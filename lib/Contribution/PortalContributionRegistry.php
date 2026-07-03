@@ -42,15 +42,19 @@ use Throwable;
 class PortalContributionRegistry
 {
     /**
-     * Alias prefix each contributing app registers its provider under.
+     * FQCN template each contributing app implements its provider at. `%s` is
+     * the app's namespace (ucfirst of the app id). Discovering by concrete class
+     * — rather than an alias — is what makes cross-app discovery work: the DI
+     * container constructs any autoloadable class by reflection, whereas a
+     * registerServiceAlias only resolves inside the registering app's container.
      */
-    private const ALIAS_PREFIX = 'OCA\\Portaliq\\Contribution\\IPortalContributionProvider::';
+    private const PROVIDER_CLASS = 'OCA\\%s\\Portal\\PortalContributionProvider';
 
     /**
      * Constructor.
      *
      * @param IAppManager        $appManager For enumerating installed apps.
-     * @param ContainerInterface $container  For resolving each app's provider alias.
+     * @param ContainerInterface $container  For constructing each app's provider.
      * @param LoggerInterface    $logger     The logger.
      */
     public function __construct(
@@ -104,7 +108,12 @@ class PortalContributionRegistry
     }//end aggregateFor()
 
     /**
-     * Discover every enabled app's contribution provider.
+     * Discover every installed app's contribution provider by convention FQCN.
+     *
+     * An app contributes by implementing `OCA\{Namespace}\Portal\PortalContributionProvider`.
+     * The namespace is taken as ucfirst(appId); camel-cased app ids (e.g.
+     * `openregister` → `OpenRegister`) would need the info.xml `<namespace>` —
+     * a follow-up refinement, as OpenRegister's MCP discovery does.
      *
      * @return array<string, IPortalContributionProvider> Keyed by app id.
      */
@@ -112,15 +121,20 @@ class PortalContributionRegistry
     {
         $providers = [];
         foreach ($this->appManager->getInstalledApps() as $appId) {
-            try {
-                $candidate = $this->container->get(self::ALIAS_PREFIX.$appId);
-            } catch (Throwable $e) {
-                // No provider registered by this app — expected for most apps.
+            $candidate = sprintf(self::PROVIDER_CLASS, ucfirst($appId));
+            if (class_exists($candidate) === false) {
                 continue;
             }
 
-            if ($candidate instanceof IPortalContributionProvider) {
-                $providers[$appId] = $candidate;
+            try {
+                $instance = $this->container->get($candidate);
+            } catch (Throwable $e) {
+                $this->logger->debug('Portaliq: contribution provider not resolvable', ['app' => $appId, 'reason' => $e->getMessage()]);
+                continue;
+            }
+
+            if ($instance instanceof IPortalContributionProvider) {
+                $providers[$appId] = $instance;
             }
         }
 

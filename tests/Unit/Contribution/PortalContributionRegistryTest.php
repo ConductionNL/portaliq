@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Contribution;
 
-use OCA\Portaliq\Contribution\ExampleContributionProvider;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Portal\PortalContributionProvider;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -13,30 +13,32 @@ use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
- * Tests the example provider + the registry's audience-filtered aggregation and
- * its tolerance of apps that register no provider.
+ * Tests the demo provider + the registry's convention-FQCN discovery, audience
+ * filtering, and tolerance of apps without a provider.
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T04
  */
 class PortalContributionRegistryTest extends TestCase
 {
 
-    private const ALIAS = 'OCA\\Portaliq\\Contribution\\IPortalContributionProvider::portaliq';
+    private const PROVIDER_FQCN = 'OCA\\Portaliq\\Portal\\PortalContributionProvider';
 
-    public function testExampleProviderContributesOnlyToSuppliers(): void
+    public function testProviderContributesOnlyToSuppliers(): void
     {
-        $provider = new ExampleContributionProvider();
+        $provider = new PortalContributionProvider();
         $this->assertSame('supplier', $provider->getAudience());
         $this->assertNotNull($provider->getContribution(['audience' => 'supplier']));
         $this->assertNull($provider->getContribution(['audience' => 'client']));
 
-    }//end testExampleProviderContributesOnlyToSuppliers()
+    }//end testProviderContributesOnlyToSuppliers()
 
     public function testAggregatesMatchingAudienceAndSkipsAppsWithoutProvider(): void
     {
+        // 'someotherapp' has no OCA\Someotherapp\Portal\PortalContributionProvider
+        // class, so class_exists() skips it before the container is even asked.
         $registry = new PortalContributionRegistry(
             $this->appManager(['portaliq', 'someotherapp']),
-            $this->container(new ExampleContributionProvider()),
+            $this->container(new PortalContributionProvider()),
             $this->createMock(LoggerInterface::class)
         );
 
@@ -53,7 +55,7 @@ class PortalContributionRegistryTest extends TestCase
     {
         $registry = new PortalContributionRegistry(
             $this->appManager(['portaliq']),
-            $this->container(new ExampleContributionProvider()),
+            $this->container(new PortalContributionProvider()),
             $this->createMock(LoggerInterface::class)
         );
 
@@ -62,24 +64,24 @@ class PortalContributionRegistryTest extends TestCase
 
     }//end testNonMatchingAudienceYieldsNothing()
 
-    private function appManager(array $enabled): IAppManager
+    private function appManager(array $installed): IAppManager
     {
         $mock = $this->createMock(IAppManager::class);
-        $mock->method('getInstalledApps')->willReturn($enabled);
+        $mock->method('getInstalledApps')->willReturn($installed);
         return $mock;
 
     }//end appManager()
 
-    private function container(ExampleContributionProvider $provider): ContainerInterface
+    private function container(PortalContributionProvider $provider): ContainerInterface
     {
         $mock = $this->createMock(ContainerInterface::class);
         $mock->method('get')->willReturnCallback(
             function (string $id) use ($provider) {
-                if ($id === self::ALIAS) {
+                if ($id === self::PROVIDER_FQCN) {
                     return $provider;
                 }
 
-                throw new RuntimeException('no provider: '.$id);
+                throw new RuntimeException('no service: '.$id);
             }
         );
         return $mock;

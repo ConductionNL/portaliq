@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Middleware;
 
 use OCA\Portaliq\Auth\PortalProtected;
-use OCA\Portaliq\Auth\PortalRequestContext;
 use OCA\Portaliq\Auth\PortalUnauthorizedException;
 use OCA\Portaliq\Middleware\PortalAuthMiddleware;
 use OCA\Portaliq\Service\PortalSessionService;
@@ -26,38 +25,36 @@ class PortalAuthMiddlewareTest extends TestCase
 
     public function testUnprotectedControllerIsIgnored(): void
     {
-        $context = new PortalRequestContext();
-        $mw      = $this->middleware($this->session(null), $context);
+        $mw = $this->middleware($this->session(null));
 
-        // No exception, and no subject was resolved.
+        // A non-protected controller passes even with no session, no exception.
         $mw->beforeController(new \stdClass(), 'index');
-        $this->assertNull($context->getSubject());
+        $this->assertTrue(true);
 
     }//end testUnprotectedControllerIsIgnored()
 
     public function testProtectedControllerWithoutSessionFailsClosed(): void
     {
-        $mw = $this->middleware($this->session(null), new PortalRequestContext());
+        $mw = $this->middleware($this->session(null));
 
         $this->expectException(PortalUnauthorizedException::class);
         $mw->beforeController($this->protectedController(), 'index');
 
     }//end testProtectedControllerWithoutSessionFailsClosed()
 
-    public function testProtectedControllerWithSessionPopulatesContext(): void
+    public function testProtectedControllerWithSessionPasses(): void
     {
-        $subject = ['subjectRef' => 's1', 'audience' => 'supplier', 'organisation' => 'org-1'];
-        $context = new PortalRequestContext();
-        $mw      = $this->middleware($this->session($subject), $context);
+        $mw = $this->middleware($this->session(['subjectRef' => 's1', 'audience' => 'supplier']));
 
+        // No exception thrown when a valid session resolves.
         $mw->beforeController($this->protectedController(), 'index');
-        $this->assertSame($subject, $context->getSubject());
+        $this->assertTrue(true);
 
-    }//end testProtectedControllerWithSessionPopulatesContext()
+    }//end testProtectedControllerWithSessionPasses()
 
     public function testAfterExceptionConvertsAuthFailureTo401(): void
     {
-        $mw       = $this->middleware($this->session(null), new PortalRequestContext());
+        $mw       = $this->middleware($this->session(null));
         $response = $mw->afterException($this->protectedController(), 'index', new PortalUnauthorizedException());
 
         $this->assertInstanceOf(JSONResponse::class, $response);
@@ -67,18 +64,18 @@ class PortalAuthMiddlewareTest extends TestCase
 
     public function testAfterExceptionRethrowsOtherErrors(): void
     {
-        $mw = $this->middleware($this->session(null), new PortalRequestContext());
+        $mw = $this->middleware($this->session(null));
 
         $this->expectException(RuntimeException::class);
         $mw->afterException($this->protectedController(), 'index', new RuntimeException('boom'));
 
     }//end testAfterExceptionRethrowsOtherErrors()
 
-    private function middleware(PortalSessionService $session, PortalRequestContext $context): PortalAuthMiddleware
+    private function middleware(PortalSessionService $session): PortalAuthMiddleware
     {
         $request = $this->createMock(IRequest::class);
         $request->method('getHeader')->willReturn('');
-        return new PortalAuthMiddleware($request, $session, $context);
+        return new PortalAuthMiddleware($request, $session);
 
     }//end middleware()
 

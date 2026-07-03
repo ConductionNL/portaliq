@@ -32,6 +32,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\AppInfo\Application;
+use OCP\IConfig;
 use OCP\Security\ISecureRandom;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -49,17 +51,36 @@ class PortalSessionService
     private const BEARER_PREFIX = 'Bearer ';
 
     /**
+     * The token minter/validator, built from the configured signing secret.
+     *
+     * @var PortalJwtService
+     */
+    private readonly PortalJwtService $jwt;
+
+    /**
      * Constructor.
      *
-     * @param PortalJwtService $jwt    The token minter/validator.
-     * @param ISecureRandom    $random Cryptographically secure id generator (jti).
-     * @param LoggerInterface  $logger The logger.
+     * The HMAC signing secret comes from app config, never the request; it falls
+     * back to the instance secret so the edge works out of the box in dev. Set a
+     * dedicated `jwt_signing_secret` (>= 16 chars) per deployment for production.
+     * Building PortalJwtService here (rather than via a DI factory) keeps the whole
+     * service auto-wireable — only core services are injected.
+     *
+     * @param IConfig         $config The configuration source for the secret.
+     * @param ISecureRandom   $random Cryptographically secure id generator (jti).
+     * @param LoggerInterface $logger The logger.
      */
     public function __construct(
-        private readonly PortalJwtService $jwt,
+        IConfig $config,
         private readonly ISecureRandom $random,
         private readonly LoggerInterface $logger,
     ) {
+        $secret = (string) $config->getAppValue(Application::APP_ID, 'jwt_signing_secret', '');
+        if ($secret === '' || strlen($secret) < 16) {
+            $secret = (string) $config->getSystemValue('secret', str_pad(Application::APP_ID, 32, '_'));
+        }
+
+        $this->jwt = new PortalJwtService(signingSecret: $secret);
     }//end __construct()
 
     /**

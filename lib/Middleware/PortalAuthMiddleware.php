@@ -4,12 +4,12 @@
  * Portaliq Portal Auth Middleware
  *
  * Guards every controller that implements the PortalProtected marker: before the
- * controller runs it resolves the caller's bearer to a server-derived subject
- * and stores it in the request-scoped PortalRequestContext. A missing / invalid
- * bearer throws PortalUnauthorizedException, converted here to a 401 — so a
- * protected method can never execute without an authenticated subject
- * (fail-closed; ADR-005). Public auth-edge endpoints do not implement the marker
- * and are left untouched.
+ * controller runs it requires a valid bearer session. A missing / invalid bearer
+ * throws PortalUnauthorizedException, converted here to a 401 — so a protected
+ * method can never execute without an authenticated subject (fail-closed;
+ * ADR-005). This is purely the gate; the guarded controller re-derives the
+ * subject itself. Public auth-edge endpoints do not implement the marker and are
+ * left untouched.
  *
  * @category Middleware
  * @package  OCA\Portaliq\Middleware
@@ -31,7 +31,6 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Middleware;
 
 use OCA\Portaliq\Auth\PortalProtected;
-use OCA\Portaliq\Auth\PortalRequestContext;
 use OCA\Portaliq\Auth\PortalUnauthorizedException;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Http;
@@ -53,17 +52,17 @@ class PortalAuthMiddleware extends Middleware
      *
      * @param IRequest             $request The request object.
      * @param PortalSessionService $session The session resolver.
-     * @param PortalRequestContext $context The request-scoped subject holder.
      */
     public function __construct(
         private readonly IRequest $request,
         private readonly PortalSessionService $session,
-        private readonly PortalRequestContext $context,
     ) {
     }//end __construct()
 
     /**
-     * Resolve + require a subject before a protected controller runs.
+     * Require a valid bearer session before a protected controller runs. The
+     * guarded controller re-derives the subject itself; this is purely the
+     * fail-closed gate.
      *
      * @param object $controller The controller being dispatched.
      * @param string $methodName The method being invoked.
@@ -86,8 +85,6 @@ class PortalAuthMiddleware extends Middleware
         if ($subject === null) {
             throw new PortalUnauthorizedException(message: 'No valid portal session');
         }
-
-        $this->context->setSubject($subject);
     }//end beforeController()
 
     /**

@@ -32,9 +32,9 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
-use OCA\Portaliq\Auth\PortalRequestContext;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -54,16 +54,29 @@ class ContributionController extends Controller implements PortalProtected
      *
      * @param IRequest                   $request  The request object.
      * @param PortalContributionRegistry $registry The contribution aggregator.
-     * @param PortalRequestContext       $context  The request-scoped subject holder.
+     * @param PortalSessionService       $session  Resolves the subject from the bearer.
+     * @param PortalObjectReader         $reader   Subject-scoped OR reader.
      */
     public function __construct(
         IRequest $request,
         private readonly PortalContributionRegistry $registry,
-        private readonly PortalRequestContext $context,
+        private readonly PortalSessionService $session,
         private readonly PortalObjectReader $reader,
     ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
     }//end __construct()
+
+    /**
+     * Resolve the subject from the bearer (fail-closed). PortalAuthMiddleware
+     * has already gated protected access; this re-derives the subject reliably
+     * for the handler without depending on request-scoped DI sharing.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function subject(): ?array
+    {
+        return $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
+    }//end subject()
 
     /**
      * List the contributions the authenticated subject may see.
@@ -80,7 +93,7 @@ class ContributionController extends Controller implements PortalProtected
     #[NoCSRFRequired]
     public function index(): JSONResponse
     {
-        $subject = $this->context->getSubject();
+        $subject = $this->subject();
         if ($subject === null) {
             // Defensive: the middleware should already have failed closed.
             return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
@@ -94,7 +107,7 @@ class ContributionController extends Controller implements PortalProtected
      *
      * Authorises first: the (register, schema) must appear in one of the
      * subject's own contributions, so a subject can only read collections its
-     * apps granted it. The subject reference is taken from the request context,
+     * apps granted it. The subject reference is derived from the bearer,
      * never the client.
      *
      * @param string $register The register of the collection.
@@ -108,7 +121,7 @@ class ContributionController extends Controller implements PortalProtected
     #[NoCSRFRequired]
     public function collection(string $register, string $schema): JSONResponse
     {
-        $subject = $this->context->getSubject();
+        $subject = $this->subject();
         if ($subject === null) {
             return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
         }

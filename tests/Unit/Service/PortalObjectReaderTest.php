@@ -38,18 +38,40 @@ class PortalObjectReaderTest extends TestCase
             /** @var array<string,mixed> */
             public array $received = [];
 
+            public string $register = '';
+
+            public string $schema = '';
+
+            public function setRegister(string $register): self
+            {
+                $this->register = $register;
+                return $this;
+            }
+
+            public function setSchema(string $schema): self
+            {
+                $this->schema = $schema;
+                return $this;
+            }
+
+            public bool $rbac = true;
+
+            public bool $multitenancy = true;
+
             /**
              * @param array<string,mixed> $config
              *
              * @return array<int,array<string,mixed>>
              */
-            public function findAll(array $config): array
+            public function findAll(array $config, bool $_rbac=true, bool $_multitenancy=true): array
             {
-                $this->received = $config;
+                $this->received     = $config;
+                $this->rbac         = $_rbac;
+                $this->multitenancy = $_multitenancy;
                 // OR mistakenly returns a foreign row too — the reader must drop it.
                 return [
-                    ['subjectRef' => 's1', 'title' => 'Mine'],
-                    ['subjectRef' => 's2', 'title' => 'Not mine'],
+                    ['subjectRef' => 's1', 'organisation' => 'org-1', 'title' => 'Mine'],
+                    ['subjectRef' => 's2', 'organisation' => 'org-1', 'title' => 'Not mine'],
                 ];
             }
         };
@@ -59,10 +81,17 @@ class PortalObjectReaderTest extends TestCase
 
         $this->assertCount(1, $rows);
         $this->assertSame('Mine', $rows[0]['title']);
-        $this->assertSame('portaliq', $objectService->received['filters']['register']);
-        $this->assertSame('exampleDocument', $objectService->received['filters']['schema']);
+        // register/schema are set via the setters, NOT leaked into filters.
+        $this->assertSame('portaliq', $objectService->register);
+        $this->assertSame('exampleDocument', $objectService->schema);
+        $this->assertArrayNotHasKey('register', $objectService->received['filters']);
+        // organisation is a multitenancy field, NOT an OR filter (it is only a
+        // per-row check), so it must not appear in the query filters.
+        $this->assertArrayNotHasKey('organisation', $objectService->received['filters']);
         $this->assertSame('s1', $objectService->received['filters']['subjectRef']);
-        $this->assertSame('org-1', $objectService->received['filters']['organisation']);
+        // Portal reads bypass OR's NC-user RBAC/multitenancy — Portaliq scopes.
+        $this->assertFalse($objectService->rbac);
+        $this->assertFalse($objectService->multitenancy);
 
     }//end testFiltersOnScopeAndDropsForeignRows()
 

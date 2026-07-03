@@ -89,20 +89,29 @@ class PortalObjectReader
             return [];
         }
 
-        $filters = [
-            'register' => $register,
-            'schema'   => $schema,
-        ];
+        $filters = [];
         if ($scopeField !== '' && $subjectRef !== '') {
             $filters[$scopeField] = $subjectRef;
         }
 
-        if ($organisation !== '') {
-            $filters['organisation'] = $organisation;
-        }
-
+        // NOTE: `organisation` is deliberately NOT an OR filter — it is a
+        // multitenancy field, not a queryable property, so filtering on it
+        // returns nothing. Tenant isolation is the per-row organisation check in
+        // verifyScope(); broader tenant scoping for anonymous portal reads is a
+        // follow-up (see T05 notes).
         try {
-            $rows = $objectService->findAll(['filters' => $filters, 'limit' => $limit, 'offset' => 0]);
+            // Set the register/schema context via the dedicated setters, exactly
+            // as OpenRegister's own controllers do. Passing register/schema inside
+            // `filters` would leak them as literal property filters (no object has
+            // those properties), matching nothing.
+            $objectService->setRegister(register: $register);
+            $objectService->setSchema(schema: $schema);
+            // RBAC + multitenancy OFF: portal subjects are NOT Nextcloud users, so
+            // OR's user/org-based scoping would filter everything out. Portaliq is
+            // the trusted intermediary — it authenticated the subject via the
+            // bearer and scopes by the subjectRef filter + per-row verification
+            // below, which IS the security boundary.
+            $rows = $objectService->findAll(config: ['filters' => $filters, 'limit' => $limit, 'offset' => 0], _rbac: false, _multitenancy: false);
         } catch (Throwable $e) {
             $this->logger->warning('Portaliq: OR read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
             return [];
@@ -112,29 +121,35 @@ class PortalObjectReader
             return [];
         }
 
-        return $this->verifyScope(rows: $rows, scopeField: $scopeField, subjectRef: $subjectRef);
+        return $this->verifyScope(rows: $rows, scopeField: $scopeField, subjectRef: $subjectRef, organisation: $organisation);
     }//end readCollection()
 
     /**
-     * Re-check every row against the subject ref. Any row that does not carry
-     * the exact subject ref is dropped — a mis-scoped OR result must never leak.
+     * Re-check every row against the subject ref (and organisation, when known).
+     * Any row that does not carry the exact subject ref — or belongs to a
+     * different tenant — is dropped, so a mis-scoped OR result never leaks.
      *
-     * @param array<int, mixed> $rows       The raw rows from OpenRegister.
-     * @param string            $scopeField The scope field to check.
-     * @param string            $subjectRef The expected subject reference.
+     * @param array<int, mixed> $rows         The raw rows from OpenRegister.
+     * @param string            $scopeField   The scope field to check.
+     * @param string            $subjectRef   The expected subject reference.
+     * @param string            $organisation The expected tenant (empty = skip).
      *
      * @return array<int, array<string, mixed>> The verified rows.
      */
-    private function verifyScope(array $rows, string $scopeField, string $subjectRef): array
+    private function verifyScope(array $rows, string $scopeField, string $subjectRef, string $organisation=''): array
     {
         $verified = [];
         foreach ($rows as $row) {
-            $normalised = $this->normalise($row);
+            $normalised = $this->normalise(row: $row);
             if ($normalised === null) {
                 continue;
             }
 
             if ($scopeField !== '' && (string) ($normalised[$scopeField] ?? '') !== $subjectRef) {
+                continue;
+            }
+
+            if ($organisation !== '' && (string) ($normalised['organisation'] ?? '') !== $organisation) {
                 continue;
             }
 
@@ -180,6 +195,10 @@ class PortalObjectReader
             return null;
         }
 
-        return is_object($service) ? $service : null;
+        if (is_object($service) === true) {
+            return $service;
+        }
+
+        return null;
     }//end objectService()
 }//end class

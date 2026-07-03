@@ -1,16 +1,19 @@
 <?php
 
 /**
- * Portaliq Example Contribution Provider
+ * Portaliq's own (demo) Portal Contribution Provider
  *
- * A sample IPortalContributionProvider (like the template's ExampleWidget) that
- * declares a demo supplier contribution so the registry, the contributions
- * endpoint, and the portal shell can be exercised end-to-end before a real app
- * (procest) ships its provider. Delete this class and its alias in
- * Application.php once real contributions exist.
+ * A contributing app exposes its portal contribution by implementing the class
+ * `OCA\{Namespace}\Portal\PortalContributionProvider` (implementing
+ * IPortalContributionProvider). PortalContributionRegistry discovers each app's
+ * provider by that concrete FQCN — the DI container constructs any autoloadable
+ * class by reflection, so discovery works across apps (mirroring OpenRegister's
+ * MCP tool-provider discovery). This is Portaliq's own demo contribution so the
+ * portal is exercisable before a real app (procest) ships its provider; delete
+ * it once real contributions exist.
  *
- * @category Contribution
- * @package  OCA\Portaliq\Contribution
+ * @category Portal
+ * @package  OCA\Portaliq\Portal
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -26,14 +29,16 @@
 
 declare(strict_types=1);
 
-namespace OCA\Portaliq\Contribution;
+namespace OCA\Portaliq\Portal;
+
+use OCA\Portaliq\Contribution\IPortalContributionProvider;
 
 /**
  * Demo supplier contribution — illustrative only.
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T04
  */
-class ExampleContributionProvider implements IPortalContributionProvider
+class PortalContributionProvider implements IPortalContributionProvider
 {
     /**
      * {@inheritDoc}
