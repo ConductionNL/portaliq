@@ -80,6 +80,15 @@ class PortalContributionProvider implements IPortalContributionProvider
                     'label'      => 'Voorbeeldgegevens',
                     'listable'   => true,
                 ],
+                [
+                    'id'         => 'inbox',
+                    'kind'       => 'inbox',
+                    'register'   => 'portaliq',
+                    'schema'     => 'portalMessage',
+                    'scopeField' => 'subjectRef',
+                    'label'      => 'Berichten',
+                    'listable'   => true,
+                ],
             ],
             'actions'       => [
                 [

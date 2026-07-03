@@ -194,10 +194,17 @@ export default function App({ config }) {
 												</button>
 												{loaded?.loading && <span> …</span>}
 												{loaded && !loaded.loading && (
-													<ul className="portaliq-objects">
-														{loaded.objects.length === 0 && <li><em>Geen items.</em></li>}
+													<ul className={col.kind === 'inbox' ? 'portaliq-inbox' : 'portaliq-objects'}>
+														{loaded.objects.length === 0 && <li><em>{col.kind === 'inbox' ? 'Geen berichten.' : 'Geen items.'}</em></li>}
 														{loaded.objects.map((o, i) => (
-															<li key={o.id || o['@self']?.id || i}>{o.title || o.name || o.id || '—'}</li>
+															col.kind === 'inbox'
+																	? (
+																		<li key={o.id || i} className={o.read ? 'read' : 'unread'}>
+																			<strong>{o.read ? '' : '● '}{o.subject || '(geen onderwerp)'}</strong>
+																			{o.body && <div className="portaliq-msg-body">{o.body}</div>}
+																		</li>
+																	)
+																	: <li key={o.id || o['@self']?.id || i}>{o.title || o.name || o.id || '—'}</li>
 														))}
 													</ul>
 												)}

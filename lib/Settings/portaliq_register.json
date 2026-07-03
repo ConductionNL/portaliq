@@ -3,7 +3,7 @@
   "info": {
     "title": "Portaliq Register",
     "description": "Register containing all schemas owned by the Portaliq external-portal application.",
-    "version": "0.1.0"
+    "version": "0.1.1"
   },
   "x-openregister": {
     "type": "application",
@@ -185,6 +185,54 @@
             "type": "string",
             "description": "Lifecycle status.",
             "example": "open"
+          }
+        }
+      },
+      "portalMessage": {
+        "slug": "portalMessage",
+        "icon": "EmailOutline",
+        "version": "0.1.0",
+        "title": "Portal Message",
+        "description": "A message in a subject's portal inbox (the in-portal realisation of the notification/inbox surface). Subject-scoped by subjectRef, so it is read through the same path as any contribution collection. OpenRegister's notification engine (email channel + `field` recipient kind) can additionally email the subject out-of-band when a message arrives.",
+        "type": "object",
+        "required": [
+          "subjectRef",
+          "subject"
+        ],
+        "x-openregister": {
+          "publicRead": false,
+          "publicWrite": false
+        },
+        "properties": {
+          "subjectRef": {
+            "type": "string",
+            "description": "The recipient subject; the field the inbox is scoped on.",
+            "example": "dev-supplier"
+          },
+          "organisation": {
+            "type": "string",
+            "description": "The tenant this message belongs to.",
+            "example": "dev-org"
+          },
+          "subject": {
+            "type": "string",
+            "description": "Message subject line.",
+            "example": "Uw contract verloopt binnenkort"
+          },
+          "body": {
+            "type": "string",
+            "description": "Message body.",
+            "example": "Contract 12345 verloopt op 1 augustus."
+          },
+          "read": {
+            "type": "boolean",
+            "description": "Whether the subject has read the message.",
+            "example": false
+          },
+          "receivedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the message arrived."
           }
         }
       }

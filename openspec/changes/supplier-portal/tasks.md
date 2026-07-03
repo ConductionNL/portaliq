@@ -24,7 +24,7 @@
 
 ## Portaliq — inbox + white-label
 
-- [ ] **T07**: Inbox reader over OR `x-openregister-notifications` for `supplierRef` recipients; one aggregated list in the shell. Track the OR external-recipient/relation-resolver dependency.
+- [~] **T07**: Inbox for the subject; track the OR external-recipient dependency. — DONE (display), LIVE-VERIFIED. **Dependency resolved positively:** OR's notification engine (`AnnotationNotificationDispatcher`) DOES reach external (non-NC-user) recipients via the `email` channel + `field` recipient kind, so outbound "you have a message" email works. The IN-PORTAL inbox is realised as a subject-scoped **message collection** (`portalMessage` schema) rendered via the existing read path — a contribution collection with `kind: 'inbox'`; the React shell renders it as a message list with read/unread. No OR-side work needed. Proven live: dev-supplier sees its 2 messages (unread + read badges), not another subject's. REMAINING: mark-as-read (needs a `PortalObjectWriter::updateObject` — follow-up) and wiring an app's `x-openregister-notifications` to auto-email on new messages.
 - [ ] **T08**: Resolve `window.RUNTIME_CONFIG` (theme/logo/name/IdP/flags) server-side in `PortalPageController::index()` from the tenant's OR Organisation record; theme the React shell (NL-DS variants).
 
 ## procest — first contributor
