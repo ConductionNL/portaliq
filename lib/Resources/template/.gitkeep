@@ -1,0 +1,4 @@
+Placeholder so psalm.xml's `<ignoreFiles><directory name="lib/Resources/template"/>`
+resolves. Portaliq ships no verbatim template snapshot here (unlike openbuild);
+this keeps the psalm gate runnable. Root fix belongs upstream in the app template
+(psalm should tolerate the absent directory). See ADR-046 / template-sync.

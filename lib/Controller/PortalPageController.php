@@ -1,5 +1,4 @@
 <?php
-// SPDX-License-Identifier: EUPL-1.2
 
 /**
  * Portaliq PortalPageController
@@ -40,6 +39,8 @@ use OCP\IRequest;
 
 /**
  * Serves the public Portaliq SPA shell.
+ *
+ * @spec openspec/changes/supplier-portal/tasks.md#T08
  */
 class PortalPageController extends Controller
 {
@@ -50,7 +51,7 @@ class PortalPageController extends Controller
      */
     public function __construct(IRequest $request)
     {
-        parent::__construct(Application::APP_ID, $request);
+        parent::__construct(appName: Application::APP_ID, request: $request);
     }//end __construct()
 
     /**
@@ -93,6 +94,8 @@ class PortalPageController extends Controller
      * @param string $path The deep-link path (unused server-side).
      *
      * @return TemplateResponse
+     *
+     * @spec openspec/changes/supplier-portal/tasks.md#T08
      */
     #[PublicPage]
     #[NoCSRFRequired]
