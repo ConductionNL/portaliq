@@ -1,0 +1,25 @@
+{
+  "id": "portaliq",
+  "name": "Portaliq",
+  "namespace": "Portaliq",
+  "summary": "One shared external portal for clients and suppliers.",
+  "goal": "The fleet's shared external portal: clients and suppliers get one integrated, white-label portal to view and act on their records across every app, reading data through OpenRegister and rendering each app's registered portal contribution (ADR-046).",
+  "category": "tools",
+  "version": "0.1.0",
+  "license": "EUPL-1.2",
+  "author": "Conduction B.V.",
+  "repository": "https://codeberg.org/Conduction/portaliq",
+  "dependencies": {
+    "requiresOpenRegister": true,
+    "additionalCiApps": [
+      {"repo": "ConductionNL/openregister", "app": "openregister", "ref": "main"}
+    ]
+  },
+  "cicd": {
+    "phpVersions": ["8.3", "8.4"],
+    "nextcloudRefs": ["stable31", "stable32"],
+    "enableNewman": false
+  },
+  "createdAt": "2026-07-03",
+  "updatedAt": "2026-07-03"
+}

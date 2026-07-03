@@ -1,0 +1,48 @@
+publiccodeYmlVersion: "0.3"
+
+name: "App Template"
+url: "https://codeberg.org/Conduction/portaliq"
+softwareVersion: "0.1.2"
+releaseDate: "2026-01-01"
+softwareType: "addon"
+
+platforms:
+  - nextcloud
+
+categories:
+  - content-management
+
+developmentStatus: development
+
+description:
+  en:
+    shortDescription: "Scaffold template for Conduction Nextcloud apps"
+    longDescription: |
+      A scaffold template for creating new Nextcloud applications using the
+      Conduction development stack. Provides OpenRegister integration,
+      manifest-driven UI, MCP tool provider scaffolding, and Playwright
+      end-to-end test setup.
+    features:
+      - OpenRegister register and schema initialisation
+      - Manifest-driven SPA with CnAppRoot
+      - AI Chat Companion (MCP tool provider) scaffold
+      - Admin settings panel
+      - Playwright e2e test setup
+
+legal:
+  license: EUPL-1.2
+  mainCopyrightOwner: "Conduction B.V."
+  repoOwner: "ConductionNL"
+
+maintenance:
+  type: internal
+  contacts:
+    - name: "Conduction B.V."
+      email: "info@conduction.nl"
+      affiliation: "Conduction B.V."
+
+localisation:
+  localisationReady: true
+  availableLanguages:
+    - en
+    - nl
