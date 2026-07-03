@@ -149,6 +149,44 @@
             "example": false
           }
         }
+      },
+      "exampleDocument": {
+        "slug": "exampleDocument",
+        "icon": "FileDocumentOutline",
+        "version": "0.1.0",
+        "title": "Example Document",
+        "description": "A demo subject-scoped content object so the portal object reader is exercisable end-to-end. Carries subjectRef so PortalObjectReader can scope it. Replace with real, app-owned content schemas (procest ships supplierContract etc.).",
+        "type": "object",
+        "required": [
+          "subjectRef",
+          "title"
+        ],
+        "x-openregister": {
+          "publicRead": false,
+          "publicWrite": false
+        },
+        "properties": {
+          "subjectRef": {
+            "type": "string",
+            "description": "The subject this document belongs to; the field PortalObjectReader scopes on.",
+            "example": "dev-supplier"
+          },
+          "organisation": {
+            "type": "string",
+            "description": "The tenant this document belongs to.",
+            "example": "dev-org"
+          },
+          "title": {
+            "type": "string",
+            "description": "Human-readable title shown in the portal.",
+            "example": "Voorbeelddocument"
+          },
+          "status": {
+            "type": "string",
+            "description": "Lifecycle status.",
+            "example": "open"
+          }
+        }
       }
     }
   }

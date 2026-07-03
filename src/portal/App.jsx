@@ -56,6 +56,22 @@ async function fetchContributions(config, token) {
 export default function App({ config }) {
 	const [token, setToken] = useState(() => window.localStorage.getItem(TOKEN_KEY) || null)
 	const [state, setState] = useState({ loading: true, session: null, contributions: null, devError: null })
+	const [collectionData, setCollectionData] = useState({})
+
+	// Load one collection's objects (subject-scoped, authorised server-side).
+	async function loadCollection(register, schema) {
+		const key = `${register}/${schema}`
+		setCollectionData((d) => ({ ...d, [key]: { loading: true, objects: [] } }))
+		try {
+			const res = await fetch(`${config.apiBase}/collections/${encodeURIComponent(register)}/${encodeURIComponent(schema)}`, {
+				headers: { Accept: 'application/json', ...authHeaders(token) },
+			})
+			const objects = res.ok ? ((await res.json()).objects || []) : []
+			setCollectionData((d) => ({ ...d, [key]: { loading: false, objects } }))
+		} catch (e) {
+			setCollectionData((d) => ({ ...d, [key]: { loading: false, objects: [] } }))
+		}
+	}
 
 	const refresh = useCallback(async (tok) => {
 		setState((s) => ({ ...s, loading: true }))
@@ -145,9 +161,26 @@ export default function App({ config }) {
 							<article key={c.app} className="portaliq-contribution">
 								<h2>{c.label || c.app}</h2>
 								<ul className="portaliq-collections">
-									{(c.collections || []).map((col) => (
-										<li key={col.id}>{col.label || col.schema}</li>
-									))}
+									{(c.collections || []).map((col) => {
+										const key = `${col.register}/${col.schema}`
+										const loaded = collectionData[key]
+										return (
+											<li key={col.id}>
+												<button type="button" onClick={() => loadCollection(col.register, col.schema)}>
+													{col.label || col.schema}
+												</button>
+												{loaded?.loading && <span> …</span>}
+												{loaded && !loaded.loading && (
+													<ul className="portaliq-objects">
+														{loaded.objects.length === 0 && <li><em>Geen items.</em></li>}
+														{loaded.objects.map((o, i) => (
+															<li key={o.id || o['@self']?.id || i}>{o.title || o.name || o.id || '—'}</li>
+														))}
+													</ul>
+												)}
+											</li>
+										)
+									})}
 								</ul>
 								{(c.actions || []).length > 0 && (
 									<div className="portaliq-actions">

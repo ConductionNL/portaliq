@@ -36,6 +36,8 @@ return [
         // Aggregated portal contributions for the authenticated subject
         // (supplier-portal T04). Guarded by PortalAuthMiddleware (fail-closed).
         ['name' => 'contribution#index', 'url' => '/portal/api/contributions', 'verb' => 'GET'],
+        // Objects in one contribution collection, subject-scoped (T05).
+        ['name' => 'contribution#collection', 'url' => '/portal/api/collections/{register}/{schema}', 'verb' => 'GET'],
 
         ['name' => 'portalPage#catchAll', 'url' => '/portal/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
 

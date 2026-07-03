@@ -68,11 +68,12 @@ class ExampleContributionProvider implements IPortalContributionProvider
             'label'         => 'Voorbeeld',
             'collections'   => [
                 [
-                    'id'       => 'exampleCollection',
-                    'register' => 'portaliq',
-                    'schema'   => 'example',
-                    'label'    => 'Voorbeeldgegevens',
-                    'listable' => true,
+                    'id'         => 'exampleCollection',
+                    'register'   => 'portaliq',
+                    'schema'     => 'exampleDocument',
+                    'scopeField' => 'subjectRef',
+                    'label'      => 'Voorbeeldgegevens',
+                    'listable'   => true,
                 ],
             ],
             'actions'       => [

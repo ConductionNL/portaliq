@@ -34,6 +34,7 @@ use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Auth\PortalRequestContext;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Service\PortalObjectReader;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -59,6 +60,7 @@ class ContributionController extends Controller implements PortalProtected
         IRequest $request,
         private readonly PortalContributionRegistry $registry,
         private readonly PortalRequestContext $context,
+        private readonly PortalObjectReader $reader,
     ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
     }//end __construct()
@@ -86,4 +88,68 @@ class ContributionController extends Controller implements PortalProtected
 
         return new JSONResponse($this->registry->aggregateFor($subject));
     }//end index()
+
+    /**
+     * Read the objects in one contribution collection, scoped to the subject.
+     *
+     * Authorises first: the (register, schema) must appear in one of the
+     * subject's own contributions, so a subject can only read collections its
+     * apps granted it. The subject reference is taken from the request context,
+     * never the client.
+     *
+     * @param string $register The register of the collection.
+     * @param string $schema   The schema of the collection.
+     *
+     * @return JSONResponse The subject's rows, or 401 / 403.
+     *
+     * @spec openspec/changes/supplier-portal/tasks.md#T05
+     */
+    #[PublicPage]
+    #[NoCSRFRequired]
+    public function collection(string $register, string $schema): JSONResponse
+    {
+        $subject = $this->context->getSubject();
+        if ($subject === null) {
+            return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+        }
+
+        $collection = $this->authorisedCollection(subject: $subject, register: $register, schema: $schema);
+        if ($collection === null) {
+            return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+        }
+
+        $objects = $this->reader->readCollection(
+            register: $register,
+            schema: $schema,
+            scopeField: (string) ($collection['scopeField'] ?? 'subjectRef'),
+            subjectRef: (string) ($subject['subjectRef'] ?? ''),
+            organisation: (string) ($subject['organisation'] ?? '')
+        );
+
+        return new JSONResponse(['register' => $register, 'schema' => $schema, 'objects' => $objects]);
+    }//end collection()
+
+    /**
+     * Find the collection matching (register, schema) in the subject's
+     * aggregated contributions, or null when the subject is not entitled to it.
+     *
+     * @param array<string, mixed> $subject  The resolved subject.
+     * @param string               $register The requested register.
+     * @param string               $schema   The requested schema.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function authorisedCollection(array $subject, string $register, string $schema): ?array
+    {
+        $aggregate = $this->registry->aggregateFor($subject);
+        foreach (($aggregate['contributions'] ?? []) as $contribution) {
+            foreach (($contribution['collections'] ?? []) as $collection) {
+                if (($collection['register'] ?? '') === $register && ($collection['schema'] ?? '') === $schema) {
+                    return $collection;
+                }
+            }
+        }
+
+        return null;
+    }//end authorisedCollection()
 }//end class
