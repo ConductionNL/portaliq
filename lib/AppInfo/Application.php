@@ -33,6 +33,8 @@ namespace OCA\Portaliq\AppInfo;
 use OCA\Portaliq\Dashboard\ExampleWidget;
 use OCA\Portaliq\Listener\DeepLinkRegistrationListener;
 use OCA\Portaliq\Mcp\ExampleToolProvider;
+use OCA\Portaliq\Contribution\ExampleContributionProvider;
+use OCA\Portaliq\Middleware\PortalAuthMiddleware;
 use OCA\Portaliq\Repair\InitializeSettings;
 use OCA\Portaliq\Service\PortalJwtService;
 use OCA\OpenRegister\Event\DeepLinkRegistrationEvent;
@@ -109,6 +111,20 @@ class Application extends App implements IBootstrap
 
                 return new PortalJwtService(signingSecret: $secret);
             }
+        );
+
+        // Fail-closed bearer guard for PortalProtected controllers (e.g.
+        // ContributionController). Public auth-edge routes are untouched.
+        $context->registerMiddleware(PortalAuthMiddleware::class);
+
+        // Demo portal contribution (supplier-portal T04) so the registry +
+        // /portal/api/contributions are exercisable before a real app ships its
+        // provider. Each contributing app registers its own under the alias
+        // OCA\Portaliq\Contribution\IPortalContributionProvider::{appId}.
+        // Remove this alias + ExampleContributionProvider once real ones exist.
+        $context->registerServiceAlias(
+            'OCA\\Portaliq\\Contribution\\IPortalContributionProvider::'.self::APP_ID,
+            ExampleContributionProvider::class
         );
 
     }//end register()

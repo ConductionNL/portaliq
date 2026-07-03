@@ -37,14 +37,31 @@ async function resolveSession(config, token) {
 	}
 }
 
+// Fetch the aggregated portal contributions the subject may see. The endpoint is
+// guarded server-side (PortalAuthMiddleware); an unauthenticated call returns 401.
+async function fetchContributions(config, token) {
+	try {
+		const res = await fetch(`${config.apiBase}/contributions`, {
+			headers: { Accept: 'application/json', ...authHeaders(token) },
+		})
+		if (!res.ok) {
+			return null
+		}
+		return await res.json()
+	} catch (e) {
+		return null
+	}
+}
+
 export default function App({ config }) {
 	const [token, setToken] = useState(() => window.localStorage.getItem(TOKEN_KEY) || null)
-	const [state, setState] = useState({ loading: true, session: null, devError: null })
+	const [state, setState] = useState({ loading: true, session: null, contributions: null, devError: null })
 
 	const refresh = useCallback(async (tok) => {
 		setState((s) => ({ ...s, loading: true }))
 		const session = await resolveSession(config, tok)
-		setState({ loading: false, session, devError: null })
+		const contributions = session ? await fetchContributions(config, tok) : null
+		setState({ loading: false, session, contributions, devError: null })
 	}, [config])
 
 	useEffect(() => {
@@ -117,9 +134,31 @@ export default function App({ config }) {
 							Ingelogd als <strong>{state.session.subjectRef}</strong>
 							{' '}({state.session.audience} · {state.session.organisation})
 						</p>
-						{/* TODO (supplier-portal T04–T07): render registered portal contributions
-						    (collections + actions) read via OpenRegister, plus the unified inbox. */}
-						<p>Nog geen bijdragen om weer te geven.</p>
+
+						{/* Contribution manifest: which collections + actions each app
+						    contributes to this subject. Reading the objects in each
+						    collection via OpenRegister is the next slice (T05). */}
+						{(state.contributions?.contributions || []).length === 0 && (
+							<p>Nog geen bijdragen om weer te geven.</p>
+						)}
+						{(state.contributions?.contributions || []).map((c) => (
+							<article key={c.app} className="portaliq-contribution">
+								<h2>{c.label || c.app}</h2>
+								<ul className="portaliq-collections">
+									{(c.collections || []).map((col) => (
+										<li key={col.id}>{col.label || col.schema}</li>
+									))}
+								</ul>
+								{(c.actions || []).length > 0 && (
+									<div className="portaliq-actions">
+										{(c.actions || []).map((a) => (
+											<button key={a.id} type="button" disabled={!a.endpoint}>{a.label || a.id}</button>
+										))}
+									</div>
+								)}
+							</article>
+						))}
+						{/* TODO (supplier-portal T07): unified inbox over the OR notification engine. */}
 					</section>
 				)}
 			</main>

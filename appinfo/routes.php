@@ -33,6 +33,10 @@ return [
         ['name' => 'session#devLogin', 'url' => '/portal/api/session/dev-login', 'verb' => 'POST'],
         ['name' => 'session#logout', 'url' => '/portal/api/session', 'verb' => 'DELETE'],
 
+        // Aggregated portal contributions for the authenticated subject
+        // (supplier-portal T04). Guarded by PortalAuthMiddleware (fail-closed).
+        ['name' => 'contribution#index', 'url' => '/portal/api/contributions', 'verb' => 'GET'],
+
         ['name' => 'portalPage#catchAll', 'url' => '/portal/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
 
         // SPA catch-all — same controller as the index route; must use a distinct route name

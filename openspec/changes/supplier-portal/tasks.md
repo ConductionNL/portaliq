@@ -18,8 +18,8 @@
 
 ## Portaliq — contribution registry + rendering
 
-- [ ] **T04**: Define the `PortalContributionProvider` contract (PHP interface + OCS capability discovery, ADR-019 parity) and the `PortalContributionRegistry` consumer that aggregates registered contributions per authenticated subject.
-- [ ] **T05**: Read declared collections via OpenRegister's objects API RBAC-scoped by `supplierRef` + Organisation; render list + detail with NL-DS components in the React shell.
+- [x] **T04**: Define the `PortalContributionProvider` contract + the `PortalContributionRegistry` consumer. — DONE: `IPortalContributionProvider` (getAudience + getContribution), `PortalContributionRegistry` (alias-discovery `OCA\Portaliq\Contribution\IPortalContributionProvider::{appId}` mirroring the MCP pattern; audience-filtered aggregation), `ExampleContributionProvider` (demo, remove when real ones land), protected `ContributionController` (`GET /portal/api/contributions`) behind `PortalAuthMiddleware`. Also completes the T02 middleware piece: `PortalAuthMiddleware` + `PortalProtected` marker + `PortalRequestContext` + `PortalUnauthorizedException` (fail-closed 401). Unit-tested (registry aggregation + provider + middleware fail-closed).
+- [~] **T05**: Read declared collections via OpenRegister's objects API RBAC-scoped by subject + Organisation; render list/detail. — PARTIAL: the contribution *manifest* (collections + actions a subject may see) is served + rendered in the React shell. Reading the actual *objects* per collection via OR's ObjectService is deferred until the API can be verified against a live OR (DC01) — deliberately not guessed.
 - [ ] **T06**: Render declared `actions` as buttons that call the app's endpoints (bearer-forwarded).
 
 ## Portaliq — inbox + white-label
