@@ -29,7 +29,7 @@
 
 ## procest — first contributor
 
-- [ ] **T09**: Add procest's `PortalContributionProvider` for the supplier audience (collections: supplierTender/Contract/Invoice; actions: requestRenewal, submitAccreditation, updateProfile; notifications).
+- [x] **T09**: Add procest's `PortalContributionProvider` for the supplier audience. — DONE + LIVE-VERIFIED (procest repo, change `portal-contribution`). procest ships a plain, dependency-free `OCA\Procest\Portal\PortalContributionProvider` (collections supplierTender/Contract/Invoice + inbox supplierMessage, scoped by `supplierRef`). To avoid a cross-app hard dependency, Portaliq's registry now **duck-types** providers (getAudience + getContribution) instead of requiring `instanceof IPortalContributionProvider`, so a contributing app references nothing from Portaliq. Also fixed the reader's per-row org check to only enforce tenant isolation when the row carries an `organisation` (procest schemas don't). Proven live: a supplier (UUID subjectRef) reads procest's tenders through the portal, scoped, alongside the demo contribution.
 - [ ] **T10**: Bearer-guard `/api/leverancier-portaal/*` reads (flip from `#[NoAdminRequired]`; the `SupplierAuthMiddleware` already exists) so Portaliq can call them for a portal subject.
 - [ ] **T11**: Retire procest's in-app supplier surface (`src/views/leverancier/*`, `manifest.d/60-leverancier.json`) once Portaliq renders the contribution; leave the API + facades.
 

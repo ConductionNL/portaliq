@@ -3,12 +3,13 @@
 /**
  * Portaliq Portal Contribution Registry
  *
- * Discovers every app's registered IPortalContributionProvider (by the alias
- * `OCA\Portaliq\Contribution\IPortalContributionProvider::{appId}`, one per
- * enabled app) and aggregates the contributions that apply to a given
- * authenticated subject — filtered by the subject's audience. This is the
- * read-side of ADR-046: Portaliq collects declarative manifests, then renders
- * them and reads their collections through OpenRegister.
+ * Discovers every installed app's contribution provider by convention FQCN
+ * (`OCA\{Namespace}\Portal\PortalContributionProvider`) and aggregates the
+ * contributions that apply to a given authenticated subject — filtered by the
+ * subject's audience. Providers are duck-typed (getAudience + getContribution),
+ * so a contributing app does NOT hard-depend on Portaliq's interface. This is
+ * the read-side of ADR-046: Portaliq collects declarative manifests, then
+ * renders them and reads their collections through OpenRegister.
  *
  * @category Contribution
  * @package  OCA\Portaliq\Contribution
@@ -80,7 +81,18 @@ class PortalContributionRegistry
         $audience      = (string) ($subject['audience'] ?? '');
         $contributions = [];
 
-        foreach ($this->discoverProviders() as $appId => $provider) {
+        foreach ($this->appManager->getInstalledApps() as $appId) {
+            $provider = $this->resolveProvider(appId: (string) $appId);
+            // The method_exists checks narrow for static analysis; duck typing
+            // means a contributing app does NOT need to implement (and thus
+            // hard-depend on) Portaliq's interface — only the two methods.
+            if ($provider === null
+                || method_exists($provider, 'getAudience') === false
+                || method_exists($provider, 'getContribution') === false
+            ) {
+                continue;
+            }
+
             if ($provider->getAudience() !== $audience) {
                 continue;
             }
@@ -92,13 +104,13 @@ class PortalContributionRegistry
                 continue;
             }
 
-            if ($contribution === null) {
+            if (is_array($contribution) === false) {
                 continue;
             }
 
             $contribution['app'] = $appId;
             $contributions[]     = $contribution;
-        }
+        }//end foreach
 
         return [
             'audience'      => $audience,
@@ -108,36 +120,36 @@ class PortalContributionRegistry
     }//end aggregateFor()
 
     /**
-     * Discover every installed app's contribution provider by convention FQCN.
+     * Resolve one app's contribution provider by convention FQCN, or null.
      *
-     * An app contributes by implementing `OCA\{Namespace}\Portal\PortalContributionProvider`.
-     * The namespace is taken as ucfirst(appId); camel-cased app ids (e.g.
-     * `openregister` → `OpenRegister`) would need the info.xml `<namespace>` —
-     * a follow-up refinement, as OpenRegister's MCP discovery does.
+     * An app contributes by shipping `OCA\{Namespace}\Portal\PortalContributionProvider`
+     * with `getAudience()` + `getContribution()` — no need to implement (and thus
+     * depend on) Portaliq's interface. The namespace is ucfirst(appId); camel-cased
+     * app ids (e.g. `openregister` → `OpenRegister`) would need the info.xml
+     * `<namespace>`, a follow-up as OpenRegister's MCP discovery does.
      *
-     * @return array<string, IPortalContributionProvider> Keyed by app id.
+     * @param string $appId The app id.
+     *
+     * @return object|null
      */
-    private function discoverProviders(): array
+    private function resolveProvider(string $appId): ?object
     {
-        $providers = [];
-        foreach ($this->appManager->getInstalledApps() as $appId) {
-            $candidate = sprintf(self::PROVIDER_CLASS, ucfirst($appId));
-            if (class_exists($candidate) === false) {
-                continue;
-            }
-
-            try {
-                $instance = $this->container->get($candidate);
-            } catch (Throwable $e) {
-                $this->logger->debug('Portaliq: contribution provider not resolvable', ['app' => $appId, 'reason' => $e->getMessage()]);
-                continue;
-            }
-
-            if ($instance instanceof IPortalContributionProvider) {
-                $providers[$appId] = $instance;
-            }
+        $candidate = sprintf(self::PROVIDER_CLASS, ucfirst($appId));
+        if (class_exists($candidate) === false) {
+            return null;
         }
 
-        return $providers;
-    }//end discoverProviders()
+        try {
+            $instance = $this->container->get($candidate);
+        } catch (Throwable $e) {
+            $this->logger->debug('Portaliq: contribution provider not resolvable', ['app' => $appId, 'reason' => $e->getMessage()]);
+            return null;
+        }
+
+        if (is_object($instance) === true) {
+            return $instance;
+        }
+
+        return null;
+    }//end resolveProvider()
 }//end class

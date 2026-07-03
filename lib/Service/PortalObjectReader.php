@@ -149,7 +149,11 @@ class PortalObjectReader
                 continue;
             }
 
-            if ($organisation !== '' && (string) ($normalised['organisation'] ?? '') !== $organisation) {
+            // Only enforce tenant isolation when the row actually carries an
+            // organisation; schemas without one (e.g. procest supplierTender) are
+            // scoped by the subject reference alone, which is globally unique.
+            $rowOrganisation = (string) ($normalised['organisation'] ?? '');
+            if ($organisation !== '' && $rowOrganisation !== '' && $rowOrganisation !== $organisation) {
                 continue;
             }
 
