@@ -25,6 +25,14 @@ return [
         // client-side deep links. Registered BEFORE the dashboard catch-all so
         // /portal is not swallowed by /{path}.
         ['name' => 'portalPage#index', 'url' => '/portal', 'verb' => 'GET'],
+
+        // Portal auth-edge API (supplier-portal T02). session#index resolves the
+        // caller's bearer (fail-closed); devLogin is debug-gated; logout ends the
+        // client session. Registered before the /portal/{path} SPA catch-all.
+        ['name' => 'session#index', 'url' => '/portal/api/session', 'verb' => 'GET'],
+        ['name' => 'session#devLogin', 'url' => '/portal/api/session/dev-login', 'verb' => 'POST'],
+        ['name' => 'session#logout', 'url' => '/portal/api/session', 'verb' => 'DELETE'],
+
         ['name' => 'portalPage#catchAll', 'url' => '/portal/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
 
         // SPA catch-all — same controller as the index route; must use a distinct route name

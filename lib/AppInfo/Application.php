@@ -34,11 +34,14 @@ use OCA\Portaliq\Dashboard\ExampleWidget;
 use OCA\Portaliq\Listener\DeepLinkRegistrationListener;
 use OCA\Portaliq\Mcp\ExampleToolProvider;
 use OCA\Portaliq\Repair\InitializeSettings;
+use OCA\Portaliq\Service\PortalJwtService;
 use OCA\OpenRegister\Event\DeepLinkRegistrationEvent;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
+use OCP\IConfig;
+use Psr\Container\ContainerInterface;
 
 /**
  * Main application class for the Portaliq Nextcloud app.
@@ -89,6 +92,23 @@ class Application extends App implements IBootstrap
         $context->registerServiceAlias(
             'OCA\\OpenRegister\\Mcp\\IMcpToolProvider::'.self::APP_ID,
             ExampleToolProvider::class
+        );
+
+        // Portal auth edge (ADR-046 / supplier-portal): the HMAC signing secret
+        // comes from app config, never the request. Falls back to the instance
+        // secret so the edge works out of the box in dev; set a dedicated
+        // `jwt_signing_secret` (>= 16 chars) per deployment for production.
+        $context->registerService(
+            PortalJwtService::class,
+            function (ContainerInterface $c): PortalJwtService {
+                $config = $c->get(IConfig::class);
+                $secret = (string) $config->getAppValue(self::APP_ID, 'jwt_signing_secret', '');
+                if ($secret === '' || strlen($secret) < 16) {
+                    $secret = (string) $config->getSystemValue('secret', str_pad(self::APP_ID, 32, '_'));
+                }
+
+                return new PortalJwtService(signingSecret: $secret);
+            }
         );
 
     }//end register()

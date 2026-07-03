@@ -1,0 +1,155 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Portaliq Register",
+    "description": "Register containing all schemas owned by the Portaliq external-portal application.",
+    "version": "0.1.0"
+  },
+  "x-openregister": {
+    "type": "application",
+    "app": "portaliq",
+    "openregister": "^v0.2.10",
+    "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046).",
+    "rbac": true,
+    "multitenancy": true
+  },
+  "paths": {},
+  "components": {
+    "schemas": {
+      "portalAccount": {
+        "slug": "portalAccount",
+        "icon": "AccountKey",
+        "version": "0.1.0",
+        "title": "Portal Account",
+        "description": "Links an external identity (eHerkenning / DigiD / eIDAS) to the subject reference used for RBAC scoping. Owned by Portaliq's auth edge; never publicly readable. See ADR-046 and openspec/changes/supplier-portal.",
+        "type": "object",
+        "required": [
+          "audience",
+          "subjectRef",
+          "organisation"
+        ],
+        "x-openregister": {
+          "publicRead": false,
+          "publicWrite": false
+        },
+        "properties": {
+          "audience": {
+            "type": "string",
+            "description": "Which external audience this account belongs to.",
+            "enum": ["supplier", "client"],
+            "example": "supplier"
+          },
+          "identityType": {
+            "type": "string",
+            "description": "The external identity provider that authenticated this account.",
+            "enum": ["eherkenning", "digid", "eidas", "dev"],
+            "example": "eherkenning"
+          },
+          "identityRef": {
+            "type": "string",
+            "description": "Pseudonymous identity reference from the IdP (e.g. eHerkenning KvK number for suppliers, or a pairwise pseudonym for clients). Not a raw BSN.",
+            "example": "12345678"
+          },
+          "subjectRef": {
+            "type": "string",
+            "description": "The reference the domain apps scope their data by (e.g. procest supplierRef). Server-derived; never accepted from the client.",
+            "example": "b3d9c2a1-0000-4000-8000-000000000000"
+          },
+          "organisation": {
+            "type": "string",
+            "description": "The tenant (OpenRegister Organisation) this account belongs to.",
+            "example": "gemeente-x"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "Human-readable name for the portal UI.",
+            "example": "Voorbeeld Leverancier B.V."
+          },
+          "email": {
+            "type": "string",
+            "description": "Contact email for notifications (masked in logs).",
+            "example": "contact@example.org"
+          },
+          "status": {
+            "type": "string",
+            "description": "Account lifecycle status.",
+            "enum": ["active", "suspended"],
+            "example": "active"
+          },
+          "lastLoginAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp of the most recent successful login."
+          }
+        }
+      },
+      "portalSession": {
+        "slug": "portalSession",
+        "icon": "Ticket",
+        "version": "0.1.0",
+        "title": "Portal Session",
+        "description": "A bearer session issued by Portaliq's auth edge. Records the minted token id (jti) so sessions can be revoked. Owned by Portaliq; never publicly readable.",
+        "type": "object",
+        "required": [
+          "subjectRef",
+          "audience",
+          "organisation",
+          "jti",
+          "expiresAt"
+        ],
+        "x-openregister": {
+          "publicRead": false,
+          "publicWrite": false
+        },
+        "properties": {
+          "accountRef": {
+            "type": "string",
+            "description": "Reference to the portalAccount this session was issued for.",
+            "example": "a1b2c3d4-0000-4000-8000-000000000000"
+          },
+          "subjectRef": {
+            "type": "string",
+            "description": "The subject reference carried in the token (server-derived).",
+            "example": "b3d9c2a1-0000-4000-8000-000000000000"
+          },
+          "audience": {
+            "type": "string",
+            "description": "The external audience of this session.",
+            "enum": ["supplier", "client"],
+            "example": "supplier"
+          },
+          "organisation": {
+            "type": "string",
+            "description": "The tenant this session is scoped to.",
+            "example": "gemeente-x"
+          },
+          "jti": {
+            "type": "string",
+            "description": "Unique token identifier (JWT jti claim) for revocation.",
+            "example": "9f8e7d6c-0000-4000-8000-000000000000"
+          },
+          "trustLevel": {
+            "type": "string",
+            "description": "Assurance level of the authentication (e.g. eHerkenning EH3, DigiD Midden/Substantieel).",
+            "example": "EH3"
+          },
+          "issuedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the session was minted."
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the session expires."
+          },
+          "revoked": {
+            "type": "boolean",
+            "description": "Whether the session has been explicitly revoked (logout / admin).",
+            "example": false
+          }
+        }
+      }
+    }
+  }
+}

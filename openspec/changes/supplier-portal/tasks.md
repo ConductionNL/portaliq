@@ -6,15 +6,15 @@
 
 ## Deduplication / Dependency Check
 
-- [ ] **DC01**: Confirm OpenRegister exposes the anonymous+authenticated objects API, RBAC (schema `public` group + predicates), the Organisation entity, case-tokens, and the `x-openregister-notifications` engine in the deployed OR version; record the min OR version in `appinfo/info.xml`.
-- [ ] **DC02**: Confirm the eHerkenning broker path (OpenConnector) is available and can return an EH3 assertion with KvK number; if not, file the gap on OpenConnector rather than embedding a SAML lib in Portaliq.
-- [ ] **DC03**: Confirm procest's `/api/leverancier-portaal/*` reads are already `supplierRef`-scoped + IDOR-safe (they are) and reusable behind a bearer guard; do NOT reimplement supplier CRUD in Portaliq.
+- [~] **DC01**: Confirm OpenRegister exposes the anonymous+authenticated objects API, RBAC, the Organisation entity, case-tokens, and the `x-openregister-notifications` engine. — PARTIAL: register/schema mechanism (rbac + multitenancy dialect) confirmed via the template's OR integration; live anonymous-API + notification-engine confirmation deferred to the data-read slice (T05/T07).
+- [x] **DC02**: Confirm the eHerkenning broker path (OpenConnector). — DONE: procest ships a DORMANT `EHerkenningSamlAdapterInterface` + `LogEHerkenningSamlAdapter` stub (throws until an OpenConnector broker + certs are configured). Portaliq mirrors this — JWT edge live now, real broker deferred behind the same interface.
+- [x] **DC03**: Confirm procest's `/api/leverancier-portaal/*` reads are `supplierRef`-scoped + IDOR-safe and reusable. — DONE: confirmed. procest's `SupplierScopeService` / `SupplierAuthMiddleware` / `SupplierSessionService` derive `supplierRef` server-side from a validated HS256 JWT, never a client param.
 
 ## Portaliq — auth edge
 
-- [ ] **T01**: Add the `portal_account` + `portal_session` schemas as a Portaliq-owned OpenRegister register (`lib/Settings/portaliq_register.json`).
-- [ ] **T02**: Wire the eHerkenning→JWT edge: `SessionController` (`POST /portal/api/session` start, `GET /portal/api/session` resolve, `DELETE` logout) + `PortalAuthMiddleware` (bearer validation → `_supplierRef`, fail-closed 401). Reuse procest's `EHerkenningSamlAdapterInterface` / `SupplierAuthService` / `TenantJwtService` patterns via OpenConnector.
-- [ ] **T03**: Enforce trust level (EH3) and tenant claim on session mint; never trust a client-supplied scope.
+- [x] **T01**: Add the `portalAccount` + `portalSession` schemas as a Portaliq-owned OpenRegister register (`lib/Settings/portaliq_register.json`). — DONE. Also fixed a template bug: the file was named `app_template_register.json` while `SettingsService` loads `portaliq_register.json` (via `APP_ID`), so the register never loaded — renamed.
+- [~] **T02**: Wire the eHerkenning→JWT edge. — PARTIAL (first slice): `PortalJwtService` (self-contained HS256, audience-agnostic, unit-tested fail-closed), `PortalSessionService` (issue + `resolveFromBearer`, fail-closed), `SessionController` (`GET /portal/api/session` resolve, `POST /portal/api/session/dev-login` debug-gated, `DELETE` logout), JWT signing-secret DI factory, routes, React shell wired (bearer + dev-login + logout). DEFERRED to the data-read slice: `PortalAuthMiddleware` (lands with the protected data controllers so it isn't inert), OR-backed `portalSession` persistence + revocation, and the real eHerkenning/DigiD broker (dormant behind the interface until OpenConnector).
+- [~] **T03**: Enforce trust level and tenant claim on session mint; never trust a client-supplied scope. — PARTIAL: `subjectRef`/`audience`/`organisation`/`trust` are carried in the signed token and only ever read server-side from the validated bearer (never a client param). EH3 enforcement lands with the real eHerkenning broker.
 
 ## Portaliq — contribution registry + rendering
 
