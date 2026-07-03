@@ -83,6 +83,14 @@ class PortalContributionProvider implements IPortalContributionProvider
             ],
             'actions'       => [
                 [
+                    'id'       => 'createExample',
+                    'type'     => 'create',
+                    'label'    => 'Nieuw voorbeeld',
+                    'register' => 'portaliq',
+                    'schema'   => 'exampleDocument',
+                    'fields'   => ['title'],
+                ],
+                [
                     'id'       => 'exampleAction',
                     'label'    => 'Voorbeeldactie',
                     'endpoint' => null,

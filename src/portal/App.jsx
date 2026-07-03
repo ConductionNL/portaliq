@@ -73,6 +73,29 @@ export default function App({ config }) {
 		}
 	}
 
+	// Perform a declared `create` action: collect the whitelisted fields and POST
+	// them; the server stamps ownership. Then reload that collection.
+	async function createInCollection(action) {
+		const body = {}
+		for (const field of (action.fields || [])) {
+			const value = window.prompt(`${field}?`, 'Nieuw document')
+			if (value === null) {
+				return
+			}
+			body[field] = value
+		}
+		try {
+			await fetch(`${config.apiBase}/collections/${encodeURIComponent(action.register)}/${encodeURIComponent(action.schema)}`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...authHeaders(token) },
+				body: JSON.stringify(body),
+			})
+		} catch (e) {
+			// Best-effort; the reload reflects whatever landed.
+		}
+		loadCollection(action.register, action.schema)
+	}
+
 	const refresh = useCallback(async (tok) => {
 		setState((s) => ({ ...s, loading: true }))
 		const session = await resolveSession(config, tok)
@@ -185,7 +208,9 @@ export default function App({ config }) {
 								{(c.actions || []).length > 0 && (
 									<div className="portaliq-actions">
 										{(c.actions || []).map((a) => (
-											<button key={a.id} type="button" disabled={!a.endpoint}>{a.label || a.id}</button>
+											a.type === 'create'
+												? <button key={a.id} type="button" onClick={() => createInCollection(a)}>{a.label || a.id}</button>
+												: <button key={a.id} type="button" disabled={!a.endpoint}>{a.label || a.id}</button>
 										))}
 									</div>
 								)}

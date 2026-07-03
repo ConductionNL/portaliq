@@ -34,6 +34,7 @@ use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -56,12 +57,14 @@ class ContributionController extends Controller implements PortalProtected
      * @param PortalContributionRegistry $registry The contribution aggregator.
      * @param PortalSessionService       $session  Resolves the subject from the bearer.
      * @param PortalObjectReader         $reader   Subject-scoped OR reader.
+     * @param PortalObjectWriter         $writer   Subject-scoped OR writer.
      */
     public function __construct(
         IRequest $request,
         private readonly PortalContributionRegistry $registry,
         private readonly PortalSessionService $session,
         private readonly PortalObjectReader $reader,
+        private readonly PortalObjectWriter $writer,
     ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
     }//end __construct()
@@ -165,4 +168,99 @@ class ContributionController extends Controller implements PortalProtected
 
         return null;
     }//end authorisedCollection()
+
+    /**
+     * Create an object in a collection, owned by the subject.
+     *
+     * Authorises against the subject's own contributions: there must be a
+     * declared `type: create` action for this (register, schema). Only the
+     * fields that action whitelists are accepted; the subject ref and tenant are
+     * stamped server-side. A subject can therefore only create records it is
+     * entitled to, owned by itself.
+     *
+     * @param string $register The register of the collection.
+     * @param string $schema   The schema of the collection.
+     *
+     * @return JSONResponse The created object, or 401 / 403 / 502.
+     *
+     * @spec openspec/changes/supplier-portal/tasks.md#T06
+     */
+    #[PublicPage]
+    #[NoCSRFRequired]
+    public function create(string $register, string $schema): JSONResponse
+    {
+        $subject = $this->subject();
+        if ($subject === null) {
+            return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+        }
+
+        $action = $this->authorisedCreateAction(subject: $subject, register: $register, schema: $schema);
+        if ($action === null) {
+            return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+        }
+
+        $data = $this->whitelist(fields: (array) ($action['fields'] ?? []));
+
+        $created = $this->writer->createObject(
+            register: $register,
+            schema: $schema,
+            scopeField: (string) ($action['scopeField'] ?? 'subjectRef'),
+            subjectRef: (string) ($subject['subjectRef'] ?? ''),
+            organisation: (string) ($subject['organisation'] ?? ''),
+            data: $data
+        );
+
+        if ($created === null) {
+            return new JSONResponse(['error' => 'write_failed'], Http::STATUS_BAD_GATEWAY);
+        }
+
+        return new JSONResponse(['object' => $created]);
+    }//end create()
+
+    /**
+     * Find a `type: create` action for (register, schema) in the subject's
+     * contributions, or null when the subject is not entitled to create there.
+     *
+     * @param array<string, mixed> $subject  The resolved subject.
+     * @param string               $register The requested register.
+     * @param string               $schema   The requested schema.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function authorisedCreateAction(array $subject, string $register, string $schema): ?array
+    {
+        $aggregate = $this->registry->aggregateFor($subject);
+        foreach (($aggregate['contributions'] ?? []) as $contribution) {
+            foreach (($contribution['actions'] ?? []) as $action) {
+                if (($action['type'] ?? '') === 'create'
+                    && ($action['register'] ?? '') === $register
+                    && ($action['schema'] ?? '') === $schema
+                ) {
+                    return $action;
+                }
+            }
+        }
+
+        return null;
+    }//end authorisedCreateAction()
+
+    /**
+     * Read the request body and keep only the whitelisted fields.
+     *
+     * @param array<int, string> $fields The permitted field names.
+     *
+     * @return array<string, mixed>
+     */
+    private function whitelist(array $fields): array
+    {
+        $data = [];
+        foreach ($fields as $field) {
+            $value = $this->request->getParam($field);
+            if ($value !== null) {
+                $data[$field] = $value;
+            }
+        }
+
+        return $data;
+    }//end whitelist()
 }//end class
