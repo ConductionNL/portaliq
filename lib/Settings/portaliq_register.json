@@ -157,6 +157,7 @@
         "title": "Example Document",
         "description": "A demo subject-scoped content object so the portal object reader is exercisable end-to-end. Carries subjectRef so PortalObjectReader can scope it. Replace with real, app-owned content schemas (procest ships supplierContract etc.).",
         "type": "object",
+        "x-schema-org": "schema:DigitalDocument",
         "required": [
           "subjectRef",
           "title"
@@ -195,6 +196,7 @@
         "title": "Portal Message",
         "description": "A message in a subject's portal inbox (the in-portal realisation of the notification/inbox surface). Subject-scoped by subjectRef, so it is read through the same path as any contribution collection. OpenRegister's notification engine (email channel + `field` recipient kind) can additionally email the subject out-of-band when a message arrives.",
         "type": "object",
+        "x-schema-org": "schema:Message",
         "required": [
           "subjectRef",
           "subject"
