@@ -27,6 +27,7 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T02
+ * @spec openspec/changes/contract-v2/tasks.md#T7
  */
 
 declare(strict_types=1);
@@ -58,6 +59,18 @@ class PortalJwtService
      * supplier session TTL).
      */
     public const DEFAULT_TTL = 7200;
+
+    /**
+     * Subject-assertion validity window in seconds (contract v2, A6). Short by
+     * design: the assertion only has to survive one server-to-server forward.
+     */
+    public const ASSERTION_TTL = 60;
+
+    /**
+     * The `use` claim value marking an X-Portal-Subject assertion. Tokens
+     * carrying it are REJECTED by PortalSessionService::resolveFromBearer().
+     */
+    public const USE_ASSERTION = 'assertion';
 
     /**
      * Token issuer claim.
@@ -124,6 +137,55 @@ class PortalJwtService
         $sig   = $this->b64UrlEncode(bytes: $this->signRaw(input: $hPart.'.'.$cPart));
         return $hPart.'.'.$cPart.'.'.$sig;
     }//end createSession()
+
+    /**
+     * Mint a short-lived `X-Portal-Subject` assertion (contract v2, A6).
+     *
+     * Distinct from a session token: it carries `use: "assertion"` (rejected by
+     * the session resolver — token-confusion guard) and the ORIGINATING
+     * session's `jti`, so the receiving app can correlate the action to the
+     * revocable session for audit. Same HS256 signing + secret as sessions.
+     *
+     * @param string   $subjectRef   Server-derived subject reference.
+     * @param string   $audience     External audience of the subject.
+     * @param string   $organisation Tenant the subject is scoped to.
+     * @param string   $trust        Normalised trust level (`low|substantial|high`).
+     * @param string   $jti          The originating SESSION's token id.
+     * @param int|null $ttl          Override the assertion TTL (seconds).
+     *
+     * @return string Compact JWT string.
+     *
+     * @spec openspec/changes/contract-v2/tasks.md#T7
+     */
+    public function createAssertion(
+        string $subjectRef,
+        string $audience,
+        string $organisation,
+        string $trust,
+        string $jti,
+        ?int $ttl=null
+    ): string {
+        $iat = time();
+        $exp = ($iat + ($ttl ?? self::ASSERTION_TTL));
+
+        $header = ['alg' => self::ALG, 'typ' => 'JWT'];
+        $claims = [
+            'sub'          => $subjectRef,
+            'audience'     => $audience,
+            'organisation' => $organisation,
+            'trust'        => $trust,
+            'jti'          => $jti,
+            'use'          => self::USE_ASSERTION,
+            'iat'          => $iat,
+            'exp'          => $exp,
+            'iss'          => self::ISSUER,
+        ];
+
+        $hPart = $this->b64UrlEncode(bytes: (string) json_encode($header, JSON_UNESCAPED_SLASHES));
+        $cPart = $this->b64UrlEncode(bytes: (string) json_encode($claims, JSON_UNESCAPED_SLASHES));
+        $sig   = $this->b64UrlEncode(bytes: $this->signRaw(input: $hPart.'.'.$cPart));
+        return $hPart.'.'.$cPart.'.'.$sig;
+    }//end createAssertion()
 
     /**
      * Validate a JWT and return its claims.

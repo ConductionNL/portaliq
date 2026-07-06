@@ -1,5 +1,4 @@
 <?php
-// SPDX-License-Identifier: EUPL-1.2
 
 /**
  * Portaliq Application
@@ -94,7 +93,6 @@ class Application extends App implements IBootstrap
         // (OCA\{Namespace}\Portal\PortalContributionProvider) — see
         // PortalContributionRegistry — so no per-provider registration is needed
         // here; the DI container constructs each app's provider by reflection.
-
     }//end register()
 
     /**

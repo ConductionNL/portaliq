@@ -40,6 +40,10 @@ return [
         ['name' => 'contribution#collection', 'url' => '/portal/api/collections/{register}/{schema}', 'verb' => 'GET'],
         // Create an object in a collection, owned by the subject (T06).
         ['name' => 'contribution#create', 'url' => '/portal/api/collections/{register}/{schema}', 'verb' => 'POST'],
+        // Forward a declared endpoint action server-to-server with a signed
+        // X-Portal-Subject assertion (contract-v2 T8, ADR-046 A6). Guarded by
+        // PortalAuthMiddleware; registered before the /portal/{path} catch-all.
+        ['name' => 'contribution#action', 'url' => '/portal/api/actions/{appId}/{actionId}', 'verb' => 'POST'],
 
         ['name' => 'portalPage#catchAll', 'url' => '/portal/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
 

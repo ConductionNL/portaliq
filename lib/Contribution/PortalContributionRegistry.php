@@ -6,10 +6,14 @@
  * Discovers every installed app's contribution provider by convention FQCN
  * (`OCA\{Namespace}\Portal\PortalContributionProvider`) and aggregates the
  * contributions that apply to a given authenticated subject — filtered by the
- * subject's audience. Providers are duck-typed (getAudience + getContribution),
- * so a contributing app does NOT hard-depend on Portaliq's interface. This is
- * the read-side of ADR-046: Portaliq collects declarative manifests, then
- * renders them and reads their collections through OpenRegister.
+ * subject's audience AND trust level (contract v2). Providers are duck-typed
+ * (`getAudiences()` preferred, `getAudience()` fallback, + getContribution), so
+ * a contributing app does NOT hard-depend on Portaliq's interface. Collections
+ * and actions whose `minTrust` exceeds the subject's trust are dropped here, in
+ * the ONE aggregation path every authorisation lookup flows through; entries
+ * with an unrecognised `minTrust` are dropped for every subject (fail-closed).
+ * This is the read-side of ADR-046: Portaliq collects declarative manifests,
+ * then renders them and reads their collections through OpenRegister.
  *
  * @category Contribution
  * @package  OCA\Portaliq\Contribution
@@ -24,12 +28,14 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T04
+ * @spec openspec/changes/contract-v2/tasks.md#T2
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Service\PortalSessionService;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -39,6 +45,11 @@ use Throwable;
  * Aggregates registered portal contributions for a subject.
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T04
+ *
+ * @SuppressWarnings(PHPMD.StaticAccess) -- PortalSessionService's trust
+ * helpers are deliberately THE single normalisation/comparison point
+ * (contract-v2 design decision); calling them statically keeps one source of
+ * truth on every path.
  */
 class PortalContributionRegistry
 {
@@ -79,6 +90,7 @@ class PortalContributionRegistry
     public function aggregateFor(array $subject): array
     {
         $audience      = (string) ($subject['audience'] ?? '');
+        $trust         = PortalSessionService::normaliseTrust(trust: ($subject['trust'] ?? ''));
         $contributions = [];
 
         foreach ($this->appManager->getInstalledApps() as $appId) {
@@ -86,14 +98,11 @@ class PortalContributionRegistry
             // The method_exists checks narrow for static analysis; duck typing
             // means a contributing app does NOT need to implement (and thus
             // hard-depend on) Portaliq's interface — only the two methods.
-            if ($provider === null
-                || method_exists($provider, 'getAudience') === false
-                || method_exists($provider, 'getContribution') === false
-            ) {
+            if ($provider === null || method_exists($provider, 'getContribution') === false) {
                 continue;
             }
 
-            if ($provider->getAudience() !== $audience) {
+            if ($this->servesAudience(provider: $provider, audience: $audience) === false) {
                 continue;
             }
 
@@ -109,7 +118,7 @@ class PortalContributionRegistry
             }
 
             $contribution['app'] = $appId;
-            $contributions[]     = $contribution;
+            $contributions[]     = $this->filterByTrust(contribution: $contribution, trust: $trust);
         }//end foreach
 
         return [
@@ -118,6 +127,81 @@ class PortalContributionRegistry
             'contributions' => $contributions,
         ];
     }//end aggregateFor()
+
+    /**
+     * Whether a provider serves the subject's audience (contract v2, A2).
+     *
+     * Prefers the duck-typed `getAudiences(): array` when present (multi-
+     * audience providers); falls back to the v1 `getAudience(): string`. A
+     * provider exposing neither serves nobody (fail-closed). The audience
+     * vocabulary is an open string set — no enum is enforced here.
+     *
+     * @param object $provider The resolved provider.
+     * @param string $audience The subject's audience.
+     *
+     * @return bool
+     *
+     * @spec openspec/changes/contract-v2/tasks.md#T2
+     */
+    private function servesAudience(object $provider, string $audience): bool
+    {
+        if (method_exists($provider, 'getAudiences') === true) {
+            $audiences = $provider->getAudiences();
+            if (is_array($audiences) === false) {
+                return false;
+            }
+
+            return in_array($audience, $audiences, true);
+        }
+
+        if (method_exists($provider, 'getAudience') === true) {
+            return $provider->getAudience() === $audience;
+        }
+
+        return false;
+    }//end servesAudience()
+
+    /**
+     * Drop every collection and action whose `minTrust` the subject does not
+     * satisfy (contract v2, A3). Filtering here — inside the ONE aggregation
+     * path that index(), collection(), create(), and action() all authorise
+     * against — enforces trust on every data path with one source of truth;
+     * the controller re-checks the matched entry as defense in depth. A
+     * missing `minTrust` defaults to `low`; an unrecognised value renders the
+     * entry unsatisfiable for every subject (fail-closed, ADR-005).
+     *
+     * @param array<string, mixed> $contribution One app's contribution manifest.
+     * @param string               $trust        The subject's normalised trust.
+     *
+     * @return array<string, mixed> The trust-filtered contribution.
+     *
+     * @spec openspec/changes/contract-v2/tasks.md#T2
+     */
+    private function filterByTrust(array $contribution, string $trust): array
+    {
+        foreach (['collections', 'actions'] as $section) {
+            if (is_array(($contribution[$section] ?? null)) === false) {
+                continue;
+            }
+
+            $kept = [];
+            foreach ($contribution[$section] as $entry) {
+                if (is_array($entry) === false) {
+                    continue;
+                }
+
+                if (PortalSessionService::trustSatisfies($trust, ($entry['minTrust'] ?? null)) === false) {
+                    continue;
+                }
+
+                $kept[] = $entry;
+            }
+
+            $contribution[$section] = $kept;
+        }//end foreach
+
+        return $contribution;
+    }//end filterByTrust()
 
     /**
      * Resolve one app's contribution provider by convention FQCN, or null.

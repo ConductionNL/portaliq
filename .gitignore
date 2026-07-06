@@ -48,6 +48,9 @@ phpqa_output.log
 **/endpoints *
 **/*Analysis*
 **/*references*
+# "Preferences*" ends in "references" — un-ignore the legit per-user
+# preferences API controller the junk pattern above accidentally swallows.
+!**/PreferencesController.php
 **/*encoding*
 **/ter
 **/clearCache*

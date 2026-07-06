@@ -85,6 +85,53 @@ _Update this diagram during `/app-explore` sessions as the architecture evolves.
 
 _Data model is defined using OpenRegister schemas. See [`openspec/specs/`](openspec/specs/) for feature-level design decisions and [`openspec/architecture/`](openspec/architecture/) for architectural decisions._
 
+### Portal API (external subjects)
+
+The public portal SPA talks to these endpoints. All `contribution#*` routes are
+guarded by `PortalAuthMiddleware` (bearer session required, fail-closed 401);
+the session routes are the public auth edge.
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET` | `/apps/portaliq/portal/api/session` | Resolve the caller's bearer to a subject (401 without one) |
+| `POST` | `/apps/portaliq/portal/api/session/dev-login` | Mint a dev session (debug-gated; issues `trust: low`) |
+| `DELETE` | `/apps/portaliq/portal/api/session` | End the client session |
+| `GET` | `/apps/portaliq/portal/api/contributions` | The subject's aggregated manifest (audience- and trust-filtered) |
+| `GET` | `/apps/portaliq/portal/api/collections/{register}/{schema}` | Read one collection, subject-scoped with per-row verification |
+| `POST` | `/apps/portaliq/portal/api/collections/{register}/{schema}` | Create an object via a declared `type: create` action (whitelisted fields only) |
+| `POST` | `/apps/portaliq/portal/api/actions/{appId}/{actionId}` | Forward a declared endpoint action server-to-server with a signed `X-Portal-Subject` assertion (contract v2, A6) |
+
+### Contribution contract v2 (ADR-046 amendment)
+
+A contributing app ships one plain class `OCA\{App}\Portal\PortalContributionProvider`
+(duck-typed — no portaliq dependency). Contract v2 vocabulary, every field
+optional with a v1-equivalent default:
+
+- **`getAudiences(): array`** — multi-audience providers; preferred over the v1
+  `getAudience(): string` (open audience vocabulary).
+- **`minTrust`** on collections and actions — `low | substantial | high`
+  (eIDAS-aligned). Below-threshold entries are filtered from the manifest AND
+  rejected 403 server-side on read/create/action. Unrecognised values make the
+  entry unsatisfiable for everyone (fail-closed).
+- **`scopeClaim`** on a collection — scope by a server-managed claim from the
+  subject's `portalAccount.claims` (`{appId: {claimName: uuid}}`) instead of
+  the pseudonymous `subjectRef`. `"claimName"` resolves in the contributing
+  app's own namespace, `"appId.claimName"` is explicit. Absent claim → the
+  collection contributes zero rows (200 + empty, never an error).
+- **`via`** on a collection — one-hop join scoping:
+  `{register, schema, scopeField, targetField}` (dot paths allowed in
+  `scopeField`). Only per-row-verified targets referenced by the subject's
+  verified join rows are returned; invalid or nested declarations fail closed.
+- **Endpoint actions** — `{id, label, endpoint, method?, minTrust?}` where
+  `endpoint` is an **instance-local absolute path** (full URLs rejected —
+  SSRF guard). Portaliq forwards server-to-server with a ~60s HS256
+  `X-Portal-Subject` assertion (`sub`/`audience`/`organisation`/`trust`/`jti` +
+  `use: "assertion"`); the client's own `Authorization` header is never
+  forwarded, and an assertion can never be replayed as a portal session.
+
+Canonical contract text: ADR-046 amendment 2026-07-06 (hydra) + the
+`portal-contribution-contract` spec in [`openspec/specs/`](openspec/specs/).
+
 ### Directory Structure
 
 ```

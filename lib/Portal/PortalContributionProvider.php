@@ -25,6 +25,7 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T04
+ * @spec openspec/changes/contract-v2/tasks.md#T9
  */
 
 declare(strict_types=1);
@@ -53,13 +54,35 @@ class PortalContributionProvider implements IPortalContributionProvider
     }//end getAudience()
 
     /**
+     * The audiences this provider contributes to (contract v2, A2). The
+     * registry prefers this duck-typed list over getAudience(); the v1 method
+     * above stays as the demo of the backward-compatible fallback.
+     *
+     * @return array<int, string>
+     *
+     * @spec openspec/changes/contract-v2/tasks.md#T9
+     */
+    public function getAudiences(): array
+    {
+        return ['supplier'];
+    }//end getAudiences()
+
+    /**
      * {@inheritDoc}
+     *
+     * Exercises the full v2 vocabulary on a dev install: a claim-scoped
+     * collection (`scopeClaim` resolved against the seeded dev-supplier
+     * account's placeholder claim; the claimless dev-client seed proves the
+     * fail-closed empty path), an endpoint action with a placeholder
+     * instance-local path, and a `minTrust: substantial` action that a
+     * low-trust dev-login session never sees.
      *
      * @param array<string, mixed> $subject The resolved subject.
      *
      * @return array<string, mixed>|null
      *
      * @spec openspec/changes/supplier-portal/tasks.md#T04
+     * @spec openspec/changes/contract-v2/tasks.md#T9
      */
     public function getContribution(array $subject): ?array
     {
@@ -89,6 +112,18 @@ class PortalContributionProvider implements IPortalContributionProvider
                     'label'      => 'Berichten',
                     'listable'   => true,
                 ],
+                [
+                    // Contract v2 (A4): scoped by the server-managed claim
+                    // `claims.portaliq.exampleContactId` (bare form = own
+                    // namespace), not by the subjectRef.
+                    'id'         => 'exampleClaimScoped',
+                    'register'   => 'portaliq',
+                    'schema'     => 'exampleDocument',
+                    'scopeField' => 'subjectRef',
+                    'scopeClaim' => 'exampleContactId',
+                    'label'      => 'Gekoppelde voorbeeldgegevens',
+                    'listable'   => true,
+                ],
             ],
             'actions'       => [
                 [
@@ -100,9 +135,22 @@ class PortalContributionProvider implements IPortalContributionProvider
                     'fields'   => ['title'],
                 ],
                 [
-                    'id'       => 'exampleAction',
-                    'label'    => 'Voorbeeldactie',
-                    'endpoint' => null,
+                    // Contract v2 (A6): endpoint bearer-forward action with a
+                    // placeholder instance-local path (the app's own public
+                    // health endpoint, so the forward is exercisable on dev).
+                    'id'       => 'exampleForward',
+                    'label'    => 'Voorbeeld-doorstuuractie',
+                    'endpoint' => '/apps/portaliq/api/health',
+                    'method'   => 'GET',
+                ],
+                [
+                    // Contract v2 (A3): gated above the dev-login trust level —
+                    // a `low` session proves the manifest filter by its absence.
+                    'id'       => 'exampleTrusted',
+                    'label'    => 'Vertrouwde voorbeeldactie',
+                    'endpoint' => '/apps/portaliq/api/health',
+                    'method'   => 'GET',
+                    'minTrust' => 'substantial',
                 ],
             ],
             'notifications' => [],
