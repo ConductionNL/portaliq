@@ -81,6 +81,11 @@ class PortalContributionProvider implements IPortalContributionProvider
      * as title/status + identifier only); the other collections stay
      * undeclared as the full-row backward-compat reference.
      *
+     * A reverse `via` (`match: 'scopeField'`, contract v2.2) collection is also
+     * declared, deliberately self-referential so it stays exercisable on a
+     * dev install with the existing demo schemas only — a realistic
+     * parent→child→grades reverse join needs a domain app's own schemas.
+     *
      * @param array<string, mixed> $subject The resolved subject.
      *
      * @return array<string, mixed>|null
@@ -88,6 +93,7 @@ class PortalContributionProvider implements IPortalContributionProvider
      * @spec openspec/changes/supplier-portal/tasks.md#T04
      * @spec openspec/changes/contract-v2/tasks.md#T9
      * @spec openspec/changes/field-projection/tasks.md#T3
+     * @spec openspec/changes/reverse-scope-join/tasks.md#T3
      */
     public function getContribution(array $subject): ?array
     {
@@ -131,6 +137,33 @@ class PortalContributionProvider implements IPortalContributionProvider
                     'scopeField' => 'subjectRef',
                     'scopeClaim' => 'exampleContactId',
                     'label'      => 'Gekoppelde voorbeeldgegevens',
+                    'listable'   => true,
+                ],
+                [
+                    // Contract v2.2 (reverse-scope-join): the reverse
+                    // `match: 'scopeField'` join mechanic, exercisable with the
+                    // existing demo schemas only. The join pre-pass resolves
+                    // the subject's OWN portalAccount (join scopeField
+                    // `subjectRef`), collects its `subjectRef` as the target
+                    // VALUE, then keeps `exampleDocument` rows whose OWN
+                    // `subjectRef` (the collection scopeField) is in that set.
+                    // Deliberately self-referential — a realistic
+                    // guardian→learner→grades reverse join needs a domain app's
+                    // schemas (scholiq), out of scope here — but it drives the
+                    // reverse code path end-to-end, so rows created via
+                    // `createExample` surface through it too.
+                    'id'         => 'exampleReverseJoin',
+                    'register'   => 'portaliq',
+                    'schema'     => 'exampleDocument',
+                    'scopeField' => 'subjectRef',
+                    'via'        => [
+                        'register'    => 'portaliq',
+                        'schema'      => 'portalAccount',
+                        'scopeField'  => 'subjectRef',
+                        'targetField' => 'subjectRef',
+                        'match'       => 'scopeField',
+                    ],
+                    'label'      => 'Voorbeeld omgekeerde koppeling',
                     'listable'   => true,
                 ],
             ],

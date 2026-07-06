@@ -119,9 +119,22 @@ optional with a v1-equivalent default:
   app's own namespace, `"appId.claimName"` is explicit. Absent claim → the
   collection contributes zero rows (200 + empty, never an error).
 - **`via`** on a collection — one-hop join scoping:
-  `{register, schema, scopeField, targetField}` (dot paths allowed in
-  `scopeField`). Only per-row-verified targets referenced by the subject's
-  verified join rows are returned; invalid or nested declarations fail closed.
+  `{register, schema, scopeField, targetField, match?}` (dot paths allowed in
+  `scopeField`). The join pre-pass resolves the subject → a verified set of
+  `targetField` values; `match` then selects how that set is applied to the
+  outer rows:
+  - **`match: 'id'`** (default when absent) — *forward*: keep outer rows whose
+    OWN `id`/`uuid` is in the set (the join row references the outer object by
+    id, e.g. zaakafhandelapp `rol`→`zaak`).
+  - **`match: 'scopeField'`** — *reverse*: keep outer rows whose value at the
+    collection's own `scopeField` (dot-path; scalar equality OR strict
+    array-contains for a multi-value field) is in the set — for outer rows that
+    carry a FOREIGN scope key, e.g. scholiq guardian → `learner-profile`
+    (`guardianRefs`→learner refs) → grades WHERE `learnerRef` ∈ children.
+
+  Both modes re-verify membership AND tenant per row; an empty verified set
+  yields zero rows (never all rows); a `match` other than those two literals,
+  or an invalid/nested declaration, fails closed.
 - **`fields`** on a collection (any `kind`, including `inbox`) — read-side
   projection: a pure whitelist of top-level row property names. Verified rows
   come back with ONLY those properties plus the row identifier(s) (flat

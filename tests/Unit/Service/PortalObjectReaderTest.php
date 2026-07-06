@@ -20,12 +20,19 @@ use RuntimeException;
  * field-projection matrix proves the read-side `fields` whitelist: declared
  * properties + identifiers only, applied after verification on the direct AND
  * via paths, full rows without a declaration, identifiers-only on a malformed
- * one, and the single-row (detail) primitive `projectRow()` directly.
+ * one, and the single-row (detail) primitive `projectRow()` directly. The
+ * reverse-scope-join matrix (v2.2) proves `via.match: 'scopeField'`: outer
+ * rows matched by the collection's own scope field (scalar and array-element)
+ * against the subject-resolved target set, empty set → zero rows, absent/null
+ * scopeField excluded, tenant still enforced on the outer row, malformed
+ * match fails the via closed, forward `match: 'id'` (explicit and absent)
+ * unchanged, and projection applied to reverse-joined rows.
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T05
  * @spec openspec/changes/contract-v2/tasks.md#T5
  * @spec openspec/changes/contract-v2/tasks.md#T6
  * @spec openspec/changes/field-projection/tasks.md#T1
+ * @spec openspec/changes/reverse-scope-join/tasks.md#T1
  */
 class PortalObjectReaderTest extends TestCase
 {
@@ -367,6 +374,386 @@ class PortalObjectReaderTest extends TestCase
         $this->assertSame('rol', $objectService->calls[0]['schema']);
 
     }//end testViaWithEmptyVerifiedJoinSetYieldsEmptyWithoutTargetRead()
+
+    /**
+     * Reverse join happy path (scholiq parent): the subject (a guardian)
+     * resolves through the join to a set of learner refs, then outer
+     * `gradeEntry` rows are kept when THEIR OWN `learnerRef` (the collection's
+     * scopeField) is in that set — not when their id is. A foreign learner's
+     * grade and an unrelated grade are both dropped even though OR returned
+     * them.
+     */
+    public function testReverseViaMatchesOuterRowsByScopeFieldValue(): void
+    {
+        $objectService = $this->objectService(
+            [
+                'learnerProfile' => [
+                    // Verified: the subject guardians this learner.
+                    ['guardianRefs' => ['guardian-1'], 'learnerRef' => 'learner-a'],
+                    // Foreign guardian — dropped, so learner-x never enters the set.
+                    ['guardianRefs' => ['guardian-9'], 'learnerRef' => 'learner-x'],
+                    ['guardianRefs' => ['guardian-1'], 'learnerRef' => 'learner-b'],
+                ],
+                'gradeEntry'     => [
+                    ['id' => 'g-1', 'learnerRef' => 'learner-a', 'title' => 'Math'],
+                    ['id' => 'g-2', 'learnerRef' => 'learner-x', 'title' => 'Foreign learner'],
+                    ['id' => 'g-3', 'learnerRef' => 'learner-b', 'title' => 'Science'],
+                    ['id' => 'g-4', 'learnerRef' => 'learner-z', 'title' => 'Unrelated'],
+                ],
+            ]
+        );
+
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+        $rows   = $reader->readCollection(
+            register: 'scholiq',
+            schema: 'gradeEntry',
+            scopeField: 'learnerRef',
+            subjectRef: 'guardian-1',
+            organisation: '',
+            limit: 200,
+            scopeClaim: '',
+            contributingApp: 'scholiq',
+            via: [
+                'register'    => 'scholiq',
+                'schema'      => 'learnerProfile',
+                'scopeField'  => 'guardianRefs',
+                'targetField' => 'learnerRef',
+                'match'       => 'scopeField',
+            ],
+            audience: 'parent'
+        );
+
+        // Kept because learnerRef ∈ {learner-a, learner-b}; g-2/g-4 dropped.
+        $this->assertSame(['Math', 'Science'], array_column($rows, 'title'));
+        // The join pre-pass queried the join schema, the outer read the target.
+        $this->assertSame('learnerProfile', $objectService->calls[0]['schema']);
+        $this->assertSame('gradeEntry', $objectService->calls[1]['schema']);
+
+    }//end testReverseViaMatchesOuterRowsByScopeFieldValue()
+
+    /**
+     * A multi-value scopeField matches when ANY of its elements is in the
+     * verified set (strict, element-wise) — and stays excluded when none is.
+     */
+    public function testReverseViaArrayScopeFieldMatchesOnAnyElement(): void
+    {
+        $objectService = $this->objectService(
+            [
+                'learnerProfile' => [
+                    ['guardianRefs' => ['guardian-1'], 'learnerRef' => 'learner-b'],
+                ],
+                'gradeEntry'     => [
+                    // learner-b is one of several refs on this row → matched.
+                    ['id' => 'g-1', 'learnerRefs' => ['learner-q', 'learner-b'], 'title' => 'Shared project'],
+                    // None of these refs is in the verified set → dropped.
+                    ['id' => 'g-2', 'learnerRefs' => ['learner-q', 'learner-r'], 'title' => 'Other group'],
+                ],
+            ]
+        );
+
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+        $rows   = $reader->readCollection(
+            register: 'scholiq',
+            schema: 'gradeEntry',
+            scopeField: 'learnerRefs',
+            subjectRef: 'guardian-1',
+            organisation: '',
+            limit: 200,
+            scopeClaim: '',
+            contributingApp: 'scholiq',
+            via: [
+                'register'    => 'scholiq',
+                'schema'      => 'learnerProfile',
+                'scopeField'  => 'guardianRefs',
+                'targetField' => 'learnerRef',
+                'match'       => 'scopeField',
+            ],
+            audience: 'parent'
+        );
+
+        $this->assertSame(['Shared project'], array_column($rows, 'title'));
+
+    }//end testReverseViaArrayScopeFieldMatchesOnAnyElement()
+
+    /**
+     * Security invariant: reverse match NEVER widens. An empty verified target
+     * set yields zero rows and the outer read is skipped entirely — the
+     * absence of matches can only ever exclude, never fall through to "all
+     * rows".
+     */
+    public function testReverseViaEmptyVerifiedTargetSetYieldsZeroRows(): void
+    {
+        $objectService = $this->objectService(
+            [
+                // No profile links this guardian → empty target set.
+                'learnerProfile' => [
+                    ['guardianRefs' => ['guardian-9'], 'learnerRef' => 'learner-x'],
+                ],
+                'gradeEntry'     => [
+                    ['id' => 'g-1', 'learnerRef' => 'learner-x', 'title' => 'Must never surface'],
+                ],
+            ]
+        );
+
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+        $rows   = $reader->readCollection(
+            register: 'scholiq',
+            schema: 'gradeEntry',
+            scopeField: 'learnerRef',
+            subjectRef: 'guardian-1',
+            organisation: '',
+            limit: 200,
+            scopeClaim: '',
+            contributingApp: 'scholiq',
+            via: [
+                'register'    => 'scholiq',
+                'schema'      => 'learnerProfile',
+                'scopeField'  => 'guardianRefs',
+                'targetField' => 'learnerRef',
+                'match'       => 'scopeField',
+            ],
+            audience: 'parent'
+        );
+
+        $this->assertSame([], $rows);
+        // Only the join pre-pass ran; the outer read was never issued.
+        $this->assertCount(1, $objectService->calls);
+        $this->assertSame('learnerProfile', $objectService->calls[0]['schema']);
+
+    }//end testReverseViaEmptyVerifiedTargetSetYieldsZeroRows()
+
+    /**
+     * Security invariant: an outer row whose scopeField is absent or null is
+     * excluded — a missing key normalises to no candidates, never a wildcard.
+     */
+    public function testReverseViaExcludesRowsWithAbsentOrNullScopeField(): void
+    {
+        $objectService = $this->objectService(
+            [
+                'learnerProfile' => [
+                    ['guardianRefs' => ['guardian-1'], 'learnerRef' => 'learner-a'],
+                ],
+                'gradeEntry'     => [
+                    ['id' => 'g-1', 'learnerRef' => 'learner-a', 'title' => 'Mine'],
+                    // scopeField entirely absent — excluded.
+                    ['id' => 'g-2', 'title' => 'No scope key'],
+                    // scopeField present but null — excluded.
+                    ['id' => 'g-3', 'learnerRef' => null, 'title' => 'Null scope key'],
+                ],
+            ]
+        );
+
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+        $rows   = $reader->readCollection(
+            register: 'scholiq',
+            schema: 'gradeEntry',
+            scopeField: 'learnerRef',
+            subjectRef: 'guardian-1',
+            organisation: '',
+            limit: 200,
+            scopeClaim: '',
+            contributingApp: 'scholiq',
+            via: [
+                'register'    => 'scholiq',
+                'schema'      => 'learnerProfile',
+                'scopeField'  => 'guardianRefs',
+                'targetField' => 'learnerRef',
+                'match'       => 'scopeField',
+            ],
+            audience: 'parent'
+        );
+
+        $this->assertSame(['Mine'], array_column($rows, 'title'));
+
+    }//end testReverseViaExcludesRowsWithAbsentOrNullScopeField()
+
+    /**
+     * Security invariant: a `match` value that is neither 'id' nor
+     * 'scopeField' fails the whole via closed (invalid via → zero rows + a
+     * logged warning, no OR query) — exactly like a structurally invalid via.
+     */
+    public function testReverseViaMalformedMatchFailsClosed(): void
+    {
+        foreach (['reverse', 'ID', 'scopefield', '', 42, true] as $badMatch) {
+            $objectService = $this->objectService(
+                [
+                    'learnerProfile' => [['guardianRefs' => ['guardian-1'], 'learnerRef' => 'learner-a']],
+                    'gradeEntry'     => [['id' => 'g-1', 'learnerRef' => 'learner-a', 'title' => 'Never']],
+                ]
+            );
+            $logger = $this->createMock(LoggerInterface::class);
+            $logger->expects($this->once())->method('warning');
+
+            $reader = new PortalObjectReader($this->container($objectService), $logger);
+            $rows   = $reader->readCollection(
+                register: 'scholiq',
+                schema: 'gradeEntry',
+                scopeField: 'learnerRef',
+                subjectRef: 'guardian-1',
+                organisation: '',
+                limit: 200,
+                scopeClaim: '',
+                contributingApp: 'scholiq',
+                via: [
+                    'register'    => 'scholiq',
+                    'schema'      => 'learnerProfile',
+                    'scopeField'  => 'guardianRefs',
+                    'targetField' => 'learnerRef',
+                    'match'       => $badMatch,
+                ],
+                audience: 'parent'
+            );
+
+            $this->assertSame([], $rows, 'match value must fail closed');
+            $this->assertCount(0, $objectService->calls);
+        }//end foreach
+
+    }//end testReverseViaMalformedMatchFailsClosed()
+
+    /**
+     * Security invariant: the per-row tenant check on the OUTER rows is
+     * preserved in reverse mode. A grade for a verified learner but belonging
+     * to a different tenant is still dropped.
+     */
+    public function testReverseViaTenantMismatchOnOuterRowExcluded(): void
+    {
+        $objectService = $this->objectService(
+            [
+                'learnerProfile' => [
+                    ['guardianRefs' => ['guardian-1'], 'learnerRef' => 'learner-a', 'organisation' => 'org-1'],
+                ],
+                'gradeEntry'     => [
+                    ['id' => 'g-1', 'learnerRef' => 'learner-a', 'organisation' => 'org-1', 'title' => 'Mine'],
+                    // Same verified learner, but a foreign tenant — dropped.
+                    ['id' => 'g-2', 'learnerRef' => 'learner-a', 'organisation' => 'org-2', 'title' => 'Other tenant'],
+                ],
+            ]
+        );
+
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+        $rows   = $reader->readCollection(
+            register: 'scholiq',
+            schema: 'gradeEntry',
+            scopeField: 'learnerRef',
+            subjectRef: 'guardian-1',
+            organisation: 'org-1',
+            limit: 200,
+            scopeClaim: '',
+            contributingApp: 'scholiq',
+            via: [
+                'register'    => 'scholiq',
+                'schema'      => 'learnerProfile',
+                'scopeField'  => 'guardianRefs',
+                'targetField' => 'learnerRef',
+                'match'       => 'scopeField',
+            ],
+            audience: 'parent'
+        );
+
+        $this->assertSame(['Mine'], array_column($rows, 'title'));
+
+    }//end testReverseViaTenantMismatchOnOuterRowExcluded()
+
+    /**
+     * Regression pin: an EXPLICIT `match: 'id'` is byte-for-byte the forward
+     * behaviour (and identical to omitting `match`) — outer rows matched by
+     * their OWN id/uuid, the existing zaak/rol scenario unchanged.
+     */
+    public function testForwardViaWithExplicitIdMatchIsUnchanged(): void
+    {
+        $rows = [];
+        foreach ([['match' => 'id'], []] as $matchKey) {
+            $objectService = $this->objectService(
+                [
+                    'rol'  => [
+                        ['betrokkeneIdentificatie' => ['inpBsn' => 'bsn-1'], 'zaak' => 'z-1'],
+                        ['betrokkeneIdentificatie' => ['inpBsn' => 'bsn-2'], 'zaak' => 'z-2'],
+                        ['betrokkeneIdentificatie' => ['inpBsn' => 'bsn-1'], 'zaak' => ['z-3', '']],
+                    ],
+                    'zaak' => [
+                        ['uuid' => 'z-1', 'title' => 'Mine'],
+                        ['id' => 'z-2', 'title' => 'Foreign case'],
+                        ['@self' => ['uuid' => 'z-3'], 'title' => 'Envelope id'],
+                        ['uuid' => 'z-9', 'title' => 'Unreferenced'],
+                    ],
+                ]
+            );
+
+            $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+            $rows[] = $reader->readCollection(
+                register: 'zaken',
+                schema: 'zaak',
+                scopeField: 'irrelevantForVia',
+                subjectRef: 'bsn-1',
+                organisation: '',
+                limit: 200,
+                scopeClaim: '',
+                contributingApp: 'zaakafhandelapp',
+                via: array_merge(
+                    [
+                        'register'    => 'zaken',
+                        'schema'      => 'rol',
+                        'scopeField'  => 'betrokkeneIdentificatie.inpBsn',
+                        'targetField' => 'zaak',
+                    ],
+                    $matchKey
+                ),
+                audience: 'citizen'
+            );
+        }//end foreach
+
+        // Explicit match:'id' and omitted match produce the identical forward
+        // result — matched by the outer row's OWN id/uuid.
+        $this->assertSame(['Mine', 'Envelope id'], array_column($rows[0], 'title'));
+        $this->assertSame($rows[0], $rows[1]);
+
+    }//end testForwardViaWithExplicitIdMatchIsUnchanged()
+
+    /**
+     * Field projection still runs AFTER reverse filtering: reverse-joined rows
+     * are projected to the declared whitelist + identifier, exactly like the
+     * forward via path.
+     */
+    public function testReverseViaProjectionAppliedToReverseJoinedRows(): void
+    {
+        $objectService = $this->objectService(
+            [
+                'learnerProfile' => [
+                    ['guardianRefs' => ['guardian-1'], 'learnerRef' => 'learner-a'],
+                ],
+                'gradeEntry'     => [
+                    ['id' => 'g-1', 'learnerRef' => 'learner-a', 'title' => 'Math', 'grade' => '8', 'teacherNotes' => 'staff only'],
+                    ['id' => 'g-9', 'learnerRef' => 'learner-z', 'title' => 'Unrelated', 'grade' => '4'],
+                ],
+            ]
+        );
+
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+        $rows   = $reader->readCollection(
+            register: 'scholiq',
+            schema: 'gradeEntry',
+            scopeField: 'learnerRef',
+            subjectRef: 'guardian-1',
+            organisation: '',
+            limit: 200,
+            scopeClaim: '',
+            contributingApp: 'scholiq',
+            via: [
+                'register'    => 'scholiq',
+                'schema'      => 'learnerProfile',
+                'scopeField'  => 'guardianRefs',
+                'targetField' => 'learnerRef',
+                'match'       => 'scopeField',
+            ],
+            audience: 'parent',
+            fields: ['title', 'grade']
+        );
+
+        // Reverse membership decides WHICH rows return; projection then decides
+        // what each shows — teacherNotes and the scopeField are absent.
+        $this->assertSame([['title' => 'Math', 'grade' => '8', 'id' => 'g-1']], $rows);
+
+    }//end testReverseViaProjectionAppliedToReverseJoinedRows()
 
     public function testProjectionReturnsOnlyDeclaredFieldsPlusIdentifierAfterVerification(): void
     {

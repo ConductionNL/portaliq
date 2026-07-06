@@ -6,6 +6,7 @@
 
 - [contract-v2](../../changes/contract-v2/)
 - [field-projection](../../changes/field-projection/)
+- [reverse-scope-join](../../changes/reverse-scope-join/)
 
 ## Purpose
 
@@ -13,7 +14,8 @@ Defines contribution contract v2 as enforced by portaliq (the hub side of the
 ADR-046 amendment, 2026-07-06): how the registry discovers multi-audience
 providers, how trust levels gate what a subject sees and may do, how a
 collection selects its scoping value (subjectRef, a server-managed claim, or a
-one-hop `via` join), how a collection projects verified rows down to a
+one-hop `via` join in either direction — forward by outer id or reverse by the
+outer `scopeField` value), how a collection projects verified rows down to a
 declared `fields` whitelist, and how declared endpoint actions are forwarded
 server-to-server with a signed subject assertion. Contract v1 (single
 audience, subjectRef-only scoping, create-only actions) was proven live by the
@@ -126,29 +128,71 @@ not an error).
 ### Requirement: One-hop via join scoping
 
 The reader MUST support one declared join per collection —
-`via: {register, schema, scopeField, targetField}` (optional).
-It MUST first resolve join rows in `via.register`/`via.schema` whose
-`via.scopeField` (dot-path allowed for nested properties) equals the
-collection's scoping value, per-row verified; MUST collect the `targetField`
-references from the verified join rows; and MUST return only target objects
-whose `id`/`uuid` is in that set, verified per row. Exactly one hop is
-supported: a `via` declaration nested inside another `via`, or a structurally
-invalid `via`, MUST yield zero rows (fail-closed empty). The join pre-pass and
-target read MUST apply the same `_rbac: false` / `_multitenancy: false` +
-per-row organisation verification discipline as direct reads.
+`via: {register, schema, scopeField, targetField, match?}` (optional). It MUST
+first resolve join rows in `via.register`/`via.schema` whose `via.scopeField`
+(dot-path allowed for nested properties) equals the collection's scoping value,
+per-row verified; MUST collect the `targetField` references from the verified
+join rows into a set; and MUST apply that set to the outer rows the way the
+optional `match` discriminator selects:
+
+- **`match: 'id'`** (the DEFAULT when absent) — *forward*: return only outer
+  objects whose own `id`/`uuid` is in the set, verified per row. This is the
+  original A5 behaviour, unchanged.
+- **`match: 'scopeField'`** — *reverse*: return only outer rows whose value at
+  the collection's own `scopeField` (dot-path allowed) is in the set — scalar
+  equality, OR strict element-wise membership for a multi-value field (ANY
+  element in the set matches; no loose comparison). An outer row whose
+  `scopeField` value is absent or null MUST be excluded (never treated as a
+  wildcard).
+
+The join pre-pass (per-row dot-path verification, the row cap, and the tenant
+check) MUST be identical in both directions and is the security boundary; the
+per-row organisation verification MUST also be applied to the outer rows in
+both directions. `match`, when present, MUST be exactly `'id'` or
+`'scopeField'` — any other value MUST fail the whole `via` closed (zero rows +
+logged warning), exactly like a structurally invalid `via`. An empty verified
+join set MUST yield zero rows in BOTH modes (fail-closed empty, never all
+rows). Exactly one hop is supported: a `via` declaration nested inside another
+`via`, or a structurally invalid `via`, MUST yield zero rows. The join pre-pass
+and outer read MUST apply the same `_rbac: false` / `_multitenancy: false` +
+per-row organisation verification discipline as direct reads. Field projection,
+when declared, MUST run AFTER this filtering in both modes.
 
 #### Scenario: A case is readable because a role row links the subject
 
 - GIVEN join rows in `zaken`/`rol` where `betrokkeneIdentificatie.inpBsn` equals the subject's scoping value and `zaak` references target UUIDs
-- AND a collection on `zaken`/`zaak` declaring that `via`
+- AND a collection on `zaken`/`zaak` declaring that `via` (no `match`, or `match: "id"`)
 - WHEN the subject reads the collection
 - THEN only `zaak` objects whose `id`/`uuid` appears in the verified join set are returned
 - AND a `zaak` not referenced by any of the subject's join rows is never returned even if OpenRegister returns it
-- @e2e exclude backend join contract — covered by PHPUnit two-hop suite (join match, target membership, foreign-row drop); no portaliq UI change
+- @e2e exclude backend join contract — covered by PHPUnit forward-via suite (join match, target membership, foreign-row drop) plus an explicit `match:"id"` ≡ absent pin; no portaliq UI change
 
-#### Scenario: More than one hop fails closed
+#### Scenario: A guardian reads grades via a reverse scopeField join
 
-- GIVEN a collection whose `via` is structurally invalid or attempts a nested join
+- GIVEN join rows in `scholiq`/`learnerProfile` where `guardianRefs` contains the subject's scoping value and `learnerRef` references the guardian's children
+- AND a collection on `scholiq`/`gradeEntry` with `scopeField: "learnerRef"` declaring that `via` with `match: "scopeField"`
+- WHEN the subject reads the collection
+- THEN only `gradeEntry` rows whose own `learnerRef` is one of the verified children is returned, each re-checked per row and by tenant
+- AND a grade for a child the subject does not guardian is never returned even if OpenRegister returns it
+- @e2e exclude backend reverse-join contract — covered by the PHPUnit reverse-match matrix (scalar + array-element match, foreign-row drop); requires scholiq schemas, no distinct portaliq UI flow
+
+#### Scenario: A multi-value scopeField matches on any element
+
+- GIVEN a reverse (`match: "scopeField"`) collection whose outer rows carry a multi-value `scopeField` (e.g. `learnerRefs: [...]`)
+- WHEN the subject reads the collection
+- THEN a row is returned iff AT LEAST ONE element of its `scopeField` is in the verified set (strict, element-wise), and excluded when none is
+- @e2e exclude strict-membership invariant — pinned by a dedicated PHPUnit case; no UI surface
+
+#### Scenario: Reverse match never widens
+
+- GIVEN a reverse (`match: "scopeField"`) collection AND a subject whose verified join set is empty, OR outer rows whose `scopeField` is absent/null
+- WHEN the subject reads the collection
+- THEN the response is 200 with zero rows — an empty set skips the outer read entirely, and an absent/null `scopeField` value is excluded (never a wildcard)
+- @e2e exclude fail-closed-empty contract — covered by PHPUnit, indistinguishable from an empty collection in the UI
+
+#### Scenario: More than one hop, or a malformed match, fails closed
+
+- GIVEN a collection whose `via` is structurally invalid, attempts a nested join, or carries a `match` value other than `"id"`/`"scopeField"`
 - WHEN the subject reads the collection
 - THEN the response is 200 with zero objects and a warning is logged
 - @e2e exclude defensive validation — covered by PHPUnit, no UI surface
@@ -286,8 +330,9 @@ domain-app verifiers templated against it.
 
 - **Performance:** trust filtering adds no OpenRegister queries; `scopeClaim`
   resolution adds at most one portalAccount lookup per collection read; `via`
-  adds exactly one join query (row-capped) before the target read. Manifest
-  aggregation stays a single pass over installed apps.
+  adds exactly one join query (row-capped) before the outer read in BOTH match
+  directions (the reverse `match` is an in-memory per-row set membership, no
+  extra query). Manifest aggregation stays a single pass over installed apps.
 - **Accessibility:** no portaliq UI change in this slice; the SPA renders the
   (already filtered) manifest exactly as before.
 - **Internationalization:** no new user-facing strings on the portaliq side
@@ -304,6 +349,7 @@ domain-app verifiers templated against it.
 - [ ] Below-`minTrust` entries are absent from the manifest AND rejected 403 on direct read/create/action calls
 - [ ] `scopeClaim` collections scope by the server-resolved claim; absent claim → 200 with zero rows; client-supplied `claims` never reaches a write
 - [ ] `via` collections return only per-row-verified targets referenced by the subject's verified join rows; invalid/nested `via` → zero rows
+- [ ] `via.match: 'scopeField'` (reverse) returns only outer rows whose own `scopeField` value (scalar or any array element, strict) is in the verified set; forward `match: 'id'`/absent is byte-for-byte unchanged; empty set / absent-null `scopeField` / malformed `match` → zero rows
 - [ ] `POST /portal/api/actions/{appId}/{actionId}` authorises against the subject's own manifest, forwards with a ≈60s `X-Portal-Subject` assertion, relays the response
 - [ ] An assertion presented as a session bearer is rejected 401
 - [ ] Existing supplier-portal unit suite stays green (v1 manifests unchanged in behaviour)
@@ -333,3 +379,7 @@ domain-app verifiers templated against it.
   requirements were added by the `field-projection` change (delta:
   `openspec/changes/field-projection/specs/portal-contribution-contract/spec.md`);
   same sync discipline until that change archives.
+- The reverse `via.match` direction was added to "One-hop via join scoping" by
+  the `reverse-scope-join` change (delta:
+  `openspec/changes/reverse-scope-join/specs/portal-contribution-contract/spec.md`,
+  tracking Conduction/portaliq#14); same sync discipline until it archives.

@@ -17,9 +17,22 @@
  * portalAccount (`claims[appId][claimName]`; never client input). A collection
  * may additionally declare a one-hop `via` join: the reader first resolves the
  * join rows whose (dot-path) scope field matches the scoping value, collects
- * the referenced target ids, and returns only per-row-verified members of that
- * set. Every v2 path fails closed to zero rows (absent claim, malformed
+ * the referenced target values, and returns only per-row-verified members of
+ * that set. Every v2 path fails closed to zero rows (absent claim, malformed
  * scopeClaim, invalid or nested via) — never to a wider read.
+ *
+ * Contract v2.2 (ADR-046 A5 extension, reverse-scope-join change): a `via` may
+ * carry an optional `match` discriminator selecting how the verified target
+ * set is applied to the outer rows. `match: 'id'` (the DEFAULT when absent —
+ * the byte-for-byte forward behaviour) keeps outer rows whose OWN id/uuid is
+ * in the set (the join row references the outer object by id — zaakafhandelapp
+ * rol→zaak). `match: 'scopeField'` (reverse) keeps outer rows whose value at
+ * the collection's own `scopeField` (dot-path) is in the set — scalar equality
+ * or strict array-contains — so an outer row carrying a FOREIGN scope key
+ * (scholiq grade-entry.learnerRef) is matched against subject-resolved key
+ * VALUES. The join pre-pass, row cap, and tenant discipline are identical in
+ * both modes; an empty verified set still yields zero rows, and any `match`
+ * value other than the two literals fails the via closed.
  *
  * Field projection (field-projection change): a collection may declare
  * `fields: [...]` — a pure whitelist of top-level row properties. Projection
@@ -128,6 +141,7 @@ class PortalObjectReader
      * @spec openspec/changes/contract-v2/tasks.md#T5
      * @spec openspec/changes/contract-v2/tasks.md#T6
      * @spec openspec/changes/field-projection/tasks.md#T1
+     * @spec openspec/changes/reverse-scope-join/tasks.md#T1
      *
      * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- the parameters map
      * 1:1 onto the declarative contract-v2 collection fields; folding them
@@ -174,11 +188,14 @@ class PortalObjectReader
         }
 
         // Contract v2 (A5): a declared via joins one hop before the target read.
+        // The collection's own scopeField rides along so a reverse
+        // (`match: 'scopeField'`) join can match the outer rows on it (v2.2).
         if ($via !== null) {
             $joined = $this->readViaCollection(
                 objectService: $objectService,
                 register: $register,
                 schema: $schema,
+                scopeField: $scopeField,
                 via: $via,
                 scopeValue: $scopeValue,
                 organisation: $organisation,
@@ -503,19 +520,26 @@ class PortalObjectReader
     }//end fetchOwnAccount()
 
     /**
-     * Read a collection through its one-hop `via` join (contract v2, A5).
+     * Read a collection through its one-hop `via` join (contract v2, A5;
+     * reverse `match` mode added in v2.2).
      *
      * Join pre-pass first: rows in via.register/via.schema whose (dot-path)
      * via.scopeField equals the scoping value — the query-side filter is
      * best-effort, the PER-ROW dot-path verification is the security boundary.
-     * Then the target read keeps only rows whose id/uuid is in the verified
-     * targetField set. Structurally invalid or nested `via` declarations fail
-     * closed to zero rows with a logged warning; exactly one hop is contract
-     * law (deeper chains must materialise a direct subject-ref property).
+     * Then the outer read applies the verified target set to the rows the way
+     * the `via.match` discriminator selects: `id` (default) keeps rows whose
+     * OWN id/uuid is in the set (forward); `scopeField` keeps rows whose value
+     * at the collection's own `$scopeField` is in the set (reverse). Both
+     * modes re-check membership AND tenant per row. Structurally invalid or
+     * nested `via` declarations — and any `match` value other than the two
+     * literals — fail closed to zero rows with a logged warning; exactly one
+     * hop is contract law (deeper chains must materialise a direct
+     * subject-ref property).
      *
      * @param object $objectService OpenRegister's ObjectService.
      * @param string $register      The target register.
      * @param string $schema        The target schema.
+     * @param string $scopeField    The collection's own scope field (reverse match).
      * @param mixed  $via           The raw via declaration (validated here).
      * @param string $scopeValue    The subject's scoping value.
      * @param string $organisation  The subject's tenant (may be empty).
@@ -524,11 +548,13 @@ class PortalObjectReader
      * @return array<int, array<string, mixed>> The verified target rows.
      *
      * @spec openspec/changes/contract-v2/tasks.md#T6
+     * @spec openspec/changes/reverse-scope-join/tasks.md#T1
      */
     private function readViaCollection(
         object $objectService,
         string $register,
         string $schema,
+        string $scopeField,
         mixed $via,
         string $scopeValue,
         string $organisation,
@@ -546,6 +572,8 @@ class PortalObjectReader
         $targets = $this->verifiedJoinTargets(objectService: $objectService, via: $via, scopeValue: $scopeValue, organisation: $organisation);
         if (count($targets) === 0) {
             // A subject without join rows is a normal state — empty, no error.
+            // This is also the reverse-mode "never widen" floor: an empty
+            // verified set can only ever produce zero rows, never all rows.
             return [];
         }
 
@@ -562,7 +590,10 @@ class PortalObjectReader
             return [];
         }
 
-        return $this->filterTargetRows(rows: $rows, targets: $targets, organisation: $organisation);
+        // The via is validated, so `match` is absent, 'id', or 'scopeField'.
+        $match = (string) ($via['match'] ?? 'id');
+
+        return $this->filterTargetRows(rows: $rows, targets: $targets, organisation: $organisation, match: $match, scopeField: $scopeField);
     }//end readViaCollection()
 
     /**
@@ -654,16 +685,23 @@ class PortalObjectReader
     }//end joinRowMatches()
 
     /**
-     * Keep only target rows whose id/uuid is in the verified join set —
-     * membership checked per row — plus the shared tenant discipline.
+     * Keep only outer rows the verified join set selects — membership checked
+     * per row per the `match` mode — plus the shared tenant discipline. The
+     * tenant check is applied in BOTH modes (defense in depth on the outer
+     * rows, identical to direct reads).
      *
-     * @param array<int, mixed>   $rows         The raw target rows.
-     * @param array<string, true> $targets      The verified target-id set.
+     * @param array<int, mixed>   $rows         The raw outer rows.
+     * @param array<string, true> $targets      The verified target set.
      * @param string              $organisation The subject's tenant (may be empty).
+     * @param string              $match        'id' (forward) or 'scopeField' (reverse).
+     * @param string              $scopeField   The outer collection's scope field (reverse).
      *
      * @return array<int, array<string, mixed>>
+     *
+     * @spec openspec/changes/contract-v2/tasks.md#T6
+     * @spec openspec/changes/reverse-scope-join/tasks.md#T1
      */
-    private function filterTargetRows(array $rows, array $targets, string $organisation): array
+    private function filterTargetRows(array $rows, array $targets, string $organisation, string $match='id', string $scopeField=''): array
     {
         $verified = [];
         foreach ($rows as $row) {
@@ -672,16 +710,8 @@ class PortalObjectReader
                 continue;
             }
 
-            // Membership in the verified join set — checked per row.
-            $member = false;
-            foreach ($this->rowIds(row: $normalised) as $id) {
-                if (isset($targets[$id]) === true) {
-                    $member = true;
-                    break;
-                }
-            }
-
-            if ($member === false) {
+            // Membership in the verified join set — checked per row, per mode.
+            if ($this->rowInTargetSet(row: $normalised, targets: $targets, match: $match, scopeField: $scopeField) === false) {
                 continue;
             }
 
@@ -696,13 +726,65 @@ class PortalObjectReader
     }//end filterTargetRows()
 
     /**
+     * Whether one outer row is a member of the verified target set under the
+     * declared `match` mode. Both branches use strict set membership over the
+     * SAME `array<string, true>` set the join pre-pass built, so nothing loose
+     * can slip in and an empty set can only ever exclude.
+     *
+     * - `scopeField` (reverse, v2.2): the outer row carries a foreign scope
+     *   key. It is a member when the value at its `$scopeField` (dot-path) is
+     *   in the set — scalar equality, OR strict array-contains for a
+     *   multi-value field (ANY element in the set matches). An absent/null
+     *   value normalises to no candidates → excluded, never a wildcard.
+     * - `id` (forward, DEFAULT): the outer row's OWN id/uuid is in the set —
+     *   the original A5 behaviour, byte-for-byte.
+     *
+     * @param array<string, mixed> $row        The normalised outer row.
+     * @param array<string, true>  $targets    The verified target set.
+     * @param string               $match      'id' or 'scopeField'.
+     * @param string               $scopeField The outer collection's scope field.
+     *
+     * @return bool
+     *
+     * @spec openspec/changes/reverse-scope-join/tasks.md#T1
+     */
+    private function rowInTargetSet(array $row, array $targets, string $match, string $scopeField): bool
+    {
+        if ($match === 'scopeField') {
+            // Reuse the same string/array-of-strings normalisation the target
+            // set itself was built from (targetRefs), so the two sides compare
+            // like-for-like under strict membership.
+            foreach ($this->targetRefs(value: $this->dotGet(row: $row, path: $scopeField)) as $key) {
+                if (isset($targets[$key]) === true) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        foreach ($this->rowIds(row: $row) as $id) {
+            if (isset($targets[$id]) === true) {
+                return true;
+            }
+        }
+
+        return false;
+    }//end rowInTargetSet()
+
+    /**
      * Structural validation of a `via` declaration: an array carrying
      * non-empty string register/schema/scopeField/targetField members and NO
-     * nested `via` (one hop maximum — contract law, ADR-046 A5).
+     * nested `via` (one hop maximum — contract law, ADR-046 A5). The optional
+     * `match` discriminator (v2.2) is validated too: absent is fine (defaults
+     * to forward `id`), but when present it MUST be exactly `'id'` or
+     * `'scopeField'` — any other value fails the via closed (→ zero rows).
      *
      * @param mixed $via The raw declaration.
      *
      * @return bool
+     *
+     * @spec openspec/changes/reverse-scope-join/tasks.md#T1
      */
     private function isValidVia(mixed $via): bool
     {
@@ -718,6 +800,12 @@ class PortalObjectReader
             if (is_string(($via[$member] ?? null)) === false || $via[$member] === '') {
                 return false;
             }
+        }
+
+        if (array_key_exists('match', $via) === true
+            && in_array($via['match'], ['id', 'scopeField'], true) === false
+        ) {
+            return false;
         }
 
         return true;
