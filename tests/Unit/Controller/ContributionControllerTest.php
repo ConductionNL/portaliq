@@ -25,11 +25,14 @@ use RuntimeException;
  * (scopeClaim / contributing app / via / audience) reaching the reader, the
  * `claims` whitelist guard, and the A6 endpoint-action forward: manifest
  * authorisation, SSRF guard, X-Portal-Subject assertion (never the client's
- * Authorization), response relay, and the 502 transport posture.
+ * Authorization), response relay, and the 502 transport posture. The
+ * field-projection cases prove the declared `fields` whitelist reaches the
+ * reader untouched (null = no projection) — for plain AND inbox collections.
  *
  * @spec openspec/changes/contract-v2/tasks.md#T3
  * @spec openspec/changes/contract-v2/tasks.md#T5
  * @spec openspec/changes/contract-v2/tasks.md#T8
+ * @spec openspec/changes/field-projection/tasks.md#T2
  */
 class ContributionControllerTest extends TestCase
 {
@@ -89,41 +92,12 @@ class ContributionControllerTest extends TestCase
         ];
         $aggregate = $this->aggregate(
             collections: [
-                ['register' => 'zaken', 'schema' => 'zaak', 'scopeField' => 'own', 'scopeClaim' => 'linkedContactId', 'via' => $via],
+                ['register' => 'zaken', 'schema' => 'zaak', 'scopeField' => 'own', 'scopeClaim' => 'linkedContactId', 'via' => $via, 'fields' => ['title', 'status']],
             ]
         );
 
-        $received = [];
-        $reader   = $this->createMock(PortalObjectReader::class);
-        $reader->method('readCollection')->willReturnCallback(
-            function (
-                string $register,
-                string $schema,
-                string $scopeField,
-                string $subjectRef,
-                string $organisation='',
-                int $limit=200,
-                string $scopeClaim='',
-                string $contributingApp='',
-                mixed $via=null,
-                string $audience=''
-            ) use (&$received) {
-                $received = [
-                    'register'        => $register,
-                    'schema'          => $schema,
-                    'scopeField'      => $scopeField,
-                    'subjectRef'      => $subjectRef,
-                    'organisation'    => $organisation,
-                    'limit'           => $limit,
-                    'scopeClaim'      => $scopeClaim,
-                    'contributingApp' => $contributingApp,
-                    'via'             => $via,
-                    'audience'        => $audience,
-                ];
-                return [];
-            }
-        );
-
+        $received   = [];
+        $reader     = $this->readerCapturing($received);
         $controller = $this->controller(aggregate: $aggregate, reader: $reader);
         $response   = $controller->collection('zaken', 'zaak');
 
@@ -138,8 +112,33 @@ class ContributionControllerTest extends TestCase
         $this->assertSame('portaliq', $received['contributingApp']);
         $this->assertSame($via, $received['via']);
         $this->assertSame('supplier', $received['audience']);
+        // The declared projection whitelist travels to the reader untouched.
+        $this->assertSame(['title', 'status'], $received['fields']);
 
     }//end testCollectionPassesV2ScopeParametersToReader()
+
+    public function testInboxCollectionFieldsReachTheReaderAndAbsentFieldsStayNull(): void
+    {
+        $aggregate = $this->aggregate(
+            collections: [
+                ['id' => 'inbox', 'kind' => 'inbox', 'register' => 'portaliq', 'schema' => 'portalMessage', 'scopeField' => 'subjectRef', 'fields' => ['subject', 'read']],
+                ['register' => 'portaliq', 'schema' => 'exampleDocument', 'scopeField' => 'subjectRef'],
+            ]
+        );
+
+        $received   = [];
+        $reader     = $this->readerCapturing($received);
+        $controller = $this->controller(aggregate: $aggregate, reader: $reader);
+
+        // A kind:'inbox' collection may declare fields like any other.
+        $this->assertSame(Http::STATUS_OK, $controller->collection('portaliq', 'portalMessage')->getStatus());
+        $this->assertSame(['subject', 'read'], $received['fields']);
+
+        // No declaration → null, which the reader treats as "full rows".
+        $this->assertSame(Http::STATUS_OK, $controller->collection('portaliq', 'exampleDocument')->getStatus());
+        $this->assertNull($received['fields']);
+
+    }//end testInboxCollectionFieldsReachTheReaderAndAbsentFieldsStayNull()
 
     public function testCreateNeverPassesClaimsToTheWriter(): void
     {
@@ -280,6 +279,47 @@ class ContributionControllerTest extends TestCase
         $this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->action('portaliq', 'x')->getStatus());
 
     }//end testUnauthenticatedActionIs401()
+
+    /**
+     * A reader mock whose readCollection() records every received argument
+     * into the given array (by reference) and returns no rows.
+     */
+    private function readerCapturing(array &$received): PortalObjectReader
+    {
+        $reader = $this->createMock(PortalObjectReader::class);
+        $reader->method('readCollection')->willReturnCallback(
+            function (
+                string $register,
+                string $schema,
+                string $scopeField,
+                string $subjectRef,
+                string $organisation='',
+                int $limit=200,
+                string $scopeClaim='',
+                string $contributingApp='',
+                mixed $via=null,
+                string $audience='',
+                mixed $fields=null
+            ) use (&$received) {
+                $received = [
+                    'register'        => $register,
+                    'schema'          => $schema,
+                    'scopeField'      => $scopeField,
+                    'subjectRef'      => $subjectRef,
+                    'organisation'    => $organisation,
+                    'limit'           => $limit,
+                    'scopeClaim'      => $scopeClaim,
+                    'contributingApp' => $contributingApp,
+                    'via'             => $via,
+                    'audience'        => $audience,
+                    'fields'          => $fields,
+                ];
+                return [];
+            }
+        );
+        return $reader;
+
+    }//end readerCapturing()
 
     /**
      * Build a controller with a canned aggregate + subject and optional

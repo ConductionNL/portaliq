@@ -122,6 +122,16 @@ optional with a v1-equivalent default:
   `{register, schema, scopeField, targetField}` (dot paths allowed in
   `scopeField`). Only per-row-verified targets referenced by the subject's
   verified join rows are returned; invalid or nested declarations fail closed.
+- **`fields`** on a collection (any `kind`, including `inbox`) — read-side
+  projection: a pure whitelist of top-level row property names. Verified rows
+  come back with ONLY those properties plus the row identifier(s) (flat
+  `id`/`uuid`; an `@self` envelope reduces to its `id`/`uuid` — declare
+  `"@self"` to keep it whole), so staff-only fields (e.g. internal notes)
+  never leave the instance. Unknown declared names are silently absent;
+  `scopeField` is not auto-included; a malformed declaration projects to
+  identifiers-only (never the full row). No `fields` = full rows (v1/v2
+  behaviour). Projection runs AFTER per-row verification — it shapes what a
+  row shows, never which rows return.
 - **Endpoint actions** — `{id, label, endpoint, method?, minTrust?}` where
   `endpoint` is an **instance-local absolute path** (full URLs rejected —
   SSRF guard). Portaliq forwards server-to-server with a ~60s HS256
