@@ -93,7 +93,6 @@ portaliq/
 ├── lib/                        # PHP backend
 │   ├── AppInfo/Application.php
 │   ├── Controller/             # DashboardController, SettingsController
-│   ├── Dashboard/              # Nextcloud Dashboard widget classes (ExampleWidget)
 │   ├── Mcp/ExampleToolProvider.php  # AI Chat Companion tools (hydra ADR-034/035)
 │   ├── Service/SettingsService.php
 │   ├── Listener/DeepLinkRegistrationListener.php
@@ -106,15 +105,12 @@ portaliq/
 │   ├── App.vue                 # Mounts CnAppRoot + #sidebar slot
 │   ├── registry.js             # v2 five-kind component registry (widget/modal/page/form-field/cell-renderer)
 │   ├── customComponents.js     # v1 registry (kept for backward-compat; remove once v2 migration complete)
-│   ├── widgets/                # kind: "widget" components (ExampleWidget.vue)
 │   ├── modals/                 # kind: "modal" components (ExampleModal.vue)
 │   ├── formFields/             # kind: "form-field" components (EmailField.vue)
 │   ├── cellRenderers/          # kind: "cell-renderer" components (StatusBadge.vue)
-│   ├── exampleWidget.js        # Sample Nextcloud Dashboard widget entry-point
 │   ├── settings.js             # Nextcloud admin settings webpack entry-point
 │   ├── store/                  # Pinia stores (used by AdminSettings)
-│   ├── views/CustomExample.vue # Example custom component (registry demo)
-│   └── views/widgets/          # Dashboard widget Vue components (ExampleWidget.vue)
+│   └── views/CustomExample.vue # Example custom component (registry demo)
 ├── openspec/                   # Specifications, decisions, and roadmap
 │   ├── app-config.json         # Canonical app config (id, goal, dependencies, CI)
 │   ├── config.yaml             # OpenSpec CLI configuration
@@ -275,13 +271,12 @@ replace the examples when you clone the template.
 
 ### Adding a dashboard widget
 
-The template ships with a working `ExampleWidget` you can copy. Each widget is
-**three files plus two registration points**:
+Each Nextcloud Dashboard widget is **three files plus two registration
+points**:
 
 1. `lib/Dashboard/<Foo>Widget.php` — implements `OCP\Dashboard\IWidget`. The
    `load()` method MUST attach the two shared chunks (`-shared-vendor`,
-   `-shared-nc-vue`) **before** the per-widget bundle. Order matters; see
-   `ExampleWidget.php` for the reference.
+   `-shared-nc-vue`) **before** the per-widget bundle. Order matters.
 2. `src/<foo>Widget.js` — webpack entry-point that registers the renderer via
    `OCA.Dashboard.register('<id>', (el, { widget }) => { ... })`. The id MUST
    equal `Widget::getId()` from PHP.
