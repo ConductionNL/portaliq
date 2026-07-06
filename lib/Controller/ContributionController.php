@@ -141,7 +141,9 @@ class ContributionController extends Controller implements PortalProtected
      * Authorises first: the (register, schema) must appear in one of the
      * subject's own contributions, so a subject can only read collections its
      * apps granted it. The subject reference is derived from the bearer,
-     * never the client.
+     * never the client. A declared `fields` whitelist (any collection kind,
+     * including inbox) is forwarded to the reader untouched — `null` means
+     * "no projection, full rows" (field-projection change).
      *
      * @param string $register The register of the collection.
      * @param string $schema   The schema of the collection.
@@ -151,6 +153,7 @@ class ContributionController extends Controller implements PortalProtected
      * @spec openspec/changes/supplier-portal/tasks.md#T05
      * @spec openspec/changes/contract-v2/tasks.md#T3
      * @spec openspec/changes/contract-v2/tasks.md#T5
+     * @spec openspec/changes/field-projection/tasks.md#T2
      */
     #[PublicPage]
     #[NoCSRFRequired]
@@ -186,7 +189,8 @@ class ContributionController extends Controller implements PortalProtected
             scopeClaim: (string) ($collection['scopeClaim'] ?? ''),
             contributingApp: $match['app'],
             via: ($collection['via'] ?? null),
-            audience: (string) ($subject['audience'] ?? '')
+            audience: (string) ($subject['audience'] ?? ''),
+            fields: ($collection['fields'] ?? null)
         );
 
         return new JSONResponse(['register' => $register, 'schema' => $schema, 'objects' => $objects]);

@@ -75,7 +75,11 @@ class PortalContributionProvider implements IPortalContributionProvider
      * account's placeholder claim; the claimless dev-client seed proves the
      * fail-closed empty path), an endpoint action with a placeholder
      * instance-local path, and a `minTrust: substantial` action that a
-     * low-trust dev-login session never sees.
+     * low-trust dev-login session never sees. The example collection also
+     * declares a `fields` projection whitelist so a dev install demonstrates
+     * read-side field projection (rows created via `createExample` come back
+     * as title/status + identifier only); the other collections stay
+     * undeclared as the full-row backward-compat reference.
      *
      * @param array<string, mixed> $subject The resolved subject.
      *
@@ -83,6 +87,7 @@ class PortalContributionProvider implements IPortalContributionProvider
      *
      * @spec openspec/changes/supplier-portal/tasks.md#T04
      * @spec openspec/changes/contract-v2/tasks.md#T9
+     * @spec openspec/changes/field-projection/tasks.md#T3
      */
     public function getContribution(array $subject): ?array
     {
@@ -96,10 +101,14 @@ class PortalContributionProvider implements IPortalContributionProvider
             'label'         => 'Voorbeeld',
             'collections'   => [
                 [
+                    // Field projection (read-side): the portal returns ONLY
+                    // title + status (+ the row identifier) per row — the
+                    // scopeField value and any other property never leave.
                     'id'         => 'exampleCollection',
                     'register'   => 'portaliq',
                     'schema'     => 'exampleDocument',
                     'scopeField' => 'subjectRef',
+                    'fields'     => ['title', 'status'],
                     'label'      => 'Voorbeeldgegevens',
                     'listable'   => true,
                 ],

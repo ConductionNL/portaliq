@@ -11,9 +11,13 @@ use RuntimeException;
 
 /**
  * Unit tests for the portal auth-edge JWT service. Proves the token round-trips
- * and, critically, that forged / tampered / expired tokens FAIL CLOSED.
+ * and, critically, that forged / tampered / expired tokens FAIL CLOSED. Also
+ * pins the A6 `X-Portal-Subject` assertion WIRE FORMAT (header + exact claim
+ * set, as literals) so receiver-side verifiers templated in domain apps can
+ * rely on a frozen shape — any drift fails this suite loudly.
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T02
+ * @spec openspec/changes/field-projection/tasks.md#T4
  */
 class PortalJwtServiceTest extends TestCase
 {
@@ -111,5 +115,68 @@ class PortalJwtServiceTest extends TestCase
         new PortalJwtService('too-short');
 
     }//end testShortSecretIsRejected()
+
+    public function testAssertionWireFormatIsPinnedForReceiverVerifiers(): void
+    {
+        $jwt       = new PortalJwtService(self::SECRET);
+        $assertion = $jwt->createAssertion(
+            subjectRef: 's1',
+            audience: 'supplier',
+            organisation: 'org-1',
+            trust: 'low',
+            jti: 'session-jti-1'
+        );
+
+        // COMPATIBILITY PIN — deliberately asserts LITERALS, not the class
+        // constants: receiver-side X-Portal-Subject verifiers in domain apps
+        // are templated against exactly this shape. If this test fails, the
+        // assertion wire format changed and every receiver breaks — treat it
+        // as a breaking contract change, never "fix" the literals casually.
+        $parts = explode('.', $assertion);
+        $this->assertCount(3, $parts);
+
+        // Header: exactly HS256 / JWT, nothing else.
+        $header = json_decode($this->b64UrlDecode($parts[0]), true);
+        $this->assertSame(['alg' => 'HS256', 'typ' => 'JWT'], $header);
+
+        // Claims: the exact key set, in the exact serialisation order.
+        $claims = json_decode($this->b64UrlDecode($parts[1]), true);
+        $this->assertIsArray($claims);
+        $this->assertSame(
+            ['sub', 'audience', 'organisation', 'trust', 'jti', 'use', 'iat', 'exp', 'iss'],
+            array_keys($claims)
+        );
+
+        // Every claim value, explicitly.
+        $this->assertSame('s1', $claims['sub']);
+        $this->assertSame('supplier', $claims['audience']);
+        $this->assertSame('org-1', $claims['organisation']);
+        $this->assertSame('low', $claims['trust']);
+        $this->assertSame('session-jti-1', $claims['jti']);
+        $this->assertSame('assertion', $claims['use']);
+        $this->assertIsInt($claims['iat']);
+        $this->assertIsInt($claims['exp']);
+        $this->assertSame(60, ($claims['exp'] - $claims['iat']));
+        $this->assertSame('portaliq', $claims['iss']);
+
+        // And the mint validates against its own signature (HS256 intact).
+        $this->assertSame($claims, $jwt->validate($assertion));
+
+    }//end testAssertionWireFormatIsPinnedForReceiverVerifiers()
+
+    /**
+     * Base64-url decode (test-local twin of the service's private helper, so
+     * the pin decodes the wire bytes independently of the implementation).
+     */
+    private function b64UrlDecode(string $encoded): string
+    {
+        $pad = (4 - (strlen($encoded) % 4));
+        if ($pad < 4) {
+            $encoded .= str_repeat('=', $pad);
+        }
+
+        return (string) base64_decode(strtr($encoded, '-_', '+/'));
+
+    }//end b64UrlDecode()
 
 }//end class

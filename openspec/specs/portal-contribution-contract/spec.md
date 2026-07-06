@@ -5,6 +5,7 @@
 **OpenSpec changes**:
 
 - [contract-v2](../../changes/contract-v2/)
+- [field-projection](../../changes/field-projection/)
 
 ## Purpose
 
@@ -12,7 +13,8 @@ Defines contribution contract v2 as enforced by portaliq (the hub side of the
 ADR-046 amendment, 2026-07-06): how the registry discovers multi-audience
 providers, how trust levels gate what a subject sees and may do, how a
 collection selects its scoping value (subjectRef, a server-managed claim, or a
-one-hop `via` join), and how declared endpoint actions are forwarded
+one-hop `via` join), how a collection projects verified rows down to a
+declared `fields` whitelist, and how declared endpoint actions are forwarded
 server-to-server with a signed subject assertion. Contract v1 (single
 audience, subjectRef-only scoping, create-only actions) was proven live by the
 `supplier-portal` change; every v2 field is optional with v1-equivalent
@@ -198,6 +200,88 @@ replayed as a portal session (ADR-005).
 - THEN the request is rejected with 401
 - @e2e exclude token-confusion guard — covered by PHPUnit fail-closed test, not a UI flow
 
+### Requirement: Read-side field projection
+
+The portal read path MUST support an optional `fields: [string, ...]`
+member on a collection declaration — a whitelist of top-level row property
+names. Any collection `kind` (including `inbox`) may declare it. When
+`fields` is declared, every returned row MUST contain ONLY: the declared
+properties that exist on the row, plus the row identifier(s) — the flat `id`
+and `uuid` properties when present, and, when the row carries an `@self`
+envelope, a reduced `@self` containing only its `id`/`uuid` members.
+Projection MUST be applied AFTER per-row verification and BEFORE the rows
+are returned, on every read path (direct, `via`-joined, and any
+single-object/detail read the reader gains later), and MUST NOT influence
+which rows are returned. A declared field that does not exist on a row MUST
+simply be absent from the output (pure whitelist — no error). `scopeField`
+values MUST NOT be included unless declared. When `fields` is absent, the
+full row MUST be returned unchanged (backward compatible); when `fields` is
+present but malformed (not a list of non-empty strings), the row MUST
+project to identifiers-only — a declared projection intent never fails open
+to the full row (ADR-005).
+
+#### Scenario: A collection declares fields and rows are projected
+
+- GIVEN a collection declaring `fields: ["title", "status"]` over rows that also carry `subjectRef`, `organisation`, and `internalNotes`
+- WHEN the subject reads the collection
+- THEN each returned row contains only `title`, `status`, and the row identifier(s)
+- AND `internalNotes` and the `scopeField` value (`subjectRef`) are absent
+- @e2e exclude backend row-shaping contract — covered by the PHPUnit projection matrix; the SPA renders whatever properties arrive, no distinct UI flow
+
+#### Scenario: The row identifier is never stripped
+
+- GIVEN a collection declaring `fields: ["title"]` over rows carrying flat `id`/`uuid` or an `@self` envelope
+- WHEN the subject reads the collection
+- THEN each returned row retains its flat `id`/`uuid` and, when only the envelope carries them, a reduced `@self` with only `id`/`uuid`
+- AND detail links built from `id`/`uuid` keep resolving
+- @e2e exclude identifier-preservation invariant — pinned by a dedicated PHPUnit test; no portaliq detail UI ships in this change
+
+#### Scenario: Unknown declared fields project to absent
+
+- GIVEN a collection declaring `fields: ["title", "notAProperty"]`
+- WHEN the subject reads the collection
+- THEN rows contain `title` (plus identifiers) and no `notAProperty` key
+- AND the response is 200 — a stale declaration never becomes an error
+- @e2e exclude tolerant-whitelist contract — covered by PHPUnit, indistinguishable from a normal read in the UI
+
+#### Scenario: No fields declaration keeps full rows
+
+- GIVEN a collection without a `fields` declaration
+- WHEN the subject reads the collection
+- THEN rows are returned exactly as before this change (full verified rows)
+- @e2e exclude backward-compatibility contract — covered by the existing reader suite kept green plus an explicit full-row PHPUnit case
+
+#### Scenario: A malformed fields declaration fails closed to identifiers-only
+
+- GIVEN a collection whose `fields` is declared but malformed (e.g. a string, or a list of non-strings)
+- WHEN the subject reads the collection
+- THEN rows contain only their identifier(s) — never the full row
+- @e2e exclude fail-closed narrowing — covered by PHPUnit, no UI surface for a malformed manifest
+
+#### Scenario: An inbox collection may declare fields
+
+- GIVEN a `kind: "inbox"` collection declaring `fields: ["subject", "read"]`
+- WHEN the subject reads it through the same collection endpoint
+- THEN message rows are projected exactly like any other collection (declared fields + identifiers; `body` absent)
+- @e2e exclude same code path as list projection — covered by a PHPUnit controller pass-through case; inbox rendering itself is unchanged
+
+### Requirement: Frozen assertion wire format
+
+The A6 `X-Portal-Subject` assertion wire format MUST be treated as frozen
+for receiver-side verifiers: header exactly `{"alg": "HS256", "typ": "JWT"}`
+and the exact claim set `sub`, `audience`, `organisation`, `trust`, `jti`,
+`use` (literal `"assertion"`), `iat`, `exp`, `iss` (literal `"portaliq"`),
+with `exp - iat` equal to the 60-second assertion TTL. A unit test MUST pin
+every element of that shape so any drift fails loudly before it can break
+domain-app verifiers templated against it.
+
+#### Scenario: The assertion shape is pinned
+
+- GIVEN a freshly minted `X-Portal-Subject` assertion
+- WHEN its header and claims are decoded
+- THEN the header is exactly `{"alg": "HS256", "typ": "JWT"}` and the claim keys are exactly `sub`, `audience`, `organisation`, `trust`, `jti`, `use`, `iat`, `exp`, `iss` with `use = "assertion"`, `iss = "portaliq"`, and `exp - iat = 60`
+- @e2e exclude wire-format pin — a PHPUnit compatibility test by definition; no UI or HTTP surface
+
 ## Non-Functional Requirements
 
 - **Performance:** trust filtering adds no OpenRegister queries; `scopeClaim`
@@ -223,6 +307,8 @@ replayed as a portal session (ADR-005).
 - [ ] `POST /portal/api/actions/{appId}/{actionId}` authorises against the subject's own manifest, forwards with a ≈60s `X-Portal-Subject` assertion, relays the response
 - [ ] An assertion presented as a session bearer is rejected 401
 - [ ] Existing supplier-portal unit suite stays green (v1 manifests unchanged in behaviour)
+- [ ] Rows of a `fields`-declaring collection contain only declared properties plus identifiers, on both direct and `via` read paths; absent `fields` → full rows; malformed `fields` → identifiers-only
+- [ ] The assertion wire-format pin test asserts header alg and every claim explicitly
 
 ## Notes
 
@@ -243,3 +329,7 @@ replayed as a portal session (ADR-005).
 - This spec was created by the `contract-v2` change (delta:
   `openspec/changes/contract-v2/specs/portal-contribution-contract/spec.md`);
   keep both in sync until the change archives.
+- The "Read-side field projection" and "Frozen assertion wire format"
+  requirements were added by the `field-projection` change (delta:
+  `openspec/changes/field-projection/specs/portal-contribution-contract/spec.md`);
+  same sync discipline until that change archives.

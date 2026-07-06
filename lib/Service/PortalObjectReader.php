@@ -21,6 +21,15 @@
  * set. Every v2 path fails closed to zero rows (absent claim, malformed
  * scopeClaim, invalid or nested via) — never to a wider read.
  *
+ * Field projection (field-projection change): a collection may declare
+ * `fields: [...]` — a pure whitelist of top-level row properties. Projection
+ * runs AFTER per-row verification and BEFORE returning, on every read path;
+ * it shapes what a verified row SHOWS, never which rows return. The row
+ * identifier(s) (`id`/`uuid`, flat or as a reduced `@self`) are never
+ * stripped, so detail links keep working. Absent `fields` = full row
+ * (backward compatible); a malformed declaration projects to identifiers-only
+ * (fail-closed narrow, never open).
+ *
  * Verified against OpenRegister 0.2.17: `ObjectService::findAll(array $config)`
  * takes register/schema/filters inside `$config['filters']` (the older
  * `findAll(register:, schema:, ...)` named-argument form is gone).
@@ -111,12 +120,14 @@ class PortalObjectReader
      * @param string $contributingApp The app the contribution came from (bare-claim namespace).
      * @param mixed  $via             Optional one-hop join declaration (array), fail-closed on anything else.
      * @param string $audience        The subject's audience (portalAccount lookup filter).
+     * @param mixed  $fields          Optional projection whitelist (array of property names); null = full rows.
      *
      * @return array<int, array<string, mixed>> The subject's rows (possibly empty).
      *
      * @spec openspec/changes/supplier-portal/tasks.md#T05
      * @spec openspec/changes/contract-v2/tasks.md#T5
      * @spec openspec/changes/contract-v2/tasks.md#T6
+     * @spec openspec/changes/field-projection/tasks.md#T1
      *
      * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- the parameters map
      * 1:1 onto the declarative contract-v2 collection fields; folding them
@@ -132,7 +143,8 @@ class PortalObjectReader
         string $scopeClaim='',
         string $contributingApp='',
         mixed $via=null,
-        string $audience=''
+        string $audience='',
+        mixed $fields=null
     ): array {
         $objectService = $this->objectService();
         if ($objectService === null) {
@@ -163,7 +175,7 @@ class PortalObjectReader
 
         // Contract v2 (A5): a declared via joins one hop before the target read.
         if ($via !== null) {
-            return $this->readViaCollection(
+            $joined = $this->readViaCollection(
                 objectService: $objectService,
                 register: $register,
                 schema: $schema,
@@ -172,6 +184,7 @@ class PortalObjectReader
                 organisation: $organisation,
                 limit: $limit
             );
+            return $this->projectRows(rows: $joined, fields: $fields);
         }
 
         $filters = [];
@@ -206,8 +219,150 @@ class PortalObjectReader
             return [];
         }
 
-        return $this->verifyScope(rows: $rows, scopeField: $scopeField, subjectRef: $scopeValue, organisation: $organisation);
+        $verified = $this->verifyScope(rows: $rows, scopeField: $scopeField, subjectRef: $scopeValue, organisation: $organisation);
+
+        // Field projection runs AFTER per-row verification, BEFORE returning —
+        // it shapes what a verified row shows, never which rows return.
+        return $this->projectRows(rows: $verified, fields: $fields);
     }//end readCollection()
+
+    /**
+     * Project every verified row down to the declared fields whitelist.
+     *
+     * `$fields === null` means "no projection declared" — rows pass through
+     * whole (backward compatible). Anything else is handed to projectRow()
+     * per row, including malformed declarations (which fail closed there).
+     *
+     * @param array<int, array<string, mixed>> $rows   The verified rows.
+     * @param mixed                            $fields The raw `fields` declaration.
+     *
+     * @return array<int, array<string, mixed>> The projected rows.
+     *
+     * @spec openspec/changes/field-projection/tasks.md#T1
+     */
+    public function projectRows(array $rows, mixed $fields): array
+    {
+        if ($fields === null) {
+            return $rows;
+        }
+
+        $projected = [];
+        foreach ($rows as $row) {
+            $projected[] = $this->projectRow(row: $row, fields: $fields);
+        }
+
+        return $projected;
+    }//end projectRows()
+
+    /**
+     * Project a single verified row down to the declared fields whitelist.
+     *
+     * Public on purpose: this is THE single-row projection primitive, so any
+     * future single-object/detail read applies identical semantics by calling
+     * it before returning. Semantics (field-projection change):
+     *
+     * - `$fields === null` → the row passes through whole (no declaration).
+     * - Pure whitelist: only declared property names that exist as TOP-LEVEL
+     *   row keys are kept; unknown declared names are simply absent (a stale
+     *   manifest never becomes an error). No dot-path interpretation.
+     * - The row identifier(s) are NEVER stripped: flat `id`/`uuid` survive
+     *   when present, and an `@self` envelope reduces to only its `id`/`uuid`
+     *   members (declare `"@self"` explicitly to keep the full envelope) —
+     *   detail links keep working while envelope metadata stays suppressed.
+     * - A malformed declaration (non-array, or non-string entries) projects
+     *   to identifiers-only: a declared projection intent fails closed
+     *   NARROW, never open to the full row (ADR-005) — failing open would
+     *   leak exactly the staff-only fields the contributor tried to hide.
+     * - `scopeField` values are not auto-included; declare them if wanted.
+     *
+     * @param array<string, mixed> $row    The verified, normalised row.
+     * @param mixed                $fields The raw `fields` declaration.
+     *
+     * @return array<string, mixed> The projected row.
+     *
+     * @spec openspec/changes/field-projection/tasks.md#T1
+     */
+    public function projectRow(array $row, mixed $fields): array
+    {
+        if ($fields === null) {
+            return $row;
+        }
+
+        $projected = [];
+        foreach ($this->fieldWhitelist(fields: $fields) as $field) {
+            if (array_key_exists($field, $row) === true) {
+                $projected[$field] = $row[$field];
+            }
+        }
+
+        return $this->preserveIdentifiers(row: $row, projected: $projected);
+    }//end projectRow()
+
+    /**
+     * Re-attach the row identifier(s) a projection must never strip (detail
+     * links depend on them): flat `id`/`uuid` pass through, and an `@self`
+     * envelope — unless explicitly declared — reduces to its `id`/`uuid`
+     * members only, so envelope metadata stays suppressed.
+     *
+     * @param array<string, mixed> $row       The original verified row.
+     * @param array<string, mixed> $projected The whitelisted projection so far.
+     *
+     * @return array<string, mixed> The projection with identifiers preserved.
+     *
+     * @spec openspec/changes/field-projection/tasks.md#T1
+     */
+    private function preserveIdentifiers(array $row, array $projected): array
+    {
+        foreach (['id', 'uuid'] as $idKey) {
+            if (array_key_exists($idKey, $row) === true && array_key_exists($idKey, $projected) === false) {
+                $projected[$idKey] = $row[$idKey];
+            }
+        }
+
+        if (array_key_exists('@self', $projected) === true || is_array(($row['@self'] ?? null)) === false) {
+            return $projected;
+        }
+
+        $self = [];
+        foreach (['id', 'uuid'] as $idKey) {
+            if (array_key_exists($idKey, $row['@self']) === true) {
+                $self[$idKey] = $row['@self'][$idKey];
+            }
+        }
+
+        if (count($self) > 0) {
+            $projected['@self'] = $self;
+        }
+
+        return $projected;
+    }//end preserveIdentifiers()
+
+    /**
+     * Normalise a raw `fields` declaration to a list of usable property
+     * names: only non-empty strings survive. A malformed declaration (not an
+     * array at all) yields the empty whitelist — identifiers-only downstream.
+     *
+     * @param mixed $fields The raw `fields` declaration.
+     *
+     * @return array<int, string>
+     */
+    private function fieldWhitelist(mixed $fields): array
+    {
+        $whitelist = [];
+        if (is_array($fields) === true) {
+            foreach ($fields as $field) {
+                if (is_string($field) === true && $field !== '') {
+                    $whitelist[] = $field;
+                }
+            }
+        }
+
+        if (count($whitelist) === 0) {
+            $this->logger->debug('Portaliq: fields declaration yielded an empty whitelist — projecting to identifiers only');
+        }
+
+        return $whitelist;
+    }//end fieldWhitelist()
 
     /**
      * Resolve a scopeClaim to its value from the subject's OWN portalAccount.
