@@ -164,7 +164,13 @@ class ContributionController extends Controller implements PortalProtected
             return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
         }
 
-        $match = $this->authorisedCollection(subject: $subject, register: $register, schema: $schema);
+        // The optional `collection` query param disambiguates multiple
+        // collections that share a register+schema (contract v2 — scopeClaim /
+        // via views over the same schema). Absent → first-by-(register,schema),
+        // preserving the pre-existing behaviour.
+        $collectionId = (string) $this->request->getParam('collection', '');
+
+        $match = $this->authorisedCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
         if ($match === null) {
             return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
         }
@@ -206,17 +212,27 @@ class ContributionController extends Controller implements PortalProtected
      *
      * @return array{collection: array<string, mixed>, app: string}|null
      */
-    private function authorisedCollection(array $subject, string $register, string $schema): ?array
+    private function authorisedCollection(array $subject, string $register, string $schema, string $collectionId=''): ?array
     {
         $aggregate = $this->registry->aggregateFor($subject);
         foreach (($aggregate['contributions'] ?? []) as $contribution) {
             foreach (($contribution['collections'] ?? []) as $collection) {
-                if (($collection['register'] ?? '') === $register && ($collection['schema'] ?? '') === $schema) {
-                    return [
-                        'collection' => $collection,
-                        'app'        => (string) ($contribution['app'] ?? ''),
-                    ];
+                if (($collection['register'] ?? '') !== $register || ($collection['schema'] ?? '') !== $schema) {
+                    continue;
                 }
+
+                // When a collection id is supplied it MUST match — this is what
+                // distinguishes two collections that share a register+schema
+                // (e.g. a direct view and a scopeClaim/via view of the same
+                // schema). An empty id keeps the first-match fallback.
+                if ($collectionId !== '' && ($collection['id'] ?? '') !== $collectionId) {
+                    continue;
+                }
+
+                return [
+                    'collection' => $collection,
+                    'app'        => (string) ($contribution['app'] ?? ''),
+                ];
             }
         }
 

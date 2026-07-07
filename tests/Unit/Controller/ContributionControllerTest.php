@@ -281,6 +281,66 @@ class ContributionControllerTest extends TestCase
     }//end testUnauthenticatedActionIs401()
 
     /**
+     * When two collections share a register+schema, the `collection` query
+     * param selects which one is read — the direct view and a scopeClaim view
+     * of the same schema must be individually addressable (portaliq#18).
+     *
+     * @return void
+     */
+    public function testCollectionParamDisambiguatesSharedSchema(): void
+    {
+        $aggregate = $this->aggregate(
+            collections: [
+                ['id' => 'direct', 'register' => 'portaliq', 'schema' => 'exampleDocument', 'scopeField' => 'subjectRef'],
+                ['id' => 'claimed', 'register' => 'portaliq', 'schema' => 'exampleDocument', 'scopeField' => 'subjectRef', 'scopeClaim' => 'exampleContactId'],
+            ]
+        );
+
+        // Requesting the second collection by id resolves the scopeClaim view.
+        $received = [];
+        $this->controllerWithCollectionParam($aggregate, 'claimed', $this->readerCapturing($received))
+            ->collection('portaliq', 'exampleDocument');
+        $this->assertSame('exampleContactId', $received['scopeClaim']);
+
+        // No id (empty) keeps the first-match fallback — the direct view.
+        $received = [];
+        $this->controllerWithCollectionParam($aggregate, '', $this->readerCapturing($received))
+            ->collection('portaliq', 'exampleDocument');
+        $this->assertSame('', $received['scopeClaim']);
+
+    }//end testCollectionParamDisambiguatesSharedSchema()
+
+    /**
+     * A controller whose request returns the given value for the `collection`
+     * query param (and safe defaults for the rest).
+     */
+    private function controllerWithCollectionParam(array $aggregate, string $collectionId, PortalObjectReader $reader): ContributionController
+    {
+        $request = $this->createMock(IRequest::class);
+        $request->method('getHeader')->willReturnMap([['Authorization', 'Bearer client-session-token']]);
+        $request->method('getParam')->willReturnCallback(
+            fn (string $key, $default=null) => ($key === 'collection' ? $collectionId : $default)
+        );
+
+        $registry = $this->createMock(PortalContributionRegistry::class);
+        $registry->method('aggregateFor')->willReturn($aggregate);
+
+        $session = $this->createMock(PortalSessionService::class);
+        $session->method('resolveFromBearer')->willReturn(self::SUBJECT);
+
+        return new ContributionController(
+            $request,
+            $registry,
+            $session,
+            $reader,
+            $this->createMock(PortalObjectWriter::class),
+            $this->createMock(IClientService::class),
+            $this->createMock(IURLGenerator::class)
+        );
+
+    }//end controllerWithCollectionParam()
+
+    /**
      * A reader mock whose readCollection() records every received argument
      * into the given array (by reference) and returns no rows.
      */
