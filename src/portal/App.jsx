@@ -59,11 +59,15 @@ export default function App({ config }) {
 	const [collectionData, setCollectionData] = useState({})
 
 	// Load one collection's objects (subject-scoped, authorised server-side).
-	async function loadCollection(register, schema) {
-		const key = `${register}/${schema}`
+	// Keyed by the collection's own `id` and disambiguated on the wire with a
+	// `collection` param, so two collections that share a register+schema
+	// (a direct view and a scopeClaim/via view) never collide.
+	async function loadCollection(col) {
+		const key = col.id
 		setCollectionData((d) => ({ ...d, [key]: { loading: true, objects: [] } }))
 		try {
-			const res = await fetch(`${config.apiBase}/collections/${encodeURIComponent(register)}/${encodeURIComponent(schema)}`, {
+			const url = `${config.apiBase}/collections/${encodeURIComponent(col.register)}/${encodeURIComponent(col.schema)}?collection=${encodeURIComponent(col.id)}`
+			const res = await fetch(url, {
 				headers: { Accept: 'application/json', ...authHeaders(token) },
 			})
 			const objects = res.ok ? ((await res.json()).objects || []) : []
@@ -93,7 +97,14 @@ export default function App({ config }) {
 		} catch (e) {
 			// Best-effort; the reload reflects whatever landed.
 		}
-		loadCollection(action.register, action.schema)
+		// Reload any loaded collection that reads the schema we just wrote to.
+		for (const c of (state.contributions?.contributions || [])) {
+			for (const col of (c.collections || [])) {
+				if (col.register === action.register && col.schema === action.schema) {
+					loadCollection(col)
+				}
+			}
+		}
 	}
 
 	const refresh = useCallback(async (tok) => {
@@ -185,11 +196,11 @@ export default function App({ config }) {
 								<h2>{c.label || c.app}</h2>
 								<ul className="portaliq-collections">
 									{(c.collections || []).map((col) => {
-										const key = `${col.register}/${col.schema}`
+										const key = col.id
 										const loaded = collectionData[key]
 										return (
 											<li key={col.id}>
-												<button type="button" onClick={() => loadCollection(col.register, col.schema)}>
+												<button type="button" onClick={() => loadCollection(col)}>
 													{col.label || col.schema}
 												</button>
 												{loaded?.loading && <span> …</span>}
