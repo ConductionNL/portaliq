@@ -36,10 +36,29 @@ class PortaliqRegisterConfigTest extends TestCase
     public function testRegisterJsonParsesAndVersionsAreBumped(): void
     {
         $this->assertNotSame([], self::$register, 'register JSON must parse');
-        $this->assertSame('0.2.0', self::$register['info']['version']);
-        $this->assertSame('0.2.0', self::$register['components']['schemas']['portalAccount']['version']);
+        $this->assertSame('0.3.0', self::$register['info']['version']);
+        $this->assertSame('0.3.0', self::$register['components']['schemas']['portalAccount']['version']);
 
     }//end testRegisterJsonParsesAndVersionsAreBumped()
+
+    /**
+     * The `audience` property on portalAccount and portalSession MUST be an
+     * open string (no enum) so contract-v2 audiences (citizen, student, parent,
+     * …) can be persisted without a schema change. Regression guard for #20:
+     * the closed [supplier, client] enum blocked every new-audience account at
+     * the data layer.
+     *
+     * @return void
+     */
+    public function testAudienceIsOpenStringNotEnumConstrained(): void
+    {
+        foreach (['portalAccount', 'portalSession'] as $slug) {
+            $audience = self::$register['components']['schemas'][$slug]['properties']['audience'];
+            $this->assertSame('string', $audience['type']);
+            $this->assertArrayNotHasKey('enum', $audience, "$slug.audience must not be enum-constrained (#20)");
+        }
+
+    }//end testAudienceIsOpenStringNotEnumConstrained()
 
     public function testPortalAccountClaimsPropertyIsServerManagedShape(): void
     {
