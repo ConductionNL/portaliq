@@ -104,12 +104,14 @@
         "properties": {
           "accountRef": {
             "type": "string",
-            "description": "Reference to the portalAccount this session was issued for.",
+            "format": "uuid",
+            "$ref": "portalAccount",
+            "description": "Reference to the portalAccount this session was issued for. The register's one real object FK (ADR-062 rule 7).",
             "example": "a1b2c3d4-0000-4000-8000-000000000000"
           },
           "subjectRef": {
             "type": "string",
-            "description": "The subject reference carried in the token (server-derived).",
+            "description": "The subject reference carried in the token (server-derived). Not an OpenRegister object reference — deliberately left as a plain string (ADR-062 rule 7): the value is an opaque identity token issued by the external IdP / domain app, not an OR object id.",
             "example": "b3d9c2a1-0000-4000-8000-000000000000"
           },
           "audience": {
@@ -169,7 +171,7 @@
         "properties": {
           "subjectRef": {
             "type": "string",
-            "description": "The subject this document belongs to; the field PortalObjectReader scopes on.",
+            "description": "The subject this document belongs to; the field PortalObjectReader scopes on. Not an OpenRegister object reference — deliberately left as a plain string (ADR-062 rule 7): the value is an opaque identity token issued by the external IdP / domain app, not an OR object id.",
             "example": "dev-supplier"
           },
           "organisation": {
@@ -208,7 +210,7 @@
         "properties": {
           "subjectRef": {
             "type": "string",
-            "description": "The recipient subject; the field the inbox is scoped on.",
+            "description": "The recipient subject; the field the inbox is scoped on. Not an OpenRegister object reference — deliberately left as a plain string (ADR-062 rule 7): the value is an opaque identity token issued by the external IdP / domain app, not an OR object id.",
             "example": "dev-supplier"
           },
           "organisation": {
