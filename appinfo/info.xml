@@ -8,7 +8,7 @@
     <summary lang="nl">Eén gedeeld extern portaal voor klanten en leveranciers.</summary>
     <description lang="en"><![CDATA[Portaliq is the fleet's shared external portal. Clients (citizens) and suppliers (companies) get one integrated, white-label portal to see and act on their records across every app — reading data through OpenRegister and rendering each app's registered portal contribution. It owns the external auth edge (DigiD / eHerkenning / eIDAS), the white-label portal shell, the unified inbox, and the portal-contribution registry. Employees stay internal. See ADR-046.]]></description>
     <description lang="nl"><![CDATA[Portaliq is het gedeelde externe portaal voor de hele appsuite. Klanten (burgers) en leveranciers (bedrijven) krijgen één geïntegreerd, white-label portaal om hun gegevens over alle apps heen in te zien en er acties op te doen — gegevens komen via OpenRegister en elke app levert zijn eigen portaalbijdrage. Portaliq verzorgt de externe authenticatie (DigiD / eHerkenning / eIDAS), de white-label portaalschil, de gebundelde berichtenbox en het register van portaalbijdragen. Medewerkers blijven intern. Zie ADR-046.]]></description>
-    <version>0.1.2</version>
+    <version>0.1.5</version>
     <licence>eupl</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Portaliq</namespace>
