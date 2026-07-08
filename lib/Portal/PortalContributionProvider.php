@@ -121,13 +121,23 @@ class PortalContributionProvider implements IPortalContributionProvider
                     // Field projection (read-side): the portal returns ONLY
                     // title + status (+ the row identifier) per row — the
                     // scopeField value and any other property never leave.
-                    'id'         => 'exampleCollection',
-                    'register'   => 'portaliq',
-                    'schema'     => 'exampleDocument',
-                    'scopeField' => 'subjectRef',
-                    'fields'     => ['title', 'status'],
-                    'label'      => 'Voorbeeldgegevens',
-                    'listable'   => true,
+                    'id'          => 'exampleCollection',
+                    'register'    => 'portaliq',
+                    'schema'      => 'exampleDocument',
+                    'scopeField'  => 'subjectRef',
+                    'fields'      => ['title', 'status'],
+                    'label'       => 'Voorbeeldgegevens',
+                    'listable'    => true,
+                    // Contribution-manifest-v3 (presentation-only): per-column
+                    // render hints, a detail layout, and a default sort. None of
+                    // these widens access — a column naming a projected-away
+                    // field (e.g. the scopeField) renders blank, never leaks.
+                    'columns'     => [
+                        ['field' => 'title', 'label' => 'Onderwerp'],
+                        ['field' => 'status', 'label' => 'Status', 'render' => 'badge'],
+                    ],
+                    'detail'      => ['layout' => 'card', 'fields' => ['title', 'status']],
+                    'defaultSort' => ['field' => 'title', 'direction' => 'asc'],
                 ],
                 [
                     'id'         => 'inbox',
@@ -180,12 +190,39 @@ class PortalContributionProvider implements IPortalContributionProvider
             ],
             'actions'       => [
                 [
-                    'id'       => 'createExample',
-                    'type'     => 'create',
-                    'label'    => 'Nieuw voorbeeld',
-                    'register' => 'portaliq',
-                    'schema'   => 'exampleDocument',
-                    'fields'   => ['title'],
+                    'id'               => 'createExample',
+                    'type'             => 'create',
+                    'label'            => 'Nieuw voorbeeld',
+                    'register'         => 'portaliq',
+                    'schema'           => 'exampleDocument',
+                    'fields'           => ['title', 'status'],
+                    // Contribution-manifest-v3 (presentation-only): per-field form
+                    // hints + option providers. `fieldConfigs` may only describe a
+                    // WHITELISTED field — a config for a field outside `fields` is
+                    // dropped by the normaliser, so it can never widen the submit.
+                    'fieldConfigs'     => [
+                        'title'  => ['label' => 'Onderwerp', 'required' => true, 'size' => 'large', 'placeholder' => 'Waar gaat het over?'],
+                        'status' => ['label' => 'Status'],
+                    ],
+                    'optionsProviders' => [
+                        // A static dropdown. A `collection` provider would instead
+                        // be, e.g.:
+                        // 'contract' => ['type' => 'collection',
+                        // 'register' => 'procest', 'schema' => 'supplierContract',
+                        // 'labelField' => 'name', 'valueField' => 'id']
+                        // and the portal populates it through the SUBJECT-SCOPED
+                        // collection endpoint, so it can only ever offer rows the
+                        // subject may already read.
+                        'status' => [
+                            'type'    => 'static',
+                            'options' => [
+                                ['value' => 'open', 'label' => 'Open'],
+                                ['value' => 'closed', 'label' => 'Afgehandeld'],
+                            ],
+                        ],
+                    ],
+                    'submitLabel'      => 'Aanmaken',
+                    'successMessage'   => 'Voorbeeld aangemaakt',
                 ],
                 [
                     // Portal-scoped update (portal-scoped-crud, ADR-062 Phase 1):
@@ -218,6 +255,31 @@ class PortalContributionProvider implements IPortalContributionProvider
                     'endpoint' => '/apps/portaliq/api/health',
                     'method'   => 'GET',
                     'minTrust' => 'substantial',
+                ],
+            ],
+            // Contribution-manifest-v3: an explicit page composition. Every block
+            // reference resolves within THIS contribution (after trust filtering);
+            // an unresolvable/cross-contribution ref is dropped by the normaliser.
+            // Omit `pages` entirely to let Portaliq synthesise one default page per
+            // listable collection (the v2 rendering).
+            'pages'         => [
+                [
+                    'id'     => 'voorbeeld',
+                    'label'  => 'Voorbeeld',
+                    'icon'   => 'FileDocument',
+                    'blocks' => [
+                        ['type' => 'richText', 'markdown' => '## Voorbeeldportaal'."\n".'Beheer uw voorbeeldgegevens.'],
+                        ['type' => 'action', 'action' => 'createExample'],
+                        ['type' => 'collection', 'collection' => 'exampleCollection'],
+                    ],
+                ],
+                [
+                    'id'     => 'berichten',
+                    'label'  => 'Berichten',
+                    'icon'   => 'Email',
+                    'blocks' => [
+                        ['type' => 'collection', 'collection' => 'inbox'],
+                    ],
                 ],
             ],
             'notifications' => [],

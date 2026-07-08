@@ -65,14 +65,16 @@ class PortalContributionRegistry
     /**
      * Constructor.
      *
-     * @param IAppManager        $appManager For enumerating installed apps.
-     * @param ContainerInterface $container  For constructing each app's provider.
-     * @param LoggerInterface    $logger     The logger.
+     * @param IAppManager              $appManager For enumerating installed apps.
+     * @param ContainerInterface       $container  For constructing each app's provider.
+     * @param LoggerInterface          $logger     The logger.
+     * @param PortalManifestNormaliser $normaliser The fail-closed v3 UI-config sanitiser.
      */
     public function __construct(
         private readonly IAppManager $appManager,
         private readonly ContainerInterface $container,
         private readonly LoggerInterface $logger,
+        private readonly PortalManifestNormaliser $normaliser=new PortalManifestNormaliser(),
     ) {
     }//end __construct()
 
@@ -118,7 +120,20 @@ class PortalContributionRegistry
             }
 
             $contribution['app'] = $appId;
-            $contributions[]     = $this->filterByTrust(contribution: $contribution, trust: $trust);
+            $filtered            = $this->filterByTrust(contribution: $contribution, trust: $trust);
+
+            // Sanitise the v3 UI-configuration vocabulary AFTER trust filtering,
+            // so a surviving page can never reference a trust-dropped entry. The
+            // normaliser is fail-closed and never throws; guard anyway so a
+            // provider config bug degrades to the un-normalised (but trust-
+            // filtered) manifest rather than a 500.
+            try {
+                $filtered = $this->normaliser->normalise(contribution: $filtered);
+            } catch (Throwable $e) {
+                $this->logger->error('Portaliq: manifest normalisation failed', ['app' => $appId, 'reason' => $e->getMessage()]);
+            }
+
+            $contributions[] = $filtered;
         }//end foreach
 
         return [

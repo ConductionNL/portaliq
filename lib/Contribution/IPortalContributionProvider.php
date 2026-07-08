@@ -29,6 +29,25 @@
  * Every v2 field is optional with a v1-equivalent default, so v1 providers and
  * manifests keep working unchanged.
  *
+ * Contribution-manifest-v3 (ADR-063) adds an optional, PRESENTATION-ONLY UI
+ * configuration vocabulary, also duck-typed and additive — it NEVER widens data
+ * access (the `fields` whitelist, collection scope, and read-side projection stay
+ * the sole authorities; a fail-closed server-side normaliser sanitises it):
+ *
+ * - Collections: `columns` (`[{field, label?, render?}]`, render ∈ text|date|
+ *   datetime|badge|currency|boolean|link), `detail` (`{layout: card|timeline,
+ *   fields?[]}`), `defaultSort` (`{field, direction: asc|desc}`), `defaultFilters`.
+ * - Actions: `fieldConfigs` (per-whitelisted-field `{label?, visible?, required?,
+ *   disabled?, size?, placeholder?, help?}` — a config for a non-whitelisted field
+ *   is dropped), `optionsProviders` (per-field `{type: static, options[]}` or
+ *   `{type: collection, register, schema, labelField, valueField}` — a collection
+ *   dropdown is populated through the SUBJECT-SCOPED collection endpoint, so it can
+ *   only offer values the subject may already read), `submitLabel`, `successMessage`.
+ * - Contributions: `pages` (`[{id, label?, icon?, blocks[]}]`) composing typed
+ *   blocks (`collection`/`action`/`detail`/`richText`/`cta`) whose references
+ *   resolve within the SAME contribution; absent → one default page per listable
+ *   collection is synthesised (v2 rendering preserved).
+ *
  * @category Contribution
  * @package  OCA\Portaliq\Contribution
  *
