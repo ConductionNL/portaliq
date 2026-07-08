@@ -206,9 +206,10 @@ class ContributionController extends Controller implements PortalProtected
      * Find the collection matching (register, schema) in the subject's
      * aggregated contributions, or null when the subject is not entitled to it.
      *
-     * @param array<string, mixed> $subject  The resolved subject.
-     * @param string               $register The requested register.
-     * @param string               $schema   The requested schema.
+     * @param array<string, mixed> $subject      The resolved subject.
+     * @param string               $register     The requested register.
+     * @param string               $schema       The requested schema.
+     * @param string               $collectionId Optional collection id disambiguating a shared register+schema.
      *
      * @return array{collection: array<string, mixed>, app: string}|null
      */
@@ -238,6 +239,72 @@ class ContributionController extends Controller implements PortalProtected
 
         return null;
     }//end authorisedCollection()
+
+    /**
+     * Read a SINGLE object in a contribution collection, scoped to the subject
+     * (portal-scoped-crud, ADR-062 Phase 1).
+     *
+     * Authorises identically to collection(): the (register, schema) must
+     * appear in one of the subject's own contributions (honouring the
+     * `?collection=` disambiguation), and the matched collection's minTrust is
+     * re-checked as defense in depth — 403 before any OpenRegister call. The
+     * reader re-verifies per-subject ownership of the fetched object, so a
+     * null result (foreign owner OR non-existent id, indistinguishable) yields
+     * 404 — NO existence oracle.
+     *
+     * @param string $register The register of the collection.
+     * @param string $schema   The schema of the collection.
+     * @param string $id       The object id (never trusted; ownership re-checked server-side).
+     *
+     * @return JSONResponse The subject's object, or 401 / 403 / 404.
+     *
+     * @spec openspec/changes/portal-scoped-crud/tasks.md#T3
+     */
+    #[PublicPage]
+    #[NoCSRFRequired]
+    public function object(string $register, string $schema, string $id): JSONResponse
+    {
+        $subject = $this->subject();
+        if ($subject === null) {
+            return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+        }
+
+        $collectionId = (string) $this->request->getParam('collection', '');
+
+        $match = $this->authorisedCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
+        if ($match === null) {
+            return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+        }
+
+        $collection = $match['collection'];
+
+        // Defense in depth (contract v2, A3): re-check the matched collection's
+        // minTrust — 403 before any OpenRegister call.
+        if (PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
+            return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+        }
+
+        $object = $this->reader->readObject(
+            register: $register,
+            schema: $schema,
+            scopeField: (string) ($collection['scopeField'] ?? 'subjectRef'),
+            subjectRef: (string) ($subject['subjectRef'] ?? ''),
+            id: $id,
+            organisation: (string) ($subject['organisation'] ?? ''),
+            scopeClaim: (string) ($collection['scopeClaim'] ?? ''),
+            contributingApp: $match['app'],
+            via: ($collection['via'] ?? null),
+            audience: (string) ($subject['audience'] ?? ''),
+            fields: ($collection['fields'] ?? null)
+        );
+
+        // Null = not the subject's OR does not exist — a single 404, no oracle.
+        if ($object === null) {
+            return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+        }
+
+        return new JSONResponse(['object' => $object]);
+    }//end object()
 
     /**
      * Create an object in a collection, owned by the subject.
@@ -320,6 +387,97 @@ class ContributionController extends Controller implements PortalProtected
 
         return null;
     }//end authorisedCreateAction()
+
+    /**
+     * Update an object in a collection, owned by the subject (portal-scoped-crud,
+     * ADR-062 Phase 1 — closes the write-IDOR concern, Conduction/portaliq#16).
+     *
+     * Mirrors create()'s authorisation discipline: there must be a declared
+     * `type: update` action for this (register, schema); only the fields that
+     * action whitelists are accepted (the scope field is never whitelisted);
+     * the matched action's minTrust is re-checked (403 before any write). The
+     * writer re-verifies ownership of the client-supplied id against
+     * OpenRegister BEFORE writing, so a null result (not the subject's OR
+     * non-existent, indistinguishable) yields 404 — no existence oracle and no
+     * write.
+     *
+     * @param string $register The register of the collection.
+     * @param string $schema   The schema of the collection.
+     * @param string $id       The object id (never trusted; ownership re-checked server-side).
+     *
+     * @return JSONResponse The updated object, or 401 / 403 / 404.
+     *
+     * @spec openspec/changes/portal-scoped-crud/tasks.md#T3
+     */
+    #[PublicPage]
+    #[NoCSRFRequired]
+    public function update(string $register, string $schema, string $id): JSONResponse
+    {
+        $subject = $this->subject();
+        if ($subject === null) {
+            return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+        }
+
+        $action = $this->authorisedUpdateAction(subject: $subject, register: $register, schema: $schema);
+        if ($action === null) {
+            return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+        }
+
+        // Defense in depth (contract v2, A3): re-check the matched action's
+        // minTrust — 403 before any OpenRegister write.
+        if (PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null)) === false) {
+            return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+        }
+
+        $data = $this->whitelist(fields: (array) ($action['fields'] ?? []));
+
+        $updated = $this->writer->updateObject(
+            register: $register,
+            schema: $schema,
+            scopeField: (string) ($action['scopeField'] ?? 'subjectRef'),
+            subjectRef: (string) ($subject['subjectRef'] ?? ''),
+            organisation: (string) ($subject['organisation'] ?? ''),
+            id: $id,
+            data: $data
+        );
+
+        // Null = ownership re-verification failed OR the row does not exist —
+        // a single 404, indistinguishable, and nothing was written.
+        if ($updated === null) {
+            return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+        }
+
+        return new JSONResponse(['object' => $updated]);
+    }//end update()
+
+    /**
+     * Find a `type: update` action for (register, schema) in the subject's
+     * contributions, or null when the subject is not entitled to update there.
+     *
+     * @param array<string, mixed> $subject  The resolved subject.
+     * @param string               $register The requested register.
+     * @param string               $schema   The requested schema.
+     *
+     * @return array<string, mixed>|null
+     *
+     * @spec openspec/changes/portal-scoped-crud/tasks.md#T3
+     */
+    private function authorisedUpdateAction(array $subject, string $register, string $schema): ?array
+    {
+        $aggregate = $this->registry->aggregateFor($subject);
+        foreach (($aggregate['contributions'] ?? []) as $contribution) {
+            foreach (($contribution['actions'] ?? []) as $action) {
+                if (($action['type'] ?? '') === 'update'
+                    && ($action['register'] ?? '') === $register
+                    && ($action['schema'] ?? '') === $schema
+                ) {
+                    return $action;
+                }
+            }
+        }
+
+        return null;
+    }//end authorisedUpdateAction()
 
     /**
      * Read the request body and keep only the whitelisted fields.

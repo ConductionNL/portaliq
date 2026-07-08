@@ -86,6 +86,10 @@ class PortalContributionProvider implements IPortalContributionProvider
      * dev install with the existing demo schemas only — a realistic
      * parent→child→grades reverse join needs a domain app's own schemas.
      *
+     * A `type: update` action (portal-scoped-crud, ADR-062 Phase 1) patches the
+     * subject's OWN exampleDocument title, exercising the write-IDOR-safe update
+     * path (ownership re-verified against OR before any write; scope re-stamped).
+     *
      * @param array<string, mixed> $subject The resolved subject.
      *
      * @return array<string, mixed>|null
@@ -94,6 +98,13 @@ class PortalContributionProvider implements IPortalContributionProvider
      * @spec openspec/changes/contract-v2/tasks.md#T9
      * @spec openspec/changes/field-projection/tasks.md#T3
      * @spec openspec/changes/reverse-scope-join/tasks.md#T3
+     * @spec openspec/changes/portal-scoped-crud/tasks.md#T4
+     *
+     * @SuppressWarnings(PHPMD.ExcessiveMethodLength) -- this is a single
+     * declarative return: one manifest literal exercising the full contract
+     * vocabulary (collections, claim/via scoping, create/update/endpoint
+     * actions) so the demo portal stays the exercisable reference; it is data,
+     * not branching logic.
      */
     public function getContribution(array $subject): ?array
     {
@@ -172,6 +183,20 @@ class PortalContributionProvider implements IPortalContributionProvider
                     'id'       => 'createExample',
                     'type'     => 'create',
                     'label'    => 'Nieuw voorbeeld',
+                    'register' => 'portaliq',
+                    'schema'   => 'exampleDocument',
+                    'fields'   => ['title'],
+                ],
+                [
+                    // Portal-scoped update (portal-scoped-crud, ADR-062 Phase 1):
+                    // patches ONLY the whitelisted `title` of the subject's OWN
+                    // exampleDocument. Ownership is re-verified against
+                    // OpenRegister before any write; the scope field is
+                    // re-stamped server-side, so the id can never be used to
+                    // patch another subject's row (closes #16).
+                    'id'       => 'updateExample',
+                    'type'     => 'update',
+                    'label'    => 'Voorbeeld bijwerken',
                     'register' => 'portaliq',
                     'schema'   => 'exampleDocument',
                     'fields'   => ['title'],

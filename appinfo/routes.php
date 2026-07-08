@@ -40,6 +40,12 @@ return [
         ['name' => 'contribution#collection', 'url' => '/portal/api/collections/{register}/{schema}', 'verb' => 'GET'],
         // Create an object in a collection, owned by the subject (T06).
         ['name' => 'contribution#create', 'url' => '/portal/api/collections/{register}/{schema}', 'verb' => 'POST'],
+        // Read/update a SINGLE object, subject-scoped with per-row ownership
+        // re-verification (portal-scoped-crud, ADR-062 Phase 1; closes #16).
+        // Registered before the /portal/{path} SPA catch-all; the {id} segment
+        // makes these distinct from the collection-level routes above.
+        ['name' => 'contribution#object', 'url' => '/portal/api/collections/{register}/{schema}/{id}', 'verb' => 'GET'],
+        ['name' => 'contribution#update', 'url' => '/portal/api/collections/{register}/{schema}/{id}', 'verb' => 'PATCH'],
         // Forward a declared endpoint action server-to-server with a signed
         // X-Portal-Subject assertion (contract-v2 T8, ADR-046 A6). Guarded by
         // PortalAuthMiddleware; registered before the /portal/{path} catch-all.
