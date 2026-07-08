@@ -44,7 +44,7 @@ function DetailCard({ collection, row }) {
 	)
 }
 
-export default function PageView({ page, contribution, api, dataByCollection, onCreated, onAction }) {
+export default function PageView({ page, contribution, api, dataByCollection, onCreated, onAction, onRowAction, busyRow }) {
 	// The row selected in a table on this page, keyed by collection id — feeds
 	// any `detail` block for the same collection.
 	const [selected, setSelected] = useState({})
@@ -66,6 +66,9 @@ export default function PageView({ page, contribution, api, dataByCollection, on
 						if (block.type === 'detail') {
 							return <DetailCard key={i} collection={collection} row={selected[collection.id]} />
 						}
+						const rowActions = (collection.rowActions || [])
+							.map((id) => findAction(contribution, id))
+							.filter(Boolean)
 						return (
 							<div key={i} className="portaliq-block-collection">
 								{collection.label && <h3>{collection.label}</h3>}
@@ -74,6 +77,9 @@ export default function PageView({ page, contribution, api, dataByCollection, on
 									objects={loaded?.objects || []}
 									loading={loaded?.loading}
 									onSelect={(row) => setSelected((s) => ({ ...s, [collection.id]: row }))}
+									rowActions={rowActions}
+									busyRow={busyRow}
+									onRowAction={(action, row) => onRowAction && onRowAction(action, row, collection)}
 								/>
 							</div>
 						)

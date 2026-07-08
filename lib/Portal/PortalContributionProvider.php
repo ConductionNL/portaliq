@@ -138,6 +138,11 @@ class PortalContributionProvider implements IPortalContributionProvider
                     ],
                     'detail'      => ['layout' => 'card', 'fields' => ['title', 'status']],
                     'defaultSort' => ['field' => 'title', 'direction' => 'asc'],
+                    // Contribution-manifest-v3 (status transitions): per-row
+                    // buttons wired to a `type: update` action whose server-
+                    // enforced `set` fixes the transition target — a client can
+                    // never choose an arbitrary status.
+                    'rowActions'  => ['closeExample'],
                 ],
                 [
                     'id'         => 'inbox',
@@ -237,6 +242,21 @@ class PortalContributionProvider implements IPortalContributionProvider
                     'register' => 'portaliq',
                     'schema'   => 'exampleDocument',
                     'fields'   => ['title'],
+                ],
+                [
+                    // Contribution-manifest-v3 status transition: a `type: update`
+                    // action whose server-enforced `set` fixes `status` to
+                    // `closed`. Surfaced as a per-row button via the collection's
+                    // `rowActions`. The client sends no field data — the server
+                    // applies `set` (only whitelisted fields) and re-stamps the
+                    // scope, so the transition target can never be tampered with.
+                    'id'       => 'closeExample',
+                    'type'     => 'update',
+                    'label'    => 'Afhandelen',
+                    'register' => 'portaliq',
+                    'schema'   => 'exampleDocument',
+                    'fields'   => ['status'],
+                    'set'      => ['status' => 'closed'],
                 ],
                 [
                     // Contract v2 (A6): endpoint bearer-forward action with a

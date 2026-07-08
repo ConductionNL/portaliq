@@ -39,6 +39,7 @@ export default function App({ config }) {
 	const [state, setState] = useState({ loading: true, session: null, contributions: null, devError: null })
 	const [dataByCollection, setDataByCollection] = useState({})
 	const [activeKey, setActiveKey] = useState(null)
+	const [busyRow, setBusyRow] = useState(null)
 
 	const refresh = useCallback(async () => {
 		setState((s) => ({ ...s, loading: true }))
@@ -96,6 +97,21 @@ export default function App({ config }) {
 			}
 		}
 	}, [state.contributions, dataByCollection, loadCollection])
+
+	// A per-row status transition (approve/reject/close): invoke a resolved
+	// `type: update` action against the row's id with NO field data — the server
+	// applies the action's `set` values, so the transition target is enforced
+	// server-side and re-scoped to the subject. Then reload that collection.
+	const onRowAction = useCallback(async (action, row, collection) => {
+		const id = row.id || row['@self']?.id
+		if (!id) {
+			return
+		}
+		setBusyRow(id)
+		await api.updateObject(action, id, {})
+		setBusyRow(null)
+		loadCollection(collection)
+	}, [api, loadCollection])
 
 	// Forward an endpoint / A6 action server-to-server (best-effort; the shell
 	// does not hold the target's credentials — Portaliq signs the assertion).
@@ -189,6 +205,8 @@ export default function App({ config }) {
 								dataByCollection={dataByCollection}
 								onCreated={onCreated}
 								onAction={onAction}
+								onRowAction={onRowAction}
+								busyRow={busyRow}
 							/>
 						)}
 					</section>

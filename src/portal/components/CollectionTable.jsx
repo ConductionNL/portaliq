@@ -45,7 +45,11 @@ function deriveColumns(collection, objects) {
 	return fields.map((f) => ({ field: f, render: 'text' }))
 }
 
-export default function CollectionTable({ collection, objects, loading, onSelect }) {
+// `rowActions` are resolved `type: update` actions (contribution-manifest-v3):
+// per-row transition buttons (approve/reject/close). The server applies the
+// action's `set` values — the button sends no field data, so the transition
+// target can never be tampered with client-side.
+export default function CollectionTable({ collection, objects, loading, onSelect, rowActions, onRowAction, busyRow }) {
 	if (loading) {
 		return <p className="portaliq-loading">…</p>
 	}
@@ -54,6 +58,7 @@ export default function CollectionTable({ collection, objects, loading, onSelect
 	}
 
 	const columns = deriveColumns(collection, objects)
+	const actions = rowActions || []
 
 	return (
 		<table className="portaliq-table">
@@ -62,6 +67,7 @@ export default function CollectionTable({ collection, objects, loading, onSelect
 					{columns.map((c) => (
 						<th key={c.field}>{c.label || c.field}</th>
 					))}
+					{actions.length > 0 && <th className="portaliq-rowactions-head">Acties</th>}
 				</tr>
 			</thead>
 			<tbody>
@@ -80,6 +86,20 @@ export default function CollectionTable({ collection, objects, loading, onSelect
 										: formatCell(row[c.field], c.render)}
 								</td>
 							))}
+							{actions.length > 0 && (
+								<td className="portaliq-rowactions">
+									{actions.map((a) => (
+										<button
+											key={a.id}
+											type="button"
+											disabled={busyRow === id}
+											onClick={(e) => { e.stopPropagation(); onRowAction && onRowAction(a, row) }}
+										>
+											{a.label || a.id}
+										</button>
+									))}
+								</td>
+							)}
 						</tr>
 					)
 				})}

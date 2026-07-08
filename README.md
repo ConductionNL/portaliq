@@ -186,6 +186,15 @@ page blocks resolve only within the same (trust-filtered) contribution.
 Malformed config is dropped fail-closed, never fatal. Absent `pages` →
 Portaliq synthesises one default page per listable collection (v2 rendering).
 
+**Status transitions (approve / reject / close).** A `type: update` action MAY
+declare **`set`** — a map of **whitelisted** field → fixed value the *server*
+applies over the client body — and a collection MAY declare **`rowActions`** (ids
+of update actions, rendered as per-row buttons). The `PATCH` update endpoint takes
+`?action=<id>` to pick which transition to apply. The target is **tamper-proof**:
+a client PATCHing `{status: "hacked"}` against a `set: {status: "closed"}`
+transition still lands on `closed`, and `set` only honours whitelisted fields, so
+a transition can never move a row out of the subject's scope.
+
 Canonical contract text: ADR-046 amendment 2026-07-06 + ADR-063 (hydra) + the
 `portal-contribution-contract` spec in [`openspec/specs/`](openspec/specs/).
 

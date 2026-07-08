@@ -125,7 +125,9 @@ export function createPortalApi(config) {
 		 * PR #25). Ownership is re-verified server-side; the id is never trusted.
 		 */
 		async updateObject(action, id, data) {
-			return send('PATCH', `${col(action.register, action.schema)}/${encodeURIComponent(id)}`, data)
+			// Name the action (`?action=`) so the server applies THIS transition's
+			// `set`, not just the first update action declared for the schema.
+			return send('PATCH', `${col(action.register, action.schema)}/${encodeURIComponent(id)}?action=${encodeURIComponent(action.id)}`, data)
 		},
 
 		/**
