@@ -7,6 +7,7 @@
 - [contract-v2](../../changes/contract-v2/)
 - [field-projection](../../changes/field-projection/)
 - [reverse-scope-join](../../changes/reverse-scope-join/)
+- [portal-scoped-crud](../../changes/portal-scoped-crud/)
 - [contribution-manifest-v3](../../changes/contribution-manifest-v3/)
 
 ## Purpose
@@ -310,6 +311,79 @@ to the full row (ADR-005).
 - THEN message rows are projected exactly like any other collection (declared fields + identifiers; `body` absent)
 - @e2e exclude same code path as list projection — covered by a PHPUnit controller pass-through case; inbox rendering itself is unchanged
 
+### Requirement: Scoped single-object read
+
+The reader MUST expose a single-object read that returns ONE object by id,
+scoped to the subject by the SAME per-row ownership boundary as the list read.
+It MUST resolve the scoping value identically to the list read (a declared
+`scopeClaim` → the server-resolved claim from the subject's own portalAccount,
+else the subjectRef; an absent or malformed claim MUST fail closed to "not
+found" WITHOUT fetching the object). It MUST fetch the object by id, then
+re-check ownership: for a direct collection `row[scopeField]` MUST equal the
+scoping value and the tenant MUST match; for a `via` collection the object MUST
+pass the one-hop join membership (the identical verified pre-pass, `match`
+mode, and tenant discipline as the list read). Field projection, when declared,
+MUST run before returning. An object owned by a different subject, in a
+different tenant, not a join member, with an absent/malformed claim, or with an
+id that does not exist MUST ALL return the identical "not found" result — there
+MUST be NO existence oracle. The read MUST fail closed (missing OpenRegister,
+OR error, malformed row) to "not found". The controller MUST answer
+`GET .../collections/{register}/{schema}/{id}` with the object (200) or 404,
+after authorising the collection exactly like the list read (manifest
+membership honouring `?collection=`, plus the matched collection's `minTrust`
+re-checked — 403 before any OpenRegister call). Added by the
+`portal-scoped-crud` change (ADR-062 Phase 1).
+
+#### Scenario: A subject reads its own object by id
+
+- GIVEN a collection the subject is entitled to AND an object whose `scopeField` equals the subject's scoping value
+- WHEN the subject requests that object by id
+- THEN the object is returned (200), projected to the collection's `fields` when declared
+- @e2e exclude backend single-read contract — covered by the PHPUnit reader/controller matrices; no distinct portaliq UI flow
+
+#### Scenario: A foreign-owned or absent id is an identical 404
+
+- GIVEN a subject AND an id that either belongs to a DIFFERENT subject/tenant, is not a join member, or does not exist
+- WHEN the subject requests that id
+- THEN the response is 404 with the identical body in every case — no existence oracle
+- @e2e exclude no-oracle security invariant — covered by PHPUnit (foreign-owner, foreign-tenant, non-member, non-existent) all returning null → 404; no UI surface
+
+### Requirement: Scoped verified update
+
+The writer MUST expose a verified update that patches ONE object by id, and
+MUST re-verify ownership against OpenRegister BEFORE any write: it MUST re-read
+the row by id and confirm `row[scopeField]` equals the subject's reference AND
+the tenant matches (the SAME boundary as the reader's per-row check); if the
+row is not the subject's — foreign owner, wrong tenant, or non-existent id — it
+MUST return "not found" and MUST NOT call the OpenRegister save at all. The
+client-supplied id MUST NEVER be trusted as a capability. On an owned row it
+MUST merge only the already-whitelisted fields onto the existing object,
+re-stamp the scope field (and organisation) AFTER the merge so a patch can
+never move the row out of the subject's scope, and save with the id preserved
+so OpenRegister UPDATES rather than creates. The update MUST fail closed (OR
+error, missing OpenRegister) to "not found". The controller MUST answer
+`PATCH .../collections/{register}/{schema}/{id}` after authorising a declared
+`{id, type: 'update', register, schema, fields, minTrust?}` action (403 if
+none; the matched action's `minTrust` re-checked before any write) and
+whitelisting the request body to the action's `fields` (the scope field is
+never whitelisted, and `claims` is always dropped); a null result is 404, no
+existence oracle. This closes the write-side IDOR concern
+(Conduction/portaliq#16). Added by the `portal-scoped-crud` change.
+
+#### Scenario: A subject patches its own object
+
+- GIVEN a `type: update` action for a collection the subject is entitled to AND an object the subject owns
+- WHEN the subject PATCHes whitelisted fields on that object by id
+- THEN only the whitelisted fields change, unrelated fields are preserved, the scope field is re-stamped, and OpenRegister updates the row (id preserved)
+- @e2e exclude backend update contract — covered by the PHPUnit writer/controller matrices; no distinct portaliq UI flow
+
+#### Scenario: A patch to a foreign-owned id is refused before any write
+
+- GIVEN a subject AND an id that belongs to a DIFFERENT subject or tenant
+- WHEN the subject PATCHes that id
+- THEN ownership is re-verified against OpenRegister FIRST, the write is refused (the OpenRegister save is never called), and the response is 404 — closing Conduction/portaliq#16
+- @e2e exclude write-IDOR security invariant — pinned by a PHPUnit test asserting the save is never called for a foreign id; no UI surface
+
 ### Requirement: Frozen assertion wire format
 
 The A6 `X-Portal-Subject` assertion wire format MUST be treated as frozen
@@ -446,6 +520,7 @@ byte-identical, aside from an additive synthesised `pages` array.
   the `reverse-scope-join` change (delta:
   `openspec/changes/reverse-scope-join/specs/portal-contribution-contract/spec.md`,
   tracking Conduction/portaliq#14); same sync discipline until it archives.
+<<<<<<< HEAD
 - The "Manifest UI configuration is presentation-only", "Scoped option
   providers", "Page composition with resolvable, same-contribution blocks", and
   "v2 manifests are unchanged by normalisation" requirements were added by the
@@ -453,3 +528,10 @@ byte-identical, aside from an additive synthesised `pages` array.
   `openspec/changes/contribution-manifest-v3/specs/portal-contribution-contract/spec.md`);
   enforced by `PortalManifestNormaliser` and frozen in hydra ADR-063; same sync
   discipline until it archives.
+=======
+- The "Scoped single-object read" and "Scoped verified update" requirements
+  were added by the `portal-scoped-crud` change (delta:
+  `openspec/changes/portal-scoped-crud/specs/portal-contribution-contract/spec.md`,
+  ADR-062 Phase 1, closing Conduction/portaliq#16); same sync discipline until
+  it archives.
+>>>>>>> origin/development

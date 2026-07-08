@@ -99,6 +99,8 @@ the session routes are the public auth edge.
 | `GET` | `/apps/portaliq/portal/api/contributions` | The subject's aggregated manifest (audience- and trust-filtered) |
 | `GET` | `/apps/portaliq/portal/api/collections/{register}/{schema}` | Read one collection, subject-scoped with per-row verification |
 | `POST` | `/apps/portaliq/portal/api/collections/{register}/{schema}` | Create an object via a declared `type: create` action (whitelisted fields only) |
+| `GET` | `/apps/portaliq/portal/api/collections/{register}/{schema}/{id}` | Read a single object, subject-scoped; per-row ownership re-verified (404 for a foreign-owned or absent id — no existence oracle) |
+| `PATCH` | `/apps/portaliq/portal/api/collections/{register}/{schema}/{id}` | Update an object via a declared `type: update` action (whitelisted fields only); ownership re-verified against OR before any write, scope field re-stamped (closes #16) |
 | `POST` | `/apps/portaliq/portal/api/actions/{appId}/{actionId}` | Forward a declared endpoint action server-to-server with a signed `X-Portal-Subject` assertion (contract v2, A6) |
 
 ### Contribution contract v2 (ADR-046 amendment)
@@ -145,6 +147,15 @@ optional with a v1-equivalent default:
   identifiers-only (never the full row). No `fields` = full rows (v1/v2
   behaviour). Projection runs AFTER per-row verification — it shapes what a
   row shows, never which rows return.
+- **`type: update` action** (portal-scoped-crud, ADR-062 Phase 1) —
+  `{id, type: 'update', register, schema, fields, minTrust?}`: authorises the
+  `PATCH .../collections/{register}/{schema}/{id}` endpoint. Only the declared
+  `fields` are accepted (the scope field is never whitelisted). Ownership of
+  the client-supplied id is re-verified against OpenRegister BEFORE any write —
+  the id is never trusted — and the scope field is re-stamped server-side, so a
+  patch can never move a row out of, or into, another subject's scope
+  (write-IDOR closed, #16). A null result (foreign-owned OR non-existent id) is
+  a single 404 — no existence oracle.
 - **Endpoint actions** — `{id, label, endpoint, method?, minTrust?}` where
   `endpoint` is an **instance-local absolute path** (full URLs rejected —
   SSRF guard). Portaliq forwards server-to-server with a ~60s HS256
