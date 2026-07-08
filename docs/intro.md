@@ -20,9 +20,6 @@ ships:
   declared in `src/manifest.json`; the shell (CnAppRoot) reads the
   manifest at boot and renders index / detail / dashboard / settings
   pages without per-page Vue files.
-- **A Dashboard widget** — a working `ExampleWidget` (PHP `IWidget`
-  class + webpack entry + `NcDashboardWidget` renderer) you copy and
-  rename.
 - **Admin settings** — a settings panel wired through
   `NcAppSettingsDialog`, backed by an OpenRegister settings register.
 - **An MCP tool provider** — `ExampleToolProvider` exposes the app's

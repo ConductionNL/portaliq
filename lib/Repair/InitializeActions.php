@@ -14,6 +14,9 @@
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ *
  * @link https://conduction.nl
  *
  * @spec openspec/architecture/adr-023-action-authorization.md
@@ -75,11 +78,10 @@ class InitializeActions implements IRepairStep
     {
         $existing = $this->actionAuth->getMatrix();
         if (count($existing) > 0) {
-            $count = count($existing);
+            $count  = count($existing);
+            $plural = 'ies';
             if ($count === 1) {
                 $plural = 'y';
-            } else {
-                $plural = 'ies';
             }
 
             $output->info(
@@ -125,11 +127,10 @@ class InitializeActions implements IRepairStep
             return;
         }
 
-        $count = count($actions);
+        $count  = count($actions);
+        $plural = 's';
         if ($count === 1) {
             $plural = '';
-        } else {
-            $plural = 's';
         }
 
         $output->info(

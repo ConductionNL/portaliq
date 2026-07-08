@@ -136,6 +136,10 @@ class SettingsService
      * @return array<string,mixed> Result with success flag, message, and version.
      *
      * @spec openspec/specs/settings-management/spec.md#REQ-CFG-003
+     *
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag) -- mirrors OpenRegister's
+     * ConfigurationService::importFromApp() force semantics; splitting into two
+     * methods would fork the fleet-canonical import API.
      */
     public function loadConfiguration(bool $force=false): array
     {
@@ -150,7 +154,7 @@ class SettingsService
         try {
             $configurationService = $this->container->get('OCA\OpenRegister\Service\ConfigurationService');
 
-            $absPath = $this->appManager->getAppPath(Application::APP_ID) . '/lib/Settings/' . Application::APP_ID . '_register.json';
+            $absPath = $this->appManager->getAppPath(Application::APP_ID).'/lib/Settings/'.Application::APP_ID.'_register.json';
             $version = '0.1.0';
             $data    = [];
             if (is_file($absPath) === true) {

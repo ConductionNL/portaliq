@@ -1,5 +1,4 @@
 <?php
-// SPDX-License-Identifier: EUPL-1.2
 
 /**
  * Portaliq Application
@@ -30,7 +29,6 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\AppInfo;
 
-use OCA\Portaliq\Dashboard\ExampleWidget;
 use OCA\Portaliq\Listener\DeepLinkRegistrationListener;
 use OCA\Portaliq\Mcp\ExampleToolProvider;
 use OCA\Portaliq\Middleware\PortalAuthMiddleware;
@@ -79,11 +77,6 @@ class Application extends App implements IBootstrap
         // Initialize register and schemas on install/upgrade.
         $context->registerRepairStep(InitializeSettings::class);
 
-        // Sample dashboard widget — see lib/Dashboard/ExampleWidget.php.
-        // Delete this line and the ExampleWidget files if your app has no
-        // dashboard widgets.
-        $context->registerDashboardWidget(ExampleWidget::class);
-
         // AI Chat Companion (hydra ADR-034/035): expose this app's capabilities to the in-app AI
         // by registering an IMcpToolProvider under the alias OCA\OpenRegister\Mcp\IMcpToolProvider::{appId}.
         // OpenRegister's McpToolsService discovers providers by this alias. See lib/Mcp/ExampleToolProvider.php.
@@ -100,7 +93,6 @@ class Application extends App implements IBootstrap
         // (OCA\{Namespace}\Portal\PortalContributionProvider) — see
         // PortalContributionRegistry — so no per-provider registration is needed
         // here; the DI container constructs each app's provider by reflection.
-
     }//end register()
 
     /**

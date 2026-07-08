@@ -26,6 +26,8 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T02
+ * @spec openspec/changes/contract-v2/tasks.md#T1
+ * @spec openspec/changes/contract-v2/tasks.md#T7
  */
 
 declare(strict_types=1);
@@ -49,6 +51,17 @@ class PortalSessionService
      * The bearer scheme prefix, case-sensitive per RFC 6750.
      */
     private const BEARER_PREFIX = 'Bearer ';
+
+    /**
+     * The eIDAS-aligned trust vocabulary, ordered ascending (contract v2, A3).
+     * Any subject trust outside this map normalises to `low`; any entry
+     * `minTrust` outside it is unsatisfiable (fail-closed both ways).
+     */
+    private const TRUST_ORDER = [
+        'low'         => 1,
+        'substantial' => 2,
+        'high'        => 3,
+    ];
 
     /**
      * The token minter/validator, built from the configured signing secret.
@@ -82,6 +95,59 @@ class PortalSessionService
 
         $this->jwt = new PortalJwtService(signingSecret: $secret);
     }//end __construct()
+
+    /**
+     * Normalise a subject trust value to the eIDAS-aligned vocabulary.
+     *
+     * Any value outside `low|substantial|high` — including empty, legacy `dev`
+     * or `EH3` — normalises to `low` (fail-closed; ADR-005). This is the single
+     * normalisation point used by the session edge, the registry, and the
+     * contribution controller.
+     *
+     * @param mixed $trust The raw trust value (session claim or config).
+     *
+     * @return string One of `low`, `substantial`, `high`.
+     *
+     * @spec openspec/changes/contract-v2/tasks.md#T1
+     */
+    public static function normaliseTrust(mixed $trust): string
+    {
+        if (is_string($trust) === true && isset(self::TRUST_ORDER[$trust]) === true) {
+            return $trust;
+        }
+
+        return 'low';
+    }//end normaliseTrust()
+
+    /**
+     * Whether a subject trust level satisfies an entry's `minTrust`.
+     *
+     * Ordering is `low < substantial < high`. A missing `minTrust` (null or
+     * empty string) defaults to `low`; an unrecognised `minTrust` value makes
+     * the entry unsatisfiable for EVERY subject — a typo must never widen
+     * access (fail-closed; ADR-005). The subject side is normalised first, so
+     * unknown subject trust is compared as `low`.
+     *
+     * @param mixed $subjectTrust The subject's trust value (normalised here).
+     * @param mixed $minTrust     The entry's declared minimum, or null/'' when absent.
+     *
+     * @return bool True when the subject meets the threshold.
+     *
+     * @spec openspec/changes/contract-v2/tasks.md#T1
+     */
+    public static function trustSatisfies(mixed $subjectTrust, mixed $minTrust): bool
+    {
+        if ($minTrust === null || $minTrust === '') {
+            $minTrust = 'low';
+        }
+
+        if (is_string($minTrust) === false || isset(self::TRUST_ORDER[$minTrust]) === false) {
+            // Unrecognised minTrust → unsatisfiable for everyone.
+            return false;
+        }
+
+        return self::TRUST_ORDER[self::normaliseTrust(trust: $subjectTrust)] >= self::TRUST_ORDER[$minTrust];
+    }//end trustSatisfies()
 
     /**
      * Mint a session for an authenticated subject.
@@ -146,13 +212,47 @@ class PortalSessionService
             return null;
         }
 
+        // Token-confusion guard (contract v2, A6): a subject assertion — or any
+        // future special-use token — is NOT a portal session. A relayed or
+        // leaked X-Portal-Subject assertion can never be replayed as a bearer.
+        if (($claims['use'] ?? '') !== '') {
+            $this->logger->debug('Portaliq: bearer rejected', ['reason' => 'special-use token presented as session']);
+            return null;
+        }
+
         return [
             'subjectRef'   => (string) ($claims['sub'] ?? ''),
             'audience'     => (string) ($claims['audience'] ?? ''),
             'organisation' => (string) ($claims['organisation'] ?? ''),
-            'trust'        => (string) ($claims['trust'] ?? ''),
+            'trust'        => self::normaliseTrust(trust: ($claims['trust'] ?? '')),
             'roles'        => (array) ($claims['roles'] ?? []),
             'jti'          => (string) ($claims['jti'] ?? ''),
         ];
     }//end resolveFromBearer()
+
+    /**
+     * Mint a short-lived `X-Portal-Subject` assertion for a resolved subject.
+     *
+     * Delegates to PortalJwtService::createAssertion() so the assertion uses
+     * exactly the same secret sourcing as sessions. The assertion carries the
+     * SESSION's jti (audit correlation to the originating, revocable session)
+     * plus `use: "assertion"`, which resolveFromBearer() rejects — an assertion
+     * can never come back as a portal session (contract v2, A6).
+     *
+     * @param array<string, mixed> $subject The resolved subject (from resolveFromBearer).
+     *
+     * @return string Compact assertion JWT (TTL ~60s).
+     *
+     * @spec openspec/changes/contract-v2/tasks.md#T7
+     */
+    public function issueAssertion(array $subject): string
+    {
+        return $this->jwt->createAssertion(
+            subjectRef: (string) ($subject['subjectRef'] ?? ''),
+            audience: (string) ($subject['audience'] ?? ''),
+            organisation: (string) ($subject['organisation'] ?? ''),
+            trust: self::normaliseTrust(trust: ($subject['trust'] ?? '')),
+            jti: (string) ($subject['jti'] ?? '')
+        );
+    }//end issueAssertion()
 }//end class

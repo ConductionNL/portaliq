@@ -7,10 +7,46 @@
  * A domain app implements this and registers it under the service alias
  * `OCA\Portaliq\Contribution\IPortalContributionProvider::{appId}` so Portaliq's
  * PortalContributionRegistry can discover it (mirrors OpenRegister's MCP tool
- * provider discovery). The provider declares — for one external audience — which
+ * provider discovery). The provider declares — per external audience — which
  * OpenRegister collections a subject may see, which actions they may take, and
  * which notification keys they receive. No portal logic lives in the app; no
  * domain logic lives in Portaliq.
+ *
+ * Contract v2 (ADR-046 amendment 2026-07-06) additions are DUCK-TYPED — the
+ * interface stays optional, so a contributing app never hard-depends on it:
+ *
+ * - `getAudiences(): array` — preferred over getAudience() when present; the
+ *   provider is consulted for every audience in the list (open vocabulary).
+ * - Collection fields: `minTrust` (`low|substantial|high`, default `low`),
+ *   `scopeClaim` (`"claimName"` or `"appId.claimName"` — scope by a
+ *   server-managed portalAccount claim instead of the subjectRef), and
+ *   `via` (`{register, schema, scopeField, targetField}` — one-hop join
+ *   scoping; exactly one hop, deeper chains are rejected fail-closed).
+ * - Endpoint actions: `{id, label, endpoint, method?, minTrust?}` — an
+ *   instance-local absolute path Portaliq forwards to server-to-server with a
+ *   short-lived signed `X-Portal-Subject` assertion (never the client bearer).
+ *
+ * Every v2 field is optional with a v1-equivalent default, so v1 providers and
+ * manifests keep working unchanged.
+ *
+ * Contribution-manifest-v3 (ADR-063) adds an optional, PRESENTATION-ONLY UI
+ * configuration vocabulary, also duck-typed and additive — it NEVER widens data
+ * access (the `fields` whitelist, collection scope, and read-side projection stay
+ * the sole authorities; a fail-closed server-side normaliser sanitises it):
+ *
+ * - Collections: `columns` (`[{field, label?, render?}]`, render ∈ text|date|
+ *   datetime|badge|currency|boolean|link), `detail` (`{layout: card|timeline,
+ *   fields?[]}`), `defaultSort` (`{field, direction: asc|desc}`), `defaultFilters`.
+ * - Actions: `fieldConfigs` (per-whitelisted-field `{label?, visible?, required?,
+ *   disabled?, size?, placeholder?, help?}` — a config for a non-whitelisted field
+ *   is dropped), `optionsProviders` (per-field `{type: static, options[]}` or
+ *   `{type: collection, register, schema, labelField, valueField}` — a collection
+ *   dropdown is populated through the SUBJECT-SCOPED collection endpoint, so it can
+ *   only offer values the subject may already read), `submitLabel`, `successMessage`.
+ * - Contributions: `pages` (`[{id, label?, icon?, blocks[]}]`) composing typed
+ *   blocks (`collection`/`action`/`detail`/`richText`/`cta`) whose references
+ *   resolve within the SAME contribution; absent → one default page per listable
+ *   collection is synthesised (v2 rendering preserved).
  *
  * @category Contribution
  * @package  OCA\Portaliq\Contribution
@@ -25,6 +61,7 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T04
+ * @spec openspec/changes/contract-v2/tasks.md#T2
  */
 
 declare(strict_types=1);

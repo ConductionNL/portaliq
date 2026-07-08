@@ -1,0 +1,22 @@
+## ADDED Requirements
+
+### Requirement: Every lib PHP file carries the EUPL-1.2 SPDX header
+
+Every PHP file under `lib/` MUST carry the EUPL-1.2 licence/copyright header in its top
+docblock (`@copyright` Conduction B.V., `@license EUPL-1.2`, `SPDX-License-Identifier:
+EUPL-1.2`, `SPDX-FileCopyrightText`), matching the majority of the tree and the repository
+`LICENSE`/`composer.json`/manifest (all EUPL-1.2). No `lib/` PHP file — specifically
+including `lib/Repair/InitializeActions.php` and `lib/Service/ActionAuthService.php` — may
+ship without it.
+
+#### Scenario: The two previously-unheadered files declare their licence
+
+- **WHEN** `lib/Repair/InitializeActions.php` and `lib/Service/ActionAuthService.php` are inspected
+- **THEN** each MUST contain `@license EUPL-1.2`, `@copyright`, and `SPDX-License-Identifier: EUPL-1.2`
+
+#### Scenario: The spdx-headers gate passes at 100%
+
+- **WHEN** the `spdx-headers` gate scans `lib/`
+- **THEN** the count of `lib/**/*.php` files with `SPDX-License-Identifier` MUST equal the total count of such files (27/27)
+
+@e2e exclude source-header presence is a static REUSE/gate check, not a runtime UI flow.
