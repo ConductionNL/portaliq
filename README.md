@@ -152,7 +152,30 @@ optional with a v1-equivalent default:
   `use: "assertion"`); the client's own `Authorization` header is never
   forwarded, and an assertion can never be replayed as a portal session.
 
-Canonical contract text: ADR-046 amendment 2026-07-06 (hydra) + the
+### Contribution manifest v3 — UI configuration (ADR-063)
+
+The manifest MAY also carry a **presentation-only** UI-configuration vocabulary
+so an app ships a schema + manifest and its subjects get a real rendered
+interface — no bespoke frontend per app. Every key is optional and additive; a
+fail-closed `PortalManifestNormaliser` sanitises them in the aggregate.
+
+| Level | Keys |
+|---|---|
+| Collection | `columns` (`[{field, label?, render?}]`, render ∈ `text·date·datetime·badge·currency·boolean·link`), `detail` (`{layout: card·timeline, fields?}`), `defaultSort` (`{field, direction}`), `defaultFilters` |
+| Action | `fieldConfigs` (per-**whitelisted**-field `{label?, visible?, required?, disabled?, size?, placeholder?, help?}`), `optionsProviders`, `submitLabel`, `successMessage` |
+| Contribution | `pages` (`[{id, label?, icon?, blocks[]}]`) of typed blocks `collection·action·detail·richText·cta` |
+
+**UI config never widens access — the invariant.** The action `fields`
+whitelist, collection scope, and read-side projection remain the sole data
+authorities. A `fieldConfigs`/`optionsProviders` entry for a field outside the
+whitelist is dropped; a `column` naming a projected-away field renders blank; a
+`collection` optionsProvider dropdown is populated through the **subject-scoped**
+collection endpoint, so it can only offer values the subject may already read;
+page blocks resolve only within the same (trust-filtered) contribution.
+Malformed config is dropped fail-closed, never fatal. Absent `pages` →
+Portaliq synthesises one default page per listable collection (v2 rendering).
+
+Canonical contract text: ADR-046 amendment 2026-07-06 + ADR-063 (hydra) + the
 `portal-contribution-contract` spec in [`openspec/specs/`](openspec/specs/).
 
 ### Directory Structure

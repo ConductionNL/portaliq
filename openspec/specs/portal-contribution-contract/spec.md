@@ -7,6 +7,7 @@
 - [contract-v2](../../changes/contract-v2/)
 - [field-projection](../../changes/field-projection/)
 - [reverse-scope-join](../../changes/reverse-scope-join/)
+- [contribution-manifest-v3](../../changes/contribution-manifest-v3/)
 
 ## Purpose
 
@@ -326,6 +327,68 @@ domain-app verifiers templated against it.
 - THEN the header is exactly `{"alg": "HS256", "typ": "JWT"}` and the claim keys are exactly `sub`, `audience`, `organisation`, `trust`, `jti`, `use`, `iat`, `exp`, `iss` with `use = "assertion"`, `iss = "portaliq"`, and `exp - iat = 60`
 - @e2e exclude wire-format pin — a PHPUnit compatibility test by definition; no UI or HTTP surface
 
+### Requirement: Manifest UI configuration is presentation-only
+
+The manifest MAY carry UI-configuration keys (collection `columns`/`detail`/
+`defaultSort`/`defaultFilters`; action `fieldConfigs`/`optionsProviders`/
+`submitLabel`/`successMessage`; contribution `pages`), consumed by the portal
+frontend for rendering ONLY. They MUST NOT influence the action `fields`
+whitelist, collection scoping, or read-side field projection. All keys are
+optional; a `PortalManifestNormaliser` sanitises them fail-closed after trust
+filtering, in the aggregate, and never throws.
+
+#### Scenario: A field config never widens the create whitelist
+
+- GIVEN an action whose `fields` whitelist is `["title"]` and a `fieldConfigs`
+  entry marking `status` visible/required
+- WHEN the manifest is normalised
+- THEN the `status` config is removed and a submit still accepts only `title`
+
+#### Scenario: A column naming a projected-away field never leaks it
+
+- GIVEN a collection projecting `["title","status"]` and a column for `internalNotes`
+- WHEN the collection is read and rendered
+- THEN rows carry only title/status/identifiers and the column renders blank
+
+### Requirement: Scoped option providers
+
+An action field MAY declare an `optionsProvider`: `static` (`options[]`) or
+`collection` (`{register,schema,labelField,valueField}`, populated by the portal
+through the SUBJECT-SCOPED `/portal/api/collections/{register}/{schema}` endpoint,
+so it can only offer values the subject may already read). Any other shape, or a
+provider for a non-whitelisted field, is dropped fail-closed.
+
+#### Scenario: A collection dropdown is scoped to the subject
+
+- GIVEN a `collection` optionsProvider for `procest/supplierContract`
+- WHEN the form is rendered for subject `s1`
+- THEN the options are exactly the `supplierContract` rows `s1` may read
+
+### Requirement: Page composition with resolvable, same-contribution blocks
+
+A contribution MAY declare `pages` of typed `blocks` (`collection`, `action`,
+`detail`, `richText`, `cta`). Every `collection`/`action` reference MUST resolve
+within the SAME contribution AFTER trust filtering; an unresolved/unknown block
+is dropped, a zero-block page is dropped, and a contribution with no valid pages
+gets one synthesised default page per `listable` collection (v2 rendering).
+
+#### Scenario: A cross-contribution or trust-dropped reference is refused
+
+- GIVEN a page block referencing another app's collection, or a trust-dropped action
+- WHEN the manifest is normalised
+- THEN the block is dropped (and its page too, if that empties it)
+
+### Requirement: v2 manifests are unchanged by normalisation
+
+A manifest with no v3 keys MUST pass through with collections and actions
+byte-identical, aside from an additive synthesised `pages` array.
+
+#### Scenario: A pure v2 manifest round-trips
+
+- GIVEN a v2 contribution (no v3 keys)
+- WHEN normalised
+- THEN every collection/action is unchanged and a default `pages` array is added
+
 ## Non-Functional Requirements
 
 - **Performance:** trust filtering adds no OpenRegister queries; `scopeClaim`
@@ -383,3 +446,10 @@ domain-app verifiers templated against it.
   the `reverse-scope-join` change (delta:
   `openspec/changes/reverse-scope-join/specs/portal-contribution-contract/spec.md`,
   tracking Conduction/portaliq#14); same sync discipline until it archives.
+- The "Manifest UI configuration is presentation-only", "Scoped option
+  providers", "Page composition with resolvable, same-contribution blocks", and
+  "v2 manifests are unchanged by normalisation" requirements were added by the
+  `contribution-manifest-v3` change (delta:
+  `openspec/changes/contribution-manifest-v3/specs/portal-contribution-contract/spec.md`);
+  enforced by `PortalManifestNormaliser` and frozen in hydra ADR-063; same sync
+  discipline until it archives.
