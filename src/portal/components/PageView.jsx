@@ -9,7 +9,7 @@
 // The server-side normaliser has already dropped unresolvable/cross-contribution
 // blocks, so a ref that does not resolve here is a defensive skip, not expected.
 
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 import CollectionTable from './CollectionTable.jsx'
 import SchemaForm from './SchemaForm.jsx'
 import RichText from './RichText.jsx'
@@ -25,7 +25,43 @@ function findAction(contribution, id) {
 // A single-object detail rendered from an already-loaded row (no extra fetch —
 // works pre-#25). Uses the collection's `detail.fields` when declared, else the
 // row keys.
-function DetailCard({ collection, row }) {
+// The scoped file-upload control (the file-upload block). Shown in a detail card
+// only when the collection declares `filesUpload` — the server re-verifies
+// ownership and requires the opt-in, so this is a convenience, not the authority.
+function FileUpload({ collection, row, api }) {
+	const [state, setState] = useState({ busy: false, message: null })
+	const inputRef = useRef(null)
+
+	async function onChange(e) {
+		const file = e.target.files && e.target.files[0]
+		if (!file) {
+			return
+		}
+		const id = row.id || row['@self']?.id
+		if (!id) {
+			return
+		}
+		setState({ busy: true, message: null })
+		const result = await api.uploadFile(collection, id, file)
+		setState({ busy: false, message: result.ok ? `Bestand toegevoegd: ${result.file?.name || file.name}` : 'Uploaden is niet gelukt.' })
+		if (inputRef.current) {
+			inputRef.current.value = ''
+		}
+	}
+
+	return (
+		<div className="portaliq-fileupload">
+			<label>
+				Bijlage toevoegen
+				<input ref={inputRef} type="file" disabled={state.busy} onChange={onChange} />
+			</label>
+			{state.busy && <span> …</span>}
+			{state.message && <p className="portaliq-fileupload-msg">{state.message}</p>}
+		</div>
+	)
+}
+
+function DetailCard({ collection, row, api }) {
 	if (!row) {
 		return <p className="portaliq-empty"><em>Selecteer een item.</em></p>
 	}
@@ -33,14 +69,17 @@ function DetailCard({ collection, row }) {
 		? collection.detail.fields
 		: Object.keys(row).filter((k) => k !== '@self')
 	return (
-		<dl className={`portaliq-detail portaliq-detail-${collection.detail?.layout || 'card'}`}>
-			{fields.map((f) => (
-				<div key={f} className="portaliq-detail-row">
-					<dt>{f}</dt>
-					<dd>{row[f] === null || row[f] === undefined ? '' : String(row[f])}</dd>
-				</div>
-			))}
-		</dl>
+		<>
+			<dl className={`portaliq-detail portaliq-detail-${collection.detail?.layout || 'card'}`}>
+				{fields.map((f) => (
+					<div key={f} className="portaliq-detail-row">
+						<dt>{f}</dt>
+						<dd>{row[f] === null || row[f] === undefined ? '' : String(row[f])}</dd>
+					</div>
+				))}
+			</dl>
+			{collection.filesUpload === true && api && <FileUpload collection={collection} row={row} api={api} />}
+		</>
 	)
 }
 
@@ -64,7 +103,7 @@ export default function PageView({ page, contribution, api, dataByCollection, on
 						}
 						const loaded = dataByCollection[collection.id]
 						if (block.type === 'detail') {
-							return <DetailCard key={i} collection={collection} row={selected[collection.id]} />
+							return <DetailCard key={i} collection={collection} row={selected[collection.id]} api={api} />
 						}
 						const rowActions = (collection.rowActions || [])
 							.map((id) => findAction(contribution, id))

@@ -173,7 +173,14 @@ class PortalManifestNormaliser
             $collection = $this->normaliseColumns(collection: $collection);
             $collection = $this->normaliseDetail(collection: $collection);
             $collection = $this->normaliseDefaults(collection: $collection);
-            $out[]      = $collection;
+
+            // `filesUpload` opts the collection into the scoped file-upload block;
+            // coerce to a strict boolean so only an explicit true enables it.
+            if (array_key_exists('filesUpload', $collection) === true) {
+                $collection['filesUpload'] = ($collection['filesUpload'] === true || $collection['filesUpload'] === 'true');
+            }
+
+            $out[] = $collection;
         }
 
         return $out;

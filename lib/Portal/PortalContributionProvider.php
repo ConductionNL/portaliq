@@ -143,6 +143,10 @@ class PortalContributionProvider implements IPortalContributionProvider
                     // enforced `set` fixes the transition target — a client can
                     // never choose an arbitrary status.
                     'rowActions'  => ['closeExample'],
+                    // Opt into the scoped file-upload block (ADR-063): a subject
+                    // may attach evidence/attachments to their OWN example object,
+                    // stored in the object's OpenRegister folder.
+                    'filesUpload' => true,
                 ],
                 [
                     'id'         => 'inbox',
@@ -288,9 +292,15 @@ class PortalContributionProvider implements IPortalContributionProvider
                     'label'  => 'Voorbeeld',
                     'icon'   => 'FileDocument',
                     'blocks' => [
-                        ['type' => 'richText', 'markdown' => '## Voorbeeldportaal'."\n".'Beheer uw voorbeeldgegevens.'],
+                        [
+                            'type'     => 'richText',
+                            'markdown' => '## Voorbeeldportaal'."\n".'Beheer uw voorbeeldgegevens. Klik een rij aan voor details en bijlagen.',
+                        ],
                         ['type' => 'action', 'action' => 'createExample'],
                         ['type' => 'collection', 'collection' => 'exampleCollection'],
+                        // A detail block for the selected row — the filesUpload
+                        // opt-in on the collection surfaces the upload control here.
+                        ['type' => 'detail', 'collection' => 'exampleCollection'],
                     ],
                 ],
                 [

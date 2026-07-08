@@ -131,6 +131,27 @@ export function createPortalApi(config) {
 		},
 
 		/**
+		 * Attach a file to an object the subject owns (the file-upload block).
+		 * Ownership is re-verified server-side; the collection must declare
+		 * `filesUpload`. Sends multipart with field name `file`.
+		 */
+		async uploadFile(collection, id, file) {
+			const form = new FormData()
+			form.append('file', file)
+			const url = `${base}${col(collection.register, collection.schema)}/${encodeURIComponent(id)}/files?collection=${encodeURIComponent(collection.id)}`
+			try {
+				const res = await fetch(url, { method: 'POST', headers: { Accept: 'application/json', ...authHeaders() }, body: form })
+				if (!res.ok) {
+					return { ok: false, status: res.status }
+				}
+				const json = await res.json().catch(() => ({}))
+				return { ok: true, file: json.file || json }
+			} catch (e) {
+				return { ok: false, status: 0 }
+			}
+		},
+
+		/**
 		 * Populate a `collection` optionsProvider: fetch the referenced scoped
 		 * collection and map each row to `{ value, label }`. Because it goes
 		 * through the subject-scoped endpoint, it can only ever offer values the

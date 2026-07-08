@@ -339,4 +339,26 @@ class PortalManifestNormaliserTest extends TestCase
         // A collection left with no resolvable row actions loses the key.
         $this->assertArrayNotHasKey('rowActions', $out['collections'][1]);
     }//end testRowActionsResolveOnlyToUpdateActionsInContribution()
+
+    public function testFilesUploadIsCoercedToAStrictBoolean(): void
+    {
+        $out = $this->normaliser()->normalise(
+            [
+                'collections' => [
+                    ['id' => 'a', 'schema' => 's', 'filesUpload' => true],
+                    ['id' => 'b', 'schema' => 's', 'filesUpload' => 'true'],
+                    ['id' => 'c', 'schema' => 's', 'filesUpload' => 1],
+                    ['id' => 'd', 'schema' => 's'],
+                ],
+                'actions'     => [],
+            ]
+        );
+
+        // Only explicit true / "true" enable it; a truthy 1 does NOT.
+        $this->assertTrue($out['collections'][0]['filesUpload']);
+        $this->assertTrue($out['collections'][1]['filesUpload']);
+        $this->assertFalse($out['collections'][2]['filesUpload']);
+        $this->assertArrayNotHasKey('filesUpload', $out['collections'][3]);
+
+    }//end testFilesUploadIsCoercedToAStrictBoolean()
 }//end class
