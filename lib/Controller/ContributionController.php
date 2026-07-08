@@ -419,15 +419,32 @@ class ContributionController extends Controller implements PortalProtected
         }
 
         $actionId = (string) $this->request->getParam('action', '');
-        $action   = $this->authorisedUpdateAction(subject: $subject, register: $register, schema: $schema, actionId: $actionId);
-        if ($action === null) {
+        $match    = $this->authorisedUpdateAction(subject: $subject, register: $register, schema: $schema, actionId: $actionId);
+        if ($match === null) {
             return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
         }
+
+        $action = $match['action'];
 
         // Defense in depth (contract v2, A3): re-check the matched action's
         // minTrust — 403 before any OpenRegister write.
         if (PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null)) === false) {
             return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+        }
+
+        // Resolve the OWNERSHIP scope value the SAME way the read path does: a
+        // declared `scopeClaim` resolves server-side from the subject's
+        // portalAccount, else it is the subjectRef. This lets a transition run on
+        // a claim-scoped collection (e.g. a manager approving timesheets scoped
+        // by their costCenter claim) while still re-verifying ownership by the
+        // resolved value. A declared claim that cannot resolve → 404, no write.
+        $scopeValue = $this->reader->resolveScopeValue(
+            scopeClaim: (string) ($action['scopeClaim'] ?? ''),
+            contributingApp: $match['app'],
+            subject: $subject
+        );
+        if ($scopeValue === null || $scopeValue === '') {
+            return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
         }
 
         $data = $this->whitelist(fields: (array) ($action['fields'] ?? []));
@@ -448,7 +465,7 @@ class ContributionController extends Controller implements PortalProtected
             register: $register,
             schema: $schema,
             scopeField: (string) ($action['scopeField'] ?? 'subjectRef'),
-            subjectRef: (string) ($subject['subjectRef'] ?? ''),
+            subjectRef: $scopeValue,
             organisation: (string) ($subject['organisation'] ?? ''),
             id: $id,
             data: $data
@@ -473,7 +490,9 @@ class ContributionController extends Controller implements PortalProtected
      * @param string               $actionId Optional action id to match exactly
      *                                       (`?action=`); empty = first update action.
      *
-     * @return array<string, mixed>|null
+     * @return array{action: array<string, mixed>, app: string}|null The matched
+     *                                       action and its contributing app (the
+     *                                       scopeClaim namespace), or null.
      *
      * @spec openspec/changes/portal-scoped-crud/tasks.md#T3
      */
@@ -497,7 +516,7 @@ class ContributionController extends Controller implements PortalProtected
                     continue;
                 }
 
-                return $action;
+                return ['action' => $action, 'app' => (string) ($contribution['app'] ?? '')];
             }
         }
 

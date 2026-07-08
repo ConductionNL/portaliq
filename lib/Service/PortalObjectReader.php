@@ -601,6 +601,46 @@ class PortalObjectReader
     }//end fieldWhitelist()
 
     /**
+     * Resolve the OWNERSHIP scope value for a subject on a collection/action —
+     * the value the writer/reader compares against `row[scopeField]`. Without a
+     * `scopeClaim` this is the subject's own `subjectRef`; WITH one it is the
+     * server-resolved claim from the subject's portalAccount (contract v2, A4).
+     * Shared by the write path so a status transition on a claim-scoped
+     * collection re-verifies ownership by the SAME resolved value as the read —
+     * a claim resolving to null (absent/malformed) fails closed to null so no
+     * write can happen.
+     *
+     * @param string               $scopeClaim      The declared claim address ('' = none).
+     * @param string               $contributingApp Namespace for the bare form.
+     * @param array<string, mixed> $subject         The resolved subject (subjectRef/audience/organisation).
+     *
+     * @return string|null The scope value, or null when a declared claim is absent.
+     *
+     * @spec openspec/changes/portal-status-transitions/tasks.md#T2
+     */
+    public function resolveScopeValue(string $scopeClaim, string $contributingApp, array $subject): ?string
+    {
+        $subjectRef = (string) ($subject['subjectRef'] ?? '');
+        if ($scopeClaim === '') {
+            return $subjectRef;
+        }
+
+        $objectService = $this->objectService();
+        if ($objectService === null) {
+            return null;
+        }
+
+        return $this->resolveClaim(
+            objectService: $objectService,
+            scopeClaim: $scopeClaim,
+            contributingApp: $contributingApp,
+            subjectRef: $subjectRef,
+            audience: (string) ($subject['audience'] ?? ''),
+            organisation: (string) ($subject['organisation'] ?? '')
+        );
+    }//end resolveScopeValue()
+
+    /**
      * Resolve a scopeClaim to its value from the subject's OWN portalAccount.
      *
      * Addressing (contract v2, A4): `"appId.claimName"` explicit, or a bare
