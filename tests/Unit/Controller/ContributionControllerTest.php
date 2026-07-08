@@ -8,6 +8,7 @@ use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\ContributionController;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalFileWriter;
+use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Http;
@@ -645,6 +646,7 @@ class ContributionControllerTest extends TestCase
             $reader,
             $this->createMock(PortalObjectWriter::class),
             $fileWriter,
+            $this->createMock(PortalSchemaReader::class),
             $this->createMock(IClientService::class),
             $this->createMock(IURLGenerator::class)
         );
@@ -709,6 +711,7 @@ class ContributionControllerTest extends TestCase
             $reader,
             $this->createMock(PortalObjectWriter::class),
             $this->createMock(PortalFileWriter::class),
+            $this->createMock(PortalSchemaReader::class),
             $this->createMock(IClientService::class),
             $this->createMock(IURLGenerator::class)
         );
@@ -804,6 +807,7 @@ class ContributionControllerTest extends TestCase
             ($reader ?? $defaultReader),
             ($writer ?? $this->createMock(PortalObjectWriter::class)),
             ($fileWriter ?? $this->createMock(PortalFileWriter::class)),
+            $this->createMock(PortalSchemaReader::class),
             ($clientService ?? $this->createMock(IClientService::class)),
             $urlGenerator
         );

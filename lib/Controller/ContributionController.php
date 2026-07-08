@@ -42,6 +42,7 @@ use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\PortalFileWriter;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -86,6 +87,7 @@ class ContributionController extends Controller implements PortalProtected
      * @param PortalObjectReader         $reader        Subject-scoped OR reader.
      * @param PortalObjectWriter         $writer        Subject-scoped OR writer.
      * @param PortalFileWriter           $fileWriter    Subject-scoped OR file attach.
+     * @param PortalSchemaReader         $schemaReader  Scoped OR schema-definition reader.
      * @param IClientService             $clientService HTTP client for the A6 action forward.
      * @param IURLGenerator              $urlGenerator  Resolves instance-local endpoint paths.
      */
@@ -96,6 +98,7 @@ class ContributionController extends Controller implements PortalProtected
         private readonly PortalObjectReader $reader,
         private readonly PortalObjectWriter $writer,
         private readonly PortalFileWriter $fileWriter,
+        private readonly PortalSchemaReader $schemaReader,
         private readonly IClientService $clientService,
         private readonly IURLGenerator $urlGenerator,
     ) {
@@ -403,6 +406,57 @@ class ContributionController extends Controller implements PortalProtected
 
         return new JSONResponse(['file' => $result]);
     }//end uploadFile()
+
+    /**
+     * Return an OpenRegister schema DEFINITION by slug, for the schema-driven
+     * portal frontend (the tilburg-woo engine repointed at /portal/api). The
+     * store fetches a schema by slug to build table headers + forms; the scoped
+     * API answers it, gated so a subject may only introspect a schema their
+     * manifest references (via a collection or an action, any register). RBAC is
+     * bypassed in the reader (schemas are metadata, not subject data), and the
+     * shape is OpenRegister's own (`properties` etc.) so the store consumes it
+     * unchanged.
+     *
+     * @param string $schema The schema slug.
+     *
+     * @return JSONResponse The schema definition, or 401 / 403 / 404.
+     *
+     * @spec openspec/changes/portal-schema-endpoint/tasks.md#T2
+     */
+    #[PublicPage]
+    #[NoCSRFRequired]
+    public function schema(string $schema): JSONResponse
+    {
+        $subject = $this->subject();
+        if ($subject === null) {
+            return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+        }
+
+        // The subject may only introspect a schema their manifest references.
+        $referenced = false;
+        $aggregate  = $this->registry->aggregateFor(subject: $subject);
+        foreach (($aggregate['contributions'] ?? []) as $contribution) {
+            foreach (['collections', 'actions'] as $section) {
+                foreach (($contribution[$section] ?? []) as $entry) {
+                    if ((string) ($entry['schema'] ?? '') === $schema) {
+                        $referenced = true;
+                        break 3;
+                    }
+                }
+            }
+        }
+
+        if ($referenced === false) {
+            return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+        }
+
+        $definition = $this->schemaReader->readSchema(slug: $schema);
+        if ($definition === null) {
+            return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+        }
+
+        return new JSONResponse($definition);
+    }//end schema()
 
     /**
      * Create an object in a collection, owned by the subject.
