@@ -52,7 +52,10 @@ class PortalObjectReaderTest extends TestCase
     public function testFiltersOnScopeAndDropsForeignRows(): void
     {
         $objectService = new class {
-            /** @var array<string,mixed> */
+
+            /**
+             * @var array<string,mixed>
+             */
             public array $received = [];
 
             public string $register = '';
@@ -63,13 +66,13 @@ class PortalObjectReaderTest extends TestCase
             {
                 $this->register = $register;
                 return $this;
-            }
+            }//end setRegister()
 
             public function setSchema(string $schema): self
             {
                 $this->schema = $schema;
                 return $this;
-            }
+            }//end setSchema()
 
             public bool $rbac = true;
 
@@ -90,7 +93,7 @@ class PortalObjectReaderTest extends TestCase
                     ['subjectRef' => 's1', 'organisation' => 'org-1', 'title' => 'Mine'],
                     ['subjectRef' => 's2', 'organisation' => 'org-1', 'title' => 'Not mine'],
                 ];
-            }
+            }//end findAll()
         };
 
         $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
@@ -336,7 +339,7 @@ class PortalObjectReaderTest extends TestCase
 
             $this->assertSame([], $rows);
             $this->assertCount(0, $objectService->calls);
-        }
+        }//end foreach
 
     }//end testInvalidOrNestedViaFailsClosedWithWarning()
 
@@ -581,7 +584,7 @@ class PortalObjectReaderTest extends TestCase
                     'gradeEntry'     => [['id' => 'g-1', 'learnerRef' => 'learner-a', 'title' => 'Never']],
                 ]
             );
-            $logger = $this->createMock(LoggerInterface::class);
+            $logger        = $this->createMock(LoggerInterface::class);
             $logger->expects($this->once())->method('warning');
 
             $reader = new PortalObjectReader($this->container($objectService), $logger);
@@ -892,7 +895,7 @@ class PortalObjectReaderTest extends TestCase
             // A declared-but-malformed projection intent never fails open to
             // the full row — identifiers only.
             $this->assertSame([['id' => 'b-1', 'uuid' => 'u-1']], $rows);
-        }
+        }//end foreach
 
     }//end testMalformedFieldsDeclarationFailsClosedToIdentifiersOnly()
 
@@ -1163,7 +1166,7 @@ class PortalObjectReaderTest extends TestCase
                 ],
             ]
         );
-        $via = [
+        $via           = [
             'register'    => 'zaken',
             'schema'      => 'rol',
             'scopeField'  => 'betrokkeneIdentificatie.inpBsn',
@@ -1207,7 +1210,9 @@ class PortalObjectReaderTest extends TestCase
     {
         return new class ($returnsPerSchema) {
 
-            /** @var array<int,array<string,mixed>> */
+            /**
+             * @var array<int,array<string,mixed>>
+             */
             public array $calls = [];
 
             private string $register = '';
@@ -1216,19 +1221,19 @@ class PortalObjectReaderTest extends TestCase
 
             public function __construct(private array $returns)
             {
-            }
+            }//end __construct()
 
             public function setRegister(string $register): self
             {
                 $this->register = $register;
                 return $this;
-            }
+            }//end setRegister()
 
             public function setSchema(string $schema): self
             {
                 $this->schema = $schema;
                 return $this;
-            }
+            }//end setSchema()
 
             /**
              * @param array<string,mixed> $config
@@ -1245,7 +1250,30 @@ class PortalObjectReaderTest extends TestCase
                     'multitenancy' => $_multitenancy,
                 ];
                 return ($this->returns[$this->schema] ?? []);
-            }
+            }//end findAll()
+
+            /**
+             * Fetch a single canned row by id/uuid (OR's by-identifier read).
+             *
+             * @return array<string,mixed>|null
+             */
+            public function find(string $id, string $register='', string $schema='', bool $_rbac=true, bool $_multitenancy=true): ?array
+            {
+                $this->calls[] = [
+                    'register'     => $register,
+                    'schema'       => $schema,
+                    'config'       => ['filters' => ['id' => $id]],
+                    'rbac'         => $_rbac,
+                    'multitenancy' => $_multitenancy,
+                ];
+                foreach (($this->returns[$schema] ?? []) as $row) {
+                    if (in_array($id, [($row['id'] ?? null), ($row['uuid'] ?? null)], true) === true) {
+                        return $row;
+                    }
+                }
+
+                return null;
+            }//end find()
         };
 
     }//end objectService()
@@ -1265,5 +1293,4 @@ class PortalObjectReaderTest extends TestCase
         return $mock;
 
     }//end container()
-
 }//end class

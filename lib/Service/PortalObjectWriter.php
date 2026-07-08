@@ -239,11 +239,13 @@ class PortalObjectWriter
         string $organisation,
         string $id
     ): ?array {
+        // OR only honours DATA-property filters, so findAll(filters:['id'=>…])
+        // does NOT select by identifier — fetch by id directly with find().
         try {
-            $objectService->setRegister(register: $register);
-            $objectService->setSchema(schema: $schema);
-            $rows = $objectService->findAll(
-                config: ['filters' => ['id' => $id], 'limit' => 100, 'offset' => 0],
+            $entity = $objectService->find(
+                id: $id,
+                register: $register,
+                schema: $schema,
                 _rbac: false,
                 _multitenancy: false
             );
@@ -252,33 +254,32 @@ class PortalObjectWriter
             return null;
         }
 
-        if (is_array($rows) === false) {
+        if ($entity === null) {
             return null;
         }
 
-        foreach ($rows as $raw) {
-            $row = $this->normalise(row: $raw);
-            if ($row === null) {
-                continue;
-            }
+        $row = $this->normalise(row: $entity);
+        if ($row === null) {
+            return null;
+        }
 
-            if (in_array($id, $this->rowIds(row: $row), true) === false) {
-                continue;
-            }
+        // Confirm the resolved row carries the requested id (defence).
+        if (in_array($id, $this->rowIds(row: $row), true) === false) {
+            return null;
+        }
 
-            // THE ownership boundary — identical to the reader's verifyScope.
-            if ($scopeField !== '' && (string) ($row[$scopeField] ?? '') !== $subjectRef) {
-                return null;
-            }
+        // THE ownership boundary — identical to the reader's verifyScope. The
+        // client id only SELECTS a candidate; the row's own stored scopeField
+        // value decides whether the subject may touch it.
+        if ($scopeField !== '' && (string) ($row[$scopeField] ?? '') !== $subjectRef) {
+            return null;
+        }
 
-            if ($this->organisationMatches(row: $row, organisation: $organisation) === false) {
-                return null;
-            }
+        if ($this->organisationMatches(row: $row, organisation: $organisation) === false) {
+            return null;
+        }
 
-            return $row;
-        }//end foreach
-
-        return null;
+        return $row;
     }//end fetchOwnedObject()
 
     /**

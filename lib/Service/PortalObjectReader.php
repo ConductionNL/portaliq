@@ -377,11 +377,14 @@ class PortalObjectReader
      */
     private function fetchById(object $objectService, string $register, string $schema, string $id): ?array
     {
+        // OR only honours DATA-property filters, so findAll(filters:['id'=>…])
+        // does NOT select by identifier — fetch by id directly with find().
+        // RBAC/tenant off; the caller re-verifies ownership via verifyScope.
         try {
-            $objectService->setRegister(register: $register);
-            $objectService->setSchema(schema: $schema);
-            $rows = $objectService->findAll(
-                config: ['filters' => ['id' => $id], 'limit' => self::JOIN_ROW_CAP, 'offset' => 0],
+            $entity = $objectService->find(
+                id: $id,
+                register: $register,
+                schema: $schema,
                 _rbac: false,
                 _multitenancy: false
             );
@@ -390,22 +393,21 @@ class PortalObjectReader
             return null;
         }
 
-        if (is_array($rows) === false) {
+        if ($entity === null) {
             return null;
         }
 
-        foreach ($rows as $raw) {
-            $row = $this->normalise(row: $raw);
-            if ($row === null) {
-                continue;
-            }
-
-            if (in_array($id, $this->rowIds(row: $row), true) === true) {
-                return $row;
-            }
+        $row = $this->normalise(row: $entity);
+        if ($row === null) {
+            return null;
         }
 
-        return null;
+        // Defence: confirm the resolved row actually carries the requested id.
+        if (in_array($id, $this->rowIds(row: $row), true) === false) {
+            return null;
+        }
+
+        return $row;
     }//end fetchById()
 
     /**
@@ -435,7 +437,10 @@ class PortalObjectReader
         array $row
     ): ?array {
         if (is_array($via) === false || $this->isValidVia(via: $via) === false) {
-            $this->logger->warning('Portaliq: invalid via declaration on single read — failing closed', ['schema' => (string) ($row['@self']['schema'] ?? '')]);
+            $this->logger->warning(
+                'Portaliq: invalid via declaration on single read — failing closed',
+                ['schema' => (string) ($row['@self']['schema'] ?? '')]
+            );
             return null;
         }
 

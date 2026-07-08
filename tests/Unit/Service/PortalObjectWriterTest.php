@@ -35,7 +35,10 @@ class PortalObjectWriterTest extends TestCase
     public function testStampsOwnershipOverClientInputAndBypassesRbac(): void
     {
         $objectService = new class {
-            /** @var array<string,mixed> */
+
+            /**
+             * @var array<string,mixed>
+             */
             public array $saved = [];
 
             public mixed $register = null;
@@ -66,7 +69,7 @@ class PortalObjectWriterTest extends TestCase
                 $this->rbac         = $_rbac;
                 $this->multitenancy = $_multitenancy;
                 return array_merge($object, ['id' => 'new-id']);
-            }
+            }//end saveObject()
         };
 
         $container = $this->createMock(ContainerInterface::class);
@@ -267,7 +270,9 @@ class PortalObjectWriterTest extends TestCase
     {
         return new class ($rowsPerSchema, $throwOnSave) {
 
-            /** @var array<string,mixed> */
+            /**
+             * @var array<string,mixed>
+             */
             public array $saved = [];
 
             public mixed $savedUuid = null;
@@ -280,18 +285,18 @@ class PortalObjectWriterTest extends TestCase
 
             public function __construct(private array $rows, private bool $throwOnSave)
             {
-            }
+            }//end __construct()
 
             public function setRegister(string $register): self
             {
                 return $this;
-            }
+            }//end setRegister()
 
             public function setSchema(string $schema): self
             {
                 $this->schema = $schema;
                 return $this;
-            }
+            }//end setSchema()
 
             /**
              * @param array<string,mixed> $config
@@ -301,7 +306,23 @@ class PortalObjectWriterTest extends TestCase
             public function findAll(array $config, bool $_rbac=true, bool $_multitenancy=true): array
             {
                 return ($this->rows[$this->schema] ?? []);
-            }
+            }//end findAll()
+
+            /**
+             * Fetch a single canned row by id/uuid (OR's by-identifier read).
+             *
+             * @return array<string,mixed>|null
+             */
+            public function find(string $id, string $register='', string $schema='', bool $_rbac=true, bool $_multitenancy=true): ?array
+            {
+                foreach (($this->rows[$schema] ?? []) as $row) {
+                    if (in_array($id, [($row['id'] ?? null), ($row['uuid'] ?? null)], true) === true) {
+                        return $row;
+                    }
+                }
+
+                return null;
+            }//end find()
 
             /**
              * @param array<string,mixed> $object
@@ -326,9 +347,8 @@ class PortalObjectWriterTest extends TestCase
                 $this->savedUuid  = $uuid;
                 $this->rbac       = $_rbac;
                 return $object;
-            }
+            }//end saveObject()
         };
 
     }//end updatableObjectService()
-
 }//end class
