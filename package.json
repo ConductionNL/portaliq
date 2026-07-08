@@ -7,12 +7,13 @@
     "npm": "^10.0.0"
   },
   "scripts": {
-    "build": "NODE_ENV=production webpack --config webpack.config.js --progress",
+    "build": "npm run build:admin && npm run build:portal",
+    "build:admin": "NODE_ENV=production webpack --config webpack.config.js --progress",
     "dev": "NODE_ENV=development webpack --config webpack.config.js --progress",
     "watch": "NODE_ENV=development webpack --config webpack.config.js --progress --watch",
     "build:portal": "NODE_ENV=production webpack --config webpack.portal.js --progress",
     "watch:portal": "NODE_ENV=development webpack --config webpack.portal.js --progress --watch",
-    "build:all": "npm run build && npm run build:portal",
+    "build:all": "npm run build",
     "lint": "eslint src",
     "lint-fix": "npm run lint -- --fix",
     "stylelint": "stylelint src/**/*.vue src/**/*.scss src/**/*.css",
