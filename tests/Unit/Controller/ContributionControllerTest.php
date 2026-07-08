@@ -499,6 +499,75 @@ class ContributionControllerTest extends TestCase
     }//end testUpdateAppliesWhitelistAndReturnsUpdatedObject()
 
     /**
+     * A claim-scoped transition (portal-status-transitions): the update action
+     * declares a scopeClaim, so the reader resolves the ownership value from the
+     * subject's portalAccount and THAT value — not the raw subjectRef — reaches
+     * the writer as the scope value it re-verifies row ownership against. This is
+     * what lets, e.g., a manager approve timesheets scoped by their costCenter
+     * claim. A claim that cannot resolve (null) is a 404 with no write.
+     */
+    public function testClaimScopedUpdateResolvesTheScopeValueForOwnership(): void
+    {
+        $aggregate = $this->aggregate(
+            actions: [
+                ['id' => 'approve', 'type' => 'update', 'register' => 'hrmq', 'schema' => 'timesheet', 'scopeField' => 'costCenter', 'scopeClaim' => 'costCenter', 'fields' => ['status'], 'set' => ['status' => 'approved']],
+            ]
+        );
+
+        $received = [];
+        $writer   = $this->createMock(PortalObjectWriter::class);
+        $writer->method('updateObject')->willReturnCallback(
+            function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id, array $data) use (&$received) {
+                $received = ['scopeField' => $scopeField, 'scopeValue' => $subjectRef, 'data' => $data];
+                return ['id' => $id, 'status' => 'approved'];
+            }
+        );
+
+        // The reader resolves the costCenter claim to CC-100.
+        $reader = $this->createMock(PortalObjectReader::class);
+        // The contributing app (the scopeClaim namespace) is taken from the
+        // contribution, here 'portaliq' per the aggregate() fixture.
+        $reader->expects($this->once())->method('resolveScopeValue')
+            ->with('costCenter', 'portaliq', self::SUBJECT)
+            ->willReturn('CC-100');
+
+        $controller = $this->controller(aggregate: $aggregate, reader: $reader, writer: $writer);
+        $response   = $controller->update('hrmq', 'timesheet', 't-1');
+
+        $this->assertSame(Http::STATUS_OK, $response->getStatus());
+        // The RESOLVED claim value (not the subjectRef) is the ownership value,
+        // and the server-enforced set is applied.
+        $this->assertSame('costCenter', $received['scopeField']);
+        $this->assertSame('CC-100', $received['scopeValue']);
+        $this->assertSame(['status' => 'approved'], $received['data']);
+
+    }//end testClaimScopedUpdateResolvesTheScopeValueForOwnership()
+
+    /**
+     * A declared scopeClaim that cannot resolve (absent claim) → 404, no write.
+     */
+    public function testClaimScopedUpdateWithUnresolvableClaimIs404BeforeAnyWrite(): void
+    {
+        $aggregate = $this->aggregate(
+            actions: [
+                ['id' => 'approve', 'type' => 'update', 'register' => 'hrmq', 'schema' => 'timesheet', 'scopeField' => 'costCenter', 'scopeClaim' => 'costCenter', 'fields' => ['status'], 'set' => ['status' => 'approved']],
+            ]
+        );
+
+        $writer = $this->createMock(PortalObjectWriter::class);
+        $writer->expects($this->never())->method('updateObject');
+
+        $reader = $this->createMock(PortalObjectReader::class);
+        $reader->method('resolveScopeValue')->willReturn(null);
+
+        $controller = $this->controller(aggregate: $aggregate, reader: $reader, writer: $writer);
+        $response   = $controller->update('hrmq', 'timesheet', 't-1');
+
+        $this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+
+    }//end testClaimScopedUpdateWithUnresolvableClaimIs404BeforeAnyWrite()
+
+    /**
      * A null from the writer (ownership re-verification failed — the write did
      * not happen) is 404, indistinguishable from a non-existent id.
      */
@@ -627,11 +696,16 @@ class ContributionControllerTest extends TestCase
             fn (string $path) => 'https://cloud.example'.$path
         );
 
+        // Default reader: resolveScopeValue returns the subject's subjectRef (the
+        // real no-scopeClaim behaviour) so update()'s ownership resolution passes.
+        $defaultReader = $this->createMock(PortalObjectReader::class);
+        $defaultReader->method('resolveScopeValue')->willReturn((string) ($subject['subjectRef'] ?? ''));
+
         return new ContributionController(
             $request,
             $registry,
             $session,
-            ($reader ?? $this->createMock(PortalObjectReader::class)),
+            ($reader ?? $defaultReader),
             ($writer ?? $this->createMock(PortalObjectWriter::class)),
             ($clientService ?? $this->createMock(IClientService::class)),
             $urlGenerator

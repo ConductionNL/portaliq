@@ -9,6 +9,7 @@
 - [reverse-scope-join](../../changes/reverse-scope-join/)
 - [portal-scoped-crud](../../changes/portal-scoped-crud/)
 - [contribution-manifest-v3](../../changes/contribution-manifest-v3/)
+- [portal-status-transitions](../../changes/portal-status-transitions/)
 
 ## Purpose
 
@@ -462,6 +463,29 @@ byte-identical, aside from an additive synthesised `pages` array.
 - GIVEN a v2 contribution (no v3 keys)
 - WHEN normalised
 - THEN every collection/action is unchanged and a default `pages` array is added
+
+### Requirement: Server-enforced status transitions
+
+A `type: update` action MAY declare `set` — a map of WHITELISTED field → fixed
+value the SERVER applies over the client body (after whitelisting, before the
+write) — and a collection MAY declare `rowActions` (ids resolving to `type:
+update` actions in the same contribution, rendered as per-row buttons). The
+`PATCH` update endpoint accepts `?action=<id>` to select which update action to
+apply. The transition target is tamper-proof (the client can never choose an
+arbitrary value); malformed `set`/`rowActions` are dropped fail-closed; ownership
+re-verification and scope re-stamp still run.
+
+#### Scenario: A transition target cannot be tampered with
+
+- GIVEN an update action `close` with `fields: [status]` and `set: {status: closed}`
+- WHEN the subject PATCHes their own row with `?action=close` and body `{status: "hacked"}`
+- THEN the saved `status` is `closed` (server `set` overrides the client) and 200 is returned
+
+#### Scenario: rowActions and set fail closed
+
+- GIVEN `set: {status: closed, subjectRef: other}` and `rowActions: [close, createTicket, ghost]`
+- WHEN normalised
+- THEN `set` keeps only `{status: closed}` and `rowActions` keeps only `[close]`
 
 ## Non-Functional Requirements
 

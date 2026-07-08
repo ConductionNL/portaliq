@@ -91,6 +91,11 @@ class PortalManifestNormaliser
         $collections = $this->normaliseCollections(collections: (array) ($contribution['collections'] ?? []));
         $actions     = $this->normaliseActions(actions: (array) ($contribution['actions'] ?? []));
 
+        // Resolve each collection's `rowActions` against the update actions in
+        // THIS contribution — a per-row transition button (approve/reject/close)
+        // may only reference a `type: update` action the subject is entitled to.
+        $collections = $this->resolveRowActions(collections: $collections, actions: $actions);
+
         $contribution['collections'] = $collections;
         $contribution['actions']     = $actions;
         $contribution['pages']       = $this->normalisePages(
@@ -101,6 +106,54 @@ class PortalManifestNormaliser
 
         return $contribution;
     }//end normalise()
+
+    /**
+     * Filter each collection's `rowActions` to ids that resolve to a `type:
+     * update` action in the same contribution; drop the key when it empties out
+     * or is malformed. A per-row transition can only ever invoke an update
+     * action the subject already holds.
+     *
+     * @param array<int, array<string, mixed>> $collections The sanitised collections.
+     * @param array<int, array<string, mixed>> $actions     The sanitised actions.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function resolveRowActions(array $collections, array $actions): array
+    {
+        $updateIds = [];
+        foreach ($actions as $action) {
+            $id = ($action['id'] ?? null);
+            if (($action['type'] ?? null) === 'update' && is_string($id) === true && $id !== '') {
+                $updateIds[] = $id;
+            }
+        }
+
+        foreach ($collections as $index => $collection) {
+            if (array_key_exists('rowActions', $collection) === false) {
+                continue;
+            }
+
+            if (is_array($collection['rowActions']) === false) {
+                unset($collections[$index]['rowActions']);
+                continue;
+            }
+
+            $resolved = [];
+            foreach ($collection['rowActions'] as $ref) {
+                if (in_array($ref, $updateIds, true) === true) {
+                    $resolved[] = $ref;
+                }
+            }
+
+            if ($resolved === []) {
+                unset($collections[$index]['rowActions']);
+            } else {
+                $collections[$index]['rowActions'] = $resolved;
+            }
+        }//end foreach
+
+        return $collections;
+    }//end resolveRowActions()
 
     /**
      * Sanitise the presentation keys on every collection.
@@ -247,6 +300,7 @@ class PortalManifestNormaliser
 
             $action = $this->normaliseFieldConfigs(action: $action, whitelist: $whitelist);
             $action = $this->normaliseOptionsProviders(action: $action, whitelist: $whitelist);
+            $action = $this->normaliseSet(action: $action, whitelist: $whitelist);
 
             foreach (['submitLabel', 'successMessage'] as $textKey) {
                 if (isset($action[$textKey]) === true && is_string($action[$textKey]) === false) {
@@ -259,6 +313,39 @@ class PortalManifestNormaliser
 
         return $out;
     }//end normaliseActions()
+
+    /**
+     * Keep a well-formed `set` (server-enforced transition target): a map of
+     * WHITELISTED field → scalar value. A key outside the action's `fields` (or a
+     * non-scalar value) is dropped, so `set` can only ever fix a field the action
+     * is already entitled to write. The whole key is dropped when malformed.
+     *
+     * @param array<string, mixed> $action    The action.
+     * @param array<int, string>   $whitelist The action's `fields` whitelist.
+     *
+     * @return array<string, mixed>
+     */
+    private function normaliseSet(array $action, array $whitelist): array
+    {
+        if (array_key_exists('set', $action) === false) {
+            return $action;
+        }
+
+        if (is_array($action['set']) === false) {
+            unset($action['set']);
+            return $action;
+        }
+
+        $set = [];
+        foreach ($action['set'] as $field => $value) {
+            if (in_array($field, $whitelist, true) === true && (is_scalar($value) === true || $value === null)) {
+                $set[$field] = $value;
+            }
+        }
+
+        $action['set'] = $set;
+        return $action;
+    }//end normaliseSet()
 
     /**
      * Keep only `fieldConfigs` whose key is in the action's whitelist.

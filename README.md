@@ -186,8 +186,39 @@ page blocks resolve only within the same (trust-filtered) contribution.
 Malformed config is dropped fail-closed, never fatal. Absent `pages` →
 Portaliq synthesises one default page per listable collection (v2 rendering).
 
+**Status transitions (approve / reject / close).** A `type: update` action MAY
+declare **`set`** — a map of **whitelisted** field → fixed value the *server*
+applies over the client body — and a collection MAY declare **`rowActions`** (ids
+of update actions, rendered as per-row buttons). The `PATCH` update endpoint takes
+`?action=<id>` to pick which transition to apply. The target is **tamper-proof**:
+a client PATCHing `{status: "hacked"}` against a `set: {status: "closed"}`
+transition still lands on `closed`, and `set` only honours whitelisted fields, so
+a transition can never move a row out of the subject's scope.
+
 Canonical contract text: ADR-046 amendment 2026-07-06 + ADR-063 (hydra) + the
 `portal-contribution-contract` spec in [`openspec/specs/`](openspec/specs/).
+
+### Deploying the portal (production notes)
+
+- **Build both bundles.** `npm run build` produces *both* the Vue admin bundle
+  and the React portal bundle (`js/portaliq-portal.js`); the portal bundle is
+  gitignored, so a release that only runs the admin build serves a 404 at
+  `/portal`. `build:admin` / `build:portal` build them individually.
+- **`portalAccount` claims schema.** `scopeClaim`/`via` scoping resolves the
+  subject's claims from a `portalAccount` object carrying `subjectRef`,
+  `audience` and `claims` (`{appId: {claimName: value}}`). Ensure the deployed
+  `portalAccount` schema carries these — if another app defines a `portalAccount`
+  schema it can shadow this one on OpenRegister's global slug (see the
+  schema-slug-collision note in the issue tracker).
+- **Transitions vs lifecycle hooks.** A `type: update` transition writes through
+  OpenRegister with RBAC bypassed (portal subjects are not NC users) but does
+  NOT bypass a schema's declarative lifecycle hooks. A schema whose status
+  transition requires a logged-in NC user cannot be transitioned by an external
+  subject via the scoped `PATCH` — use the A6 bearer-forward action or a
+  portal-subject-aware hook. Keep such manifests read-only until then.
+- **Cache-busting** is automatic outside `debug` mode (Nextcloud appends the app
+  version to script URLs); in a `debug`-true dev instance no `?v=` is added, so
+  bump the app version (or hard-reload) after redeploying the bundle.
 
 ### Directory Structure
 
