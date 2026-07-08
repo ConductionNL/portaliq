@@ -39,6 +39,7 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Service\PortalFileWriter;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSessionService;
@@ -84,6 +85,7 @@ class ContributionController extends Controller implements PortalProtected
      * @param PortalSessionService       $session       Resolves the subject from the bearer.
      * @param PortalObjectReader         $reader        Subject-scoped OR reader.
      * @param PortalObjectWriter         $writer        Subject-scoped OR writer.
+     * @param PortalFileWriter           $fileWriter    Subject-scoped OR file attach.
      * @param IClientService             $clientService HTTP client for the A6 action forward.
      * @param IURLGenerator              $urlGenerator  Resolves instance-local endpoint paths.
      */
@@ -93,6 +95,7 @@ class ContributionController extends Controller implements PortalProtected
         private readonly PortalSessionService $session,
         private readonly PortalObjectReader $reader,
         private readonly PortalObjectWriter $writer,
+        private readonly PortalFileWriter $fileWriter,
         private readonly IClientService $clientService,
         private readonly IURLGenerator $urlGenerator,
     ) {
@@ -305,6 +308,101 @@ class ContributionController extends Controller implements PortalProtected
 
         return new JSONResponse(['object' => $object]);
     }//end object()
+
+    /**
+     * Attach an uploaded file to an object the subject owns (the file-upload
+     * block, ADR-063). The collection MUST declare `filesUpload: true`, and
+     * ownership is re-verified through the SAME scoped reader as the single-object
+     * read (scopeField / scopeClaim / via) BEFORE the file is accepted — a foreign
+     * or absent id is a single 404 with nothing written. The file lands in the
+     * object's OpenRegister folder via the shared FileService (RBAC bypassed;
+     * Portaliq is the trusted scoper). Multipart field name: `file`.
+     *
+     * @param string $register The register of the collection.
+     * @param string $schema   The schema of the collection.
+     * @param string $id       The object to attach to.
+     *
+     * @return JSONResponse The attached file metadata, or 401 / 403 / 404 / 400 / 502.
+     *
+     * @spec openspec/changes/portal-file-upload/tasks.md#T2
+     */
+    #[PublicPage]
+    #[NoCSRFRequired]
+    public function uploadFile(string $register, string $schema, string $id): JSONResponse
+    {
+        $subject = $this->subject();
+        if ($subject === null) {
+            return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+        }
+
+        $collectionId = (string) $this->request->getParam('collection', '');
+        $match        = $this->authorisedCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
+        if ($match === null) {
+            return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+        }
+
+        $collection = $match['collection'];
+
+        // The collection must explicitly opt in to file uploads.
+        if (($collection['filesUpload'] ?? false) !== true) {
+            return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+        }
+
+        if (PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
+            return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+        }
+
+        // Re-verify ownership with the full scope resolution — 404 (no oracle)
+        // when the object is not the subject's or does not exist.
+        $owned = $this->reader->readObject(
+            register: $register,
+            schema: $schema,
+            scopeField: (string) ($collection['scopeField'] ?? 'subjectRef'),
+            subjectRef: (string) ($subject['subjectRef'] ?? ''),
+            id: $id,
+            organisation: (string) ($subject['organisation'] ?? ''),
+            scopeClaim: (string) ($collection['scopeClaim'] ?? ''),
+            contributingApp: $match['app'],
+            via: ($collection['via'] ?? null),
+            audience: (string) ($subject['audience'] ?? ''),
+            fields: ($collection['fields'] ?? null)
+        );
+        if ($owned === null) {
+            return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+        }
+
+        // Read the multipart upload (`file`); reject an empty/failed upload 400.
+        // getUploadedFile returns [] when absent, so the error/tmp_name checks
+        // cover the missing case.
+        $uploaded = $this->request->getUploadedFile('file');
+        if ((int) ($uploaded['error'] ?? 1) !== 0 || ($uploaded['tmp_name'] ?? '') === '') {
+            return new JSONResponse(['error' => 'no_file'], Http::STATUS_BAD_REQUEST);
+        }
+
+        $content = @file_get_contents($uploaded['tmp_name']);
+        if ($content === false) {
+            return new JSONResponse(['error' => 'no_file'], Http::STATUS_BAD_REQUEST);
+        }
+
+        // Sanitise the filename to a basename — never trust a client path.
+        $fileName = basename((string) ($uploaded['name'] ?? 'upload'));
+        if ($fileName === '' || $fileName === '.' || $fileName === '..') {
+            $fileName = 'upload';
+        }
+
+        $result = $this->fileWriter->attachFile(
+            register: $register,
+            schema: $schema,
+            id: $id,
+            fileName: $fileName,
+            content: $content
+        );
+        if ($result === null) {
+            return new JSONResponse(['error' => 'upload_failed'], Http::STATUS_BAD_GATEWAY);
+        }
+
+        return new JSONResponse(['file' => $result]);
+    }//end uploadFile()
 
     /**
      * Create an object in a collection, owned by the subject.

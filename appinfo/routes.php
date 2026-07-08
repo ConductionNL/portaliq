@@ -46,6 +46,10 @@ return [
         // makes these distinct from the collection-level routes above.
         ['name' => 'contribution#object', 'url' => '/portal/api/collections/{register}/{schema}/{id}', 'verb' => 'GET'],
         ['name' => 'contribution#update', 'url' => '/portal/api/collections/{register}/{schema}/{id}', 'verb' => 'PATCH'],
+        // Attach an uploaded file to an owned object (the file-upload block,
+        // ADR-063). Ownership re-verified via the scoped reader; the collection
+        // must declare `filesUpload: true`.
+        ['name' => 'contribution#uploadFile', 'url' => '/portal/api/collections/{register}/{schema}/{id}/files', 'verb' => 'POST'],
         // Forward a declared endpoint action server-to-server with a signed
         // X-Portal-Subject assertion (contract-v2 T8, ADR-046 A6). Guarded by
         // PortalAuthMiddleware; registered before the /portal/{path} catch-all.

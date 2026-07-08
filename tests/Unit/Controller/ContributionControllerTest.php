@@ -7,6 +7,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\ContributionController;
 use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\PortalFileWriter;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Http;
@@ -567,6 +568,99 @@ class ContributionControllerTest extends TestCase
 
     }//end testClaimScopedUpdateWithUnresolvableClaimIs404BeforeAnyWrite()
 
+    public function testUploadRequiresTheCollectionToOptIntoFileUploads(): void
+    {
+        // The collection does NOT declare filesUpload → 403, no read, no attach.
+        $aggregate = $this->aggregate(
+            collections: [['id' => 'c1', 'register' => 'portaliq', 'schema' => 'exampleDocument', 'scopeField' => 'subjectRef', 'listable' => true]]
+        );
+
+        $fileWriter = $this->createMock(PortalFileWriter::class);
+        $fileWriter->expects($this->never())->method('attachFile');
+
+        $controller = $this->controller(aggregate: $aggregate, fileWriter: $fileWriter);
+        $response   = $controller->uploadFile('portaliq', 'exampleDocument', 'd-1');
+
+        $this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+
+    }//end testUploadRequiresTheCollectionToOptIntoFileUploads()
+
+    public function testUploadForeignOrAbsentObjectIs404BeforeAnyAttach(): void
+    {
+        $aggregate = $this->aggregate(
+            collections: [['id' => 'c1', 'register' => 'portaliq', 'schema' => 'exampleDocument', 'scopeField' => 'subjectRef', 'listable' => true, 'filesUpload' => true]]
+        );
+
+        // The scoped reader returns null (not the subject's / absent).
+        $reader = $this->createMock(PortalObjectReader::class);
+        $reader->method('readObject')->willReturn(null);
+        $reader->method('resolveScopeValue')->willReturn('s1');
+
+        $fileWriter = $this->createMock(PortalFileWriter::class);
+        $fileWriter->expects($this->never())->method('attachFile');
+
+        $controller = $this->controller(aggregate: $aggregate, reader: $reader, fileWriter: $fileWriter);
+        $response   = $controller->uploadFile('portaliq', 'exampleDocument', 'd-1');
+
+        $this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+
+    }//end testUploadForeignOrAbsentObjectIs404BeforeAnyAttach()
+
+    public function testUploadAttachesTheFileToAnOwnedObject(): void
+    {
+        $aggregate = $this->aggregate(
+            collections: [['id' => 'c1', 'register' => 'portaliq', 'schema' => 'exampleDocument', 'scopeField' => 'subjectRef', 'listable' => true, 'filesUpload' => true]]
+        );
+
+        // A real temp file stands in for the multipart upload.
+        $tmp = tempnam(sys_get_temp_dir(), 'portaliq-test');
+        file_put_contents($tmp, 'evidence-bytes');
+
+        $request = $this->createMock(IRequest::class);
+        $request->method('getHeader')->willReturnMap([['Authorization', 'Bearer client-session-token']]);
+        $request->method('getParam')->willReturn('');
+        $request->method('getUploadedFile')->willReturn(['name' => 'bewijs.pdf', 'tmp_name' => $tmp, 'error' => 0, 'size' => 14]);
+
+        $registry = $this->createMock(PortalContributionRegistry::class);
+        $registry->method('aggregateFor')->willReturn($aggregate);
+        $session = $this->createMock(PortalSessionService::class);
+        $session->method('resolveFromBearer')->willReturn(self::SUBJECT);
+
+        $reader = $this->createMock(PortalObjectReader::class);
+        $reader->method('readObject')->willReturn(['id' => 'd-1', 'title' => 'Mine']);
+
+        $captured   = [];
+        $fileWriter = $this->createMock(PortalFileWriter::class);
+        $fileWriter->method('attachFile')->willReturnCallback(
+            function (string $register, string $schema, string $id, string $fileName, string $content) use (&$captured) {
+                $captured = ['id' => $id, 'fileName' => $fileName, 'content' => $content];
+                return ['id' => 7, 'name' => $fileName, 'size' => strlen($content)];
+            }
+        );
+
+        $controller = new ContributionController(
+            $request,
+            $registry,
+            $session,
+            $reader,
+            $this->createMock(PortalObjectWriter::class),
+            $fileWriter,
+            $this->createMock(IClientService::class),
+            $this->createMock(IURLGenerator::class)
+        );
+
+        $response = $controller->uploadFile('portaliq', 'exampleDocument', 'd-1');
+        @unlink($tmp);
+
+        $this->assertSame(Http::STATUS_OK, $response->getStatus());
+        // The verified id + the sanitised basename + the file bytes reach the writer.
+        $this->assertSame('d-1', $captured['id']);
+        $this->assertSame('bewijs.pdf', $captured['fileName']);
+        $this->assertSame('evidence-bytes', $captured['content']);
+        $this->assertSame(['file' => ['id' => 7, 'name' => 'bewijs.pdf', 'size' => 14]], $response->getData());
+
+    }//end testUploadAttachesTheFileToAnOwnedObject()
+
     /**
      * A null from the writer (ownership re-verification failed — the write did
      * not happen) is 404, indistinguishable from a non-existent id.
@@ -614,6 +708,7 @@ class ContributionControllerTest extends TestCase
             $session,
             $reader,
             $this->createMock(PortalObjectWriter::class),
+            $this->createMock(PortalFileWriter::class),
             $this->createMock(IClientService::class),
             $this->createMock(IURLGenerator::class)
         );
@@ -670,7 +765,8 @@ class ContributionControllerTest extends TestCase
         ?array $subject=self::SUBJECT,
         ?PortalObjectReader $reader=null,
         ?PortalObjectWriter $writer=null,
-        ?IClientService $clientService=null
+        ?IClientService $clientService=null,
+        ?PortalFileWriter $fileWriter=null
     ): ContributionController {
         $request = $this->createMock(IRequest::class);
         $request->method('getHeader')->willReturnMap([['Authorization', 'Bearer client-session-token']]);
@@ -707,6 +803,7 @@ class ContributionControllerTest extends TestCase
             $session,
             ($reader ?? $defaultReader),
             ($writer ?? $this->createMock(PortalObjectWriter::class)),
+            ($fileWriter ?? $this->createMock(PortalFileWriter::class)),
             ($clientService ?? $this->createMock(IClientService::class)),
             $urlGenerator
         );
