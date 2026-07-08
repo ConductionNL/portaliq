@@ -960,6 +960,245 @@ class PortalObjectReaderTest extends TestCase
 
     }//end testProjectRowSingleObjectDetailSemantics()
 
+    public function testReadObjectReturnsNullWhenOpenRegisterUnavailable(): void
+    {
+        $container = $this->createMock(ContainerInterface::class);
+        $container->method('get')->willThrowException(new RuntimeException('OR not installed'));
+
+        $reader = new PortalObjectReader($container, $this->createMock(LoggerInterface::class));
+        $this->assertNull($reader->readObject('portaliq', 'exampleDocument', 'subjectRef', 's1', 'd-1'));
+
+    }//end testReadObjectReturnsNullWhenOpenRegisterUnavailable()
+
+    public function testReadObjectReturnsTheSubjectsOwnProjectedObject(): void
+    {
+        $objectService = $this->objectService(
+            [
+                'booking' => [
+                    ['id' => 'b-1', 'uuid' => 'u-1', 'subjectRef' => 's1', 'organisation' => 'org-1', 'title' => 'Mine', 'status' => 'open', 'internalNotes' => 'staff only'],
+                ],
+            ]
+        );
+
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+        $object = $reader->readObject(
+            register: 'pipelinq',
+            schema: 'booking',
+            scopeField: 'subjectRef',
+            subjectRef: 's1',
+            id: 'b-1',
+            organisation: 'org-1',
+            fields: ['title', 'status']
+        );
+
+        // Projected to the whitelist + identifiers; the scopeField value and
+        // staff-only notes never leave.
+        $this->assertSame(['title' => 'Mine', 'status' => 'open', 'id' => 'b-1', 'uuid' => 'u-1'], $object);
+        // The fetch is scoped register/schema, id-filtered, RBAC-bypassed.
+        $this->assertSame('booking', $objectService->calls[0]['schema']);
+        $this->assertSame('b-1', $objectService->calls[0]['config']['filters']['id']);
+        $this->assertFalse($objectService->calls[0]['rbac']);
+
+    }//end testReadObjectReturnsTheSubjectsOwnProjectedObject()
+
+    /**
+     * ISOLATION: an object owned by a DIFFERENT subject is never returned,
+     * even though OpenRegister returned it for the requested id — the per-row
+     * ownership check drops it → null (→ 404, no oracle).
+     */
+    public function testReadObjectReturnsNullForAForeignOwnedObject(): void
+    {
+        $objectService = $this->objectService(
+            [
+                'booking' => [
+                    ['id' => 'b-2', 'uuid' => 'u-2', 'subjectRef' => 's2', 'organisation' => 'org-1', 'title' => 'Not mine'],
+                ],
+            ]
+        );
+
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+        $object = $reader->readObject(
+            register: 'pipelinq',
+            schema: 'booking',
+            scopeField: 'subjectRef',
+            subjectRef: 's1',
+            id: 'b-2',
+            organisation: 'org-1'
+        );
+
+        $this->assertNull($object);
+
+    }//end testReadObjectReturnsNullForAForeignOwnedObject()
+
+    /**
+     * ISOLATION: a different tenant's object with the subject's OWN scope value
+     * is still dropped by the per-row tenant check.
+     */
+    public function testReadObjectReturnsNullForAForeignTenant(): void
+    {
+        $objectService = $this->objectService(
+            [
+                'booking' => [
+                    ['id' => 'b-3', 'subjectRef' => 's1', 'organisation' => 'org-2', 'title' => 'Other tenant'],
+                ],
+            ]
+        );
+
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+        $object = $reader->readObject(
+            register: 'pipelinq',
+            schema: 'booking',
+            scopeField: 'subjectRef',
+            subjectRef: 's1',
+            id: 'b-3',
+            organisation: 'org-1'
+        );
+
+        $this->assertNull($object);
+
+    }//end testReadObjectReturnsNullForAForeignTenant()
+
+    public function testReadObjectReturnsNullForANonExistentId(): void
+    {
+        $objectService = $this->objectService(
+            [
+                'booking' => [
+                    ['id' => 'b-1', 'subjectRef' => 's1', 'title' => 'Mine'],
+                ],
+            ]
+        );
+
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+        // Requested id is not among the returned rows.
+        $this->assertNull($reader->readObject('pipelinq', 'booking', 'subjectRef', 's1', 'does-not-exist'));
+        // And an empty id fails closed without any query.
+        $this->assertNull($reader->readObject('pipelinq', 'booking', 'subjectRef', 's1', ''));
+        $this->assertCount(1, $objectService->calls);
+
+    }//end testReadObjectReturnsNullForANonExistentId()
+
+    /**
+     * ISOLATION: a claim-scoped single read resolves the claim server-side and
+     * only returns the object matching the RESOLVED claim value; an absent
+     * claim fails closed to null WITHOUT the object fetch.
+     */
+    public function testReadObjectResolvesTheScopeClaimServerSide(): void
+    {
+        $objectService = $this->objectService(
+            [
+                'portalAccount' => [
+                    ['subjectRef' => 's1', 'claims' => ['pipelinq' => ['linkedContactId' => 'uuid-c1']]],
+                ],
+                'crmDeal'       => [
+                    ['id' => 'd-1', 'contact' => 'uuid-c1', 'title' => 'Mine'],
+                ],
+            ]
+        );
+
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+        $object = $reader->readObject(
+            register: 'pipelinq',
+            schema: 'crmDeal',
+            scopeField: 'contact',
+            subjectRef: 's1',
+            id: 'd-1',
+            organisation: '',
+            scopeClaim: 'linkedContactId',
+            contributingApp: 'pipelinq',
+            audience: 'supplier'
+        );
+
+        $this->assertSame('Mine', $object['title']);
+
+    }//end testReadObjectResolvesTheScopeClaimServerSide()
+
+    public function testReadObjectReturnsNullWhenScopeClaimAbsentWithoutFetch(): void
+    {
+        $objectService = $this->objectService(
+            [
+                'portalAccount' => [
+                    ['subjectRef' => 's1', 'claims' => []],
+                ],
+                'crmDeal'       => [
+                    ['id' => 'd-1', 'contact' => 'uuid-c1', 'title' => 'Must never surface'],
+                ],
+            ]
+        );
+
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+        $object = $reader->readObject(
+            register: 'pipelinq',
+            schema: 'crmDeal',
+            scopeField: 'contact',
+            subjectRef: 's1',
+            id: 'd-1',
+            organisation: '',
+            scopeClaim: 'linkedContactId',
+            contributingApp: 'pipelinq',
+            audience: 'supplier'
+        );
+
+        $this->assertNull($object);
+        // Only the portalAccount lookup ran — the object was NEVER fetched.
+        $this->assertCount(1, $objectService->calls);
+        $this->assertSame('portalAccount', $objectService->calls[0]['schema']);
+
+    }//end testReadObjectReturnsNullWhenScopeClaimAbsentWithoutFetch()
+
+    /**
+     * A via-collection single read passes the object through the SAME one-hop
+     * join membership as the list path: the subject's linked case is returned,
+     * a case the subject's join rows do not reference is null.
+     */
+    public function testReadObjectViaCollectionVerifiesJoinMembership(): void
+    {
+        $objectService = $this->objectService(
+            [
+                'rol'  => [
+                    ['betrokkeneIdentificatie' => ['inpBsn' => 'bsn-1'], 'zaak' => 'z-1'],
+                ],
+                'zaak' => [
+                    ['uuid' => 'z-1', 'title' => 'Mine'],
+                    ['uuid' => 'z-9', 'title' => 'Unreferenced'],
+                ],
+            ]
+        );
+        $via = [
+            'register'    => 'zaken',
+            'schema'      => 'rol',
+            'scopeField'  => 'betrokkeneIdentificatie.inpBsn',
+            'targetField' => 'zaak',
+        ];
+
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+
+        $mine = $reader->readObject(
+            register: 'zaken',
+            schema: 'zaak',
+            scopeField: 'irrelevantForVia',
+            subjectRef: 'bsn-1',
+            id: 'z-1',
+            organisation: '',
+            via: $via,
+            audience: 'citizen'
+        );
+        $this->assertSame('Mine', $mine['title']);
+
+        // A case the subject's join rows do NOT reference → null (not visible).
+        $foreign = $reader->readObject(
+            register: 'zaken',
+            schema: 'zaak',
+            scopeField: 'irrelevantForVia',
+            subjectRef: 'bsn-1',
+            id: 'z-9',
+            organisation: '',
+            via: $via,
+            audience: 'citizen'
+        );
+        $this->assertNull($foreign);
+
+    }//end testReadObjectViaCollectionVerifiesJoinMembership()
+
     /**
      * An ObjectService stand-in serving canned rows per schema and recording
      * every call (register/schema context, config, rbac/multitenancy flags).
