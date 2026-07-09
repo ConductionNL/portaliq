@@ -544,7 +544,6 @@ re-verification and scope re-stamp still run.
   the `reverse-scope-join` change (delta:
   `openspec/changes/reverse-scope-join/specs/portal-contribution-contract/spec.md`,
   tracking Conduction/portaliq#14); same sync discipline until it archives.
-<<<<<<< HEAD
 - The "Manifest UI configuration is presentation-only", "Scoped option
   providers", "Page composition with resolvable, same-contribution blocks", and
   "v2 manifests are unchanged by normalisation" requirements were added by the
@@ -552,10 +551,8 @@ re-verification and scope re-stamp still run.
   `openspec/changes/contribution-manifest-v3/specs/portal-contribution-contract/spec.md`);
   enforced by `PortalManifestNormaliser` and frozen in hydra ADR-063; same sync
   discipline until it archives.
-=======
 - The "Scoped single-object read" and "Scoped verified update" requirements
   were added by the `portal-scoped-crud` change (delta:
   `openspec/changes/portal-scoped-crud/specs/portal-contribution-contract/spec.md`,
   ADR-062 Phase 1, closing Conduction/portaliq#16); same sync discipline until
   it archives.
->>>>>>> origin/development
