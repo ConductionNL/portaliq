@@ -13,11 +13,32 @@
 			"order": 10
 		},
 		{
-			"id": "Examples",
-			"label": "Examples",
-			"icon": "icon-files",
-			"route": "Examples",
+			"id": "PortalAccounts",
+			"label": "Portal accounts",
+			"icon": "icon-user",
+			"route": "PortalAccounts",
 			"order": 20
+		},
+		{
+			"id": "PortalSessions",
+			"label": "Portal sessions",
+			"icon": "icon-category-security",
+			"route": "PortalSessions",
+			"order": 30
+		},
+		{
+			"id": "PortalMessages",
+			"label": "Portal messages",
+			"icon": "icon-mail",
+			"route": "PortalMessages",
+			"order": 40
+		},
+		{
+			"id": "Documents",
+			"label": "Documents",
+			"icon": "icon-files",
+			"route": "Documents",
+			"order": 50
 		},
 		{
 			"id": "Documentation",
@@ -45,118 +66,299 @@
 			"config": {
 				"widgets": [
 					{
-						"id": "open-examples",
-						"title": "Open examples",
+						"id": "active-accounts",
+						"title": "Active accounts",
 						"type": "stats-block",
-						"iconClass": "icon-files",
+						"iconClass": "icon-user",
 						"dataSource": {
 							"register": "portaliq",
-							"schema": "example",
+							"schema": "portalAccount",
+							"filter": { "status": "active" },
 							"aggregate": "count"
 						},
 						"props": {
-							"countLabel": "examples",
+							"countLabel": "accounts",
 							"variant": "primary"
 						}
 					},
 					{
-						"id": "in-progress",
-						"title": "In progress",
+						"id": "active-sessions",
+						"title": "Active sessions",
 						"type": "stats-block",
-						"iconClass": "icon-loading",
+						"iconClass": "icon-category-security",
 						"dataSource": {
 							"register": "portaliq",
-							"schema": "example",
+							"schema": "portalSession",
+							"filter": { "revoked": false },
 							"aggregate": "count"
 						},
 						"props": {
-							"countLabel": "examples",
-							"variant": "warning"
+							"countLabel": "sessions",
+							"variant": "success"
 						}
 					},
 					{
-						"id": "closed",
-						"title": "Closed",
+						"id": "unread-messages",
+						"title": "Unread messages",
 						"type": "stats-block",
-						"iconClass": "icon-checkmark",
+						"iconClass": "icon-mail",
 						"dataSource": {
 							"register": "portaliq",
-							"schema": "example",
+							"schema": "portalMessage",
+							"filter": { "read": false },
 							"aggregate": "count"
 						},
 						"props": {
-							"countLabel": "examples",
-							"variant": "success"
+							"countLabel": "messages",
+							"variant": "warning"
 						}
 					}
 				],
 				"layout": [
-					{ "id": 1, "widgetId": "open-examples", "gridX": 0, "gridY": 0, "gridWidth": 3, "gridHeight": 1 },
-					{ "id": 2, "widgetId": "in-progress", "gridX": 3, "gridY": 0, "gridWidth": 3, "gridHeight": 1 },
-					{ "id": 3, "widgetId": "closed", "gridX": 6, "gridY": 0, "gridWidth": 3, "gridHeight": 1 }
+					{ "id": 1, "widgetId": "active-accounts", "gridX": 0, "gridY": 0, "gridWidth": 4, "gridHeight": 1 },
+					{ "id": 2, "widgetId": "active-sessions", "gridX": 4, "gridY": 0, "gridWidth": 4, "gridHeight": 1 },
+					{ "id": 3, "widgetId": "unread-messages", "gridX": 8, "gridY": 0, "gridWidth": 4, "gridHeight": 1 }
 				]
-			},
-			"widgets": []
+			}
 		},
 		{
-			"id": "Examples",
-			"route": "/examples",
+			"id": "PortalAccounts",
+			"route": "/accounts",
 			"type": "index",
-			"title": "Examples",
+			"title": "Portal Accounts",
 			"config": {
 				"register": "portaliq",
-				"schema": "example",
+				"schema": "portalAccount",
 				"columns": [
-					"title",
-					"status",
-					"updatedAt"
+					"displayName",
+					"audience",
+					"identityType",
+					"organisation",
+					{
+						"key": "status",
+						"label": "Status",
+						"widget": "badge",
+						"widgetProps": {
+							"colorMap": {
+								"active": "success",
+								"suspended": "error"
+							}
+						}
+					},
+					"lastLoginAt"
 				],
 				"sidebar": {
 					"enabled": true,
 					"showMetadata": true
 				}
-			},
-			"widgets": [
-				{
-					"widgetKey": "object-table",
-					"slot": "body",
-					"gridX": 0,
-					"gridY": 0,
-					"gridWidth": 12,
-					"gridHeight": 6
-				}
-			]
+			}
 		},
 		{
-			"id": "ExampleDetail",
-			"route": "/examples/:id",
+			"id": "PortalAccountDetail",
+			"route": "/accounts/:id",
 			"type": "detail",
-			"title": "Example",
+			"title": "Portal Account",
 			"config": {
 				"register": "portaliq",
-				"schema": "example",
-				"sidebar": true
-			},
-			"widgets": [
-				{
-					"widgetKey": "object-data",
-					"slot": "sidebar",
-					"tabGroup": "data",
-					"gridX": 0,
-					"gridY": 0,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "audit-trail",
-					"slot": "sidebar",
-					"tabGroup": "audit",
-					"gridX": 0,
-					"gridY": 0,
-					"gridWidth": 1,
-					"gridHeight": 1
+				"schema": "portalAccount",
+				"documentationUrl": "https://portaliq.conduction.nl",
+				"_note": "Identity/access-holder archetype: a portalAccount links one external IdP identity (eHerkenning/DigiD/eIDAS) to the subjectRef domain apps scope data by, so its detail page answers 'who is this and what sessions have they used to access the portal'. ADR-062 rev3 update: the summaryAggregates header chips are retired in favour of an in-grid stats-block card (account-stats) placed top-right of the lead account-data widget, both sized h5 so the row closes together; account-sessions moves below as its own full-width row. account-sessions gets allowCreate:false — sessions are IdP-minted at login time, never hand-created — plus a viewAllRoute to the fleet-wide PortalSessions index (the only session-listing page; no per-account filtered page exists) with a token-resolved viewAllQuery so the link at least carries the account's id. portalMessage.subjectRef and exampleDocument.subjectRef remain plain IdP-issued strings, not object ids, so they stay NOT filterable by @objectId and deliberately absent here. No Related panel: portalAccount declares no object-reference properties of its own (organisation is a plain tenant string, not an OR ref). No files/calendar/contacts/talk leaves: this is an auth-edge identity record, not a document- or comms-bearing object. status is a genuine two-state lifecycle (active/suspended) so lifecycleActions is wired to it. Audit history stays a sidebar tab.",
+				"widgets": [
+					{ "id": "account-data", "type": "data", "title": "Account details", "icon": "Account", "content": { "columns": 2 } },
+					{ "id": "account-stats-sessions-issued", "type": "stats-block", "title": "Sessions issued", "icon": "ShieldCheckOutline", "content": { "entries": [
+						{ "title": "Sessions issued", "register": "portaliq", "schema": "portalSession", "metric": "count", "filter": { "accountRef": "@objectId" } }
+					] } },
+					{ "id": "account-stats-active-sessions", "type": "stats-block", "title": "Active sessions", "icon": "ShieldCheckOutline", "content": { "entries": [
+						{ "title": "Active sessions", "register": "portaliq", "schema": "portalSession", "metric": "count", "filter": { "accountRef": "@objectId", "revoked": false } }
+					] } },
+					{ "id": "account-sessions", "type": "object-list", "title": "Sessions", "icon": "ShieldCheckOutline", "content": { "register": "portaliq", "schema": "portalSession", "filter": { "accountRef": "@objectId" }, "sort": { "field": "issuedAt", "dir": "desc" }, "columns": [ { "key": "jti", "label": "Token ID" }, { "key": "trustLevel", "label": "Trust level" }, { "key": "issuedAt", "label": "Issued" }, { "key": "expiresAt", "label": "Expires" }, { "key": "revoked", "label": "Revoked" } ], "limit": 25, "rowRoute": "PortalSessionDetail", "viewAllRoute": "PortalSessions", "viewAllQuery": { "accountRef": "@objectId" }, "emptyText": "No sessions issued yet", "allowCreate": false } }
+				],
+				"layout": [
+					{ "id": "1", "widgetId": "account-data", "gridX": 0, "gridY": 0, "gridWidth": 8, "gridHeight": 5 },
+					{ "id": "account-stats-sessions-issued", "widgetId": "account-stats-sessions-issued", "gridX": 8, "gridY": 0, "gridWidth": 4, "gridHeight": 2 },
+					{ "id": "account-stats-active-sessions", "widgetId": "account-stats-active-sessions", "gridX": 8, "gridY": 2, "gridWidth": 4, "gridHeight": 3 },
+					{ "id": "3", "widgetId": "account-sessions", "gridX": 0, "gridY": 5, "gridWidth": 12, "gridHeight": 4 }
+				],
+				"lifecycleActions": { "field": "status" },
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true,
+					"tabs": [
+						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] }
+					]
 				}
-			]
+			}
+		},
+		{
+			"id": "PortalSessions",
+			"route": "/sessions",
+			"type": "index",
+			"title": "Portal Sessions",
+			"config": {
+				"register": "portaliq",
+				"schema": "portalSession",
+				"columns": [
+					"subjectRef",
+					"audience",
+					"trustLevel",
+					"issuedAt",
+					"expiresAt",
+					{
+						"key": "revoked",
+						"label": "Revoked",
+						"widget": "badge",
+						"widgetProps": {
+							"colorMap": {
+								"false": "success",
+								"true": "error"
+							}
+						}
+					}
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				}
+			}
+		},
+		{
+			"id": "PortalSessionDetail",
+			"route": "/sessions/:id",
+			"type": "detail",
+			"title": "Portal Session",
+			"config": {
+				"register": "portaliq",
+				"schema": "portalSession",
+				"documentationUrl": "https://portaliq.conduction.nl",
+				"_note": "Security-token archetype: a portalSession is a bearer session minted for one portalAccount, so what matters when opening it is 'who does this belong to, what trust level, is it still valid'. The body leads with the session's own fields (audience, organisation, jti, trustLevel, issuedAt, expiresAt, revoked) in an 8-wide data card beside a 4-wide Related panel that resolves the accountRef FK back to the issuing portalAccount — the schema's only outbound object reference, now expressed as a canonical $ref+format:uuid property (ADR-062 rule 7) so the Related panel can resolve it to a display name instead of a raw uuid. No child object-list: nothing in this register points AT a portalSession. No files/calendar/contacts/talk leaves: a session is a pure auth-edge token, not content-bearing. No lifecycleActions: revoked is a one-way flag flipped by logout/admin action, not a modeled multi-state lifecycle. Audit history stays a sidebar tab.",
+				"widgets": [
+					{ "id": "session-data", "type": "data", "title": "Session details", "icon": "ShieldCheckOutline", "content": { "columns": 2 } },
+					{ "id": "session-related", "type": "related", "title": "Issuing account", "icon": "AccountBoxOutline" }
+				],
+				"layout": [
+					{ "id": "1", "widgetId": "session-data", "gridX": 0, "gridY": 0, "gridWidth": 8, "gridHeight": 4 },
+					{ "id": "2", "widgetId": "session-related", "gridX": 8, "gridY": 0, "gridWidth": 4, "gridHeight": 4 }
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true,
+					"tabs": [
+						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] }
+					]
+				}
+			}
+		},
+		{
+			"id": "PortalMessages",
+			"route": "/messages",
+			"type": "index",
+			"title": "Portal Messages",
+			"config": {
+				"register": "portaliq",
+				"schema": "portalMessage",
+				"columns": [
+					"subject",
+					"subjectRef",
+					{
+						"key": "read",
+						"label": "Read",
+						"widget": "badge",
+						"widgetProps": {
+							"colorMap": {
+								"false": "warning",
+								"true": "success"
+							}
+						}
+					},
+					"receivedAt"
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				}
+			}
+		},
+		{
+			"id": "PortalMessageDetail",
+			"route": "/messages/:id",
+			"type": "detail",
+			"title": "Portal Message",
+			"config": {
+				"register": "portaliq",
+				"schema": "portalMessage",
+				"documentationUrl": "https://portaliq.conduction.nl",
+				"_note": "Inbox-item archetype: a portalMessage is a single notification delivered to a subject's portal inbox, so the whole record is small enough to read at a glance — the body is one full-width data card with all fields (subject, body, read, receivedAt, subjectRef, organisation). No Related panel: subjectRef is the plain pseudonymous identity string the IdP/domain app returned, NOT an OR object reference (portalMessage has no accountRef FK), so there is nothing to resolve. No child object-list: nothing in this register points at a portalMessage. No files/calendar/contacts/talk leaves: a message is text-only, not content- or comms-bearing beyond itself. No lifecycleActions: read is a one-way flag toggled by the portal UI, not a modeled lifecycle. Audit history stays a sidebar tab.",
+				"widgets": [
+					{ "id": "message-data", "type": "data", "title": "Message", "icon": "Email", "content": { "columns": 2 } }
+				],
+				"layout": [
+					{ "id": "1", "widgetId": "message-data", "gridX": 0, "gridY": 0, "gridWidth": 12, "gridHeight": 4 }
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true,
+					"tabs": [
+						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] }
+					]
+				}
+			}
+		},
+		{
+			"id": "Documents",
+			"route": "/documents",
+			"type": "index",
+			"title": "Documents",
+			"config": {
+				"register": "portaliq",
+				"schema": "exampleDocument",
+				"columns": [
+					"title",
+					"subjectRef",
+					"organisation",
+					{
+						"key": "status",
+						"label": "Status",
+						"widget": "badge",
+						"widgetProps": {
+							"colorMap": {
+								"open": "warning"
+							}
+						}
+					}
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				}
+			}
+		},
+		{
+			"id": "DocumentDetail",
+			"route": "/documents/:id",
+			"type": "detail",
+			"title": "Document",
+			"config": {
+				"register": "portaliq",
+				"schema": "exampleDocument",
+				"documentationUrl": "https://portaliq.conduction.nl",
+				"_note": "Document-record archetype: exampleDocument is the register's own demo, subject-scoped content object (x-schema-org DigitalDocument) that exercises the portal object reader end-to-end; its schema description says apps should replace it with real content schemas (procest ships supplierContract etc.), so this page is designed honestly for what exists today. The body leads with the document's own fields (title, status, subjectRef, organisation) in a full-width data card, with a full-width Files leaf below since the schema is schema.org DigitalDocument — a document-bearing type — even though this demo schema has no binary field yet. ADR-062 rev3 update: both cells shrunk from h4 to h3 — only 4 fields (2 rows at columns:2) and an empty-by-default Files leaf don't fill an h4 budget (rule 1's 60% floor). No Related panel: no object-reference properties are declared. No object-list: nothing else in this register points at an exampleDocument. status is a plain lifecycle string so lifecycleActions is wired to it. Audit history stays a sidebar tab.",
+				"widgets": [
+					{ "id": "document-data", "type": "data", "title": "Document details", "icon": "FileDocument", "content": { "columns": 2 } },
+					{ "id": "document-files", "type": "integration", "integrationId": "files", "title": "Attachments", "icon": "FolderOutline" }
+				],
+				"layout": [
+					{ "id": "1", "widgetId": "document-data", "gridX": 0, "gridY": 0, "gridWidth": 12, "gridHeight": 3 },
+					{ "id": "2", "widgetId": "document-files", "gridX": 0, "gridY": 3, "gridWidth": 12, "gridHeight": 3 }
+				],
+				"lifecycleActions": { "field": "status" },
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true,
+					"tabs": [
+						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] }
+					]
+				}
+			}
 		},
 		{
 			"id": "Settings",

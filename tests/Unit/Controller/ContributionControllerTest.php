@@ -7,6 +7,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\ContributionController;
 use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\PortalFileWriter;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Http;
@@ -310,6 +311,379 @@ class ContributionControllerTest extends TestCase
 
     }//end testCollectionParamDisambiguatesSharedSchema()
 
+    public function testObjectUnauthenticatedIs401(): void
+    {
+        $controller = $this->controller(aggregate: $this->aggregate(), subject: null);
+        $this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->object('r1', 'a', 'id-1')->getStatus());
+
+    }//end testObjectUnauthenticatedIs401()
+
+    public function testObjectOutsideManifestIs403BeforeAnyRead(): void
+    {
+        // No collection grants (r1, a) → forbidden, reader never called.
+        $reader = $this->createMock(PortalObjectReader::class);
+        $reader->expects($this->never())->method('readObject');
+
+        $controller = $this->controller(aggregate: $this->aggregate(), reader: $reader);
+        $this->assertSame(Http::STATUS_FORBIDDEN, $controller->object('r1', 'a', 'id-1')->getStatus());
+
+    }//end testObjectOutsideManifestIs403BeforeAnyRead()
+
+    public function testObjectBelowTrustThresholdIs403BeforeAnyRead(): void
+    {
+        $aggregate = $this->aggregate(
+            collections: [
+                ['register' => 'r1', 'schema' => 'a', 'minTrust' => 'high'],
+            ]
+        );
+
+        $reader = $this->createMock(PortalObjectReader::class);
+        $reader->expects($this->never())->method('readObject');
+
+        $controller = $this->controller(aggregate: $aggregate, reader: $reader);
+        $this->assertSame(Http::STATUS_FORBIDDEN, $controller->object('r1', 'a', 'id-1')->getStatus());
+
+    }//end testObjectBelowTrustThresholdIs403BeforeAnyRead()
+
+    /**
+     * A null from the reader (foreign-owned OR non-existent — indistinguishable)
+     * is a single 404: no existence oracle.
+     */
+    public function testObjectNullFromReaderIs404NoOracle(): void
+    {
+        $aggregate = $this->aggregate(
+            collections: [
+                ['register' => 'r1', 'schema' => 'a', 'scopeField' => 'subjectRef'],
+            ]
+        );
+
+        $reader = $this->createMock(PortalObjectReader::class);
+        $reader->method('readObject')->willReturn(null);
+
+        $controller = $this->controller(aggregate: $aggregate, reader: $reader);
+        $response   = $controller->object('r1', 'a', 'id-1');
+
+        $this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+        $this->assertSame(['error' => 'not_found'], $response->getData());
+
+    }//end testObjectNullFromReaderIs404NoOracle()
+
+    public function testObjectReturnsTheSubjectsObjectAndPassesScopeParams(): void
+    {
+        $aggregate = $this->aggregate(
+            collections: [
+                ['register' => 'portaliq', 'schema' => 'exampleDocument', 'scopeField' => 'subjectRef', 'fields' => ['title']],
+            ]
+        );
+
+        $received = [];
+        $reader   = $this->createMock(PortalObjectReader::class);
+        $reader->method('readObject')->willReturnCallback(
+            function (
+                string $register,
+                string $schema,
+                string $scopeField,
+                string $subjectRef,
+                string $id,
+                string $organisation='',
+                string $scopeClaim='',
+                string $contributingApp='',
+                mixed $via=null,
+                string $audience='',
+                mixed $fields=null
+            ) use (&$received) {
+                $received = [
+                    'register'        => $register,
+                    'schema'          => $schema,
+                    'scopeField'      => $scopeField,
+                    'subjectRef'      => $subjectRef,
+                    'id'              => $id,
+                    'organisation'    => $organisation,
+                    'contributingApp' => $contributingApp,
+                    'audience'        => $audience,
+                    'fields'          => $fields,
+                ];
+                return ['title' => 'Mine', 'id' => 'd-1'];
+            }
+        );
+
+        $controller = $this->controller(aggregate: $aggregate, reader: $reader);
+        $response   = $controller->object('portaliq', 'exampleDocument', 'd-1');
+
+        $this->assertSame(Http::STATUS_OK, $response->getStatus());
+        $this->assertSame(['object' => ['title' => 'Mine', 'id' => 'd-1']], $response->getData());
+        // The client-supplied id + the collection's scope params reach the reader.
+        $this->assertSame('d-1', $received['id']);
+        $this->assertSame('subjectRef', $received['scopeField']);
+        $this->assertSame('s1', $received['subjectRef']);
+        $this->assertSame('org-1', $received['organisation']);
+        $this->assertSame('portaliq', $received['contributingApp']);
+        $this->assertSame(['title'], $received['fields']);
+
+    }//end testObjectReturnsTheSubjectsObjectAndPassesScopeParams()
+
+    public function testUpdateUnauthenticatedIs401(): void
+    {
+        $controller = $this->controller(aggregate: $this->aggregate(), subject: null);
+        $this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->update('r1', 'a', 'id-1')->getStatus());
+
+    }//end testUpdateUnauthenticatedIs401()
+
+    public function testUpdateWithoutAnUpdateActionIs403BeforeAnyWrite(): void
+    {
+        // A create action for the same schema must NOT authorise an update.
+        $aggregate = $this->aggregate(
+            actions: [
+                ['id' => 'c1', 'type' => 'create', 'register' => 'r1', 'schema' => 'a', 'fields' => ['title']],
+            ]
+        );
+
+        $writer = $this->createMock(PortalObjectWriter::class);
+        $writer->expects($this->never())->method('updateObject');
+
+        $controller = $this->controller(aggregate: $aggregate, writer: $writer);
+        $this->assertSame(Http::STATUS_FORBIDDEN, $controller->update('r1', 'a', 'id-1')->getStatus());
+
+    }//end testUpdateWithoutAnUpdateActionIs403BeforeAnyWrite()
+
+    public function testUpdateBelowTrustThresholdIs403BeforeAnyWrite(): void
+    {
+        $aggregate = $this->aggregate(
+            actions: [
+                ['id' => 'u1', 'type' => 'update', 'register' => 'r1', 'schema' => 'a', 'fields' => ['title'], 'minTrust' => 'high'],
+            ]
+        );
+
+        $writer = $this->createMock(PortalObjectWriter::class);
+        $writer->expects($this->never())->method('updateObject');
+
+        $controller = $this->controller(aggregate: $aggregate, writer: $writer);
+        $this->assertSame(Http::STATUS_FORBIDDEN, $controller->update('r1', 'a', 'id-1')->getStatus());
+
+    }//end testUpdateBelowTrustThresholdIs403BeforeAnyWrite()
+
+    /**
+     * The update body is whitelisted to the action's fields (never `claims`),
+     * the client-supplied id travels to the writer, and the projected object
+     * is returned.
+     */
+    public function testUpdateAppliesWhitelistAndReturnsUpdatedObject(): void
+    {
+        $aggregate = $this->aggregate(
+            actions: [
+                ['id' => 'u1', 'type' => 'update', 'register' => 'portaliq', 'schema' => 'exampleDocument', 'fields' => ['title', 'claims']],
+            ]
+        );
+
+        $received = [];
+        $writer   = $this->createMock(PortalObjectWriter::class);
+        $writer->method('updateObject')->willReturnCallback(
+            function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id, array $data) use (&$received) {
+                $received = ['id' => $id, 'subjectRef' => $subjectRef, 'organisation' => $organisation, 'data' => $data];
+                return ['id' => $id, 'title' => 'X'];
+            }
+        );
+
+        $controller = $this->controller(aggregate: $aggregate, writer: $writer);
+        $response   = $controller->update('portaliq', 'exampleDocument', 'd-1');
+
+        $this->assertSame(Http::STATUS_OK, $response->getStatus());
+        $this->assertSame(['object' => ['id' => 'd-1', 'title' => 'X']], $response->getData());
+        // Whitelist applied; `claims` dropped even though mistakenly declared.
+        $this->assertSame(['title' => 'X'], $received['data']);
+        $this->assertArrayNotHasKey('claims', $received['data']);
+        // The client id + server-derived scope reach the writer.
+        $this->assertSame('d-1', $received['id']);
+        $this->assertSame('s1', $received['subjectRef']);
+        $this->assertSame('org-1', $received['organisation']);
+
+    }//end testUpdateAppliesWhitelistAndReturnsUpdatedObject()
+
+    /**
+     * A claim-scoped transition (portal-status-transitions): the update action
+     * declares a scopeClaim, so the reader resolves the ownership value from the
+     * subject's portalAccount and THAT value — not the raw subjectRef — reaches
+     * the writer as the scope value it re-verifies row ownership against. This is
+     * what lets, e.g., a manager approve timesheets scoped by their costCenter
+     * claim. A claim that cannot resolve (null) is a 404 with no write.
+     */
+    public function testClaimScopedUpdateResolvesTheScopeValueForOwnership(): void
+    {
+        $aggregate = $this->aggregate(
+            actions: [
+                ['id' => 'approve', 'type' => 'update', 'register' => 'hrmq', 'schema' => 'timesheet', 'scopeField' => 'costCenter', 'scopeClaim' => 'costCenter', 'fields' => ['status'], 'set' => ['status' => 'approved']],
+            ]
+        );
+
+        $received = [];
+        $writer   = $this->createMock(PortalObjectWriter::class);
+        $writer->method('updateObject')->willReturnCallback(
+            function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id, array $data) use (&$received) {
+                $received = ['scopeField' => $scopeField, 'scopeValue' => $subjectRef, 'data' => $data];
+                return ['id' => $id, 'status' => 'approved'];
+            }
+        );
+
+        // The reader resolves the costCenter claim to CC-100.
+        $reader = $this->createMock(PortalObjectReader::class);
+        // The contributing app (the scopeClaim namespace) is taken from the
+        // contribution, here 'portaliq' per the aggregate() fixture.
+        $reader->expects($this->once())->method('resolveScopeValue')
+            ->with('costCenter', 'portaliq', self::SUBJECT)
+            ->willReturn('CC-100');
+
+        $controller = $this->controller(aggregate: $aggregate, reader: $reader, writer: $writer);
+        $response   = $controller->update('hrmq', 'timesheet', 't-1');
+
+        $this->assertSame(Http::STATUS_OK, $response->getStatus());
+        // The RESOLVED claim value (not the subjectRef) is the ownership value,
+        // and the server-enforced set is applied.
+        $this->assertSame('costCenter', $received['scopeField']);
+        $this->assertSame('CC-100', $received['scopeValue']);
+        $this->assertSame(['status' => 'approved'], $received['data']);
+
+    }//end testClaimScopedUpdateResolvesTheScopeValueForOwnership()
+
+    /**
+     * A declared scopeClaim that cannot resolve (absent claim) → 404, no write.
+     */
+    public function testClaimScopedUpdateWithUnresolvableClaimIs404BeforeAnyWrite(): void
+    {
+        $aggregate = $this->aggregate(
+            actions: [
+                ['id' => 'approve', 'type' => 'update', 'register' => 'hrmq', 'schema' => 'timesheet', 'scopeField' => 'costCenter', 'scopeClaim' => 'costCenter', 'fields' => ['status'], 'set' => ['status' => 'approved']],
+            ]
+        );
+
+        $writer = $this->createMock(PortalObjectWriter::class);
+        $writer->expects($this->never())->method('updateObject');
+
+        $reader = $this->createMock(PortalObjectReader::class);
+        $reader->method('resolveScopeValue')->willReturn(null);
+
+        $controller = $this->controller(aggregate: $aggregate, reader: $reader, writer: $writer);
+        $response   = $controller->update('hrmq', 'timesheet', 't-1');
+
+        $this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+
+    }//end testClaimScopedUpdateWithUnresolvableClaimIs404BeforeAnyWrite()
+
+    public function testUploadRequiresTheCollectionToOptIntoFileUploads(): void
+    {
+        // The collection does NOT declare filesUpload → 403, no read, no attach.
+        $aggregate = $this->aggregate(
+            collections: [['id' => 'c1', 'register' => 'portaliq', 'schema' => 'exampleDocument', 'scopeField' => 'subjectRef', 'listable' => true]]
+        );
+
+        $fileWriter = $this->createMock(PortalFileWriter::class);
+        $fileWriter->expects($this->never())->method('attachFile');
+
+        $controller = $this->controller(aggregate: $aggregate, fileWriter: $fileWriter);
+        $response   = $controller->uploadFile('portaliq', 'exampleDocument', 'd-1');
+
+        $this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+
+    }//end testUploadRequiresTheCollectionToOptIntoFileUploads()
+
+    public function testUploadForeignOrAbsentObjectIs404BeforeAnyAttach(): void
+    {
+        $aggregate = $this->aggregate(
+            collections: [['id' => 'c1', 'register' => 'portaliq', 'schema' => 'exampleDocument', 'scopeField' => 'subjectRef', 'listable' => true, 'filesUpload' => true]]
+        );
+
+        // The scoped reader returns null (not the subject's / absent).
+        $reader = $this->createMock(PortalObjectReader::class);
+        $reader->method('readObject')->willReturn(null);
+        $reader->method('resolveScopeValue')->willReturn('s1');
+
+        $fileWriter = $this->createMock(PortalFileWriter::class);
+        $fileWriter->expects($this->never())->method('attachFile');
+
+        $controller = $this->controller(aggregate: $aggregate, reader: $reader, fileWriter: $fileWriter);
+        $response   = $controller->uploadFile('portaliq', 'exampleDocument', 'd-1');
+
+        $this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+
+    }//end testUploadForeignOrAbsentObjectIs404BeforeAnyAttach()
+
+    public function testUploadAttachesTheFileToAnOwnedObject(): void
+    {
+        $aggregate = $this->aggregate(
+            collections: [['id' => 'c1', 'register' => 'portaliq', 'schema' => 'exampleDocument', 'scopeField' => 'subjectRef', 'listable' => true, 'filesUpload' => true]]
+        );
+
+        // A real temp file stands in for the multipart upload.
+        $tmp = tempnam(sys_get_temp_dir(), 'portaliq-test');
+        file_put_contents($tmp, 'evidence-bytes');
+
+        $request = $this->createMock(IRequest::class);
+        $request->method('getHeader')->willReturnMap([['Authorization', 'Bearer client-session-token']]);
+        $request->method('getParam')->willReturn('');
+        $request->method('getUploadedFile')->willReturn(['name' => 'bewijs.pdf', 'tmp_name' => $tmp, 'error' => 0, 'size' => 14]);
+
+        $registry = $this->createMock(PortalContributionRegistry::class);
+        $registry->method('aggregateFor')->willReturn($aggregate);
+        $session = $this->createMock(PortalSessionService::class);
+        $session->method('resolveFromBearer')->willReturn(self::SUBJECT);
+
+        $reader = $this->createMock(PortalObjectReader::class);
+        $reader->method('readObject')->willReturn(['id' => 'd-1', 'title' => 'Mine']);
+
+        $captured   = [];
+        $fileWriter = $this->createMock(PortalFileWriter::class);
+        $fileWriter->method('attachFile')->willReturnCallback(
+            function (string $register, string $schema, string $id, string $fileName, string $content) use (&$captured) {
+                $captured = ['id' => $id, 'fileName' => $fileName, 'content' => $content];
+                return ['id' => 7, 'name' => $fileName, 'size' => strlen($content)];
+            }
+        );
+
+        $controller = new ContributionController(
+            $request,
+            $registry,
+            $session,
+            $reader,
+            $this->createMock(PortalObjectWriter::class),
+            $fileWriter,
+            $this->createMock(IClientService::class),
+            $this->createMock(IURLGenerator::class)
+        );
+
+        $response = $controller->uploadFile('portaliq', 'exampleDocument', 'd-1');
+        @unlink($tmp);
+
+        $this->assertSame(Http::STATUS_OK, $response->getStatus());
+        // The verified id + the sanitised basename + the file bytes reach the writer.
+        $this->assertSame('d-1', $captured['id']);
+        $this->assertSame('bewijs.pdf', $captured['fileName']);
+        $this->assertSame('evidence-bytes', $captured['content']);
+        $this->assertSame(['file' => ['id' => 7, 'name' => 'bewijs.pdf', 'size' => 14]], $response->getData());
+
+    }//end testUploadAttachesTheFileToAnOwnedObject()
+
+    /**
+     * A null from the writer (ownership re-verification failed — the write did
+     * not happen) is 404, indistinguishable from a non-existent id.
+     */
+    public function testUpdateOwnershipFailureFromWriterIs404(): void
+    {
+        $aggregate = $this->aggregate(
+            actions: [
+                ['id' => 'u1', 'type' => 'update', 'register' => 'portaliq', 'schema' => 'exampleDocument', 'fields' => ['title']],
+            ]
+        );
+
+        $writer = $this->createMock(PortalObjectWriter::class);
+        $writer->method('updateObject')->willReturn(null);
+
+        $controller = $this->controller(aggregate: $aggregate, writer: $writer);
+        $response   = $controller->update('portaliq', 'exampleDocument', 'not-mine');
+
+        $this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+        $this->assertSame(['error' => 'not_found'], $response->getData());
+
+    }//end testUpdateOwnershipFailureFromWriterIs404()
+
     /**
      * A controller whose request returns the given value for the `collection`
      * query param (and safe defaults for the rest).
@@ -334,6 +708,7 @@ class ContributionControllerTest extends TestCase
             $session,
             $reader,
             $this->createMock(PortalObjectWriter::class),
+            $this->createMock(PortalFileWriter::class),
             $this->createMock(IClientService::class),
             $this->createMock(IURLGenerator::class)
         );
@@ -390,7 +765,8 @@ class ContributionControllerTest extends TestCase
         ?array $subject=self::SUBJECT,
         ?PortalObjectReader $reader=null,
         ?PortalObjectWriter $writer=null,
-        ?IClientService $clientService=null
+        ?IClientService $clientService=null,
+        ?PortalFileWriter $fileWriter=null
     ): ContributionController {
         $request = $this->createMock(IRequest::class);
         $request->method('getHeader')->willReturnMap([['Authorization', 'Bearer client-session-token']]);
@@ -416,12 +792,18 @@ class ContributionControllerTest extends TestCase
             fn (string $path) => 'https://cloud.example'.$path
         );
 
+        // Default reader: resolveScopeValue returns the subject's subjectRef (the
+        // real no-scopeClaim behaviour) so update()'s ownership resolution passes.
+        $defaultReader = $this->createMock(PortalObjectReader::class);
+        $defaultReader->method('resolveScopeValue')->willReturn((string) ($subject['subjectRef'] ?? ''));
+
         return new ContributionController(
             $request,
             $registry,
             $session,
-            ($reader ?? $this->createMock(PortalObjectReader::class)),
+            ($reader ?? $defaultReader),
             ($writer ?? $this->createMock(PortalObjectWriter::class)),
+            ($fileWriter ?? $this->createMock(PortalFileWriter::class)),
             ($clientService ?? $this->createMock(IClientService::class)),
             $urlGenerator
         );

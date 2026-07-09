@@ -99,6 +99,8 @@ the session routes are the public auth edge.
 | `GET` | `/apps/portaliq/portal/api/contributions` | The subject's aggregated manifest (audience- and trust-filtered) |
 | `GET` | `/apps/portaliq/portal/api/collections/{register}/{schema}` | Read one collection, subject-scoped with per-row verification |
 | `POST` | `/apps/portaliq/portal/api/collections/{register}/{schema}` | Create an object via a declared `type: create` action (whitelisted fields only) |
+| `GET` | `/apps/portaliq/portal/api/collections/{register}/{schema}/{id}` | Read a single object, subject-scoped; per-row ownership re-verified (404 for a foreign-owned or absent id — no existence oracle) |
+| `PATCH` | `/apps/portaliq/portal/api/collections/{register}/{schema}/{id}` | Update an object via a declared `type: update` action (whitelisted fields only); ownership re-verified against OR before any write, scope field re-stamped (closes #16) |
 | `POST` | `/apps/portaliq/portal/api/actions/{appId}/{actionId}` | Forward a declared endpoint action server-to-server with a signed `X-Portal-Subject` assertion (contract v2, A6) |
 
 ### Contribution contract v2 (ADR-046 amendment)
@@ -145,6 +147,15 @@ optional with a v1-equivalent default:
   identifiers-only (never the full row). No `fields` = full rows (v1/v2
   behaviour). Projection runs AFTER per-row verification — it shapes what a
   row shows, never which rows return.
+- **`type: update` action** (portal-scoped-crud, ADR-062 Phase 1) —
+  `{id, type: 'update', register, schema, fields, minTrust?}`: authorises the
+  `PATCH .../collections/{register}/{schema}/{id}` endpoint. Only the declared
+  `fields` are accepted (the scope field is never whitelisted). Ownership of
+  the client-supplied id is re-verified against OpenRegister BEFORE any write —
+  the id is never trusted — and the scope field is re-stamped server-side, so a
+  patch can never move a row out of, or into, another subject's scope
+  (write-IDOR closed, #16). A null result (foreign-owned OR non-existent id) is
+  a single 404 — no existence oracle.
 - **Endpoint actions** — `{id, label, endpoint, method?, minTrust?}` where
   `endpoint` is an **instance-local absolute path** (full URLs rejected —
   SSRF guard). Portaliq forwards server-to-server with a ~60s HS256
@@ -152,8 +163,62 @@ optional with a v1-equivalent default:
   `use: "assertion"`); the client's own `Authorization` header is never
   forwarded, and an assertion can never be replayed as a portal session.
 
-Canonical contract text: ADR-046 amendment 2026-07-06 (hydra) + the
+### Contribution manifest v3 — UI configuration (ADR-063)
+
+The manifest MAY also carry a **presentation-only** UI-configuration vocabulary
+so an app ships a schema + manifest and its subjects get a real rendered
+interface — no bespoke frontend per app. Every key is optional and additive; a
+fail-closed `PortalManifestNormaliser` sanitises them in the aggregate.
+
+| Level | Keys |
+|---|---|
+| Collection | `columns` (`[{field, label?, render?}]`, render ∈ `text·date·datetime·badge·currency·boolean·link`), `detail` (`{layout: card·timeline, fields?}`), `defaultSort` (`{field, direction}`), `defaultFilters` |
+| Action | `fieldConfigs` (per-**whitelisted**-field `{label?, visible?, required?, disabled?, size?, placeholder?, help?}`), `optionsProviders`, `submitLabel`, `successMessage` |
+| Contribution | `pages` (`[{id, label?, icon?, blocks[]}]`) of typed blocks `collection·action·detail·richText·cta` |
+
+**UI config never widens access — the invariant.** The action `fields`
+whitelist, collection scope, and read-side projection remain the sole data
+authorities. A `fieldConfigs`/`optionsProviders` entry for a field outside the
+whitelist is dropped; a `column` naming a projected-away field renders blank; a
+`collection` optionsProvider dropdown is populated through the **subject-scoped**
+collection endpoint, so it can only offer values the subject may already read;
+page blocks resolve only within the same (trust-filtered) contribution.
+Malformed config is dropped fail-closed, never fatal. Absent `pages` →
+Portaliq synthesises one default page per listable collection (v2 rendering).
+
+**Status transitions (approve / reject / close).** A `type: update` action MAY
+declare **`set`** — a map of **whitelisted** field → fixed value the *server*
+applies over the client body — and a collection MAY declare **`rowActions`** (ids
+of update actions, rendered as per-row buttons). The `PATCH` update endpoint takes
+`?action=<id>` to pick which transition to apply. The target is **tamper-proof**:
+a client PATCHing `{status: "hacked"}` against a `set: {status: "closed"}`
+transition still lands on `closed`, and `set` only honours whitelisted fields, so
+a transition can never move a row out of the subject's scope.
+
+Canonical contract text: ADR-046 amendment 2026-07-06 + ADR-063 (hydra) + the
 `portal-contribution-contract` spec in [`openspec/specs/`](openspec/specs/).
+
+### Deploying the portal (production notes)
+
+- **Build both bundles.** `npm run build` produces *both* the Vue admin bundle
+  and the React portal bundle (`js/portaliq-portal.js`); the portal bundle is
+  gitignored, so a release that only runs the admin build serves a 404 at
+  `/portal`. `build:admin` / `build:portal` build them individually.
+- **`portalAccount` claims schema.** `scopeClaim`/`via` scoping resolves the
+  subject's claims from a `portalAccount` object carrying `subjectRef`,
+  `audience` and `claims` (`{appId: {claimName: value}}`). Ensure the deployed
+  `portalAccount` schema carries these — if another app defines a `portalAccount`
+  schema it can shadow this one on OpenRegister's global slug (see the
+  schema-slug-collision note in the issue tracker).
+- **Transitions vs lifecycle hooks.** A `type: update` transition writes through
+  OpenRegister with RBAC bypassed (portal subjects are not NC users) but does
+  NOT bypass a schema's declarative lifecycle hooks. A schema whose status
+  transition requires a logged-in NC user cannot be transitioned by an external
+  subject via the scoped `PATCH` — use the A6 bearer-forward action or a
+  portal-subject-aware hook. Keep such manifests read-only until then.
+- **Cache-busting** is automatic outside `debug` mode (Nextcloud appends the app
+  version to script URLs); in a `debug`-true dev instance no `?v=` is added, so
+  bump the app version (or hard-reload) after redeploying the bundle.
 
 ### Directory Structure
 

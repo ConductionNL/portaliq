@@ -7,6 +7,9 @@
 - [contract-v2](../../changes/contract-v2/)
 - [field-projection](../../changes/field-projection/)
 - [reverse-scope-join](../../changes/reverse-scope-join/)
+- [portal-scoped-crud](../../changes/portal-scoped-crud/)
+- [contribution-manifest-v3](../../changes/contribution-manifest-v3/)
+- [portal-status-transitions](../../changes/portal-status-transitions/)
 
 ## Purpose
 
@@ -309,6 +312,79 @@ to the full row (ADR-005).
 - THEN message rows are projected exactly like any other collection (declared fields + identifiers; `body` absent)
 - @e2e exclude same code path as list projection — covered by a PHPUnit controller pass-through case; inbox rendering itself is unchanged
 
+### Requirement: Scoped single-object read
+
+The reader MUST expose a single-object read that returns ONE object by id,
+scoped to the subject by the SAME per-row ownership boundary as the list read.
+It MUST resolve the scoping value identically to the list read (a declared
+`scopeClaim` → the server-resolved claim from the subject's own portalAccount,
+else the subjectRef; an absent or malformed claim MUST fail closed to "not
+found" WITHOUT fetching the object). It MUST fetch the object by id, then
+re-check ownership: for a direct collection `row[scopeField]` MUST equal the
+scoping value and the tenant MUST match; for a `via` collection the object MUST
+pass the one-hop join membership (the identical verified pre-pass, `match`
+mode, and tenant discipline as the list read). Field projection, when declared,
+MUST run before returning. An object owned by a different subject, in a
+different tenant, not a join member, with an absent/malformed claim, or with an
+id that does not exist MUST ALL return the identical "not found" result — there
+MUST be NO existence oracle. The read MUST fail closed (missing OpenRegister,
+OR error, malformed row) to "not found". The controller MUST answer
+`GET .../collections/{register}/{schema}/{id}` with the object (200) or 404,
+after authorising the collection exactly like the list read (manifest
+membership honouring `?collection=`, plus the matched collection's `minTrust`
+re-checked — 403 before any OpenRegister call). Added by the
+`portal-scoped-crud` change (ADR-062 Phase 1).
+
+#### Scenario: A subject reads its own object by id
+
+- GIVEN a collection the subject is entitled to AND an object whose `scopeField` equals the subject's scoping value
+- WHEN the subject requests that object by id
+- THEN the object is returned (200), projected to the collection's `fields` when declared
+- @e2e exclude backend single-read contract — covered by the PHPUnit reader/controller matrices; no distinct portaliq UI flow
+
+#### Scenario: A foreign-owned or absent id is an identical 404
+
+- GIVEN a subject AND an id that either belongs to a DIFFERENT subject/tenant, is not a join member, or does not exist
+- WHEN the subject requests that id
+- THEN the response is 404 with the identical body in every case — no existence oracle
+- @e2e exclude no-oracle security invariant — covered by PHPUnit (foreign-owner, foreign-tenant, non-member, non-existent) all returning null → 404; no UI surface
+
+### Requirement: Scoped verified update
+
+The writer MUST expose a verified update that patches ONE object by id, and
+MUST re-verify ownership against OpenRegister BEFORE any write: it MUST re-read
+the row by id and confirm `row[scopeField]` equals the subject's reference AND
+the tenant matches (the SAME boundary as the reader's per-row check); if the
+row is not the subject's — foreign owner, wrong tenant, or non-existent id — it
+MUST return "not found" and MUST NOT call the OpenRegister save at all. The
+client-supplied id MUST NEVER be trusted as a capability. On an owned row it
+MUST merge only the already-whitelisted fields onto the existing object,
+re-stamp the scope field (and organisation) AFTER the merge so a patch can
+never move the row out of the subject's scope, and save with the id preserved
+so OpenRegister UPDATES rather than creates. The update MUST fail closed (OR
+error, missing OpenRegister) to "not found". The controller MUST answer
+`PATCH .../collections/{register}/{schema}/{id}` after authorising a declared
+`{id, type: 'update', register, schema, fields, minTrust?}` action (403 if
+none; the matched action's `minTrust` re-checked before any write) and
+whitelisting the request body to the action's `fields` (the scope field is
+never whitelisted, and `claims` is always dropped); a null result is 404, no
+existence oracle. This closes the write-side IDOR concern
+(Conduction/portaliq#16). Added by the `portal-scoped-crud` change.
+
+#### Scenario: A subject patches its own object
+
+- GIVEN a `type: update` action for a collection the subject is entitled to AND an object the subject owns
+- WHEN the subject PATCHes whitelisted fields on that object by id
+- THEN only the whitelisted fields change, unrelated fields are preserved, the scope field is re-stamped, and OpenRegister updates the row (id preserved)
+- @e2e exclude backend update contract — covered by the PHPUnit writer/controller matrices; no distinct portaliq UI flow
+
+#### Scenario: A patch to a foreign-owned id is refused before any write
+
+- GIVEN a subject AND an id that belongs to a DIFFERENT subject or tenant
+- WHEN the subject PATCHes that id
+- THEN ownership is re-verified against OpenRegister FIRST, the write is refused (the OpenRegister save is never called), and the response is 404 — closing Conduction/portaliq#16
+- @e2e exclude write-IDOR security invariant — pinned by a PHPUnit test asserting the save is never called for a foreign id; no UI surface
+
 ### Requirement: Frozen assertion wire format
 
 The A6 `X-Portal-Subject` assertion wire format MUST be treated as frozen
@@ -325,6 +401,91 @@ domain-app verifiers templated against it.
 - WHEN its header and claims are decoded
 - THEN the header is exactly `{"alg": "HS256", "typ": "JWT"}` and the claim keys are exactly `sub`, `audience`, `organisation`, `trust`, `jti`, `use`, `iat`, `exp`, `iss` with `use = "assertion"`, `iss = "portaliq"`, and `exp - iat = 60`
 - @e2e exclude wire-format pin — a PHPUnit compatibility test by definition; no UI or HTTP surface
+
+### Requirement: Manifest UI configuration is presentation-only
+
+The manifest MAY carry UI-configuration keys (collection `columns`/`detail`/
+`defaultSort`/`defaultFilters`; action `fieldConfigs`/`optionsProviders`/
+`submitLabel`/`successMessage`; contribution `pages`), consumed by the portal
+frontend for rendering ONLY. They MUST NOT influence the action `fields`
+whitelist, collection scoping, or read-side field projection. All keys are
+optional; a `PortalManifestNormaliser` sanitises them fail-closed after trust
+filtering, in the aggregate, and never throws.
+
+#### Scenario: A field config never widens the create whitelist
+
+- GIVEN an action whose `fields` whitelist is `["title"]` and a `fieldConfigs`
+  entry marking `status` visible/required
+- WHEN the manifest is normalised
+- THEN the `status` config is removed and a submit still accepts only `title`
+
+#### Scenario: A column naming a projected-away field never leaks it
+
+- GIVEN a collection projecting `["title","status"]` and a column for `internalNotes`
+- WHEN the collection is read and rendered
+- THEN rows carry only title/status/identifiers and the column renders blank
+
+### Requirement: Scoped option providers
+
+An action field MAY declare an `optionsProvider`: `static` (`options[]`) or
+`collection` (`{register,schema,labelField,valueField}`, populated by the portal
+through the SUBJECT-SCOPED `/portal/api/collections/{register}/{schema}` endpoint,
+so it can only offer values the subject may already read). Any other shape, or a
+provider for a non-whitelisted field, is dropped fail-closed.
+
+#### Scenario: A collection dropdown is scoped to the subject
+
+- GIVEN a `collection` optionsProvider for `procest/supplierContract`
+- WHEN the form is rendered for subject `s1`
+- THEN the options are exactly the `supplierContract` rows `s1` may read
+
+### Requirement: Page composition with resolvable, same-contribution blocks
+
+A contribution MAY declare `pages` of typed `blocks` (`collection`, `action`,
+`detail`, `richText`, `cta`). Every `collection`/`action` reference MUST resolve
+within the SAME contribution AFTER trust filtering; an unresolved/unknown block
+is dropped, a zero-block page is dropped, and a contribution with no valid pages
+gets one synthesised default page per `listable` collection (v2 rendering).
+
+#### Scenario: A cross-contribution or trust-dropped reference is refused
+
+- GIVEN a page block referencing another app's collection, or a trust-dropped action
+- WHEN the manifest is normalised
+- THEN the block is dropped (and its page too, if that empties it)
+
+### Requirement: v2 manifests are unchanged by normalisation
+
+A manifest with no v3 keys MUST pass through with collections and actions
+byte-identical, aside from an additive synthesised `pages` array.
+
+#### Scenario: A pure v2 manifest round-trips
+
+- GIVEN a v2 contribution (no v3 keys)
+- WHEN normalised
+- THEN every collection/action is unchanged and a default `pages` array is added
+
+### Requirement: Server-enforced status transitions
+
+A `type: update` action MAY declare `set` — a map of WHITELISTED field → fixed
+value the SERVER applies over the client body (after whitelisting, before the
+write) — and a collection MAY declare `rowActions` (ids resolving to `type:
+update` actions in the same contribution, rendered as per-row buttons). The
+`PATCH` update endpoint accepts `?action=<id>` to select which update action to
+apply. The transition target is tamper-proof (the client can never choose an
+arbitrary value); malformed `set`/`rowActions` are dropped fail-closed; ownership
+re-verification and scope re-stamp still run.
+
+#### Scenario: A transition target cannot be tampered with
+
+- GIVEN an update action `close` with `fields: [status]` and `set: {status: closed}`
+- WHEN the subject PATCHes their own row with `?action=close` and body `{status: "hacked"}`
+- THEN the saved `status` is `closed` (server `set` overrides the client) and 200 is returned
+
+#### Scenario: rowActions and set fail closed
+
+- GIVEN `set: {status: closed, subjectRef: other}` and `rowActions: [close, createTicket, ghost]`
+- WHEN normalised
+- THEN `set` keeps only `{status: closed}` and `rowActions` keeps only `[close]`
 
 ## Non-Functional Requirements
 
@@ -383,3 +544,18 @@ domain-app verifiers templated against it.
   the `reverse-scope-join` change (delta:
   `openspec/changes/reverse-scope-join/specs/portal-contribution-contract/spec.md`,
   tracking Conduction/portaliq#14); same sync discipline until it archives.
+<<<<<<< HEAD
+- The "Manifest UI configuration is presentation-only", "Scoped option
+  providers", "Page composition with resolvable, same-contribution blocks", and
+  "v2 manifests are unchanged by normalisation" requirements were added by the
+  `contribution-manifest-v3` change (delta:
+  `openspec/changes/contribution-manifest-v3/specs/portal-contribution-contract/spec.md`);
+  enforced by `PortalManifestNormaliser` and frozen in hydra ADR-063; same sync
+  discipline until it archives.
+=======
+- The "Scoped single-object read" and "Scoped verified update" requirements
+  were added by the `portal-scoped-crud` change (delta:
+  `openspec/changes/portal-scoped-crud/specs/portal-contribution-contract/spec.md`,
+  ADR-062 Phase 1, closing Conduction/portaliq#16); same sync discipline until
+  it archives.
+>>>>>>> origin/development

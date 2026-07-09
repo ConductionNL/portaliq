@@ -82,6 +82,10 @@ use Throwable;
  * (claim, via, direct) re-validates structure and per-row ownership before
  * anything is returned; collapsing the guards would trade auditability for a
  * score.
+ * @SuppressWarnings(PHPMD.ExcessiveClassLength)     -- the length is the
+ * per-path scoping helpers (claim, forward/reverse via, projection) plus the
+ * single-object read reusing them; each carries its own security rationale, so
+ * splitting the file would scatter one security boundary across classes.
  */
 class PortalObjectReader
 {
@@ -244,6 +248,221 @@ class PortalObjectReader
     }//end readCollection()
 
     /**
+     * Read a SINGLE object by id, scoped to the subject exactly like
+     * readCollection scopes a list (portal-scoped-crud, ADR-062 Phase 1).
+     *
+     * The scoping value is resolved identically (scopeClaim → resolveClaim,
+     * else the subjectRef); the object is fetched by id and then re-checked
+     * through the SAME per-row ownership boundary — verifyScope for a direct
+     * collection, or the one-hop `via` membership machinery for a via
+     * collection. An object whose scope value is not the subject's (or that
+     * fails the tenant check, or does not exist, or an absent/malformed claim)
+     * returns null so the controller answers 404 — indistinguishable from
+     * "not found", giving NO existence oracle. Field projection runs last,
+     * exactly as on the list path. Fail-closed on everything (missing OR, OR
+     * error, malformed row) → null.
+     *
+     * @param string $register        The OpenRegister register slug/id.
+     * @param string $schema          The schema slug.
+     * @param string $scopeField      The row field that must equal the scope value.
+     * @param string $subjectRef      The server-derived subject reference.
+     * @param string $id              The client-supplied object id/uuid (never trusted).
+     * @param string $organisation    The tenant to constrain to (may be empty).
+     * @param string $scopeClaim      Optional claim address (`claimName` or `appId.claimName`).
+     * @param string $contributingApp The app the contribution came from (bare-claim namespace).
+     * @param mixed  $via             Optional one-hop join declaration (array), fail-closed on anything else.
+     * @param string $audience        The subject's audience (portalAccount lookup filter).
+     * @param mixed  $fields          Optional projection whitelist (array of property names); null = full row.
+     *
+     * @return array<string, mixed>|null The subject's object, or null (→ 404).
+     *
+     * @spec openspec/changes/portal-scoped-crud/tasks.md#T1
+     *
+     * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- the parameters map
+     * 1:1 onto the declarative collection fields, identical to readCollection;
+     * folding them into an options array would lose type safety on a security
+     * boundary.
+     */
+    public function readObject(
+        string $register,
+        string $schema,
+        string $scopeField,
+        string $subjectRef,
+        string $id,
+        string $organisation='',
+        string $scopeClaim='',
+        string $contributingApp='',
+        mixed $via=null,
+        string $audience='',
+        mixed $fields=null
+    ): ?array {
+        if ($id === '') {
+            return null;
+        }
+
+        $objectService = $this->objectService();
+        if ($objectService === null) {
+            return null;
+        }
+
+        // Resolve the scoping value the SAME way readCollection does: a
+        // declared scopeClaim replaces the subjectRef with a server-resolved
+        // claim from the subject's OWN portalAccount; an absent/malformed claim
+        // fails closed to null (→ 404), never an unscoped fetch.
+        $scopeValue = $subjectRef;
+        if ($scopeClaim !== '') {
+            $claimValue = $this->resolveClaim(
+                objectService: $objectService,
+                scopeClaim: $scopeClaim,
+                contributingApp: $contributingApp,
+                subjectRef: $subjectRef,
+                audience: $audience,
+                organisation: $organisation
+            );
+            if ($claimValue === null) {
+                return null;
+            }
+
+            $scopeValue = $claimValue;
+        }
+
+        $row = $this->fetchById(objectService: $objectService, register: $register, schema: $schema, id: $id);
+        if ($row === null) {
+            return null;
+        }
+
+        // A via collection: the object must ALSO pass the one-hop via
+        // membership (same join pre-pass + tenant + match discipline as the
+        // list path), reusing the exact machinery readViaCollection uses.
+        if ($via !== null) {
+            $verified = $this->verifyViaObject(
+                objectService: $objectService,
+                scopeField: $scopeField,
+                via: $via,
+                scopeValue: $scopeValue,
+                organisation: $organisation,
+                row: $row
+            );
+            if ($verified === null) {
+                return null;
+            }
+
+            return $this->projectRow(row: $verified, fields: $fields);
+        }
+
+        // Direct scope: run the fetched row through the SAME per-row ownership
+        // check every portal read uses. A foreign-owned row is dropped here.
+        $verified = $this->verifyScope(rows: [$row], scopeField: $scopeField, subjectRef: $scopeValue, organisation: $organisation);
+        if (count($verified) === 0) {
+            return null;
+        }
+
+        return $this->projectRow(row: $verified[0], fields: $fields);
+    }//end readObject()
+
+    /**
+     * Fetch a single OpenRegister row by id/uuid (best-effort query-side
+     * filter — the per-row ownership check in readObject is the boundary). The
+     * id is matched in-memory against the row's identifier candidates so it
+     * works whether OR filtered server-side or returned a wider set.
+     *
+     * @param object $objectService OpenRegister's ObjectService.
+     * @param string $register      The register slug/id.
+     * @param string $schema        The schema slug.
+     * @param string $id            The client-supplied id/uuid.
+     *
+     * @return array<string, mixed>|null The normalised row, or null.
+     *
+     * @spec openspec/changes/portal-scoped-crud/tasks.md#T1
+     */
+    private function fetchById(object $objectService, string $register, string $schema, string $id): ?array
+    {
+        // OR only honours DATA-property filters, so findAll(filters:['id'=>…])
+        // does NOT select by identifier — fetch by id directly with find().
+        // RBAC/tenant off; the caller re-verifies ownership via verifyScope.
+        try {
+            $entity = $objectService->find(
+                id: $id,
+                register: $register,
+                schema: $schema,
+                _rbac: false,
+                _multitenancy: false
+            );
+        } catch (Throwable $e) {
+            $this->logger->warning('Portaliq: OR single read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
+            return null;
+        }
+
+        if ($entity === null) {
+            return null;
+        }
+
+        $row = $this->normalise(row: $entity);
+        if ($row === null) {
+            return null;
+        }
+
+        // Defence: confirm the resolved row actually carries the requested id.
+        if (in_array($id, $this->rowIds(row: $row), true) === false) {
+            return null;
+        }
+
+        return $row;
+    }//end fetchById()
+
+    /**
+     * Verify a single fetched row against a one-hop `via` join, reusing the
+     * exact list-path machinery (validate → verified join pre-pass → per-row
+     * membership + tenant under the declared `match` mode). Fails closed to
+     * null on an invalid/nested/malformed-`match` via, an empty scoping value,
+     * an empty verified target set, or a non-member row.
+     *
+     * @param object               $objectService OpenRegister's ObjectService.
+     * @param string               $scopeField    The collection's own scope field (reverse match).
+     * @param mixed                $via           The raw via declaration (validated here).
+     * @param string               $scopeValue    The subject's scoping value.
+     * @param string               $organisation  The subject's tenant (may be empty).
+     * @param array<string, mixed> $row           The normalised fetched row.
+     *
+     * @return array<string, mixed>|null The verified row, or null.
+     *
+     * @spec openspec/changes/portal-scoped-crud/tasks.md#T1
+     */
+    private function verifyViaObject(
+        object $objectService,
+        string $scopeField,
+        mixed $via,
+        string $scopeValue,
+        string $organisation,
+        array $row
+    ): ?array {
+        if (is_array($via) === false || $this->isValidVia(via: $via) === false) {
+            $this->logger->warning(
+                'Portaliq: invalid via declaration on single read — failing closed',
+                ['schema' => (string) ($row['@self']['schema'] ?? '')]
+            );
+            return null;
+        }
+
+        if ($scopeValue === '') {
+            return null;
+        }
+
+        $targets = $this->verifiedJoinTargets(objectService: $objectService, via: $via, scopeValue: $scopeValue, organisation: $organisation);
+        if (count($targets) === 0) {
+            return null;
+        }
+
+        $match    = (string) ($via['match'] ?? 'id');
+        $verified = $this->filterTargetRows(rows: [$row], targets: $targets, organisation: $organisation, match: $match, scopeField: $scopeField);
+        if (count($verified) === 0) {
+            return null;
+        }
+
+        return $verified[0];
+    }//end verifyViaObject()
+
+    /**
      * Project every verified row down to the declared fields whitelist.
      *
      * `$fields === null` means "no projection declared" — rows pass through
@@ -380,6 +599,46 @@ class PortalObjectReader
 
         return $whitelist;
     }//end fieldWhitelist()
+
+    /**
+     * Resolve the OWNERSHIP scope value for a subject on a collection/action —
+     * the value the writer/reader compares against `row[scopeField]`. Without a
+     * `scopeClaim` this is the subject's own `subjectRef`; WITH one it is the
+     * server-resolved claim from the subject's portalAccount (contract v2, A4).
+     * Shared by the write path so a status transition on a claim-scoped
+     * collection re-verifies ownership by the SAME resolved value as the read —
+     * a claim resolving to null (absent/malformed) fails closed to null so no
+     * write can happen.
+     *
+     * @param string               $scopeClaim      The declared claim address ('' = none).
+     * @param string               $contributingApp Namespace for the bare form.
+     * @param array<string, mixed> $subject         The resolved subject (subjectRef/audience/organisation).
+     *
+     * @return string|null The scope value, or null when a declared claim is absent.
+     *
+     * @spec openspec/changes/portal-status-transitions/tasks.md#T2
+     */
+    public function resolveScopeValue(string $scopeClaim, string $contributingApp, array $subject): ?string
+    {
+        $subjectRef = (string) ($subject['subjectRef'] ?? '');
+        if ($scopeClaim === '') {
+            return $subjectRef;
+        }
+
+        $objectService = $this->objectService();
+        if ($objectService === null) {
+            return null;
+        }
+
+        return $this->resolveClaim(
+            objectService: $objectService,
+            scopeClaim: $scopeClaim,
+            contributingApp: $contributingApp,
+            subjectRef: $subjectRef,
+            audience: (string) ($subject['audience'] ?? ''),
+            organisation: (string) ($subject['organisation'] ?? '')
+        );
+    }//end resolveScopeValue()
 
     /**
      * Resolve a scopeClaim to its value from the subject's OWN portalAccount.
