@@ -1,141 +1,150 @@
 // SPDX-License-Identifier: EUPL-1.2
 //
-// Portaliq public portal shell (skeleton).
+// Portaliq public portal shell (Phase 3 — ADR-063 frontend merge).
 //
-// Role-based white-label shell for the two external audiences (client / supplier).
-// This slice wires the auth edge: it resolves the stored bearer against
-// /portal/api/session (fail-closed), and — when the backend's debug-gated
-// dev-login is open — lets you mint a test session without a real IdP. The
-// eHerkenning / DigiD handshake, contribution rendering, and inbox land in later
-// slices of openspec/changes/supplier-portal.
+// Role-based white-label shell for the external audiences. It wires the auth
+// edge (resolve the stored bearer against /portal/api/session, fail-closed; a
+// debug-gated dev-login mints a test session), then drives the whole UI from the
+// subject's contribution manifest: every contribution's `pages` (contribution-
+// manifest-v3) become navigable views, each rendered by PageView from typed
+// blocks (collection table / schema form / detail / rich text / cta). All data
+// flows through the subject-scoped /portal/api adapter — the portal never reads
+// OpenRegister directly.
 
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { createPortalApi, getToken } from '@portal/lib/portalApi.js'
+import PageView from '@portal/components/PageView.jsx'
 
-const TOKEN_KEY = 'portaliq_token'
-
-function authHeaders(token) {
-	return token ? { Authorization: `Bearer ${token}` } : {}
-}
-
-/**
- * Resolve the current portal session. MUST fail closed — any non-200 is treated
- * as "not authenticated". The subjectRef/audience/organisation are derived by
- * the server from the bearer, never sent by the client.
- */
-async function resolveSession(config, token) {
-	try {
-		const res = await fetch(`${config.apiBase}/session`, {
-			headers: { Accept: 'application/json', ...authHeaders(token) },
-		})
-		if (!res.ok) {
-			return null
+// Flatten every contribution's pages into a single navigable list, tagging each
+// with its owning contribution so a block's refs resolve in the right scope.
+function buildNav(contributions) {
+	const nav = []
+	for (const contribution of (contributions || [])) {
+		for (const page of (contribution.pages || [])) {
+			nav.push({
+				key: `${contribution.app}:${page.id}`,
+				label: page.label || page.id,
+				icon: page.icon,
+				page,
+				contribution,
+			})
 		}
-		const body = await res.json()
-		return body.authenticated ? body : null
-	} catch (e) {
-		return null
 	}
-}
-
-// Fetch the aggregated portal contributions the subject may see. The endpoint is
-// guarded server-side (PortalAuthMiddleware); an unauthenticated call returns 401.
-async function fetchContributions(config, token) {
-	try {
-		const res = await fetch(`${config.apiBase}/contributions`, {
-			headers: { Accept: 'application/json', ...authHeaders(token) },
-		})
-		if (!res.ok) {
-			return null
-		}
-		return await res.json()
-	} catch (e) {
-		return null
-	}
+	return nav
 }
 
 export default function App({ config }) {
-	const [token, setToken] = useState(() => window.localStorage.getItem(TOKEN_KEY) || null)
+	const api = useMemo(() => createPortalApi(config), [config])
+	const [token, setTokenState] = useState(() => getToken())
 	const [state, setState] = useState({ loading: true, session: null, contributions: null, devError: null })
-	const [collectionData, setCollectionData] = useState({})
+	const [dataByCollection, setDataByCollection] = useState({})
+	const [activeKey, setActiveKey] = useState(null)
+	const [busyRow, setBusyRow] = useState(null)
 
-	// Load one collection's objects (subject-scoped, authorised server-side).
-	async function loadCollection(register, schema) {
-		const key = `${register}/${schema}`
-		setCollectionData((d) => ({ ...d, [key]: { loading: true, objects: [] } }))
-		try {
-			const res = await fetch(`${config.apiBase}/collections/${encodeURIComponent(register)}/${encodeURIComponent(schema)}`, {
-				headers: { Accept: 'application/json', ...authHeaders(token) },
-			})
-			const objects = res.ok ? ((await res.json()).objects || []) : []
-			setCollectionData((d) => ({ ...d, [key]: { loading: false, objects } }))
-		} catch (e) {
-			setCollectionData((d) => ({ ...d, [key]: { loading: false, objects: [] } }))
-		}
-	}
-
-	// Perform a declared `create` action: collect the whitelisted fields and POST
-	// them; the server stamps ownership. Then reload that collection.
-	async function createInCollection(action) {
-		const body = {}
-		for (const field of (action.fields || [])) {
-			const value = window.prompt(`${field}?`, 'Nieuw document')
-			if (value === null) {
-				return
-			}
-			body[field] = value
-		}
-		try {
-			await fetch(`${config.apiBase}/collections/${encodeURIComponent(action.register)}/${encodeURIComponent(action.schema)}`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...authHeaders(token) },
-				body: JSON.stringify(body),
-			})
-		} catch (e) {
-			// Best-effort; the reload reflects whatever landed.
-		}
-		loadCollection(action.register, action.schema)
-	}
-
-	const refresh = useCallback(async (tok) => {
+	const refresh = useCallback(async () => {
 		setState((s) => ({ ...s, loading: true }))
-		const session = await resolveSession(config, tok)
-		const contributions = session ? await fetchContributions(config, tok) : null
+		const session = await api.getSession()
+		const contributions = session ? await api.getContributions() : null
 		setState({ loading: false, session, contributions, devError: null })
-	}, [config])
+	}, [api])
 
+	useEffect(() => { refresh() }, [refresh, token])
+
+	const nav = useMemo(() => buildNav(state.contributions?.contributions), [state.contributions])
+
+	// Default to the first page once contributions load.
 	useEffect(() => {
-		refresh(token)
-	}, [refresh, token])
+		if (nav.length > 0 && (activeKey === null || !nav.some((n) => n.key === activeKey))) {
+			setActiveKey(nav[0].key)
+		}
+	}, [nav, activeKey])
 
-	// Debug-only helper: mint a session via the backend's gated dev-login.
-	// Returns 404 in production, so this button simply won't work there.
-	async function devLogin() {
-		try {
-			const res = await fetch(`${config.apiBase}/session/dev-login`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-				body: JSON.stringify({ audience: config.audience || 'supplier' }),
-			})
-			if (!res.ok) {
-				setState((s) => ({ ...s, devError: 'Dev-login is disabled on this environment.' }))
-				return
+	const active = useMemo(() => nav.find((n) => n.key === activeKey) || null, [nav, activeKey])
+
+	// Load a collection's objects, subject-scoped, keyed by the collection id.
+	const loadCollection = useCallback(async (collection) => {
+		setDataByCollection((d) => ({ ...d, [collection.id]: { loading: true, objects: d[collection.id]?.objects || [] } }))
+		const objects = await api.fetchCollection(collection)
+		setDataByCollection((d) => ({ ...d, [collection.id]: { loading: false, objects } }))
+	}, [api])
+
+	// When the active page changes, load every collection it references.
+	useEffect(() => {
+		if (!active) {
+			return
+		}
+		const ids = new Set()
+		for (const block of (active.page.blocks || [])) {
+			if ((block.type === 'collection' || block.type === 'detail') && block.collection) {
+				ids.add(block.collection)
 			}
-			const body = await res.json()
-			window.localStorage.setItem(TOKEN_KEY, body.token)
-			setToken(body.token)
+		}
+		for (const id of ids) {
+			const collection = (active.contribution.collections || []).find((c) => c.id === id)
+			if (collection) {
+				loadCollection(collection)
+			}
+		}
+	}, [active, loadCollection])
+
+	// After a create/update, reload any loaded collection that reads that schema.
+	const onCreated = useCallback((_obj, action) => {
+		for (const contribution of (state.contributions?.contributions || [])) {
+			for (const collection of (contribution.collections || [])) {
+				if (collection.register === action.register && collection.schema === action.schema && dataByCollection[collection.id]) {
+					loadCollection(collection)
+				}
+			}
+		}
+	}, [state.contributions, dataByCollection, loadCollection])
+
+	// A per-row status transition (approve/reject/close): invoke a resolved
+	// `type: update` action against the row's id with NO field data — the server
+	// applies the action's `set` values, so the transition target is enforced
+	// server-side and re-scoped to the subject. Then reload that collection.
+	const onRowAction = useCallback(async (action, row, collection) => {
+		const id = row.id || row['@self']?.id
+		if (!id) {
+			return
+		}
+		setBusyRow(id)
+		await api.updateObject(action, id, {})
+		setBusyRow(null)
+		loadCollection(collection)
+	}, [api, loadCollection])
+
+	// Forward an endpoint / A6 action server-to-server (best-effort; the shell
+	// does not hold the target's credentials — Portaliq signs the assertion).
+	const onAction = useCallback(async (action) => {
+		if (!action.endpoint && !action.id) {
+			return
+		}
+		// A6 actions are addressed by app + action id; endpoint-only actions are
+		// forwarded by the backend. This is a thin trigger; result UI is a
+		// follow-up (Phase 4 blocks).
+		try {
+			await fetch(`${config.apiBase}/actions/${encodeURIComponent(action.app || active?.contribution?.app || '')}/${encodeURIComponent(action.id)}`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}) },
+				body: '{}',
+			})
 		} catch (e) {
-			setState((s) => ({ ...s, devError: 'Dev-login request failed.' }))
+			/* best-effort */
+		}
+	}, [config, active])
+
+	async function devLogin() {
+		const minted = await api.devLogin(config.audience)
+		if (minted) {
+			setTokenState(minted)
+		} else {
+			setState((s) => ({ ...s, devError: 'Dev-login is disabled on this environment.' }))
 		}
 	}
 
 	async function logout() {
-		try {
-			await fetch(`${config.apiBase}/session`, { method: 'DELETE', headers: authHeaders(token) })
-		} catch (e) {
-			// Best-effort; the client token is dropped regardless.
-		}
-		window.localStorage.removeItem(TOKEN_KEY)
-		setToken(null)
+		await api.logout()
+		setTokenState(null)
 	}
 
 	return (
@@ -147,6 +156,21 @@ export default function App({ config }) {
 				)}
 			</header>
 
+			{!state.loading && state.session && nav.length > 0 && (
+				<nav className="portaliq-nav">
+					{nav.map((n) => (
+						<button
+							key={n.key}
+							type="button"
+							className={n.key === activeKey ? 'portaliq-nav-item active' : 'portaliq-nav-item'}
+							onClick={() => setActiveKey(n.key)}
+						>
+							{n.label}
+						</button>
+					))}
+				</nav>
+			)}
+
 			<main className="portaliq-main">
 				{state.loading && <p>…</p>}
 
@@ -154,8 +178,6 @@ export default function App({ config }) {
 					<section className="portaliq-login">
 						<h1>Welkom</h1>
 						<p>Log in om uw gegevens te bekijken.</p>
-						{/* TODO (supplier-portal T02/T12): real eHerkenning (supplier) / DigiD (client)
-						    handshake, driven by config.audience + config.idp. Dormant until OpenConnector. */}
 						<button type="button" disabled>
 							{config.audience === 'supplier' ? 'Inloggen met eHerkenning' : 'Inloggen met DigiD'}
 						</button>
@@ -168,62 +190,25 @@ export default function App({ config }) {
 
 				{!state.loading && state.session && (
 					<section className="portaliq-home">
-						<h1>Mijn overzicht</h1>
-						<p>
+						<p className="portaliq-subject">
 							Ingelogd als <strong>{state.session.subjectRef}</strong>
 							{' '}({state.session.audience} · {state.session.organisation})
 						</p>
 
-						{/* Contribution manifest: which collections + actions each app
-						    contributes to this subject. Reading the objects in each
-						    collection via OpenRegister is the next slice (T05). */}
-						{(state.contributions?.contributions || []).length === 0 && (
-							<p>Nog geen bijdragen om weer te geven.</p>
+						{nav.length === 0 && <p>Nog geen bijdragen om weer te geven.</p>}
+
+						{active && (
+							<PageView
+								page={active.page}
+								contribution={active.contribution}
+								api={api}
+								dataByCollection={dataByCollection}
+								onCreated={onCreated}
+								onAction={onAction}
+								onRowAction={onRowAction}
+								busyRow={busyRow}
+							/>
 						)}
-						{(state.contributions?.contributions || []).map((c) => (
-							<article key={c.app} className="portaliq-contribution">
-								<h2>{c.label || c.app}</h2>
-								<ul className="portaliq-collections">
-									{(c.collections || []).map((col) => {
-										const key = `${col.register}/${col.schema}`
-										const loaded = collectionData[key]
-										return (
-											<li key={col.id}>
-												<button type="button" onClick={() => loadCollection(col.register, col.schema)}>
-													{col.label || col.schema}
-												</button>
-												{loaded?.loading && <span> …</span>}
-												{loaded && !loaded.loading && (
-													<ul className={col.kind === 'inbox' ? 'portaliq-inbox' : 'portaliq-objects'}>
-														{loaded.objects.length === 0 && <li><em>{col.kind === 'inbox' ? 'Geen berichten.' : 'Geen items.'}</em></li>}
-														{loaded.objects.map((o, i) => (
-															col.kind === 'inbox'
-																	? (
-																		<li key={o.id || i} className={o.read ? 'read' : 'unread'}>
-																			<strong>{o.read ? '' : '● '}{o.subject || '(geen onderwerp)'}</strong>
-																			{o.body && <div className="portaliq-msg-body">{o.body}</div>}
-																		</li>
-																	)
-																	: <li key={o.id || o['@self']?.id || i}>{o.title || o.name || o.id || '—'}</li>
-														))}
-													</ul>
-												)}
-											</li>
-										)
-									})}
-								</ul>
-								{(c.actions || []).length > 0 && (
-									<div className="portaliq-actions">
-										{(c.actions || []).map((a) => (
-											a.type === 'create'
-												? <button key={a.id} type="button" onClick={() => createInCollection(a)}>{a.label || a.id}</button>
-												: <button key={a.id} type="button" disabled={!a.endpoint}>{a.label || a.id}</button>
-										))}
-									</div>
-								)}
-							</article>
-						))}
-						{/* TODO (supplier-portal T07): unified inbox over the OR notification engine. */}
 					</section>
 				)}
 			</main>

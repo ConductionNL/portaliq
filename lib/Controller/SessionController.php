@@ -23,6 +23,7 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T02
+ * @spec openspec/changes/contract-v2/tasks.md#T1
  */
 
 declare(strict_types=1);
@@ -98,6 +99,7 @@ class SessionController extends Controller
      * @return JSONResponse 200 with a bearer token, or 404 when the gate is closed.
      *
      * @spec openspec/changes/supplier-portal/tasks.md#T02
+     * @spec openspec/changes/contract-v2/tasks.md#T1
      */
     #[PublicPage]
     #[NoCSRFRequired]
@@ -107,11 +109,13 @@ class SessionController extends Controller
             return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
         }
 
+        // Dev-login is a password-less mint, so it carries the LOWEST assurance
+        // level explicitly (contract v2, A3 — eIDAS-aligned trust vocabulary).
         $issued = $this->session->issueSession(
             subjectRef: $subjectRef,
             audience: $audience,
             organisation: $organisation,
-            trust: 'dev',
+            trust: 'low',
             roles: [$audience.':read']
         );
 

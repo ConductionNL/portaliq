@@ -5,11 +5,14 @@
  *
  * Protected portal API: returns the aggregated portal contributions the
  * authenticated subject may see (the declarative manifest — collections +
- * actions each contributing app registered). Guarded by PortalAuthMiddleware via
- * the PortalProtected marker, so it fails closed (401) without a valid session;
- * the subject is read from the request-scoped context, never from a client
- * param. Reading the actual objects in each collection through OpenRegister is
- * the next slice (T05).
+ * actions each contributing app registered), reads collection objects, creates
+ * whitelisted objects, and forwards declared endpoint actions server-to-server
+ * (contract v2, A6). Guarded by PortalAuthMiddleware via the PortalProtected
+ * marker, so it fails closed (401) without a valid session; the subject is read
+ * from the validated bearer, never from a client param. Every handler
+ * authorises against the subject's OWN aggregated manifest — already
+ * trust-filtered by the registry — and re-checks the matched entry's minTrust
+ * as defense in depth (ADR-005).
  *
  * @category Controller
  * @package  OCA\Portaliq\Controller
@@ -24,6 +27,9 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T04
+ * @spec openspec/changes/contract-v2/tasks.md#T3
+ * @spec openspec/changes/contract-v2/tasks.md#T5
+ * @spec openspec/changes/contract-v2/tasks.md#T8
  */
 
 declare(strict_types=1);
@@ -33,6 +39,7 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Service\PortalFileWriter;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSessionService;
@@ -41,23 +48,46 @@ use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\Http\Client\IClientService;
 use OCP\IRequest;
+use OCP\IURLGenerator;
+use Throwable;
 
 /**
  * Serves the authenticated subject's aggregated portal contributions.
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T04
+ *
+ * @SuppressWarnings(PHPMD.StaticAccess)             -- PortalSessionService::trustSatisfies
+ * is deliberately THE single trust comparator (contract-v2 design decision);
+ * every re-check calls it statically so the ordering can never fork.
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- the complexity is
+ * fail-closed authorisation guards on an auth edge (ADR-005), one per attack
+ * surface; collapsing them would trade auditability for a score.
  */
 class ContributionController extends Controller implements PortalProtected
 {
     /**
+     * HTTP methods an endpoint action may declare (contract v2, A6).
+     */
+    private const ALLOWED_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+
+    /**
+     * Timeout (seconds) for the server-to-server action forward.
+     */
+    private const FORWARD_TIMEOUT = 10;
+
+    /**
      * Constructor.
      *
-     * @param IRequest                   $request  The request object.
-     * @param PortalContributionRegistry $registry The contribution aggregator.
-     * @param PortalSessionService       $session  Resolves the subject from the bearer.
-     * @param PortalObjectReader         $reader   Subject-scoped OR reader.
-     * @param PortalObjectWriter         $writer   Subject-scoped OR writer.
+     * @param IRequest                   $request       The request object.
+     * @param PortalContributionRegistry $registry      The contribution aggregator.
+     * @param PortalSessionService       $session       Resolves the subject from the bearer.
+     * @param PortalObjectReader         $reader        Subject-scoped OR reader.
+     * @param PortalObjectWriter         $writer        Subject-scoped OR writer.
+     * @param PortalFileWriter           $fileWriter    Subject-scoped OR file attach.
+     * @param IClientService             $clientService HTTP client for the A6 action forward.
+     * @param IURLGenerator              $urlGenerator  Resolves instance-local endpoint paths.
      */
     public function __construct(
         IRequest $request,
@@ -65,6 +95,9 @@ class ContributionController extends Controller implements PortalProtected
         private readonly PortalSessionService $session,
         private readonly PortalObjectReader $reader,
         private readonly PortalObjectWriter $writer,
+        private readonly PortalFileWriter $fileWriter,
+        private readonly IClientService $clientService,
+        private readonly IURLGenerator $urlGenerator,
     ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
     }//end __construct()
@@ -111,7 +144,9 @@ class ContributionController extends Controller implements PortalProtected
      * Authorises first: the (register, schema) must appear in one of the
      * subject's own contributions, so a subject can only read collections its
      * apps granted it. The subject reference is derived from the bearer,
-     * never the client.
+     * never the client. A declared `fields` whitelist (any collection kind,
+     * including inbox) is forwarded to the reader untouched — `null` means
+     * "no projection, full rows" (field-projection change).
      *
      * @param string $register The register of the collection.
      * @param string $schema   The schema of the collection.
@@ -119,6 +154,9 @@ class ContributionController extends Controller implements PortalProtected
      * @return JSONResponse The subject's rows, or 401 / 403.
      *
      * @spec openspec/changes/supplier-portal/tasks.md#T05
+     * @spec openspec/changes/contract-v2/tasks.md#T3
+     * @spec openspec/changes/contract-v2/tasks.md#T5
+     * @spec openspec/changes/field-projection/tasks.md#T2
      */
     #[PublicPage]
     #[NoCSRFRequired]
@@ -129,8 +167,24 @@ class ContributionController extends Controller implements PortalProtected
             return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
         }
 
-        $collection = $this->authorisedCollection(subject: $subject, register: $register, schema: $schema);
-        if ($collection === null) {
+        // The optional `collection` query param disambiguates multiple
+        // collections that share a register+schema (contract v2 — scopeClaim /
+        // via views over the same schema). Absent → first-by-(register,schema),
+        // preserving the pre-existing behaviour.
+        $collectionId = (string) $this->request->getParam('collection', '');
+
+        $match = $this->authorisedCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
+        if ($match === null) {
+            return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+        }
+
+        $collection = $match['collection'];
+
+        // Defense in depth (contract v2, A3): the aggregate is already
+        // trust-filtered, but the matched entry's minTrust is re-checked here
+        // so a direct request can never slip below the threshold — 403 before
+        // any OpenRegister call.
+        if (PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
             return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
         }
 
@@ -139,7 +193,13 @@ class ContributionController extends Controller implements PortalProtected
             schema: $schema,
             scopeField: (string) ($collection['scopeField'] ?? 'subjectRef'),
             subjectRef: (string) ($subject['subjectRef'] ?? ''),
-            organisation: (string) ($subject['organisation'] ?? '')
+            organisation: (string) ($subject['organisation'] ?? ''),
+            limit: 200,
+            scopeClaim: (string) ($collection['scopeClaim'] ?? ''),
+            contributingApp: $match['app'],
+            via: ($collection['via'] ?? null),
+            audience: (string) ($subject['audience'] ?? ''),
+            fields: ($collection['fields'] ?? null)
         );
 
         return new JSONResponse(['register' => $register, 'schema' => $schema, 'objects' => $objects]);
@@ -149,25 +209,200 @@ class ContributionController extends Controller implements PortalProtected
      * Find the collection matching (register, schema) in the subject's
      * aggregated contributions, or null when the subject is not entitled to it.
      *
-     * @param array<string, mixed> $subject  The resolved subject.
-     * @param string               $register The requested register.
-     * @param string               $schema   The requested schema.
+     * @param array<string, mixed> $subject      The resolved subject.
+     * @param string               $register     The requested register.
+     * @param string               $schema       The requested schema.
+     * @param string               $collectionId Optional collection id disambiguating a shared register+schema.
      *
-     * @return array<string, mixed>|null
+     * @return array{collection: array<string, mixed>, app: string}|null
      */
-    private function authorisedCollection(array $subject, string $register, string $schema): ?array
+    private function authorisedCollection(array $subject, string $register, string $schema, string $collectionId=''): ?array
     {
         $aggregate = $this->registry->aggregateFor($subject);
         foreach (($aggregate['contributions'] ?? []) as $contribution) {
             foreach (($contribution['collections'] ?? []) as $collection) {
-                if (($collection['register'] ?? '') === $register && ($collection['schema'] ?? '') === $schema) {
-                    return $collection;
+                if (($collection['register'] ?? '') !== $register || ($collection['schema'] ?? '') !== $schema) {
+                    continue;
                 }
+
+                // When a collection id is supplied it MUST match — this is what
+                // distinguishes two collections that share a register+schema
+                // (e.g. a direct view and a scopeClaim/via view of the same
+                // schema). An empty id keeps the first-match fallback.
+                if ($collectionId !== '' && ($collection['id'] ?? '') !== $collectionId) {
+                    continue;
+                }
+
+                return [
+                    'collection' => $collection,
+                    'app'        => (string) ($contribution['app'] ?? ''),
+                ];
             }
         }
 
         return null;
     }//end authorisedCollection()
+
+    /**
+     * Read a SINGLE object in a contribution collection, scoped to the subject
+     * (portal-scoped-crud, ADR-062 Phase 1).
+     *
+     * Authorises identically to collection(): the (register, schema) must
+     * appear in one of the subject's own contributions (honouring the
+     * `?collection=` disambiguation), and the matched collection's minTrust is
+     * re-checked as defense in depth — 403 before any OpenRegister call. The
+     * reader re-verifies per-subject ownership of the fetched object, so a
+     * null result (foreign owner OR non-existent id, indistinguishable) yields
+     * 404 — NO existence oracle.
+     *
+     * @param string $register The register of the collection.
+     * @param string $schema   The schema of the collection.
+     * @param string $id       The object id (never trusted; ownership re-checked server-side).
+     *
+     * @return JSONResponse The subject's object, or 401 / 403 / 404.
+     *
+     * @spec openspec/changes/portal-scoped-crud/tasks.md#T3
+     */
+    #[PublicPage]
+    #[NoCSRFRequired]
+    public function object(string $register, string $schema, string $id): JSONResponse
+    {
+        $subject = $this->subject();
+        if ($subject === null) {
+            return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+        }
+
+        $collectionId = (string) $this->request->getParam('collection', '');
+
+        $match = $this->authorisedCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
+        if ($match === null) {
+            return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+        }
+
+        $collection = $match['collection'];
+
+        // Defense in depth (contract v2, A3): re-check the matched collection's
+        // minTrust — 403 before any OpenRegister call.
+        if (PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
+            return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+        }
+
+        $object = $this->reader->readObject(
+            register: $register,
+            schema: $schema,
+            scopeField: (string) ($collection['scopeField'] ?? 'subjectRef'),
+            subjectRef: (string) ($subject['subjectRef'] ?? ''),
+            id: $id,
+            organisation: (string) ($subject['organisation'] ?? ''),
+            scopeClaim: (string) ($collection['scopeClaim'] ?? ''),
+            contributingApp: $match['app'],
+            via: ($collection['via'] ?? null),
+            audience: (string) ($subject['audience'] ?? ''),
+            fields: ($collection['fields'] ?? null)
+        );
+
+        // Null = not the subject's OR does not exist — a single 404, no oracle.
+        if ($object === null) {
+            return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+        }
+
+        return new JSONResponse(['object' => $object]);
+    }//end object()
+
+    /**
+     * Attach an uploaded file to an object the subject owns (the file-upload
+     * block, ADR-063). The collection MUST declare `filesUpload: true`, and
+     * ownership is re-verified through the SAME scoped reader as the single-object
+     * read (scopeField / scopeClaim / via) BEFORE the file is accepted — a foreign
+     * or absent id is a single 404 with nothing written. The file lands in the
+     * object's OpenRegister folder via the shared FileService (RBAC bypassed;
+     * Portaliq is the trusted scoper). Multipart field name: `file`.
+     *
+     * @param string $register The register of the collection.
+     * @param string $schema   The schema of the collection.
+     * @param string $id       The object to attach to.
+     *
+     * @return JSONResponse The attached file metadata, or 401 / 403 / 404 / 400 / 502.
+     *
+     * @spec openspec/changes/portal-file-upload/tasks.md#T2
+     */
+    #[PublicPage]
+    #[NoCSRFRequired]
+    public function uploadFile(string $register, string $schema, string $id): JSONResponse
+    {
+        $subject = $this->subject();
+        if ($subject === null) {
+            return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+        }
+
+        $collectionId = (string) $this->request->getParam('collection', '');
+        $match        = $this->authorisedCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
+        if ($match === null) {
+            return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+        }
+
+        $collection = $match['collection'];
+
+        // The collection must explicitly opt in to file uploads.
+        if (($collection['filesUpload'] ?? false) !== true) {
+            return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+        }
+
+        if (PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
+            return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+        }
+
+        // Re-verify ownership with the full scope resolution — 404 (no oracle)
+        // when the object is not the subject's or does not exist.
+        $owned = $this->reader->readObject(
+            register: $register,
+            schema: $schema,
+            scopeField: (string) ($collection['scopeField'] ?? 'subjectRef'),
+            subjectRef: (string) ($subject['subjectRef'] ?? ''),
+            id: $id,
+            organisation: (string) ($subject['organisation'] ?? ''),
+            scopeClaim: (string) ($collection['scopeClaim'] ?? ''),
+            contributingApp: $match['app'],
+            via: ($collection['via'] ?? null),
+            audience: (string) ($subject['audience'] ?? ''),
+            fields: ($collection['fields'] ?? null)
+        );
+        if ($owned === null) {
+            return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+        }
+
+        // Read the multipart upload (`file`); reject an empty/failed upload 400.
+        // getUploadedFile returns [] when absent, so the error/tmp_name checks
+        // cover the missing case.
+        $uploaded = $this->request->getUploadedFile('file');
+        if ((int) ($uploaded['error'] ?? 1) !== 0 || ($uploaded['tmp_name'] ?? '') === '') {
+            return new JSONResponse(['error' => 'no_file'], Http::STATUS_BAD_REQUEST);
+        }
+
+        $content = @file_get_contents($uploaded['tmp_name']);
+        if ($content === false) {
+            return new JSONResponse(['error' => 'no_file'], Http::STATUS_BAD_REQUEST);
+        }
+
+        // Sanitise the filename to a basename — never trust a client path.
+        $fileName = basename((string) ($uploaded['name'] ?? 'upload'));
+        if ($fileName === '' || $fileName === '.' || $fileName === '..') {
+            $fileName = 'upload';
+        }
+
+        $result = $this->fileWriter->attachFile(
+            register: $register,
+            schema: $schema,
+            id: $id,
+            fileName: $fileName,
+            content: $content
+        );
+        if ($result === null) {
+            return new JSONResponse(['error' => 'upload_failed'], Http::STATUS_BAD_GATEWAY);
+        }
+
+        return new JSONResponse(['file' => $result]);
+    }//end uploadFile()
 
     /**
      * Create an object in a collection, owned by the subject.
@@ -184,6 +419,7 @@ class ContributionController extends Controller implements PortalProtected
      * @return JSONResponse The created object, or 401 / 403 / 502.
      *
      * @spec openspec/changes/supplier-portal/tasks.md#T06
+     * @spec openspec/changes/contract-v2/tasks.md#T3
      */
     #[PublicPage]
     #[NoCSRFRequired]
@@ -196,6 +432,12 @@ class ContributionController extends Controller implements PortalProtected
 
         $action = $this->authorisedCreateAction(subject: $subject, register: $register, schema: $schema);
         if ($action === null) {
+            return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+        }
+
+        // Defense in depth (contract v2, A3): re-check the matched action's
+        // minTrust — 403 before any OpenRegister write.
+        if (PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null)) === false) {
             return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
         }
 
@@ -245,16 +487,161 @@ class ContributionController extends Controller implements PortalProtected
     }//end authorisedCreateAction()
 
     /**
+     * Update an object in a collection, owned by the subject (portal-scoped-crud,
+     * ADR-062 Phase 1 — closes the write-IDOR concern, Conduction/portaliq#16).
+     *
+     * Mirrors create()'s authorisation discipline: there must be a declared
+     * `type: update` action for this (register, schema); only the fields that
+     * action whitelists are accepted (the scope field is never whitelisted);
+     * the matched action's minTrust is re-checked (403 before any write). The
+     * writer re-verifies ownership of the client-supplied id against
+     * OpenRegister BEFORE writing, so a null result (not the subject's OR
+     * non-existent, indistinguishable) yields 404 — no existence oracle and no
+     * write.
+     *
+     * @param string $register The register of the collection.
+     * @param string $schema   The schema of the collection.
+     * @param string $id       The object id (never trusted; ownership re-checked server-side).
+     *
+     * @return JSONResponse The updated object, or 401 / 403 / 404.
+     *
+     * @spec openspec/changes/portal-scoped-crud/tasks.md#T3
+     */
+    #[PublicPage]
+    #[NoCSRFRequired]
+    public function update(string $register, string $schema, string $id): JSONResponse
+    {
+        $subject = $this->subject();
+        if ($subject === null) {
+            return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+        }
+
+        $actionId = (string) $this->request->getParam('action', '');
+        $match    = $this->authorisedUpdateAction(subject: $subject, register: $register, schema: $schema, actionId: $actionId);
+        if ($match === null) {
+            return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+        }
+
+        $action = $match['action'];
+
+        // Defense in depth (contract v2, A3): re-check the matched action's
+        // minTrust — 403 before any OpenRegister write.
+        if (PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null)) === false) {
+            return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+        }
+
+        // Resolve the OWNERSHIP scope value the SAME way the read path does: a
+        // declared `scopeClaim` resolves server-side from the subject's
+        // portalAccount, else it is the subjectRef. This lets a transition run on
+        // a claim-scoped collection (e.g. a manager approving timesheets scoped
+        // by their costCenter claim) while still re-verifying ownership by the
+        // resolved value. A declared claim that cannot resolve → 404, no write.
+        $scopeValue = $this->reader->resolveScopeValue(
+            scopeClaim: (string) ($action['scopeClaim'] ?? ''),
+            contributingApp: $match['app'],
+            subject: $subject
+        );
+        if ($scopeValue === null || $scopeValue === '') {
+            return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+        }
+
+        $data = $this->whitelist(fields: (array) ($action['fields'] ?? []));
+
+        // Server-enforced transition target (contribution-manifest-v3): an update
+        // action MAY declare `set` — fixed field values the SERVER applies OVER
+        // the client input, so an approve/reject/close transition can never be
+        // tampered with by the client. Only whitelisted fields are honoured
+        // (defence in depth; the normaliser already dropped non-whitelisted keys).
+        $whitelist = (array) ($action['fields'] ?? []);
+        foreach ((array) ($action['set'] ?? []) as $field => $value) {
+            if (in_array($field, $whitelist, true) === true) {
+                $data[$field] = $value;
+            }
+        }
+
+        $updated = $this->writer->updateObject(
+            register: $register,
+            schema: $schema,
+            scopeField: (string) ($action['scopeField'] ?? 'subjectRef'),
+            subjectRef: $scopeValue,
+            organisation: (string) ($subject['organisation'] ?? ''),
+            id: $id,
+            data: $data
+        );
+
+        // Null = ownership re-verification failed OR the row does not exist —
+        // a single 404, indistinguishable, and nothing was written.
+        if ($updated === null) {
+            return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+        }
+
+        return new JSONResponse(['object' => $updated]);
+    }//end update()
+
+    /**
+     * Find a `type: update` action for (register, schema) in the subject's
+     * contributions, or null when the subject is not entitled to update there.
+     *
+     * @param array<string, mixed> $subject  The resolved subject.
+     * @param string               $register The requested register.
+     * @param string               $schema   The requested schema.
+     * @param string               $actionId Optional action id to match exactly
+     *                                       (`?action=`); empty = first update action.
+     *
+     * @return array{action: array<string, mixed>, app: string}|null The matched
+     *                                       action and its contributing app (the
+     *                                       scopeClaim namespace), or null.
+     *
+     * @spec openspec/changes/portal-scoped-crud/tasks.md#T3
+     */
+    private function authorisedUpdateAction(array $subject, string $register, string $schema, string $actionId=''): ?array
+    {
+        $aggregate = $this->registry->aggregateFor($subject);
+        foreach (($aggregate['contributions'] ?? []) as $contribution) {
+            foreach (($contribution['actions'] ?? []) as $action) {
+                if (($action['type'] ?? '') !== 'update'
+                    || ($action['register'] ?? '') !== $register
+                    || ($action['schema'] ?? '') !== $schema
+                ) {
+                    continue;
+                }
+
+                // When the caller names an action (`?action=`), match it exactly
+                // so a specific status transition (e.g. `closeExample` with its
+                // server-enforced `set`) is applied — not just the first update
+                // action for the schema. No `actionId` keeps the v1 behaviour.
+                if ($actionId !== '' && (string) ($action['id'] ?? '') !== $actionId) {
+                    continue;
+                }
+
+                return ['action' => $action, 'app' => (string) ($contribution['app'] ?? '')];
+            }
+        }
+
+        return null;
+    }//end authorisedUpdateAction()
+
+    /**
      * Read the request body and keep only the whitelisted fields.
+     *
+     * `claims` is server-managed (contract v2, A4) and is dropped here even if
+     * a contribution mistakenly whitelists it — a client-supplied claim map
+     * must never reach an OpenRegister write.
      *
      * @param array<int, string> $fields The permitted field names.
      *
      * @return array<string, mixed>
+     *
+     * @spec openspec/changes/contract-v2/tasks.md#T5
      */
     private function whitelist(array $fields): array
     {
         $data = [];
         foreach ($fields as $field) {
+            if ($field === 'claims') {
+                continue;
+            }
+
             $value = $this->request->getParam($field);
             if ($value !== null) {
                 $data[$field] = $value;
@@ -263,4 +650,182 @@ class ContributionController extends Controller implements PortalProtected
 
         return $data;
     }//end whitelist()
+
+    /**
+     * Forward a declared endpoint action server-to-server (contract v2, A6).
+     *
+     * Authorises against the subject's OWN aggregated (already trust-filtered)
+     * manifest: the contribution for {appId} must declare an action with
+     * {actionId}, a non-empty instance-local endpoint path, and an allowed
+     * method, and its minTrust is re-checked — otherwise 403 with NO outbound
+     * request. The forward attaches a short-lived signed `X-Portal-Subject`
+     * assertion; the client's own Authorization header is NEVER forwarded, and
+     * full http(s) URLs are rejected (SSRF guard). The domain app's status and
+     * JSON body are relayed as-is; transport failure yields 502.
+     *
+     * @param string $appId    The contributing app the action belongs to.
+     * @param string $actionId The declared action id.
+     *
+     * @return JSONResponse The relayed response, or 401 / 403 / 502.
+     *
+     * @spec openspec/changes/contract-v2/tasks.md#T8
+     */
+    #[PublicPage]
+    #[NoCSRFRequired]
+    public function action(string $appId, string $actionId): JSONResponse
+    {
+        $subject = $this->subject();
+        if ($subject === null) {
+            return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+        }
+
+        $action = $this->authorisedEndpointAction(subject: $subject, appId: $appId, actionId: $actionId);
+        if ($action === null) {
+            return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+        }
+
+        $endpoint = (string) $action['endpoint'];
+        $method   = strtoupper((string) ($action['method'] ?? 'POST'));
+
+        try {
+            $client  = $this->clientService->newClient();
+            $options = [
+                'headers'     => [
+                    'X-Portal-Subject' => $this->session->issueAssertion($subject),
+                    'Content-Type'     => 'application/json',
+                ],
+                'timeout'     => self::FORWARD_TIMEOUT,
+                'body'        => $this->requestBody(),
+                // Relay non-2xx domain responses instead of throwing, so the
+                // domain app's own status codes (e.g. 422) reach the caller.
+                'http_errors' => false,
+                // The endpoint is instance-local by contract, so the request
+                // legitimately targets our own (possibly private) address.
+                'nextcloud'   => ['allow_local_address' => true],
+            ];
+            $url      = $this->urlGenerator->getAbsoluteURL($endpoint);
+            $response = match ($method) {
+                'GET' => $client->get($url, $options),
+                'PUT' => $client->put($url, $options),
+                'PATCH' => $client->patch($url, $options),
+                'DELETE' => $client->delete($url, $options),
+                default => $client->post($url, $options),
+            };
+        } catch (Throwable) {
+            // Transport failure — mirrors the writer's 502 posture. Never leak
+            // transport internals to the portal client.
+            return new JSONResponse(['error' => 'forward_failed'], Http::STATUS_BAD_GATEWAY);
+        }//end try
+
+        $body    = $response->getBody();
+        $decoded = null;
+        if (is_string($body) === true && $body !== '') {
+            $decoded = json_decode($body, true);
+        }
+
+        if (is_array($decoded) === false) {
+            $decoded = [];
+        }
+
+        return new JSONResponse($decoded, $response->getStatusCode());
+    }//end action()
+
+    /**
+     * Find an authorised endpoint action {appId, actionId} in the subject's
+     * OWN aggregated manifest, or null (fail-closed 403, no outbound call).
+     *
+     * Requirements (contract v2, A6): the action id matches, the endpoint is a
+     * non-empty INSTANCE-LOCAL absolute path (starts with `/`, no scheme, no
+     * protocol-relative `//` — SSRF guard), the method is allowed, and the
+     * entry's minTrust is satisfied (defense in depth on top of the
+     * trust-filtered aggregate).
+     *
+     * @param array<string, mixed> $subject  The resolved subject.
+     * @param string               $appId    The requested contributing app.
+     * @param string               $actionId The requested action id.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function authorisedEndpointAction(array $subject, string $appId, string $actionId): ?array
+    {
+        $aggregate = $this->registry->aggregateFor($subject);
+        foreach (($aggregate['contributions'] ?? []) as $contribution) {
+            if (($contribution['app'] ?? '') !== $appId) {
+                continue;
+            }
+
+            foreach (($contribution['actions'] ?? []) as $action) {
+                if (($action['id'] ?? '') !== $actionId) {
+                    continue;
+                }
+
+                if ($this->isForwardableAction(action: $action, subject: $subject) === false) {
+                    return null;
+                }
+
+                return $action;
+            }//end foreach
+
+            return null;
+        }//end foreach
+
+        return null;
+    }//end authorisedEndpointAction()
+
+    /**
+     * Whether a matched action is safe to forward: non-empty INSTANCE-LOCAL
+     * endpoint path (SSRF guard: no scheme, no protocol-relative `//`), an
+     * allowed method, and satisfied minTrust — all fail-closed.
+     *
+     * @param array<string, mixed> $action  The matched action declaration.
+     * @param array<string, mixed> $subject The resolved subject.
+     *
+     * @return bool
+     */
+    private function isForwardableAction(array $action, array $subject): bool
+    {
+        $endpoint = ($action['endpoint'] ?? null);
+        if (is_string($endpoint) === false || $endpoint === '') {
+            return false;
+        }
+
+        // SSRF guard: instance-local absolute paths ONLY. Full http(s)://
+        // URLs and protocol-relative // paths are rejected.
+        if (str_starts_with($endpoint, '/') === false
+            || str_starts_with($endpoint, '//') === true
+            || str_contains($endpoint, '://') === true
+        ) {
+            return false;
+        }
+
+        $method = strtoupper((string) ($action['method'] ?? 'POST'));
+        if (in_array($method, self::ALLOWED_METHODS, true) === false) {
+            return false;
+        }
+
+        return PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null));
+    }//end isForwardableAction()
+
+    /**
+     * The raw request body to relay verbatim to the domain endpoint. Portaliq
+     * never interprets it — the domain app validates its own input.
+     *
+     * @return string
+     */
+    private function requestBody(): string
+    {
+        // OCP\IRequest does not declare getContent() in every stub set; the
+        // runtime request object provides it. Guarded so unit mocks without it
+        // simply relay an empty body.
+        if (method_exists($this->request, 'getContent') === false) {
+            return '';
+        }
+
+        $content = $this->request->getContent();
+        if (is_string($content) === false) {
+            return '';
+        }
+
+        return $content;
+    }//end requestBody()
 }//end class

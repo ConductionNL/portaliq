@@ -96,6 +96,9 @@ class PortalPageController extends Controller
      * @return TemplateResponse
      *
      * @spec openspec/changes/supplier-portal/tasks.md#T08
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) -- $path is bound by the
+     * route definition; the SPA router consumes it client-side.
      */
     #[PublicPage]
     #[NoCSRFRequired]
