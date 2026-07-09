@@ -32,7 +32,6 @@ namespace OCA\Portaliq\AppInfo;
 use OCA\Portaliq\Listener\DeepLinkRegistrationListener;
 use OCA\Portaliq\Mcp\ExampleToolProvider;
 use OCA\Portaliq\Middleware\PortalAuthMiddleware;
-use OCA\Portaliq\Repair\InitializeSettings;
 use OCA\OpenRegister\Event\DeepLinkRegistrationEvent;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
@@ -74,8 +73,13 @@ class Application extends App implements IBootstrap
             listener: DeepLinkRegistrationListener::class
         );
 
-        // Initialize register and schemas on install/upgrade.
-        $context->registerRepairStep(InitializeSettings::class);
+        // Initialize register and schemas on install/upgrade — registered via
+        // appinfo/info.xml <repair-steps> (pre- and post-migration). The
+        // programmatic IRegistrationContext::registerRepairStep() was removed in
+        // Nextcloud 34, so calling it here fatals app registration (and, thrown
+        // during the Coordinator pass, blanks the whole Settings framework and
+        // blocks the app's own version-upgrade from recording). info.xml is the
+        // NC34-supported mechanism and already declares this step.
 
         // AI Chat Companion (hydra ADR-034/035): expose this app's capabilities to the in-app AI
         // by registering an IMcpToolProvider under the alias OCA\OpenRegister\Mcp\IMcpToolProvider::{appId}.
