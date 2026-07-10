@@ -1,0 +1,3 @@
+/*! For license information please see 2563.94b2ff75.chunk.js.LICENSE.txt */
+(self.webpackChunkopen_tilburg_ui=self.webpackChunkopen_tilburg_ui||[]).push([[2563],{"./node_modules/svg-react-loader/lib/loader.js!./src/assets/images/ellipse.svg":(e,l,s)=>{var t=s("./node_modules/preact/compat/dist/compat.module.js");function i(e){return t.createElement("svg",e,t.createElement("circle",{id:"Ellipse 129",cx:"4",cy:"4.5",r:"4",fill:"#B9E4FC"}))}i.defaultProps={width:"8",height:"9",viewBox:"0 0 8 9",fill:"none"},e.exports=i,i.default=i}}]);
+//# sourceMappingURL=2563.94b2ff75.chunk.js.map

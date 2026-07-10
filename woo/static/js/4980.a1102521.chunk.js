@@ -1,0 +1,3 @@
+/*! For license information please see 4980.a1102521.chunk.js.LICENSE.txt */
+(self.webpackChunkopen_tilburg_ui=self.webpackChunkopen_tilburg_ui||[]).push([[4980],{"./node_modules/svg-react-loader/lib/loader.js!./src/assets/images/user.svg":(e,t,s)=>{var r=s("./node_modules/preact/compat/dist/compat.module.js");function l(e){return r.createElement("svg",e,r.createElement("path",{d:"M8 7.8C9.7 7.8 11 6.5 11 4.8C11 3.1 9.7 1.8 8 1.8C6.3 1.8 5 3.1 5 4.8C5 6.5 6.3 7.8 8 7.8zM7.3 9.2C4.8 9.2 2.8 11.2 2.8 13.7C2.8 14.1 3.1 14.4 3.5 14.4L12.5 14.4C12.9 14.4 13.2 14.1 13.2 13.7C13.2 11.2 11.2 9.2 8.7 9.2L7.3 9.2z"}))}l.defaultProps={fill:"currentColor",viewBox:"0 0 16 16",width:"16"},e.exports=l,l.default=l}}]);
+//# sourceMappingURL=4980.a1102521.chunk.js.map

@@ -1,0 +1,23 @@
+/*! @babel/runtime/helpers/defineProperty */
+
+/*! @constants */
+
+/*! @molecules */
+
+/*! @molecules/ac-button/ac-button */
+
+/*! @stores */
+
+/*! @utrecht/component-library-react/dist/css-module */
+
+/*! mobx-react-lite */
+
+/*! preact/jsx-runtime */
+
+/*! react */
+
+/*! react-router */
+
+/*!****************************************************************!*\
+  !*** ./src/views/ac-password-reminder/ac-password-reminder.js ***!
+  \****************************************************************/

@@ -1,0 +1,24 @@
+/*! @amsterdam/design-system-react-icons */
+
+/*! @babel/runtime/helpers/defineProperty */
+
+/*! @babel/runtime/helpers/objectWithoutProperties */
+
+/*! @babel/runtime/helpers/slicedToArray */
+
+/*! @babel/runtime/helpers/toConsumableArray */
+
+/*! clsx */
+
+/*! react */
+
+/*! react/jsx-runtime */
+
+/*!***********************************************************************!*\
+  !*** ./node_modules/@amsterdam/design-system-react/dist/index.esm.js ***!
+  \***********************************************************************/
+
+/**
+ * @license EUPL-1.2+
+ * Copyright Gemeente Amsterdam
+ */

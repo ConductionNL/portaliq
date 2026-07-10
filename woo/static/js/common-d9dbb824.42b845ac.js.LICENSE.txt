@@ -1,0 +1,107 @@
+/*! ./utils/field-renderers */
+
+/*! ./utils/field-utilities */
+
+/*! @amsterdam/design-system-react */
+
+/*! @atoms */
+
+/*! @babel/runtime/helpers/defineProperty */
+
+/*! @babel/runtime/helpers/objectWithoutProperties */
+
+/*! @components */
+
+/*! @constants */
+
+/*! @constants/wizards.constants */
+
+/*! @gemeente-denhaag/components-react */
+
+/*! @molecules */
+
+/*! @src/components/con-pagination-limit-selector/con-pagination-limit-selector */
+
+/*! @src/constants */
+
+/*! @src/index.web */
+
+/*! @src/molecules */
+
+/*! @src/utilities/con-resolve-schema */
+
+/*! @src/utilities/con-sort-properties-by-order */
+
+/*! @stores */
+
+/*! @utils/organization-permissions */
+
+/*! @utrecht/component-library-react */
+
+/*! @utrecht/component-library-react/dist/css-module */
+
+/*! @views/ac-beheer/shared/components/con-action-menu */
+
+/*! @views/ac-beheer/shared/components/con-table */
+
+/*! clsx */
+
+/*! mobx-react-lite */
+
+/*! preact/jsx-runtime */
+
+/*! prop-types */
+
+/*! react */
+
+/*! react-router */
+
+/*! react-router-dom */
+
+/*! react-select */
+
+/*! react-tooltip */
+
+/*!*************************************************************!*\
+  !*** ./src/components/con-debug-viewer/con-debug-viewer.js ***!
+  \*************************************************************/
+
+/*!***************************************************************!*\
+  !*** ./src/components/con-external-link/con-external-link.js ***!
+  \***************************************************************/
+
+/*!******************************************************************!*\
+  !*** ./src/components/con-dynamic-schema-form/utils/defaults.js ***!
+  \******************************************************************/
+
+/*!*******************************************************************!*\
+  !*** ./src/components/con-dynamic-sidenav/con-dynamic-sidenav.js ***!
+  \*******************************************************************/
+
+/*!*********************************************************************!*\
+  !*** ./src/components/con-api-select-field/con-api-select-field.js ***!
+  \*********************************************************************/
+
+/*!***************************************************************************!*\
+  !*** ./src/components/con-dynamic-schema-form/con-dynamic-schema-form.js ***!
+  \***************************************************************************/
+
+/*!*****************************************************************************!*\
+  !*** ./src/components/con-details-actions-menu/con-details-actions-menu.js ***!
+  \*****************************************************************************/
+
+/*!*************************************************************************************!*\
+  !*** ./src/components/con-aangeboden-gebruik-table/con-aangeboden-gebruik-table.js ***!
+  \*************************************************************************************/
+
+/*!*************************************************************************************!*\
+  !*** ./src/components/con-dynamic-schema-form/utils/field-renderers.js + 5 modules ***!
+  \*************************************************************************************/
+
+/*!*************************************************************************************!*\
+  !*** ./src/components/con-dynamic-schema-form/utils/field-utilities.js + 2 modules ***!
+  \*************************************************************************************/
+
+/*!***************************************************************************************!*\
+  !*** ./src/components/con-existing-modules-info-box/con-existing-modules-info-box.js ***!
+  \***************************************************************************************/

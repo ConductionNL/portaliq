@@ -1,0 +1,15 @@
+/*! ../common/error-codes.js */
+
+/*! ../common/html.js */
+
+/*! ../common/token.js */
+
+/*! ../common/unicode.js */
+
+/*! ./preprocessor.js */
+
+/*! entities/decode */
+
+/*!*****************************************************!*\
+  !*** ./node_modules/parse5/dist/tokenizer/index.js ***!
+  \*****************************************************/

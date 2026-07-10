@@ -1,0 +1,23 @@
+/*! @atoms */
+
+/*! @components */
+
+/*! @constants/wizards.constants */
+
+/*! @molecules */
+
+/*! @stores */
+
+/*! @utrecht/component-library-react/dist/css-module */
+
+/*! mobx-react-lite */
+
+/*! preact/jsx-runtime */
+
+/*! react */
+
+/*! react-router */
+
+/*!*************************************************************!*\
+  !*** ./src/views/ac-beheer/core/components/ac-dashboard.js ***!
+  \*************************************************************/
