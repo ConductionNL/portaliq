@@ -1,0 +1,55 @@
+// Auto-generated runtime configuration
+// This file is generated at container startup and loaded BEFORE the React bundle
+// It provides runtime environment configuration that is NOT bundled by webpack
+// Priority: 1. values.yaml (env/extraEnvVars) -> 2. Environment variables -> 3. Defaults
+// DO NOT EDIT MANUALLY - changes will be overwritten
+
+// Make configuration available globally
+window.RUNTIME_CONFIG = {
+  "SITE_TITLE": "Hot Reload Development 🔥",
+  "SITE_DESCRIPTION": "Hot reload development instance",
+  "SITE": "localhost",
+  "MODE": "development",
+  "THEME_VARIANT": "vng",
+  "ENVIRONMENT_NAME": "development",
+  "BASE_URL": "/index.php/apps",
+  "GRANT_TYPE": "authorization_code",
+  "CLIENT_ID": "",
+  "CLIENT_SECRET": "",
+  "PROVIDER": "nextcloud",
+  "REGISTER_URL": "",
+  "AUTO_LOGOUT": false,
+  "AUTO_LOGOUT_TIME": 3600,
+  "SESSION_TIMEOUT": 3600,
+  "ACTIVITY_PING": false,
+  "ROLLBAR_KEY": "",
+  "ROLLBAR_ENVIRONMENT": "development",
+  "ENABLE_AUTHENTICATION": false,
+  "ENABLE_GEMMA": true,
+  "ENABLE_DIRECTORY": true,
+  "ENABLE_ROLLBAR": false,
+  "ENABLE_MOCK_THEMES": true,
+  "ENABLE_BREADCRUMBS": false,
+  "EXTERNAL_WEBSITE_URL": "https://www.tilburg.nl/",
+  "EXTERNAL_PRIVACY_URL": "https://www.tilburg.nl/privacystatement/",
+  "EXTERNAL_COOKIES_URL": "https://www.tilburg.nl/cookies/",
+  "EXTERNAL_PROCLAIMER_URL": "https://www.tilburg.nl/proclaimer/",
+  "HERO_IMAGE_URL": "null",
+  "FAVICON_URL": null,
+  "FOOTER_STYLE": "vng",
+  "FOOTER_LOGO_TITLE": "Open Tilburg",
+  "FOOTER_LOGO_SUBTITLE": "Één plek voor alle publicaties van Gemeente Tilburg",
+  "SUPPORT_EMAIL_ADDRESS": "info@conduction.nl",
+  "DEFAULT_SEARCH_SCHEMA": "18",
+  "NODE_ENV": "development",
+  "BASE_URL_COMMONGROUND": "/index.php/apps",
+  "NGINX_ROOT_DIR": "/usr/share/nginx/html",
+  "NGINX_OPENCONNECTOR_UPSTREAM": "",
+  "NGINX_NEXTCLOUD_UPSTREAM": "",
+  "NGINX_NEXTCLOUD_DOMAIN": "",
+  "NGINX_TARGET_HOST": "",
+  "CHAT_ENDPOINT": "https://api.example.com/chat",
+  "CHAT_TITLE": "Chat met Open Registers",
+  "CHAT_DESCRIPTION": "Stel vragen over data en bestanden in open registers en krijg direct antwoord.",
+  "FAST_REFRESH": "true"
+};

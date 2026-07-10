@@ -1,0 +1,29 @@
+/*! @loadable/component */
+
+/*! @views/ac-beheer/core/components/ac-dashboard */
+
+/*! @views/ac-beheer/core/components/ac-standard-pages/ac-beheer-error */
+
+/*! @views/ac-beheer/core/components/ac-standard-pages/ac-beheer-loading */
+
+/*! import() */
+
+/*!**************************************!*\
+  !*** ./src/views/ac-beheer/index.js ***!
+  \**************************************/
+
+/*!**************************************************************************************!*\
+  !*** ./src/views/ac-beheer/domains/ac-module/con-module-details-page.js + 1 modules ***!
+  \**************************************************************************************/
+
+/*!****************************************************************************************!*\
+  !*** ./src/views/ac-beheer/domains/ac-product/con-product-details-page.js + 1 modules ***!
+  \****************************************************************************************/
+
+/*!************************************************************************************************!*\
+  !*** ./src/views/ac-beheer/domains/ac-organisatie/con-organisatie-details-page.js + 1 modules ***!
+  \************************************************************************************************/
+
+/*!******************************************************************************************************!*\
+  !*** ./src/views/ac-beheer/domains/con-module-version/con-module-version-detail-page.js + 1 modules ***!
+  \******************************************************************************************************/

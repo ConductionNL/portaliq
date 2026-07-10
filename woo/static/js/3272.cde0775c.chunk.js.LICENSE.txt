@@ -1,0 +1,15 @@
+/*! @stores */
+
+/*! @views/ac-beheer/core/components/con-beheer-page-wrapper */
+
+/*! mobx-react-lite */
+
+/*! preact/jsx-runtime */
+
+/*! react */
+
+/*! react-router */
+
+/*!*******************************************!*\
+  !*** ./src/views/ac-beheer/ac-objects.js ***!
+  \*******************************************/

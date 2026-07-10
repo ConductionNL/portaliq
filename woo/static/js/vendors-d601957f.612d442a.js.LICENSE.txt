@@ -1,0 +1,55 @@
+/*! @ungap/structured-clone */
+
+/*! decode-named-character-reference */
+
+/*! mdast-util-to-string */
+
+/*! micromark */
+
+/*! micromark-extension-definition-list */
+
+/*! micromark-util-decode-numeric-character-reference */
+
+/*! micromark-util-decode-string */
+
+/*! micromark-util-normalize-identifier */
+
+/*! micromark-util-sanitize-uri */
+
+/*! unist-builder */
+
+/*! unist-util-is */
+
+/*! unist-util-stringify-position */
+
+/*!*******************************************************!*\
+  !*** ./node_modules/mdast-util-phrasing/lib/index.js ***!
+  \*******************************************************/
+
+/*!*******************************************************!*\
+  !*** ./node_modules/mdast-util-to-hast/lib/footer.js ***!
+  \*******************************************************/
+
+/*!************************************************************!*\
+  !*** ./node_modules/mdast-util-from-markdown/lib/index.js ***!
+  \************************************************************/
+
+/*!**************************************************************!*\
+  !*** ./node_modules/mdast-util-gfm/lib/index.js + 5 modules ***!
+  \**************************************************************/
+
+/*!****************************************************************!*\
+  !*** ./node_modules/mdast-util-definition-list/lib/to-hast.js ***!
+  \****************************************************************/
+
+/*!********************************************************************!*\
+  !*** ./node_modules/mdast-util-definition-list/lib/to-markdown.js ***!
+  \********************************************************************/
+
+/*!**********************************************************************!*\
+  !*** ./node_modules/mdast-util-definition-list/lib/from-markdown.js ***!
+  \**********************************************************************/
+
+/*!***************************************************************************!*\
+  !*** ./node_modules/mdast-util-find-and-replace/lib/index.js + 1 modules ***!
+  \***************************************************************************/

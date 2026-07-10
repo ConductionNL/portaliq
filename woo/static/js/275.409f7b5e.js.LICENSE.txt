@@ -1,0 +1,21 @@
+/*! @babel/runtime/helpers/applyDecoratedDescriptor */
+
+/*! @babel/runtime/helpers/defineProperty */
+
+/*! @babel/runtime/helpers/initializerDefineProperty */
+
+/*! @services/registerCache.service */
+
+/*! @services/schemaCache.service */
+
+/*! @src/utilities */
+
+/*! @views/ac-beheer/core/utils/constants */
+
+/*! axios */
+
+/*! mobx */
+
+/*!************************************!*\
+  !*** ./src/stores/object.store.js ***!
+  \************************************/

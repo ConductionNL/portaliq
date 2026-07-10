@@ -1,0 +1,19 @@
+/*! @atoms */
+
+/*! @components */
+
+/*! @config */
+
+/*! @constants */
+
+/*! @utrecht/component-library-react/dist/css-module */
+
+/*! mobx-react-lite */
+
+/*! preact/jsx-runtime */
+
+/*! react */
+
+/*!**************************************************************************************!*\
+  !*** ./src/views/ac-beheer/core/modals/con-addAccount-modal/con-addAccount-modal.js ***!
+  \**************************************************************************************/

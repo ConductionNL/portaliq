@@ -1,0 +1,21 @@
+/*! @atoms */
+
+/*! @components */
+
+/*! @constants */
+
+/*! @molecules */
+
+/*! @stores */
+
+/*! @utrecht/component-library-react */
+
+/*! mobx-react-lite */
+
+/*! preact/jsx-runtime */
+
+/*! react */
+
+/*!******************************************************************!*\
+  !*** ./src/views/con-beheer-views-list/con-beheer-views-list.js ***!
+  \******************************************************************/

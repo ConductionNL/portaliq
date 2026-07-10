@@ -1,0 +1,49 @@
+/*! @atoms */
+
+/*! @babel/runtime/helpers/defineProperty */
+
+/*! @babel/runtime/helpers/objectWithoutProperties */
+
+/*! @components */
+
+/*! @conduction/archimate-diagram-engine */
+
+/*! @constants */
+
+/*! @molecules */
+
+/*! @src/constants */
+
+/*! @src/index.web */
+
+/*! @src/molecules */
+
+/*! @stores */
+
+/*! @utrecht/component-library-react/dist/css-module */
+
+/*! @views/ac-beheer/shared/components/con-action-menu */
+
+/*! clsx */
+
+/*! jointjs */
+
+/*! mobx-react-lite */
+
+/*! preact/compat */
+
+/*! preact/jsx-runtime */
+
+/*! react */
+
+/*! react-router */
+
+/*! svg-pan-zoom */
+
+/*!********************************************************!*\
+  !*** ./src/views/con-beheer-views/con-beheer-views.js ***!
+  \********************************************************/
+
+/*!******************************************************************!*\
+  !*** ./src/views/ac-beheer/shared/components/con-action-menu.js ***!
+  \******************************************************************/

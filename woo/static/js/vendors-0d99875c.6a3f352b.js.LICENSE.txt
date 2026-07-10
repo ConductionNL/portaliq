@@ -1,0 +1,29 @@
+/*! @ungap/structured-clone */
+
+/*! hast-util-from-parse5 */
+
+/*! hast-util-to-parse5 */
+
+/*! html-void-elements */
+
+/*! parse5 */
+
+/*! unist-util-position */
+
+/*! unist-util-visit */
+
+/*! web-namespaces */
+
+/*! zwitch */
+
+/*!*************************************************!*\
+  !*** ./node_modules/hast-util-raw/lib/index.js ***!
+  \*************************************************/
+
+/*!****************************************************************!*\
+  !*** ./node_modules/hast-util-select/lib/index.js + 9 modules ***!
+  \****************************************************************/
+
+/*!******************************************************************!*\
+  !*** ./node_modules/hast-util-sanitize/lib/index.js + 1 modules ***!
+  \******************************************************************/

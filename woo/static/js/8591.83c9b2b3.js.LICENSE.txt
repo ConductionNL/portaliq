@@ -1,0 +1,121 @@
+/*! @atoms */
+
+/*! @babel/runtime/helpers/applyDecoratedDescriptor */
+
+/*! @babel/runtime/helpers/defineProperty */
+
+/*! @babel/runtime/helpers/initializerDefineProperty */
+
+/*! @components */
+
+/*! @components/con-glossary-highlight/con-glossary-highlight */
+
+/*! @config */
+
+/*! @constants/container.constants */
+
+/*! @constants/routes.constants */
+
+/*! @loadable/component */
+
+/*! @services/schemaCache.service */
+
+/*! @src/utilities/con-detect-object-references */
+
+/*! @src/views/ac-forms/ac-forms-koppeling/ac-forms-koppeling */
+
+/*! @src/views/ac-forms/con-forms-dienst/con-forms-dienst */
+
+/*! @stores */
+
+/*! @utils */
+
+/*! @utrecht/component-library-react/dist/css-module */
+
+/*! @views/ac-beheer/ac-objects */
+
+/*! @views/ac-beheer/core/components/ac-beheer */
+
+/*! @views/ac-chat/ac-chat */
+
+/*! @views/ac-fallback-error-page/ac-fallback-error-page */
+
+/*! @views/ac-forms/ac-forms-applicatie/ac-forms-applicatie */
+
+/*! @views/ac-forms/ac-forms-gebruik/gebruik-application/ac-forms-gebruik */
+
+/*! @views/ac-forms/ac-forms-gebruik/gebruik-dienst/con-forms-dienst */
+
+/*! @views/ac-forms/ac-forms-gebruik/gebruik-koppeling/ac-forms-koppeling */
+
+/*! @views/ac-forms/ac-forms-product/ac-forms-product */
+
+/*! @views/ac-forms/con-forms-index/con-forms-index */
+
+/*! @views/ac-gemma/ac-gemma */
+
+/*! @views/ac-home/ac-home */
+
+/*! @views/ac-login/ac-login */
+
+/*! @views/ac-mijn-omgeving/ac-mijn-omgeving */
+
+/*! @views/ac-my-account/ac-my-account */
+
+/*! @views/ac-nextcloud-authorization/ac-nextcloud-authorization */
+
+/*! @views/ac-password-reminder/ac-password-reminder */
+
+/*! @views/ac-publication/ac-publication */
+
+/*! @views/ac-register/ac-register */
+
+/*! @views/ac-search/ac-search */
+
+/*! @views/ac-themes/ac-themes */
+
+/*! @views/ac-views/ac-views */
+
+/*! @views/con-beheer-views-list/con-beheer-views-list */
+
+/*! @views/con-beheer-views/con-beheer-views */
+
+/*! @views/con-directory/con-directory */
+
+/*! @views/con-views-list/con-views-list */
+
+/*! import() */
+
+/*! mobx */
+
+/*! mobx-react-lite */
+
+/*! preact/jsx-runtime */
+
+/*! react */
+
+/*! react-router-dom */
+
+/*!****************************!*\
+  !*** ./src/views/index.js ***!
+  \****************************/
+
+/*!*******************************!*\
+  !*** ./src/styles/index.scss ***!
+  \*******************************/
+
+/*!*****************************************!*\
+  !*** ./src/stores/store.js + 6 modules ***!
+  \*****************************************/
+
+/*!******************************************!*\
+  !*** ./src/stores/publications.store.js ***!
+  \******************************************/
+
+/*!********************************************!*\
+  !*** ./src/views/ac-content/ac-content.js ***!
+  \********************************************/
+
+/*!*****************************************************!*\
+  !*** ./src/views/ac-beheer/core/utils/constants.js ***!
+  \*****************************************************/
