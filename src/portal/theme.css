@@ -1,0 +1,98 @@
+/* SPDX-License-Identifier: EUPL-1.2 */
+/*
+ * Theme tokens for the PUBLIC Portaliq portal shell (portal-spa-nl-design-system-styling).
+ *
+ * @utrecht/component-library-react components inject their OWN per-component
+ * CSS at runtime (each ships an `insert-style` module) — this file supplies
+ * the SHELL-level tokens/layout those components render inside of, mapped to
+ * `RUNTIME_CONFIG.theme` via a `theme-<name>` class on the root element
+ * (`App.jsx`: `<div className={`portaliq-shell theme-${config.theme}`}>`).
+ *
+ * The portal is a standalone public surface (NOT rendered inside Nextcloud's
+ * own page chrome), so NC's own `--color-*` custom properties are not
+ * available here; these are the portal's OWN token set, named distinctly
+ * (`--portaliq-*`) so they never collide with or shadow NC's variables.
+ */
+
+.portaliq-shell {
+	--portaliq-color-text: #1b1b1b;
+	--portaliq-color-text-muted: #5c5c5c;
+	--portaliq-color-background: #ffffff;
+	--portaliq-color-accent: #01689b; /* Rijkshuisstijl-adjacent blue, the common NL-DS default accent */
+	--portaliq-color-border: #d6d6d6;
+	--portaliq-space-sm: 0.5rem;
+	--portaliq-space-md: 1rem;
+	--portaliq-space-lg: 1.5rem;
+
+	display: flex;
+	flex-direction: column;
+	min-height: 100vh;
+	color: var(--portaliq-color-text);
+	background: var(--portaliq-color-background);
+	font-family: system-ui, sans-serif;
+}
+
+/* A tenant configuring theme: 'utrecht' opts into a slightly warmer accent —
+   a placeholder for real per-tenant NL-DS theme packages, not a redesign. */
+.portaliq-shell.theme-utrecht {
+	--portaliq-color-accent: #ca005d;
+}
+
+.portaliq-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: var(--portaliq-space-md) var(--portaliq-space-lg);
+	border-bottom: 1px solid var(--portaliq-color-border);
+}
+
+.portaliq-org {
+	font-weight: 700;
+}
+
+.portaliq-main {
+	flex: 1;
+	padding: var(--portaliq-space-lg);
+	max-width: 960px;
+	margin: 0 auto;
+	width: 100%;
+}
+
+.portaliq-idp-hint {
+	color: var(--portaliq-color-text-muted);
+}
+
+.portaliq-error {
+	color: #a12622;
+}
+
+.portaliq-action-form {
+	display: flex;
+	flex-direction: column;
+	gap: var(--portaliq-space-sm);
+	margin: var(--portaliq-space-sm) 0;
+	padding: var(--portaliq-space-md);
+	border: 1px solid var(--portaliq-color-border);
+	border-radius: 4px;
+}
+
+.portaliq-action-form__buttons {
+	display: flex;
+	gap: var(--portaliq-space-sm);
+}
+
+.portaliq-action-ok {
+	color: #14804a;
+}
+
+.portaliq-action-error {
+	color: #a12622;
+}
+
+/* Visible focus indicator on every interactive element — WCAG 2.4.7. The
+   Utrecht components already carry their own focus styling; this is the
+   fallback for the few bare-HTML elements (e.g. the collection <li> links). */
+.portaliq-shell :focus-visible {
+	outline: 2px solid var(--portaliq-color-accent);
+	outline-offset: 2px;
+}
