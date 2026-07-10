@@ -107,6 +107,19 @@ class PortalContributionProvider implements IPortalContributionProvider
             'label'         => 'Voorbeeld',
             'collections'   => [
                 [
+                    // Support-ticket interface (contribution-manifest-v3 proto):
+                    // a schema-driven list. The portal reads the `ticket` schema
+                    // and renders these projected columns; the create action
+                    // below renders a schema-driven form.
+                    'id'         => 'tickets',
+                    'register'   => 'portaliq',
+                    'schema'     => 'ticket',
+                    'scopeField' => 'subjectRef',
+                    'fields'     => ['subject', 'category', 'priority', 'status', 'createdAt'],
+                    'label'      => 'Mijn supporttickets',
+                    'listable'   => true,
+                ],
+                [
                     // Field projection (read-side): the portal returns ONLY
                     // title + status (+ the row identifier) per row — the
                     // scopeField value and any other property never leave.
@@ -168,6 +181,18 @@ class PortalContributionProvider implements IPortalContributionProvider
                 ],
             ],
             'actions'       => [
+                [
+                    // Schema-driven create form: the portal fetches the `ticket`
+                    // schema and renders an input per whitelisted field (enum →
+                    // select, long string → textarea). subjectRef is stamped
+                    // server-side; staff-only fields (status) are NOT offered.
+                    'id'       => 'createTicket',
+                    'type'     => 'create',
+                    'label'    => 'Nieuw ticket',
+                    'register' => 'portaliq',
+                    'schema'   => 'ticket',
+                    'fields'   => ['subject', 'description', 'category', 'priority'],
+                ],
                 [
                     'id'       => 'createExample',
                     'type'     => 'create',

@@ -38,6 +38,9 @@ return [
         ['name' => 'contribution#index', 'url' => '/portal/api/contributions', 'verb' => 'GET'],
         // Objects in one contribution collection, subject-scoped (T05).
         ['name' => 'contribution#collection', 'url' => '/portal/api/collections/{register}/{schema}', 'verb' => 'GET'],
+        // Schema field-definitions for a manifest-referenced schema, so the
+        // portal can render a schema-driven create form (manifest-v3 proto).
+        ['name' => 'contribution#schema', 'url' => '/portal/api/schema/{register}/{schema}', 'verb' => 'GET'],
         // Create an object in a collection, owned by the subject (T06).
         ['name' => 'contribution#create', 'url' => '/portal/api/collections/{register}/{schema}', 'verb' => 'POST'],
         // Forward a declared endpoint action server-to-server with a signed
@@ -46,6 +49,11 @@ return [
         ['name' => 'contribution#action', 'url' => '/portal/api/actions/{appId}/{actionId}', 'verb' => 'POST'],
 
         ['name' => 'portalPage#catchAll', 'url' => '/portal/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
+
+        // Hosted tilburg-woo-ui (Open Tilburg WOO SPA) — public, zero NC chrome.
+        // Registered BEFORE the greedy /{path} catch-all so /woo isn't swallowed.
+        ['name' => 'woo#serve', 'url' => '/woo', 'verb' => 'GET'],
+        ['name' => 'woo#servePath', 'url' => '/woo/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
 
         // SPA catch-all — same controller as the index route; must use a distinct route name
         // (duplicate names replace the earlier route in Symfony, which breaks GET /).

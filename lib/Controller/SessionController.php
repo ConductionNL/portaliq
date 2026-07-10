@@ -103,19 +103,22 @@ class SessionController extends Controller
      */
     #[PublicPage]
     #[NoCSRFRequired]
-    public function devLogin(string $subjectRef='dev-supplier', string $audience='supplier', string $organisation='dev-org'): JSONResponse
+    public function devLogin(string $subjectRef='dev-supplier', string $audience='supplier', string $organisation='dev-org', string $trust='low'): JSONResponse
     {
         if ($this->isDevLoginEnabled() === false) {
             return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
         }
 
-        // Dev-login is a password-less mint, so it carries the LOWEST assurance
-        // level explicitly (contract v2, A3 — eIDAS-aligned trust vocabulary).
+        // Dev-login is a password-less mint. It normally carries the LOWEST
+        // assurance level (contract v2, A3); the optional trust override lets a
+        // debug environment simulate a broker-issued substantial/high session
+        // for exercising trust-gated collections.
+        $trust  = in_array($trust, ['low', 'substantial', 'high'], true) ? $trust : 'low';
         $issued = $this->session->issueSession(
             subjectRef: $subjectRef,
             audience: $audience,
             organisation: $organisation,
-            trust: 'low',
+            trust: $trust,
             roles: [$audience.':read']
         );
 

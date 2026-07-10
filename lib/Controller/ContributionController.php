@@ -203,6 +203,73 @@ class ContributionController extends Controller implements PortalProtected
     }//end collection()
 
     /**
+     * Return a schema's field definitions (title/type/enum/description) so the
+     * portal can render a schema-driven create form. Restricted to schemas the
+     * subject's own aggregated manifest references (403 otherwise). For this
+     * prototype the definition is read from portaliq's own register JSON; a
+     * production version resolves any contributing app's schema via OpenRegister.
+     *
+     * @param string $register The register of the schema.
+     * @param string $schema   The schema slug.
+     *
+     * @return JSONResponse The field definitions, or 401 / 403 / 404.
+     */
+    #[PublicPage]
+    #[NoCSRFRequired]
+    public function schema(string $register, string $schema): JSONResponse
+    {
+        $subject = $this->subject();
+        if ($subject === null) {
+            return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+        }
+
+        // The subject may only introspect a schema their manifest references
+        // (via a collection or a create action).
+        $referenced = false;
+        $aggregate  = $this->registry->aggregateFor(subject: $subject);
+        foreach (($aggregate['contributions'] ?? []) as $contribution) {
+            foreach (($contribution['collections'] ?? []) as $entry) {
+                if (($entry['register'] ?? '') === $register && ($entry['schema'] ?? '') === $schema) {
+                    $referenced = true;
+                }
+            }
+
+            foreach (($contribution['actions'] ?? []) as $entry) {
+                if (($entry['register'] ?? '') === $register && ($entry['schema'] ?? '') === $schema) {
+                    $referenced = true;
+                }
+            }
+        }
+
+        if ($referenced === false) {
+            return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+        }
+
+        $registerJson = __DIR__.'/../Settings/portaliq_register.json';
+        $raw          = @file_get_contents($registerJson);
+        $config       = ($raw !== false) ? json_decode($raw, true) : null;
+        $definition   = $config['components']['schemas'][$schema]['properties'] ?? null;
+        if (is_array($definition) === false) {
+            return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+        }
+
+        // Project to the safe, form-relevant metadata only.
+        $properties = [];
+        foreach ($definition as $name => $spec) {
+            $properties[$name] = [
+                'title'       => (string) ($spec['title'] ?? $name),
+                'type'        => (string) ($spec['type'] ?? 'string'),
+                'description' => (string) ($spec['description'] ?? ''),
+                'enum'        => array_values((array) ($spec['enum'] ?? [])),
+                'format'      => (string) ($spec['format'] ?? ''),
+                'maxLength'   => (int) ($spec['maxLength'] ?? 0),
+            ];
+        }
+
+        return new JSONResponse(['register' => $register, 'schema' => $schema, 'properties' => $properties]);
+    }//end schema()
+
+    /**
      * Find the collection matching (register, schema) in the subject's
      * aggregated contributions, or null when the subject is not entitled to it.
      *
