@@ -119,6 +119,13 @@ class SessionController extends Controller
             roles: [$audience.':read']
         );
 
+        if ($issued === null) {
+            // The auth edge fails closed when no dedicated jwt_signing_secret is
+            // configured yet (portal-auth-edge-session-hardening) — never signs
+            // with a placeholder.
+            return new JSONResponse(['error' => 'not_configured'], Http::STATUS_SERVICE_UNAVAILABLE);
+        }
+
         return new JSONResponse(
             [
                 'token'        => $issued['token'],
@@ -131,17 +138,26 @@ class SessionController extends Controller
     }//end devLogin()
 
     /**
-     * End the client session. Stateless today; server-side revocation of the
-     * `portalSession` record is the next slice.
+     * End the client session: resolves the caller's own bearer and marks its
+     * `portalSession` record revoked, so `resolveFromBearer()` rejects it on
+     * any subsequent request, even before its natural expiry. Always responds
+     * `{ok: true}` — an already-invalid or unknown bearer is not itself an
+     * error (the client's local token is dropped regardless per App.jsx).
      *
      * @return JSONResponse 200.
      *
      * @spec openspec/changes/supplier-portal/tasks.md#T02
+     * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#3.1
      */
     #[PublicPage]
     #[NoCSRFRequired]
     public function logout(): JSONResponse
     {
+        $subject = $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
+        if ($subject !== null) {
+            $this->session->revoke((string) ($subject['jti'] ?? ''));
+        }
+
         return new JSONResponse(['ok' => true]);
     }//end logout()
 

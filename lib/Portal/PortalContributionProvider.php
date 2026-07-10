@@ -105,97 +105,133 @@ class PortalContributionProvider implements IPortalContributionProvider
 
         return [
             'label'         => 'Voorbeeld',
-            'collections'   => [
-                [
-                    // Field projection (read-side): the portal returns ONLY
-                    // title + status (+ the row identifier) per row — the
-                    // scopeField value and any other property never leave.
-                    'id'         => 'exampleCollection',
-                    'register'   => 'portaliq',
-                    'schema'     => 'exampleDocument',
-                    'scopeField' => 'subjectRef',
-                    'fields'     => ['title', 'status'],
-                    'label'      => 'Voorbeeldgegevens',
-                    'listable'   => true,
-                ],
-                [
-                    'id'         => 'inbox',
-                    'kind'       => 'inbox',
-                    'register'   => 'portaliq',
-                    'schema'     => 'portalMessage',
-                    'scopeField' => 'subjectRef',
-                    'label'      => 'Berichten',
-                    'listable'   => true,
-                ],
-                [
-                    // Contract v2 (A4): scoped by the server-managed claim
-                    // `claims.portaliq.exampleContactId` (bare form = own
-                    // namespace), not by the subjectRef.
-                    'id'         => 'exampleClaimScoped',
-                    'register'   => 'portaliq',
-                    'schema'     => 'exampleDocument',
-                    'scopeField' => 'subjectRef',
-                    'scopeClaim' => 'exampleContactId',
-                    'label'      => 'Gekoppelde voorbeeldgegevens',
-                    'listable'   => true,
-                ],
-                [
-                    // Contract v2.2 (reverse-scope-join): the reverse
-                    // `match: 'scopeField'` join mechanic, exercisable with the
-                    // existing demo schemas only. The join pre-pass resolves
-                    // the subject's OWN portalAccount (join scopeField
-                    // `subjectRef`), collects its `subjectRef` as the target
-                    // VALUE, then keeps `exampleDocument` rows whose OWN
-                    // `subjectRef` (the collection scopeField) is in that set.
-                    // Deliberately self-referential — a realistic
-                    // guardian→learner→grades reverse join needs a domain app's
-                    // schemas (scholiq), out of scope here — but it drives the
-                    // reverse code path end-to-end, so rows created via
-                    // `createExample` surface through it too.
-                    'id'         => 'exampleReverseJoin',
-                    'register'   => 'portaliq',
-                    'schema'     => 'exampleDocument',
-                    'scopeField' => 'subjectRef',
-                    'via'        => [
-                        'register'    => 'portaliq',
-                        'schema'      => 'portalAccount',
-                        'scopeField'  => 'subjectRef',
-                        'targetField' => 'subjectRef',
-                        'match'       => 'scopeField',
-                    ],
-                    'label'      => 'Voorbeeld omgekeerde koppeling',
-                    'listable'   => true,
-                ],
-            ],
-            'actions'       => [
-                [
-                    'id'       => 'createExample',
-                    'type'     => 'create',
-                    'label'    => 'Nieuw voorbeeld',
-                    'register' => 'portaliq',
-                    'schema'   => 'exampleDocument',
-                    'fields'   => ['title'],
-                ],
-                [
-                    // Contract v2 (A6): endpoint bearer-forward action with a
-                    // placeholder instance-local path (the app's own public
-                    // health endpoint, so the forward is exercisable on dev).
-                    'id'       => 'exampleForward',
-                    'label'    => 'Voorbeeld-doorstuuractie',
-                    'endpoint' => '/apps/portaliq/api/health',
-                    'method'   => 'GET',
-                ],
-                [
-                    // Contract v2 (A3): gated above the dev-login trust level —
-                    // a `low` session proves the manifest filter by its absence.
-                    'id'       => 'exampleTrusted',
-                    'label'    => 'Vertrouwde voorbeeldactie',
-                    'endpoint' => '/apps/portaliq/api/health',
-                    'method'   => 'GET',
-                    'minTrust' => 'substantial',
-                ],
-            ],
+            'collections'   => $this->exampleCollections(),
+            'actions'       => $this->exampleActions(),
             'notifications' => [],
         ];
     }//end getContribution()
+
+    /**
+     * The demo collections — one per contract-v2 scoping mechanic (direct,
+     * `scopeClaim`, forward `via`, reverse `via`), plus field projection on
+     * the direct one. Split out of getContribution() to keep it readable.
+     *
+     * @return array<int, array<string, mixed>>
+     *
+     * @spec openspec/changes/contract-v2/tasks.md#T9
+     * @spec openspec/changes/field-projection/tasks.md#T3
+     * @spec openspec/changes/reverse-scope-join/tasks.md#T3
+     */
+    private function exampleCollections(): array
+    {
+        return [
+            [
+                // Field projection (read-side): the portal returns ONLY
+                // title + status (+ the row identifier) per row — the
+                // scopeField value and any other property never leave.
+                'id'         => 'exampleCollection',
+                'register'   => 'portaliq',
+                'schema'     => 'exampleDocument',
+                'scopeField' => 'subjectRef',
+                'fields'     => ['title', 'status'],
+                'label'      => 'Voorbeeldgegevens',
+                'listable'   => true,
+            ],
+            [
+                'id'         => 'inbox',
+                'kind'       => 'inbox',
+                'register'   => 'portaliq',
+                'schema'     => 'portalMessage',
+                'scopeField' => 'subjectRef',
+                'label'      => 'Berichten',
+                'listable'   => true,
+            ],
+            [
+                // Contract v2 (A4): scoped by the server-managed claim
+                // `claims.portaliq.exampleContactId` (bare form = own
+                // namespace), not by the subjectRef.
+                'id'         => 'exampleClaimScoped',
+                'register'   => 'portaliq',
+                'schema'     => 'exampleDocument',
+                'scopeField' => 'subjectRef',
+                'scopeClaim' => 'exampleContactId',
+                'label'      => 'Gekoppelde voorbeeldgegevens',
+                'listable'   => true,
+            ],
+            [
+                // Contract v2.2 (reverse-scope-join): the reverse
+                // `match: 'scopeField'` join mechanic, exercisable with the
+                // existing demo schemas only. The join pre-pass resolves
+                // the subject's OWN portalAccount (join scopeField
+                // `subjectRef`), collects its `subjectRef` as the target
+                // VALUE, then keeps `exampleDocument` rows whose OWN
+                // `subjectRef` (the collection scopeField) is in that set.
+                // Deliberately self-referential — a realistic
+                // guardian→learner→grades reverse join needs a domain app's
+                // schemas (scholiq), out of scope here — but it drives the
+                // reverse code path end-to-end, so rows created via
+                // `createExample` surface through it too.
+                'id'         => 'exampleReverseJoin',
+                'register'   => 'portaliq',
+                'schema'     => 'exampleDocument',
+                'scopeField' => 'subjectRef',
+                'via'        => [
+                    'register'    => 'portaliq',
+                    'schema'      => 'portalAccount',
+                    'scopeField'  => 'subjectRef',
+                    'targetField' => 'subjectRef',
+                    'match'       => 'scopeField',
+                ],
+                'label'      => 'Voorbeeld omgekeerde koppeling',
+                'listable'   => true,
+            ],
+        ];
+    }//end exampleCollections()
+
+    /**
+     * The demo actions — a `create` action (T06) and two `endpoint` actions
+     * (contract v2, A6 / portal-contribution-endpoint-actions): one open to
+     * any trust level, one gated above the dev-login trust level so the
+     * manifest's trust filter is exercisable by its absence on a `low`
+     * session. Both endpoint actions target the app's own public health
+     * endpoint so the forward is exercisable on a dev install with no other
+     * app installed.
+     *
+     * @return array<int, array<string, mixed>>
+     *
+     * @spec openspec/changes/supplier-portal/tasks.md#T06
+     * @spec openspec/changes/contract-v2/tasks.md#T9
+     * @spec openspec/changes/portal-contribution-endpoint-actions/tasks.md#4.1
+     */
+    private function exampleActions(): array
+    {
+        return [
+            [
+                'id'       => 'createExample',
+                'type'     => 'create',
+                'label'    => 'Nieuw voorbeeld',
+                'register' => 'portaliq',
+                'schema'   => 'exampleDocument',
+                'fields'   => ['title'],
+            ],
+            [
+                // Contract v2 (A6): endpoint bearer-forward action with a
+                // placeholder instance-local path (the app's own public
+                // health endpoint, so the forward is exercisable on dev).
+                'id'       => 'exampleForward',
+                'label'    => 'Voorbeeld-doorstuuractie',
+                'endpoint' => '/apps/portaliq/api/health',
+                'method'   => 'GET',
+            ],
+            [
+                // Contract v2 (A3): gated above the dev-login trust level —
+                // a `low` session proves the manifest filter by its absence.
+                'id'       => 'exampleTrusted',
+                'label'    => 'Vertrouwde voorbeeldactie',
+                'endpoint' => '/apps/portaliq/api/health',
+                'method'   => 'GET',
+                'minTrust' => 'substantial',
+            ],
+        ];
+    }//end exampleActions()
 }//end class

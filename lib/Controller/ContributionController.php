@@ -206,9 +206,12 @@ class ContributionController extends Controller implements PortalProtected
      * Find the collection matching (register, schema) in the subject's
      * aggregated contributions, or null when the subject is not entitled to it.
      *
-     * @param array<string, mixed> $subject  The resolved subject.
-     * @param string               $register The requested register.
-     * @param string               $schema   The requested schema.
+     * @param array<string, mixed> $subject      The resolved subject.
+     * @param string               $register     The requested register.
+     * @param string               $schema       The requested schema.
+     * @param string               $collectionId Disambiguates two collections
+     *                                           sharing a register+schema; empty
+     *                                           keeps the first-match fallback.
      *
      * @return array{collection: array<string, mixed>, app: string}|null
      */
@@ -360,7 +363,13 @@ class ContributionController extends Controller implements PortalProtected
      * method, and its minTrust is re-checked — otherwise 403 with NO outbound
      * request. The forward attaches a short-lived signed `X-Portal-Subject`
      * assertion; the client's own Authorization header is NEVER forwarded, and
-     * full http(s) URLs are rejected (SSRF guard). The domain app's status and
+     * full http(s) URLs are rejected (SSRF guard). When the action declares a
+     * `fields` whitelist (portal-contribution-endpoint-actions), the forwarded
+     * body is rebuilt from ONLY those fields (reusing the same `whitelist()`
+     * the `create` action path already uses) — a client cannot smuggle
+     * additional properties past the manifest even though the domain app also
+     * validates its own input; when no `fields` is declared, the raw body is
+     * relayed unchanged (backward compatible). The domain app's status and
      * JSON body are relayed as-is; transport failure yields 502.
      *
      * @param string $appId    The contributing app the action belongs to.
@@ -369,6 +378,7 @@ class ContributionController extends Controller implements PortalProtected
      * @return JSONResponse The relayed response, or 401 / 403 / 502.
      *
      * @spec openspec/changes/contract-v2/tasks.md#T8
+     * @spec openspec/changes/portal-contribution-endpoint-actions/tasks.md#2.2
      */
     #[PublicPage]
     #[NoCSRFRequired]
@@ -395,7 +405,7 @@ class ContributionController extends Controller implements PortalProtected
                     'Content-Type'     => 'application/json',
                 ],
                 'timeout'     => self::FORWARD_TIMEOUT,
-                'body'        => $this->requestBody(),
+                'body'        => $this->forwardBody(action: $action),
                 // Relay non-2xx domain responses instead of throwing, so the
                 // domain app's own status codes (e.g. 422) reach the caller.
                 'http_errors' => false,
@@ -528,4 +538,26 @@ class ContributionController extends Controller implements PortalProtected
 
         return $content;
     }//end requestBody()
+
+    /**
+     * The body to forward for an endpoint action: a declared `fields`
+     * whitelist rebuilds it from ONLY those fields (same `whitelist()` the
+     * `create` path uses); absent `fields` relays the raw request body
+     * unchanged (backward compatible with actions that predate this
+     * whitelist — e.g. GET-method actions that carry no body at all).
+     *
+     * @param array<string, mixed> $action The matched, authorised action.
+     *
+     * @return string
+     *
+     * @spec openspec/changes/portal-contribution-endpoint-actions/tasks.md#2.2
+     */
+    private function forwardBody(array $action): string
+    {
+        if (is_array(($action['fields'] ?? null)) === false) {
+            return $this->requestBody();
+        }
+
+        return (string) json_encode($this->whitelist(fields: $action['fields']));
+    }//end forwardBody()
 }//end class

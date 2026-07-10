@@ -25,16 +25,77 @@
 				{{ t('portaliq', 'No pre-boot settings yet. Edit `src/views/AdminRoot.vue` to add fields here.') }}
 			</p>
 		</NcSettingsSection>
+
+		<NcSettingsSection
+			:name="t('portaliq', 'Portal auth edge')"
+			:description="t('portaliq', 'The public portal signs supplier/client sessions with a secret dedicated to this app — never the Nextcloud instance secret.')">
+			<NcNoteCard v-if="jwtSigningSecretConfigured" type="success">
+				{{ t('portaliq', 'A dedicated signing secret is configured. The portal auth edge is safe to use.') }}
+			</NcNoteCard>
+			<NcNoteCard v-else type="warning">
+				{{ t('portaliq', 'No dedicated signing secret is configured yet. The portal cannot issue or accept sessions until the next install/upgrade repair step runs.') }}
+			</NcNoteCard>
+
+			<form class="portaliq-admin-settings__revoke" @submit.prevent="revokeOrganisation">
+				<NcTextField
+					v-model="organisationInput"
+					:label="t('portaliq', 'Organisation')"
+					:placeholder="t('portaliq', 'Organisation UUID')"
+					:disabled="revoking" />
+				<NcButton type="error" :disabled="revoking || organisationInput === ''" native-type="submit">
+					{{ t('portaliq', 'Revoke all sessions for this organisation') }}
+				</NcButton>
+			</form>
+			<p v-if="revokeResult !== null" class="portaliq-admin-settings__hint" role="status">
+				{{ t('portaliq', 'Revoked {count} session(s).', { count: revokeResult }) }}
+			</p>
+		</NcSettingsSection>
 	</div>
 </template>
 
 <script>
-import { NcSettingsSection } from '@nextcloud/vue'
+import { NcSettingsSection, NcNoteCard, NcTextField, NcButton } from '@nextcloud/vue'
+import { loadState } from '@nextcloud/initial-state'
+import { generateUrl } from '@nextcloud/router'
+import axios from '@nextcloud/axios'
 
 export default {
 	name: 'AdminRoot',
 	components: {
 		NcSettingsSection,
+		NcNoteCard,
+		NcTextField,
+		NcButton,
+	},
+	data() {
+		return {
+			// Server-derived via IInitialStateService (AdminSettings::getForm());
+			// never re-derived client-side (ADR-004 — no DOM data attributes).
+			jwtSigningSecretConfigured: loadState('portaliq', 'jwtSigningSecretConfigured', false),
+			organisationInput: '',
+			revoking: false,
+			revokeResult: null,
+		}
+	},
+	methods: {
+		async revokeOrganisation() {
+			if (this.organisationInput === '') {
+				return
+			}
+			this.revoking = true
+			this.revokeResult = null
+			try {
+				const { data } = await axios.post(
+					generateUrl('/apps/portaliq/api/session-admin/revoke-organisation'),
+					{ organisation: this.organisationInput },
+				)
+				this.revokeResult = data.revoked ?? 0
+			} catch (e) {
+				this.revokeResult = 0
+			} finally {
+				this.revoking = false
+			}
+		},
 	},
 }
 </script>
@@ -48,5 +109,12 @@ export default {
 	margin: 0;
 	color: var(--color-text-maxcontrast);
 	line-height: 1.5;
+}
+
+.portaliq-admin-settings__revoke {
+	display: flex;
+	align-items: flex-end;
+	gap: 8px;
+	margin-top: 12px;
 }
 </style>

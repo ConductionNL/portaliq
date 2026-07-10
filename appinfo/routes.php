@@ -33,6 +33,10 @@ return [
         ['name' => 'session#devLogin', 'url' => '/portal/api/session/dev-login', 'verb' => 'POST'],
         ['name' => 'session#logout', 'url' => '/portal/api/session', 'verb' => 'DELETE'],
 
+        // Admin-only incident response (portal-auth-edge-session-hardening):
+        // revoke every active portal session for an Organisation.
+        ['name' => 'sessionAdmin#revokeOrganisation', 'url' => '/api/session-admin/revoke-organisation', 'verb' => 'POST'],
+
         // Aggregated portal contributions for the authenticated subject
         // (supplier-portal T04). Guarded by PortalAuthMiddleware (fail-closed).
         ['name' => 'contribution#index', 'url' => '/portal/api/contributions', 'verb' => 'GET'],

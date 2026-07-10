@@ -8,8 +8,15 @@
 // dev-login is open — lets you mint a test session without a real IdP. The
 // eHerkenning / DigiD handshake, contribution rendering, and inbox land in later
 // slices of openspec/changes/supplier-portal.
+//
+// UI primitives come from @utrecht/component-library-react (NL Design System)
+// per the app's own "React + NL Design System" framing (webpack.portal.js) and
+// company ADR-010 (CSS custom properties, WCAG AA) — see
+// portal-spa-nl-design-system-styling.
 
 import React, { useCallback, useEffect, useState } from 'react'
+import { Button, Heading, Paragraph } from '@utrecht/component-library-react'
+import ActionFieldsForm from './components/ActionFieldsForm.jsx'
 
 const TOKEN_KEY = 'portaliq_token'
 
@@ -53,10 +60,19 @@ async function fetchContributions(config, token) {
 	}
 }
 
-export default function App({ config }) {
+export default function App({ config, t }) {
 	const [token, setToken] = useState(() => window.localStorage.getItem(TOKEN_KEY) || null)
 	const [state, setState] = useState({ loading: true, session: null, contributions: null, devError: null })
 	const [collectionData, setCollectionData] = useState({})
+	// Per-action feedback for endpoint-type actions, keyed by action id:
+	// { pending, ok } — surfaced instead of silently swallowing the forward's
+	// success/failure (portal-contribution-endpoint-actions, task 3.2).
+	const [actionFeedback, setActionFeedback] = useState({})
+	// The action currently collecting fields via the inline form (replaces
+	// window.prompt() — portal-spa-nl-design-system-styling): either
+	// { kind: 'create', action } or { kind: 'endpoint', appId, action }, or
+	// null when no form is open.
+	const [pendingAction, setPendingAction] = useState(null)
 
 	// Load one collection's objects (subject-scoped, authorised server-side).
 	// Keyed by the collection's own `id` and disambiguated on the wire with a
@@ -77,22 +93,14 @@ export default function App({ config }) {
 		}
 	}
 
-	// Perform a declared `create` action: collect the whitelisted fields and POST
-	// them; the server stamps ownership. Then reload that collection.
-	async function createInCollection(action) {
-		const body = {}
-		for (const field of (action.fields || [])) {
-			const value = window.prompt(`${field}?`, 'Nieuw document')
-			if (value === null) {
-				return
-			}
-			body[field] = value
-		}
+	// Perform a declared `create` action: POST the (already-collected) fields;
+	// the server stamps ownership. Then reload that collection.
+	async function createInCollection(action, values) {
 		try {
 			await fetch(`${config.apiBase}/collections/${encodeURIComponent(action.register)}/${encodeURIComponent(action.schema)}`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...authHeaders(token) },
-				body: JSON.stringify(body),
+				body: JSON.stringify(values),
 			})
 		} catch (e) {
 			// Best-effort; the reload reflects whatever landed.
@@ -104,6 +112,59 @@ export default function App({ config }) {
 					loadCollection(col)
 				}
 			}
+		}
+	}
+
+	// Invoke a declared `endpoint`-type action (contract v2, A6 —
+	// portal-contribution-endpoint-actions) with the (already-collected)
+	// fields, forwarding to the authorised server-to-server route. The
+	// backend stamps the subject via a signed X-Portal-Subject assertion —
+	// never the client's own bearer — and relays the domain app's response
+	// as-is.
+	async function invokeEndpointAction(appId, action, values) {
+		setActionFeedback((f) => ({ ...f, [action.id]: { pending: true } }))
+		try {
+			const res = await fetch(
+				`${config.apiBase}/actions/${encodeURIComponent(appId)}/${encodeURIComponent(action.id)}`,
+				{
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...authHeaders(token) },
+					body: JSON.stringify(values),
+				},
+			)
+			setActionFeedback((f) => ({ ...f, [action.id]: { pending: false, ok: res.ok } }))
+		} catch (e) {
+			setActionFeedback((f) => ({ ...f, [action.id]: { pending: false, ok: false } }))
+		}
+	}
+
+	// Dispatch a clicked action: a declared, non-empty `fields` whitelist opens
+	// the inline collection form; otherwise (or once the form is submitted)
+	// the action runs immediately with whatever values were collected (`{}`
+	// when there were no fields to begin with).
+	function startCreateAction(action) {
+		if ((action.fields || []).length > 0) {
+			setPendingAction({ kind: 'create', action })
+			return
+		}
+		createInCollection(action, {})
+	}
+
+	function startEndpointAction(appId, action) {
+		if ((action.fields || []).length > 0) {
+			setPendingAction({ kind: 'endpoint', appId, action })
+			return
+		}
+		invokeEndpointAction(appId, action, {})
+	}
+
+	function submitPendingAction(values) {
+		const pending = pendingAction
+		setPendingAction(null)
+		if (pending?.kind === 'create') {
+			createInCollection(pending.action, values)
+		} else if (pending?.kind === 'endpoint') {
+			invokeEndpointAction(pending.appId, pending.action, values)
 		}
 	}
 
@@ -128,14 +189,14 @@ export default function App({ config }) {
 				body: JSON.stringify({ audience: config.audience || 'supplier' }),
 			})
 			if (!res.ok) {
-				setState((s) => ({ ...s, devError: 'Dev-login is disabled on this environment.' }))
+				setState((s) => ({ ...s, devError: t('Dev-login is disabled on this environment.') }))
 				return
 			}
 			const body = await res.json()
 			window.localStorage.setItem(TOKEN_KEY, body.token)
 			setToken(body.token)
 		} catch (e) {
-			setState((s) => ({ ...s, devError: 'Dev-login request failed.' }))
+			setState((s) => ({ ...s, devError: t('Dev-login request failed.') }))
 		}
 	}
 
@@ -154,64 +215,67 @@ export default function App({ config }) {
 			<header className="portaliq-header">
 				<span className="portaliq-org">{config.organisationName}</span>
 				{state.session && (
-					<button type="button" className="portaliq-logout" onClick={logout}>Uitloggen</button>
+					<Button appearance="subtle-button" className="portaliq-logout" onClick={logout}>{t('Log out')}</Button>
 				)}
 			</header>
 
 			<main className="portaliq-main">
-				{state.loading && <p>…</p>}
+				{state.loading && <Paragraph role="status" aria-live="polite">…</Paragraph>}
 
 				{!state.loading && !state.session && (
 					<section className="portaliq-login">
-						<h1>Welkom</h1>
-						<p>Log in om uw gegevens te bekijken.</p>
+						<Heading level={1}>{t('Welcome')}</Heading>
+						<Paragraph>{t('Log in to view your information.')}</Paragraph>
 						{/* TODO (supplier-portal T02/T12): real eHerkenning (supplier) / DigiD (client)
 						    handshake, driven by config.audience + config.idp. Dormant until OpenConnector. */}
-						<button type="button" disabled>
-							{config.audience === 'supplier' ? 'Inloggen met eHerkenning' : 'Inloggen met DigiD'}
-						</button>
-						<button type="button" className="portaliq-devlogin" onClick={devLogin}>
-							Dev-login (test)
-						</button>
-						{state.devError && <p className="portaliq-error">{state.devError}</p>}
+						<Button disabled aria-describedby="portaliq-idp-unavailable">
+							{config.audience === 'supplier' ? t('Log in with eHerkenning') : t('Log in with DigiD')}
+						</Button>
+						<Paragraph id="portaliq-idp-unavailable" appearance="small" className="portaliq-idp-hint">
+							{t('Available once your organisation configures eHerkenning/DigiD.')}
+						</Paragraph>
+						<Button appearance="secondary-action-button" className="portaliq-devlogin" onClick={devLogin}>
+							{t('Dev-login (test)')}
+						</Button>
+						{state.devError && <Paragraph role="alert" className="portaliq-error">{state.devError}</Paragraph>}
 					</section>
 				)}
 
 				{!state.loading && state.session && (
 					<section className="portaliq-home">
-						<h1>Mijn overzicht</h1>
-						<p>
-							Ingelogd als <strong>{state.session.subjectRef}</strong>
+						<Heading level={1}>{t('My overview')}</Heading>
+						<Paragraph>
+							{t('Logged in as {subjectRef}', { subjectRef: state.session.subjectRef })}
 							{' '}({state.session.audience} · {state.session.organisation})
-						</p>
+						</Paragraph>
 
 						{/* Contribution manifest: which collections + actions each app
 						    contributes to this subject. Reading the objects in each
 						    collection via OpenRegister is the next slice (T05). */}
 						{(state.contributions?.contributions || []).length === 0 && (
-							<p>Nog geen bijdragen om weer te geven.</p>
+							<Paragraph>{t('No contributions to show yet.')}</Paragraph>
 						)}
 						{(state.contributions?.contributions || []).map((c) => (
 							<article key={c.app} className="portaliq-contribution">
-								<h2>{c.label || c.app}</h2>
+								<Heading level={2}>{c.label || c.app}</Heading>
 								<ul className="portaliq-collections">
 									{(c.collections || []).map((col) => {
 										const key = col.id
 										const loaded = collectionData[key]
 										return (
 											<li key={col.id}>
-												<button type="button" onClick={() => loadCollection(col)}>
+												<Button appearance="subtle-button" onClick={() => loadCollection(col)}>
 													{col.label || col.schema}
-												</button>
-												{loaded?.loading && <span> …</span>}
+												</Button>
+												{loaded?.loading && <span role="status" aria-live="polite"> …</span>}
 												{loaded && !loaded.loading && (
 													<ul className={col.kind === 'inbox' ? 'portaliq-inbox' : 'portaliq-objects'}>
-														{loaded.objects.length === 0 && <li><em>{col.kind === 'inbox' ? 'Geen berichten.' : 'Geen items.'}</em></li>}
+														{loaded.objects.length === 0 && <li><em>{col.kind === 'inbox' ? t('No messages.') : t('No items.')}</em></li>}
 														{loaded.objects.map((o, i) => (
 															col.kind === 'inbox'
 																	? (
 																		<li key={o.id || i} className={o.read ? 'read' : 'unread'}>
-																			<strong>{o.read ? '' : '● '}{o.subject || '(geen onderwerp)'}</strong>
+																			<strong>{o.read ? '' : '● '}{o.subject || t('(no subject)')}</strong>
 																			{o.body && <div className="portaliq-msg-body">{o.body}</div>}
 																		</li>
 																	)
@@ -225,11 +289,54 @@ export default function App({ config }) {
 								</ul>
 								{(c.actions || []).length > 0 && (
 									<div className="portaliq-actions">
-										{(c.actions || []).map((a) => (
-											a.type === 'create'
-												? <button key={a.id} type="button" onClick={() => createInCollection(a)}>{a.label || a.id}</button>
-												: <button key={a.id} type="button" disabled={!a.endpoint}>{a.label || a.id}</button>
-										))}
+										{(c.actions || []).map((a) => {
+											const isPendingHere = pendingAction
+												&& pendingAction.action.id === a.id
+												&& (a.type === 'create' ? pendingAction.kind === 'create' : (pendingAction.kind === 'endpoint' && pendingAction.appId === c.app))
+
+											if (isPendingHere) {
+												return (
+													<ActionFieldsForm
+														key={a.id}
+														fields={a.fields || []}
+														t={t}
+														onSubmit={submitPendingAction}
+														onCancel={() => setPendingAction(null)}
+													/>
+												)
+											}
+
+											if (a.type === 'create') {
+												return (
+													<Button key={a.id} appearance="secondary-action-button" onClick={() => startCreateAction(a)}>
+														{a.label || a.id}
+													</Button>
+												)
+											}
+
+											// Endpoint-type action (contract v2, A6): enabled whenever
+											// the manifest declares a non-empty endpoint — the SSRF /
+											// trust / manifest-membership guards are enforced
+											// server-side regardless of what the client sends.
+											const feedback = actionFeedback[a.id]
+											return (
+												<span key={a.id} className="portaliq-endpoint-action">
+													<Button
+														appearance="secondary-action-button"
+														disabled={!a.endpoint || feedback?.pending}
+														onClick={() => startEndpointAction(c.app, a)}>
+														{a.label || a.id}
+													</Button>
+													{feedback && !feedback.pending && (
+														<span
+															role="status"
+															className={feedback.ok ? 'portaliq-action-ok' : 'portaliq-action-error'}>
+															{feedback.ok ? '✓' : '✕'}
+														</span>
+													)}
+												</span>
+											)
+										})}
 									</div>
 								)}
 							</article>

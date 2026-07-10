@@ -9,6 +9,16 @@
  * the `portaliq-portal` bundle, which authenticates against the portal's own
  * auth edge (see the supplier-portal change) rather than a Nextcloud session.
  *
+ * White-label resolution (portal-white-label-runtime-config): the visitor is
+ * unauthenticated at this point (no bearer, no session claim to resolve a
+ * tenant from), so the tenant is identified by a `?org={slug}` query
+ * parameter (design.md — path-segment routing is a documented follow-up) and
+ * resolved via {@see PortalOrganisationConfigService}. A missing/unknown
+ * `org` renders the safe neutral default shell, never a 500 and never another
+ * tenant's branding. The CSP `frame-ancestors` is built from the resolved
+ * Organisation's configured allowed embed origins — `'none'` when empty,
+ * NEVER the previous hard-coded `'*'`.
+ *
  * @category Controller
  * @package  OCA\Portaliq\Controller
  *
@@ -22,6 +32,9 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T08
+ * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.1
+ * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#2.1
+ * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#3.2
  */
 
 declare(strict_types=1);
@@ -29,6 +42,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\ContentSecurityPolicy;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -47,10 +61,14 @@ class PortalPageController extends Controller
     /**
      * Constructor.
      *
-     * @param IRequest $request The request
+     * @param IRequest                        $request     The request
+     * @param PortalOrganisationConfigService $orgResolver Resolves the tenant's
+     *                                                     white-label presentation.
      */
-    public function __construct(IRequest $request)
-    {
+    public function __construct(
+        IRequest $request,
+        private readonly PortalOrganisationConfigService $orgResolver,
+    ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
     }//end __construct()
 
@@ -58,30 +76,50 @@ class PortalPageController extends Controller
      * Render the public portal shell.
      *
      * The white-label runtime config (organisation name, theme, logo, IdP,
-     * feature flags) is resolved server-side and injected as
-     * `window.RUNTIME_CONFIG` — see T08. The React bundle takes over routing
-     * client-side; deep links are handled by catchAll().
+     * feature flags) is resolved server-side from the `?org={slug}` query
+     * parameter and injected via IInitialStateService (see
+     * `templates/portal.php`; `src/portal/main.jsx` reads it back with
+     * `loadState('portaliq', 'runtimeConfig', ...)`). The React bundle takes
+     * over routing client-side; deep links are handled by catchAll(), which
+     * renders through this same method so every portal URL carries the
+     * resolved config.
      *
      * @return TemplateResponse
      *
      * @spec openspec/changes/supplier-portal/tasks.md#T08
+     * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.1
+     * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#2.1
+     * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#2.4
      */
     #[PublicPage]
     #[NoCSRFRequired]
     #[NoAdminRequired]
     public function index(): TemplateResponse
     {
+        $orgSlug       = (string) $this->request->getParam('org', '');
+        $locale        = $this->resolveLocale();
+        $runtimeConfig = $this->orgResolver->resolve(orgSlug: $orgSlug, locale: $locale);
+
         $response = new TemplateResponse(
             Application::APP_ID,
             'portal',
-            [],
+            ['runtimeConfig' => $runtimeConfig],
             TemplateResponse::RENDER_AS_PUBLIC
         );
 
-        // The portal is a standalone white-label surface; allow it to be
-        // embedded by tenant sites. Tighten per-tenant in T08 if needed.
+        // Per-tenant frame-ancestors (portal-white-label-runtime-config): the
+        // portal carries a bearer token and renders authenticated actions, so
+        // an unrestricted '*' is a clickjacking exposure. Default-deny; an
+        // explicit tenant opts into embedding via its configured origins.
+        // ContentSecurityPolicy() defaults `frame-ancestors` to 'self' — that
+        // default must be cleared first, or an empty-origins tenant would
+        // still (wrongly) allow same-origin framing instead of 'none'.
         $csp = new ContentSecurityPolicy();
-        $csp->addAllowedFrameAncestorDomain('*');
+        $csp->disallowFrameAncestorDomain('\'self\'');
+        foreach ((array) ($runtimeConfig['allowedEmbedOrigins'] ?? []) as $origin) {
+            $csp->addAllowedFrameAncestorDomain((string) $origin);
+        }
+
         $response->setContentSecurityPolicy($csp);
 
         return $response;
@@ -107,4 +145,29 @@ class PortalPageController extends Controller
     {
         return $this->index();
     }//end catchAll()
+
+    /**
+     * Resolve the visitor's locale from the `Accept-Language` header
+     * (portal-spa-i18n-locale-support) — the visitor is unauthenticated at
+     * this point, so there is no session/tenant locale to prefer yet. Only
+     * the first (highest-priority) language tag is read; normalisation to a
+     * supported locale (falling back to `nl`) happens in
+     * `PortalOrganisationConfigService`.
+     *
+     * @return string The raw first `Accept-Language` tag, or `''` when absent.
+     *
+     * @spec openspec/changes/portal-spa-i18n-locale-support/tasks.md#2.2
+     */
+    private function resolveLocale(): string
+    {
+        $header = $this->request->getHeader('Accept-Language');
+        if ($header === '') {
+            return '';
+        }
+
+        $first = explode(',', $header)[0];
+        $first = explode(';', $first)[0];
+
+        return trim($first);
+    }//end resolveLocale()
 }//end class

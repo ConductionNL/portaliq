@@ -12,6 +12,11 @@ $appId = Application::APP_ID;
 \OC::$server->get(\OCP\IInitialStateService::class)
     ->provideInitialState($appId, 'version', $_['version'] ?? '');
 
+// Whether the portal auth edge's dedicated jwt_signing_secret is configured
+// (portal-auth-edge-session-hardening) — never the secret's value.
+\OC::$server->get(\OCP\IInitialStateService::class)
+    ->provideInitialState($appId, 'jwtSigningSecretConfigured', $_['jwtSigningSecretConfigured'] ?? false);
+
 // webpack splitChunks emits shared chunks that every entry-point depends on
 // (see comment in templates/index.php). The admin-settings entry's bundle
 // tail also wraps its mount in `__webpack_require__.O(...)` waiting for the

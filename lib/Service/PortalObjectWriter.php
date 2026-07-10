@@ -28,6 +28,7 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T06
+ * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#2.1
  */
 
 declare(strict_types=1);
@@ -113,6 +114,47 @@ class PortalObjectWriter
 
         return $this->normalise(row: $saved);
     }//end createObject()
+
+    /**
+     * Update an existing object by uuid (e.g. session revocation).
+     *
+     * Unlike {@see createObject()}, no ownership stamp is applied here — the
+     * caller is expected to have already verified the row belongs to the
+     * subject/organisation it is updating (defense in depth stays with the
+     * caller, exactly like every other portal write path).
+     *
+     * @param string               $register The register slug/id.
+     * @param string               $schema   The schema slug.
+     * @param string               $uuid     The object's uuid.
+     * @param array<string, mixed> $data     The fields to merge/overwrite.
+     *
+     * @return array<string, mixed>|null The updated object, or null on failure.
+     *
+     * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#2.1
+     */
+    public function updateObject(string $register, string $schema, string $uuid, array $data): ?array
+    {
+        $objectService = $this->objectService();
+        if ($objectService === null) {
+            return null;
+        }
+
+        try {
+            $saved = $objectService->saveObject(
+                object: $data,
+                register: $register,
+                schema: $schema,
+                uuid: $uuid,
+                _rbac: false,
+                _multitenancy: false
+            );
+        } catch (Throwable $e) {
+            $this->logger->warning('Portaliq: OR update failed', ['schema' => $schema, 'uuid' => $uuid, 'reason' => $e->getMessage()]);
+            return null;
+        }
+
+        return $this->normalise(row: $saved);
+    }//end updateObject()
 
     /**
      * Normalise an OpenRegister result (array or ObjectEntity) to an array.
