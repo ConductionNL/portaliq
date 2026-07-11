@@ -165,15 +165,18 @@
 				"_note": "Identity/access-holder archetype: a portalAccount links one external IdP identity (eHerkenning/DigiD/eIDAS) to the subjectRef domain apps scope data by, so its detail page answers 'who is this and what sessions have they used to access the portal'. ADR-062 rev3 update: the summaryAggregates header chips are retired in favour of an in-grid stats-block card (account-stats) placed top-right of the lead account-data widget, both sized h5 so the row closes together; account-sessions moves below as its own full-width row. account-sessions gets allowCreate:false — sessions are IdP-minted at login time, never hand-created — plus a viewAllRoute to the fleet-wide PortalSessions index (the only session-listing page; no per-account filtered page exists) with a token-resolved viewAllQuery so the link at least carries the account's id. portalMessage.subjectRef and exampleDocument.subjectRef remain plain IdP-issued strings, not object ids, so they stay NOT filterable by @objectId and deliberately absent here. No Related panel: portalAccount declares no object-reference properties of its own (organisation is a plain tenant string, not an OR ref). No files/calendar/contacts/talk leaves: this is an auth-edge identity record, not a document- or comms-bearing object. status is a genuine two-state lifecycle (active/suspended) so lifecycleActions is wired to it. Audit history stays a sidebar tab.",
 				"widgets": [
 					{ "id": "account-data", "type": "data", "title": "Account details", "icon": "Account", "content": { "columns": 2 } },
-					{ "id": "account-stats", "type": "stats-block", "title": "Sessions", "icon": "ShieldCheckOutline", "content": { "entries": [
-						{ "title": "Sessions issued", "register": "portaliq", "schema": "portalSession", "metric": "count", "filter": { "accountRef": "@objectId" } },
+					{ "id": "account-stats-sessions-issued", "type": "stats-block", "title": "Sessions issued", "icon": "ShieldCheckOutline", "content": { "entries": [
+						{ "title": "Sessions issued", "register": "portaliq", "schema": "portalSession", "metric": "count", "filter": { "accountRef": "@objectId" } }
+					] } },
+					{ "id": "account-stats-active-sessions", "type": "stats-block", "title": "Active sessions", "icon": "ShieldCheckOutline", "content": { "entries": [
 						{ "title": "Active sessions", "register": "portaliq", "schema": "portalSession", "metric": "count", "filter": { "accountRef": "@objectId", "revoked": false } }
 					] } },
 					{ "id": "account-sessions", "type": "object-list", "title": "Sessions", "icon": "ShieldCheckOutline", "content": { "register": "portaliq", "schema": "portalSession", "filter": { "accountRef": "@objectId" }, "sort": { "field": "issuedAt", "dir": "desc" }, "columns": [ { "key": "jti", "label": "Token ID" }, { "key": "trustLevel", "label": "Trust level" }, { "key": "issuedAt", "label": "Issued" }, { "key": "expiresAt", "label": "Expires" }, { "key": "revoked", "label": "Revoked" } ], "limit": 25, "rowRoute": "PortalSessionDetail", "viewAllRoute": "PortalSessions", "viewAllQuery": { "accountRef": "@objectId" }, "emptyText": "No sessions issued yet", "allowCreate": false } }
 				],
 				"layout": [
 					{ "id": "1", "widgetId": "account-data", "gridX": 0, "gridY": 0, "gridWidth": 8, "gridHeight": 5 },
-					{ "id": "2", "widgetId": "account-stats", "gridX": 8, "gridY": 0, "gridWidth": 4, "gridHeight": 5 },
+					{ "id": "account-stats-sessions-issued", "widgetId": "account-stats-sessions-issued", "gridX": 8, "gridY": 0, "gridWidth": 4, "gridHeight": 2 },
+					{ "id": "account-stats-active-sessions", "widgetId": "account-stats-active-sessions", "gridX": 8, "gridY": 2, "gridWidth": 4, "gridHeight": 3 },
 					{ "id": "3", "widgetId": "account-sessions", "gridX": 0, "gridY": 5, "gridWidth": 12, "gridHeight": 4 }
 				],
 				"lifecycleActions": { "field": "status" },
