@@ -1,0 +1,103 @@
+/*! @babel/runtime/helpers/applyDecoratedDescriptor */
+
+/*! @babel/runtime/helpers/defineProperty */
+
+/*! @babel/runtime/helpers/initializerDefineProperty */
+
+/*! @components/ac-footer/ac-footer */
+
+/*! @components/ac-header/ac-header */
+
+/*! @config */
+
+/*! @constants */
+
+/*! @constants/container.constants */
+
+/*! @src/utilities */
+
+/*! @stores/store */
+
+/*! @utils */
+
+/*! @views/ac-beheer/core/utils/constants */
+
+/*! axios */
+
+/*! dayjs */
+
+/*! dayjs/plugin/advancedFormat */
+
+/*! dayjs/plugin/localizedFormat */
+
+/*! dayjs/plugin/relativeTime */
+
+/*! import() */
+
+/*! mobx */
+
+/*! object-assign */
+
+/*! preact/jsx-runtime */
+
+/*! promise/lib/es6-extensions.js */
+
+/*! promise/lib/rejection-tracking */
+
+/*! react */
+
+/*!*****************************!*\
+  !*** ./config/polyfills.js ***!
+  \*****************************/
+
+/*!*****************************!*\
+  !*** ./src/config/index.js ***!
+  \*****************************/
+
+/*!*****************************!*\
+  !*** ./src/stores/index.js ***!
+  \*****************************/
+
+/*!**********************************!*\
+  !*** ./src/stores/auth.store.js ***!
+  \**********************************/
+
+/*!**********************************!*\
+  !*** ./src/stores/chat.store.js ***!
+  \**********************************/
+
+/*!**********************************!*\
+  !*** ./src/stores/faqs.store.js ***!
+  \**********************************/
+
+/*!***********************************!*\
+  !*** ./src/stores/gemma.store.js ***!
+  \***********************************/
+
+/*!**************************************!*\
+  !*** ./src/index.web.js + 2 modules ***!
+  \**************************************/
+
+/*!**************************************!*\
+  !*** ./src/stores/glossary.store.js ***!
+  \**************************************/
+
+/*!***************************************!*\
+  !*** ./src/api/index.js + 11 modules ***!
+  \***************************************/
+
+/*!********************************************!*\
+  !*** ./src/stores/authentication.store.js ***!
+  \********************************************/
+
+/*!*********************************************!*\
+  !*** ./src/services/schemaCache.service.js ***!
+  \*********************************************/
+
+/*!***********************************************!*\
+  !*** ./src/services/registerCache.service.js ***!
+  \***********************************************/
+
+/*!*******************************************************!*\
+  !*** ./src/services/ac-check-if-specific-hostname.js ***!
+  \*******************************************************/

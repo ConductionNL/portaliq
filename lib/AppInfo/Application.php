@@ -29,10 +29,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\AppInfo;
 
-use OCA\Portaliq\Listener\DeepLinkRegistrationListener;
 use OCA\Portaliq\Mcp\ExampleToolProvider;
 use OCA\Portaliq\Middleware\PortalAuthMiddleware;
-use OCA\OpenRegister\Event\DeepLinkRegistrationEvent;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
@@ -66,13 +64,6 @@ class Application extends App implements IBootstrap
      */
     public function register(IRegistrationContext $context): void
     {
-        // Register deep link patterns with OpenRegister's unified search provider.
-        // Only fires when OpenRegister is installed and dispatches the event.
-        $context->registerEventListener(
-            event: DeepLinkRegistrationEvent::class,
-            listener: DeepLinkRegistrationListener::class
-        );
-
         // Initialize register and schemas on install/upgrade — registered via
         // appinfo/info.xml <repair-steps> (pre- and post-migration). The
         // programmatic IRegistrationContext::registerRepairStep() was removed in

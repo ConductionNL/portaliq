@@ -1,0 +1,47 @@
+/*! @babel/runtime/helpers/defineProperty */
+
+/*! @babel/runtime/helpers/extends */
+
+/*! @babel/runtime/helpers/objectDestructuringEmpty */
+
+/*! @babel/runtime/helpers/objectWithoutProperties */
+
+/*! @babel/runtime/helpers/slicedToArray */
+
+/*! @utrecht/button-group-react */
+
+/*! @utrecht/button-react */
+
+/*! @utrecht/checkbox-react */
+
+/*! @utrecht/combobox-react */
+
+/*! @utrecht/fieldset-react */
+
+/*! @utrecht/form-field-checkbox-react */
+
+/*! @utrecht/form-field-description-react */
+
+/*! @utrecht/form-field-error-message-react */
+
+/*! @utrecht/form-field-react */
+
+/*! @utrecht/form-label-react */
+
+/*! @utrecht/link-react */
+
+/*! @utrecht/listbox-react */
+
+/*! @utrecht/radio-button-react */
+
+/*! @utrecht/textbox-react */
+
+/*! clsx */
+
+/*! react */
+
+/*! react/jsx-runtime */
+
+/*!**********************************************************************!*\
+  !*** ./node_modules/@utrecht/component-library-react/dist/index.mjs ***!
+  \**********************************************************************/

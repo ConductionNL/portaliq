@@ -1,0 +1,63 @@
+/*! ./con-beheer-page-config-factory */
+
+/*! @assets/licenses/licenses.json */
+
+/*! @atoms */
+
+/*! @babel/runtime/helpers/defineProperty */
+
+/*! @babel/runtime/helpers/extends */
+
+/*! @babel/runtime/helpers/objectDestructuringEmpty */
+
+/*! @components */
+
+/*! @constants */
+
+/*! @src/atoms */
+
+/*! @src/constants */
+
+/*! @src/hooks/use-ref-options */
+
+/*! @src/index.web */
+
+/*! @src/molecules */
+
+/*! @src/utilities */
+
+/*! @stores */
+
+/*! @utils/field-authorization */
+
+/*! @utrecht/component-library-react/dist/css-module */
+
+/*! @views/ac-beheer/core/factories/con-form-modal-config-factory.js */
+
+/*! @views/ac-beheer/shared/components/con-logo-upload-field.js */
+
+/*! clsx */
+
+/*! lodash */
+
+/*! mobx-react-lite */
+
+/*! preact/jsx-runtime */
+
+/*! react */
+
+/*!*******************************************!*\
+  !*** ./src/assets/licenses/licenses.json ***!
+  \*******************************************/
+
+/*!************************************************************************!*\
+  !*** ./src/views/ac-beheer/shared/components/con-logo-upload-field.js ***!
+  \************************************************************************/
+
+/*!*****************************************************************************!*\
+  !*** ./src/views/ac-beheer/core/factories/con-form-modal-config-factory.js ***!
+  \*****************************************************************************/
+
+/*!******************************************************************************************!*\
+  !*** ./src/views/ac-beheer/core/modals/con-generic-form-modal/con-generic-form-modal.js ***!
+  \******************************************************************************************/

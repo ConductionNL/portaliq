@@ -1,0 +1,99 @@
+/*!
+ * @license
+ * Copyright Saša Jovanić
+ * Licensed under the Mozilla Public License, Version 2.0 or the MIT license,
+ * at your option. This file may not be copied, modified, or distributed
+ * except according to those terms.
+ * SPDX-FileCopyrightText: Saša Jovanić
+ * SPDX-License-Identifier: MIT or MPL/2.0
+ */
+
+/*! ../lib/index.js */
+
+/*! ./attributes-to-props */
+
+/*! ./constants */
+
+/*! ./dom-to-react */
+
+/*! ./domparser */
+
+/*! ./utilities */
+
+/*! domhandler */
+
+/*! html-dom-parser */
+
+/*! react */
+
+/*! react-is */
+
+/*! react-property */
+
+/*! style-to-js */
+
+/*!**************************************************!*\
+  !*** ./node_modules/html-void-elements/index.js ***!
+  \**************************************************/
+
+/*!****************************************************!*\
+  !*** ./node_modules/ibantools/jsnext/ibantools.js ***!
+  \****************************************************/
+
+/*!*****************************************************!*\
+  !*** ./node_modules/html-react-parser/lib/index.js ***!
+  \*****************************************************/
+
+/*!******************************************************!*\
+  !*** ./node_modules/html-react-parser/esm/index.mjs ***!
+  \******************************************************/
+
+/*!*******************************************************!*\
+  !*** ./node_modules/html-url-attributes/lib/index.js ***!
+  \*******************************************************/
+
+/*!*******************************************************!*\
+  !*** ./node_modules/inline-style-parser/cjs/index.js ***!
+  \*******************************************************/
+
+/*!*********************************************************!*\
+  !*** ./node_modules/html-react-parser/lib/utilities.js ***!
+  \*********************************************************/
+
+/*!************************************************************!*\
+  !*** ./node_modules/html-react-parser/lib/dom-to-react.js ***!
+  \************************************************************/
+
+/*!**************************************************************!*\
+  !*** ./node_modules/html-dom-parser/lib/client/constants.js ***!
+  \**************************************************************/
+
+/*!**************************************************************!*\
+  !*** ./node_modules/html-dom-parser/lib/client/domparser.js ***!
+  \**************************************************************/
+
+/*!**************************************************************!*\
+  !*** ./node_modules/html-dom-parser/lib/client/utilities.js ***!
+  \**************************************************************/
+
+/*!****************************************************************!*\
+  !*** ./node_modules/html-dom-parser/lib/client/html-to-dom.js ***!
+  \****************************************************************/
+
+/*!*******************************************************************!*\
+  !*** ./node_modules/html-react-parser/lib/attributes-to-props.js ***!
+  \*******************************************************************/
+
+/*!**********************************************************************************!*\
+  !*** ./node_modules/hoist-non-react-statics/dist/hoist-non-react-statics.cjs.js ***!
+  \**********************************************************************************/
+
+/**
+ * Validation, extraction and creation of IBAN, BBAN, BIC/SWIFT numbers plus some other helpful stuff
+ * @package Documentation
+ * @author Saša Jovanić
+ * @module ibantools
+ * @version 4.5.1
+ * @license MIT or MPL-2.0
+ * @preferred
+ */

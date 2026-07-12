@@ -8,6 +8,7 @@ use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\ContributionController;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalFileWriter;
+use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Http;
@@ -46,6 +47,82 @@ class ContributionControllerTest extends TestCase
         'roles'        => [],
         'jti'          => 'session-jti-1',
     ];
+
+    public function testIndexReturns401WhenSubjectResolvesNull(): void
+    {
+        $controller = $this->controller(aggregate: $this->aggregate(), subject: null);
+        $response   = $controller->index();
+
+        $this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+        $this->assertFalse($response->getData()['authenticated']);
+
+    }//end testIndexReturns401WhenSubjectResolvesNull()
+
+    public function testIndexReturnsTheRegistrysAggregateForAnAuthenticatedSubject(): void
+    {
+        $aggregate  = $this->aggregate(collections: [['register' => 'r1', 'schema' => 'a']]);
+        $controller = $this->controller(aggregate: $aggregate);
+        $response   = $controller->index();
+
+        $this->assertSame(Http::STATUS_OK, $response->getStatus());
+        $this->assertSame($aggregate, $response->getData());
+
+    }//end testIndexReturnsTheRegistrysAggregateForAnAuthenticatedSubject()
+
+    public function testCollectionOutsideSubjectsManifestIs403IdorGuard(): void
+    {
+        // The IDOR guard: (register, schema) simply never appears in the
+        // subject's own aggregated contributions — distinct from the
+        // minTrust-based 403 covered below.
+        $aggregate = $this->aggregate(
+            collections: [
+                ['register' => 'r1', 'schema' => 'a'],
+            ]
+        );
+
+        $reader = $this->createMock(PortalObjectReader::class);
+        $reader->expects($this->never())->method('readCollection');
+
+        $controller = $this->controller(aggregate: $aggregate, reader: $reader);
+        $response   = $controller->collection('r-not-granted', 'schema-not-granted');
+
+        $this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+
+    }//end testCollectionOutsideSubjectsManifestIs403IdorGuard()
+
+    public function testCollectionUnauthenticatedIs401(): void
+    {
+        $controller = $this->controller(aggregate: $this->aggregate(), subject: null);
+        $this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->collection('r1', 'a')->getStatus());
+
+    }//end testCollectionUnauthenticatedIs401()
+
+    public function testCreateWithoutAMatchingActionIs403(): void
+    {
+        // No declared `type: create` action for (register, schema) at all —
+        // distinct from the minTrust-based 403 covered below.
+        $aggregate = $this->aggregate(
+            actions: [
+                ['id' => 'c1', 'type' => 'create', 'register' => 'other-register', 'schema' => 'other-schema', 'fields' => ['title']],
+            ]
+        );
+
+        $writer = $this->createMock(PortalObjectWriter::class);
+        $writer->expects($this->never())->method('createObject');
+
+        $controller = $this->controller(aggregate: $aggregate, writer: $writer);
+        $response   = $controller->create('r1', 'a');
+
+        $this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+
+    }//end testCreateWithoutAMatchingActionIs403()
+
+    public function testCreateUnauthenticatedIs401(): void
+    {
+        $controller = $this->controller(aggregate: $this->aggregate(), subject: null);
+        $this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->create('r1', 'a')->getStatus());
+
+    }//end testCreateUnauthenticatedIs401()
 
     public function testCollectionBelowTrustThresholdIs403BeforeAnyRead(): void
     {
@@ -213,6 +290,85 @@ class ContributionControllerTest extends TestCase
         }
 
     }//end testActionSsrfAndTrustGuardsFailClosed()
+
+    public function testActionWithDeclaredFieldsForwardsOnlyThoseFieldsIgnoringSmuggledOnes(): void
+    {
+        // portal-contribution-endpoint-actions: a declared `fields` whitelist
+        // rebuilds the forwarded body server-side — a client-supplied
+        // `subjectRef` (or any other undeclared field) must never reach the
+        // domain app through this path either.
+        $aggregate = $this->aggregate(
+            actions: [
+                ['id' => 'submitAccreditation', 'endpoint' => '/apps/demo/api/portal/accreditations', 'method' => 'POST', 'fields' => ['reason']],
+            ]
+        );
+
+        $captured = [];
+        $response = $this->createMock(IResponse::class);
+        $response->method('getBody')->willReturn('{}');
+        $response->method('getStatusCode')->willReturn(200);
+
+        $client = $this->createMock(IClient::class);
+        $client->method('post')->willReturnCallback(
+            function (string $uri, array $options) use (&$captured, $response) {
+                $captured = $options;
+                return $response;
+            }
+        );
+
+        $clientService = $this->createMock(IClientService::class);
+        $clientService->method('newClient')->willReturn($client);
+
+        // The request mock's getParam() (set up in controller()) returns
+        // 'title' => 'X' and 'claims' => [...] — neither is 'reason', so the
+        // whitelisted body must be empty; 'reason' is simply absent from the
+        // fixture's params, proving undeclared fields never leak through
+        // even when present on the request.
+        $controller = $this->controller(aggregate: $aggregate, clientService: $clientService);
+        $result     = $controller->action('portaliq', 'submitAccreditation');
+
+        $this->assertSame(200, $result->getStatus());
+        // json_encode([]) is '[]' (an empty PHP array is ambiguous between
+        // object/array) — the point being tested is that it is EMPTY, not '{}'.
+        $this->assertSame('[]', $captured['body']);
+
+    }//end testActionWithDeclaredFieldsForwardsOnlyThoseFieldsIgnoringSmuggledOnes()
+
+    public function testActionWithoutDeclaredFieldsForwardsTheRawBodyUnchanged(): void
+    {
+        // Backward compatible: an action with no `fields` declaration (e.g.
+        // the demo's GET-method actions) keeps relaying the raw request body.
+        $aggregate = $this->aggregate(
+            actions: [
+                ['id' => 'noFields', 'endpoint' => '/apps/demo/api/x', 'method' => 'GET'],
+            ]
+        );
+
+        $captured = [];
+        $response = $this->createMock(IResponse::class);
+        $response->method('getBody')->willReturn('{}');
+        $response->method('getStatusCode')->willReturn(200);
+
+        $client = $this->createMock(IClient::class);
+        $client->method('get')->willReturnCallback(
+            function (string $uri, array $options) use (&$captured, $response) {
+                $captured = $options;
+                return $response;
+            }
+        );
+
+        $clientService = $this->createMock(IClientService::class);
+        $clientService->method('newClient')->willReturn($client);
+
+        $controller = $this->controller(aggregate: $aggregate, clientService: $clientService);
+        $controller->action('portaliq', 'noFields');
+
+        // The controller()-built request mock has no getContent() method, so
+        // requestBody() degrades to an empty string — proving THIS path (not
+        // the whitelist one) is the one that ran.
+        $this->assertSame('', $captured['body']);
+
+    }//end testActionWithoutDeclaredFieldsForwardsTheRawBodyUnchanged()
 
     public function testActionForwardsWithAssertionAndRelaysResponse(): void
     {
@@ -645,6 +801,7 @@ class ContributionControllerTest extends TestCase
             $reader,
             $this->createMock(PortalObjectWriter::class),
             $fileWriter,
+            $this->createMock(PortalSchemaReader::class),
             $this->createMock(IClientService::class),
             $this->createMock(IURLGenerator::class)
         );
@@ -709,6 +866,7 @@ class ContributionControllerTest extends TestCase
             $reader,
             $this->createMock(PortalObjectWriter::class),
             $this->createMock(PortalFileWriter::class),
+            $this->createMock(PortalSchemaReader::class),
             $this->createMock(IClientService::class),
             $this->createMock(IURLGenerator::class)
         );
@@ -804,6 +962,7 @@ class ContributionControllerTest extends TestCase
             ($reader ?? $defaultReader),
             ($writer ?? $this->createMock(PortalObjectWriter::class)),
             ($fileWriter ?? $this->createMock(PortalFileWriter::class)),
+            $this->createMock(PortalSchemaReader::class),
             ($clientService ?? $this->createMock(IClientService::class)),
             $urlGenerator
         );

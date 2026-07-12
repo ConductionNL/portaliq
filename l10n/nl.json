@@ -31,7 +31,15 @@
         "User settings will appear here in a future update.": "Gebruikersinstellingen verschijnen hier in een toekomstige update.",
         "app-availability.title": "Vereiste applicatie niet beschikbaar",
         "app-availability.description": "Deze applicatie vereist dat OpenRegister is geïnstalleerd en ingeschakeld.",
-        "app-availability.action": "OpenRegister installeren"
+        "app-availability.action": "OpenRegister installeren",
+        "Portal auth edge": "Portaal-authenticatierand",
+        "The public portal signs supplier/client sessions with a secret dedicated to this app — never the Nextcloud instance secret.": "Het openbare portaal ondertekent leverancier-/klantsessies met een geheim dat exclusief voor deze app is — nooit het Nextcloud-instantiegeheim.",
+        "A dedicated signing secret is configured. The portal auth edge is safe to use.": "Er is een dedicated ondertekeningsgeheim geconfigureerd. De portaal-authenticatierand is veilig te gebruiken.",
+        "No dedicated signing secret is configured yet. The portal cannot issue or accept sessions until the next install/upgrade repair step runs.": "Er is nog geen dedicated ondertekeningsgeheim geconfigureerd. Het portaal kan geen sessies uitgeven of accepteren totdat de volgende install-/upgrade-reparatiestap is uitgevoerd.",
+        "Organisation": "Organisatie",
+        "Organisation UUID": "Organisatie-UUID",
+        "Revoke all sessions for this organisation": "Alle sessies voor deze organisatie intrekken",
+        "Revoked {count} session(s).": "{count} sessie(s) ingetrokken."
     },
     "plurals": ""
 }

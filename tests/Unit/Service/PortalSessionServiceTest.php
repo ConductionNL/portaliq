@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\Service\PortalJwtService;
+use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\IConfig;
 use OCP\Security\ISecureRandom;
@@ -18,8 +20,20 @@ use Psr\Log\LoggerInterface;
  * the token-confusion guard — an X-Portal-Subject assertion presented as an
  * Authorization bearer is REJECTED while real sessions keep resolving.
  *
+ * portal-auth-edge-session-hardening additions: no dedicated secret means
+ * issuance/resolution fail closed (never a system-secret fallback); a session
+ * is recorded on issue and a revoked/unknown jti is rejected on resolve, even
+ * when a valid signature is presented; logout-style revocation and an OR
+ * lookup failure both fail closed.
+ *
  * @spec openspec/changes/contract-v2/tasks.md#T1
  * @spec openspec/changes/contract-v2/tasks.md#T7
+ * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.1
+ * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.3
+ * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#2.1
+ * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#2.2
+ * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#2.3
+ * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#3.1
  */
 class PortalSessionServiceTest extends TestCase
 {
@@ -147,16 +161,171 @@ class PortalSessionServiceTest extends TestCase
 
     }//end testRealSessionBearerStillResolves()
 
-    private function service(): PortalSessionService
+    public function testNoDedicatedSecretRefusesIssuanceAndResolution(): void
+    {
+        // Empty app config → NEVER falls back to a system/instance secret
+        // (portal-auth-edge-session-hardening) — the edge fails closed.
+        $service = $this->service(secret: '');
+
+        $this->assertFalse($service->isConfigured());
+        $this->assertNull($service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1'));
+        $this->assertNull($service->resolveFromBearer('Bearer whatever'));
+
+    }//end testNoDedicatedSecretRefusesIssuanceAndResolution()
+
+    public function testShortSecretAlsoRefusesFailClosed(): void
+    {
+        $service = $this->service(secret: 'too-short');
+        $this->assertFalse($service->isConfigured());
+        $this->assertNull($service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1'));
+
+    }//end testShortSecretAlsoRefusesFailClosed()
+
+    public function testIssuedSessionIsRecordedAndResolvable(): void
+    {
+        $store   = [];
+        $service = $this->service(store: $store);
+
+        $issued = $service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1', trust: 'high');
+        $this->assertNotNull($issued);
+
+        $subject = $service->resolveFromBearer('Bearer '.$issued['token']);
+        $this->assertNotNull($subject);
+        $this->assertSame($issued['jti'], $subject['jti']);
+
+    }//end testIssuedSessionIsRecordedAndResolvable()
+
+    public function testRevokedJtiFailsClosedEvenWithValidSignature(): void
+    {
+        $store   = [];
+        $service = $this->service(store: $store);
+
+        $issued = $service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1');
+        $this->assertNotNull($issued);
+
+        // Still valid before revocation.
+        $this->assertNotNull($service->resolveFromBearer('Bearer '.$issued['token']));
+
+        $this->assertTrue($service->revoke($issued['jti']));
+
+        // Same, perfectly-signed, unexpired token — now rejected.
+        $this->assertNull($service->resolveFromBearer('Bearer '.$issued['token']));
+
+    }//end testRevokedJtiFailsClosedEvenWithValidSignature()
+
+    public function testUnknownJtiFailsClosed(): void
+    {
+        // A signature that validates but whose jti has no portalSession row at
+        // all (never issued via this service, or the OR write silently failed)
+        // must be rejected exactly like a revoked one.
+        $service = $this->service();
+        $token   = (new PortalJwtService(self::SECRET))->createSession(
+            subjectRef: 's1',
+            audience: 'supplier',
+            organisation: 'org-1',
+            jti: 'never-recorded-jti'
+        );
+
+        $this->assertNull($service->resolveFromBearer('Bearer '.$token));
+
+    }//end testUnknownJtiFailsClosed()
+
+    public function testLogoutRevokesOnlyItsOwnSession(): void
+    {
+        $store   = [];
+        $service = $this->service(store: $store);
+
+        $mine   = $service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1');
+        $theirs = $service->issueSession(subjectRef: 's2', audience: 'supplier', organisation: 'org-1');
+
+        $this->assertTrue($service->revoke($mine['jti']));
+
+        $this->assertNull($service->resolveFromBearer('Bearer '.$mine['token']));
+        $this->assertNotNull($service->resolveFromBearer('Bearer '.$theirs['token']));
+
+    }//end testLogoutRevokesOnlyItsOwnSession()
+
+    public function testRevokeAllForOrganisationRevokesEveryActiveSession(): void
+    {
+        $store   = [];
+        $service = $this->service(store: $store);
+
+        $a = $service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1');
+        $b = $service->issueSession(subjectRef: 's2', audience: 'supplier', organisation: 'org-1');
+        $c = $service->issueSession(subjectRef: 's3', audience: 'supplier', organisation: 'org-2');
+
+        $revoked = $service->revokeAllForOrganisation('org-1');
+
+        $this->assertSame(2, $revoked);
+        $this->assertNull($service->resolveFromBearer('Bearer '.$a['token']));
+        $this->assertNull($service->resolveFromBearer('Bearer '.$b['token']));
+        // A different organisation's session is untouched.
+        $this->assertNotNull($service->resolveFromBearer('Bearer '.$c['token']));
+
+    }//end testRevokeAllForOrganisationRevokesEveryActiveSession()
+
+    public function testRevokeUnknownJtiIsANoOp(): void
+    {
+        $service = $this->service();
+        $this->assertFalse($service->revoke('does-not-exist'));
+        $this->assertFalse($service->revoke(''));
+
+    }//end testRevokeUnknownJtiIsANoOp()
+
+    /**
+     * Build a service backed by a dedicated (default: valid) signing secret
+     * and an in-memory fake portalSession store (create/read/update), unless
+     * $store is null (used for the "no secret configured" refusal tests,
+     * where the writer/reader are never expected to be called).
+     *
+     * @param string|null           $secret Override the configured secret; null uses SECRET.
+     * @param array<string, mixed>& $store  Backing store, keyed by uuid.
+     */
+    private function service(?string $secret=self::SECRET, array &$store=[]): PortalSessionService
     {
         $config = $this->createMock(IConfig::class);
-        $config->method('getAppValue')->willReturn('');
-        $config->method('getSystemValue')->willReturn(self::SECRET);
+        $config->method('getAppValue')->willReturn($secret ?? '');
 
         $random = $this->createMock(ISecureRandom::class);
-        $random->method('generate')->willReturn('generated-jti-000');
+        $counter = 0;
+        $random->method('generate')->willReturnCallback(function () use (&$counter) {
+            $counter++;
+            return 'generated-jti-'.$counter;
+        });
 
-        return new PortalSessionService($config, $random, $this->createMock(LoggerInterface::class));
+        $writer = $this->createMock(PortalObjectWriter::class);
+        $writer->method('createObject')->willReturnCallback(
+            function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, array $data) use (&$store) {
+                $uuid          = 'uuid-'.(count($store) + 1);
+                $data['uuid']  = $uuid;
+                $store[$uuid]  = $data;
+                return $data;
+            }
+        );
+        $writer->method('updateObject')->willReturnCallback(
+            function (string $register, string $schema, string $uuid, array $data) use (&$store) {
+                if (isset($store[$uuid]) === false) {
+                    return null;
+                }
+                $store[$uuid] = array_merge($store[$uuid], $data);
+                return $store[$uuid];
+            }
+        );
+
+        $reader = $this->createMock(PortalObjectReader::class);
+        $reader->method('readCollection')->willReturnCallback(
+            function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation='') use (&$store) {
+                $matches = [];
+                foreach ($store as $row) {
+                    if ($scopeField !== '' && ($row[$scopeField] ?? null) === $subjectRef) {
+                        $matches[] = $row;
+                    }
+                }
+                return $matches;
+            }
+        );
+
+        return new PortalSessionService($config, $random, $this->createMock(LoggerInterface::class), $writer, $reader);
 
     }//end service()
 

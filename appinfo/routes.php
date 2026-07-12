@@ -33,6 +33,10 @@ return [
         ['name' => 'session#devLogin', 'url' => '/portal/api/session/dev-login', 'verb' => 'POST'],
         ['name' => 'session#logout', 'url' => '/portal/api/session', 'verb' => 'DELETE'],
 
+        // Admin-only incident response (portal-auth-edge-session-hardening):
+        // revoke every active portal session for an Organisation.
+        ['name' => 'sessionAdmin#revokeOrganisation', 'url' => '/api/session-admin/revoke-organisation', 'verb' => 'POST'],
+
         // Aggregated portal contributions for the authenticated subject
         // (supplier-portal T04). Guarded by PortalAuthMiddleware (fail-closed).
         ['name' => 'contribution#index', 'url' => '/portal/api/contributions', 'verb' => 'GET'],
@@ -50,12 +54,21 @@ return [
         // ADR-063). Ownership re-verified via the scoped reader; the collection
         // must declare `filesUpload: true`.
         ['name' => 'contribution#uploadFile', 'url' => '/portal/api/collections/{register}/{schema}/{id}/files', 'verb' => 'POST'],
+        // Schema definition by slug (gated to the subject's manifest) for the
+        // schema-driven frontend engine (ADR-063). The store fetches a schema by
+        // slug; the adapter maps /openregister/api/schemas/{slug} here.
+        ['name' => 'contribution#schema', 'url' => '/portal/api/schema/{schema}', 'verb' => 'GET'],
         // Forward a declared endpoint action server-to-server with a signed
         // X-Portal-Subject assertion (contract-v2 T8, ADR-046 A6). Guarded by
         // PortalAuthMiddleware; registered before the /portal/{path} catch-all.
         ['name' => 'contribution#action', 'url' => '/portal/api/actions/{appId}/{actionId}', 'verb' => 'POST'],
 
         ['name' => 'portalPage#catchAll', 'url' => '/portal/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
+
+        // Hosted tilburg-woo-ui (Open Tilburg WOO SPA) — public. Registered
+        // BEFORE the greedy /{path} catch-all so /woo assets are not swallowed.
+        ['name' => 'woo#serve', 'url' => '/woo', 'verb' => 'GET'],
+        ['name' => 'woo#servePath', 'url' => '/woo/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
 
         // SPA catch-all — same controller as the index route; must use a distinct route name
         // (duplicate names replace the earlier route in Symfony, which breaks GET /).

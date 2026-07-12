@@ -1,0 +1,3 @@
+/*! For license information please see 3390.cbd8589e.chunk.js.LICENSE.txt */
+(self.webpackChunkopen_tilburg_ui=self.webpackChunkopen_tilburg_ui||[]).push([[3390],{"./node_modules/svg-react-loader/lib/loader.js!./src/assets/images/circle-exclamation.svg":(e,t,l)=>{var a=l("./node_modules/preact/compat/dist/compat.module.js");function s(e){return a.createElement("svg",e,a.createElement("path",{d:"M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm0-384c13.3 0 24 10.7 24 24l0 112c0 13.3-10.7 24-24 24s-24-10.7-24-24l0-112c0-13.3 10.7-24 24-24zM224 352a32 32 0 1 1 64 0 32 32 0 1 1 -64 0z"}))}s.defaultProps={fill:"currentcolor",width:"16",height:"24",viewBox:"0 0 512 512"},e.exports=s,s.default=s}}]);
+//# sourceMappingURL=3390.cbd8589e.chunk.js.map

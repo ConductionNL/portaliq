@@ -1,0 +1,21 @@
+{
+	"Log out": "Log out",
+	"Welcome": "Welcome",
+	"Log in to view your information.": "Log in to view your information.",
+	"Log in with eHerkenning": "Log in with eHerkenning",
+	"Log in with DigiD": "Log in with DigiD",
+	"Available once your organisation configures eHerkenning/DigiD.": "Available once your organisation configures eHerkenning/DigiD.",
+	"Dev-login (test)": "Dev-login (test)",
+	"Dev-login is disabled on this environment.": "Dev-login is disabled on this environment.",
+	"Dev-login request failed.": "Dev-login request failed.",
+	"My overview": "My overview",
+	"Logged in as {subjectRef}": "Logged in as {subjectRef}",
+	"No contributions to show yet.": "No contributions to show yet.",
+	"No messages.": "No messages.",
+	"No items.": "No items.",
+	"(no subject)": "(no subject)",
+	"New document": "New document",
+	"{field}?": "{field}?",
+	"Confirm": "Confirm",
+	"Cancel": "Cancel"
+}
