@@ -115,6 +115,109 @@ class PortalObjectReaderTest extends TestCase
 
     }//end testFiltersOnScopeAndDropsForeignRows()
 
+    public function testDeclaredFilterNarrowsTheReadAndScopeStillWins(): void
+    {
+        $objectService = new class {
+
+            /**
+             * @var array<string,mixed>
+             */
+            public array $received = [];
+
+            public string $register = '';
+
+            public string $schema = '';
+
+            public function setRegister(string $register): self
+            {
+                $this->register = $register;
+                return $this;
+            }//end setRegister()
+
+            public function setSchema(string $schema): self
+            {
+                $this->schema = $schema;
+                return $this;
+            }//end setSchema()
+
+            /**
+             * @param array<string,mixed> $config
+             *
+             * @return array<int,array<string,mixed>>
+             */
+            public function findAll(array $config, bool $_rbac=true, bool $_multitenancy=true): array
+            {
+                $this->received = $config;
+                return [['subjectRef' => 's1', 'organisation' => 'org-1', 'ticketType' => 'request', 'title' => 'Mine']];
+            }//end findAll()
+        };
+
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+        $rows   = $reader->readCollection(
+            register: 'pipelinq',
+            schema: 'ticket',
+            scopeField: 'subjectRef',
+            subjectRef: 's1',
+            organisation: 'org-1',
+            filter: ['ticketType' => 'request']
+        );
+
+        $this->assertCount(1, $rows);
+        // The declared discriminator rides into the OR query as a narrowing filter.
+        $this->assertSame('request', $objectService->received['filters']['ticketType']);
+        // The scope filter is still present and applied last (always wins).
+        $this->assertSame('s1', $objectService->received['filters']['subjectRef']);
+
+    }//end testDeclaredFilterNarrowsTheReadAndScopeStillWins()
+
+    public function testDeclaredFilterCannotOverrideTheScopeField(): void
+    {
+        $objectService = new class {
+
+            /**
+             * @var array<string,mixed>
+             */
+            public array $received = [];
+
+            public function setRegister(string $register): self
+            {
+                return $this;
+            }//end setRegister()
+
+            public function setSchema(string $schema): self
+            {
+                return $this;
+            }//end setSchema()
+
+            /**
+             * @param array<string,mixed> $config
+             *
+             * @return array<int,array<string,mixed>>
+             */
+            public function findAll(array $config, bool $_rbac=true, bool $_multitenancy=true): array
+            {
+                $this->received = $config;
+                return [];
+            }//end findAll()
+        };
+
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+        // A malicious declared filter tries to widen the read by re-pointing the
+        // scope field at another subject; the scope filter is applied last, so
+        // the subject's own value must survive.
+        $reader->readCollection(
+            register: 'pipelinq',
+            schema: 'ticket',
+            scopeField: 'subjectRef',
+            subjectRef: 's1',
+            organisation: 'org-1',
+            filter: ['subjectRef' => 'someone-else']
+        );
+
+        $this->assertSame('s1', $objectService->received['filters']['subjectRef']);
+
+    }//end testDeclaredFilterCannotOverrideTheScopeField()
+
     public function testClaimScopedReadResolvesTheClaimServerSide(): void
     {
         $objectService = $this->objectService(
