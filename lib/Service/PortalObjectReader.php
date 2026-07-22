@@ -138,6 +138,9 @@ class PortalObjectReader
      * @param mixed  $via             Optional one-hop join declaration (array), fail-closed on anything else.
      * @param string $audience        The subject's audience (portalAccount lookup filter).
      * @param mixed  $fields          Optional projection whitelist (array of property names); null = full rows.
+     * @param array  $filter          Optional declared narrowing filter, e.g. a supertype discriminator
+     *                                (`['ticketType' => 'request']`). Narrows only — the scope filter is
+     *                                applied after it and always wins, so it can never widen access.
      *
      * @return array<int, array<string, mixed>> The subject's rows (possibly empty).
      *
@@ -162,7 +165,8 @@ class PortalObjectReader
         string $contributingApp='',
         mixed $via=null,
         string $audience='',
-        mixed $fields=null
+        mixed $fields=null,
+        array $filter=[]
     ): array {
         $objectService = $this->objectService();
         if ($objectService === null) {
@@ -208,7 +212,20 @@ class PortalObjectReader
             return $this->projectRows(rows: $joined, fields: $fields);
         }
 
+        // A declared collection `filter` narrows the read to a subset of the
+        // schema. It exists for SUPERTYPE schemas that carry several logical
+        // kinds behind a discriminator (e.g. pipelinq's `ticket` schema, whose
+        // `ticketType` separates requests / complaints / contact moments): without
+        // it, three collections over one schema would each return all three kinds.
+        // It NARROWS only — the scope filter below is applied last and always
+        // wins, so a declared filter can never widen past the scope boundary.
         $filters = [];
+        foreach ($filter as $key => $value) {
+            if (is_string($key) === true && $key !== '') {
+                $filters[$key] = $value;
+            }
+        }
+
         if ($scopeField !== '' && $scopeValue !== '') {
             $filters[$scopeField] = $scopeValue;
         }

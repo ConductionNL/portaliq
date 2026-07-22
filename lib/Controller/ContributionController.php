@@ -202,7 +202,11 @@ class ContributionController extends Controller implements PortalProtected
             contributingApp: $match['app'],
             via: ($collection['via'] ?? null),
             audience: (string) ($subject['audience'] ?? ''),
-            fields: ($collection['fields'] ?? null)
+            fields: ($collection['fields'] ?? null),
+            // Declared narrowing filter (e.g. a supertype discriminator such as
+            // pipelinq's `ticketType`). The reader applies it BEFORE the scope
+            // filter, so it can only ever subset the subject's own rows.
+            filter: (array) ($collection['filter'] ?? [])
         );
 
         return new JSONResponse(['register' => $register, 'schema' => $schema, 'objects' => $objects]);
@@ -496,6 +500,17 @@ class ContributionController extends Controller implements PortalProtected
         }
 
         $data = $this->whitelist(fields: (array) ($action['fields'] ?? []));
+
+        // A declared action `defaults` map is stamped server-side over the
+        // whitelisted client payload. It carries values the client must not choose
+        // — notably a supertype discriminator (pipelinq's `ticketType`), which is
+        // required by the schema but is never a client-editable field. Applied
+        // AFTER the whitelist so a client can never override it.
+        foreach ((array) ($action['defaults'] ?? []) as $key => $value) {
+            if (is_string($key) === true && $key !== '') {
+                $data[$key] = $value;
+            }
+        }
 
         $created = $this->writer->createObject(
             register: $register,
