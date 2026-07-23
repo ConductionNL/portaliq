@@ -14,10 +14,17 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { createPortalApi, getToken } from '@portal/lib/portalApi.js'
 import PageView from '@portal/components/PageView.jsx'
+import InboxPage from '@portal/components/InboxPage.jsx'
+
+// The fixed cross-app inbox nav entry's key (portal-inbox-v2 T05) — distinct
+// from any `${contribution.app}:${page.id}` key a real contribution could mint.
+const INBOX_KEY = '__inbox__'
 
 // Flatten every contribution's pages into a single navigable list, tagging each
 // with its owning contribution so a block's refs resolve in the right scope.
-function buildNav(contributions) {
+// The unified inbox (portal-inbox-v2) is appended last: a fixed, cross-app nav
+// entry that is not sourced from any single contribution's own `pages`.
+function buildNav(contributions, t) {
 	const nav = []
 	for (const contribution of (contributions || [])) {
 		for (const page of (contribution.pages || [])) {
@@ -30,10 +37,14 @@ function buildNav(contributions) {
 			})
 		}
 	}
+	nav.push({ key: INBOX_KEY, label: t('Inbox'), icon: 'Email', special: 'inbox' })
 	return nav
 }
 
-export default function App({ config }) {
+export default function App({ config, t: tProp }) {
+	// `t` is optional so the shell still renders (English fallback) when a
+	// caller does not supply a translator — never a blank/undefined string.
+	const t = tProp || ((key) => key)
 	const api = useMemo(() => createPortalApi(config), [config])
 	const [token, setTokenState] = useState(() => getToken())
 	const [state, setState] = useState({ loading: true, session: null, contributions: null, devError: null })
@@ -50,7 +61,8 @@ export default function App({ config }) {
 
 	useEffect(() => { refresh() }, [refresh, token])
 
-	const nav = useMemo(() => buildNav(state.contributions?.contributions), [state.contributions])
+	const nav = useMemo(() => buildNav(state.contributions?.contributions, t), [state.contributions, t])
+	const unreadCount = state.contributions?.unreadCount || 0
 
 	// Default to the first page once contributions load.
 	useEffect(() => {
@@ -166,6 +178,9 @@ export default function App({ config }) {
 							onClick={() => setActiveKey(n.key)}
 						>
 							{n.label}
+							{n.special === 'inbox' && unreadCount > 0 && (
+								<span className="portaliq-badge-count">{unreadCount}</span>
+							)}
 						</button>
 					))}
 				</nav>
@@ -195,9 +210,13 @@ export default function App({ config }) {
 							{' '}({state.session.audience} · {state.session.organisation})
 						</p>
 
-						{nav.length === 0 && <p>Nog geen bijdragen om weer te geven.</p>}
+						{nav.length === 0 && <p>{t('No contributions to show yet.')}</p>}
 
-						{active && (
+						{active && active.special === 'inbox' && (
+							<InboxPage api={api} t={t} locale={config.locale} />
+						)}
+
+						{active && active.special !== 'inbox' && (
 							<PageView
 								page={active.page}
 								contribution={active.contribution}

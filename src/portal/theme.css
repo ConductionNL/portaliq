@@ -96,3 +96,86 @@
 	outline: 2px solid var(--portaliq-color-accent);
 	outline-offset: 2px;
 }
+
+/* Unified inbox (portal-inbox-v2 T05/T06). */
+.portaliq-inbox {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: var(--portaliq-space-sm);
+}
+
+.portaliq-inbox-row {
+	border: 1px solid var(--portaliq-color-border);
+	border-radius: 4px;
+	padding: var(--portaliq-space-sm) var(--portaliq-space-md);
+}
+
+.portaliq-inbox-row--unread {
+	border-left: 4px solid var(--portaliq-color-accent);
+}
+
+.portaliq-inbox-row__header {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: var(--portaliq-space-sm);
+}
+
+.portaliq-inbox-row__subject {
+	font-weight: 700;
+}
+
+.portaliq-inbox-row__source {
+	color: var(--portaliq-color-text-muted);
+	font-size: 0.85em;
+}
+
+.portaliq-inbox-row__date {
+	margin-left: auto;
+	color: var(--portaliq-color-text-muted);
+	font-size: 0.85em;
+}
+
+.portaliq-inbox-row__body {
+	margin: var(--portaliq-space-sm) 0;
+}
+
+.portaliq-inbox-row__meta {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--portaliq-space-md);
+	margin: var(--portaliq-space-sm) 0;
+	padding: var(--portaliq-space-sm);
+	background: color-mix(in srgb, var(--portaliq-color-accent) 6%, transparent);
+	border-radius: 4px;
+}
+
+.portaliq-inbox-row__meta-item dt {
+	font-size: 0.8em;
+	color: var(--portaliq-color-text-muted);
+}
+
+.portaliq-inbox-row__meta-item dd {
+	margin: 0;
+	font-weight: 600;
+}
+
+.portaliq-badge-unread {
+	color: var(--portaliq-color-accent);
+}
+
+.portaliq-badge-count {
+	display: inline-block;
+	min-width: 1.2em;
+	margin-left: 0.4em;
+	padding: 0 0.35em;
+	border-radius: 999px;
+	background: var(--portaliq-color-accent);
+	color: #fff;
+	font-size: 0.75em;
+	line-height: 1.4;
+	text-align: center;
+}

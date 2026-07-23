@@ -87,9 +87,38 @@ export function createPortalApi(config) {
 			return body && body.authenticated ? body : null
 		},
 
-		/** The subject's aggregated, trust-filtered, v3-normalised manifest. */
+		/**
+		 * The subject's aggregated, trust-filtered, v3-normalised manifest —
+		 * carries the subject's own unread inbox count (portal-inbox-v2 T04).
+		 */
 		async getContributions() {
-			return (await get('/contributions')) || { contributions: [] }
+			return (await get('/contributions')) || { contributions: [], unreadCount: 0 }
+		},
+
+		/**
+		 * The unified inbox (portal-inbox-v2 T02): every `kind: inbox`
+		 * collection across the subject's contributions, merged, sorted by
+		 * `receivedAt` descending, each row carrying a `_source` provenance
+		 * tag (`appId`/`label`/`register`/`schema`/`collection`).
+		 */
+		async fetchInbox() {
+			const body = await get('/inbox')
+			return (body && Array.isArray(body.messages)) ? body.messages : []
+		},
+
+		/**
+		 * Mark ONE inbox message read (portal-inbox-v2 T03). Ownership is
+		 * re-verified server-side; the endpoint can only ever set `read` —
+		 * this call never sends any other field.
+		 */
+		async markMessageRead(message) {
+			const source = message._source || {}
+			const id = message.id || message['@self']?.id
+			if (!id || !source.register || !source.schema) {
+				return { ok: false, status: 0 }
+			}
+			const path = `/inbox/${encodeURIComponent(source.register)}/${encodeURIComponent(source.schema)}/${encodeURIComponent(id)}/read?collection=${encodeURIComponent(source.collection || '')}`
+			return send('PATCH', path, {})
 		},
 
 		/**

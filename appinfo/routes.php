@@ -39,7 +39,18 @@ return [
 
         // Aggregated portal contributions for the authenticated subject
         // (supplier-portal T04). Guarded by PortalAuthMiddleware (fail-closed).
+        // The response also carries the subject's own unread inbox count
+        // (portal-inbox-v2 T04).
         ['name' => 'contribution#index', 'url' => '/portal/api/contributions', 'verb' => 'GET'],
+        // Unified inbox — merges every `kind: inbox` collection across the
+        // subject's contributions, sorted by receivedAt desc, provenance-tagged
+        // (portal-inbox-v2 T02). Registered before the /portal/{path} catch-all.
+        ['name' => 'contribution#inbox', 'url' => '/portal/api/inbox', 'verb' => 'GET'],
+        // Tamper-proof mark-read on ONE inbox message: ownership/tenant/trust
+        // re-verified before any write; only `read` is ever set (portal-inbox-v2
+        // T03). The {register}/{schema}/{id} segments distinguish it from the
+        // plain GET above.
+        ['name' => 'contribution#markRead', 'url' => '/portal/api/inbox/{register}/{schema}/{id}/read', 'verb' => 'PATCH'],
         // Objects in one contribution collection, subject-scoped (T05).
         ['name' => 'contribution#collection', 'url' => '/portal/api/collections/{register}/{schema}', 'verb' => 'GET'],
         // Create an object in a collection, owned by the subject (T06).

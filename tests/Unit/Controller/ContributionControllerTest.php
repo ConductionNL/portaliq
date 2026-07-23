@@ -8,6 +8,7 @@ use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\ContributionController;
 use OCA\Portaliq\Service\PortalAuditHook;
 use OCA\Portaliq\Service\PortalFileReader;
+use OCA\Portaliq\Service\PortalInboxReader;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalFileWriter;
 use OCA\Portaliq\Service\PortalSchemaReader;
@@ -68,9 +69,32 @@ class ContributionControllerTest extends TestCase
         $response   = $controller->index();
 
         $this->assertSame(Http::STATUS_OK, $response->getStatus());
-        $this->assertSame($aggregate, $response->getData());
+        // The aggregate is returned unchanged PLUS the unread count
+        // (portal-inbox-v2 T04) — the default inbox reader stub yields 0.
+        $this->assertSame(($aggregate + ['unreadCount' => 0]), $response->getData());
 
     }//end testIndexReturnsTheRegistrysAggregateForAnAuthenticatedSubject()
+
+    /**
+     * The contributions response carries the subject's own unread count,
+     * computed by PortalInboxReader over the SAME aggregate (portal-inbox-v2 T04).
+     */
+    public function testIndexIncludesTheSubjectsUnreadCount(): void
+    {
+        $aggregate = $this->aggregate(collections: [['id' => 'inbox', 'kind' => 'inbox', 'register' => 'portaliq', 'schema' => 'portalMessage']]);
+
+        $inboxReader = $this->createMock(PortalInboxReader::class);
+        $inboxReader->expects($this->once())->method('unreadCount')
+            ->with(self::SUBJECT, $aggregate)
+            ->willReturn(3);
+
+        $controller = $this->controller(aggregate: $aggregate, inboxReader: $inboxReader);
+        $response   = $controller->index();
+
+        $this->assertSame(Http::STATUS_OK, $response->getStatus());
+        $this->assertSame(3, $response->getData()['unreadCount']);
+
+    }//end testIndexIncludesTheSubjectsUnreadCount()
 
     public function testCollectionOutsideSubjectsManifestIs403IdorGuard(): void
     {
@@ -727,6 +751,192 @@ class ContributionControllerTest extends TestCase
 
     }//end testClaimScopedUpdateWithUnresolvableClaimIs404BeforeAnyWrite()
 
+    // -- portal-inbox-v2 (T02/T03): unified inbox + tamper-proof mark-read --
+
+    public function testInboxUnauthenticatedIs401(): void
+    {
+        $controller = $this->controller(aggregate: $this->aggregate(), subject: null);
+        $this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->inbox()->getStatus());
+
+    }//end testInboxUnauthenticatedIs401()
+
+    /**
+     * inbox() delegates the aggregate straight to PortalInboxReader — the
+     * merge/sort/provenance logic is PortalInboxReader's own responsibility
+     * (see PortalInboxReaderTest); this test only proves the controller wires
+     * the subject + aggregate through and relays the result.
+     */
+    public function testInboxReturnsTheAggregatedMessages(): void
+    {
+        $aggregate = $this->aggregate(collections: [['id' => 'inbox', 'kind' => 'inbox', 'register' => 'portaliq', 'schema' => 'portalMessage']]);
+
+        $messages    = [['subject' => 'Hallo', '_source' => ['appId' => 'portaliq', 'label' => 'Portaliq']]];
+        $inboxReader = $this->createMock(PortalInboxReader::class);
+        $inboxReader->expects($this->once())->method('aggregateInbox')
+            ->with(self::SUBJECT, $aggregate)
+            ->willReturn($messages);
+
+        $controller = $this->controller(aggregate: $aggregate, inboxReader: $inboxReader);
+        $response   = $controller->inbox();
+
+        $this->assertSame(Http::STATUS_OK, $response->getStatus());
+        $this->assertSame(['messages' => $messages], $response->getData());
+
+    }//end testInboxReturnsTheAggregatedMessages()
+
+    public function testMarkReadUnauthenticatedIs401(): void
+    {
+        $controller = $this->controller(aggregate: $this->aggregate(), subject: null);
+        $this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->markRead('r1', 'a', 'id-1')->getStatus());
+
+    }//end testMarkReadUnauthenticatedIs401()
+
+    public function testMarkReadOutsideSubjectsManifestIs403IdorGuard(): void
+    {
+        // (register, schema) never appears in the subject's own contributions.
+        $aggregate = $this->aggregate(
+            collections: [
+                ['id' => 'inbox', 'kind' => 'inbox', 'register' => 'r1', 'schema' => 'a'],
+            ]
+        );
+
+        $writer = $this->createMock(PortalObjectWriter::class);
+        $writer->expects($this->never())->method('updateObject');
+
+        $controller = $this->controller(aggregate: $aggregate, writer: $writer);
+        $response   = $controller->markRead('r-not-granted', 'schema-not-granted', 'id-1');
+
+        $this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+
+    }//end testMarkReadOutsideSubjectsManifestIs403IdorGuard()
+
+    /**
+     * A collection matching (register, schema) that is NOT declared
+     * `kind: inbox` must never be reachable through the mark-read endpoint —
+     * it narrows to inbox collections only, distinct from the plain IDOR guard.
+     */
+    public function testMarkReadOnANonInboxCollectionIs403(): void
+    {
+        $aggregate = $this->aggregate(
+            collections: [
+                ['id' => 'exampleCollection', 'register' => 'portaliq', 'schema' => 'exampleDocument'],
+            ]
+        );
+
+        $writer = $this->createMock(PortalObjectWriter::class);
+        $writer->expects($this->never())->method('updateObject');
+
+        $controller = $this->controller(aggregate: $aggregate, writer: $writer);
+        $response   = $controller->markRead('portaliq', 'exampleDocument', 'id-1');
+
+        $this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+
+    }//end testMarkReadOnANonInboxCollectionIs403()
+
+    public function testMarkReadBelowTrustThresholdIs403BeforeAnyWrite(): void
+    {
+        $aggregate = $this->aggregate(
+            collections: [
+                ['id' => 'inbox', 'kind' => 'inbox', 'register' => 'portaliq', 'schema' => 'portalMessage', 'minTrust' => 'substantial'],
+            ]
+        );
+
+        $writer = $this->createMock(PortalObjectWriter::class);
+        $writer->expects($this->never())->method('updateObject');
+
+        $controller = $this->controller(aggregate: $aggregate, writer: $writer);
+        $response   = $controller->markRead('portaliq', 'portalMessage', 'm-1');
+
+        $this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+
+    }//end testMarkReadBelowTrustThresholdIs403BeforeAnyWrite()
+
+    /**
+     * On a subject's own message: the writer receives a LITERAL `['read' => true]`
+     * payload — never anything derived from the request body — so no other
+     * field can ever be written through this endpoint.
+     */
+    public function testMarkReadSetsOnlyTheReadFieldOnTheSubjectsOwnMessage(): void
+    {
+        $aggregate = $this->aggregate(
+            collections: [
+                ['id' => 'inbox', 'kind' => 'inbox', 'register' => 'portaliq', 'schema' => 'portalMessage'],
+            ]
+        );
+
+        $received = [];
+        $writer   = $this->createMock(PortalObjectWriter::class);
+        $writer->method('updateObject')->willReturnCallback(
+            function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id, array $data) use (&$received) {
+                $received = ['id' => $id, 'subjectRef' => $subjectRef, 'organisation' => $organisation, 'data' => $data];
+                return ['id' => $id, 'subject' => 'Hallo', 'read' => true];
+            }
+        );
+
+        $controller = $this->controller(aggregate: $aggregate, writer: $writer);
+        $response   = $controller->markRead('portaliq', 'portalMessage', 'm-1');
+
+        $this->assertSame(Http::STATUS_OK, $response->getStatus());
+        $this->assertSame(['object' => ['id' => 'm-1', 'subject' => 'Hallo', 'read' => true]], $response->getData());
+        // ONLY `read` reaches the writer — a tamper attempt via other body
+        // fields is never even read (whitelist() is not invoked for this path).
+        $this->assertSame(['read' => true], $received['data']);
+        $this->assertSame('m-1', $received['id']);
+        $this->assertSame('s1', $received['subjectRef']);
+        $this->assertSame('org-1', $received['organisation']);
+
+    }//end testMarkReadSetsOnlyTheReadFieldOnTheSubjectsOwnMessage()
+
+    /**
+     * A foreign-owned or non-existent message id: the writer's own ownership
+     * re-verification returns null (no write happened, identical to every
+     * other scoped write), and the controller answers the SAME 404 — no
+     * existence oracle.
+     */
+    public function testMarkReadOnAForeignOrAbsentMessageIs404WithNoWrite(): void
+    {
+        $aggregate = $this->aggregate(
+            collections: [
+                ['id' => 'inbox', 'kind' => 'inbox', 'register' => 'portaliq', 'schema' => 'portalMessage'],
+            ]
+        );
+
+        $writer = $this->createMock(PortalObjectWriter::class);
+        $writer->expects($this->once())->method('updateObject')->willReturn(null);
+
+        $controller = $this->controller(aggregate: $aggregate, writer: $writer);
+        $response   = $controller->markRead('portaliq', 'portalMessage', 'not-mine');
+
+        $this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+        $this->assertSame(['error' => 'not_found'], $response->getData());
+
+    }//end testMarkReadOnAForeignOrAbsentMessageIs404WithNoWrite()
+
+    /**
+     * A declared scopeClaim that cannot resolve on the inbox collection →
+     * 404, no write — the SAME fail-closed posture as a claim-scoped update().
+     */
+    public function testMarkReadWithUnresolvableClaimIs404BeforeAnyWrite(): void
+    {
+        $aggregate = $this->aggregate(
+            collections: [
+                ['id' => 'inbox', 'kind' => 'inbox', 'register' => 'portaliq', 'schema' => 'portalMessage', 'scopeField' => 'ownerRef', 'scopeClaim' => 'ownerRef'],
+            ]
+        );
+
+        $writer = $this->createMock(PortalObjectWriter::class);
+        $writer->expects($this->never())->method('updateObject');
+
+        $reader = $this->createMock(PortalObjectReader::class);
+        $reader->method('resolveScopeValue')->willReturn(null);
+
+        $controller = $this->controller(aggregate: $aggregate, reader: $reader, writer: $writer);
+        $response   = $controller->markRead('portaliq', 'portalMessage', 'm-1');
+
+        $this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+
+    }//end testMarkReadWithUnresolvableClaimIs404BeforeAnyWrite()
+
     public function testUploadRequiresTheCollectionToOptIntoFileUploads(): void
     {
         // The collection does NOT declare filesUpload → 403, no read, no attach.
@@ -806,6 +1016,7 @@ class ContributionControllerTest extends TestCase
             $fileWriter,
             $this->createMock(PortalFileReader::class),
             $this->createMock(PortalSchemaReader::class),
+            $this->createMock(PortalInboxReader::class),
             $this->createMock(PortalAuditHook::class),
             $this->createMock(IClientService::class),
             $this->createMock(IURLGenerator::class)
@@ -1091,6 +1302,7 @@ class ContributionControllerTest extends TestCase
             $this->createMock(PortalFileWriter::class),
             $this->createMock(PortalFileReader::class),
             $this->createMock(PortalSchemaReader::class),
+            $this->createMock(PortalInboxReader::class),
             $this->createMock(PortalAuditHook::class),
             $this->createMock(IClientService::class),
             $this->createMock(IURLGenerator::class)
@@ -1151,7 +1363,8 @@ class ContributionControllerTest extends TestCase
         ?IClientService $clientService=null,
         ?PortalFileWriter $fileWriter=null,
         ?PortalFileReader $fileReader=null,
-        ?PortalAuditHook $auditHook=null
+        ?PortalAuditHook $auditHook=null,
+        ?PortalInboxReader $inboxReader=null
     ): ContributionController {
         $request = $this->createMock(IRequest::class);
         $request->method('getHeader')->willReturnMap([['Authorization', 'Bearer client-session-token']]);
@@ -1191,6 +1404,7 @@ class ContributionControllerTest extends TestCase
             ($fileWriter ?? $this->createMock(PortalFileWriter::class)),
             ($fileReader ?? $this->createMock(PortalFileReader::class)),
             $this->createMock(PortalSchemaReader::class),
+            ($inboxReader ?? $this->createMock(PortalInboxReader::class)),
             ($auditHook ?? $this->createMock(PortalAuditHook::class)),
             ($clientService ?? $this->createMock(IClientService::class)),
             $urlGenerator

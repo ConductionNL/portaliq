@@ -30,6 +30,9 @@
  * @spec openspec/changes/contract-v2/tasks.md#T3
  * @spec openspec/changes/contract-v2/tasks.md#T5
  * @spec openspec/changes/contract-v2/tasks.md#T8
+ * @spec openspec/changes/portal-inbox-v2/tasks.md#T02
+ * @spec openspec/changes/portal-inbox-v2/tasks.md#T03
+ * @spec openspec/changes/portal-inbox-v2/tasks.md#T04
  */
 
 declare(strict_types=1);
@@ -42,6 +45,7 @@ use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\PortalAuditHook;
 use OCA\Portaliq\Service\PortalFileReader;
 use OCA\Portaliq\Service\PortalFileWriter;
+use OCA\Portaliq\Service\PortalInboxReader;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSchemaReader;
@@ -92,6 +96,7 @@ class ContributionController extends Controller implements PortalProtected
      * @param PortalFileWriter           $fileWriter    Subject-scoped OR file attach.
      * @param PortalFileReader           $fileReader    Subject-scoped OR file list/download.
      * @param PortalSchemaReader         $schemaReader  Scoped OR schema-definition reader.
+     * @param PortalInboxReader          $inboxReader   Cross-app inbox aggregation + unread count (portal-inbox-v2).
      * @param PortalAuditHook            $auditHook     Fail-safe audit-record call site.
      * @param IClientService             $clientService HTTP client for the A6 action forward.
      * @param IURLGenerator              $urlGenerator  Resolves instance-local endpoint paths.
@@ -105,6 +110,7 @@ class ContributionController extends Controller implements PortalProtected
         private readonly PortalFileWriter $fileWriter,
         private readonly PortalFileReader $fileReader,
         private readonly PortalSchemaReader $schemaReader,
+        private readonly PortalInboxReader $inboxReader,
         private readonly PortalAuditHook $auditHook,
         private readonly IClientService $clientService,
         private readonly IURLGenerator $urlGenerator,
@@ -131,9 +137,11 @@ class ContributionController extends Controller implements PortalProtected
      * Nextcloud users; PortalAuthMiddleware enforces the bearer session and
      * fails closed before this method runs.
      *
-     * @return JSONResponse The aggregated contribution manifest.
+     * @return JSONResponse The aggregated contribution manifest, carrying the
+     *                       subject's own unread inbox count (portal-inbox-v2 T04).
      *
      * @spec openspec/changes/supplier-portal/tasks.md#T04
+     * @spec openspec/changes/portal-inbox-v2/tasks.md#T04
      */
     #[PublicPage]
     #[NoCSRFRequired]
@@ -145,8 +153,143 @@ class ContributionController extends Controller implements PortalProtected
             return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
         }
 
-        return new JSONResponse($this->registry->aggregateFor($subject));
+        $aggregate = $this->registry->aggregateFor($subject);
+        $aggregate['unreadCount'] = $this->inboxReader->unreadCount(subject: $subject, aggregate: $aggregate);
+
+        return new JSONResponse($aggregate);
     }//end index()
+
+    /**
+     * The subject's unified inbox: every `kind: inbox` collection across ALL
+     * their contributions, merged, sorted by `receivedAt` descending, and
+     * tagged with its source app/label (portal-inbox-v2 T02). Each row passes
+     * through the IDENTICAL per-row subject + tenant + trust boundary as a
+     * normal collection read — PortalInboxReader adds no authorisation of its
+     * own, it only fans the subject's own (already trust-filtered) aggregate
+     * out across every inbox collection. Fails closed to an empty inbox on
+     * any per-collection OR error.
+     *
+     * @return JSONResponse The merged inbox rows, or 401.
+     *
+     * @spec openspec/changes/portal-inbox-v2/tasks.md#T02
+     */
+    #[PublicPage]
+    #[NoCSRFRequired]
+    public function inbox(): JSONResponse
+    {
+        $subject = $this->subject();
+        if ($subject === null) {
+            return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+        }
+
+        $aggregate = $this->registry->aggregateFor($subject);
+        $messages  = $this->inboxReader->aggregateInbox(subject: $subject, aggregate: $aggregate);
+
+        return new JSONResponse(['messages' => $messages]);
+    }//end inbox()
+
+    /**
+     * Mark ONE inbox message read (portal-inbox-v2 T03) — tamper-proof: the
+     * (register, schema) must resolve to a `kind: inbox` collection in the
+     * subject's own contributions (the same IDOR guard as collection()/
+     * object()), the matched collection's minTrust is re-checked (403 before
+     * any write), and the write goes through PortalObjectWriter::updateObject()
+     * with a LITERAL `['read' => true]` payload — never the request body — so
+     * no other field can ever be written through this endpoint regardless of
+     * what a client sends. updateObject() re-verifies ownership (scopeField +
+     * tenant) against OpenRegister BEFORE writing, so a foreign-owned or
+     * non-existent id yields the SAME 404 as every other scoped write — no
+     * existence oracle.
+     *
+     * @param string $register The register of the inbox collection.
+     * @param string $schema   The schema of the inbox collection.
+     * @param string $id       The message id (never trusted; ownership re-checked server-side).
+     *
+     * @return JSONResponse The updated message, or 401 / 403 / 404.
+     *
+     * @spec openspec/changes/portal-inbox-v2/tasks.md#T03
+     */
+    #[PublicPage]
+    #[NoCSRFRequired]
+    public function markRead(string $register, string $schema, string $id): JSONResponse
+    {
+        $subject = $this->subject();
+        if ($subject === null) {
+            return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+        }
+
+        $collectionId = (string) $this->request->getParam('collection', '');
+        $match        = $this->authorisedInboxCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
+        if ($match === null) {
+            return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+        }
+
+        $collection = $match['collection'];
+
+        // Defense in depth (contract v2, A3): re-check the matched collection's
+        // minTrust — 403 before any OpenRegister write.
+        if (PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
+            return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+        }
+
+        // Resolve the OWNERSHIP scope value the SAME way every scoped write does:
+        // a declared scopeClaim resolves server-side; an absent/malformed claim
+        // fails closed to 404 with no write.
+        $scopeValue = $this->reader->resolveScopeValue(
+            scopeClaim: (string) ($collection['scopeClaim'] ?? ''),
+            contributingApp: $match['app'],
+            subject: $subject
+        );
+        if ($scopeValue === null || $scopeValue === '') {
+            return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+        }
+
+        // The LITERAL payload — never the request body. Whatever extra fields a
+        // client sends are simply never read, so `read` is the only field this
+        // endpoint can ever change.
+        $updated = $this->writer->updateObject(
+            register: $register,
+            schema: $schema,
+            scopeField: (string) ($collection['scopeField'] ?? 'subjectRef'),
+            subjectRef: $scopeValue,
+            organisation: (string) ($subject['organisation'] ?? ''),
+            id: $id,
+            data: ['read' => true]
+        );
+
+        // Null = ownership re-verification failed OR the row does not exist —
+        // a single 404, indistinguishable, and nothing was written.
+        if ($updated === null) {
+            return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+        }
+
+        return new JSONResponse(['object' => $updated]);
+    }//end markRead()
+
+    /**
+     * Find a `kind: inbox` collection matching (register, schema) in the
+     * subject's aggregated contributions — the SAME IDOR guard as
+     * authorisedCollection(), narrowed to inbox collections only, so mark-read
+     * can never be pointed at an arbitrary non-inbox collection/schema.
+     *
+     * @param array<string, mixed> $subject      The resolved subject.
+     * @param string               $register     The requested register.
+     * @param string               $schema       The requested schema.
+     * @param string               $collectionId Optional collection id disambiguating a shared register+schema.
+     *
+     * @return array{collection: array<string, mixed>, app: string}|null
+     *
+     * @spec openspec/changes/portal-inbox-v2/tasks.md#T03
+     */
+    private function authorisedInboxCollection(array $subject, string $register, string $schema, string $collectionId=''): ?array
+    {
+        $match = $this->authorisedCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
+        if ($match === null || ($match['collection']['kind'] ?? '') !== 'inbox') {
+            return null;
+        }
+
+        return $match;
+    }//end authorisedInboxCollection()
 
     /**
      * Read the objects in one contribution collection, scoped to the subject.

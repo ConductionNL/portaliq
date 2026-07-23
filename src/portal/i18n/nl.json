@@ -17,5 +17,12 @@
 	"New document": "Nieuw document",
 	"{field}?": "{field}?",
 	"Confirm": "Bevestigen",
-	"Cancel": "Annuleren"
+	"Cancel": "Annuleren",
+	"Inbox": "Berichten",
+	"Unread": "Ongelezen",
+	"Nature": "Aard",
+	"Legal effect": "Rechtsgevolg",
+	"Deadline": "Termijn",
+	"Mark as read": "Markeren als gelezen",
+	"Read": "Gelezen"
 }
