@@ -330,166 +330,27 @@
                         "type": "string",
                         "format": "date-time",
                         "description": "When the message arrived."
+                    },
+                    "aard": {
+                        "title": "Aard",
+                        "type": "string",
+                        "description": "WMEBV art 2:10 (2027 readiness): the nature of the message/decision. Optional — rendered only when the contributing app supplies it; absent means no such field renders.",
+                        "example": "Beschikking"
+                    },
+                    "rechtsgevolg": {
+                        "title": "Rechtsgevolg",
+                        "type": "string",
+                        "description": "WMEBV art 2:10 (2027 readiness): the legal effect of the message/decision. Optional — rendered only when supplied.",
+                        "example": "De aanvraag is toegewezen."
+                    },
+                    "termijn": {
+                        "title": "Termijn",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "WMEBV art 2:10 (2027 readiness): the deadline associated with the message/decision (e.g. an objection period). Optional — rendered only when supplied."
                     }
                 }
             }
         }
-      },
-      "portalSession": {
-        "slug": "portalSession",
-        "icon": "Ticket",
-        "version": "0.1.0",
-        "title": "Portal Session",
-        "description": "A bearer session issued by Portaliq's auth edge. Records the minted token id (jti) so sessions can be revoked. Owned by Portaliq; never publicly readable.",
-        "type": "object",
-        "required": [
-          "subjectRef",
-          "audience",
-          "organisation",
-          "jti",
-          "expiresAt"
-        ],
-        "x-openregister": {
-          "publicRead": false,
-          "publicWrite": false
-        },
-        "properties": {
-          "accountRef": {
-            "type": "string",
-            "format": "uuid",
-            "$ref": "portalAccount",
-            "description": "Reference to the portalAccount this session was issued for. The register's one real object FK (ADR-062 rule 7).",
-            "example": "a1b2c3d4-0000-4000-8000-000000000000"
-          },
-          "subjectRef": {
-            "type": "string",
-            "description": "The subject reference carried in the token (server-derived). Not an OpenRegister object reference — deliberately left as a plain string (ADR-062 rule 7): the value is an opaque identity token issued by the external IdP / domain app, not an OR object id.",
-            "example": "b3d9c2a1-0000-4000-8000-000000000000"
-          },
-          "audience": {
-            "type": "string",
-            "description": "The external audience of this session.",
-            "enum": ["supplier", "client"],
-            "example": "supplier"
-          },
-          "organisation": {
-            "type": "string",
-            "description": "The tenant this session is scoped to.",
-            "example": "gemeente-x"
-          },
-          "jti": {
-            "type": "string",
-            "description": "Unique token identifier (JWT jti claim) for revocation.",
-            "example": "9f8e7d6c-0000-4000-8000-000000000000"
-          },
-          "trustLevel": {
-            "type": "string",
-            "description": "Assurance level of the authentication (e.g. eHerkenning EH3, DigiD Midden/Substantieel).",
-            "example": "EH3"
-          },
-          "issuedAt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "When the session was minted."
-          },
-          "expiresAt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "When the session expires."
-          },
-          "revoked": {
-            "type": "boolean",
-            "description": "Whether the session has been explicitly revoked (logout / admin).",
-            "example": false
-          }
-        }
-      },
-      "exampleDocument": {
-        "slug": "exampleDocument",
-        "icon": "FileDocumentOutline",
-        "version": "0.1.0",
-        "title": "Example Document",
-        "description": "A demo subject-scoped content object so the portal object reader is exercisable end-to-end. Carries subjectRef so PortalObjectReader can scope it. Replace with real, app-owned content schemas (procest ships supplierContract etc.).",
-        "type": "object",
-        "x-schema-org": "schema:DigitalDocument",
-        "required": [
-          "subjectRef",
-          "title"
-        ],
-        "x-openregister": {
-          "publicRead": false,
-          "publicWrite": false
-        },
-        "properties": {
-          "subjectRef": {
-            "type": "string",
-            "description": "The subject this document belongs to; the field PortalObjectReader scopes on. Not an OpenRegister object reference — deliberately left as a plain string (ADR-062 rule 7): the value is an opaque identity token issued by the external IdP / domain app, not an OR object id.",
-            "example": "dev-supplier"
-          },
-          "organisation": {
-            "type": "string",
-            "description": "The tenant this document belongs to.",
-            "example": "dev-org"
-          },
-          "title": {
-            "type": "string",
-            "description": "Human-readable title shown in the portal.",
-            "example": "Voorbeelddocument"
-          },
-          "status": {
-            "type": "string",
-            "description": "Lifecycle status.",
-            "example": "open"
-          }
-        }
-      },
-      "portalMessage": {
-        "slug": "portalMessage",
-        "icon": "EmailOutline",
-        "version": "0.1.0",
-        "title": "Portal Message",
-        "description": "A message in a subject's portal inbox (the in-portal realisation of the notification/inbox surface). Subject-scoped by subjectRef, so it is read through the same path as any contribution collection. OpenRegister's notification engine (email channel + `field` recipient kind) can additionally email the subject out-of-band when a message arrives.",
-        "type": "object",
-        "x-schema-org": "schema:Message",
-        "required": [
-          "subjectRef",
-          "subject"
-        ],
-        "x-openregister": {
-          "publicRead": false,
-          "publicWrite": false
-        },
-        "properties": {
-          "subjectRef": {
-            "type": "string",
-            "description": "The recipient subject; the field the inbox is scoped on. Not an OpenRegister object reference — deliberately left as a plain string (ADR-062 rule 7): the value is an opaque identity token issued by the external IdP / domain app, not an OR object id.",
-            "example": "dev-supplier"
-          },
-          "organisation": {
-            "type": "string",
-            "description": "The tenant this message belongs to.",
-            "example": "dev-org"
-          },
-          "subject": {
-            "type": "string",
-            "description": "Message subject line.",
-            "example": "Uw contract verloopt binnenkort"
-          },
-          "body": {
-            "type": "string",
-            "description": "Message body.",
-            "example": "Contract 12345 verloopt op 1 augustus."
-          },
-          "read": {
-            "type": "boolean",
-            "description": "Whether the subject has read the message.",
-            "example": false
-          },
-          "receivedAt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "When the message arrived."
-          }
-        }
-      }
     }
+}

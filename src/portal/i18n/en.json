@@ -17,5 +17,12 @@
 	"New document": "New document",
 	"{field}?": "{field}?",
 	"Confirm": "Confirm",
-	"Cancel": "Cancel"
+	"Cancel": "Cancel",
+	"Inbox": "Inbox",
+	"Unread": "Unread",
+	"Nature": "Nature",
+	"Legal effect": "Legal effect",
+	"Deadline": "Deadline",
+	"Mark as read": "Mark as read",
+	"Read": "Read"
 }

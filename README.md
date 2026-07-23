@@ -96,7 +96,9 @@ the session routes are the public auth edge.
 | `GET` | `/apps/portaliq/portal/api/session` | Resolve the caller's bearer to a subject (401 without one) |
 | `POST` | `/apps/portaliq/portal/api/session/dev-login` | Mint a dev session (debug-gated; issues `trust: low`) |
 | `DELETE` | `/apps/portaliq/portal/api/session` | End the client session |
-| `GET` | `/apps/portaliq/portal/api/contributions` | The subject's aggregated manifest (audience- and trust-filtered) |
+| `GET` | `/apps/portaliq/portal/api/contributions` | The subject's aggregated manifest (audience- and trust-filtered), carrying the subject's own unread inbox count (`unreadCount`, portal-inbox-v2) |
+| `GET` | `/apps/portaliq/portal/api/inbox` | The subject's unified inbox (portal-inbox-v2): every `kind: inbox` collection across ALL their contributions, merged, sorted by `receivedAt` descending, each row tagged with its source `appId`/label. Every row passes the IDENTICAL per-row subject + tenant + trust boundary as a normal collection read; fails closed to an empty inbox on any per-collection OR error |
+| `PATCH` | `/apps/portaliq/portal/api/inbox/{register}/{schema}/{id}/read` | Mark ONE inbox message read (portal-inbox-v2), tamper-proof: ownership/tenant/trust re-verified BEFORE any write, only the `read` field is ever set (any other body field is ignored), and a foreign-owned/absent id 404s identically to every other scoped write — no existence oracle |
 | `GET` | `/apps/portaliq/portal/api/collections/{register}/{schema}` | Read one collection, subject-scoped with per-row verification |
 | `POST` | `/apps/portaliq/portal/api/collections/{register}/{schema}` | Create an object via a declared `type: create` action (whitelisted fields only) |
 | `GET` | `/apps/portaliq/portal/api/collections/{register}/{schema}/{id}` | Read a single object, subject-scoped; per-row ownership re-verified (404 for a foreign-owned or absent id — no existence oracle) |
@@ -104,6 +106,23 @@ the session routes are the public auth edge.
 | `POST` | `/apps/portaliq/portal/api/collections/{register}/{schema}/{id}/files` | Attach an uploaded file to an owned object; ownership re-verified server-side; the collection must declare `filesUpload: true` (403 otherwise, before any read) |
 | `GET` | `/apps/portaliq/portal/api/collections/{register}/{schema}/{id}/files/{fileId}` | Stream a file attached to an owned object; ownership + tenant + trust re-verified BEFORE the file is resolved. The collection must declare `filesDownload: true`; a non-opted-in collection, a foreign/absent object, and a non-existent `fileId` all return the IDENTICAL 404 — no existence oracle, and the raw stored path is never exposed |
 | `POST` | `/apps/portaliq/portal/api/actions/{appId}/{actionId}` | Forward a declared endpoint action server-to-server with a signed `X-Portal-Subject` assertion (contract v2, A6) |
+
+#### Unified inbox (portal-inbox-v2)
+
+A single, mark-readable inbox across every `kind: inbox` collection a
+subject's contributions declare — the Berichtenbox pattern citizens already
+know from MijnOverheid, and the top-tier "one inbox across organisations"
+Logius wish. The SPA's Inbox nav entry is a fixed, cross-app view (not sourced
+from any one contribution's own `pages`) that shows the unread count as a
+badge and lets the subject mark a message read; the per-app `kind: inbox`
+collections keep working unchanged for a contribution that wants its own
+dedicated messages page too.
+
+`portalMessage` (and any other `kind: inbox` schema) may optionally carry
+`aard` (nature), `rechtsgevolg` (legal effect), and `termijn` (deadline) — the
+WMEBV art 2:10 content-shape requirements, deferred to 2027. The SPA renders
+whichever of the three a message actually supplies and nothing for the rest;
+no contributing app is required to populate them before then.
 
 ### Contribution contract v2 (ADR-046 amendment)
 
