@@ -54,6 +54,12 @@ return [
         // ADR-063). Ownership re-verified via the scoped reader; the collection
         // must declare `filesUpload: true`.
         ['name' => 'contribution#uploadFile', 'url' => '/portal/api/collections/{register}/{schema}/{id}/files', 'verb' => 'POST'],
+        // Stream a file attached to an owned object (portal-document-download,
+        // the read-side counterpart of uploadFile). Ownership re-verified via
+        // the scoped reader BEFORE the file is resolved; the collection must
+        // declare `filesDownload: true`. Registered before the /portal/{path}
+        // catch-all; the {fileId} segment makes this distinct from the upload route.
+        ['name' => 'contribution#downloadFile', 'url' => '/portal/api/collections/{register}/{schema}/{id}/files/{fileId}', 'verb' => 'GET'],
         // Schema definition by slug (gated to the subject's manifest) for the
         // schema-driven frontend engine (ADR-063). The store fetches a schema by
         // slug; the adapter maps /openregister/api/schemas/{slug} here.

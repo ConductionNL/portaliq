@@ -152,6 +152,39 @@ export function createPortalApi(config) {
 		},
 
 		/**
+		 * Download a file attached to an object the subject owns (the
+		 * file-download block, portal-document-download — the read-side
+		 * counterpart of `uploadFile`). Ownership + the collection's
+		 * `filesDownload` opt-in are re-verified server-side; a foreign/absent
+		 * file is an identical 404. Fetched with the bearer auth header (not a
+		 * plain `<a href>`, which cannot carry it) and saved client-side via a
+		 * Blob object URL.
+		 *
+		 * @spec openspec/specs/supplier-portal/spec.md#scoped-file-download-re-verifies-ownership-before-serving-a-byte
+		 */
+		async downloadFile(collection, id, file) {
+			const url = `${base}${col(collection.register, collection.schema)}/${encodeURIComponent(id)}/files/${encodeURIComponent(file.id)}?collection=${encodeURIComponent(collection.id)}`
+			try {
+				const res = await fetch(url, { headers: { ...authHeaders() } })
+				if (!res.ok) {
+					return { ok: false, status: res.status }
+				}
+				const blob = await res.blob()
+				const objectUrl = window.URL.createObjectURL(blob)
+				const link = document.createElement('a')
+				link.href = objectUrl
+				link.download = file.name || 'download'
+				document.body.appendChild(link)
+				link.click()
+				link.remove()
+				window.URL.revokeObjectURL(objectUrl)
+				return { ok: true }
+			} catch (e) {
+				return { ok: false, status: 0 }
+			}
+		},
+
+		/**
 		 * Populate a `collection` optionsProvider: fetch the referenced scoped
 		 * collection and map each row to `{ value, label }`. Because it goes
 		 * through the subject-scoped endpoint, it can only ever offer values the

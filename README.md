@@ -101,6 +101,8 @@ the session routes are the public auth edge.
 | `POST` | `/apps/portaliq/portal/api/collections/{register}/{schema}` | Create an object via a declared `type: create` action (whitelisted fields only) |
 | `GET` | `/apps/portaliq/portal/api/collections/{register}/{schema}/{id}` | Read a single object, subject-scoped; per-row ownership re-verified (404 for a foreign-owned or absent id — no existence oracle) |
 | `PATCH` | `/apps/portaliq/portal/api/collections/{register}/{schema}/{id}` | Update an object via a declared `type: update` action (whitelisted fields only); ownership re-verified against OR before any write, scope field re-stamped (closes #16) |
+| `POST` | `/apps/portaliq/portal/api/collections/{register}/{schema}/{id}/files` | Attach an uploaded file to an owned object; ownership re-verified server-side; the collection must declare `filesUpload: true` (403 otherwise, before any read) |
+| `GET` | `/apps/portaliq/portal/api/collections/{register}/{schema}/{id}/files/{fileId}` | Stream a file attached to an owned object; ownership + tenant + trust re-verified BEFORE the file is resolved. The collection must declare `filesDownload: true`; a non-opted-in collection, a foreign/absent object, and a non-existent `fileId` all return the IDENTICAL 404 — no existence oracle, and the raw stored path is never exposed |
 | `POST` | `/apps/portaliq/portal/api/actions/{appId}/{actionId}` | Forward a declared endpoint action server-to-server with a signed `X-Portal-Subject` assertion (contract v2, A6) |
 
 ### Contribution contract v2 (ADR-046 amendment)
@@ -156,6 +158,18 @@ optional with a v1-equivalent default:
   patch can never move a row out of, or into, another subject's scope
   (write-IDOR closed, #16). A null result (foreign-owned OR non-existent id) is
   a single 404 — no existence oracle.
+- **`filesUpload`** / **`filesDownload`** on a collection (ADR-063 /
+  portal-document-download) — opt a collection into the scoped file blocks; both
+  default `false` and are normalised fail-closed (a malformed or absent value is
+  `false`, mirroring each other exactly). `filesUpload: true` lets a subject
+  attach a file to their OWN row (`POST .../{id}/files`) via OpenRegister's
+  object-file store, RBAC bypassed. `filesDownload: true` lets a subject
+  retrieve a file attached to their OWN row (`GET .../{id}/files/{fileId}`)
+  after the SAME ownership + tenant + trust re-verification as the scoped read;
+  a non-opted-in collection, a foreign/absent object, and a non-existent file
+  all 404 identically (no existence oracle), and the raw stored path is never
+  exposed. A successful download also invokes an audit hook (verb `download`);
+  the audit ENTRY itself is written by `portal-session-hardening-v2`.
 - **Endpoint actions** — `{id, label, endpoint, method?, minTrust?}` where
   `endpoint` is an **instance-local absolute path** (full URLs rejected —
   SSRF guard). Portaliq forwards server-to-server with a ~60s HS256

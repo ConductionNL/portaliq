@@ -121,32 +121,37 @@ class PortalContributionProvider implements IPortalContributionProvider
                     // Field projection (read-side): the portal returns ONLY
                     // title + status (+ the row identifier) per row — the
                     // scopeField value and any other property never leave.
-                    'id'          => 'exampleCollection',
-                    'register'    => 'portaliq',
-                    'schema'      => 'exampleDocument',
-                    'scopeField'  => 'subjectRef',
-                    'fields'      => ['title', 'status'],
-                    'label'       => 'Voorbeeldgegevens',
-                    'listable'    => true,
+                    'id'            => 'exampleCollection',
+                    'register'      => 'portaliq',
+                    'schema'        => 'exampleDocument',
+                    'scopeField'    => 'subjectRef',
+                    'fields'        => ['title', 'status'],
+                    'label'         => 'Voorbeeldgegevens',
+                    'listable'      => true,
                     // Contribution-manifest-v3 (presentation-only): per-column
                     // render hints, a detail layout, and a default sort. None of
                     // these widens access — a column naming a projected-away
                     // field (e.g. the scopeField) renders blank, never leaks.
-                    'columns'     => [
+                    'columns'       => [
                         ['field' => 'title', 'label' => 'Onderwerp'],
                         ['field' => 'status', 'label' => 'Status', 'render' => 'badge'],
                     ],
-                    'detail'      => ['layout' => 'card', 'fields' => ['title', 'status']],
-                    'defaultSort' => ['field' => 'title', 'direction' => 'asc'],
+                    'detail'        => ['layout' => 'card', 'fields' => ['title', 'status']],
+                    'defaultSort'   => ['field' => 'title', 'direction' => 'asc'],
                     // Contribution-manifest-v3 (status transitions): per-row
                     // buttons wired to a `type: update` action whose server-
                     // enforced `set` fixes the transition target — a client can
                     // never choose an arbitrary status.
-                    'rowActions'  => ['closeExample'],
+                    'rowActions'    => ['closeExample'],
                     // Opt into the scoped file-upload block (ADR-063): a subject
                     // may attach evidence/attachments to their OWN example object,
                     // stored in the object's OpenRegister folder.
-                    'filesUpload' => true,
+                    'filesUpload'   => true,
+                    // Opt into the scoped file-DOWNLOAD block (portal-document-
+                    // download): a subject may retrieve a file attached to their
+                    // OWN example object, after the same ownership + tenant +
+                    // trust re-verification as the scoped read.
+                    'filesDownload' => true,
                 ],
                 [
                     'id'         => 'inbox',

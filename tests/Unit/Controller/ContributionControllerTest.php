@@ -6,12 +6,15 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\ContributionController;
+use OCA\Portaliq\Service\PortalAuditHook;
+use OCA\Portaliq\Service\PortalFileReader;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalFileWriter;
 use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\StreamResponse;
 use OCP\Http\Client\IClient;
 use OCP\Http\Client\IClientService;
 use OCP\Http\Client\IResponse;
@@ -801,7 +804,9 @@ class ContributionControllerTest extends TestCase
             $reader,
             $this->createMock(PortalObjectWriter::class),
             $fileWriter,
+            $this->createMock(PortalFileReader::class),
             $this->createMock(PortalSchemaReader::class),
+            $this->createMock(PortalAuditHook::class),
             $this->createMock(IClientService::class),
             $this->createMock(IURLGenerator::class)
         );
@@ -842,6 +847,224 @@ class ContributionControllerTest extends TestCase
     }//end testUpdateOwnershipFailureFromWriterIs404()
 
     /**
+     * portal-document-download: the object() response is enriched with a safe
+     * `_files` listing only when the matched collection opts in.
+     */
+    public function testObjectAttachesFilesListingOnlyWhenCollectionOptsIn(): void
+    {
+        $aggregate = $this->aggregate(
+            collections: [
+                ['register' => 'portaliq', 'schema' => 'exampleDocument', 'scopeField' => 'subjectRef', 'filesDownload' => true],
+            ]
+        );
+
+        $reader = $this->createMock(PortalObjectReader::class);
+        $reader->method('readObject')->willReturn(['id' => 'd-1', 'title' => 'Mine']);
+
+        $fileReader = $this->createMock(PortalFileReader::class);
+        $fileReader->expects($this->once())->method('listFiles')->with('d-1')->willReturn([['id' => 7, 'name' => 'besluit.pdf', 'size' => 10]]);
+
+        $controller = $this->controller(aggregate: $aggregate, reader: $reader, fileReader: $fileReader);
+        $response   = $controller->object('portaliq', 'exampleDocument', 'd-1');
+
+        $this->assertSame(Http::STATUS_OK, $response->getStatus());
+        $this->assertSame([['id' => 7, 'name' => 'besluit.pdf', 'size' => 10]], $response->getData()['object']['_files']);
+
+    }//end testObjectAttachesFilesListingOnlyWhenCollectionOptsIn()
+
+    public function testObjectNeverAttachesFilesListingWhenCollectionDoesNotOptIn(): void
+    {
+        $aggregate = $this->aggregate(
+            collections: [
+                ['register' => 'portaliq', 'schema' => 'exampleDocument', 'scopeField' => 'subjectRef'],
+            ]
+        );
+
+        $reader = $this->createMock(PortalObjectReader::class);
+        $reader->method('readObject')->willReturn(['id' => 'd-1', 'title' => 'Mine']);
+
+        $fileReader = $this->createMock(PortalFileReader::class);
+        $fileReader->expects($this->never())->method('listFiles');
+
+        $controller = $this->controller(aggregate: $aggregate, reader: $reader, fileReader: $fileReader);
+        $response   = $controller->object('portaliq', 'exampleDocument', 'd-1');
+
+        $this->assertSame(Http::STATUS_OK, $response->getStatus());
+        $this->assertArrayNotHasKey('_files', $response->getData()['object']);
+
+    }//end testObjectNeverAttachesFilesListingWhenCollectionDoesNotOptIn()
+
+    public function testDownloadUnauthenticatedIs401(): void
+    {
+        $controller = $this->controller(aggregate: $this->aggregate(), subject: null);
+        $this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->downloadFile('r1', 'a', 'id-1', 'f-1')->getStatus());
+
+    }//end testDownloadUnauthenticatedIs401()
+
+    public function testDownloadOutsideManifestIs403BeforeAnyRead(): void
+    {
+        $reader = $this->createMock(PortalObjectReader::class);
+        $reader->expects($this->never())->method('readObject');
+
+        $fileReader = $this->createMock(PortalFileReader::class);
+        $fileReader->expects($this->never())->method('streamFile');
+
+        $controller = $this->controller(aggregate: $this->aggregate(), reader: $reader, fileReader: $fileReader);
+        $response   = $controller->downloadFile('r1', 'a', 'id-1', 'f-1');
+
+        $this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+
+    }//end testDownloadOutsideManifestIs403BeforeAnyRead()
+
+    public function testDownloadBelowTrustThresholdIs403BeforeAnyRead(): void
+    {
+        $aggregate = $this->aggregate(
+            collections: [
+                ['register' => 'r1', 'schema' => 'a', 'minTrust' => 'high', 'filesDownload' => true],
+            ]
+        );
+
+        $fileReader = $this->createMock(PortalFileReader::class);
+        $fileReader->expects($this->never())->method('streamFile');
+
+        $controller = $this->controller(aggregate: $aggregate, fileReader: $fileReader);
+        $response   = $controller->downloadFile('r1', 'a', 'id-1', 'f-1');
+
+        $this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+
+    }//end testDownloadBelowTrustThresholdIs403BeforeAnyRead()
+
+    /**
+     * A collection that has NOT declared `filesDownload: true` refuses BEFORE
+     * any OpenRegister read, with the identical 404 body every other refusal
+     * uses (no existence oracle).
+     */
+    public function testDownloadRequiresTheCollectionToOptIntoFileDownloads(): void
+    {
+        $aggregate = $this->aggregate(
+            collections: [['id' => 'c1', 'register' => 'portaliq', 'schema' => 'exampleDocument', 'scopeField' => 'subjectRef']]
+        );
+
+        $reader = $this->createMock(PortalObjectReader::class);
+        $reader->expects($this->never())->method('readObject');
+
+        $fileReader = $this->createMock(PortalFileReader::class);
+        $fileReader->expects($this->never())->method('streamFile');
+
+        $controller = $this->controller(aggregate: $aggregate, reader: $reader, fileReader: $fileReader);
+        $response   = $controller->downloadFile('portaliq', 'exampleDocument', 'd-1', 'f-1');
+
+        $this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+        $this->assertSame(['error' => 'not_found'], $response->getData());
+
+    }//end testDownloadRequiresTheCollectionToOptIntoFileDownloads()
+
+    /**
+     * A foreign-owned or non-existent object is refused with the IDENTICAL 404
+     * BEFORE the file layer is ever touched.
+     */
+    public function testDownloadForeignOrAbsentObjectIs404BeforeAnyStream(): void
+    {
+        $aggregate = $this->aggregate(
+            collections: [['id' => 'c1', 'register' => 'portaliq', 'schema' => 'exampleDocument', 'scopeField' => 'subjectRef', 'filesDownload' => true]]
+        );
+
+        $reader = $this->createMock(PortalObjectReader::class);
+        $reader->method('readObject')->willReturn(null);
+
+        $fileReader = $this->createMock(PortalFileReader::class);
+        $fileReader->expects($this->never())->method('streamFile');
+
+        $auditHook = $this->createMock(PortalAuditHook::class);
+        $auditHook->expects($this->never())->method('download');
+
+        $controller = $this->controller(aggregate: $aggregate, reader: $reader, fileReader: $fileReader, auditHook: $auditHook);
+        $response   = $controller->downloadFile('portaliq', 'exampleDocument', 'd-1', 'f-1');
+
+        $this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+        $this->assertSame(['error' => 'not_found'], $response->getData());
+
+    }//end testDownloadForeignOrAbsentObjectIs404BeforeAnyStream()
+
+    /**
+     * A `fileId` that does not resolve (non-existent, or foreign to the owned
+     * object's folder) is the SAME 404 as the two refusals above — no oracle.
+     */
+    public function testDownloadNonExistentFileIs404IdenticalToOtherRefusals(): void
+    {
+        $aggregate = $this->aggregate(
+            collections: [['id' => 'c1', 'register' => 'portaliq', 'schema' => 'exampleDocument', 'scopeField' => 'subjectRef', 'filesDownload' => true]]
+        );
+
+        $reader = $this->createMock(PortalObjectReader::class);
+        $reader->method('readObject')->willReturn(['id' => 'd-1', 'title' => 'Mine']);
+
+        $fileReader = $this->createMock(PortalFileReader::class);
+        $fileReader->method('streamFile')->willReturn(null);
+
+        $auditHook = $this->createMock(PortalAuditHook::class);
+        $auditHook->expects($this->never())->method('download');
+
+        $controller = $this->controller(aggregate: $aggregate, reader: $reader, fileReader: $fileReader, auditHook: $auditHook);
+        $response   = $controller->downloadFile('portaliq', 'exampleDocument', 'd-1', 'not-mine');
+
+        $this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+        $this->assertSame(['error' => 'not_found'], $response->getData());
+
+    }//end testDownloadNonExistentFileIs404IdenticalToOtherRefusals()
+
+    /**
+     * On success: ownership is re-verified BEFORE the file layer runs, the
+     * resolved stream is returned to the client, and the audit hook is invoked
+     * with the verb `download` and the target register/schema/id.
+     */
+    public function testDownloadStreamsOwnedFileAndInvokesAuditHookOnSuccess(): void
+    {
+        $aggregate = $this->aggregate(
+            collections: [['id' => 'c1', 'register' => 'portaliq', 'schema' => 'exampleDocument', 'scopeField' => 'subjectRef', 'filesDownload' => true]]
+        );
+
+        $received = [];
+        $reader   = $this->createMock(PortalObjectReader::class);
+        $reader->method('readObject')->willReturnCallback(
+            function (
+                string $register,
+                string $schema,
+                string $scopeField,
+                string $subjectRef,
+                string $id,
+                string $organisation='',
+                string $scopeClaim='',
+                string $contributingApp='',
+                mixed $via=null,
+                string $audience='',
+                mixed $fields=null
+            ) use (&$received) {
+                $received = ['register' => $register, 'schema' => $schema, 'scopeField' => $scopeField, 'subjectRef' => $subjectRef, 'id' => $id];
+                return ['id' => 'd-1', 'title' => 'Mine'];
+            }
+        );
+
+        $expectedStream = $this->createMock(StreamResponse::class);
+        $fileReader     = $this->createMock(PortalFileReader::class);
+        $fileReader->expects($this->once())->method('streamFile')->with('d-1', 'f-1')->willReturn($expectedStream);
+
+        $auditHook = $this->createMock(PortalAuditHook::class);
+        $auditHook->expects($this->once())->method('download')->with('s1', 'org-1', 'portaliq', 'exampleDocument', 'd-1');
+
+        $controller = $this->controller(aggregate: $aggregate, reader: $reader, fileReader: $fileReader, auditHook: $auditHook);
+        $response   = $controller->downloadFile('portaliq', 'exampleDocument', 'd-1', 'f-1');
+
+        $this->assertSame($expectedStream, $response);
+        // Ownership was re-verified through the SAME scoped path as object()/update()
+        // BEFORE the file layer ran.
+        $this->assertSame('d-1', $received['id']);
+        $this->assertSame('subjectRef', $received['scopeField']);
+        $this->assertSame('s1', $received['subjectRef']);
+
+    }//end testDownloadStreamsOwnedFileAndInvokesAuditHookOnSuccess()
+
+    /**
      * A controller whose request returns the given value for the `collection`
      * query param (and safe defaults for the rest).
      */
@@ -866,7 +1089,9 @@ class ContributionControllerTest extends TestCase
             $reader,
             $this->createMock(PortalObjectWriter::class),
             $this->createMock(PortalFileWriter::class),
+            $this->createMock(PortalFileReader::class),
             $this->createMock(PortalSchemaReader::class),
+            $this->createMock(PortalAuditHook::class),
             $this->createMock(IClientService::class),
             $this->createMock(IURLGenerator::class)
         );
@@ -924,7 +1149,9 @@ class ContributionControllerTest extends TestCase
         ?PortalObjectReader $reader=null,
         ?PortalObjectWriter $writer=null,
         ?IClientService $clientService=null,
-        ?PortalFileWriter $fileWriter=null
+        ?PortalFileWriter $fileWriter=null,
+        ?PortalFileReader $fileReader=null,
+        ?PortalAuditHook $auditHook=null
     ): ContributionController {
         $request = $this->createMock(IRequest::class);
         $request->method('getHeader')->willReturnMap([['Authorization', 'Bearer client-session-token']]);
@@ -962,7 +1189,9 @@ class ContributionControllerTest extends TestCase
             ($reader ?? $defaultReader),
             ($writer ?? $this->createMock(PortalObjectWriter::class)),
             ($fileWriter ?? $this->createMock(PortalFileWriter::class)),
+            ($fileReader ?? $this->createMock(PortalFileReader::class)),
             $this->createMock(PortalSchemaReader::class),
+            ($auditHook ?? $this->createMock(PortalAuditHook::class)),
             ($clientService ?? $this->createMock(IClientService::class)),
             $urlGenerator
         );
