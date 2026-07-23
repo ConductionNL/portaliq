@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Register containing all schemas owned by the Portaliq external-portal application.",
-        "version": "0.3.0"
+        "version": "0.4.0"
     },
     "x-openregister": {
         "type": "application",
@@ -281,7 +281,7 @@
             "portalMessage": {
                 "slug": "portalMessage",
                 "icon": "EmailOutline",
-                "version": "0.1.0",
+                "version": "0.2.0",
                 "title": "Portal Message",
                 "description": "A message in a subject's portal inbox (the in-portal realisation of the notification/inbox surface). Subject-scoped by subjectRef, so it is read through the same path as any contribution collection. OpenRegister's notification engine (email channel + `field` recipient kind) can additionally email the subject out-of-band when a message arrives.",
                 "type": "object",
@@ -348,6 +348,97 @@
                         "type": "string",
                         "format": "date-time",
                         "description": "WMEBV art 2:10 (2027 readiness): the deadline associated with the message/decision (e.g. an objection period). Optional — rendered only when supplied."
+                    },
+                    "referenceId": {
+                        "title": "Reference id",
+                        "type": "string",
+                        "description": "WMEBV ontvangstbevestiging (wmebv-submission-receipts): the receipt's own reference id, shown to the subject and linked from the matching `portalSubmission` proof-log entry's `receiptMessageRef`. Present only on a receipt message; absent on an ordinary domain notification.",
+                        "example": "WMEBV-9F3A1B2C4D5E6F70"
+                    },
+                    "dataCopy": {
+                        "title": "Data copy",
+                        "type": "object",
+                        "description": "WMEBV ontvangstbevestiging (wmebv-submission-receipts): a copy of the WHITELISTED submitted field data — the subject's right to a copy of what they submitted. Present only on a receipt message; never contains a non-whitelisted or raw client field.",
+                        "example": {
+                            "title": "Voorbeeldaanvraag"
+                        }
+                    }
+                }
+            },
+            "portalSubmission": {
+                "slug": "portalSubmission",
+                "icon": "FileCheckOutline",
+                "version": "0.1.0",
+                "title": "Portal Submission",
+                "description": "Append-only proof-of-receipt log record satisfying the WMEBV burden-of-proof duty (~Awb 2:25): one row per successful portal create-action, linking to the ontvangstbevestiging `portalMessage` it generated. Subject- and tenant-scoped like any other portal object; backs the subject's right to a copy of their own submission-log entries. See openspec/specs/supplier-portal/spec.md (wmebv-submission-receipts).",
+                "type": "object",
+                "required": [
+                    "subjectRef",
+                    "organisation",
+                    "appId",
+                    "actionId",
+                    "submittedAt",
+                    "deliveryStatus"
+                ],
+                "x-openregister": {
+                    "publicRead": false,
+                    "publicWrite": false
+                },
+                "properties": {
+                    "subjectRef": {
+                        "title": "Subject reference",
+                        "type": "string",
+                        "description": "The submitting subject; the field this log is scoped on.",
+                        "example": "dev-supplier"
+                    },
+                    "organisation": {
+                        "title": "Organisation",
+                        "type": "string",
+                        "description": "The tenant this submission belongs to.",
+                        "example": "dev-org"
+                    },
+                    "appId": {
+                        "title": "App id",
+                        "type": "string",
+                        "description": "The contributing app whose `type: create` action was submitted.",
+                        "example": "portaliq"
+                    },
+                    "actionId": {
+                        "title": "Action id",
+                        "type": "string",
+                        "description": "The declared action id that was submitted.",
+                        "example": "createExample"
+                    },
+                    "payloadCopy": {
+                        "title": "Payload copy",
+                        "type": "object",
+                        "description": "A copy of the WHITELISTED submitted field data — the same map the domain create persisted, never the raw client body.",
+                        "example": {
+                            "title": "Voorbeeldaanvraag"
+                        }
+                    },
+                    "receiptMessageRef": {
+                        "title": "Receipt message reference",
+                        "type": "string",
+                        "description": "Links to the `referenceId` of the ontvangstbevestiging `portalMessage` this submission generated.",
+                        "example": "WMEBV-9F3A1B2C4D5E6F70"
+                    },
+                    "submittedAt": {
+                        "title": "Submitted at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the domain create succeeded (ISO-8601)."
+                    },
+                    "deliveryStatus": {
+                        "title": "Delivery status",
+                        "type": "string",
+                        "description": "The receipt's retriability signal: `delivered` once the receipt message was written, `failed` when the receipt/log side-effect threw (retriable — the domain create itself is never lost).",
+                        "enum": [
+                            "pending",
+                            "delivered",
+                            "failed"
+                        ],
+                        "example": "delivered"
                     }
                 }
             }
