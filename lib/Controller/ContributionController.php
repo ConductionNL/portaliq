@@ -39,6 +39,8 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Service\PortalAuditHook;
+use OCA\Portaliq\Service\PortalFileReader;
 use OCA\Portaliq\Service\PortalFileWriter;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
@@ -49,6 +51,7 @@ use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\AppFramework\Http\Response;
 use OCP\Http\Client\IClientService;
 use OCP\IRequest;
 use OCP\IURLGenerator;
@@ -87,7 +90,9 @@ class ContributionController extends Controller implements PortalProtected
      * @param PortalObjectReader         $reader        Subject-scoped OR reader.
      * @param PortalObjectWriter         $writer        Subject-scoped OR writer.
      * @param PortalFileWriter           $fileWriter    Subject-scoped OR file attach.
+     * @param PortalFileReader           $fileReader    Subject-scoped OR file list/download.
      * @param PortalSchemaReader         $schemaReader  Scoped OR schema-definition reader.
+     * @param PortalAuditHook            $auditHook     Fail-safe audit-record call site.
      * @param IClientService             $clientService HTTP client for the A6 action forward.
      * @param IURLGenerator              $urlGenerator  Resolves instance-local endpoint paths.
      */
@@ -98,7 +103,9 @@ class ContributionController extends Controller implements PortalProtected
         private readonly PortalObjectReader $reader,
         private readonly PortalObjectWriter $writer,
         private readonly PortalFileWriter $fileWriter,
+        private readonly PortalFileReader $fileReader,
         private readonly PortalSchemaReader $schemaReader,
+        private readonly PortalAuditHook $auditHook,
         private readonly IClientService $clientService,
         private readonly IURLGenerator $urlGenerator,
     ) {
@@ -262,6 +269,12 @@ class ContributionController extends Controller implements PortalProtected
      * null result (foreign owner OR non-existent id, indistinguishable) yields
      * 404 — NO existence oracle.
      *
+     * When the collection declares `filesDownload: true` (portal-document-download),
+     * the ALREADY-owned object is enriched with a safe `_files` listing (id/name/size
+     * only — no stored path) so the SPA detail view can render download links for a
+     * row it just proved the subject owns; a collection that has not opted in never
+     * gets a `_files` key, and the listing itself degrades to `[]` on any OR error.
+     *
      * @param string $register The register of the collection.
      * @param string $schema   The schema of the collection.
      * @param string $id       The object id (never trusted; ownership re-checked server-side).
@@ -269,6 +282,7 @@ class ContributionController extends Controller implements PortalProtected
      * @return JSONResponse The subject's object, or 401 / 403 / 404.
      *
      * @spec openspec/changes/portal-scoped-crud/tasks.md#T3
+     * @spec openspec/specs/supplier-portal/spec.md#scoped-file-download-re-verifies-ownership-before-serving-a-byte
      */
     #[PublicPage]
     #[NoCSRFRequired]
@@ -311,6 +325,13 @@ class ContributionController extends Controller implements PortalProtected
         // Null = not the subject's OR does not exist — a single 404, no oracle.
         if ($object === null) {
             return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+        }
+
+        // Opt-in only, and only after ownership is already proven above — the
+        // listing itself never widens which ROWS are visible, only what a row
+        // the subject already owns additionally shows.
+        if (($collection['filesDownload'] ?? false) === true) {
+            $object['_files'] = $this->fileReader->listFiles(id: $id);
         }
 
         return new JSONResponse(['object' => $object]);
@@ -410,6 +431,96 @@ class ContributionController extends Controller implements PortalProtected
 
         return new JSONResponse(['file' => $result]);
     }//end uploadFile()
+
+    /**
+     * Stream a file attached to an object the subject owns
+     * (portal-document-download — the read-side counterpart of uploadFile()).
+     *
+     * The collection MUST declare `filesDownload: true`, and ownership is
+     * re-verified through the SAME scoped reader as the single-object read
+     * (scopeField / scopeClaim / via) BEFORE the file is resolved. Per the
+     * identical-404 discipline, a non-opted-in collection, a foreign/absent
+     * object, and a `fileId` that does not resolve inside the owned object's
+     * folder ALL return the exact same 404 body — no existence oracle can
+     * distinguish "not opted in" from "not yours" from "does not exist", and
+     * the raw stored path is never exposed. A successful download invokes the
+     * audit hook (verb `download`) — a hook failure never affects the
+     * response already being streamed.
+     *
+     * @param string $register The register of the collection.
+     * @param string $schema   The schema of the collection.
+     * @param string $id       The object the file hangs off (never trusted; ownership re-checked server-side).
+     * @param string $fileId   The requested file's id (never trusted as a capability).
+     *
+     * @return Response The streamed file, or a 401 / 403 / 404 JSON error.
+     *
+     * @spec openspec/specs/supplier-portal/spec.md#scoped-file-download-re-verifies-ownership-before-serving-a-byte
+     * @spec openspec/specs/supplier-portal/spec.md#download-is-opt-in-per-collection-fail-closed
+     * @spec openspec/specs/supplier-portal/spec.md#identical-404-discipline-no-existence-oracle
+     * @spec openspec/specs/supplier-portal/spec.md#download-emits-an-audit-hook
+     */
+    #[PublicPage]
+    #[NoCSRFRequired]
+    public function downloadFile(string $register, string $schema, string $id, string $fileId): Response
+    {
+        $subject = $this->subject();
+        if ($subject === null) {
+            return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+        }
+
+        $collectionId = (string) $this->request->getParam('collection', '');
+        $match        = $this->authorisedCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
+        if ($match === null) {
+            return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+        }
+
+        $collection = $match['collection'];
+
+        if (PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
+            return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+        }
+
+        // From here on every refusal is the IDENTICAL 404 — opt-in, ownership,
+        // and file resolution are indistinguishable to the client (no oracle).
+        if (($collection['filesDownload'] ?? false) !== true) {
+            return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+        }
+
+        // Re-verify ownership with the full scope resolution BEFORE the file is
+        // ever resolved — a foreign or non-existent object never reaches the
+        // file layer.
+        $owned = $this->reader->readObject(
+            register: $register,
+            schema: $schema,
+            scopeField: (string) ($collection['scopeField'] ?? 'subjectRef'),
+            subjectRef: (string) ($subject['subjectRef'] ?? ''),
+            id: $id,
+            organisation: (string) ($subject['organisation'] ?? ''),
+            scopeClaim: (string) ($collection['scopeClaim'] ?? ''),
+            contributingApp: $match['app'],
+            via: ($collection['via'] ?? null),
+            audience: (string) ($subject['audience'] ?? ''),
+            fields: ($collection['fields'] ?? null)
+        );
+        if ($owned === null) {
+            return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+        }
+
+        $stream = $this->fileReader->streamFile(id: $id, fileId: $fileId);
+        if ($stream === null) {
+            return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+        }
+
+        $this->auditHook->download(
+            subjectRef: (string) ($subject['subjectRef'] ?? ''),
+            organisation: (string) ($subject['organisation'] ?? ''),
+            register: $register,
+            schema: $schema,
+            id: $id
+        );
+
+        return $stream;
+    }//end downloadFile()
 
     /**
      * Return an OpenRegister schema DEFINITION by slug, for the schema-driven

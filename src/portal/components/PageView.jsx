@@ -61,13 +61,54 @@ function FileUpload({ collection, row, api }) {
 	)
 }
 
+// The scoped file-download list (the file-download block, portal-document-
+// download — the read-side counterpart of FileUpload above). Shown in a
+// detail card only when the collection declares `filesDownload` — the server
+// re-verifies ownership + the opt-in on every download; this list is a
+// convenience, not the authority. Reads `row._files` (id/name/size only,
+// attached server-side by object() when the collection opts in).
+function FileList({ collection, row, api }) {
+	const [state, setState] = useState({ busyId: null, message: null })
+	const files = Array.isArray(row?._files) ? row._files : []
+	const id = row?.id || row?.['@self']?.id
+
+	async function onDownload(file) {
+		if (!id) {
+			return
+		}
+		setState({ busyId: file.id, message: null })
+		const result = await api.downloadFile(collection, id, file)
+		setState({ busyId: null, message: result.ok ? null : 'Downloaden is niet gelukt.' })
+	}
+
+	if (files.length === 0) {
+		return null
+	}
+
+	return (
+		<div className="portaliq-filelist">
+			<h4>Bijlagen</h4>
+			<ul>
+				{files.map((file) => (
+					<li key={file.id}>
+						<button type="button" disabled={state.busyId === file.id} onClick={() => onDownload(file)}>
+							{file.name || `Bestand ${file.id}`}
+						</button>
+					</li>
+				))}
+			</ul>
+			{state.message && <p className="portaliq-filelist-msg">{state.message}</p>}
+		</div>
+	)
+}
+
 function DetailCard({ collection, row, api }) {
 	if (!row) {
 		return <p className="portaliq-empty"><em>Selecteer een item.</em></p>
 	}
 	const fields = (collection.detail && Array.isArray(collection.detail.fields) && collection.detail.fields.length > 0)
 		? collection.detail.fields
-		: Object.keys(row).filter((k) => k !== '@self')
+		: Object.keys(row).filter((k) => k !== '@self' && k !== '_files')
 	return (
 		<>
 			<dl className={`portaliq-detail portaliq-detail-${collection.detail?.layout || 'card'}`}>
@@ -79,6 +120,7 @@ function DetailCard({ collection, row, api }) {
 				))}
 			</dl>
 			{collection.filesUpload === true && api && <FileUpload collection={collection} row={row} api={api} />}
+			{collection.filesDownload === true && api && <FileList collection={collection} row={row} api={api} />}
 		</>
 	)
 }

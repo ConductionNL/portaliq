@@ -161,6 +161,8 @@ class PortalManifestNormaliser
      * @param array<int, mixed> $collections The collection list.
      *
      * @return array<int, array<string, mixed>>
+     *
+     * @spec openspec/specs/supplier-portal/spec.md#download-is-opt-in-per-collection-fail-closed
      */
     private function normaliseCollections(array $collections): array
     {
@@ -180,8 +182,16 @@ class PortalManifestNormaliser
                 $collection['filesUpload'] = ($collection['filesUpload'] === true || $collection['filesUpload'] === 'true');
             }
 
+            // `filesDownload` opts the collection into the scoped file-download
+            // block (portal-document-download); coerce to a strict boolean, same
+            // as `filesUpload` — only an explicit true enables it, a malformed or
+            // absent value means false (fail-closed).
+            if (array_key_exists('filesDownload', $collection) === true) {
+                $collection['filesDownload'] = ($collection['filesDownload'] === true || $collection['filesDownload'] === 'true');
+            }
+
             $out[] = $collection;
-        }
+        }//end foreach
 
         return $out;
     }//end normaliseCollections()

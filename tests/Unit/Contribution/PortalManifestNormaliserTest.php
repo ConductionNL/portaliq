@@ -361,4 +361,30 @@ class PortalManifestNormaliserTest extends TestCase
         $this->assertArrayNotHasKey('filesUpload', $out['collections'][3]);
 
     }//end testFilesUploadIsCoercedToAStrictBoolean()
+
+    /**
+     * portal-document-download: `filesDownload` is normalised exactly like
+     * `filesUpload` — default false, malformed → false, true preserved.
+     */
+    public function testFilesDownloadIsCoercedToAStrictBoolean(): void
+    {
+        $out = $this->normaliser()->normalise(
+            [
+                'collections' => [
+                    ['id' => 'a', 'schema' => 's', 'filesDownload' => true],
+                    ['id' => 'b', 'schema' => 's', 'filesDownload' => 'true'],
+                    ['id' => 'c', 'schema' => 's', 'filesDownload' => 1],
+                    ['id' => 'd', 'schema' => 's'],
+                ],
+                'actions'     => [],
+            ]
+        );
+
+        // Only explicit true / "true" enable it; a truthy 1 does NOT.
+        $this->assertTrue($out['collections'][0]['filesDownload']);
+        $this->assertTrue($out['collections'][1]['filesDownload']);
+        $this->assertFalse($out['collections'][2]['filesDownload']);
+        $this->assertArrayNotHasKey('filesDownload', $out['collections'][3]);
+
+    }//end testFilesDownloadIsCoercedToAStrictBoolean()
 }//end class
