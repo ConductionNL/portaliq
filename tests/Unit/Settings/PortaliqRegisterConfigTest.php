@@ -36,11 +36,11 @@ class PortaliqRegisterConfigTest extends TestCase
     public function testRegisterJsonParsesAndVersionsAreBumped(): void
     {
         $this->assertNotSame([], self::$register, 'register JSON must parse');
-        // wmebv-submission-receipts bumped the register's OWN version (adds
-        // portalSubmission + portalMessage.referenceId/dataCopy); portalAccount
-        // itself is untouched by this change and keeps its contract-v2 version.
-        $this->assertSame('0.4.0', self::$register['info']['version']);
-        $this->assertSame('0.3.0', self::$register['components']['schemas']['portalAccount']['version']);
+        // portal-notifications-dispatch bumps the register's OWN version (adds
+        // the portalNotification schema) AND portalAccount's version (adds the
+        // needsAlternativeContact fallback flag).
+        $this->assertSame('0.5.0', self::$register['info']['version']);
+        $this->assertSame('0.4.0', self::$register['components']['schemas']['portalAccount']['version']);
 
     }//end testRegisterJsonParsesAndVersionsAreBumped()
 
@@ -89,6 +89,35 @@ class PortaliqRegisterConfigTest extends TestCase
         );
 
     }//end testPortalAccountRequiredListIsUnchanged()
+
+    /**
+     * portal-notifications-dispatch T01: the new `portalNotification` log
+     * schema is never publicly readable/writable, and `portalAccount` gains the
+     * optional `needsAlternativeContact` fallback flag (WMEBV notificatieplicht,
+     * ~Awb 2:11) without touching the `required` list.
+     */
+    public function testPortalNotificationSchemaIsAddedAndNeverPublic(): void
+    {
+        $schemas = self::$register['components']['schemas'];
+        $this->assertArrayHasKey('portalNotification', $schemas, 'portalNotification schema must exist');
+
+        $notification = $schemas['portalNotification'];
+        $this->assertFalse($notification['x-openregister']['publicRead']);
+        $this->assertFalse($notification['x-openregister']['publicWrite']);
+        $this->assertSame(
+            ['accountRef', 'ruleKey', 'channel', 'status', 'attempts', 'lastAttemptAt'],
+            $notification['required']
+        );
+        $this->assertSame(['email'], $notification['properties']['channel']['enum']);
+        $this->assertSame(['sent', 'failed'], $notification['properties']['status']['enum']);
+
+        $account = $schemas['portalAccount'];
+        $this->assertSame('boolean', $account['properties']['needsAlternativeContact']['type']);
+        // Union-merge caution (migration.md): the additive property must not
+        // touch the required list — needsAlternativeContact stays OPTIONAL.
+        $this->assertSame(['audience', 'subjectRef', 'organisation'], $account['required']);
+
+    }//end testPortalNotificationSchemaIsAddedAndNeverPublic()
 
     public function testSeedAccountsUsePlaceholdersAndProveBothClaimStates(): void
     {

@@ -33,6 +33,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Portal;
 
 use OCA\Portaliq\Contribution\IPortalContributionProvider;
+use OCA\Portaliq\Service\NotificationDispatchService;
 
 /**
  * Demo supplier contribution — illustrative only.
@@ -317,7 +318,14 @@ class PortalContributionProvider implements IPortalContributionProvider
                     ],
                 ],
             ],
-            'notifications' => [],
+            // Portal-notifications-dispatch: an app opts IN per rule key — an
+            // app declaring neither of these gets no email for that trigger
+            // (fail-closed). Illustrative here so the demo contribution
+            // exercises the out-of-band nudge end-to-end.
+            'notifications' => [
+                NotificationDispatchService::RULE_MESSAGE_CREATED,
+                NotificationDispatchService::RULE_STATUS_CHANGED,
+            ],
         ];
     }//end getContribution()
 }//end class

@@ -24,7 +24,9 @@
         "Revoke all sessions for this organisation": "Revoke all sessions for this organisation",
         "Revoked {count} session(s).": "Revoked {count} session(s).",
         "Confirmation of receipt — reference %1$s": "Confirmation of receipt — reference %1$s",
-        "We received your submission on %2$s (reference %1$s). This message confirms receipt; we will contact you if further action is needed.": "We received your submission on %2$s (reference %1$s). This message confirms receipt; we will contact you if further action is needed."
+        "We received your submission on %2$s (reference %1$s). This message confirms receipt; we will contact you if further action is needed.": "We received your submission on %2$s (reference %1$s). This message confirms receipt; we will contact you if further action is needed.",
+        "You have a new message in the portal of %1$s": "You have a new message in the portal of %1$s",
+        "You have a new message in the portal of %1$s. Log in to view it: %2$s": "You have a new message in the portal of %1$s. Log in to view it: %2$s"
     },
     "plurals": ""
 }
