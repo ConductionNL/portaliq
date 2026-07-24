@@ -33,6 +33,7 @@
  * @spec openspec/changes/portal-inbox-v2/tasks.md#T02
  * @spec openspec/changes/portal-inbox-v2/tasks.md#T03
  * @spec openspec/changes/portal-inbox-v2/tasks.md#T04
+ * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
  */
 
 declare(strict_types=1);
@@ -50,6 +51,7 @@ use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\SubmissionReceiptService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -88,18 +90,22 @@ class ContributionController extends Controller implements PortalProtected
     /**
      * Constructor.
      *
-     * @param IRequest                   $request       The request object.
-     * @param PortalContributionRegistry $registry      The contribution aggregator.
-     * @param PortalSessionService       $session       Resolves the subject from the bearer.
-     * @param PortalObjectReader         $reader        Subject-scoped OR reader.
-     * @param PortalObjectWriter         $writer        Subject-scoped OR writer.
-     * @param PortalFileWriter           $fileWriter    Subject-scoped OR file attach.
-     * @param PortalFileReader           $fileReader    Subject-scoped OR file list/download.
-     * @param PortalSchemaReader         $schemaReader  Scoped OR schema-definition reader.
-     * @param PortalInboxReader          $inboxReader   Cross-app inbox aggregation + unread count (portal-inbox-v2).
-     * @param PortalAuditHook            $auditHook     Fail-safe audit-record call site.
-     * @param IClientService             $clientService HTTP client for the A6 action forward.
-     * @param IURLGenerator              $urlGenerator  Resolves instance-local endpoint paths.
+     * @param IRequest                   $request        The request object.
+     * @param PortalContributionRegistry $registry       The contribution aggregator.
+     * @param PortalSessionService       $session        Resolves the subject from the bearer.
+     * @param PortalObjectReader         $reader         Subject-scoped OR reader.
+     * @param PortalObjectWriter         $writer         Subject-scoped OR writer.
+     * @param PortalFileWriter           $fileWriter     Subject-scoped OR file attach.
+     * @param PortalFileReader           $fileReader     Subject-scoped OR file list/download.
+     * @param PortalSchemaReader         $schemaReader   Scoped OR schema-definition reader.
+     * @param PortalInboxReader          $inboxReader    Cross-app inbox aggregation + unread count (portal-inbox-v2).
+     * @param PortalAuditHook            $auditHook      Fail-safe audit-record call site.
+     * @param IClientService             $clientService  HTTP client for the A6 action forward.
+     * @param IURLGenerator              $urlGenerator   Resolves instance-local endpoint paths.
+     * @param SubmissionReceiptService   $receiptService WMEBV ontvangstbevestiging + proof-log
+     *                                                   generator, called after every
+     *                                                   successful create (fail-safe; never
+     *                                                   affects the response).
      */
     public function __construct(
         IRequest $request,
@@ -114,6 +120,7 @@ class ContributionController extends Controller implements PortalProtected
         private readonly PortalAuditHook $auditHook,
         private readonly IClientService $clientService,
         private readonly IURLGenerator $urlGenerator,
+        private readonly SubmissionReceiptService $receiptService,
     ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
     }//end __construct()
@@ -725,6 +732,13 @@ class ContributionController extends Controller implements PortalProtected
      * stamped server-side. A subject can therefore only create records it is
      * entitled to, owned by itself.
      *
+     * On a SUCCESSFUL create, `SubmissionReceiptService::record()` fires the
+     * WMEBV ontvangstbevestiging + burden-of-proof log (wmebv-submission-
+     * receipts) with the SAME whitelisted field map just persisted (never the
+     * raw request body). The call is fail-safe by construction — it never
+     * throws and never affects this response — so a receipt/log side-effect
+     * can never turn a successful submission into a failed one.
+     *
      * @param string $register The register of the collection.
      * @param string $schema   The schema of the collection.
      *
@@ -732,6 +746,7 @@ class ContributionController extends Controller implements PortalProtected
      *
      * @spec openspec/changes/supplier-portal/tasks.md#T06
      * @spec openspec/changes/contract-v2/tasks.md#T3
+     * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
      */
     #[PublicPage]
     #[NoCSRFRequired]
@@ -742,10 +757,12 @@ class ContributionController extends Controller implements PortalProtected
             return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
         }
 
-        $action = $this->authorisedCreateAction(subject: $subject, register: $register, schema: $schema);
-        if ($action === null) {
+        $match = $this->authorisedCreateAction(subject: $subject, register: $register, schema: $schema);
+        if ($match === null) {
             return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
         }
+
+        $action = $match['action'];
 
         // Defense in depth (contract v2, A3): re-check the matched action's
         // minTrust — 403 before any OpenRegister write.
@@ -779,6 +796,18 @@ class ContributionController extends Controller implements PortalProtected
             return new JSONResponse(['error' => 'write_failed'], Http::STATUS_BAD_GATEWAY);
         }
 
+        // WMEBV (wmebv-submission-receipts): the domain create is already
+        // authoritative and has already succeeded above — this is a fail-safe
+        // follow-on, never a gate. $data is the exact whitelisted+defaults map
+        // just persisted (never the raw request body).
+        $this->receiptService->record(
+            subjectRef: (string) ($subject['subjectRef'] ?? ''),
+            organisation: (string) ($subject['organisation'] ?? ''),
+            appId: $match['app'],
+            actionId: (string) ($action['id'] ?? ''),
+            whitelistedData: $data
+        );
+
         return new JSONResponse(['object' => $created]);
     }//end create()
 
@@ -790,7 +819,9 @@ class ContributionController extends Controller implements PortalProtected
      * @param string               $register The requested register.
      * @param string               $schema   The requested schema.
      *
-     * @return array<string, mixed>|null
+     * @return array{action: array<string, mixed>, app: string}|null The matched
+     *                                       action and its contributing app (the
+     *                                       WMEBV receipt's `appId`), or null.
      */
     private function authorisedCreateAction(array $subject, string $register, string $schema): ?array
     {
@@ -801,7 +832,7 @@ class ContributionController extends Controller implements PortalProtected
                     && ($action['register'] ?? '') === $register
                     && ($action['schema'] ?? '') === $schema
                 ) {
-                    return $action;
+                    return ['action' => $action, 'app' => (string) ($contribution['app'] ?? '')];
                 }
             }
         }
@@ -986,12 +1017,20 @@ class ContributionController extends Controller implements PortalProtected
      * full http(s) URLs are rejected (SSRF guard). The domain app's status and
      * JSON body are relayed as-is; transport failure yields 502.
      *
+     * When the matched action declares `type: create` and the domain endpoint
+     * relays a 2xx status, `SubmissionReceiptService::record()` fires the SAME
+     * WMEBV ontvangstbevestiging + proof-log follow-on as the direct create()
+     * path (wmebv-submission-receipts) — rebuilding the whitelisted field map
+     * from `$action['fields']` the SAME way whitelist() does, never the raw
+     * relayed body. Fail-safe; never affects this response.
+     *
      * @param string $appId    The contributing app the action belongs to.
      * @param string $actionId The declared action id.
      *
      * @return JSONResponse The relayed response, or 401 / 403 / 502.
      *
      * @spec openspec/changes/contract-v2/tasks.md#T8
+     * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
      */
     #[PublicPage]
     #[NoCSRFRequired]
@@ -1050,7 +1089,22 @@ class ContributionController extends Controller implements PortalProtected
             $decoded = [];
         }
 
-        return new JSONResponse($decoded, $response->getStatusCode());
+        $status = $response->getStatusCode();
+
+        // WMEBV (wmebv-submission-receipts) — the create branch of action():
+        // the domain endpoint is authoritative and has already succeeded (2xx)
+        // by the time this fires; fail-safe follow-on only, never a gate.
+        if (($action['type'] ?? '') === 'create' && $status >= 200 && $status < 300) {
+            $this->receiptService->record(
+                subjectRef: (string) ($subject['subjectRef'] ?? ''),
+                organisation: (string) ($subject['organisation'] ?? ''),
+                appId: $appId,
+                actionId: $actionId,
+                whitelistedData: $this->whitelist(fields: (array) ($action['fields'] ?? []))
+            );
+        }
+
+        return new JSONResponse($decoded, $status);
     }//end action()
 
     /**

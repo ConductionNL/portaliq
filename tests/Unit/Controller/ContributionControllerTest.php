@@ -14,6 +14,7 @@ use OCA\Portaliq\Service\PortalFileWriter;
 use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\SubmissionReceiptService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\StreamResponse;
 use OCP\Http\Client\IClient;
@@ -273,6 +274,98 @@ class ContributionControllerTest extends TestCase
 
     }//end testCreateNeverPassesClaimsToTheWriter()
 
+    /**
+     * WMEBV (wmebv-submission-receipts): a successful create fires
+     * SubmissionReceiptService::record() with the subject/tenant scope, the
+     * contributing app id, the action id, and the EXACT whitelisted field map
+     * just persisted (never the raw request body).
+     */
+    public function testSuccessfulCreateTriggersReceiptRecordWithWhitelistedMap(): void
+    {
+        $aggregate = $this->aggregate(
+            actions: [
+                ['id' => 'c1', 'type' => 'create', 'register' => 'r1', 'schema' => 'a', 'fields' => ['title']],
+            ]
+        );
+
+        $writer = $this->createMock(PortalObjectWriter::class);
+        $writer->method('createObject')->willReturn(['id' => 'new']);
+
+        $received       = [];
+        $receiptService = $this->createMock(SubmissionReceiptService::class);
+        $receiptService->expects($this->once())->method('record')->willReturnCallback(
+            function (string $subjectRef, string $organisation, string $appId, string $actionId, array $whitelistedData) use (&$received) {
+                $received = [
+                    'subjectRef'      => $subjectRef,
+                    'organisation'    => $organisation,
+                    'appId'           => $appId,
+                    'actionId'        => $actionId,
+                    'whitelistedData' => $whitelistedData,
+                ];
+            }
+        );
+
+        $controller = $this->controller(aggregate: $aggregate, writer: $writer, receiptService: $receiptService);
+        $response   = $controller->create('r1', 'a');
+
+        $this->assertSame(Http::STATUS_OK, $response->getStatus());
+        $this->assertSame('s1', $received['subjectRef']);
+        $this->assertSame('org-1', $received['organisation']);
+        $this->assertSame('portaliq', $received['appId']);
+        $this->assertSame('c1', $received['actionId']);
+        $this->assertSame(['title' => 'X'], $received['whitelistedData']);
+
+    }//end testSuccessfulCreateTriggersReceiptRecordWithWhitelistedMap()
+
+    /**
+     * WMEBV: a create that never reaches the domain write (403 IDOR, 403
+     * trust) never fires the receipt — no receipt/log for a submission the
+     * subject was never entitled to make.
+     */
+    public function testForbiddenCreateNeverTriggersReceiptRecord(): void
+    {
+        $aggregate = $this->aggregate(
+            actions: [
+                ['id' => 'c1', 'type' => 'create', 'register' => 'other-register', 'schema' => 'other-schema', 'fields' => ['title']],
+            ]
+        );
+
+        $receiptService = $this->createMock(SubmissionReceiptService::class);
+        $receiptService->expects($this->never())->method('record');
+
+        $controller = $this->controller(aggregate: $aggregate, receiptService: $receiptService);
+        $response   = $controller->create('r1', 'a');
+
+        $this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+
+    }//end testForbiddenCreateNeverTriggersReceiptRecord()
+
+    /**
+     * WMEBV: a create whose domain write fails (writer returns null → 502)
+     * never fires the receipt — the domain write is the authority; nothing
+     * was actually persisted, so nothing should be receipted or logged.
+     */
+    public function testFailedDomainWriteNeverTriggersReceiptRecord(): void
+    {
+        $aggregate = $this->aggregate(
+            actions: [
+                ['id' => 'c1', 'type' => 'create', 'register' => 'r1', 'schema' => 'a', 'fields' => ['title']],
+            ]
+        );
+
+        $writer = $this->createMock(PortalObjectWriter::class);
+        $writer->method('createObject')->willReturn(null);
+
+        $receiptService = $this->createMock(SubmissionReceiptService::class);
+        $receiptService->expects($this->never())->method('record');
+
+        $controller = $this->controller(aggregate: $aggregate, writer: $writer, receiptService: $receiptService);
+        $response   = $controller->create('r1', 'a');
+
+        $this->assertSame(Http::STATUS_BAD_GATEWAY, $response->getStatus());
+
+    }//end testFailedDomainWriteNeverTriggersReceiptRecord()
+
     public function testActionOutsideManifestIs403WithoutOutboundCall(): void
     {
         $aggregate = $this->aggregate(
@@ -434,6 +527,115 @@ class ContributionControllerTest extends TestCase
         $this->assertArrayNotHasKey('Authorization', $captured['options']['headers']);
 
     }//end testActionForwardsWithAssertionAndRelaysResponse()
+
+    /**
+     * WMEBV (wmebv-submission-receipts): the create branch of action() — a
+     * matched action declaring `type: create` whose forward relays a 2xx
+     * status fires the SAME receipt follow-on as the direct create() path,
+     * rebuilding the whitelisted map from the action's OWN `fields` (never the
+     * raw relayed body).
+     */
+    public function testActionWithTypeCreateAndSuccessfulForwardTriggersReceiptRecord(): void
+    {
+        $aggregate = $this->aggregate(
+            actions: [
+                ['id' => 'submitAccreditation', 'type' => 'create', 'endpoint' => '/apps/demo/api/portal/accreditations', 'method' => 'POST', 'fields' => ['title']],
+            ]
+        );
+
+        $response = $this->createMock(IResponse::class);
+        $response->method('getBody')->willReturn('{"accepted":true}');
+        $response->method('getStatusCode')->willReturn(201);
+
+        $client = $this->createMock(IClient::class);
+        $client->method('post')->willReturn($response);
+
+        $clientService = $this->createMock(IClientService::class);
+        $clientService->method('newClient')->willReturn($client);
+
+        $received       = [];
+        $receiptService = $this->createMock(SubmissionReceiptService::class);
+        $receiptService->expects($this->once())->method('record')->willReturnCallback(
+            function (string $subjectRef, string $organisation, string $appId, string $actionId, array $whitelistedData) use (&$received) {
+                $received = compact('subjectRef', 'organisation', 'appId', 'actionId', 'whitelistedData');
+            }
+        );
+
+        $controller = $this->controller(aggregate: $aggregate, clientService: $clientService, receiptService: $receiptService);
+        $result     = $controller->action('portaliq', 'submitAccreditation');
+
+        $this->assertSame(201, $result->getStatus());
+        $this->assertSame('s1', $received['subjectRef']);
+        $this->assertSame('org-1', $received['organisation']);
+        $this->assertSame('portaliq', $received['appId']);
+        $this->assertSame('submitAccreditation', $received['actionId']);
+        $this->assertSame(['title' => 'X'], $received['whitelistedData']);
+
+    }//end testActionWithTypeCreateAndSuccessfulForwardTriggersReceiptRecord()
+
+    /**
+     * WMEBV: a `type: create` forward that the domain app itself rejects
+     * (non-2xx) never fires the receipt — nothing was actually created.
+     */
+    public function testActionWithTypeCreateAndFailedForwardNeverTriggersReceiptRecord(): void
+    {
+        $aggregate = $this->aggregate(
+            actions: [
+                ['id' => 'submitAccreditation', 'type' => 'create', 'endpoint' => '/apps/demo/api/portal/accreditations', 'method' => 'POST', 'fields' => ['title']],
+            ]
+        );
+
+        $response = $this->createMock(IResponse::class);
+        $response->method('getBody')->willReturn('{"error":"invalid"}');
+        $response->method('getStatusCode')->willReturn(422);
+
+        $client = $this->createMock(IClient::class);
+        $client->method('post')->willReturn($response);
+
+        $clientService = $this->createMock(IClientService::class);
+        $clientService->method('newClient')->willReturn($client);
+
+        $receiptService = $this->createMock(SubmissionReceiptService::class);
+        $receiptService->expects($this->never())->method('record');
+
+        $controller = $this->controller(aggregate: $aggregate, clientService: $clientService, receiptService: $receiptService);
+        $result     = $controller->action('portaliq', 'submitAccreditation');
+
+        $this->assertSame(422, $result->getStatus());
+
+    }//end testActionWithTypeCreateAndFailedForwardNeverTriggersReceiptRecord()
+
+    /**
+     * WMEBV: a non-create endpoint action (no `type` declared, e.g. the demo
+     * health-check forward) never fires the receipt regardless of status.
+     */
+    public function testActionWithoutTypeCreateNeverTriggersReceiptRecord(): void
+    {
+        $aggregate = $this->aggregate(
+            actions: [
+                ['id' => 'requestRenewal', 'endpoint' => '/apps/demo/api/portal/renewals', 'method' => 'POST'],
+            ]
+        );
+
+        $response = $this->createMock(IResponse::class);
+        $response->method('getBody')->willReturn('{"accepted":true}');
+        $response->method('getStatusCode')->willReturn(201);
+
+        $client = $this->createMock(IClient::class);
+        $client->method('post')->willReturn($response);
+
+        $clientService = $this->createMock(IClientService::class);
+        $clientService->method('newClient')->willReturn($client);
+
+        $receiptService = $this->createMock(SubmissionReceiptService::class);
+        $receiptService->expects($this->never())->method('record');
+
+        $controller = $this->controller(aggregate: $aggregate, clientService: $clientService, receiptService: $receiptService);
+        $controller->action('portaliq', 'requestRenewal');
+
+        $this->addToAssertionCount(1);
+
+    }//end testActionWithoutTypeCreateNeverTriggersReceiptRecord()
 
     public function testActionTransportFailureIs502ForwardFailed(): void
     {
@@ -1019,7 +1221,8 @@ class ContributionControllerTest extends TestCase
             $this->createMock(PortalInboxReader::class),
             $this->createMock(PortalAuditHook::class),
             $this->createMock(IClientService::class),
-            $this->createMock(IURLGenerator::class)
+            $this->createMock(IURLGenerator::class),
+            $this->createMock(SubmissionReceiptService::class)
         );
 
         $response = $controller->uploadFile('portaliq', 'exampleDocument', 'd-1');
@@ -1305,7 +1508,8 @@ class ContributionControllerTest extends TestCase
             $this->createMock(PortalInboxReader::class),
             $this->createMock(PortalAuditHook::class),
             $this->createMock(IClientService::class),
-            $this->createMock(IURLGenerator::class)
+            $this->createMock(IURLGenerator::class),
+            $this->createMock(SubmissionReceiptService::class)
         );
 
     }//end controllerWithCollectionParam()
@@ -1364,7 +1568,8 @@ class ContributionControllerTest extends TestCase
         ?PortalFileWriter $fileWriter=null,
         ?PortalFileReader $fileReader=null,
         ?PortalAuditHook $auditHook=null,
-        ?PortalInboxReader $inboxReader=null
+        ?PortalInboxReader $inboxReader=null,
+        ?SubmissionReceiptService $receiptService=null
     ): ContributionController {
         $request = $this->createMock(IRequest::class);
         $request->method('getHeader')->willReturnMap([['Authorization', 'Bearer client-session-token']]);
@@ -1407,7 +1612,8 @@ class ContributionControllerTest extends TestCase
             ($inboxReader ?? $this->createMock(PortalInboxReader::class)),
             ($auditHook ?? $this->createMock(PortalAuditHook::class)),
             ($clientService ?? $this->createMock(IClientService::class)),
-            $urlGenerator
+            $urlGenerator,
+            ($receiptService ?? $this->createMock(SubmissionReceiptService::class))
         );
 
     }//end controller()

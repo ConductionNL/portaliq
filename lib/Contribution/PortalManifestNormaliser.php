@@ -33,16 +33,20 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/contribution-manifest-v3/tasks.md#T1
+ * @spec openspec/specs/supplier-portal/spec.md#form-data-minimisation-no-non-mandatory-field-may-be-required
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Service\PortalSchemaReader;
+
 /**
  * Validates and sanitises the v3 UI-configuration vocabulary, fail-closed.
  *
  * @spec openspec/changes/contribution-manifest-v3/tasks.md#T1
+ * @spec openspec/specs/supplier-portal/spec.md#form-data-minimisation-no-non-mandatory-field-may-be-required
  */
 class PortalManifestNormaliser
 {
@@ -75,6 +79,29 @@ class PortalManifestNormaliser
      * The block-type registry. A block of any other type is dropped.
      */
     private const BLOCK_TYPES = ['collection', 'action', 'detail', 'richText', 'cta'];
+
+    /**
+     * Constructor.
+     *
+     * @param PortalSchemaReader|null $schemaReader Resolves an action's schema
+     *                                              `required` set for the WMEBV
+     *                                              data-minimisation guard.
+     *                                              Optional/nullable so this
+     *                                              class stays constructible
+     *                                              with no arguments (its
+     *                                              pre-existing default-value
+     *                                              call site and every direct
+     *                                              unit-test instantiation); a
+     *                                              null reader simply means the
+     *                                              guard always fails closed
+     *                                              (drops `required`).
+     *
+     * @spec openspec/specs/supplier-portal/spec.md#form-data-minimisation-no-non-mandatory-field-may-be-required
+     */
+    public function __construct(
+        private readonly ?PortalSchemaReader $schemaReader=null,
+    ) {
+    }//end __construct()
 
     /**
      * Normalise one (already trust-filtered) contribution manifest.
@@ -315,9 +342,10 @@ class PortalManifestNormaliser
                 $whitelist = array_values(array_filter($action['fields'], static fn($f) => is_string($f) === true));
             }
 
-            $action = $this->normaliseFieldConfigs(action: $action, whitelist: $whitelist);
-            $action = $this->normaliseOptionsProviders(action: $action, whitelist: $whitelist);
-            $action = $this->normaliseSet(action: $action, whitelist: $whitelist);
+            $mandatory = $this->mandatoryFields(action: $action);
+            $action    = $this->normaliseFieldConfigs(action: $action, whitelist: $whitelist, mandatory: $mandatory);
+            $action    = $this->normaliseOptionsProviders(action: $action, whitelist: $whitelist);
+            $action    = $this->normaliseSet(action: $action, whitelist: $whitelist);
 
             foreach (['submitLabel', 'successMessage'] as $textKey) {
                 if (isset($action[$textKey]) === true && is_string($action[$textKey]) === false) {
@@ -367,12 +395,23 @@ class PortalManifestNormaliser
     /**
      * Keep only `fieldConfigs` whose key is in the action's whitelist.
      *
+     * WMEBV data-minimisation (~Awb 2:15, forms-may-not-require-non-mandatory-
+     * fields): a `required: true` flag is honoured ONLY when the field is also
+     * in `mandatory` (the action's schema `required` set) — otherwise it is
+     * dropped fail-closed and the field stays optional. An electronic form may
+     * never require a field the schema itself does not mandate.
+     *
      * @param array<string, mixed> $action    The action.
      * @param array<int, string>   $whitelist The action's `fields` whitelist.
+     * @param array<int, string>   $mandatory The action's schema `required` set
+     *                                        (empty when unresolvable — fails
+     *                                        closed, never elevated on a guess).
      *
      * @return array<string, mixed>
+     *
+     * @spec openspec/specs/supplier-portal/spec.md#form-data-minimisation-no-non-mandatory-field-may-be-required
      */
-    private function normaliseFieldConfigs(array $action, array $whitelist): array
+    private function normaliseFieldConfigs(array $action, array $whitelist, array $mandatory=[]): array
     {
         if (array_key_exists('fieldConfigs', $action) === false) {
             return $action;
@@ -405,10 +444,21 @@ class PortalManifestNormaliser
             }
 
             foreach (['visible', 'required', 'disabled'] as $flag) {
-                if (isset($config[$flag]) === true) {
-                    $entry[$flag] = ($config[$flag] === true || $config[$flag] === 'true' || $config[$flag] === 1);
+                if (isset($config[$flag]) === false) {
+                    continue;
                 }
-            }
+
+                $value = ($config[$flag] === true || $config[$flag] === 'true' || $config[$flag] === 1);
+
+                // WMEBV guard: a `required: true` may only survive for a field
+                // the action's schema genuinely mandates — never a non-
+                // mandatory field, and never on an unresolvable schema.
+                if ($flag === 'required' && $value === true && in_array($field, $mandatory, true) === false) {
+                    continue;
+                }
+
+                $entry[$flag] = $value;
+            }//end foreach
 
             $entry['size']   = $this->oneOf(value: ($config['size'] ?? null), allowed: self::FIELD_SIZES, default: 'medium');
             $configs[$field] = $entry;
@@ -417,6 +467,43 @@ class PortalManifestNormaliser
         $action['fieldConfigs'] = $configs;
         return $action;
     }//end normaliseFieldConfigs()
+
+    /**
+     * Resolve an action's schema `required` set (the field names it genuinely
+     * mandates), or an empty set when unresolvable — fail-closed, per the
+     * WMEBV data-minimisation guard: a `required` flag is NEVER elevated on a
+     * guess. Requires a schema slug on the action AND an injected
+     * PortalSchemaReader; either being absent yields an empty set.
+     *
+     * @param array<string, mixed> $action The action (reads its `schema` key).
+     *
+     * @return array<int, string>
+     *
+     * @spec openspec/specs/supplier-portal/spec.md#form-data-minimisation-no-non-mandatory-field-may-be-required
+     */
+    private function mandatoryFields(array $action): array
+    {
+        if ($this->schemaReader === null) {
+            return [];
+        }
+
+        $schemaSlug = ($action['schema'] ?? null);
+        if (is_string($schemaSlug) === false || $schemaSlug === '') {
+            return [];
+        }
+
+        $definition = $this->schemaReader->readSchema(slug: $schemaSlug);
+        if ($definition === null) {
+            return [];
+        }
+
+        $required = ($definition['required'] ?? null);
+        if (is_array($required) === false) {
+            return [];
+        }
+
+        return array_values(array_filter($required, static fn($f) => is_string($f) === true));
+    }//end mandatoryFields()
 
     /**
      * Keep only valid `static` / `collection` option providers.
