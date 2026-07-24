@@ -7,6 +7,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\ContributionController;
 use OCA\Portaliq\Service\AuditTrailService;
+use OCA\Portaliq\Service\NotificationDispatchService;
 use OCA\Portaliq\Service\PortalAuditHook;
 use OCA\Portaliq\Service\PortalFileReader;
 use OCA\Portaliq\Service\PortalInboxReader;
@@ -1025,6 +1026,66 @@ class ContributionControllerTest extends TestCase
     }//end testUpdateOwnershipFailureNeverRecordsAnAuditEntry()
 
     /**
+     * portal-notifications-dispatch: a SUCCESSFUL update fires
+     * NotificationDispatchService::dispatch() with the `status.changed` rule
+     * key, the matched app id, and the FULL resolved subject (audience is
+     * required to resolve the app's manifest via the registry).
+     */
+    public function testSuccessfulUpdateTriggersStatusChangedDispatch(): void
+    {
+        $aggregate = $this->aggregate(
+            actions: [
+                ['id' => 'u1', 'type' => 'update', 'register' => 'portaliq', 'schema' => 'exampleDocument', 'fields' => ['title']],
+            ]
+        );
+
+        $writer = $this->createMock(PortalObjectWriter::class);
+        $writer->method('updateObject')->willReturn(['id' => 'd-1', 'title' => 'X']);
+
+        $received             = [];
+        $notificationDispatch = $this->createMock(NotificationDispatchService::class);
+        $notificationDispatch->expects($this->once())->method('dispatch')->willReturnCallback(
+            function (string $ruleKey, string $appId, array $subject) use (&$received) {
+                $received = compact('ruleKey', 'appId', 'subject');
+            }
+        );
+
+        $controller = $this->controller(aggregate: $aggregate, writer: $writer, notificationDispatch: $notificationDispatch);
+        $response   = $controller->update('portaliq', 'exampleDocument', 'd-1');
+
+        $this->assertSame(Http::STATUS_OK, $response->getStatus());
+        $this->assertSame(NotificationDispatchService::RULE_STATUS_CHANGED, $received['ruleKey']);
+        $this->assertSame('portaliq', $received['appId']);
+        $this->assertSame(self::SUBJECT, $received['subject']);
+
+    }//end testSuccessfulUpdateTriggersStatusChangedDispatch()
+
+    /**
+     * A failed/unauthorised update (404, before any write) never fires the
+     * dispatch — nothing changed, so nothing should be notified about.
+     */
+    public function testFailedUpdateNeverTriggersStatusChangedDispatch(): void
+    {
+        $aggregate = $this->aggregate(
+            actions: [
+                ['id' => 'u1', 'type' => 'update', 'register' => 'portaliq', 'schema' => 'exampleDocument', 'fields' => ['title']],
+            ]
+        );
+
+        $writer = $this->createMock(PortalObjectWriter::class);
+        $writer->method('updateObject')->willReturn(null);
+
+        $notificationDispatch = $this->createMock(NotificationDispatchService::class);
+        $notificationDispatch->expects($this->never())->method('dispatch');
+
+        $controller = $this->controller(aggregate: $aggregate, writer: $writer, notificationDispatch: $notificationDispatch);
+        $response   = $controller->update('portaliq', 'exampleDocument', 'd-1');
+
+        $this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+
+    }//end testFailedUpdateNeverTriggersStatusChangedDispatch()
+
+    /**
      * A claim-scoped transition (portal-status-transitions): the update action
      * declares a scopeClaim, so the reader resolves the ownership value from the
      * subject's portalAccount and THAT value — not the raw subjectRef — reaches
@@ -1363,7 +1424,8 @@ class ContributionControllerTest extends TestCase
             $this->createMock(IClientService::class),
             $this->createMock(IURLGenerator::class),
             $this->createMock(AuditTrailService::class),
-            $this->createMock(SubmissionReceiptService::class)
+            $this->createMock(SubmissionReceiptService::class),
+            $this->createMock(NotificationDispatchService::class)
         );
 
         $response = $controller->uploadFile('portaliq', 'exampleDocument', 'd-1');
@@ -1651,7 +1713,8 @@ class ContributionControllerTest extends TestCase
             $this->createMock(IClientService::class),
             $this->createMock(IURLGenerator::class),
             $this->createMock(AuditTrailService::class),
-            $this->createMock(SubmissionReceiptService::class)
+            $this->createMock(SubmissionReceiptService::class),
+            $this->createMock(NotificationDispatchService::class)
         );
 
     }//end controllerWithCollectionParam()
@@ -1712,7 +1775,8 @@ class ContributionControllerTest extends TestCase
         ?PortalAuditHook $auditHook=null,
         ?PortalInboxReader $inboxReader=null,
         ?AuditTrailService $auditor=null,
-        ?SubmissionReceiptService $receiptService=null
+        ?SubmissionReceiptService $receiptService=null,
+        ?NotificationDispatchService $notificationDispatch=null
     ): ContributionController {
         $request = $this->createMock(IRequest::class);
         $request->method('getHeader')->willReturnMap([['Authorization', 'Bearer client-session-token']]);
@@ -1757,7 +1821,8 @@ class ContributionControllerTest extends TestCase
             ($clientService ?? $this->createMock(IClientService::class)),
             $urlGenerator,
             ($auditor ?? $this->createMock(AuditTrailService::class)),
-            ($receiptService ?? $this->createMock(SubmissionReceiptService::class))
+            ($receiptService ?? $this->createMock(SubmissionReceiptService::class)),
+            ($notificationDispatch ?? $this->createMock(NotificationDispatchService::class))
         );
 
     }//end controller()

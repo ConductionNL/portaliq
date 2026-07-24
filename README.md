@@ -204,6 +204,48 @@ stays optional) — an unresolvable schema drops it too, never elevating on a
 guess. This enforces the WMEBV rule that an electronic form may not require a
 field that is not genuinely mandatory for the request.
 
+#### External notification dispatch (portal-notifications-dispatch)
+
+The contribution contract's manifest `notifications` list — an array of rule
+keys such as `message.created` / `status.changed` — used to be declared by
+apps and consumed by nothing. `NotificationDispatchService` now consumes it:
+when a `portalMessage` is created for a subject (including the WMEBV receipt
+above) or a status-transition update succeeds
+(`ContributionController::update()`), the service resolves the subject's
+aggregated manifest and checks whether the contributing app declared a
+matching rule key. A missing, non-matching, or malformed declaration enqueues
+nothing (fail-closed) — the feature is opt-in per contribution.
+
+A match enqueues `NotificationDispatchJob` via `OCP\BackgroundJob\IJobList`
+with a **content-free** payload (`subjectRef`, `organisation`, `audience`,
+`appId`, `ruleKey` — never message content) — the send never runs inline, so
+a slow or failing mail server can never slow or fail the subject's original
+request. The job resolves the subject's `portalAccount`, and — when an email
+is on file — sends a **privacy-minimal**, bilingual (NL first, EN second) B1
+email via `OCP\Mail\IMailer`: *"You have a new message in the portal of
+&lt;org&gt;"* plus a `/portal?org=<slug>` deep link, landing the subject at the
+authenticated portal after login. The email **never** carries the message
+subject, body, case identifiers, or any data beyond the recipient address.
+
+Every attempt — sent or failed, including "no email on file" — appends a new
+`portalNotification` row (`accountRef`, `ruleKey`, `channel`, `status`,
+`attempts`, `lastAttemptAt`) rather than updating one in place, mirroring the
+WMEBV burden-of-proof append-only convention `portalSubmission` already uses.
+`attempts` is the consecutive-failure streak carried from the previous attempt
+for the same account + rule key; it resets to 0 on a successful send. After
+**N consecutive failures** (`notification_failure_threshold` app config, small
+default) the subject's `portalAccount` is flagged `needsAlternativeContact` —
+the WMEBV notificatieplicht (~Awb 2:11) fallback signal that an operator must
+reach the subject by another channel — and cleared again on the next
+successful send. `MetricsController` surfaces both counts (failed attempts,
+accounts needing a fallback) **count-only**, never recipient identity:
+`portaliq_notifications_failed_total`, `portaliq_accounts_needs_alt_contact`.
+
+Only the `email` channel is implemented; `channel` is future-proofed for
+`sms`/`push`. Complementary to OpenRegister's own ADR-031 notification engine
+(server/tenant-side); this is the external-subject side keyed off the portal
+manifest — this change does not touch the ADR-031 dialect.
+
 ### Contribution contract v2 (ADR-046 amendment)
 
 A contributing app ships one plain class `OCA\{App}\Portal\PortalContributionProvider`
