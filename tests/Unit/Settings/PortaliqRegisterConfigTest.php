@@ -36,9 +36,12 @@ class PortaliqRegisterConfigTest extends TestCase
     public function testRegisterJsonParsesAndVersionsAreBumped(): void
     {
         $this->assertNotSame([], self::$register, 'register JSON must parse');
-        // portal-session-hardening-v2 (T07) bumped the register's OWN version
-        // when it added `portalAuditEntry`; portalAccount's individual schema
-        // version is untouched by that change.
+        // The register's OWN version bumped to 0.4.0 for two concurrently
+        // merged changes: portal-session-hardening-v2 (T07, adds
+        // `portalAuditEntry`) and wmebv-submission-receipts (adds
+        // `portalSubmission` + `portalMessage.referenceId`/`dataCopy`).
+        // portalAccount itself is untouched by either and keeps its
+        // contract-v2 version.
         $this->assertSame('0.4.0', self::$register['info']['version']);
         $this->assertSame('0.3.0', self::$register['components']['schemas']['portalAccount']['version']);
 

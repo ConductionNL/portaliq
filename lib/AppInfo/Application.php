@@ -71,7 +71,6 @@ class Application extends App implements IBootstrap
         // during the Coordinator pass, blanks the whole Settings framework and
         // blocks the app's own version-upgrade from recording). info.xml is the
         // NC34-supported mechanism and already declares this step.
-
         // AI Chat Companion (hydra ADR-034/035): expose this app's capabilities to the in-app AI
         // by registering an IMcpToolProvider under the alias OCA\OpenRegister\Mcp\IMcpToolProvider::{appId}.
         // OpenRegister's McpToolsService discovers providers by this alias. See lib/Mcp/ExampleToolProvider.php.

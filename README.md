@@ -164,6 +164,46 @@ targets) is exposed per-verb via `GET /api/metrics`
 OpenRegister's records-management concern (Archiefwet `_retention`) —
 Portaliq only writes the entries, it does not rebuild a purge.
 
+#### WMEBV submission receipts (wmebv-submission-receipts)
+
+The **Wet modernisering elektronisch bestuurlijk verkeer** (in force
+2026-01-01, BWBR0048252) makes an automatic receipt, a copy of submitted data,
+and a burden-of-proof log hard duties for every electronic submission. Every
+**successful** portal create-action — `ContributionController::create()` and
+the `type: create` branch of `action()` (the A6 server-to-server forward) —
+now generates both, via `SubmissionReceiptService::record()`:
+
+- A **`portalMessage`** ontvangstbevestiging in the submitting subject's own
+  inbox — the SAME unified inbox portal-inbox-v2 aggregates, reused rather
+  than duplicated. It carries a `referenceId`, an ISO-8601 `receivedAt`,
+  bilingual NL/EN B1-level `subject`/`body` text, and a `dataCopy` — the
+  **whitelisted** submitted field map the create actually persisted, never
+  the raw client body. NL/EN text is generated via `IL10N\IFactory::get()`
+  for BOTH `nl` and `en` explicitly (portal subjects are not NC users, so
+  there is no session locale to key off), not the caller's own locale.
+- A **`portalSubmission`** append-only proof-of-receipt log record
+  (`subjectRef`, `organisation`, `appId`, `actionId`, `payloadCopy`,
+  `receiptMessageRef` linking to the receipt's `referenceId`, `submittedAt`,
+  `deliveryStatus`) — the evidentiary artefact satisfying the burden-of-proof
+  duty and backing the subject's right to a copy of their own submission log.
+
+**Failure is never lossy.** The domain create is authoritative and has
+already succeeded by the time `record()` runs; every failure inside it — a
+thrown exception, or a write degrading to `null` — is caught, logged, and
+never propagated, so a WMEBV side-effect can never turn a successful
+submission into a failed one (create still returns 200). A failed
+`portalSubmission` write retries once with a minimal fallback row carrying
+`deliveryStatus: "failed"`, so the submission stays retriable rather than
+silently missing from the proof log.
+
+**Data-minimisation guard.** `PortalManifestNormaliser::normaliseFieldConfigs()`
+honours a `fieldConfigs` entry's `required: true` ONLY when that field is
+also in the action's OWN schema `required` set (resolved via
+`PortalSchemaReader`); otherwise the flag is dropped fail-closed (the field
+stays optional) — an unresolvable schema drops it too, never elevating on a
+guess. This enforces the WMEBV rule that an electronic form may not require a
+field that is not genuinely mandatory for the request.
+
 ### Contribution contract v2 (ADR-046 amendment)
 
 A contributing app ships one plain class `OCA\{App}\Portal\PortalContributionProvider`

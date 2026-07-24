@@ -50,6 +50,7 @@ use OCP\IRequest;
  */
 class PortalPageController extends Controller
 {
+
     /**
      * Absolute path to the bundled built portal SPA.
      *
@@ -65,8 +66,12 @@ class PortalPageController extends Controller
     public function __construct(IRequest $request)
     {
         parent::__construct(appName: Application::APP_ID, request: $request);
-        $resolved   = realpath(__DIR__.'/../../portal-ui');
-        $this->root = ($resolved !== false) ? $resolved : (__DIR__.'/../../portal-ui');
+        $resolved = realpath(__DIR__.'/../../portal-ui');
+        if ($resolved !== false) {
+            $this->root = $resolved;
+        } else {
+            $this->root = __DIR__.'/../../portal-ui';
+        }
     }//end __construct()
 
     /**
@@ -131,7 +136,7 @@ class PortalPageController extends Controller
         $isIndex  = (substr($resolved, -10) === 'index.html');
         $response = new DataDisplayResponse($content, Http::STATUS_OK, ['Content-Type' => $this->mimeFor(file: $resolved)]);
 
-        // index.html + runtime-config.js are per-instance and must never cache.
+        // Index.html + runtime-config.js are per-instance and must never cache.
         $noCache = ($isIndex === true || substr($resolved, -17) === 'runtime-config.js');
         if ($noCache === true) {
             // The bundled SPA loads its own same-origin scripts/styles/fonts and
@@ -153,7 +158,7 @@ class PortalPageController extends Controller
         } else {
             // Hash-named static assets are immutable.
             $response->cacheFor(86400);
-        }
+        }//end if
 
         return $response;
     }//end render()

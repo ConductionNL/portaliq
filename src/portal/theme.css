@@ -23,7 +23,6 @@
 	--portaliq-space-sm: 0.5rem;
 	--portaliq-space-md: 1rem;
 	--portaliq-space-lg: 1.5rem;
-
 	display: flex;
 	flex-direction: column;
 	min-height: 100vh;
