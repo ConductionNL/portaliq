@@ -299,7 +299,7 @@ class SessionController extends Controller
      * one returning the IDENTICAL generic error (ADR-005, design.md);
      * collapsing them would trade auditability for a score, mirroring
      * PortalSessionService's identical rationale.
-     * @SuppressWarnings(PHPMD.NPathComplexity) -- same rationale.
+     * @SuppressWarnings(PHPMD.NPathComplexity)      -- same rationale.
      */
     #[PublicPage]
     #[NoCSRFRequired]

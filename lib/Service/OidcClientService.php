@@ -200,12 +200,12 @@ class OidcClientService
      * Build the authorization-request URL (RFC 6749 + PKCE).
      *
      * @param string             $authorizeEndpoint The broker's authorization endpoint.
-     * @param string             $clientId              This RP's client id.
-     * @param string             $redirectUri           The callback URL.
-     * @param array<int, string> $scopes                Requested scopes.
-     * @param string             $state                 The CSRF state token.
-     * @param string             $nonce                 The replay nonce.
-     * @param string             $codeChallenge         The PKCE S256 code challenge.
+     * @param string             $clientId          This RP's client id.
+     * @param string             $redirectUri       The callback URL.
+     * @param array<int, string> $scopes            Requested scopes.
+     * @param string             $state             The CSRF state token.
+     * @param string             $nonce             The replay nonce.
+     * @param string             $codeChallenge     The PKCE S256 code challenge.
      *
      * @return string
      *
@@ -398,11 +398,11 @@ class OidcClientService
      *   - `exp` is in the future (within clock skew) and `iat` is not in the
      *     future beyond clock skew.
      *
-     * @param string                                        $idToken       The compact JWT.
+     * @param string                         $idToken       The compact JWT.
      * @param array{keys: array<int, mixed>} $jwks          The JWKS to verify against.
-     * @param string                                        $issuer        The configured issuer.
-     * @param string                                        $clientId      This RP's client id.
-     * @param string                                        $expectedNonce The nonce stored at `start`.
+     * @param string                         $issuer        The configured issuer.
+     * @param string                         $clientId      This RP's client id.
+     * @param string                         $expectedNonce The nonce stored at `start`.
      *
      * @return array<string, mixed>|null The validated claim set, or null.
      *
@@ -501,7 +501,7 @@ class OidcClientService
      * RSA signing key — an ambiguous match fails closed rather than guessing.
      *
      * @param array{keys: array<int, mixed>} $jwks The JWKS.
-     * @param string                                        $kid  The token's `kid` header (may be empty).
+     * @param string                         $kid  The token's `kid` header (may be empty).
      *
      * @return string|null PEM-encoded RSA public key, or null when unresolvable.
      */
