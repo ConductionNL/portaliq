@@ -33,6 +33,8 @@
  * @spec openspec/changes/portal-inbox-v2/tasks.md#T02
  * @spec openspec/changes/portal-inbox-v2/tasks.md#T03
  * @spec openspec/changes/portal-inbox-v2/tasks.md#T04
+ * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T06
+ * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
  */
 
 declare(strict_types=1);
@@ -42,6 +44,7 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\PortalAuditHook;
 use OCA\Portaliq\Service\PortalFileReader;
 use OCA\Portaliq\Service\PortalFileWriter;
@@ -52,6 +55,7 @@ use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
@@ -72,6 +76,17 @@ use Throwable;
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- the complexity is
  * fail-closed authorisation guards on an auth edge (ADR-005), one per attack
  * surface; collapsing them would trade auditability for a score.
+ * @SuppressWarnings(PHPMD.ExcessiveParameterList)   -- one dependency per
+ * distinct scoped OpenRegister capability (read/write/file/schema/inbox/audit),
+ * ADR-022; folding them into a facade would hide which security boundary each
+ * handler actually exercises.
+ * @SuppressWarnings(PHPMD.ExcessiveClassLength)     -- one handler per public
+ * portal endpoint, each carrying its own IDOR/trust rationale inline (ADR-005);
+ * splitting would scatter one security boundary across classes.
+ * @SuppressWarnings(PHPMD.TooManyPublicMethods)     -- one method per routed
+ * endpoint (appinfo/routes.php); the count tracks the API surface, not
+ * incidental complexity.
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)   -- see ExcessiveParameterList.
  */
 class ContributionController extends Controller implements PortalProtected
 {
@@ -97,9 +112,11 @@ class ContributionController extends Controller implements PortalProtected
      * @param PortalFileReader           $fileReader    Subject-scoped OR file list/download.
      * @param PortalSchemaReader         $schemaReader  Scoped OR schema-definition reader.
      * @param PortalInboxReader          $inboxReader   Cross-app inbox aggregation + unread count (portal-inbox-v2).
-     * @param PortalAuditHook            $auditHook     Fail-safe audit-record call site.
+     * @param PortalAuditHook            $auditHook     Fail-safe audit-record call site (download).
      * @param IClientService             $clientService HTTP client for the A6 action forward.
      * @param IURLGenerator              $urlGenerator  Resolves instance-local endpoint paths.
+     * @param AuditTrailService          $auditor       Records create/update/forward mutations
+     *                                                  (portal-session-hardening-v2).
      */
     public function __construct(
         IRequest $request,
@@ -114,6 +131,7 @@ class ContributionController extends Controller implements PortalProtected
         private readonly PortalAuditHook $auditHook,
         private readonly IClientService $clientService,
         private readonly IURLGenerator $urlGenerator,
+        private readonly AuditTrailService $auditor,
     ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
     }//end __construct()
@@ -313,6 +331,7 @@ class ContributionController extends Controller implements PortalProtected
      */
     #[PublicPage]
     #[NoCSRFRequired]
+    #[AnonRateLimit(limit: 60, period: 60)]
     public function collection(string $register, string $schema): JSONResponse
     {
         $subject = $this->subject();
@@ -604,6 +623,7 @@ class ContributionController extends Controller implements PortalProtected
      */
     #[PublicPage]
     #[NoCSRFRequired]
+    #[AnonRateLimit(limit: 60, period: 60)]
     public function downloadFile(string $register, string $schema, string $id, string $fileId): Response
     {
         $subject = $this->subject();
@@ -732,9 +752,11 @@ class ContributionController extends Controller implements PortalProtected
      *
      * @spec openspec/changes/supplier-portal/tasks.md#T06
      * @spec openspec/changes/contract-v2/tasks.md#T3
+     * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
      */
     #[PublicPage]
     #[NoCSRFRequired]
+    #[AnonRateLimit(limit: 60, period: 60)]
     public function create(string $register, string $schema): JSONResponse
     {
         $subject = $this->subject();
@@ -778,6 +800,16 @@ class ContributionController extends Controller implements PortalProtected
         if ($created === null) {
             return new JSONResponse(['error' => 'write_failed'], Http::STATUS_BAD_GATEWAY);
         }
+
+        $this->auditor->record(
+            verb: 'create',
+            subjectRef: (string) ($subject['subjectRef'] ?? ''),
+            organisation: (string) ($subject['organisation'] ?? ''),
+            register: $register,
+            schema: $schema,
+            id: $this->extractId(row: $created),
+            jti: (string) ($subject['jti'] ?? '')
+        );
 
         return new JSONResponse(['object' => $created]);
     }//end create()
@@ -829,9 +861,11 @@ class ContributionController extends Controller implements PortalProtected
      * @return JSONResponse The updated object, or 401 / 403 / 404.
      *
      * @spec openspec/changes/portal-scoped-crud/tasks.md#T3
+     * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
      */
     #[PublicPage]
     #[NoCSRFRequired]
+    #[AnonRateLimit(limit: 60, period: 60)]
     public function update(string $register, string $schema, string $id): JSONResponse
     {
         $subject = $this->subject();
@@ -897,6 +931,16 @@ class ContributionController extends Controller implements PortalProtected
         if ($updated === null) {
             return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
         }
+
+        $this->auditor->record(
+            verb: 'update',
+            subjectRef: (string) ($subject['subjectRef'] ?? ''),
+            organisation: (string) ($subject['organisation'] ?? ''),
+            register: $register,
+            schema: $schema,
+            id: $id,
+            jti: (string) ($subject['jti'] ?? '')
+        );
 
         return new JSONResponse(['object' => $updated]);
     }//end update()
@@ -975,6 +1019,36 @@ class ContributionController extends Controller implements PortalProtected
     }//end whitelist()
 
     /**
+     * Extract a saved row's identifier (`id`/`uuid`, flat or in `@self`) for
+     * the audit trail's target id — the same identifier candidates every
+     * other reader/writer in this app checks.
+     *
+     * @param array<string, mixed> $row The saved/normalised row.
+     *
+     * @return string The identifier, or '' when the row carries none.
+     *
+     * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
+     */
+    private function extractId(array $row): string
+    {
+        $self     = ($row['@self'] ?? null);
+        $selfUuid = null;
+        $selfId   = null;
+        if (is_array($self) === true) {
+            $selfUuid = ($self['uuid'] ?? null);
+            $selfId   = ($self['id'] ?? null);
+        }
+
+        foreach ([($row['id'] ?? null), ($row['uuid'] ?? null), $selfUuid, $selfId] as $candidate) {
+            if ((is_string($candidate) === true || is_int($candidate) === true) && (string) $candidate !== '') {
+                return (string) $candidate;
+            }
+        }
+
+        return '';
+    }//end extractId()
+
+    /**
      * Forward a declared endpoint action server-to-server (contract v2, A6).
      *
      * Authorises against the subject's OWN aggregated (already trust-filtered)
@@ -992,9 +1066,11 @@ class ContributionController extends Controller implements PortalProtected
      * @return JSONResponse The relayed response, or 401 / 403 / 502.
      *
      * @spec openspec/changes/contract-v2/tasks.md#T8
+     * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
      */
     #[PublicPage]
     #[NoCSRFRequired]
+    #[AnonRateLimit(limit: 60, period: 60)]
     public function action(string $appId, string $actionId): JSONResponse
     {
         $subject = $this->subject();
@@ -1006,6 +1082,22 @@ class ContributionController extends Controller implements PortalProtected
         if ($action === null) {
             return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
         }
+
+        // Recorded once the forward is AUTHORISED — regardless of the domain
+        // app's own response status or a transport failure below — because the
+        // fact being audited is "the subject invoked this forward", not
+        // whether the downstream call happened to succeed. `register`/`schema`
+        // have no natural analogue for a forward, so the appId/actionId ride
+        // in their place (design.md).
+        $this->auditor->record(
+            verb: 'forward',
+            subjectRef: (string) ($subject['subjectRef'] ?? ''),
+            organisation: (string) ($subject['organisation'] ?? ''),
+            register: $appId,
+            schema: $actionId,
+            id: '',
+            jti: (string) ($subject['jti'] ?? '')
+        );
 
         $endpoint = (string) $action['endpoint'];
         $method   = strtoupper((string) ($action['method'] ?? 'POST'));

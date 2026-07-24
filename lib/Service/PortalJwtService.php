@@ -102,10 +102,17 @@ class PortalJwtService
      * @param string             $trust        Assurance level (e.g. "EH3"); empty when not applicable.
      * @param array<int, string> $roles        Roles carried inside the session.
      * @param int|null           $ttl          Override the default TTL (seconds).
+     * @param int|null           $authTime     Unix timestamp of the ORIGINAL login this session
+     *                                         chain descends from (portal-session-hardening-v2).
+     *                                         Carried forward unchanged across a refresh rotation
+     *                                         so the absolute session lifetime can be enforced from
+     *                                         the true origin, not the most recent mint. Defaults to
+     *                                         `$iat` (a fresh login) when not supplied.
      *
      * @return string Compact JWT string.
      *
      * @spec openspec/changes/supplier-portal/tasks.md#T02
+     * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T01
      */
     public function createSession(
         string $subjectRef,
@@ -114,7 +121,8 @@ class PortalJwtService
         string $jti,
         string $trust='',
         array $roles=[],
-        ?int $ttl=null
+        ?int $ttl=null,
+        ?int $authTime=null
     ): string {
         $iat = time();
         $exp = ($iat + ($ttl ?? self::DEFAULT_TTL));
@@ -130,6 +138,10 @@ class PortalJwtService
             'iat'          => $iat,
             'exp'          => $exp,
             'iss'          => self::ISSUER,
+            // The ORIGIN login's timestamp — unchanged by refresh — so the
+            // absolute session lifetime cap is measured from the true start of
+            // the session chain (portal-session-hardening-v2, design.md).
+            'authTime'     => ($authTime ?? $iat),
         ];
 
         $hPart = $this->b64UrlEncode(bytes: (string) json_encode($header, JSON_UNESCAPED_SLASHES));

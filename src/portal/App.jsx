@@ -20,6 +20,13 @@ import InboxPage from '@portal/components/InboxPage.jsx'
 // from any `${contribution.app}:${page.id}` key a real contribution could mint.
 const INBOX_KEY = '__inbox__'
 
+// How often to proactively rotate the bearer while a session is active
+// (portal-session-hardening-v2, T04) — comfortably inside the 2h default TTL
+// so a subject filling in a long form or reading a case is never logged out
+// mid-task. A failed/refused rotation is silent (see portalApi.refreshSession);
+// the existing bearer simply runs to its natural expiry.
+const REFRESH_INTERVAL_MS = 25 * 60 * 1000
+
 // Flatten every contribution's pages into a single navigable list, tagging each
 // with its owning contribution so a block's refs resolve in the right scope.
 // The unified inbox (portal-inbox-v2) is appended last: a fixed, cross-app nav
@@ -60,6 +67,18 @@ export default function App({ config, t: tProp }) {
 	}, [api])
 
 	useEffect(() => { refresh() }, [refresh, token])
+
+	// Slide the bearer forward ahead of its natural expiry (T04). Runs only
+	// while a session is active; deliberately does NOT touch React state on
+	// success (the rotated token is swapped in localStorage silently) so a
+	// routine rotation never re-triggers the full contributions reload.
+	useEffect(() => {
+		if (!state.session) {
+			return undefined
+		}
+		const id = setInterval(() => { api.refreshSession() }, REFRESH_INTERVAL_MS)
+		return () => clearInterval(id)
+	}, [state.session, api])
 
 	const nav = useMemo(() => buildNav(state.contributions?.contributions, t), [state.contributions, t])
 	const unreadCount = state.contributions?.unreadCount || 0

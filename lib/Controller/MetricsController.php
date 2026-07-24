@@ -22,6 +22,7 @@
  * @spec openspec/changes/example-change/tasks.md#task-8
  *   (Illustrative stub per ADR-006 — every app MUST expose `GET /api/metrics`
  *   as Prometheus text, admin auth. Replace the metric values with real data.)
+ * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T10
  */
 
 declare(strict_types=1);
@@ -29,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\SettingsService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -55,9 +57,11 @@ class MetricsController extends Controller
     /**
      * Constructor.
      *
-     * @param IRequest        $request         The request object
-     * @param SettingsService $settingsService For OpenRegister availability check
-     * @param LoggerInterface $logger          The logger
+     * @param IRequest          $request         The request object
+     * @param SettingsService   $settingsService For OpenRegister availability check
+     * @param LoggerInterface   $logger          The logger
+     * @param AuditTrailService $auditor         Count-only audit-entry totals by verb
+     *                                           (portal-session-hardening-v2).
      *
      * @return void
      *
@@ -67,6 +71,7 @@ class MetricsController extends Controller
         IRequest $request,
         private SettingsService $settingsService,
         private LoggerInterface $logger,
+        private AuditTrailService $auditor,
     ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
     }//end __construct()
@@ -92,6 +97,14 @@ class MetricsController extends Controller
                 '# TYPE '.$prefix.'_health_status gauge',
                 $prefix.'_health_status '.$healthy,
             ];
+
+            // Count-only portal audit-trail exposure (portal-session-hardening-v2,
+            // T10): a total PER VERB, never a subject, target id, or payload.
+            $lines[] = '# HELP '.$prefix.'_audit_entries_total Portal audit-trail entry count by verb';
+            $lines[] = '# TYPE '.$prefix.'_audit_entries_total counter';
+            foreach ($this->auditor->countsByVerb() as $verb => $count) {
+                $lines[] = $prefix.'_audit_entries_total{verb="'.$verb.'"} '.$count;
+            }
 
             return new DataDisplayResponse(
                 implode("\n", $lines)."\n",

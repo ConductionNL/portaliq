@@ -22,6 +22,7 @@ use PHPUnit\Framework\TestCase;
  * @spec openspec/changes/portal-controller-http-test-coverage/tasks.md#2.1
  * @spec openspec/changes/portal-controller-http-test-coverage/tasks.md#2.2
  * @spec openspec/changes/portal-controller-http-test-coverage/tasks.md#2.3
+ * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T03
  */
 class SessionControllerTest extends TestCase
 {
@@ -76,6 +77,10 @@ class SessionControllerTest extends TestCase
         $response = $this->controller(session: $session, config: $config)->devLogin();
 
         $this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+        // Marked for Nextcloud's bruteforce throttler (portal-session-hardening-v2,
+        // T05) — probing for a debug-only endpoint on a closed instance is the
+        // abuse pattern BruteForceProtection exists to slow down.
+        $this->assertTrue($response->isThrottled());
 
     }//end testDevLoginReturns404WhenGateIsClosed()
 
@@ -156,6 +161,33 @@ class SessionControllerTest extends TestCase
         $this->assertTrue($response->getData()['ok']);
 
     }//end testLogoutOnAnAlreadyInvalidBearerIsNotAnError()
+
+    public function testRefreshReturnsANewBearerForAValidSession(): void
+    {
+        $session = $this->createMock(PortalSessionService::class);
+        $session->method('refreshSession')->willReturn(['token' => 'new.signed.jwt', 'jti' => 'jti-2']);
+
+        $response = $this->controller(session: $session)->refresh();
+
+        $this->assertSame(Http::STATUS_OK, $response->getStatus());
+        $data = $response->getData();
+        $this->assertSame('new.signed.jwt', $data['token']);
+        $this->assertSame('Bearer', $data['tokenType']);
+
+    }//end testRefreshReturnsANewBearerForAValidSession()
+
+    public function testRefreshReturns401OnAnyRejection(): void
+    {
+        // Fail-closed: revoked, expired, malformed, past-the-cap, or
+        // unconfigured all collapse to the SAME null → the SAME generic 401.
+        $session = $this->createMock(PortalSessionService::class);
+        $session->method('refreshSession')->willReturn(null);
+
+        $response = $this->controller(session: $session)->refresh();
+
+        $this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+
+    }//end testRefreshReturns401OnAnyRejection()
 
     private function controller(PortalSessionService $session, ?IConfig $config=null): SessionController
     {
