@@ -37,6 +37,7 @@
  * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
  * @spec openspec/specs/supplier-portal/spec.md#proof-of-receipt-log-satisfying-the-wmebv-burden-of-proof
  * @spec openspec/specs/supplier-portal/spec.md#a-receipt-or-log-failure-never-loses-the-submission
+ * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
  */
 
 declare(strict_types=1);
@@ -87,18 +88,25 @@ class SubmissionReceiptService
     /**
      * Constructor.
      *
-     * @param PortalObjectWriter $writer      Subject-scoped OR writer (same one the create used).
-     * @param IFactory           $l10nFactory Resolves NL/EN translators independent of any
-     *                                        session locale (portal subjects are not NC
-     *                                        users).
-     * @param ITimeFactory       $timeFactory Testable clock for the ISO-8601 timestamps.
-     * @param LoggerInterface    $logger      The logger.
+     * @param PortalObjectWriter          $writer               Subject-scoped OR writer (same
+     *                                                          one the create used).
+     * @param IFactory                    $l10nFactory          Resolves NL/EN translators
+     *                                                          independent of any session locale
+     *                                                          (portal subjects are not NC users).
+     * @param ITimeFactory                $timeFactory          Testable clock for the ISO-8601
+     *                                                          timestamps.
+     * @param LoggerInterface             $logger               The logger.
+     * @param NotificationDispatchService $notificationDispatch Fires the `message.created` trigger
+     *                                                          (portal-notifications-dispatch)
+     *                                                          on a successful receipt write; itself
+     *                                                          fail-safe, never affects this call.
      */
     public function __construct(
         private readonly PortalObjectWriter $writer,
         private readonly IFactory $l10nFactory,
         private readonly ITimeFactory $timeFactory,
         private readonly LoggerInterface $logger,
+        private readonly NotificationDispatchService $notificationDispatch,
     ) {
     }//end __construct()
 
@@ -117,19 +125,25 @@ class SubmissionReceiptService
      *                                              domain create persisted (never the raw
      *                                              client body) — the WMEBV "copy of
      *                                              submitted data".
+     * @param string               $audience        The subject's audience (portal-notifications-
+     *                                              dispatch — resolves the app manifest via the
+     *                                              registry; empty is safe, it simply yields no
+     *                                              notification match).
      *
      * @return void
      *
      * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
      * @spec openspec/specs/supplier-portal/spec.md#proof-of-receipt-log-satisfying-the-wmebv-burden-of-proof
      * @spec openspec/specs/supplier-portal/spec.md#a-receipt-or-log-failure-never-loses-the-submission
+     * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
      */
     public function record(
         string $subjectRef,
         string $organisation,
         string $appId,
         string $actionId,
-        array $whitelistedData
+        array $whitelistedData,
+        string $audience=''
     ): void {
         try {
             $this->doRecord(
@@ -137,7 +151,8 @@ class SubmissionReceiptService
                 organisation: $organisation,
                 appId: $appId,
                 actionId: $actionId,
-                whitelistedData: $whitelistedData
+                whitelistedData: $whitelistedData,
+                audience: $audience
             );
         } catch (Throwable $e) {
             // Belt-and-braces: doRecord()'s own writes already degrade to null
@@ -160,6 +175,7 @@ class SubmissionReceiptService
      * @param string               $appId           The contributing app.
      * @param string               $actionId        The declared action id.
      * @param array<string, mixed> $whitelistedData The whitelisted submitted data.
+     * @param string               $audience        The subject's audience (notification dispatch).
      *
      * @return void
      */
@@ -168,7 +184,8 @@ class SubmissionReceiptService
         string $organisation,
         string $appId,
         string $actionId,
-        array $whitelistedData
+        array $whitelistedData,
+        string $audience=''
     ): void {
         $referenceId = $this->generateReferenceId();
         $submittedAt = $this->now();
@@ -192,12 +209,26 @@ class SubmissionReceiptService
         $deliveryStatus = 'failed';
         if ($message !== null) {
             $deliveryStatus = 'delivered';
+
+            // Portal-notifications-dispatch: the receipt message was written —
+            // fire the `message.created` trigger. Fail-safe by construction
+            // (NotificationDispatchService::dispatch never throws); this can
+            // never affect the WMEBV receipt/proof-log outcome above.
+            $this->notificationDispatch->dispatch(
+                ruleKey: NotificationDispatchService::RULE_MESSAGE_CREATED,
+                appId: $appId,
+                subject: [
+                    'subjectRef'   => $subjectRef,
+                    'organisation' => $organisation,
+                    'audience'     => $audience,
+                ]
+            );
         } else {
             $this->logger->warning(
                 'Portaliq: WMEBV receipt message write failed — submission remains authoritative',
                 ['appId' => $appId, 'actionId' => $actionId, 'subjectRef' => $subjectRef]
             );
-        }
+        }//end if
 
         $submission = $this->writer->createObject(
             register: self::REGISTER,
@@ -303,10 +334,10 @@ class SubmissionReceiptService
      */
     private function subjectLine(string $referenceId): string
     {
-        $nl = $this->l10nFactory->get('portaliq', 'nl')->t(self::SUBJECT_KEY, [$referenceId]);
-        $en = $this->l10nFactory->get('portaliq', 'en')->t(self::SUBJECT_KEY, [$referenceId]);
+        $nlText = $this->l10nFactory->get('portaliq', 'nl')->t(self::SUBJECT_KEY, [$referenceId]);
+        $enText = $this->l10nFactory->get('portaliq', 'en')->t(self::SUBJECT_KEY, [$referenceId]);
 
-        return $nl.' / '.$en;
+        return $nlText.' / '.$enText;
     }//end subjectLine()
 
     /**
@@ -321,9 +352,9 @@ class SubmissionReceiptService
      */
     private function bodyText(string $referenceId, string $submittedAt): string
     {
-        $nl = $this->l10nFactory->get('portaliq', 'nl')->t(self::BODY_KEY, [$referenceId, $submittedAt]);
-        $en = $this->l10nFactory->get('portaliq', 'en')->t(self::BODY_KEY, [$referenceId, $submittedAt]);
+        $nlText = $this->l10nFactory->get('portaliq', 'nl')->t(self::BODY_KEY, [$referenceId, $submittedAt]);
+        $enText = $this->l10nFactory->get('portaliq', 'en')->t(self::BODY_KEY, [$referenceId, $submittedAt]);
 
-        return $nl."\n\n".$en;
+        return $nlText."\n\n".$enText;
     }//end bodyText()
 }//end class

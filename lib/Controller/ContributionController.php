@@ -34,6 +34,7 @@
  * @spec openspec/changes/portal-inbox-v2/tasks.md#T03
  * @spec openspec/changes/portal-inbox-v2/tasks.md#T04
  * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
+ * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
  */
 
 declare(strict_types=1);
@@ -46,6 +47,7 @@ use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\PortalAuditHook;
 use OCA\Portaliq\Service\PortalFileReader;
 use OCA\Portaliq\Service\PortalFileWriter;
+use OCA\Portaliq\Service\NotificationDispatchService;
 use OCA\Portaliq\Service\PortalInboxReader;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
@@ -90,22 +92,26 @@ class ContributionController extends Controller implements PortalProtected
     /**
      * Constructor.
      *
-     * @param IRequest                   $request        The request object.
-     * @param PortalContributionRegistry $registry       The contribution aggregator.
-     * @param PortalSessionService       $session        Resolves the subject from the bearer.
-     * @param PortalObjectReader         $reader         Subject-scoped OR reader.
-     * @param PortalObjectWriter         $writer         Subject-scoped OR writer.
-     * @param PortalFileWriter           $fileWriter     Subject-scoped OR file attach.
-     * @param PortalFileReader           $fileReader     Subject-scoped OR file list/download.
-     * @param PortalSchemaReader         $schemaReader   Scoped OR schema-definition reader.
-     * @param PortalInboxReader          $inboxReader    Cross-app inbox aggregation + unread count (portal-inbox-v2).
-     * @param PortalAuditHook            $auditHook      Fail-safe audit-record call site.
-     * @param IClientService             $clientService  HTTP client for the A6 action forward.
-     * @param IURLGenerator              $urlGenerator   Resolves instance-local endpoint paths.
-     * @param SubmissionReceiptService   $receiptService WMEBV ontvangstbevestiging + proof-log
-     *                                                   generator, called after every
-     *                                                   successful create (fail-safe; never
-     *                                                   affects the response).
+     * @param IRequest                    $request              The request object.
+     * @param PortalContributionRegistry  $registry             The contribution aggregator.
+     * @param PortalSessionService        $session              Resolves the subject from the bearer.
+     * @param PortalObjectReader          $reader               Subject-scoped OR reader.
+     * @param PortalObjectWriter          $writer               Subject-scoped OR writer.
+     * @param PortalFileWriter            $fileWriter           Subject-scoped OR file attach.
+     * @param PortalFileReader            $fileReader           Subject-scoped OR file list/download.
+     * @param PortalSchemaReader          $schemaReader         Scoped OR schema-definition reader.
+     * @param PortalInboxReader           $inboxReader          Cross-app inbox aggregation + unread count (portal-inbox-v2).
+     * @param PortalAuditHook             $auditHook            Fail-safe audit-record call site.
+     * @param IClientService              $clientService        HTTP client for the A6 action forward.
+     * @param IURLGenerator               $urlGenerator         Resolves instance-local endpoint paths.
+     * @param SubmissionReceiptService    $receiptService       WMEBV ontvangstbevestiging + proof-log
+     *                                                          generator, called after every
+     *                                                          successful create (fail-safe; never
+     *                                                          affects the response).
+     * @param NotificationDispatchService $notificationDispatch Fires the `status.changed` trigger
+     *                                                          (portal-notifications-dispatch) on a
+     *                                                          successful transition; fail-safe,
+     *                                                          never affects the response.
      */
     public function __construct(
         IRequest $request,
@@ -121,6 +127,7 @@ class ContributionController extends Controller implements PortalProtected
         private readonly IClientService $clientService,
         private readonly IURLGenerator $urlGenerator,
         private readonly SubmissionReceiptService $receiptService,
+        private readonly NotificationDispatchService $notificationDispatch,
     ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
     }//end __construct()
@@ -737,7 +744,9 @@ class ContributionController extends Controller implements PortalProtected
      * receipts) with the SAME whitelisted field map just persisted (never the
      * raw request body). The call is fail-safe by construction — it never
      * throws and never affects this response — so a receipt/log side-effect
-     * can never turn a successful submission into a failed one.
+     * can never turn a successful submission into a failed one. The receipt
+     * write itself, when successful, fires the `message.created` notification
+     * trigger (portal-notifications-dispatch, inside SubmissionReceiptService).
      *
      * @param string $register The register of the collection.
      * @param string $schema   The schema of the collection.
@@ -747,6 +756,7 @@ class ContributionController extends Controller implements PortalProtected
      * @spec openspec/changes/supplier-portal/tasks.md#T06
      * @spec openspec/changes/contract-v2/tasks.md#T3
      * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
+     * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
      */
     #[PublicPage]
     #[NoCSRFRequired]
@@ -805,7 +815,8 @@ class ContributionController extends Controller implements PortalProtected
             organisation: (string) ($subject['organisation'] ?? ''),
             appId: $match['app'],
             actionId: (string) ($action['id'] ?? ''),
-            whitelistedData: $data
+            whitelistedData: $data,
+            audience: (string) ($subject['audience'] ?? '')
         );
 
         return new JSONResponse(['object' => $created]);
@@ -853,6 +864,11 @@ class ContributionController extends Controller implements PortalProtected
      * non-existent, indistinguishable) yields 404 — no existence oracle and no
      * write.
      *
+     * On a SUCCESSFUL update, `NotificationDispatchService::dispatch()` fires
+     * the `status.changed` trigger (portal-notifications-dispatch) — a
+     * fail-safe follow-on, never a gate; the matched app's manifest opts in
+     * per rule key.
+     *
      * @param string $register The register of the collection.
      * @param string $schema   The schema of the collection.
      * @param string $id       The object id (never trusted; ownership re-checked server-side).
@@ -860,6 +876,7 @@ class ContributionController extends Controller implements PortalProtected
      * @return JSONResponse The updated object, or 401 / 403 / 404.
      *
      * @spec openspec/changes/portal-scoped-crud/tasks.md#T3
+     * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
      */
     #[PublicPage]
     #[NoCSRFRequired]
@@ -928,6 +945,17 @@ class ContributionController extends Controller implements PortalProtected
         if ($updated === null) {
             return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
         }
+
+        // Portal-notifications-dispatch: the update ALREADY succeeded above —
+        // this is a fail-safe follow-on (dispatch() never throws), never a
+        // gate. The matched app's manifest opts in per rule key, so a plain
+        // (non-status) update action that declares no `status.changed` key
+        // simply enqueues nothing.
+        $this->notificationDispatch->dispatch(
+            ruleKey: NotificationDispatchService::RULE_STATUS_CHANGED,
+            appId: $match['app'],
+            subject: $subject
+        );
 
         return new JSONResponse(['object' => $updated]);
     }//end update()
@@ -1031,6 +1059,7 @@ class ContributionController extends Controller implements PortalProtected
      *
      * @spec openspec/changes/contract-v2/tasks.md#T8
      * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
+     * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
      */
     #[PublicPage]
     #[NoCSRFRequired]
@@ -1100,7 +1129,8 @@ class ContributionController extends Controller implements PortalProtected
                 organisation: (string) ($subject['organisation'] ?? ''),
                 appId: $appId,
                 actionId: $actionId,
-                whitelistedData: $this->whitelist(fields: (array) ($action['fields'] ?? []))
+                whitelistedData: $this->whitelist(fields: (array) ($action['fields'] ?? [])),
+                audience: (string) ($subject['audience'] ?? '')
             );
         }
 

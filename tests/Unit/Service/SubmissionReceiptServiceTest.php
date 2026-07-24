@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\Portaliq\Service\NotificationDispatchService;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\SubmissionReceiptService;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -75,7 +76,7 @@ class SubmissionReceiptServiceTest extends TestCase
             }
         );
 
-        $service = new SubmissionReceiptService($writer, $this->l10nFactory(), $this->timeFactory(), $this->createMock(LoggerInterface::class));
+        $service = new SubmissionReceiptService($writer, $this->l10nFactory(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
         $service->record('s1', 'org-1', 'portaliq', 'createExample', ['title' => 'Voorbeeld']);
 
         $this->assertCount(2, $writes);
@@ -112,6 +113,63 @@ class SubmissionReceiptServiceTest extends TestCase
 
     }//end testSuccessfulRecordWritesAReceiptMessageAndALinkedProofLog()
 
+    /**
+     * portal-notifications-dispatch: a successfully written receipt message
+     * fires NotificationDispatchService::dispatch() with the `message.created`
+     * rule key, the contributing appId, and a subject carrying subjectRef +
+     * organisation + the passed-through audience.
+     */
+    public function testSuccessfulMessageWriteFiresTheMessageCreatedDispatchTrigger(): void
+    {
+        $writer = $this->createMock(PortalObjectWriter::class);
+        $writer->method('createObject')->willReturnCallback(
+            static fn (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, array $data) => (['@self' => ['id' => $schema.'-id']] + $data)
+        );
+
+        $received              = [];
+        $notificationDispatch = $this->createMock(NotificationDispatchService::class);
+        $notificationDispatch->expects($this->once())->method('dispatch')->willReturnCallback(
+            function (string $ruleKey, string $appId, array $subject) use (&$received) {
+                $received = compact('ruleKey', 'appId', 'subject');
+            }
+        );
+
+        $service = new SubmissionReceiptService($writer, $this->l10nFactory(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $notificationDispatch);
+        $service->record('s1', 'org-1', 'portaliq', 'createExample', ['title' => 'Voorbeeld'], 'supplier');
+
+        $this->assertSame(NotificationDispatchService::RULE_MESSAGE_CREATED, $received['ruleKey']);
+        $this->assertSame('portaliq', $received['appId']);
+        $this->assertSame('s1', $received['subject']['subjectRef']);
+        $this->assertSame('org-1', $received['subject']['organisation']);
+        $this->assertSame('supplier', $received['subject']['audience']);
+
+    }//end testSuccessfulMessageWriteFiresTheMessageCreatedDispatchTrigger()
+
+    /**
+     * A failed receipt message write never fires the dispatch trigger — there
+     * is no message to notify about.
+     */
+    public function testFailedMessageWriteNeverFiresTheDispatchTrigger(): void
+    {
+        $writer = $this->createMock(PortalObjectWriter::class);
+        $writer->method('createObject')->willReturnCallback(
+            static function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, array $data) {
+                if ($schema === 'portalMessage') {
+                    return null;
+                }
+
+                return ['id' => 'submission-1'];
+            }
+        );
+
+        $notificationDispatch = $this->createMock(NotificationDispatchService::class);
+        $notificationDispatch->expects($this->never())->method('dispatch');
+
+        $service = new SubmissionReceiptService($writer, $this->l10nFactory(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $notificationDispatch);
+        $service->record('s1', 'org-1', 'portaliq', 'createExample', ['title' => 'X']);
+
+    }//end testFailedMessageWriteNeverFiresTheDispatchTrigger()
+
     public function testReceiptMessageWriteFailureStillWritesAFailedProofLogAndNeverThrows(): void
     {
         $writer   = $this->createMock(PortalObjectWriter::class);
@@ -127,7 +185,7 @@ class SubmissionReceiptServiceTest extends TestCase
             }
         );
 
-        $service = new SubmissionReceiptService($writer, $this->l10nFactory(), $this->timeFactory(), $this->createMock(LoggerInterface::class));
+        $service = new SubmissionReceiptService($writer, $this->l10nFactory(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
 
         // Must not throw.
         $service->record('s1', 'org-1', 'portaliq', 'createExample', ['title' => 'X']);
@@ -159,7 +217,7 @@ class SubmissionReceiptServiceTest extends TestCase
             }
         );
 
-        $service = new SubmissionReceiptService($writer, $this->l10nFactory(), $this->timeFactory(), $this->createMock(LoggerInterface::class));
+        $service = new SubmissionReceiptService($writer, $this->l10nFactory(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
         $service->record('s1', 'org-1', 'portaliq', 'createExample', ['title' => 'X']);
 
         $submissionWrites = array_values(array_filter($captured, static fn($c) => $c['schema'] === 'portalSubmission'));
@@ -194,7 +252,7 @@ class SubmissionReceiptServiceTest extends TestCase
             }
         );
 
-        $service = new SubmissionReceiptService($writer, $this->l10nFactory(), $this->timeFactory(), $this->createMock(LoggerInterface::class));
+        $service = new SubmissionReceiptService($writer, $this->l10nFactory(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
 
         // Must not throw — the domain create already succeeded; a WMEBV
         // side-effect exception must never surface to the caller.
@@ -210,7 +268,7 @@ class SubmissionReceiptServiceTest extends TestCase
         $writer = $this->createMock(PortalObjectWriter::class);
         $writer->method('createObject')->willThrowException(new RuntimeException('OR is entirely down'));
 
-        $service = new SubmissionReceiptService($writer, $this->l10nFactory(), $this->timeFactory(), $this->createMock(LoggerInterface::class));
+        $service = new SubmissionReceiptService($writer, $this->l10nFactory(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
 
         // Even when EVERY write throws, record() must never propagate.
         $service->record('s1', 'org-1', 'portaliq', 'createExample', ['title' => 'X']);
