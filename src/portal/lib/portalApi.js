@@ -230,6 +230,29 @@ export function createPortalApi(config) {
 				.filter((o) => o.value !== undefined && o.value !== null)
 		},
 
+		/**
+		 * Rotate the bearer ahead of its natural expiry (portal-session-hardening-v2,
+		 * T04): mints a new jti and revokes the old one server-side, capped by the
+		 * absolute session lifetime. Fails closed silently — a revoked, expired, or
+		 * past-the-cap bearer is simply not rotated; the existing (or absent) token
+		 * is left as-is and the next getSession() call surfaces the real state.
+		 */
+		async refreshSession() {
+			const res = await fetch(`${base}/session/refresh`, {
+				method: 'POST',
+				headers: { Accept: 'application/json', ...authHeaders() },
+			})
+			if (!res.ok) {
+				return null
+			}
+			const body = await res.json().catch(() => null)
+			if (body && body.token) {
+				setToken(body.token)
+				return body.token
+			}
+			return null
+		},
+
 		/** Mint a test session via the debug-gated dev-login (404 in prod). */
 		async devLogin(audience) {
 			const res = await fetch(`${base}/session/dev-login`, {

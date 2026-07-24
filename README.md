@@ -96,6 +96,7 @@ the session routes are the public auth edge.
 | `GET` | `/apps/portaliq/portal/api/session` | Resolve the caller's bearer to a subject (401 without one) |
 | `POST` | `/apps/portaliq/portal/api/session/dev-login` | Mint a dev session (debug-gated; issues `trust: low`) |
 | `DELETE` | `/apps/portaliq/portal/api/session` | End the client session |
+| `POST` | `/apps/portaliq/portal/api/session/refresh` | Rotate the bearer within the absolute session lifetime cap (portal-session-hardening-v2) — mints a NEW `jti`, revokes the OLD one; fails closed (401) on a revoked/expired/malformed bearer, past the cap, or when the edge is unconfigured |
 | `GET` | `/apps/portaliq/portal/api/contributions` | The subject's aggregated manifest (audience- and trust-filtered), carrying the subject's own unread inbox count (`unreadCount`, portal-inbox-v2) |
 | `GET` | `/apps/portaliq/portal/api/inbox` | The subject's unified inbox (portal-inbox-v2): every `kind: inbox` collection across ALL their contributions, merged, sorted by `receivedAt` descending, each row tagged with its source `appId`/label. Every row passes the IDENTICAL per-row subject + tenant + trust boundary as a normal collection read; fails closed to an empty inbox on any per-collection OR error |
 | `PATCH` | `/apps/portaliq/portal/api/inbox/{register}/{schema}/{id}/read` | Mark ONE inbox message read (portal-inbox-v2), tamper-proof: ownership/tenant/trust re-verified BEFORE any write, only the `read` field is ever set (any other body field is ignored), and a foreign-owned/absent id 404s identically to every other scoped write — no existence oracle |
@@ -123,6 +124,45 @@ dedicated messages page too.
 WMEBV art 2:10 content-shape requirements, deferred to 2027. The SPA renders
 whichever of the three a message actually supplies and nothing for the rest;
 no contributing app is required to populate them before then.
+
+### Session refresh, rate limiting, and the audit trail (portal-session-hardening-v2)
+
+**Refresh — a sliding window with an absolute cap.** The session TTL is fixed
+(2h, `PortalJwtService::DEFAULT_TTL`); `POST /portal/api/session/refresh`
+lets a subject filling in a long form or reading a case stay signed in past
+it. A valid, unexpired, not-yet-revoked bearer mints a NEW session with a NEW
+`jti` and revokes the OLD one (a rotation, never a second live token — a
+stolen old bearer dies on refresh). The renewal is capped by an **absolute
+maximum session lifetime** — app config `session_max_lifetime`, default 8h
+(28800s) — measured from the subject's *original* login (`authTime`, carried
+unchanged across every rotation in the chain, never reset by a refresh). A
+refresh past the cap, on a revoked/expired/malformed bearer, or when the
+signing secret is not yet configured, fails closed to the SAME generic 401 —
+the subject must re-authenticate. The SPA (`src/portal/App.jsx`) calls refresh
+proactively every ~25 minutes while a session is active.
+
+**Rate limiting.** The public session endpoints (`index`/`devLogin`/`logout`/
+`refresh`) and the scoped-CRUD/action surface
+(`collection`/`create`/`update`/`action`/`downloadFile`) all carry
+`OCP\AppFramework\Http\Attribute\AnonRateLimit` with conservative per-IP
+defaults, so the auth edge and the write/forward surface are not
+brute-forceable. `dev-login` additionally carries `BruteForceProtection` — the
+tightest limit of any session endpoint, since a password-less mint must never
+become a brute-force oracle if a debug instance is ever exposed. These limits
+combine with, rather than replace, the existing `jti` revocation and
+fail-closed middleware.
+
+**Audit trail.** Every portal mutation (`create`/`update`/`forward`), every
+file `download`, and every session event (`login`/`logout`/`refresh`) writes
+an append-only `portalAuditEntry` (`jti`, `subjectRef`, `organisation`,
+`appId`, `verb`, target `register`/`schema`/`id`, `timestamp`) via
+`AuditTrailService::record()` — a **fact record only**, it never carries
+payload content. A `record()` failure is caught and logged; it never reverses
+the audited action (failure isolation). The count (never the subjects or
+targets) is exposed per-verb via `GET /api/metrics`
+(`portaliq_audit_entries_total{verb="..."}`, ADR-006). Retention is
+OpenRegister's records-management concern (Archiefwet `_retention`) —
+Portaliq only writes the entries, it does not rebuild a purge.
 
 #### WMEBV submission receipts (wmebv-submission-receipts)
 

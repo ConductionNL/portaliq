@@ -24,6 +24,8 @@
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T02
  * @spec openspec/changes/contract-v2/tasks.md#T1
+ * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T03
+ * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T05
  */
 
 declare(strict_types=1);
@@ -34,6 +36,8 @@ use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\AnonRateLimit;
+use OCP\AppFramework\Http\Attribute\BruteForceProtection;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
@@ -68,9 +72,11 @@ class SessionController extends Controller
      * @return JSONResponse 200 with the subject, or 401 when unauthenticated.
      *
      * @spec openspec/changes/supplier-portal/tasks.md#T02
+     * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T05
      */
     #[PublicPage]
     #[NoCSRFRequired]
+    #[AnonRateLimit(limit: 60, period: 60)]
     public function index(): JSONResponse
     {
         $subject = $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
@@ -98,15 +104,29 @@ class SessionController extends Controller
      *
      * @return JSONResponse 200 with a bearer token, or 404 when the gate is closed.
      *
+     * The tightest anon rate limit of any session endpoint (design.md): a
+     * password-less mint must not become a brute-force oracle if a debug
+     * instance is ever exposed. `BruteForceProtection`'s delay is registered
+     * whenever the response is marked `throttle()`d below (the gate-closed
+     * 404 path).
+     *
      * @spec openspec/changes/supplier-portal/tasks.md#T02
      * @spec openspec/changes/contract-v2/tasks.md#T1
+     * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T05
      */
     #[PublicPage]
     #[NoCSRFRequired]
+    #[AnonRateLimit(limit: 10, period: 60)]
+    #[BruteForceProtection(action: 'portaliq_dev_login')]
     public function devLogin(string $subjectRef='dev-supplier', string $audience='supplier', string $organisation='dev-org'): JSONResponse
     {
         if ($this->isDevLoginEnabled() === false) {
-            return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+            $response = new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+            // Mark the attempt for Nextcloud's bruteforce throttler — probing
+            // for a debug-only endpoint on a production instance is exactly
+            // the abuse pattern BruteForceProtection exists to slow down.
+            $response->throttle(['reason' => 'dev_login_disabled']);
+            return $response;
         }
 
         // Dev-login is a password-less mint, so it carries the LOWEST assurance
@@ -148,9 +168,11 @@ class SessionController extends Controller
      *
      * @spec openspec/changes/supplier-portal/tasks.md#T02
      * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#3.1
+     * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T05
      */
     #[PublicPage]
     #[NoCSRFRequired]
+    #[AnonRateLimit(limit: 30, period: 60)]
     public function logout(): JSONResponse
     {
         $subject = $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
@@ -160,6 +182,37 @@ class SessionController extends Controller
 
         return new JSONResponse(['ok' => true]);
     }//end logout()
+
+    /**
+     * Rotate the caller's bearer within the absolute session lifetime cap
+     * (portal-session-hardening-v2). A valid, unexpired, not-yet-revoked
+     * bearer gets a NEW bearer with a NEW `jti`; the OLD bearer is revoked
+     * (rotation, not a second live token). Fails closed with the SAME generic
+     * 401 on every rejection — revoked, expired, malformed, past the absolute
+     * cap, or the edge not yet configured — never distinguishing why.
+     *
+     * @return JSONResponse 200 with the new bearer, or 401 on any rejection.
+     *
+     * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T03
+     * @spec openspec/specs/supplier-portal/spec.md#session-refresh-rotates-the-token-within-an-absolute-cap
+     */
+    #[PublicPage]
+    #[NoCSRFRequired]
+    #[AnonRateLimit(limit: 30, period: 60)]
+    public function refresh(): JSONResponse
+    {
+        $issued = $this->session->refreshSession($this->request->getHeader('Authorization'));
+        if ($issued === null) {
+            return new JSONResponse(['error' => 'unauthorized'], Http::STATUS_UNAUTHORIZED);
+        }
+
+        return new JSONResponse(
+            [
+                'token'     => $issued['token'],
+                'tokenType' => 'Bearer',
+            ]
+        );
+    }//end refresh()
 
     /**
      * Whether the dev-login gate is open: NC debug mode, or an explicit app flag.

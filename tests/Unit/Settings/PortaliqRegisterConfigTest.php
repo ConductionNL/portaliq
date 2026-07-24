@@ -36,10 +36,14 @@ class PortaliqRegisterConfigTest extends TestCase
     public function testRegisterJsonParsesAndVersionsAreBumped(): void
     {
         $this->assertNotSame([], self::$register, 'register JSON must parse');
-        // portal-notifications-dispatch bumps the register's OWN version (adds
-        // the portalNotification schema) AND portalAccount's version (adds the
-        // needsAlternativeContact fallback flag).
-        $this->assertSame('0.5.0', self::$register['info']['version']);
+        // The register's OWN version bumped to 0.6.0 across three concurrently
+        // merged changes: portal-session-hardening-v2 (T07, adds
+        // `portalAuditEntry`), wmebv-submission-receipts (adds
+        // `portalSubmission` + `portalMessage.referenceId`/`dataCopy`), and
+        // portal-notifications-dispatch (adds `portalNotification` AND bumps
+        // portalAccount's own version for the `needsAlternativeContact`
+        // fallback flag).
+        $this->assertSame('0.6.0', self::$register['info']['version']);
         $this->assertSame('0.4.0', self::$register['components']['schemas']['portalAccount']['version']);
 
     }//end testRegisterJsonParsesAndVersionsAreBumped()

@@ -60,6 +60,13 @@ use Throwable;
  * Mints and resolves Portaliq bearer sessions (fail-closed).
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T02
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- the auth edge's session
+ * lifecycle (mint/resolve/refresh/revoke), each a fail-closed guard chain
+ * (ADR-005); collapsing them would trade auditability for a score.
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)   -- one dependency per
+ * distinct responsibility (signing secret, id generation, OR read/write,
+ * audit recording) — see ContributionController's identical rationale.
  */
 class PortalSessionService
 {
@@ -90,6 +97,18 @@ class PortalSessionService
     private const SESSION_SCHEMA = 'portalSession';
 
     /**
+     * The app config key for the absolute maximum session lifetime override
+     * (seconds), measured from the ORIGIN login — a sliding refresh can never
+     * stretch a session past this cap (portal-session-hardening-v2).
+     */
+    private const MAX_LIFETIME_CONFIG_KEY = 'session_max_lifetime';
+
+    /**
+     * Default absolute maximum session lifetime: 8 hours.
+     */
+    private const DEFAULT_MAX_LIFETIME = 28800;
+
+    /**
      * The token minter/validator, built from the configured signing secret, or
      * null when no dedicated secret is configured yet (fail-closed window
      * between install and the repair step generating one).
@@ -109,20 +128,26 @@ class PortalSessionService
      * PortalJwtService here (rather than via a DI factory) keeps the whole
      * service auto-wireable — only core services are injected.
      *
-     * @param IConfig            $config The configuration source for the secret.
-     * @param ISecureRandom      $random Cryptographically secure id generator (jti).
-     * @param LoggerInterface    $logger The logger.
-     * @param PortalObjectWriter $writer Persists issued sessions for revocation.
-     * @param PortalObjectReader $reader Looks up sessions by jti / organisation.
+     * @param IConfig            $config  The configuration source for the secret + the
+     *                                    absolute max session lifetime (portal-session-
+     *                                    hardening-v2).
+     * @param ISecureRandom      $random  Cryptographically secure id generator (jti).
+     * @param LoggerInterface    $logger  The logger.
+     * @param PortalObjectWriter $writer  Persists issued sessions for revocation.
+     * @param PortalObjectReader $reader  Looks up sessions by jti / organisation.
+     * @param AuditTrailService  $auditor Records login/logout/refresh session events
+     *                                    (portal-session-hardening-v2).
      *
      * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.1
+     * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T01
      */
     public function __construct(
-        IConfig $config,
+        private readonly IConfig $config,
         private readonly ISecureRandom $random,
         private readonly LoggerInterface $logger,
         private readonly PortalObjectWriter $writer,
         private readonly PortalObjectReader $reader,
+        private readonly AuditTrailService $auditor,
     ) {
         $secret    = (string) $config->getAppValue(Application::APP_ID, 'jwt_signing_secret', '');
         $this->jwt = self::buildJwtService(secret: $secret);
@@ -215,7 +240,7 @@ class PortalSessionService
     }//end trustSatisfies()
 
     /**
-     * Mint a session for an authenticated subject.
+     * Mint a session for an authenticated subject. Records the `login` event.
      *
      * Fails closed when no dedicated signing secret is configured yet — never
      * signs with a placeholder. Records a `portalSession` row on success so the
@@ -234,6 +259,7 @@ class PortalSessionService
      * @spec openspec/changes/supplier-portal/tasks.md#T02
      * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.3
      * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#2.1
+     * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
      */
     public function issueSession(
         string $subjectRef,
@@ -242,22 +268,83 @@ class PortalSessionService
         string $trust='',
         array $roles=[]
     ): ?array {
+        $issued = $this->mintSession(
+            subjectRef: $subjectRef,
+            audience: $audience,
+            organisation: $organisation,
+            trust: $trust,
+            roles: $roles,
+            authTime: null
+        );
+        if ($issued === null) {
+            return null;
+        }
+
+        $this->auditor->record(
+            verb: 'login',
+            subjectRef: $subjectRef,
+            organisation: $organisation,
+            register: self::SESSION_REGISTER,
+            schema: self::SESSION_SCHEMA,
+            id: $issued['jti'],
+            jti: $issued['jti']
+        );
+
+        return $issued;
+    }//end issueSession()
+
+    /**
+     * Sign a new bearer + persist its `portalSession` row, WITHOUT recording
+     * any audit event — the single low-level mint primitive shared by
+     * `issueSession()` (records `login`) and `refreshSession()` (records
+     * `refresh` instead, so a rotation never ALSO logs a spurious login).
+     *
+     * Fails closed when no dedicated signing secret is configured yet — never
+     * signs with a placeholder.
+     *
+     * @param string             $subjectRef   Server-derived subject reference.
+     * @param string             $audience     External audience ("supplier"|"client").
+     * @param string             $organisation Tenant the session is scoped to.
+     * @param string             $trust        Assurance level (e.g. "EH3").
+     * @param array<int, string> $roles        Roles carried in the session.
+     * @param int|null           $authTime     The ORIGIN login's unix timestamp to carry
+     *                                         forward unchanged (a refresh rotation); null
+     *                                         mints a fresh origin (a genuine new login).
+     *
+     * @return array{token: string, jti: string}|null The minted bearer token +
+     *                                                 its id, or null when the
+     *                                                 edge is not yet configured.
+     *
+     * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T01
+     * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T02
+     */
+    private function mintSession(
+        string $subjectRef,
+        string $audience,
+        string $organisation,
+        string $trust,
+        array $roles,
+        ?int $authTime
+    ): ?array {
         if ($this->jwt === null) {
             $this->logger->warning('Portaliq: session issuance refused — no dedicated jwt_signing_secret configured');
             return null;
         }
 
-        $jti   = $this->random->generate(32, (ISecureRandom::CHAR_LOWER.ISecureRandom::CHAR_DIGITS));
+        $jti            = $this->random->generate(32, (ISecureRandom::CHAR_LOWER.ISecureRandom::CHAR_DIGITS));
+        $now            = new DateTimeImmutable();
+        $originAuthTime = ($authTime ?? $now->getTimestamp());
+
         $token = $this->jwt->createSession(
             subjectRef: $subjectRef,
             audience: $audience,
             organisation: $organisation,
             jti: $jti,
             trust: $trust,
-            roles: $roles
+            roles: $roles,
+            authTime: $originAuthTime
         );
 
-        $now = new DateTimeImmutable();
         $this->writer->createObject(
             register: self::SESSION_REGISTER,
             schema: self::SESSION_SCHEMA,
@@ -273,11 +360,31 @@ class PortalSessionService
                 'issuedAt'     => $now->format(DATE_ATOM),
                 'expiresAt'    => $now->add(new DateInterval('PT'.PortalJwtService::DEFAULT_TTL.'S'))->format(DATE_ATOM),
                 'revoked'      => false,
+                'authTime'     => (new DateTimeImmutable('@'.$originAuthTime))->format(DATE_ATOM),
             ]
         );
 
         return ['token' => $token, 'jti' => $jti];
-    }//end issueSession()
+    }//end mintSession()
+
+    /**
+     * The absolute maximum session lifetime in seconds — config `session_max_lifetime`
+     * (default 8h). A non-positive / unparseable override falls back to the default
+     * rather than disabling the cap.
+     *
+     * @return int
+     *
+     * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T01
+     */
+    private function maxLifetimeSeconds(): int
+    {
+        $configured = (int) $this->config->getAppValue(Application::APP_ID, self::MAX_LIFETIME_CONFIG_KEY, (string) self::DEFAULT_MAX_LIFETIME);
+        if ($configured <= 0) {
+            return self::DEFAULT_MAX_LIFETIME;
+        }
+
+        return $configured;
+    }//end maxLifetimeSeconds()
 
     /**
      * Resolve an Authorization header to a server-derived subject. FAILS CLOSED.
@@ -343,8 +450,82 @@ class PortalSessionService
             'trust'        => self::normaliseTrust(trust: ($claims['trust'] ?? '')),
             'roles'        => (array) ($claims['roles'] ?? []),
             'jti'          => $jti,
+            // The ORIGIN login's timestamp (portal-session-hardening-v2) — 0
+            // for a token minted before this claim existed, which refreshSession()
+            // treats as "cannot establish an origin" and refuses (fail-closed).
+            'authTime'     => (int) ($claims['authTime'] ?? 0),
         ];
     }//end resolveFromBearer()
+
+    /**
+     * Rotate a valid, unexpired, not-yet-revoked bearer into a NEW session with
+     * a NEW `jti`, revoking the old one — a sliding renewal capped by the
+     * ABSOLUTE maximum session lifetime measured from the original login
+     * (portal-session-hardening-v2). Fails closed (returns null, mints
+     * nothing) on every rejection: unconfigured signing secret, revoked bearer,
+     * expired bearer, malformed bearer, or past the absolute cap — all
+     * indistinguishable to the caller, exactly like `resolveFromBearer()`.
+     *
+     * @param string|null $authorizationHeader The raw Authorization header value.
+     *
+     * @return array{token: string, jti: string}|null The NEW bearer token + its
+     *                                                 id, or null on any rejection.
+     *
+     * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T02
+     * @spec openspec/specs/supplier-portal/spec.md#session-refresh-rotates-the-token-within-an-absolute-cap
+     */
+    public function refreshSession(?string $authorizationHeader): ?array
+    {
+        // Resolving the bearer already fails closed on: unconfigured secret,
+        // absent/malformed/forged bearer, expired bearer, and revoked/unknown
+        // jti — refresh inherits every one of those rejections for free.
+        $subject = $this->resolveFromBearer(authorizationHeader: $authorizationHeader);
+        if ($subject === null) {
+            return null;
+        }
+
+        $oldJti   = (string) ($subject['jti'] ?? '');
+        $authTime = (int) ($subject['authTime'] ?? 0);
+        if ($oldJti === '' || $authTime <= 0) {
+            // No origin timestamp to measure the cap from (a pre-upgrade token,
+            // or a malformed claim) — fail closed rather than assume "fresh".
+            return null;
+        }
+
+        if ((time() - $authTime) >= $this->maxLifetimeSeconds()) {
+            $this->logger->debug('Portaliq: refresh refused — past the absolute session lifetime', ['jti' => $oldJti]);
+            return null;
+        }
+
+        $issued = $this->mintSession(
+            subjectRef: (string) ($subject['subjectRef'] ?? ''),
+            audience: (string) ($subject['audience'] ?? ''),
+            organisation: (string) ($subject['organisation'] ?? ''),
+            trust: (string) ($subject['trust'] ?? ''),
+            roles: (array) ($subject['roles'] ?? []),
+            authTime: $authTime
+        );
+        if ($issued === null) {
+            return null;
+        }
+
+        // Rotate: the OLD bearer stops validating from here on. A quiet
+        // revoke (no separate `logout` audit entry) — the visible event for
+        // this rotation is `refresh`, recorded once, below.
+        $this->revokeQuietly(jti: $oldJti);
+
+        $this->auditor->record(
+            verb: 'refresh',
+            subjectRef: (string) ($subject['subjectRef'] ?? ''),
+            organisation: (string) ($subject['organisation'] ?? ''),
+            register: self::SESSION_REGISTER,
+            schema: self::SESSION_SCHEMA,
+            id: $issued['jti'],
+            jti: $oldJti
+        );
+
+        return $issued;
+    }//end refreshSession()
 
     /**
      * Whether a `jti` has a corresponding, not-revoked `portalSession` row.
@@ -397,37 +578,88 @@ class PortalSessionService
     }//end findSessionByJti()
 
     /**
-     * Revoke the session identified by `jti` (logout). A no-op (returns false,
-     * no error) when the jti is empty or the row cannot be found — logging out
-     * an already-invalid session is not itself an error.
+     * Revoke the session identified by `jti` (logout). Records the `logout`
+     * event. A no-op (returns false, no error, no audit entry) when the jti is
+     * empty or the row cannot be found — logging out an already-invalid
+     * session is not itself an error.
      *
      * @param string $jti The session's token id to revoke.
      *
      * @return bool True when a matching session was found and marked revoked.
      *
      * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#3.1
+     * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
      */
     public function revoke(string $jti): bool
     {
-        if ($jti === '') {
+        $row = $this->revokeQuietly(jti: $jti);
+        if ($row === null) {
             return false;
+        }
+
+        $this->auditor->record(
+            verb: 'logout',
+            subjectRef: (string) ($row['subjectRef'] ?? ''),
+            organisation: (string) ($row['organisation'] ?? ''),
+            register: self::SESSION_REGISTER,
+            schema: self::SESSION_SCHEMA,
+            id: $jti,
+            jti: $jti
+        );
+
+        return true;
+    }//end revoke()
+
+    /**
+     * Mark a session revoked WITHOUT recording any audit event — the shared
+     * primitive behind `revoke()` (records `logout`) and `refreshSession()`'s
+     * old-jti rotation (recorded once, as `refresh`, not also as a `logout`).
+     *
+     * Calls `PortalObjectWriter::updateObject()` with an EMPTY `scopeField` /
+     * `subjectRef` / `organisation` — this is a privileged, internal
+     * revocation of a row Portaliq itself already located by `jti`
+     * (`findSessionByJti()`), not a subject-scoped write, so there is no
+     * ownership re-check to satisfy (an empty `scopeField` skips it, exactly
+     * like `issueSession()`'s own `portalSession` write).
+     *
+     * @param string $jti The session's token id to revoke.
+     *
+     * @return array<string, mixed>|null The row that was revoked (for the
+     *                                    caller's own audit fields), or null
+     *                                    when the jti is empty, unknown, or
+     *                                    the OR write failed.
+     *
+     * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#3.1
+     * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T02
+     */
+    private function revokeQuietly(string $jti): ?array
+    {
+        if ($jti === '') {
+            return null;
         }
 
         $row  = $this->findSessionByJti(jti: $jti);
         $uuid = $this->rowId(row: $row);
         if ($row === null || $uuid === null) {
-            return false;
+            return null;
         }
 
         $updated = $this->writer->updateObject(
             register: self::SESSION_REGISTER,
             schema: self::SESSION_SCHEMA,
-            uuid: $uuid,
+            scopeField: '',
+            subjectRef: '',
+            organisation: '',
+            id: $uuid,
             data: ['revoked' => true]
         );
 
-        return $updated !== null;
-    }//end revoke()
+        if ($updated === null) {
+            return null;
+        }
+
+        return $row;
+    }//end revokeQuietly()
 
     /**
      * Revoke every active `portalSession` for an organisation (admin incident
@@ -440,6 +672,7 @@ class PortalSessionService
      * @return int The number of sessions revoked.
      *
      * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#3.2
+     * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
      */
     public function revokeAllForOrganisation(string $organisation): int
     {
@@ -470,12 +703,24 @@ class PortalSessionService
             $updated = $this->writer->updateObject(
                 register: self::SESSION_REGISTER,
                 schema: self::SESSION_SCHEMA,
-                uuid: $uuid,
+                scopeField: '',
+                subjectRef: '',
+                organisation: '',
+                id: $uuid,
                 data: ['revoked' => true]
             );
 
             if ($updated !== null) {
                 $revoked++;
+                $this->auditor->record(
+                    verb: 'logout',
+                    subjectRef: (string) ($row['subjectRef'] ?? ''),
+                    organisation: $organisation,
+                    register: self::SESSION_REGISTER,
+                    schema: self::SESSION_SCHEMA,
+                    id: (string) ($row['jti'] ?? ''),
+                    jti: (string) ($row['jti'] ?? '')
+                );
             }
         }//end foreach
 

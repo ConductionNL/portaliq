@@ -6,6 +6,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\ContributionController;
+use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\NotificationDispatchService;
 use OCA\Portaliq\Service\PortalAuditHook;
 use OCA\Portaliq\Service\PortalFileReader;
@@ -275,6 +276,37 @@ class ContributionControllerTest extends TestCase
 
     }//end testCreateNeverPassesClaimsToTheWriter()
 
+    public function testCreateRecordsACreateAuditEntryWithTheNewId(): void
+    {
+        // portal-session-hardening-v2 T09: a successful create() records a
+        // `create` audit entry carrying the NEWLY created object's id.
+        $aggregate = $this->aggregate(
+            actions: [
+                ['id' => 'c1', 'type' => 'create', 'register' => 'r1', 'schema' => 'a', 'fields' => ['title']],
+            ]
+        );
+
+        $writer = $this->createMock(PortalObjectWriter::class);
+        $writer->method('createObject')->willReturn(['id' => 'new-object-id']);
+
+        $auditor = $this->createMock(AuditTrailService::class);
+        $auditor->expects($this->once())->method('record')->with(
+            'create',
+            's1',
+            'org-1',
+            'r1',
+            'a',
+            'new-object-id',
+            'session-jti-1'
+        );
+
+        $controller = $this->controller(aggregate: $aggregate, writer: $writer, auditor: $auditor);
+        $response   = $controller->create('r1', 'a');
+
+        $this->assertSame(Http::STATUS_OK, $response->getStatus());
+
+    }//end testCreateRecordsACreateAuditEntryWithTheNewId()
+
     /**
      * WMEBV (wmebv-submission-receipts): a successful create fires
      * SubmissionReceiptService::record() with the subject/tenant scope, the
@@ -342,11 +374,13 @@ class ContributionControllerTest extends TestCase
     }//end testForbiddenCreateNeverTriggersReceiptRecord()
 
     /**
-     * WMEBV: a create whose domain write fails (writer returns null → 502)
-     * never fires the receipt — the domain write is the authority; nothing
-     * was actually persisted, so nothing should be receipted or logged.
+     * A create whose domain write fails (writer returns null → 502) never
+     * fires either follow-on: not `AuditTrailService::record()`
+     * (portal-session-hardening-v2 T09) and not the WMEBV receipt — the
+     * domain write is the authority; nothing was actually persisted, so
+     * nothing should be audited, receipted, or logged.
      */
-    public function testFailedDomainWriteNeverTriggersReceiptRecord(): void
+    public function testFailedDomainWriteNeverTriggersAuditOrReceiptRecord(): void
     {
         $aggregate = $this->aggregate(
             actions: [
@@ -357,15 +391,18 @@ class ContributionControllerTest extends TestCase
         $writer = $this->createMock(PortalObjectWriter::class);
         $writer->method('createObject')->willReturn(null);
 
+        $auditor = $this->createMock(AuditTrailService::class);
+        $auditor->expects($this->never())->method('record');
+
         $receiptService = $this->createMock(SubmissionReceiptService::class);
         $receiptService->expects($this->never())->method('record');
 
-        $controller = $this->controller(aggregate: $aggregate, writer: $writer, receiptService: $receiptService);
+        $controller = $this->controller(aggregate: $aggregate, writer: $writer, auditor: $auditor, receiptService: $receiptService);
         $response   = $controller->create('r1', 'a');
 
         $this->assertSame(Http::STATUS_BAD_GATEWAY, $response->getStatus());
 
-    }//end testFailedDomainWriteNeverTriggersReceiptRecord()
+    }//end testFailedDomainWriteNeverTriggersAuditOrReceiptRecord()
 
     public function testActionOutsideManifestIs403WithoutOutboundCall(): void
     {
@@ -386,6 +423,20 @@ class ContributionControllerTest extends TestCase
         $this->assertSame(Http::STATUS_FORBIDDEN, $controller->action('otherapp', 'known')->getStatus());
 
     }//end testActionOutsideManifestIs403WithoutOutboundCall()
+
+    public function testActionForbiddenNeverRecordsAnAuditEntry(): void
+    {
+        // portal-session-hardening-v2 T09: a `forward` is only auditable once
+        // the manifest AUTHORISES it — a 403 must never write an entry.
+        $aggregate = $this->aggregate(actions: []);
+
+        $auditor = $this->createMock(AuditTrailService::class);
+        $auditor->expects($this->never())->method('record');
+
+        $controller = $this->controller(aggregate: $aggregate, auditor: $auditor);
+        $this->assertSame(Http::STATUS_FORBIDDEN, $controller->action('portaliq', 'unknown')->getStatus());
+
+    }//end testActionForbiddenNeverRecordsAnAuditEntry()
 
     public function testActionSsrfAndTrustGuardsFailClosed(): void
     {
@@ -490,6 +541,43 @@ class ContributionControllerTest extends TestCase
         $this->assertSame('', $captured['body']);
 
     }//end testActionWithoutDeclaredFieldsForwardsTheRawBodyUnchanged()
+
+    public function testActionRecordsAForwardAuditEntryBeforeTheOutboundCall(): void
+    {
+        // portal-session-hardening-v2 T09: `forward` has no register/schema of
+        // its own, so appId/actionId ride in their place (design.md); `id` is
+        // empty. Recorded once authorised, regardless of the domain response.
+        $aggregate = $this->aggregate(
+            actions: [
+                ['id' => 'noFields', 'endpoint' => '/apps/demo/api/x', 'method' => 'GET'],
+            ]
+        );
+
+        $response = $this->createMock(IResponse::class);
+        $response->method('getBody')->willReturn('{}');
+        $response->method('getStatusCode')->willReturn(200);
+
+        $client = $this->createMock(IClient::class);
+        $client->method('get')->willReturn($response);
+
+        $clientService = $this->createMock(IClientService::class);
+        $clientService->method('newClient')->willReturn($client);
+
+        $auditor = $this->createMock(AuditTrailService::class);
+        $auditor->expects($this->once())->method('record')->with(
+            'forward',
+            's1',
+            'org-1',
+            'portaliq',
+            'noFields',
+            '',
+            'session-jti-1'
+        );
+
+        $controller = $this->controller(aggregate: $aggregate, clientService: $clientService, auditor: $auditor);
+        $controller->action('portaliq', 'noFields');
+
+    }//end testActionRecordsAForwardAuditEntryBeforeTheOutboundCall()
 
     public function testActionForwardsWithAssertionAndRelaysResponse(): void
     {
@@ -884,6 +972,58 @@ class ContributionControllerTest extends TestCase
         $this->assertSame('org-1', $received['organisation']);
 
     }//end testUpdateAppliesWhitelistAndReturnsUpdatedObject()
+
+    public function testUpdateRecordsAnUpdateAuditEntryWithTheClientId(): void
+    {
+        // portal-session-hardening-v2 T09: a successful update() records an
+        // `update` audit entry carrying the (ownership-verified) client id.
+        $aggregate = $this->aggregate(
+            actions: [
+                ['id' => 'u1', 'type' => 'update', 'register' => 'portaliq', 'schema' => 'exampleDocument', 'fields' => ['title']],
+            ]
+        );
+
+        $writer = $this->createMock(PortalObjectWriter::class);
+        $writer->method('updateObject')->willReturn(['id' => 'd-1', 'title' => 'X']);
+
+        $auditor = $this->createMock(AuditTrailService::class);
+        $auditor->expects($this->once())->method('record')->with(
+            'update',
+            's1',
+            'org-1',
+            'portaliq',
+            'exampleDocument',
+            'd-1',
+            'session-jti-1'
+        );
+
+        $controller = $this->controller(aggregate: $aggregate, writer: $writer, auditor: $auditor);
+        $response   = $controller->update('portaliq', 'exampleDocument', 'd-1');
+
+        $this->assertSame(Http::STATUS_OK, $response->getStatus());
+
+    }//end testUpdateRecordsAnUpdateAuditEntryWithTheClientId()
+
+    public function testUpdateOwnershipFailureNeverRecordsAnAuditEntry(): void
+    {
+        $aggregate = $this->aggregate(
+            actions: [
+                ['id' => 'u1', 'type' => 'update', 'register' => 'portaliq', 'schema' => 'exampleDocument', 'fields' => ['title']],
+            ]
+        );
+
+        $writer = $this->createMock(PortalObjectWriter::class);
+        $writer->method('updateObject')->willReturn(null);
+
+        $auditor = $this->createMock(AuditTrailService::class);
+        $auditor->expects($this->never())->method('record');
+
+        $controller = $this->controller(aggregate: $aggregate, writer: $writer, auditor: $auditor);
+        $response   = $controller->update('portaliq', 'exampleDocument', 'd-1');
+
+        $this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+
+    }//end testUpdateOwnershipFailureNeverRecordsAnAuditEntry()
 
     /**
      * portal-notifications-dispatch: a SUCCESSFUL update fires
@@ -1283,6 +1423,7 @@ class ContributionControllerTest extends TestCase
             $this->createMock(PortalAuditHook::class),
             $this->createMock(IClientService::class),
             $this->createMock(IURLGenerator::class),
+            $this->createMock(AuditTrailService::class),
             $this->createMock(SubmissionReceiptService::class),
             $this->createMock(NotificationDispatchService::class)
         );
@@ -1571,6 +1712,7 @@ class ContributionControllerTest extends TestCase
             $this->createMock(PortalAuditHook::class),
             $this->createMock(IClientService::class),
             $this->createMock(IURLGenerator::class),
+            $this->createMock(AuditTrailService::class),
             $this->createMock(SubmissionReceiptService::class),
             $this->createMock(NotificationDispatchService::class)
         );
@@ -1632,6 +1774,7 @@ class ContributionControllerTest extends TestCase
         ?PortalFileReader $fileReader=null,
         ?PortalAuditHook $auditHook=null,
         ?PortalInboxReader $inboxReader=null,
+        ?AuditTrailService $auditor=null,
         ?SubmissionReceiptService $receiptService=null,
         ?NotificationDispatchService $notificationDispatch=null
     ): ContributionController {
@@ -1677,6 +1820,7 @@ class ContributionControllerTest extends TestCase
             ($auditHook ?? $this->createMock(PortalAuditHook::class)),
             ($clientService ?? $this->createMock(IClientService::class)),
             $urlGenerator,
+            ($auditor ?? $this->createMock(AuditTrailService::class)),
             ($receiptService ?? $this->createMock(SubmissionReceiptService::class)),
             ($notificationDispatch ?? $this->createMock(NotificationDispatchService::class))
         );

@@ -115,6 +115,39 @@ class PortalObjectWriter
     }//end createObject()
 
     /**
+     * Count objects in a register/schema matching a set of property filters
+     * (portal-session-hardening-v2 — the count-only metrics exposure). Uses
+     * OpenRegister's native `count()` rather than fetching rows, so the audit
+     * trail's contents never travel through this path — only a number does.
+     * Fails closed to 0 when OpenRegister is unavailable or errors; a metrics
+     * endpoint must never 500 because the audit register is unreachable.
+     *
+     * @param string               $register The register slug/id.
+     * @param string               $schema   The schema slug.
+     * @param array<string, mixed> $filters  Property filters (e.g. `['verb' => 'login']`).
+     *
+     * @return int The matching count, or 0 on failure.
+     *
+     * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T10
+     */
+    public function countObjects(string $register, string $schema, array $filters=[]): int
+    {
+        $objectService = $this->objectService();
+        if ($objectService === null) {
+            return 0;
+        }
+
+        try {
+            $objectService->setRegister(register: $register);
+            $objectService->setSchema(schema: $schema);
+            return $objectService->count(config: ['filters' => $filters]);
+        } catch (Throwable $e) {
+            $this->logger->warning('Portaliq: OR count failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
+            return 0;
+        }
+    }//end countObjects()
+
+    /**
      * Update an object owned by the subject (portal-scoped-crud, ADR-062
      * Phase 1 — closes the write-IDOR concern, Conduction/portaliq#16).
      *

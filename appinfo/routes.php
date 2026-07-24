@@ -32,6 +32,10 @@ return [
         ['name' => 'session#index', 'url' => '/portal/api/session', 'verb' => 'GET'],
         ['name' => 'session#devLogin', 'url' => '/portal/api/session/dev-login', 'verb' => 'POST'],
         ['name' => 'session#logout', 'url' => '/portal/api/session', 'verb' => 'DELETE'],
+        // Sliding-window session refresh, capped by an absolute maximum
+        // session lifetime (portal-session-hardening-v2 T03). Registered
+        // before the /portal/{path} SPA catch-all.
+        ['name' => 'session#refresh', 'url' => '/portal/api/session/refresh', 'verb' => 'POST'],
 
         // Admin-only incident response (portal-auth-edge-session-hardening):
         // revoke every active portal session for an Organisation.

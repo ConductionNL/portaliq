@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Register containing all schemas owned by the Portaliq external-portal application.",
-        "version": "0.5.0"
+        "version": "0.6.0"
     },
     "x-openregister": {
         "type": "application",
@@ -445,6 +445,90 @@
                             "failed"
                         ],
                         "example": "delivered"
+                    }
+                }
+            },
+            "portalAuditEntry": {
+                "slug": "portalAuditEntry",
+                "icon": "ShieldCheckOutline",
+                "version": "0.1.0",
+                "title": "Portal Audit Entry",
+                "description": "Append-only, portal-owned audit-trail fact record (portal-session-hardening-v2): written on every portal mutation (create/update/forward), every download, and every session event (login/logout/refresh). Never carries payload content — records THAT a verb happened against a target, not the data. Exposed count-only via MetricsController; never publicly readable. Retention is OpenRegister's records-management concern (Archiefwet) — see openspec/changes/portal-session-hardening-v2/design.md.",
+                "type": "object",
+                "required": [
+                    "subjectRef",
+                    "organisation",
+                    "verb",
+                    "timestamp"
+                ],
+                "appendOnly": true,
+                "x-openregister": {
+                    "publicRead": false,
+                    "publicWrite": false
+                },
+                "properties": {
+                    "jti": {
+                        "title": "Token id (jti)",
+                        "type": "string",
+                        "description": "The acting/affected session's token id, when known (empty for the download hook, which does not carry one).",
+                        "example": "9f8e7d6c-0000-4000-8000-000000000000"
+                    },
+                    "subjectRef": {
+                        "title": "Subject reference",
+                        "type": "string",
+                        "description": "The subject the event belongs to.",
+                        "example": "b3d9c2a1-0000-4000-8000-000000000000"
+                    },
+                    "organisation": {
+                        "title": "Organisation",
+                        "type": "string",
+                        "description": "The subject's tenant.",
+                        "example": "gemeente-x"
+                    },
+                    "appId": {
+                        "title": "App id",
+                        "type": "string",
+                        "description": "The contributing app recording the entry (defaults to portaliq's own id).",
+                        "example": "portaliq"
+                    },
+                    "verb": {
+                        "title": "Verb",
+                        "type": "string",
+                        "description": "The audited action.",
+                        "enum": [
+                            "create",
+                            "update",
+                            "forward",
+                            "download",
+                            "login",
+                            "logout",
+                            "refresh"
+                        ],
+                        "example": "create"
+                    },
+                    "register": {
+                        "title": "Target register",
+                        "type": "string",
+                        "description": "The target register (or, for a forwarded action which touches no register directly, the contributing appId).",
+                        "example": "portaliq"
+                    },
+                    "schema": {
+                        "title": "Target schema",
+                        "type": "string",
+                        "description": "The target schema (or, for a forwarded action, the declared action id).",
+                        "example": "exampleDocument"
+                    },
+                    "id": {
+                        "title": "Target id",
+                        "type": "string",
+                        "description": "The target object id (empty for session events and forwarded actions, which have no single object id).",
+                        "example": "00000000-0000-4000-8000-000000000000"
+                    },
+                    "timestamp": {
+                        "title": "Timestamp",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the event was recorded."
                     }
                 }
             },

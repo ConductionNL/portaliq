@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\PortalJwtService;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
@@ -26,6 +27,13 @@ use Psr\Log\LoggerInterface;
  * when a valid signature is presented; logout-style revocation and an OR
  * lookup failure both fail closed.
  *
+ * portal-session-hardening-v2 additions: `refreshSession()` rotates the jti,
+ * revokes the old one, and slides the expiry within an absolute maximum
+ * lifetime measured from the ORIGINAL login (`authTime`, carried unchanged
+ * across rotations); a refresh past the cap, on a revoked/expired/malformed
+ * bearer, or with no dedicated secret configured fails closed to null. Login/
+ * logout/refresh each record an audit event via the injected AuditTrailService.
+ *
  * @spec openspec/changes/contract-v2/tasks.md#T1
  * @spec openspec/changes/contract-v2/tasks.md#T7
  * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.1
@@ -34,6 +42,10 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#2.2
  * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#2.3
  * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#3.1
+ * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T01
+ * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T02
+ * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
+ * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T11
  */
 class PortalSessionServiceTest extends TestCase
 {
@@ -272,19 +284,273 @@ class PortalSessionServiceTest extends TestCase
 
     }//end testRevokeUnknownJtiIsANoOp()
 
+    public function testRefreshRotatesJtiRevokesOldAndSlidesExpiry(): void
+    {
+        $store   = [];
+        $service = $this->service(store: $store);
+
+        $issued = $service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1', trust: 'high', roles: ['supplier:read']);
+        $this->assertNotNull($issued);
+
+        $refreshed = $service->refreshSession('Bearer '.$issued['token']);
+        $this->assertNotNull($refreshed);
+        $this->assertNotSame($issued['jti'], $refreshed['jti'], 'refresh must mint a NEW jti');
+
+        // The OLD bearer no longer validates (rotation, not a second live token).
+        $this->assertNull($service->resolveFromBearer('Bearer '.$issued['token']));
+
+        // The NEW bearer resolves, carries the SAME subject, and its trust/roles
+        // survive the rotation unchanged.
+        $subject = $service->resolveFromBearer('Bearer '.$refreshed['token']);
+        $this->assertNotNull($subject);
+        $this->assertSame('s1', $subject['subjectRef']);
+        $this->assertSame('high', $subject['trust']);
+        $this->assertSame($refreshed['jti'], $subject['jti']);
+
+    }//end testRefreshRotatesJtiRevokesOldAndSlidesExpiry()
+
+    public function testRefreshCarriesTheOriginAuthTimeAcrossRotations(): void
+    {
+        // A SECOND refresh must still be measured from the ORIGINAL login, not
+        // the most recent mint — authTime is carried forward unchanged.
+        $store   = [];
+        $service = $this->service(store: $store);
+
+        $issued = $service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1');
+        $first  = $service->refreshSession('Bearer '.$issued['token']);
+        $this->assertNotNull($first);
+
+        $originalSubject = $service->resolveFromBearer('Bearer '.$issued['token']);
+        // Already revoked by the first refresh.
+        $this->assertNull($originalSubject);
+
+        $second = $service->refreshSession('Bearer '.$first['token']);
+        $this->assertNotNull($second);
+        $this->assertNotSame($first['jti'], $second['jti']);
+
+    }//end testRefreshCarriesTheOriginAuthTimeAcrossRotations()
+
+    public function testRefreshPastTheAbsoluteCapIsRefusedFailClosed(): void
+    {
+        // A synthetic bearer whose authTime is 2h in the past, against a 1h
+        // configured cap — proves the ABSOLUTE cap refuses the refresh even
+        // though the bearer itself has not (naturally) expired
+        // (DEFAULT_TTL is 2h and this token was minted with a normal `exp`).
+        $store   = [];
+        $service = $this->service(store: $store, maxLifetime: 3600);
+
+        $staleAuthTime = (time() - 7200);
+        $token         = (new PortalJwtService(self::SECRET))->createSession(
+            subjectRef: 's1',
+            audience: 'supplier',
+            organisation: 'org-1',
+            jti: 'stale-jti',
+            authTime: $staleAuthTime
+        );
+        $store['uuid-stale'] = [
+            'uuid'         => 'uuid-stale',
+            'subjectRef'   => 's1',
+            'organisation' => 'org-1',
+            'jti'          => 'stale-jti',
+            'revoked'      => false,
+        ];
+
+        $this->assertNull($service->refreshSession('Bearer '.$token));
+        // Refused — the bearer is untouched (still resolvable), no new token
+        // minted; the subject must re-authenticate instead.
+        $this->assertNotNull($service->resolveFromBearer('Bearer '.$token));
+
+    }//end testRefreshPastTheAbsoluteCapIsRefusedFailClosed()
+
+    public function testRefreshOnARevokedBearerFailsClosed(): void
+    {
+        $store   = [];
+        $service = $this->service(store: $store);
+
+        $issued = $service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1');
+        $this->assertTrue($service->revoke($issued['jti']));
+
+        $this->assertNull($service->refreshSession('Bearer '.$issued['token']));
+
+    }//end testRefreshOnARevokedBearerFailsClosed()
+
+    public function testRefreshOnAMalformedBearerFailsClosed(): void
+    {
+        $service = $this->service();
+        $this->assertNull($service->refreshSession('not-a-bearer-token'));
+        $this->assertNull($service->refreshSession(null));
+
+    }//end testRefreshOnAMalformedBearerFailsClosed()
+
+    public function testRefreshWithNoDedicatedSecretFailsClosed(): void
+    {
+        $service = $this->service(secret: '');
+        $this->assertNull($service->refreshSession('Bearer whatever'));
+
+    }//end testRefreshWithNoDedicatedSecretFailsClosed()
+
+    public function testRefreshOnATokenPredatingTheAuthTimeClaimFailsClosed(): void
+    {
+        // A token minted before portal-session-hardening-v2 carries NO
+        // `authTime` claim at all — hand-built here since createSession() now
+        // always stamps one. With no origin to measure the cap from, refresh
+        // must refuse rather than assume "fresh" (fail-closed, never a free
+        // unlimited-lifetime pass) — resolveFromBearer() itself still
+        // succeeds (the token is otherwise well-formed and unexpired), so
+        // this proves refreshSession()'s OWN authTime guard, not the
+        // jti-revocation check.
+        $store   = [];
+        $service = $this->service(store: $store);
+
+        $legacyToken = $this->legacyTokenWithoutAuthTimeClaim(subjectRef: 's1', organisation: 'org-1', jti: 'legacy-jti');
+        $store['uuid-legacy'] = [
+            'uuid'         => 'uuid-legacy',
+            'subjectRef'   => 's1',
+            'organisation' => 'org-1',
+            'jti'          => 'legacy-jti',
+            'revoked'      => false,
+        ];
+
+        $this->assertNotNull($service->resolveFromBearer('Bearer '.$legacyToken));
+        $this->assertNull($service->refreshSession('Bearer '.$legacyToken));
+
+    }//end testRefreshOnATokenPredatingTheAuthTimeClaimFailsClosed()
+
+    /**
+     * Hand-build a compact JWT in PortalJwtService's own wire format but
+     * WITHOUT an `authTime` claim — simulating a token minted before
+     * portal-session-hardening-v2 introduced it (createSession() itself now
+     * always stamps one, so this cannot be produced through the public API).
+     *
+     * @param string $subjectRef   The subject reference.
+     * @param string $organisation The tenant.
+     * @param string $jti          The token id.
+     *
+     * @return string Compact JWT string, signed with SECRET.
+     */
+    private function legacyTokenWithoutAuthTimeClaim(string $subjectRef, string $organisation, string $jti): string
+    {
+        $iat    = time();
+        $header = ['alg' => PortalJwtService::ALG, 'typ' => 'JWT'];
+        $claims = [
+            'sub'          => $subjectRef,
+            'audience'     => 'supplier',
+            'organisation' => $organisation,
+            'trust'        => '',
+            'roles'        => [],
+            'jti'          => $jti,
+            'iat'          => $iat,
+            'exp'          => ($iat + PortalJwtService::DEFAULT_TTL),
+            'iss'          => 'portaliq',
+        ];
+
+        $b64UrlEncode = static fn (string $bytes): string => rtrim(strtr(base64_encode($bytes), '+/', '-_'), '=');
+        $hPart        = $b64UrlEncode(json_encode($header, JSON_UNESCAPED_SLASHES));
+        $cPart        = $b64UrlEncode(json_encode($claims, JSON_UNESCAPED_SLASHES));
+        $sig          = $b64UrlEncode(hash_hmac('sha256', ($hPart.'.'.$cPart), self::SECRET, true));
+
+        return $hPart.'.'.$cPart.'.'.$sig;
+
+    }//end legacyTokenWithoutAuthTimeClaim()
+
+    public function testIssueSessionRecordsALoginAuditEntry(): void
+    {
+        // record(verb, subjectRef, organisation, register, schema, id, jti[, appId]);
+        // login supplies exactly 7 (appId defaults), the new session's jti in
+        // BOTH `id` and `jti` (there is no prior session to reference).
+        $auditor = $this->createMock(AuditTrailService::class);
+        $auditor->expects($this->once())->method('record')->with(
+            'login',
+            's1',
+            'org-1',
+            $this->anything(),
+            $this->anything(),
+            $this->anything(),
+            $this->anything()
+        );
+
+        $store   = [];
+        $service = $this->service(store: $store, auditor: $auditor);
+        $issued  = $service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1');
+        $this->assertNotNull($issued);
+
+    }//end testIssueSessionRecordsALoginAuditEntry()
+
+    public function testRevokeRecordsALogoutAuditEntry(): void
+    {
+        $store  = [];
+        $issuer = $this->service(store: $store);
+        $issued = $issuer->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1');
+
+        $auditor = $this->createMock(AuditTrailService::class);
+        $auditor->expects($this->once())->method('record')->with(
+            'logout',
+            's1',
+            'org-1',
+            $this->anything(),
+            $this->anything(),
+            $issued['jti'],
+            $issued['jti']
+        );
+
+        // A SEPARATE service instance sharing the SAME store — revoke() only
+        // needs to find the row the first service already wrote.
+        $service = $this->service(store: $store, auditor: $auditor);
+        $this->assertTrue($service->revoke($issued['jti']));
+
+    }//end testRevokeRecordsALogoutAuditEntry()
+
+    public function testRefreshRecordsARefreshAuditEntryNotALoginOrLogout(): void
+    {
+        $store  = [];
+        $issuer = $this->service(store: $store);
+        $issued = $issuer->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1');
+
+        // refresh's `jti` field is the OLD (acting) session's jti — the
+        // rotation is auditable as ONE `refresh` event, never also a separate
+        // `login`/`logout` pair.
+        $auditor = $this->createMock(AuditTrailService::class);
+        $auditor->expects($this->once())->method('record')->with(
+            'refresh',
+            's1',
+            'org-1',
+            $this->anything(),
+            $this->anything(),
+            $this->anything(),
+            $issued['jti']
+        );
+
+        $service   = $this->service(store: $store, auditor: $auditor);
+        $refreshed = $service->refreshSession('Bearer '.$issued['token']);
+        $this->assertNotNull($refreshed);
+
+    }//end testRefreshRecordsARefreshAuditEntryNotALoginOrLogout()
+
     /**
      * Build a service backed by a dedicated (default: valid) signing secret
      * and an in-memory fake portalSession store (create/read/update), unless
      * $store is null (used for the "no secret configured" refusal tests,
-     * where the writer/reader are never expected to be called).
+     * where the writer/reader are never expected to be called). The
+     * AuditTrailService is a permissive mock by default (portal-session-
+     * hardening-v2) — a test that cares about WHAT was recorded passes its own
+     * `$auditor` mock instead.
      *
-     * @param string|null           $secret Override the configured secret; null uses SECRET.
-     * @param array<string, mixed>& $store  Backing store, keyed by uuid.
+     * @param string|null           $secret     Override the configured secret; null uses SECRET.
+     * @param array<string, mixed>& $store      Backing store, keyed by uuid.
+     * @param AuditTrailService|null $auditor   Override the audit recorder; null uses a permissive mock.
+     * @param int                     $maxLifetime Override `session_max_lifetime` (seconds); the default 8h otherwise.
      */
-    private function service(?string $secret=self::SECRET, array &$store=[]): PortalSessionService
+    private function service(?string $secret=self::SECRET, array &$store=[], ?AuditTrailService $auditor=null, int $maxLifetime=0): PortalSessionService
     {
         $config = $this->createMock(IConfig::class);
-        $config->method('getAppValue')->willReturn($secret ?? '');
+        $config->method('getAppValue')->willReturnCallback(
+            function (string $appId, string $key, string $default='') use ($secret, $maxLifetime) {
+                if ($key === 'session_max_lifetime' && $maxLifetime > 0) {
+                    return (string) $maxLifetime;
+                }
+                return ($secret ?? '');
+            }
+        );
 
         $random = $this->createMock(ISecureRandom::class);
         $counter = 0;
@@ -303,12 +569,12 @@ class PortalSessionServiceTest extends TestCase
             }
         );
         $writer->method('updateObject')->willReturnCallback(
-            function (string $register, string $schema, string $uuid, array $data) use (&$store) {
-                if (isset($store[$uuid]) === false) {
+            function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id, array $data) use (&$store) {
+                if (isset($store[$id]) === false) {
                     return null;
                 }
-                $store[$uuid] = array_merge($store[$uuid], $data);
-                return $store[$uuid];
+                $store[$id] = array_merge($store[$id], $data);
+                return $store[$id];
             }
         );
 
@@ -325,7 +591,14 @@ class PortalSessionServiceTest extends TestCase
             }
         );
 
-        return new PortalSessionService($config, $random, $this->createMock(LoggerInterface::class), $writer, $reader);
+        return new PortalSessionService(
+            $config,
+            $random,
+            $this->createMock(LoggerInterface::class),
+            $writer,
+            $reader,
+            ($auditor ?? $this->createMock(AuditTrailService::class))
+        );
 
     }//end service()
 

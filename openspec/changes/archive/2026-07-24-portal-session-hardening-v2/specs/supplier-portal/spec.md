@@ -30,7 +30,7 @@ with a generic error and mint nothing.
 - **GIVEN** a subject with a valid, unexpired bearer within the absolute lifetime
 - **WHEN** they POST to `/portal/api/session/refresh`
 - **THEN** a new bearer with a new `jti` and a slid-forward expiry is returned, and the old `jti` is revoked (the old bearer no longer validates)
-- @e2e exclude add Playwright e2e in apply phase — spec-only PR; asserted at unit level (rotate, revoke-old, expiry slide)
+- @e2e tests/e2e/portal-session-refresh.spec.ts
 
 #### Scenario: Refresh past the absolute cap is refused
 
