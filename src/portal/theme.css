@@ -61,6 +61,21 @@
 	color: var(--portaliq-color-text-muted);
 }
 
+/* Per-org OIDC broker login buttons (portal-oidc-broker-login) — one per
+   configured provider, stacked with the same rhythm as the action-form
+   buttons below. */
+.portaliq-oidc-login {
+	display: block;
+	margin: var(--portaliq-space-sm) 0;
+	padding: var(--portaliq-space-sm) var(--portaliq-space-md);
+	border: 1px solid var(--portaliq-color-accent);
+	border-radius: 4px;
+	background: var(--portaliq-color-accent);
+	color: #ffffff;
+	font-weight: 600;
+	cursor: pointer;
+}
+
 .portaliq-error {
 	color: #a12622;
 }

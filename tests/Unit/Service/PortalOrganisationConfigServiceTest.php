@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\Portaliq\Service\OidcClaimMapperService;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
@@ -19,9 +20,17 @@ use RuntimeException;
  * logo, allowedEmbedOrigins) travel through untouched; a malformed
  * `allowedEmbedOrigins` override degrades to the empty (deny) list.
  *
+ * portal-oidc-broker-login additions: `resolveOidcConfig()` (the FULL,
+ * secret-carrying config — server-side only) fails closed on an unknown org,
+ * an unconfigured provider, and a missing required field; the client secret
+ * NEVER comes from the presentation-override blob, only from its own
+ * dedicated `sensitive` IAppConfig entry. `resolve()`'s `oidcProviders` (the
+ * SPA-facing, secret-free list) only lists providers with a complete config.
+ *
  * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.2
  * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.3
  * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#3.1
+ * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T01
  */
 class PortalOrganisationConfigServiceTest extends TestCase
 {
@@ -86,7 +95,8 @@ class PortalOrganisationConfigServiceTest extends TestCase
         $service = new PortalOrganisationConfigService(
             $container,
             $this->createMock(IAppConfig::class),
-            $this->createMock(LoggerInterface::class)
+            $this->createMock(LoggerInterface::class),
+            new OidcClaimMapperService()
         );
 
         $config = $service->resolve('gemeente-x');
@@ -160,6 +170,127 @@ class PortalOrganisationConfigServiceTest extends TestCase
 
     }//end testMalformedAllowedEmbedOriginsDegradesToEmptyDenyList()
 
+    /**
+     * portal-oidc-broker-login: a configured `eherkenning` provider surfaces
+     * in `resolve()`'s secret-free `oidcProviders`, and `resolveOidcConfig()`
+     * returns the FULL merged config (issuer/clientId/scopes/claimMap/loaMap)
+     * — with the secret coming ONLY from the dedicated sensitive key, never
+     * from the presentation-override blob.
+     */
+    public function testConfiguredProviderSurfacesInOidcProvidersAndResolvesFully(): void
+    {
+        $overrides = [
+            'oidc' => [
+                'eherkenning' => [
+                    'issuer'   => 'https://broker.example/idp',
+                    'clientId' => 'rp-client-1',
+                    'scopes'   => ['openid', 'kvk'],
+                ],
+            ],
+        ];
+
+        $service = $this->oidcService(overridesJson: json_encode($overrides), secret: 's3cr3t-value-0000000000');
+
+        $config = $service->resolve('gemeente-x');
+        $this->assertSame([['provider' => 'eherkenning', 'label' => 'eHerkenning']], $config['oidcProviders']);
+        // The client secret is NEVER present anywhere in the SPA-facing shape.
+        $this->assertStringNotContainsString('s3cr3t-value', (string) json_encode($config));
+
+        $full = $service->resolveOidcConfig('gemeente-x', 'eherkenning');
+        $this->assertNotNull($full);
+        $this->assertSame('https://broker.example/idp', $full['issuer']);
+        $this->assertSame('rp-client-1', $full['clientId']);
+        $this->assertSame('s3cr3t-value-0000000000', $full['clientSecret']);
+        $this->assertSame(['openid', 'kvk'], $full['scopes']);
+        $this->assertSame('eherkenning', $full['identityType']);
+
+    }//end testConfiguredProviderSurfacesInOidcProvidersAndResolvesFully()
+
+    public function testUnconfiguredProviderResolvesToNullNotAnError(): void
+    {
+        $service = $this->oidcService(overridesJson: '{}', secret: '');
+
+        $this->assertNull($service->resolveOidcConfig('gemeente-x', 'digid'));
+        $this->assertSame([], $service->resolve('gemeente-x')['oidcProviders']);
+
+    }//end testUnconfiguredProviderResolvesToNullNotAnError()
+
+    public function testResolveOidcConfigFailsClosedWithoutAClientSecret(): void
+    {
+        $overrides = [
+            'oidc' => [
+                'digid' => [
+                    'issuer'   => 'https://broker.example/idp',
+                    'clientId' => 'rp-client-1',
+                ],
+            ],
+        ];
+
+        // No secret configured at the dedicated key — the provider must NOT
+        // be treated as configured, in either resolveOidcConfig() or the
+        // SPA-facing oidcProviders list.
+        $service = $this->oidcService(overridesJson: json_encode($overrides), secret: '');
+
+        $this->assertNull($service->resolveOidcConfig('gemeente-x', 'digid'));
+        $this->assertSame([], $service->resolve('gemeente-x')['oidcProviders']);
+
+    }//end testResolveOidcConfigFailsClosedWithoutAClientSecret()
+
+    public function testResolveOidcConfigRejectsAnUnknownProviderString(): void
+    {
+        $service = $this->oidcService(overridesJson: '{}', secret: '');
+
+        $this->assertNull($service->resolveOidcConfig('gemeente-x', 'not-a-real-provider'));
+
+    }//end testResolveOidcConfigRejectsAnUnknownProviderString()
+
+    /**
+     * Builds a service against a resolvable "gemeente-x" organisation, with
+     * `getValueString` returning `$overridesJson` for the presentation-
+     * override key and `$secret` for ANY `oidc_secret_*` key.
+     */
+    private function oidcService(string $overridesJson, string $secret): PortalOrganisationConfigService
+    {
+        $mapper = new class {
+            public function findBySlug(string $slug)
+            {
+                return new class {
+                    public function getUuid()
+                    {
+                        return 'org-uuid-x';
+                    }
+
+                    public function getName()
+                    {
+                        return 'Gemeente X';
+                    }
+                };
+            }
+        };
+
+        $container = $this->createMock(ContainerInterface::class);
+        $container->method('get')->willReturn($mapper);
+
+        $appConfig = $this->createMock(IAppConfig::class);
+        $appConfig->method('getValueString')->willReturnCallback(
+            function (string $app, string $key, string $default='') use ($overridesJson, $secret) {
+                if (str_starts_with($key, 'oidc_secret_') === true) {
+                    return $secret;
+                }
+
+                return $overridesJson;
+            }
+        );
+
+        return new PortalOrganisationConfigService(
+            $container,
+            $appConfig,
+            $this->createMock(LoggerInterface::class),
+            new OidcClaimMapperService()
+        );
+
+    }//end oidcService()
+
     private function service(?object $mapper=null, ?string $overridesJson=null): PortalOrganisationConfigService
     {
         $container = $this->createMock(ContainerInterface::class);
@@ -175,7 +306,8 @@ class PortalOrganisationConfigServiceTest extends TestCase
         return new PortalOrganisationConfigService(
             $container,
             $appConfig,
-            $this->createMock(LoggerInterface::class)
+            $this->createMock(LoggerInterface::class),
+            new OidcClaimMapperService()
         );
 
     }//end service()

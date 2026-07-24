@@ -26,6 +26,8 @@
  * @spec openspec/changes/contract-v2/tasks.md#T1
  * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T03
  * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T05
+ * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T06
+ * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T07
  */
 
 declare(strict_types=1);
@@ -33,6 +35,11 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Service\OidcClaimMapperService;
+use OCA\Portaliq\Service\OidcClientService;
+use OCA\Portaliq\Service\OidcStateStoreService;
+use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -41,27 +48,72 @@ use OCP\AppFramework\Http\Attribute\BruteForceProtection;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\AppFramework\Http\RedirectResponse;
+use OCP\AppFramework\Http\Response;
 use OCP\IConfig;
 use OCP\IRequest;
+use OCP\IURLGenerator;
 
 /**
  * Public auth-edge endpoints for the portal SPA.
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T02
+ * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T06
+ * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T07
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- one dependency per
+ * distinct OIDC responsibility (config resolution, protocol mechanics, claim
+ * mapping, state storage, account resolution) — see PortalSessionService's
+ * identical rationale; collapsing them would hide the fail-closed seams this
+ * edge depends on.
+ * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- the constructor mirrors
+ * that coupling 1:1; folding services into a facade would only relocate the
+ * same count behind one more layer.
  */
 class SessionController extends Controller
 {
     /**
+     * The identical, generic OIDC failure response (design.md, ADR-005): every
+     * validation/config/lookup failure in `oidcStart()`/`oidcCallback()`
+     * returns EXACTLY this — no response ever reveals WHICH check failed.
+     */
+    private const OIDC_GENERIC_ERROR = 'oidc_failed';
+
+    /**
+     * Where an OIDC callback lands in the SPA when no `returnTo` was stored.
+     */
+    private const DEFAULT_RETURN_TO = '/portal';
+
+    /**
      * Constructor.
      *
-     * @param IRequest             $request The request object.
-     * @param PortalSessionService $session The session service.
-     * @param IConfig              $config  For the dev-login gate.
+     * @param IRequest                        $request      The request object.
+     * @param PortalSessionService            $session      The session service.
+     * @param IConfig                         $config       For the dev-login gate.
+     * @param PortalOrganisationConfigService $orgConfig    Resolves per-org OIDC
+     *                                                      broker config
+     *                                                      (portal-oidc-broker-login).
+     * @param OidcClientService               $oidc         OIDC protocol mechanics
+     *                                                      (discovery, PKCE, token
+     *                                                      exchange, ID-token
+     *                                                      validation).
+     * @param OidcClaimMapperService          $claimMapper  Claim → identity + LoA →
+     *                                                      trust mapping.
+     * @param OidcStateStoreService           $stateStore   Single-use state/nonce/PKCE storage.
+     * @param PortalAccountService            $accounts     Find-or-create `portalAccount`.
+     * @param IURLGenerator                   $urlGenerator Builds the callback redirect_uri
+     *                                                      + the final SPA redirect.
      */
     public function __construct(
         IRequest $request,
         private readonly PortalSessionService $session,
         private readonly IConfig $config,
+        private readonly PortalOrganisationConfigService $orgConfig,
+        private readonly OidcClientService $oidc,
+        private readonly OidcClaimMapperService $claimMapper,
+        private readonly OidcStateStoreService $stateStore,
+        private readonly PortalAccountService $accounts,
+        private readonly IURLGenerator $urlGenerator,
     ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
     }//end __construct()
@@ -156,6 +208,213 @@ class SessionController extends Controller
             ]
         );
     }//end devLogin()
+
+    /**
+     * Start an OIDC broker login: resolves the org+provider config (fail
+     * closed if absent), generates `state`+`nonce`+PKCE, stores them
+     * single-use/TTL-bounded, and 302-redirects to the broker's authorization
+     * endpoint. Every failure — unknown org/provider, discovery unreachable,
+     * state-store write failure — returns the SAME generic error, never a
+     * redirect (design.md).
+     *
+     * @param string $org      The `?org=` slug to log in to.
+     * @param string $provider One of `digid|eherkenning|eidas|generic`.
+     *
+     * @return Response 302 to the broker, or the generic OIDC error.
+     *
+     * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T06
+     * @spec openspec/specs/supplier-portal/spec.md#oidc-start-builds-a-state-nonce-pkce-authorization-request
+     */
+    #[PublicPage]
+    #[NoCSRFRequired]
+    #[AnonRateLimit(limit: 30, period: 60)]
+    public function oidcStart(string $org='', string $provider=''): Response
+    {
+        $config = $this->orgConfig->resolveOidcConfig(orgSlug: $org, provider: $provider);
+        if ($config === null) {
+            return $this->oidcGenericError();
+        }
+
+        $endpoints = $this->oidc->discover(issuer: (string) $config['issuer']);
+        if ($endpoints === null) {
+            return $this->oidcGenericError();
+        }
+
+        $state = $this->oidc->generateToken();
+        $nonce = $this->oidc->generateToken();
+        $pkce  = $this->oidc->generatePkce();
+
+        $stored = $this->stateStore->create(
+            state: $state,
+            nonce: $nonce,
+            codeVerifier: $pkce['verifier'],
+            org: $org,
+            provider: $provider,
+            returnTo: self::DEFAULT_RETURN_TO
+        );
+        if ($stored === false) {
+            return $this->oidcGenericError();
+        }
+
+        $url = $this->oidc->buildAuthorizationUrl(
+            authorizeEndpoint: $endpoints['authorization_endpoint'],
+            clientId: (string) $config['clientId'],
+            redirectUri: $this->oidcRedirectUri(),
+            scopes: (array) $config['scopes'],
+            state: $state,
+            nonce: $nonce,
+            codeChallenge: $pkce['challenge']
+        );
+
+        // Explicit 302 (design.md) — RedirectResponse's own default is 303.
+        return new RedirectResponse($url, Http::STATUS_FOUND);
+    }//end oidcStart()
+
+    /**
+     * OIDC broker callback: consumes the single-use `state` (CSRF/replay
+     * guard), exchanges the code, FULLY validates the ID token (issuer,
+     * audience, nonce, expiry, RS256 signature via cached JWKS — {@see
+     * OidcClientService::verifyIdToken()}), maps claims + LoA, finds-or-
+     * creates the `portalAccount`, and mints the EXISTING HS256 portal
+     * session via `PortalSessionService::issueSession()`.
+     *
+     * ANY failure at ANY step returns the IDENTICAL generic error and mints
+     * NO session (design.md, ADR-005) — no response distinguishes which
+     * check failed.
+     *
+     * @param string $state The OIDC `state` returned by the broker.
+     * @param string $code  The authorization code.
+     * @param string $error An error the broker itself reported (e.g. `access_denied`).
+     *
+     * @return Response 302 to the SPA with the minted bearer, or the generic OIDC error.
+     *
+     * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T07
+     * @spec openspec/specs/supplier-portal/spec.md#oidc-callback-validates-the-id-token-and-fails-closed-on-every-error
+     * @spec openspec/specs/supplier-portal/spec.md#every-validation-failure-is-an-identical-generic-error
+     * @spec openspec/specs/supplier-portal/spec.md#the-subject-reference-is-server-derived-never-client-supplied
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) -- one fail-closed guard
+     * per step of the OIDC flow (state, config, discovery, exchange, ID-token
+     * validation, claim mapping, account resolution, session issuance), every
+     * one returning the IDENTICAL generic error (ADR-005, design.md);
+     * collapsing them would trade auditability for a score, mirroring
+     * PortalSessionService's identical rationale.
+     * @SuppressWarnings(PHPMD.NPathComplexity) -- same rationale.
+     */
+    #[PublicPage]
+    #[NoCSRFRequired]
+    #[AnonRateLimit(limit: 30, period: 60)]
+    public function oidcCallback(string $state='', string $code='', string $error=''): Response
+    {
+        if ($state === '' || $code === '' || $error !== '') {
+            return $this->oidcGenericError();
+        }
+
+        $pending = $this->stateStore->consume(state: $state);
+        if ($pending === null) {
+            return $this->oidcGenericError();
+        }
+
+        $config = $this->orgConfig->resolveOidcConfig(orgSlug: $pending['org'], provider: $pending['provider']);
+        if ($config === null) {
+            return $this->oidcGenericError();
+        }
+
+        $endpoints = $this->oidc->discover(issuer: (string) $config['issuer']);
+        if ($endpoints === null) {
+            return $this->oidcGenericError();
+        }
+
+        $tokenResponse = $this->oidc->exchangeCode(
+            tokenEndpoint: $endpoints['token_endpoint'],
+            code: $code,
+            codeVerifier: $pending['codeVerifier'],
+            clientId: (string) $config['clientId'],
+            clientSecret: (string) $config['clientSecret'],
+            redirectUri: $this->oidcRedirectUri()
+        );
+        $idToken       = (string) ($tokenResponse['id_token'] ?? '');
+        if ($idToken === '') {
+            return $this->oidcGenericError();
+        }
+
+        $claims = $this->oidc->verifyIdToken(
+            idToken: $idToken,
+            jwksUri: $endpoints['jwks_uri'],
+            issuer: (string) $config['issuer'],
+            clientId: (string) $config['clientId'],
+            expectedNonce: $pending['nonce']
+        );
+        if ($claims === null) {
+            return $this->oidcGenericError();
+        }
+
+        $mapped = $this->claimMapper->mapClaims(claims: $claims, config: $config);
+        if ($mapped === null) {
+            return $this->oidcGenericError();
+        }
+
+        $account = $this->accounts->findOrCreate(
+            identityType: $mapped['identityType'],
+            identityRef: $mapped['identityRef'],
+            organisation: $pending['org'],
+            audience: $mapped['audience'],
+            subjectRefOverride: $mapped['subjectRef']
+        );
+        if ($account === null) {
+            return $this->oidcGenericError();
+        }
+
+        $trust  = $this->claimMapper->mapLoaToTrust(claims: $claims, config: $config);
+        $issued = $this->session->issueSession(
+            subjectRef: $account['subjectRef'],
+            audience: $mapped['audience'],
+            organisation: $pending['org'],
+            trust: $trust,
+            roles: [$mapped['audience'].':read']
+        );
+        if ($issued === null) {
+            return $this->oidcGenericError();
+        }
+
+        $returnTo = self::DEFAULT_RETURN_TO;
+        if ($pending['returnTo'] !== '') {
+            $returnTo = $pending['returnTo'];
+        }
+
+        // The bearer travels in the URL FRAGMENT, never a query string — a
+        // fragment is never sent to the server (no access/Referer-header
+        // leak) and never appears in server logs.
+        $redirectUrl = $this->urlGenerator->getAbsoluteURL($returnTo).'#token='.rawurlencode($issued['token']);
+
+        // Explicit 302 (design.md) — RedirectResponse's own default is 303.
+        return new RedirectResponse($redirectUrl, Http::STATUS_FOUND);
+    }//end oidcCallback()
+
+    /**
+     * The redirect_uri this RP presents to every broker — MUST be identical
+     * at `start` and at `callback` (most brokers reject a mismatch).
+     *
+     * @return string
+     */
+    private function oidcRedirectUri(): string
+    {
+        return $this->urlGenerator->linkToRouteAbsolute(Application::APP_ID.'.session.oidcCallback');
+    }//end oidcRedirectUri()
+
+    /**
+     * The ONE generic OIDC failure response — reused by every failure branch
+     * of `oidcStart()`/`oidcCallback()` so no response can ever distinguish
+     * which check failed (design.md, ADR-005 — no oracle).
+     *
+     * @return JSONResponse 400 with a generic error code.
+     *
+     * @spec openspec/specs/supplier-portal/spec.md#every-validation-failure-is-an-identical-generic-error
+     */
+    private function oidcGenericError(): JSONResponse
+    {
+        return new JSONResponse(['error' => self::OIDC_GENERIC_ERROR], Http::STATUS_BAD_REQUEST);
+    }//end oidcGenericError()
 
     /**
      * End the client session: resolves the caller's own bearer and marks its

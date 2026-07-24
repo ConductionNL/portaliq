@@ -280,5 +280,46 @@ export function createPortalApi(config) {
 			}
 			setToken(null)
 		},
+
+		/**
+		 * Build the OIDC broker login URL for one of the org's configured
+		 * providers (portal-oidc-broker-login). A plain GET redirect — the
+		 * caller navigates the WHOLE page to it (`window.location.href =`),
+		 * never a `fetch()`, so the broker's own login page renders.
+		 *
+		 * @param {string} provider The provider preset (`digid`|`eherkenning`|`eidas`|`generic`).
+		 * @return {string}
+		 */
+		oidcStartUrl(provider) {
+			const org = config.organisationSlug || ''
+			return `${base}/session/oidc/start?org=${encodeURIComponent(org)}&provider=${encodeURIComponent(provider)}`
+		},
 	}
+}
+
+/**
+ * Pick up the bearer minted by an OIDC callback redirect (portal-oidc-broker-
+ * login): the token travels in the URL FRAGMENT (`#token=...`), never a query
+ * string, so it is never sent to the server and never appears in a log.
+ * Stores it via `setToken()` and strips the fragment from the visible URL
+ * (history.replaceState) so the bearer never lingers in browser history.
+ * A no-op (returns false) when there is no `#token=` fragment.
+ *
+ * @return {boolean} Whether a token was picked up.
+ */
+export function consumeOidcCallbackFragment() {
+	const hash = window.location.hash || ''
+	const match = hash.match(/^#token=(.+)$/)
+	if (!match) {
+		return false
+	}
+
+	const token = decodeURIComponent(match[1])
+	setToken(token)
+
+	const url = new URL(window.location.href)
+	url.hash = ''
+	window.history.replaceState(null, '', url.toString())
+
+	return true
 }

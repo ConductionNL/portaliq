@@ -12,7 +12,7 @@
 // OpenRegister directly.
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { createPortalApi, getToken } from '@portal/lib/portalApi.js'
+import { createPortalApi, getToken, consumeOidcCallbackFragment } from '@portal/lib/portalApi.js'
 import PageView from '@portal/components/PageView.jsx'
 import InboxPage from '@portal/components/InboxPage.jsx'
 
@@ -53,7 +53,13 @@ export default function App({ config, t: tProp }) {
 	// caller does not supply a translator — never a blank/undefined string.
 	const t = tProp || ((key) => key)
 	const api = useMemo(() => createPortalApi(config), [config])
-	const [token, setTokenState] = useState(() => getToken())
+	// Pick up an OIDC callback's bearer BEFORE the initial token read (portal-
+	// oidc-broker-login) — the fragment is consumed/stripped exactly once, on
+	// mount, so a later re-render never re-parses a stale hash.
+	const [token, setTokenState] = useState(() => {
+		consumeOidcCallbackFragment()
+		return getToken()
+	})
 	const [state, setState] = useState({ loading: true, session: null, contributions: null, devError: null })
 	const [dataByCollection, setDataByCollection] = useState({})
 	const [activeKey, setActiveKey] = useState(null)
@@ -178,6 +184,13 @@ export default function App({ config, t: tProp }) {
 		setTokenState(null)
 	}
 
+	// Navigate the WHOLE page to the OIDC start endpoint (portal-oidc-broker-
+	// login) — a full-page redirect, never a fetch(), so the broker's own
+	// login page renders in place of the portal.
+	function oidcLogin(provider) {
+		window.location.href = api.oidcStartUrl(provider)
+	}
+
 	return (
 		<div className={`portaliq-shell theme-${config.theme}`}>
 			<header className="portaliq-header">
@@ -212,9 +225,19 @@ export default function App({ config, t: tProp }) {
 					<section className="portaliq-login">
 						<h1>Welkom</h1>
 						<p>Log in om uw gegevens te bekijken.</p>
-						<button type="button" disabled>
-							{config.audience === 'supplier' ? 'Inloggen met eHerkenning' : 'Inloggen met DigiD'}
-						</button>
+						{(config.oidcProviders || []).map((p) => (
+							<button
+								key={p.provider}
+								type="button"
+								className="portaliq-oidc-login"
+								onClick={() => oidcLogin(p.provider)}
+							>
+								{t('Log in with {provider}', { provider: p.label })}
+							</button>
+						))}
+						{(config.oidcProviders || []).length === 0 && (
+							<p className="portaliq-idp-hint">{t('No login method is configured for this organisation yet.')}</p>
+						)}
 						<button type="button" className="portaliq-devlogin" onClick={devLogin}>
 							Dev-login (test)
 						</button>

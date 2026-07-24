@@ -36,15 +36,13 @@ class PortaliqRegisterConfigTest extends TestCase
     public function testRegisterJsonParsesAndVersionsAreBumped(): void
     {
         $this->assertNotSame([], self::$register, 'register JSON must parse');
-        // The register's OWN version bumped to 0.6.0 across three concurrently
-        // merged changes: portal-session-hardening-v2 (T07, adds
-        // `portalAuditEntry`), wmebv-submission-receipts (adds
-        // `portalSubmission` + `portalMessage.referenceId`/`dataCopy`), and
-        // portal-notifications-dispatch (adds `portalNotification` AND bumps
-        // portalAccount's own version for the `needsAlternativeContact`
-        // fallback flag).
-        $this->assertSame('0.6.0', self::$register['info']['version']);
-        $this->assertSame('0.4.0', self::$register['components']['schemas']['portalAccount']['version']);
+        // The register's OWN version bumped to 0.7.0 for portal-oidc-broker-login
+        // (T01/T08): adds the `portalOidcState` schema (single-use OIDC state/
+        // nonce/PKCE storage) and bumps portalAccount's own version for the
+        // additive `generic` identityType enum member (a broker-agnostic OIDC
+        // provider preset that is none of digid/eherkenning/eidas).
+        $this->assertSame('0.7.0', self::$register['info']['version']);
+        $this->assertSame('0.5.0', self::$register['components']['schemas']['portalAccount']['version']);
 
     }//end testRegisterJsonParsesAndVersionsAreBumped()
 
@@ -122,6 +120,38 @@ class PortaliqRegisterConfigTest extends TestCase
         $this->assertSame(['audience', 'subjectRef', 'organisation'], $account['required']);
 
     }//end testPortalNotificationSchemaIsAddedAndNeverPublic()
+
+    /**
+     * portal-oidc-broker-login T01/T08: `portalAccount.identityType` gains the
+     * additive `generic` enum member (a broker-agnostic OIDC provider preset
+     * for a broker that is none of digid/eherkenning/eidas), and the new
+     * `portalOidcState` schema (single-use start→callback state/nonce/PKCE
+     * storage) is never publicly readable/writable and never touches
+     * `portalAccount`'s `required` list.
+     */
+    public function testPortalOidcStateSchemaIsAddedAndNeverPublic(): void
+    {
+        $schemas = self::$register['components']['schemas'];
+        $this->assertArrayHasKey('portalOidcState', $schemas, 'portalOidcState schema must exist');
+
+        $state = $schemas['portalOidcState'];
+        $this->assertFalse($state['x-openregister']['publicRead']);
+        $this->assertFalse($state['x-openregister']['publicWrite']);
+        $this->assertSame(
+            ['state', 'nonce', 'codeVerifier', 'org', 'provider', 'expiresAt'],
+            $state['required']
+        );
+
+        $account = $schemas['portalAccount'];
+        $this->assertSame(
+            ['eherkenning', 'digid', 'eidas', 'generic', 'dev'],
+            $account['properties']['identityType']['enum']
+        );
+        // Union-merge caution (migration.md): the additive enum member must not
+        // touch the required list.
+        $this->assertSame(['audience', 'subjectRef', 'organisation'], $account['required']);
+
+    }//end testPortalOidcStateSchemaIsAddedAndNeverPublic()
 
     public function testSeedAccountsUsePlaceholdersAndProveBothClaimStates(): void
     {
