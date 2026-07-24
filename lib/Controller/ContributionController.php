@@ -1106,6 +1106,13 @@ class ContributionController extends Controller implements PortalProtected
      * @spec openspec/changes/contract-v2/tasks.md#T8
      * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
      * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) -- the audit fact-record
+     * (portal-session-hardening-v2) and the WMEBV receipt follow-on
+     * (wmebv-submission-receipts) both hang off this ONE authorised-forward
+     * handler by design — each is a single fail-safe branch guarding a
+     * distinct compliance duty; splitting them would separate two
+     * side-effects of the SAME forward from the single 403 gate above them.
      */
     #[PublicPage]
     #[NoCSRFRequired]
