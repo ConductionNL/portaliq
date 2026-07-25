@@ -154,6 +154,37 @@ class PortalContributionProviderTest extends TestCase
     }//end testContributionLevelMinTrustFillsEntriesLackingOwnMinTrust()
 
     /**
+     * `activePortalPages()` — the shared read every public method funnels
+     * through — narrows to `status: active` via the reader's own `filter`
+     * parameter, and deliberately queries with an EMPTY `scopeField`/
+     * `subjectRef`: `portalPage` rows are configuration, not subject data,
+     * so there is no per-subject scope to enforce here (a `draft` row is
+     * excluded by the filter before this class ever sees it).
+     */
+    public function testActivePortalPagesQueriesOnlyActiveStatus(): void
+    {
+        $reader = $this->createMock(PortalObjectReader::class);
+        $reader->expects($this->once())->method('readCollection')->with(
+            'portaliq',
+            'portalPage',
+            '',
+            '',
+            '',
+            200,
+            '',
+            '',
+            null,
+            '',
+            null,
+            ['status' => 'active']
+        )->willReturn([]);
+
+        $provider = new PortalContributionProvider($reader, $this->createMock(LoggerInterface::class));
+        $provider->getAudiences();
+
+    }//end testActivePortalPagesQueriesOnlyActiveStatus()
+
+    /**
      * @param array<int, array<string, mixed>> $rows The rows the mocked
      *                                                reader returns.
      */

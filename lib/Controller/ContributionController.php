@@ -37,8 +37,8 @@
  * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
  * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
  * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
- * @spec openspec/changes/portal-page-provisioning/tasks.md#4.3
- * @spec openspec/changes/portal-page-provisioning/tasks.md#4.4
+ * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
+ * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
  */
 
 declare(strict_types=1);
@@ -185,7 +185,7 @@ class ContributionController extends Controller implements PortalProtected
      *
      * @spec openspec/changes/supplier-portal/tasks.md#T04
      * @spec openspec/changes/portal-inbox-v2/tasks.md#T04
-     * @spec openspec/changes/portal-page-provisioning/tasks.md#4.4
+     * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
      */
     #[PublicPage]
     #[NoCSRFRequired]
@@ -920,7 +920,7 @@ class ContributionController extends Controller implements PortalProtected
      *
      * @return JSONResponse The created object, or 403 / 502.
      *
-     * @spec openspec/changes/portal-page-provisioning/tasks.md#4.3
+     * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
      */
     private function createAnonymous(string $register, string $schema): JSONResponse
     {
@@ -960,7 +960,7 @@ class ContributionController extends Controller implements PortalProtected
      *
      * @return array<string, mixed>|null The matched action, or null.
      *
-     * @spec openspec/changes/portal-page-provisioning/tasks.md#4.2
+     * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
      */
     private function authorisedAnonymousCreateAction(string $register, string $schema): ?array
     {

@@ -34,7 +34,7 @@
  *
  * @spec openspec/changes/contribution-manifest-v3/tasks.md#T1
  * @spec openspec/specs/supplier-portal/spec.md#form-data-minimisation-no-non-mandatory-field-may-be-required
- * @spec openspec/changes/portal-page-provisioning/tasks.md#2.2
+ * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-and-elevated-trust-must-not-combine-on-one-entry
  */
 
 declare(strict_types=1);
@@ -835,7 +835,7 @@ class PortalManifestNormaliser
      *
      * @return array<string, mixed>
      *
-     * @spec openspec/changes/portal-page-provisioning/tasks.md#2.2
+     * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-and-elevated-trust-must-not-combine-on-one-entry
      */
     private function normaliseAnonymousFlag(array $entry): array
     {

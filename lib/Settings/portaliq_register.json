@@ -909,6 +909,7 @@
                                 "label": {
                                     "title": "Label",
                                     "type": "string",
+                                    "description": "Display label for this action in the portal SPA (button/form title).",
                                     "example": "Melding maken"
                                 },
                                 "register": {
@@ -920,6 +921,7 @@
                                 "schema": {
                                     "title": "Schema",
                                     "type": "string",
+                                    "description": "Target schema slug within that register.",
                                     "example": "melding"
                                 },
                                 "fields": {
@@ -991,11 +993,13 @@
                                 "id": {
                                     "title": "Page id",
                                     "type": "string",
+                                    "description": "Unique within this contribution; the portal SPA's page route segment.",
                                     "example": "melding-maken"
                                 },
                                 "label": {
                                     "title": "Label",
                                     "type": "string",
+                                    "description": "Display label for this page in the portal SPA (nav item / page title).",
                                     "example": "Melding maken"
                                 },
                                 "icon": {
@@ -1017,6 +1021,7 @@
                                             "type": {
                                                 "title": "Block type",
                                                 "type": "string",
+                                                "description": "The block's kind — which of the below reference fields applies, and how the SPA renders it (PortalManifestNormaliser::BLOCK_TYPES).",
                                                 "enum": [
                                                     "collection",
                                                     "action",

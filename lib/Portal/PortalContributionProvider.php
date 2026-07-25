@@ -52,9 +52,9 @@
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T04
  * @spec openspec/changes/contract-v2/tasks.md#T9
- * @spec openspec/changes/portal-page-provisioning/tasks.md#3.1
- * @spec openspec/changes/portal-page-provisioning/tasks.md#3.2
- * @spec openspec/changes/portal-page-provisioning/tasks.md#3.3
+ * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-an-app-must-be-able-to-provision-a-portal-page-as-data
+ * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-an-app-must-be-able-to-provision-a-portal-page-as-data
+ * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-an-app-must-be-able-to-provision-a-portal-page-as-data
  */
 
 declare(strict_types=1);
@@ -69,7 +69,7 @@ use Psr\Log\LoggerInterface;
  * Config-driven contribution provider: reads active `portalPage` objects.
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T04
- * @spec openspec/changes/portal-page-provisioning/tasks.md#3.1
+ * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-an-app-must-be-able-to-provision-a-portal-page-as-data
  */
 class PortalContributionProvider implements IPortalContributionProvider
 {
@@ -122,7 +122,7 @@ class PortalContributionProvider implements IPortalContributionProvider
      *
      * @return array<int, string>
      *
-     * @spec openspec/changes/portal-page-provisioning/tasks.md#3.2
+     * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-an-app-must-be-able-to-provision-a-portal-page-as-data
      */
     public function getAudiences(): array
     {
@@ -159,8 +159,8 @@ class PortalContributionProvider implements IPortalContributionProvider
      * @return array<string, mixed>|null
      *
      * @spec openspec/changes/supplier-portal/tasks.md#T04
-     * @spec openspec/changes/portal-page-provisioning/tasks.md#3.1
-     * @spec openspec/changes/portal-page-provisioning/tasks.md#3.3
+     * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-an-app-must-be-able-to-provision-a-portal-page-as-data
+     * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-an-app-must-be-able-to-provision-a-portal-page-as-data
      */
     public function getContribution(array $subject): ?array
     {

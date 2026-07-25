@@ -28,7 +28,7 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T06
- * @spec openspec/changes/portal-page-provisioning/tasks.md#4.1
+ * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
  */
 
 declare(strict_types=1);
@@ -132,7 +132,7 @@ class PortalObjectWriter
      *
      * @return array<string, mixed>|null The created object, or null on failure.
      *
-     * @spec openspec/changes/portal-page-provisioning/tasks.md#4.1
+     * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
      */
     public function createAnonymousObject(string $register, string $schema, array $data): ?array
     {

@@ -33,7 +33,7 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T02
- * @spec openspec/changes/portal-page-provisioning/tasks.md#5.1
+ * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
  */
 
 declare(strict_types=1);
@@ -56,7 +56,7 @@ use Throwable;
  * additive anonymous-allowed branch (portal-page-provisioning).
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T02
- * @spec openspec/changes/portal-page-provisioning/tasks.md#5.1
+ * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
  */
 class PortalAuthMiddleware extends Middleware
 {
@@ -101,7 +101,7 @@ class PortalAuthMiddleware extends Middleware
      *                                      matches the request.
      *
      * @spec openspec/changes/supplier-portal/tasks.md#T02
-     * @spec openspec/changes/portal-page-provisioning/tasks.md#5.1
+     * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
      */
     public function beforeController($controller, $methodName): void
     {
@@ -132,7 +132,7 @@ class PortalAuthMiddleware extends Middleware
      *
      * @return bool
      *
-     * @spec openspec/changes/portal-page-provisioning/tasks.md#5.1
+     * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
      */
     private function anonymousEntryMatches(string $methodName): bool
     {
@@ -165,7 +165,7 @@ class PortalAuthMiddleware extends Middleware
      *
      * @return bool
      *
-     * @spec openspec/changes/portal-page-provisioning/tasks.md#5.1
+     * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
      */
     private function anonymousCreateActionMatches(array $contributions): bool
     {

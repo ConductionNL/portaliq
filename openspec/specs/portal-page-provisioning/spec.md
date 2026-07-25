@@ -50,6 +50,12 @@ object SHALL NOT appear in any aggregate.
   portal manifest
 - **THEN** the response includes that contribution, rendered exactly as it
   would be had the app instead shipped a PHP provider class
+- @e2e exclude no live IdP-backed citizen session in this dev environment
+  (identity providers beyond `dev` are not wired end-to-end yet); the
+  row→manifest conversion and aggregation path are covered by PHPUnit
+  (`PortalContributionProviderTest::testGetContributionConvertsRowToManifestShape`,
+  `PortalContributionRegistryTest::testAggregatesMatchingAudienceAndSkipsAppsWithoutProvider`).
+  Follow-up once a `portalPage`-provisioned demo page is deployed.
 
 #### Scenario: A draft page is never exposed
 
@@ -57,6 +63,12 @@ object SHALL NOT appear in any aggregate.
 - **WHEN** any subject (or an anonymous caller) requests a portal manifest
 - **THEN** that page's collections, actions, and pages do not appear in the
   aggregate
+- @e2e exclude status filtering happens before the provider ever sees a
+  draft row — covered by PHPUnit
+  (`PortalContributionProviderTest::testActivePortalPagesQueriesOnlyActiveStatus`)
+  plus PortalObjectReader's own pre-existing, tested `filter` narrowing
+  (`PortalObjectReaderTest`); no distinct UI surface from the zero-code
+  scenario above.
 
 ### Requirement: Anonymous submission MUST be available without an identity provider
 
@@ -75,12 +87,25 @@ identity provider to be configured or live.
   that collection's create route
 - **THEN** the request succeeds (not 401) and the created object carries no
   subjectRef/organisation stamp
+- @e2e exclude live citizen E2E (real browser, no session) is deferred —
+  no deploy to the shared dev instance in this change. Covered end-to-end
+  at the PHPUnit layer instead: `ContributionControllerTest::
+  testAnonymousCreateSucceedsForAnAnonymousAction` (whitelist + write with
+  no ownership stamp) and `PortalAuthMiddlewareTest::
+  testNoBearerCreateToAnonymousDeclaredRoutePassesThrough` (the gate that
+  lets the no-bearer request reach the controller at all). A seed
+  `portalPage` object (`dev-citizen-intake`) ships this change so the real
+  browser flow is exercisable once deployed — follow-up.
 
 #### Scenario: A non-anonymous action still requires a bearer session
 
 - **GIVEN** an action WITHOUT `anonymous: true`
 - **WHEN** an unauthenticated caller submits to the same route
 - **THEN** the request is rejected 401
+- @e2e exclude regression invariant, not a new UI flow — covered by
+  PHPUnit (`ContributionControllerTest::
+  testCreateUnauthenticatedWithNoAnonymousActionIs403`,
+  `PortalAuthMiddlewareTest::testNoBearerCreateToNonAnonymousRouteStillThrows`).
 
 ### Requirement: Anonymous and elevated trust MUST NOT combine on one entry
 
@@ -95,6 +120,11 @@ bearer.
 - **WHEN** the manifest is normalised
 - **THEN** the surfaced entry no longer carries `anonymous: true` — only a
   bearer-authenticated, sufficiently-trusted subject can invoke it
+- @e2e exclude pure fail-closed sanitisation invariant, no UI surface —
+  covered by PHPUnit (`PortalManifestNormaliserTest::
+  testAnonymousIsDroppedWhenCombinedWithElevatedMinTrust`) and, fleet-wide,
+  `PortalContributionRegistryTest::
+  testAggregateAnonymousDropsEntryStrippedByMutualExclusion`.
 
 ## Non-Goals
 
