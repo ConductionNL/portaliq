@@ -36,10 +36,14 @@ class OidcClientServiceTest extends TestCase
     private const NONCE     = 'expected-nonce-123';
     private const KID       = 'key-1';
 
-    /** @var resource|\OpenSSLAsymmetricKey */
+    /**
+     * @var resource|\OpenSSLAsymmetricKey
+     */
     private $privateKey;
 
-    /** @var array{n: string, e: string} */
+    /**
+     * @var array{n: string, e: string}
+     */
     private array $jwkComponents;
 
     protected function setUp(): void
@@ -134,10 +138,17 @@ class OidcClientServiceTest extends TestCase
         $service = $this->service();
         $token   = $this->signedToken(claimOverrides: []);
 
-        // Flip the last byte of the signature segment.
-        $parts             = explode('.', $token);
-        $parts[2]          = substr($parts[2], 0, -1).($parts[2][-1] === 'A' ? 'B' : 'A');
-        $tamperedToken     = implode('.', $parts);
+        // Corrupt the raw signature bytes (not a trailing base64 padding bit):
+        // decode the signature segment, flip one bit of a middle byte, and
+        // re-encode. Mutating the final base64 character can be a no-op when it
+        // only carries base64 padding bits, so operate on the decoded bytes to
+        // guarantee the signature actually differs.
+        $parts     = explode('.', $token);
+        $signature = base64_decode(strtr($parts[2], '-_', '+/').str_repeat('=', ((4 - (strlen($parts[2]) % 4)) % 4)));
+        $mid       = intdiv(strlen($signature), 2);
+        $signature[$mid] = chr((ord($signature[$mid]) ^ 0x01));
+        $parts[2]        = rtrim(strtr(base64_encode($signature), '+/', '-_'), '=');
+        $tamperedToken   = implode('.', $parts);
 
         $this->assertNull($service->validateIdTokenAgainstJwks($tamperedToken, $this->jwks(), self::ISSUER, self::CLIENT_ID, self::NONCE));
 
@@ -161,7 +172,7 @@ class OidcClientServiceTest extends TestCase
         $header  = $this->b64Url((string) json_encode(['alg' => 'none', 'typ' => 'JWT']));
         $claims  = $this->b64Url((string) json_encode($this->claims([])));
         // `alg: none` tokens conventionally carry an EMPTY signature segment.
-        $token   = $header.'.'.$claims.'.';
+        $token = $header.'.'.$claims.'.';
 
         $this->assertNull($service->validateIdTokenAgainstJwks($token, $this->jwks(), self::ISSUER, self::CLIENT_ID, self::NONCE));
 
@@ -197,10 +208,10 @@ class OidcClientServiceTest extends TestCase
     {
         // No `kid` in the header, and the JWKS carries TWO RSA keys —
         // ambiguous resolution must fail closed, never guess.
-        $service     = $this->service();
-        $token       = $this->signedToken(claimOverrides: [], kid: null);
-        $secondPair  = openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA]);
-        $secondJwks  = $this->jwks();
+        $service    = $this->service();
+        $token      = $this->signedToken(claimOverrides: [], kid: null);
+        $secondPair = openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA]);
+        $secondJwks = $this->jwks();
         $secondJwks['keys'][] = $this->jwkEntry($secondPair, 'key-2');
 
         $this->assertNull($service->validateIdTokenAgainstJwks($token, $secondJwks, self::ISSUER, self::CLIENT_ID, self::NONCE));
@@ -236,7 +247,6 @@ class OidcClientServiceTest extends TestCase
     }//end testEmptyJwksRejectsEveryToken()
 
     // -- discover() / exchangeCode() / verifyIdToken() orchestration --------
-
     public function testDiscoverFailsClosedOnAnEmptyIssuer(): void
     {
         $service = $this->service();
@@ -279,7 +289,7 @@ class OidcClientServiceTest extends TestCase
         $oldJwksResponse = $this->createMock(IResponse::class);
         $oldJwksResponse->method('getBody')->willReturn((string) json_encode($this->jwks()));
 
-        $rotatedEntry = $this->jwkEntry($rotatedPair, 'rotated-kid');
+        $rotatedEntry    = $this->jwkEntry($rotatedPair, 'rotated-kid');
         $newJwksResponse = $this->createMock(IResponse::class);
         $newJwksResponse->method('getBody')->willReturn((string) json_encode(['keys' => [$rotatedEntry]]));
 
@@ -297,7 +307,6 @@ class OidcClientServiceTest extends TestCase
     }//end testVerifyIdTokenRetriesOnceOnAKeyRotationBeforeFailingClosed()
 
     // -- fixtures -------------------------------------------------------------
-
     private function service(?IClientService $clientService=null, ?ICacheFactory $cacheFactory=null): OidcClientService
     {
         return new OidcClientService(
@@ -404,5 +413,4 @@ class OidcClientServiceTest extends TestCase
         return rtrim(strtr(base64_encode($bytes), '+/', '-_'), '=');
 
     }//end b64Url()
-
 }//end class
