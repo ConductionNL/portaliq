@@ -97,6 +97,8 @@ the session routes are the public auth edge.
 | `POST` | `/apps/portaliq/portal/api/session/dev-login` | Mint a dev session (debug-gated; issues `trust: low`) |
 | `DELETE` | `/apps/portaliq/portal/api/session` | End the client session |
 | `POST` | `/apps/portaliq/portal/api/session/refresh` | Rotate the bearer within the absolute session lifetime cap (portal-session-hardening-v2) — mints a NEW `jti`, revokes the OLD one; fails closed (401) on a revoked/expired/malformed bearer, past the cap, or when the edge is unconfigured |
+| `GET` | `/apps/portaliq/portal/api/session/oidc/start?org=&provider=` | Start a broker OIDC login (portal-oidc-broker-login) — 302 to the broker's authorization endpoint with `state`+`nonce`+PKCE; fails closed (generic error, no redirect) on an unconfigured org/provider |
+| `GET` | `/apps/portaliq/portal/api/session/oidc/callback` | Broker OIDC callback — validates the ID token, maps claims, mints the session, 302s to the SPA with the bearer in the URL fragment; fails closed to the SAME generic error on ANY validation failure |
 | `GET` | `/apps/portaliq/portal/api/contributions` | The subject's aggregated manifest (audience- and trust-filtered), carrying the subject's own unread inbox count (`unreadCount`, portal-inbox-v2) |
 | `GET` | `/apps/portaliq/portal/api/inbox` | The subject's unified inbox (portal-inbox-v2): every `kind: inbox` collection across ALL their contributions, merged, sorted by `receivedAt` descending, each row tagged with its source `appId`/label. Every row passes the IDENTICAL per-row subject + tenant + trust boundary as a normal collection read; fails closed to an empty inbox on any per-collection OR error |
 | `PATCH` | `/apps/portaliq/portal/api/inbox/{register}/{schema}/{id}/read` | Mark ONE inbox message read (portal-inbox-v2), tamper-proof: ownership/tenant/trust re-verified BEFORE any write, only the `read` field is ever set (any other body field is ignored), and a foreign-owned/absent id 404s identically to every other scoped write — no existence oracle |
@@ -124,6 +126,93 @@ dedicated messages page too.
 WMEBV art 2:10 content-shape requirements, deferred to 2027. The SPA renders
 whichever of the three a message actually supplies and nothing for the rest;
 no contributing app is required to populate them before then.
+
+### OIDC broker login — DigiD / eHerkenning / eIDAS (portal-oidc-broker-login)
+
+Replaces the dormant dev-login-only auth edge with a real external identity
+edge: a **generic, broker-agnostic OIDC Relying Party**. Portaliq is deliberately
+**not** an OIDC broker itself — a Signicat-class identity broker exposes
+DigiD/eHerkenning/eIDAS as plain OIDC and keeps the PKIo-certificate / Logius
+metadata burden on its own side, so portaliq only ever has to be a standard
+OIDC RP. `digid`/`eherkenning`/`eidas`/`generic` are *provider presets* over
+that one generic RP.
+
+**Per-organisation config.** Each Organisation may configure one broker per
+provider preset via `PortalOrganisationConfigService`: `issuer`, `clientId`,
+`scopes`, claim mappings (`identityRef`/`subjectRef`/`audience` — see below),
+and a `loaMap` (broker LoA/`acr` → portal trust). The **client secret is
+stored via its own dedicated, `sensitive`-flagged `IAppConfig` entry**
+(`oidc_secret_<organisationUuid>_<provider>`) — separate from the
+non-sensitive presentation-override blob, and **never** returned by any
+endpoint or rendered in the SPA. An org without a configured provider simply
+does not offer that login button (`resolve()`'s `oidcProviders` list).
+
+**Claim mapping.** `identityType` is always the preset's fixed value (or, for
+`generic`, an org-declared override validated against the closed register
+enum). `identityRef` reads a configurable claim (default `sub`). `subjectRef`
+is either the literal `derive` keyword — `PortalAccountService` mints a fresh,
+cryptographically random reference on first login and reuses it on every
+later login for the SAME `(identityType, identityRef, organisation)` — or a
+`claim:<name>` reference into the validated ID token; it is **never** a
+request parameter. `audience` is a fixed literal or a `claim:<name>`
+reference. This is the change's core security invariant: the subject
+reference the domain apps scope their data by is always server-derived.
+
+**The flow.**
+1. `GET .../session/oidc/start?org=&provider=` resolves the org+provider
+   config (fail closed if absent), generates `state`/`nonce`/PKCE
+   (`code_verifier`/`code_challenge` S256), persists them single-use and
+   TTL-bounded (10 min) via the `portalOidcState` OpenRegister schema, and
+   302s to the broker's `authorization_endpoint` (resolved from the issuer's
+   `.well-known/openid-configuration`, cached).
+2. `GET .../session/oidc/callback` consumes the `state` EXACTLY ONCE (a
+   replayed or unknown `state` fails closed), exchanges the `code` at the
+   `token_endpoint` with the stored PKCE verifier, and **fully validates the
+   ID token**: `iss` equals the configured issuer, `aud` contains the
+   `clientId`, `nonce` equals the stored nonce, `exp`/`iat` within a 60s
+   clock-skew, and an **RS256 signature** verified against the broker's own
+   JWKS (fetched from the discovery document's `jwks_uri`, cached, with ONE
+   forced-refresh retry on failure — key-rotation tolerance).
+3. Claims map to `identityType`/`identityRef`/`subjectRef`/`audience`; the
+   broker's LoA (`acr` by default, per-org configurable) maps to the portal's
+   `low|substantial|high` trust vocabulary via `loaMap` — **unmapped or
+   missing LoA always maps to `low`, never higher** (under-privilege on
+   ambiguity).
+4. `PortalAccountService::findOrCreate()` resolves the `portalAccount`; the
+   EXISTING `PortalSessionService::issueSession()` mints the SAME HS256
+   portal session every other login path uses (recording the `login` audit
+   event and stamping `authTime` for a genuine new origin, per
+   portal-session-hardening-v2) and the browser is redirected to the SPA with
+   the bearer in the URL **fragment** (`#token=...`, never a query string —
+   never sent to the server, never in a log or Referer header).
+
+**Fail-closed discipline (ADR-005).** `alg: none` and every non-RS256
+algorithm is rejected outright (closes the classic HS256-confusion attack
+too); an ambiguous/unknown JWKS key (`kid`) resolution fails closed; and
+**every single failure — unknown org/provider, bad/reused state,
+token-exchange error, any one of iss/aud/nonce/exp/signature, unmappable
+claims, account/session mint failure — returns the IDENTICAL generic
+`{"error":"oidc_failed"}` response.** No response ever distinguishes which
+check failed (no oracle).
+
+**Dev-login is unaffected.** `POST /portal/api/session/dev-login` remains
+debug-gated and always issues `trust: low` — the local-development door,
+unrelated to and unaffected by the OIDC edge.
+
+**Decoupling.** The RP is a standard OIDC client and does **not** hard-depend
+on OpenConnector — if OpenConnector later fronts a broker, it is just another
+OIDC issuer in the per-org config, no portaliq code change.
+
+**Production go-live is an OPS gate, not a code task.** Shipping **DigiD** to
+production requires the DigiD **Normenkader 3.0** annual
+ICT-beveiligingsassessment (RE auditor) **and a DPIA** — operational/compliance
+gates that run in parallel with, and are not delivered by, this code change.
+The edge can be built and fully tested against a broker's *acceptance*
+environment while the assessment/DPIA proceed.
+
+**Out of scope (later slices).** DigiD *Machtigen* / eHerkenning
+*ketenmachtiging* delegation, and a SAML broker profile — this edge is
+OIDC-only.
 
 ### Session refresh, rate limiting, and the audit trail (portal-session-hardening-v2)
 

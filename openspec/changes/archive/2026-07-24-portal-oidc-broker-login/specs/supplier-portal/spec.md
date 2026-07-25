@@ -32,7 +32,7 @@ that login option.
 - **GIVEN** an organisation configured with an `eherkenning` OIDC provider and no `digid`
 - **WHEN** the SPA loads that org's login options
 - **THEN** an eHerkenning button is shown and no DigiD button is shown; the client secret is never present in any response
-- @e2e exclude add Playwright e2e in apply phase — spec-only PR; config-driven button rendering asserted in the login e2e
+- @e2e exclude the button-rendering assertion is written in `tests/e2e/portal-oidc-broker-login.spec.ts` (happy-path group) but requires a live Organisation with an OIDC broker config wired up first (see the file's header) — not run in the apply pass; the config-shape half (`resolve()`'s `oidcProviders` is secret-free and provider-gated) is covered by `PortalOrganisationConfigServiceTest`
 
 ### Requirement: OIDC start builds a state + nonce + PKCE authorization request
 
@@ -54,7 +54,7 @@ endpoint with `state`, `nonce`, and `code_challenge`.
 - **GIVEN** an org/provider with no OIDC config
 - **WHEN** start is called
 - **THEN** it fails closed with a generic error and issues no redirect
-- @e2e exclude fail-closed start — covered by PHPUnit; no UI surface
+- @e2e tests/e2e/portal-oidc-broker-login.spec.ts
 
 ### Requirement: OIDC callback validates the ID token and fails closed on every error
 
@@ -72,14 +72,14 @@ check failed.
 - **GIVEN** a callback with a valid `state`, exchangeable `code`, and an ID token passing all checks (iss, aud, nonce, exp, RS256 signature)
 - **WHEN** the callback is processed
 - **THEN** claims are mapped, the `portalAccount` is found-or-created, and an HS256 portal session is minted via `PortalSessionService::issueSession()` before redirecting to the SPA
-- @e2e exclude add Playwright e2e in apply phase — spec-only PR; happy path asserted at unit level against a stub broker + JWKS
+- @e2e exclude the happy-path start→callback round trip against a stub broker is written in `tests/e2e/portal-oidc-broker-login.spec.ts` (skipped unless `OIDC_E2E_LIVE=1` — needs a live Organisation with an OIDC broker config wired up first, see the file's header) — not run in the apply pass; asserted at unit level against a stub broker + JWKS in `SessionControllerTest` and `OidcClientServiceTest`
 
 #### Scenario: Every validation failure is an identical generic error
 
 - **GIVEN** callbacks that each fail exactly one check — reused `state`, wrong `iss`, wrong `aud`, wrong `nonce`, expired token, bad RS256 signature, `alg: none`, or JWKS unavailable
 - **WHEN** each is processed
 - **THEN** each returns the IDENTICAL generic error, mints no session, and reveals nothing about which check failed
-- @e2e exclude no-oracle security invariant — covered by a PHPUnit validation matrix; no UI surface
+- @e2e exclude the state/CSRF-replay slice (missing state, unknown/never-issued state, broker-reported error) runs live against the API in `tests/e2e/portal-oidc-broker-login.spec.ts`; the iss/aud/nonce/exp/signature/`alg:none` slice needs a broker round trip and is covered by a PHPUnit validation matrix (`OidcClientServiceTest`) instead — no UI surface for those checks
 
 #### Scenario: The subject reference is server-derived, never client-supplied
 

@@ -112,7 +112,7 @@ class PortalPageControllerTest extends TestCase
             'organisationSlug'    => '',
             'theme'               => 'default',
             'logo'                => null,
-            'idp'                 => null,
+            'oidcProviders'       => [],
             'featureFlags'        => [],
             'allowedEmbedOrigins' => [],
             'apiBase'             => '/index.php/apps/portaliq/portal/api',

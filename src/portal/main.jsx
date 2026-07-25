@@ -28,7 +28,9 @@ const RUNTIME_CONFIG = loadState('portaliq', 'runtimeConfig', {
 	organisationSlug: '',
 	theme: 'default',
 	logo: null,
-	idp: null,
+	// portal-oidc-broker-login: secret-free {provider, label} pairs the login
+	// buttons are built from; empty here means "no broker configured".
+	oidcProviders: [],
 	featureFlags: {},
 	allowedEmbedOrigins: [],
 	apiBase: '/index.php/apps/portaliq/portal/api',

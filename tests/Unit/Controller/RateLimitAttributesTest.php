@@ -39,6 +39,8 @@ class RateLimitAttributesTest extends TestCase
             'session devLogin'       => [SessionController::class, 'devLogin'],
             'session logout'         => [SessionController::class, 'logout'],
             'session refresh'        => [SessionController::class, 'refresh'],
+            'session oidcStart'      => [SessionController::class, 'oidcStart'],
+            'session oidcCallback'   => [SessionController::class, 'oidcCallback'],
             'contribution collection' => [ContributionController::class, 'collection'],
             'contribution create'    => [ContributionController::class, 'create'],
             'contribution update'    => [ContributionController::class, 'update'],

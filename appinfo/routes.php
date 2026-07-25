@@ -36,6 +36,13 @@ return [
         // session lifetime (portal-session-hardening-v2 T03). Registered
         // before the /portal/{path} SPA catch-all.
         ['name' => 'session#refresh', 'url' => '/portal/api/session/refresh', 'verb' => 'POST'],
+        // Generic, broker-agnostic OIDC Relying Party (portal-oidc-broker-login,
+        // T06/T07): start builds a state+nonce+PKCE authorization request and
+        // 302s to the broker; callback validates the ID token and mints the
+        // existing HS256 portal session. Registered before the /portal/{path}
+        // SPA catch-all.
+        ['name' => 'session#oidcStart', 'url' => '/portal/api/session/oidc/start', 'verb' => 'GET'],
+        ['name' => 'session#oidcCallback', 'url' => '/portal/api/session/oidc/callback', 'verb' => 'GET'],
 
         // Admin-only incident response (portal-auth-edge-session-hardening):
         // revoke every active portal session for an Organisation.
