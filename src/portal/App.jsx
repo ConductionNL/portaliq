@@ -107,7 +107,11 @@ export default function App({ config, t: tProp }) {
 
 	// When the active page changes, load every collection it references.
 	useEffect(() => {
-		if (!active) {
+		// Guard synthetic nav entries (the fixed cross-app inbox, portal-inbox-v2)
+		// that carry no `page` — they are rendered by InboxPage, not from blocks.
+		// Without this, `active.page.blocks` throws when the inbox tab is active
+		// (or is the only nav entry), crashing the whole SPA on load.
+		if (!active || !active.page) {
 			return
 		}
 		const ids = new Set()
