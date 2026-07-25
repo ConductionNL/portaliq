@@ -1,10 +1,10 @@
 # portal-page-provisioning Specification
 
-**Status**: in-progress
+**Status**: done
 **Scope**: portaliq
 **OpenSpec changes**:
 
-- [portal-page-provisioning](../../changes/portal-page-provisioning/)
+- [portal-page-provisioning](../../changes/archive/2026-07-25-portal-page-provisioning/) _(archived 2026-07-25)_
 
 ## Purpose
 
@@ -107,6 +107,21 @@ identity provider to be configured or live.
   testCreateUnauthenticatedWithNoAnonymousActionIs403`,
   `PortalAuthMiddlewareTest::testNoBearerCreateToNonAnonymousRouteStillThrows`).
 
+#### Scenario: An anonymous visitor can read the page layout before submitting
+
+- **GIVEN** a `portalPage` with at least one `anonymous: true` entry
+- **WHEN** an unauthenticated caller requests the portal manifest
+  (`GET /portal/api/contributions`)
+- **THEN** the response contains ONLY that contribution's anonymous-flagged
+  collections/actions/pages (not any private sibling entry in the same
+  contribution, and not any other audience's private contribution), instead
+  of a 401
+- @e2e exclude live citizen E2E deferred, same as the intake-form scenario
+  above — covered by PHPUnit
+  (`ContributionControllerTest::testIndexServesAnonymousAggregateWhenSubjectResolvesNull`,
+  `PortalAuthMiddlewareTest::testNoBearerIndexWithAnonymousEntryPassesThrough`,
+  `PortalContributionRegistryTest::testAggregateAnonymousSurfacesOnlyAnonymousEntriesAndDropsPrivateSiblings`).
+
 ### Requirement: Anonymous and elevated trust MUST NOT combine on one entry
 
 Portaliq SHALL fail closed when one entry declares both `anonymous: true`
@@ -126,6 +141,29 @@ bearer.
   `PortalContributionRegistryTest::
   testAggregateAnonymousDropsEntryStrippedByMutualExclusion`.
 
+### Requirement: Trust-elevated (non-anonymous) pages are unaffected
+
+Elevated-trust, non-anonymous entries SHALL continue to require a resolved
+bearer subject whose session trust satisfies the declared `minTrust`,
+exactly as contract v2 already specifies — unchanged by this change.
+DigiD/eHerkenning/eIDAS remain OPTIONAL trust elevation for pages that opt
+into a higher `minTrust` — never a precondition for the anonymous or
+`low`-trust surface this change adds.
+
+#### Scenario: An elevated-trust action still gates on session trust, not on identity provider presence
+
+- **GIVEN** a `portalPage` action with `minTrust: "substantial"` and no
+  `anonymous` flag
+- **WHEN** a bearer-authenticated subject whose session trust normalises to
+  `low` invokes it
+- **THEN** the request is rejected 403, identical to today's `minTrust`
+  enforcement — unaffected by this change
+- @e2e exclude pre-existing contract-v2 minTrust enforcement, not new
+  behaviour — covered by the pre-existing
+  `PortalContributionRegistryTest::testMinTrustFiltersCollectionsAndActionsFailClosed`
+  and this change's
+  `PortalContributionProviderTest::testContributionLevelMinTrustFillsEntriesLackingOwnMinTrust`.
+
 ## Non-Goals
 
 - Frontend SPA routing/UX for anonymous form pages.
@@ -136,14 +174,14 @@ bearer.
 
 ## Acceptance Criteria
 
-- [ ] `portalPage` schema exists in `lib/Settings/portaliq_register.json`
+- [x] `portalPage` schema exists in `lib/Settings/portaliq_register.json`
       with `title`/`description` on every property (ADR-011).
-- [ ] Portaliq's built-in provider reads active `portalPage` objects into
+- [x] Portaliq's built-in provider reads active `portalPage` objects into
       the standard manifest shape.
-- [ ] `PortalContributionRegistry::aggregateAnonymous()` surfaces only
+- [x] `PortalContributionRegistry::aggregateAnonymous()` surfaces only
       `anonymous: true` entries, dropping private siblings.
-- [ ] `PortalAuthMiddleware` lets an anonymous-declared `create`/`index`
+- [x] `PortalAuthMiddleware` lets an anonymous-declared `create`/`index`
       request through without a bearer; every non-anonymous route is
       unaffected.
-- [ ] Anonymous writes carry no subject/organisation stamp; the mutual
+- [x] Anonymous writes carry no subject/organisation stamp; the mutual
       exclusion with elevated `minTrust` is enforced fail-closed.
