@@ -37,6 +37,8 @@
  * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
  * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
  * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
+ * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
+ * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
  */
 
 declare(strict_types=1);
@@ -163,17 +165,27 @@ class ContributionController extends Controller implements PortalProtected
     }//end subject()
 
     /**
-     * List the contributions the authenticated subject may see.
+     * List the contributions the authenticated subject may see — or, when no
+     * bearer resolves, the anonymous-reachable surface (portal-page-provisioning).
      *
      * The route is marked #[PublicPage] because portal subjects are not
      * Nextcloud users; PortalAuthMiddleware enforces the bearer session and
-     * fails closed before this method runs.
+     * fails closed before this method runs UNLESS at least one anonymous
+     * entry exists anywhere in the fleet, in which case a no-bearer request
+     * reaches here with `subject() === null` and gets the anonymous
+     * aggregate instead of a page-shaped 401 — the anonymous visitor's SPA
+     * needs the page layout (labels, richText, field configs) before it can
+     * submit anything.
      *
-     * @return JSONResponse The aggregated contribution manifest, carrying the
-     *                       subject's own unread inbox count (portal-inbox-v2 T04).
+     * @return JSONResponse The aggregated contribution manifest (subject or
+     *                       anonymous), carrying the subject's own unread
+     *                       inbox count when authenticated (portal-inbox-v2 T04;
+     *                       always `0` on the anonymous path — there is no
+     *                       inbox without a subject).
      *
      * @spec openspec/changes/supplier-portal/tasks.md#T04
      * @spec openspec/changes/portal-inbox-v2/tasks.md#T04
+     * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
      */
     #[PublicPage]
     #[NoCSRFRequired]
@@ -181,8 +193,13 @@ class ContributionController extends Controller implements PortalProtected
     {
         $subject = $this->subject();
         if ($subject === null) {
-            // Defensive: the middleware should already have failed closed.
-            return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+            // Reached only when PortalAuthMiddleware already confirmed at
+            // least one anonymous entry exists (fail-closed gate); a direct
+            // re-check would just repeat the same aggregation, so the
+            // anonymous aggregate is served straight away.
+            $aggregate = $this->registry->aggregateAnonymous();
+            $aggregate['unreadCount'] = 0;
+            return new JSONResponse($aggregate);
         }
 
         $aggregate = $this->registry->aggregateFor($subject);
@@ -786,7 +803,7 @@ class ContributionController extends Controller implements PortalProtected
     {
         $subject = $this->subject();
         if ($subject === null) {
-            return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+            return $this->createAnonymous(register: $register, schema: $schema);
         }
 
         $match = $this->authorisedCreateAction(subject: $subject, register: $register, schema: $schema);
@@ -882,6 +899,86 @@ class ContributionController extends Controller implements PortalProtected
 
         return null;
     }//end authorisedCreateAction()
+
+    /**
+     * Create an object with NO subject at all (portal-page-provisioning) —
+     * the anonymous sibling of the bearer-authenticated create() path.
+     * Reached only when `subject()` is null; PortalAuthMiddleware has
+     * already confirmed an anonymous `type: create` action exists for this
+     * exact `(register, schema)` before letting the request through, but
+     * this re-derives the match independently (defense in depth, the SAME
+     * discipline `authorisedCreateAction()` applies for a bearer subject) —
+     * a mismatch here means 403, not a write. Whitelisting and `defaults`
+     * are applied identically to the authenticated path; the write goes
+     * through `PortalObjectWriter::createAnonymousObject()`, which stamps NO
+     * subject/organisation ownership. There is no subject to audit or issue
+     * a WMEBV receipt against — an anonymous submission is, by definition,
+     * unowned.
+     *
+     * @param string $register The register of the collection.
+     * @param string $schema   The schema of the collection.
+     *
+     * @return JSONResponse The created object, or 403 / 502.
+     *
+     * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
+     */
+    private function createAnonymous(string $register, string $schema): JSONResponse
+    {
+        $action = $this->authorisedAnonymousCreateAction(register: $register, schema: $schema);
+        if ($action === null) {
+            return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+        }
+
+        $data = $this->whitelist(fields: (array) ($action['fields'] ?? []));
+
+        // Server-forced defaults, applied AFTER the whitelist so a client can
+        // never override them — identical discipline to the authenticated
+        // path (e.g. stamping a placeholder ownership marker a schema's
+        // `required` set may mandate, since an anonymous write carries no
+        // real subjectRef).
+        foreach ((array) ($action['defaults'] ?? []) as $key => $value) {
+            if (is_string($key) === true && $key !== '') {
+                $data[$key] = $value;
+            }
+        }
+
+        $created = $this->writer->createAnonymousObject(register: $register, schema: $schema, data: $data);
+        if ($created === null) {
+            return new JSONResponse(['error' => 'write_failed'], Http::STATUS_BAD_GATEWAY);
+        }
+
+        return new JSONResponse(['object' => $created]);
+    }//end createAnonymous()
+
+    /**
+     * Find an `anonymous: true`, `type: create` action for (register, schema)
+     * in the fleet-wide anonymous aggregate, or null when nothing matches
+     * (portal-page-provisioning).
+     *
+     * @param string $register The requested register.
+     * @param string $schema   The requested schema.
+     *
+     * @return array<string, mixed>|null The matched action, or null.
+     *
+     * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
+     */
+    private function authorisedAnonymousCreateAction(string $register, string $schema): ?array
+    {
+        $aggregate = $this->registry->aggregateAnonymous();
+        foreach (($aggregate['contributions'] ?? []) as $contribution) {
+            foreach (($contribution['actions'] ?? []) as $action) {
+                if (($action['type'] ?? '') === 'create'
+                    && ($action['anonymous'] ?? false) === true
+                    && ($action['register'] ?? '') === $register
+                    && ($action['schema'] ?? '') === $schema
+                ) {
+                    return $action;
+                }
+            }
+        }
+
+        return null;
+    }//end authorisedAnonymousCreateAction()
 
     /**
      * Update an object in a collection, owned by the subject (portal-scoped-crud,

@@ -48,6 +48,18 @@
  *   resolve within the SAME contribution; absent → one default page per listable
  *   collection is synthesised (v2 rendering preserved).
  *
+ * portal-page-provisioning adds one further optional, duck-typed field, on
+ * BOTH collections and actions:
+ *
+ * - `anonymous` (`bool`, default `false`) — when `true`, the entry is
+ *   surfaced by `PortalContributionRegistry::aggregateAnonymous()` and
+ *   reachable with NO bearer session at all (a `type: create` action) or
+ *   readable with no session (a collection). Mutually exclusive with a
+ *   non-`low` `minTrust` on the SAME entry — `PortalManifestNormaliser`
+ *   drops `anonymous` fail-closed when both are declared, so a malformed
+ *   manifest can never widen access. A provider that never sets `anonymous`
+ *   is byte-identical to today: every entry stays bearer-required.
+ *
  * @category Contribution
  * @package  OCA\Portaliq\Contribution
  *
@@ -62,6 +74,7 @@
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T04
  * @spec openspec/changes/contract-v2/tasks.md#T2
+ * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
  */
 
 declare(strict_types=1);

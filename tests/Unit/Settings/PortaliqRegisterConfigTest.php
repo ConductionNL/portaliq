@@ -36,13 +36,12 @@ class PortaliqRegisterConfigTest extends TestCase
     public function testRegisterJsonParsesAndVersionsAreBumped(): void
     {
         $this->assertNotSame([], self::$register, 'register JSON must parse');
-        // The register's OWN version bumped to 0.7.0 for portal-oidc-broker-login
-        // (T01/T08): adds the `portalOidcState` schema (single-use OIDC state/
-        // nonce/PKCE storage) and bumps portalAccount's own version for the
-        // additive `generic` identityType enum member (a broker-agnostic OIDC
-        // provider preset that is none of digid/eherkenning/eidas).
-        $this->assertSame('0.7.0', self::$register['info']['version']);
+        // The register's OWN version bumped to 0.8.0 for portal-page-provisioning
+        // (task 1.3): adds the new `portalPage` schema (data-provisioned portal
+        // contributions, ADR-046) — additive, no existing schema changed.
+        $this->assertSame('0.8.0', self::$register['info']['version']);
         $this->assertSame('0.5.0', self::$register['components']['schemas']['portalAccount']['version']);
+        $this->assertSame('0.1.0', self::$register['components']['schemas']['portalPage']['version']);
 
     }//end testRegisterJsonParsesAndVersionsAreBumped()
 
