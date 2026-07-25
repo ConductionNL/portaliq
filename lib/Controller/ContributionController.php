@@ -1275,6 +1275,16 @@ class ContributionController extends Controller implements PortalProtected
         $endpoint = (string) $action['endpoint'];
         $method   = strtoupper((string) ($action['method'] ?? 'POST'));
 
+        // A declared `fields` whitelist rebuilds the forwarded body server-side
+        // from ONLY those request params — an undeclared field (subjectRef, or
+        // anything else a client smuggles into the body) can never reach the
+        // domain app through the forward. An action that declares no `fields`
+        // relays the raw request body as-is (contract v2, A6): forwards like
+        // shillinq's `pay` carry an opaque domain payload with no whitelist.
+        $body = array_key_exists('fields', $action) === true
+            ? (string) json_encode($this->whitelist(fields: (array) $action['fields']))
+            : $this->requestBody();
+
         try {
             $client  = $this->clientService->newClient();
             $options = [
@@ -1283,7 +1293,7 @@ class ContributionController extends Controller implements PortalProtected
                     'Content-Type'     => 'application/json',
                 ],
                 'timeout'     => self::FORWARD_TIMEOUT,
-                'body'        => $this->requestBody(),
+                'body'        => $body,
                 // Relay non-2xx domain responses instead of throwing, so the
                 // domain app's own status codes (e.g. 422) reach the caller.
                 'http_errors' => false,

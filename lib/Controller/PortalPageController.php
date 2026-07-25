@@ -3,16 +3,21 @@
 /**
  * Portaliq PortalPageController
  *
- * Serves the per-subject external portal as a standalone SPA with ZERO Nextcloud
- * chrome — the tilburg-woo (softwarecatalogus) frontend, repointed at Portaliq's
- * subject-scoped `/portal/api` and hosted here (ADR-063, Decision-0: build ON
- * tilburg-woo). The built bundle lives under the app's `portal-ui/` directory;
- * this controller streams its static assets and falls back to `index.html` for
- * client-side (react-router) routes. Public — the auth edge is the SPA's own
- * bearer session against `/portal/api/session`, not a Nextcloud session.
+ * Serves the PUBLIC, white-label portal SPA (React + NL Design System) to the
+ * two external audiences — clients and suppliers — who are NOT Nextcloud users.
+ * The page renders with the public chrome (no Nextcloud navigation) and boots
+ * the `portaliq-portal` bundle, which authenticates against the portal's own
+ * auth edge (see the supplier-portal change) rather than a Nextcloud session.
  *
- * The `/portal/api/*` routes are registered BEFORE the `/portal/{path}` SPA
- * catch-all (appinfo/routes.php), so the scoped API is never swallowed here.
+ * White-label resolution (portal-white-label-runtime-config): the visitor is
+ * unauthenticated at this point (no bearer, no session claim to resolve a
+ * tenant from), so the tenant is identified by a `?org={slug}` query
+ * parameter (design.md — path-segment routing is a documented follow-up) and
+ * resolved via {@see PortalOrganisationConfigService}. A missing/unknown
+ * `org` renders the safe neutral default shell, never a 500 and never another
+ * tenant's branding. The CSP `frame-ancestors` is built from the resolved
+ * Organisation's configured allowed embed origins — `'none'` when empty,
+ * NEVER the previous hard-coded `'*'`.
  *
  * @category Controller
  * @package  OCA\Portaliq\Controller
@@ -27,6 +32,9 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T08
+ * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.1
+ * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#2.1
+ * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#3.2
  */
 
 declare(strict_types=1);
@@ -34,165 +42,132 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCP\AppFramework\Controller;
-use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\ContentSecurityPolicy;
+use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
-use OCP\AppFramework\Http\DataDisplayResponse;
-use OCP\AppFramework\Http\EmptyContentSecurityPolicy;
-use OCP\AppFramework\Http\Response;
+use OCP\AppFramework\Http\TemplateResponse;
 use OCP\IRequest;
 
 /**
- * Serves the bundled tilburg-woo portal SPA (`portal-ui/`) as an in-app public page.
+ * Serves the public Portaliq SPA shell.
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T08
  */
 class PortalPageController extends Controller
 {
-
-    /**
-     * Absolute path to the bundled built portal SPA.
-     *
-     * @var string
-     */
-    private string $root;
-
     /**
      * Constructor.
      *
-     * @param IRequest $request The request.
+     * @param IRequest                        $request     The request
+     * @param PortalOrganisationConfigService $orgResolver Resolves the tenant's
+     *                                                     white-label presentation.
      */
-    public function __construct(IRequest $request)
-    {
+    public function __construct(
+        IRequest $request,
+        private readonly PortalOrganisationConfigService $orgResolver,
+    ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
-        $resolved = realpath(__DIR__.'/../../portal-ui');
-        if ($resolved !== false) {
-            $this->root = $resolved;
-        } else {
-            $this->root = __DIR__.'/../../portal-ui';
-        }
     }//end __construct()
 
     /**
-     * Serve the SPA entry (`/portal`).
+     * Render the public portal shell.
      *
-     * @return Response
+     * The white-label runtime config (organisation name, theme, logo, IdP,
+     * feature flags) is resolved server-side from the `?org={slug}` query
+     * parameter and injected via IInitialStateService (see
+     * `templates/portal.php`; `src/portal/main.jsx` reads it back with
+     * `loadState('portaliq', 'runtimeConfig', ...)`). The React bundle takes
+     * over routing client-side; deep links are handled by catchAll(), which
+     * renders through this same method so every portal URL carries the
+     * resolved config.
+     *
+     * @return TemplateResponse
      *
      * @spec openspec/changes/supplier-portal/tasks.md#T08
+     * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.1
+     * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#2.1
+     * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#2.4
      */
     #[PublicPage]
     #[NoCSRFRequired]
-    public function index(): Response
+    #[NoAdminRequired]
+    public function index(): TemplateResponse
     {
-        return $this->render(path: '');
+        $orgSlug       = (string) $this->request->getParam('org', '');
+        $locale        = $this->resolveLocale();
+        $runtimeConfig = $this->orgResolver->resolve(orgSlug: $orgSlug, locale: $locale);
+
+        $response = new TemplateResponse(
+            Application::APP_ID,
+            'portal',
+            ['runtimeConfig' => $runtimeConfig],
+            TemplateResponse::RENDER_AS_PUBLIC
+        );
+
+        // Per-tenant frame-ancestors (portal-white-label-runtime-config): the
+        // portal carries a bearer token and renders authenticated actions, so
+        // an unrestricted '*' is a clickjacking exposure. Default-deny; an
+        // explicit tenant opts into embedding via its configured origins.
+        // ContentSecurityPolicy() defaults `frame-ancestors` to 'self' — that
+        // default must be cleared first, or an empty-origins tenant would
+        // still (wrongly) allow same-origin framing instead of 'none'.
+        $csp = new ContentSecurityPolicy();
+        $csp->disallowFrameAncestorDomain('\'self\'');
+        foreach ((array) ($runtimeConfig['allowedEmbedOrigins'] ?? []) as $origin) {
+            $csp->addAllowedFrameAncestorDomain((string) $origin);
+        }
+
+        $response->setContentSecurityPolicy($csp);
+
+        return $response;
     }//end index()
 
     /**
-     * Serve a bundled asset, or fall back to the SPA entry for client routes
-     * (`/portal/{path}`).
+     * Client-side-routed deep links (e.g. /portal/contracts/123) resolve to the
+     * same shell; the React router renders the correct view.
      *
-     * @param string $path The requested sub-path.
+     * @param string $path The deep-link path (unused server-side).
      *
-     * @return Response
+     * @return TemplateResponse
      *
      * @spec openspec/changes/supplier-portal/tasks.md#T08
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) -- $path is bound by the
+     * route definition; the SPA router consumes it client-side.
      */
     #[PublicPage]
     #[NoCSRFRequired]
-    public function catchAll(string $path=''): Response
+    #[NoAdminRequired]
+    public function catchAll(string $path=''): TemplateResponse
     {
-        return $this->render(path: $path);
+        return $this->index();
     }//end catchAll()
 
     /**
-     * Resolve the request path to a bundled file (path-traversal safe) and return
-     * it, or the SPA `index.html` when the path is empty / not a real bundled file
-     * (react-router client route).
+     * Resolve the visitor's locale from the `Accept-Language` header
+     * (portal-spa-i18n-locale-support) — the visitor is unauthenticated at
+     * this point, so there is no session/tenant locale to prefer yet. Only
+     * the first (highest-priority) language tag is read; normalisation to a
+     * supported locale (falling back to `nl`) happens in
+     * `PortalOrganisationConfigService`.
      *
-     * @param string $path The requested sub-path.
+     * @return string The raw first `Accept-Language` tag, or `''` when absent.
      *
-     * @return Response
+     * @spec openspec/changes/portal-spa-i18n-locale-support/tasks.md#2.2
      */
-    private function render(string $path): Response
+    private function resolveLocale(): string
     {
-        $relative = ltrim(str_replace('\\', '/', $path), '/');
-        $resolved = realpath($this->root.'/'.$relative);
-
-        // SPA fallback: empty, traversal outside root, or not a real file.
-        if ($relative === ''
-            || $resolved === false
-            || strncmp($resolved, $this->root, strlen($this->root)) !== 0
-            || is_file($resolved) === false
-        ) {
-            $resolved = $this->root.'/index.html';
+        $header = $this->request->getHeader('Accept-Language');
+        if ($header === '') {
+            return '';
         }
 
-        $content = @file_get_contents($resolved);
-        if ($content === false) {
-            return new DataDisplayResponse('Portal not built', Http::STATUS_NOT_FOUND, ['Content-Type' => 'text/plain']);
-        }
+        $first = explode(',', $header)[0];
+        $first = explode(';', $first)[0];
 
-        $isIndex  = (substr($resolved, -10) === 'index.html');
-        $response = new DataDisplayResponse($content, Http::STATUS_OK, ['Content-Type' => $this->mimeFor(file: $resolved)]);
-
-        // Index.html + runtime-config.js are per-instance and must never cache.
-        $noCache = ($isIndex === true || substr($resolved, -17) === 'runtime-config.js');
-        if ($noCache === true) {
-            // The bundled SPA loads its own same-origin scripts/styles/fonts and
-            // calls the same-origin /portal/api. Relax the default (`default-src
-            // 'none'`) CSP so it can run — start from an EMPTY policy (no nonce /
-            // strict-dynamic that would make the browser ignore 'self') and allow
-            // exactly what the same-origin SPA needs.
-            $csp = new EmptyContentSecurityPolicy();
-            $csp->allowInlineStyle(true);
-            $csp->addAllowedScriptDomain("'self'");
-            $csp->addAllowedStyleDomain("'self'");
-            $csp->addAllowedFontDomain("'self'");
-            $csp->addAllowedFontDomain('data:');
-            $csp->addAllowedFontDomain('https://fonts.gstatic.com');
-            $csp->addAllowedImageDomain("'self'");
-            $csp->addAllowedImageDomain('data:');
-            $csp->addAllowedConnectDomain("'self'");
-            $response->setContentSecurityPolicy($csp);
-        } else {
-            // Hash-named static assets are immutable.
-            $response->cacheFor(86400);
-        }//end if
-
-        return $response;
-    }//end render()
-
-    /**
-     * Map a file extension to a Content-Type.
-     *
-     * @param string $file The file path.
-     *
-     * @return string
-     */
-    private function mimeFor(string $file): string
-    {
-        $map = [
-            'html'  => 'text/html; charset=utf-8',
-            'js'    => 'application/javascript',
-            'css'   => 'text/css',
-            'json'  => 'application/json',
-            'svg'   => 'image/svg+xml',
-            'png'   => 'image/png',
-            'jpg'   => 'image/jpeg',
-            'jpeg'  => 'image/jpeg',
-            'gif'   => 'image/gif',
-            'ico'   => 'image/x-icon',
-            'webp'  => 'image/webp',
-            'woff'  => 'font/woff',
-            'woff2' => 'font/woff2',
-            'ttf'   => 'font/ttf',
-            'otf'   => 'font/otf',
-            'txt'   => 'text/plain; charset=utf-8',
-            'map'   => 'application/json',
-        ];
-
-        $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
-        return ($map[$ext] ?? 'application/octet-stream');
-    }//end mimeFor()
+        return trim($first);
+    }//end resolveLocale()
 }//end class
