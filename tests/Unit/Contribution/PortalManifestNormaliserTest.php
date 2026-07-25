@@ -524,4 +524,89 @@ class PortalManifestNormaliserTest extends TestCase
         $this->assertArrayNotHasKey('filesDownload', $out['collections'][3]);
 
     }//end testFilesDownloadIsCoercedToAStrictBoolean()
+
+    /**
+     * portal-page-provisioning: `anonymous` is coerced to a strict boolean,
+     * exactly like `filesUpload`/`filesDownload` — default false, malformed →
+     * false, `true`/`"true"` preserved. Covers both collections and actions.
+     */
+    public function testAnonymousIsCoercedToAStrictBoolean(): void
+    {
+        $out = $this->normaliser()->normalise(
+            [
+                'collections' => [
+                    ['id' => 'a', 'schema' => 's', 'anonymous' => true],
+                    ['id' => 'b', 'schema' => 's', 'anonymous' => 'true'],
+                    ['id' => 'c', 'schema' => 's', 'anonymous' => 1],
+                    ['id' => 'd', 'schema' => 's'],
+                ],
+                'actions'     => [
+                    ['id' => 'x', 'type' => 'create', 'anonymous' => true],
+                    ['id' => 'y', 'type' => 'create'],
+                ],
+            ]
+        );
+
+        $this->assertTrue($out['collections'][0]['anonymous']);
+        $this->assertTrue($out['collections'][1]['anonymous']);
+        $this->assertFalse($out['collections'][2]['anonymous']);
+        $this->assertArrayNotHasKey('anonymous', $out['collections'][3]);
+
+        $this->assertTrue($out['actions'][0]['anonymous']);
+        $this->assertArrayNotHasKey('anonymous', $out['actions'][1]);
+
+    }//end testAnonymousIsCoercedToAStrictBoolean()
+
+    /**
+     * portal-page-provisioning (spec: "Anonymous and elevated trust MUST NOT
+     * combine on one entry"): an entry declaring BOTH `anonymous: true` AND a
+     * non-`low` `minTrust` has `anonymous` dropped — fail-closed, the entry
+     * falls back to requiring an authenticated, trust-checked bearer, never
+     * the reverse. The entry itself (and its `minTrust`) is NOT removed —
+     * only the contradictory `anonymous` flag is.
+     */
+    public function testAnonymousIsDroppedWhenCombinedWithElevatedMinTrust(): void
+    {
+        $out = $this->normaliser()->normalise(
+            [
+                'collections' => [
+                    ['id' => 'gated', 'schema' => 's', 'anonymous' => true, 'minTrust' => 'substantial'],
+                ],
+                'actions'     => [
+                    ['id' => 'gatedAction', 'type' => 'create', 'anonymous' => true, 'minTrust' => 'high'],
+                ],
+            ]
+        );
+
+        $collection = $out['collections'][0];
+        $this->assertArrayNotHasKey('anonymous', $collection);
+        $this->assertSame('substantial', $collection['minTrust']);
+
+        $action = $out['actions'][0];
+        $this->assertArrayNotHasKey('anonymous', $action);
+        $this->assertSame('high', $action['minTrust']);
+
+    }//end testAnonymousIsDroppedWhenCombinedWithElevatedMinTrust()
+
+    /**
+     * An absent or explicit `minTrust: low` does NOT conflict with
+     * `anonymous: true` — only a HIGHER-than-low minTrust trips the
+     * exclusion (design.md).
+     */
+    public function testAnonymousSurvivesWithNoOrLowMinTrust(): void
+    {
+        $out = $this->normaliser()->normalise(
+            [
+                'collections' => [
+                    ['id' => 'a', 'schema' => 's', 'anonymous' => true],
+                    ['id' => 'b', 'schema' => 's', 'anonymous' => true, 'minTrust' => 'low'],
+                ],
+                'actions'     => [],
+            ]
+        );
+
+        $this->assertTrue($out['collections'][0]['anonymous']);
+        $this->assertTrue($out['collections'][1]['anonymous']);
+
+    }//end testAnonymousSurvivesWithNoOrLowMinTrust()
 }//end class

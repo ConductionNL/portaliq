@@ -55,15 +55,46 @@ class ContributionControllerTest extends TestCase
         'jti'          => 'session-jti-1',
     ];
 
-    public function testIndexReturns401WhenSubjectResolvesNull(): void
+    /**
+     * portal-page-provisioning: with NO anonymous entries anywhere, a
+     * no-bearer index() call serves the (empty) anonymous aggregate — 200,
+     * not 401. In production PortalAuthMiddleware would already have thrown
+     * before this method ran; this proves the controller's OWN behaviour in
+     * isolation.
+     */
+    public function testIndexServesEmptyAnonymousAggregateWhenSubjectResolvesNullAndNoAnonymousEntries(): void
     {
         $controller = $this->controller(aggregate: $this->aggregate(), subject: null);
         $response   = $controller->index();
 
-        $this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
-        $this->assertFalse($response->getData()['authenticated']);
+        $this->assertSame(Http::STATUS_OK, $response->getStatus());
+        $this->assertSame([], $response->getData()['contributions']);
+        $this->assertSame(0, $response->getData()['unreadCount']);
 
-    }//end testIndexReturns401WhenSubjectResolvesNull()
+    }//end testIndexServesEmptyAnonymousAggregateWhenSubjectResolvesNullAndNoAnonymousEntries()
+
+    /**
+     * portal-page-provisioning (spec: "An anonymous visitor can read the page
+     * layout before submitting"): a no-bearer index() call serves
+     * `aggregateAnonymous()`'s manifest — the anonymous-only slice — instead
+     * of a page-shaped 401.
+     */
+    public function testIndexServesAnonymousAggregateWhenSubjectResolvesNull(): void
+    {
+        $anonymousAggregate = [
+            'contributions' => [
+                ['app' => 'portaliq', 'label' => 'Meldingen', 'collections' => [], 'actions' => [['id' => 'openIntake', 'type' => 'create', 'anonymous' => true]]],
+            ],
+        ];
+
+        $controller = $this->controller(aggregate: $this->aggregate(), subject: null, anonymousAggregate: $anonymousAggregate);
+        $response   = $controller->index();
+
+        $this->assertSame(Http::STATUS_OK, $response->getStatus());
+        $this->assertSame($anonymousAggregate['contributions'], $response->getData()['contributions']);
+        $this->assertSame(0, $response->getData()['unreadCount']);
+
+    }//end testIndexServesAnonymousAggregateWhenSubjectResolvesNull()
 
     public function testIndexReturnsTheRegistrysAggregateForAnAuthenticatedSubject(): void
     {
@@ -147,12 +178,155 @@ class ContributionControllerTest extends TestCase
 
     }//end testCreateWithoutAMatchingActionIs403()
 
-    public function testCreateUnauthenticatedIs401(): void
+    /**
+     * portal-page-provisioning: a no-bearer create() call with NO anonymous
+     * `type: create` action declared for this exact (register, schema) is
+     * 403 forbidden — the anonymous path never becomes an open write.
+     */
+    public function testCreateUnauthenticatedWithNoAnonymousActionIs403(): void
     {
-        $controller = $this->controller(aggregate: $this->aggregate(), subject: null);
-        $this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->create('r1', 'a')->getStatus());
+        $writer = $this->createMock(PortalObjectWriter::class);
+        $writer->expects($this->never())->method('createAnonymousObject');
 
-    }//end testCreateUnauthenticatedIs401()
+        $controller = $this->controller(aggregate: $this->aggregate(), subject: null, writer: $writer);
+        $response   = $controller->create('r1', 'a');
+
+        $this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+
+    }//end testCreateUnauthenticatedWithNoAnonymousActionIs403()
+
+    /**
+     * portal-page-provisioning (spec: "An anonymous citizen submits a public
+     * intake form"): a no-bearer create() call matching an `anonymous: true`,
+     * `type: create` action for the EXACT (register, schema) succeeds — only
+     * the whitelisted fields are written, through
+     * PortalObjectWriter::createAnonymousObject() (NO subject/organisation
+     * stamp), never `createObject()`.
+     */
+    public function testAnonymousCreateSucceedsForAnAnonymousAction(): void
+    {
+        $anonymousAggregate = [
+            'contributions' => [
+                [
+                    'app'     => 'openbuild',
+                    'actions' => [
+                        ['id' => 'openIntake', 'type' => 'create', 'register' => 'openbuild', 'schema' => 'melding', 'fields' => ['title'], 'anonymous' => true],
+                    ],
+                ],
+            ],
+        ];
+
+        $writer = $this->createMock(PortalObjectWriter::class);
+        $writer->expects($this->once())->method('createAnonymousObject')
+            ->with('openbuild', 'melding', ['title' => 'X'])
+            ->willReturn(['id' => 'new-object', 'title' => 'X']);
+        // The authenticated create() path must NEVER be used on the
+        // anonymous branch — no ownership to stamp.
+        $writer->expects($this->never())->method('createObject');
+
+        $controller = $this->controller(aggregate: $this->aggregate(), subject: null, writer: $writer, anonymousAggregate: $anonymousAggregate);
+        $response   = $controller->create('openbuild', 'melding');
+
+        $this->assertSame(Http::STATUS_OK, $response->getStatus());
+        $this->assertSame(['id' => 'new-object', 'title' => 'X'], $response->getData()['object']);
+
+    }//end testAnonymousCreateSucceedsForAnAnonymousAction()
+
+    /**
+     * A `type: create` action for the SAME (register, schema) that does NOT
+     * declare `anonymous: true` is not matched by the anonymous path — the
+     * write is rejected 403, no write attempted. (The bearer-authenticated
+     * path for the SAME action is covered by the existing
+     * testCreatesAnObjectOwnedBySubject-style tests below; this proves the
+     * anonymous branch specifically requires the flag, not just any create
+     * action existing for the target.)
+     */
+    public function testAnonymousCreateRejectsANonAnonymousActionForTheSameTarget(): void
+    {
+        $anonymousAggregate = [
+            'contributions' => [
+                [
+                    'app'     => 'openbuild',
+                    'actions' => [
+                        // Present in the AUTHENTICATED aggregate but this
+                        // fixture simulates it NOT surviving into
+                        // aggregateAnonymous() because it never declared
+                        // anonymous: true — the registry already dropped it.
+                    ],
+                ],
+            ],
+        ];
+
+        $writer = $this->createMock(PortalObjectWriter::class);
+        $writer->expects($this->never())->method('createAnonymousObject');
+
+        $controller = $this->controller(aggregate: $this->aggregate(), subject: null, writer: $writer, anonymousAggregate: $anonymousAggregate);
+        $response   = $controller->create('openbuild', 'melding');
+
+        $this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+
+    }//end testAnonymousCreateRejectsANonAnonymousActionForTheSameTarget()
+
+    /**
+     * `defaults` are stamped server-side over the whitelisted payload on the
+     * anonymous path too — identical discipline to the authenticated path —
+     * so a schema's own required-but-not-client-editable field (e.g. a
+     * placeholder ownership marker) can be satisfied without a real subject.
+     */
+    public function testAnonymousCreateAppliesDefaultsOverTheWhitelist(): void
+    {
+        $anonymousAggregate = [
+            'contributions' => [
+                [
+                    'app'     => 'portaliq',
+                    'actions' => [
+                        [
+                            'id'         => 'publicIntake',
+                            'type'       => 'create',
+                            'register'   => 'portaliq',
+                            'schema'     => 'exampleDocument',
+                            'fields'     => ['title'],
+                            'defaults'   => ['subjectRef' => 'anonymous'],
+                            'anonymous'  => true,
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $writer = $this->createMock(PortalObjectWriter::class);
+        $writer->expects($this->once())->method('createAnonymousObject')
+            ->with('portaliq', 'exampleDocument', ['title' => 'X', 'subjectRef' => 'anonymous'])
+            ->willReturn(['id' => 'new-object']);
+
+        $controller = $this->controller(aggregate: $this->aggregate(), subject: null, writer: $writer, anonymousAggregate: $anonymousAggregate);
+        $response   = $controller->create('portaliq', 'exampleDocument');
+
+        $this->assertSame(Http::STATUS_OK, $response->getStatus());
+
+    }//end testAnonymousCreateAppliesDefaultsOverTheWhitelist()
+
+    /**
+     * A failed anonymous OpenRegister write is relayed as 502, exactly like
+     * the authenticated path.
+     */
+    public function testAnonymousCreateWriteFailureIs502(): void
+    {
+        $anonymousAggregate = [
+            'contributions' => [
+                ['app' => 'openbuild', 'actions' => [['id' => 'x', 'type' => 'create', 'register' => 'r1', 'schema' => 'a', 'fields' => ['title'], 'anonymous' => true]]],
+            ],
+        ];
+
+        $writer = $this->createMock(PortalObjectWriter::class);
+        $writer->method('createAnonymousObject')->willReturn(null);
+
+        $controller = $this->controller(aggregate: $this->aggregate(), subject: null, writer: $writer, anonymousAggregate: $anonymousAggregate);
+        $response   = $controller->create('r1', 'a');
+
+        $this->assertSame(Http::STATUS_BAD_GATEWAY, $response->getStatus());
+
+    }//end testAnonymousCreateWriteFailureIs502()
 
     public function testCollectionBelowTrustThresholdIs403BeforeAnyRead(): void
     {
@@ -1776,7 +1950,8 @@ class ContributionControllerTest extends TestCase
         ?PortalInboxReader $inboxReader=null,
         ?AuditTrailService $auditor=null,
         ?SubmissionReceiptService $receiptService=null,
-        ?NotificationDispatchService $notificationDispatch=null
+        ?NotificationDispatchService $notificationDispatch=null,
+        ?array $anonymousAggregate=null
     ): ContributionController {
         $request = $this->createMock(IRequest::class);
         $request->method('getHeader')->willReturnMap([['Authorization', 'Bearer client-session-token']]);
@@ -1792,6 +1967,10 @@ class ContributionControllerTest extends TestCase
 
         $registry = $this->createMock(PortalContributionRegistry::class);
         $registry->method('aggregateFor')->willReturn($aggregate);
+        // portal-page-provisioning: defaults to an empty anonymous surface
+        // (byte-identical to pre-change behaviour) unless a test explicitly
+        // wires an anonymous aggregate.
+        $registry->method('aggregateAnonymous')->willReturn($anonymousAggregate ?? ['contributions' => []]);
 
         $session = $this->createMock(PortalSessionService::class);
         $session->method('resolveFromBearer')->willReturn($subject);

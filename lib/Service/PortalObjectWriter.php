@@ -28,6 +28,7 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T06
+ * @spec openspec/changes/portal-page-provisioning/tasks.md#4.1
  */
 
 declare(strict_types=1);
@@ -113,6 +114,48 @@ class PortalObjectWriter
 
         return $this->normalise(row: $saved);
     }//end createObject()
+
+    /**
+     * Create an object with NO ownership stamp — the anonymous sibling of
+     * `createObject()` (portal-page-provisioning). There is no subject: no
+     * `scopeField`/`subjectRef` and no `organisation` is written, whatever
+     * the caller passes in `$data` (already whitelisted by the controller).
+     * The write still goes through OpenRegister's normal `saveObject()`
+     * (`_rbac`/`_multitenancy` off, same trusted-intermediary convention as
+     * every other portal write), so `ObjectCreatedEvent` still fires and any
+     * `x-openregister-flows` declared on the target schema still run —
+     * unchanged, automatic, no code here touches that path.
+     *
+     * @param string               $register The register slug/id.
+     * @param string               $schema   The schema slug.
+     * @param array<string, mixed> $data     The client-supplied fields (already whitelisted + defaults applied).
+     *
+     * @return array<string, mixed>|null The created object, or null on failure.
+     *
+     * @spec openspec/changes/portal-page-provisioning/tasks.md#4.1
+     */
+    public function createAnonymousObject(string $register, string $schema, array $data): ?array
+    {
+        $objectService = $this->objectService();
+        if ($objectService === null) {
+            return null;
+        }
+
+        try {
+            $saved = $objectService->saveObject(
+                object: $data,
+                register: $register,
+                schema: $schema,
+                _rbac: false,
+                _multitenancy: false
+            );
+        } catch (Throwable $e) {
+            $this->logger->warning('Portaliq: OR anonymous write failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
+            return null;
+        }
+
+        return $this->normalise(row: $saved);
+    }//end createAnonymousObject()
 
     /**
      * Count objects in a register/schema matching a set of property filters

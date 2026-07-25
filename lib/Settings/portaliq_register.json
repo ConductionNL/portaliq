@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Register containing all schemas owned by the Portaliq external-portal application.",
-        "version": "0.7.0"
+        "version": "0.8.0"
     },
     "x-openregister": {
         "type": "application",
@@ -64,6 +64,58 @@
                 "displayName": "Tweede Leverancier (placeholder)",
                 "status": "active",
                 "claims": {}
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "portalPage",
+                    "slug": "dev-citizen-intake"
+                },
+                "label": "Meldingen",
+                "audience": "citizen",
+                "status": "active",
+                "collections": [
+                    {
+                        "id": "myIntakeHistory",
+                        "register": "portaliq",
+                        "schema": "exampleDocument",
+                        "scopeField": "subjectRef",
+                        "fields": ["title", "status"],
+                        "label": "Mijn meldingen",
+                        "listable": false
+                    }
+                ],
+                "actions": [
+                    {
+                        "id": "publicIntake",
+                        "type": "create",
+                        "label": "Melding indienen",
+                        "register": "portaliq",
+                        "schema": "exampleDocument",
+                        "fields": ["title", "status"],
+                        "defaults": {
+                            "subjectRef": "anonymous"
+                        },
+                        "anonymous": true
+                    }
+                ],
+                "pages": [
+                    {
+                        "id": "meldingen",
+                        "label": "Melding indienen",
+                        "icon": "AlertCircleOutline",
+                        "blocks": [
+                            {
+                                "type": "richText",
+                                "markdown": "## Meld een probleem\nDien een melding in — geen account nodig. Bekende melders zien hun eigen meldingen hierboven; een anonieme melding heeft geen koppeling met een account."
+                            },
+                            {
+                                "type": "action",
+                                "action": "publicIntake"
+                            }
+                        ]
+                    }
+                ]
             }
         ],
         "schemas": {
@@ -683,6 +735,316 @@
                         "type": "boolean",
                         "description": "Set true the moment the row is consumed. A second consumption attempt (state replay) fails closed even if still within `expiresAt`.",
                         "example": false
+                    }
+                }
+            },
+            "portalPage": {
+                "slug": "portalPage",
+                "icon": "WebBox",
+                "version": "0.1.0",
+                "title": "Portal Page",
+                "description": "A data-provisioned portal contribution (ADR-046, portal-page-provisioning). Mirrors the IPortalContributionProvider manifest shape 1:1 so Portaliq's built-in provider can read this object and hand it to the same PortalManifestNormaliser every PHP provider's output passes through. Owned by the app that provisions the page; never publicly readable — the built-in provider is the only reader, server-side.",
+                "type": "object",
+                "required": [
+                    "label",
+                    "audience",
+                    "status"
+                ],
+                "x-openregister": {
+                    "publicRead": false,
+                    "publicWrite": false
+                },
+                "properties": {
+                    "label": {
+                        "title": "Label",
+                        "type": "string",
+                        "description": "Display name for this contribution in the portal SPA (nav / page title).",
+                        "example": "Meldingen"
+                    },
+                    "audience": {
+                        "title": "Audience",
+                        "type": "string",
+                        "description": "Which external audience this contribution serves. Open string set (contract v2 A2), same vocabulary as portalAccount.audience — e.g. supplier, client, citizen. Not enum-constrained.",
+                        "example": "citizen"
+                    },
+                    "minTrust": {
+                        "title": "Minimum trust",
+                        "type": "string",
+                        "description": "Contribution-level default minimum trust (low|substantial|high, contract v2 A3). Absent defaults to low. Individual collections/actions may override with their own minTrust. Mutually exclusive with an entry's own `anonymous: true` — the normaliser drops `anonymous` on an entry that also declares a non-low minTrust.",
+                        "enum": [
+                            "low",
+                            "substantial",
+                            "high"
+                        ],
+                        "example": "low"
+                    },
+                    "status": {
+                        "title": "Status",
+                        "type": "string",
+                        "description": "Lifecycle status. Only `active` portalPage objects are read into any aggregate (authenticated or anonymous); `draft` lets an author stage a page without exposing it.",
+                        "enum": [
+                            "active",
+                            "draft"
+                        ],
+                        "example": "active"
+                    },
+                    "collections": {
+                        "title": "Collections",
+                        "type": "array",
+                        "description": "Readable OpenRegister collections this contribution exposes. Each entry mirrors IPortalContributionProvider's collection shape (contract v2/v3).",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "id",
+                                "register",
+                                "schema"
+                            ],
+                            "properties": {
+                                "id": {
+                                    "title": "Collection id",
+                                    "type": "string",
+                                    "description": "Unique within this contribution; referenced by pages[].blocks[].collection.",
+                                    "example": "meldingen"
+                                },
+                                "register": {
+                                    "title": "Register",
+                                    "type": "string",
+                                    "description": "The OpenRegister register slug the collection reads from. A plain string, not an OR object relation — this selects a (register, schema) pair, it does not reference a specific object instance (ADR-062's $ref/format:uuid relation dialect applies to same-register object foreign keys, not cross-register schema selectors).",
+                                    "example": "openbuild"
+                                },
+                                "schema": {
+                                    "title": "Schema",
+                                    "type": "string",
+                                    "description": "The schema slug within that register.",
+                                    "example": "melding"
+                                },
+                                "scopeField": {
+                                    "title": "Scope field",
+                                    "type": "string",
+                                    "description": "The property rows are scoped by (contract v2). Omit or leave absent on an anonymous collection — there is no subject to scope by.",
+                                    "example": "subjectRef"
+                                },
+                                "scopeClaim": {
+                                    "title": "Scope claim",
+                                    "type": "string",
+                                    "description": "Contract v2 A4: scope by a server-managed portalAccount claim instead of scopeField/subjectRef. Never applicable to an anonymous entry (no portalAccount)."
+                                },
+                                "via": {
+                                    "title": "Via (reverse/forward join)",
+                                    "type": "object",
+                                    "description": "Contract v2 A5/A5.2: one-hop join scoping. See the portal-contribution-contract spec for the full shape."
+                                },
+                                "minTrust": {
+                                    "title": "Minimum trust",
+                                    "type": "string",
+                                    "enum": [
+                                        "low",
+                                        "substantial",
+                                        "high"
+                                    ],
+                                    "description": "Overrides the contribution-level minTrust for this collection."
+                                },
+                                "anonymous": {
+                                    "title": "Anonymous",
+                                    "type": "boolean",
+                                    "description": "When true, this collection is included in aggregateAnonymous() and readable with no bearer session. Mutually exclusive with a non-low minTrust on the SAME entry (fail-closed: the normaliser drops anonymous when both are set). Default false.",
+                                    "example": false
+                                },
+                                "fields": {
+                                    "title": "Field projection",
+                                    "type": "array",
+                                    "description": "Read-side whitelist (field-projection change); absent returns the full row.",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "columns": {
+                                    "title": "Columns",
+                                    "type": "array",
+                                    "description": "Presentation-only per-column render hints (contribution-manifest-v3)."
+                                },
+                                "detail": {
+                                    "title": "Detail layout",
+                                    "type": "object",
+                                    "description": "Presentation-only detail-view layout (contribution-manifest-v3)."
+                                },
+                                "listable": {
+                                    "title": "Listable",
+                                    "type": "boolean",
+                                    "description": "Whether this collection gets a synthesised default page when pages[] is absent.",
+                                    "example": true
+                                }
+                            }
+                        }
+                    },
+                    "actions": {
+                        "title": "Actions",
+                        "type": "array",
+                        "description": "Writable/forwardable actions this contribution exposes. Each entry mirrors IPortalContributionProvider's action shape (contract v2/v3), plus the new `anonymous` field.",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "id",
+                                "type",
+                                "label"
+                            ],
+                            "properties": {
+                                "id": {
+                                    "title": "Action id",
+                                    "type": "string",
+                                    "description": "Unique within this contribution; referenced by pages[].blocks[].action and by POST /portal/api/actions/{appId}/{actionId} for endpoint actions.",
+                                    "example": "meldenMaken"
+                                },
+                                "type": {
+                                    "title": "Type",
+                                    "type": "string",
+                                    "enum": [
+                                        "create",
+                                        "update",
+                                        "endpoint"
+                                    ],
+                                    "description": "create/update write through OpenRegister via the portal's own writer; endpoint bearer-forwards to a domain app's own route (contract v2 A6). Anonymous submission is only meaningful for type=create.",
+                                    "example": "create"
+                                },
+                                "label": {
+                                    "title": "Label",
+                                    "type": "string",
+                                    "example": "Melding maken"
+                                },
+                                "register": {
+                                    "title": "Register",
+                                    "type": "string",
+                                    "description": "Target register for create/update. Plain string schema-selector, not an OR relation — see the collections.register note.",
+                                    "example": "openbuild"
+                                },
+                                "schema": {
+                                    "title": "Schema",
+                                    "type": "string",
+                                    "example": "melding"
+                                },
+                                "fields": {
+                                    "title": "Field whitelist",
+                                    "type": "array",
+                                    "description": "The ONLY client-supplied fields accepted; anything else in the request body is dropped server-side.",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "set": {
+                                    "title": "Server-forced values",
+                                    "type": "object",
+                                    "description": "Values the server stamps AFTER the whitelist, never client-choosable (e.g. a fixed status transition target)."
+                                },
+                                "defaults": {
+                                    "title": "Defaults",
+                                    "type": "object",
+                                    "description": "Values stamped over the whitelisted payload server-side (e.g. a supertype discriminator). Applied after the whitelist so a client can never override them."
+                                },
+                                "endpoint": {
+                                    "title": "Endpoint path",
+                                    "type": "string",
+                                    "description": "Instance-local absolute path for type=endpoint (contract v2 A6). Full URLs are rejected (SSRF guard)."
+                                },
+                                "method": {
+                                    "title": "HTTP method",
+                                    "type": "string",
+                                    "enum": [
+                                        "GET",
+                                        "POST",
+                                        "PUT",
+                                        "PATCH",
+                                        "DELETE"
+                                    ],
+                                    "description": "For type=endpoint; defaults to POST."
+                                },
+                                "minTrust": {
+                                    "title": "Minimum trust",
+                                    "type": "string",
+                                    "enum": [
+                                        "low",
+                                        "substantial",
+                                        "high"
+                                    ],
+                                    "description": "Overrides the contribution-level minTrust for this action."
+                                },
+                                "anonymous": {
+                                    "title": "Anonymous",
+                                    "type": "boolean",
+                                    "description": "When true and type=create, this action is reachable via POST /portal/api/collections/{register}/{schema} with NO bearer session — the write is unowned (no subjectRef/organisation stamped). Mutually exclusive with a non-low minTrust on the SAME entry (fail-closed: the normaliser drops anonymous when both are set, falling back to requiring authentication). Default false.",
+                                    "example": true
+                                }
+                            }
+                        }
+                    },
+                    "pages": {
+                        "title": "Pages",
+                        "type": "array",
+                        "description": "Explicit UI page composition (contribution-manifest-v3). Absent synthesises one default page per listable collection.",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "id",
+                                "label",
+                                "blocks"
+                            ],
+                            "properties": {
+                                "id": {
+                                    "title": "Page id",
+                                    "type": "string",
+                                    "example": "melding-maken"
+                                },
+                                "label": {
+                                    "title": "Label",
+                                    "type": "string",
+                                    "example": "Melding maken"
+                                },
+                                "icon": {
+                                    "title": "Icon",
+                                    "type": "string",
+                                    "description": "An MDI name resolvable by the shared icon registry.",
+                                    "example": "AlertCircleOutline"
+                                },
+                                "blocks": {
+                                    "title": "Blocks",
+                                    "type": "array",
+                                    "description": "Ordered UI blocks composing the page. type ∈ collection|action|detail|richText|cta (PortalManifestNormaliser::BLOCK_TYPES) — an unrecognised type or an unresolvable collection/action reference is dropped by the normaliser, never rendered as broken.",
+                                    "items": {
+                                        "type": "object",
+                                        "required": [
+                                            "type"
+                                        ],
+                                        "properties": {
+                                            "type": {
+                                                "title": "Block type",
+                                                "type": "string",
+                                                "enum": [
+                                                    "collection",
+                                                    "action",
+                                                    "detail",
+                                                    "richText",
+                                                    "cta"
+                                                ]
+                                            },
+                                            "collection": {
+                                                "title": "Collection reference",
+                                                "type": "string",
+                                                "description": "References collections[].id (for type=collection/detail)."
+                                            },
+                                            "action": {
+                                                "title": "Action reference",
+                                                "type": "string",
+                                                "description": "References actions[].id (for type=action/cta)."
+                                            },
+                                            "markdown": {
+                                                "title": "Markdown",
+                                                "type": "string",
+                                                "description": "For type=richText."
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }

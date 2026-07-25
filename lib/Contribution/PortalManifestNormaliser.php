@@ -34,6 +34,7 @@
  *
  * @spec openspec/changes/contribution-manifest-v3/tasks.md#T1
  * @spec openspec/specs/supplier-portal/spec.md#form-data-minimisation-no-non-mandatory-field-may-be-required
+ * @spec openspec/changes/portal-page-provisioning/tasks.md#2.2
  */
 
 declare(strict_types=1);
@@ -217,6 +218,8 @@ class PortalManifestNormaliser
                 $collection['filesDownload'] = ($collection['filesDownload'] === true || $collection['filesDownload'] === 'true');
             }
 
+            $collection = $this->normaliseAnonymousFlag(entry: $collection);
+
             $out[] = $collection;
         }//end foreach
 
@@ -352,6 +355,8 @@ class PortalManifestNormaliser
                     unset($action[$textKey]);
                 }
             }
+
+            $action = $this->normaliseAnonymousFlag(entry: $action);
 
             $out[] = $action;
         }//end foreach
@@ -814,6 +819,44 @@ class PortalManifestNormaliser
 
         return $ids;
     }//end ids()
+
+    /**
+     * Coerce `anonymous` to a strict boolean and enforce the fail-closed
+     * mutual exclusion with a non-`low` `minTrust` on the SAME entry
+     * (portal-page-provisioning): there is no subject to hold a trust level
+     * on an anonymous call, so a manifest declaring BOTH is contradictory.
+     * `anonymous` is dropped — never the `minTrust` — so the entry falls back
+     * to requiring an authenticated, trust-checked bearer, never the reverse
+     * (ADR-005). An absent or `low` `minTrust` does not conflict; only
+     * `substantial`/`high` (or a malformed-but-truthy value that survived as
+     * a string) trips the exclusion.
+     *
+     * @param array<string, mixed> $entry One collection or action entry.
+     *
+     * @return array<string, mixed>
+     *
+     * @spec openspec/changes/portal-page-provisioning/tasks.md#2.2
+     */
+    private function normaliseAnonymousFlag(array $entry): array
+    {
+        if (array_key_exists('anonymous', $entry) === false) {
+            return $entry;
+        }
+
+        $entry['anonymous'] = ($entry['anonymous'] === true || $entry['anonymous'] === 'true');
+        if ($entry['anonymous'] === false) {
+            return $entry;
+        }
+
+        $minTrust = ($entry['minTrust'] ?? null);
+        if (is_string($minTrust) === true && $minTrust !== '' && $minTrust !== 'low') {
+            // Fail-closed: drop `anonymous`, keep `minTrust` — the entry
+            // reverts to requiring an authenticated, trust-checked bearer.
+            unset($entry['anonymous']);
+        }
+
+        return $entry;
+    }//end normaliseAnonymousFlag()
 
     /**
      * Return `value` when it is one of `allowed`, else `default`.

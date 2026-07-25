@@ -29,6 +29,7 @@
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T04
  * @spec openspec/changes/contract-v2/tasks.md#T2
+ * @spec openspec/changes/portal-page-provisioning/tasks.md#2.1
  */
 
 declare(strict_types=1);
@@ -142,6 +143,194 @@ class PortalContributionRegistry
             'contributions' => $contributions,
         ];
     }//end aggregateFor()
+
+    /**
+     * Aggregate the ANONYMOUS-reachable surface across every installed
+     * provider — the no-subject sibling of `aggregateFor()`
+     * (portal-page-provisioning). Enumerates every installed app's provider
+     * exactly as `aggregateFor()` does, but for EACH audience the provider
+     * declares (duck-typed `getAudiences()`/`getAudience()`, same as
+     * `servesAudience()`) — there is no single subject audience to filter
+     * by, so every audience the provider serves is consulted. Only
+     * `collections`/`actions` entries explicitly flagged `anonymous: true`
+     * survive into the returned contribution — every other entry in the same
+     * contribution (private, subject-scoped siblings) is dropped BEFORE
+     * normalisation, mirroring `filterByTrust()`'s shape (filtering on a
+     * different flag) so a surviving page can never reference a dropped
+     * entry. A provider/audience pair contributing zero anonymous entries is
+     * omitted entirely — an anonymous caller never sees an empty shell.
+     *
+     * The fail-closed anonymous/minTrust mutual exclusion lives in
+     * `PortalManifestNormaliser` and can itself drop the `anonymous` flag
+     * from an entry that also declares a non-`low` `minTrust`; the anonymous
+     * filter therefore runs a SECOND time after normalisation so a
+     * flag-stripped entry can never survive into an aggregate an anonymous
+     * caller consumes.
+     *
+     * @return array<string, mixed> `{ contributions[] }` — no `audience` /
+     *                               `organisation` keys, since there is no
+     *                               subject.
+     *
+     * @spec openspec/changes/portal-page-provisioning/tasks.md#2.1
+     */
+    public function aggregateAnonymous(): array
+    {
+        $contributions = [];
+
+        foreach ($this->appManager->getInstalledApps() as $appId) {
+            $provider = $this->resolveProvider(appId: (string) $appId);
+            if ($provider === null || method_exists($provider, 'getContribution') === false) {
+                continue;
+            }
+
+            foreach ($this->providerAudiences(provider: $provider) as $audience) {
+                $contributions = array_merge(
+                    $contributions,
+                    $this->anonymousContributionsFor(provider: $provider, appId: (string) $appId, audience: $audience)
+                );
+            }
+        }//end foreach
+
+        return ['contributions' => $contributions];
+    }//end aggregateAnonymous()
+
+    /**
+     * Resolve one provider/audience pair's anonymous-only contribution, or
+     * an empty list when the provider errors, returns nothing, or has no
+     * anonymous entries for that audience.
+     *
+     * @param object $provider The resolved provider.
+     * @param string $appId    The app id (for logging + the `app` tag).
+     * @param string $audience The audience to consult the provider for.
+     *
+     * @return array<int, array<string, mixed>> Zero or one contribution.
+     *
+     * @spec openspec/changes/portal-page-provisioning/tasks.md#2.1
+     */
+    private function anonymousContributionsFor(object $provider, string $appId, string $audience): array
+    {
+        try {
+            $contribution = $provider->getContribution(['audience' => $audience]);
+        } catch (Throwable $e) {
+            $this->logger->error(
+                'Portaliq: contribution provider failed (anonymous aggregation)',
+                ['app' => $appId, 'audience' => $audience, 'reason' => $e->getMessage()]
+            );
+            return [];
+        }
+
+        if (is_array($contribution) === false) {
+            return [];
+        }
+
+        $contribution['app'] = $appId;
+        $anonymousOnly       = $this->keepAnonymousOnly(contribution: $contribution);
+        if ($this->hasAnonymousEntries(contribution: $anonymousOnly) === false) {
+            return [];
+        }
+
+        try {
+            $anonymousOnly = $this->normaliser->normalise(contribution: $anonymousOnly);
+        } catch (Throwable $e) {
+            $this->logger->error(
+                'Portaliq: manifest normalisation failed (anonymous aggregation)',
+                ['app' => $appId, 'audience' => $audience, 'reason' => $e->getMessage()]
+            );
+        }
+
+        // The normaliser may have dropped `anonymous` from an entry that ALSO
+        // declared a non-low minTrust (fail-closed mutual exclusion) — filter
+        // again so no flag-stripped entry can survive into an aggregate an
+        // anonymous caller consumes.
+        $anonymousOnly = $this->keepAnonymousOnly(contribution: $anonymousOnly);
+        if ($this->hasAnonymousEntries(contribution: $anonymousOnly) === false) {
+            return [];
+        }
+
+        return [$anonymousOnly];
+    }//end anonymousContributionsFor()
+
+    /**
+     * Drop every collection/action entry that is not explicitly flagged
+     * `anonymous: true`.
+     *
+     * @param array<string, mixed> $contribution One provider's raw (or
+     *                                           already-normalised)
+     *                                           contribution.
+     *
+     * @return array<string, mixed> The anonymous-only contribution.
+     *
+     * @spec openspec/changes/portal-page-provisioning/tasks.md#2.1
+     */
+    private function keepAnonymousOnly(array $contribution): array
+    {
+        foreach (['collections', 'actions'] as $section) {
+            if (is_array(($contribution[$section] ?? null)) === false) {
+                $contribution[$section] = [];
+                continue;
+            }
+
+            $kept = [];
+            foreach ($contribution[$section] as $entry) {
+                if (is_array($entry) === false) {
+                    continue;
+                }
+
+                if (($entry['anonymous'] ?? false) !== true) {
+                    continue;
+                }
+
+                $kept[] = $entry;
+            }
+
+            $contribution[$section] = $kept;
+        }//end foreach
+
+        return $contribution;
+    }//end keepAnonymousOnly()
+
+    /**
+     * Whether an (already anonymous-filtered) contribution carries at least
+     * one surviving collection or action.
+     *
+     * @param array<string, mixed> $contribution The anonymous-filtered contribution.
+     *
+     * @return bool
+     */
+    private function hasAnonymousEntries(array $contribution): bool
+    {
+        return count(($contribution['collections'] ?? [])) > 0 || count(($contribution['actions'] ?? [])) > 0;
+    }//end hasAnonymousEntries()
+
+    /**
+     * The full set of audiences a provider serves (contract v2, A2 duck
+     * typing — same preference order as `servesAudience()`): `getAudiences()`
+     * when present, else the single `getAudience()` value, else none.
+     *
+     * @param object $provider The resolved provider.
+     *
+     * @return array<int, string>
+     */
+    private function providerAudiences(object $provider): array
+    {
+        if (method_exists($provider, 'getAudiences') === true) {
+            $audiences = $provider->getAudiences();
+            if (is_array($audiences) === false) {
+                return [];
+            }
+
+            return array_values(array_filter($audiences, static fn($a) => is_string($a) === true && $a !== ''));
+        }
+
+        if (method_exists($provider, 'getAudience') === true) {
+            $audience = $provider->getAudience();
+            if (is_string($audience) === true && $audience !== '') {
+                return [$audience];
+            }
+        }
+
+        return [];
+    }//end providerAudiences()
 
     /**
      * Whether a provider serves the subject's audience (contract v2, A2).
