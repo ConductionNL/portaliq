@@ -57,15 +57,26 @@ export default function SchemaForm({ action, api, onSubmitted }) {
 		e.preventDefault()
 		setError(null)
 		setDone(null)
+		// Read the LIVE field values from the form element at submit time rather
+		// than the React `values` state: a controlled input's onChange state
+		// update can still be in flight on the first submit (it commits a render
+		// behind), which would make a just-filled required field read as empty.
+		// The DOM is the source of truth here; `values` is only the fallback.
+		const formEl = e.currentTarget
+		const submitValues = {}
+		for (const field of fields) {
+			const el = formEl.querySelector(`#f-${action.id}-${field}`)
+			submitValues[field] = (el ? el.value : values[field]) ?? ''
+		}
 		// Client-side required check (the server is the authority regardless).
 		for (const field of fields) {
-			if (fieldConfigs[field]?.required && !values[field]) {
+			if (fieldConfigs[field]?.required && !submitValues[field]) {
 				setError(`${fieldConfigs[field]?.label || field} is verplicht.`)
 				return
 			}
 		}
 		setSubmitting(true)
-		const result = await api.createObject(action, values)
+		const result = await api.createObject(action, submitValues)
 		setSubmitting(false)
 		if (!result.ok) {
 			setError('Opslaan is niet gelukt.')

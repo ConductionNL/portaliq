@@ -70,11 +70,17 @@ export default function App({ config, t: tProp }) {
 	const [dataByCollection, setDataByCollection] = useState({})
 	const [activeKey, setActiveKey] = useState(null)
 	const [busyRow, setBusyRow] = useState(null)
+	// A live unread-count override (portal-inbox-v2): lets a create's receipt
+	// follow-on update the Inbox badge WITHOUT replacing the contributions
+	// object, so the active page's form/state (e.g. the just-shown success
+	// message) is never disturbed. Null = use the manifest's own count.
+	const [unreadOverride, setUnreadOverride] = useState(null)
 
 	const refresh = useCallback(async () => {
 		setState((s) => ({ ...s, loading: true }))
 		const session = await api.getSession()
 		const contributions = session ? await api.getContributions() : null
+		setUnreadOverride(null)
 		setState({ loading: false, session, contributions, devError: null })
 	}, [api])
 
@@ -93,7 +99,7 @@ export default function App({ config, t: tProp }) {
 	}, [state.session, api])
 
 	const nav = useMemo(() => buildNav(state.contributions?.contributions, t), [state.contributions, t])
-	const unreadCount = state.contributions?.unreadCount || 0
+	const unreadCount = unreadOverride ?? (state.contributions?.unreadCount || 0)
 
 	// Default to the first CONTENT page once contributions load — never the
 	// synthetic cross-app inbox, which would open the portal on an empty
@@ -137,8 +143,12 @@ export default function App({ config, t: tProp }) {
 		}
 	}, [active, loadCollection])
 
-	// After a create/update, reload any loaded collection that reads that schema.
-	const onCreated = useCallback(async (_obj, action) => {
+	// After a create/update, reload any loaded collection that reads that schema,
+	// then refresh the aggregated manifest so the unread inbox badge reflects any
+	// server-generated follow-on — e.g. the WMEBV ontvangstbevestiging that
+	// SubmissionReceiptService drops into the subject's inbox. Deferred a tick so
+	// the receipt's fail-safe write has landed.
+	const onCreated = useCallback((_obj, action) => {
 		for (const contribution of (state.contributions?.contributions || [])) {
 			for (const collection of (contribution.collections || [])) {
 				if (collection.register === action.register && collection.schema === action.schema && dataByCollection[collection.id]) {
@@ -146,19 +156,11 @@ export default function App({ config, t: tProp }) {
 				}
 			}
 		}
-		// Update ONLY the unread inbox count so the badge reflects any
-		// server-generated follow-on the create produced — e.g. the WMEBV
-		// ontvangstbevestiging that SubmissionReceiptService drops into the
-		// subject's inbox (wmebv-submission-receipts). Patching the scalar in
-		// place (rather than replacing the whole contributions object) keeps the
-		// nav/page/form references stable, so the just-shown success message and
-		// the active page are preserved.
-		const fresh = await api.getContributions()
-		if (fresh && typeof fresh.unreadCount === 'number') {
-			setState((s) => (s.contributions
-				? { ...s, contributions: { ...s.contributions, unreadCount: fresh.unreadCount } }
-				: s))
-		}
+		api.getContributions().then((fresh) => {
+			if (fresh && typeof fresh.unreadCount === 'number') {
+				setUnreadOverride(fresh.unreadCount)
+			}
+		})
 	}, [state.contributions, dataByCollection, loadCollection, api])
 
 	// A per-row status transition (approve/reject/close): invoke a resolved
