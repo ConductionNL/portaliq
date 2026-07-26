@@ -67,9 +67,17 @@ test.describe('portal-document-download', () => {
 		const title = `E2E download ${Date.now()}`
 		await page.getByLabel('Onderwerp').fill(title)
 		await page.getByRole('button', { name: 'Aanmaken' }).click()
+		// Wait for the create to CONFIRM (and its collection reload to settle)
+		// before selecting the row — the create does several synchronous
+		// OpenRegister writes and takes seconds on a shared dev instance;
+		// selecting the row while the table is still reloading races an empty
+		// render. The row is the clickable table entry carrying the title.
+		await expect(page.getByText('Voorbeeld aangemaakt')).toBeVisible({ timeout: 20_000 })
+		const row = page.locator('tr.portaliq-row-clickable').filter({ hasText: title })
+		await row.waitFor({ timeout: 20_000 })
 
 		// Select the newly created row so its detail card (with the file blocks) renders.
-		await page.getByText(title, { exact: false }).first().click()
+		await row.click()
 
 		// Upload a file to the owned row — the file-download list only shows
 		// files that actually exist, so the upload block seeds the fixture.
@@ -83,7 +91,7 @@ test.describe('portal-document-download', () => {
 		// The upload block reports success, and the download list picks up the
 		// new file (server-attached `_files`, refreshed by re-selecting the row).
 		await expect(page.locator('.portaliq-fileupload-msg')).toContainText('toegevoegd')
-		await page.getByText(title, { exact: false }).first().click()
+		await row.click()
 
 		const downloadButton = page.locator('.portaliq-filelist button', { hasText: 'e2e-besluit.txt' })
 		await expect(downloadButton).toBeVisible()

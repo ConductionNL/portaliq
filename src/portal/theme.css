@@ -193,3 +193,15 @@
 	line-height: 1.4;
 	text-align: center;
 }
+
+/*
+ * Zero Nextcloud chrome (ADR-063): the public-page template ships a
+ * position:fixed `.guest-box` footer ("Nextcloud – a safe home for all your
+ * data"). On the white-label portal it is both an unwanted branding leak AND a
+ * click-blocker — its fixed box overlaps the bottom of the SPA content, so any
+ * clickable element that lands under it (e.g. a table row) cannot be clicked.
+ * Hide it; the portal owns the full surface.
+ */
+body .guest-box {
+	display: none !important;
+}

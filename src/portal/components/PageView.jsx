@@ -9,7 +9,7 @@
 // The server-side normaliser has already dropped unresolvable/cross-contribution
 // blocks, so a ref that does not resolve here is a defensive skip, not expected.
 
-import React, { useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import CollectionTable from './CollectionTable.jsx'
 import SchemaForm from './SchemaForm.jsx'
 import RichText from './RichText.jsx'
@@ -28,7 +28,7 @@ function findAction(contribution, id) {
 // The scoped file-upload control (the file-upload block). Shown in a detail card
 // only when the collection declares `filesUpload` — the server re-verifies
 // ownership and requires the opt-in, so this is a convenience, not the authority.
-function FileUpload({ collection, row, api }) {
+const FileUpload = React.memo(function FileUpload({ collection, row, api, onUploaded }) {
 	const [state, setState] = useState({ busy: false, message: null })
 	const inputRef = useRef(null)
 
@@ -47,6 +47,11 @@ function FileUpload({ collection, row, api }) {
 		if (inputRef.current) {
 			inputRef.current.value = ''
 		}
+		// Let the detail card re-read the row's `_files` so the download list
+		// picks up the just-uploaded attachment.
+		if (result.ok && onUploaded) {
+			onUploaded()
+		}
 	}
 
 	return (
@@ -59,7 +64,7 @@ function FileUpload({ collection, row, api }) {
 			{state.message && <p className="portaliq-fileupload-msg">{state.message}</p>}
 		</div>
 	)
-}
+})
 
 // The scoped file-download list (the file-download block, portal-document-
 // download — the read-side counterpart of FileUpload above). Shown in a
@@ -103,24 +108,47 @@ function FileList({ collection, row, api }) {
 }
 
 function DetailCard({ collection, row, api }) {
+	const rowId = row && (row.id || row['@self']?.id)
+	// The FULL single-object read carries the server-attached `_files` listing
+	// the file-download block needs — the collection list projection omits it.
+	// Fetch it on selection and re-fetch after an upload, while keeping the
+	// STABLE list `row` as FileUpload's upload target so an in-flight upload is
+	// never disturbed by this refresh.
+	const [full, setFull] = useState(row)
+	const refresh = useCallback(async () => {
+		if (!rowId || collection.filesDownload !== true || !api) {
+			return
+		}
+		const f = await api.fetchObject(collection, rowId)
+		if (f) {
+			setFull(f)
+		}
+	}, [rowId, collection, api])
+	useEffect(() => {
+		setFull(row)
+		refresh()
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [rowId])
+
 	if (!row) {
 		return <p className="portaliq-empty"><em>Selecteer een item.</em></p>
 	}
+	const detailRow = full || row
 	const fields = (collection.detail && Array.isArray(collection.detail.fields) && collection.detail.fields.length > 0)
 		? collection.detail.fields
-		: Object.keys(row).filter((k) => k !== '@self' && k !== '_files')
+		: Object.keys(detailRow).filter((k) => k !== '@self' && k !== '_files')
 	return (
 		<>
 			<dl className={`portaliq-detail portaliq-detail-${collection.detail?.layout || 'card'}`}>
 				{fields.map((f) => (
 					<div key={f} className="portaliq-detail-row">
 						<dt>{f}</dt>
-						<dd>{row[f] === null || row[f] === undefined ? '' : String(row[f])}</dd>
+						<dd>{detailRow[f] === null || detailRow[f] === undefined ? '' : String(detailRow[f])}</dd>
 					</div>
 				))}
 			</dl>
-			{collection.filesUpload === true && api && <FileUpload collection={collection} row={row} api={api} />}
-			{collection.filesDownload === true && api && <FileList collection={collection} row={row} api={api} />}
+			{collection.filesUpload === true && api && <FileUpload collection={collection} row={row} api={api} onUploaded={refresh} />}
+			{collection.filesDownload === true && api && <FileList collection={collection} row={detailRow} api={api} />}
 		</>
 	)
 }

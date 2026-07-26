@@ -168,16 +168,31 @@ export function createPortalApi(config) {
 			const form = new FormData()
 			form.append('file', file)
 			const url = `${base}${col(collection.register, collection.schema)}/${encodeURIComponent(id)}/files?collection=${encodeURIComponent(collection.id)}`
-			try {
-				const res = await fetch(url, { method: 'POST', headers: { Accept: 'application/json', ...authHeaders() }, body: form })
-				if (!res.ok) {
+			// Retry once on a transient upstream error (502/503/504): a low-worker
+			// dev instance can bounce an upload that overlaps another same-object
+			// request (e.g. the detail card's file-list read). Idempotent enough
+			// for a fresh attach; the server re-verifies ownership either way.
+			for (let attempt = 0; attempt < 2; attempt++) {
+				try {
+					const res = await fetch(url, { method: 'POST', headers: { Accept: 'application/json', ...authHeaders() }, body: form })
+					if (res.ok) {
+						const json = await res.json().catch(() => ({}))
+						return { ok: true, file: json.file || json }
+					}
+					if (attempt === 0 && (res.status === 502 || res.status === 503 || res.status === 504)) {
+						await new Promise((r) => setTimeout(r, 600))
+						continue
+					}
 					return { ok: false, status: res.status }
+				} catch (e) {
+					if (attempt === 0) {
+						await new Promise((r) => setTimeout(r, 600))
+						continue
+					}
+					return { ok: false, status: 0 }
 				}
-				const json = await res.json().catch(() => ({}))
-				return { ok: true, file: json.file || json }
-			} catch (e) {
-				return { ok: false, status: 0 }
 			}
+			return { ok: false, status: 0 }
 		},
 
 		/**
@@ -205,8 +220,12 @@ export function createPortalApi(config) {
 				link.download = file.name || 'download'
 				document.body.appendChild(link)
 				link.click()
-				link.remove()
-				window.URL.revokeObjectURL(objectUrl)
+				// Defer cleanup: revoking the object URL synchronously after click()
+				// can cancel the download before the browser has started streaming it.
+				setTimeout(() => {
+					link.remove()
+					window.URL.revokeObjectURL(objectUrl)
+				}, 10000)
 				return { ok: true }
 			} catch (e) {
 				return { ok: false, status: 0 }

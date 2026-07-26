@@ -143,15 +143,18 @@ export default function App({ config, t: tProp }) {
 		}
 	}, [active, loadCollection])
 
-	// After a create/update, reload any loaded collection that reads that schema,
-	// then refresh the aggregated manifest so the unread inbox badge reflects any
+	// After a create/update, reload every collection that reads that schema so
+	// the new row shows — UNCONDITIONALLY, not only ones already in
+	// dataByCollection: if the create completes before a collection's initial
+	// load has settled, a `dataByCollection` guard would skip the reload and the
+	// stale (pre-create) load would leave the table empty forever. Then refresh
+	// the aggregated manifest so the unread inbox badge reflects any
 	// server-generated follow-on — e.g. the WMEBV ontvangstbevestiging that
-	// SubmissionReceiptService drops into the subject's inbox. Deferred a tick so
-	// the receipt's fail-safe write has landed.
+	// SubmissionReceiptService drops into the subject's inbox.
 	const onCreated = useCallback((_obj, action) => {
 		for (const contribution of (state.contributions?.contributions || [])) {
 			for (const collection of (contribution.collections || [])) {
-				if (collection.register === action.register && collection.schema === action.schema && dataByCollection[collection.id]) {
+				if (collection.register === action.register && collection.schema === action.schema) {
 					loadCollection(collection)
 				}
 			}
@@ -161,7 +164,7 @@ export default function App({ config, t: tProp }) {
 				setUnreadOverride(fresh.unreadCount)
 			}
 		})
-	}, [state.contributions, dataByCollection, loadCollection, api])
+	}, [state.contributions, loadCollection, api])
 
 	// A per-row status transition (approve/reject/close): invoke a resolved
 	// `type: update` action against the row's id with NO field data — the server
