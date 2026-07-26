@@ -44,7 +44,13 @@ function buildNav(contributions, t) {
 			})
 		}
 	}
-	nav.push({ key: INBOX_KEY, label: t('Inbox'), icon: 'Email', special: 'inbox' })
+	// Surface the fixed cross-app inbox only once contributions have loaded.
+	// Appending it on the initial (pre-load) render would make it the sole nav
+	// entry, locking the default active page to the empty inbox instead of the
+	// subject's first content page.
+	if (nav.length > 0) {
+		nav.push({ key: INBOX_KEY, label: t('Inbox'), icon: 'Email', special: 'inbox' })
+	}
 	return nav
 }
 
@@ -89,10 +95,13 @@ export default function App({ config, t: tProp }) {
 	const nav = useMemo(() => buildNav(state.contributions?.contributions, t), [state.contributions, t])
 	const unreadCount = state.contributions?.unreadCount || 0
 
-	// Default to the first page once contributions load.
+	// Default to the first CONTENT page once contributions load — never the
+	// synthetic cross-app inbox, which would open the portal on an empty
+	// message list instead of the subject's actual records.
 	useEffect(() => {
 		if (nav.length > 0 && (activeKey === null || !nav.some((n) => n.key === activeKey))) {
-			setActiveKey(nav[0].key)
+			const firstContent = nav.find((n) => n.special !== 'inbox') || nav[0]
+			setActiveKey(firstContent.key)
 		}
 	}, [nav, activeKey])
 
