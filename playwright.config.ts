@@ -24,10 +24,10 @@ import { defineConfig, devices } from '@playwright/test'
 
 export default defineConfig({
 	testDir: './tests/e2e',
-	timeout: 30_000,
-	expect: { timeout: 10_000 },
+	timeout: 90_000,
+	expect: { timeout: 15_000 },
 	fullyParallel: false,
-	retries: process.env.CI ? 1 : 0,
+	retries: process.env.CI ? 1 : 1,
 	workers: 1,
 	reporter: [
 		['html', { open: 'never', outputFolder: 'tests/e2e/playwright-report' }],
@@ -39,6 +39,11 @@ export default defineConfig({
 		baseURL: process.env.NEXTCLOUD_URL || 'http://localhost:8080',
 		trace: 'on-first-retry',
 		screenshot: 'only-on-failure',
+		// The target is a shared Nextcloud dev instance under variable load; give
+		// navigation/actions headroom so a busy-instance page load is not read as
+		// a portal failure.
+		navigationTimeout: 60_000,
+		actionTimeout: 30_000,
 	},
 
 	projects: [

@@ -67,7 +67,7 @@ test.describe('wmebv-submission-receipts', () => {
 		await loginAsSupplier(request, page, subjectRef, organisation)
 
 		await page.goto(PORTAL_PATH)
-		await page.waitForLoadState('networkidle')
+		await page.waitForLoadState('domcontentloaded')
 
 		// Submit the demo create-action through the SPA form — the SAME
 		// fixture portal-document-download.spec.ts uses to seed a fresh row,

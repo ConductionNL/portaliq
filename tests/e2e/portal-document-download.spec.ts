@@ -60,7 +60,7 @@ test.describe('portal-document-download', () => {
 		await loginAsSupplier(request, page, `e2e-download-${Date.now()}`)
 
 		await page.goto(PORTAL_PATH)
-		await page.waitForLoadState('networkidle')
+		await page.waitForLoadState('domcontentloaded')
 
 		// Create a fresh example row via the demo "Nieuw voorbeeld" form so the
 		// test owns a row with no pre-existing state to collide with.
@@ -102,7 +102,7 @@ test.describe('portal-document-download', () => {
 		await loginAsSupplier(request, page, `e2e-download-404-${Date.now()}`)
 
 		await page.goto(PORTAL_PATH)
-		await page.waitForLoadState('networkidle')
+		await page.waitForLoadState('domcontentloaded')
 
 		const title = `E2E 404 ${Date.now()}`
 		await page.getByLabel('Onderwerp').fill(title)

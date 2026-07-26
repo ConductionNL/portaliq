@@ -73,7 +73,12 @@ async function loginAsSupplier(request: APIRequestContext, page: Page, subjectRe
  * contributing app having already written the row.
  */
 async function seedMessage(request: APIRequestContext, subjectRef: string, organisation: string, data: Record<string, unknown>): Promise<string> {
+	// OpenRegister's object API is an internal admin surface (no portal bearer
+	// applies) — authenticate as the dev admin. This stands in for a
+	// contributing app having written the row server-side.
+	const admin = Buffer.from('admin:admin').toString('base64')
 	const res = await request.post(`${OR_OBJECTS_BASE}/portaliq/portalMessage`, {
+		headers: { Authorization: `Basic ${admin}`, 'OCS-APIRequest': 'true' },
 		data: { subjectRef, organisation, ...data },
 	})
 	expect(res.ok(), 'OpenRegister objects#create must be reachable on the target instance').toBeTruthy()
@@ -111,7 +116,7 @@ test.describe('portal-inbox-v2', () => {
 		await loginAsSupplier(request, page, subjectRef, organisation)
 
 		await page.goto(PORTAL_PATH)
-		await page.waitForLoadState('networkidle')
+		await page.waitForLoadState('domcontentloaded')
 
 		// The unread badge on the Inbox nav item reflects the ONE unread
 		// message (portal-inbox-v2 T04 / contributions unread count).

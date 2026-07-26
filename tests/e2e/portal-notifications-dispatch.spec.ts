@@ -73,7 +73,7 @@ test.describe('portal-notifications-dispatch', () => {
 		// deep-linking, landing the subject at the authenticated inbox after
 		// login").
 		await page.goto(`${PORTAL_PATH}?org=e2e-org`)
-		await page.waitForLoadState('networkidle')
+		await page.waitForLoadState('domcontentloaded')
 
 		// The shell renders (no 404) — the subject is prompted to authenticate
 		// rather than seeing case content, matching the "content only behind the
@@ -87,7 +87,7 @@ test.describe('portal-notifications-dispatch', () => {
 		await loginAsSupplier(request, page, subjectRef, organisation)
 
 		await page.goto(PORTAL_PATH)
-		await page.waitForLoadState('networkidle')
+		await page.waitForLoadState('domcontentloaded')
 
 		// The demo contribution (PortalContributionProvider) now declares
 		// `message.created` (and `status.changed`) in its `notifications` list —

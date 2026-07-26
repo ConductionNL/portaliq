@@ -138,7 +138,7 @@ export default function App({ config, t: tProp }) {
 	}, [active, loadCollection])
 
 	// After a create/update, reload any loaded collection that reads that schema.
-	const onCreated = useCallback((_obj, action) => {
+	const onCreated = useCallback(async (_obj, action) => {
 		for (const contribution of (state.contributions?.contributions || [])) {
 			for (const collection of (contribution.collections || [])) {
 				if (collection.register === action.register && collection.schema === action.schema && dataByCollection[collection.id]) {
@@ -146,7 +146,20 @@ export default function App({ config, t: tProp }) {
 				}
 			}
 		}
-	}, [state.contributions, dataByCollection, loadCollection])
+		// Update ONLY the unread inbox count so the badge reflects any
+		// server-generated follow-on the create produced — e.g. the WMEBV
+		// ontvangstbevestiging that SubmissionReceiptService drops into the
+		// subject's inbox (wmebv-submission-receipts). Patching the scalar in
+		// place (rather than replacing the whole contributions object) keeps the
+		// nav/page/form references stable, so the just-shown success message and
+		// the active page are preserved.
+		const fresh = await api.getContributions()
+		if (fresh && typeof fresh.unreadCount === 'number') {
+			setState((s) => (s.contributions
+				? { ...s, contributions: { ...s.contributions, unreadCount: fresh.unreadCount } }
+				: s))
+		}
+	}, [state.contributions, dataByCollection, loadCollection, api])
 
 	// A per-row status transition (approve/reject/close): invoke a resolved
 	// `type: update` action against the row's id with NO field data — the server
