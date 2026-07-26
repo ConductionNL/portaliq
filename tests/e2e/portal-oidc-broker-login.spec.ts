@@ -179,10 +179,21 @@ test.describe('portal-oidc-broker-login — happy path (stub broker, requires se
 			res.writeHead(404)
 			res.end()
 		})
-		await new Promise<void>((resolve) => server.listen(0, resolve))
+		// Bind the stub where BOTH the Nextcloud server AND the browser can reach
+		// it, and advertise the SAME origin the org's OIDC config was seeded with
+		// (so the ID token's `iss`, the discovery/JWKS/token URLs, and the
+		// server-side issuer check all agree). When NEXTCLOUD runs in a container,
+		// `127.0.0.1` is the container's own loopback — unreachable — so pass
+		// OIDC_E2E_ISSUER (e.g. http://host.docker.internal:4180, reachable from
+		// the container, and resolvable by the browser host via /etc/hosts). The
+		// stub then binds THAT issuer's port on all interfaces. With no issuer
+		// override it falls back to an ephemeral 127.0.0.1 port (host-only NC).
+		const issuerOverride = process.env.OIDC_E2E_ISSUER
+		const bindPort = issuerOverride ? Number(new URL(issuerOverride).port || '80') : 0
+		await new Promise<void>((resolve) => server.listen(bindPort, '0.0.0.0', resolve))
 		const port = (server.address() as { port: number }).port
 		function stubOrigin() {
-			return `http://127.0.0.1:${port}`
+			return issuerOverride || `http://127.0.0.1:${port}`
 		}
 
 		try {
