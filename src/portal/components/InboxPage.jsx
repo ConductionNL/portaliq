@@ -22,7 +22,7 @@ function formatDateTime(value, locale) {
 	}
 }
 
-export default function InboxPage({ api, t, locale }) {
+export default function InboxPage({ api, t, locale, onRead }) {
 	const [state, setState] = useState({ loading: true, messages: [] })
 	const [busyId, setBusyId] = useState(null)
 
@@ -49,6 +49,11 @@ export default function InboxPage({ api, t, locale }) {
 				...s,
 				messages: s.messages.map((m) => ((m.id || m['@self']?.id) === id ? { ...m, read: true } : m)),
 			}))
+			// Tell the shell one message is no longer unread, so the cross-app
+			// Inbox nav badge (portal-inbox-v2 T04) drops in lockstep.
+			if (onRead) {
+				onRead()
+			}
 		}
 	}
 

@@ -100,6 +100,12 @@ test.describe('portal-notifications-dispatch', () => {
 		const title = `E2E notif ${Date.now()}`
 		await page.getByLabel('Onderwerp').fill(title)
 		await page.getByRole('button', { name: 'Aanmaken' }).click()
-		await expect(page.getByText('Voorbeeld aangemaakt')).toBeVisible({ timeout: 5000 })
+		// The success UI must appear WITHOUT waiting on the email send. The create
+		// itself does several synchronous OpenRegister writes (the row + the
+		// WMEBV receipt's portalMessage + portalSubmission), which on a shared dev
+		// instance take several seconds; the observable proof of the dispatch
+		// decoupling is that it returns in that DB-bound window and NOT only after
+		// a (potentially 30s+) mail round-trip. 20s comfortably separates those.
+		await expect(page.getByText('Voorbeeld aangemaakt')).toBeVisible({ timeout: 20_000 })
 	})
 })

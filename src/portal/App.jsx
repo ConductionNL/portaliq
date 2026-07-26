@@ -283,7 +283,15 @@ export default function App({ config, t: tProp }) {
 						{nav.length === 0 && <p>{t('No contributions to show yet.')}</p>}
 
 						{active && active.special === 'inbox' && (
-							<InboxPage api={api} t={t} locale={config.locale} />
+							<InboxPage
+								api={api}
+								t={t}
+								locale={config.locale}
+								onRead={() => setUnreadOverride((prev) => {
+									const current = prev ?? (state.contributions?.unreadCount || 0)
+									return Math.max(0, current - 1)
+								})}
+							/>
 						)}
 
 						{active && active.special !== 'inbox' && (
