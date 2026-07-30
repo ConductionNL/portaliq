@@ -61,7 +61,7 @@ class AuditTrailServiceTest extends TestCase
         $this->assertSame('create', $data['verb']);
         $this->assertSame('r1', $data['register']);
         $this->assertSame('a', $data['schema']);
-        $this->assertSame('obj-1', $data['id']);
+        $this->assertSame('obj-1', $data['targetId']);
         $this->assertArrayHasKey('timestamp', $data);
         // NEVER a payload/content field — a fact record only.
         $this->assertArrayNotHasKey('data', $data);
