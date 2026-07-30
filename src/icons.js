@@ -1,0 +1,59 @@
+// SPDX-License-Identifier: EUPL-1.2
+// Copyright (C) 2026 Conduction B.V.
+//
+// Icon registry for portaliq (ADR-077 semantic icon vocabulary).
+//
+// CnAppNav, CnIcon, CnIndexPage / CnDetailPage headers and empty states resolve
+// an `icon` by PascalCase name through the registry that `registerIcons()`
+// populates. A name that is not registered renders NO icon in the navigation —
+// not a fallback glyph — so this file must cover every `icon` the manifests and
+// register files name. Keep it in sync when you add a menu entry.
+//
+// Generated from the app's own manifests; every name is verified to exist in
+// vue-material-design-icons.
+
+import Account from 'vue-material-design-icons/Account.vue'
+import AccountBoxOutline from 'vue-material-design-icons/AccountBoxOutline.vue'
+import AccountKey from 'vue-material-design-icons/AccountKey.vue'
+import AlertCircleOutline from 'vue-material-design-icons/AlertCircleOutline.vue'
+import BellOutline from 'vue-material-design-icons/BellOutline.vue'
+import BookOpenVariantOutline from 'vue-material-design-icons/BookOpenVariantOutline.vue'
+import Email from 'vue-material-design-icons/Email.vue'
+import EmailOutline from 'vue-material-design-icons/EmailOutline.vue'
+import FileCheckOutline from 'vue-material-design-icons/FileCheckOutline.vue'
+import FileDocument from 'vue-material-design-icons/FileDocument.vue'
+import FileDocumentMultipleOutline from 'vue-material-design-icons/FileDocumentMultipleOutline.vue'
+import FileDocumentOutline from 'vue-material-design-icons/FileDocumentOutline.vue'
+import FolderOutline from 'vue-material-design-icons/FolderOutline.vue'
+import History from 'vue-material-design-icons/History.vue'
+import MapMarkerPath from 'vue-material-design-icons/MapMarkerPath.vue'
+import MessageTextOutline from 'vue-material-design-icons/MessageTextOutline.vue'
+import ShieldCheckOutline from 'vue-material-design-icons/ShieldCheckOutline.vue'
+import ShieldLock from 'vue-material-design-icons/ShieldLock.vue'
+import Ticket from 'vue-material-design-icons/Ticket.vue'
+import ViewDashboardOutline from 'vue-material-design-icons/ViewDashboardOutline.vue'
+import WebBox from 'vue-material-design-icons/WebBox.vue'
+
+export default {
+	Account,
+	AccountBoxOutline,
+	AccountKey,
+	AlertCircleOutline,
+	BellOutline,
+	BookOpenVariantOutline,
+	Email,
+	EmailOutline,
+	FileCheckOutline,
+	FileDocument,
+	FileDocumentMultipleOutline,
+	FileDocumentOutline,
+	FolderOutline,
+	History,
+	MapMarkerPath,
+	MessageTextOutline,
+	ShieldCheckOutline,
+	ShieldLock,
+	Ticket,
+	ViewDashboardOutline,
+	WebBox,
+}

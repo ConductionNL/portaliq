@@ -21,6 +21,7 @@ import customComponents from './customComponents.js'
 // Both props coexist during the v1 → v2 transition.
 // Once fully migrated to v2, remove the customComponents import and prop.
 import registry from './registry.js'
+import appIcons from './icons.js'
 
 // Library CSS — must be explicit import (webpack tree-shakes side-effect imports from aliased packages)
 import '@conduction/nextcloud-vue/css/index.css'
@@ -33,7 +34,7 @@ Vue.use(PiniaVuePlugin)
 Vue.use(VueRouter)
 
 // Register library-side icon set + lib translations once at bootstrap.
-registerIcons()
+registerIcons(appIcons)
 try {
 	registerTranslations()
 } catch (e) {
