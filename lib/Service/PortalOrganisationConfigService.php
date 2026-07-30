@@ -450,6 +450,18 @@ class PortalOrganisationConfigService
 
         try {
             $organisation = $mapper->findBySlug($slug);
+            if (is_object($organisation) === false) {
+                return null;
+            }
+
+            // OpenRegister's Organisation is a Nextcloud `Entity`: its `getUuid()`
+            // / `getName()` accessors are MAGIC (`__call`), so `method_exists()`
+            // reports them as absent even though the calls work — gating on
+            // method_exists here rejected EVERY organisation, silently killing
+            // white-label + OIDC resolution. Call the accessors directly inside
+            // the try instead; a genuinely broken entity throws and fails closed.
+            $uuid = (string) $organisation->getUuid();
+            $name = (string) ($organisation->getName() ?? '');
         } catch (Throwable $e) {
             // Unknown slug (DoesNotExistException) or any other lookup
             // failure — both resolve to "no tenant found" upstream.
@@ -457,18 +469,9 @@ class PortalOrganisationConfigService
             return null;
         }
 
-        if (is_object($organisation) === false
-            || method_exists($organisation, 'getUuid') === false
-            || method_exists($organisation, 'getName') === false
-        ) {
-            return null;
-        }
-
-        $name = $organisation->getName();
-
         return [
-            'uuid' => (string) $organisation->getUuid(),
-            'name' => (string) ($name ?? ''),
+            'uuid' => $uuid,
+            'name' => $name,
         ];
     }//end findOrganisationBySlug()
 
