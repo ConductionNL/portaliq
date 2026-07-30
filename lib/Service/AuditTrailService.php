@@ -131,7 +131,7 @@ class AuditTrailService
                     'verb'         => $verb,
                     'register'     => $register,
                     'schema'       => $schema,
-                    'id'           => $id,
+                    'targetId'     => $id,
                     'timestamp'    => (new DateTimeImmutable())->format(DATE_ATOM),
                 ]
             );

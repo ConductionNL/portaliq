@@ -3,13 +3,13 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Register containing all schemas owned by the Portaliq external-portal application.",
-        "version": "0.8.0"
+        "version": "0.9.0"
     },
     "x-openregister": {
         "type": "application",
         "app": "portaliq",
         "openregister": "^v0.2.10",
-        "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046).",
+        "description": "Portaliq \u2014 the fleet's shared external portal for clients and suppliers (ADR-046).",
         "rbac": true,
         "multitenancy": true
     },
@@ -80,7 +80,10 @@
                         "register": "portaliq",
                         "schema": "exampleDocument",
                         "scopeField": "subjectRef",
-                        "fields": ["title", "status"],
+                        "fields": [
+                            "title",
+                            "status"
+                        ],
                         "label": "Mijn meldingen",
                         "listable": false
                     }
@@ -92,7 +95,10 @@
                         "label": "Melding indienen",
                         "register": "portaliq",
                         "schema": "exampleDocument",
-                        "fields": ["title", "status"],
+                        "fields": [
+                            "title",
+                            "status"
+                        ],
                         "defaults": {
                             "subjectRef": "anonymous"
                         },
@@ -107,7 +113,7 @@
                         "blocks": [
                             {
                                 "type": "richText",
-                                "markdown": "## Meld een probleem\nDien een melding in — geen account nodig. Bekende melders zien hun eigen meldingen hierboven; een anonieme melding heeft geen koppeling met een account."
+                                "markdown": "## Meld een probleem\nDien een melding in \u2014 geen account nodig. Bekende melders zien hun eigen meldingen hierboven; een anonieme melding heeft geen koppeling met een account."
                             },
                             {
                                 "type": "action",
@@ -139,7 +145,7 @@
                     "audience": {
                         "title": "Audience",
                         "type": "string",
-                        "description": "Which external audience this account belongs to. Open string set (contract v2 A2) — e.g. supplier, client, citizen, organisation, student, parent, external-employee, data-subject, signer, participant, vendor-org. Not enum-constrained so new audiences need no schema change.",
+                        "description": "Which external audience this account belongs to. Open string set (contract v2 A2) \u2014 e.g. supplier, client, citizen, organisation, student, parent, external-employee, data-subject, signer, participant, vendor-org. Not enum-constrained so new audiences need no schema change.",
                         "example": "supplier"
                     },
                     "identityType": {
@@ -198,7 +204,7 @@
                     "needsAlternativeContact": {
                         "title": "Needs alternative contact",
                         "type": "boolean",
-                        "description": "portal-notifications-dispatch (WMEBV notificatieplicht fallback, ~Awb 2:11): set true by NotificationDispatchJob after N consecutive failed out-of-band notification attempts for this account — signals an operator must reach the subject by another channel. Reset to false on the next successful dispatch.",
+                        "description": "portal-notifications-dispatch (WMEBV notificatieplicht fallback, ~Awb 2:11): set true by NotificationDispatchJob after N consecutive failed out-of-band notification attempts for this account \u2014 signals an operator must reach the subject by another channel. Reset to false on the next successful dispatch.",
                         "example": false
                     },
                     "lastLoginAt": {
@@ -210,7 +216,7 @@
                     "claims": {
                         "title": "Claims",
                         "type": "object",
-                        "description": "Server-managed per-app claim map linking this account to domain identities: {appId: {claimName: uuid}} (ADR-046 contract v2, A4). Written only by Portaliq server code / admin tooling — never accepted from a client. Collections select a claim via scopeClaim.",
+                        "description": "Server-managed per-app claim map linking this account to domain identities: {appId: {claimName: uuid}} (ADR-046 contract v2, A4). Written only by Portaliq server code / admin tooling \u2014 never accepted from a client. Collections select a claim via scopeClaim.",
                         "example": {
                             "pipelinq": {
                                 "linkedContactId": "00000000-0000-0000-0000-000000000000"
@@ -253,7 +259,7 @@
                     "audience": {
                         "title": "Audience",
                         "type": "string",
-                        "description": "The external audience of this session. Open string set (contract v2 A2) — not enum-constrained so new audiences need no schema change.",
+                        "description": "The external audience of this session. Open string set (contract v2 A2) \u2014 not enum-constrained so new audiences need no schema change.",
                         "example": "supplier"
                     },
                     "organisation": {
@@ -393,20 +399,20 @@
                     "aard": {
                         "title": "Aard",
                         "type": "string",
-                        "description": "WMEBV art 2:10 (2027 readiness): the nature of the message/decision. Optional — rendered only when the contributing app supplies it; absent means no such field renders.",
+                        "description": "WMEBV art 2:10 (2027 readiness): the nature of the message/decision. Optional \u2014 rendered only when the contributing app supplies it; absent means no such field renders.",
                         "example": "Beschikking"
                     },
                     "rechtsgevolg": {
                         "title": "Rechtsgevolg",
                         "type": "string",
-                        "description": "WMEBV art 2:10 (2027 readiness): the legal effect of the message/decision. Optional — rendered only when supplied.",
+                        "description": "WMEBV art 2:10 (2027 readiness): the legal effect of the message/decision. Optional \u2014 rendered only when supplied.",
                         "example": "De aanvraag is toegewezen."
                     },
                     "termijn": {
                         "title": "Termijn",
                         "type": "string",
                         "format": "date-time",
-                        "description": "WMEBV art 2:10 (2027 readiness): the deadline associated with the message/decision (e.g. an objection period). Optional — rendered only when supplied."
+                        "description": "WMEBV art 2:10 (2027 readiness): the deadline associated with the message/decision (e.g. an objection period). Optional \u2014 rendered only when supplied."
                     },
                     "referenceId": {
                         "title": "Reference id",
@@ -417,7 +423,7 @@
                     "dataCopy": {
                         "title": "Data copy",
                         "type": "object",
-                        "description": "WMEBV ontvangstbevestiging (wmebv-submission-receipts): a copy of the WHITELISTED submitted field data — the subject's right to a copy of what they submitted. Present only on a receipt message; never contains a non-whitelisted or raw client field.",
+                        "description": "WMEBV ontvangstbevestiging (wmebv-submission-receipts): a copy of the WHITELISTED submitted field data \u2014 the subject's right to a copy of what they submitted. Present only on a receipt message; never contains a non-whitelisted or raw client field.",
                         "example": {
                             "title": "Voorbeeldaanvraag"
                         }
@@ -471,7 +477,7 @@
                     "payloadCopy": {
                         "title": "Payload copy",
                         "type": "object",
-                        "description": "A copy of the WHITELISTED submitted field data — the same map the domain create persisted, never the raw client body.",
+                        "description": "A copy of the WHITELISTED submitted field data \u2014 the same map the domain create persisted, never the raw client body.",
                         "example": {
                             "title": "Voorbeeldaanvraag"
                         }
@@ -491,7 +497,7 @@
                     "deliveryStatus": {
                         "title": "Delivery status",
                         "type": "string",
-                        "description": "The receipt's retriability signal: `delivered` once the receipt message was written, `failed` when the receipt/log side-effect threw (retriable — the domain create itself is never lost).",
+                        "description": "The receipt's retriability signal: `delivered` once the receipt message was written, `failed` when the receipt/log side-effect threw (retriable \u2014 the domain create itself is never lost).",
                         "enum": [
                             "pending",
                             "delivered",
@@ -506,7 +512,7 @@
                 "icon": "ShieldCheckOutline",
                 "version": "0.1.0",
                 "title": "Portal Audit Entry",
-                "description": "Append-only, portal-owned audit-trail fact record (portal-session-hardening-v2): written on every portal mutation (create/update/forward), every download, and every session event (login/logout/refresh). Never carries payload content — records THAT a verb happened against a target, not the data. Exposed count-only via MetricsController; never publicly readable. Retention is OpenRegister's records-management concern (Archiefwet) — see openspec/changes/portal-session-hardening-v2/design.md.",
+                "description": "Append-only, portal-owned audit-trail fact record (portal-session-hardening-v2): written on every portal mutation (create/update/forward), every download, and every session event (login/logout/refresh). Never carries payload content \u2014 records THAT a verb happened against a target, not the data. Exposed count-only via MetricsController; never publicly readable. Retention is OpenRegister's records-management concern (Archiefwet) \u2014 see openspec/changes/portal-session-hardening-v2/design.md.",
                 "type": "object",
                 "required": [
                     "subjectRef",
@@ -571,7 +577,7 @@
                         "description": "The target schema (or, for a forwarded action, the declared action id).",
                         "example": "exampleDocument"
                     },
-                    "id": {
+                    "targetId": {
                         "title": "Target id",
                         "type": "string",
                         "description": "The target object id (empty for session events and forwarded actions, which have no single object id).",
@@ -590,7 +596,7 @@
                 "icon": "BellOutline",
                 "version": "0.1.0",
                 "title": "Portal Notification",
-                "description": "Append-only per-attempt log of an out-of-band (email) nudge dispatched by NotificationDispatchJob when a contributing app's manifest `notifications` rule key matches a portalMessage create or a successful status transition (portal-notifications-dispatch). One row per attempt — never updated in place — so the burden-of-proof/audit trail is complete. Never publicly readable; recipients are never exposed via metrics.",
+                "description": "Append-only per-attempt log of an out-of-band (email) nudge dispatched by NotificationDispatchJob when a contributing app's manifest `notifications` rule key matches a portalMessage create or a successful status transition (portal-notifications-dispatch). One row per attempt \u2014 never updated in place \u2014 so the burden-of-proof/audit trail is complete. Never publicly readable; recipients are never exposed via metrics.",
                 "type": "object",
                 "required": [
                     "accountRef",
@@ -667,7 +673,7 @@
                 "icon": "ShieldLock",
                 "version": "0.1.0",
                 "title": "Portal OIDC State",
-                "description": "Short-lived, single-use server-side storage for one OIDC authorization-code + PKCE round trip (portal-oidc-broker-login). Written by SessionController::oidcStart(), consumed exactly once by SessionController::oidcCallback(); a reused or expired row fails the callback closed. Never publicly readable — it briefly carries the PKCE code_verifier.",
+                "description": "Short-lived, single-use server-side storage for one OIDC authorization-code + PKCE round trip (portal-oidc-broker-login). Written by SessionController::oidcStart(), consumed exactly once by SessionController::oidcCallback(); a reused or expired row fails the callback closed. Never publicly readable \u2014 it briefly carries the PKCE code_verifier.",
                 "type": "object",
                 "required": [
                     "state",
@@ -685,7 +691,7 @@
                     "state": {
                         "title": "State",
                         "type": "string",
-                        "description": "The OIDC `state` parameter — the single-use lookup key for this row (CSRF guard).",
+                        "description": "The OIDC `state` parameter \u2014 the single-use lookup key for this row (CSRF guard).",
                         "example": "9f8e7d6c0000400080000000000000009f8e7d6c00004000800000000000"
                     },
                     "nonce": {
@@ -728,7 +734,7 @@
                         "title": "Expires at",
                         "type": "string",
                         "format": "date-time",
-                        "description": "When this row becomes unusable — a TTL bound on the whole start→callback round trip, independent of `used`."
+                        "description": "When this row becomes unusable \u2014 a TTL bound on the whole start\u2192callback round trip, independent of `used`."
                     },
                     "used": {
                         "title": "Used",
@@ -743,7 +749,7 @@
                 "icon": "WebBox",
                 "version": "0.1.0",
                 "title": "Portal Page",
-                "description": "A data-provisioned portal contribution (ADR-046, portal-page-provisioning). Mirrors the IPortalContributionProvider manifest shape 1:1 so Portaliq's built-in provider can read this object and hand it to the same PortalManifestNormaliser every PHP provider's output passes through. Owned by the app that provisions the page; never publicly readable — the built-in provider is the only reader, server-side.",
+                "description": "A data-provisioned portal contribution (ADR-046, portal-page-provisioning). Mirrors the IPortalContributionProvider manifest shape 1:1 so Portaliq's built-in provider can read this object and hand it to the same PortalManifestNormaliser every PHP provider's output passes through. Owned by the app that provisions the page; never publicly readable \u2014 the built-in provider is the only reader, server-side.",
                 "type": "object",
                 "required": [
                     "label",
@@ -764,13 +770,13 @@
                     "audience": {
                         "title": "Audience",
                         "type": "string",
-                        "description": "Which external audience this contribution serves. Open string set (contract v2 A2), same vocabulary as portalAccount.audience — e.g. supplier, client, citizen. Not enum-constrained.",
+                        "description": "Which external audience this contribution serves. Open string set (contract v2 A2), same vocabulary as portalAccount.audience \u2014 e.g. supplier, client, citizen. Not enum-constrained.",
                         "example": "citizen"
                     },
                     "minTrust": {
                         "title": "Minimum trust",
                         "type": "string",
-                        "description": "Contribution-level default minimum trust (low|substantial|high, contract v2 A3). Absent defaults to low. Individual collections/actions may override with their own minTrust. Mutually exclusive with an entry's own `anonymous: true` — the normaliser drops `anonymous` on an entry that also declares a non-low minTrust.",
+                        "description": "Contribution-level default minimum trust (low|substantial|high, contract v2 A3). Absent defaults to low. Individual collections/actions may override with their own minTrust. Mutually exclusive with an entry's own `anonymous: true` \u2014 the normaliser drops `anonymous` on an entry that also declares a non-low minTrust.",
                         "enum": [
                             "low",
                             "substantial",
@@ -809,7 +815,7 @@
                                 "register": {
                                     "title": "Register",
                                     "type": "string",
-                                    "description": "The OpenRegister register slug the collection reads from. A plain string, not an OR object relation — this selects a (register, schema) pair, it does not reference a specific object instance (ADR-062's $ref/format:uuid relation dialect applies to same-register object foreign keys, not cross-register schema selectors).",
+                                    "description": "The OpenRegister register slug the collection reads from. A plain string, not an OR object relation \u2014 this selects a (register, schema) pair, it does not reference a specific object instance (ADR-062's $ref/format:uuid relation dialect applies to same-register object foreign keys, not cross-register schema selectors).",
                                     "example": "openbuild"
                                 },
                                 "schema": {
@@ -821,7 +827,7 @@
                                 "scopeField": {
                                     "title": "Scope field",
                                     "type": "string",
-                                    "description": "The property rows are scoped by (contract v2). Omit or leave absent on an anonymous collection — there is no subject to scope by.",
+                                    "description": "The property rows are scoped by (contract v2). Omit or leave absent on an anonymous collection \u2014 there is no subject to scope by.",
                                     "example": "subjectRef"
                                 },
                                 "scopeClaim": {
@@ -915,7 +921,7 @@
                                 "register": {
                                     "title": "Register",
                                     "type": "string",
-                                    "description": "Target register for create/update. Plain string schema-selector, not an OR relation — see the collections.register note.",
+                                    "description": "Target register for create/update. Plain string schema-selector, not an OR relation \u2014 see the collections.register note.",
                                     "example": "openbuild"
                                 },
                                 "schema": {
@@ -972,7 +978,7 @@
                                 "anonymous": {
                                     "title": "Anonymous",
                                     "type": "boolean",
-                                    "description": "When true and type=create, this action is reachable via POST /portal/api/collections/{register}/{schema} with NO bearer session — the write is unowned (no subjectRef/organisation stamped). Mutually exclusive with a non-low minTrust on the SAME entry (fail-closed: the normaliser drops anonymous when both are set, falling back to requiring authentication). Default false.",
+                                    "description": "When true and type=create, this action is reachable via POST /portal/api/collections/{register}/{schema} with NO bearer session \u2014 the write is unowned (no subjectRef/organisation stamped). Mutually exclusive with a non-low minTrust on the SAME entry (fail-closed: the normaliser drops anonymous when both are set, falling back to requiring authentication). Default false.",
                                     "example": true
                                 }
                             }
@@ -1011,7 +1017,7 @@
                                 "blocks": {
                                     "title": "Blocks",
                                     "type": "array",
-                                    "description": "Ordered UI blocks composing the page. type ∈ collection|action|detail|richText|cta (PortalManifestNormaliser::BLOCK_TYPES) — an unrecognised type or an unresolvable collection/action reference is dropped by the normaliser, never rendered as broken.",
+                                    "description": "Ordered UI blocks composing the page. type \u2208 collection|action|detail|richText|cta (PortalManifestNormaliser::BLOCK_TYPES) \u2014 an unrecognised type or an unresolvable collection/action reference is dropped by the normaliser, never rendered as broken.",
                                     "items": {
                                         "type": "object",
                                         "required": [
@@ -1021,7 +1027,7 @@
                                             "type": {
                                                 "title": "Block type",
                                                 "type": "string",
-                                                "description": "The block's kind — which of the below reference fields applies, and how the SPA renders it (PortalManifestNormaliser::BLOCK_TYPES).",
+                                                "description": "The block's kind \u2014 which of the below reference fields applies, and how the SPA renders it (PortalManifestNormaliser::BLOCK_TYPES).",
                                                 "enum": [
                                                     "collection",
                                                     "action",

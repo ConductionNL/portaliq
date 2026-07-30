@@ -80,9 +80,18 @@ class SessionController extends Controller
     private const OIDC_GENERIC_ERROR = 'oidc_failed';
 
     /**
-     * Where an OIDC callback lands in the SPA when no `returnTo` was stored.
+     * Where an OIDC callback lands in the SPA when no `returnTo` was stored:
+     * the portal page's OWN route, resolved through the URL generator so it
+     * carries the app's web-root (`/apps/portaliq/portal`). A bare `/portal`
+     * literal resolved to the Nextcloud ROOT (`/portal`), which 404s — the
+     * portal is an app page, so every OIDC login landed on "Page not found".
+     *
+     * @return string
      */
-    private const DEFAULT_RETURN_TO = '/portal';
+    private function portalReturnTo(): string
+    {
+        return $this->urlGenerator->linkToRoute(Application::APP_ID.'.portalPage.index');
+    }
 
     /**
      * Constructor.
@@ -250,7 +259,7 @@ class SessionController extends Controller
             codeVerifier: $pkce['verifier'],
             org: $org,
             provider: $provider,
-            returnTo: self::DEFAULT_RETURN_TO
+            returnTo: $this->portalReturnTo()
         );
         if ($stored === false) {
             return $this->oidcGenericError();
@@ -377,7 +386,7 @@ class SessionController extends Controller
             return $this->oidcGenericError();
         }
 
-        $returnTo = self::DEFAULT_RETURN_TO;
+        $returnTo = $this->portalReturnTo();
         if ($pending['returnTo'] !== '') {
             $returnTo = $pending['returnTo'];
         }
