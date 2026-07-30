@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use stdClass;
 
 /**
  * Tests the OR file reader: it degrades to a safe empty/null result without
@@ -17,6 +18,11 @@ use RuntimeException;
  * exposes the raw stored path in a listing, and it delegates streaming to
  * OpenRegister's own `FileService::streamFile()` rather than re-implementing
  * Content-Disposition sanitisation.
+ *
+ * The reader first resolves the object UUID to a full ObjectEntity through
+ * OpenRegister's ObjectService (a bare string id leaves the file service unable
+ * to locate the object folder), so the container mock resolves BOTH the object
+ * service (whose `find()` returns the entity) and the file service.
  *
  * @spec openspec/specs/supplier-portal/spec.md#scoped-file-download-re-verifies-ownership-before-serving-a-byte
  * @spec openspec/specs/supplier-portal/spec.md#identical-404-discipline-no-existence-oracle
@@ -26,34 +32,91 @@ class PortalFileReaderTest extends TestCase
 
     private const FS = 'OCA\\OpenRegister\\Service\\FileService';
 
+    private const OS = 'OCA\\OpenRegister\\Service\\ObjectService';
+
+    private const REGISTER = 'contributions';
+
+    private const SCHEMA = 'contribution';
+
+    /**
+     * Build a container mock that resolves the object service (returning the
+     * given entity from `find()`) and the file service.
+     *
+     * @param object      $fileService The stubbed OpenRegister FileService.
+     * @param object|null $entity      The entity `ObjectService::find()` returns.
+     *
+     * @return ContainerInterface
+     */
+    private function containerFor(object $fileService, ?object $entity): ContainerInterface
+    {
+        $objectService = new class ($entity) {
+            public function __construct(private readonly ?object $entity)
+            {
+            }//end __construct()
+
+            public function find(...$args): ?object
+            {
+                return $this->entity;
+            }//end find()
+        };
+
+        $container = $this->createMock(ContainerInterface::class);
+        $container->method('get')->willReturnCallback(
+            fn (string $id) => match ($id) {
+                self::OS => $objectService,
+                self::FS => $fileService,
+                default  => throw new RuntimeException('unexpected service '.$id),
+            }
+        );
+
+        return $container;
+    }//end containerFor()
+
     public function testListFilesReturnsEmptyArrayWhenOpenRegisterUnavailable(): void
     {
         $container = $this->createMock(ContainerInterface::class);
         $container->method('get')->willThrowException(new RuntimeException('OR not installed'));
 
         $reader = new PortalFileReader($container, $this->createMock(LoggerInterface::class));
-        $this->assertSame([], $reader->listFiles('d-1'));
+        $this->assertSame([], $reader->listFiles(self::REGISTER, self::SCHEMA, 'd-1'));
 
     }//end testListFilesReturnsEmptyArrayWhenOpenRegisterUnavailable()
 
     public function testListFilesReturnsEmptyArrayWhenOpenRegisterThrows(): void
     {
         $fileService = new class {
-            public function getFiles(string $object): array
+            public function getFiles(object $object): array
             {
                 throw new RuntimeException('OR error');
             }//end getFiles()
         };
 
-        $container = $this->createMock(ContainerInterface::class);
-        $container->method('get')->willReturnCallback(
-            fn (string $id) => ($id === self::FS ? $fileService : throw new RuntimeException('unexpected'))
-        );
+        $container = $this->containerFor($fileService, new stdClass());
 
         $reader = new PortalFileReader($container, $this->createMock(LoggerInterface::class));
-        $this->assertSame([], $reader->listFiles('d-1'));
+        $this->assertSame([], $reader->listFiles(self::REGISTER, self::SCHEMA, 'd-1'));
 
     }//end testListFilesReturnsEmptyArrayWhenOpenRegisterThrows()
+
+    /**
+     * When the object UUID cannot be resolved to an entity, the listing is empty
+     * — the file service is never reached.
+     */
+    public function testListFilesReturnsEmptyArrayWhenObjectDoesNotResolve(): void
+    {
+        $fileService = new class {
+            public function getFiles(object $object): array
+            {
+                throw new RuntimeException('must not be called');
+            }//end getFiles()
+        };
+
+        $container = $this->containerFor($fileService, null);
+
+        $reader = new PortalFileReader($container, $this->createMock(LoggerInterface::class));
+        $this->assertSame([], $reader->listFiles(self::REGISTER, self::SCHEMA, 'd-1'));
+
+    }//end testListFilesReturnsEmptyArrayWhenObjectDoesNotResolve()
 
     /**
      * Only safe metadata (id/name/size) is ever shaped into the listing — the
@@ -88,17 +151,16 @@ class PortalFileReaderTest extends TestCase
             {
             }//end __construct()
 
-            public function getFiles(string $object): array
+            public function getFiles(object $object): array
             {
                 return [$this->node];
             }//end getFiles()
         };
 
-        $container = $this->createMock(ContainerInterface::class);
-        $container->method('get')->willReturn($fileService);
+        $container = $this->containerFor($fileService, new stdClass());
 
         $reader = new PortalFileReader($container, $this->createMock(LoggerInterface::class));
-        $files  = $reader->listFiles('d-1');
+        $files  = $reader->listFiles(self::REGISTER, self::SCHEMA, 'd-1');
 
         $this->assertSame([['id' => 42, 'name' => 'besluit.pdf', 'size' => 1024]], $files);
         foreach ($files as $file) {
@@ -113,7 +175,7 @@ class PortalFileReaderTest extends TestCase
         $container->method('get')->willThrowException(new RuntimeException('OR not installed'));
 
         $reader = new PortalFileReader($container, $this->createMock(LoggerInterface::class));
-        $this->assertNull($reader->streamFile('d-1', '42'));
+        $this->assertNull($reader->streamFile(self::REGISTER, self::SCHEMA, 'd-1', '42'));
 
     }//end testStreamFileReturnsNullWhenOpenRegisterUnavailable()
 
@@ -125,34 +187,32 @@ class PortalFileReaderTest extends TestCase
     public function testStreamFileReturnsNullWhenFileDoesNotResolve(): void
     {
         $fileService = new class {
-            public function getFile(string $object, string $file): ?object
+            public function getFile(object $object, string $file): ?object
             {
                 return null;
             }//end getFile()
         };
 
-        $container = $this->createMock(ContainerInterface::class);
-        $container->method('get')->willReturn($fileService);
+        $container = $this->containerFor($fileService, new stdClass());
 
         $reader = new PortalFileReader($container, $this->createMock(LoggerInterface::class));
-        $this->assertNull($reader->streamFile('d-1', 'not-mine'));
+        $this->assertNull($reader->streamFile(self::REGISTER, self::SCHEMA, 'd-1', 'not-mine'));
 
     }//end testStreamFileReturnsNullWhenFileDoesNotResolve()
 
     public function testStreamFileReturnsNullWhenOpenRegisterThrows(): void
     {
         $fileService = new class {
-            public function getFile(string $object, string $file): ?object
+            public function getFile(object $object, string $file): ?object
             {
                 throw new RuntimeException('OR error');
             }//end getFile()
         };
 
-        $container = $this->createMock(ContainerInterface::class);
-        $container->method('get')->willReturn($fileService);
+        $container = $this->containerFor($fileService, new stdClass());
 
         $reader = new PortalFileReader($container, $this->createMock(LoggerInterface::class));
-        $this->assertNull($reader->streamFile('d-1', '42'));
+        $this->assertNull($reader->streamFile(self::REGISTER, self::SCHEMA, 'd-1', '42'));
 
     }//end testStreamFileReturnsNullWhenOpenRegisterThrows()
 
@@ -171,7 +231,7 @@ class PortalFileReaderTest extends TestCase
             {
             }//end __construct()
 
-            public function getFile(string $object, string $file): object
+            public function getFile(object $object, string $file): object
             {
                 return $this->file;
             }//end getFile()
@@ -182,11 +242,10 @@ class PortalFileReaderTest extends TestCase
             }//end streamFile()
         };
 
-        $container = $this->createMock(ContainerInterface::class);
-        $container->method('get')->willReturn($fileService);
+        $container = $this->containerFor($fileService, new stdClass());
 
         $reader = new PortalFileReader($container, $this->createMock(LoggerInterface::class));
-        $this->assertSame($expected, $reader->streamFile('d-1', '42'));
+        $this->assertSame($expected, $reader->streamFile(self::REGISTER, self::SCHEMA, 'd-1', '42'));
 
     }//end testStreamFileDelegatesToOpenRegistersStreamFileOnSuccess()
 }//end class

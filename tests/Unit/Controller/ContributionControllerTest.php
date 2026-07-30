@@ -1653,7 +1653,7 @@ class ContributionControllerTest extends TestCase
         $reader->method('readObject')->willReturn(['id' => 'd-1', 'title' => 'Mine']);
 
         $fileReader = $this->createMock(PortalFileReader::class);
-        $fileReader->expects($this->once())->method('listFiles')->with('d-1')->willReturn([['id' => 7, 'name' => 'besluit.pdf', 'size' => 10]]);
+        $fileReader->expects($this->once())->method('listFiles')->with('portaliq', 'exampleDocument', 'd-1')->willReturn([['id' => 7, 'name' => 'besluit.pdf', 'size' => 10]]);
 
         $controller = $this->controller(aggregate: $aggregate, reader: $reader, fileReader: $fileReader);
         $response   = $controller->object('portaliq', 'exampleDocument', 'd-1');
@@ -1838,7 +1838,7 @@ class ContributionControllerTest extends TestCase
 
         $expectedStream = $this->createMock(StreamResponse::class);
         $fileReader     = $this->createMock(PortalFileReader::class);
-        $fileReader->expects($this->once())->method('streamFile')->with('d-1', 'f-1')->willReturn($expectedStream);
+        $fileReader->expects($this->once())->method('streamFile')->with('portaliq', 'exampleDocument', 'd-1', 'f-1')->willReturn($expectedStream);
 
         $auditHook = $this->createMock(PortalAuditHook::class);
         $auditHook->expects($this->once())->method('download')->with('s1', 'org-1', 'portaliq', 'exampleDocument', 'd-1');

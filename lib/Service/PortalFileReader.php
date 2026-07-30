@@ -64,6 +64,12 @@ class PortalFileReader
     private const FILE_SERVICE = 'OCA\\OpenRegister\\Service\\FileService';
 
     /**
+     * OpenRegister's object service — resolves an object UUID to a full
+     * ObjectEntity so the file service can locate its folder (see listFiles()).
+     */
+    private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
+
+    /**
      * Constructor.
      *
      * @param ContainerInterface $container For resolving OpenRegister's FileService.
@@ -84,21 +90,28 @@ class PortalFileReader
      * OpenRegister is unavailable — a listing failure never surfaces as an
      * error to the client, it simply shows no files.
      *
-     * @param string $id The owned object's id (ownership already verified).
+     * @param string $register The register slug/id.
+     * @param string $schema   The schema slug/id.
+     * @param string $id       The owned object's id (ownership already verified).
      *
      * @return array<int, array<string, mixed>> The attached files' safe metadata.
      *
      * @spec openspec/specs/supplier-portal/spec.md#identical-404-discipline-no-existence-oracle
      */
-    public function listFiles(string $id): array
+    public function listFiles(string $register, string $schema, string $id): array
     {
         $fileService = $this->fileService();
         if ($fileService === null) {
             return [];
         }
 
+        $entity = $this->resolveObjectEntity(register: $register, schema: $schema, id: $id);
+        if ($entity === null) {
+            return [];
+        }
+
         try {
-            $files = $fileService->getFiles(object: $id);
+            $files = $fileService->getFiles(object: $entity);
         } catch (Throwable $e) {
             $this->logger->warning('Portaliq: OR file list failed', ['reason' => $e->getMessage()]);
             return [];
@@ -126,9 +139,11 @@ class PortalFileReader
      * different object's folder — or no file at all — resolves to null, never
      * a stream. Fails closed to null on any OR error.
      *
-     * @param string $id     The owned object's id (ownership already verified).
-     * @param string $fileId The requested file's id (never trusted as a
-     *                       capability; scoped to the owned object's folder).
+     * @param string $register The register slug/id.
+     * @param string $schema   The schema slug/id.
+     * @param string $id       The owned object's id (ownership already verified).
+     * @param string $fileId   The requested file's id (never trusted as a
+     *                         capability; scoped to the owned object's folder).
      *
      * @return StreamResponse|null The stream response, or null when the file
      *                             cannot be resolved (identical to "does not
@@ -136,15 +151,20 @@ class PortalFileReader
      *
      * @spec openspec/specs/supplier-portal/spec.md#scoped-file-download-re-verifies-ownership-before-serving-a-byte
      */
-    public function streamFile(string $id, string $fileId): ?StreamResponse
+    public function streamFile(string $register, string $schema, string $id, string $fileId): ?StreamResponse
     {
         $fileService = $this->fileService();
         if ($fileService === null) {
             return null;
         }
 
+        $entity = $this->resolveObjectEntity(register: $register, schema: $schema, id: $id);
+        if ($entity === null) {
+            return null;
+        }
+
         try {
-            $file = $fileService->getFile(object: $id, file: $fileId);
+            $file = $fileService->getFile(object: $entity, file: $fileId);
             if ($file instanceof File === false) {
                 return null;
             }
@@ -205,4 +225,43 @@ class PortalFileReader
 
         return null;
     }//end fileService()
+
+    /**
+     * Resolve an object UUID to a full OpenRegister ObjectEntity via the object
+     * service. The file service's folder resolution takes its entity-input
+     * branch only when handed an ObjectEntity; a bare string id leaves it unable
+     * to resolve the register, so `getFiles()`/`getFile()` return nothing.
+     * RBAC/tenant off — the caller re-verified ownership already.
+     *
+     * @param string $register The register slug/id.
+     * @param string $schema   The schema slug/id.
+     * @param string $id       The owned object's UUID.
+     *
+     * @return object|null The ObjectEntity, or null on any resolution failure.
+     */
+    private function resolveObjectEntity(string $register, string $schema, string $id): ?object
+    {
+        try {
+            $objectService = $this->container->get(self::OBJECT_SERVICE);
+            if (is_object($objectService) === false) {
+                return null;
+            }
+
+            $entity = $objectService->find(
+                id: $id,
+                register: $register,
+                schema: $schema,
+                _rbac: false,
+                _multitenancy: false
+            );
+            if (is_object($entity) === true) {
+                return $entity;
+            }
+
+            return null;
+        } catch (Throwable $e) {
+            $this->logger->warning('Portaliq: object resolve for file read failed', ['reason' => $e->getMessage()]);
+            return null;
+        }//end try
+    }//end resolveObjectEntity()
 }//end class

@@ -524,7 +524,7 @@ class ContributionController extends Controller implements PortalProtected
         // listing itself never widens which ROWS are visible, only what a row
         // the subject already owns additionally shows.
         if (($collection['filesDownload'] ?? false) === true) {
-            $object['_files'] = $this->fileReader->listFiles(id: $id);
+            $object['_files'] = $this->fileReader->listFiles(register: $register, schema: $schema, id: $id);
         }
 
         return new JSONResponse(['object' => $object]);
@@ -700,7 +700,7 @@ class ContributionController extends Controller implements PortalProtected
             return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
         }
 
-        $stream = $this->fileReader->streamFile(id: $id, fileId: $fileId);
+        $stream = $this->fileReader->streamFile(register: $register, schema: $schema, id: $id, fileId: $fileId);
         if ($stream === null) {
             return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
         }
@@ -1281,9 +1281,10 @@ class ContributionController extends Controller implements PortalProtected
         // domain app through the forward. An action that declares no `fields`
         // relays the raw request body as-is (contract v2, A6): forwards like
         // shillinq's `pay` carry an opaque domain payload with no whitelist.
-        $body = array_key_exists('fields', $action) === true
-            ? (string) json_encode($this->whitelist(fields: (array) $action['fields']))
-            : $this->requestBody();
+        $body = $this->requestBody();
+        if (array_key_exists('fields', $action) === true) {
+            $body = (string) json_encode($this->whitelist(fields: (array) $action['fields']));
+        }
 
         try {
             $client  = $this->clientService->newClient();

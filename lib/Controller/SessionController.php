@@ -91,7 +91,7 @@ class SessionController extends Controller
     private function portalReturnTo(): string
     {
         return $this->urlGenerator->linkToRoute(Application::APP_ID.'.portalPage.index');
-    }
+    }//end portalReturnTo()
 
     /**
      * Constructor.

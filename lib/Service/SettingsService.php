@@ -34,6 +34,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Service for managing Portaliq application configuration and settings.
+ *
+ * @spec openspec/specs/settings-management/spec.md#REQ-CFG-001
  */
 class SettingsService
 {
@@ -73,6 +75,8 @@ class SettingsService
      * Check whether OpenRegister is installed and available.
      *
      * @return bool
+     *
+     * @spec openspec/specs/settings-management/spec.md#REQ-CFG-001
      */
     public function isOpenRegisterAvailable(): bool
     {
