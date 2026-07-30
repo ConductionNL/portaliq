@@ -36,10 +36,11 @@ class PortaliqRegisterConfigTest extends TestCase
     public function testRegisterJsonParsesAndVersionsAreBumped(): void
     {
         $this->assertNotSame([], self::$register, 'register JSON must parse');
-        // The register's OWN version bumped to 0.8.0 for portal-page-provisioning
-        // (task 1.3): adds the new `portalPage` schema (data-provisioned portal
-        // contributions, ADR-046) — additive, no existing schema changed.
-        $this->assertSame('0.8.0', self::$register['info']['version']);
+        // 0.9.0: renamed portalAuditEntry's `id` property to `targetId` so it no
+        // longer collides with OpenRegister's reserved object-id key (which made
+        // every append-only audit write fail). 0.8.0 added the `portalPage` schema
+        // (data-provisioned portal contributions, ADR-046). Both additive.
+        $this->assertSame('0.9.0', self::$register['info']['version']);
         $this->assertSame('0.5.0', self::$register['components']['schemas']['portalAccount']['version']);
         $this->assertSame('0.1.0', self::$register['components']['schemas']['portalPage']['version']);
 
