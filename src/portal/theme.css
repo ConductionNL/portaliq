@@ -14,6 +14,18 @@
  * (`--portaliq-*`) so they never collide with or shadow NC's variables.
  */
 
+/* The public portal mounts into Nextcloud's guest `#content` chrome, which is
+   `position: fixed` with a viewport-bounded height and `overflow: clip`. NC
+   apps are expected to own their internal scroll; without it, any portal
+   content taller than the viewport (a detail card plus its attachments list,
+   a long form) is clipped and UNREACHABLE — you cannot scroll to it. Make the
+   mount node a bounded scroll container so the shell (min-height: 100vh)
+   scrolls inside it. */
+#portaliq-portal {
+	height: 100%;
+	overflow-y: auto;
+}
+
 .portaliq-shell {
 	--portaliq-color-text: #1b1b1b;
 	--portaliq-color-text-muted: #5c5c5c;
