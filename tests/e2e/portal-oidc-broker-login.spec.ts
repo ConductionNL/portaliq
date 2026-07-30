@@ -222,9 +222,12 @@ test.describe('portal-oidc-broker-login — happy path (stub broker, requires se
 			await page.getByRole('button', { name: /eHerkenning/i }).click()
 
 			// The stub broker's /authorize immediately redirects back with a
-			// code — the browser lands on the SPA, authenticated.
+			// code — the browser lands on the SPA, authenticated. The
+			// authenticated shell renders BOTH `.portaliq-home` and its
+			// `.portaliq-subject` line, so match either and take the first
+			// (a bare toBeVisible() on the two-element locator trips strict mode).
 			await page.waitForURL(/\/portal(#|$)/, { timeout: 15000 })
-			await expect(page.locator('.portaliq-subject, .portaliq-home')).toBeVisible()
+			await expect(page.locator('.portaliq-subject, .portaliq-home').first()).toBeVisible()
 		} finally {
 			server.close()
 		}

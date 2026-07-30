@@ -24,7 +24,7 @@ import { defineConfig, devices } from '@playwright/test'
 
 export default defineConfig({
 	testDir: './tests/e2e',
-	timeout: 90_000,
+	timeout: 180_000,
 	expect: { timeout: 15_000 },
 	fullyParallel: false,
 	retries: process.env.CI ? 1 : 1,
@@ -42,8 +42,8 @@ export default defineConfig({
 		// The target is a shared Nextcloud dev instance under variable load; give
 		// navigation/actions headroom so a busy-instance page load is not read as
 		// a portal failure.
-		navigationTimeout: 60_000,
-		actionTimeout: 30_000,
+		navigationTimeout: 90_000,
+		actionTimeout: 90_000,
 	},
 
 	projects: [
