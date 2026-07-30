@@ -141,8 +141,14 @@ test.describe('portal-oidc-broker-login — happy path (stub broker, requires se
 		const server = http.createServer((req, res) => {
 			const url = new URL(req.url!, 'http://stub-broker')
 			if (url.pathname === '/.well-known/openid-configuration') {
+				// Split origins for a containerized Nextcloud + host browser: the
+				// SERVER fetches token/jwks (and checked `iss`) from the issuer
+				// origin (container-reachable, e.g. host.docker.internal), while the
+				// BROWSER follows the 302 to authorization_endpoint, so THAT must be
+				// on a browser-reachable origin (e.g. 127.0.0.1). The same stub
+				// process answers both — it is bound on all interfaces.
 				respondJson(res, {
-					authorization_endpoint: `${stubOrigin()}/authorize`,
+					authorization_endpoint: `${browserOrigin()}/authorize`,
 					token_endpoint: `${stubOrigin()}/token`,
 					jwks_uri: `${stubOrigin()}/jwks`,
 				})
@@ -192,8 +198,17 @@ test.describe('portal-oidc-broker-login — happy path (stub broker, requires se
 		const bindPort = issuerOverride ? Number(new URL(issuerOverride).port || '80') : 0
 		await new Promise<void>((resolve) => server.listen(bindPort, '0.0.0.0', resolve))
 		const port = (server.address() as { port: number }).port
+		// Server-facing origin (issuer, token, jwks, `iss`) — must be reachable
+		// from the Nextcloud server (the container, via OIDC_E2E_ISSUER).
 		function stubOrigin() {
 			return issuerOverride || `http://127.0.0.1:${port}`
+		}
+		// Browser-facing origin (authorization_endpoint only) — must be reachable
+		// from the browser host. Defaults to OIDC_E2E_BROWSER_ORIGIN, else the
+		// issuer (host-local NC, where both are the same box), else the ephemeral
+		// loopback.
+		function browserOrigin() {
+			return process.env.OIDC_E2E_BROWSER_ORIGIN || issuerOverride || `http://127.0.0.1:${port}`
 		}
 
 		try {
