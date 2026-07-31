@@ -79,6 +79,20 @@ webpackConfig.resolve.alias = {
 	'@nextcloud/axios$': path.resolve(__dirname, 'node_modules/@nextcloud/axios'),
 }
 
+// This app emits TWO independent bundles into the SAME `js/` directory:
+// the Vue admin SPA (this config) and the React public portal
+// (webpack.portal.js). @nextcloud/webpack-vue-config sets
+// `output.clean: true`, so the admin build WIPES js/ — including
+// `portaliq-portal.js`, which is only ever written by the other config.
+//
+// `npm run build` survives that only by accident of ordering (admin then
+// portal). Anything that rebuilds the admin bundle alone — `npm run
+// build:admin`, `npm run watch` — silently deletes the portal bundle, and
+// the public portal then serves a bare `<div id="portaliq-portal">` with a
+// 404 on its script and NO console error. webpack.portal.js already sets
+// `clean: false` to protect the admin side; this is the missing other half.
+webpackConfig.output.clean = { keep: /^portaliq-portal\.js/ }
+
 // Add SCSS rule to the existing module rules
 webpackConfig.module.rules.push({
 	test: /\.scss$/,

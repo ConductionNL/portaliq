@@ -15,12 +15,33 @@
  *                      Output lands in
  *                      `docs/static/screenshots/tutorials/{user,admin}/`.
  *
- * Point at a running Nextcloud with NEXTCLOUD_URL (default
- * http://localhost:8080). Authentication / storage-state wiring is
- * left for the team to add when the first real e2e spec lands.
+ * Point at a running Nextcloud with PLAYWRIGHT_BASE_URL (or the older
+ * NEXTCLOUD_URL). There is no default — see the note on `baseURL` below.
  */
 
 import { defineConfig, devices } from '@playwright/test'
+
+/**
+ * The ONE place the target instance is decided.
+ *
+ * There is deliberately NO `?? 'http://localhost:8080'` fallback. That default
+ * is how two apps in this fleet were found running their suites — including
+ * their WRITE paths — against the SHARED dev container: the suite looked
+ * green, created fixtures in other people's environment, and one session's
+ * numbers had to be retracted. An unset variable must stop the run, not
+ * silently retarget it.
+ *
+ * `PLAYWRIGHT_BASE_URL` wins over the older `NEXTCLOUD_URL` so a caller who
+ * sets the standard Playwright variable is never ignored.
+ */
+const baseURL = process.env.PLAYWRIGHT_BASE_URL || process.env.NEXTCLOUD_URL
+if (!baseURL) {
+	throw new Error(
+		'Refusing to run: set PLAYWRIGHT_BASE_URL (or NEXTCLOUD_URL) to the target Nextcloud.\n'
+		+ 'Never point it at the shared dev instance on :8080 — spin up a disposable one:\n'
+		+ '  APP_SRC=<worktree> spin-up-e2e-instance.sh portaliq <free-port> openregister',
+	)
+}
 
 export default defineConfig({
 	testDir: './tests/e2e',
@@ -36,7 +57,7 @@ export default defineConfig({
 	outputDir: 'tests/e2e/test-results',
 
 	use: {
-		baseURL: process.env.NEXTCLOUD_URL || 'http://localhost:8080',
+		baseURL,
 		trace: 'on-first-retry',
 		screenshot: 'only-on-failure',
 		// The target is a shared Nextcloud dev instance under variable load; give
