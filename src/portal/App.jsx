@@ -57,7 +57,12 @@ function buildNav(contributions, t) {
 export default function App({ config, t: tProp }) {
 	// `t` is optional so the shell still renders (English fallback) when a
 	// caller does not supply a translator — never a blank/undefined string.
-	const t = tProp || ((key) => key)
+	//
+	// Memoised on `tProp`: without this the identity-fallback arrow is a NEW
+	// function on every render, so `t` changes every render, so the `nav`
+	// useMemo below (which depends on `t`) recomputes every render and
+	// memoises nothing.
+	const t = useMemo(() => tProp || ((key) => key), [tProp])
 	const api = useMemo(() => createPortalApi(config), [config])
 	// Pick up an OIDC callback's bearer BEFORE the initial token read (portal-
 	// oidc-broker-login) — the fragment is consumed/stripped exactly once, on

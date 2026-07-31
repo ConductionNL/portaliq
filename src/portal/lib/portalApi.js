@@ -46,6 +46,9 @@ function authHeaders() {
  * Build the adapter bound to a runtime config (`{ apiBase, audience, ... }`).
  * Returned methods read the current token on every call, so a login/logout is
  * picked up without re-creating the adapter.
+ *
+ * @param {object} config Runtime portal config: `{ apiBase, audience }`.
+ * @return {object} The bound portal API adapter.
  */
 export function createPortalApi(config) {
 	const base = config.apiBase
@@ -110,6 +113,9 @@ export function createPortalApi(config) {
 		 * Mark ONE inbox message read (portal-inbox-v2 T03). Ownership is
 		 * re-verified server-side; the endpoint can only ever set `read` —
 		 * this call never sends any other field.
+		 *
+		 * @param {object} message An inbox row, carrying its `_source` provenance tag.
+		 * @return {Promise<object>} `{ ok, status }` result envelope.
 		 */
 		async markMessageRead(message) {
 			const source = message._source || {}
@@ -125,6 +131,9 @@ export function createPortalApi(config) {
 		 * List one collection's objects, subject-scoped. Disambiguated on the
 		 * wire with `?collection=<id>` so two collections sharing a register+
 		 * schema (a direct view and a scopeClaim/via view) never collide.
+		 *
+		 * @param {object} collection Manifest collection: `{ id, register, schema }`.
+		 * @return {Promise<Array<object>>} The collection's objects, or `[]`.
 		 */
 		async fetchCollection(collection) {
 			const body = await get(`${col(collection.register, collection.schema)}?collection=${encodeURIComponent(collection.id)}`)
@@ -135,6 +144,10 @@ export function createPortalApi(config) {
 		 * Read a single object by id, subject-scoped (portal-scoped-crud, PR #25).
 		 * Returns null when the endpoint is absent (pre-#25) or the object is not
 		 * the subject's — callers should prefer an already-loaded list row.
+		 *
+		 * @param {object} collection Manifest collection: `{ id, register, schema }`.
+		 * @param {string} id The object id.
+		 * @return {Promise<object|null>} The object, or null when absent/foreign.
 		 */
 		async fetchObject(collection, id) {
 			const body = await get(`${col(collection.register, collection.schema)}/${encodeURIComponent(id)}?collection=${encodeURIComponent(collection.id)}`)
@@ -144,6 +157,10 @@ export function createPortalApi(config) {
 		/**
 		 * Create an object via a declared `type: create` action. Only the action's
 		 * whitelisted fields are sent; the server stamps ownership.
+		 *
+		 * @param {object} action Manifest action: `{ id, register, schema }`.
+		 * @param {object} data The whitelisted field values.
+		 * @return {Promise<object>} `{ ok, status, object }` result envelope.
 		 */
 		async createObject(action, data) {
 			return send('POST', col(action.register, action.schema), data)
@@ -152,6 +169,11 @@ export function createPortalApi(config) {
 		/**
 		 * Update an object via a declared `type: update` action (portal-scoped-crud,
 		 * PR #25). Ownership is re-verified server-side; the id is never trusted.
+		 *
+		 * @param {object} action Manifest action: `{ id, register, schema }`.
+		 * @param {string} id The object id.
+		 * @param {object} data The whitelisted field values.
+		 * @return {Promise<object>} `{ ok, status, object }` result envelope.
 		 */
 		async updateObject(action, id, data) {
 			// Name the action (`?action=`) so the server applies THIS transition's
@@ -163,6 +185,11 @@ export function createPortalApi(config) {
 		 * Attach a file to an object the subject owns (the file-upload block).
 		 * Ownership is re-verified server-side; the collection must declare
 		 * `filesUpload`. Sends multipart with field name `file`.
+		 *
+		 * @param {object} collection Manifest collection: `{ id, register, schema }`.
+		 * @param {string} id The owning object's id.
+		 * @param {File} file The file to attach.
+		 * @return {Promise<object>} `{ ok, file }` on success, `{ ok: false, status }` otherwise.
 		 */
 		async uploadFile(collection, id, file) {
 			const form = new FormData()
@@ -180,13 +207,13 @@ export function createPortalApi(config) {
 						return { ok: true, file: json.file || json }
 					}
 					if (attempt === 0 && (res.status === 502 || res.status === 503 || res.status === 504)) {
-						await new Promise((r) => setTimeout(r, 600))
+						await new Promise((resolve) => setTimeout(resolve, 600))
 						continue
 					}
 					return { ok: false, status: res.status }
 				} catch (e) {
 					if (attempt === 0) {
-						await new Promise((r) => setTimeout(r, 600))
+						await new Promise((resolve) => setTimeout(resolve, 600))
 						continue
 					}
 					return { ok: false, status: 0 }
@@ -204,6 +231,10 @@ export function createPortalApi(config) {
 		 * plain `<a href>`, which cannot carry it) and saved client-side via a
 		 * Blob object URL.
 		 *
+		 * @param {object} collection Manifest collection: `{ id, register, schema }`.
+		 * @param {string} id The owning object's id.
+		 * @param {object} file The attached file record: `{ id, name }`.
+		 * @return {Promise<object>} `{ ok }` on success, `{ ok: false, status }` otherwise.
 		 * @spec openspec/specs/supplier-portal/spec.md#scoped-file-download-re-verifies-ownership-before-serving-a-byte
 		 */
 		async downloadFile(collection, id, file) {
@@ -237,6 +268,9 @@ export function createPortalApi(config) {
 		 * collection and map each row to `{ value, label }`. Because it goes
 		 * through the subject-scoped endpoint, it can only ever offer values the
 		 * subject may already read.
+		 *
+		 * @param {object} provider optionsProvider: `{ register, schema, valueField, labelField }`.
+		 * @return {Promise<Array<object>>} `{ value, label }` pairs.
 		 */
 		async fetchOptions(provider) {
 			const body = await get(`${col(provider.register, provider.schema)}`)
@@ -272,7 +306,12 @@ export function createPortalApi(config) {
 			return null
 		},
 
-		/** Mint a test session via the debug-gated dev-login (404 in prod). */
+		/**
+		 * Mint a test session via the debug-gated dev-login (404 in prod).
+		 *
+		 * @param {string} [audience] Session audience; falls back to the config's.
+		 * @return {Promise<string|null>} The minted bearer, or null.
+		 */
 		async devLogin(audience) {
 			const res = await fetch(`${base}/session/dev-login`, {
 				method: 'POST',

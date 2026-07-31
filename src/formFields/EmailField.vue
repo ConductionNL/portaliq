@@ -27,9 +27,9 @@
 			:id="fieldId"
 			type="email"
 			class="email-field__input"
-			:value="value"
+			:value="modelValue"
 			:placeholder="placeholder"
-			@input="$emit('input', $event.target.value)">
+			@input="$emit('update:modelValue', $event.target.value)">
 	</div>
 </template>
 
@@ -40,8 +40,14 @@ export default {
 	name: 'EmailField',
 
 	props: {
-		/** Current field value. */
-		value: {
+		/**
+		 * Current field value.
+		 *
+		 * Vue 3 `v-model` on a component binds `modelValue` and listens for
+		 * `update:modelValue`. The Vue 2 `value` / `input` pair is NOT a
+		 * synonym — it binds nothing and emits into the void.
+		 */
+		modelValue: {
 			type: String,
 			default: '',
 		},
@@ -57,7 +63,7 @@ export default {
 		},
 	},
 
-	emits: ['input'],
+	emits: ['update:modelValue'],
 
 	data() {
 		_counter += 1
