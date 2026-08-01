@@ -14,19 +14,16 @@
 // because the Nextcloud admin section is the canonical place for
 // "before the app boots" config (e.g. an app's OR register binding).
 
-import Vue from 'vue'
-import { PiniaVuePlugin } from 'pinia'
+import { createApp } from 'vue'
 import { translate as t, translatePlural as n, loadTranslations } from '@nextcloud/l10n'
 import pinia from './pinia.js'
 import AdminRoot from './views/AdminRoot.vue'
 
-Vue.mixin({ methods: { t, n } })
-Vue.use(PiniaVuePlugin)
-
 loadTranslations('portaliq', () => {
-	// eslint-disable-next-line no-new
-	new Vue({
-		pinia,
-		render: (h) => h(AdminRoot),
-	}).$mount('#portaliq-settings')
+	const app = createApp(AdminRoot)
+	// Vue 3: global API is per-app. PiniaVuePlugin was the Vue-2-only shim;
+	// in Vue 3 the pinia instance IS the plugin.
+	app.mixin({ methods: { t, n } })
+	app.use(pinia)
+	app.mount('#portaliq-settings')
 })

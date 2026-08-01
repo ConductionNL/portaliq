@@ -162,73 +162,73 @@ export default function PageView({ page, contribution, api, dataByCollection, on
 		<section className="portaliq-page">
 			{(page.blocks || []).map((block, i) => {
 				switch (block.type) {
-					case 'richText':
-						return <RichText key={i} markdown={block.markdown} />
+				case 'richText':
+					return <RichText key={i} markdown={block.markdown} />
 
-					case 'collection':
-					case 'detail': {
-						const collection = findCollection(contribution, block.collection)
-						if (!collection) {
-							return null
-						}
-						const loaded = dataByCollection[collection.id]
-						if (block.type === 'detail') {
-							return <DetailCard key={i} collection={collection} row={selected[collection.id]} api={api} />
-						}
-						const rowActions = (collection.rowActions || [])
-							.map((id) => findAction(contribution, id))
-							.filter(Boolean)
+				case 'collection':
+				case 'detail': {
+					const collection = findCollection(contribution, block.collection)
+					if (!collection) {
+						return null
+					}
+					const loaded = dataByCollection[collection.id]
+					if (block.type === 'detail') {
+						return <DetailCard key={i} collection={collection} row={selected[collection.id]} api={api} />
+					}
+					const rowActions = (collection.rowActions || [])
+						.map((id) => findAction(contribution, id))
+						.filter(Boolean)
+					return (
+						<div key={i} className="portaliq-block-collection">
+							{collection.label && <h3>{collection.label}</h3>}
+							<CollectionTable
+								collection={collection}
+								objects={loaded?.objects || []}
+								loading={loaded?.loading}
+								onSelect={(row) => setSelected((s) => ({ ...s, [collection.id]: row }))}
+								rowActions={rowActions}
+								busyRow={busyRow}
+								onRowAction={(action, row) => onRowAction && onRowAction(action, row, collection)}
+							/>
+						</div>
+					)
+				}
+
+				case 'action': {
+					const action = findAction(contribution, block.action)
+					if (!action) {
+						return null
+					}
+					if (action.type === 'create' || action.type === 'update') {
 						return (
-							<div key={i} className="portaliq-block-collection">
-								{collection.label && <h3>{collection.label}</h3>}
-								<CollectionTable
-									collection={collection}
-									objects={loaded?.objects || []}
-									loading={loaded?.loading}
-									onSelect={(row) => setSelected((s) => ({ ...s, [collection.id]: row }))}
-									rowActions={rowActions}
-									busyRow={busyRow}
-									onRowAction={(action, row) => onRowAction && onRowAction(action, row, collection)}
-								/>
+							<div key={i} className="portaliq-block-action">
+								<h3>{action.label || action.id}</h3>
+								<SchemaForm action={action} api={api} onSubmitted={(obj) => onCreated && onCreated(obj, action)} />
 							</div>
 						)
 					}
+					// Endpoint / A6 action → a button the shell forwards.
+					return (
+						<button key={i} type="button" className="portaliq-cta" disabled={!action.endpoint} onClick={() => onAction && onAction(action)}>
+							{action.label || action.id}
+						</button>
+					)
+				}
 
-					case 'action': {
-						const action = findAction(contribution, block.action)
-						if (!action) {
-							return null
-						}
-						if (action.type === 'create' || action.type === 'update') {
-							return (
-								<div key={i} className="portaliq-block-action">
-									<h3>{action.label || action.id}</h3>
-									<SchemaForm action={action} api={api} onSubmitted={(obj) => onCreated && onCreated(obj, action)} />
-								</div>
-							)
-						}
-						// Endpoint / A6 action → a button the shell forwards.
-						return (
-							<button key={i} type="button" className="portaliq-cta" disabled={!action.endpoint} onClick={() => onAction && onAction(action)}>
-								{action.label || action.id}
-							</button>
-						)
-					}
-
-					case 'cta': {
-						const action = findAction(contribution, block.action)
-						if (!action) {
-							return null
-						}
-						return (
-							<button key={i} type="button" className="portaliq-cta" onClick={() => onAction && onAction(action)}>
-								{block.label}
-							</button>
-						)
-					}
-
-					default:
+				case 'cta': {
+					const action = findAction(contribution, block.action)
+					if (!action) {
 						return null
+					}
+					return (
+						<button key={i} type="button" className="portaliq-cta" onClick={() => onAction && onAction(action)}>
+							{block.label}
+						</button>
+					)
+				}
+
+				default:
+					return null
 				}
 			})}
 		</section>

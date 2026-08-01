@@ -42,7 +42,16 @@
 					:label="t('portaliq', 'Organisation')"
 					:placeholder="t('portaliq', 'Organisation UUID')"
 					:disabled="revoking" />
-				<NcButton type="error" :disabled="revoking || organisationInput === ''" native-type="submit">
+				<!--
+					@nextcloud/vue 9 repurposed NcButton's `type` prop: it is now
+					the NATIVE button type (default "button"), and the visual
+					style moved to `variant`. `native-type` no longer exists.
+					The Vue-2 spelling (`type="error" native-type="submit"`)
+					still renders — as <button type="error">, which is invalid
+					and does NOT submit the form — with no console warning and
+					no lint error.
+				-->
+				<NcButton variant="error" :disabled="revoking || organisationInput === ''" type="submit">
 					{{ t('portaliq', 'Revoke all sessions for this organisation') }}
 				</NcButton>
 			</form>
