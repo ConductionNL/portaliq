@@ -35,7 +35,7 @@
     "@babel/preset-env": "^7.29.5",
     "@babel/preset-react": "^7.27.1",
     "@babel/runtime": "^7.23.6",
-    "@conduction/nextcloud-vue": "2.1.0-vue3.12",
+    "@conduction/nextcloud-vue": "2.1.0-vue3.16",
     "@nextcloud/auth": "^2.5.0",
     "@nextcloud/axios": "~2.5.2",
     "@nextcloud/capabilities": "^1.2.1",
