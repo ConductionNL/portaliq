@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Register containing all schemas owned by the Portaliq external-portal application.",
-        "version": "0.9.0"
+        "version": "0.10.0"
     },
     "x-openregister": {
         "type": "application",
@@ -118,6 +118,179 @@
                             {
                                 "type": "action",
                                 "action": "publicIntake"
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "portalPage",
+                    "slug": "dev-supplier-demo"
+                },
+                "label": "Voorbeeld",
+                "audience": "supplier",
+                "status": "active",
+                "notifications": [
+                    "message.created",
+                    "status.changed"
+                ],
+                "collections": [
+                    {
+                        "id": "exampleCollection",
+                        "register": "portaliq",
+                        "schema": "exampleDocument",
+                        "scopeField": "subjectRef",
+                        "label": "Voorbeeldgegevens",
+                        "listable": true,
+                        "fields": [
+                            "title",
+                            "status"
+                        ],
+                        "columns": [
+                            {
+                                "field": "title",
+                                "label": "Onderwerp"
+                            },
+                            {
+                                "field": "status",
+                                "label": "Status",
+                                "render": "badge"
+                            }
+                        ],
+                        "defaultSort": {
+                            "field": "title",
+                            "direction": "asc"
+                        },
+                        "detail": {
+                            "layout": "card",
+                            "fields": [
+                                "title",
+                                "status"
+                            ]
+                        },
+                        "rowActions": [
+                            "closeExample"
+                        ],
+                        "filesUpload": true,
+                        "filesDownload": true
+                    },
+                    {
+                        "id": "inbox",
+                        "kind": "inbox",
+                        "register": "portaliq",
+                        "schema": "portalMessage",
+                        "scopeField": "subjectRef",
+                        "label": "Berichten",
+                        "listable": true
+                    },
+                    {
+                        "id": "exampleClaimScoped",
+                        "register": "portaliq",
+                        "schema": "exampleDocument",
+                        "scopeField": "subjectRef",
+                        "scopeClaim": "exampleContactId",
+                        "label": "Gekoppelde voorbeeldgegevens",
+                        "listable": true
+                    }
+                ],
+                "actions": [
+                    {
+                        "id": "createExample",
+                        "type": "create",
+                        "label": "Nieuw voorbeeld",
+                        "register": "portaliq",
+                        "schema": "exampleDocument",
+                        "fields": [
+                            "title",
+                            "status"
+                        ],
+                        "submitLabel": "Aanmaken",
+                        "successMessage": "Voorbeeld aangemaakt",
+                        "fieldConfigs": {
+                            "title": {
+                                "label": "Onderwerp",
+                                "required": true,
+                                "size": "large",
+                                "placeholder": "Waar gaat het over?"
+                            },
+                            "status": {
+                                "label": "Status"
+                            }
+                        },
+                        "optionsProviders": {
+                            "status": {
+                                "type": "static",
+                                "options": [
+                                    {
+                                        "value": "open",
+                                        "label": "Open"
+                                    },
+                                    {
+                                        "value": "closed",
+                                        "label": "Afgehandeld"
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        "id": "updateExample",
+                        "type": "update",
+                        "label": "Voorbeeld bijwerken",
+                        "register": "portaliq",
+                        "schema": "exampleDocument",
+                        "fields": [
+                            "title"
+                        ]
+                    },
+                    {
+                        "id": "closeExample",
+                        "type": "update",
+                        "label": "Afhandelen",
+                        "register": "portaliq",
+                        "schema": "exampleDocument",
+                        "fields": [
+                            "status"
+                        ],
+                        "set": {
+                            "status": "closed"
+                        }
+                    }
+                ],
+                "pages": [
+                    {
+                        "id": "voorbeeld",
+                        "label": "Voorbeeld",
+                        "icon": "FileDocument",
+                        "blocks": [
+                            {
+                                "type": "richText",
+                                "markdown": "## Voorbeeldportaal\nBeheer uw voorbeeldgegevens. Klik een rij aan voor details en bijlagen."
+                            },
+                            {
+                                "type": "action",
+                                "action": "createExample"
+                            },
+                            {
+                                "type": "collection",
+                                "collection": "exampleCollection"
+                            },
+                            {
+                                "type": "detail",
+                                "collection": "exampleCollection"
+                            }
+                        ]
+                    },
+                    {
+                        "id": "berichten",
+                        "label": "Berichten",
+                        "icon": "Email",
+                        "blocks": [
+                            {
+                                "type": "collection",
+                                "collection": "inbox"
                             }
                         ]
                     }
@@ -879,6 +1052,62 @@
                                     "type": "boolean",
                                     "description": "Whether this collection gets a synthesised default page when pages[] is absent.",
                                     "example": true
+                                },
+                                "label": {
+                                    "title": "Label",
+                                    "type": "string",
+                                    "description": "Display label for this collection in the portal SPA (page/nav title when a default page is synthesised, table caption otherwise).",
+                                    "example": "Mijn meldingen"
+                                },
+                                "kind": {
+                                    "title": "Kind",
+                                    "type": "string",
+                                    "enum": [
+                                        "inbox"
+                                    ],
+                                    "description": "Marks this collection as an INBOX collection (portal-inbox-v2). PortalInboxReader merges every `kind: inbox` collection across the subject's contributions into one sorted inbox, and ContributionController::markRead() refuses to write to a collection that is not one. Omit for an ordinary data collection.",
+                                    "example": "inbox"
+                                },
+                                "rowActions": {
+                                    "title": "Row actions",
+                                    "type": "array",
+                                    "description": "Ids of `type: update` actions offered per row (contribution-manifest-v3). The normaliser drops any id that does not resolve to an update action on the SAME contribution, so an unresolvable reference is never rendered as a broken control.",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "defaultSort": {
+                                    "title": "Default sort",
+                                    "type": "object",
+                                    "description": "Presentation-only default ordering (contribution-manifest-v3): `{ \"field\": <property>, \"direction\": \"asc\"|\"desc\" }`. Dropped by the normaliser unless `field` is a non-empty string.",
+                                    "properties": {
+                                        "field": {
+                                            "title": "Sort field",
+                                            "type": "string",
+                                            "description": "The property to sort on."
+                                        },
+                                        "direction": {
+                                            "title": "Sort direction",
+                                            "type": "string",
+                                            "enum": [
+                                                "asc",
+                                                "desc"
+                                            ],
+                                            "description": "Sort direction; anything else normalises to asc."
+                                        }
+                                    }
+                                },
+                                "filesUpload": {
+                                    "title": "Files upload",
+                                    "type": "boolean",
+                                    "description": "Opt IN to the scoped file-upload block (ADR-063). Fail-closed: only an explicit true enables it, and POST /portal/api/collections/{register}/{schema}/{id}/files 404s for a collection that has not declared it. Default false.",
+                                    "example": false
+                                },
+                                "filesDownload": {
+                                    "title": "Files download",
+                                    "type": "boolean",
+                                    "description": "Opt IN to the scoped file-download block (portal-document-download). Fail-closed on the same terms as filesUpload — a collection that has not declared it 404s with the identical body a missing file returns, so the flag is never an existence oracle. Default false.",
+                                    "example": false
                                 }
                             }
                         }
@@ -980,9 +1209,46 @@
                                     "type": "boolean",
                                     "description": "When true and type=create, this action is reachable via POST /portal/api/collections/{register}/{schema} with NO bearer session \u2014 the write is unowned (no subjectRef/organisation stamped). Mutually exclusive with a non-low minTrust on the SAME entry (fail-closed: the normaliser drops anonymous when both are set, falling back to requiring authentication). Default false.",
                                     "example": true
+                                },
+                                "submitLabel": {
+                                    "title": "Submit label",
+                                    "type": "string",
+                                    "description": "Label on the form's submit button (contribution-manifest-v3); falls back to `label` when absent.",
+                                    "example": "Aanmaken"
+                                },
+                                "successMessage": {
+                                    "title": "Success message",
+                                    "type": "string",
+                                    "description": "Confirmation shown after a successful submission (contribution-manifest-v3).",
+                                    "example": "Voorbeeld aangemaakt"
+                                },
+                                "fieldConfigs": {
+                                    "title": "Field configs",
+                                    "type": "object",
+                                    "description": "Per-field presentation hints (label / required / size / placeholder), keyed by property name (contribution-manifest-v3). The normaliser keeps ONLY keys that also appear in this action's `fields` whitelist, so a config can never widen what the server accepts."
+                                },
+                                "optionsProviders": {
+                                    "title": "Options providers",
+                                    "type": "object",
+                                    "description": "Per-field value sources for select inputs, keyed by property name (contribution-manifest-v3). Each provider declares a `type` from the normaliser's allowed provider kinds; an unrecognised kind is dropped rather than rendered."
                                 }
                             }
                         }
+                    },
+                    "notifications": {
+                        "title": "Notification rule keys",
+                        "type": "array",
+                        "description": "Per-rule-key OPT IN to out-of-band notification email (portal-notifications-dispatch, ADR-046). NotificationDispatchService only dispatches for a trigger whose rule key appears here, so a page declaring neither key gets no email at all (fail-closed). Currently `message.created` and `status.changed`.",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "message.created",
+                                "status.changed"
+                            ]
+                        },
+                        "example": [
+                            "message.created"
+                        ]
                     },
                     "pages": {
                         "title": "Pages",

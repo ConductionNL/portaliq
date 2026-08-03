@@ -210,12 +210,31 @@ class PortalContributionProvider implements IPortalContributionProvider
         $collections = (array) ($row['collections'] ?? []);
         $actions     = (array) ($row['actions'] ?? []);
 
-        return [
+        $contribution = [
             'label'       => (string) ($row['label'] ?? ''),
             'collections' => $this->applyContributionMinTrust(entries: $collections, contributionMinTrust: $contributionMinTrust),
             'actions'     => $this->applyContributionMinTrust(entries: $actions, contributionMinTrust: $contributionMinTrust),
             'pages'       => (array) ($row['pages'] ?? []),
         ];
+
+        // `notifications` is the per-rule-key opt-in NotificationDispatchService
+        // reads straight off the contribution (`$contribution['notifications']`)
+        // — an app declaring no matching key gets no out-of-band email for that
+        // trigger. It is forwarded only when the row actually declares a list,
+        // so the fail-closed default (no key => no email) is preserved exactly:
+        // an absent or malformed value leaves the array key off entirely, which
+        // is the same shape a provider that never declared one produces.
+        //
+        // Without this, `portal-page-provisioning`'s move to a config-driven
+        // provider left the opt-in UNREACHABLE for a data-provisioned page: the
+        // deleted hardcoded demo declared RULE_MESSAGE_CREATED and
+        // RULE_STATUS_CHANGED, and nothing carried them over.
+        $notifications = ($row['notifications'] ?? null);
+        if (is_array($notifications) === true && $notifications !== []) {
+            $contribution['notifications'] = array_values($notifications);
+        }
+
+        return $contribution;
     }//end toContribution()
 
     /**
