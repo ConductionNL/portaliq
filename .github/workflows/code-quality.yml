@@ -112,3 +112,26 @@ jobs:
       # cwd for this step is the Nextcloud server root, which is also what makes
       # `php occ` directly runnable inside the script.
       playwright-seed-command: 'bash apps/portaliq/tests/e2e/ci-seed.sh'
+
+      # ── Frontend Check legs ──────────────────────────────────────────────
+      # `frontend-checks` defaults to `[]`, and an empty list means the shared
+      # workflow emits NO "Frontend Check" job at all — so this repo's validator
+      # family ran nowhere while the run still looked complete.
+      # `check:specs` is the aggregate (json-strict + manifest-v2 + register +
+      # registry), listed as ONE leg rather than four because each leg is a
+      # fresh job with its own checkout + `npm ci`. `check:manifest` is separate:
+      # it is not part of that aggregate.
+      # Measured on this tree before enabling: `check:specs` PASSES,
+      # `check:manifest` FAILS (`pages[10].type: "roadmap" not in v1.1 enum`) —
+      # the same defect reproduces in 10 other fleet repos.
+      frontend-checks: '["check:specs", "check:manifest"]'
+
+      # ── Coverage ratchet ─────────────────────────────────────────────────
+      # `enable-coverage-guard` defaults to FALSE, which is why both
+      # "Coverage Baseline Protection" and "Coverage Baseline Check" have only
+      # ever reported `skipped`. It needs two inputs this repo did not have,
+      # both added in this commit: `scripts/coverage-guard.php` (byte-identical
+      # to openregister's) and `.coverage-baseline` = 79.28, this repo's own
+      # measured coverage (2674 of 3373 statements) read from clover.xml in the
+      # `coverage-report` artifact of run 30917641977.
+      enable-coverage-guard: true
