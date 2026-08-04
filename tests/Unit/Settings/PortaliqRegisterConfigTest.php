@@ -36,10 +36,70 @@ class PortaliqRegisterConfigTest extends TestCase
     public function testRegisterJsonParsesAndVersionsAreBumped(): void
     {
         $this->assertNotSame([], self::$register, 'register JSON must parse');
-        $this->assertSame('0.3.0', self::$register['info']['version']);
-        $this->assertSame('0.3.0', self::$register['components']['schemas']['portalAccount']['version']);
+        // 0.11.0 (portalSession 0.3.0): declared `authTime` on portalSession.
+        // PortalSessionService::mintSession() has always written it, but the
+        // schema never described it, so OpenRegister's MagicMapper discarded it
+        // on EVERY session mint ("Discarding 1 property the schema \"Portal
+        // Session\" does not declare: authTime") and the stored row silently
+        // lost the origin-login timestamp. Additive.
+        // 0.10.0 (portalPage 0.2.0): re-seeded the SUPPLIER demo portalPage that
+        // portal-page-provisioning deleted without carrying over (only the
+        // citizen page shipped, so a fresh install contributed nothing to a
+        // supplier), and declared the contract-v3 vocabulary the normaliser
+        // already consumes but the schema never described — `label`/`kind`/
+        // `rowActions`/`defaultSort`/`filesUpload`/`filesDownload` on
+        // collections, `submitLabel`/`successMessage`/`fieldConfigs`/
+        // `optionsProviders` on actions, and the contribution-level
+        // `notifications` opt-in. All additive.
+        // 0.9.0: renamed portalAuditEntry's `id` property to `targetId` so it no
+        // longer collides with OpenRegister's reserved object-id key (which made
+        // every append-only audit write fail). 0.8.0 added the `portalPage` schema
+        // (data-provisioned portal contributions, ADR-046). Both additive.
+        $this->assertSame('0.11.0', self::$register['info']['version']);
+        $this->assertSame('0.5.0', self::$register['components']['schemas']['portalAccount']['version']);
+        $this->assertSame('0.2.0', self::$register['components']['schemas']['portalPage']['version']);
+        $this->assertSame('0.3.0', self::$register['components']['schemas']['portalSession']['version']);
 
     }//end testRegisterJsonParsesAndVersionsAreBumped()
+
+    /**
+     * Every property `PortalSessionService::mintSession()` writes MUST be
+     * declared on the portalSession schema. An undeclared key is not an error
+     * anywhere in the stack — OpenRegister's MagicMapper drops it with a log
+     * line and the write still returns success — so this is the only place the
+     * loss is detectable. Regression guard for the discarded `authTime`.
+     *
+     * @return void
+     */
+    public function testPortalSessionDeclaresEveryPropertyTheMinterWrites(): void
+    {
+        $declared = array_keys(
+            (array) self::$register['components']['schemas']['portalSession']['properties']
+        );
+
+        // The literal payload of PortalSessionService::mintSession()'s
+        // createObject() call. Keep in step with it.
+        $written = [
+            'subjectRef',
+            'audience',
+            'organisation',
+            'jti',
+            'trustLevel',
+            'issuedAt',
+            'expiresAt',
+            'revoked',
+            'authTime',
+        ];
+
+        foreach ($written as $property) {
+            $this->assertContains(
+                $property,
+                $declared,
+                "portalSession must declare `$property` — mintSession() writes it, and MagicMapper silently discards anything the schema does not declare."
+            );
+        }
+
+    }//end testPortalSessionDeclaresEveryPropertyTheMinterWrites()
 
     /**
      * The `audience` property on portalAccount and portalSession MUST be an
@@ -86,6 +146,67 @@ class PortaliqRegisterConfigTest extends TestCase
         );
 
     }//end testPortalAccountRequiredListIsUnchanged()
+
+    /**
+     * portal-notifications-dispatch T01: the new `portalNotification` log
+     * schema is never publicly readable/writable, and `portalAccount` gains the
+     * optional `needsAlternativeContact` fallback flag (WMEBV notificatieplicht,
+     * ~Awb 2:11) without touching the `required` list.
+     */
+    public function testPortalNotificationSchemaIsAddedAndNeverPublic(): void
+    {
+        $schemas = self::$register['components']['schemas'];
+        $this->assertArrayHasKey('portalNotification', $schemas, 'portalNotification schema must exist');
+
+        $notification = $schemas['portalNotification'];
+        $this->assertFalse($notification['x-openregister']['publicRead']);
+        $this->assertFalse($notification['x-openregister']['publicWrite']);
+        $this->assertSame(
+            ['accountRef', 'ruleKey', 'channel', 'status', 'attempts', 'lastAttemptAt'],
+            $notification['required']
+        );
+        $this->assertSame(['email'], $notification['properties']['channel']['enum']);
+        $this->assertSame(['sent', 'failed'], $notification['properties']['status']['enum']);
+
+        $account = $schemas['portalAccount'];
+        $this->assertSame('boolean', $account['properties']['needsAlternativeContact']['type']);
+        // Union-merge caution (migration.md): the additive property must not
+        // touch the required list — needsAlternativeContact stays OPTIONAL.
+        $this->assertSame(['audience', 'subjectRef', 'organisation'], $account['required']);
+
+    }//end testPortalNotificationSchemaIsAddedAndNeverPublic()
+
+    /**
+     * portal-oidc-broker-login T01/T08: `portalAccount.identityType` gains the
+     * additive `generic` enum member (a broker-agnostic OIDC provider preset
+     * for a broker that is none of digid/eherkenning/eidas), and the new
+     * `portalOidcState` schema (single-use start→callback state/nonce/PKCE
+     * storage) is never publicly readable/writable and never touches
+     * `portalAccount`'s `required` list.
+     */
+    public function testPortalOidcStateSchemaIsAddedAndNeverPublic(): void
+    {
+        $schemas = self::$register['components']['schemas'];
+        $this->assertArrayHasKey('portalOidcState', $schemas, 'portalOidcState schema must exist');
+
+        $state = $schemas['portalOidcState'];
+        $this->assertFalse($state['x-openregister']['publicRead']);
+        $this->assertFalse($state['x-openregister']['publicWrite']);
+        $this->assertSame(
+            ['state', 'nonce', 'codeVerifier', 'org', 'provider', 'expiresAt'],
+            $state['required']
+        );
+
+        $account = $schemas['portalAccount'];
+        $this->assertSame(
+            ['eherkenning', 'digid', 'eidas', 'generic', 'dev'],
+            $account['properties']['identityType']['enum']
+        );
+        // Union-merge caution (migration.md): the additive enum member must not
+        // touch the required list.
+        $this->assertSame(['audience', 'subjectRef', 'organisation'], $account['required']);
+
+    }//end testPortalOidcStateSchemaIsAddedAndNeverPublic()
 
     public function testSeedAccountsUsePlaceholdersAndProveBothClaimStates(): void
     {

@@ -13,35 +13,37 @@ use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
- * Tests the demo provider + the registry's convention-FQCN discovery, audience
- * filtering, and tolerance of apps without a provider. Contract v2 adds the
- * multi-audience (`getAudiences()`) discovery matrix and the fail-closed
- * `minTrust` manifest filtering inside aggregateFor().
+ * Tests the registry's convention-FQCN discovery, audience filtering, and
+ * tolerance of apps without a provider. Contract v2 adds the multi-audience
+ * (`getAudiences()`) discovery matrix and the fail-closed `minTrust` manifest
+ * filtering inside aggregateFor(). portal-page-provisioning adds
+ * `aggregateAnonymous()` — the no-subject sibling that surfaces only
+ * `anonymous: true` entries fleet-wide. The built-in
+ * `OCA\Portaliq\Portal\PortalContributionProvider` (now config-driven, reading
+ * `portalPage` OpenRegister objects) is exercised in its OWN dedicated test
+ * (tests/Unit/Portal/PortalContributionProviderTest.php); here it is always a
+ * mock so registry-algorithm tests do not depend on OpenRegister at all.
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T04
  * @spec openspec/changes/contract-v2/tasks.md#T2
+ * @spec openspec/changes/portal-page-provisioning/tasks.md#2.1
  */
 class PortalContributionRegistryTest extends TestCase
 {
 
     private const PROVIDER_FQCN = 'OCA\\Portaliq\\Portal\\PortalContributionProvider';
 
-    public function testProviderContributesOnlyToSuppliers(): void
-    {
-        $provider = new PortalContributionProvider();
-        $this->assertSame('supplier', $provider->getAudience());
-        $this->assertNotNull($provider->getContribution(['audience' => 'supplier']));
-        $this->assertNull($provider->getContribution(['audience' => 'client']));
-
-    }//end testProviderContributesOnlyToSuppliers()
-
     public function testAggregatesMatchingAudienceAndSkipsAppsWithoutProvider(): void
     {
         // 'someotherapp' has no OCA\Someotherapp\Portal\PortalContributionProvider
         // class, so class_exists() skips it before the container is even asked.
+        $provider = $this->createMock(PortalContributionProvider::class);
+        $provider->method('getAudiences')->willReturn(['supplier']);
+        $provider->method('getContribution')->willReturn(['label' => 'Voorbeeld', 'collections' => [], 'actions' => []]);
+
         $registry = new PortalContributionRegistry(
             $this->appManager(['portaliq', 'someotherapp']),
-            $this->container(new PortalContributionProvider()),
+            $this->container($provider),
             $this->createMock(LoggerInterface::class)
         );
 
@@ -56,9 +58,13 @@ class PortalContributionRegistryTest extends TestCase
 
     public function testNonMatchingAudienceYieldsNothing(): void
     {
+        $provider = $this->createMock(PortalContributionProvider::class);
+        $provider->method('getAudiences')->willReturn(['supplier']);
+        $provider->method('getContribution')->willReturn(['label' => 'Voorbeeld', 'collections' => [], 'actions' => []]);
+
         $registry = new PortalContributionRegistry(
             $this->appManager(['portaliq']),
-            $this->container(new PortalContributionProvider()),
+            $this->container($provider),
             $this->createMock(LoggerInterface::class)
         );
 
@@ -106,14 +112,33 @@ class PortalContributionRegistryTest extends TestCase
 
     }//end testMultiAudienceProviderIsConsultedForEachListedAudience()
 
-    public function testDemoProviderExercisesTheV2Vocabulary(): void
+    public function testProviderExercisingTheV2VocabularyIsFilteredByTrust(): void
     {
-        $provider = new PortalContributionProvider();
-        $this->assertSame(['supplier'], $provider->getAudiences());
+        $provider = new class {
+
+            public function getAudiences(): array
+            {
+                return ['supplier'];
+            }
+
+            public function getContribution(array $subject): array
+            {
+                return [
+                    'label'       => 'Voorbeeld',
+                    'collections' => [
+                        ['id' => 'claimScoped', 'register' => 'portaliq', 'schema' => 'exampleDocument', 'scopeClaim' => 'exampleContactId'],
+                    ],
+                    'actions'     => [
+                        ['id' => 'forward', 'endpoint' => '/apps/portaliq/api/health', 'method' => 'GET'],
+                        ['id' => 'trusted', 'endpoint' => '/apps/portaliq/api/health', 'method' => 'GET', 'minTrust' => 'substantial'],
+                    ],
+                ];
+            }
+        };
 
         $registry = new PortalContributionRegistry(
             $this->appManager(['portaliq']),
-            $this->container($provider),
+            $this->anyContainer($provider),
             $this->createMock(LoggerInterface::class)
         );
 
@@ -122,20 +147,20 @@ class PortalContributionRegistryTest extends TestCase
         // is filtered out of the manifest.
         $low         = $registry->aggregateFor(['audience' => 'supplier', 'organisation' => 'dev-org', 'trust' => 'low']);
         $collections = array_column($low['contributions'][0]['collections'], null, 'id');
-        $this->assertArrayHasKey('exampleClaimScoped', $collections);
-        $this->assertSame('exampleContactId', $collections['exampleClaimScoped']['scopeClaim']);
+        $this->assertArrayHasKey('claimScoped', $collections);
+        $this->assertSame('exampleContactId', $collections['claimScoped']['scopeClaim']);
 
         $actions = array_column($low['contributions'][0]['actions'], null, 'id');
-        $this->assertArrayHasKey('exampleForward', $actions);
-        $this->assertSame('/apps/portaliq/api/health', $actions['exampleForward']['endpoint']);
-        $this->assertArrayNotHasKey('exampleTrusted', $actions);
+        $this->assertArrayHasKey('forward', $actions);
+        $this->assertSame('/apps/portaliq/api/health', $actions['forward']['endpoint']);
+        $this->assertArrayNotHasKey('trusted', $actions);
 
         // A substantial-trust supplier sees the gated action too.
         $substantial = $registry->aggregateFor(['audience' => 'supplier', 'organisation' => 'dev-org', 'trust' => 'substantial']);
         $actions     = array_column($substantial['contributions'][0]['actions'], null, 'id');
-        $this->assertArrayHasKey('exampleTrusted', $actions);
+        $this->assertArrayHasKey('trusted', $actions);
 
-    }//end testDemoProviderExercisesTheV2Vocabulary()
+    }//end testProviderExercisingTheV2VocabularyIsFilteredByTrust()
 
     public function testMinTrustFiltersCollectionsAndActionsFailClosed(): void
     {
@@ -182,6 +207,173 @@ class PortalContributionRegistryTest extends TestCase
         $this->assertSame(['lowAction', 'highAction'], array_column($high['contributions'][0]['actions'], 'id'));
 
     }//end testMinTrustFiltersCollectionsAndActionsFailClosed()
+
+    /**
+     * portal-page-provisioning (task 6.2): `aggregateAnonymous()` keeps only
+     * `anonymous: true` entries and drops every private sibling in the SAME
+     * contribution — a contribution mixing a private collection with one
+     * public intake action must never leak the private one to an anonymous
+     * caller.
+     */
+    public function testAggregateAnonymousSurfacesOnlyAnonymousEntriesAndDropsPrivateSiblings(): void
+    {
+        $provider = new class {
+
+            public function getAudiences(): array
+            {
+                return ['citizen'];
+            }
+
+            public function getContribution(array $subject): array
+            {
+                return [
+                    'label'       => 'Meldingen',
+                    'collections' => [
+                        ['id' => 'private', 'register' => 'r', 'schema' => 'a'],
+                        ['id' => 'public', 'register' => 'r', 'schema' => 'b', 'anonymous' => true],
+                    ],
+                    'actions'     => [
+                        ['id' => 'privateAction', 'type' => 'update', 'register' => 'r', 'schema' => 'a'],
+                        ['id' => 'publicIntake', 'type' => 'create', 'register' => 'r', 'schema' => 'c', 'anonymous' => true],
+                    ],
+                ];
+            }
+        };
+
+        $registry = new PortalContributionRegistry(
+            $this->appManager(['portaliq']),
+            $this->anyContainer($provider),
+            $this->createMock(LoggerInterface::class)
+        );
+
+        $result = $registry->aggregateAnonymous();
+
+        $this->assertCount(1, $result['contributions']);
+        $this->assertSame(['public'], array_column($result['contributions'][0]['collections'], 'id'));
+        $this->assertSame(['publicIntake'], array_column($result['contributions'][0]['actions'], 'id'));
+
+    }//end testAggregateAnonymousSurfacesOnlyAnonymousEntriesAndDropsPrivateSiblings()
+
+    /**
+     * A provider/audience contributing zero anonymous entries is omitted
+     * entirely — an anonymous caller never sees an empty contribution shell.
+     */
+    public function testAggregateAnonymousOmitsContributionsWithNoAnonymousEntries(): void
+    {
+        $provider = new class {
+
+            public function getAudiences(): array
+            {
+                return ['supplier'];
+            }
+
+            public function getContribution(array $subject): array
+            {
+                return [
+                    'label'       => 'Voorbeeld',
+                    'collections' => [['id' => 'private', 'register' => 'r', 'schema' => 'a']],
+                    'actions'     => [['id' => 'privateAction', 'type' => 'update', 'register' => 'r', 'schema' => 'a']],
+                ];
+            }
+        };
+
+        $registry = new PortalContributionRegistry(
+            $this->appManager(['portaliq']),
+            $this->anyContainer($provider),
+            $this->createMock(LoggerInterface::class)
+        );
+
+        $result = $registry->aggregateAnonymous();
+        $this->assertSame([], $result['contributions']);
+
+    }//end testAggregateAnonymousOmitsContributionsWithNoAnonymousEntries()
+
+    /**
+     * The fail-closed anonymous/minTrust mutual exclusion (normaliser) can
+     * itself drop `anonymous` from an entry that also declares a non-low
+     * `minTrust`. `aggregateAnonymous()` filters a SECOND time after
+     * normalisation, so a flag-stripped entry can never survive into an
+     * aggregate an anonymous caller consumes — a malformed manifest entry
+     * cannot widen access.
+     */
+    public function testAggregateAnonymousDropsEntryStrippedByMutualExclusion(): void
+    {
+        $provider = new class {
+
+            public function getAudiences(): array
+            {
+                return ['citizen'];
+            }
+
+            public function getContribution(array $subject): array
+            {
+                return [
+                    'label'       => 'Gated',
+                    'collections' => [],
+                    'actions'     => [
+                        ['id' => 'contradictory', 'type' => 'create', 'register' => 'r', 'schema' => 'a', 'anonymous' => true, 'minTrust' => 'substantial'],
+                    ],
+                ];
+            }
+        };
+
+        $registry = new PortalContributionRegistry(
+            $this->appManager(['portaliq']),
+            $this->anyContainer($provider),
+            $this->createMock(LoggerInterface::class)
+        );
+
+        $result = $registry->aggregateAnonymous();
+        $this->assertSame([], $result['contributions']);
+
+    }//end testAggregateAnonymousDropsEntryStrippedByMutualExclusion()
+
+    /**
+     * A multi-audience provider is consulted for EVERY audience it serves —
+     * there is no single subject audience to filter by on the anonymous
+     * path, so each audience's anonymous entries surface as its own
+     * contribution.
+     */
+    public function testAggregateAnonymousConsultsEveryAudienceAProviderServes(): void
+    {
+        $provider = new class {
+
+            public function getAudiences(): array
+            {
+                return ['supplier', 'citizen'];
+            }
+
+            public function getContribution(array $subject): array
+            {
+                $audience = ($subject['audience'] ?? '');
+                return [
+                    'label'       => 'For '.$audience,
+                    'collections' => [],
+                    'actions'     => [
+                        ['id' => 'intake-'.$audience, 'type' => 'create', 'register' => 'r', 'schema' => $audience, 'anonymous' => true],
+                    ],
+                ];
+            }
+        };
+
+        $registry = new PortalContributionRegistry(
+            $this->appManager(['portaliq']),
+            $this->anyContainer($provider),
+            $this->createMock(LoggerInterface::class)
+        );
+
+        $result = $registry->aggregateAnonymous();
+        $this->assertCount(2, $result['contributions']);
+
+        $actionIds = [];
+        foreach ($result['contributions'] as $contribution) {
+            $actionIds = array_merge($actionIds, array_column($contribution['actions'], 'id'));
+        }
+
+        $this->assertContains('intake-supplier', $actionIds);
+        $this->assertContains('intake-citizen', $actionIds);
+
+    }//end testAggregateAnonymousConsultsEveryAudienceAProviderServes()
 
     private function appManager(array $installed): IAppManager
     {

@@ -14,6 +14,18 @@
  * (`--portaliq-*`) so they never collide with or shadow NC's variables.
  */
 
+/* The public portal mounts into Nextcloud's guest `#content` chrome, which is
+   `position: fixed` with a viewport-bounded height and `overflow: clip`. NC
+   apps are expected to own their internal scroll; without it, any portal
+   content taller than the viewport (a detail card plus its attachments list,
+   a long form) is clipped and UNREACHABLE — you cannot scroll to it. Make the
+   mount node a bounded scroll container so the shell (min-height: 100vh)
+   scrolls inside it. */
+#portaliq-portal {
+	height: 100%;
+	overflow-y: auto;
+}
+
 .portaliq-shell {
 	--portaliq-color-text: #1b1b1b;
 	--portaliq-color-text-muted: #5c5c5c;
@@ -23,7 +35,6 @@
 	--portaliq-space-sm: 0.5rem;
 	--portaliq-space-md: 1rem;
 	--portaliq-space-lg: 1.5rem;
-
 	display: flex;
 	flex-direction: column;
 	min-height: 100vh;
@@ -62,6 +73,21 @@
 	color: var(--portaliq-color-text-muted);
 }
 
+/* Per-org OIDC broker login buttons (portal-oidc-broker-login) — one per
+   configured provider, stacked with the same rhythm as the action-form
+   buttons below. */
+.portaliq-oidc-login {
+	display: block;
+	margin: var(--portaliq-space-sm) 0;
+	padding: var(--portaliq-space-sm) var(--portaliq-space-md);
+	border: 1px solid var(--portaliq-color-accent);
+	border-radius: 4px;
+	background: var(--portaliq-color-accent);
+	color: #ffffff;
+	font-weight: 600;
+	cursor: pointer;
+}
+
 .portaliq-error {
 	color: #a12622;
 }
@@ -95,4 +121,99 @@
 .portaliq-shell :focus-visible {
 	outline: 2px solid var(--portaliq-color-accent);
 	outline-offset: 2px;
+}
+
+/* Unified inbox (portal-inbox-v2 T05/T06). */
+.portaliq-inbox {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: var(--portaliq-space-sm);
+}
+
+.portaliq-inbox-row {
+	border: 1px solid var(--portaliq-color-border);
+	border-radius: 4px;
+	padding: var(--portaliq-space-sm) var(--portaliq-space-md);
+}
+
+.portaliq-inbox-row--unread {
+	border-left: 4px solid var(--portaliq-color-accent);
+}
+
+.portaliq-inbox-row__header {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: var(--portaliq-space-sm);
+}
+
+.portaliq-inbox-row__subject {
+	font-weight: 700;
+}
+
+.portaliq-inbox-row__source {
+	color: var(--portaliq-color-text-muted);
+	font-size: 0.85em;
+}
+
+.portaliq-inbox-row__date {
+	margin-left: auto;
+	color: var(--portaliq-color-text-muted);
+	font-size: 0.85em;
+}
+
+.portaliq-inbox-row__body {
+	margin: var(--portaliq-space-sm) 0;
+}
+
+.portaliq-inbox-row__meta {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--portaliq-space-md);
+	margin: var(--portaliq-space-sm) 0;
+	padding: var(--portaliq-space-sm);
+	background: color-mix(in srgb, var(--portaliq-color-accent) 6%, transparent);
+	border-radius: 4px;
+}
+
+.portaliq-inbox-row__meta-item dt {
+	font-size: 0.8em;
+	color: var(--portaliq-color-text-muted);
+}
+
+.portaliq-inbox-row__meta-item dd {
+	margin: 0;
+	font-weight: 600;
+}
+
+.portaliq-badge-unread {
+	color: var(--portaliq-color-accent);
+}
+
+.portaliq-badge-count {
+	display: inline-block;
+	min-width: 1.2em;
+	margin-left: 0.4em;
+	padding: 0 0.35em;
+	border-radius: 999px;
+	background: var(--portaliq-color-accent);
+	color: #fff;
+	font-size: 0.75em;
+	line-height: 1.4;
+	text-align: center;
+}
+
+/*
+ * Zero Nextcloud chrome (ADR-063): the public-page template ships a
+ * position:fixed `.guest-box` footer ("Nextcloud – a safe home for all your
+ * data"). On the white-label portal it is both an unwanted branding leak AND a
+ * click-blocker — its fixed box overlaps the bottom of the SPA content, so any
+ * clickable element that lands under it (e.g. a table row) cannot be clicked.
+ * Hide it; the portal owns the full surface.
+ */
+body .guest-box {
+	display: none !important;
 }

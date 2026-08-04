@@ -38,13 +38,38 @@ const useLocalLib = process.env.USE_LOCAL_LIB !== 'false' && fs.existsSync(local
 // Extend the base resolve config (preserves defaults from @nextcloud/webpack-vue-config)
 webpackConfig.resolve = webpackConfig.resolve || {}
 webpackConfig.resolve.modules = [path.resolve(__dirname, 'node_modules'), 'node_modules']
+// nc-vue's chunked ESM bundles @nextcloud/dialogs chunks that import Node's
+// `path`; webpack 5 ships no core-module polyfills, so a clean `npm ci` +
+// build fails with "Can't resolve 'path'" without this fallback.
+webpackConfig.resolve.fallback = {
+	...(webpackConfig.resolve.fallback || {}),
+	path: require.resolve('path-browserify'),
+}
 webpackConfig.resolve.alias = {
 	...(webpackConfig.resolve.alias || {}),
 	'@': path.resolve(__dirname, 'src'),
 	...(useLocalLib ? { '@conduction/nextcloud-vue': localLib } : {}),
-	vue$: path.resolve(__dirname, 'node_modules/vue'),
+	// Deduplicate shared packages to ONE ABSOLUTE FILE each, so the app and
+	// every library that imports them share a single module instance. A
+	// per-importer resolve gives two copies, and for these packages two
+	// copies means two disjoint runtime states.
+	//
+	// PURE VUE 3: the source is compat-construct-free, so this is the REAL
+	// Vue 3 runtime, not @vue/compat. Two Vue copies = two
+	// `currentRenderingInstance` states, which crashes CnAppRoot with a null
+	// instance.
+	vue$: path.resolve(__dirname, 'node_modules/vue/dist/vue.runtime.esm-bundler.js'),
 	pinia$: path.resolve(__dirname, 'node_modules/pinia'),
-	'@nextcloud/vue$': path.resolve(__dirname, 'node_modules/@nextcloud/vue'),
+	// @nextcloud/vue@9 declares `vue-router` as a hard DEPENDENCY (^5.1.0),
+	// so npm installs a second copy under
+	// node_modules/@nextcloud/vue/node_modules/vue-router. Without this
+	// alias, NcAppNavigationItem's <router-link> resolves the v5 injection
+	// key while `app.use(router)` provided the v4 one — the link renders
+	// against an undefined router and throws.
+	'vue-router$': path.resolve(__dirname, 'node_modules/vue-router/dist/vue-router.mjs'),
+	// v9 is ESM-only: its exports map has '.' -> ./dist/index.mjs with no
+	// `main`/`module`, so a bare directory alias cannot resolve it.
+	'@nextcloud/vue$': path.resolve(__dirname, 'node_modules/@nextcloud/vue/dist/index.mjs'),
 	'@nextcloud/dialogs': path.resolve(__dirname, 'node_modules/@nextcloud/dialogs'),
 	// Force the lib's transitive @nextcloud/axios import to resolve to
 	// the app's installed copy. Without the `$` exact-match suffix,
@@ -53,6 +78,20 @@ webpackConfig.resolve.alias = {
 	// Decidesk reference: commit ed34703c.
 	'@nextcloud/axios$': path.resolve(__dirname, 'node_modules/@nextcloud/axios'),
 }
+
+// This app emits TWO independent bundles into the SAME `js/` directory:
+// the Vue admin SPA (this config) and the React public portal
+// (webpack.portal.js). @nextcloud/webpack-vue-config sets
+// `output.clean: true`, so the admin build WIPES js/ — including
+// `portaliq-portal.js`, which is only ever written by the other config.
+//
+// `npm run build` survives that only by accident of ordering (admin then
+// portal). Anything that rebuilds the admin bundle alone — `npm run
+// build:admin`, `npm run watch` — silently deletes the portal bundle, and
+// the public portal then serves a bare `<div id="portaliq-portal">` with a
+// 404 on its script and NO console error. webpack.portal.js already sets
+// `clean: false` to protect the admin side; this is the missing other half.
+webpackConfig.output.clean = { keep: /^portaliq-portal\.js/ }
 
 // Add SCSS rule to the existing module rules
 webpackConfig.module.rules.push({

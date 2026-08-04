@@ -32,6 +32,17 @@ return [
         ['name' => 'session#index', 'url' => '/portal/api/session', 'verb' => 'GET'],
         ['name' => 'session#devLogin', 'url' => '/portal/api/session/dev-login', 'verb' => 'POST'],
         ['name' => 'session#logout', 'url' => '/portal/api/session', 'verb' => 'DELETE'],
+        // Sliding-window session refresh, capped by an absolute maximum
+        // session lifetime (portal-session-hardening-v2 T03). Registered
+        // before the /portal/{path} SPA catch-all.
+        ['name' => 'session#refresh', 'url' => '/portal/api/session/refresh', 'verb' => 'POST'],
+        // Generic, broker-agnostic OIDC Relying Party (portal-oidc-broker-login,
+        // T06/T07): start builds a state+nonce+PKCE authorization request and
+        // 302s to the broker; callback validates the ID token and mints the
+        // existing HS256 portal session. Registered before the /portal/{path}
+        // SPA catch-all.
+        ['name' => 'session#oidcStart', 'url' => '/portal/api/session/oidc/start', 'verb' => 'GET'],
+        ['name' => 'session#oidcCallback', 'url' => '/portal/api/session/oidc/callback', 'verb' => 'GET'],
 
         // Admin-only incident response (portal-auth-edge-session-hardening):
         // revoke every active portal session for an Organisation.
@@ -39,7 +50,18 @@ return [
 
         // Aggregated portal contributions for the authenticated subject
         // (supplier-portal T04). Guarded by PortalAuthMiddleware (fail-closed).
+        // The response also carries the subject's own unread inbox count
+        // (portal-inbox-v2 T04).
         ['name' => 'contribution#index', 'url' => '/portal/api/contributions', 'verb' => 'GET'],
+        // Unified inbox — merges every `kind: inbox` collection across the
+        // subject's contributions, sorted by receivedAt desc, provenance-tagged
+        // (portal-inbox-v2 T02). Registered before the /portal/{path} catch-all.
+        ['name' => 'contribution#inbox', 'url' => '/portal/api/inbox', 'verb' => 'GET'],
+        // Tamper-proof mark-read on ONE inbox message: ownership/tenant/trust
+        // re-verified before any write; only `read` is ever set (portal-inbox-v2
+        // T03). The {register}/{schema}/{id} segments distinguish it from the
+        // plain GET above.
+        ['name' => 'contribution#markRead', 'url' => '/portal/api/inbox/{register}/{schema}/{id}/read', 'verb' => 'PATCH'],
         // Objects in one contribution collection, subject-scoped (T05).
         ['name' => 'contribution#collection', 'url' => '/portal/api/collections/{register}/{schema}', 'verb' => 'GET'],
         // Create an object in a collection, owned by the subject (T06).
@@ -54,6 +76,12 @@ return [
         // ADR-063). Ownership re-verified via the scoped reader; the collection
         // must declare `filesUpload: true`.
         ['name' => 'contribution#uploadFile', 'url' => '/portal/api/collections/{register}/{schema}/{id}/files', 'verb' => 'POST'],
+        // Stream a file attached to an owned object (portal-document-download,
+        // the read-side counterpart of uploadFile). Ownership re-verified via
+        // the scoped reader BEFORE the file is resolved; the collection must
+        // declare `filesDownload: true`. Registered before the /portal/{path}
+        // catch-all; the {fileId} segment makes this distinct from the upload route.
+        ['name' => 'contribution#downloadFile', 'url' => '/portal/api/collections/{register}/{schema}/{id}/files/{fileId}', 'verb' => 'GET'],
         // Schema definition by slug (gated to the subject's manifest) for the
         // schema-driven frontend engine (ADR-063). The store fetches a schema by
         // slug; the adapter maps /openregister/api/schemas/{slug} here.

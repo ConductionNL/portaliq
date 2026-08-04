@@ -46,6 +46,9 @@ function authHeaders() {
  * Build the adapter bound to a runtime config (`{ apiBase, audience, ... }`).
  * Returned methods read the current token on every call, so a login/logout is
  * picked up without re-creating the adapter.
+ *
+ * @param {object} config Runtime portal config: `{ apiBase, audience }`.
+ * @return {object} The bound portal API adapter.
  */
 export function createPortalApi(config) {
 	const base = config.apiBase
@@ -87,15 +90,50 @@ export function createPortalApi(config) {
 			return body && body.authenticated ? body : null
 		},
 
-		/** The subject's aggregated, trust-filtered, v3-normalised manifest. */
+		/**
+		 * The subject's aggregated, trust-filtered, v3-normalised manifest —
+		 * carries the subject's own unread inbox count (portal-inbox-v2 T04).
+		 */
 		async getContributions() {
-			return (await get('/contributions')) || { contributions: [] }
+			return (await get('/contributions')) || { contributions: [], unreadCount: 0 }
+		},
+
+		/**
+		 * The unified inbox (portal-inbox-v2 T02): every `kind: inbox`
+		 * collection across the subject's contributions, merged, sorted by
+		 * `receivedAt` descending, each row carrying a `_source` provenance
+		 * tag (`appId`/`label`/`register`/`schema`/`collection`).
+		 */
+		async fetchInbox() {
+			const body = await get('/inbox')
+			return (body && Array.isArray(body.messages)) ? body.messages : []
+		},
+
+		/**
+		 * Mark ONE inbox message read (portal-inbox-v2 T03). Ownership is
+		 * re-verified server-side; the endpoint can only ever set `read` —
+		 * this call never sends any other field.
+		 *
+		 * @param {object} message An inbox row, carrying its `_source` provenance tag.
+		 * @return {Promise<object>} `{ ok, status }` result envelope.
+		 */
+		async markMessageRead(message) {
+			const source = message._source || {}
+			const id = message.id || message['@self']?.id
+			if (!id || !source.register || !source.schema) {
+				return { ok: false, status: 0 }
+			}
+			const path = `/inbox/${encodeURIComponent(source.register)}/${encodeURIComponent(source.schema)}/${encodeURIComponent(id)}/read?collection=${encodeURIComponent(source.collection || '')}`
+			return send('PATCH', path, {})
 		},
 
 		/**
 		 * List one collection's objects, subject-scoped. Disambiguated on the
 		 * wire with `?collection=<id>` so two collections sharing a register+
 		 * schema (a direct view and a scopeClaim/via view) never collide.
+		 *
+		 * @param {object} collection Manifest collection: `{ id, register, schema }`.
+		 * @return {Promise<Array<object>>} The collection's objects, or `[]`.
 		 */
 		async fetchCollection(collection) {
 			const body = await get(`${col(collection.register, collection.schema)}?collection=${encodeURIComponent(collection.id)}`)
@@ -106,6 +144,10 @@ export function createPortalApi(config) {
 		 * Read a single object by id, subject-scoped (portal-scoped-crud, PR #25).
 		 * Returns null when the endpoint is absent (pre-#25) or the object is not
 		 * the subject's — callers should prefer an already-loaded list row.
+		 *
+		 * @param {object} collection Manifest collection: `{ id, register, schema }`.
+		 * @param {string} id The object id.
+		 * @return {Promise<object|null>} The object, or null when absent/foreign.
 		 */
 		async fetchObject(collection, id) {
 			const body = await get(`${col(collection.register, collection.schema)}/${encodeURIComponent(id)}?collection=${encodeURIComponent(collection.id)}`)
@@ -115,6 +157,10 @@ export function createPortalApi(config) {
 		/**
 		 * Create an object via a declared `type: create` action. Only the action's
 		 * whitelisted fields are sent; the server stamps ownership.
+		 *
+		 * @param {object} action Manifest action: `{ id, register, schema }`.
+		 * @param {object} data The whitelisted field values.
+		 * @return {Promise<object>} `{ ok, status, object }` result envelope.
 		 */
 		async createObject(action, data) {
 			return send('POST', col(action.register, action.schema), data)
@@ -123,6 +169,11 @@ export function createPortalApi(config) {
 		/**
 		 * Update an object via a declared `type: update` action (portal-scoped-crud,
 		 * PR #25). Ownership is re-verified server-side; the id is never trusted.
+		 *
+		 * @param {object} action Manifest action: `{ id, register, schema }`.
+		 * @param {string} id The object id.
+		 * @param {object} data The whitelisted field values.
+		 * @return {Promise<object>} `{ ok, status, object }` result envelope.
 		 */
 		async updateObject(action, id, data) {
 			// Name the action (`?action=`) so the server applies THIS transition's
@@ -134,18 +185,79 @@ export function createPortalApi(config) {
 		 * Attach a file to an object the subject owns (the file-upload block).
 		 * Ownership is re-verified server-side; the collection must declare
 		 * `filesUpload`. Sends multipart with field name `file`.
+		 *
+		 * @param {object} collection Manifest collection: `{ id, register, schema }`.
+		 * @param {string} id The owning object's id.
+		 * @param {File} file The file to attach.
+		 * @return {Promise<object>} `{ ok, file }` on success, `{ ok: false, status }` otherwise.
 		 */
 		async uploadFile(collection, id, file) {
 			const form = new FormData()
 			form.append('file', file)
 			const url = `${base}${col(collection.register, collection.schema)}/${encodeURIComponent(id)}/files?collection=${encodeURIComponent(collection.id)}`
+			// Retry once on a transient upstream error (502/503/504): a low-worker
+			// dev instance can bounce an upload that overlaps another same-object
+			// request (e.g. the detail card's file-list read). Idempotent enough
+			// for a fresh attach; the server re-verifies ownership either way.
+			for (let attempt = 0; attempt < 2; attempt++) {
+				try {
+					const res = await fetch(url, { method: 'POST', headers: { Accept: 'application/json', ...authHeaders() }, body: form })
+					if (res.ok) {
+						const json = await res.json().catch(() => ({}))
+						return { ok: true, file: json.file || json }
+					}
+					if (attempt === 0 && (res.status === 502 || res.status === 503 || res.status === 504)) {
+						await new Promise((resolve) => setTimeout(resolve, 600))
+						continue
+					}
+					return { ok: false, status: res.status }
+				} catch (e) {
+					if (attempt === 0) {
+						await new Promise((resolve) => setTimeout(resolve, 600))
+						continue
+					}
+					return { ok: false, status: 0 }
+				}
+			}
+			return { ok: false, status: 0 }
+		},
+
+		/**
+		 * Download a file attached to an object the subject owns (the
+		 * file-download block, portal-document-download — the read-side
+		 * counterpart of `uploadFile`). Ownership + the collection's
+		 * `filesDownload` opt-in are re-verified server-side; a foreign/absent
+		 * file is an identical 404. Fetched with the bearer auth header (not a
+		 * plain `<a href>`, which cannot carry it) and saved client-side via a
+		 * Blob object URL.
+		 *
+		 * @param {object} collection Manifest collection: `{ id, register, schema }`.
+		 * @param {string} id The owning object's id.
+		 * @param {object} file The attached file record: `{ id, name }`.
+		 * @return {Promise<object>} `{ ok }` on success, `{ ok: false, status }` otherwise.
+		 * @spec openspec/specs/supplier-portal/spec.md#scoped-file-download-re-verifies-ownership-before-serving-a-byte
+		 */
+		async downloadFile(collection, id, file) {
+			const url = `${base}${col(collection.register, collection.schema)}/${encodeURIComponent(id)}/files/${encodeURIComponent(file.id)}?collection=${encodeURIComponent(collection.id)}`
 			try {
-				const res = await fetch(url, { method: 'POST', headers: { Accept: 'application/json', ...authHeaders() }, body: form })
+				const res = await fetch(url, { headers: { ...authHeaders() } })
 				if (!res.ok) {
 					return { ok: false, status: res.status }
 				}
-				const json = await res.json().catch(() => ({}))
-				return { ok: true, file: json.file || json }
+				const blob = await res.blob()
+				const objectUrl = window.URL.createObjectURL(blob)
+				const link = document.createElement('a')
+				link.href = objectUrl
+				link.download = file.name || 'download'
+				document.body.appendChild(link)
+				link.click()
+				// Defer cleanup: revoking the object URL synchronously after click()
+				// can cancel the download before the browser has started streaming it.
+				setTimeout(() => {
+					link.remove()
+					window.URL.revokeObjectURL(objectUrl)
+				}, 10000)
+				return { ok: true }
 			} catch (e) {
 				return { ok: false, status: 0 }
 			}
@@ -156,6 +268,9 @@ export function createPortalApi(config) {
 		 * collection and map each row to `{ value, label }`. Because it goes
 		 * through the subject-scoped endpoint, it can only ever offer values the
 		 * subject may already read.
+		 *
+		 * @param {object} provider optionsProvider: `{ register, schema, valueField, labelField }`.
+		 * @return {Promise<Array<object>>} `{ value, label }` pairs.
 		 */
 		async fetchOptions(provider) {
 			const body = await get(`${col(provider.register, provider.schema)}`)
@@ -168,7 +283,35 @@ export function createPortalApi(config) {
 				.filter((o) => o.value !== undefined && o.value !== null)
 		},
 
-		/** Mint a test session via the debug-gated dev-login (404 in prod). */
+		/**
+		 * Rotate the bearer ahead of its natural expiry (portal-session-hardening-v2,
+		 * T04): mints a new jti and revokes the old one server-side, capped by the
+		 * absolute session lifetime. Fails closed silently — a revoked, expired, or
+		 * past-the-cap bearer is simply not rotated; the existing (or absent) token
+		 * is left as-is and the next getSession() call surfaces the real state.
+		 */
+		async refreshSession() {
+			const res = await fetch(`${base}/session/refresh`, {
+				method: 'POST',
+				headers: { Accept: 'application/json', ...authHeaders() },
+			})
+			if (!res.ok) {
+				return null
+			}
+			const body = await res.json().catch(() => null)
+			if (body && body.token) {
+				setToken(body.token)
+				return body.token
+			}
+			return null
+		},
+
+		/**
+		 * Mint a test session via the debug-gated dev-login (404 in prod).
+		 *
+		 * @param {string} [audience] Session audience; falls back to the config's.
+		 * @return {Promise<string|null>} The minted bearer, or null.
+		 */
 		async devLogin(audience) {
 			const res = await fetch(`${base}/session/dev-login`, {
 				method: 'POST',
@@ -195,5 +338,46 @@ export function createPortalApi(config) {
 			}
 			setToken(null)
 		},
+
+		/**
+		 * Build the OIDC broker login URL for one of the org's configured
+		 * providers (portal-oidc-broker-login). A plain GET redirect — the
+		 * caller navigates the WHOLE page to it (`window.location.href =`),
+		 * never a `fetch()`, so the broker's own login page renders.
+		 *
+		 * @param {string} provider The provider preset (`digid`|`eherkenning`|`eidas`|`generic`).
+		 * @return {string}
+		 */
+		oidcStartUrl(provider) {
+			const org = config.organisationSlug || ''
+			return `${base}/session/oidc/start?org=${encodeURIComponent(org)}&provider=${encodeURIComponent(provider)}`
+		},
 	}
+}
+
+/**
+ * Pick up the bearer minted by an OIDC callback redirect (portal-oidc-broker-
+ * login): the token travels in the URL FRAGMENT (`#token=...`), never a query
+ * string, so it is never sent to the server and never appears in a log.
+ * Stores it via `setToken()` and strips the fragment from the visible URL
+ * (history.replaceState) so the bearer never lingers in browser history.
+ * A no-op (returns false) when there is no `#token=` fragment.
+ *
+ * @return {boolean} Whether a token was picked up.
+ */
+export function consumeOidcCallbackFragment() {
+	const hash = window.location.hash || ''
+	const match = hash.match(/^#token=(.+)$/)
+	if (!match) {
+		return false
+	}
+
+	const token = decodeURIComponent(match[1])
+	setToken(token)
+
+	const url = new URL(window.location.href)
+	url.hash = ''
+	window.history.replaceState(null, '', url.toString())
+
+	return true
 }

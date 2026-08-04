@@ -28,6 +28,7 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T06
+ * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
  */
 
 declare(strict_types=1);
@@ -113,6 +114,81 @@ class PortalObjectWriter
 
         return $this->normalise(row: $saved);
     }//end createObject()
+
+    /**
+     * Create an object with NO ownership stamp — the anonymous sibling of
+     * `createObject()` (portal-page-provisioning). There is no subject: no
+     * `scopeField`/`subjectRef` and no `organisation` is written, whatever
+     * the caller passes in `$data` (already whitelisted by the controller).
+     * The write still goes through OpenRegister's normal `saveObject()`
+     * (`_rbac`/`_multitenancy` off, same trusted-intermediary convention as
+     * every other portal write), so `ObjectCreatedEvent` still fires and any
+     * `x-openregister-flows` declared on the target schema still run —
+     * unchanged, automatic, no code here touches that path.
+     *
+     * @param string               $register The register slug/id.
+     * @param string               $schema   The schema slug.
+     * @param array<string, mixed> $data     The client-supplied fields (already whitelisted + defaults applied).
+     *
+     * @return array<string, mixed>|null The created object, or null on failure.
+     *
+     * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
+     */
+    public function createAnonymousObject(string $register, string $schema, array $data): ?array
+    {
+        $objectService = $this->objectService();
+        if ($objectService === null) {
+            return null;
+        }
+
+        try {
+            $saved = $objectService->saveObject(
+                object: $data,
+                register: $register,
+                schema: $schema,
+                _rbac: false,
+                _multitenancy: false
+            );
+        } catch (Throwable $e) {
+            $this->logger->warning('Portaliq: OR anonymous write failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
+            return null;
+        }
+
+        return $this->normalise(row: $saved);
+    }//end createAnonymousObject()
+
+    /**
+     * Count objects in a register/schema matching a set of property filters
+     * (portal-session-hardening-v2 — the count-only metrics exposure). Uses
+     * OpenRegister's native `count()` rather than fetching rows, so the audit
+     * trail's contents never travel through this path — only a number does.
+     * Fails closed to 0 when OpenRegister is unavailable or errors; a metrics
+     * endpoint must never 500 because the audit register is unreachable.
+     *
+     * @param string               $register The register slug/id.
+     * @param string               $schema   The schema slug.
+     * @param array<string, mixed> $filters  Property filters (e.g. `['verb' => 'login']`).
+     *
+     * @return int The matching count, or 0 on failure.
+     *
+     * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T10
+     */
+    public function countObjects(string $register, string $schema, array $filters=[]): int
+    {
+        $objectService = $this->objectService();
+        if ($objectService === null) {
+            return 0;
+        }
+
+        try {
+            $objectService->setRegister(register: $register);
+            $objectService->setSchema(schema: $schema);
+            return $objectService->count(config: ['filters' => $filters]);
+        } catch (Throwable $e) {
+            $this->logger->warning('Portaliq: OR count failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
+            return 0;
+        }
+    }//end countObjects()
 
     /**
      * Update an object owned by the subject (portal-scoped-crud, ADR-062

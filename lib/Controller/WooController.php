@@ -39,6 +39,7 @@ use OCP\IRequest;
  */
 class WooController extends Controller
 {
+
     /**
      * Absolute path to the bundled built SPA.
      *
@@ -47,14 +48,20 @@ class WooController extends Controller
     private string $root;
 
     /**
+     * Constructor.
+     *
      * @param string   $appName The app id.
      * @param IRequest $request The request.
      */
     public function __construct(string $appName, IRequest $request)
     {
-        parent::__construct($appName, $request);
-        $resolved   = realpath(__DIR__.'/../../woo');
-        $this->root = ($resolved !== false) ? $resolved : (__DIR__.'/../../woo');
+        parent::__construct(appName: $appName, request: $request);
+        $resolved = realpath(__DIR__.'/../../woo');
+        if ($resolved !== false) {
+            $this->root = $resolved;
+        } else {
+            $this->root = __DIR__.'/../../woo';
+        }
     }//end __construct()
 
     /**
@@ -115,7 +122,7 @@ class WooController extends Controller
         $isIndex  = (substr($resolved, -10) === 'index.html');
         $response = new DataDisplayResponse($content, Http::STATUS_OK, ['Content-Type' => $this->mimeFor(file: $resolved)]);
 
-        // runtime-config.js must never be cached — it is redeployed per instance.
+        // Runtime-config.js must never be cached — it is redeployed per instance.
         $noCache = ($isIndex === true || substr($resolved, -17) === 'runtime-config.js');
         if ($noCache === true) {
             // The bundled SPA loads its own same-origin scripts/styles/fonts and
@@ -138,7 +145,7 @@ class WooController extends Controller
         } else {
             // Hash-named static assets are immutable.
             $response->cacheFor(86400);
-        }
+        }//end if
 
         return $response;
     }//end render()

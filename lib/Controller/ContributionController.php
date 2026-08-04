@@ -30,6 +30,15 @@
  * @spec openspec/changes/contract-v2/tasks.md#T3
  * @spec openspec/changes/contract-v2/tasks.md#T5
  * @spec openspec/changes/contract-v2/tasks.md#T8
+ * @spec openspec/changes/portal-inbox-v2/tasks.md#T02
+ * @spec openspec/changes/portal-inbox-v2/tasks.md#T03
+ * @spec openspec/changes/portal-inbox-v2/tasks.md#T04
+ * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T06
+ * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
+ * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
+ * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
+ * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
+ * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
  */
 
 declare(strict_types=1);
@@ -39,16 +48,24 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Service\AuditTrailService;
+use OCA\Portaliq\Service\PortalAuditHook;
+use OCA\Portaliq\Service\PortalFileReader;
 use OCA\Portaliq\Service\PortalFileWriter;
+use OCA\Portaliq\Service\NotificationDispatchService;
+use OCA\Portaliq\Service\PortalInboxReader;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\SubmissionReceiptService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\AppFramework\Http\Response;
 use OCP\Http\Client\IClientService;
 use OCP\IRequest;
 use OCP\IURLGenerator;
@@ -65,6 +82,17 @@ use Throwable;
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- the complexity is
  * fail-closed authorisation guards on an auth edge (ADR-005), one per attack
  * surface; collapsing them would trade auditability for a score.
+ * @SuppressWarnings(PHPMD.ExcessiveParameterList)   -- one dependency per
+ * distinct scoped OpenRegister capability (read/write/file/schema/inbox/audit),
+ * ADR-022; folding them into a facade would hide which security boundary each
+ * handler actually exercises.
+ * @SuppressWarnings(PHPMD.ExcessiveClassLength)     -- one handler per public
+ * portal endpoint, each carrying its own IDOR/trust rationale inline (ADR-005);
+ * splitting would scatter one security boundary across classes.
+ * @SuppressWarnings(PHPMD.TooManyPublicMethods)     -- one method per routed
+ * endpoint (appinfo/routes.php); the count tracks the API surface, not
+ * incidental complexity.
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)   -- see ExcessiveParameterList.
  */
 class ContributionController extends Controller implements PortalProtected
 {
@@ -81,15 +109,28 @@ class ContributionController extends Controller implements PortalProtected
     /**
      * Constructor.
      *
-     * @param IRequest                   $request       The request object.
-     * @param PortalContributionRegistry $registry      The contribution aggregator.
-     * @param PortalSessionService       $session       Resolves the subject from the bearer.
-     * @param PortalObjectReader         $reader        Subject-scoped OR reader.
-     * @param PortalObjectWriter         $writer        Subject-scoped OR writer.
-     * @param PortalFileWriter           $fileWriter    Subject-scoped OR file attach.
-     * @param PortalSchemaReader         $schemaReader  Scoped OR schema-definition reader.
-     * @param IClientService             $clientService HTTP client for the A6 action forward.
-     * @param IURLGenerator              $urlGenerator  Resolves instance-local endpoint paths.
+     * @param IRequest                    $request              The request object.
+     * @param PortalContributionRegistry  $registry             The contribution aggregator.
+     * @param PortalSessionService        $session              Resolves the subject from the bearer.
+     * @param PortalObjectReader          $reader               Subject-scoped OR reader.
+     * @param PortalObjectWriter          $writer               Subject-scoped OR writer.
+     * @param PortalFileWriter            $fileWriter           Subject-scoped OR file attach.
+     * @param PortalFileReader            $fileReader           Subject-scoped OR file list/download.
+     * @param PortalSchemaReader          $schemaReader         Scoped OR schema-definition reader.
+     * @param PortalInboxReader           $inboxReader          Cross-app inbox aggregation + unread count (portal-inbox-v2).
+     * @param PortalAuditHook             $auditHook            Fail-safe audit-record call site (download).
+     * @param IClientService              $clientService        HTTP client for the A6 action forward.
+     * @param IURLGenerator               $urlGenerator         Resolves instance-local endpoint paths.
+     * @param AuditTrailService           $auditor              Records create/update/forward mutations
+     *                                                          (portal-session-hardening-v2).
+     * @param SubmissionReceiptService    $receiptService       WMEBV ontvangstbevestiging + proof-log
+     *                                                          generator, called after every
+     *                                                          successful create (fail-safe; never
+     *                                                          affects the response).
+     * @param NotificationDispatchService $notificationDispatch Fires the `status.changed` trigger
+     *                                                          (portal-notifications-dispatch) on a
+     *                                                          successful transition; fail-safe,
+     *                                                          never affects the response.
      */
     public function __construct(
         IRequest $request,
@@ -98,9 +139,15 @@ class ContributionController extends Controller implements PortalProtected
         private readonly PortalObjectReader $reader,
         private readonly PortalObjectWriter $writer,
         private readonly PortalFileWriter $fileWriter,
+        private readonly PortalFileReader $fileReader,
         private readonly PortalSchemaReader $schemaReader,
+        private readonly PortalInboxReader $inboxReader,
+        private readonly PortalAuditHook $auditHook,
         private readonly IClientService $clientService,
         private readonly IURLGenerator $urlGenerator,
+        private readonly AuditTrailService $auditor,
+        private readonly SubmissionReceiptService $receiptService,
+        private readonly NotificationDispatchService $notificationDispatch,
     ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
     }//end __construct()
@@ -118,15 +165,27 @@ class ContributionController extends Controller implements PortalProtected
     }//end subject()
 
     /**
-     * List the contributions the authenticated subject may see.
+     * List the contributions the authenticated subject may see — or, when no
+     * bearer resolves, the anonymous-reachable surface (portal-page-provisioning).
      *
      * The route is marked #[PublicPage] because portal subjects are not
      * Nextcloud users; PortalAuthMiddleware enforces the bearer session and
-     * fails closed before this method runs.
+     * fails closed before this method runs UNLESS at least one anonymous
+     * entry exists anywhere in the fleet, in which case a no-bearer request
+     * reaches here with `subject() === null` and gets the anonymous
+     * aggregate instead of a page-shaped 401 — the anonymous visitor's SPA
+     * needs the page layout (labels, richText, field configs) before it can
+     * submit anything.
      *
-     * @return JSONResponse The aggregated contribution manifest.
+     * @return JSONResponse The aggregated contribution manifest (subject or
+     *                       anonymous), carrying the subject's own unread
+     *                       inbox count when authenticated (portal-inbox-v2 T04;
+     *                       always `0` on the anonymous path — there is no
+     *                       inbox without a subject).
      *
      * @spec openspec/changes/supplier-portal/tasks.md#T04
+     * @spec openspec/changes/portal-inbox-v2/tasks.md#T04
+     * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
      */
     #[PublicPage]
     #[NoCSRFRequired]
@@ -134,12 +193,152 @@ class ContributionController extends Controller implements PortalProtected
     {
         $subject = $this->subject();
         if ($subject === null) {
-            // Defensive: the middleware should already have failed closed.
+            // Reached only when PortalAuthMiddleware already confirmed at
+            // least one anonymous entry exists (fail-closed gate); a direct
+            // re-check would just repeat the same aggregation, so the
+            // anonymous aggregate is served straight away.
+            $aggregate = $this->registry->aggregateAnonymous();
+            $aggregate['unreadCount'] = 0;
+            return new JSONResponse($aggregate);
+        }
+
+        $aggregate = $this->registry->aggregateFor($subject);
+        $aggregate['unreadCount'] = $this->inboxReader->unreadCount(subject: $subject, aggregate: $aggregate);
+
+        return new JSONResponse($aggregate);
+    }//end index()
+
+    /**
+     * The subject's unified inbox: every `kind: inbox` collection across ALL
+     * their contributions, merged, sorted by `receivedAt` descending, and
+     * tagged with its source app/label (portal-inbox-v2 T02). Each row passes
+     * through the IDENTICAL per-row subject + tenant + trust boundary as a
+     * normal collection read — PortalInboxReader adds no authorisation of its
+     * own, it only fans the subject's own (already trust-filtered) aggregate
+     * out across every inbox collection. Fails closed to an empty inbox on
+     * any per-collection OR error.
+     *
+     * @return JSONResponse The merged inbox rows, or 401.
+     *
+     * @spec openspec/changes/portal-inbox-v2/tasks.md#T02
+     */
+    #[PublicPage]
+    #[NoCSRFRequired]
+    public function inbox(): JSONResponse
+    {
+        $subject = $this->subject();
+        if ($subject === null) {
             return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
         }
 
-        return new JSONResponse($this->registry->aggregateFor($subject));
-    }//end index()
+        $aggregate = $this->registry->aggregateFor($subject);
+        $messages  = $this->inboxReader->aggregateInbox(subject: $subject, aggregate: $aggregate);
+
+        return new JSONResponse(['messages' => $messages]);
+    }//end inbox()
+
+    /**
+     * Mark ONE inbox message read (portal-inbox-v2 T03) — tamper-proof: the
+     * (register, schema) must resolve to a `kind: inbox` collection in the
+     * subject's own contributions (the same IDOR guard as collection()/
+     * object()), the matched collection's minTrust is re-checked (403 before
+     * any write), and the write goes through PortalObjectWriter::updateObject()
+     * with a LITERAL `['read' => true]` payload — never the request body — so
+     * no other field can ever be written through this endpoint regardless of
+     * what a client sends. updateObject() re-verifies ownership (scopeField +
+     * tenant) against OpenRegister BEFORE writing, so a foreign-owned or
+     * non-existent id yields the SAME 404 as every other scoped write — no
+     * existence oracle.
+     *
+     * @param string $register The register of the inbox collection.
+     * @param string $schema   The schema of the inbox collection.
+     * @param string $id       The message id (never trusted; ownership re-checked server-side).
+     *
+     * @return JSONResponse The updated message, or 401 / 403 / 404.
+     *
+     * @spec openspec/changes/portal-inbox-v2/tasks.md#T03
+     */
+    #[PublicPage]
+    #[NoCSRFRequired]
+    public function markRead(string $register, string $schema, string $id): JSONResponse
+    {
+        $subject = $this->subject();
+        if ($subject === null) {
+            return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+        }
+
+        $collectionId = (string) $this->request->getParam('collection', '');
+        $match        = $this->authorisedInboxCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
+        if ($match === null) {
+            return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+        }
+
+        $collection = $match['collection'];
+
+        // Defense in depth (contract v2, A3): re-check the matched collection's
+        // minTrust — 403 before any OpenRegister write.
+        if (PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
+            return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+        }
+
+        // Resolve the OWNERSHIP scope value the SAME way every scoped write does:
+        // a declared scopeClaim resolves server-side; an absent/malformed claim
+        // fails closed to 404 with no write.
+        $scopeValue = $this->reader->resolveScopeValue(
+            scopeClaim: (string) ($collection['scopeClaim'] ?? ''),
+            contributingApp: $match['app'],
+            subject: $subject
+        );
+        if ($scopeValue === null || $scopeValue === '') {
+            return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+        }
+
+        // The LITERAL payload — never the request body. Whatever extra fields a
+        // client sends are simply never read, so `read` is the only field this
+        // endpoint can ever change.
+        $updated = $this->writer->updateObject(
+            register: $register,
+            schema: $schema,
+            scopeField: (string) ($collection['scopeField'] ?? 'subjectRef'),
+            subjectRef: $scopeValue,
+            organisation: (string) ($subject['organisation'] ?? ''),
+            id: $id,
+            data: ['read' => true]
+        );
+
+        // Null = ownership re-verification failed OR the row does not exist —
+        // a single 404, indistinguishable, and nothing was written.
+        if ($updated === null) {
+            return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+        }
+
+        return new JSONResponse(['object' => $updated]);
+    }//end markRead()
+
+    /**
+     * Find a `kind: inbox` collection matching (register, schema) in the
+     * subject's aggregated contributions — the SAME IDOR guard as
+     * authorisedCollection(), narrowed to inbox collections only, so mark-read
+     * can never be pointed at an arbitrary non-inbox collection/schema.
+     *
+     * @param array<string, mixed> $subject      The resolved subject.
+     * @param string               $register     The requested register.
+     * @param string               $schema       The requested schema.
+     * @param string               $collectionId Optional collection id disambiguating a shared register+schema.
+     *
+     * @return array{collection: array<string, mixed>, app: string}|null
+     *
+     * @spec openspec/changes/portal-inbox-v2/tasks.md#T03
+     */
+    private function authorisedInboxCollection(array $subject, string $register, string $schema, string $collectionId=''): ?array
+    {
+        $match = $this->authorisedCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
+        if ($match === null || ($match['collection']['kind'] ?? '') !== 'inbox') {
+            return null;
+        }
+
+        return $match;
+    }//end authorisedInboxCollection()
 
     /**
      * Read the objects in one contribution collection, scoped to the subject.
@@ -163,6 +362,7 @@ class ContributionController extends Controller implements PortalProtected
      */
     #[PublicPage]
     #[NoCSRFRequired]
+    #[AnonRateLimit(limit: 60, period: 60)]
     public function collection(string $register, string $schema): JSONResponse
     {
         $subject = $this->subject();
@@ -262,6 +462,12 @@ class ContributionController extends Controller implements PortalProtected
      * null result (foreign owner OR non-existent id, indistinguishable) yields
      * 404 — NO existence oracle.
      *
+     * When the collection declares `filesDownload: true` (portal-document-download),
+     * the ALREADY-owned object is enriched with a safe `_files` listing (id/name/size
+     * only — no stored path) so the SPA detail view can render download links for a
+     * row it just proved the subject owns; a collection that has not opted in never
+     * gets a `_files` key, and the listing itself degrades to `[]` on any OR error.
+     *
      * @param string $register The register of the collection.
      * @param string $schema   The schema of the collection.
      * @param string $id       The object id (never trusted; ownership re-checked server-side).
@@ -269,6 +475,7 @@ class ContributionController extends Controller implements PortalProtected
      * @return JSONResponse The subject's object, or 401 / 403 / 404.
      *
      * @spec openspec/changes/portal-scoped-crud/tasks.md#T3
+     * @spec openspec/specs/supplier-portal/spec.md#scoped-file-download-re-verifies-ownership-before-serving-a-byte
      */
     #[PublicPage]
     #[NoCSRFRequired]
@@ -311,6 +518,13 @@ class ContributionController extends Controller implements PortalProtected
         // Null = not the subject's OR does not exist — a single 404, no oracle.
         if ($object === null) {
             return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+        }
+
+        // Opt-in only, and only after ownership is already proven above — the
+        // listing itself never widens which ROWS are visible, only what a row
+        // the subject already owns additionally shows.
+        if (($collection['filesDownload'] ?? false) === true) {
+            $object['_files'] = $this->fileReader->listFiles(register: $register, schema: $schema, id: $id);
         }
 
         return new JSONResponse(['object' => $object]);
@@ -412,6 +626,97 @@ class ContributionController extends Controller implements PortalProtected
     }//end uploadFile()
 
     /**
+     * Stream a file attached to an object the subject owns
+     * (portal-document-download — the read-side counterpart of uploadFile()).
+     *
+     * The collection MUST declare `filesDownload: true`, and ownership is
+     * re-verified through the SAME scoped reader as the single-object read
+     * (scopeField / scopeClaim / via) BEFORE the file is resolved. Per the
+     * identical-404 discipline, a non-opted-in collection, a foreign/absent
+     * object, and a `fileId` that does not resolve inside the owned object's
+     * folder ALL return the exact same 404 body — no existence oracle can
+     * distinguish "not opted in" from "not yours" from "does not exist", and
+     * the raw stored path is never exposed. A successful download invokes the
+     * audit hook (verb `download`) — a hook failure never affects the
+     * response already being streamed.
+     *
+     * @param string $register The register of the collection.
+     * @param string $schema   The schema of the collection.
+     * @param string $id       The object the file hangs off (never trusted; ownership re-checked server-side).
+     * @param string $fileId   The requested file's id (never trusted as a capability).
+     *
+     * @return Response The streamed file, or a 401 / 403 / 404 JSON error.
+     *
+     * @spec openspec/specs/supplier-portal/spec.md#scoped-file-download-re-verifies-ownership-before-serving-a-byte
+     * @spec openspec/specs/supplier-portal/spec.md#download-is-opt-in-per-collection-fail-closed
+     * @spec openspec/specs/supplier-portal/spec.md#identical-404-discipline-no-existence-oracle
+     * @spec openspec/specs/supplier-portal/spec.md#download-emits-an-audit-hook
+     */
+    #[PublicPage]
+    #[NoCSRFRequired]
+    #[AnonRateLimit(limit: 60, period: 60)]
+    public function downloadFile(string $register, string $schema, string $id, string $fileId): Response
+    {
+        $subject = $this->subject();
+        if ($subject === null) {
+            return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+        }
+
+        $collectionId = (string) $this->request->getParam('collection', '');
+        $match        = $this->authorisedCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
+        if ($match === null) {
+            return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+        }
+
+        $collection = $match['collection'];
+
+        if (PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
+            return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+        }
+
+        // From here on every refusal is the IDENTICAL 404 — opt-in, ownership,
+        // and file resolution are indistinguishable to the client (no oracle).
+        if (($collection['filesDownload'] ?? false) !== true) {
+            return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+        }
+
+        // Re-verify ownership with the full scope resolution BEFORE the file is
+        // ever resolved — a foreign or non-existent object never reaches the
+        // file layer.
+        $owned = $this->reader->readObject(
+            register: $register,
+            schema: $schema,
+            scopeField: (string) ($collection['scopeField'] ?? 'subjectRef'),
+            subjectRef: (string) ($subject['subjectRef'] ?? ''),
+            id: $id,
+            organisation: (string) ($subject['organisation'] ?? ''),
+            scopeClaim: (string) ($collection['scopeClaim'] ?? ''),
+            contributingApp: $match['app'],
+            via: ($collection['via'] ?? null),
+            audience: (string) ($subject['audience'] ?? ''),
+            fields: ($collection['fields'] ?? null)
+        );
+        if ($owned === null) {
+            return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+        }
+
+        $stream = $this->fileReader->streamFile(register: $register, schema: $schema, id: $id, fileId: $fileId);
+        if ($stream === null) {
+            return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+        }
+
+        $this->auditHook->download(
+            subjectRef: (string) ($subject['subjectRef'] ?? ''),
+            organisation: (string) ($subject['organisation'] ?? ''),
+            register: $register,
+            schema: $schema,
+            id: $id
+        );
+
+        return $stream;
+    }//end downloadFile()
+
+    /**
      * Return an OpenRegister schema DEFINITION by slug, for the schema-driven
      * portal frontend (the tilburg-woo engine repointed at /portal/api). The
      * store fetches a schema by slug to build table headers + forms; the scoped
@@ -471,6 +776,15 @@ class ContributionController extends Controller implements PortalProtected
      * stamped server-side. A subject can therefore only create records it is
      * entitled to, owned by itself.
      *
+     * On a SUCCESSFUL create, `SubmissionReceiptService::record()` fires the
+     * WMEBV ontvangstbevestiging + burden-of-proof log (wmebv-submission-
+     * receipts) with the SAME whitelisted field map just persisted (never the
+     * raw request body). The call is fail-safe by construction — it never
+     * throws and never affects this response — so a receipt/log side-effect
+     * can never turn a successful submission into a failed one. The receipt
+     * write itself, when successful, fires the `message.created` notification
+     * trigger (portal-notifications-dispatch, inside SubmissionReceiptService).
+     *
      * @param string $register The register of the collection.
      * @param string $schema   The schema of the collection.
      *
@@ -478,20 +792,26 @@ class ContributionController extends Controller implements PortalProtected
      *
      * @spec openspec/changes/supplier-portal/tasks.md#T06
      * @spec openspec/changes/contract-v2/tasks.md#T3
+     * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
+     * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
+     * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
      */
     #[PublicPage]
     #[NoCSRFRequired]
+    #[AnonRateLimit(limit: 60, period: 60)]
     public function create(string $register, string $schema): JSONResponse
     {
         $subject = $this->subject();
         if ($subject === null) {
-            return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+            return $this->createAnonymous(register: $register, schema: $schema);
         }
 
-        $action = $this->authorisedCreateAction(subject: $subject, register: $register, schema: $schema);
-        if ($action === null) {
+        $match = $this->authorisedCreateAction(subject: $subject, register: $register, schema: $schema);
+        if ($match === null) {
             return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
         }
+
+        $action = $match['action'];
 
         // Defense in depth (contract v2, A3): re-check the matched action's
         // minTrust — 403 before any OpenRegister write.
@@ -525,6 +845,29 @@ class ContributionController extends Controller implements PortalProtected
             return new JSONResponse(['error' => 'write_failed'], Http::STATUS_BAD_GATEWAY);
         }
 
+        $this->auditor->record(
+            verb: 'create',
+            subjectRef: (string) ($subject['subjectRef'] ?? ''),
+            organisation: (string) ($subject['organisation'] ?? ''),
+            register: $register,
+            schema: $schema,
+            id: $this->extractId(row: $created),
+            jti: (string) ($subject['jti'] ?? '')
+        );
+
+        // WMEBV (wmebv-submission-receipts): the domain create is already
+        // authoritative and has already succeeded above — this is a fail-safe
+        // follow-on, never a gate. $data is the exact whitelisted+defaults map
+        // just persisted (never the raw request body).
+        $this->receiptService->record(
+            subjectRef: (string) ($subject['subjectRef'] ?? ''),
+            organisation: (string) ($subject['organisation'] ?? ''),
+            appId: $match['app'],
+            actionId: (string) ($action['id'] ?? ''),
+            whitelistedData: $data,
+            audience: (string) ($subject['audience'] ?? '')
+        );
+
         return new JSONResponse(['object' => $created]);
     }//end create()
 
@@ -536,7 +879,9 @@ class ContributionController extends Controller implements PortalProtected
      * @param string               $register The requested register.
      * @param string               $schema   The requested schema.
      *
-     * @return array<string, mixed>|null
+     * @return array{action: array<string, mixed>, app: string}|null The matched
+     *                                       action and its contributing app (the
+     *                                       WMEBV receipt's `appId`), or null.
      */
     private function authorisedCreateAction(array $subject, string $register, string $schema): ?array
     {
@@ -547,13 +892,93 @@ class ContributionController extends Controller implements PortalProtected
                     && ($action['register'] ?? '') === $register
                     && ($action['schema'] ?? '') === $schema
                 ) {
-                    return $action;
+                    return ['action' => $action, 'app' => (string) ($contribution['app'] ?? '')];
                 }
             }
         }
 
         return null;
     }//end authorisedCreateAction()
+
+    /**
+     * Create an object with NO subject at all (portal-page-provisioning) —
+     * the anonymous sibling of the bearer-authenticated create() path.
+     * Reached only when `subject()` is null; PortalAuthMiddleware has
+     * already confirmed an anonymous `type: create` action exists for this
+     * exact `(register, schema)` before letting the request through, but
+     * this re-derives the match independently (defense in depth, the SAME
+     * discipline `authorisedCreateAction()` applies for a bearer subject) —
+     * a mismatch here means 403, not a write. Whitelisting and `defaults`
+     * are applied identically to the authenticated path; the write goes
+     * through `PortalObjectWriter::createAnonymousObject()`, which stamps NO
+     * subject/organisation ownership. There is no subject to audit or issue
+     * a WMEBV receipt against — an anonymous submission is, by definition,
+     * unowned.
+     *
+     * @param string $register The register of the collection.
+     * @param string $schema   The schema of the collection.
+     *
+     * @return JSONResponse The created object, or 403 / 502.
+     *
+     * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
+     */
+    private function createAnonymous(string $register, string $schema): JSONResponse
+    {
+        $action = $this->authorisedAnonymousCreateAction(register: $register, schema: $schema);
+        if ($action === null) {
+            return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+        }
+
+        $data = $this->whitelist(fields: (array) ($action['fields'] ?? []));
+
+        // Server-forced defaults, applied AFTER the whitelist so a client can
+        // never override them — identical discipline to the authenticated
+        // path (e.g. stamping a placeholder ownership marker a schema's
+        // `required` set may mandate, since an anonymous write carries no
+        // real subjectRef).
+        foreach ((array) ($action['defaults'] ?? []) as $key => $value) {
+            if (is_string($key) === true && $key !== '') {
+                $data[$key] = $value;
+            }
+        }
+
+        $created = $this->writer->createAnonymousObject(register: $register, schema: $schema, data: $data);
+        if ($created === null) {
+            return new JSONResponse(['error' => 'write_failed'], Http::STATUS_BAD_GATEWAY);
+        }
+
+        return new JSONResponse(['object' => $created]);
+    }//end createAnonymous()
+
+    /**
+     * Find an `anonymous: true`, `type: create` action for (register, schema)
+     * in the fleet-wide anonymous aggregate, or null when nothing matches
+     * (portal-page-provisioning).
+     *
+     * @param string $register The requested register.
+     * @param string $schema   The requested schema.
+     *
+     * @return array<string, mixed>|null The matched action, or null.
+     *
+     * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
+     */
+    private function authorisedAnonymousCreateAction(string $register, string $schema): ?array
+    {
+        $aggregate = $this->registry->aggregateAnonymous();
+        foreach (($aggregate['contributions'] ?? []) as $contribution) {
+            foreach (($contribution['actions'] ?? []) as $action) {
+                if (($action['type'] ?? '') === 'create'
+                    && ($action['anonymous'] ?? false) === true
+                    && ($action['register'] ?? '') === $register
+                    && ($action['schema'] ?? '') === $schema
+                ) {
+                    return $action;
+                }
+            }
+        }
+
+        return null;
+    }//end authorisedAnonymousCreateAction()
 
     /**
      * Update an object in a collection, owned by the subject (portal-scoped-crud,
@@ -568,6 +993,11 @@ class ContributionController extends Controller implements PortalProtected
      * non-existent, indistinguishable) yields 404 — no existence oracle and no
      * write.
      *
+     * On a SUCCESSFUL update, `NotificationDispatchService::dispatch()` fires
+     * the `status.changed` trigger (portal-notifications-dispatch) — a
+     * fail-safe follow-on, never a gate; the matched app's manifest opts in
+     * per rule key.
+     *
      * @param string $register The register of the collection.
      * @param string $schema   The schema of the collection.
      * @param string $id       The object id (never trusted; ownership re-checked server-side).
@@ -575,9 +1005,12 @@ class ContributionController extends Controller implements PortalProtected
      * @return JSONResponse The updated object, or 401 / 403 / 404.
      *
      * @spec openspec/changes/portal-scoped-crud/tasks.md#T3
+     * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
+     * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
      */
     #[PublicPage]
     #[NoCSRFRequired]
+    #[AnonRateLimit(limit: 60, period: 60)]
     public function update(string $register, string $schema, string $id): JSONResponse
     {
         $subject = $this->subject();
@@ -643,6 +1076,27 @@ class ContributionController extends Controller implements PortalProtected
         if ($updated === null) {
             return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
         }
+
+        $this->auditor->record(
+            verb: 'update',
+            subjectRef: (string) ($subject['subjectRef'] ?? ''),
+            organisation: (string) ($subject['organisation'] ?? ''),
+            register: $register,
+            schema: $schema,
+            id: $id,
+            jti: (string) ($subject['jti'] ?? '')
+        );
+
+        // Portal-notifications-dispatch: the update ALREADY succeeded above —
+        // this is a fail-safe follow-on (dispatch() never throws), never a
+        // gate. The matched app's manifest opts in per rule key, so a plain
+        // (non-status) update action that declares no `status.changed` key
+        // simply enqueues nothing.
+        $this->notificationDispatch->dispatch(
+            ruleKey: NotificationDispatchService::RULE_STATUS_CHANGED,
+            appId: $match['app'],
+            subject: $subject
+        );
 
         return new JSONResponse(['object' => $updated]);
     }//end update()
@@ -721,6 +1175,36 @@ class ContributionController extends Controller implements PortalProtected
     }//end whitelist()
 
     /**
+     * Extract a saved row's identifier (`id`/`uuid`, flat or in `@self`) for
+     * the audit trail's target id — the same identifier candidates every
+     * other reader/writer in this app checks.
+     *
+     * @param array<string, mixed> $row The saved/normalised row.
+     *
+     * @return string The identifier, or '' when the row carries none.
+     *
+     * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
+     */
+    private function extractId(array $row): string
+    {
+        $self     = ($row['@self'] ?? null);
+        $selfUuid = null;
+        $selfId   = null;
+        if (is_array($self) === true) {
+            $selfUuid = ($self['uuid'] ?? null);
+            $selfId   = ($self['id'] ?? null);
+        }
+
+        foreach ([($row['id'] ?? null), ($row['uuid'] ?? null), $selfUuid, $selfId] as $candidate) {
+            if ((is_string($candidate) === true || is_int($candidate) === true) && (string) $candidate !== '') {
+                return (string) $candidate;
+            }
+        }
+
+        return '';
+    }//end extractId()
+
+    /**
      * Forward a declared endpoint action server-to-server (contract v2, A6).
      *
      * Authorises against the subject's OWN aggregated (already trust-filtered)
@@ -732,15 +1216,34 @@ class ContributionController extends Controller implements PortalProtected
      * full http(s) URLs are rejected (SSRF guard). The domain app's status and
      * JSON body are relayed as-is; transport failure yields 502.
      *
+     * When the matched action declares `type: create` and the domain endpoint
+     * relays a 2xx status, `SubmissionReceiptService::record()` fires the SAME
+     * WMEBV ontvangstbevestiging + proof-log follow-on as the direct create()
+     * path (wmebv-submission-receipts) — rebuilding the whitelisted field map
+     * from `$action['fields']` the SAME way whitelist() does, never the raw
+     * relayed body. Fail-safe; never affects this response.
+     *
      * @param string $appId    The contributing app the action belongs to.
      * @param string $actionId The declared action id.
      *
      * @return JSONResponse The relayed response, or 401 / 403 / 502.
      *
      * @spec openspec/changes/contract-v2/tasks.md#T8
+     * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
+     * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
+     * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) -- the audit fact-record
+     * (portal-session-hardening-v2), the WMEBV receipt follow-on
+     * (wmebv-submission-receipts), and the notification dispatch follow-on
+     * (portal-notifications-dispatch) all hang off this ONE authorised-forward
+     * handler by design — each is a single fail-safe branch guarding a
+     * distinct compliance duty; splitting them would separate three
+     * side-effects of the SAME forward from the single 403 gate above them.
      */
     #[PublicPage]
     #[NoCSRFRequired]
+    #[AnonRateLimit(limit: 60, period: 60)]
     public function action(string $appId, string $actionId): JSONResponse
     {
         $subject = $this->subject();
@@ -753,8 +1256,35 @@ class ContributionController extends Controller implements PortalProtected
             return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
         }
 
+        // Recorded once the forward is AUTHORISED — regardless of the domain
+        // app's own response status or a transport failure below — because the
+        // fact being audited is "the subject invoked this forward", not
+        // whether the downstream call happened to succeed. `register`/`schema`
+        // have no natural analogue for a forward, so the appId/actionId ride
+        // in their place (design.md).
+        $this->auditor->record(
+            verb: 'forward',
+            subjectRef: (string) ($subject['subjectRef'] ?? ''),
+            organisation: (string) ($subject['organisation'] ?? ''),
+            register: $appId,
+            schema: $actionId,
+            id: '',
+            jti: (string) ($subject['jti'] ?? '')
+        );
+
         $endpoint = (string) $action['endpoint'];
         $method   = strtoupper((string) ($action['method'] ?? 'POST'));
+
+        // A declared `fields` whitelist rebuilds the forwarded body server-side
+        // from ONLY those request params — an undeclared field (subjectRef, or
+        // anything else a client smuggles into the body) can never reach the
+        // domain app through the forward. An action that declares no `fields`
+        // relays the raw request body as-is (contract v2, A6): forwards like
+        // shillinq's `pay` carry an opaque domain payload with no whitelist.
+        $body = $this->requestBody();
+        if (array_key_exists('fields', $action) === true) {
+            $body = (string) json_encode($this->whitelist(fields: (array) $action['fields']));
+        }
 
         try {
             $client  = $this->clientService->newClient();
@@ -764,7 +1294,7 @@ class ContributionController extends Controller implements PortalProtected
                     'Content-Type'     => 'application/json',
                 ],
                 'timeout'     => self::FORWARD_TIMEOUT,
-                'body'        => $this->requestBody(),
+                'body'        => $body,
                 // Relay non-2xx domain responses instead of throwing, so the
                 // domain app's own status codes (e.g. 422) reach the caller.
                 'http_errors' => false,
@@ -796,7 +1326,23 @@ class ContributionController extends Controller implements PortalProtected
             $decoded = [];
         }
 
-        return new JSONResponse($decoded, $response->getStatusCode());
+        $status = $response->getStatusCode();
+
+        // WMEBV (wmebv-submission-receipts) — the create branch of action():
+        // the domain endpoint is authoritative and has already succeeded (2xx)
+        // by the time this fires; fail-safe follow-on only, never a gate.
+        if (($action['type'] ?? '') === 'create' && $status >= 200 && $status < 300) {
+            $this->receiptService->record(
+                subjectRef: (string) ($subject['subjectRef'] ?? ''),
+                organisation: (string) ($subject['organisation'] ?? ''),
+                appId: $appId,
+                actionId: $actionId,
+                whitelistedData: $this->whitelist(fields: (array) ($action['fields'] ?? [])),
+                audience: (string) ($subject['audience'] ?? '')
+            );
+        }
+
+        return new JSONResponse($decoded, $status);
     }//end action()
 
     /**

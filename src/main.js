@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: EUPL-1.2
 // Copyright (C) 2026 Conduction B.V.
 
-import Vue from 'vue'
-import VueRouter from 'vue-router'
-import { PiniaVuePlugin } from 'pinia'
+import { createApp } from 'vue'
+import { createRouter, createWebHistory } from 'vue-router'
 import { translate as t, translatePlural as n, loadTranslations, register } from '@nextcloud/l10n'
 import enTranslations from '../l10n/en.json'
 import { generateUrl } from '@nextcloud/router'
@@ -21,19 +20,23 @@ import customComponents from './customComponents.js'
 // Both props coexist during the v1 → v2 transition.
 // Once fully migrated to v2, remove the customComponents import and prop.
 import registry from './registry.js'
+import appIcons from './icons.js'
 
 // Library CSS — must be explicit import (webpack tree-shakes side-effect imports from aliased packages)
 import '@conduction/nextcloud-vue/css/index.css'
 
+// gridstack CSS. The manifest declares a `type: "dashboard"` page, and
+// gridstack v12 sizes its items with `width: var(--gs-column-width)` — that
+// variable is defined ONLY in this stylesheet. Without the import every
+// dashboard widget renders 0 px wide with NO console error and correct
+// heights (height comes from JS, width from CSS).
+import 'gridstack/dist/gridstack.css'
+
 // Global (unscoped) app styles
 import './assets/app.css'
 
-Vue.mixin({ methods: { t, n } })
-Vue.use(PiniaVuePlugin)
-Vue.use(VueRouter)
-
 // Register library-side icon set + lib translations once at bootstrap.
-registerIcons()
+registerIcons(appIcons)
 try {
 	registerTranslations()
 } catch (e) {
@@ -67,12 +70,10 @@ function tryLoadTranslations() {
 	}
 }
 
-// Shallow-clone CnPageRenderer because the lib's barrel exports are
-// non-extensible (webpack ESM module records). Vue 2's `Vue.extend()`
-// adds an internal `_Ctor` cache to the component definition; mutating
-// a non-extensible export throws "Cannot add property _Ctor, object is
-// not extensible". Cloning gives Vue Router an extensible
-// component-options object without altering the lib's internals.
+// Shallow-clone CnPageRenderer because the lib's barrel exports are frozen /
+// non-extensible (webpack ESM module records) and vue-router writes internal
+// bookkeeping onto the component options it is handed. Cloning gives the
+// router an extensible options object without altering the lib's internals.
 const RoutePageRenderer = { ...CnPageRenderer }
 
 /**
@@ -83,7 +84,7 @@ const RoutePageRenderer = { ...CnPageRenderer }
  * consumer wiring it manually.
  *
  * @param {object} manifest The bundled manifest (with `pages[]`).
- * @return {Array<object>} vue-router 3 routes config.
+ * @return {Array<object>} vue-router 4 routes config.
  */
 function routesFromManifest(manifest) {
 	const routes = manifest.pages.map((page) => ({
@@ -93,25 +94,25 @@ function routesFromManifest(manifest) {
 		props: page.route.includes(':'),
 	}))
 	// Catch-all: redirect unknown paths to the first page (the dashboard).
-	routes.push({ path: '*', redirect: '/' })
+	// vue-router 4 REMOVED the bare `path: '*'` glob. It does not warn — the
+	// route simply never matches, so an unknown path renders the app shell
+	// with an empty <main> and no console error.
+	routes.push({ path: '/:pathMatch(.*)*', redirect: '/' })
 	return routes
 }
 
-const router = new VueRouter({
-	mode: 'history',
-	base: generateUrl('/apps/portaliq'),
+const router = createRouter({
+	history: createWebHistory(generateUrl('/apps/portaliq')),
 	routes: routesFromManifest(bundledManifest),
 })
 
 tryLoadTranslations()
 
 // Pass shallow copies of the registry maps to App.vue. The lib exports
-// `defaultPageTypes` (and consumers' `customComponents`) as frozen
-// module objects in some bundle shapes — Vue 2's `Vue.extend()` mutates
-// component definitions to attach an internal `_Ctor` cache, which
-// throws "Cannot add property _Ctor, object is not extensible" against
-// a frozen source map. Cloning here yields extensible objects without
-// changing the values the lib resolves at render time.
+// `defaultPageTypes` (and consumers' `customComponents` / `registry`) as
+// FROZEN module objects in some bundle shapes; anything downstream that
+// writes to them throws in strict mode. Cloning here yields extensible
+// objects without changing the values the lib resolves at render time.
 const pageTypesProp = { ...defaultPageTypes }
 const customComponentsProp = { ...customComponents }
 // Shallow-clone the v2 registry for the same reason as above.
@@ -119,16 +120,17 @@ const customComponentsProp = { ...customComponents }
 // customComponents prop can be removed.
 const registryProp = { ...registry }
 
-// eslint-disable-next-line no-new
-new Vue({
-	pinia,
-	router,
-	render: (h) => h(App, {
-		props: {
-			manifest: bundledManifest,
-			customComponents: customComponentsProp,
-			pageTypes: pageTypesProp,
-			registry: registryProp,
-		},
-	}),
-}).$mount('#content')
+const app = createApp(App, {
+	manifest: bundledManifest,
+	customComponents: customComponentsProp,
+	pageTypes: pageTypesProp,
+	registry: registryProp,
+})
+
+// Vue 3: global API lives on the app instance, not on the Vue constructor.
+// `pinia` is a plugin here — PiniaVuePlugin was the Vue-2-only shim and is
+// gone from the Vue 3 bootstrap entirely.
+app.mixin({ methods: { t, n } })
+app.use(pinia)
+app.use(router)
+app.mount('#content')

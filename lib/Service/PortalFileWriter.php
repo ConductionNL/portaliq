@@ -54,6 +54,12 @@ class PortalFileWriter
     private const FILE_SERVICE = 'OCA\\OpenRegister\\Service\\FileService';
 
     /**
+     * OpenRegister's object service — used to resolve an object UUID to a full
+     * ObjectEntity before attaching a file (see attachFile()).
+     */
+    private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
+
+    /**
      * Constructor.
      *
      * @param ContainerInterface $container For resolving OpenRegister's FileService.
@@ -96,9 +102,21 @@ class PortalFileWriter
             return null;
         }
 
+        // Resolve the object UUID to a full ObjectEntity FIRST. OpenRegister's
+        // addFile() takes `getObjectFolder()`'s entity-input branch (which
+        // resolves the register from the entity itself) only when handed an
+        // ObjectEntity; handed a bare string id + null registerId it falls to
+        // `createObjectFolderById(string, registerId: null)` and throws "Failed
+        // to create file because no objectEntity or registerId given" — so every
+        // portal upload 502'd. Mirrors OpenRegister's own SharesProvider.
+        $entity = $this->resolveObjectEntity(register: $register, schema: $schema, id: $id);
+        if ($entity === null) {
+            return null;
+        }
+
         try {
             $file = $fileService->addFile(
-                objectEntity: $id,
+                objectEntity: $entity,
                 fileName: $fileName,
                 content: $content,
                 _schema: $schema,
@@ -161,4 +179,42 @@ class PortalFileWriter
 
         return null;
     }//end fileService()
+
+    /**
+     * Resolve an object UUID to a full OpenRegister ObjectEntity via the object
+     * service, or null when it cannot be resolved. Ownership has already been
+     * re-verified by the caller's scoped reader before this point; RBAC/tenant
+     * are off (Portaliq is the trusted scoper).
+     *
+     * @param string $register The register slug/id.
+     * @param string $schema   The schema slug/id.
+     * @param string $id       The owned object's UUID.
+     *
+     * @return object|null The ObjectEntity, or null on any resolution failure.
+     */
+    private function resolveObjectEntity(string $register, string $schema, string $id): ?object
+    {
+        try {
+            $objectService = $this->container->get(self::OBJECT_SERVICE);
+            if (is_object($objectService) === false) {
+                return null;
+            }
+
+            $entity = $objectService->find(
+                id: $id,
+                register: $register,
+                schema: $schema,
+                _rbac: false,
+                _multitenancy: false
+            );
+            if (is_object($entity) === true) {
+                return $entity;
+            }
+
+            return null;
+        } catch (Throwable $e) {
+            $this->logger->warning('Portaliq: object resolve for file attach failed', ['reason' => $e->getMessage()]);
+            return null;
+        }//end try
+    }//end resolveObjectEntity()
 }//end class

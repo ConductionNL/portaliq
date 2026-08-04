@@ -31,6 +31,7 @@
  *
  * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.2
  * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#3.1
+ * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T01
  */
 
 declare(strict_types=1);
@@ -44,9 +45,12 @@ use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * Resolves per-tenant white-label presentation for the public portal shell.
+ * Resolves per-tenant white-label presentation for the public portal shell,
+ * AND (portal-oidc-broker-login) per-organisation OIDC broker configuration —
+ * replacing the `idp` placeholder this change removes the last dependency on.
  *
  * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.2
+ * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T01
  */
 class PortalOrganisationConfigService
 {
@@ -74,7 +78,6 @@ class PortalOrganisationConfigService
         'organisationSlug'    => '',
         'theme'               => 'default',
         'logo'                => null,
-        'idp'                 => null,
         'featureFlags'        => [],
         'allowedEmbedOrigins' => [],
         // Portal-wide (not per-tenant) SPA config — kept here so the
@@ -83,6 +86,10 @@ class PortalOrganisationConfigService
         'apiBase'             => '/index.php/apps/portaliq/portal/api',
         'audience'            => 'supplier',
         'locale'              => 'nl',
+        // Portal-oidc-broker-login: replaces the `idp` placeholder. NEVER
+        // includes a secret — provider + label only, for the SPA's login
+        // buttons.
+        'oidcProviders'       => [],
     ];
 
     /**
@@ -93,16 +100,27 @@ class PortalOrganisationConfigService
     private const SUPPORTED_LOCALES = ['nl', 'en'];
 
     /**
+     * The provider presets this app understands (portal-oidc-broker-login).
+     */
+    private const OIDC_PROVIDERS = ['digid', 'eherkenning', 'eidas', 'generic'];
+
+    /**
      * Constructor.
      *
-     * @param ContainerInterface $container For resolving OpenRegister's mapper.
-     * @param IAppConfig         $appConfig Per-organisation presentation overrides.
-     * @param LoggerInterface    $logger    The logger.
+     * @param ContainerInterface     $container   For resolving OpenRegister's mapper.
+     * @param IAppConfig             $appConfig   Per-organisation presentation
+     *                                            + OIDC broker config
+     *                                            overrides.
+     * @param LoggerInterface        $logger      The logger.
+     * @param OidcClaimMapperService $claimMapper Merges a provider preset with the
+     *                                            org's raw OIDC override
+     *                                            (portal-oidc-broker-login).
      */
     public function __construct(
         private readonly ContainerInterface $container,
         private readonly IAppConfig $appConfig,
         private readonly LoggerInterface $logger,
+        private readonly OidcClaimMapperService $claimMapper,
     ) {
     }//end __construct()
 
@@ -119,12 +137,13 @@ class PortalOrganisationConfigService
      *                        falls back to `nl`.
      *
      * @return array<string, mixed> `{organisationName, organisationSlug, theme,
-     *                               logo, idp, featureFlags, allowedEmbedOrigins,
-     *                               apiBase, audience, locale}`.
+     *                               logo, featureFlags, allowedEmbedOrigins,
+     *                               apiBase, audience, locale, oidcProviders}`.
      *
      * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.2
      * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.3
      * @spec openspec/changes/portal-spa-i18n-locale-support/tasks.md#2.2
+     * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T01
      */
     public function resolve(string $orgSlug, string $locale='nl'): array
     {
@@ -161,16 +180,175 @@ class PortalOrganisationConfigService
             'organisationSlug'    => $orgSlug,
             'theme'               => (string) ($overrides['theme'] ?? self::NEUTRAL_DEFAULT['theme']),
             'logo'                => ($overrides['logo'] ?? self::NEUTRAL_DEFAULT['logo']),
-            // The real eHerkenning/DigiD IdP wiring is supplier-portal T02/T03
-            // (OpenConnector) — a placeholder passthrough only, by design.
-            'idp'                 => ($overrides['idp'] ?? self::NEUTRAL_DEFAULT['idp']),
             'featureFlags'        => $featureFlags,
             'allowedEmbedOrigins' => $this->allowedEmbedOrigins(overrides: $overrides),
             'apiBase'             => self::NEUTRAL_DEFAULT['apiBase'],
             'audience'            => (string) ($overrides['audience'] ?? self::NEUTRAL_DEFAULT['audience']),
             'locale'              => $locale,
+            // Portal-oidc-broker-login: SECRET-FREE — provider + label only.
+            'oidcProviders'       => $this->configuredOidcProviders(orgSlug: $orgSlug),
         ];
     }//end resolve()
+
+    /**
+     * Resolve the FULL per-organisation OIDC broker config for one provider —
+     * issuer/clientId/clientSecret/scopes/claimMap/loaMap merged with the
+     * provider's preset. NEVER call this from a path that returns to the SPA
+     * (it carries the client secret) — only `SessionController`'s server-side
+     * OIDC start/callback handlers use it.
+     *
+     * Fails closed to null on: an unknown org slug, an unconfigured provider,
+     * a missing required field (`issuer`/`clientId`/`clientSecret`), or an
+     * unrecognised provider preset — `oidcStart()`/`oidcCallback()` treat null
+     * identically to every other fail-closed path (same generic error).
+     *
+     * @param string $orgSlug  The `?org=` slug.
+     * @param string $provider One of `digid|eherkenning|eidas|generic`.
+     *
+     * @return array<string, mixed>|null The merged OIDC config, or null.
+     *
+     * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T01
+     * @spec openspec/specs/supplier-portal/spec.md#oidc-start-builds-a-state-nonce-pkce-authorization-request
+     */
+    public function resolveOidcConfig(string $orgSlug, string $provider): ?array
+    {
+        if ($orgSlug === '' || in_array($provider, self::OIDC_PROVIDERS, true) === false) {
+            return null;
+        }
+
+        $organisation = $this->findOrganisationBySlug(slug: $orgSlug);
+        if ($organisation === null) {
+            return null;
+        }
+
+        $overrides = $this->presentationOverrides(organisationUuid: $organisation['uuid']);
+        $oidc      = ($overrides['oidc'] ?? null);
+        if (is_array($oidc) === false) {
+            return null;
+        }
+
+        $rawConfig = ($oidc[$provider] ?? null);
+        if (is_array($rawConfig) === false) {
+            return null;
+        }
+
+        // The secret NEVER lives in the (non-sensitive) presentation-override
+        // blob — it is read from its OWN `sensitive`-flagged IAppConfig entry,
+        // keyed by organisation + provider, and injected here ONLY for this
+        // server-side-only resolution path.
+        $rawConfig['clientSecret'] = $this->oidcClientSecret(organisationUuid: $organisation['uuid'], provider: $provider);
+
+        if ($this->hasRequiredOidcFields(rawConfig: $rawConfig) === false) {
+            return null;
+        }
+
+        return $this->claimMapper->applyPreset(provider: $provider, rawConfig: $rawConfig);
+    }//end resolveOidcConfig()
+
+    /**
+     * Store an organisation's OIDC client secret for one provider, via a
+     * DEDICATED `sensitive`-flagged `IAppConfig` entry — NEVER inside the
+     * (non-sensitive) presentation-override JSON blob, and NEVER in the
+     * OpenRegister register (design.md).
+     *
+     * @param string $organisationUuid The Organisation's uuid.
+     * @param string $provider         One of `digid|eherkenning|eidas|generic`.
+     * @param string $clientSecret     The secret to store.
+     *
+     * @return bool Whether the value was written.
+     *
+     * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T01
+     */
+    public function setOidcClientSecret(string $organisationUuid, string $provider, string $clientSecret): bool
+    {
+        if ($organisationUuid === '' || in_array($provider, self::OIDC_PROVIDERS, true) === false) {
+            return false;
+        }
+
+        return $this->appConfig->setValueString(
+            Application::APP_ID,
+            $this->oidcSecretKey(organisationUuid: $organisationUuid, provider: $provider),
+            $clientSecret,
+            false,
+            true
+        );
+    }//end setOidcClientSecret()
+
+    /**
+     * Read an organisation's OIDC client secret for one provider, or '' when
+     * unset — NEVER returned by any endpoint or passed to the SPA.
+     *
+     * @param string $organisationUuid The Organisation's uuid.
+     * @param string $provider         One of `digid|eherkenning|eidas|generic`.
+     *
+     * @return string
+     */
+    private function oidcClientSecret(string $organisationUuid, string $provider): string
+    {
+        $key = $this->oidcSecretKey(organisationUuid: $organisationUuid, provider: $provider);
+
+        return $this->appConfig->getValueString(Application::APP_ID, $key, '');
+    }//end oidcClientSecret()
+
+    /**
+     * The dedicated (sensitive) IAppConfig key for one org+provider's secret.
+     *
+     * @param string $organisationUuid The Organisation's uuid.
+     * @param string $provider         The provider preset.
+     *
+     * @return string
+     */
+    private function oidcSecretKey(string $organisationUuid, string $provider): string
+    {
+        return 'oidc_secret_'.$organisationUuid.'_'.$provider;
+    }//end oidcSecretKey()
+
+    /**
+     * Whether a raw per-provider OIDC override carries the three fields every
+     * broker config needs (`issuer`, `clientId`, `clientSecret`) — a provider
+     * override missing any of these is treated as "not configured".
+     *
+     * @param array<string, mixed> $rawConfig The raw override.
+     *
+     * @return bool
+     */
+    private function hasRequiredOidcFields(array $rawConfig): bool
+    {
+        foreach (['issuer', 'clientId', 'clientSecret'] as $field) {
+            if (is_string(($rawConfig[$field] ?? null)) === false || $rawConfig[$field] === '') {
+                return false;
+            }
+        }
+
+        return true;
+    }//end hasRequiredOidcFields()
+
+    /**
+     * The org's configured OIDC providers, SECRET-FREE (provider + label
+     * only) — what the SPA's login buttons are built from. Reuses
+     * `resolveOidcConfig()` (the SAME full-resolution + validation path
+     * `oidcStart()` uses) so "configured" can never drift between the two —
+     * a provider only appears here when `resolveOidcConfig()` would actually
+     * succeed for it. The secret itself is never placed in the returned shape.
+     *
+     * @param string $orgSlug The `?org=` slug.
+     *
+     * @return array<int, array{provider: string, label: string}>
+     */
+    private function configuredOidcProviders(string $orgSlug): array
+    {
+        $providers = [];
+        foreach (self::OIDC_PROVIDERS as $provider) {
+            $merged = $this->resolveOidcConfig(orgSlug: $orgSlug, provider: $provider);
+            if ($merged === null) {
+                continue;
+            }
+
+            $providers[] = ['provider' => $provider, 'label' => (string) ($merged['label'] ?? $provider)];
+        }
+
+        return $providers;
+    }//end configuredOidcProviders()
 
     /**
      * Normalise a raw locale value (e.g. the first `Accept-Language` tag) to
@@ -272,6 +450,18 @@ class PortalOrganisationConfigService
 
         try {
             $organisation = $mapper->findBySlug($slug);
+            if (is_object($organisation) === false) {
+                return null;
+            }
+
+            // OpenRegister's Organisation is a Nextcloud `Entity`: its `getUuid()`
+            // / `getName()` accessors are MAGIC (`__call`), so `method_exists()`
+            // reports them as absent even though the calls work — gating on
+            // method_exists here rejected EVERY organisation, silently killing
+            // white-label + OIDC resolution. Call the accessors directly inside
+            // the try instead; a genuinely broken entity throws and fails closed.
+            $uuid = (string) $organisation->getUuid();
+            $name = (string) ($organisation->getName() ?? '');
         } catch (Throwable $e) {
             // Unknown slug (DoesNotExistException) or any other lookup
             // failure — both resolve to "no tenant found" upstream.
@@ -279,18 +469,9 @@ class PortalOrganisationConfigService
             return null;
         }
 
-        if (is_object($organisation) === false
-            || method_exists($organisation, 'getUuid') === false
-            || method_exists($organisation, 'getName') === false
-        ) {
-            return null;
-        }
-
-        $name = $organisation->getName();
-
         return [
-            'uuid' => (string) $organisation->getUuid(),
-            'name' => (string) ($name ?? ''),
+            'uuid' => $uuid,
+            'name' => $name,
         ];
     }//end findOrganisationBySlug()
 

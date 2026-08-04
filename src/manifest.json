@@ -8,42 +8,42 @@
 		{
 			"id": "Dashboard",
 			"label": "Dashboard",
-			"icon": "icon-category-dashboard",
+			"icon": "ViewDashboardOutline",
 			"route": "Dashboard",
 			"order": 10
 		},
 		{
 			"id": "PortalAccounts",
 			"label": "Portal accounts",
-			"icon": "icon-user",
+			"icon": "Account",
 			"route": "PortalAccounts",
 			"order": 20
 		},
 		{
 			"id": "PortalSessions",
 			"label": "Portal sessions",
-			"icon": "icon-category-security",
+			"icon": "MessageTextOutline",
 			"route": "PortalSessions",
 			"order": 30
 		},
 		{
 			"id": "PortalMessages",
 			"label": "Portal messages",
-			"icon": "icon-mail",
+			"icon": "Email",
 			"route": "PortalMessages",
 			"order": 40
 		},
 		{
 			"id": "Documents",
 			"label": "Documents",
-			"icon": "icon-files",
+			"icon": "FileDocumentMultipleOutline",
 			"route": "Documents",
 			"order": 50
 		},
 		{
 			"id": "Documentation",
 			"label": "Documentation",
-			"icon": "icon-info",
+			"icon": "BookOpenVariantOutline",
 			"href": "https://www.conduction.nl/academy",
 			"section": "footer",
 			"order": 90
@@ -51,7 +51,7 @@
 		{
 			"id": "FeaturesRoadmapMenu",
 			"label": "Features & roadmap",
-			"icon": "icon-toggle",
+			"icon": "MapMarkerPath",
 			"route": "FeaturesRoadmap",
 			"section": "footer",
 			"order": 100

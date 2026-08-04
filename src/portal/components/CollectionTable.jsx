@@ -14,16 +14,16 @@ function formatCell(value, render) {
 		return ''
 	}
 	switch (render) {
-		case 'boolean':
-			return value ? 'Ja' : 'Nee'
-		case 'date':
-			try { return new Date(value).toLocaleDateString('nl-NL') } catch (e) { return String(value) }
-		case 'datetime':
-			try { return new Date(value).toLocaleString('nl-NL') } catch (e) { return String(value) }
-		case 'currency':
-			try { return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(Number(value)) } catch (e) { return String(value) }
-		default:
-			return String(value)
+	case 'boolean':
+		return value ? 'Ja' : 'Nee'
+	case 'date':
+		try { return new Date(value).toLocaleDateString('nl-NL') } catch (e) { return String(value) }
+	case 'datetime':
+		try { return new Date(value).toLocaleString('nl-NL') } catch (e) { return String(value) }
+	case 'currency':
+		try { return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(Number(value)) } catch (e) { return String(value) }
+	default:
+		return String(value)
 	}
 }
 

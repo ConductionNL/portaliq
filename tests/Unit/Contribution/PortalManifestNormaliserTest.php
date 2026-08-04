@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Contribution;
 
 use OCA\Portaliq\Contribution\PortalManifestNormaliser;
+use OCA\Portaliq\Service\PortalSchemaReader;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -100,6 +101,13 @@ class PortalManifestNormaliserTest extends TestCase
      * SECURITY: a fieldConfig may only describe a WHITELISTED field. A config for
      * a field outside the action's `fields` is dropped — it can never be used to
      * coax a non-whitelisted field into a form/submit.
+     *
+     * With no PortalSchemaReader injected (the default, no-arg normaliser used
+     * throughout this file), the WMEBV data-minimisation guard (T07) has no
+     * schema to resolve `title` against — it fails closed and `required` is
+     * dropped, exactly like an unresolvable schema. That guard's positive path
+     * (required preserved on a genuinely mandatory field) is covered by the
+     * dedicated tests below.
      */
     public function testFieldConfigForNonWhitelistedFieldIsDropped(): void
     {
@@ -124,12 +132,141 @@ class PortalManifestNormaliserTest extends TestCase
         $this->assertArrayHasKey('title', $configs);
         // The non-whitelisted field config is gone — the whitelist is unchanged.
         $this->assertArrayNotHasKey('status', $configs);
-        $this->assertTrue($configs['title']['required']);
+        // No schema reader → the WMEBV guard cannot confirm 'title' is
+        // genuinely mandatory, so `required` is dropped fail-closed.
+        $this->assertArrayNotHasKey('required', $configs['title']);
         $this->assertSame('large', $configs['title']['size']);
         // The action's fields whitelist is never mutated.
         $this->assertSame(['title'], $out['actions'][0]['fields']);
 
     }//end testFieldConfigForNonWhitelistedFieldIsDropped()
+
+    /**
+     * WMEBV data-minimisation (wmebv-submission-receipts, T07): `required:
+     * true` on a field the action's schema does NOT mandate is dropped
+     * fail-closed — an electronic form may never require a non-mandatory
+     * field.
+     */
+    public function testRequiredIsDroppedOnANonMandatoryField(): void
+    {
+        $schemaReader = $this->createMock(PortalSchemaReader::class);
+        $schemaReader->method('readSchema')->with('exampleDocument')->willReturn(['required' => ['title']]);
+
+        $out = (new PortalManifestNormaliser($schemaReader))->normalise(
+            [
+                'collections' => [],
+                'actions'     => [
+                    [
+                        'id'           => 'create',
+                        'type'         => 'create',
+                        'schema'       => 'exampleDocument',
+                        'fields'       => ['title', 'status'],
+                        'fieldConfigs' => [
+                            'status' => ['label' => 'Status', 'required' => true],
+                        ],
+                    ],
+                ],
+            ]
+        );
+
+        // 'status' is NOT in the schema's required set — the flag is dropped,
+        // the rest of the field config survives.
+        $configs = $out['actions'][0]['fieldConfigs'];
+        $this->assertArrayNotHasKey('required', $configs['status']);
+        $this->assertSame('Status', $configs['status']['label']);
+
+    }//end testRequiredIsDroppedOnANonMandatoryField()
+
+    /**
+     * WMEBV data-minimisation: `required: true` on a field the schema DOES
+     * mandate is preserved.
+     */
+    public function testRequiredIsPreservedOnAGenuinelyMandatoryField(): void
+    {
+        $schemaReader = $this->createMock(PortalSchemaReader::class);
+        $schemaReader->method('readSchema')->with('exampleDocument')->willReturn(['required' => ['title']]);
+
+        $out = (new PortalManifestNormaliser($schemaReader))->normalise(
+            [
+                'collections' => [],
+                'actions'     => [
+                    [
+                        'id'           => 'create',
+                        'type'         => 'create',
+                        'schema'       => 'exampleDocument',
+                        'fields'       => ['title'],
+                        'fieldConfigs' => [
+                            'title' => ['label' => 'Onderwerp', 'required' => true],
+                        ],
+                    ],
+                ],
+            ]
+        );
+
+        $this->assertTrue($out['actions'][0]['fieldConfigs']['title']['required']);
+
+    }//end testRequiredIsPreservedOnAGenuinelyMandatoryField()
+
+    /**
+     * WMEBV data-minimisation: when the action's schema cannot be resolved
+     * (reader returns null — e.g. unknown slug), `required` is dropped rather
+     * than elevated on a guess.
+     */
+    public function testRequiredIsDroppedWhenSchemaIsUnresolvable(): void
+    {
+        $schemaReader = $this->createMock(PortalSchemaReader::class);
+        $schemaReader->method('readSchema')->willReturn(null);
+
+        $out = (new PortalManifestNormaliser($schemaReader))->normalise(
+            [
+                'collections' => [],
+                'actions'     => [
+                    [
+                        'id'           => 'create',
+                        'type'         => 'create',
+                        'schema'       => 'unknownSchema',
+                        'fields'       => ['title'],
+                        'fieldConfigs' => [
+                            'title' => ['label' => 'Onderwerp', 'required' => true],
+                        ],
+                    ],
+                ],
+            ]
+        );
+
+        $this->assertArrayNotHasKey('required', $out['actions'][0]['fieldConfigs']['title']);
+
+    }//end testRequiredIsDroppedWhenSchemaIsUnresolvable()
+
+    /**
+     * WMEBV data-minimisation: an action with no `schema` key at all (e.g. a
+     * malformed/legacy manifest entry) also fails closed — no slug means no
+     * lookup, so `required` is dropped.
+     */
+    public function testRequiredIsDroppedWhenActionHasNoSchemaKey(): void
+    {
+        $schemaReader = $this->createMock(PortalSchemaReader::class);
+        $schemaReader->expects($this->never())->method('readSchema');
+
+        $out = (new PortalManifestNormaliser($schemaReader))->normalise(
+            [
+                'collections' => [],
+                'actions'     => [
+                    [
+                        'id'           => 'create',
+                        'type'         => 'create',
+                        'fields'       => ['title'],
+                        'fieldConfigs' => [
+                            'title' => ['label' => 'Onderwerp', 'required' => true],
+                        ],
+                    ],
+                ],
+            ]
+        );
+
+        $this->assertArrayNotHasKey('required', $out['actions'][0]['fieldConfigs']['title']);
+
+    }//end testRequiredIsDroppedWhenActionHasNoSchemaKey()
 
     public function testOptionsProvidersValidateStaticAndCollectionAndDropMalformed(): void
     {
@@ -361,4 +498,115 @@ class PortalManifestNormaliserTest extends TestCase
         $this->assertArrayNotHasKey('filesUpload', $out['collections'][3]);
 
     }//end testFilesUploadIsCoercedToAStrictBoolean()
+
+    /**
+     * portal-document-download: `filesDownload` is normalised exactly like
+     * `filesUpload` — default false, malformed → false, true preserved.
+     */
+    public function testFilesDownloadIsCoercedToAStrictBoolean(): void
+    {
+        $out = $this->normaliser()->normalise(
+            [
+                'collections' => [
+                    ['id' => 'a', 'schema' => 's', 'filesDownload' => true],
+                    ['id' => 'b', 'schema' => 's', 'filesDownload' => 'true'],
+                    ['id' => 'c', 'schema' => 's', 'filesDownload' => 1],
+                    ['id' => 'd', 'schema' => 's'],
+                ],
+                'actions'     => [],
+            ]
+        );
+
+        // Only explicit true / "true" enable it; a truthy 1 does NOT.
+        $this->assertTrue($out['collections'][0]['filesDownload']);
+        $this->assertTrue($out['collections'][1]['filesDownload']);
+        $this->assertFalse($out['collections'][2]['filesDownload']);
+        $this->assertArrayNotHasKey('filesDownload', $out['collections'][3]);
+
+    }//end testFilesDownloadIsCoercedToAStrictBoolean()
+
+    /**
+     * portal-page-provisioning: `anonymous` is coerced to a strict boolean,
+     * exactly like `filesUpload`/`filesDownload` — default false, malformed →
+     * false, `true`/`"true"` preserved. Covers both collections and actions.
+     */
+    public function testAnonymousIsCoercedToAStrictBoolean(): void
+    {
+        $out = $this->normaliser()->normalise(
+            [
+                'collections' => [
+                    ['id' => 'a', 'schema' => 's', 'anonymous' => true],
+                    ['id' => 'b', 'schema' => 's', 'anonymous' => 'true'],
+                    ['id' => 'c', 'schema' => 's', 'anonymous' => 1],
+                    ['id' => 'd', 'schema' => 's'],
+                ],
+                'actions'     => [
+                    ['id' => 'x', 'type' => 'create', 'anonymous' => true],
+                    ['id' => 'y', 'type' => 'create'],
+                ],
+            ]
+        );
+
+        $this->assertTrue($out['collections'][0]['anonymous']);
+        $this->assertTrue($out['collections'][1]['anonymous']);
+        $this->assertFalse($out['collections'][2]['anonymous']);
+        $this->assertArrayNotHasKey('anonymous', $out['collections'][3]);
+
+        $this->assertTrue($out['actions'][0]['anonymous']);
+        $this->assertArrayNotHasKey('anonymous', $out['actions'][1]);
+
+    }//end testAnonymousIsCoercedToAStrictBoolean()
+
+    /**
+     * portal-page-provisioning (spec: "Anonymous and elevated trust MUST NOT
+     * combine on one entry"): an entry declaring BOTH `anonymous: true` AND a
+     * non-`low` `minTrust` has `anonymous` dropped — fail-closed, the entry
+     * falls back to requiring an authenticated, trust-checked bearer, never
+     * the reverse. The entry itself (and its `minTrust`) is NOT removed —
+     * only the contradictory `anonymous` flag is.
+     */
+    public function testAnonymousIsDroppedWhenCombinedWithElevatedMinTrust(): void
+    {
+        $out = $this->normaliser()->normalise(
+            [
+                'collections' => [
+                    ['id' => 'gated', 'schema' => 's', 'anonymous' => true, 'minTrust' => 'substantial'],
+                ],
+                'actions'     => [
+                    ['id' => 'gatedAction', 'type' => 'create', 'anonymous' => true, 'minTrust' => 'high'],
+                ],
+            ]
+        );
+
+        $collection = $out['collections'][0];
+        $this->assertArrayNotHasKey('anonymous', $collection);
+        $this->assertSame('substantial', $collection['minTrust']);
+
+        $action = $out['actions'][0];
+        $this->assertArrayNotHasKey('anonymous', $action);
+        $this->assertSame('high', $action['minTrust']);
+
+    }//end testAnonymousIsDroppedWhenCombinedWithElevatedMinTrust()
+
+    /**
+     * An absent or explicit `minTrust: low` does NOT conflict with
+     * `anonymous: true` — only a HIGHER-than-low minTrust trips the
+     * exclusion (design.md).
+     */
+    public function testAnonymousSurvivesWithNoOrLowMinTrust(): void
+    {
+        $out = $this->normaliser()->normalise(
+            [
+                'collections' => [
+                    ['id' => 'a', 'schema' => 's', 'anonymous' => true],
+                    ['id' => 'b', 'schema' => 's', 'anonymous' => true, 'minTrust' => 'low'],
+                ],
+                'actions'     => [],
+            ]
+        );
+
+        $this->assertTrue($out['collections'][0]['anonymous']);
+        $this->assertTrue($out['collections'][1]['anonymous']);
+
+    }//end testAnonymousSurvivesWithNoOrLowMinTrust()
 }//end class
