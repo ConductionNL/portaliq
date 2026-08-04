@@ -206,29 +206,14 @@ class SubmissionReceiptService
             ]
         );
 
-        $deliveryStatus = 'failed';
-        if ($message !== null) {
-            $deliveryStatus = 'delivered';
-
-            // Portal-notifications-dispatch: the receipt message was written —
-            // fire the `message.created` trigger. Fail-safe by construction
-            // (NotificationDispatchService::dispatch never throws); this can
-            // never affect the WMEBV receipt/proof-log outcome above.
-            $this->notificationDispatch->dispatch(
-                ruleKey: NotificationDispatchService::RULE_MESSAGE_CREATED,
-                appId: $appId,
-                subject: [
-                    'subjectRef'   => $subjectRef,
-                    'organisation' => $organisation,
-                    'audience'     => $audience,
-                ]
-            );
-        } else {
-            $this->logger->warning(
-                'Portaliq: WMEBV receipt message write failed — submission remains authoritative',
-                ['appId' => $appId, 'actionId' => $actionId, 'subjectRef' => $subjectRef]
-            );
-        }//end if
+        $deliveryStatus = $this->announceReceipt(
+            message: $message,
+            subjectRef: $subjectRef,
+            organisation: $organisation,
+            appId: $appId,
+            actionId: $actionId,
+            audience: $audience
+        );
 
         $submission = $this->writer->createObject(
             register: self::REGISTER,
@@ -254,6 +239,55 @@ class SubmissionReceiptService
             $this->writeFallbackSubmission(subjectRef: $subjectRef, organisation: $organisation, appId: $appId, actionId: $actionId);
         }
     }//end doRecord()
+
+    /**
+     * Resolve the proof-log `deliveryStatus` for a receipt-message write, and
+     * announce a successful one.
+     *
+     * On a write, fires the portal-notifications-dispatch `message.created`
+     * trigger. That call is fail-safe by construction
+     * (`NotificationDispatchService::dispatch` never throws), so it can never
+     * affect the WMEBV receipt/proof-log outcome. On a failed write, the gap is
+     * logged — the submission itself remains authoritative either way.
+     *
+     * @param array<string, mixed>|null $message      The written receipt message, or null when the write failed.
+     * @param string                    $subjectRef   The submitting subject.
+     * @param string                    $organisation The subject's tenant.
+     * @param string                    $appId        The contributing app.
+     * @param string                    $actionId     The declared action id.
+     * @param string                    $audience     The subject's audience (notification dispatch).
+     *
+     * @return string Either `delivered` or `failed`.
+     */
+    private function announceReceipt(
+        ?array $message,
+        string $subjectRef,
+        string $organisation,
+        string $appId,
+        string $actionId,
+        string $audience
+    ): string {
+        if ($message === null) {
+            $this->logger->warning(
+                'Portaliq: WMEBV receipt message write failed — submission remains authoritative',
+                ['appId' => $appId, 'actionId' => $actionId, 'subjectRef' => $subjectRef]
+            );
+
+            return 'failed';
+        }
+
+        $this->notificationDispatch->dispatch(
+            ruleKey: NotificationDispatchService::RULE_MESSAGE_CREATED,
+            appId: $appId,
+            subject: [
+                'subjectRef'   => $subjectRef,
+                'organisation' => $organisation,
+                'audience'     => $audience,
+            ]
+        );
+
+        return 'delivered';
+    }//end announceReceipt()
 
     /**
      * Best-effort minimal `portalSubmission` row when the full write failed —

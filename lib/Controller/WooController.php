@@ -56,11 +56,14 @@ class WooController extends Controller
     public function __construct(string $appName, IRequest $request)
     {
         parent::__construct(appName: $appName, request: $request);
-        $resolved = realpath(__DIR__.'/../../woo');
+
+        // Initialise to the unresolved path, then override when `realpath()`
+        // can canonicalise it (it returns false when the directory is absent,
+        // e.g. before the SPA bundle has been built).
+        $this->root = __DIR__.'/../../woo';
+        $resolved   = realpath($this->root);
         if ($resolved !== false) {
             $this->root = $resolved;
-        } else {
-            $this->root = __DIR__.'/../../woo';
         }
     }//end __construct()
 
@@ -124,31 +127,44 @@ class WooController extends Controller
 
         // Runtime-config.js must never be cached — it is redeployed per instance.
         $noCache = ($isIndex === true || substr($resolved, -17) === 'runtime-config.js');
-        if ($noCache === true) {
-            // The bundled SPA loads its own same-origin scripts/styles/fonts and
-            // boots via an inline script; relax the default (`default-src 'none'`)
-            // CSP so it can run. Everything stays same-origin ('self') + data:.
-            // Start from an EMPTY policy (no nonce / no strict-dynamic that would
-            // make the browser ignore 'self') and allow exactly what the bundled
-            // same-origin SPA needs. All script/style/font/img are 'self' + data:.
-            $csp = new EmptyContentSecurityPolicy();
-            $csp->allowInlineStyle(true);
-            $csp->addAllowedScriptDomain("'self'");
-            $csp->addAllowedStyleDomain("'self'");
-            $csp->addAllowedFontDomain("'self'");
-            $csp->addAllowedFontDomain('data:');
-            $csp->addAllowedFontDomain('https://fonts.gstatic.com');
-            $csp->addAllowedImageDomain("'self'");
-            $csp->addAllowedImageDomain('data:');
-            $csp->addAllowedConnectDomain("'self'");
-            $response->setContentSecurityPolicy($csp);
-        } else {
+        if ($noCache === false) {
             // Hash-named static assets are immutable.
             $response->cacheFor(86400);
-        }//end if
+            return $response;
+        }
+
+        $this->applySpaCsp(response: $response);
 
         return $response;
     }//end render()
+
+    /**
+     * Relax the default (`default-src 'none'`) CSP for the bundled SPA entry.
+     *
+     * The bundled SPA loads its own same-origin scripts/styles/fonts and boots
+     * via an inline script. The policy starts EMPTY (no nonce / no
+     * strict-dynamic that would make the browser ignore 'self') and allows
+     * exactly what the bundled same-origin SPA needs — everything stays
+     * same-origin ('self') + data:.
+     *
+     * @param DataDisplayResponse $response The response to attach the policy to.
+     *
+     * @return void
+     */
+    private function applySpaCsp(DataDisplayResponse $response): void
+    {
+        $csp = new EmptyContentSecurityPolicy();
+        $csp->allowInlineStyle(true);
+        $csp->addAllowedScriptDomain("'self'");
+        $csp->addAllowedStyleDomain("'self'");
+        $csp->addAllowedFontDomain("'self'");
+        $csp->addAllowedFontDomain('data:');
+        $csp->addAllowedFontDomain('https://fonts.gstatic.com');
+        $csp->addAllowedImageDomain("'self'");
+        $csp->addAllowedImageDomain('data:');
+        $csp->addAllowedConnectDomain("'self'");
+        $response->setContentSecurityPolicy($csp);
+    }//end applySpaCsp()
 
     /**
      * Map a file extension to a Content-Type.
