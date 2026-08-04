@@ -407,12 +407,3 @@ if [ "${GITHUB_ACTIONS:-}" = "true" ] || [ "${CI:-}" = "true" ]; then
 fi
 
 echo "[ci-seed] done."
-
-# ── TEMPORARY TRUNCATION CONTROL — REVERTED IN THE NEXT COMMIT ───────────────
-# Proves the green floor actually depends on the portal bundle. TRUNCATE, do
-# not delete: `ensureBundleBuilt()` rebuilds a deleted bundle, and an
-# existsSync-style guard cannot see a zero-byte file either. A truncated bundle
-# still serves HTTP 200 — the trap this control exists to rule out.
-: > "${APP_DIR}/js/portaliq-portal.js"
-echo "[ci-seed] CONTROL: truncated js/portaliq-portal.js to 0 bytes"
-ls -la "${APP_DIR}/js/portaliq-portal.js"
