@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Register containing all schemas owned by the Portaliq external-portal application.",
-        "version": "0.11.0"
+        "version": "0.12.0"
     },
     "x-openregister": {
         "type": "application",
@@ -15,6 +15,25 @@
     },
     "paths": {},
     "components": {
+        "registers": {
+            "portaliq": {
+                "slug": "portaliq",
+                "title": "Portaliq Register",
+                "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification and audit entry the app reads and writes.",
+                "version": "0.12.0",
+                "schemas": [
+                    "exampleDocument",
+                    "portalAccount",
+                    "portalAuditEntry",
+                    "portalMessage",
+                    "portalNotification",
+                    "portalOidcState",
+                    "portalPage",
+                    "portalSession",
+                    "portalSubmission"
+                ]
+            }
+        },
         "objects": [
             {
                 "@self": {
