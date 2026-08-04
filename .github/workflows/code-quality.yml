@@ -38,6 +38,49 @@ jobs:
       enable-eslint: true
       enable-phpunit: true
       enable-newman: true
-      # additional-apps: '[]'  # Add app dependencies here if needed, e.g.:
-      # additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"main"}]'
+      # Portaliq cannot be exercised without OpenRegister: its register,
+      # schemas and every portal collection/action live there, and
+      # `PortalContributionProvider` is config-driven off `portalPage` OBJECTS
+      # (portal-page-provisioning) — with no OpenRegister the portal renders an
+      # empty shell. Pinned to `development`, not `main`: this app tracks
+      # `development`, and pinning the foundation to `main` makes a CI instance
+      # behave unlike any environment the app is actually developed against.
+      additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"development"}]'
       enable-sbom: true
+
+      # ── E2E browser tests ────────────────────────────────────────────────
+      # Previously OFF (`additional-apps` was commented out entirely, so the
+      # job could not have worked even if enabled). Turned on together with
+      # tests/e2e/ci-seed.sh, which provisions the three things a fresh CI
+      # instance is missing and each of which fails SILENTLY:
+      #
+      #  1. The register + schemas + seed `portalPage` objects. The
+      #     `InitializeSettings` repair step is not a reliable sole path — it
+      #     calls `loadConfiguration(force: false)` (version-guarded) and
+      #     catches every \Throwable as a warning, so `occ app:enable portaliq`
+      #     exits 0 whether or not anything was imported. ci-seed.sh imports
+      #     explicitly over the admin HTTP API (forced) and then VERIFIES the
+      #     register slug, the nine schema slugs, and the active portalPage
+      #     rows.
+      #  2. `portaliq/dev_login_enabled`. Every portal spec mints its bearer
+      #     through the debug-gated `POST /portal/api/session/dev-login`, which
+      #     404s on a default instance. ci-seed.sh sets the DEDICATED app flag
+      #     (not blanket system `debug`, which would change error rendering and
+      #     log verbosity instance-wide) and then probes the endpoint.
+      #  3. Nothing, for `jwt_signing_secret` — that one is VERIFIED, never
+      #     generated, so a broken install path cannot hide behind a green run.
+      enable-playwright: true
+      # Double duty in the shared workflow: it is both the directory the
+      # "Validate Playwright tests exist" step counts *.spec.ts in, AND the
+      # FIRST place the run step looks for a config
+      # (`${playwright-test-path}/playwright.config.ts`), falling back to the
+      # repo root only if that file is absent. We ship
+      # tests/e2e/playwright.config.ts precisely so that lookup hits it: the run
+      # step passes no `--project`, so the ROOT config would also run
+      # `docs-capture` and re-shoot every documentation screenshot on every PR.
+      # The root config is untouched — the separate `Journeydoc Capture` job
+      # requires it to keep declaring that project.
+      playwright-test-path: tests/e2e
+      # cwd for this step is the Nextcloud server root, which is also what makes
+      # `php occ` directly runnable inside the script.
+      playwright-seed-command: 'bash apps/portaliq/tests/e2e/ci-seed.sh'
