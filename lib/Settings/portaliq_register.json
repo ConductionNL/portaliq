@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Register containing all schemas owned by the Portaliq external-portal application.",
-        "version": "0.10.0"
+        "version": "0.11.0"
     },
     "x-openregister": {
         "type": "application",
@@ -401,7 +401,7 @@
             "portalSession": {
                 "slug": "portalSession",
                 "icon": "Ticket",
-                "version": "0.2.0",
+                "version": "0.3.0",
                 "title": "Portal Session",
                 "description": "A bearer session issued by Portaliq's auth edge. Records the minted token id (jti) so sessions can be revoked. Owned by Portaliq; never publicly readable.",
                 "type": "object",
@@ -464,6 +464,13 @@
                         "type": "string",
                         "format": "date-time",
                         "description": "When the session expires."
+                    },
+                    "authTime": {
+                        "title": "Origin authentication time",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "The ORIGINAL login this session descends from (portal-session-hardening-v2). Carried unchanged across every refresh rotation, so it records when the subject actually authenticated rather than when the current token was minted — `issuedAt` moves on each rotation, this does not. PortalSessionService has always written it; until schema 0.3.0 it was not declared here, so OpenRegister's MagicMapper discarded it on every single session mint and the stored row silently lost the origin timestamp.",
+                        "example": "2026-08-04T05:27:24+00:00"
                     },
                     "revoked": {
                         "title": "Revoked",

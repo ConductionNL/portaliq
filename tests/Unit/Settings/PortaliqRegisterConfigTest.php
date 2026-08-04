@@ -36,6 +36,12 @@ class PortaliqRegisterConfigTest extends TestCase
     public function testRegisterJsonParsesAndVersionsAreBumped(): void
     {
         $this->assertNotSame([], self::$register, 'register JSON must parse');
+        // 0.11.0 (portalSession 0.3.0): declared `authTime` on portalSession.
+        // PortalSessionService::mintSession() has always written it, but the
+        // schema never described it, so OpenRegister's MagicMapper discarded it
+        // on EVERY session mint ("Discarding 1 property the schema \"Portal
+        // Session\" does not declare: authTime") and the stored row silently
+        // lost the origin-login timestamp. Additive.
         // 0.10.0 (portalPage 0.2.0): re-seeded the SUPPLIER demo portalPage that
         // portal-page-provisioning deleted without carrying over (only the
         // citizen page shipped, so a fresh install contributed nothing to a
@@ -49,11 +55,51 @@ class PortaliqRegisterConfigTest extends TestCase
         // longer collides with OpenRegister's reserved object-id key (which made
         // every append-only audit write fail). 0.8.0 added the `portalPage` schema
         // (data-provisioned portal contributions, ADR-046). Both additive.
-        $this->assertSame('0.10.0', self::$register['info']['version']);
+        $this->assertSame('0.11.0', self::$register['info']['version']);
         $this->assertSame('0.5.0', self::$register['components']['schemas']['portalAccount']['version']);
         $this->assertSame('0.2.0', self::$register['components']['schemas']['portalPage']['version']);
+        $this->assertSame('0.3.0', self::$register['components']['schemas']['portalSession']['version']);
 
     }//end testRegisterJsonParsesAndVersionsAreBumped()
+
+    /**
+     * Every property `PortalSessionService::mintSession()` writes MUST be
+     * declared on the portalSession schema. An undeclared key is not an error
+     * anywhere in the stack — OpenRegister's MagicMapper drops it with a log
+     * line and the write still returns success — so this is the only place the
+     * loss is detectable. Regression guard for the discarded `authTime`.
+     *
+     * @return void
+     */
+    public function testPortalSessionDeclaresEveryPropertyTheMinterWrites(): void
+    {
+        $declared = array_keys(
+            (array) self::$register['components']['schemas']['portalSession']['properties']
+        );
+
+        // The literal payload of PortalSessionService::mintSession()'s
+        // createObject() call. Keep in step with it.
+        $written = [
+            'subjectRef',
+            'audience',
+            'organisation',
+            'jti',
+            'trustLevel',
+            'issuedAt',
+            'expiresAt',
+            'revoked',
+            'authTime',
+        ];
+
+        foreach ($written as $property) {
+            $this->assertContains(
+                $property,
+                $declared,
+                "portalSession must declare `$property` — mintSession() writes it, and MagicMapper silently discards anything the schema does not declare."
+            );
+        }
+
+    }//end testPortalSessionDeclaresEveryPropertyTheMinterWrites()
 
     /**
      * The `audience` property on portalAccount and portalSession MUST be an
