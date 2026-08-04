@@ -407,10 +407,3 @@ if [ "${GITHUB_ACTIONS:-}" = "true" ] || [ "${CI:-}" = "true" ]; then
 fi
 
 echo "[ci-seed] done."
-
-# ── TEMPORARY TRUNCATION CONTROL — REVERTED IN THE NEXT COMMIT ───────────────
-# Proves the suite actually depends on the portal bundle. TRUNCATE, do not
-# delete: an existsSync-based guard cannot detect a zero-byte file.
-: > "${APP_DIR}/js/portaliq-portal.js"
-echo "[ci-seed] CONTROL: truncated js/portaliq-portal.js to 0 bytes"
-ls -la "${APP_DIR}/js/portaliq-portal.js"
