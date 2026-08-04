@@ -8,6 +8,7 @@ use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\ContributionController;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\NotificationDispatchService;
+use OCA\Portaliq\Service\PortalActionForwarder;
 use OCA\Portaliq\Service\PortalAuditHook;
 use OCA\Portaliq\Service\PortalFileReader;
 use OCA\Portaliq\Service\PortalInboxReader;
@@ -1595,8 +1596,7 @@ class ContributionControllerTest extends TestCase
             $this->createMock(PortalSchemaReader::class),
             $this->createMock(PortalInboxReader::class),
             $this->createMock(PortalAuditHook::class),
-            $this->createMock(IClientService::class),
-            $this->createMock(IURLGenerator::class),
+            $this->forwarder(request: $request, session: $session),
             $this->createMock(AuditTrailService::class),
             $this->createMock(SubmissionReceiptService::class),
             $this->createMock(NotificationDispatchService::class)
@@ -1884,8 +1884,7 @@ class ContributionControllerTest extends TestCase
             $this->createMock(PortalSchemaReader::class),
             $this->createMock(PortalInboxReader::class),
             $this->createMock(PortalAuditHook::class),
-            $this->createMock(IClientService::class),
-            $this->createMock(IURLGenerator::class),
+            $this->forwarder(request: $request, session: $session),
             $this->createMock(AuditTrailService::class),
             $this->createMock(SubmissionReceiptService::class),
             $this->createMock(NotificationDispatchService::class)
@@ -1997,14 +1996,46 @@ class ContributionControllerTest extends TestCase
             $this->createMock(PortalSchemaReader::class),
             ($inboxReader ?? $this->createMock(PortalInboxReader::class)),
             ($auditHook ?? $this->createMock(PortalAuditHook::class)),
-            ($clientService ?? $this->createMock(IClientService::class)),
-            $urlGenerator,
+            $this->forwarder(
+                request: $request,
+                session: $session,
+                clientService: $clientService,
+                urlGenerator: $urlGenerator
+            ),
             ($auditor ?? $this->createMock(AuditTrailService::class)),
             ($receiptService ?? $this->createMock(SubmissionReceiptService::class)),
             ($notificationDispatch ?? $this->createMock(NotificationDispatchService::class))
         );
 
     }//end controller()
+
+    /**
+     * The real PortalActionForwarder wired to the SAME request/session/client
+     * mocks the controller under test uses — the forward's transport behaviour
+     * (signed assertion header, instance-local URL, method dispatch, 502 on a
+     * transport throw) is still exercised end-to-end through action().
+     */
+    private function forwarder(
+        IRequest $request,
+        PortalSessionService $session,
+        ?IClientService $clientService=null,
+        ?IURLGenerator $urlGenerator=null
+    ): PortalActionForwarder {
+        if ($urlGenerator === null) {
+            $urlGenerator = $this->createMock(IURLGenerator::class);
+            $urlGenerator->method('getAbsoluteURL')->willReturnCallback(
+                fn (string $path) => 'https://cloud.example'.$path
+            );
+        }
+
+        return new PortalActionForwarder(
+            $request,
+            ($clientService ?? $this->createMock(IClientService::class)),
+            $urlGenerator,
+            $session
+        );
+
+    }//end forwarder()
 
     /**
      * A one-contribution aggregate shaped like the registry's output.

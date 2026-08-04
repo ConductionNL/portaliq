@@ -49,6 +49,7 @@ use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\AuditTrailService;
+use OCA\Portaliq\Service\PortalActionForwarder;
 use OCA\Portaliq\Service\PortalAuditHook;
 use OCA\Portaliq\Service\PortalFileReader;
 use OCA\Portaliq\Service\PortalFileWriter;
@@ -66,10 +67,7 @@ use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Http\Response;
-use OCP\Http\Client\IClientService;
 use OCP\IRequest;
-use OCP\IURLGenerator;
-use Throwable;
 
 /**
  * Serves the authenticated subject's aggregated portal contributions.
@@ -102,11 +100,6 @@ class ContributionController extends Controller implements PortalProtected
     private const ALLOWED_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 
     /**
-     * Timeout (seconds) for the server-to-server action forward.
-     */
-    private const FORWARD_TIMEOUT = 10;
-
-    /**
      * Constructor.
      *
      * @param IRequest                    $request              The request object.
@@ -119,8 +112,9 @@ class ContributionController extends Controller implements PortalProtected
      * @param PortalSchemaReader          $schemaReader         Scoped OR schema-definition reader.
      * @param PortalInboxReader           $inboxReader          Cross-app inbox aggregation + unread count (portal-inbox-v2).
      * @param PortalAuditHook             $auditHook            Fail-safe audit-record call site (download).
-     * @param IClientService              $clientService        HTTP client for the A6 action forward.
-     * @param IURLGenerator               $urlGenerator         Resolves instance-local endpoint paths.
+     * @param PortalActionForwarder       $forwarder            Transport half of the A6 action forward
+     *                                                          (signed assertion, instance-local URL,
+     *                                                          502-on-transport-failure).
      * @param AuditTrailService           $auditor              Records create/update/forward mutations
      *                                                          (portal-session-hardening-v2).
      * @param SubmissionReceiptService    $receiptService       WMEBV ontvangstbevestiging + proof-log
@@ -143,8 +137,7 @@ class ContributionController extends Controller implements PortalProtected
         private readonly PortalSchemaReader $schemaReader,
         private readonly PortalInboxReader $inboxReader,
         private readonly PortalAuditHook $auditHook,
-        private readonly IClientService $clientService,
-        private readonly IURLGenerator $urlGenerator,
+        private readonly PortalActionForwarder $forwarder,
         private readonly AuditTrailService $auditor,
         private readonly SubmissionReceiptService $receiptService,
         private readonly NotificationDispatchService $notificationDispatch,
@@ -592,31 +585,17 @@ class ContributionController extends Controller implements PortalProtected
             return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
         }
 
-        // Read the multipart upload (`file`); reject an empty/failed upload 400.
-        // getUploadedFile returns [] when absent, so the error/tmp_name checks
-        // cover the missing case.
-        $uploaded = $this->request->getUploadedFile('file');
-        if ((int) ($uploaded['error'] ?? 1) !== 0 || ($uploaded['tmp_name'] ?? '') === '') {
+        $upload = $this->readUploadedFile();
+        if ($upload === null) {
             return new JSONResponse(['error' => 'no_file'], Http::STATUS_BAD_REQUEST);
-        }
-
-        $content = @file_get_contents($uploaded['tmp_name']);
-        if ($content === false) {
-            return new JSONResponse(['error' => 'no_file'], Http::STATUS_BAD_REQUEST);
-        }
-
-        // Sanitise the filename to a basename — never trust a client path.
-        $fileName = basename((string) ($uploaded['name'] ?? 'upload'));
-        if ($fileName === '' || $fileName === '.' || $fileName === '..') {
-            $fileName = 'upload';
         }
 
         $result = $this->fileWriter->attachFile(
             register: $register,
             schema: $schema,
             id: $id,
-            fileName: $fileName,
-            content: $content
+            fileName: $upload['name'],
+            content: $upload['content']
         );
         if ($result === null) {
             return new JSONResponse(['error' => 'upload_failed'], Http::STATUS_BAD_GATEWAY);
@@ -624,6 +603,41 @@ class ContributionController extends Controller implements PortalProtected
 
         return new JSONResponse(['file' => $result]);
     }//end uploadFile()
+
+    /**
+     * Read the multipart upload (`file`) into a sanitised {name, content} pair,
+     * or null when there is nothing usable to attach (the caller answers 400).
+     *
+     * `IRequest::getUploadedFile()` returns `[]` when the field is absent, so
+     * the error/tmp_name checks also cover the missing case. Readability is
+     * probed BEFORE the read so the read itself needs no error-control
+     * operator; the `false` check remains as the residual guard.
+     *
+     * The filename is reduced to a basename — a client path is never trusted —
+     * and degrades to `upload` when that leaves nothing usable.
+     *
+     * @return array{name: string, content: string}|null
+     */
+    private function readUploadedFile(): ?array
+    {
+        $uploaded = $this->request->getUploadedFile('file');
+        $tmpName  = (string) ($uploaded['tmp_name'] ?? '');
+        if ((int) ($uploaded['error'] ?? 1) !== 0 || $tmpName === '' || is_readable($tmpName) === false) {
+            return null;
+        }
+
+        $content = file_get_contents($tmpName);
+        if ($content === false) {
+            return null;
+        }
+
+        $fileName = basename((string) ($uploaded['name'] ?? 'upload'));
+        if ($fileName === '' || $fileName === '.' || $fileName === '..') {
+            $fileName = 'upload';
+        }
+
+        return ['name' => $fileName, 'content' => $content];
+    }//end readUploadedFile()
 
     /**
      * Stream a file attached to an object the subject owns
@@ -1272,61 +1286,23 @@ class ContributionController extends Controller implements PortalProtected
             jti: (string) ($subject['jti'] ?? '')
         );
 
-        $endpoint = (string) $action['endpoint'];
-        $method   = strtoupper((string) ($action['method'] ?? 'POST'));
-
         // A declared `fields` whitelist rebuilds the forwarded body server-side
-        // from ONLY those request params — an undeclared field (subjectRef, or
-        // anything else a client smuggles into the body) can never reach the
-        // domain app through the forward. An action that declares no `fields`
-        // relays the raw request body as-is (contract v2, A6): forwards like
-        // shillinq's `pay` carry an opaque domain payload with no whitelist.
-        $body = $this->requestBody();
+        // from ONLY those request params; an action that declares none relays
+        // the raw request body as-is (contract v2, A6).
+        $whitelisted = null;
         if (array_key_exists('fields', $action) === true) {
-            $body = (string) json_encode($this->whitelist(fields: (array) $action['fields']));
+            $whitelisted = $this->whitelist(fields: (array) $action['fields']);
         }
 
-        try {
-            $client  = $this->clientService->newClient();
-            $options = [
-                'headers'     => [
-                    'X-Portal-Subject' => $this->session->issueAssertion($subject),
-                    'Content-Type'     => 'application/json',
-                ],
-                'timeout'     => self::FORWARD_TIMEOUT,
-                'body'        => $body,
-                // Relay non-2xx domain responses instead of throwing, so the
-                // domain app's own status codes (e.g. 422) reach the caller.
-                'http_errors' => false,
-                // The endpoint is instance-local by contract, so the request
-                // legitimately targets our own (possibly private) address.
-                'nextcloud'   => ['allow_local_address' => true],
-            ];
-            $url      = $this->urlGenerator->getAbsoluteURL($endpoint);
-            $response = match ($method) {
-                'GET' => $client->get($url, $options),
-                'PUT' => $client->put($url, $options),
-                'PATCH' => $client->patch($url, $options),
-                'DELETE' => $client->delete($url, $options),
-                default => $client->post($url, $options),
-            };
-        } catch (Throwable) {
+        $response = $this->forwarder->forward(action: $action, subject: $subject, whitelisted: $whitelisted);
+        if ($response === null) {
             // Transport failure — mirrors the writer's 502 posture. Never leak
             // transport internals to the portal client.
             return new JSONResponse(['error' => 'forward_failed'], Http::STATUS_BAD_GATEWAY);
-        }//end try
-
-        $body    = $response->getBody();
-        $decoded = null;
-        if (is_string($body) === true && $body !== '') {
-            $decoded = json_decode($body, true);
         }
 
-        if (is_array($decoded) === false) {
-            $decoded = [];
-        }
-
-        $status = $response->getStatusCode();
+        $decoded = $this->forwarder->decodeBody(response: $response);
+        $status  = $response->getStatusCode();
 
         // WMEBV (wmebv-submission-receipts) — the create branch of action():
         // the domain endpoint is authoritative and has already succeeded (2xx)
@@ -1420,27 +1396,4 @@ class ContributionController extends Controller implements PortalProtected
 
         return PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null));
     }//end isForwardableAction()
-
-    /**
-     * The raw request body to relay verbatim to the domain endpoint. Portaliq
-     * never interprets it — the domain app validates its own input.
-     *
-     * @return string
-     */
-    private function requestBody(): string
-    {
-        // OCP\IRequest does not declare getContent() in every stub set; the
-        // runtime request object provides it. Guarded so unit mocks without it
-        // simply relay an empty body.
-        if (method_exists($this->request, 'getContent') === false) {
-            return '';
-        }
-
-        $content = $this->request->getContent();
-        if (is_string($content) === false) {
-            return '';
-        }
-
-        return $content;
-    }//end requestBody()
 }//end class

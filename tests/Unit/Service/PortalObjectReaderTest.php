@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\Portaliq\Service\PortalFieldProjector;
 use OCA\Portaliq\Service\PortalObjectReader;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -44,7 +45,7 @@ class PortalObjectReaderTest extends TestCase
         $container = $this->createMock(ContainerInterface::class);
         $container->method('get')->willThrowException(new RuntimeException('OR not installed'));
 
-        $reader = new PortalObjectReader($container, $this->createMock(LoggerInterface::class));
+        $reader = new PortalObjectReader($container, $this->createMock(LoggerInterface::class), $this->projector());
         $this->assertSame([], $reader->readCollection('portaliq', 'exampleDocument', 'subjectRef', 's1'));
 
     }//end testReturnsEmptyWhenOpenRegisterUnavailable()
@@ -96,7 +97,7 @@ class PortalObjectReaderTest extends TestCase
             }//end findAll()
         };
 
-        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
         $rows   = $reader->readCollection('portaliq', 'exampleDocument', 'subjectRef', 's1', 'org-1');
 
         $this->assertCount(1, $rows);
@@ -152,7 +153,7 @@ class PortalObjectReaderTest extends TestCase
             }//end findAll()
         };
 
-        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
         $rows   = $reader->readCollection(
             register: 'pipelinq',
             schema: 'ticket',
@@ -201,7 +202,7 @@ class PortalObjectReaderTest extends TestCase
             }//end findAll()
         };
 
-        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
         // A malicious declared filter tries to widen the read by re-pointing the
         // scope field at another subject; the scope filter is applied last, so
         // the subject's own value must survive.
@@ -235,7 +236,7 @@ class PortalObjectReaderTest extends TestCase
             ]
         );
 
-        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
         $rows   = $reader->readCollection(
             register: 'pipelinq',
             schema: 'crmDeal',
@@ -274,7 +275,7 @@ class PortalObjectReaderTest extends TestCase
             ]
         );
 
-        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
         $rows   = $reader->readCollection(
             register: 'pipelinq',
             schema: 'crmDeal',
@@ -307,7 +308,7 @@ class PortalObjectReaderTest extends TestCase
             ]
         );
 
-        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
         $rows   = $reader->readCollection(
             register: 'pipelinq',
             schema: 'crmDeal',
@@ -332,7 +333,7 @@ class PortalObjectReaderTest extends TestCase
     {
         $objectService = $this->objectService(['crmDeal' => [['contact' => 'x']]]);
 
-        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
 
         foreach (['Bad Claim!', '.leadingDot', 'trailing.', 'UPPER.case', '9starts.withDigit'] as $malformed) {
             $rows = $reader->readCollection(
@@ -375,7 +376,7 @@ class PortalObjectReaderTest extends TestCase
             ]
         );
 
-        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
         $rows   = $reader->readCollection(
             register: 'zaken',
             schema: 'zaak',
@@ -426,7 +427,7 @@ class PortalObjectReaderTest extends TestCase
             $logger        = $this->createMock(LoggerInterface::class);
             $logger->expects($this->once())->method('warning');
 
-            $reader = new PortalObjectReader($this->container($objectService), $logger);
+            $reader = new PortalObjectReader($this->container($objectService), $logger, $this->projector());
             $rows   = $reader->readCollection(
                 register: 'zaken',
                 schema: 'zaak',
@@ -455,7 +456,7 @@ class PortalObjectReaderTest extends TestCase
             ]
         );
 
-        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
         $rows   = $reader->readCollection(
             register: 'zaken',
             schema: 'zaak',
@@ -509,7 +510,7 @@ class PortalObjectReaderTest extends TestCase
             ]
         );
 
-        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
         $rows   = $reader->readCollection(
             register: 'scholiq',
             schema: 'gradeEntry',
@@ -557,7 +558,7 @@ class PortalObjectReaderTest extends TestCase
             ]
         );
 
-        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
         $rows   = $reader->readCollection(
             register: 'scholiq',
             schema: 'gradeEntry',
@@ -601,7 +602,7 @@ class PortalObjectReaderTest extends TestCase
             ]
         );
 
-        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
         $rows   = $reader->readCollection(
             register: 'scholiq',
             schema: 'gradeEntry',
@@ -649,7 +650,7 @@ class PortalObjectReaderTest extends TestCase
             ]
         );
 
-        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
         $rows   = $reader->readCollection(
             register: 'scholiq',
             schema: 'gradeEntry',
@@ -690,7 +691,7 @@ class PortalObjectReaderTest extends TestCase
             $logger        = $this->createMock(LoggerInterface::class);
             $logger->expects($this->once())->method('warning');
 
-            $reader = new PortalObjectReader($this->container($objectService), $logger);
+            $reader = new PortalObjectReader($this->container($objectService), $logger, $this->projector());
             $rows   = $reader->readCollection(
                 register: 'scholiq',
                 schema: 'gradeEntry',
@@ -736,7 +737,7 @@ class PortalObjectReaderTest extends TestCase
             ]
         );
 
-        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
         $rows   = $reader->readCollection(
             register: 'scholiq',
             schema: 'gradeEntry',
@@ -785,7 +786,7 @@ class PortalObjectReaderTest extends TestCase
                 ]
             );
 
-            $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+            $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
             $rows[] = $reader->readCollection(
                 register: 'zaken',
                 schema: 'zaak',
@@ -834,7 +835,7 @@ class PortalObjectReaderTest extends TestCase
             ]
         );
 
-        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
         $rows   = $reader->readCollection(
             register: 'scholiq',
             schema: 'gradeEntry',
@@ -875,7 +876,7 @@ class PortalObjectReaderTest extends TestCase
             ]
         );
 
-        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
         $rows   = $reader->readCollection(
             register: 'pipelinq',
             schema: 'booking',
@@ -918,7 +919,7 @@ class PortalObjectReaderTest extends TestCase
             ]
         );
 
-        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
         $rows   = $reader->readCollection(
             register: 'pipelinq',
             schema: 'booking',
@@ -960,7 +961,7 @@ class PortalObjectReaderTest extends TestCase
             ]
         );
 
-        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
         $rows   = $reader->readCollection('pipelinq', 'booking', 'subjectRef', 's1');
 
         // Backward compatible: absent fields = the full verified row.
@@ -980,7 +981,7 @@ class PortalObjectReaderTest extends TestCase
                 ]
             );
 
-            $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+            $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
             $rows   = $reader->readCollection(
                 register: 'pipelinq',
                 schema: 'booking',
@@ -1016,7 +1017,7 @@ class PortalObjectReaderTest extends TestCase
             ]
         );
 
-        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
         $rows   = $reader->readCollection(
             register: 'zaken',
             schema: 'zaak',
@@ -1044,9 +1045,7 @@ class PortalObjectReaderTest extends TestCase
 
     public function testProjectRowSingleObjectDetailSemantics(): void
     {
-        $container = $this->createMock(ContainerInterface::class);
-        $container->method('get')->willThrowException(new RuntimeException('not needed'));
-        $reader = new PortalObjectReader($container, $this->createMock(LoggerInterface::class));
+        $projector = $this->projector();
 
         $row = [
             'id'         => 'd-1',
@@ -1055,14 +1054,14 @@ class PortalObjectReaderTest extends TestCase
             'notes'      => 'staff only',
         ];
 
-        // The public single-row primitive a future detail read must call:
+        // The public single-row primitive every detail read must call:
         // whitelist + identifier, null passes the row through whole.
-        $this->assertSame(['title' => 'Mine', 'id' => 'd-1'], $reader->projectRow($row, ['title']));
-        $this->assertSame($row, $reader->projectRow($row, null));
+        $this->assertSame(['title' => 'Mine', 'id' => 'd-1'], $projector->projectRow($row, ['title']));
+        $this->assertSame($row, $projector->projectRow($row, null));
         // Declaring '@self' explicitly keeps the full envelope (whitelist
         // escape hatch documented in the design).
         $withSelf = ['@self' => ['id' => 'd-1', 'owner' => 'admin'], 'title' => 'Mine'];
-        $this->assertSame($withSelf, $reader->projectRow($withSelf, ['@self', 'title']));
+        $this->assertSame($withSelf, $projector->projectRow($withSelf, ['@self', 'title']));
 
     }//end testProjectRowSingleObjectDetailSemantics()
 
@@ -1071,7 +1070,7 @@ class PortalObjectReaderTest extends TestCase
         $container = $this->createMock(ContainerInterface::class);
         $container->method('get')->willThrowException(new RuntimeException('OR not installed'));
 
-        $reader = new PortalObjectReader($container, $this->createMock(LoggerInterface::class));
+        $reader = new PortalObjectReader($container, $this->createMock(LoggerInterface::class), $this->projector());
         $this->assertNull($reader->readObject('portaliq', 'exampleDocument', 'subjectRef', 's1', 'd-1'));
 
     }//end testReadObjectReturnsNullWhenOpenRegisterUnavailable()
@@ -1086,7 +1085,7 @@ class PortalObjectReaderTest extends TestCase
             ]
         );
 
-        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
         $object = $reader->readObject(
             register: 'pipelinq',
             schema: 'booking',
@@ -1122,7 +1121,7 @@ class PortalObjectReaderTest extends TestCase
             ]
         );
 
-        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
         $object = $reader->readObject(
             register: 'pipelinq',
             schema: 'booking',
@@ -1150,7 +1149,7 @@ class PortalObjectReaderTest extends TestCase
             ]
         );
 
-        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
         $object = $reader->readObject(
             register: 'pipelinq',
             schema: 'booking',
@@ -1174,7 +1173,7 @@ class PortalObjectReaderTest extends TestCase
             ]
         );
 
-        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
         // Requested id is not among the returned rows.
         $this->assertNull($reader->readObject('pipelinq', 'booking', 'subjectRef', 's1', 'does-not-exist'));
         // And an empty id fails closed without any query.
@@ -1201,7 +1200,7 @@ class PortalObjectReaderTest extends TestCase
             ]
         );
 
-        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
         $object = $reader->readObject(
             register: 'pipelinq',
             schema: 'crmDeal',
@@ -1231,7 +1230,7 @@ class PortalObjectReaderTest extends TestCase
             ]
         );
 
-        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
         $object = $reader->readObject(
             register: 'pipelinq',
             schema: 'crmDeal',
@@ -1276,7 +1275,7 @@ class PortalObjectReaderTest extends TestCase
             'targetField' => 'zaak',
         ];
 
-        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class));
+        $reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
 
         $mine = $reader->readObject(
             register: 'zaken',
@@ -1396,4 +1395,15 @@ class PortalObjectReaderTest extends TestCase
         return $mock;
 
     }//end container()
+
+    /**
+     * The real field projector the reader shapes its verified rows with — the
+     * projection semantics stay exercised end-to-end through readCollection()
+     * and readObject(), exactly as before the collaborator was split out.
+     */
+    private function projector(): PortalFieldProjector
+    {
+        return new PortalFieldProjector($this->createMock(LoggerInterface::class));
+
+    }//end projector()
 }//end class
