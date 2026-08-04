@@ -97,13 +97,13 @@ const IGNORE = [
  * OpenRegister and widens a security boundary on a file-write path, so it gets
  * its own change rather than riding along with CI enablement.
  *
- *     → ConductionNL/portaliq#31
+ *     → ConductionNL/portaliq#29
  *
  * The exclusion is deliberately a TITLE filter, not a file one: the sibling
  * test in the same spec — `a foreign or absent file 404s identically — no
  * existence oracle` — is a passing security assertion and stays in the gate.
  * The test body is untouched: nothing is skipped, no assertion is weakened, no
- * timeout is raised. Delete this filter when #31 closes.
+ * timeout is raised. Delete this filter when #29 closes.
  */
 const GREP_INVERT = /a subject downloads a file on a row they own/
 
