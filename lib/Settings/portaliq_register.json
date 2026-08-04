@@ -920,7 +920,7 @@
             "portalPage": {
                 "slug": "portalPage",
                 "icon": "WebBox",
-                "version": "0.1.0",
+                "version": "0.2.0",
                 "title": "Portal Page",
                 "description": "A data-provisioned portal contribution (ADR-046, portal-page-provisioning). Mirrors the IPortalContributionProvider manifest shape 1:1 so Portaliq's built-in provider can read this object and hand it to the same PortalManifestNormaliser every PHP provider's output passes through. Owned by the app that provisions the page; never publicly readable \u2014 the built-in provider is the only reader, server-side.",
                 "type": "object",

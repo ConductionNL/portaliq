@@ -36,13 +36,22 @@ class PortaliqRegisterConfigTest extends TestCase
     public function testRegisterJsonParsesAndVersionsAreBumped(): void
     {
         $this->assertNotSame([], self::$register, 'register JSON must parse');
+        // 0.10.0 (portalPage 0.2.0): re-seeded the SUPPLIER demo portalPage that
+        // portal-page-provisioning deleted without carrying over (only the
+        // citizen page shipped, so a fresh install contributed nothing to a
+        // supplier), and declared the contract-v3 vocabulary the normaliser
+        // already consumes but the schema never described — `label`/`kind`/
+        // `rowActions`/`defaultSort`/`filesUpload`/`filesDownload` on
+        // collections, `submitLabel`/`successMessage`/`fieldConfigs`/
+        // `optionsProviders` on actions, and the contribution-level
+        // `notifications` opt-in. All additive.
         // 0.9.0: renamed portalAuditEntry's `id` property to `targetId` so it no
         // longer collides with OpenRegister's reserved object-id key (which made
         // every append-only audit write fail). 0.8.0 added the `portalPage` schema
         // (data-provisioned portal contributions, ADR-046). Both additive.
-        $this->assertSame('0.9.0', self::$register['info']['version']);
+        $this->assertSame('0.10.0', self::$register['info']['version']);
         $this->assertSame('0.5.0', self::$register['components']['schemas']['portalAccount']['version']);
-        $this->assertSame('0.1.0', self::$register['components']['schemas']['portalPage']['version']);
+        $this->assertSame('0.2.0', self::$register['components']['schemas']['portalPage']['version']);
 
     }//end testRegisterJsonParsesAndVersionsAreBumped()
 
