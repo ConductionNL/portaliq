@@ -68,9 +68,23 @@ jobs:
       #
       # Pinned to a tag, not `main`, so a change to the gate package cannot
       # alter this repository's verdict without a commit here to move the pin.
-      # v1.0.1 is the pin openbuild and openregister already run.
+      #
+      # Moved v1.0.1 -> v1.2.0:
+      #
+      #   - gate-22 (manifest-validation) reported `FAIL — 0` here. The finding
+      #     was real; the COUNT was the bug, and the reason was orphaned onto a
+      #     second line that no `^\[gate-` consumer parses. Fixed in v1.1.0.
+      #   - gate-5 (route-auth) read route names through `'[a-z_]+#…'`, so
+      #     camelCase slugs were invisible. Measured locally against this repo
+      #     at full-tree scope: v1.0.1 found 2 findings, v1.2.0 finds 3 — the
+      #     new one is `sessionAdmin#revokeOrganisation`, a POST that revokes
+      #     every portal session for a tenant, and it carries no auth attribute
+      #     at all. v1.0.1 never opened it. This is the pin move paying for
+      #     itself, and it means EXPECT RED.
+      #   - v1.2.0 also brings the runner's COVERAGE accounting, which v1.0.1
+      #     does not have.
       enable-hydra-gates: true
-      hydra-gates-ref: v1.0.1
+      hydra-gates-ref: v1.2.0
       # `enable-axe` deliberately NOT set: it produces the report gate-33
       # consumes, and a vanilla Nextcloud already carries serious/critical axe
       # violations, so enabling it here would mix "this repo has a defect" with
