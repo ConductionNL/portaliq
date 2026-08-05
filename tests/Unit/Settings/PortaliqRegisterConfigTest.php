@@ -36,6 +36,14 @@ class PortaliqRegisterConfigTest extends TestCase
     public function testRegisterJsonParsesAndVersionsAreBumped(): void
     {
         $this->assertNotSame([], self::$register, 'register JSON must parse');
+        // 0.12.0: declared `components.registers.portaliq` — the register
+        // itself. OpenRegister's ImportHandler creates a Register row from that
+        // key and nowhere else on the main/beta lines, so until now a clean
+        // install created 9 schemas and ZERO registers and every
+        // GET /api/objects/portaliq/<schema> answered HTTP 404
+        // "Register not found: 'portaliq'". The version bump is load-bearing:
+        // importFromApp is version-gated, so a frozen info.version would never
+        // re-import and the register would stay absent on existing installs.
         // 0.11.0 (portalSession 0.3.0): declared `authTime` on portalSession.
         // PortalSessionService::mintSession() has always written it, but the
         // schema never described it, so OpenRegister's MagicMapper discarded it
@@ -55,12 +63,54 @@ class PortaliqRegisterConfigTest extends TestCase
         // longer collides with OpenRegister's reserved object-id key (which made
         // every append-only audit write fail). 0.8.0 added the `portalPage` schema
         // (data-provisioned portal contributions, ADR-046). Both additive.
-        $this->assertSame('0.11.0', self::$register['info']['version']);
+        $this->assertSame('0.12.0', self::$register['info']['version']);
         $this->assertSame('0.5.0', self::$register['components']['schemas']['portalAccount']['version']);
         $this->assertSame('0.2.0', self::$register['components']['schemas']['portalPage']['version']);
         $this->assertSame('0.3.0', self::$register['components']['schemas']['portalSession']['version']);
 
     }//end testRegisterJsonParsesAndVersionsAreBumped()
+
+
+    /**
+     * The register must declare ITSELF, listing exactly its own schemas.
+     *
+     * OpenRegister's ImportHandler creates a Register row only from
+     * `components.registers` (ImportHandler.php:1514) on the main/beta lines.
+     * Without it a clean install provisions the schemas and no register, the
+     * import still reports success, and every object route 404s — a silent
+     * outage this test exists to make loud.
+     *
+     * The schema list is asserted to be the EXACT set of schema SLUGS, not
+     * components.schemas keys: ImportHandler keys its schemasMap by
+     * $schema->getSlug(), so a register listing the keys binds ZERO schemas
+     * while still looking correctly declared. A register listing only SOME
+     * schemas is the same silent partial outage, one schema at a time.
+     */
+    public function testRegisterDeclaresItselfWithExactlyItsOwnSchemaSlugs(): void
+    {
+        $registers = (self::$register['components']['registers'] ?? []);
+        $this->assertArrayHasKey('portaliq', $registers, 'the portaliq register must be declared');
+
+        $declared = $registers['portaliq'];
+        $this->assertSame('portaliq', $declared['slug']);
+        $this->assertSame(
+            self::$register['info']['version'],
+            $declared['version'],
+            'the register version must track info.version, or a later schema change never re-imports'
+        );
+
+        $expected = [];
+        foreach ((self::$register['components']['schemas'] ?? []) as $key => $schema) {
+            $expected[] = ($schema['slug'] ?? $key);
+        }
+
+        sort($expected);
+        $actual = $declared['schemas'];
+        sort($actual);
+
+        $this->assertSame($expected, $actual, 'the register must list exactly its own schema slugs');
+
+    }//end testRegisterDeclaresItselfWithExactlyItsOwnSchemaSlugs()
 
     /**
      * Every property `PortalSessionService::mintSession()` writes MUST be
