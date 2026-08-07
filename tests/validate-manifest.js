@@ -3,7 +3,7 @@
 // Copyright (C) 2026 Conduction B.V.
 //
 // validate-manifest.js — schema-validates src/manifest.json against the
-// @conduction/nextcloud-vue v1.1.0 app-manifest schema using Ajv.
+// @conduction/nextcloud-vue app-manifest schema using Ajv.
 //
 // Usage:
 //   node tests/validate-manifest.js
@@ -12,16 +12,19 @@
 //   0 — manifest validates against the schema with zero errors
 //   1 — manifest fails validation (or schema/manifest cannot be loaded)
 //
-// Schema lookup order (first hit wins):
-//   1. Env var APP_MANIFEST_SCHEMA — explicit absolute path to a schema JSON
-//   2. node_modules/@conduction/nextcloud-vue/src/schemas/app-manifest.schema.json
-//   3. ../nextcloud-vue/src/schemas/app-manifest.schema.json (sibling worktree)
-//   4. /tmp/worktrees/nextcloud-vue-manifest-v1/src/schemas/app-manifest.schema.json (v1.2.0 consolidation worktree)
-//   5. /tmp/worktrees/nextcloud-vue-page-type-extensions/src/schemas/app-manifest.schema.json (v1.1.0 fallback)
+// Schema VARIANT is chosen from the manifest's own `$schema` — a manifest
+// pointing at `app-manifest-v2.schema.json` is validated against the v2
+// schema, anything else against v1. Hardcoding v1 here (as this script did
+// until 2026-08) validated portaliq's v2 manifest against the v1 schema,
+// whose `$defs.widgetDef` sets `additionalProperties: false` and predates the
+// `content` / `icon` / `integrationId` widget keys that CnDetailPage actually
+// renders — reporting 21 errors against a manifest that renders correctly and
+// passes its own declared schema with zero errors.
 //
-// The fourth / fifth options exist because the v1.x schema is not yet
-// released to npm; the consolidated `manifest-v1` worktree carries the
-// canonical v1.2.0 source. Once published, options 1 and 2 take over.
+// Schema lookup order (first hit wins), for the selected variant:
+//   1. Env var APP_MANIFEST_SCHEMA — explicit absolute path to a schema JSON
+//   2. node_modules/@conduction/nextcloud-vue/src/schemas/<variant>
+//   3. ../nextcloud-vue/src/schemas/<variant> (sibling worktree)
 
 'use strict'
 
@@ -32,16 +35,34 @@ const REPO_ROOT = path.resolve(__dirname, '..')
 
 const MANIFEST_PATH = path.join(REPO_ROOT, 'src', 'manifest.json')
 
-const SCHEMA_CANDIDATES = [
-	process.env.APP_MANIFEST_SCHEMA,
-	path.join(REPO_ROOT, 'node_modules', '@conduction', 'nextcloud-vue', 'src', 'schemas', 'app-manifest.schema.json'),
-	path.join(REPO_ROOT, '..', 'nextcloud-vue', 'src', 'schemas', 'app-manifest.schema.json'),
-	'/tmp/worktrees/nextcloud-vue-manifest-v1/src/schemas/app-manifest.schema.json',
-	'/tmp/worktrees/nextcloud-vue-page-type-extensions/src/schemas/app-manifest.schema.json',
-].filter(Boolean)
+/**
+ * Determine whether the manifest is v2 (points to the v2 $schema URL).
+ *
+ * @param {object} manifest Parsed manifest object.
+ * @return {boolean} True when the manifest targets the v2 schema.
+ */
+function isV2Manifest(manifest) {
+	return typeof manifest.$schema === 'string' && manifest.$schema.includes('app-manifest-v2')
+}
 
-function findSchemaPath() {
-	for (const candidate of SCHEMA_CANDIDATES) {
+/**
+ * Build the ordered list of schema file candidates for a given manifest.
+ * V2 manifests prefer the v2 schema file; v1 manifests prefer the v1 file.
+ *
+ * @param {object} manifest Parsed manifest object.
+ * @return {string[]} Candidate paths (env override first, then node_modules, then sibling worktree).
+ */
+function schemaCandidates(manifest) {
+	const schemaFile = isV2Manifest(manifest) ? 'app-manifest-v2.schema.json' : 'app-manifest.schema.json'
+	return [
+		process.env.APP_MANIFEST_SCHEMA,
+		path.join(REPO_ROOT, 'node_modules', '@conduction', 'nextcloud-vue', 'src', 'schemas', schemaFile),
+		path.join(REPO_ROOT, '..', 'nextcloud-vue', 'src', 'schemas', schemaFile),
+	].filter(Boolean)
+}
+
+function findSchemaPath(manifest) {
+	for (const candidate of schemaCandidates(manifest)) {
 		try {
 			if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
 				return candidate
@@ -98,7 +119,13 @@ function structuralLint(manifest) {
 	}
 	if (!Array.isArray(manifest.menu)) errors.push('top-level: menu (array) is required')
 	if (!Array.isArray(manifest.pages)) errors.push('top-level: pages (array) is required')
-	const allowedTypes = new Set(['index', 'detail', 'dashboard', 'logs', 'settings', 'chat', 'files', 'custom'])
+	// Mirrors $defs/page/properties/type in app-manifest-v2.schema.json — every
+	// entry is a type CnAppRoot actually renders. Do NOT widen this to make a
+	// manifest pass; widen it only once the renderer has gained the type.
+	const allowedTypes = new Set([
+		'chat', 'custom', 'dashboard', 'detail', 'files', 'form', 'index',
+		'logs', 'map', 'roadmap', 'search', 'settings', 'wiki',
+	])
 	const seenIds = new Set()
 	for (let i = 0; i < (manifest.pages || []).length; i++) {
 		const page = manifest.pages[i]
@@ -136,7 +163,10 @@ function main() {
 	console.log(`[validate-manifest] manifest.version: ${manifest.version}`)
 	console.log(`[validate-manifest] pages: ${(manifest.pages || []).length}`)
 
-	const schemaPath = findSchemaPath()
+	console.log(`[validate-manifest] manifest.$schema: ${manifest.$schema || '(unset)'}`)
+	console.log(`[validate-manifest] schema variant: ${isV2Manifest(manifest) ? 'v2' : 'v1'}`)
+
+	const schemaPath = findSchemaPath(manifest)
 	if (!schemaPath) {
 		console.warn('[validate-manifest] no schema candidate resolved; falling back to structural lint.')
 		const errors = structuralLint(manifest)

@@ -374,7 +374,7 @@
 							{
 								"type": "version-info",
 								"props": {
-									"appName": "App Template",
+									"appName": "Portaliq",
 									"showUpdateButton": false,
 									"isUpToDate": true,
 									"title": "Version Information",
@@ -384,24 +384,7 @@
 						]
 					}
 				]
-			},
-			"widgets": [
-				{
-					"widgetKey": "version-info",
-					"slot": "section:version",
-					"gridX": 0,
-					"gridY": 0,
-					"gridWidth": 12,
-					"gridHeight": 1,
-					"props": {
-						"appName": "App Template",
-						"showUpdateButton": false,
-						"isUpToDate": true,
-						"title": "Version Information",
-						"description": "Information about the current installation."
-					}
-				}
-			]
+			}
 		},
 		{
 			"id": "FeaturesRoadmap",
