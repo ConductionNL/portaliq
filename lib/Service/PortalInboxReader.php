@@ -33,6 +33,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use Psr\Log\LoggerInterface;
+
 /**
  * Aggregates every inbox collection across a subject's contributions.
  *
@@ -49,13 +51,20 @@ class PortalInboxReader
     /**
      * Constructor.
      *
-     * @param PortalObjectReader $reader The subject-scoped OR reader every
-     *                                   inbox collection is read through —
-     *                                   identical per-row tenant + trust
-     *                                   boundary as any other collection.
+     * @param PortalObjectReader   $reader The subject-scoped OR reader every
+     *                                     inbox collection is read through —
+     *                                     identical per-row tenant + trust
+     *                                     boundary as any other collection.
+     * @param LoggerInterface|null $logger Optional so the many existing
+     *                                     single-argument construction sites
+     *                                     (and their tests) keep working; NC's
+     *                                     container autowires it in production.
+     *                                     Only used to record a REFUSED
+     *                                     unscoped read, never on a normal path.
      */
     public function __construct(
         private readonly PortalObjectReader $reader,
+        private readonly ?LoggerInterface $logger=null,
     ) {
     }//end __construct()
 
@@ -164,11 +173,57 @@ class PortalInboxReader
      */
     private function readInboxCollection(array $subject, array $collection, string $contributingApp): array
     {
+        $scopeField = (string) ($collection['scopeField'] ?? 'subjectRef');
+        $scopeClaim = (string) ($collection['scopeClaim'] ?? '');
+        $via        = ($collection['via'] ?? null);
+        $subjectRef = (string) ($subject['subjectRef'] ?? '');
+
+        // FAIL CLOSED. An inbox collection is subject data by definition, so a
+        // read with no way to scope it must return nothing rather than
+        // everything.
+        //
+        // PortalObjectReader is unscoped-by-omission on purpose: scopedFilters()
+        // adds the scope filter only `if ($scopeField !== '' && $scopeValue !== '')`,
+        // verifyScope()'s per-row check is guarded by `$scopeField !== ''`, and
+        // findAll() runs with `_rbac: false, _multitenancy: false` because portal
+        // subjects are not Nextcloud users. That combination is correct for
+        // PortalContributionProvider::activePortalPages(), which reads
+        // `portalPage` CONFIGURATION objects and documents the no-op — but on
+        // this path the three of them line up into an unfiltered read of another
+        // subject's records.
+        //
+        // The registry does not close it either: nothing in lib/Contribution/
+        // validates `scopeField`, and the register schema types it as a bare
+        // `string` with no minLength, described as omittable "on an anonymous
+        // collection". This reader has no notion of anonymous — it selects on
+        // `kind === 'inbox'` alone — so a contributing app that omits the field,
+        // sends `""`, or sends a non-string that casts to `""` gets every row of
+        // that schema. Same shape as opencatalogi#828.
+        //
+        // `via` counts as scoping: it joins one hop and filters the outer rows
+        // itself (readViaCollection returns before scopedFilters is reached).
+        // `scopeClaim` counts too: it resolves a server-side claim and returns []
+        // when the claim is absent.
+        $hasScope = ($scopeField !== '' || $scopeClaim !== '' || $via !== null);
+        if ($hasScope === false || $subjectRef === '') {
+            $this->logger?->warning(
+                'Portaliq: refusing an unscoped inbox read — the collection declares no scopeField, scopeClaim or via',
+                [
+                    'app'        => $contributingApp,
+                    'collection' => (string) ($collection['id'] ?? ''),
+                    'register'   => (string) ($collection['register'] ?? ''),
+                    'schema'     => (string) ($collection['schema'] ?? ''),
+                    'hasSubject' => ($subjectRef !== ''),
+                ]
+            );
+            return [];
+        }
+
         return $this->reader->readCollection(
             register: (string) ($collection['register'] ?? ''),
             schema: (string) ($collection['schema'] ?? ''),
-            scopeField: (string) ($collection['scopeField'] ?? 'subjectRef'),
-            subjectRef: (string) ($subject['subjectRef'] ?? ''),
+            scopeField: $scopeField,
+            subjectRef: $subjectRef,
             organisation: (string) ($subject['organisation'] ?? ''),
             limit: self::ROW_LIMIT,
             scopeClaim: (string) ($collection['scopeClaim'] ?? ''),
