@@ -53,23 +53,70 @@ class AppInfoDependenciesTest extends TestCase
     }//end repoRoot()
 
     /**
+     * Parse appinfo/info.xml into a SimpleXMLElement.
+     *
+     * Deliberately `simplexml_load_string(file_get_contents(...))` rather than
+     * `simplexml_load_file()`. Under this repo's unit bootstrap Nextcloud's
+     * `lib/base.php` is loaded whenever a server checkout is present — which is
+     * true in CI and false on a bare developer machine — and it installs libxml
+     * external-entity restrictions that make `simplexml_load_file()` return
+     * `false` for a perfectly valid local file. That is exactly how this test
+     * first behaved: green locally, three errors on all four CI legs, all of
+     * them "not parseable XML" for a file the parser had simply refused to
+     * open. Reading the bytes ourselves removes the file-access layer from the
+     * question entirely.
+     *
+     * Any residual libxml diagnostics are surfaced in the exception message, so
+     * a future parse failure names its own cause instead of repeating the same
+     * uninformative sentence.
+     *
+     * @return \SimpleXMLElement
+     */
+    private function infoXml(): \SimpleXMLElement
+    {
+        $path = $this->repoRoot().'/appinfo/info.xml';
+        $this->assertFileExists($path, 'appinfo/info.xml is missing');
+
+        $raw = file_get_contents($path);
+        if ($raw === false || trim($raw) === '') {
+            throw new RuntimeException('appinfo/info.xml could not be read, or is empty');
+        }
+
+        $previous = libxml_use_internal_errors(true);
+        libxml_clear_errors();
+        $xml = simplexml_load_string($raw);
+        $errors = libxml_get_errors();
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+
+        if ($xml === false) {
+            $detail = [];
+            foreach ($errors as $error) {
+                $detail[] = trim($error->message).' (line '.$error->line.')';
+            }
+
+            throw new RuntimeException(
+                'appinfo/info.xml is not parseable XML: '
+                .(empty($detail) === true ? 'no libxml diagnostics available' : implode('; ', $detail))
+            );
+        }
+
+        return $xml;
+
+    }//end infoXml()
+
+    /**
      * The `<nextcloud>` element's min/max attributes from appinfo/info.xml.
      *
-     * Parsed with SimpleXML rather than grepped, so a commented-out element
-     * cannot be mistaken for a live one — a grep for `min-version` matches the
+     * Parsed as XML rather than grepped, so a commented-out element cannot be
+     * mistaken for a live one — a grep for `min-version` matches the
      * explanatory comment directly above the tag just as happily as the tag.
      *
      * @return array{min:int, max:int}
      */
     private function declaredRange(): array
     {
-        $path = $this->repoRoot().'/appinfo/info.xml';
-        $this->assertFileExists($path, 'appinfo/info.xml is missing');
-
-        $xml = simplexml_load_file($path);
-        if ($xml === false) {
-            throw new RuntimeException('appinfo/info.xml is not parseable XML');
-        }
+        $xml = $this->infoXml();
 
         $nodes = $xml->xpath('/info/dependencies/nextcloud');
         $this->assertNotEmpty($nodes, 'appinfo/info.xml declares no <nextcloud> dependency');
@@ -221,13 +268,7 @@ class AppInfoDependenciesTest extends TestCase
      */
     public function testPhpFloorIsDeclared(): void
     {
-        $path = $this->repoRoot().'/appinfo/info.xml';
-        $xml  = simplexml_load_file($path);
-        if ($xml === false) {
-            throw new RuntimeException('appinfo/info.xml is not parseable XML');
-        }
-
-        $nodes = $xml->xpath('/info/dependencies/php');
+        $nodes = $this->infoXml()->xpath('/info/dependencies/php');
         $this->assertNotEmpty($nodes, 'appinfo/info.xml declares no <php> dependency');
         $this->assertSame('8.3', (string) $nodes[0]['min-version'], 'PHP floor must stay 8.3');
 
