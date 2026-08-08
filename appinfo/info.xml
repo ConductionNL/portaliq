@@ -27,19 +27,38 @@
 
     <dependencies>
         <!--
-        App dependency (not expressible in app-info.xsd): OpenRegister — every
-        Portaliq entity is an OpenRegister object, and src/manifest.json lists
-        "openregister" as a required dependency.
+        App dependency (not expressible in app-info.xsd — the `dependencies`
+        complexType in server/resources/app-info.xsd declares php, database,
+        command, lib, owncloud, nextcloud, architecture and backend, and NC's
+        own DependencyAnalyzer reads nothing from `dependencies.app`):
+        OpenRegister — every Portaliq entity is an OpenRegister object, and
+        src/manifest.json lists "openregister" as a required dependency.
 
-        min-version is therefore 32, NOT 28: openregister declares min-version="32"
-        because its lib/ContextChat/ContentProvider.php implements
-        OCP\ContextChat\IContentProvider, an interface core does not have before
-        Nextcloud 32. On NC 28-31 openregister refuses to install ("cannot be
-        installed because it is not compatible with this version of the server"), so
-        the app cannot function there. Declaring 28 advertised a range this app
-        cannot deliver. Same defect as openconnector#1173.
+        min-version is 32 because 32 is the OLDEST NEXTCLOUD THIS REPO TESTS.
+        `nextcloud-test-refs` in .github/workflows/code-quality.yml is
+        ["stable32", "stable33"]; there is no stable31 leg and no stable28 leg.
+        Declaring 28 advertised NC 28-31 support in the App Store that not one
+        job in this repository exercises, which is the same "advertised a range
+        it cannot deliver" defect as openconnector#1172/#1173 — only reached
+        here through the CI matrix rather than through a dependency floor.
+        tests/Unit/AppInfoDependenciesTest.php now holds the two apart from
+        drifting again.
+
+        NOTE — this is NOT the ContextChat argument that #56 used and #58
+        reverted. That rationale is dead: openregister#2372 removed every eager
+        reference to its ContextChat provider and openregister#2380 restored
+        openregister's own 28 floor, so as of today openregister declares
+        min-version="28" and imposes no floor on this app at all. #58 then
+        reverted this value to 28 on the stated grounds that "this repo tests
+        stable31" — but #56 had already removed the stable31 leg, and #58
+        changed only this one line, so that reason was not true of this
+        repository when it was written.
+
+        The floor is 32 as a deliberate fleet policy (NC 32 is the PHP 8.3
+        baseline), matched by <php min-version="8.3"/> below. max-version stays
+        34, which is the fleet-wide value everywhere except openconnector (35).
         -->
-        <nextcloud min-version="28" max-version="34"/>
+        <nextcloud min-version="32" max-version="34"/>
         <php min-version="8.3"/>
     </dependencies>
 
