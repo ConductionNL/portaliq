@@ -76,9 +76,38 @@ class SettingsSectionTest extends TestCase
         $path = dirname(__DIR__, 3).'/appinfo/info.xml';
         $this->assertFileExists($path, 'appinfo/info.xml is missing');
 
-        $xml = simplexml_load_file($path);
+        // Deliberately read-then-parse rather than `simplexml_load_file()`.
+        // This repo's unit bootstrap loads Nextcloud's `lib/base.php` whenever
+        // a server checkout sits next to the app — true in CI, false on a bare
+        // developer machine — and it installs libxml external-entity
+        // restrictions under which `simplexml_load_file()` returns `false` for
+        // a valid LOCAL path. A sibling test in this PR series was green
+        // locally and errored on all four CI legs for exactly that reason, with
+        // a message claiming the file was unparseable when the parser had
+        // simply refused to open it. Reading the bytes ourselves removes the
+        // file-access layer from the question.
+        $raw = file_get_contents($path);
+        if ($raw === false || trim($raw) === '') {
+            throw new RuntimeException('appinfo/info.xml could not be read, or is empty');
+        }
+
+        $previous = libxml_use_internal_errors(true);
+        libxml_clear_errors();
+        $xml    = simplexml_load_string($raw);
+        $errors = libxml_get_errors();
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+
         if ($xml === false) {
-            throw new RuntimeException('appinfo/info.xml is not parseable XML');
+            $detail = [];
+            foreach ($errors as $error) {
+                $detail[] = trim($error->message).' (line '.$error->line.')';
+            }
+
+            throw new RuntimeException(
+                'appinfo/info.xml is not parseable XML: '
+                .(empty($detail) === true ? 'no libxml diagnostics available' : implode('; ', $detail))
+            );
         }
 
         $nodes = $xml->xpath('/info/name');
