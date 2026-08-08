@@ -82,8 +82,15 @@ test.describe('docs: user track', () => {
 
 test.describe('docs: admin track', () => {
 	test.beforeEach(async ({ page }) => {
-		await page.goto('/settings/admin/portaliq')
-		await page.waitForLoadState('networkidle')
+		await page.goto('/settings/admin/portaliq', { waitUntil: 'domcontentloaded' })
+		// Wait for CONTENT, not for the container. `#portaliq-settings` is the
+		// empty mount div `templates/settings/admin.php` emits — it is present
+		// in the very first byte of HTML, so waiting on it would be satisfied
+		// before Vue has rendered anything and the capture would be a
+		// screenshot of an empty page. `NcSettingsSection` renders the heading
+		// only after `src/settings.js` has mounted AdminRoot.vue.
+		await page.locator('#portaliq-settings .settings-section').first()
+			.waitFor({ state: 'visible' })
 	})
 
 	test('AN admin-settings', async ({ page }) => {
