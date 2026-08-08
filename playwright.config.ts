@@ -50,6 +50,19 @@ export default defineConfig({
 	fullyParallel: false,
 	retries: process.env.CI ? 1 : 1,
 	workers: 1,
+	// The shared quality.yml Playwright job is `timeout-minutes: 45`, and a job
+	// cancelled by that cap produces NO verdict: Playwright never prints its
+	// tally, the `if: failure()` trace upload never fires, and the
+	// `if: always()` report upload does not run on a cancelled job either — the
+	// run you most need to read is the one that leaves nothing behind, and it
+	// still renders as "fail" in `gh pr checks` while carrying no information.
+	// Runs cancelled at ~45m16s have been observed in this fleet. This matters
+	// more here than elsewhere: `timeout` above is 180s per test, so a stalled
+	// suite reaches the 45m cap far sooner than one on the 30s default.
+	// Measured overhead before `Run Playwright tests` starts is 2.0-2.4 min and
+	// the uploads after it take seconds, so 38m keeps ~7 min of margin while
+	// guaranteeing both a tally and the artifacts that explain it.
+	globalTimeout: 38 * 60_000,
 	reporter: [
 		['html', { open: 'never', outputFolder: 'tests/e2e/playwright-report' }],
 		['list'],
@@ -58,7 +71,15 @@ export default defineConfig({
 
 	use: {
 		baseURL,
-		trace: 'on-first-retry',
+		// `on-first-retry` writes a trace only for the SECOND attempt, so a
+		// failure that does NOT reproduce on retry — precisely the one worth a
+		// trace, and the likely shape against a shared instance under variable
+		// load — leaves no record of the attempt that actually failed. It also
+		// ties the trace artifact to `retries`, which several repos in this
+		// fleet set to 0, giving them zero traces ever. `retain-on-failure`
+		// traces every attempt and keeps the ones that failed: strictly more
+		// informative, and independent of the retry count.
+		trace: 'retain-on-failure',
 		screenshot: 'only-on-failure',
 		// The target is a shared Nextcloud dev instance under variable load; give
 		// navigation/actions headroom so a busy-instance page load is not read as
