@@ -212,4 +212,130 @@ class PortalInboxReaderTest extends TestCase
         $this->assertSame(2, $inboxReader->unreadCount(self::SUBJECT, $aggregate));
 
     }//end testUnreadCountCountsOnlyUnreadMessages()
+
+    /**
+     * An inbox collection that declares NO way to scope itself must be
+     * REFUSED, not read.
+     *
+     * PortalObjectReader is unscoped-by-omission by design: scopedFilters()
+     * adds the scope filter only when both scopeField and scopeValue are
+     * non-empty, verifyScope()'s per-row check is guarded by
+     * `$scopeField !== ''`, and findAll() runs `_rbac: false,
+     * _multitenancy: false` because portal subjects are not Nextcloud users.
+     * With an empty scopeField all three line up into an unfiltered read of
+     * every row of that schema — every other subject's records.
+     *
+     * Nothing upstream closes it: lib/Contribution/ does not validate
+     * scopeField at all, and the register schema types it as a bare string
+     * with no minLength. So this reader must refuse.
+     *
+     * The assertion is that readCollection is NEVER CALLED. Asserting on an
+     * empty return would also pass if the call happened and the mock simply
+     * returned nothing — which is exactly the shape being defended against.
+     *
+     * @return void
+     */
+    public function testRefusesAnInboxCollectionWithNoScopeAtAll(): void
+    {
+        $aggregate = [
+            'contributions' => [
+                [
+                    'app'         => 'rogue',
+                    'label'       => 'Rogue',
+                    'collections' => [
+                        // scopeField explicitly empty: `??` does not catch '',
+                        // so this reaches readCollection as an empty scope.
+                        ['id' => 'leak', 'kind' => 'inbox', 'register' => 'procest', 'schema' => 'message', 'scopeField' => ''],
+                    ],
+                ],
+            ],
+        ];
+
+        $reader = $this->createMock(PortalObjectReader::class);
+        $reader->expects($this->never())
+            ->method('readCollection');
+
+        $inboxReader = new PortalInboxReader($reader);
+
+        $this->assertSame([], $inboxReader->aggregateInbox(self::SUBJECT, $aggregate));
+
+    }//end testRefusesAnInboxCollectionWithNoScopeAtAll()
+
+    /**
+     * The same refusal when `scopeField` is absent entirely and the default
+     * would have applied, but the SUBJECT carries no subjectRef — an
+     * anonymous caller cannot be scoped either.
+     *
+     * @return void
+     */
+    public function testRefusesWhenTheSubjectHasNoSubjectRef(): void
+    {
+        $aggregate = [
+            'contributions' => [
+                [
+                    'app'         => 'procest',
+                    'label'       => 'Procest',
+                    'collections' => [
+                        ['id' => 'inbox', 'kind' => 'inbox', 'register' => 'procest', 'schema' => 'message', 'scopeField' => 'subjectRef'],
+                    ],
+                ],
+            ],
+        ];
+
+        $reader = $this->createMock(PortalObjectReader::class);
+        $reader->expects($this->never())
+            ->method('readCollection');
+
+        $inboxReader = new PortalInboxReader($reader);
+
+        $this->assertSame(
+            [],
+            $inboxReader->aggregateInbox(['subjectRef' => '', 'audience' => 'supplier', 'organisation' => 'org-1'], $aggregate)
+        );
+
+    }//end testRefusesWhenTheSubjectHasNoSubjectRef()
+
+    /**
+     * POSITIVE CONTROL for the two refusals above. `via` and `scopeClaim` are
+     * each a legitimate way to scope a collection WITHOUT a scopeField —
+     * readViaCollection filters the outer rows itself, and a scopeClaim
+     * resolves server-side and returns [] when absent. Neither may be caught
+     * by the refusal, or the fix would have closed the hole by breaking two
+     * working features.
+     *
+     * @return void
+     */
+    public function testScopeClaimAndViaAreStillReadWithoutAScopeField(): void
+    {
+        $aggregate = [
+            'contributions' => [
+                [
+                    'app'         => 'procest',
+                    'label'       => 'Procest',
+                    'collections' => [
+                        ['id' => 'byClaim', 'kind' => 'inbox', 'register' => 'procest', 'schema' => 'message', 'scopeField' => '', 'scopeClaim' => 'kvk'],
+                        ['id' => 'byVia', 'kind' => 'inbox', 'register' => 'procest', 'schema' => 'note', 'scopeField' => '', 'via' => ['register' => 'procest', 'schema' => 'rol']],
+                    ],
+                ],
+            ],
+        ];
+
+        $seen   = [];
+        $reader = $this->createMock(PortalObjectReader::class);
+        $reader->method('readCollection')->willReturnCallback(
+            function (string $register, string $schema) use (&$seen) {
+                $seen[] = $schema;
+                return [['id' => $schema.'-1', 'receivedAt' => '2026-07-01T00:00:00Z']];
+            }
+        );
+
+        $inboxReader = new PortalInboxReader($reader);
+        $messages    = $inboxReader->aggregateInbox(self::SUBJECT, $aggregate);
+
+        sort($seen);
+        $this->assertSame(['message', 'note'], $seen, 'scopeClaim and via must still be read');
+        $this->assertCount(2, $messages);
+
+    }//end testScopeClaimAndViaAreStillReadWithoutAScopeField()
+
 }//end class
