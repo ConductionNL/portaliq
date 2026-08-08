@@ -15,8 +15,12 @@
  NcAppSettingsDialog via CnAppRoot's cnOpenUserSettings inject.
  Feed your settings sections into the #user-settings slot below.
 
- @spec openspec/changes/template-manifest-v1/specs/template-manifest-v1/spec.md
- @spec openspec/changes/scaffold-v2/specs/scaffold-v2/spec.md
+ Point @spec at the canonical spec under openspec/specs/, never at
+ openspec/changes/<name>/ — a change directory is archived or deleted when the
+ change completes, and every tag into it dangles from that moment on
+ (ConductionNL/.github#228).
+
+ @spec openspec/specs/dashboard-page/spec.md#REQ-DASH-003
 -->
 <template>
 	<CnAppRoot

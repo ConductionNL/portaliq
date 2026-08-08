@@ -19,10 +19,19 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-change/tasks.md#task-N
- *   (file-level @spec tag — link back to the OpenSpec change that created or
- *   last modified this file. Multiple @spec tags allowed. Public methods SHOULD
- *   also carry their own @spec tag. ADR-003.)
+ * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
+ *   (file-level @spec tag — link back to the REQUIREMENT this file exists to
+ *   satisfy. Multiple @spec tags allowed. Public methods SHOULD also carry
+ *   their own @spec tag. ADR-003.
+ *
+ *   register() wires PortalAuthMiddleware, the fail-closed bearer guard that
+ *   enforces that requirement's anonymous/elevated split.
+ *
+ *   Point at the canonical spec under `openspec/specs/`, never at
+ *   `openspec/changes/<name>/` — a change directory is temporary, and every
+ *   tag into it dangles once the change is archived or dropped. This tag was
+ *   inherited from nextcloud-app-template and read `#task-N`, a literal
+ *   placeholder that resolved to nothing. See ConductionNL/.github#228.)
  */
 
 declare(strict_types=1);

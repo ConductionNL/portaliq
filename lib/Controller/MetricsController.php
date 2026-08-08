@@ -19,9 +19,12 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-change/tasks.md#task-8
+ * @spec openspec/specs/observability/spec.md#REQ-OBS-001
  *   (Illustrative stub per ADR-006 — every app MUST expose `GET /api/metrics`
- *   as Prometheus text, admin auth. Replace the metric values with real data.)
+ *   as Prometheus text, admin auth. Replace the metric values with real data.
+ *
+ *   Point @spec at the canonical spec under `openspec/specs/`, never at
+ *   `openspec/changes/<name>/` — see ConductionNL/.github#228.)
  * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T10
  * @spec openspec/specs/supplier-portal/spec.md#repeated-failure-flags-an-alternative-contact-fallback
  */
@@ -91,7 +94,7 @@ class MetricsController extends Controller
      *
      * @return void
      *
-     * @spec openspec/changes/example-change/tasks.md#task-8
+     * @spec openspec/specs/observability/spec.md#REQ-OBS-001
      */
     public function __construct(
         IRequest $request,
@@ -108,7 +111,7 @@ class MetricsController extends Controller
      *
      * @return DataDisplayResponse
      *
-     * @spec openspec/changes/example-change/tasks.md#task-8
+     * @spec openspec/specs/observability/spec.md#REQ-OBS-001
      * @spec openspec/specs/supplier-portal/spec.md#repeated-failure-flags-an-alternative-contact-fallback
      */
     public function index(): DataDisplayResponse
