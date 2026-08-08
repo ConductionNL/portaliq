@@ -9,6 +9,11 @@ return [
         ['name' => 'dashboard#page', 'url' => '/', 'verb' => 'GET'],
         ['name' => 'settings#index', 'url' => '/api/settings', 'verb' => 'GET'],
         ['name' => 'settings#create', 'url' => '/api/settings', 'verb' => 'POST'],
+        // Canonical settings write per OpenRegister's AppHost dialect
+        // (Routes::standard()): PUT is the write, POST above is the legacy
+        // alias. Portaliq does not call Routes::standard(), so this entry has
+        // to be declared locally — without it PUT /api/settings answers 405.
+        ['name' => 'settings#update', 'url' => '/api/settings', 'verb' => 'PUT'],
         ['name' => 'settings#load',  'url' => '/api/settings/load', 'verb' => 'POST'],
 
         // Generic per-user preferences (used by shared nextcloud-vue widgets, e.g. CnSupportDialog).
