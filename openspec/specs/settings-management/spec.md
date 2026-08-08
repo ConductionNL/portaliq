@@ -125,6 +125,11 @@ user dismissed a hint). The system MUST expose a
 that user alone. Keys MUST be sanitised before use so a caller cannot address
 another app's or another scope's config.
 
+@e2e exclude API-level per-user config contract with no UI surface of its own —
+the endpoint is called by shared `@conduction/nextcloud-vue` widgets, never by a
+page in this app, so a browser test would exercise the widget rather than this
+contract; the auth and sanitisation branches are unit-testable.
+
 #### Scenario: Logged-in user reads a preference
 
 - GIVEN a logged-in user and a key the user has previously set
@@ -150,6 +155,10 @@ The system MUST expose a `PUT /api/preferences/{key}` endpoint that stores a
 value for the calling user only. Writing an empty value MUST clear the
 preference rather than storing an empty string, so that a cleared preference
 and a never-set preference read back identically.
+
+@e2e exclude API-level per-user config contract with no UI surface of its own —
+same reasoning as REQ-CFG-005; the clear-vs-store branch is a storage-layer
+invariant observable through the API and through no page in this app.
 
 #### Scenario: User stores a preference
 

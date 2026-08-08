@@ -90,6 +90,14 @@ at it, so that several fields on one form remain individually labelled
 (WCAG 2.2 AA 1.3.1 / 4.1.2 — a duplicated `id` collapses the label
 association).
 
+@e2e exclude reachable only via a schema fixture this repo's e2e suite does not
+provision — `EmailField` IS registered in `src/registry.js` (kind `form-field`,
+`appliesTo: { format: "email" }`), so it is not dead code, but it binds only to
+an OpenRegister schema property declaring `format: "email"`, and no such
+property exists in the bundled manifest or in the seeded e2e fixtures. Reaching
+it in a browser would mean authoring a register/schema purely to host it; the
+v-model contract and the id uniqueness are component-level assertions.
+
 #### Scenario: User edits the field
 
 - GIVEN an `EmailField` rendered with `modelValue`

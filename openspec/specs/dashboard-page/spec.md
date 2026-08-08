@@ -64,6 +64,12 @@ The shell MUST also host exactly one `CnObjectSidebar` and expose the reactive
 `objectSidebarState` channel via `provide()`, so that descendant `CnDetailPage`
 instances drive that single sidebar instead of each rendering their own.
 
+@e2e exclude structural shell contract, not a user-visible behaviour — what this
+requires (one `<CnAppRoot>`, both registries forwarded, one hosted sidebar) is
+asserted by inspecting the component, and any page-level browser test that
+rendered at all would already depend on it being true; a dedicated e2e would
+restate the precondition of every other e2e in this repo.
+
 #### Scenario: Boot with a v2 manifest
 
 - GIVEN `main.js` mounts `App` with a `manifest` prop and a `registry` prop
