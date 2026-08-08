@@ -64,7 +64,12 @@ class SettingsSection implements IIconSection
      */
     public function getName(): string
     {
-        return $this->l->t('App Template');
+        // The label every admin sees in Administration settings. This returned
+        // 'App Template' — the scaffolding name of the template this app was
+        // generated from — so Portaliq's own settings section was listed under
+        // another app's name. Keep this in step with <name> in appinfo/info.xml;
+        // tests/Unit/Sections/SettingsSectionTest.php asserts exactly that.
+        return $this->l->t('Portaliq');
     }//end getName()
 
     /**

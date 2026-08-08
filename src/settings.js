@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Conduction B.V.
 //
 // Webpack entry-point for the Nextcloud admin app-settings panel
-// (Admin > Administration settings > App Template). This is DISTINCT
+// (Admin > Administration settings > Portaliq). This is DISTINCT
 // from the manifest's `type: "settings"` page, which lives inside
 // the SPA at `/settings` and is rendered by CnSettingsPage.
 //

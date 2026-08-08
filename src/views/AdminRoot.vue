@@ -7,7 +7,8 @@
  Mounted into `#portaliq-settings` by `src/settings.js` (which
  itself is loaded from `templates/settings/admin.php` via
  `Util::addScript`). This is the panel users reach via Nextcloud's
- "Administration settings" → "App Template".
+ "Administration settings" → "Portaliq" (the section label comes from
+ `lib/Sections/SettingsSection.php::getName()`).
 
  In a manifest-driven app this surface is mostly redundant — the
  SPA's `type: "settings"` page (declared in `src/manifest.json`)
@@ -19,7 +20,7 @@
 <template>
 	<div class="portaliq-admin-settings">
 		<NcSettingsSection
-			:name="t('portaliq', 'App Template')"
+			:name="t('portaliq', 'Pre-boot configuration')"
 			:description="t('portaliq', 'Pre-app-boot configuration. Most settings live inside the app at /settings (manifest-driven).')">
 			<p class="portaliq-admin-settings__hint">
 				{{ t('portaliq', 'No pre-boot settings yet. Edit `src/views/AdminRoot.vue` to add fields here.') }}
