@@ -19,10 +19,13 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-change/tasks.md#task-9
+ * @spec openspec/specs/observability/spec.md#REQ-OBS-002
  *   (Illustrative stub per ADR-006 — every app MUST expose `GET /api/health`
  *   returning JSON, publicly accessible. Health check MUST verify OpenRegister
- *   connectivity for apps that depend on it.)
+ *   connectivity for apps that depend on it.
+ *
+ *   Point @spec at the canonical spec under `openspec/specs/`, never at
+ *   `openspec/changes/<name>/` — see ConductionNL/.github#228.)
  */
 
 declare(strict_types=1);
@@ -55,7 +58,7 @@ class HealthController extends Controller
      *
      * @return void
      *
-     * @spec openspec/changes/example-change/tasks.md#task-9
+     * @spec openspec/specs/observability/spec.md#REQ-OBS-002
      */
     public function __construct(
         IRequest $request,
@@ -73,7 +76,7 @@ class HealthController extends Controller
      *
      * @return JSONResponse
      *
-     * @spec openspec/changes/example-change/tasks.md#task-9
+     * @spec openspec/specs/observability/spec.md#REQ-OBS-002
      */
     public function index(): JSONResponse
     {

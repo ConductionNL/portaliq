@@ -15,7 +15,7 @@
   3. Reference it in manifest actions via
      { type: "open-modal", target: "<your-key>", props: { ... } }.
 
-  @spec openspec/changes/scaffold-v2/specs/scaffold-v2/spec.md
+  @spec openspec/specs/scaffold-components/spec.md#REQ-COMP-002
 -->
 <template>
 	<NcDialog

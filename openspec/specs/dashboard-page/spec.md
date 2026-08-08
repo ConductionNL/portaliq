@@ -46,3 +46,35 @@ The system MUST expose a catch-all route that also returns the dashboard SPA so 
 - THEN the system MUST return the same `TemplateResponse` as `page()`
 - AND the Vue router MUST resolve the `/items/abc-123` path client-side after hydration
 - AND the catch-all MUST be public in the same sense as `page()` (`#[NoAdminRequired]`, `#[NoCSRFRequired]`)
+
+### REQ-DASH-003: The SPA shell mounts `CnAppRoot` from the bundled manifest
+
+REQ-DASH-001/002 cover the server half of the SPA entry point. This requirement
+covers its client half: `src/App.vue` is the Tier-4 app shell (ADR-024) and MUST
+mount a single `<CnAppRoot>`, driven entirely by data rather than by hand-written
+page markup.
+
+The shell MUST forward, unchanged, the `manifest` it is given at bootstrap plus
+the component registries `CnAppRoot` resolves widgets against — `customComponents`
+(v1) and `registry` (the ADR-036 five-kind registry, v2). Both registries MUST be
+accepted together, so a manifest may be migrated page by page rather than in one
+cut-over.
+
+The shell MUST also host exactly one `CnObjectSidebar` and expose the reactive
+`objectSidebarState` channel via `provide()`, so that descendant `CnDetailPage`
+instances drive that single sidebar instead of each rendering their own.
+
+#### Scenario: Boot with a v2 manifest
+
+- GIVEN `main.js` mounts `App` with a `manifest` prop and a `registry` prop
+- WHEN the shell renders
+- THEN it MUST render one `<CnAppRoot>` and pass `manifest`, `customComponents`,
+  `pageTypes` and `registry` through unchanged
+- AND it MUST NOT render page markup of its own beyond the named slots
+
+#### Scenario: A detail page opens the object sidebar
+
+- GIVEN a descendant `CnDetailPage` injects `objectSidebarState`
+- WHEN it sets `active` to `true` and populates the object identifiers
+- THEN the shell's single `<CnObjectSidebar>` MUST render with those values
+- AND no second sidebar instance may be created for the same app shell

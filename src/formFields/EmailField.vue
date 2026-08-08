@@ -16,7 +16,7 @@
      appropriate appliesTo.format or appliesTo.property.
   3. The form renderer will auto-bind it to matching properties.
 
-  @spec openspec/changes/scaffold-v2/specs/scaffold-v2/spec.md
+  @spec openspec/specs/scaffold-components/spec.md#REQ-COMP-003
 -->
 <template>
 	<div class="email-field">

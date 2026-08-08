@@ -76,3 +76,30 @@ isolation, ADR-004).
 - WHEN the user activates the Cancel button (`onCancel`)
 - THEN the component MUST emit `cancel`
 - AND it MUST emit `update:open` with `false`
+
+### REQ-COMP-003: Form-field demo uses the Vue 3 v-model contract and a unique label id
+
+The `EmailField` demo (`kind: form-field`, `appliesTo: { format: "email" }`)
+MUST implement the Vue 3 `v-model` contract: it takes the current value as the
+`modelValue` prop and reports edits by emitting `update:modelValue`. The Vue 2
+`value`/`input` pair is NOT a synonym — bound to a Vue 3 host it binds nothing
+and emits into the void, so the field would silently never save.
+
+Each instance MUST also generate its own `id` and point its `<label for=...>`
+at it, so that several fields on one form remain individually labelled
+(WCAG 2.2 AA 1.3.1 / 4.1.2 — a duplicated `id` collapses the label
+association).
+
+#### Scenario: User edits the field
+
+- GIVEN an `EmailField` rendered with `modelValue`
+- WHEN the user types into the `input`
+- THEN the component MUST emit `update:modelValue` with the new input value
+- AND the component MUST NOT mutate `modelValue` directly
+
+#### Scenario: Two fields on one form
+
+- GIVEN two `EmailField` instances rendered in the same form
+- WHEN the DOM is inspected
+- THEN each MUST carry a distinct `fieldId`
+- AND each `<label>`'s `for` attribute MUST match its own input's `id`

@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/retrofit-2026-05-26-preferences-api/tasks.md#task-1
+ * @spec openspec/specs/settings-management/spec.md#REQ-CFG-005
  */
 
 declare(strict_types=1);
@@ -38,7 +38,8 @@ use OCP\IUserSession;
 /**
  * Per-user preferences controller.
  *
- * @spec openspec/changes/retrofit-2026-05-26-preferences-api/tasks.md#task-1
+ * @spec openspec/specs/settings-management/spec.md#REQ-CFG-005
+ * @spec openspec/specs/settings-management/spec.md#REQ-CFG-006
  */
 class PreferencesController extends Controller
 {
@@ -64,7 +65,7 @@ class PreferencesController extends Controller
      *
      * @return JSONResponse `{value: string|null}`.
      *
-     * @spec openspec/changes/retrofit-2026-05-26-preferences-api/tasks.md#task-1
+     * @spec openspec/specs/settings-management/spec.md#REQ-CFG-005
      *
      * @NoAdminRequired
      * @NoCSRFRequired
@@ -104,7 +105,7 @@ class PreferencesController extends Controller
      *
      * @return JSONResponse `{value: string|null}`.
      *
-     * @spec openspec/changes/retrofit-2026-05-26-preferences-api/tasks.md#task-2
+     * @spec openspec/specs/settings-management/spec.md#REQ-CFG-006
      *
      * @NoAdminRequired
      * @NoCSRFRequired
