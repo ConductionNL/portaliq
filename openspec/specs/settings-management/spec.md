@@ -54,10 +54,20 @@ accessible to any authenticated user (`#[NoAdminRequired]`).
 
 ### REQ-CFG-002: Update settings (admin only)
 
-The system MUST expose a `POST /api/settings` endpoint that accepts a partial
+The system MUST expose a settings-write endpoint that accepts a partial
 settings payload and writes values to the app config. Only keys in `CONFIG_KEYS`
 are persisted; unknown keys MUST be silently ignored. The endpoint MUST be
 restricted to admin users (no `#[NoAdminRequired]`).
+
+Per OpenRegister's AppHost dialect (`AppHost\Routes::standard()`, mirrored by
+`GenericSettingsControllerBase`), `PUT /api/settings` (`settings#update`) is the
+CANONICAL write and `POST /api/settings` (`settings#create`) is a retained
+LEGACY alias. Both verbs MUST be routed, MUST reach the same
+`SettingsService::updateSettings()` call, and MUST return the same payload;
+`create()` MUST delegate to `update()` rather than duplicating the write.
+Because Nextcloud's SecurityMiddleware evaluates auth attributes only on the
+DISPATCHED method, each of the two methods MUST declare its own auth posture
+independently — the delegate target's posture is never consulted.
 
 #### Scenario: Admin updates a known setting
 
@@ -78,6 +88,16 @@ restricted to admin users (no `#[NoAdminRequired]`).
 - WHEN `updateSettings()` iterates `CONFIG_KEYS`
 - THEN the system MUST persist only `allowed`
 - AND the response MUST reflect the updated state without surfacing an error for the unknown key
+
+#### Scenario: Admin updates a setting over the canonical PUT verb
+
+- @e2e exclude routing/dispatch invariant — covered by PHPUnit (`CanonicalSettingsWriteRouteTest` evaluates the returned `appinfo/routes.php` array for `settings#update` on `/api/settings` verb `PUT`; `SettingsControllerWriteTest` pins the write and the `create()` delegation). The admin settings UI has no distinct surface for the verb, and the payload/response are byte-identical to the POST scenario above.
+- GIVEN an authenticated admin sends `PUT /api/settings` with `{ "someKey": "new-value" }`
+- WHEN `SettingsController::update()` invokes `SettingsService::updateSettings()`
+- THEN the system MUST persist the new value to app config
+- AND the response MUST be HTTP 200 with `{ "success": true, "config": <freshly-read settings> }`
+- AND the legacy `POST /api/settings` MUST continue to produce an identical result by delegating to `update()`
+- AND neither verb MUST be reachable without an admin session
 
 ### REQ-CFG-003: Reload configuration from JSON file (admin only)
 

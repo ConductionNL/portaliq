@@ -75,13 +75,41 @@ class SettingsController extends Controller
     }//end index()
 
     /**
-     * Update settings with provided data.
+     * Update settings with provided data — the canonical write.
+     *
+     * OpenRegister's AppHost dialect
+     * (`OCA\OpenRegister\AppHost\Routes::standard()`, mirrored by
+     * `GenericSettingsControllerBase::update()`) makes `PUT /api/settings` the
+     * canonical settings write and `POST /api/settings` the legacy alias.
+     * Portaliq builds its own route table rather than calling
+     * `Routes::standard()`, so before this method existed the PUT verb had no
+     * route at all and the URL answered 405 Method Not Allowed (measured
+     * 2026-08-08 against the dev instance) — not the 500 that leaf apps which
+     * DO adopt the AppHost table produce for a missing method.
+     *
+     * Auth posture: deliberately NO auth attribute at all, exactly as the
+     * legacy `create()` alias below. Nextcloud's SecurityMiddleware defaults to
+     * requiring an admin session unless a method opts out, and this method does
+     * not opt out — which is what REQ-CFG-002 mandates. The net privilege
+     * change is therefore zero: `update()` is the same write path as
+     * `create()`, reachable by exactly the same callers. An
+     * AuthorizedAdminSetting attribute is intentionally NOT used here — it
+     * would additionally admit delegated settings admins, widening access
+     * relative to the POST route this method mirrors.
+     *
+     * Note for readers: the opt-out attribute names are deliberately NOT
+     * spelled in bracket form anywhere in this docblock. Gate-5 (route-auth)
+     * decides whether a routed method declares an auth posture by grepping the
+     * lines above `public function` for that bracket form, and a comment
+     * mentioning one is indistinguishable from a real declaration — so writing
+     * the name out would have silently exempted this method from a security
+     * gate. See the PR for the upstream report.
      *
      * @return JSONResponse
      *
      * @spec openspec/specs/settings-management/spec.md#REQ-CFG-002
      */
-    public function create(): JSONResponse
+    public function update(): JSONResponse
     {
         $data   = $this->request->getParams();
         $config = $this->settingsService->updateSettings($data);
@@ -92,6 +120,24 @@ class SettingsController extends Controller
                 'config'  => $config,
             ]
         );
+    }//end update()
+
+    /**
+     * Legacy alias for {@see update()} — `POST /api/settings`.
+     *
+     * Retained verbatim in behaviour so every existing POST caller keeps
+     * working; this is a strict addition, nothing was removed. The alias must
+     * keep declaring its own auth posture (here: the admin-required default, by
+     * declaring no attribute) because Nextcloud's middleware only evaluates
+     * attributes on the DISPATCHED method, never on the delegate target.
+     *
+     * @return JSONResponse
+     *
+     * @spec openspec/specs/settings-management/spec.md#REQ-CFG-002
+     */
+    public function create(): JSONResponse
+    {
+        return $this->update();
     }//end create()
 
     /**
