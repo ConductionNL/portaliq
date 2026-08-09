@@ -24,7 +24,6 @@
 //
 // See hydra ADR-036 for the v2 registry design.
 
-import CustomExample from './views/CustomExample.vue'
 // Features & Roadmap page — thin wrapper around the lib's
 // CnFeaturesAndRoadmapView (in-product roadmap surface powered by
 // OpenRegister's github-issue-proxy). Shipped wired-up so apps scaffolded
@@ -33,12 +32,6 @@ import CustomExample from './views/CustomExample.vue'
 // ConductionNL/hydra#251.
 
 export default {
-	// Example custom component. Keep or delete when scaffolding a new
-	// app. The manifest does NOT reference this by default; it is
-	// included so the registry's role is visible to first-time
-	// cloners. Wire it up by adding a `type: "custom"` page entry to
-	// `src/manifest.json` with `"component": "CustomExample"`.
-	CustomExample,
 	// Features & Roadmap page (lib's CnFeaturesAndRoadmapView) — wired up
 	// in src/manifest.json (the `FeaturesRoadmap` custom page + the
 	// `FeaturesRoadmapMenu` settings entry).

@@ -40,7 +40,6 @@
 import ExampleModal from './modals/ExampleModal.vue'
 import EmailField from './formFields/EmailField.vue'
 import StatusBadge from './cellRenderers/StatusBadge.vue'
-import CustomExample from './views/CustomExample.vue'
 
 export default {
 	// -------------------------------------------------------------------------
@@ -77,16 +76,10 @@ export default {
 	// customComponents.js entries work unchanged during the v1 → v2 transition.
 	// -------------------------------------------------------------------------
 
-	/**
-	 * Example custom page. The manifest does NOT reference this by default;
-	 * it is included so the registry's role is visible to first-time cloners.
-	 * Wire it up by adding a type: "custom" page entry to src/manifest.json
-	 * with component: "CustomExample" and a _note field.
-	 */
-	CustomExample: {
-		kind: 'page',
-		component: CustomExample,
-	},
+	// No `kind: "page"` entries. Portaliq's pages are all built-in types wired
+	// in src/manifest.json; this escape hatch is deliberately empty (keep it
+	// near-zero). The former `CustomExample` demo lived here unwired — no
+	// manifest page referenced it, so it could not be reached at runtime.
 
 	// -------------------------------------------------------------------------
 	// kind: "form-field" — custom property editors
