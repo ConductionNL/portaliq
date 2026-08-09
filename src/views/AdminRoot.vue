@@ -88,6 +88,15 @@ export default {
 		}
 	},
 	methods: {
+		/**
+		 * Revoke every active portalSession for one organisation.
+		 *
+		 * The frontend half of the incident-response action whose backend twin
+		 * is SessionAdminController::revokeOrganisation(), which carries this
+		 * same anchor.
+		 *
+		 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#3.2
+		 */
 		async revokeOrganisation() {
 			if (this.organisationInput === '') {
 				return
