@@ -111,6 +111,12 @@ class MetricsController extends Controller
      *
      * @return DataDisplayResponse
      *
+     * @auth admin-only ADR-006 makes the Prometheus scrape target admin-gated:
+     *       this body counts portalNotification and portalAccount rows, so an
+     *       anonymous scrape would leak tenant volume. Nextcloud expresses
+     *       "admin required" as the ABSENCE of an opt-out attribute, so there
+     *       is no attribute to add here — this tag is the declaration.
+     *
      * @spec openspec/specs/observability/spec.md#REQ-OBS-001
      * @spec openspec/specs/supplier-portal/spec.md#repeated-failure-flags-an-alternative-contact-fallback
      */

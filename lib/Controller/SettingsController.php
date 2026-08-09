@@ -107,6 +107,13 @@ class SettingsController extends Controller
      *
      * @return JSONResponse
      *
+     * @auth admin-only Instance-wide configuration write mandated admin-only by
+     *       REQ-CFG-002. Nextcloud expresses that as the ABSENCE of an opt-out
+     *       attribute, so there is no attribute to add; this tag is the
+     *       declaration. Deliberately not the AuthorizedAdminSetting attribute
+     *       (named here without its bracket form on purpose, per the note
+     *       above), which would widen the route to delegated settings admins.
+     *
      * @spec openspec/specs/settings-management/spec.md#REQ-CFG-002
      */
     public function update(): JSONResponse
@@ -132,6 +139,12 @@ class SettingsController extends Controller
      * attributes on the DISPATCHED method, never on the delegate target.
      *
      * @return JSONResponse
+     *
+     * @auth admin-only Legacy POST alias for the same instance-wide settings
+     *       write, so it carries the identical admin-only posture required by
+     *       REQ-CFG-002. Nextcloud middleware evaluates attributes only on the
+     *       DISPATCHED method, never on the delegate target, so this alias must
+     *       declare the posture in its own right.
      *
      * @spec openspec/specs/settings-management/spec.md#REQ-CFG-002
      */
