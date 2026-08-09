@@ -1,13 +1,17 @@
 ---
+example: true
 capability: dashboard-page
-status: active
+status: example
+built_by: openspec/changes/example-change
 ---
 
 # Dashboard Page Specification
 
-> Portaliq's SPA entry point and history-mode catch-all, implemented by
-> `lib/Controller/DashboardController.php`. The file ships and both routes are
-> registered; this capability is live behaviour, not reference material.
+> ⚠️ **EXAMPLE SPEC** — This spec lives in the `portaliq` repository
+> as a demonstration of the OpenSpec format. It describes the behaviour of
+> `lib/Controller/DashboardController.php` in the template's own code, but the
+> capability name, REQs, and scenarios are reference material — apps built from
+> this template should replace this content with their own.
 
 ## Purpose
 

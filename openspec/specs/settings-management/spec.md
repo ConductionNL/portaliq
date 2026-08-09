@@ -1,15 +1,17 @@
 ---
+example: true
 capability: settings-management
-status: active
+status: example
+built_by: openspec/changes/example-change
 ---
 
 # Settings Management Specification
 
-> Portaliq's settings read/write path and per-user preferences, implemented by
-> `lib/Controller/SettingsController.php`, `lib/Service/SettingsService.php`
-> and `lib/Controller/PreferencesController.php`. This capability carries the
-> most `@spec` references in the repository (14) and is live behaviour, not
-> reference material.
+> ⚠️ **EXAMPLE SPEC** — This spec lives in the `portaliq` repository
+> as a demonstration of the OpenSpec format. It describes the behaviour of
+> `lib/Controller/SettingsController.php` + `lib/Service/SettingsService.php` in
+> the template's own code. Apps built from this template should replace this
+> content with their own settings REQs.
 
 ## Purpose
 

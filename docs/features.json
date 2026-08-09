@@ -1,1 +1,44 @@
-[]
+[
+  {
+    "slug": "admin-ui",
+    "title": "Admin UI Registration",
+    "summary": "Registers the app's configuration panel inside Nextcloud's admin settings UI.",
+    "status": "stable",
+    "docsUrl": "openspec/specs/admin-ui/spec.md"
+  },
+  {
+    "slug": "configuration-initialization",
+    "title": "Configuration Initialization",
+    "summary": "Populates the app's OpenRegister schemas + registers on first install (and after upgrades that ship a new bundled configuration) from a JSON file committed alongside the app's PHP code.",
+    "status": "stable",
+    "docsUrl": "openspec/specs/configuration-initialization/spec.md"
+  },
+  {
+    "slug": "dashboard-page",
+    "title": "Dashboard Page",
+    "summary": "Serves the single-page application (SPA) that is the user-facing front end of an OpenSpec-based Nextcloud app.",
+    "status": "stable",
+    "docsUrl": "openspec/specs/dashboard-page/spec.md"
+  },
+  {
+    "slug": "frontend-data-stores",
+    "title": "Frontend Data Stores",
+    "summary": "Per ADR-022, template-derived apps own no database of their own.",
+    "status": "stable",
+    "docsUrl": "openspec/specs/frontend-data-stores/spec.md"
+  },
+  {
+    "slug": "observability",
+    "title": "Observability",
+    "summary": "Every template-derived app MUST expose two observability endpoints per ADR-006.",
+    "status": "stable",
+    "docsUrl": "openspec/specs/observability/spec.md"
+  },
+  {
+    "slug": "settings-management",
+    "title": "Settings Management",
+    "summary": "Defines how a template-derived app reads, writes, and reloads its application configuration.",
+    "status": "stable",
+    "docsUrl": "openspec/specs/settings-management/spec.md"
+  }
+]
