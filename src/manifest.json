@@ -361,32 +361,6 @@
 			}
 		},
 		{
-			"id": "Settings",
-			"route": "/settings",
-			"type": "settings",
-			"title": "Settings",
-			"config": {
-				"saveEndpoint": "/index.php/apps/portaliq/api/settings",
-				"sections": [
-					{
-						"title": "Version",
-						"widgets": [
-							{
-								"type": "version-info",
-								"props": {
-									"appName": "Portaliq",
-									"showUpdateButton": false,
-									"isUpToDate": true,
-									"title": "Version Information",
-									"description": "Information about the current installation."
-								}
-							}
-						]
-					}
-				]
-			}
-		},
-		{
 			"id": "FeaturesRoadmap",
 			"route": "/features-roadmap",
 			"type": "roadmap",
