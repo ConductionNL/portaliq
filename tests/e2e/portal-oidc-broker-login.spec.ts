@@ -75,6 +75,7 @@ const API_BASE = '/apps/portaliq/portal/api'
 const LIVE = process.env.OIDC_E2E_LIVE === '1'
 
 test.describe('portal-oidc-broker-login — fail-closed (no setup required)', () => {
+	// @e2e supplier-portal::start-on-an-unconfigured-orgprovider-fails-closed
 	test('start on an unconfigured org/provider fails closed with no redirect', async ({ request }) => {
 		const res = await request.get(`${API_BASE}/session/oidc/start`, {
 			params: { org: `no-such-org-${Date.now()}`, provider: 'eherkenning' },
