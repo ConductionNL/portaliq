@@ -40,23 +40,55 @@ phpqa_output.log
 *.xls
 *.xlsx
 
-# Files with unusual extensions or no extensions that could be mistakes
+# Files with unusual names (trailing space, no extension) that are likely mistakes.
+#
+# ⚠️ THESE ARE SUBSTRING GLOBS, AND EVERY ONE OF THEM NEEDS A NEGATION.
+# `**/*references*` matches "Preferences", so it swallowed
+# lib/Controller/PreferencesController.php — and, worse, ANY DIRECTORY whose
+# name contains the substring: `openspec/specs/user-preferences/` resolved
+# locally, was absent from the commit, and CI then reported the `@spec` tag as
+# a missing file while the author was looking straight at the file on disk.
+# A test file (tests/…/PreferencesControllerTest.php) hit the same trap.
+#
+# Each junk pattern is therefore paired with negations that re-admit real
+# source files and real directories. Naming ONE file (the old
+# `!**/PreferencesController.php`) fixes one symptom and leaves the class of
+# bug live. openregister's .gitignore is the reference implementation.
 **/PR *
 **/adds *
 **/implements *
 **/ALL *
 **/endpoints *
 **/*Analysis*
+!**/*Analysis*.php
+!**/*Analysis*/
 **/*references*
-# "Preferences*" ends in "references" — un-ignore the legit per-user
-# preferences API controller the junk pattern above accidentally swallows.
-!**/PreferencesController.php
+!**/*references*.php
+!**/*references*.vue
+!**/*references*.js
+!**/*references*.ts
+!**/*references*.json
+!**/*references*.md
+!**/*references*/
 **/*encoding*
+!**/*encoding*.php
+!**/*encoding*/
 **/ter
 **/clearCache*
+!**/clearCache*.php
+!**/clearCache*/
 **/update*Settings*
+!**/update*Settings*.php
+!**/update*Settings*.vue
+!**/update*Settings*/
 **/rebase*
+!**/rebase*.php
+!**/rebase*/
 **/setup*
+!**/setup*.php
+!**/setup*.js
+!**/setup*.ts
+!**/setup*/
 
 # Temporary test files that shouldn't be committed
 simple-solr-test.php
