@@ -1950,7 +1950,8 @@ class ContributionControllerTest extends TestCase
         ?AuditTrailService $auditor=null,
         ?SubmissionReceiptService $receiptService=null,
         ?NotificationDispatchService $notificationDispatch=null,
-        ?array $anonymousAggregate=null
+        ?array $anonymousAggregate=null,
+        ?PortalSchemaReader $schemaReader=null
     ): ContributionController {
         $request = $this->createMock(IRequest::class);
         $request->method('getHeader')->willReturnMap([['Authorization', 'Bearer client-session-token']]);
@@ -1993,7 +1994,7 @@ class ContributionControllerTest extends TestCase
             ($writer ?? $this->createMock(PortalObjectWriter::class)),
             ($fileWriter ?? $this->createMock(PortalFileWriter::class)),
             ($fileReader ?? $this->createMock(PortalFileReader::class)),
-            $this->createMock(PortalSchemaReader::class),
+            ($schemaReader ?? $this->createMock(PortalSchemaReader::class)),
             ($inboxReader ?? $this->createMock(PortalInboxReader::class)),
             ($auditHook ?? $this->createMock(PortalAuditHook::class)),
             $this->forwarder(
@@ -2008,6 +2009,121 @@ class ContributionControllerTest extends TestCase
         );
 
     }//end controller()
+
+    /**
+     * `GET /portal/api/schema/{schema}` (`contribution#schema`) — an anonymous
+     * caller is refused before any schema is read.
+     */
+    public function testSchemaRefusesAnAnonymousCallerWithoutReadingASchema(): void
+    {
+        $schemaReader = $this->createMock(PortalSchemaReader::class);
+        $schemaReader->expects($this->never())->method('readSchema');
+
+        $controller = $this->controller(
+            aggregate: $this->aggregate(),
+            subject: null,
+            schemaReader: $schemaReader
+        );
+
+        $response = $controller->schema('exampleDocument');
+
+        $this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+
+    }//end testSchemaRefusesAnAnonymousCallerWithoutReadingASchema()
+
+    /**
+     * A subject may only introspect a schema their OWN manifest references.
+     * A schema outside the aggregate is 403 — and, critically, the reader is
+     * never called, so the refusal happens BEFORE OpenRegister is touched
+     * (the reader deliberately runs `_rbac: false`, so a call that reached it
+     * would have succeeded).
+     */
+    public function testSchemaRefusesASchemaTheManifestDoesNotReference(): void
+    {
+        $schemaReader = $this->createMock(PortalSchemaReader::class);
+        $schemaReader->expects($this->never())->method('readSchema');
+
+        $controller = $this->controller(
+            aggregate: $this->aggregate(collections: [['register' => 'portaliq', 'schema' => 'exampleDocument']]),
+            schemaReader: $schemaReader
+        );
+
+        $response = $controller->schema('secretPersonnelFile');
+
+        $this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+        $this->assertSame(['error' => 'forbidden'], $response->getData());
+
+    }//end testSchemaRefusesASchemaTheManifestDoesNotReference()
+
+    /**
+     * A schema referenced by a manifest COLLECTION is served as-is.
+     */
+    public function testSchemaServesADefinitionReferencedByACollection(): void
+    {
+        $definition = ['title' => 'exampleDocument', 'properties' => ['name' => ['type' => 'string']]];
+
+        $schemaReader = $this->createMock(PortalSchemaReader::class);
+        $schemaReader->expects($this->once())
+            ->method('readSchema')
+            ->with('exampleDocument')
+            ->willReturn($definition);
+
+        $controller = $this->controller(
+            aggregate: $this->aggregate(collections: [['register' => 'portaliq', 'schema' => 'exampleDocument']]),
+            schemaReader: $schemaReader
+        );
+
+        $response = $controller->schema('exampleDocument');
+
+        $this->assertSame(Http::STATUS_OK, $response->getStatus());
+        $this->assertSame($definition, $response->getData());
+
+    }//end testSchemaServesADefinitionReferencedByACollection()
+
+    /**
+     * An ACTION reference authorises introspection too — a subject that may
+     * submit a form must be able to read the schema that form is built from.
+     */
+    public function testSchemaServesADefinitionReferencedByAnAction(): void
+    {
+        $definition = ['title' => 'melding', 'properties' => []];
+
+        $schemaReader = $this->createMock(PortalSchemaReader::class);
+        $schemaReader->method('readSchema')->willReturn($definition);
+
+        $controller = $this->controller(
+            aggregate: $this->aggregate(actions: [['id' => 'openIntake', 'type' => 'create', 'schema' => 'melding']]),
+            schemaReader: $schemaReader
+        );
+
+        $response = $controller->schema('melding');
+
+        $this->assertSame(Http::STATUS_OK, $response->getStatus());
+        $this->assertSame($definition, $response->getData());
+
+    }//end testSchemaServesADefinitionReferencedByAnAction()
+
+    /**
+     * An authorised schema that OpenRegister cannot resolve is 404 — not a 200
+     * carrying an empty body, which the schema-driven frontend would render as
+     * a form with no fields.
+     */
+    public function testSchemaReturnsNotFoundWhenTheReaderResolvesNothing(): void
+    {
+        $schemaReader = $this->createMock(PortalSchemaReader::class);
+        $schemaReader->method('readSchema')->willReturn(null);
+
+        $controller = $this->controller(
+            aggregate: $this->aggregate(collections: [['register' => 'portaliq', 'schema' => 'exampleDocument']]),
+            schemaReader: $schemaReader
+        );
+
+        $response = $controller->schema('exampleDocument');
+
+        $this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+        $this->assertSame(['error' => 'not_found'], $response->getData());
+
+    }//end testSchemaReturnsNotFoundWhenTheReaderResolvesNothing()
 
     /**
      * The real PortalActionForwarder wired to the SAME request/session/client
