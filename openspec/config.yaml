@@ -1,19 +1,28 @@
 schema: conduction
 
 context: |
-  Project: App Template
+  Project: Portaliq
   Repo: ConductionNL/portaliq
-  Type: Nextcloud App (PHP backend + Vue 2 frontend)
-  Description: Starter template for Conduction Nextcloud apps — replace this description with your app's purpose.
-  Key components: Dashboard, Settings, Example objects
+  Type: Nextcloud App (PHP backend + Vue 3 frontend)
+  Description: The fleet's shared external portal. Clients (citizens) and
+    suppliers (companies) get one integrated, white-label portal to see and act
+    on their records across every app, reading data through OpenRegister and
+    rendering each app's registered portal contribution. Portaliq owns the
+    external auth edge (DigiD / eHerkenning / eIDAS), the white-label portal
+    shell, the unified inbox, and the portal-contribution registry. Employees
+    stay internal. See ADR-046.
+  Key components: portal auth edge (sessions, OIDC broker), portal-contribution
+    registry, unified inbox, documents, WOO SPA, admin settings
   Database: PostgreSQL (via OpenRegister's ObjectService)
   Mount path: /var/www/html/custom_apps/portaliq
+  Nextcloud: min-version 32, max-version 34
 
   Architecture:
-    Pattern: Thin client — App Template owns no database tables
+    Pattern: Thin client — Portaliq owns no database tables
     Data layer: OpenRegister (JSON object storage with schema validation)
-    Frontend: Vue 2.7 + Pinia stores querying OpenRegister API directly
-    Backend: Minimal — SettingsController + SettingsService for register setup
+    Frontend: Vue 3.5 + Pinia stores querying OpenRegister API directly
+    Backend: 10 controllers / 21 services — the portal auth edge and the
+      contribution contract, not a thin settings shim
 
   Shared specs: See ../openspec/specs/ for cross-project conventions
   Project guidelines: See ../project.md for workspace-wide standards
