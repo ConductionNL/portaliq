@@ -1,18 +1,14 @@
 ---
-example: true
 capability: observability
-status: example
-built_by: openspec/changes/example-change
+status: active
 ---
 
 # Observability Specification
 
-> ⚠️ **EXAMPLE SPEC** — This spec lives in the `portaliq` repository
-> as a demonstration of the OpenSpec format. It describes the behaviour of
-> `lib/Controller/MetricsController.php` + `lib/Controller/HealthController.php`
-> in the template's own code. Apps built from this template MUST keep the two
-> endpoints (admin metrics, public health) per ADR-006 and may extend the set
-> of published metrics beyond the template's stub values.
+> Portaliq's two ADR-006 endpoints — admin metrics and public health —
+> implemented by `lib/Controller/MetricsController.php` and
+> `lib/Controller/HealthController.php`. Both ship and are routed; this
+> capability is live behaviour, not reference material.
 
 ## Purpose
 

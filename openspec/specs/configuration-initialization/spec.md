@@ -1,18 +1,13 @@
 ---
-example: true
 capability: configuration-initialization
-status: example
-built_by: openspec/changes/example-change
+status: active
 ---
 
 # Configuration Initialization Specification
 
-> ⚠️ **EXAMPLE SPEC** — This spec lives in the `portaliq` repository
-> as a demonstration of the OpenSpec format. It describes the behaviour of
-> `lib/Repair/InitializeSettings.php` in the template's own code. Apps built
-> from this template will typically keep this capability almost unchanged; the
-> only substitutions are the bundled config file name and the schema/register
-> IDs that the import produces.
+> Portaliq's install/upgrade repair step, implemented by
+> `lib/Repair/InitializeSettings.php`. The file ships and runs; this capability
+> is live behaviour, not reference material.
 
 ## Purpose
 

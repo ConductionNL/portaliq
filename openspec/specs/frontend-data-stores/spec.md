@@ -1,19 +1,14 @@
 ---
-example: true
 capability: frontend-data-stores
-status: example
-built_by: openspec/changes/example-change
+status: active
 ---
 
 # Frontend Data Stores Specification
 
-> ⚠️ **EXAMPLE SPEC** — This spec lives in the `portaliq` repository
-> as a demonstration of the OpenSpec format for the **frontend** layer. It
-> describes the behaviour of the Pinia stores in `src/store/` (the generic
-> OpenRegister object store, the app-settings store, and the boot-time store
-> initializer). Apps built from this template will typically keep this
-> capability almost unchanged; the substitutions are the schema/register names
-> registered with the object store and the API base paths.
+> Portaliq's **frontend** data layer: the Pinia stores in `src/store/` — the
+> generic OpenRegister object store (`modules/object.js`), the app-settings
+> store (`modules/settings.js`), and the boot-time initializer (`store.js`).
+> All three ship; this capability is live behaviour, not reference material.
 
 ## Purpose
 

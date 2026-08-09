@@ -1,22 +1,18 @@
 ---
-example: true
 capability: scaffold-components
-status: example
-built_by: openspec/changes/scaffold-v2
+status: active
 ---
 
 # Scaffold Components Specification
 
-> ⚠️ **EXAMPLE SPEC** — This spec lives in the `portaliq` repository
-> as a demonstration of the OpenSpec format for the demo components the scaffold
-> ships under `src/cellRenderers/` and `src/modals/`.
-> Each is the canonical starting point for one of the five registry kinds
-> (hydra ADR-036): a cell-renderer and a modal. Apps built
-> from this template replace or delete these once they have their own; this spec
-> documents the small but real runtime behaviour each demonstrates so the
-> `@spec` references in the demo code resolve. The *registry-shape* requirements
-> (how these get registered) live in `openspec/specs/scaffold-v2/` — confusingly
-> the same change; this capability is specifically the **runtime behaviour**.
+> The **runtime behaviour** of the registry-wired components portaliq ships
+> under `src/cellRenderers/` and `src/modals/` — one cell-renderer and one
+> modal, each a working instance of a five-kind registry entry (hydra ADR-036).
+> Both directories ship and six live `@spec` references point here.
+>
+> The registry-*shape* requirements (how components get registered) are owned by
+> hydra ADR-036 itself. An earlier version of this note pointed at
+> `openspec/specs/scaffold-v2/`, which has never existed in this repository.
 
 ## Purpose
 

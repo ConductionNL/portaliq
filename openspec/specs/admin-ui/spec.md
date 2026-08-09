@@ -1,18 +1,13 @@
 ---
-example: true
 capability: admin-ui
-status: example
-built_by: openspec/changes/example-change
+status: active
 ---
 
 # Admin UI Registration Specification
 
-> ⚠️ **EXAMPLE SPEC** — This spec lives in the `portaliq` repository
-> as a demonstration of the OpenSpec format. It describes the Nextcloud admin-
-> panel registration in `lib/Settings/AdminSettings.php` + `lib/Sections/SettingsSection.php`.
-> Apps built from this template will typically keep this capability almost
-> unchanged; the substitutions are the section ID string, display name, icon
-> path, and priority numbers.
+> Portaliq's Nextcloud admin-panel registration, implemented by
+> `lib/Settings/AdminSettings.php` and `lib/Sections/SettingsSection.php`.
+> Both files ship; this capability is live behaviour, not reference material.
 
 ## Purpose
 
