@@ -61,6 +61,7 @@ async function loginAsSupplier(request: APIRequestContext, page: Page, subjectRe
 }
 
 test.describe('wmebv-submission-receipts', () => {
+	// @e2e supplier-portal::a-successful-submission-produces-a-receipt-in-the-subjects-inbox
 	test('a successful create-action submission produces a bilingual receipt in the inbox', async ({ page, request }) => {
 		const subjectRef = `e2e-receipt-${Date.now()}`
 		const organisation = 'e2e-org'

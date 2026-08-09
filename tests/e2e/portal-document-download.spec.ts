@@ -106,6 +106,8 @@ test.describe('portal-document-download', () => {
 		expect(downloadedPath).toBeTruthy()
 	})
 
+	// Asserts the three-way identical refusal against the running API.
+	// @e2e supplier-portal::non-existent-foreign-and-non-opted-in-all-404-identically
 	test('a foreign or absent file 404s identically — no existence oracle', async ({ page, request }) => {
 		await loginAsSupplier(request, page, `e2e-download-404-${Date.now()}`)
 

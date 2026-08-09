@@ -51,6 +51,11 @@ async function devLogin(request: APIRequestContext, subjectRef: string): Promise
 }
 
 test.describe('portal-session-hardening-v2 — session refresh', () => {
+	// @e2e supplier-portal::a-valid-bearer-refreshes-and-rotates-its-jti
+	//
+	// The absolute-cap and fail-closed-on-expired scenarios are NOT anchored:
+	// they have no UI surface and remain PHPUnit-only invariants in
+	// PortalSessionServiceTest, exactly as the spec says.
 	test('a valid bearer refreshes, rotates its jti, and the old bearer stops validating', async ({ request }) => {
 		const oldToken = await devLogin(request, `e2e-refresh-${Date.now()}`)
 

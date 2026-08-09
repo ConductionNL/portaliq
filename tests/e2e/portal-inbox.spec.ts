@@ -89,6 +89,23 @@ async function seedMessage(request: APIRequestContext, subjectRef: string, organ
 }
 
 test.describe('portal-inbox-v2', () => {
+	// This one test asserts three separate scenarios end-to-end: the read-state
+	// toggle (server-confirmed before the UI flips), the unread count reaching
+	// the SPA via the contributions payload (the nav badge cannot read 1 unless
+	// the payload carried 1), and the 2:10 metadata rendering on the row that
+	// supplies it AND being absent — no empty placeholder — on the row that
+	// does not.
+	//
+	// @e2e supplier-portal::a-subject-marks-their-own-message-read
+	// @e2e supplier-portal::the-contributions-response-carries-the-unread-count
+	// @e2e supplier-portal::210-metadata-renders-only-when-supplied
+	//
+	// NOT anchored here: "messages from multiple apps merge into one sorted
+	// inbox". Both rows are seeded into the SAME register/schema
+	// (portaliq/portalMessage), i.e. ONE contribution, so this test proves
+	// sorting — not the cross-contribution merge the scenario requires. That
+	// stays with PortalInboxReaderTest::
+	// testMergesInboxCollectionsAcrossAppsSortedByReceivedAtDesc.
 	test('merged inbox with unread badge, 2:10 metadata, and read-state toggle', async ({ page, request }) => {
 		const subjectRef = `e2e-inbox-${Date.now()}`
 		const organisation = 'e2e-org'
