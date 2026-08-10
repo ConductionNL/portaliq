@@ -418,12 +418,14 @@ filtering, in the aggregate, and never throws.
   entry marking `status` visible/required
 - WHEN the manifest is normalised
 - THEN the `status` config is removed and a submit still accepts only `title`
+- @e2e exclude Normaliser fail-closed contract — the assertion is that presentation config CANNOT widen a server-side whitelist, which is decided in PortalManifestNormaliser before any render. Pinned by PortalManifestNormaliserTest::testFieldConfigForNonWhitelistedFieldIsDropped and, on the submit half, ContributionControllerTest::testActionWithDeclaredFieldsForwardsOnlyThoseFieldsIgnoringSmuggledOnes. A browser can only observe the field it was already allowed to see.
 
 #### Scenario: A column naming a projected-away field never leaks it
 
 - GIVEN a collection projecting `["title","status"]` and a column for `internalNotes`
 - WHEN the collection is read and rendered
 - THEN rows carry only title/status/identifiers and the column renders blank
+- @e2e exclude The load-bearing half is a NEGATIVE on the wire — the projected-away value must never reach the client — and an empty table cell is the same pixel whether the field was withheld or merely absent, so a browser assertion cannot tell the leak from the non-leak. Pinned where it is decidable: PortalObjectReaderTest::testProjectionReturnsOnlyDeclaredFieldsPlusIdentifierAfterVerification and ::testProjectionKeepsReducedEnvelopeIdentifierAndDropsUnknownDeclaredFields.
 
 ### Requirement: Scoped option providers
 
@@ -438,6 +440,7 @@ provider for a non-whitelisted field, is dropped fail-closed.
 - GIVEN a `collection` optionsProvider for `procest/supplierContract`
 - WHEN the form is rendered for subject `s1`
 - THEN the options are exactly the `supplierContract` rows `s1` may read
+- @e2e exclude The claim is that a dropdown can offer NOTHING the subject may not already read — it is the scoped collection endpoint doing the work, and proving it in a browser needs a second subject's rows to exist and be shown absent, which is an assertion about data that is not there. Pinned by PortalManifestNormaliserTest::testOptionsProvidersValidateStaticAndCollectionAndDropMalformed for the provider shape, and by the scoping suite in PortalObjectReaderTest for what the endpoint may return.
 
 ### Requirement: Page composition with resolvable, same-contribution blocks
 
@@ -452,6 +455,7 @@ gets one synthesised default page per `listable` collection (v2 rendering).
 - GIVEN a page block referencing another app's collection, or a trust-dropped action
 - WHEN the manifest is normalised
 - THEN the block is dropped (and its page too, if that empties it)
+- @e2e exclude Normaliser fail-closed contract, asserted on the manifest structure before any page is rendered; the browser-visible consequence is a page that does not exist, which is not a thing a Playwright locator can be pointed at. Pinned by PortalManifestNormaliserTest::testPageBlocksResolveWithinContributionAndUnknownAreDropped and ::testAbsentPagesSynthesiseOneDefaultPerListableCollection.
 
 ### Requirement: v2 manifests are unchanged by normalisation
 
@@ -463,6 +467,7 @@ byte-identical, aside from an additive synthesised `pages` array.
 - GIVEN a v2 contribution (no v3 keys)
 - WHEN normalised
 - THEN every collection/action is unchanged and a default `pages` array is added
+- @e2e exclude A byte-identity claim about a data structure ("unchanged aside from an additive pages array"). A browser sees a rendered page, which is precisely the thing that is allowed to differ, so it cannot witness the invariant. Pinned by PortalManifestNormaliserTest::testV2ManifestRoundTripsWithOnlyAdditivePages.
 
 ### Requirement: Server-enforced status transitions
 
@@ -480,12 +485,14 @@ re-verification and scope re-stamp still run.
 - GIVEN an update action `close` with `fields: [status]` and `set: {status: closed}`
 - WHEN the subject PATCHes their own row with `?action=close` and body `{status: "hacked"}`
 - THEN the saved `status` is `closed` (server `set` overrides the client) and 200 is returned
+- @e2e exclude The attack is a HAND-CRAFTED body — the portal UI never offers a way to send `status: "hacked"`, so driving this through the browser would prove the UI is well behaved, not that the server is. It is an API-level tamper assertion. Pinned by PortalManifestNormaliserTest::testSetKeepsOnlyWhitelistedScalarTransitionValues and the PATCH-path cases in ContributionControllerTest.
 
 #### Scenario: rowActions and set fail closed
 
 - GIVEN `set: {status: closed, subjectRef: other}` and `rowActions: [close, createTicket, ghost]`
 - WHEN normalised
 - THEN `set` keeps only `{status: closed}` and `rowActions` keeps only `[close]`
+- @e2e exclude Normaliser fail-closed contract asserted on the manifest structure — the browser-visible consequence is a button that is not rendered and a field that is not written, both absences. Pinned by PortalManifestNormaliserTest::testRowActionsResolveOnlyToUpdateActionsInContribution and ::testMalformedSetIsDropped.
 
 ### Requirement: Scoped file attachment on a subject-owned object
 
