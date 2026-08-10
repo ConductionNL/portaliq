@@ -538,7 +538,7 @@ class ContributionController extends Controller implements PortalProtected
      *
      * @return JSONResponse The attached file metadata, or 401 / 403 / 404 / 400 / 502.
      *
-     * @spec openspec/changes/portal-file-upload/tasks.md#T2
+     * @spec openspec/specs/portal-contribution-contract/spec.md#scoped-file-attachment-on-a-subject-owned-object
      */
     #[PublicPage]
     #[NoCSRFRequired]
@@ -744,7 +744,7 @@ class ContributionController extends Controller implements PortalProtected
      *
      * @return JSONResponse The schema definition, or 401 / 403 / 404.
      *
-     * @spec openspec/changes/portal-schema-endpoint/tasks.md#T2
+     * @spec openspec/specs/portal-contribution-contract/spec.md#scoped-schema-introspection
      */
     #[PublicPage]
     #[NoCSRFRequired]

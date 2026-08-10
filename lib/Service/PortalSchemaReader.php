@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-schema-endpoint/tasks.md#T1
+ * @spec openspec/specs/portal-contribution-contract/spec.md#scoped-schema-introspection
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ use Throwable;
 /**
  * Resolves OpenRegister schema definitions by slug for the portal engine.
  *
- * @spec openspec/changes/portal-schema-endpoint/tasks.md#T1
+ * @spec openspec/specs/portal-contribution-contract/spec.md#scoped-schema-introspection
  */
 class PortalSchemaReader
 {
@@ -66,7 +66,7 @@ class PortalSchemaReader
      * @return array<string, mixed>|null The schema as an array (with `properties`),
      *                                   or null when unavailable/not found.
      *
-     * @spec openspec/changes/portal-schema-endpoint/tasks.md#T1
+     * @spec openspec/specs/portal-contribution-contract/spec.md#scoped-schema-introspection
      */
     public function readSchema(string $slug): ?array
     {

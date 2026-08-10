@@ -418,12 +418,14 @@ filtering, in the aggregate, and never throws.
   entry marking `status` visible/required
 - WHEN the manifest is normalised
 - THEN the `status` config is removed and a submit still accepts only `title`
+- @e2e exclude Normaliser fail-closed contract — the assertion is that presentation config CANNOT widen a server-side whitelist, which is decided in PortalManifestNormaliser before any render. Pinned by PortalManifestNormaliserTest::testFieldConfigForNonWhitelistedFieldIsDropped and, on the submit half, ContributionControllerTest::testActionWithDeclaredFieldsForwardsOnlyThoseFieldsIgnoringSmuggledOnes. A browser can only observe the field it was already allowed to see.
 
 #### Scenario: A column naming a projected-away field never leaks it
 
 - GIVEN a collection projecting `["title","status"]` and a column for `internalNotes`
 - WHEN the collection is read and rendered
 - THEN rows carry only title/status/identifiers and the column renders blank
+- @e2e exclude The load-bearing half is a NEGATIVE on the wire — the projected-away value must never reach the client — and an empty table cell is the same pixel whether the field was withheld or merely absent, so a browser assertion cannot tell the leak from the non-leak. Pinned where it is decidable: PortalObjectReaderTest::testProjectionReturnsOnlyDeclaredFieldsPlusIdentifierAfterVerification and ::testProjectionKeepsReducedEnvelopeIdentifierAndDropsUnknownDeclaredFields.
 
 ### Requirement: Scoped option providers
 
@@ -438,6 +440,7 @@ provider for a non-whitelisted field, is dropped fail-closed.
 - GIVEN a `collection` optionsProvider for `procest/supplierContract`
 - WHEN the form is rendered for subject `s1`
 - THEN the options are exactly the `supplierContract` rows `s1` may read
+- @e2e exclude The claim is that a dropdown can offer NOTHING the subject may not already read — it is the scoped collection endpoint doing the work, and proving it in a browser needs a second subject's rows to exist and be shown absent, which is an assertion about data that is not there. Pinned by PortalManifestNormaliserTest::testOptionsProvidersValidateStaticAndCollectionAndDropMalformed for the provider shape, and by the scoping suite in PortalObjectReaderTest for what the endpoint may return.
 
 ### Requirement: Page composition with resolvable, same-contribution blocks
 
@@ -452,6 +455,7 @@ gets one synthesised default page per `listable` collection (v2 rendering).
 - GIVEN a page block referencing another app's collection, or a trust-dropped action
 - WHEN the manifest is normalised
 - THEN the block is dropped (and its page too, if that empties it)
+- @e2e exclude Normaliser fail-closed contract, asserted on the manifest structure before any page is rendered; the browser-visible consequence is a page that does not exist, which is not a thing a Playwright locator can be pointed at. Pinned by PortalManifestNormaliserTest::testPageBlocksResolveWithinContributionAndUnknownAreDropped and ::testAbsentPagesSynthesiseOneDefaultPerListableCollection.
 
 ### Requirement: v2 manifests are unchanged by normalisation
 
@@ -463,6 +467,7 @@ byte-identical, aside from an additive synthesised `pages` array.
 - GIVEN a v2 contribution (no v3 keys)
 - WHEN normalised
 - THEN every collection/action is unchanged and a default `pages` array is added
+- @e2e exclude A byte-identity claim about a data structure ("unchanged aside from an additive pages array"). A browser sees a rendered page, which is precisely the thing that is allowed to differ, so it cannot witness the invariant. Pinned by PortalManifestNormaliserTest::testV2ManifestRoundTripsWithOnlyAdditivePages.
 
 ### Requirement: Server-enforced status transitions
 
@@ -480,12 +485,74 @@ re-verification and scope re-stamp still run.
 - GIVEN an update action `close` with `fields: [status]` and `set: {status: closed}`
 - WHEN the subject PATCHes their own row with `?action=close` and body `{status: "hacked"}`
 - THEN the saved `status` is `closed` (server `set` overrides the client) and 200 is returned
+- @e2e exclude The attack is a HAND-CRAFTED body — the portal UI never offers a way to send `status: "hacked"`, so driving this through the browser would prove the UI is well behaved, not that the server is. It is an API-level tamper assertion. Pinned by PortalManifestNormaliserTest::testSetKeepsOnlyWhitelistedScalarTransitionValues and the PATCH-path cases in ContributionControllerTest.
 
 #### Scenario: rowActions and set fail closed
 
 - GIVEN `set: {status: closed, subjectRef: other}` and `rowActions: [close, createTicket, ghost]`
 - WHEN normalised
 - THEN `set` keeps only `{status: closed}` and `rowActions` keeps only `[close]`
+- @e2e exclude Normaliser fail-closed contract asserted on the manifest structure — the browser-visible consequence is a button that is not rendered and a field that is not written, both absences. Pinned by PortalManifestNormaliserTest::testRowActionsResolveOnlyToUpdateActionsInContribution and ::testMalformedSetIsDropped.
+
+### Requirement: Scoped file attachment on a subject-owned object
+
+`POST /portal/api/collections/{register}/{schema}/{id}/files` (multipart field
+`file`) attaches a subject-uploaded file to an existing object. The collection
+MUST opt in explicitly with `filesUpload: true` — an absent or false flag is a
+403 and no attach is attempted. Ownership MUST be re-verified through the same
+scoped read the collection declares (`scopeField` / `scopeClaim` / `via`)
+BEFORE the file is accepted; a foreign or absent id is a single 404 with
+nothing written, carrying no body that distinguishes the two. The file lands in
+the object's OpenRegister folder through OR's shared `FileService` (ADR-022,
+never through `IRootFolder` directly); portaliq is the trusted scoper, so OR
+RBAC is bypassed only after portaliq's own scope check has passed. `PortalFileWriter`
+owns the attach and is the only writer on this path.
+
+#### Scenario: A subject attaches a file to a row they own
+
+- GIVEN a collection declaring `filesUpload: true` and a row the subject owns
+- WHEN the subject uploads a file through the portal's upload block
+- THEN the file is attached to that object via OR's file service
+- AND the upload block reports the attachment and the file appears on the row
+- @e2e exclude A Playwright test for exactly this flow EXISTS and passes locally — tests/e2e/portal-document-download.spec.ts `a subject downloads a file on a row they own` drives the upload block and proves the attach by downloading the file back — but CI does not run it: tests/e2e/playwright.config.ts grepInverts it by title while ConductionNL/portaliq#29 is open (OpenRegister's FileService::addFile has no _rbac parameter, so a portal subject cannot materialise the register folder). Tagging that test would satisfy gate-19 while nothing executed — measured on hydra-gates @94c855b, the count moves 47 to 46 on the tag alone, because gate-19 honours testIgnore but not grepInvert. Replace this exclude with the @e2e reference when #29 closes and the grepInvert is deleted.
+
+#### Scenario: A non-opted-in collection and a foreign id both refuse before any write
+
+- GIVEN a collection WITHOUT `filesUpload`, and separately a foreign/absent id
+  on a collection that has it
+- WHEN an attach is attempted against either
+- THEN the first is 403 and the second is 404
+- AND `PortalFileWriter::attachFile()` is never reached in either case
+- @e2e exclude Fail-closed ordering, not a UI surface — the assertion is that the writer is NEVER CALLED (`expects($this->never())->method('attachFile')`), which is observable only at the seam. Pinned by ContributionControllerTest::testUploadRequiresTheCollectionToOptIntoFileUploads and ::testUploadForeignOrAbsentObjectIs404BeforeAnyAttach; a browser can see the status code but not that no write was attempted.
+
+### Requirement: Scoped schema introspection
+
+`GET /portal/api/schemas/{schema}` returns an OpenRegister schema definition by
+slug so the portal engine can build table headers and forms from the same
+source the server validates against. The caller MUST hold a valid portal
+session (401 otherwise) and MAY only introspect a schema their own aggregated
+manifest references — through a collection or an action, in any register.
+An unreferenced slug is 403 and an unresolvable one is 404, both decided before
+any definition is read. OR RBAC is bypassed inside `PortalSchemaReader` because
+a schema is metadata rather than subject data; the shape returned is
+OpenRegister's own (`properties` etc.) so the SPA store consumes it unchanged.
+
+#### Scenario: A schema the manifest references is served, one it does not is refused
+
+- GIVEN a subject whose manifest references schema `exampleDocument` via a
+  collection, and an unrelated schema `secretThing` it references nowhere
+- WHEN the subject requests each definition
+- THEN `exampleDocument` is returned in OpenRegister's own shape
+- AND `secretThing` is refused without its definition being read
+- @e2e exclude Server-side metadata contract with no distinct UI surface — the SPA consumes this response to build a form it renders elsewhere, so a browser assertion would be testing the form, not the gate. Pinned by ContributionControllerTest::testSchemaServesADefinitionReferencedByACollection, ::testSchemaServesADefinitionReferencedByAnAction and ::testSchemaRefusesASchemaTheManifestDoesNotReference.
+
+#### Scenario: An anonymous caller is refused without a schema being read
+
+- GIVEN a request carrying no valid portal session
+- WHEN a schema definition is requested
+- THEN the response is 401
+- AND `PortalSchemaReader` is never consulted
+- @e2e exclude Fail-closed ordering, not a UI surface — the assertion is that the reader is NEVER CONSULTED, observable only at the seam. Pinned by ContributionControllerTest::testSchemaRefusesAnAnonymousCallerWithoutReadingASchema.
 
 ## Non-Functional Requirements
 

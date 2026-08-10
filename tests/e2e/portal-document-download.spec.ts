@@ -56,6 +56,21 @@ async function loginAsSupplier(request: APIRequestContext, page: Page, subjectRe
 }
 
 test.describe('portal-document-download', () => {
+	// This test seeds its own fixture by UPLOADING through the portal's upload
+	// block before it downloads, so its body really does exercise the scoped
+	// attach path end to end — it drives `.portaliq-fileupload input[type="file"]`
+	// on a row the subject owns and proves the file landed by downloading it
+	// back by name.
+	//
+	// It deliberately carries NO `@e2e` reference to
+	// `portal-contribution-contract::a-subject-attaches-a-file-to-a-row-they-own`,
+	// even though it would satisfy the gate if it did. THIS TEST DOES NOT RUN IN
+	// CI: playwright.config.ts in this directory `grepInvert`s it by title while
+	// ConductionNL/portaliq#29 is open. Measured on hydra-gates @94c855b —
+	// gate-19 honours `testIgnore` but not `grepInvert`, so adding the tag moves
+	// the count from 47 to 46 and buys a green from a test that never executes.
+	// The scenario carries a reason-bearing `@e2e exclude` naming #29 instead;
+	// swap the exclude for the tag here when #29 closes and the grepInvert goes.
 	test('a subject downloads a file on a row they own', async ({ page, request }) => {
 		await loginAsSupplier(request, page, `e2e-download-${Date.now()}`)
 
