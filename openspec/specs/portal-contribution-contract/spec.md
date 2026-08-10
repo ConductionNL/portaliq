@@ -487,6 +487,66 @@ re-verification and scope re-stamp still run.
 - WHEN normalised
 - THEN `set` keeps only `{status: closed}` and `rowActions` keeps only `[close]`
 
+### Requirement: Scoped file attachment on a subject-owned object
+
+`POST /portal/api/collections/{register}/{schema}/{id}/files` (multipart field
+`file`) attaches a subject-uploaded file to an existing object. The collection
+MUST opt in explicitly with `filesUpload: true` — an absent or false flag is a
+403 and no attach is attempted. Ownership MUST be re-verified through the same
+scoped read the collection declares (`scopeField` / `scopeClaim` / `via`)
+BEFORE the file is accepted; a foreign or absent id is a single 404 with
+nothing written, carrying no body that distinguishes the two. The file lands in
+the object's OpenRegister folder through OR's shared `FileService` (ADR-022,
+never through `IRootFolder` directly); portaliq is the trusted scoper, so OR
+RBAC is bypassed only after portaliq's own scope check has passed. `PortalFileWriter`
+owns the attach and is the only writer on this path.
+
+#### Scenario: A subject attaches a file to a row they own
+
+- GIVEN a collection declaring `filesUpload: true` and a row the subject owns
+- WHEN the subject uploads a file through the portal's upload block
+- THEN the file is attached to that object via OR's file service
+- AND the upload block reports the attachment and the file appears on the row
+- @e2e exclude A Playwright test for exactly this flow EXISTS and passes locally — tests/e2e/portal-document-download.spec.ts `a subject downloads a file on a row they own` drives the upload block and proves the attach by downloading the file back — but CI does not run it: tests/e2e/playwright.config.ts grepInverts it by title while ConductionNL/portaliq#29 is open (OpenRegister's FileService::addFile has no _rbac parameter, so a portal subject cannot materialise the register folder). Tagging that test would satisfy gate-19 while nothing executed — measured on hydra-gates @94c855b, the count moves 47 to 46 on the tag alone, because gate-19 honours testIgnore but not grepInvert. Replace this exclude with the @e2e reference when #29 closes and the grepInvert is deleted.
+
+#### Scenario: A non-opted-in collection and a foreign id both refuse before any write
+
+- GIVEN a collection WITHOUT `filesUpload`, and separately a foreign/absent id
+  on a collection that has it
+- WHEN an attach is attempted against either
+- THEN the first is 403 and the second is 404
+- AND `PortalFileWriter::attachFile()` is never reached in either case
+- @e2e exclude Fail-closed ordering, not a UI surface — the assertion is that the writer is NEVER CALLED (`expects($this->never())->method('attachFile')`), which is observable only at the seam. Pinned by ContributionControllerTest::testUploadRequiresTheCollectionToOptIntoFileUploads and ::testUploadForeignOrAbsentObjectIs404BeforeAnyAttach; a browser can see the status code but not that no write was attempted.
+
+### Requirement: Scoped schema introspection
+
+`GET /portal/api/schemas/{schema}` returns an OpenRegister schema definition by
+slug so the portal engine can build table headers and forms from the same
+source the server validates against. The caller MUST hold a valid portal
+session (401 otherwise) and MAY only introspect a schema their own aggregated
+manifest references — through a collection or an action, in any register.
+An unreferenced slug is 403 and an unresolvable one is 404, both decided before
+any definition is read. OR RBAC is bypassed inside `PortalSchemaReader` because
+a schema is metadata rather than subject data; the shape returned is
+OpenRegister's own (`properties` etc.) so the SPA store consumes it unchanged.
+
+#### Scenario: A schema the manifest references is served, one it does not is refused
+
+- GIVEN a subject whose manifest references schema `exampleDocument` via a
+  collection, and an unrelated schema `secretThing` it references nowhere
+- WHEN the subject requests each definition
+- THEN `exampleDocument` is returned in OpenRegister's own shape
+- AND `secretThing` is refused without its definition being read
+- @e2e exclude Server-side metadata contract with no distinct UI surface — the SPA consumes this response to build a form it renders elsewhere, so a browser assertion would be testing the form, not the gate. Pinned by ContributionControllerTest::testSchemaServesADefinitionReferencedByACollection, ::testSchemaServesADefinitionReferencedByAnAction and ::testSchemaRefusesASchemaTheManifestDoesNotReference.
+
+#### Scenario: An anonymous caller is refused without a schema being read
+
+- GIVEN a request carrying no valid portal session
+- WHEN a schema definition is requested
+- THEN the response is 401
+- AND `PortalSchemaReader` is never consulted
+- @e2e exclude Fail-closed ordering, not a UI surface — the assertion is that the reader is NEVER CONSULTED, observable only at the seam. Pinned by ContributionControllerTest::testSchemaRefusesAnAnonymousCallerWithoutReadingASchema.
+
 ## Non-Functional Requirements
 
 - **Performance:** trust filtering adds no OpenRegister queries; `scopeClaim`

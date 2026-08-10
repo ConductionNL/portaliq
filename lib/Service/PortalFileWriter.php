@@ -30,7 +30,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-file-upload/tasks.md#T1
+ * @spec openspec/specs/portal-contribution-contract/spec.md#scoped-file-attachment-on-a-subject-owned-object
  */
 
 declare(strict_types=1);
@@ -44,7 +44,7 @@ use Throwable;
 /**
  * Attaches subject-uploaded files to a contribution object via OpenRegister.
  *
- * @spec openspec/changes/portal-file-upload/tasks.md#T1
+ * @spec openspec/specs/portal-contribution-contract/spec.md#scoped-file-attachment-on-a-subject-owned-object
  */
 class PortalFileWriter
 {
@@ -88,7 +88,7 @@ class PortalFileWriter
      *
      * @return array<string, mixed>|null The attached file's metadata, or null on failure.
      *
-     * @spec openspec/changes/portal-file-upload/tasks.md#T1
+     * @spec openspec/specs/portal-contribution-contract/spec.md#scoped-file-attachment-on-a-subject-owned-object
      */
     public function attachFile(
         string $register,
