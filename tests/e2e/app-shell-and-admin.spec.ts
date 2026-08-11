@@ -20,13 +20,25 @@
  * TWO IDENTITIES, TWO COOKIE JARS — THIS IS LOAD-BEARING
  * ------------------------------------------------------
  * Several assertions below are *negative*: a non-admin, or an anonymous
- * caller, must NOT be able to read metrics or write settings. Nextcloud
- * resolves a SESSION COOKIE BEFORE it looks at an Authorization header, so a
- * single shared APIRequestContext runs every later request as whoever
- * authenticated LAST — which turns "403 for a non-admin" into a silent 200 and
- * files an authorization hole that does not exist (or, worse, hides one that
- * does). Playwright's built-in `request` fixture is ONE context for the whole
- * test, so it is deliberately not used for the identity-sensitive calls.
+ * caller, must NOT be able to read metrics or write settings.
+ *
+ * The precise rule, measured rather than assumed, because two half-truths
+ * about it contradicted each other for a while:
+ *
+ *   - a VALID session cookie OUTRANKS a later Basic header. Nextcloud
+ *     resolves the cookie first, so a context that authenticated as admin and
+ *     then "switches" identity by sending different Basic credentials KEEPS
+ *     RUNNING AS ADMIN. A per-request Authorization header is not an identity
+ *     switch.
+ *   - a STALE cookie authenticates nobody — the request comes back as
+ *     unauthenticated rather than as its former owner.
+ *
+ * Only the first case matters here, and it is the dangerous one: it turns
+ * "403 for a non-admin" into a silent 200, filing an authorization hole that
+ * does not exist — or hiding one that does. The consequence is that identity
+ * must be separated AT THE JAR, not at the request: Playwright's built-in
+ * `request` fixture is ONE context for the whole test, so it is deliberately
+ * not used for the identity-sensitive calls.
  * `newIdentity()` below mints a fresh, isolated jar per identity, and
  * `assertCallerIs()` proves — in the same chain, against `/ocs/v2.php/cloud/
  * user` — that the request really is being made by the identity the assertion
@@ -103,7 +115,29 @@ async function newIdentity(identity: Identity): Promise<APIRequestContext> {
 		const basic = Buffer.from(`${identity.user}:${identity.pass}`).toString('base64')
 		headers.Authorization = `Basic ${basic}`
 	}
-	return playwrightRequest.newContext({ baseURL: BASE_URL, extraHTTPHeaders: headers })
+	return playwrightRequest.newContext({
+		baseURL: BASE_URL,
+		extraHTTPHeaders: headers,
+		// AN EMPTY JAR IS ASKED FOR EXPLICITLY, even though this project does
+		// not currently declare `use.storageState`.
+		//
+		// A context created without naming `storageState` INHERITS the
+		// project's default one. This suite has no globalSetup today (see the
+		// header of tests/e2e/playwright.config.ts, which says so
+		// deliberately), so the default is empty and this line changes
+		// nothing — today. The moment anyone adds a globalSetup that logs in,
+		// every context here silently starts holding that session cookie, and
+		// because a valid cookie outranks a later Authorization header, the
+		// "anonymous" and "non-admin" contexts below would quietly become the
+		// admin while still passing.
+		//
+		// That is not hypothetical: the byte-identical helper in pipelinq,
+		// whose config DOES set `use.storageState`, had exactly this defect —
+		// `assertCallerIs(anon, null)` read back `"admin"`. One line of
+		// difference in a config file, in another repository, decided whether
+		// five negative assertions meant anything.
+		storageState: { cookies: [], origins: [] },
+	})
 }
 
 /**
@@ -119,18 +153,37 @@ async function newIdentity(identity: Identity): Promise<APIRequestContext> {
  */
 async function assertCallerIs(ctx: APIRequestContext, expected: string | null): Promise<void> {
 	const res = await ctx.get('/ocs/v2.php/cloud/user?format=json')
+	const body = await res.json().catch(() => null)
+	// READ THE IDENTITY, NOT THE HTTP STATUS.
+	//
+	// The OCS layer reports "not logged in" as **HTTP 200** with
+	// `ocs.meta.statuscode: 997` — it does not 401. The previous version of
+	// this helper asserted `status !== 200` for the anonymous case, which made
+	// the guard's verdict a property of how this Nextcloud version chooses to
+	// signal the refusal rather than of who is actually calling. It passed
+	// here and failed on pipelinq's CI against a context that was correctly
+	// anonymous: the same assertion, two answers, so at most one of them was
+	// measuring the thing it named.
+	//
+	// `ocs.data.id` is the resolved identity itself. Absent means nobody is
+	// authenticated, whichever way the server says so; present means somebody
+	// is, and names them. That also makes this a DISCRIMINATOR rather than a
+	// smoke test: if a session cookie ever did leak into a context meant to be
+	// anonymous, this reads back `admin` and fails — which is precisely the
+	// failure the guard exists to catch, and which a status check cannot
+	// distinguish from a version difference.
+	const uid = body?.ocs?.data?.id ?? null
+
 	if (expected === null) {
 		expect(
-			res.status(),
-			'an anonymous context must not resolve to a Nextcloud session — if it does, a cookie leaked in from another identity and every negative assertion below is meaningless',
-		).not.toBe(200)
+			uid,
+			'an anonymous context must not resolve to a Nextcloud user — if it does, a cookie leaked in from another identity and every negative assertion below is meaningless',
+		).toBeNull()
 		return
 	}
-	expect(res.status(), `caller identity probe must succeed for ${expected}`).toBe(200)
-	const body = await res.json()
 	expect(
-		body?.ocs?.data?.id,
-		`this context must be acting as ${expected}; a different uid means the cookie jar is shared and the assertions below measure the wrong caller`,
+		uid,
+		`this context must be acting as ${expected}; a different uid (or none) means the cookie jar is shared, or the credentials did not authenticate, and the assertions below measure the wrong caller`,
 	).toBe(expected)
 }
 
