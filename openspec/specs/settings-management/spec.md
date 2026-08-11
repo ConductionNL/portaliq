@@ -42,9 +42,22 @@ accessible to any authenticated user (`#[NoAdminRequired]`).
 
 - GIVEN a signed-in, non-admin user sends `GET /api/settings`
 - WHEN `SettingsController::index()` invokes `SettingsService::getSettings()`
-- THEN the system MUST return HTTP 200 with a JSON object containing every `CONFIG_KEYS` entry (empty string if unset)
+- THEN the system MUST return HTTP 200
 - AND the body MUST include `openregisters` (boolean) and `isAdmin: false`
+- AND the admin-sensitive `register` binding MUST be stripped from the response, so a regular authenticated user is never handed the register UUID
 - AND unauthenticated access MUST still be rejected by the Nextcloud framework
+
+> **Corrected against the shipped contract.** This scenario previously said the
+> non-admin body "MUST contain every `CONFIG_KEYS` entry". It never did:
+> `SettingsController::index()` has stripped `register` for non-admins since
+> the initial scaffold commit (`0fa52bf`), with a docblock giving the reason
+> ("so the register UUID is not exposed to regular authenticated users") and a
+> unit test pinning it
+> (`SettingsControllerTest::testIndexStripsRegisterForNonAdmin`). The spec
+> sentence was inherited verbatim from `nextcloud-app-template` and described
+> code that has never run here; the shipped behaviour is the stricter of the
+> two, so the text is corrected to it rather than the code loosened to the
+> text. Asserted end-to-end in `tests/e2e/app-shell-and-admin.spec.ts`.
 
 #### Scenario: Admin user reads settings
 
@@ -115,6 +128,7 @@ admin-only and MUST be callable at any time (not only on install).
 
 #### Scenario: Admin triggers re-import but OpenRegister is missing
 
+- @e2e exclude observing this end-to-end means disabling `openregister` on the running instance, and Portaliq's register, schemas and every portal collection live there — the rest of this suite (and every portal spec) would fail on missing data, so the run would report a wall of red naming the wrong cause. Covered by `SettingsControllerTest::testLoadReturnsConfigurationResult` together with the `isOpenRegisterAvailable()` guard asserted in `InitializeSettingsTest::testMissingOpenRegisterWarnsOnBothChannelsAndReturnsNormally`; the available half of the same requirement IS asserted end-to-end in `tests/e2e/app-shell-and-admin.spec.ts`.
 - GIVEN OpenRegister is not installed or disabled
 - WHEN `loadConfiguration()` is invoked
 - THEN the system MUST emit a server-side warning via `LoggerInterface::warning()`

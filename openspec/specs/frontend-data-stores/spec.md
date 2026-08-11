@@ -39,6 +39,29 @@ return safe fallback" rule on the client).
 
 ## Requirements
 
+@e2e exclude the Pinia store layer this capability describes has NO IMPORTER in
+`src/`. `src/store/store.js` and `src/store/modules/{object,settings}.js` are
+imported by nothing: `src/main.js` imports `./pinia.js` (the bare Pinia
+instance) and mounts `App.vue`, which renders `<CnAppRoot>` from
+`@conduction/nextcloud-vue` — the SPA is manifest-driven and reaches
+OpenRegister through the shared library's own store plane (ADR-022, and hydra
+gate-62 `store-plane`), never through these modules. Verify with
+`grep -rn "store/store\|store/modules" src/ --include=*.js --include=*.vue`,
+which returns nothing outside `src/store/` itself. No browser session can
+execute code the bundle's module graph never reaches, so every scenario below
+is unreachable end-to-end by construction rather than by omission — and the
+remaining requirements (a `requesttoken` header, a per-type `loading` flag, a
+`console.warn` on an unregistered type) are internal to a store instance and
+have no rendered surface even if it were wired.
+
+> **This is a finding, not a disposition.** The honest close for this capability
+> is to delete the dead module tree and archive the spec with it, or to wire it
+> up if the app still needs its own store layer. Both are product decisions
+> about scaffold inherited from `nextcloud-app-template`, so they are filed
+> rather than taken here
+> ([ConductionNL/portaliq#92](https://github.com/ConductionNL/portaliq/issues/92));
+> the exclusion states why an e2e test cannot be the answer either way.
+
 ### REQ-STORE-001: Configure the object store with OpenRegister URLs
 
 The object store MUST expose a `configure({ baseUrl, schemaBaseUrl })` action

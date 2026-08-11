@@ -3,6 +3,17 @@
 ## Purpose
 TBD - created by archiving change complete-spdx-headers. Update Purpose after archive.
 ## Requirements
+
+@e2e exclude source-header presence is a STATIC property of the checkout, not a
+runtime behaviour: nothing a browser can do to a running instance changes
+whether a `.php` file on disk carries an SPDX line, so no end-to-end test could
+distinguish a compliant tree from a non-compliant one. It is enforced
+mechanically instead, on every PR, by hydra gate-1 (`spdx-headers`) and by
+REUSE via `REUSE.toml` — both of which fail the build, which is strictly
+stronger than an e2e assertion would be. (The exclusion previously sat only
+under the second scenario, leaving the first one uncovered for the same reason
+that applies to both.)
+
 ### Requirement: Every lib PHP file carries the EUPL-1.2 SPDX header
 
 Every PHP file under `lib/` MUST carry the EUPL-1.2 licence/copyright header in its top

@@ -49,7 +49,7 @@ failure (OR error, missing OpenRegister, malformed row) it MUST fail closed to
 - **GIVEN** a subject, an opted-in collection, a row they own, and a file attached to that row
 - **WHEN** they request that file by `fileId`
 - **THEN** ownership + tenant + trust are re-verified first, then the file streams with `Content-Disposition: attachment` and a sanitised filename
-- Covered by `tests/e2e/portal-document-download.spec.ts` ("a subject downloads a file on a row they own") + `ContributionControllerTest::testDownloadStreamsOwnedFileAndInvokesAuditHookOnSuccess`.
+- @e2e exclude the e2e test for this scenario EXISTS but DOES NOT RUN: `tests/e2e/playwright.config.ts` carries a `grepInvert` on the title "a subject downloads a file on a row they own", because it fails against an OpenRegister product bug (`FileService::addFile()` has no `_rbac` parameter, so a portal subject cannot attach a file on an instance whose register folder has not already been materialised by an authenticated Nextcloud user) — ConductionNL/portaliq#29. A test a Playwright project never executes is not coverage, so anchoring this scenario to it would be a false green. Covered meanwhile by `ContributionControllerTest::testDownloadStreamsOwnedFileAndInvokesAuditHookOnSuccess`. Delete this exclusion and anchor the spec to the test when #29 closes and the `grepInvert` goes.
 
 #### Scenario: A file on a foreign-owned row is refused before it is resolved
 
@@ -119,7 +119,8 @@ empty inbox, never leaking another subject's or tenant's messages.
 - **GIVEN** a subject with `kind: inbox` collections in two contributions, each holding messages they own
 - **WHEN** they call `GET /portal/api/inbox`
 - **THEN** all their messages are returned merged, sorted by `receivedAt` descending, each tagged with its source `appId` and label — and no message they do not own is included
-- Covered by `tests/e2e/portal-inbox.spec.ts` ("merged inbox with unread badge, 2:10 metadata, and read-state toggle") at the SPA level, plus `PortalInboxReaderTest::testMergesInboxCollectionsAcrossAppsSortedByReceivedAtDesc` for the multi-app merge/sort/provenance contract.
+- @e2e exclude the MULTI-CONTRIBUTION half of this scenario is not reachable from this suite: the only contribution a CI instance has is the demo `PortalContributionProvider`, so both seedable message rows land in the SAME register/schema (`portaliq/portalMessage`) — i.e. one contribution — and a browser test can therefore prove sorting and provenance-tagging but never the cross-app MERGE the scenario is about. `tests/e2e/portal-inbox.spec.ts` says so in its own body and deliberately does not anchor this scenario. Covered by `PortalInboxReaderTest::testMergesInboxCollectionsAcrossAppsSortedByReceivedAtDesc`, which drives two distinct contributions through the reader. Reaching it end-to-end needs a second contributing app installed on the CI instance.
+- Previously this bullet claimed `tests/e2e/portal-inbox.spec.ts` covered the scenario "at the SPA level". It does not, and its own comments say why; the claim is corrected rather than carried forward.
 
 #### Scenario: The unified inbox honours the per-row trust and tenant boundary
 
