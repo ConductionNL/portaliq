@@ -35,6 +35,21 @@ per slot-bearing kind so a freshly-cloned template renders something real:
 
 ### REQ-COMP-001: Cell renderer derives a CSS-safe class from the value
 
+@e2e exclude `StatusBadge` is registered but can never bind, so no rendered
+table cell in this app is one. `src/registry.js` registers it with
+`appliesTo: { schema: 'example', property: 'status' }`, and the component's own
+docblock says `schema: "item"` — neither string is a schema in this app's
+register. `lib/Settings/portaliq_register.json` declares exactly nine schema
+slugs (`exampleDocument`, `portalAccount`, `portalAuditEntry`, `portalMessage`,
+`portalNotification`, `portalOidcState`, `portalPage`, `portalSession`,
+`portalSubmission`), and `tests/e2e/ci-seed.sh` verifies that list on every CI
+run. The object table therefore never substitutes this renderer for any column,
+and a browser test would assert against a badge that does not render. The
+mismatch is filed rather than silently repointed at `exampleDocument`: making a
+dead scaffold component live changes what the Documents table looks like, which
+is a product decision, not a test fix —
+[ConductionNL/portaliq#93](https://github.com/ConductionNL/portaliq/issues/93).
+
 The `StatusBadge` cell renderer MUST display the raw cell value and MUST derive
 a CSS-safe modifier class from a normalised form of that value, so that the
 object table can colour status cells without the schema dictating CSS. The
@@ -56,6 +71,18 @@ when the value is empty.
 - THEN it MUST return `unknown`
 
 ### REQ-COMP-002: Confirm/cancel modal relays the choice and closes
+
+@e2e exclude `ExampleModal` is opened only by a manifest action of
+`type: "open-modal"` targeting the registry key `example-modal`, and
+`src/manifest.json` contains no `open-modal` action at all
+(`grep -c open-modal src/manifest.json` → 0). There is consequently no control
+anywhere in the SPA that opens this dialog, so a browser test would have to
+add one — i.e. change the product to create its own subject. Same family as the
+`EmailField` exclusion on REQ-COMP-003 below, and the same disposition: the
+event contract (`confirm` / `cancel` plus `update:open` deferred to the parent,
+per the ADR-004 modal-isolation rule) is a component-level assertion, and
+wiring a demo action into the shipped manifest is a product decision —
+[ConductionNL/portaliq#93](https://github.com/ConductionNL/portaliq/issues/93).
 
 The `ExampleModal` MUST, on confirm, emit a `confirm` event and request closure
 (`update:open` with `false`); on cancel, it MUST emit a `cancel` event and
