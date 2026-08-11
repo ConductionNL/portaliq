@@ -115,7 +115,29 @@ async function newIdentity(identity: Identity): Promise<APIRequestContext> {
 		const basic = Buffer.from(`${identity.user}:${identity.pass}`).toString('base64')
 		headers.Authorization = `Basic ${basic}`
 	}
-	return playwrightRequest.newContext({ baseURL: BASE_URL, extraHTTPHeaders: headers })
+	return playwrightRequest.newContext({
+		baseURL: BASE_URL,
+		extraHTTPHeaders: headers,
+		// AN EMPTY JAR IS ASKED FOR EXPLICITLY, even though this project does
+		// not currently declare `use.storageState`.
+		//
+		// A context created without naming `storageState` INHERITS the
+		// project's default one. This suite has no globalSetup today (see the
+		// header of tests/e2e/playwright.config.ts, which says so
+		// deliberately), so the default is empty and this line changes
+		// nothing — today. The moment anyone adds a globalSetup that logs in,
+		// every context here silently starts holding that session cookie, and
+		// because a valid cookie outranks a later Authorization header, the
+		// "anonymous" and "non-admin" contexts below would quietly become the
+		// admin while still passing.
+		//
+		// That is not hypothetical: the byte-identical helper in pipelinq,
+		// whose config DOES set `use.storageState`, had exactly this defect —
+		// `assertCallerIs(anon, null)` read back `"admin"`. One line of
+		// difference in a config file, in another repository, decided whether
+		// five negative assertions meant anything.
+		storageState: { cookies: [], origins: [] },
+	})
 }
 
 /**
