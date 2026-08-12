@@ -57,89 +57,86 @@ use OCA\Portaliq\Service\PortalSchemaReader;
  * @spec openspec/changes/contribution-manifest-v3/tasks.md#T1
  * @spec openspec/specs/supplier-portal/spec.md#form-data-minimisation-no-non-mandatory-field-may-be-required
  */
-class PortalManifestNormaliser
-{
+class PortalManifestNormaliser {
 
-    /**
-     * The collection-half validator.
-     *
-     * @var CollectionConfigNormaliser
-     */
-    private readonly CollectionConfigNormaliser $collections;
+	/**
+	 * The collection-half validator.
+	 *
+	 * @var CollectionConfigNormaliser
+	 */
+	private readonly CollectionConfigNormaliser $collections;
 
-    /**
-     * The action-half validator.
-     *
-     * @var ActionConfigNormaliser
-     */
-    private readonly ActionConfigNormaliser $actions;
+	/**
+	 * The action-half validator.
+	 *
+	 * @var ActionConfigNormaliser
+	 */
+	private readonly ActionConfigNormaliser $actions;
 
-    /**
-     * The page/block resolver.
-     *
-     * @var PortalPageResolver
-     */
-    private readonly PortalPageResolver $pages;
+	/**
+	 * The page/block resolver.
+	 *
+	 * @var PortalPageResolver
+	 */
+	private readonly PortalPageResolver $pages;
 
-    /**
-     * Constructor.
-     *
-     * The collaborators are pure value transformers with no I/O of their own,
-     * so they are composed here rather than injected — this keeps the class
-     * constructible with no arguments (its pre-existing default-value call site
-     * in PortalContributionRegistry and every direct unit-test instantiation).
-     *
-     * @param PortalSchemaReader|null $schemaReader Resolves an action's schema
-     *                                              `required` set for the WMEBV
-     *                                              data-minimisation guard.
-     *                                              Optional/nullable; a null
-     *                                              reader simply means the guard
-     *                                              always fails closed (drops
-     *                                              `required`).
-     *
-     * @spec openspec/specs/supplier-portal/spec.md#form-data-minimisation-no-non-mandatory-field-may-be-required
-     */
-    public function __construct(?PortalSchemaReader $schemaReader=null)
-    {
-        $values = new ManifestValueNormaliser();
+	/**
+	 * Constructor.
+	 *
+	 * The collaborators are pure value transformers with no I/O of their own,
+	 * so they are composed here rather than injected — this keeps the class
+	 * constructible with no arguments (its pre-existing default-value call site
+	 * in PortalContributionRegistry and every direct unit-test instantiation).
+	 *
+	 * @param PortalSchemaReader|null $schemaReader Resolves an action's schema
+	 *                                              `required` set for the WMEBV
+	 *                                              data-minimisation guard.
+	 *                                              Optional/nullable; a null
+	 *                                              reader simply means the guard
+	 *                                              always fails closed (drops
+	 *                                              `required`).
+	 *
+	 * @spec openspec/specs/supplier-portal/spec.md#form-data-minimisation-no-non-mandatory-field-may-be-required
+	 */
+	public function __construct(?PortalSchemaReader $schemaReader = null) {
+		$values = new ManifestValueNormaliser();
 
-        $this->collections = new CollectionConfigNormaliser($values);
-        $this->actions     = new ActionConfigNormaliser(
-            $values,
-            new ActionOptionsNormaliser($values),
-            $schemaReader
-        );
-        $this->pages       = new PortalPageResolver(new PortalBlockResolver());
-    }//end __construct()
+		$this->collections = new CollectionConfigNormaliser($values);
+		$this->actions = new ActionConfigNormaliser(
+			$values,
+			new ActionOptionsNormaliser($values),
+			$schemaReader
+		);
+		$this->pages = new PortalPageResolver(new PortalBlockResolver());
+	}//end __construct()
 
-    /**
-     * Normalise one (already trust-filtered) contribution manifest.
-     *
-     * @param array<string, mixed> $contribution The trust-filtered contribution.
-     *
-     * @return array<string, mixed> The contribution with sanitised v3 config and
-     *                              a resolved/synthesised `pages` array.
-     *
-     * @spec openspec/changes/contribution-manifest-v3/tasks.md#T3
-     */
-    public function normalise(array $contribution): array
-    {
-        $collections = $this->collections->normaliseCollections(collections: (array) ($contribution['collections'] ?? []));
-        $actions     = $this->actions->normaliseActions(actions: (array) ($contribution['actions'] ?? []));
+	/**
+	 * Normalise one (already trust-filtered) contribution manifest.
+	 *
+	 * @param array<string, mixed> $contribution The trust-filtered contribution.
+	 *
+	 * @return array<string, mixed> The contribution with sanitised v3 config and
+	 *                              a resolved/synthesised `pages` array.
+	 *
+	 * @spec openspec/changes/contribution-manifest-v3/tasks.md#T3
+	 */
+	public function normalise(array $contribution): array {
+		$collections = $this->collections->normaliseCollections(collections: (array)($contribution['collections'] ?? []));
+		$actions = $this->actions->normaliseActions(actions: (array)($contribution['actions'] ?? []));
 
-        // Resolve each collection's `rowActions` against the update actions in
-        // THIS contribution — a per-row transition button (approve/reject/close)
-        // may only reference a `type: update` action the subject is entitled to.
-        $collections = $this->collections->resolveRowActions(collections: $collections, actions: $actions);
+		// Resolve each collection's `rowActions` against the update actions in
+		// THIS contribution — a per-row transition button (approve/reject/close)
+		// may only reference a `type: update` action the subject is entitled to.
+		$collections = $this->collections->resolveRowActions(collections: $collections, actions: $actions);
 
-        $contribution['collections'] = $collections;
-        $contribution['actions']     = $actions;
-        $contribution['pages']       = $this->pages->normalisePages(
-            pages: ($contribution['pages'] ?? null),
-            collections: $collections,
-            actions: $actions
-        );
+		$contribution['collections'] = $collections;
+		$contribution['actions'] = $actions;
+		$contribution['pages'] = $this->pages->normalisePages(
+			pages: ($contribution['pages'] ?? null),
+			collections: $collections,
+			actions: $actions
+		);
 
-        return $contribution;
-    }//end normalise()
+		return $contribution;
+	}//end normalise()
 }//end class

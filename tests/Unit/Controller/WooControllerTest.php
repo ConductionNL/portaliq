@@ -57,164 +57,155 @@ use ReflectionClass;
  *
  * @covers \OCA\Portaliq\Controller\WooController
  */
-class WooControllerTest extends TestCase
-{
+class WooControllerTest extends TestCase {
 
-    /**
-     * Temporary bundle root standing in for the built SPA.
-     *
-     * @var string
-     */
-    private string $bundle;
+	/**
+	 * Temporary bundle root standing in for the built SPA.
+	 *
+	 * @var string
+	 */
+	private string $bundle;
 
-    /**
-     * The controller under test, rooted at the temporary bundle.
-     *
-     * @var WooController
-     */
-    private WooController $controller;
+	/**
+	 * The controller under test, rooted at the temporary bundle.
+	 *
+	 * @var WooController
+	 */
+	private WooController $controller;
 
-    /**
-     * A file OUTSIDE the bundle that traversal must never reach.
-     *
-     * @var string
-     */
-    private string $secretOutside;
+	/**
+	 * A file OUTSIDE the bundle that traversal must never reach.
+	 *
+	 * @var string
+	 */
+	private string $secretOutside;
 
-    /**
-     * Build a throwaway bundle plus a secret file one level above its root.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
+	/**
+	 * Build a throwaway bundle plus a secret file one level above its root.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		parent::setUp();
 
-        $base = sys_get_temp_dir().'/pq-woo-'.bin2hex(random_bytes(6));
-        mkdir($base.'/woo/assets', 0777, true);
+		$base = sys_get_temp_dir() . '/pq-woo-' . bin2hex(random_bytes(6));
+		mkdir($base . '/woo/assets', 0777, true);
 
-        $this->bundle        = $base.'/woo';
-        $this->secretOutside = $base.'/secret.txt';
+		$this->bundle = $base . '/woo';
+		$this->secretOutside = $base . '/secret.txt';
 
-        file_put_contents($this->bundle.'/index.html', '<!doctype html><title>WOO SPA</title>');
-        file_put_contents($this->bundle.'/assets/app.a1b2c3.js', 'console.log(1)');
-        file_put_contents($this->secretOutside, 'TOP-SECRET');
+		file_put_contents($this->bundle . '/index.html', '<!doctype html><title>WOO SPA</title>');
+		file_put_contents($this->bundle . '/assets/app.a1b2c3.js', 'console.log(1)');
+		file_put_contents($this->secretOutside, 'TOP-SECRET');
 
-        $this->controller = new WooController('portaliq', $this->createMock(IRequest::class));
+		$this->controller = new WooController('portaliq', $this->createMock(IRequest::class));
 
-        $root = (new ReflectionClass(WooController::class))->getProperty('root');
-        $root->setAccessible(true);
-        $root->setValue($this->controller, realpath($this->bundle));
-    }//end setUp()
+		$root = (new ReflectionClass(WooController::class))->getProperty('root');
+		$root->setAccessible(true);
+		$root->setValue($this->controller, realpath($this->bundle));
+	}//end setUp()
 
-    /**
-     * Remove the throwaway bundle.
-     *
-     * @return void
-     */
-    protected function tearDown(): void
-    {
-        foreach ([
-            $this->bundle.'/assets/app.a1b2c3.js',
-            $this->bundle.'/index.html',
-            $this->secretOutside,
-        ] as $file) {
-            if (is_file($file) === true) {
-                unlink($file);
-            }
-        }
+	/**
+	 * Remove the throwaway bundle.
+	 *
+	 * @return void
+	 */
+	protected function tearDown(): void {
+		foreach ([
+			$this->bundle . '/assets/app.a1b2c3.js',
+			$this->bundle . '/index.html',
+			$this->secretOutside,
+		] as $file) {
+			if (is_file($file) === true) {
+				unlink($file);
+			}
+		}
 
-        @rmdir($this->bundle.'/assets');
-        @rmdir($this->bundle);
-        @rmdir(dirname($this->bundle));
+		@rmdir($this->bundle . '/assets');
+		@rmdir($this->bundle);
+		@rmdir(dirname($this->bundle));
 
-        parent::tearDown();
-    }//end tearDown()
+		parent::tearDown();
+	}//end tearDown()
 
-    /**
-     * Read the rendered bytes out of a response.
-     *
-     * @param DataDisplayResponse $response The response to read.
-     *
-     * @return string
-     */
-    private function bytes(DataDisplayResponse $response): string
-    {
-        return (string) $response->render();
-    }//end bytes()
+	/**
+	 * Read the rendered bytes out of a response.
+	 *
+	 * @param DataDisplayResponse $response The response to read.
+	 *
+	 * @return string
+	 */
+	private function bytes(DataDisplayResponse $response): string {
+		return (string)$response->render();
+	}//end bytes()
 
-    /**
-     * `/woo` serves the SPA entry.
-     *
-     * @return void
-     */
-    public function testServeReturnsTheSpaEntry(): void
-    {
-        $response = $this->controller->serve();
+	/**
+	 * `/woo` serves the SPA entry.
+	 *
+	 * @return void
+	 */
+	public function testServeReturnsTheSpaEntry(): void {
+		$response = $this->controller->serve();
 
-        $this->assertInstanceOf(DataDisplayResponse::class, $response);
-        $this->assertStringContainsString('WOO SPA', $this->bytes($response));
-    }//end testServeReturnsTheSpaEntry()
+		$this->assertInstanceOf(DataDisplayResponse::class, $response);
+		$this->assertStringContainsString('WOO SPA', $this->bytes($response));
+	}//end testServeReturnsTheSpaEntry()
 
-    /**
-     * An unknown sub-path is a client-side route, so it falls back to the SPA
-     * entry rather than 404ing.
-     *
-     * @return void
-     */
-    public function testServePathFallsBackToTheSpaForClientRoutes(): void
-    {
-        $response = $this->controller->servePath(path: 'requests/2026/42');
+	/**
+	 * An unknown sub-path is a client-side route, so it falls back to the SPA
+	 * entry rather than 404ing.
+	 *
+	 * @return void
+	 */
+	public function testServePathFallsBackToTheSpaForClientRoutes(): void {
+		$response = $this->controller->servePath(path: 'requests/2026/42');
 
-        $this->assertStringContainsString('WOO SPA', $this->bytes($response));
-    }//end testServePathFallsBackToTheSpaForClientRoutes()
+		$this->assertStringContainsString('WOO SPA', $this->bytes($response));
+	}//end testServePathFallsBackToTheSpaForClientRoutes()
 
-    /**
-     * Traversal above the bundle root NEVER serves the outside file; it falls
-     * back to the SPA entry. Every one of these is reachable by an anonymous
-     * caller, because the route requirement is `.+`.
-     *
-     * @param string $path The hostile sub-path.
-     *
-     * @return void
-     *
-     * @dataProvider traversalProvider
-     */
-    public function testServePathRefusesToEscapeTheBundleRoot(string $path): void
-    {
-        $body = $this->bytes($this->controller->servePath(path: $path));
+	/**
+	 * Traversal above the bundle root NEVER serves the outside file; it falls
+	 * back to the SPA entry. Every one of these is reachable by an anonymous
+	 * caller, because the route requirement is `.+`.
+	 *
+	 * @param string $path The hostile sub-path.
+	 *
+	 * @return void
+	 *
+	 * @dataProvider traversalProvider
+	 */
+	public function testServePathRefusesToEscapeTheBundleRoot(string $path): void {
+		$body = $this->bytes($this->controller->servePath(path: $path));
 
-        $this->assertStringNotContainsString('TOP-SECRET', $body, 'traversal escaped the bundle root');
-        $this->assertStringContainsString('WOO SPA', $body, 'traversal should fall back to the SPA entry');
-    }//end testServePathRefusesToEscapeTheBundleRoot()
+		$this->assertStringNotContainsString('TOP-SECRET', $body, 'traversal escaped the bundle root');
+		$this->assertStringContainsString('WOO SPA', $body, 'traversal should fall back to the SPA entry');
+	}//end testServePathRefusesToEscapeTheBundleRoot()
 
-    /**
-     * Hostile sub-paths an anonymous caller can put in `/woo/{path}`.
-     *
-     * @return array<string, array{0: string}>
-     */
-    public static function traversalProvider(): array
-    {
-        return [
-            'dot-dot to sibling file' => ['../secret.txt'],
-            'nested dot-dot'          => ['assets/../../secret.txt'],
-            'backslash separators'    => ['..\\secret.txt'],
-            'leading slash + dot-dot' => ['/../secret.txt'],
-            'absolute path'           => ['/etc/hostname'],
-        ];
-    }//end traversalProvider()
+	/**
+	 * Hostile sub-paths an anonymous caller can put in `/woo/{path}`.
+	 *
+	 * @return array<string, array{0: string}>
+	 */
+	public static function traversalProvider(): array {
+		return [
+			'dot-dot to sibling file' => ['../secret.txt'],
+			'nested dot-dot' => ['assets/../../secret.txt'],
+			'backslash separators' => ['..\\secret.txt'],
+			'leading slash + dot-dot' => ['/../secret.txt'],
+			'absolute path' => ['/etc/hostname'],
+		];
+	}//end traversalProvider()
 
-    /**
-     * An empty `{path}` (the route's own default) is the SPA entry, never a
-     * directory listing or an error.
-     *
-     * @return void
-     */
-    public function testServePathWithTheRouteDefaultReturnsTheSpaEntry(): void
-    {
-        $this->assertStringContainsString(
-            'WOO SPA',
-            $this->bytes($this->controller->servePath(path: ''))
-        );
-    }//end testServePathWithTheRouteDefaultReturnsTheSpaEntry()
+	/**
+	 * An empty `{path}` (the route's own default) is the SPA entry, never a
+	 * directory listing or an error.
+	 *
+	 * @return void
+	 */
+	public function testServePathWithTheRouteDefaultReturnsTheSpaEntry(): void {
+		$this->assertStringContainsString(
+			'WOO SPA',
+			$this->bytes($this->controller->servePath(path: ''))
+		);
+	}//end testServePathWithTheRouteDefaultReturnsTheSpaEntry()
 }//end class

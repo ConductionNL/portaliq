@@ -58,159 +58,154 @@ use Throwable;
  * @spec openspec/changes/supplier-portal/tasks.md#T02
  * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
  */
-class PortalAuthMiddleware extends Middleware
-{
-    /**
-     * Controller methods the anonymous-allowed branch considers at all.
-     * Every other guarded method keeps the unconditional bearer-required
-     * default (no anonymous surface is defined for it in this change —
-     * `update`/endpoint `action` are explicitly out of scope, design.md).
-     */
-    private const ANONYMOUS_ELIGIBLE_METHODS = ['index', 'create'];
+class PortalAuthMiddleware extends Middleware {
+	/**
+	 * Controller methods the anonymous-allowed branch considers at all.
+	 * Every other guarded method keeps the unconditional bearer-required
+	 * default (no anonymous surface is defined for it in this change —
+	 * `update`/endpoint `action` are explicitly out of scope, design.md).
+	 */
+	private const ANONYMOUS_ELIGIBLE_METHODS = ['index', 'create'];
 
-    /**
-     * Constructor.
-     *
-     * @param IRequest                   $request  The request object.
-     * @param PortalSessionService       $session  The session resolver.
-     * @param PortalContributionRegistry $registry Resolves the anonymous-reachable
-     *                                             surface
-     *                                             (portal-page-provisioning).
-     */
-    public function __construct(
-        private readonly IRequest $request,
-        private readonly PortalSessionService $session,
-        private readonly PortalContributionRegistry $registry,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param IRequest $request The request object.
+	 * @param PortalSessionService $session The session resolver.
+	 * @param PortalContributionRegistry $registry Resolves the anonymous-reachable
+	 *                                             surface
+	 *                                             (portal-page-provisioning).
+	 */
+	public function __construct(
+		private readonly IRequest $request,
+		private readonly PortalSessionService $session,
+		private readonly PortalContributionRegistry $registry,
+	) {
+	}//end __construct()
 
-    /**
-     * Require a valid bearer session before a protected controller runs,
-     * unless the request matches an explicitly anonymous-flagged entry
-     * (portal-page-provisioning). The guarded controller re-derives the
-     * subject itself (null on the anonymous path); this is purely the
-     * fail-closed gate.
-     *
-     * @param object $controller The controller being dispatched.
-     * @param string $methodName The method being invoked.
-     *
-     * @return void
-     *
-     * @throws PortalUnauthorizedException When no valid bearer session is
-     *                                      present AND no anonymous entry
-     *                                      matches the request.
-     *
-     * @spec openspec/changes/supplier-portal/tasks.md#T02
-     * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
-     */
-    public function beforeController($controller, $methodName): void
-    {
-        if (($controller instanceof PortalProtected) === false) {
-            return;
-        }
+	/**
+	 * Require a valid bearer session before a protected controller runs,
+	 * unless the request matches an explicitly anonymous-flagged entry
+	 * (portal-page-provisioning). The guarded controller re-derives the
+	 * subject itself (null on the anonymous path); this is purely the
+	 * fail-closed gate.
+	 *
+	 * @param object $controller The controller being dispatched.
+	 * @param string $methodName The method being invoked.
+	 *
+	 * @return void
+	 *
+	 * @throws PortalUnauthorizedException When no valid bearer session is
+	 *                                     present AND no anonymous entry
+	 *                                     matches the request.
+	 *
+	 * @spec openspec/changes/supplier-portal/tasks.md#T02
+	 * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
+	 */
+	public function beforeController($controller, $methodName): void {
+		if (($controller instanceof PortalProtected) === false) {
+			return;
+		}
 
-        $subject = $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
-        if ($subject !== null) {
-            return;
-        }
+		$subject = $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
+		if ($subject !== null) {
+			return;
+		}
 
-        if ($this->anonymousEntryMatches(methodName: $methodName) === true) {
-            return;
-        }
+		if ($this->anonymousEntryMatches(methodName: $methodName) === true) {
+			return;
+		}
 
-        throw new PortalUnauthorizedException(message: 'No valid portal session');
-    }//end beforeController()
+		throw new PortalUnauthorizedException(message: 'No valid portal session');
+	}//end beforeController()
 
-    /**
-     * Whether the current request matches an anonymous-flagged entry for the
-     * method being invoked (portal-page-provisioning). Fails closed to false
-     * on any method this change does not define an anonymous surface for,
-     * and on a `create()` request missing its `register`/`schema` route
-     * parameters.
-     *
-     * @param string $methodName The method being invoked.
-     *
-     * @return bool
-     *
-     * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
-     */
-    private function anonymousEntryMatches(string $methodName): bool
-    {
-        if (in_array($methodName, self::ANONYMOUS_ELIGIBLE_METHODS, true) === false) {
-            return false;
-        }
+	/**
+	 * Whether the current request matches an anonymous-flagged entry for the
+	 * method being invoked (portal-page-provisioning). Fails closed to false
+	 * on any method this change does not define an anonymous surface for,
+	 * and on a `create()` request missing its `register`/`schema` route
+	 * parameters.
+	 *
+	 * @param string $methodName The method being invoked.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
+	 */
+	private function anonymousEntryMatches(string $methodName): bool {
+		if (in_array($methodName, self::ANONYMOUS_ELIGIBLE_METHODS, true) === false) {
+			return false;
+		}
 
-        $aggregate     = $this->registry->aggregateAnonymous();
-        $contributions = (array) ($aggregate['contributions'] ?? []);
+		$aggregate = $this->registry->aggregateAnonymous();
+		$contributions = (array)($aggregate['contributions'] ?? []);
 
-        // Index(): any anonymous entry existing at all is enough — the
-        // anonymous visitor's SPA needs the page layout (labels, richText,
-        // field configs) before it can submit anything.
-        if ($methodName === 'index') {
-            return count($contributions) > 0;
-        }
+		// Index(): any anonymous entry existing at all is enough — the
+		// anonymous visitor's SPA needs the page layout (labels, richText,
+		// field configs) before it can submit anything.
+		if ($methodName === 'index') {
+			return count($contributions) > 0;
+		}
 
-        return $this->anonymousCreateActionMatches(contributions: $contributions);
-    }//end anonymousEntryMatches()
+		return $this->anonymousCreateActionMatches(contributions: $contributions);
+	}//end anonymousEntryMatches()
 
-    /**
-     * Whether an anonymous `type: create` action matches the request's
-     * target `(register, schema)` — bound from the route's {register}/
-     * {schema} placeholders, the same shape
-     * `ContributionController::authorisedCreateAction()` matches for a
-     * bearer-authenticated subject. Fails closed to false when either route
-     * parameter is missing.
-     *
-     * @param array<int, array<string, mixed>> $contributions The anonymous-only contributions.
-     *
-     * @return bool
-     *
-     * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
-     */
-    private function anonymousCreateActionMatches(array $contributions): bool
-    {
-        $register = (string) $this->request->getParam('register', '');
-        $schema   = (string) $this->request->getParam('schema', '');
-        if ($register === '' || $schema === '') {
-            return false;
-        }
+	/**
+	 * Whether an anonymous `type: create` action matches the request's
+	 * target `(register, schema)` — bound from the route's {register}/
+	 * {schema} placeholders, the same shape
+	 * `ContributionController::authorisedCreateAction()` matches for a
+	 * bearer-authenticated subject. Fails closed to false when either route
+	 * parameter is missing.
+	 *
+	 * @param array<int, array<string, mixed>> $contributions The anonymous-only contributions.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
+	 */
+	private function anonymousCreateActionMatches(array $contributions): bool {
+		$register = (string)$this->request->getParam('register', '');
+		$schema = (string)$this->request->getParam('schema', '');
+		if ($register === '' || $schema === '') {
+			return false;
+		}
 
-        foreach ($contributions as $contribution) {
-            foreach ((array) ($contribution['actions'] ?? []) as $action) {
-                if (($action['type'] ?? '') === 'create'
-                    && ($action['anonymous'] ?? false) === true
-                    && ($action['register'] ?? '') === $register
-                    && ($action['schema'] ?? '') === $schema
-                ) {
-                    return true;
-                }
-            }
-        }
+		foreach ($contributions as $contribution) {
+			foreach ((array)($contribution['actions'] ?? []) as $action) {
+				if (($action['type'] ?? '') === 'create'
+					&& ($action['anonymous'] ?? false) === true
+					&& ($action['register'] ?? '') === $register
+					&& ($action['schema'] ?? '') === $schema
+				) {
+					return true;
+				}
+			}
+		}
 
-        return false;
-    }//end anonymousCreateActionMatches()
+		return false;
+	}//end anonymousCreateActionMatches()
 
-    /**
-     * Convert a portal auth failure to a 401 JSON response.
-     *
-     * @param object     $controller The controller being dispatched.
-     * @param string     $methodName The method being invoked.
-     * @param \Throwable $exception  The thrown exception.
-     *
-     * @return Response
-     *
-     * @throws Throwable Re-thrown when it is not a portal auth failure.
-     *
-     * @spec openspec/changes/supplier-portal/tasks.md#T02
-     *
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
-     */
-    public function afterException($controller, $methodName, \Throwable $exception): Response
-    {
-        if ($exception instanceof PortalUnauthorizedException) {
-            return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
-        }
+	/**
+	 * Convert a portal auth failure to a 401 JSON response.
+	 *
+	 * @param object $controller The controller being dispatched.
+	 * @param string $methodName The method being invoked.
+	 * @param \Throwable $exception The thrown exception.
+	 *
+	 * @return Response
+	 *
+	 * @throws Throwable Re-thrown when it is not a portal auth failure.
+	 *
+	 * @spec openspec/changes/supplier-portal/tasks.md#T02
+	 *
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	 */
+	public function afterException($controller, $methodName, \Throwable $exception): Response {
+		if ($exception instanceof PortalUnauthorizedException) {
+			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+		}
 
-        throw $exception;
-    }//end afterException()
+		throw $exception;
+	}//end afterException()
 }//end class

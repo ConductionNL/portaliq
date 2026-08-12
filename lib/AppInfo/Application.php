@@ -48,66 +48,62 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
 /**
  * Main application class for the Portaliq Nextcloud app.
  */
-class Application extends App implements IBootstrap
-{
-    public const APP_ID = 'portaliq';
+class Application extends App implements IBootstrap {
+	public const APP_ID = 'portaliq';
 
-    /**
-     * Constructor for the Application class.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-        parent::__construct(appName: self::APP_ID);
-    }//end __construct()
+	/**
+	 * Constructor for the Application class.
+	 *
+	 * @return void
+	 */
+	public function __construct() {
+		parent::__construct(appName: self::APP_ID);
+	}//end __construct()
 
-    /**
-     * Register event listeners and services.
-     *
-     * @param IRegistrationContext $context The registration context
-     *
-     * @return void
-     *
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
-     */
-    public function register(IRegistrationContext $context): void
-    {
-        // Initialize register and schemas on install/upgrade — registered via
-        // appinfo/info.xml <repair-steps> (pre- and post-migration). The
-        // programmatic IRegistrationContext::registerRepairStep() was removed in
-        // Nextcloud 34, so calling it here fatals app registration (and, thrown
-        // during the Coordinator pass, blanks the whole Settings framework and
-        // blocks the app's own version-upgrade from recording). info.xml is the
-        // NC34-supported mechanism and already declares this step.
-        // AI Chat Companion (hydra ADR-034/035): expose this app's capabilities to the in-app AI
-        // by registering an IMcpToolProvider under the alias OCA\OpenRegister\Mcp\IMcpToolProvider::{appId}.
-        // OpenRegister's McpToolsService discovers providers by this alias. See lib/Mcp/ExampleToolProvider.php.
-        $context->registerServiceAlias(
-            'OCA\\OpenRegister\\Mcp\\IMcpToolProvider::'.self::APP_ID,
-            ExampleToolProvider::class
-        );
+	/**
+	 * Register event listeners and services.
+	 *
+	 * @param IRegistrationContext $context The registration context
+	 *
+	 * @return void
+	 *
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	 */
+	public function register(IRegistrationContext $context): void {
+		// Initialize register and schemas on install/upgrade — registered via
+		// appinfo/info.xml <repair-steps> (pre- and post-migration). The
+		// programmatic IRegistrationContext::registerRepairStep() was removed in
+		// Nextcloud 34, so calling it here fatals app registration (and, thrown
+		// during the Coordinator pass, blanks the whole Settings framework and
+		// blocks the app's own version-upgrade from recording). info.xml is the
+		// NC34-supported mechanism and already declares this step.
+		// AI Chat Companion (hydra ADR-034/035): expose this app's capabilities to the in-app AI
+		// by registering an IMcpToolProvider under the alias OCA\OpenRegister\Mcp\IMcpToolProvider::{appId}.
+		// OpenRegister's McpToolsService discovers providers by this alias. See lib/Mcp/ExampleToolProvider.php.
+		$context->registerServiceAlias(
+			'OCA\\OpenRegister\\Mcp\\IMcpToolProvider::' . self::APP_ID,
+			ExampleToolProvider::class
+		);
 
-        // Fail-closed bearer guard for PortalProtected controllers (e.g.
-        // ContributionController). Public auth-edge routes are untouched.
-        $context->registerMiddleware(PortalAuthMiddleware::class);
+		// Fail-closed bearer guard for PortalProtected controllers (e.g.
+		// ContributionController). Public auth-edge routes are untouched.
+		$context->registerMiddleware(PortalAuthMiddleware::class);
 
-        // Portal contributions are discovered by convention FQCN
-        // (OCA\{Namespace}\Portal\PortalContributionProvider) — see
-        // PortalContributionRegistry — so no per-provider registration is needed
-        // here; the DI container constructs each app's provider by reflection.
-    }//end register()
+		// Portal contributions are discovered by convention FQCN
+		// (OCA\{Namespace}\Portal\PortalContributionProvider) — see
+		// PortalContributionRegistry — so no per-provider registration is needed
+		// here; the DI container constructs each app's provider by reflection.
+	}//end register()
 
-    /**
-     * Boot the application.
-     *
-     * @param IBootContext $context The boot context
-     *
-     * @return void
-     *
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
-     */
-    public function boot(IBootContext $context): void
-    {
-    }//end boot()
+	/**
+	 * Boot the application.
+	 *
+	 * @param IBootContext $context The boot context
+	 *
+	 * @return void
+	 *
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	 */
+	public function boot(IBootContext $context): void {
+	}//end boot()
 }//end class

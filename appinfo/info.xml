@@ -58,9 +58,26 @@
         baseline), matched by <php min-version="8.3"/> below. max-version stays
         34, which is the fleet-wide value everywhere except openconnector (35).
         -->
-        <nextcloud min-version="32" max-version="34"/>
         <php min-version="8.3"/>
+        <nextcloud min-version="32" max-version="34"/>
     </dependencies>
+
+    <!-- @spec openspec/architecture/adr-023-action-authorization.md -->
+    <repair-steps>
+        <post-migration>
+            <step>OCA\Portaliq\Repair\InitializeSettings</step>
+            <step>OCA\Portaliq\Repair\InitializeActions</step>
+        </post-migration>
+        <install>
+            <step>OCA\Portaliq\Repair\InitializeSettings</step>
+            <step>OCA\Portaliq\Repair\InitializeActions</step>
+        </install>
+    </repair-steps>
+
+    <settings>
+        <admin>OCA\Portaliq\Settings\AdminSettings</admin>
+        <admin-section>OCA\Portaliq\Sections\SettingsSection</admin-section>
+    </settings>
 
     <navigations>
         <navigation>
@@ -70,21 +87,4 @@
             <icon>app.svg</icon>
         </navigation>
     </navigations>
-
-    <!-- @spec openspec/architecture/adr-023-action-authorization.md -->
-    <repair-steps>
-        <install>
-            <step>OCA\Portaliq\Repair\InitializeSettings</step>
-            <step>OCA\Portaliq\Repair\InitializeActions</step>
-        </install>
-        <post-migration>
-            <step>OCA\Portaliq\Repair\InitializeSettings</step>
-            <step>OCA\Portaliq\Repair\InitializeActions</step>
-        </post-migration>
-    </repair-steps>
-
-    <settings>
-        <admin>OCA\Portaliq\Settings\AdminSettings</admin>
-        <admin-section>OCA\Portaliq\Sections\SettingsSection</admin-section>
-    </settings>
 </info>

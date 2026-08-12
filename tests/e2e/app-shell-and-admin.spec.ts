@@ -272,7 +272,24 @@ test.describe('admin SPA + admin settings + operator contracts', () => {
 
 		await page.goto('/index.php/settings/admin')
 		// The section registered by SettingsSection::getID() === 'portaliq'.
-		const sectionLink = page.locator('#app-navigation a[href*="/settings/admin/portaliq"]').first()
+		//
+		// BOTH SETTINGS SHELLS, because this app declares NC 32 to 34 and the
+		// two halves of that range do not render the same one. Up to NC 33 the
+		// settings page is server-rendered and its container is
+		// `#app-navigation` (nextcloud/server, apps/settings/templates/settings/
+		// frame.php@stable32 and @stable33, line 13/10: `<div id="app-navigation">`).
+		// NC 34 replaced that template with a Vue app — the same file@stable34 is
+		// just `<div id="settings-app"></div>` — and apps/settings/src/views/
+		// SettingsNavigation.vue renders the list through `<NcAppNavigation>`,
+		// whose root carries `id="app-navigation-vue"`. Scoping to the pre-NC34
+		// id alone made this test report "SettingsSection must contribute an
+		// entry to the admin navigation" on stable34, which was never true: the
+		// section was registered and listed, in a container the selector could
+		// not see. The scoping is kept rather than dropped because being IN the
+		// navigation is half of what this test exists to prove.
+		const sectionLink = page
+			.locator('#app-navigation a[href*="/settings/admin/portaliq"], #app-navigation-vue a[href*="/settings/admin/portaliq"]')
+			.first()
 		await expect(sectionLink, 'SettingsSection must contribute an entry to the admin navigation').toBeVisible({ timeout: 60_000 })
 
 		await sectionLink.click()

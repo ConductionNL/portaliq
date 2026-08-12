@@ -28,167 +28,155 @@ use RuntimeException;
  * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T10
  * @spec openspec/specs/supplier-portal/spec.md#repeated-failure-flags-an-alternative-contact-fallback
  */
-class MetricsControllerTest extends TestCase
-{
+class MetricsControllerTest extends TestCase {
 
-    /**
-     * A fake OpenRegister ObjectService returning canned rows per schema, for
-     * the portal-notifications-dispatch count-only gauges.
-     */
-    private function objectService(array $portalNotificationRows, array $portalAccountRows): object
-    {
-        return new class ($portalNotificationRows, $portalAccountRows) {
-            private string $schema = '';
+	/**
+	 * A fake OpenRegister ObjectService returning canned rows per schema, for
+	 * the portal-notifications-dispatch count-only gauges.
+	 */
+	private function objectService(array $portalNotificationRows, array $portalAccountRows): object {
+		return new class($portalNotificationRows, $portalAccountRows) {
+			private string $schema = '';
 
-            public function __construct(
-                private array $portalNotificationRows,
-                private array $portalAccountRows,
-            ) {
-            }
+			public function __construct(
+				private array $portalNotificationRows,
+				private array $portalAccountRows,
+			) {
+			}
 
-            public function setRegister(string $register): void
-            {
-            }
+			public function setRegister(string $register): void {
+			}
 
-            public function setSchema(string $schema): void
-            {
-                $this->schema = $schema;
-            }
+			public function setSchema(string $schema): void {
+				$this->schema = $schema;
+			}
 
-            public function findAll(array $config, bool $_rbac=true, bool $_multitenancy=true): array
-            {
-                return ($this->schema === 'portalNotification') ? $this->portalNotificationRows : $this->portalAccountRows;
-            }
-        };
-    }//end objectService()
+			public function findAll(array $config, bool $_rbac = true, bool $_multitenancy = true): array {
+				return ($this->schema === 'portalNotification') ? $this->portalNotificationRows : $this->portalAccountRows;
+			}
+		};
+	}//end objectService()
 
-    /**
-     * Build a controller with a canned ObjectService (notification/fallback
-     * counts) and a canned AuditTrailService (audit-entry counts).
-     */
-    private function controller(?object $objectService=null, ?AuditTrailService $auditor=null): MetricsController
-    {
-        $settingsService = $this->createMock(SettingsService::class);
-        $settingsService->method('isOpenRegisterAvailable')->willReturn(true);
+	/**
+	 * Build a controller with a canned ObjectService (notification/fallback
+	 * counts) and a canned AuditTrailService (audit-entry counts).
+	 */
+	private function controller(?object $objectService = null, ?AuditTrailService $auditor = null): MetricsController {
+		$settingsService = $this->createMock(SettingsService::class);
+		$settingsService->method('isOpenRegisterAvailable')->willReturn(true);
 
-        $container = $this->createMock(ContainerInterface::class);
-        $container->method('get')->willReturn($objectService ?? $this->objectService(portalNotificationRows: [], portalAccountRows: []));
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willReturn($objectService ?? $this->objectService(portalNotificationRows: [], portalAccountRows: []));
 
-        return new MetricsController(
-            $this->createMock(IRequest::class),
-            $settingsService,
-            $container,
-            $this->createMock(LoggerInterface::class),
-            ($auditor ?? $this->auditorReturning([]))
-        );
-    }//end controller()
+		return new MetricsController(
+			$this->createMock(IRequest::class),
+			$settingsService,
+			$container,
+			$this->createMock(LoggerInterface::class),
+			($auditor ?? $this->auditorReturning([]))
+		);
+	}//end controller()
 
-    /**
-     * A canned AuditTrailService returning the given per-verb counts.
-     */
-    private function auditorReturning(array $counts): AuditTrailService
-    {
-        $auditor = $this->createMock(AuditTrailService::class);
-        $auditor->method('countsByVerb')->willReturn($counts);
-        return $auditor;
+	/**
+	 * A canned AuditTrailService returning the given per-verb counts.
+	 */
+	private function auditorReturning(array $counts): AuditTrailService {
+		$auditor = $this->createMock(AuditTrailService::class);
+		$auditor->method('countsByVerb')->willReturn($counts);
+		return $auditor;
+	}//end auditorReturning()
 
-    }//end auditorReturning()
+	public function testIndexExposesAuditEntryCountsByVerbAndNothingElse(): void {
+		$auditor = $this->auditorReturning(
+			[
+				'create' => 5,
+				'update' => 2,
+				'forward' => 0,
+				'download' => 3,
+				'login' => 7,
+				'logout' => 4,
+				'refresh' => 1,
+			]
+		);
 
-    public function testIndexExposesAuditEntryCountsByVerbAndNothingElse(): void
-    {
-        $auditor = $this->auditorReturning(
-            [
-                'create'   => 5,
-                'update'   => 2,
-                'forward'  => 0,
-                'download' => 3,
-                'login'    => 7,
-                'logout'   => 4,
-                'refresh'  => 1,
-            ]
-        );
+		$response = $this->controller(auditor: $auditor)->index();
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 
-        $response = $this->controller(auditor: $auditor)->index();
-        $this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$body = $response->render();
+		$this->assertStringContainsString('_audit_entries_total{verb="create"} 5', $body);
+		$this->assertStringContainsString('_audit_entries_total{verb="login"} 7', $body);
+		$this->assertStringContainsString('_audit_entries_total{verb="refresh"} 1', $body);
 
-        $body = $response->render();
-        $this->assertStringContainsString('_audit_entries_total{verb="create"} 5', $body);
-        $this->assertStringContainsString('_audit_entries_total{verb="login"} 7', $body);
-        $this->assertStringContainsString('_audit_entries_total{verb="refresh"} 1', $body);
+		// Count-only: no subject reference, target identifier, or payload
+		// content ever appears in the exposition text.
+		$this->assertStringNotContainsString('subjectRef', $body);
+		$this->assertStringNotContainsString('s1', $body);
+		$this->assertStringNotContainsString('organisation', $body);
 
-        // Count-only: no subject reference, target identifier, or payload
-        // content ever appears in the exposition text.
-        $this->assertStringNotContainsString('subjectRef', $body);
-        $this->assertStringNotContainsString('s1', $body);
-        $this->assertStringNotContainsString('organisation', $body);
+	}//end testIndexExposesAuditEntryCountsByVerbAndNothingElse()
 
-    }//end testIndexExposesAuditEntryCountsByVerbAndNothingElse()
+	public function testIndexStillExposesTheExistingHealthAndInfoMetrics(): void {
+		// The pre-existing ADR-006 metrics must survive the T10 addition.
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('isOpenRegisterAvailable')->willReturn(false);
 
-    public function testIndexStillExposesTheExistingHealthAndInfoMetrics(): void
-    {
-        // The pre-existing ADR-006 metrics must survive the T10 addition.
-        $settings = $this->createMock(SettingsService::class);
-        $settings->method('isOpenRegisterAvailable')->willReturn(false);
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willReturn($this->objectService(portalNotificationRows: [], portalAccountRows: []));
 
-        $container = $this->createMock(ContainerInterface::class);
-        $container->method('get')->willReturn($this->objectService(portalNotificationRows: [], portalAccountRows: []));
+		$controller = new MetricsController(
+			$this->createMock(IRequest::class),
+			$settings,
+			$container,
+			$this->createMock(LoggerInterface::class),
+			$this->auditorReturning([])
+		);
 
-        $controller = new MetricsController(
-            $this->createMock(IRequest::class),
-            $settings,
-            $container,
-            $this->createMock(LoggerInterface::class),
-            $this->auditorReturning([])
-        );
+		$body = $controller->index()->render();
+		$this->assertStringContainsString('_info{app="portaliq"', $body);
+		$this->assertStringContainsString('_health_status 0', $body);
 
-        $body = $controller->index()->render();
-        $this->assertStringContainsString('_info{app="portaliq"', $body);
-        $this->assertStringContainsString('_health_status 0', $body);
+	}//end testIndexStillExposesTheExistingHealthAndInfoMetrics()
 
-    }//end testIndexStillExposesTheExistingHealthAndInfoMetrics()
+	public function testMetricsCarryTheAppOwnPrefixAndTheCountOnlyNotificationGauges(): void {
+		$objectService = $this->objectService(
+			portalNotificationRows: [['status' => 'failed'], ['status' => 'failed']],
+			portalAccountRows: [['needsAlternativeContact' => true]]
+		);
 
-    public function testMetricsCarryTheAppOwnPrefixAndTheCountOnlyNotificationGauges(): void
-    {
-        $objectService = $this->objectService(
-            portalNotificationRows: [['status' => 'failed'], ['status' => 'failed']],
-            portalAccountRows: [['needsAlternativeContact' => true]]
-        );
+		$response = $this->controller(objectService: $objectService)->index();
+		$body = $response->render();
 
-        $response = $this->controller(objectService: $objectService)->index();
-        $body     = $response->render();
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		// ADR-006 prefix fix: no more 'app_template_' metrics.
+		$this->assertStringNotContainsString('app_template_', $body);
+		$this->assertStringContainsString('portaliq_info{', $body);
+		$this->assertStringContainsString('portaliq_health_status 1', $body);
+		$this->assertStringContainsString('portaliq_notifications_failed_total 2', $body);
+		$this->assertStringContainsString('portaliq_accounts_needs_alt_contact 1', $body);
 
-        $this->assertSame(Http::STATUS_OK, $response->getStatus());
-        // ADR-006 prefix fix: no more 'app_template_' metrics.
-        $this->assertStringNotContainsString('app_template_', $body);
-        $this->assertStringContainsString('portaliq_info{', $body);
-        $this->assertStringContainsString('portaliq_health_status 1', $body);
-        $this->assertStringContainsString('portaliq_notifications_failed_total 2', $body);
-        $this->assertStringContainsString('portaliq_accounts_needs_alt_contact 1', $body);
+	}//end testMetricsCarryTheAppOwnPrefixAndTheCountOnlyNotificationGauges()
 
-    }//end testMetricsCarryTheAppOwnPrefixAndTheCountOnlyNotificationGauges()
+	public function testAnUnreachableObjectServiceDegradesCountsToZero(): void {
+		$settingsService = $this->createMock(SettingsService::class);
+		$settingsService->method('isOpenRegisterAvailable')->willReturn(false);
 
-    public function testAnUnreachableObjectServiceDegradesCountsToZero(): void
-    {
-        $settingsService = $this->createMock(SettingsService::class);
-        $settingsService->method('isOpenRegisterAvailable')->willReturn(false);
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willThrowException(new RuntimeException('OpenRegister not installed'));
 
-        $container = $this->createMock(ContainerInterface::class);
-        $container->method('get')->willThrowException(new RuntimeException('OpenRegister not installed'));
+		$controller = new MetricsController(
+			$this->createMock(IRequest::class),
+			$settingsService,
+			$container,
+			$this->createMock(LoggerInterface::class),
+			$this->auditorReturning([])
+		);
 
-        $controller = new MetricsController(
-            $this->createMock(IRequest::class),
-            $settingsService,
-            $container,
-            $this->createMock(LoggerInterface::class),
-            $this->auditorReturning([])
-        );
+		$response = $controller->index();
+		$body = $response->render();
 
-        $response = $controller->index();
-        $body     = $response->render();
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertStringContainsString('portaliq_notifications_failed_total 0', $body);
+		$this->assertStringContainsString('portaliq_accounts_needs_alt_contact 0', $body);
 
-        $this->assertSame(Http::STATUS_OK, $response->getStatus());
-        $this->assertStringContainsString('portaliq_notifications_failed_total 0', $body);
-        $this->assertStringContainsString('portaliq_accounts_needs_alt_contact 0', $body);
-
-    }//end testAnUnreachableObjectServiceDegradesCountsToZero()
+	}//end testAnUnreachableObjectServiceDegradesCountsToZero()
 }//end class

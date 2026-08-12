@@ -51,142 +51,138 @@ use Throwable;
  *
  * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
  */
-class NotificationDispatchService
-{
-    /**
-     * Rule key for a `portalMessage` create (SubmissionReceiptService's WMEBV
-     * receipt, or any other message-create path).
-     */
-    public const RULE_MESSAGE_CREATED = 'message.created';
+class NotificationDispatchService {
+	/**
+	 * Rule key for a `portalMessage` create (SubmissionReceiptService's WMEBV
+	 * receipt, or any other message-create path).
+	 */
+	public const RULE_MESSAGE_CREATED = 'message.created';
 
-    /**
-     * Rule key for a successful status-transition update
-     * (`ContributionController::update()`).
-     */
-    public const RULE_STATUS_CHANGED = 'status.changed';
+	/**
+	 * Rule key for a successful status-transition update
+	 * (`ContributionController::update()`).
+	 */
+	public const RULE_STATUS_CHANGED = 'status.changed';
 
-    /**
-     * Constructor.
-     *
-     * @param PortalContributionRegistry $registry Aggregates a subject's manifest,
-     *                                             the SAME path every authorisation
-     *                                             lookup flows through.
-     * @param IJobList                   $jobList  Enqueues the async dispatch job —
-     *                                             the send never runs inline.
-     * @param LoggerInterface            $logger   The logger.
-     */
-    public function __construct(
-        private readonly PortalContributionRegistry $registry,
-        private readonly IJobList $jobList,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param PortalContributionRegistry $registry Aggregates a subject's manifest,
+	 *                                             the SAME path every authorisation
+	 *                                             lookup flows through.
+	 * @param IJobList $jobList Enqueues the async dispatch job —
+	 *                          the send never runs inline.
+	 * @param LoggerInterface $logger The logger.
+	 */
+	public function __construct(
+		private readonly PortalContributionRegistry $registry,
+		private readonly IJobList $jobList,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Match a trigger against the contributing app's manifest and enqueue the
-     * dispatch job on a hit. Never throws — a notification side-effect can
-     * never turn an already-successful domain action into a failed one.
-     *
-     * @param string               $ruleKey The trigger's rule key (RULE_MESSAGE_CREATED
-     *                                      or RULE_STATUS_CHANGED).
-     * @param string               $appId   The contributing app whose manifest is checked.
-     * @param array<string, mixed> $subject The resolved subject (subjectRef, organisation,
-     *                                      audience — audience is REQUIRED to resolve the
-     *                                      app's manifest via the registry; trust is optional).
-     *
-     * @return void
-     *
-     * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
-     * @spec openspec/specs/supplier-portal/spec.md#dispatch-is-decoupled-from-the-request-path
-     */
-    public function dispatch(string $ruleKey, string $appId, array $subject): void
-    {
-        try {
-            $this->doDispatch(ruleKey: $ruleKey, appId: $appId, subject: $subject);
-        } catch (Throwable $e) {
-            $this->logger->error(
-                'Portaliq: notification dispatch matching failed — no email will be sent for this trigger',
-                ['appId' => $appId, 'ruleKey' => $ruleKey, 'reason' => $e->getMessage()]
-            );
-        }
-    }//end dispatch()
+	/**
+	 * Match a trigger against the contributing app's manifest and enqueue the
+	 * dispatch job on a hit. Never throws — a notification side-effect can
+	 * never turn an already-successful domain action into a failed one.
+	 *
+	 * @param string $ruleKey The trigger's rule key (RULE_MESSAGE_CREATED
+	 *                        or RULE_STATUS_CHANGED).
+	 * @param string $appId The contributing app whose manifest is checked.
+	 * @param array<string, mixed> $subject The resolved subject (subjectRef, organisation,
+	 *                                      audience — audience is REQUIRED to resolve the
+	 *                                      app's manifest via the registry; trust is optional).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
+	 * @spec openspec/specs/supplier-portal/spec.md#dispatch-is-decoupled-from-the-request-path
+	 */
+	public function dispatch(string $ruleKey, string $appId, array $subject): void {
+		try {
+			$this->doDispatch(ruleKey: $ruleKey, appId: $appId, subject: $subject);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Portaliq: notification dispatch matching failed — no email will be sent for this trigger',
+				['appId' => $appId, 'ruleKey' => $ruleKey, 'reason' => $e->getMessage()]
+			);
+		}
+	}//end dispatch()
 
-    /**
-     * The actual matching + enqueue logic, isolated so dispatch() can wrap it
-     * in a single fail-safe try/catch.
-     *
-     * @param string               $ruleKey The trigger's rule key.
-     * @param string               $appId   The contributing app.
-     * @param array<string, mixed> $subject The resolved subject.
-     *
-     * @return void
-     */
-    private function doDispatch(string $ruleKey, string $appId, array $subject): void
-    {
-        if ($ruleKey === '' || $appId === '') {
-            return;
-        }
+	/**
+	 * The actual matching + enqueue logic, isolated so dispatch() can wrap it
+	 * in a single fail-safe try/catch.
+	 *
+	 * @param string $ruleKey The trigger's rule key.
+	 * @param string $appId The contributing app.
+	 * @param array<string, mixed> $subject The resolved subject.
+	 *
+	 * @return void
+	 */
+	private function doDispatch(string $ruleKey, string $appId, array $subject): void {
+		if ($ruleKey === '' || $appId === '') {
+			return;
+		}
 
-        $subjectRef = (string) ($subject['subjectRef'] ?? '');
-        if ($subjectRef === '') {
-            return;
-        }
+		$subjectRef = (string)($subject['subjectRef'] ?? '');
+		if ($subjectRef === '') {
+			return;
+		}
 
-        // Aggregate through the ONE path every authorisation lookup flows
-        // through — the same manifest the controller/registry already trust.
-        $aggregate = $this->registry->aggregateFor(subject: $subject);
+		// Aggregate through the ONE path every authorisation lookup flows
+		// through — the same manifest the controller/registry already trust.
+		$aggregate = $this->registry->aggregateFor(subject: $subject);
 
-        foreach (($aggregate['contributions'] ?? []) as $contribution) {
-            if (is_array($contribution) === false || (string) ($contribution['app'] ?? '') !== $appId) {
-                continue;
-            }
+		foreach (($aggregate['contributions'] ?? []) as $contribution) {
+			if (is_array($contribution) === false || (string)($contribution['app'] ?? '') !== $appId) {
+				continue;
+			}
 
-            if ($this->declaresRuleKey(contribution: $contribution, ruleKey: $ruleKey) === false) {
-                // Fail-closed: no matching (or malformed/missing) declaration
-                // means this contribution gets no email for this trigger.
-                return;
-            }
+			if ($this->declaresRuleKey(contribution: $contribution, ruleKey: $ruleKey) === false) {
+				// Fail-closed: no matching (or malformed/missing) declaration
+				// means this contribution gets no email for this trigger.
+				return;
+			}
 
-            $this->jobList->add(
-                NotificationDispatchJob::class,
-                [
-                    'subjectRef'   => $subjectRef,
-                    'organisation' => (string) ($subject['organisation'] ?? ''),
-                    'audience'     => (string) ($subject['audience'] ?? ''),
-                    'appId'        => $appId,
-                    'ruleKey'      => $ruleKey,
-                ]
-            );
+			$this->jobList->add(
+				NotificationDispatchJob::class,
+				[
+					'subjectRef' => $subjectRef,
+					'organisation' => (string)($subject['organisation'] ?? ''),
+					'audience' => (string)($subject['audience'] ?? ''),
+					'appId' => $appId,
+					'ruleKey' => $ruleKey,
+				]
+			);
 
-            return;
-        }//end foreach
-    }//end doDispatch()
+			return;
+		}//end foreach
+	}//end doDispatch()
 
-    /**
-     * Whether a contribution's `notifications` list declares the exact rule
-     * key. A missing or non-array `notifications` — or a list containing only
-     * non-string / non-matching entries — fails closed to false (ADR-005): an
-     * unknown or malformed declaration must never widen into an email being
-     * sent.
-     *
-     * @param array<string, mixed> $contribution One app's aggregated contribution manifest.
-     * @param string               $ruleKey      The trigger's rule key.
-     *
-     * @return bool
-     */
-    private function declaresRuleKey(array $contribution, string $ruleKey): bool
-    {
-        $notifications = ($contribution['notifications'] ?? null);
-        if (is_array($notifications) === false) {
-            return false;
-        }
+	/**
+	 * Whether a contribution's `notifications` list declares the exact rule
+	 * key. A missing or non-array `notifications` — or a list containing only
+	 * non-string / non-matching entries — fails closed to false (ADR-005): an
+	 * unknown or malformed declaration must never widen into an email being
+	 * sent.
+	 *
+	 * @param array<string, mixed> $contribution One app's aggregated contribution manifest.
+	 * @param string $ruleKey The trigger's rule key.
+	 *
+	 * @return bool
+	 */
+	private function declaresRuleKey(array $contribution, string $ruleKey): bool {
+		$notifications = ($contribution['notifications'] ?? null);
+		if (is_array($notifications) === false) {
+			return false;
+		}
 
-        foreach ($notifications as $declared) {
-            if (is_string($declared) === true && $declared === $ruleKey) {
-                return true;
-            }
-        }
+		foreach ($notifications as $declared) {
+			if (is_string($declared) === true && $declared === $ruleKey) {
+				return true;
+			}
+		}
 
-        return false;
-    }//end declaresRuleKey()
+		return false;
+	}//end declaresRuleKey()
 }//end class

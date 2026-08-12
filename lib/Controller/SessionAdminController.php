@@ -47,46 +47,44 @@ use OCP\IRequest;
  *
  * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#3.2
  */
-class SessionAdminController extends Controller
-{
-    /**
-     * Constructor.
-     *
-     * @param IRequest             $request The request object.
-     * @param PortalSessionService $session The session service.
-     */
-    public function __construct(
-        IRequest $request,
-        private readonly PortalSessionService $session,
-    ) {
-        parent::__construct(appName: Application::APP_ID, request: $request);
-    }//end __construct()
+class SessionAdminController extends Controller {
+	/**
+	 * Constructor.
+	 *
+	 * @param IRequest $request The request object.
+	 * @param PortalSessionService $session The session service.
+	 */
+	public function __construct(
+		IRequest $request,
+		private readonly PortalSessionService $session,
+	) {
+		parent::__construct(appName: Application::APP_ID, request: $request);
+	}//end __construct()
 
-    /**
-     * Revoke every active portal session for an Organisation.
-     *
-     * @param string $organisation The tenant (OpenRegister Organisation) to
-     *                             revoke every session for.
-     *
-     * @return JSONResponse `{revoked: int}`, or 400 when `organisation` is empty.
-     *
-     * @auth admin-only Incident-response action that revokes every active
-     *       portalSession for a whole tenant. Nextcloud expresses "instance
-     *       admin + CSRF" as the ABSENCE of an opt-out attribute, so there is
-     *       no attribute to add; this tag is the declaration. Deliberately not
-     *       the AuthorizedAdminSetting attribute, which would widen it to
-     *       delegated admins — see the class docblock.
-     *
-     * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#3.2
-     */
-    public function revokeOrganisation(string $organisation=''): JSONResponse
-    {
-        if ($organisation === '') {
-            return new JSONResponse(['error' => 'organisation_required'], Http::STATUS_BAD_REQUEST);
-        }
+	/**
+	 * Revoke every active portal session for an Organisation.
+	 *
+	 * @param string $organisation The tenant (OpenRegister Organisation) to
+	 *                             revoke every session for.
+	 *
+	 * @return JSONResponse `{revoked: int}`, or 400 when `organisation` is empty.
+	 *
+	 * @auth admin-only Incident-response action that revokes every active
+	 *       portalSession for a whole tenant. Nextcloud expresses "instance
+	 *       admin + CSRF" as the ABSENCE of an opt-out attribute, so there is
+	 *       no attribute to add; this tag is the declaration. Deliberately not
+	 *       the AuthorizedAdminSetting attribute, which would widen it to
+	 *       delegated admins — see the class docblock.
+	 *
+	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#3.2
+	 */
+	public function revokeOrganisation(string $organisation = ''): JSONResponse {
+		if ($organisation === '') {
+			return new JSONResponse(['error' => 'organisation_required'], Http::STATUS_BAD_REQUEST);
+		}
 
-        $revoked = $this->session->revokeAllForOrganisation($organisation);
+		$revoked = $this->session->revokeAllForOrganisation($organisation);
 
-        return new JSONResponse(['revoked' => $revoked]);
-    }//end revokeOrganisation()
+		return new JSONResponse(['revoked' => $revoked]);
+	}//end revokeOrganisation()
 }//end class

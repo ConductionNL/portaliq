@@ -39,85 +39,82 @@ use Throwable;
  *
  * @spec openspec/specs/portal-contribution-contract/spec.md#scoped-schema-introspection
  */
-class PortalSchemaReader
-{
-    /**
-     * OpenRegister's schema mapper.
-     */
-    private const SCHEMA_MAPPER = 'OCA\\OpenRegister\\Db\\SchemaMapper';
+class PortalSchemaReader {
+	/**
+	 * OpenRegister's schema mapper.
+	 */
+	private const SCHEMA_MAPPER = 'OCA\\OpenRegister\\Db\\SchemaMapper';
 
-    /**
-     * Constructor.
-     *
-     * @param ContainerInterface $container For resolving OpenRegister's SchemaMapper.
-     * @param LoggerInterface    $logger    The logger.
-     */
-    public function __construct(
-        private readonly ContainerInterface $container,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param ContainerInterface $container For resolving OpenRegister's SchemaMapper.
+	 * @param LoggerInterface $logger The logger.
+	 */
+	public function __construct(
+		private readonly ContainerInterface $container,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Resolve a schema's serialised definition by slug (RBAC bypassed).
-     *
-     * @param string $slug The schema slug (the manifest already authorised it).
-     *
-     * @return array<string, mixed>|null The schema as an array (with `properties`),
-     *                                   or null when unavailable/not found.
-     *
-     * @spec openspec/specs/portal-contribution-contract/spec.md#scoped-schema-introspection
-     */
-    public function readSchema(string $slug): ?array
-    {
-        if ($slug === '') {
-            return null;
-        }
+	/**
+	 * Resolve a schema's serialised definition by slug (RBAC bypassed).
+	 *
+	 * @param string $slug The schema slug (the manifest already authorised it).
+	 *
+	 * @return array<string, mixed>|null The schema as an array (with `properties`),
+	 *                                   or null when unavailable/not found.
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#scoped-schema-introspection
+	 */
+	public function readSchema(string $slug): ?array {
+		if ($slug === '') {
+			return null;
+		}
 
-        $mapper = $this->schemaMapper();
-        if ($mapper === null) {
-            return null;
-        }
+		$mapper = $this->schemaMapper();
+		if ($mapper === null) {
+			return null;
+		}
 
-        try {
-            $matches = $mapper->findBySlug(slug: $slug, limit: 1, offset: 0, _rbac: false, _multitenancy: false);
-        } catch (Throwable $e) {
-            $this->logger->warning('Portaliq: OR schema lookup failed', ['slug' => $slug, 'reason' => $e->getMessage()]);
-            return null;
-        }
+		try {
+			$matches = $mapper->findBySlug(slug: $slug, limit: 1, offset: 0, _rbac: false, _multitenancy: false);
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: OR schema lookup failed', ['slug' => $slug, 'reason' => $e->getMessage()]);
+			return null;
+		}
 
-        if (is_array($matches) === false || count($matches) === 0) {
-            return null;
-        }
+		if (is_array($matches) === false || count($matches) === 0) {
+			return null;
+		}
 
-        $schema = $matches[0];
-        if (is_object($schema) === true && method_exists($schema, 'jsonSerialize') === true) {
-            $data = $schema->jsonSerialize();
-            if (is_array($data) === true) {
-                return $data;
-            }
-        }
+		$schema = $matches[0];
+		if (is_object($schema) === true && method_exists($schema, 'jsonSerialize') === true) {
+			$data = $schema->jsonSerialize();
+			if (is_array($data) === true) {
+				return $data;
+			}
+		}
 
-        return null;
-    }//end readSchema()
+		return null;
+	}//end readSchema()
 
-    /**
-     * Resolve OpenRegister's SchemaMapper, or null when unavailable.
-     *
-     * @return object|null
-     */
-    private function schemaMapper(): ?object
-    {
-        try {
-            $service = $this->container->get(self::SCHEMA_MAPPER);
-        } catch (Throwable $e) {
-            return null;
-        }
+	/**
+	 * Resolve OpenRegister's SchemaMapper, or null when unavailable.
+	 *
+	 * @return object|null
+	 */
+	private function schemaMapper(): ?object {
+		try {
+			$service = $this->container->get(self::SCHEMA_MAPPER);
+		} catch (Throwable $e) {
+			return null;
+		}
 
-        if (is_object($service) === true) {
-            return $service;
-        }
+		if (is_object($service) === true) {
+			return $service;
+		}
 
-        return null;
-    }//end schemaMapper()
+		return null;
+	}//end schemaMapper()
 }//end class

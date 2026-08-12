@@ -42,188 +42,176 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Portaliq\Controller\SettingsController
  */
-class SettingsControllerWriteTest extends TestCase
-{
+class SettingsControllerWriteTest extends TestCase {
 
-    /**
-     * Mock IRequest.
-     *
-     * @var IRequest&MockObject
-     */
-    private IRequest&MockObject $request;
+	/**
+	 * Mock IRequest.
+	 *
+	 * @var IRequest&MockObject
+	 */
+	private IRequest&MockObject $request;
 
-    /**
-     * Mock SettingsService.
-     *
-     * @var SettingsService&MockObject
-     */
-    private SettingsService&MockObject $settingsService;
+	/**
+	 * Mock SettingsService.
+	 *
+	 * @var SettingsService&MockObject
+	 */
+	private SettingsService&MockObject $settingsService;
 
-    /**
-     * The controller under test.
-     *
-     * @var SettingsController
-     */
-    private SettingsController $controller;
+	/**
+	 * The controller under test.
+	 *
+	 * @var SettingsController
+	 */
+	private SettingsController $controller;
 
+	/**
+	 * Set up test fixtures.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		parent::setUp();
 
-    /**
-     * Set up test fixtures.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
+		$this->request = $this->createMock(IRequest::class);
+		$this->settingsService = $this->createMock(SettingsService::class);
 
-        $this->request         = $this->createMock(IRequest::class);
-        $this->settingsService = $this->createMock(SettingsService::class);
+		$this->controller = new SettingsController(
+			request: $this->request,
+			settingsService: $this->settingsService,
+		);
 
-        $this->controller = new SettingsController(
-            request: $this->request,
-            settingsService: $this->settingsService,
-        );
+	}//end setUp()
 
-    }//end setUp()
+	/**
+	 * update() must persist the request parameters and return the stored config.
+	 *
+	 * @return void
+	 */
+	public function testUpdatePersistsTheRequestParametersAndReturnsTheStoredConfig(): void {
+		$submitted = ['register' => 'new-uuid'];
+		$stored = ['register' => 'new-uuid', 'openregisters' => true, 'isAdmin' => true];
 
+		$this->request->expects($this->once())
+			->method('getParams')
+			->willReturn($submitted);
 
-    /**
-     * update() must persist the request parameters and return the stored config.
-     *
-     * @return void
-     */
-    public function testUpdatePersistsTheRequestParametersAndReturnsTheStoredConfig(): void
-    {
-        $submitted = ['register' => 'new-uuid'];
-        $stored    = ['register' => 'new-uuid', 'openregisters' => true, 'isAdmin' => true];
+		// The ITEM: the write reaches the service, with the submitted params.
+		$this->settingsService->expects($this->once())
+			->method('updateSettings')
+			->with($submitted)
+			->willReturn($stored);
 
-        $this->request->expects($this->once())
-            ->method('getParams')
-            ->willReturn($submitted);
+		$response = $this->controller->update();
 
-        // The ITEM: the write reaches the service, with the submitted params.
-        $this->settingsService->expects($this->once())
-            ->method('updateSettings')
-            ->with($submitted)
-            ->willReturn($stored);
+		self::assertInstanceOf(JSONResponse::class, $response);
+		self::assertSame(
+			[
+				'success' => true,
+				'config' => $stored,
+			],
+			$response->getData(),
+			'update() must return the config the service actually stored, not the submission'
+		);
 
-        $response = $this->controller->update();
+	}//end testUpdatePersistsTheRequestParametersAndReturnsTheStoredConfig()
 
-        self::assertInstanceOf(JSONResponse::class, $response);
-        self::assertSame(
-            [
-                'success' => true,
-                'config'  => $stored,
-            ],
-            $response->getData(),
-            'update() must return the config the service actually stored, not the submission'
-        );
+	/**
+	 * create() must delegate to update() and still perform the same write.
+	 *
+	 * The legacy POST route stays reachable, so the alias remaining a REAL
+	 * write — not an empty success — is load-bearing for existing callers.
+	 *
+	 * @return void
+	 */
+	public function testCreateDelegatesToUpdateAndStillWrites(): void {
+		$submitted = ['register' => 'legacy-uuid'];
+		$stored = ['register' => 'legacy-uuid', 'openregisters' => true, 'isAdmin' => true];
 
-    }//end testUpdatePersistsTheRequestParametersAndReturnsTheStoredConfig()
+		$this->request->expects($this->once())
+			->method('getParams')
+			->willReturn($submitted);
 
+		$this->settingsService->expects($this->once())
+			->method('updateSettings')
+			->with($submitted)
+			->willReturn($stored);
 
-    /**
-     * create() must delegate to update() and still perform the same write.
-     *
-     * The legacy POST route stays reachable, so the alias remaining a REAL
-     * write — not an empty success — is load-bearing for existing callers.
-     *
-     * @return void
-     */
-    public function testCreateDelegatesToUpdateAndStillWrites(): void
-    {
-        $submitted = ['register' => 'legacy-uuid'];
-        $stored    = ['register' => 'legacy-uuid', 'openregisters' => true, 'isAdmin' => true];
+		$response = $this->controller->create();
 
-        $this->request->expects($this->once())
-            ->method('getParams')
-            ->willReturn($submitted);
+		self::assertInstanceOf(JSONResponse::class, $response);
+		self::assertSame(
+			[
+				'success' => true,
+				'config' => $stored,
+			],
+			$response->getData(),
+			'create() must produce the same written result as update()'
+		);
 
-        $this->settingsService->expects($this->once())
-            ->method('updateSettings')
-            ->with($submitted)
-            ->willReturn($stored);
+	}//end testCreateDelegatesToUpdateAndStillWrites()
 
-        $response = $this->controller->create();
+	/**
+	 * Both verbs must produce byte-identical payloads for the same submission.
+	 *
+	 * This is the convergence claim of the change stated as an assertion: the
+	 * canonical PUT does not merely "work", it works IDENTICALLY to the legacy
+	 * POST, so no caller has to care which verb it used.
+	 *
+	 * @return void
+	 */
+	public function testUpdateAndCreateProduceIdenticalPayloadsForTheSameSubmission(): void {
+		$submitted = ['register' => 'same-uuid'];
+		$stored = ['register' => 'same-uuid', 'openregisters' => false, 'isAdmin' => true];
 
-        self::assertInstanceOf(JSONResponse::class, $response);
-        self::assertSame(
-            [
-                'success' => true,
-                'config'  => $stored,
-            ],
-            $response->getData(),
-            'create() must produce the same written result as update()'
-        );
+		$this->request->expects($this->exactly(2))
+			->method('getParams')
+			->willReturn($submitted);
 
-    }//end testCreateDelegatesToUpdateAndStillWrites()
+		$this->settingsService->expects($this->exactly(2))
+			->method('updateSettings')
+			->with($submitted)
+			->willReturn($stored);
 
+		$viaPut = $this->controller->update()->getData();
+		$viaPost = $this->controller->create()->getData();
 
-    /**
-     * Both verbs must produce byte-identical payloads for the same submission.
-     *
-     * This is the convergence claim of the change stated as an assertion: the
-     * canonical PUT does not merely "work", it works IDENTICALLY to the legacy
-     * POST, so no caller has to care which verb it used.
-     *
-     * @return void
-     */
-    public function testUpdateAndCreateProduceIdenticalPayloadsForTheSameSubmission(): void
-    {
-        $submitted = ['register' => 'same-uuid'];
-        $stored    = ['register' => 'same-uuid', 'openregisters' => false, 'isAdmin' => true];
+		self::assertSame(
+			$viaPut,
+			$viaPost,
+			'The canonical PUT and the legacy POST alias must return identical payloads'
+		);
 
-        $this->request->expects($this->exactly(2))
-            ->method('getParams')
-            ->willReturn($submitted);
+	}//end testUpdateAndCreateProduceIdenticalPayloadsForTheSameSubmission()
 
-        $this->settingsService->expects($this->exactly(2))
-            ->method('updateSettings')
-            ->with($submitted)
-            ->willReturn($stored);
+	/**
+	 * An empty submission must still reach the service.
+	 *
+	 * An early return on an empty payload would be indistinguishable from a
+	 * successful no-op write from the caller's side.
+	 *
+	 * @return void
+	 */
+	public function testEmptySubmissionStillReachesTheService(): void {
+		$this->request->expects($this->once())
+			->method('getParams')
+			->willReturn([]);
 
-        $viaPut  = $this->controller->update()->getData();
-        $viaPost = $this->controller->create()->getData();
+		$this->settingsService->expects($this->once())
+			->method('updateSettings')
+			->with([])
+			->willReturn(['unchanged' => true]);
 
-        self::assertSame(
-            $viaPut,
-            $viaPost,
-            'The canonical PUT and the legacy POST alias must return identical payloads'
-        );
+		$response = $this->controller->update();
 
-    }//end testUpdateAndCreateProduceIdenticalPayloadsForTheSameSubmission()
+		self::assertSame(
+			[
+				'success' => true,
+				'config' => ['unchanged' => true],
+			],
+			$response->getData()
+		);
 
-
-    /**
-     * An empty submission must still reach the service.
-     *
-     * An early return on an empty payload would be indistinguishable from a
-     * successful no-op write from the caller's side.
-     *
-     * @return void
-     */
-    public function testEmptySubmissionStillReachesTheService(): void
-    {
-        $this->request->expects($this->once())
-            ->method('getParams')
-            ->willReturn([]);
-
-        $this->settingsService->expects($this->once())
-            ->method('updateSettings')
-            ->with([])
-            ->willReturn(['unchanged' => true]);
-
-        $response = $this->controller->update();
-
-        self::assertSame(
-            [
-                'success' => true,
-                'config'  => ['unchanged' => true],
-            ],
-            $response->getData()
-        );
-
-    }//end testEmptySubmissionStillReachesTheService()
-
+	}//end testEmptySubmissionStillReachesTheService()
 
 }//end class

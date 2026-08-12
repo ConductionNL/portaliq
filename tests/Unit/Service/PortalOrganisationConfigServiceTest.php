@@ -32,284 +32,259 @@ use RuntimeException;
  * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#3.1
  * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T01
  */
-class PortalOrganisationConfigServiceTest extends TestCase
-{
+class PortalOrganisationConfigServiceTest extends TestCase {
 
-    public function testEmptySlugResolvesToNeutralDefault(): void
-    {
-        $service = $this->service();
-        $config  = $service->resolve('');
+	public function testEmptySlugResolvesToNeutralDefault(): void {
+		$service = $this->service();
+		$config = $service->resolve('');
 
-        $this->assertSame('Portaliq', $config['organisationName']);
-        $this->assertSame('default', $config['theme']);
-        $this->assertSame([], $config['allowedEmbedOrigins']);
-        $this->assertSame('nl', $config['locale']);
+		$this->assertSame('Portaliq', $config['organisationName']);
+		$this->assertSame('default', $config['theme']);
+		$this->assertSame([], $config['allowedEmbedOrigins']);
+		$this->assertSame('nl', $config['locale']);
 
-    }//end testEmptySlugResolvesToNeutralDefault()
+	}//end testEmptySlugResolvesToNeutralDefault()
 
-    public function testLocaleDefaultsToNlWhenAbsent(): void
-    {
-        $service = $this->service();
-        $this->assertSame('nl', $service->resolve('')['locale']);
+	public function testLocaleDefaultsToNlWhenAbsent(): void {
+		$service = $this->service();
+		$this->assertSame('nl', $service->resolve('')['locale']);
 
-    }//end testLocaleDefaultsToNlWhenAbsent()
+	}//end testLocaleDefaultsToNlWhenAbsent()
 
-    public function testSupportedLocaleIsHonoured(): void
-    {
-        $service = $this->service();
-        $this->assertSame('en', $service->resolve(orgSlug: '', locale: 'en-US')['locale']);
-        $this->assertSame('nl', $service->resolve(orgSlug: '', locale: 'nl-NL')['locale']);
+	public function testSupportedLocaleIsHonoured(): void {
+		$service = $this->service();
+		$this->assertSame('en', $service->resolve(orgSlug: '', locale: 'en-US')['locale']);
+		$this->assertSame('nl', $service->resolve(orgSlug: '', locale: 'nl-NL')['locale']);
 
-    }//end testSupportedLocaleIsHonoured()
+	}//end testSupportedLocaleIsHonoured()
 
-    public function testUnsupportedLocaleFallsBackToNl(): void
-    {
-        $service = $this->service();
-        $this->assertSame('nl', $service->resolve(orgSlug: '', locale: 'fr-FR')['locale']);
-        $this->assertSame('nl', $service->resolve(orgSlug: '', locale: '')['locale']);
+	public function testUnsupportedLocaleFallsBackToNl(): void {
+		$service = $this->service();
+		$this->assertSame('nl', $service->resolve(orgSlug: '', locale: 'fr-FR')['locale']);
+		$this->assertSame('nl', $service->resolve(orgSlug: '', locale: '')['locale']);
 
-    }//end testUnsupportedLocaleFallsBackToNl()
+	}//end testUnsupportedLocaleFallsBackToNl()
 
-    public function testUnknownSlugResolvesToNeutralDefaultNotAnError(): void
-    {
-        $mapper = new class {
-            public function findBySlug(string $slug)
-            {
-                throw new RuntimeException('not found');
-            }
-        };
+	public function testUnknownSlugResolvesToNeutralDefaultNotAnError(): void {
+		$mapper = new class {
+			public function findBySlug(string $slug) {
+				throw new RuntimeException('not found');
+			}
+		};
 
-        $service = $this->service(mapper: $mapper);
-        $config  = $service->resolve('unknown-tenant');
+		$service = $this->service(mapper: $mapper);
+		$config = $service->resolve('unknown-tenant');
 
-        $this->assertSame('Portaliq', $config['organisationName']);
-        $this->assertSame([], $config['allowedEmbedOrigins']);
+		$this->assertSame('Portaliq', $config['organisationName']);
+		$this->assertSame([], $config['allowedEmbedOrigins']);
 
-    }//end testUnknownSlugResolvesToNeutralDefaultNotAnError()
+	}//end testUnknownSlugResolvesToNeutralDefaultNotAnError()
 
-    public function testOpenRegisterUnavailableResolvesToNeutralDefault(): void
-    {
-        $container = $this->createMock(ContainerInterface::class);
-        $container->method('get')->willThrowException(new RuntimeException('OpenRegister not installed'));
+	public function testOpenRegisterUnavailableResolvesToNeutralDefault(): void {
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willThrowException(new RuntimeException('OpenRegister not installed'));
 
-        $service = new PortalOrganisationConfigService(
-            $container,
-            $this->createMock(IAppConfig::class),
-            $this->createMock(LoggerInterface::class),
-            new OidcClaimMapperService()
-        );
+		$service = new PortalOrganisationConfigService(
+			$container,
+			$this->createMock(IAppConfig::class),
+			$this->createMock(LoggerInterface::class),
+			new OidcClaimMapperService()
+		);
 
-        $config = $service->resolve('gemeente-x');
-        $this->assertSame('Portaliq', $config['organisationName']);
+		$config = $service->resolve('gemeente-x');
+		$this->assertSame('Portaliq', $config['organisationName']);
 
-    }//end testOpenRegisterUnavailableResolvesToNeutralDefault()
+	}//end testOpenRegisterUnavailableResolvesToNeutralDefault()
 
-    public function testResolvedOrganisationCarriesItsNameAndOverrides(): void
-    {
-        $mapper = new class {
-            public function findBySlug(string $slug)
-            {
-                return new class {
-                    public function getUuid()
-                    {
-                        return 'org-uuid-1';
-                    }
+	public function testResolvedOrganisationCarriesItsNameAndOverrides(): void {
+		$mapper = new class {
+			public function findBySlug(string $slug) {
+				return new class {
+					public function getUuid() {
+						return 'org-uuid-1';
+					}
 
-                    public function getName()
-                    {
-                        return 'Gemeente X';
-                    }
-                };
-            }
-        };
+					public function getName() {
+						return 'Gemeente X';
+					}
+				};
+			}
+		};
 
-        $overrides = [
-            'theme'               => 'utrecht',
-            'logo'                => '/apps/portaliq/img/gemeente-x.svg',
-            'allowedEmbedOrigins' => ['https://gemeente-x.example'],
-            'featureFlags'        => ['aiCompanion' => true],
-        ];
+		$overrides = [
+			'theme' => 'utrecht',
+			'logo' => '/apps/portaliq/img/gemeente-x.svg',
+			'allowedEmbedOrigins' => ['https://gemeente-x.example'],
+			'featureFlags' => ['aiCompanion' => true],
+		];
 
-        $service = $this->service(mapper: $mapper, overridesJson: json_encode($overrides));
-        $config  = $service->resolve('gemeente-x');
+		$service = $this->service(mapper: $mapper, overridesJson: json_encode($overrides));
+		$config = $service->resolve('gemeente-x');
 
-        $this->assertSame('Gemeente X', $config['organisationName']);
-        $this->assertSame('gemeente-x', $config['organisationSlug']);
-        $this->assertSame('utrecht', $config['theme']);
-        $this->assertSame('/apps/portaliq/img/gemeente-x.svg', $config['logo']);
-        $this->assertSame(['https://gemeente-x.example'], $config['allowedEmbedOrigins']);
-        $this->assertSame(['aiCompanion' => true], $config['featureFlags']);
+		$this->assertSame('Gemeente X', $config['organisationName']);
+		$this->assertSame('gemeente-x', $config['organisationSlug']);
+		$this->assertSame('utrecht', $config['theme']);
+		$this->assertSame('/apps/portaliq/img/gemeente-x.svg', $config['logo']);
+		$this->assertSame(['https://gemeente-x.example'], $config['allowedEmbedOrigins']);
+		$this->assertSame(['aiCompanion' => true], $config['featureFlags']);
 
-    }//end testResolvedOrganisationCarriesItsNameAndOverrides()
+	}//end testResolvedOrganisationCarriesItsNameAndOverrides()
 
-    public function testMalformedAllowedEmbedOriginsDegradesToEmptyDenyList(): void
-    {
-        $mapper = new class {
-            public function findBySlug(string $slug)
-            {
-                return new class {
-                    public function getUuid()
-                    {
-                        return 'org-uuid-2';
-                    }
+	public function testMalformedAllowedEmbedOriginsDegradesToEmptyDenyList(): void {
+		$mapper = new class {
+			public function findBySlug(string $slug) {
+				return new class {
+					public function getUuid() {
+						return 'org-uuid-2';
+					}
 
-                    public function getName()
-                    {
-                        return 'Gemeente Y';
-                    }
-                };
-            }
-        };
+					public function getName() {
+						return 'Gemeente Y';
+					}
+				};
+			}
+		};
 
-        // A malformed override (string instead of array) must fail closed to
-        // an empty (deny-embed) list, never to something permissive.
-        $service = $this->service(mapper: $mapper, overridesJson: json_encode(['allowedEmbedOrigins' => 'https://evil.example']));
-        $config  = $service->resolve('gemeente-y');
+		// A malformed override (string instead of array) must fail closed to
+		// an empty (deny-embed) list, never to something permissive.
+		$service = $this->service(mapper: $mapper, overridesJson: json_encode(['allowedEmbedOrigins' => 'https://evil.example']));
+		$config = $service->resolve('gemeente-y');
 
-        $this->assertSame([], $config['allowedEmbedOrigins']);
+		$this->assertSame([], $config['allowedEmbedOrigins']);
 
-    }//end testMalformedAllowedEmbedOriginsDegradesToEmptyDenyList()
+	}//end testMalformedAllowedEmbedOriginsDegradesToEmptyDenyList()
 
-    /**
-     * portal-oidc-broker-login: a configured `eherkenning` provider surfaces
-     * in `resolve()`'s secret-free `oidcProviders`, and `resolveOidcConfig()`
-     * returns the FULL merged config (issuer/clientId/scopes/claimMap/loaMap)
-     * — with the secret coming ONLY from the dedicated sensitive key, never
-     * from the presentation-override blob.
-     */
-    public function testConfiguredProviderSurfacesInOidcProvidersAndResolvesFully(): void
-    {
-        $overrides = [
-            'oidc' => [
-                'eherkenning' => [
-                    'issuer'   => 'https://broker.example/idp',
-                    'clientId' => 'rp-client-1',
-                    'scopes'   => ['openid', 'kvk'],
-                ],
-            ],
-        ];
+	/**
+	 * portal-oidc-broker-login: a configured `eherkenning` provider surfaces
+	 * in `resolve()`'s secret-free `oidcProviders`, and `resolveOidcConfig()`
+	 * returns the FULL merged config (issuer/clientId/scopes/claimMap/loaMap)
+	 * — with the secret coming ONLY from the dedicated sensitive key, never
+	 * from the presentation-override blob.
+	 */
+	public function testConfiguredProviderSurfacesInOidcProvidersAndResolvesFully(): void {
+		$overrides = [
+			'oidc' => [
+				'eherkenning' => [
+					'issuer' => 'https://broker.example/idp',
+					'clientId' => 'rp-client-1',
+					'scopes' => ['openid', 'kvk'],
+				],
+			],
+		];
 
-        $service = $this->oidcService(overridesJson: json_encode($overrides), secret: 's3cr3t-value-0000000000');
+		$service = $this->oidcService(overridesJson: json_encode($overrides), secret: 's3cr3t-value-0000000000');
 
-        $config = $service->resolve('gemeente-x');
-        $this->assertSame([['provider' => 'eherkenning', 'label' => 'eHerkenning']], $config['oidcProviders']);
-        // The client secret is NEVER present anywhere in the SPA-facing shape.
-        $this->assertStringNotContainsString('s3cr3t-value', (string) json_encode($config));
+		$config = $service->resolve('gemeente-x');
+		$this->assertSame([['provider' => 'eherkenning', 'label' => 'eHerkenning']], $config['oidcProviders']);
+		// The client secret is NEVER present anywhere in the SPA-facing shape.
+		$this->assertStringNotContainsString('s3cr3t-value', (string)json_encode($config));
 
-        $full = $service->resolveOidcConfig('gemeente-x', 'eherkenning');
-        $this->assertNotNull($full);
-        $this->assertSame('https://broker.example/idp', $full['issuer']);
-        $this->assertSame('rp-client-1', $full['clientId']);
-        $this->assertSame('s3cr3t-value-0000000000', $full['clientSecret']);
-        $this->assertSame(['openid', 'kvk'], $full['scopes']);
-        $this->assertSame('eherkenning', $full['identityType']);
+		$full = $service->resolveOidcConfig('gemeente-x', 'eherkenning');
+		$this->assertNotNull($full);
+		$this->assertSame('https://broker.example/idp', $full['issuer']);
+		$this->assertSame('rp-client-1', $full['clientId']);
+		$this->assertSame('s3cr3t-value-0000000000', $full['clientSecret']);
+		$this->assertSame(['openid', 'kvk'], $full['scopes']);
+		$this->assertSame('eherkenning', $full['identityType']);
 
-    }//end testConfiguredProviderSurfacesInOidcProvidersAndResolvesFully()
+	}//end testConfiguredProviderSurfacesInOidcProvidersAndResolvesFully()
 
-    public function testUnconfiguredProviderResolvesToNullNotAnError(): void
-    {
-        $service = $this->oidcService(overridesJson: '{}', secret: '');
+	public function testUnconfiguredProviderResolvesToNullNotAnError(): void {
+		$service = $this->oidcService(overridesJson: '{}', secret: '');
 
-        $this->assertNull($service->resolveOidcConfig('gemeente-x', 'digid'));
-        $this->assertSame([], $service->resolve('gemeente-x')['oidcProviders']);
+		$this->assertNull($service->resolveOidcConfig('gemeente-x', 'digid'));
+		$this->assertSame([], $service->resolve('gemeente-x')['oidcProviders']);
 
-    }//end testUnconfiguredProviderResolvesToNullNotAnError()
+	}//end testUnconfiguredProviderResolvesToNullNotAnError()
 
-    public function testResolveOidcConfigFailsClosedWithoutAClientSecret(): void
-    {
-        $overrides = [
-            'oidc' => [
-                'digid' => [
-                    'issuer'   => 'https://broker.example/idp',
-                    'clientId' => 'rp-client-1',
-                ],
-            ],
-        ];
+	public function testResolveOidcConfigFailsClosedWithoutAClientSecret(): void {
+		$overrides = [
+			'oidc' => [
+				'digid' => [
+					'issuer' => 'https://broker.example/idp',
+					'clientId' => 'rp-client-1',
+				],
+			],
+		];
 
-        // No secret configured at the dedicated key — the provider must NOT
-        // be treated as configured, in either resolveOidcConfig() or the
-        // SPA-facing oidcProviders list.
-        $service = $this->oidcService(overridesJson: json_encode($overrides), secret: '');
+		// No secret configured at the dedicated key — the provider must NOT
+		// be treated as configured, in either resolveOidcConfig() or the
+		// SPA-facing oidcProviders list.
+		$service = $this->oidcService(overridesJson: json_encode($overrides), secret: '');
 
-        $this->assertNull($service->resolveOidcConfig('gemeente-x', 'digid'));
-        $this->assertSame([], $service->resolve('gemeente-x')['oidcProviders']);
+		$this->assertNull($service->resolveOidcConfig('gemeente-x', 'digid'));
+		$this->assertSame([], $service->resolve('gemeente-x')['oidcProviders']);
 
-    }//end testResolveOidcConfigFailsClosedWithoutAClientSecret()
+	}//end testResolveOidcConfigFailsClosedWithoutAClientSecret()
 
-    public function testResolveOidcConfigRejectsAnUnknownProviderString(): void
-    {
-        $service = $this->oidcService(overridesJson: '{}', secret: '');
+	public function testResolveOidcConfigRejectsAnUnknownProviderString(): void {
+		$service = $this->oidcService(overridesJson: '{}', secret: '');
 
-        $this->assertNull($service->resolveOidcConfig('gemeente-x', 'not-a-real-provider'));
+		$this->assertNull($service->resolveOidcConfig('gemeente-x', 'not-a-real-provider'));
 
-    }//end testResolveOidcConfigRejectsAnUnknownProviderString()
+	}//end testResolveOidcConfigRejectsAnUnknownProviderString()
 
-    /**
-     * Builds a service against a resolvable "gemeente-x" organisation, with
-     * `getValueString` returning `$overridesJson` for the presentation-
-     * override key and `$secret` for ANY `oidc_secret_*` key.
-     */
-    private function oidcService(string $overridesJson, string $secret): PortalOrganisationConfigService
-    {
-        $mapper = new class {
-            public function findBySlug(string $slug)
-            {
-                return new class {
-                    public function getUuid()
-                    {
-                        return 'org-uuid-x';
-                    }
+	/**
+	 * Builds a service against a resolvable "gemeente-x" organisation, with
+	 * `getValueString` returning `$overridesJson` for the presentation-
+	 * override key and `$secret` for ANY `oidc_secret_*` key.
+	 */
+	private function oidcService(string $overridesJson, string $secret): PortalOrganisationConfigService {
+		$mapper = new class {
+			public function findBySlug(string $slug) {
+				return new class {
+					public function getUuid() {
+						return 'org-uuid-x';
+					}
 
-                    public function getName()
-                    {
-                        return 'Gemeente X';
-                    }
-                };
-            }
-        };
+					public function getName() {
+						return 'Gemeente X';
+					}
+				};
+			}
+		};
 
-        $container = $this->createMock(ContainerInterface::class);
-        $container->method('get')->willReturn($mapper);
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willReturn($mapper);
 
-        $appConfig = $this->createMock(IAppConfig::class);
-        $appConfig->method('getValueString')->willReturnCallback(
-            function (string $app, string $key, string $default='') use ($overridesJson, $secret) {
-                if (str_starts_with($key, 'oidc_secret_') === true) {
-                    return $secret;
-                }
+		$appConfig = $this->createMock(IAppConfig::class);
+		$appConfig->method('getValueString')->willReturnCallback(
+			function (string $app, string $key, string $default = '') use ($overridesJson, $secret) {
+				if (str_starts_with($key, 'oidc_secret_') === true) {
+					return $secret;
+				}
 
-                return $overridesJson;
-            }
-        );
+				return $overridesJson;
+			}
+		);
 
-        return new PortalOrganisationConfigService(
-            $container,
-            $appConfig,
-            $this->createMock(LoggerInterface::class),
-            new OidcClaimMapperService()
-        );
+		return new PortalOrganisationConfigService(
+			$container,
+			$appConfig,
+			$this->createMock(LoggerInterface::class),
+			new OidcClaimMapperService()
+		);
 
-    }//end oidcService()
+	}//end oidcService()
 
-    private function service(?object $mapper=null, ?string $overridesJson=null): PortalOrganisationConfigService
-    {
-        $container = $this->createMock(ContainerInterface::class);
-        if ($mapper !== null) {
-            $container->method('get')->willReturn($mapper);
-        } else {
-            $container->method('get')->willThrowException(new RuntimeException('unavailable'));
-        }
+	private function service(?object $mapper = null, ?string $overridesJson = null): PortalOrganisationConfigService {
+		$container = $this->createMock(ContainerInterface::class);
+		if ($mapper !== null) {
+			$container->method('get')->willReturn($mapper);
+		} else {
+			$container->method('get')->willThrowException(new RuntimeException('unavailable'));
+		}
 
-        $appConfig = $this->createMock(IAppConfig::class);
-        $appConfig->method('getValueString')->willReturn($overridesJson ?? '{}');
+		$appConfig = $this->createMock(IAppConfig::class);
+		$appConfig->method('getValueString')->willReturn($overridesJson ?? '{}');
 
-        return new PortalOrganisationConfigService(
-            $container,
-            $appConfig,
-            $this->createMock(LoggerInterface::class),
-            new OidcClaimMapperService()
-        );
+		return new PortalOrganisationConfigService(
+			$container,
+			$appConfig,
+			$this->createMock(LoggerInterface::class),
+			new OidcClaimMapperService()
+		);
 
-    }//end service()
+	}//end service()
 
 }//end class
