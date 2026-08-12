@@ -18,7 +18,7 @@
     "lint-fix": "npm run lint -- --fix",
     "test:e2e": "playwright test",
     "test:e2e:docs": "playwright test --project docs-capture",
-    "stylelint": "stylelint src/**/*.vue src/**/*.scss src/**/*.css",
+    "stylelint": "stylelint \"src/**/*.{vue,scss,css}\"",
     "stylelint-fix": "stylelint src/**/*.vue src/**/*.scss src/**/*.css --fix",
     "check:manifest": "node tests/validate-manifest.js",
     "check:manifest-v2": "node tests/manifest-v2.spec.js",
