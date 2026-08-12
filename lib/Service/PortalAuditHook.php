@@ -47,80 +47,77 @@ use Throwable;
  *
  * @spec openspec/specs/supplier-portal/spec.md#download-emits-an-audit-hook
  */
-class PortalAuditHook
-{
-    /**
-     * The audit trail service delivered by portal-session-hardening-v2.
-     */
-    private const AUDIT_SERVICE = 'OCA\\Portaliq\\Service\\AuditTrailService';
+class PortalAuditHook {
+	/**
+	 * The audit trail service delivered by portal-session-hardening-v2.
+	 */
+	private const AUDIT_SERVICE = 'OCA\\Portaliq\\Service\\AuditTrailService';
 
-    /**
-     * Constructor.
-     *
-     * @param ContainerInterface $container For resolving the audit service.
-     * @param LoggerInterface    $logger    The logger.
-     */
-    public function __construct(
-        private readonly ContainerInterface $container,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param ContainerInterface $container For resolving the audit service.
+	 * @param LoggerInterface $logger The logger.
+	 */
+	public function __construct(
+		private readonly ContainerInterface $container,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Record a `download` event, guarded so an absent/failing audit service
-     * never fails the download it is auditing.
-     *
-     * @param string $subjectRef   The subject the download belongs to.
-     * @param string $organisation The subject's tenant.
-     * @param string $register     The target register.
-     * @param string $schema       The target schema.
-     * @param string $id           The target object id.
-     *
-     * @return void
-     *
-     * @spec openspec/specs/supplier-portal/spec.md#download-emits-an-audit-hook
-     */
-    public function download(string $subjectRef, string $organisation, string $register, string $schema, string $id): void
-    {
-        $service = $this->auditService();
-        if ($service === null) {
-            return;
-        }
+	/**
+	 * Record a `download` event, guarded so an absent/failing audit service
+	 * never fails the download it is auditing.
+	 *
+	 * @param string $subjectRef The subject the download belongs to.
+	 * @param string $organisation The subject's tenant.
+	 * @param string $register The target register.
+	 * @param string $schema The target schema.
+	 * @param string $id The target object id.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/supplier-portal/spec.md#download-emits-an-audit-hook
+	 */
+	public function download(string $subjectRef, string $organisation, string $register, string $schema, string $id): void {
+		$service = $this->auditService();
+		if ($service === null) {
+			return;
+		}
 
-        try {
-            $service->record(
-                verb: 'download',
-                subjectRef: $subjectRef,
-                organisation: $organisation,
-                register: $register,
-                schema: $schema,
-                id: $id
-            );
-        } catch (Throwable $e) {
-            // Failure isolation: the download already succeeded — an audit
-            // gap is logged for reconciliation, never propagated.
-            $this->logger->warning('Portaliq: audit hook failed', ['verb' => 'download', 'reason' => $e->getMessage()]);
-        }
-    }//end download()
+		try {
+			$service->record(
+				verb: 'download',
+				subjectRef: $subjectRef,
+				organisation: $organisation,
+				register: $register,
+				schema: $schema,
+				id: $id
+			);
+		} catch (Throwable $e) {
+			// Failure isolation: the download already succeeded — an audit
+			// gap is logged for reconciliation, never propagated.
+			$this->logger->warning('Portaliq: audit hook failed', ['verb' => 'download', 'reason' => $e->getMessage()]);
+		}
+	}//end download()
 
-    /**
-     * Resolve the audit trail service, or null when unavailable (today: it
-     * does not exist yet, as documented above).
-     *
-     * @return object|null
-     */
-    private function auditService(): ?object
-    {
-        try {
-            $service = $this->container->get(self::AUDIT_SERVICE);
-        } catch (Throwable $e) {
-            return null;
-        }
+	/**
+	 * Resolve the audit trail service, or null when unavailable (today: it
+	 * does not exist yet, as documented above).
+	 *
+	 * @return object|null
+	 */
+	private function auditService(): ?object {
+		try {
+			$service = $this->container->get(self::AUDIT_SERVICE);
+		} catch (Throwable $e) {
+			return null;
+		}
 
-        if (is_object($service) === true && method_exists($service, 'record') === true) {
-            return $service;
-        }
+		if (is_object($service) === true && method_exists($service, 'record') === true) {
+			return $service;
+		}
 
-        return null;
-    }//end auditService()
+		return null;
+	}//end auditService()
 }//end class

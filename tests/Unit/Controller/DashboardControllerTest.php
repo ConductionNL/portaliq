@@ -43,55 +43,51 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Portaliq\Controller\DashboardController
  */
-class DashboardControllerTest extends TestCase
-{
+class DashboardControllerTest extends TestCase {
 
-    /**
-     * The controller under test.
-     *
-     * @var DashboardController
-     */
-    private DashboardController $controller;
+	/**
+	 * The controller under test.
+	 *
+	 * @var DashboardController
+	 */
+	private DashboardController $controller;
 
-    /**
-     * Build the controller with a mocked request.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
+	/**
+	 * Build the controller with a mocked request.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		parent::setUp();
 
-        $this->controller = new DashboardController($this->createMock(IRequest::class));
-    }//end setUp()
+		$this->controller = new DashboardController($this->createMock(IRequest::class));
+	}//end setUp()
 
-    /**
-     * `GET /` renders portaliq's own `index` template.
-     *
-     * @return void
-     */
-    public function testPageRendersThePortaliqIndexTemplate(): void
-    {
-        $response = $this->controller->page();
+	/**
+	 * `GET /` renders portaliq's own `index` template.
+	 *
+	 * @return void
+	 */
+	public function testPageRendersThePortaliqIndexTemplate(): void {
+		$response = $this->controller->page();
 
-        $this->assertInstanceOf(TemplateResponse::class, $response);
-        $this->assertSame('portaliq', $response->getApp());
-        $this->assertSame('index', $response->getTemplateName());
-    }//end testPageRendersThePortaliqIndexTemplate()
+		$this->assertInstanceOf(TemplateResponse::class, $response);
+		$this->assertSame('portaliq', $response->getApp());
+		$this->assertSame('index', $response->getTemplateName());
+	}//end testPageRendersThePortaliqIndexTemplate()
 
-    /**
-     * A deep link renders the SAME app/template pair, so a browser reload on an
-     * in-app route boots the same SPA rather than 404ing.
-     *
-     * @return void
-     */
-    public function testCatchAllRendersTheSameTemplateAsPage(): void
-    {
-        $page     = $this->controller->page();
-        $catchAll = $this->controller->catchAll();
+	/**
+	 * A deep link renders the SAME app/template pair, so a browser reload on an
+	 * in-app route boots the same SPA rather than 404ing.
+	 *
+	 * @return void
+	 */
+	public function testCatchAllRendersTheSameTemplateAsPage(): void {
+		$page = $this->controller->page();
+		$catchAll = $this->controller->catchAll();
 
-        $this->assertSame($page->getApp(), $catchAll->getApp());
-        $this->assertSame($page->getTemplateName(), $catchAll->getTemplateName());
-        $this->assertSame('index', $catchAll->getTemplateName());
-    }//end testCatchAllRendersTheSameTemplateAsPage()
+		$this->assertSame($page->getApp(), $catchAll->getApp());
+		$this->assertSame($page->getTemplateName(), $catchAll->getTemplateName());
+		$this->assertSame('index', $catchAll->getTemplateName());
+	}//end testCatchAllRendersTheSameTemplateAsPage()
 }//end class

@@ -86,34 +86,33 @@ namespace OCA\Portaliq\Contribution;
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T04
  */
-interface IPortalContributionProvider
-{
-    /**
-     * The external audience this provider contributes to.
-     *
-     * @return string "supplier" or "client".
-     *
-     * @spec openspec/changes/supplier-portal/tasks.md#T04
-     */
-    public function getAudience(): string;
+interface IPortalContributionProvider {
+	/**
+	 * The external audience this provider contributes to.
+	 *
+	 * @return string "supplier" or "client".
+	 *
+	 * @spec openspec/changes/supplier-portal/tasks.md#T04
+	 */
+	public function getAudience(): string;
 
-    /**
-     * Describe this app's contribution for a specific authenticated subject, or
-     * null when the app has nothing to contribute to that subject.
-     *
-     * The returned array is a declarative manifest — never raw domain data:
-     * `app`, `label`, `collections` (each with register/schema/label), `actions`
-     * (each with id/label/endpoint), and `notifications` (rule keys). Portaliq
-     * renders it and reads the collections through OpenRegister, RBAC-scoped to
-     * the subject; the app is never called to *list* data (ADR-022).
-     *
-     * @param array<string, mixed> $subject The resolved subject (subjectRef,
-     *                                      audience, organisation, ...), all
-     *                                      server-derived.
-     *
-     * @return array<string, mixed>|null The contribution manifest, or null.
-     *
-     * @spec openspec/changes/supplier-portal/tasks.md#T04
-     */
-    public function getContribution(array $subject): ?array;
+	/**
+	 * Describe this app's contribution for a specific authenticated subject, or
+	 * null when the app has nothing to contribute to that subject.
+	 *
+	 * The returned array is a declarative manifest — never raw domain data:
+	 * `app`, `label`, `collections` (each with register/schema/label), `actions`
+	 * (each with id/label/endpoint), and `notifications` (rule keys). Portaliq
+	 * renders it and reads the collections through OpenRegister, RBAC-scoped to
+	 * the subject; the app is never called to *list* data (ADR-022).
+	 *
+	 * @param array<string, mixed> $subject The resolved subject (subjectRef,
+	 *                                      audience, organisation, ...), all
+	 *                                      server-derived.
+	 *
+	 * @return array<string, mixed>|null The contribution manifest, or null.
+	 *
+	 * @spec openspec/changes/supplier-portal/tasks.md#T04
+	 */
+	public function getContribution(array $subject): ?array;
 }//end interface

@@ -38,240 +38,228 @@ use RuntimeException;
 /**
  * Asserts the declared Nextcloud range is covered by the CI matrix.
  */
-class AppInfoDependenciesTest extends TestCase
-{
+class AppInfoDependenciesTest extends TestCase {
 
-    /**
-     * Repository root, derived from this file's own location.
-     *
-     * @return string
-     */
-    private function repoRoot(): string
-    {
-        return dirname(__DIR__, 2);
+	/**
+	 * Repository root, derived from this file's own location.
+	 *
+	 * @return string
+	 */
+	private function repoRoot(): string {
+		return dirname(__DIR__, 2);
+	}//end repoRoot()
 
-    }//end repoRoot()
+	/**
+	 * Parse appinfo/info.xml into a SimpleXMLElement.
+	 *
+	 * Deliberately `simplexml_load_string(file_get_contents(...))` rather than
+	 * `simplexml_load_file()`. Under this repo's unit bootstrap Nextcloud's
+	 * `lib/base.php` is loaded whenever a server checkout is present — which is
+	 * true in CI and false on a bare developer machine — and it installs libxml
+	 * external-entity restrictions that make `simplexml_load_file()` return
+	 * `false` for a perfectly valid local file. That is exactly how this test
+	 * first behaved: green locally, three errors on all four CI legs, all of
+	 * them "not parseable XML" for a file the parser had simply refused to
+	 * open. Reading the bytes ourselves removes the file-access layer from the
+	 * question entirely.
+	 *
+	 * Any residual libxml diagnostics are surfaced in the exception message, so
+	 * a future parse failure names its own cause instead of repeating the same
+	 * uninformative sentence.
+	 *
+	 * @return \SimpleXMLElement
+	 */
+	private function infoXml(): \SimpleXMLElement {
+		$path = $this->repoRoot() . '/appinfo/info.xml';
+		$this->assertFileExists($path, 'appinfo/info.xml is missing');
 
-    /**
-     * Parse appinfo/info.xml into a SimpleXMLElement.
-     *
-     * Deliberately `simplexml_load_string(file_get_contents(...))` rather than
-     * `simplexml_load_file()`. Under this repo's unit bootstrap Nextcloud's
-     * `lib/base.php` is loaded whenever a server checkout is present — which is
-     * true in CI and false on a bare developer machine — and it installs libxml
-     * external-entity restrictions that make `simplexml_load_file()` return
-     * `false` for a perfectly valid local file. That is exactly how this test
-     * first behaved: green locally, three errors on all four CI legs, all of
-     * them "not parseable XML" for a file the parser had simply refused to
-     * open. Reading the bytes ourselves removes the file-access layer from the
-     * question entirely.
-     *
-     * Any residual libxml diagnostics are surfaced in the exception message, so
-     * a future parse failure names its own cause instead of repeating the same
-     * uninformative sentence.
-     *
-     * @return \SimpleXMLElement
-     */
-    private function infoXml(): \SimpleXMLElement
-    {
-        $path = $this->repoRoot().'/appinfo/info.xml';
-        $this->assertFileExists($path, 'appinfo/info.xml is missing');
+		$raw = file_get_contents($path);
+		if ($raw === false || trim($raw) === '') {
+			throw new RuntimeException('appinfo/info.xml could not be read, or is empty');
+		}
 
-        $raw = file_get_contents($path);
-        if ($raw === false || trim($raw) === '') {
-            throw new RuntimeException('appinfo/info.xml could not be read, or is empty');
-        }
+		$previous = libxml_use_internal_errors(true);
+		libxml_clear_errors();
+		$xml = simplexml_load_string($raw);
+		$errors = libxml_get_errors();
+		libxml_clear_errors();
+		libxml_use_internal_errors($previous);
 
-        $previous = libxml_use_internal_errors(true);
-        libxml_clear_errors();
-        $xml = simplexml_load_string($raw);
-        $errors = libxml_get_errors();
-        libxml_clear_errors();
-        libxml_use_internal_errors($previous);
+		if ($xml === false) {
+			$detail = [];
+			foreach ($errors as $error) {
+				$detail[] = trim($error->message) . ' (line ' . $error->line . ')';
+			}
 
-        if ($xml === false) {
-            $detail = [];
-            foreach ($errors as $error) {
-                $detail[] = trim($error->message).' (line '.$error->line.')';
-            }
+			throw new RuntimeException(
+				'appinfo/info.xml is not parseable XML: '
+				. (empty($detail) === true ? 'no libxml diagnostics available' : implode('; ', $detail))
+			);
+		}
 
-            throw new RuntimeException(
-                'appinfo/info.xml is not parseable XML: '
-                .(empty($detail) === true ? 'no libxml diagnostics available' : implode('; ', $detail))
-            );
-        }
+		return $xml;
+	}//end infoXml()
 
-        return $xml;
+	/**
+	 * The `<nextcloud>` element's min/max attributes from appinfo/info.xml.
+	 *
+	 * Parsed as XML rather than grepped, so a commented-out element cannot be
+	 * mistaken for a live one — a grep for `min-version` matches the
+	 * explanatory comment directly above the tag just as happily as the tag.
+	 *
+	 * @return array{min:int, max:int}
+	 */
+	private function declaredRange(): array {
+		$xml = $this->infoXml();
 
-    }//end infoXml()
+		$nodes = $xml->xpath('/info/dependencies/nextcloud');
+		$this->assertNotEmpty($nodes, 'appinfo/info.xml declares no <nextcloud> dependency');
 
-    /**
-     * The `<nextcloud>` element's min/max attributes from appinfo/info.xml.
-     *
-     * Parsed as XML rather than grepped, so a commented-out element cannot be
-     * mistaken for a live one — a grep for `min-version` matches the
-     * explanatory comment directly above the tag just as happily as the tag.
-     *
-     * @return array{min:int, max:int}
-     */
-    private function declaredRange(): array
-    {
-        $xml = $this->infoXml();
+		$min = (string)$nodes[0]['min-version'];
+		$max = (string)$nodes[0]['max-version'];
 
-        $nodes = $xml->xpath('/info/dependencies/nextcloud');
-        $this->assertNotEmpty($nodes, 'appinfo/info.xml declares no <nextcloud> dependency');
+		$this->assertNotSame('', $min, '<nextcloud> has no min-version');
+		$this->assertNotSame('', $max, '<nextcloud> has no max-version');
 
-        $min = (string) $nodes[0]['min-version'];
-        $max = (string) $nodes[0]['max-version'];
+		return [
+			'min' => (int)$min,
+			'max' => (int)$max,
+		];
 
-        $this->assertNotSame('', $min, '<nextcloud> has no min-version');
-        $this->assertNotSame('', $max, '<nextcloud> has no max-version');
+	}//end declaredRange()
 
-        return [
-            'min' => (int) $min,
-            'max' => (int) $max,
-        ];
+	/**
+	 * The Nextcloud major versions the quality workflow actually tests, read
+	 * from `nextcloud-test-refs` in .github/workflows/code-quality.yml.
+	 *
+	 * Returns the integers behind `stableNN`. An empty result is treated as a
+	 * failure by the callers rather than as "no constraint" — a matrix this
+	 * function could not read must not silently satisfy every assertion.
+	 *
+	 * @return int[]
+	 */
+	private function testedNextcloudMajors(): array {
+		$path = $this->repoRoot() . '/.github/workflows/code-quality.yml';
+		$this->assertFileExists($path, 'code-quality.yml is missing');
 
-    }//end declaredRange()
+		$lines = file($path, (FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES));
+		$majors = [];
+		foreach ($lines as $line) {
+			$trimmed = ltrim($line);
+			// Only a live key, never a commented-out one: the block above the
+			// key is prose explaining why stable31 was removed, and it names
+			// "stable31" repeatedly.
+			if (str_starts_with($trimmed, '#') === true) {
+				continue;
+			}
 
-    /**
-     * The Nextcloud major versions the quality workflow actually tests, read
-     * from `nextcloud-test-refs` in .github/workflows/code-quality.yml.
-     *
-     * Returns the integers behind `stableNN`. An empty result is treated as a
-     * failure by the callers rather than as "no constraint" — a matrix this
-     * function could not read must not silently satisfy every assertion.
-     *
-     * @return int[]
-     */
-    private function testedNextcloudMajors(): array
-    {
-        $path = $this->repoRoot().'/.github/workflows/code-quality.yml';
-        $this->assertFileExists($path, 'code-quality.yml is missing');
+			if (str_starts_with($trimmed, 'nextcloud-test-refs:') === false) {
+				continue;
+			}
 
-        $lines = file($path, (FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES));
-        $majors = [];
-        foreach ($lines as $line) {
-            $trimmed = ltrim($line);
-            // Only a live key, never a commented-out one: the block above the
-            // key is prose explaining why stable31 was removed, and it names
-            // "stable31" repeatedly.
-            if (str_starts_with($trimmed, '#') === true) {
-                continue;
-            }
+			if (preg_match_all('/stable(\d+)/', $trimmed, $matches) === 0) {
+				continue;
+			}
 
-            if (str_starts_with($trimmed, 'nextcloud-test-refs:') === false) {
-                continue;
-            }
+			foreach ($matches[1] as $major) {
+				$majors[] = (int)$major;
+			}
+		}
 
-            if (preg_match_all('/stable(\d+)/', $trimmed, $matches) === 0) {
-                continue;
-            }
+		sort($majors);
 
-            foreach ($matches[1] as $major) {
-                $majors[] = (int) $major;
-            }
-        }
+		return array_values(array_unique($majors));
+	}//end testedNextcloudMajors()
 
-        sort($majors);
+	/**
+	 * The matrix must be readable and non-empty, otherwise every other
+	 * assertion in this file would pass vacuously.
+	 *
+	 * @return void
+	 */
+	public function testCiMatrixIsReadable(): void {
+		$majors = $this->testedNextcloudMajors();
 
-        return array_values(array_unique($majors));
+		$this->assertNotEmpty(
+			$majors,
+			'Could not read any stableNN from nextcloud-test-refs in code-quality.yml. '
+			. 'Every other assertion in this file depends on this list, so an unreadable '
+			. 'matrix is a failure, not an exemption.'
+		);
 
-    }//end testedNextcloudMajors()
+	}//end testCiMatrixIsReadable()
 
-    /**
-     * The matrix must be readable and non-empty, otherwise every other
-     * assertion in this file would pass vacuously.
-     *
-     * @return void
-     */
-    public function testCiMatrixIsReadable(): void
-    {
-        $majors = $this->testedNextcloudMajors();
+	/**
+	 * The declared floor must not be BELOW the oldest Nextcloud CI runs.
+	 *
+	 * Declaring a lower floor advertises App Store support for versions no job
+	 * in this repository ever exercises.
+	 *
+	 * @return void
+	 */
+	public function testFloorIsNotBelowTheOldestTestedVersion(): void {
+		$range = $this->declaredRange();
+		$majors = $this->testedNextcloudMajors();
+		$this->assertNotEmpty($majors, 'CI matrix unreadable');
 
-        $this->assertNotEmpty(
-            $majors,
-            'Could not read any stableNN from nextcloud-test-refs in code-quality.yml. '
-            .'Every other assertion in this file depends on this list, so an unreadable '
-            .'matrix is a failure, not an exemption.'
-        );
+		$oldestTested = min($majors);
 
-    }//end testCiMatrixIsReadable()
+		$this->assertGreaterThanOrEqual(
+			$oldestTested,
+			$range['min'],
+			sprintf(
+				'appinfo/info.xml declares min-version="%d" but the oldest Nextcloud this repo tests is %d '
+				. '(nextcloud-test-refs = %s). NC %d-%d would be advertised in the App Store with no CI '
+				. 'coverage at all. Either raise min-version to %d or add the missing leg(s) to the matrix.',
+				$range['min'],
+				$oldestTested,
+				implode(', ', $majors),
+				$range['min'],
+				($oldestTested - 1),
+				$oldestTested
+			)
+		);
 
-    /**
-     * The declared floor must not be BELOW the oldest Nextcloud CI runs.
-     *
-     * Declaring a lower floor advertises App Store support for versions no job
-     * in this repository ever exercises.
-     *
-     * @return void
-     */
-    public function testFloorIsNotBelowTheOldestTestedVersion(): void
-    {
-        $range  = $this->declaredRange();
-        $majors = $this->testedNextcloudMajors();
-        $this->assertNotEmpty($majors, 'CI matrix unreadable');
+	}//end testFloorIsNotBelowTheOldestTestedVersion()
 
-        $oldestTested = min($majors);
+	/**
+	 * Every Nextcloud version CI tests must fall inside the declared range.
+	 *
+	 * The mirror of the previous assertion: a matrix leg above `max-version`
+	 * tests a configuration the app tells the App Store it does not support.
+	 *
+	 * @return void
+	 */
+	public function testEveryTestedVersionIsInsideTheDeclaredRange(): void {
+		$range = $this->declaredRange();
+		$majors = $this->testedNextcloudMajors();
+		$this->assertNotEmpty($majors, 'CI matrix unreadable');
 
-        $this->assertGreaterThanOrEqual(
-            $oldestTested,
-            $range['min'],
-            sprintf(
-                'appinfo/info.xml declares min-version="%d" but the oldest Nextcloud this repo tests is %d '
-                .'(nextcloud-test-refs = %s). NC %d-%d would be advertised in the App Store with no CI '
-                .'coverage at all. Either raise min-version to %d or add the missing leg(s) to the matrix.',
-                $range['min'],
-                $oldestTested,
-                implode(', ', $majors),
-                $range['min'],
-                ($oldestTested - 1),
-                $oldestTested
-            )
-        );
+		foreach ($majors as $major) {
+			$this->assertGreaterThanOrEqual(
+				$range['min'],
+				$major,
+				sprintf('CI tests NC %d, below the declared min-version="%d".', $major, $range['min'])
+			);
+			$this->assertLessThanOrEqual(
+				$range['max'],
+				$major,
+				sprintf('CI tests NC %d, above the declared max-version="%d".', $major, $range['max'])
+			);
+		}
 
-    }//end testFloorIsNotBelowTheOldestTestedVersion()
+	}//end testEveryTestedVersionIsInsideTheDeclaredRange()
 
-    /**
-     * Every Nextcloud version CI tests must fall inside the declared range.
-     *
-     * The mirror of the previous assertion: a matrix leg above `max-version`
-     * tests a configuration the app tells the App Store it does not support.
-     *
-     * @return void
-     */
-    public function testEveryTestedVersionIsInsideTheDeclaredRange(): void
-    {
-        $range  = $this->declaredRange();
-        $majors = $this->testedNextcloudMajors();
-        $this->assertNotEmpty($majors, 'CI matrix unreadable');
+	/**
+	 * The PHP floor stays at 8.3, which is what the NC 32 baseline is for.
+	 *
+	 * @return void
+	 */
+	public function testPhpFloorIsDeclared(): void {
+		$nodes = $this->infoXml()->xpath('/info/dependencies/php');
+		$this->assertNotEmpty($nodes, 'appinfo/info.xml declares no <php> dependency');
+		$this->assertSame('8.3', (string)$nodes[0]['min-version'], 'PHP floor must stay 8.3');
 
-        foreach ($majors as $major) {
-            $this->assertGreaterThanOrEqual(
-                $range['min'],
-                $major,
-                sprintf('CI tests NC %d, below the declared min-version="%d".', $major, $range['min'])
-            );
-            $this->assertLessThanOrEqual(
-                $range['max'],
-                $major,
-                sprintf('CI tests NC %d, above the declared max-version="%d".', $major, $range['max'])
-            );
-        }
-
-    }//end testEveryTestedVersionIsInsideTheDeclaredRange()
-
-    /**
-     * The PHP floor stays at 8.3, which is what the NC 32 baseline is for.
-     *
-     * @return void
-     */
-    public function testPhpFloorIsDeclared(): void
-    {
-        $nodes = $this->infoXml()->xpath('/info/dependencies/php');
-        $this->assertNotEmpty($nodes, 'appinfo/info.xml declares no <php> dependency');
-        $this->assertSame('8.3', (string) $nodes[0]['min-version'], 'PHP floor must stay 8.3');
-
-    }//end testPhpFloorIsDeclared()
+	}//end testPhpFloorIsDeclared()
 
 }//end class

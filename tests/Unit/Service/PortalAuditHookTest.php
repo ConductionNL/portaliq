@@ -18,113 +18,108 @@ use RuntimeException;
  *
  * @spec openspec/specs/supplier-portal/spec.md#download-emits-an-audit-hook
  */
-class PortalAuditHookTest extends TestCase
-{
+class PortalAuditHookTest extends TestCase {
 
-    public function testDownloadIsANoOpWhenAuditServiceIsAbsent(): void
-    {
-        $container = $this->createMock(ContainerInterface::class);
-        $container->method('get')->willThrowException(new RuntimeException('not registered'));
+	public function testDownloadIsANoOpWhenAuditServiceIsAbsent(): void {
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willThrowException(new RuntimeException('not registered'));
 
-        $hook = new PortalAuditHook($container, $this->createMock(LoggerInterface::class));
+		$hook = new PortalAuditHook($container, $this->createMock(LoggerInterface::class));
 
-        // Must not throw.
-        $hook->download('s1', 'org-1', 'portaliq', 'exampleDocument', 'd-1');
-        $this->addToAssertionCount(1);
+		// Must not throw.
+		$hook->download('s1', 'org-1', 'portaliq', 'exampleDocument', 'd-1');
+		$this->addToAssertionCount(1);
 
-    }//end testDownloadIsANoOpWhenAuditServiceIsAbsent()
+	}//end testDownloadIsANoOpWhenAuditServiceIsAbsent()
 
-    public function testDownloadIsANoOpWhenResolvedServiceHasNoRecordMethod(): void
-    {
-        $malformed = new class {
-        };
+	public function testDownloadIsANoOpWhenResolvedServiceHasNoRecordMethod(): void {
+		$malformed = new class {
+		};
 
-        $container = $this->createMock(ContainerInterface::class);
-        $container->method('get')->willReturn($malformed);
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willReturn($malformed);
 
-        $hook = new PortalAuditHook($container, $this->createMock(LoggerInterface::class));
+		$hook = new PortalAuditHook($container, $this->createMock(LoggerInterface::class));
 
-        $hook->download('s1', 'org-1', 'portaliq', 'exampleDocument', 'd-1');
-        $this->addToAssertionCount(1);
+		$hook->download('s1', 'org-1', 'portaliq', 'exampleDocument', 'd-1');
+		$this->addToAssertionCount(1);
 
-    }//end testDownloadIsANoOpWhenResolvedServiceHasNoRecordMethod()
+	}//end testDownloadIsANoOpWhenResolvedServiceHasNoRecordMethod()
 
-    public function testDownloadNeverPropagatesARecordFailure(): void
-    {
-        $audit = new class {
-            public function record(
-                string $verb,
-                string $subjectRef,
-                string $organisation,
-                string $register,
-                string $schema,
-                string $id
-            ): void {
-                throw new RuntimeException('write failed');
-            }//end record()
-        };
+	public function testDownloadNeverPropagatesARecordFailure(): void {
+		$audit = new class {
+			public function record(
+				string $verb,
+				string $subjectRef,
+				string $organisation,
+				string $register,
+				string $schema,
+				string $id,
+			): void {
+				throw new RuntimeException('write failed');
+			}//end record()
+		};
 
-        $container = $this->createMock(ContainerInterface::class);
-        $container->method('get')->willReturn($audit);
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willReturn($audit);
 
-        $hook = new PortalAuditHook($container, $this->createMock(LoggerInterface::class));
+		$hook = new PortalAuditHook($container, $this->createMock(LoggerInterface::class));
 
-        // The audited action already succeeded; a record() failure must never
-        // surface as an exception here.
-        $hook->download('s1', 'org-1', 'portaliq', 'exampleDocument', 'd-1');
-        $this->addToAssertionCount(1);
+		// The audited action already succeeded; a record() failure must never
+		// surface as an exception here.
+		$hook->download('s1', 'org-1', 'portaliq', 'exampleDocument', 'd-1');
+		$this->addToAssertionCount(1);
 
-    }//end testDownloadNeverPropagatesARecordFailure()
+	}//end testDownloadNeverPropagatesARecordFailure()
 
-    /**
-     * When the audit service IS resolvable, `download()` forwards the verb
-     * `download` and the target register/schema/id — the shape
-     * portal-session-hardening-v2's `AuditTrailService::record()` expects.
-     */
-    public function testDownloadForwardsVerbAndTargetWhenServiceIsAvailable(): void
-    {
-        $audit = new class {
-            /**
-             * @var array<string, mixed>
-             */
-            public array $received = [];
+	/**
+	 * When the audit service IS resolvable, `download()` forwards the verb
+	 * `download` and the target register/schema/id — the shape
+	 * portal-session-hardening-v2's `AuditTrailService::record()` expects.
+	 */
+	public function testDownloadForwardsVerbAndTargetWhenServiceIsAvailable(): void {
+		$audit = new class {
+			/**
+			 * @var array<string, mixed>
+			 */
+			public array $received = [];
 
-            public function record(
-                string $verb,
-                string $subjectRef,
-                string $organisation,
-                string $register,
-                string $schema,
-                string $id
-            ): void {
-                $this->received = [
-                    'verb'         => $verb,
-                    'subjectRef'   => $subjectRef,
-                    'organisation' => $organisation,
-                    'register'     => $register,
-                    'schema'       => $schema,
-                    'id'           => $id,
-                ];
-            }//end record()
-        };
+			public function record(
+				string $verb,
+				string $subjectRef,
+				string $organisation,
+				string $register,
+				string $schema,
+				string $id,
+			): void {
+				$this->received = [
+					'verb' => $verb,
+					'subjectRef' => $subjectRef,
+					'organisation' => $organisation,
+					'register' => $register,
+					'schema' => $schema,
+					'id' => $id,
+				];
+			}//end record()
+		};
 
-        $container = $this->createMock(ContainerInterface::class);
-        $container->method('get')->willReturn($audit);
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willReturn($audit);
 
-        $hook = new PortalAuditHook($container, $this->createMock(LoggerInterface::class));
-        $hook->download('s1', 'org-1', 'portaliq', 'exampleDocument', 'd-1');
+		$hook = new PortalAuditHook($container, $this->createMock(LoggerInterface::class));
+		$hook->download('s1', 'org-1', 'portaliq', 'exampleDocument', 'd-1');
 
-        $this->assertSame(
-            [
-                'verb'         => 'download',
-                'subjectRef'   => 's1',
-                'organisation' => 'org-1',
-                'register'     => 'portaliq',
-                'schema'       => 'exampleDocument',
-                'id'           => 'd-1',
-            ],
-            $audit->received
-        );
+		$this->assertSame(
+			[
+				'verb' => 'download',
+				'subjectRef' => 's1',
+				'organisation' => 'org-1',
+				'register' => 'portaliq',
+				'schema' => 'exampleDocument',
+				'id' => 'd-1',
+			],
+			$audit->received
+		);
 
-    }//end testDownloadForwardsVerbAndTargetWhenServiceIsAvailable()
+	}//end testDownloadForwardsVerbAndTargetWhenServiceIsAvailable()
 }//end class

@@ -52,137 +52,131 @@ use ReflectionMethod;
  * @covers \OCA\Portaliq\Controller\SessionAdminController
  * @covers \OCA\Portaliq\Controller\SettingsController
  */
-class AdminOnlyPostureTest extends TestCase
-{
+class AdminOnlyPostureTest extends TestCase {
 
-    /**
-     * Attributes whose presence would WIDEN access beyond instance admin.
-     */
-    private const WIDENING_ATTRIBUTES = [
-        'NoAdminRequired',
-        'PublicPage',
-        'AuthorizedAdminSetting',
-    ];
+	/**
+	 * Attributes whose presence would WIDEN access beyond instance admin.
+	 */
+	private const WIDENING_ATTRIBUTES = [
+		'NoAdminRequired',
+		'PublicPage',
+		'AuthorizedAdminSetting',
+	];
 
-    /**
-     * The routed methods that must stay admin-only.
-     *
-     * @return array<string, array{0: class-string, 1: string}>
-     */
-    public static function adminOnlyMethodProvider(): array
-    {
-        return [
-            'metrics#index'                    => [MetricsController::class, 'index'],
-            'sessionadmin#revokeOrganisation'  => [SessionAdminController::class, 'revokeOrganisation'],
-            'settings#update'                  => [SettingsController::class, 'update'],
-            'settings#create'                  => [SettingsController::class, 'create'],
-        ];
-    }//end adminOnlyMethodProvider()
+	/**
+	 * The routed methods that must stay admin-only.
+	 *
+	 * @return array<string, array{0: class-string, 1: string}>
+	 */
+	public static function adminOnlyMethodProvider(): array {
+		return [
+			'metrics#index' => [MetricsController::class, 'index'],
+			'sessionadmin#revokeOrganisation' => [SessionAdminController::class, 'revokeOrganisation'],
+			'settings#update' => [SettingsController::class, 'update'],
+			'settings#create' => [SettingsController::class, 'create'],
+		];
+	}//end adminOnlyMethodProvider()
 
-    /**
-     * No opt-out ATTRIBUTE is present, so Nextcloud's admin default applies.
-     *
-     * @param class-string $class  The controller class.
-     * @param string       $method The method name.
-     *
-     * @return void
-     *
-     * @dataProvider adminOnlyMethodProvider
-     */
-    public function testMethodDeclaresNoAccessWideningAttribute(string $class, string $method): void
-    {
-        $reflection = new ReflectionMethod($class, $method);
+	/**
+	 * No opt-out ATTRIBUTE is present, so Nextcloud's admin default applies.
+	 *
+	 * @param class-string $class The controller class.
+	 * @param string $method The method name.
+	 *
+	 * @return void
+	 *
+	 * @dataProvider adminOnlyMethodProvider
+	 */
+	public function testMethodDeclaresNoAccessWideningAttribute(string $class, string $method): void {
+		$reflection = new ReflectionMethod($class, $method);
 
-        $names = array_map(
-            static function (\ReflectionAttribute $attribute): string {
-                $parts = explode('\\', $attribute->getName());
-                return (string) end($parts);
-            },
-            $reflection->getAttributes()
-        );
+		$names = array_map(
+			static function (\ReflectionAttribute $attribute): string {
+				$parts = explode('\\', $attribute->getName());
+				return (string)end($parts);
+			},
+			$reflection->getAttributes()
+		);
 
-        foreach (self::WIDENING_ATTRIBUTES as $widening) {
-            $this->assertNotContains(
-                $widening,
-                $names,
-                $class.'::'.$method.'() is admin-only by design; #['.$widening.'] would widen it.'
-            );
-        }
-    }//end testMethodDeclaresNoAccessWideningAttribute()
+		foreach (self::WIDENING_ATTRIBUTES as $widening) {
+			$this->assertNotContains(
+				$widening,
+				$names,
+				$class . '::' . $method . '() is admin-only by design; #[' . $widening . '] would widen it.'
+			);
+		}
+	}//end testMethodDeclaresNoAccessWideningAttribute()
 
-    /**
-     * No opt-out DOCBLOCK annotation either — Nextcloud honours `@PublicPage`
-     * and `@NoAdminRequired` in a docblock just as it honours the attribute, so
-     * checking only attributes would miss half the regression.
-     *
-     * @param class-string $class  The controller class.
-     * @param string       $method The method name.
-     *
-     * @return void
-     *
-     * @dataProvider adminOnlyMethodProvider
-     */
-    public function testMethodDeclaresNoAccessWideningAnnotation(string $class, string $method): void
-    {
-        $doc = (string) (new ReflectionMethod($class, $method))->getDocComment();
+	/**
+	 * No opt-out DOCBLOCK annotation either — Nextcloud honours `@PublicPage`
+	 * and `@NoAdminRequired` in a docblock just as it honours the attribute, so
+	 * checking only attributes would miss half the regression.
+	 *
+	 * @param class-string $class The controller class.
+	 * @param string $method The method name.
+	 *
+	 * @return void
+	 *
+	 * @dataProvider adminOnlyMethodProvider
+	 */
+	public function testMethodDeclaresNoAccessWideningAnnotation(string $class, string $method): void {
+		$doc = (string)(new ReflectionMethod($class, $method))->getDocComment();
 
-        foreach (['NoAdminRequired', 'PublicPage'] as $widening) {
-            $this->assertDoesNotMatchRegularExpression(
-                '/^\s*\*\s*@'.$widening.'\b/m',
-                $doc,
-                $class.'::'.$method.'() is admin-only by design; @'.$widening.' would widen it.'
-            );
-        }
-    }//end testMethodDeclaresNoAccessWideningAnnotation()
+		foreach (['NoAdminRequired', 'PublicPage'] as $widening) {
+			$this->assertDoesNotMatchRegularExpression(
+				'/^\s*\*\s*@' . $widening . '\b/m',
+				$doc,
+				$class . '::' . $method . '() is admin-only by design; @' . $widening . ' would widen it.'
+			);
+		}
+	}//end testMethodDeclaresNoAccessWideningAnnotation()
 
-    /**
-     * The posture is DECLARED, not merely implied: each method carries the
-     * `@auth admin-only <reason>` tag at docblock-tag position with a reason of
-     * at least 20 characters.
-     *
-     * Without this, "admin-only on purpose" and "attribute forgotten" remain
-     * indistinguishable to a reader and to the route-auth gate.
-     *
-     * @param class-string $class  The controller class.
-     * @param string       $method The method name.
-     *
-     * @return void
-     *
-     * @dataProvider adminOnlyMethodProvider
-     */
-    public function testMethodDeclaresItsAdminOnlyPosture(string $class, string $method): void
-    {
-        $doc = (string) (new ReflectionMethod($class, $method))->getDocComment();
+	/**
+	 * The posture is DECLARED, not merely implied: each method carries the
+	 * `@auth admin-only <reason>` tag at docblock-tag position with a reason of
+	 * at least 20 characters.
+	 *
+	 * Without this, "admin-only on purpose" and "attribute forgotten" remain
+	 * indistinguishable to a reader and to the route-auth gate.
+	 *
+	 * @param class-string $class The controller class.
+	 * @param string $method The method name.
+	 *
+	 * @return void
+	 *
+	 * @dataProvider adminOnlyMethodProvider
+	 */
+	public function testMethodDeclaresItsAdminOnlyPosture(string $class, string $method): void {
+		$doc = (string)(new ReflectionMethod($class, $method))->getDocComment();
 
-        $this->assertMatchesRegularExpression(
-            '/^\s*\*\s*@auth\s+admin-only\s+.{20,}/m',
-            $doc,
-            $class.'::'.$method.'() must declare @auth admin-only with a reason of 20+ characters.'
-        );
-    }//end testMethodDeclaresItsAdminOnlyPosture()
+		$this->assertMatchesRegularExpression(
+			'/^\s*\*\s*@auth\s+admin-only\s+.{20,}/m',
+			$doc,
+			$class . '::' . $method . '() must declare @auth admin-only with a reason of 20+ characters.'
+		);
+	}//end testMethodDeclaresItsAdminOnlyPosture()
 
-    /**
-     * Positive control on the assertions above: a method that IS deliberately
-     * open must be seen as open. Without this, a bug that made the reflection
-     * always report "no widening attribute" would leave every assertion above
-     * green while checking nothing.
-     *
-     * @return void
-     */
-    public function testTheCheckSeesAWideningAttributeWhenOneIsPresent(): void
-    {
-        $names = [];
-        foreach ((new ReflectionClass(\OCA\Portaliq\Controller\WooController::class))
-            ->getMethod('serve')->getAttributes() as $attribute) {
-            $parts   = explode('\\', $attribute->getName());
-            $names[] = (string) end($parts);
-        }
+	/**
+	 * Positive control on the assertions above: a method that IS deliberately
+	 * open must be seen as open. Without this, a bug that made the reflection
+	 * always report "no widening attribute" would leave every assertion above
+	 * green while checking nothing.
+	 *
+	 * @return void
+	 */
+	public function testTheCheckSeesAWideningAttributeWhenOneIsPresent(): void {
+		$names = [];
+		foreach ((new ReflectionClass(\OCA\Portaliq\Controller\WooController::class))
+			->getMethod('serve')->getAttributes() as $attribute) {
+			$parts = explode('\\', $attribute->getName());
+			$names[] = (string)end($parts);
+		}
 
-        $this->assertContains(
-            'PublicPage',
-            $names,
-            'WooController::serve() is #[PublicPage]; if this fails the attribute reflection is broken, '
-            .'and every admin-only assertion in this file is vacuous.'
-        );
-    }//end testTheCheckSeesAWideningAttributeWhenOneIsPresent()
+		$this->assertContains(
+			'PublicPage',
+			$names,
+			'WooController::serve() is #[PublicPage]; if this fails the attribute reflection is broken, '
+			. 'and every admin-only assertion in this file is vacuous.'
+		);
+	}//end testTheCheckSeesAWideningAttributeWhenOneIsPresent()
 }//end class
