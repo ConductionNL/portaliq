@@ -189,7 +189,21 @@ jobs:
       # Measured on this tree before enabling: `check:specs` PASSES,
       # `check:manifest` FAILS (`pages[10].type: "roadmap" not in v1.1 enum`) —
       # the same defect reproduces in 10 other fleet repos.
-      frontend-checks: '["check:specs", "check:manifest"]'
+      #
+      # `format` (prettier --check) is listed because the shared workflow has NO
+      # prettier job of its own — `quality.yml` runs eslint and stylelint and
+      # mentions prettier ZERO times. This repo already carries
+      # `@nextcloud/prettier-config` and a `format` script, so without this leg
+      # `npm run format` never runs outside a developer's editor and the tree
+      # drifts straight back out of format between merges — the same inert-
+      # formatter failure mode that made the old `.prettierrc` worth deleting.
+      # Centralising the config never stopped drift; the gate does.
+      # Measured on this tree before enabling: PASSES. Scope is only 40 of 364
+      # tracked frontend files, and that is CORRECT rather than a hole: 320 of
+      # them are `woo/`, the committed COMPILED bundle of the separate WOO
+      # portal front-end (hashed filenames, minified CSS), excluded on purpose
+      # by .prettierignore. The 40 are this app's own hand-authored sources.
+      frontend-checks: '["check:specs", "check:manifest", "format"]'
 
       # ── Coverage ratchet ─────────────────────────────────────────────────
       # `enable-coverage-guard` defaults to FALSE, which is why both
