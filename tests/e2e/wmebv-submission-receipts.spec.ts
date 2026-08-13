@@ -46,11 +46,19 @@ const API_BASE = '/apps/portaliq/portal/api'
  * localStorage token slot BEFORE the app boots, so the portal loads already
  * authenticated (mirrors how a real bearer, once minted, is stored).
  */
-async function loginAsSupplier(request: APIRequestContext, page: Page, subjectRef: string, organisation: string): Promise<void> {
+async function loginAsSupplier(
+	request: APIRequestContext,
+	page: Page,
+	subjectRef: string,
+	organisation: string,
+): Promise<void> {
 	const res = await request.post(`${API_BASE}/session/dev-login`, {
 		data: { subjectRef, audience: 'supplier', organisation },
 	})
-	expect(res.ok(), 'dev-login must be enabled on the target instance (system config debug: true)').toBeTruthy()
+	expect(
+		res.ok(),
+		'dev-login must be enabled on the target instance (system config debug: true)',
+	).toBeTruthy()
 	const body = await res.json()
 	const token = body.token as string
 	expect(token).toBeTruthy()
@@ -62,7 +70,10 @@ async function loginAsSupplier(request: APIRequestContext, page: Page, subjectRe
 
 test.describe('wmebv-submission-receipts', () => {
 	// @e2e supplier-portal::a-successful-submission-produces-a-receipt-in-the-subjects-inbox
-	test('a successful create-action submission produces a bilingual receipt in the inbox', async ({ page, request }) => {
+	test('a successful create-action submission produces a bilingual receipt in the inbox', async ({
+		page,
+		request,
+	}) => {
 		const subjectRef = `e2e-receipt-${Date.now()}`
 		const organisation = 'e2e-org'
 		await loginAsSupplier(request, page, subjectRef, organisation)
@@ -93,6 +104,8 @@ test.describe('wmebv-submission-receipts', () => {
 		// the raw client input rendered as if it were the receipt itself.
 		await expect(rows.first()).toContainText('Bevestiging van ontvangst')
 		await expect(rows.first()).toContainText('Confirmation of receipt')
-		await expect(rows.first().locator('.portaliq-inbox-row__body')).toContainText('WMEBV-')
+		await expect(
+			rows.first().locator('.portaliq-inbox-row__body'),
+		).toContainText('WMEBV-')
 	})
 })

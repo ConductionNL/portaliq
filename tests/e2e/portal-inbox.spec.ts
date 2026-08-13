@@ -50,11 +50,19 @@ const OR_OBJECTS_BASE = '/apps/openregister/api/objects'
  * localStorage token slot BEFORE the app boots, so the portal loads already
  * authenticated (mirrors how a real bearer, once minted, is stored).
  */
-async function loginAsSupplier(request: APIRequestContext, page: Page, subjectRef: string, organisation: string): Promise<string> {
+async function loginAsSupplier(
+	request: APIRequestContext,
+	page: Page,
+	subjectRef: string,
+	organisation: string,
+): Promise<string> {
 	const res = await request.post(`${API_BASE}/session/dev-login`, {
 		data: { subjectRef, audience: 'supplier', organisation },
 	})
-	expect(res.ok(), 'dev-login must be enabled on the target instance (system config debug: true)').toBeTruthy()
+	expect(
+		res.ok(),
+		'dev-login must be enabled on the target instance (system config debug: true)',
+	).toBeTruthy()
 	const body = await res.json()
 	const token = body.token as string
 	expect(token).toBeTruthy()
@@ -72,7 +80,12 @@ async function loginAsSupplier(request: APIRequestContext, page: Page, subjectRe
  * create` action exists for `portalMessage`), so this stands in for a
  * contributing app having already written the row.
  */
-async function seedMessage(request: APIRequestContext, subjectRef: string, organisation: string, data: Record<string, unknown>): Promise<string> {
+async function seedMessage(
+	request: APIRequestContext,
+	subjectRef: string,
+	organisation: string,
+	data: Record<string, unknown>,
+): Promise<string> {
 	// OpenRegister's object API is an internal admin surface (no portal bearer
 	// applies) — authenticate as the dev admin. This stands in for a
 	// contributing app having written the row server-side.
@@ -81,7 +94,10 @@ async function seedMessage(request: APIRequestContext, subjectRef: string, organ
 		headers: { Authorization: `Basic ${admin}`, 'OCS-APIRequest': 'true' },
 		data: { subjectRef, organisation, ...data },
 	})
-	expect(res.ok(), 'OpenRegister objects#create must be reachable on the target instance').toBeTruthy()
+	expect(
+		res.ok(),
+		'OpenRegister objects#create must be reachable on the target instance',
+	).toBeTruthy()
 	const body = await res.json()
 	const id = (body.id ?? body['@self']?.id) as string
 	expect(id).toBeTruthy()
@@ -106,7 +122,10 @@ test.describe('portal-inbox-v2', () => {
 	// sorting — not the cross-contribution merge the scenario requires. That
 	// stays with PortalInboxReaderTest::
 	// testMergesInboxCollectionsAcrossAppsSortedByReceivedAtDesc.
-	test('merged inbox with unread badge, 2:10 metadata, and read-state toggle', async ({ page, request }) => {
+	test('merged inbox with unread badge, 2:10 metadata, and read-state toggle', async ({
+		page,
+		request,
+	}) => {
 		const subjectRef = `e2e-inbox-${Date.now()}`
 		const organisation = 'e2e-org'
 
@@ -152,8 +171,12 @@ test.describe('portal-inbox-v2', () => {
 		// 2:10 metadata renders on the row that carries it …
 		const unreadRow = rows.nth(0)
 		await expect(unreadRow).toHaveClass(/portaliq-inbox-row--unread/)
-		await expect(unreadRow.locator('.portaliq-inbox-row__meta')).toContainText('Beschikking')
-		await expect(unreadRow.locator('.portaliq-inbox-row__meta')).toContainText('De aanvraag is toegewezen.')
+		await expect(unreadRow.locator('.portaliq-inbox-row__meta')).toContainText(
+			'Beschikking',
+		)
+		await expect(unreadRow.locator('.portaliq-inbox-row__meta')).toContainText(
+			'De aanvraag is toegewezen.',
+		)
 
 		// … and is absent entirely (no empty placeholder) on the row without it.
 		const readRow = rows.nth(1)
@@ -163,7 +186,9 @@ test.describe('portal-inbox-v2', () => {
 		// Toggle read state on the unread row — tamper-proof mark-read
 		// (portal-inbox-v2 T03), server-confirmed before the UI flips.
 		await unreadRow.locator('.portaliq-inbox-row__toggle').click()
-		await expect(unreadRow.locator('.portaliq-inbox-row__toggle')).toHaveText('Read')
+		await expect(unreadRow.locator('.portaliq-inbox-row__toggle')).toHaveText(
+			'Read',
+		)
 		await expect(unreadRow).not.toHaveClass(/portaliq-inbox-row--unread/)
 
 		// The nav badge disappears once nothing is unread.

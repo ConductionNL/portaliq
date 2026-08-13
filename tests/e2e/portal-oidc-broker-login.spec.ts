@@ -76,7 +76,9 @@ const LIVE = process.env.OIDC_E2E_LIVE === '1'
 
 test.describe('portal-oidc-broker-login — fail-closed (no setup required)', () => {
 	// @e2e supplier-portal::start-on-an-unconfigured-orgprovider-fails-closed
-	test('start on an unconfigured org/provider fails closed with no redirect', async ({ request }) => {
+	test('start on an unconfigured org/provider fails closed with no redirect', async ({
+		request,
+	}) => {
 		const res = await request.get(`${API_BASE}/session/oidc/start`, {
 			params: { org: `no-such-org-${Date.now()}`, provider: 'eherkenning' },
 			maxRedirects: 0,
@@ -88,7 +90,9 @@ test.describe('portal-oidc-broker-login — fail-closed (no setup required)', ()
 		expect(body.error).toBe('oidc_failed')
 	})
 
-	test('start with an unrecognised provider string fails closed identically', async ({ request }) => {
+	test('start with an unrecognised provider string fails closed identically', async ({
+		request,
+	}) => {
 		const res = await request.get(`${API_BASE}/session/oidc/start`, {
 			params: { org: 'any-org', provider: 'not-a-real-provider' },
 			maxRedirects: 0,
@@ -98,7 +102,9 @@ test.describe('portal-oidc-broker-login — fail-closed (no setup required)', ()
 		expect((await res.json()).error).toBe('oidc_failed')
 	})
 
-	test('callback with a missing state fails closed with the SAME generic error', async ({ request }) => {
+	test('callback with a missing state fails closed with the SAME generic error', async ({
+		request,
+	}) => {
 		const res = await request.get(`${API_BASE}/session/oidc/callback`, {
 			params: { code: 'some-code' },
 		})
@@ -107,7 +113,9 @@ test.describe('portal-oidc-broker-login — fail-closed (no setup required)', ()
 		expect((await res.json()).error).toBe('oidc_failed')
 	})
 
-	test('callback with an unknown/never-issued state fails closed identically (CSRF/replay guard)', async ({ request }) => {
+	test('callback with an unknown/never-issued state fails closed identically (CSRF/replay guard)', async ({
+		request,
+	}) => {
 		const res = await request.get(`${API_BASE}/session/oidc/callback`, {
 			params: { state: `never-issued-${Date.now()}`, code: 'some-code' },
 		})
@@ -116,7 +124,9 @@ test.describe('portal-oidc-broker-login — fail-closed (no setup required)', ()
 		expect((await res.json()).error).toBe('oidc_failed')
 	})
 
-	test('callback carrying the broker\'s own error param fails closed identically', async ({ request }) => {
+	test("callback carrying the broker's own error param fails closed identically", async ({
+		request,
+	}) => {
 		const res = await request.get(`${API_BASE}/session/oidc/callback`, {
 			params: { state: 's', code: 'c', error: 'access_denied' },
 		})
@@ -127,9 +137,15 @@ test.describe('portal-oidc-broker-login — fail-closed (no setup required)', ()
 })
 
 test.describe('portal-oidc-broker-login — happy path (stub broker, requires setup)', () => {
-	test.skip(!LIVE, 'set OIDC_E2E_LIVE=1 (+ OIDC_E2E_ORG_SLUG/ISSUER/CLIENT_ID) after wiring the org\'s OIDC config — see file header')
+	test.skip(
+		!LIVE,
+		"set OIDC_E2E_LIVE=1 (+ OIDC_E2E_ORG_SLUG/ISSUER/CLIENT_ID) after wiring the org's OIDC config — see file header",
+	)
 
-	test('start→callback against a stub broker lands authenticated in the SPA; the configured provider button renders, an unconfigured one does not', async ({ page, context }) => {
+	test('start→callback against a stub broker lands authenticated in the SPA; the configured provider button renders, an unconfigured one does not', async ({
+		page,
+		context,
+	}) => {
 		const orgSlug = process.env.OIDC_E2E_ORG_SLUG!
 		const clientId = process.env.OIDC_E2E_CLIENT_ID!
 
@@ -161,7 +177,9 @@ test.describe('portal-oidc-broker-login — happy path (stub broker, requires se
 				issuedCode = crypto.randomBytes(16).toString('hex')
 				const redirectUri = url.searchParams.get('redirect_uri')!
 				const state = url.searchParams.get('state')!
-				res.writeHead(302, { Location: `${redirectUri}?code=${issuedCode}&state=${encodeURIComponent(state)}` })
+				res.writeHead(302, {
+					Location: `${redirectUri}?code=${issuedCode}&state=${encodeURIComponent(state)}`,
+				})
 				res.end()
 				return
 			}
@@ -174,7 +192,11 @@ test.describe('portal-oidc-broker-login — happy path (stub broker, requires se
 					nonce: capturedNonce,
 					acr: 'e2e-high-loa',
 				})
-				respondJson(res, { access_token: 'stub-access-token', id_token: idToken, token_type: 'Bearer' })
+				respondJson(res, {
+					access_token: 'stub-access-token',
+					id_token: idToken,
+					token_type: 'Bearer',
+				})
 				return
 			}
 
@@ -196,8 +218,12 @@ test.describe('portal-oidc-broker-login — happy path (stub broker, requires se
 		// stub then binds THAT issuer's port on all interfaces. With no issuer
 		// override it falls back to an ephemeral 127.0.0.1 port (host-only NC).
 		const issuerOverride = process.env.OIDC_E2E_ISSUER
-		const bindPort = issuerOverride ? Number(new URL(issuerOverride).port || '80') : 0
-		await new Promise<void>((resolve) => server.listen(bindPort, '0.0.0.0', resolve))
+		const bindPort = issuerOverride
+			? Number(new URL(issuerOverride).port || '80')
+			: 0
+		await new Promise<void>((resolve) =>
+			server.listen(bindPort, '0.0.0.0', resolve),
+		)
 		const port = (server.address() as { port: number }).port
 		// Server-facing origin (issuer, token, jwks, `iss`) — must be reachable
 		// from the Nextcloud server (the container, via OIDC_E2E_ISSUER).
@@ -209,15 +235,23 @@ test.describe('portal-oidc-broker-login — happy path (stub broker, requires se
 		// issuer (host-local NC, where both are the same box), else the ephemeral
 		// loopback.
 		function browserOrigin() {
-			return process.env.OIDC_E2E_BROWSER_ORIGIN || issuerOverride || `http://127.0.0.1:${port}`
+			return (
+				process.env.OIDC_E2E_BROWSER_ORIGIN
+				|| issuerOverride
+				|| `http://127.0.0.1:${port}`
+			)
 		}
 
 		try {
-			await page.goto(`/apps/portaliq/portal?org=${encodeURIComponent(orgSlug)}`)
+			await page.goto(
+				`/apps/portaliq/portal?org=${encodeURIComponent(orgSlug)}`,
+			)
 
 			// The configured provider's button renders; an unconfigured one
 			// (digid, in this fixture's setup) does not.
-			await expect(page.getByRole('button', { name: /eHerkenning/i })).toBeVisible()
+			await expect(
+				page.getByRole('button', { name: /eHerkenning/i }),
+			).toBeVisible()
 			await expect(page.getByRole('button', { name: /DigiD/i })).toHaveCount(0)
 
 			await page.getByRole('button', { name: /eHerkenning/i }).click()
@@ -228,7 +262,9 @@ test.describe('portal-oidc-broker-login — happy path (stub broker, requires se
 			// `.portaliq-subject` line, so match either and take the first
 			// (a bare toBeVisible() on the two-element locator trips strict mode).
 			await page.waitForURL(/\/portal(#|$)/, { timeout: 15000 })
-			await expect(page.locator('.portaliq-subject, .portaliq-home').first()).toBeVisible()
+			await expect(
+				page.locator('.portaliq-subject, .portaliq-home').first(),
+			).toBeVisible()
 		} finally {
 			server.close()
 		}
@@ -244,8 +280,13 @@ function b64Url(input: Buffer | string): string {
 	return Buffer.from(input).toString('base64url')
 }
 
-function generateRsaJwk(): { privateKey: crypto.KeyObject; jwk: Record<string, string> } {
-	const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', { modulusLength: 2048 })
+function generateRsaJwk(): {
+	privateKey: crypto.KeyObject
+	jwk: Record<string, string>
+} {
+	const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
+		modulusLength: 2048,
+	})
 	const jwk = publicKey.export({ format: 'jwk' }) as { n: string; e: string }
 	return {
 		privateKey,
@@ -253,12 +294,19 @@ function generateRsaJwk(): { privateKey: crypto.KeyObject; jwk: Record<string, s
 	}
 }
 
-function signIdToken(privateKey: crypto.KeyObject, claims: Record<string, unknown>): string {
+function signIdToken(
+	privateKey: crypto.KeyObject,
+	claims: Record<string, unknown>,
+): string {
 	const now = Math.floor(Date.now() / 1000)
 	const header = { alg: 'RS256', typ: 'JWT', kid: 'e2e-stub-key' }
 	const fullClaims = { iat: now, exp: now + 300, ...claims }
 	const headerPart = b64Url(JSON.stringify(header))
 	const claimsPart = b64Url(JSON.stringify(fullClaims))
-	const signature = crypto.sign('RSA-SHA256', Buffer.from(`${headerPart}.${claimsPart}`), privateKey)
+	const signature = crypto.sign(
+		'RSA-SHA256',
+		Buffer.from(`${headerPart}.${claimsPart}`),
+		privateKey,
+	)
 	return `${headerPart}.${claimsPart}.${b64Url(signature)}`
 }

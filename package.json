@@ -19,6 +19,8 @@
     "test:e2e": "playwright test",
     "test:e2e:docs": "playwright test --project docs-capture",
     "stylelint": "stylelint \"src/**/*.{vue,scss,css}\"",
+    "format": "prettier --check \"**/*.{js,ts,vue,css,scss}\"",
+    "format:fix": "prettier --write \"**/*.{js,ts,vue,css,scss}\"",
     "stylelint-fix": "stylelint src/**/*.vue src/**/*.scss src/**/*.css --fix",
     "check:manifest": "node tests/validate-manifest.js",
     "check:manifest-v2": "node tests/manifest-v2.spec.js",
@@ -78,6 +80,7 @@
     "@eslint/js": "^9.39.1",
     "@nextcloud/browserslist-config": "^3.0.1",
     "@nextcloud/eslint-config": "^8.4.1",
+    "@nextcloud/prettier-config": "^1.2.0",
     "@nextcloud/stylelint-config": "^2.4.0",
     "@nextcloud/webpack-vue-config": "^7.0.2",
     "@playwright/test": "^1.59.1",
@@ -93,10 +96,12 @@
     "eslint-import-resolver-alias": "^1.1.2",
     "eslint-import-resolver-typescript": "~3.8.7",
     "eslint-plugin-import": "^2.31.0",
+    "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^4.6.2",
     "eslint-plugin-vue": "^9.21.1",
     "path-browserify": "^1.0.1",
+    "prettier": "^3.9.6",
     "sass": "^1.99.0",
     "sass-loader": "^16.0.8",
     "style-loader": "~4.0.0",
@@ -106,5 +111,6 @@
     "vue-loader": "^17.4.2",
     "webpack": "^5.106.2",
     "webpack-cli": "^6.0.1"
-  }
+  },
+  "prettier": "@nextcloud/prettier-config"
 }

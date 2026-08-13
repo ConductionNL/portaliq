@@ -1,0 +1,21 @@
+# Build output, vendored trees and the separate Docusaurus site.
+js/
+dist/
+build/
+node_modules/
+vendor/
+coverage/
+coverage-frontend/
+docs/
+website/
+playwright-report/
+test-results/
+*.min.*
+# `woo/` is the COMPILED bundle of the separate WOO portal front-end, committed
+# so the app can serve it: hashed filenames, an asset-manifest and minified CSS
+# that is two lines long. Reformatting a build artefact is meaningless and it
+# would be overwritten by the next build anyway.
+woo/
+# Written by the translation workflow — a formatter here would fight its own
+# generator on every run.
+l10n/

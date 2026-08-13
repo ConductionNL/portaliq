@@ -66,7 +66,11 @@ export function createPortalApi(config) {
 	async function send(method, path, body) {
 		const res = await fetch(`${base}${path}`, {
 			method,
-			headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...authHeaders() },
+			headers: {
+				'Content-Type': 'application/json',
+				Accept: 'application/json',
+				...authHeaders(),
+			},
 			body: JSON.stringify(body || {}),
 		})
 		if (!res.ok) {
@@ -95,7 +99,12 @@ export function createPortalApi(config) {
 		 * carries the subject's own unread inbox count (portal-inbox-v2 T04).
 		 */
 		async getContributions() {
-			return (await get('/contributions')) || { contributions: [], unreadCount: 0 }
+			return (
+				(await get('/contributions')) || {
+					contributions: [],
+					unreadCount: 0,
+				}
+			)
 		},
 
 		/**
@@ -106,7 +115,7 @@ export function createPortalApi(config) {
 		 */
 		async fetchInbox() {
 			const body = await get('/inbox')
-			return (body && Array.isArray(body.messages)) ? body.messages : []
+			return body && Array.isArray(body.messages) ? body.messages : []
 		},
 
 		/**
@@ -136,8 +145,10 @@ export function createPortalApi(config) {
 		 * @return {Promise<Array<object>>} The collection's objects, or `[]`.
 		 */
 		async fetchCollection(collection) {
-			const body = await get(`${col(collection.register, collection.schema)}?collection=${encodeURIComponent(collection.id)}`)
-			return (body && Array.isArray(body.objects)) ? body.objects : []
+			const body = await get(
+				`${col(collection.register, collection.schema)}?collection=${encodeURIComponent(collection.id)}`,
+			)
+			return body && Array.isArray(body.objects) ? body.objects : []
 		},
 
 		/**
@@ -150,8 +161,10 @@ export function createPortalApi(config) {
 		 * @return {Promise<object|null>} The object, or null when absent/foreign.
 		 */
 		async fetchObject(collection, id) {
-			const body = await get(`${col(collection.register, collection.schema)}/${encodeURIComponent(id)}?collection=${encodeURIComponent(collection.id)}`)
-			return body ? (body.object || body) : null
+			const body = await get(
+				`${col(collection.register, collection.schema)}/${encodeURIComponent(id)}?collection=${encodeURIComponent(collection.id)}`,
+			)
+			return body ? body.object || body : null
 		},
 
 		/**
@@ -178,7 +191,11 @@ export function createPortalApi(config) {
 		async updateObject(action, id, data) {
 			// Name the action (`?action=`) so the server applies THIS transition's
 			// `set`, not just the first update action declared for the schema.
-			return send('PATCH', `${col(action.register, action.schema)}/${encodeURIComponent(id)}?action=${encodeURIComponent(action.id)}`, data)
+			return send(
+				'PATCH',
+				`${col(action.register, action.schema)}/${encodeURIComponent(id)}?action=${encodeURIComponent(action.id)}`,
+				data,
+			)
 		},
 
 		/**
@@ -201,12 +218,21 @@ export function createPortalApi(config) {
 			// for a fresh attach; the server re-verifies ownership either way.
 			for (let attempt = 0; attempt < 2; attempt++) {
 				try {
-					const res = await fetch(url, { method: 'POST', headers: { Accept: 'application/json', ...authHeaders() }, body: form })
+					const res = await fetch(url, {
+						method: 'POST',
+						headers: { Accept: 'application/json', ...authHeaders() },
+						body: form,
+					})
 					if (res.ok) {
 						const json = await res.json().catch(() => ({}))
 						return { ok: true, file: json.file || json }
 					}
-					if (attempt === 0 && (res.status === 502 || res.status === 503 || res.status === 504)) {
+					if (
+						attempt === 0
+						&& (res.status === 502
+							|| res.status === 503
+							|| res.status === 504)
+					) {
 						await new Promise((resolve) => setTimeout(resolve, 600))
 						continue
 					}
@@ -274,7 +300,7 @@ export function createPortalApi(config) {
 		 */
 		async fetchOptions(provider) {
 			const body = await get(`${col(provider.register, provider.schema)}`)
-			const rows = (body && Array.isArray(body.objects)) ? body.objects : []
+			const rows = body && Array.isArray(body.objects) ? body.objects : []
 			return rows
 				.map((r) => ({
 					value: r[provider.valueField] ?? r.id ?? r['@self']?.id,
@@ -315,8 +341,13 @@ export function createPortalApi(config) {
 		async devLogin(audience) {
 			const res = await fetch(`${base}/session/dev-login`, {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-				body: JSON.stringify({ audience: audience || config.audience || 'supplier' }),
+				headers: {
+					'Content-Type': 'application/json',
+					Accept: 'application/json',
+				},
+				body: JSON.stringify({
+					audience: audience || config.audience || 'supplier',
+				}),
 			})
 			if (!res.ok) {
 				return null
@@ -332,7 +363,10 @@ export function createPortalApi(config) {
 		/** End the session server-side (best-effort) and drop the local token. */
 		async logout() {
 			try {
-				await fetch(`${base}/session`, { method: 'DELETE', headers: authHeaders() })
+				await fetch(`${base}/session`, {
+					method: 'DELETE',
+					headers: authHeaders(),
+				})
 			} catch (e) {
 				/* best-effort — the token is dropped regardless */
 			}
