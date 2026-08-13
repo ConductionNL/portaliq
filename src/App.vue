@@ -54,11 +54,14 @@
 		  Replace the placeholder section with your app's actual settings.
 		-->
 		<template #user-settings>
-			<NcAppSettingsSection
-				id="general"
-				:name="t('portaliq', 'General')">
+			<NcAppSettingsSection id="general" :name="t('portaliq', 'General')">
 				<p class="app-root__settings-hint">
-					{{ t('portaliq', 'Add your settings fields here. See src/views/AdminRoot.vue for the pre-boot admin panel.') }}
+					{{
+						t(
+							'portaliq',
+							'Add your settings fields here. See src/views/AdminRoot.vue for the pre-boot admin panel.',
+						)
+					}}
 				</p>
 			</NcAppSettingsSection>
 		</template>

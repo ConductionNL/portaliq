@@ -37,7 +37,10 @@ const useLocalLib = process.env.USE_LOCAL_LIB !== 'false' && fs.existsSync(local
 
 // Extend the base resolve config (preserves defaults from @nextcloud/webpack-vue-config)
 webpackConfig.resolve = webpackConfig.resolve || {}
-webpackConfig.resolve.modules = [path.resolve(__dirname, 'node_modules'), 'node_modules']
+webpackConfig.resolve.modules = [
+	path.resolve(__dirname, 'node_modules'),
+	'node_modules',
+]
 // nc-vue's chunked ESM bundles @nextcloud/dialogs chunks that import Node's
 // `path`; webpack 5 ships no core-module polyfills, so a clean `npm ci` +
 // build fails with "Can't resolve 'path'" without this fallback.
@@ -58,7 +61,10 @@ webpackConfig.resolve.alias = {
 	// Vue 3 runtime, not @vue/compat. Two Vue copies = two
 	// `currentRenderingInstance` states, which crashes CnAppRoot with a null
 	// instance.
-	vue$: path.resolve(__dirname, 'node_modules/vue/dist/vue.runtime.esm-bundler.js'),
+	vue$: path.resolve(
+		__dirname,
+		'node_modules/vue/dist/vue.runtime.esm-bundler.js',
+	),
 	pinia$: path.resolve(__dirname, 'node_modules/pinia'),
 	// @nextcloud/vue@9 declares `vue-router` as a hard DEPENDENCY (^5.1.0),
 	// so npm installs a second copy under
@@ -66,10 +72,16 @@ webpackConfig.resolve.alias = {
 	// alias, NcAppNavigationItem's <router-link> resolves the v5 injection
 	// key while `app.use(router)` provided the v4 one — the link renders
 	// against an undefined router and throws.
-	'vue-router$': path.resolve(__dirname, 'node_modules/vue-router/dist/vue-router.mjs'),
+	'vue-router$': path.resolve(
+		__dirname,
+		'node_modules/vue-router/dist/vue-router.mjs',
+	),
 	// v9 is ESM-only: its exports map has '.' -> ./dist/index.mjs with no
 	// `main`/`module`, so a bare directory alias cannot resolve it.
-	'@nextcloud/vue$': path.resolve(__dirname, 'node_modules/@nextcloud/vue/dist/index.mjs'),
+	'@nextcloud/vue$': path.resolve(
+		__dirname,
+		'node_modules/@nextcloud/vue/dist/index.mjs',
+	),
 	'@nextcloud/dialogs': path.resolve(__dirname, 'node_modules/@nextcloud/dialogs'),
 	// Force the lib's transitive @nextcloud/axios import to resolve to
 	// the app's installed copy. Without the `$` exact-match suffix,
@@ -109,7 +121,9 @@ webpackConfig.plugins = [
 	new VueLoaderPlugin(),
 	new NodePolyfillPlugin({ additionalAliases: ['process'] }),
 	new webpack.DefinePlugin({ appName: JSON.stringify(appId) }),
-	new webpack.DefinePlugin({ appVersion: JSON.stringify(process.env.npm_package_version) }),
+	new webpack.DefinePlugin({
+		appVersion: JSON.stringify(process.env.npm_package_version),
+	}),
 ]
 
 // Share Vue + @nextcloud/vue + pinia + icons + @conduction/nextcloud-vue across

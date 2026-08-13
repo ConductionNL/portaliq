@@ -18,10 +18,7 @@
   @spec openspec/specs/scaffold-components/spec.md#REQ-COMP-002
 -->
 <template>
-	<NcDialog
-		:name="title"
-		:open="open"
-		@update:open="$emit('update:open', $event)">
+	<NcDialog :name="title" :open="open" @update:open="$emit('update:open', $event)">
 		<p>{{ message }}</p>
 		<template #actions>
 			<NcButton @click="onConfirm">

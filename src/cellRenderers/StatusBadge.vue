@@ -19,9 +19,7 @@
   @spec openspec/specs/scaffold-components/spec.md#REQ-COMP-001
 -->
 <template>
-	<span
-		class="status-badge"
-		:class="`status-badge--${normalised}`">
+	<span class="status-badge" :class="`status-badge--${normalised}`">
 		{{ value }}
 	</span>
 </template>

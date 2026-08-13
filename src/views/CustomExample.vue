@@ -33,10 +33,20 @@
 		<CnNoteCard type="info">
 			<h2>{{ t('portaliq', 'Custom example component') }}</h2>
 			<p>
-				{{ t('portaliq', 'This is the canonical example of a custom-type page in the manifest renderer pattern. It is rendered when a manifest page declares `type: "custom"` and `component: "CustomExample"`.') }}
+				{{
+					t(
+						'portaliq',
+						'This is the canonical example of a custom-type page in the manifest renderer pattern. It is rendered when a manifest page declares `type: "custom"` and `component: "CustomExample"`.',
+					)
+				}}
 			</p>
 			<p>
-				{{ t('portaliq', 'Replace the body of this component with whatever bespoke behaviour your page needs — realtime UI, vendor integrations, anything that does not fit the built-in page types.') }}
+				{{
+					t(
+						'portaliq',
+						'Replace the body of this component with whatever bespoke behaviour your page needs — realtime UI, vendor integrations, anything that does not fit the built-in page types.',
+					)
+				}}
 			</p>
 		</CnNoteCard>
 	</div>

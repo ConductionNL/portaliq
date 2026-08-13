@@ -39,11 +39,17 @@ const API_BASE = '/apps/portaliq/portal/api'
  * Mint a low-trust supplier dev session directly via the API (no UI needed —
  * refresh is a pure API rotation, so this spec never opens a page).
  */
-async function devLogin(request: APIRequestContext, subjectRef: string): Promise<string> {
+async function devLogin(
+	request: APIRequestContext,
+	subjectRef: string,
+): Promise<string> {
 	const res = await request.post(`${API_BASE}/session/dev-login`, {
 		data: { subjectRef, audience: 'supplier', organisation: 'e2e-org' },
 	})
-	expect(res.ok(), 'dev-login must be enabled on the target instance (system config debug: true)').toBeTruthy()
+	expect(
+		res.ok(),
+		'dev-login must be enabled on the target instance (system config debug: true)',
+	).toBeTruthy()
 	const body = await res.json()
 	const token = body.token as string
 	expect(token).toBeTruthy()
@@ -56,7 +62,9 @@ test.describe('portal-session-hardening-v2 — session refresh', () => {
 	// The absolute-cap and fail-closed-on-expired scenarios are NOT anchored:
 	// they have no UI surface and remain PHPUnit-only invariants in
 	// PortalSessionServiceTest, exactly as the spec says.
-	test('a valid bearer refreshes, rotates its jti, and the old bearer stops validating', async ({ request }) => {
+	test('a valid bearer refreshes, rotates its jti, and the old bearer stops validating', async ({
+		request,
+	}) => {
 		const oldToken = await devLogin(request, `e2e-refresh-${Date.now()}`)
 
 		// The old bearer resolves BEFORE refresh.
@@ -90,7 +98,9 @@ test.describe('portal-session-hardening-v2 — session refresh', () => {
 		expect((await afterOld.json()).authenticated).toBe(false)
 	})
 
-	test('refreshing an already-revoked (logged-out) bearer fails closed with 401', async ({ request }) => {
+	test('refreshing an already-revoked (logged-out) bearer fails closed with 401', async ({
+		request,
+	}) => {
 		const token = await devLogin(request, `e2e-refresh-revoked-${Date.now()}`)
 
 		const logoutRes = await request.delete(`${API_BASE}/session`, {

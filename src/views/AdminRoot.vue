@@ -21,23 +21,50 @@
 	<div class="portaliq-admin-settings">
 		<NcSettingsSection
 			:name="t('portaliq', 'Pre-boot configuration')"
-			:description="t('portaliq', 'Pre-app-boot configuration. Most settings live inside the app at /settings (manifest-driven).')">
+			:description="
+				t(
+					'portaliq',
+					'Pre-app-boot configuration. Most settings live inside the app at /settings (manifest-driven).',
+				)
+			">
 			<p class="portaliq-admin-settings__hint">
-				{{ t('portaliq', 'No pre-boot settings yet. Edit `src/views/AdminRoot.vue` to add fields here.') }}
+				{{
+					t(
+						'portaliq',
+						'No pre-boot settings yet. Edit `src/views/AdminRoot.vue` to add fields here.',
+					)
+				}}
 			</p>
 		</NcSettingsSection>
 
 		<NcSettingsSection
 			:name="t('portaliq', 'Portal auth edge')"
-			:description="t('portaliq', 'The public portal signs supplier/client sessions with a secret dedicated to this app — never the Nextcloud instance secret.')">
+			:description="
+				t(
+					'portaliq',
+					'The public portal signs supplier/client sessions with a secret dedicated to this app — never the Nextcloud instance secret.',
+				)
+			">
 			<NcNoteCard v-if="jwtSigningSecretConfigured" type="success">
-				{{ t('portaliq', 'A dedicated signing secret is configured. The portal auth edge is safe to use.') }}
+				{{
+					t(
+						'portaliq',
+						'A dedicated signing secret is configured. The portal auth edge is safe to use.',
+					)
+				}}
 			</NcNoteCard>
 			<NcNoteCard v-else type="warning">
-				{{ t('portaliq', 'No dedicated signing secret is configured yet. The portal cannot issue or accept sessions until the next install/upgrade repair step runs.') }}
+				{{
+					t(
+						'portaliq',
+						'No dedicated signing secret is configured yet. The portal cannot issue or accept sessions until the next install/upgrade repair step runs.',
+					)
+				}}
 			</NcNoteCard>
 
-			<form class="portaliq-admin-settings__revoke" @submit.prevent="revokeOrganisation">
+			<form
+				class="portaliq-admin-settings__revoke"
+				@submit.prevent="revokeOrganisation">
 				<NcTextField
 					v-model="organisationInput"
 					:label="t('portaliq', 'Organisation')"
@@ -52,12 +79,22 @@
 					and does NOT submit the form — with no console warning and
 					no lint error.
 				-->
-				<NcButton variant="error" :disabled="revoking || organisationInput === ''" type="submit">
+				<NcButton
+					variant="error"
+					:disabled="revoking || organisationInput === ''"
+					type="submit">
 					{{ t('portaliq', 'Revoke all sessions for this organisation') }}
 				</NcButton>
 			</form>
-			<p v-if="revokeResult !== null" class="portaliq-admin-settings__hint" role="status">
-				{{ t('portaliq', 'Revoked {count} session(s).', { count: revokeResult }) }}
+			<p
+				v-if="revokeResult !== null"
+				class="portaliq-admin-settings__hint"
+				role="status">
+				{{
+					t('portaliq', 'Revoked {count} session(s).', {
+						count: revokeResult,
+					})
+				}}
 			</p>
 		</NcSettingsSection>
 	</div>
@@ -81,7 +118,11 @@ export default {
 		return {
 			// Server-derived via IInitialStateService (AdminSettings::getForm());
 			// never re-derived client-side (ADR-004 — no DOM data attributes).
-			jwtSigningSecretConfigured: loadState('portaliq', 'jwtSigningSecretConfigured', false),
+			jwtSigningSecretConfigured: loadState(
+				'portaliq',
+				'jwtSigningSecretConfigured',
+				false,
+			),
 			organisationInput: '',
 			revoking: false,
 			revokeResult: null,
@@ -105,7 +146,9 @@ export default {
 			this.revokeResult = null
 			try {
 				const { data } = await axios.post(
-					generateUrl('/apps/portaliq/api/session-admin/revoke-organisation'),
+					generateUrl(
+						'/apps/portaliq/api/session-admin/revoke-organisation',
+					),
 					{ organisation: this.organisationInput },
 				)
 				this.revokeResult = data.revoked ?? 0

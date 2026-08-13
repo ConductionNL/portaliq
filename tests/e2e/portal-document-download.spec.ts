@@ -39,11 +39,18 @@ const API_BASE = '/apps/portaliq/portal/api'
  * localStorage token slot BEFORE the app boots, so the portal loads already
  * authenticated (mirrors how a real bearer, once minted, is stored).
  */
-async function loginAsSupplier(request: APIRequestContext, page: Page, subjectRef: string): Promise<string> {
+async function loginAsSupplier(
+	request: APIRequestContext,
+	page: Page,
+	subjectRef: string,
+): Promise<string> {
 	const res = await request.post(`${API_BASE}/session/dev-login`, {
 		data: { subjectRef, audience: 'supplier', organisation: 'e2e-org' },
 	})
-	expect(res.ok(), 'dev-login must be enabled on the target instance (system config debug: true)').toBeTruthy()
+	expect(
+		res.ok(),
+		'dev-login must be enabled on the target instance (system config debug: true)',
+	).toBeTruthy()
 	const body = await res.json()
 	const token = body.token as string
 	expect(token).toBeTruthy()
@@ -71,7 +78,10 @@ test.describe('portal-document-download', () => {
 	// the count from 47 to 46 and buys a green from a test that never executes.
 	// The scenario carries a reason-bearing `@e2e exclude` naming #29 instead;
 	// swap the exclude for the tag here when #29 closes and the grepInvert goes.
-	test('a subject downloads a file on a row they own', async ({ page, request }) => {
+	test('a subject downloads a file on a row they own', async ({
+		page,
+		request,
+	}) => {
 		await loginAsSupplier(request, page, `e2e-download-${Date.now()}`)
 
 		await page.goto(PORTAL_PATH)
@@ -87,8 +97,12 @@ test.describe('portal-document-download', () => {
 		// OpenRegister writes and takes seconds on a shared dev instance;
 		// selecting the row while the table is still reloading races an empty
 		// render. The row is the clickable table entry carrying the title.
-		await expect(page.getByText('Voorbeeld aangemaakt')).toBeVisible({ timeout: 20_000 })
-		const row = page.locator('tr.portaliq-row-clickable').filter({ hasText: title })
+		await expect(page.getByText('Voorbeeld aangemaakt')).toBeVisible({
+			timeout: 20_000,
+		})
+		const row = page
+			.locator('tr.portaliq-row-clickable')
+			.filter({ hasText: title })
 		await row.waitFor({ timeout: 20_000 })
 
 		// Select the newly created row so its detail card (with the file blocks) renders.
@@ -105,10 +119,14 @@ test.describe('portal-document-download', () => {
 
 		// The upload block reports success, and the download list picks up the
 		// new file (server-attached `_files`, refreshed by re-selecting the row).
-		await expect(page.locator('.portaliq-fileupload-msg')).toContainText('toegevoegd')
+		await expect(page.locator('.portaliq-fileupload-msg')).toContainText(
+			'toegevoegd',
+		)
 		await row.click()
 
-		const downloadButton = page.locator('.portaliq-filelist button', { hasText: 'e2e-besluit.txt' })
+		const downloadButton = page.locator('.portaliq-filelist button', {
+			hasText: 'e2e-besluit.txt',
+		})
 		await expect(downloadButton).toBeVisible()
 
 		const [download] = await Promise.all([
@@ -123,7 +141,10 @@ test.describe('portal-document-download', () => {
 
 	// Asserts the three-way identical refusal against the running API.
 	// @e2e supplier-portal::non-existent-foreign-and-non-opted-in-all-404-identically
-	test('a foreign or absent file 404s identically — no existence oracle', async ({ page, request }) => {
+	test('a foreign or absent file 404s identically — no existence oracle', async ({
+		page,
+		request,
+	}) => {
 		await loginAsSupplier(request, page, `e2e-download-404-${Date.now()}`)
 
 		await page.goto(PORTAL_PATH)
@@ -134,14 +155,16 @@ test.describe('portal-document-download', () => {
 		await page.getByRole('button', { name: 'Aanmaken' }).click()
 		await page.waitForTimeout(500)
 
-		const token = await page.evaluate(() => window.localStorage.getItem('portaliq_token'))
+		const token = await page.evaluate(() =>
+			window.localStorage.getItem('portaliq_token'),
+		)
 
 		// A non-existent fileId on a row this subject does NOT necessarily even
 		// own yet (no upload happened) still 404s — never a 401/500, and never
 		// a body distinguishing "no file" from "not yours".
 		const nonExistent = await request.get(
 			`${API_BASE}/collections/portaliq/exampleDocument/nonexistent-object-id/files/999999?collection=exampleCollection`,
-			{ headers: { Authorization: `Bearer ${token}` } }
+			{ headers: { Authorization: `Bearer ${token}` } },
 		)
 		expect(nonExistent.status()).toBe(404)
 		const nonExistentBody = await nonExistent.json()
@@ -151,7 +174,7 @@ test.describe('portal-document-download', () => {
 		// demo collection never declares it — 404s with the IDENTICAL body.
 		const notOptedIn = await request.get(
 			`${API_BASE}/collections/portaliq/exampleDocument/nonexistent-object-id/files/999999?collection=exampleClaimScoped`,
-			{ headers: { Authorization: `Bearer ${token}` } }
+			{ headers: { Authorization: `Bearer ${token}` } },
 		)
 		expect(notOptedIn.status()).toBe(404)
 		expect(await notOptedIn.json()).toEqual(nonExistentBody)

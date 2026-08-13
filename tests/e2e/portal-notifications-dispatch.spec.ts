@@ -50,11 +50,19 @@ const API_BASE = '/apps/portaliq/portal/api'
  * localStorage token slot BEFORE the app boots, so the portal loads already
  * authenticated (mirrors how a real bearer, once minted, is stored).
  */
-async function loginAsSupplier(request: APIRequestContext, page: Page, subjectRef: string, organisation: string): Promise<void> {
+async function loginAsSupplier(
+	request: APIRequestContext,
+	page: Page,
+	subjectRef: string,
+	organisation: string,
+): Promise<void> {
 	const res = await request.post(`${API_BASE}/session/dev-login`, {
 		data: { subjectRef, audience: 'supplier', organisation },
 	})
-	expect(res.ok(), 'dev-login must be enabled on the target instance (system config debug: true)').toBeTruthy()
+	expect(
+		res.ok(),
+		'dev-login must be enabled on the target instance (system config debug: true)',
+	).toBeTruthy()
 	const body = await res.json()
 	const token = body.token as string
 	expect(token).toBeTruthy()
@@ -65,7 +73,9 @@ async function loginAsSupplier(request: APIRequestContext, page: Page, subjectRe
 }
 
 test.describe('portal-notifications-dispatch', () => {
-	test('the deep link an email points at resolves the tenant', async ({ page }) => {
+	test('the deep link an email points at resolves the tenant', async ({
+		page,
+	}) => {
 		// The privacy-minimal email's ONLY link is `/portal?org=<slug>` — assert
 		// it lands the (unauthenticated) portal shell rather than a 404/blank
 		// page, and that white-label resolution reads the org param, exactly as
@@ -81,7 +91,10 @@ test.describe('portal-notifications-dispatch', () => {
 		await expect(page.locator('body')).not.toContainText('404')
 	})
 
-	test('a create-action that fires message.created completes promptly — dispatch never blocks the request', async ({ page, request }) => {
+	test('a create-action that fires message.created completes promptly — dispatch never blocks the request', async ({
+		page,
+		request,
+	}) => {
 		const subjectRef = `e2e-notif-${Date.now()}`
 		const organisation = 'e2e-org'
 		await loginAsSupplier(request, page, subjectRef, organisation)
@@ -106,6 +119,8 @@ test.describe('portal-notifications-dispatch', () => {
 		// instance take several seconds; the observable proof of the dispatch
 		// decoupling is that it returns in that DB-bound window and NOT only after
 		// a (potentially 30s+) mail round-trip. 20s comfortably separates those.
-		await expect(page.getByText('Voorbeeld aangemaakt')).toBeVisible({ timeout: 20_000 })
+		await expect(page.getByText('Voorbeeld aangemaakt')).toBeVisible({
+			timeout: 20_000,
+		})
 	})
 })

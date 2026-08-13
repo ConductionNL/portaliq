@@ -38,8 +38,8 @@ const baseURL = process.env.PLAYWRIGHT_BASE_URL || process.env.NEXTCLOUD_URL
 if (!baseURL) {
 	throw new Error(
 		'Refusing to run: set PLAYWRIGHT_BASE_URL (or NEXTCLOUD_URL) to the target Nextcloud.\n'
-		+ 'Never point it at the shared dev instance on :8080 — spin up a disposable one:\n'
-		+ '  APP_SRC=<worktree> spin-up-e2e-instance.sh portaliq <free-port> openregister',
+			+ 'Never point it at the shared dev instance on :8080 — spin up a disposable one:\n'
+			+ '  APP_SRC=<worktree> spin-up-e2e-instance.sh portaliq <free-port> openregister',
 	)
 }
 

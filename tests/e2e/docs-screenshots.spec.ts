@@ -31,7 +31,15 @@ import { test, type Page } from '@playwright/test'
 import * as path from 'path'
 import * as fs from 'fs'
 
-const SHOT_ROOT = path.resolve(__dirname, '..', '..', 'docs', 'static', 'screenshots', 'tutorials')
+const SHOT_ROOT = path.resolve(
+	__dirname,
+	'..',
+	'..',
+	'docs',
+	'static',
+	'screenshots',
+	'tutorials',
+)
 
 /**
  * Save a screenshot under
@@ -39,7 +47,11 @@ const SHOT_ROOT = path.resolve(__dirname, '..', '..', 'docs', 'static', 'screens
  * Lives under `static/` so Docusaurus copies the PNG into the build
  * root — markdown image refs use `/screenshots/...` (root-absolute).
  */
-async function shoot(page: Page, track: 'user' | 'admin', file: string): Promise<void> {
+async function shoot(
+	page: Page,
+	track: 'user' | 'admin',
+	file: string,
+): Promise<void> {
 	const dir = path.join(SHOT_ROOT, track)
 	if (!fs.existsSync(dir)) {
 		fs.mkdirSync(dir, { recursive: true })
@@ -82,14 +94,18 @@ test.describe('docs: user track', () => {
 
 test.describe('docs: admin track', () => {
 	test.beforeEach(async ({ page }) => {
-		await page.goto('/settings/admin/portaliq', { waitUntil: 'domcontentloaded' })
+		await page.goto('/settings/admin/portaliq', {
+			waitUntil: 'domcontentloaded',
+		})
 		// Wait for CONTENT, not for the container. `#portaliq-settings` is the
 		// empty mount div `templates/settings/admin.php` emits — it is present
 		// in the very first byte of HTML, so waiting on it would be satisfied
 		// before Vue has rendered anything and the capture would be a
 		// screenshot of an empty page. `NcSettingsSection` renders the heading
 		// only after `src/settings.js` has mounted AdminRoot.vue.
-		await page.locator('#portaliq-settings .settings-section').first()
+		await page
+			.locator('#portaliq-settings .settings-section')
+			.first()
 			.waitFor({ state: 'visible' })
 	})
 

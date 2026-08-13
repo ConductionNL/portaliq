@@ -67,7 +67,13 @@
  * @spec openspec/specs/observability/spec.md#REQ-OBS-002
  */
 
-import { test, expect, request as playwrightRequest, type APIRequestContext, type Page } from '@playwright/test'
+import {
+	test,
+	expect,
+	request as playwrightRequest,
+	type APIRequestContext,
+	type Page,
+} from '@playwright/test'
 
 import { BASE_URL } from './base-url'
 
@@ -91,7 +97,7 @@ const APP_BASE = '/index.php/apps/portaliq'
 const API_BASE = `${APP_BASE}/api`
 
 /** Anonymous marker for `newIdentity()`. */
-type Identity = { user: string, pass: string } | 'anonymous'
+type Identity = { user: string; pass: string } | 'anonymous'
 
 /**
  * A fresh APIRequestContext with its own cookie jar.
@@ -112,7 +118,9 @@ async function newIdentity(identity: Identity): Promise<APIRequestContext> {
 		Accept: 'application/json',
 	}
 	if (identity !== 'anonymous') {
-		const basic = Buffer.from(`${identity.user}:${identity.pass}`).toString('base64')
+		const basic = Buffer.from(`${identity.user}:${identity.pass}`).toString(
+			'base64',
+		)
 		headers.Authorization = `Basic ${basic}`
 	}
 	return playwrightRequest.newContext({
@@ -151,7 +159,10 @@ async function newIdentity(identity: Identity): Promise<APIRequestContext> {
  * @param ctx      The context to interrogate.
  * @param expected The uid expected, or null for "must not be authenticated".
  */
-async function assertCallerIs(ctx: APIRequestContext, expected: string | null): Promise<void> {
+async function assertCallerIs(
+	ctx: APIRequestContext,
+	expected: string | null,
+): Promise<void> {
 	const res = await ctx.get('/ocs/v2.php/cloud/user?format=json')
 	const body = await res.json().catch(() => null)
 	// READ THE IDENTITY, NOT THE HTTP STATUS.
@@ -199,7 +210,11 @@ async function assertCallerIs(ctx: APIRequestContext, expected: string | null): 
  * @param user Username.
  * @param pass Password.
  */
-async function loginToNextcloud(page: Page, user: string, pass: string): Promise<void> {
+async function loginToNextcloud(
+	page: Page,
+	user: string,
+	pass: string,
+): Promise<void> {
 	await page.goto('/index.php/login')
 	await page.locator('input[name="user"]').fill(user)
 	await page.locator('input[name="password"]').fill(pass)
@@ -213,7 +228,6 @@ async function loginToNextcloud(page: Page, user: string, pass: string): Promise
 }
 
 test.describe('admin SPA + admin settings + operator contracts', () => {
-
 	// The catch-all route and the app root both render the same Twig `index`
 	// template, and the Vue bundle mounts into `#content`. Requiring a CHILD of
 	// `#content` is what makes this a MOUNT assertion instead of an HTTP one:
@@ -221,12 +235,16 @@ test.describe('admin SPA + admin settings + operator contracts', () => {
 	// loads, so `#content` alone is present even when the SPA is dead.
 	//
 	// @e2e dashboard-page::authenticated-user-opens-the-dashboard
-	test('a signed-in user opens the dashboard and the SPA mounts', async ({ page }) => {
+	test('a signed-in user opens the dashboard and the SPA mounts', async ({
+		page,
+	}) => {
 		await loginToNextcloud(page, ADMIN_USER, ADMIN_PASS)
 
 		const response = await page.goto(`${APP_BASE}/`)
 		expect(response?.status(), 'the app root must be served').toBe(200)
-		await expect(page.locator('#content > *').first()).toBeVisible({ timeout: 60_000 })
+		await expect(page.locator('#content > *').first()).toBeVisible({
+			timeout: 60_000,
+		})
 	})
 
 	// A deep link is the catch-all route's whole purpose: the server must
@@ -245,13 +263,20 @@ test.describe('admin SPA + admin settings + operator contracts', () => {
 	// vue-router 4 introduced when it removed the bare `path: '*'` glob.
 	//
 	// @e2e dashboard-page::deep-link-to-an-in-app-route
-	test('a deep link to /features-roadmap serves the SPA and the router keeps the path', async ({ page }) => {
+	test('a deep link to /features-roadmap serves the SPA and the router keeps the path', async ({
+		page,
+	}) => {
 		await loginToNextcloud(page, ADMIN_USER, ADMIN_PASS)
 
 		const response = await page.goto(`${APP_BASE}/features-roadmap`)
-		expect(response?.status(), 'the catch-all route must serve the SPA for an in-app sub-path').toBe(200)
+		expect(
+			response?.status(),
+			'the catch-all route must serve the SPA for an in-app sub-path',
+		).toBe(200)
 
-		await expect(page.locator('#content > *').first()).toBeVisible({ timeout: 60_000 })
+		await expect(page.locator('#content > *').first()).toBeVisible({
+			timeout: 60_000,
+		})
 		await expect(page).toHaveURL(/\/features-roadmap$/)
 	})
 
@@ -267,7 +292,9 @@ test.describe('admin SPA + admin settings + operator contracts', () => {
 	// @e2e admin-ui::section-appears-in-admin-navigation
 	// @e2e admin-ui::admin-opens-the-apps-settings-section
 	// @e2e admin-ui::section-join-key
-	test('the admin section is listed, opens, and renders the app form', async ({ page }) => {
+	test('the admin section is listed, opens, and renders the app form', async ({
+		page,
+	}) => {
 		await loginToNextcloud(page, ADMIN_USER, ADMIN_PASS)
 
 		await page.goto('/index.php/settings/admin')
@@ -288,9 +315,14 @@ test.describe('admin SPA + admin settings + operator contracts', () => {
 		// not see. The scoping is kept rather than dropped because being IN the
 		// navigation is half of what this test exists to prove.
 		const sectionLink = page
-			.locator('#app-navigation a[href*="/settings/admin/portaliq"], #app-navigation-vue a[href*="/settings/admin/portaliq"]')
+			.locator(
+				'#app-navigation a[href*="/settings/admin/portaliq"], #app-navigation-vue a[href*="/settings/admin/portaliq"]',
+			)
 			.first()
-		await expect(sectionLink, 'SettingsSection must contribute an entry to the admin navigation').toBeVisible({ timeout: 60_000 })
+		await expect(
+			sectionLink,
+			'SettingsSection must contribute an entry to the admin navigation',
+		).toBeVisible({ timeout: 60_000 })
 
 		await sectionLink.click()
 		await expect(page).toHaveURL(/\/settings\/admin\/portaliq$/)
@@ -344,12 +376,22 @@ test.describe('admin SPA + admin settings + operator contracts', () => {
 			await assertCallerIs(reader, E2E_USER)
 			await assertCallerIs(anon, null)
 
-			for (const [label, ctx] of [['non-admin', reader], ['anonymous', anon]] as const) {
+			for (const [label, ctx] of [
+				['non-admin', reader],
+				['anonymous', anon],
+			] as const) {
 				const res = await ctx.get(`${API_BASE}/metrics`)
-				expect(res.status(), `${label} must not be allowed to scrape metrics`).not.toBe(200)
+				expect(
+					res.status(),
+					`${label} must not be allowed to scrape metrics`,
+				).not.toBe(200)
 				const body = await res.text()
-				expect(body, `${label} must receive no metric data`).not.toContain('portaliq_info')
-				expect(body, `${label} must receive no metric data`).not.toContain('portaliq_health_status')
+				expect(body, `${label} must receive no metric data`).not.toContain(
+					'portaliq_info',
+				)
+				expect(body, `${label} must receive no metric data`).not.toContain(
+					'portaliq_health_status',
+				)
 			}
 		} finally {
 			await reader.dispose()
@@ -369,7 +411,10 @@ test.describe('admin SPA + admin settings + operator contracts', () => {
 			await assertCallerIs(anon, null)
 
 			const res = await anon.get(`${API_BASE}/health`)
-			expect(res.status(), 'health must answer 200 when every dependency is present').toBe(200)
+			expect(
+				res.status(),
+				'health must answer 200 when every dependency is present',
+			).toBe(200)
 			const body = await res.json()
 			expect(body.status).toBe('ok')
 			expect(body.app).toBe('portaliq')
@@ -404,14 +449,20 @@ test.describe('admin SPA + admin settings + operator contracts', () => {
 			const adminRes = await admin.get(`${API_BASE}/settings`)
 			expect(adminRes.status()).toBe(200)
 			const adminBody = await adminRes.json()
-			expect(adminBody.isAdmin, 'the admin must be told they are an admin').toBe(true)
+			expect(
+				adminBody.isAdmin,
+				'the admin must be told they are an admin',
+			).toBe(true)
 			expect(adminBody).toHaveProperty('register')
 			// REQ-CFG-004: OpenRegister is installed on the CI instance
 			// (`additional-apps` pins it), so the probe must say so.
 			expect(adminBody.openregisters).toBe(true)
 
 			const readerRes = await reader.get(`${API_BASE}/settings`)
-			expect(readerRes.status(), 'any authenticated user may read settings').toBe(200)
+			expect(
+				readerRes.status(),
+				'any authenticated user may read settings',
+			).toBe(200)
 			const readerBody = await readerRes.json()
 			expect(readerBody.isAdmin).toBe(false)
 			expect(readerBody.openregisters).toBe(true)
@@ -447,14 +498,23 @@ test.describe('admin SPA + admin settings + operator contracts', () => {
 			const probe = `e2e-${Date.now()}`
 
 			const res = await admin.post(`${API_BASE}/settings`, {
-				data: { register: probe, thisKeyIsNotInConfigKeys: 'must-be-ignored' },
+				data: {
+					register: probe,
+					thisKeyIsNotInConfigKeys: 'must-be-ignored',
+				},
 			})
 			expect(res.status()).toBe(200)
 			const body = await res.json()
 			expect(body.success).toBe(true)
-			expect(body.config?.register, 'a CONFIG_KEYS entry must be persisted').toBe(probe)
 			expect(
-				Object.prototype.hasOwnProperty.call(body.config ?? {}, 'thisKeyIsNotInConfigKeys'),
+				body.config?.register,
+				'a CONFIG_KEYS entry must be persisted',
+			).toBe(probe)
+			expect(
+				Object.prototype.hasOwnProperty.call(
+					body.config ?? {},
+					'thisKeyIsNotInConfigKeys',
+				),
 				'an unknown key must be ignored, not stored and not surfaced as an error',
 			).toBe(false)
 
@@ -463,9 +523,14 @@ test.describe('admin SPA + admin settings + operator contracts', () => {
 			const after = await (await admin.get(`${API_BASE}/settings`)).json()
 			expect(after.register).toBe(probe)
 
-			await admin.post(`${API_BASE}/settings`, { data: { register: original } })
+			await admin.post(`${API_BASE}/settings`, {
+				data: { register: original },
+			})
 			const restored = await (await admin.get(`${API_BASE}/settings`)).json()
-			expect(restored.register, 'the instance must be left as it was found').toBe(original)
+			expect(
+				restored.register,
+				'the instance must be left as it was found',
+			).toBe(original)
 		} finally {
 			await admin.dispose()
 		}
@@ -490,16 +555,32 @@ test.describe('admin SPA + admin settings + operator contracts', () => {
 			await assertCallerIs(admin, ADMIN_USER)
 			await assertCallerIs(reader, E2E_USER)
 
-			const before = (await (await admin.get(`${API_BASE}/settings`)).json()).register ?? ''
+			const before =
+				(await (await admin.get(`${API_BASE}/settings`)).json()).register
+				?? ''
 
 			const attempted = `non-admin-must-not-write-${Date.now()}`
-			const post = await reader.post(`${API_BASE}/settings`, { data: { register: attempted } })
-			expect(post.status(), 'POST /api/settings must be refused for a non-admin').not.toBe(200)
-			const put = await reader.put(`${API_BASE}/settings`, { data: { register: attempted } })
-			expect(put.status(), 'PUT /api/settings must be refused for a non-admin').not.toBe(200)
+			const post = await reader.post(`${API_BASE}/settings`, {
+				data: { register: attempted },
+			})
+			expect(
+				post.status(),
+				'POST /api/settings must be refused for a non-admin',
+			).not.toBe(200)
+			const put = await reader.put(`${API_BASE}/settings`, {
+				data: { register: attempted },
+			})
+			expect(
+				put.status(),
+				'PUT /api/settings must be refused for a non-admin',
+			).not.toBe(200)
 
-			const after = (await (await admin.get(`${API_BASE}/settings`)).json()).register ?? ''
-			expect(after, 'a refused write must not have mutated app config').toBe(before)
+			const after =
+				(await (await admin.get(`${API_BASE}/settings`)).json()).register
+				?? ''
+			expect(after, 'a refused write must not have mutated app config').toBe(
+				before,
+			)
 		} finally {
 			await admin.dispose()
 			await reader.dispose()
