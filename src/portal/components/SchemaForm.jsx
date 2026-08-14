@@ -15,10 +15,21 @@ import React, { useEffect, useState } from 'react'
 
 // Large/full fields render as a textarea; everything else a single-line input
 // (unless an optionsProvider makes it a select).
+/**
+ *
+ * @param cfg
+ */
 function isMultiline(cfg) {
 	return cfg && (cfg.size === 'large' || cfg.size === 'full')
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.action
+ * @param root0.api
+ * @param root0.onSubmitted
+ */
 export default function SchemaForm({ action, api, onSubmitted }) {
 	const fields = action.fields || []
 	const fieldConfigs = action.fieldConfigs || {}
@@ -49,10 +60,19 @@ export default function SchemaForm({ action, api, onSubmitted }) {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [action.id])
 
+	/**
+	 *
+	 * @param field
+	 * @param value
+	 */
 	function setField(field, value) {
 		setValues((v) => ({ ...v, [field]: value }))
 	}
 
+	/**
+	 *
+	 * @param e
+	 */
 	async function submit(e) {
 		e.preventDefault()
 		setError(null)

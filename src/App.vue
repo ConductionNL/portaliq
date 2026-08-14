@@ -24,25 +24,25 @@
 -->
 <template>
 	<CnAppRoot
-		:ai-companion="true"
+		:aiCompanion="true"
 		:manifest="manifest"
-		:custom-components="customComponents"
-		:page-types="pageTypes"
+		:customComponents="customComponents"
+		:pageTypes="pageTypes"
 		:registry="registry"
-		app-id="portaliq"
+		appId="portaliq"
 		:translate="translateForApp"
 		:permissions="permissions"
-		:requires-apps="[]">
+		:requiresApps="[]">
 		<template #sidebar>
 			<CnObjectSidebar
 				v-if="objectSidebarState.active"
 				:title="objectSidebarState.title"
 				:subtitle="objectSidebarState.subtitle"
-				:object-type="objectSidebarState.objectType"
-				:object-id="objectSidebarState.objectId"
+				:objectType="objectSidebarState.objectType"
+				:objectId="objectSidebarState.objectId"
 				:register="objectSidebarState.register"
 				:schema="objectSidebarState.schema"
-				:hidden-tabs="objectSidebarState.hiddenTabs"
+				:hiddenTabs="objectSidebarState.hiddenTabs"
 				:tabs="objectSidebarState.tabs"
 				:open="objectSidebarState.open"
 				@update:open="objectSidebarState.open = $event" />
@@ -69,10 +69,10 @@
 </template>
 
 <script>
-import { reactive } from 'vue'
+import { CnAppRoot, CnObjectSidebar } from '@conduction/nextcloud-vue'
 import { translate as ncT } from '@nextcloud/l10n'
 import { NcAppSettingsSection } from '@nextcloud/vue'
-import { CnAppRoot, CnObjectSidebar } from '@conduction/nextcloud-vue'
+import { reactive } from 'vue'
 
 export default {
 	name: 'App',
@@ -110,6 +110,7 @@ export default {
 			type: Object,
 			required: true,
 		},
+
 		/**
 		 * Registry of consumer-injected components used by:
 		 *   - `type: "custom"` pages (`page.component`)
@@ -121,6 +122,7 @@ export default {
 			type: Object,
 			default: () => ({}),
 		},
+
 		/**
 		 * Page-type registry — `{ index, detail, dashboard, settings, ... }`.
 		 * Wired through to descendant `CnPageRenderer` instances via
@@ -130,6 +132,7 @@ export default {
 			type: Object,
 			default: null,
 		},
+
 		/**
 		 * v2 five-kind component registry — `{ "<key>": { kind, component, ...metadata } }`.
 		 * Introduced by hydra ADR-036; passed through to CnAppRoot which provides

@@ -17,6 +17,9 @@
 
 const TOKEN_KEY = 'portaliq_token'
 
+/**
+ *
+ */
 export function getToken() {
 	try {
 		return window.localStorage.getItem(TOKEN_KEY) || null
@@ -25,6 +28,10 @@ export function getToken() {
 	}
 }
 
+/**
+ *
+ * @param token
+ */
 export function setToken(token) {
 	try {
 		if (token) {
@@ -37,6 +44,9 @@ export function setToken(token) {
 	}
 }
 
+/**
+ *
+ */
 function authHeaders() {
 	const token = getToken()
 	return token ? { Authorization: `Bearer ${token}` } : {}
@@ -53,6 +63,10 @@ function authHeaders() {
 export function createPortalApi(config) {
 	const base = config.apiBase
 
+	/**
+	 *
+	 * @param path
+	 */
 	async function get(path) {
 		const res = await fetch(`${base}${path}`, {
 			headers: { Accept: 'application/json', ...authHeaders() },
@@ -63,6 +77,12 @@ export function createPortalApi(config) {
 		return res.json()
 	}
 
+	/**
+	 *
+	 * @param method
+	 * @param path
+	 * @param body
+	 */
 	async function send(method, path, body) {
 		const res = await fetch(`${base}${path}`, {
 			method,

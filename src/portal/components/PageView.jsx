@@ -11,13 +11,23 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import CollectionTable from './CollectionTable.jsx'
-import SchemaForm from './SchemaForm.jsx'
 import RichText from './RichText.jsx'
+import SchemaForm from './SchemaForm.jsx'
 
+/**
+ *
+ * @param contribution
+ * @param id
+ */
 function findCollection(contribution, id) {
 	return (contribution.collections || []).find((c) => c.id === id) || null
 }
 
+/**
+ *
+ * @param contribution
+ * @param id
+ */
 function findAction(contribution, id) {
 	return (contribution.actions || []).find((a) => a.id === id) || null
 }
@@ -32,6 +42,10 @@ const FileUpload = React.memo(function FileUpload({ collection, row, api, onUplo
 	const [state, setState] = useState({ busy: false, message: null })
 	const inputRef = useRef(null)
 
+	/**
+	 *
+	 * @param e
+	 */
 	async function onChange(e) {
 		const file = e.target.files && e.target.files[0]
 		if (!file) {
@@ -72,11 +86,22 @@ const FileUpload = React.memo(function FileUpload({ collection, row, api, onUplo
 // re-verifies ownership + the opt-in on every download; this list is a
 // convenience, not the authority. Reads `row._files` (id/name/size only,
 // attached server-side by object() when the collection opts in).
+/**
+ *
+ * @param root0
+ * @param root0.collection
+ * @param root0.row
+ * @param root0.api
+ */
 function FileList({ collection, row, api }) {
 	const [state, setState] = useState({ busyId: null, message: null })
 	const files = Array.isArray(row?._files) ? row._files : []
 	const id = row?.id || row?.['@self']?.id
 
+	/**
+	 *
+	 * @param file
+	 */
 	async function onDownload(file) {
 		if (!id) {
 			return
@@ -107,6 +132,13 @@ function FileList({ collection, row, api }) {
 	)
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.collection
+ * @param root0.row
+ * @param root0.api
+ */
 function DetailCard({ collection, row, api }) {
 	const rowId = row && (row.id || row['@self']?.id)
 	// The FULL single-object read carries the server-attached `_files` listing
@@ -153,6 +185,18 @@ function DetailCard({ collection, row, api }) {
 	)
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.page
+ * @param root0.contribution
+ * @param root0.api
+ * @param root0.dataByCollection
+ * @param root0.onCreated
+ * @param root0.onAction
+ * @param root0.onRowAction
+ * @param root0.busyRow
+ */
 export default function PageView({ page, contribution, api, dataByCollection, onCreated, onAction, onRowAction, busyRow }) {
 	// The row selected in a table on this page, keyed by collection id — feeds
 	// any `detail` block for the same collection.

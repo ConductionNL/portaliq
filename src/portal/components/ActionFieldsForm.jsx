@@ -9,16 +9,33 @@
 // no placeholder-only labelling, and the form is keyboard-submittable
 // (Enter key on the last field, or the explicit submit button).
 
-import React, { useState } from 'react'
 import { Button, FormFieldTextbox } from '@utrecht/component-library-react'
+import React, { useState } from 'react'
 
+/**
+ *
+ * @param root0
+ * @param root0.fields
+ * @param root0.t
+ * @param root0.onSubmit
+ * @param root0.onCancel
+ */
 export default function ActionFieldsForm({ fields, t, onSubmit, onCancel }) {
 	const [values, setValues] = useState({})
 
+	/**
+	 *
+	 * @param field
+	 * @param value
+	 */
 	function handleChange(field, value) {
 		setValues((v) => ({ ...v, [field]: value }))
 	}
 
+	/**
+	 *
+	 * @param event
+	 */
 	function handleSubmit(event) {
 		event.preventDefault()
 		onSubmit(values)

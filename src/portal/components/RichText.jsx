@@ -7,6 +7,11 @@
 
 import React from 'react'
 
+/**
+ *
+ * @param root0
+ * @param root0.markdown
+ */
 export default function RichText({ markdown }) {
 	const lines = String(markdown || '').split('\n')
 	return (

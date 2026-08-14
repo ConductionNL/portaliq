@@ -101,10 +101,10 @@
 </template>
 
 <script>
-import { NcSettingsSection, NcNoteCard, NcTextField, NcButton } from '@nextcloud/vue'
+import axios from '@nextcloud/axios'
 import { loadState } from '@nextcloud/initial-state'
 import { generateUrl } from '@nextcloud/router'
-import axios from '@nextcloud/axios'
+import { NcButton, NcNoteCard, NcSettingsSection, NcTextField } from '@nextcloud/vue'
 
 export default {
 	name: 'AdminRoot',
@@ -114,6 +114,7 @@ export default {
 		NcTextField,
 		NcButton,
 	},
+
 	data() {
 		return {
 			// Server-derived via IInitialStateService (AdminSettings::getForm());
@@ -123,11 +124,13 @@ export default {
 				'jwtSigningSecretConfigured',
 				false,
 			),
+
 			organisationInput: '',
 			revoking: false,
 			revokeResult: null,
 		}
 	},
+
 	methods: {
 		/**
 		 * Revoke every active portalSession for one organisation.
