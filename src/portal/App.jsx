@@ -11,10 +11,10 @@
 // flows through the subject-scoped /portal/api adapter — the portal never reads
 // OpenRegister directly.
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { createPortalApi, getToken, consumeOidcCallbackFragment } from '@portal/lib/portalApi.js'
-import PageView from '@portal/components/PageView.jsx'
 import InboxPage from '@portal/components/InboxPage.jsx'
+import PageView from '@portal/components/PageView.jsx'
+import { consumeOidcCallbackFragment, createPortalApi, getToken } from '@portal/lib/portalApi.js'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 // The fixed cross-app inbox nav entry's key (portal-inbox-v2 T05) — distinct
 // from any `${contribution.app}:${page.id}` key a real contribution could mint.
@@ -31,6 +31,11 @@ const REFRESH_INTERVAL_MS = 25 * 60 * 1000
 // with its owning contribution so a block's refs resolve in the right scope.
 // The unified inbox (portal-inbox-v2) is appended last: a fixed, cross-app nav
 // entry that is not sourced from any single contribution's own `pages`.
+/**
+ *
+ * @param contributions
+ * @param t
+ */
 function buildNav(contributions, t) {
 	const nav = []
 	for (const contribution of (contributions || [])) {
@@ -54,6 +59,12 @@ function buildNav(contributions, t) {
 	return nav
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.config
+ * @param root0.t
+ */
 export default function App({ config, t: tProp }) {
 	// `t` is optional so the shell still renders (English fallback) when a
 	// caller does not supply a translator — never a blank/undefined string.
@@ -206,6 +217,9 @@ export default function App({ config, t: tProp }) {
 		}
 	}, [config, active])
 
+	/**
+	 *
+	 */
 	async function devLogin() {
 		const minted = await api.devLogin(config.audience)
 		if (minted) {
@@ -215,6 +229,9 @@ export default function App({ config, t: tProp }) {
 		}
 	}
 
+	/**
+	 *
+	 */
 	async function logout() {
 		await api.logout()
 		setTokenState(null)
@@ -223,6 +240,10 @@ export default function App({ config, t: tProp }) {
 	// Navigate the WHOLE page to the OIDC start endpoint (portal-oidc-broker-
 	// login) — a full-page redirect, never a fetch(), so the broker's own
 	// login page renders in place of the portal.
+	/**
+	 *
+	 * @param provider
+	 */
 	function oidcLogin(provider) {
 		window.location.href = api.oidcStartUrl(provider)
 	}

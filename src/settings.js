@@ -14,14 +14,14 @@
 // because the Nextcloud admin section is the canonical place for
 // "before the app boots" config (e.g. an app's OR register binding).
 
-import { createApp } from 'vue'
 import {
-	translate as t,
-	translatePlural as n,
 	loadTranslations,
+	translatePlural as n,
+	translate as t,
 } from '@nextcloud/l10n'
-import pinia from './pinia.js'
+import { createApp } from 'vue'
 import AdminRoot from './views/AdminRoot.vue'
+import pinia from './pinia.js'
 
 loadTranslations('portaliq', () => {
 	const app = createApp(AdminRoot)

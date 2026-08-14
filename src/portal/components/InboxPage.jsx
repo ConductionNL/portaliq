@@ -11,6 +11,11 @@
 
 import React, { useCallback, useEffect, useState } from 'react'
 
+/**
+ *
+ * @param value
+ * @param locale
+ */
 function formatDateTime(value, locale) {
 	if (!value) {
 		return ''
@@ -22,6 +27,14 @@ function formatDateTime(value, locale) {
 	}
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.api
+ * @param root0.t
+ * @param root0.locale
+ * @param root0.onRead
+ */
 export default function InboxPage({ api, t, locale, onRead }) {
 	const [state, setState] = useState({ loading: true, messages: [] })
 	const [busyId, setBusyId] = useState(null)
@@ -34,6 +47,10 @@ export default function InboxPage({ api, t, locale, onRead }) {
 
 	useEffect(() => { load() }, [load])
 
+	/**
+	 *
+	 * @param message
+	 */
 	async function onToggleRead(message) {
 		const id = message.id || message['@self']?.id
 		if (!id || message.read === true) {
