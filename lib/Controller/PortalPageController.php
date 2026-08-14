@@ -46,6 +46,7 @@ use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
+use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\ContentSecurityPolicy;
 use OCP\AppFramework\Http\TemplateResponse;
@@ -93,6 +94,10 @@ class PortalPageController extends Controller {
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[NoAdminRequired]
+	// The portal shell — the one genuinely public HTML page in the fleet
+	// (ADR-081). A generous ceiling: a citizen reloading a form must never be
+	// the thing that trips it.
+	#[AnonRateLimit(limit: 120, period: 60)]
 	public function index(): TemplateResponse {
 		$orgSlug = (string)$this->request->getParam('org', '');
 		$locale = $this->resolveLocale();
@@ -139,6 +144,7 @@ class PortalPageController extends Controller {
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[NoAdminRequired]
+	#[AnonRateLimit(limit: 120, period: 60)]
 	public function catchAll(string $path = ''): TemplateResponse {
 		return $this->index();
 	}//end catchAll()

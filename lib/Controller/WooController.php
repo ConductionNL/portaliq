@@ -28,6 +28,7 @@ namespace OCA\Portaliq\Controller;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
+use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\DataDisplayResponse;
 use OCP\AppFramework\Http\EmptyContentSecurityPolicy;
@@ -72,6 +73,9 @@ class WooController extends Controller {
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
+	// Woo is the Dutch open-government publication surface — public access is
+	// the statutory point of it, so this is a runaway ceiling, not a gate.
+	#[AnonRateLimit(limit: 120, period: 60)]
 	public function serve(): Response {
 		return $this->render(path: '');
 	}//end serve()
@@ -86,6 +90,7 @@ class WooController extends Controller {
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 120, period: 60)]
 	public function servePath(string $path = ''): Response {
 		return $this->render(path: $path);
 	}//end servePath()

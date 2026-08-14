@@ -180,6 +180,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 60, period: 60)]
 	public function index(): JSONResponse {
 		$subject = $this->subject();
 		if ($subject === null) {
@@ -214,6 +215,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 60, period: 60)]
 	public function inbox(): JSONResponse {
 		$subject = $this->subject();
 		if ($subject === null) {
@@ -249,6 +251,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 60, period: 60)]
 	public function markRead(string $register, string $schema, string $id): JSONResponse {
 		$subject = $this->subject();
 		if ($subject === null) {
@@ -464,6 +467,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 60, period: 60)]
 	public function object(string $register, string $schema, string $id): JSONResponse {
 		$subject = $this->subject();
 		if ($subject === null) {
@@ -533,6 +537,8 @@ class ContributionController extends Controller implements PortalProtected {
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
+	// Tighter than the read paths: an upload costs storage, not just a query.
+	#[AnonRateLimit(limit: 20, period: 60)]
 	public function uploadFile(string $register, string $schema, string $id): JSONResponse {
 		$subject = $this->subject();
 		if ($subject === null) {
@@ -736,6 +742,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 120, period: 60)]
 	public function schema(string $schema): JSONResponse {
 		$subject = $this->subject();
 		if ($subject === null) {
