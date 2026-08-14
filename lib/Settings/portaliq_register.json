@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Register containing all schemas owned by the Portaliq external-portal application.",
-        "version": "0.12.0"
+        "version": "0.13.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification and audit entry the app reads and writes.",
-                "version": "0.12.0",
+                "version": "0.13.0",
                 "schemas": [
                     "exampleDocument",
                     "portalAccount",
@@ -545,7 +545,7 @@
             "portalMessage": {
                 "slug": "portalMessage",
                 "icon": "EmailOutline",
-                "version": "0.2.0",
+                "version": "0.3.0",
                 "title": "Portal Message",
                 "description": "A message in a subject's portal inbox (the in-portal realisation of the notification/inbox surface). Subject-scoped by subjectRef, so it is read through the same path as any contribution collection. OpenRegister's notification engine (email channel + `field` recipient kind) can additionally email the subject out-of-band when a message arrives.",
                 "type": "object",
@@ -557,6 +557,23 @@
                 "x-openregister": {
                     "publicRead": false,
                     "publicWrite": false
+                },
+                "x-openregister-mcp": {
+                    "search": {
+                        "scope": "read",
+                        "readOnlyHint": true,
+                        "description": "Search the caller's own portal inbox messages, optionally filtered by read state, organisation, or subject reference. Never returns another subject's messages.",
+                        "filters": [
+                            "read",
+                            "organisation",
+                            "subjectRef"
+                        ]
+                    },
+                    "get": {
+                        "scope": "read",
+                        "readOnlyHint": true,
+                        "description": "Retrieve a single portal inbox message by id, scoped to the caller's own subject."
+                    }
                 },
                 "properties": {
                     "subjectRef": {
