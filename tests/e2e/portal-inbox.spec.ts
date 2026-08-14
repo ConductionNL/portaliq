@@ -138,9 +138,9 @@ test.describe('portal-inbox-v2', () => {
 			body: 'Zie de bijlage voor details.',
 			read: false,
 			receivedAt: '2026-07-23T10:00:00Z',
-			aard: 'Beschikking',
+			nature: 'Beschikking',
 			rechtsgevolg: 'De aanvraag is toegewezen.',
-			termijn: '2026-08-06T00:00:00Z',
+			term: '2026-08-06T00:00:00Z',
 		})
 		await seedMessage(request, subjectRef, organisation, {
 			subject: 'Welkomstbericht',

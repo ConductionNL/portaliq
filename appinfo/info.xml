@@ -67,6 +67,7 @@
         <post-migration>
             <step>OCA\Portaliq\Repair\InitializeSettings</step>
             <step>OCA\Portaliq\Repair\InitializeActions</step>
+            <step>OCA\Portaliq\Repair\RenameDutchColumns</step>
         </post-migration>
         <install>
             <step>OCA\Portaliq\Repair\InitializeSettings</step>

@@ -44,10 +44,10 @@ class NotificationDispatchJobTest extends TestCase {
 	private function l10nFactory(): IFactory {
 		$factory = $this->createMock(IFactory::class);
 		$factory->method('get')->willReturnCallback(
-			function (string $app, $lang = null, $locale = null) {
+			function (string $app, $long = null, $locale = null) {
 				$l10n = $this->createMock(IL10N::class);
 				$l10n->method('t')->willReturnCallback(
-					static fn (string $text, $parameters = []) => '[' . $lang . '] ' . vsprintf($text, $parameters)
+					static fn (string $text, $parameters = []) => '[' . $long . '] ' . vsprintf($text, $parameters)
 				);
 
 				return $l10n;
