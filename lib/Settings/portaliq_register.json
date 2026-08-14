@@ -595,7 +595,7 @@
                         "format": "date-time",
                         "description": "When the message arrived."
                     },
-                    "aard": {
+                    "nature": {
                         "title": "Aard",
                         "type": "string",
                         "description": "WMEBV art 2:10 (2027 readiness): the nature of the message/decision. Optional \u2014 rendered only when the contributing app supplies it; absent means no such field renders.",
@@ -607,7 +607,7 @@
                         "description": "WMEBV art 2:10 (2027 readiness): the legal effect of the message/decision. Optional \u2014 rendered only when supplied.",
                         "example": "De aanvraag is toegewezen."
                     },
-                    "termijn": {
+                    "term": {
                         "title": "Termijn",
                         "type": "string",
                         "format": "date-time",

@@ -31,7 +31,7 @@ use RuntimeException;
 class SubmissionReceiptServiceTest extends TestCase {
 
 	/**
-	 * An IFactory stub whose `get('portaliq', $lang)` returns an IL10N that
+	 * An IFactory stub whose `get('portaliq', $long)` returns an IL10N that
 	 * prefixes the sprintf-substituted key with the requested language code
 	 * (e.g. `[nl] ...` / `[en] ...`) — a stand-in for the real l10n/*.json
 	 * translation (tested separately) that still lets THIS test prove the
@@ -40,10 +40,10 @@ class SubmissionReceiptServiceTest extends TestCase {
 	private function l10nFactory(): IFactory {
 		$factory = $this->createMock(IFactory::class);
 		$factory->method('get')->willReturnCallback(
-			function (string $app, $lang = null, $locale = null) {
+			function (string $app, $long = null, $locale = null) {
 				$l10n = $this->createMock(IL10N::class);
 				$l10n->method('t')->willReturnCallback(
-					static fn (string $text, $parameters = []) => '[' . $lang . '] ' . vsprintf($text, $parameters)
+					static fn (string $text, $parameters = []) => '[' . $long . '] ' . vsprintf($text, $parameters)
 				);
 
 				return $l10n;

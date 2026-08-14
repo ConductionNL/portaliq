@@ -6,7 +6,7 @@
 // newest-first. Each row shows an unread indicator + read-state toggle
 // (`PATCH .../inbox/{register}/{schema}/{id}/read`, tamper-proof server-side)
 // and, when the contributing app supplied them, the optional WMEBV art 2:10
-// readiness fields (aard/rechtsgevolg/termijn) — absent fields render nothing,
+// readiness fields (nature/rechtsgevolg/term) — absent fields render nothing,
 // never an empty placeholder.
 
 import React, { useCallback, useEffect, useState } from 'react'
@@ -82,12 +82,12 @@ export default function InboxPage({ api, t, locale, onRead }) {
 
 						{message.body && <p className="portaliq-inbox-row__body">{message.body}</p>}
 
-						{(message.aard || message.rechtsgevolg || message.termijn) && (
+						{(message.nature || message.rechtsgevolg || message.term) && (
 							<dl className="portaliq-inbox-row__meta">
-								{message.aard && (
+								{message.nature && (
 									<div className="portaliq-inbox-row__meta-item">
 										<dt>{t('Nature')}</dt>
-										<dd>{message.aard}</dd>
+										<dd>{message.nature}</dd>
 									</div>
 								)}
 								{message.rechtsgevolg && (
@@ -96,10 +96,10 @@ export default function InboxPage({ api, t, locale, onRead }) {
 										<dd>{message.rechtsgevolg}</dd>
 									</div>
 								)}
-								{message.termijn && (
+								{message.term && (
 									<div className="portaliq-inbox-row__meta-item">
 										<dt>{t('Deadline')}</dt>
-										<dd>{formatDateTime(message.termijn, locale)}</dd>
+										<dd>{formatDateTime(message.term, locale)}</dd>
 									</div>
 								)}
 							</dl>
