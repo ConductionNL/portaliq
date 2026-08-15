@@ -51,6 +51,7 @@ use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\ContentSecurityPolicy;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\IRequest;
+use OCP\IURLGenerator;
 
 /**
  * Serves the public Portaliq SPA shell.
@@ -64,10 +65,13 @@ class PortalPageController extends Controller {
 	 * @param IRequest $request The request
 	 * @param PortalOrganisationConfigService $orgResolver Resolves the tenant's
 	 *                                                     white-label presentation.
+	 * @param IURLGenerator $urlGenerator Builds the content API base handed to
+	 *                                    the site renderer.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PortalOrganisationConfigService $orgResolver,
+		private readonly IURLGenerator $urlGenerator,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -148,6 +152,53 @@ class PortalPageController extends Controller {
 	public function catchAll(string $path = ''): TemplateResponse {
 		return $this->index();
 	}//end catchAll()
+
+	/**
+	 * The built-in SITE renderer shell (ADR-084).
+	 *
+	 * Deliberately thin. Unlike `index()`, this template resolves nothing
+	 * server-side beyond an explicit site slug: title, theme, menus, pages and
+	 * glossary all come from the PUBLIC content API at runtime, exactly as they
+	 * do for a Docusaurus build. The moment this method starts resolving
+	 * content, the built-in renderer has a privileged path no other consumer
+	 * can use, and the CMS stops being headless (ADR-086 §1).
+	 *
+	 * Served alongside `/portal` while parity is measured — a comparison
+	 * against a portal that has already been deleted is not a comparison.
+	 *
+	 * @return TemplateResponse The site shell.
+	 *
+	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[NoAdminRequired]
+	#[AnonRateLimit(limit: 120, period: 60)]
+	public function site(): TemplateResponse {
+		$response = new TemplateResponse(
+			Application::APP_ID,
+			'site',
+			[
+				'siteConfig' => [
+					// The ONLY thing resolved server-side: which site, when the
+					// caller named one. Host resolution — the normal path —
+					// needs nothing here at all.
+					'site'    => (string)$this->request->getParam('site', ''),
+					'apiBase' => $this->urlGenerator->linkToRoute('portaliq.content.site'),
+				],
+			],
+			TemplateResponse::RENDER_AS_PUBLIC
+		);
+
+		// Deny framing unless the resolved site says otherwise. Same posture
+		// as index(): clear the `'self'` default first, or a site with no
+		// configured embedders still allows same-origin framing.
+		$csp = new ContentSecurityPolicy();
+		$csp->disallowFrameAncestorDomain('\'self\'');
+		$response->setContentSecurityPolicy($csp);
+
+		return $response;
+	}//end site()
 
 	/**
 	 * Resolve the visitor's locale from the `Accept-Language` header

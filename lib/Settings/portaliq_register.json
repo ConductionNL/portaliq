@@ -23,6 +23,9 @@
                 "version": "0.12.0",
                 "schemas": [
                     "exampleDocument",
+                    "glossaryTerm",
+                    "menu",
+                    "page",
                     "portalAccount",
                     "portalAuditEntry",
                     "portalMessage",
@@ -30,7 +33,8 @@
                     "portalOidcState",
                     "portalPage",
                     "portalSession",
-                    "portalSubmission"
+                    "portalSubmission",
+                    "website"
                 ]
             }
         },
@@ -1348,6 +1352,538 @@
                                 }
                             }
                         }
+                    }
+                }
+            },
+            "website": {
+                "slug": "website",
+                "icon": "Web",
+                "version": "0.1.0",
+                "title": "Website",
+                "description": "One public site Portaliq serves (ADR-086 §2). Owns its domains, theme, authentication configuration, locales and publication status. Every menu, page and glossary term belongs to exactly one website; an Organisation may run several (a public site, a supplier portal, a docs site), each branded and authenticated differently. Supersedes the never-implemented white-label-on-Organisation requirement in supplier-portal T08.",
+                "type": "object",
+                "required": [
+                    "title",
+                    "slug",
+                    "status"
+                ],
+                "x-openregister": {
+                    "publicRead": true,
+                    "publicWrite": false
+                },
+                "properties": {
+                    "title": {
+                        "title": "Title",
+                        "type": "string",
+                        "description": "Display name of the site, shown as the portal header and page title. Replaces the hard-coded literal 'Portaliq' every tenant currently sees.",
+                        "example": "Gemeente Tilburg"
+                    },
+                    "slug": {
+                        "title": "Slug",
+                        "type": "string",
+                        "description": "Stable machine identifier for this website, used to scope content and to address the site from a consumer that is not resolving by host (a Docusaurus build, a CLI).",
+                        "example": "open-tilburg"
+                    },
+                    "status": {
+                        "title": "Status",
+                        "type": "string",
+                        "description": "Lifecycle status. Only a published website is served; a draft lets an editor stage a whole site without exposing it.",
+                        "enum": [
+                            "draft",
+                            "published"
+                        ],
+                        "example": "published"
+                    },
+                    "domains": {
+                        "title": "Domains",
+                        "type": "array",
+                        "description": "Hostnames this website answers on. A request is routed by its Host header; an unknown host resolves to NO website and returns 404 — there is deliberately no default or first-match fallback, because that is exactly how a multi-tenant host serves one tenant's content under another tenant's domain.",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "hostname"
+                            ],
+                            "properties": {
+                                "hostname": {
+                                    "title": "Hostname",
+                                    "type": "string",
+                                    "description": "The host this website answers on, without scheme or port.",
+                                    "example": "portal.example.com"
+                                },
+                                "verified": {
+                                    "title": "Verified",
+                                    "type": "boolean",
+                                    "description": "Whether control of the domain has been proven. A domain serves ONLY when true. Without this, pointing DNS at Portaliq would be enough for one tenant to claim another tenant's hostname.",
+                                    "example": false
+                                },
+                                "verificationToken": {
+                                    "title": "Verification token",
+                                    "type": "string",
+                                    "description": "Per-website nonce the tenant must publish as TXT _portaliq-verify.<hostname>. Per-website so a record published for one site cannot verify another.",
+                                    "example": "portaliq-site-verification=9f2c..."
+                                },
+                                "verifiedAt": {
+                                    "title": "Verified at",
+                                    "type": "string",
+                                    "format": "date-time",
+                                    "description": "When verification last succeeded. Re-checked periodically; a removed record eventually unbinds the domain.",
+                                    "example": "2026-08-15T09:00:00+00:00"
+                                }
+                            }
+                        }
+                    },
+                    "theme": {
+                        "title": "Theme",
+                        "type": "string",
+                        "description": "Reference to a themiq (currently `nldesign`) theme. Portaliq ships NO theming mechanism of its own (ADR-086 §6); an unresolvable reference is reported rather than rendered around.",
+                        "example": "vng"
+                    },
+                    "logo": {
+                        "title": "Logo",
+                        "type": "string",
+                        "description": "URL or object reference for the site logo shown in the portal header.",
+                        "example": "/apps/portaliq/logo/open-tilburg.svg"
+                    },
+                    "locales": {
+                        "title": "Locales",
+                        "type": "array",
+                        "description": "Locales this site publishes content in. The first entry is the default. Part of the content cache key, so a translated page is never served under the wrong locale.",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "nl",
+                            "en"
+                        ]
+                    },
+                    "authentication": {
+                        "title": "Authentication",
+                        "type": "object",
+                        "description": "How visitors to THIS website authenticate (ADR-086 §8). Absent or unparseable configuration fails closed to public READ-ONLY — never to an authenticated-looking session, and never granting write.",
+                        "properties": {
+                            "modes": {
+                                "title": "Modes",
+                                "type": "array",
+                                "description": "Enabled authentication modes; more than one may be active. `oidc` covers Google, Microsoft and Keycloak through one integration rather than one per provider.",
+                                "items": {
+                                    "type": "string",
+                                    "enum": [
+                                        "public",
+                                        "nextcloud",
+                                        "local",
+                                        "oidc",
+                                        "digid",
+                                        "eherkenning",
+                                        "eidas"
+                                    ]
+                                },
+                                "example": [
+                                    "public"
+                                ]
+                            },
+                            "minTrust": {
+                                "title": "Minimum trust",
+                                "type": "string",
+                                "description": "eIDAS-aligned assurance floor for the government modes. Absent means low.",
+                                "enum": [
+                                    "low",
+                                    "substantial",
+                                    "high"
+                                ],
+                                "example": "low"
+                            },
+                            "oidc": {
+                                "title": "OIDC configuration",
+                                "type": "object",
+                                "description": "Provider configuration when `oidc` is enabled: issuer, client id and the scopes requested. The client secret is held in the credential broker, never here.",
+                                "additionalProperties": true
+                            }
+                        }
+                    },
+                    "frameAncestors": {
+                        "title": "Frame ancestors",
+                        "type": "array",
+                        "description": "Origins permitted to embed this site in an iframe, used to build Content-Security-Policy: frame-ancestors per website. An empty list forbids framing. This replaces the portal-wide wildcard, which let ANY origin iframe a portal carrying a bearer token.",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": []
+                    },
+                    "organisation": {
+                        "title": "Organisation",
+                        "type": "string",
+                        "description": "The tenant this website belongs to. One Organisation may own several websites.",
+                        "example": "dev-org"
+                    }
+                }
+            },
+            "menu": {
+                "slug": "menu",
+                "icon": "Menu",
+                "version": "0.1.0",
+                "title": "Menu",
+                "description": "A navigation menu for one website (ADR-086 §3). The shape is preserved EXACTLY as OpenCatalogi deploys it today — two levels, `order`/`name`/`link`/`icon`/`groups`/`hideBeforeLogin`/`hideAfterLogin` — so the handover needs no data migration across the ten live municipal deployments.",
+                "type": "object",
+                "required": [
+                    "title",
+                    "website"
+                ],
+                "x-openregister": {
+                    "publicRead": true,
+                    "publicWrite": false
+                },
+                "properties": {
+                    "title": {
+                        "title": "Title",
+                        "type": "string",
+                        "description": "Display title of the menu.",
+                        "example": "Hoofdmenu"
+                    },
+                    "website": {
+                        "title": "Website",
+                        "type": "string",
+                        "description": "The website this menu belongs to. REQUIRED — an unscoped content object cannot be served, because resolution starts from the site.",
+                        "example": "open-tilburg"
+                    },
+                    "position": {
+                        "title": "Position",
+                        "type": "integer",
+                        "description": "Ordering of this menu relative to others on the same website (a header menu versus a footer menu).",
+                        "example": 0
+                    },
+                    "items": {
+                        "title": "Items",
+                        "type": "array",
+                        "description": "Ordered menu items. Exactly two levels are allowed: an item may carry `items`, but a sub-item may not.",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "name"
+                            ],
+                            "properties": {
+                                "order": {
+                                    "title": "Order",
+                                    "type": "integer",
+                                    "description": "Sort order within its level.",
+                                    "example": 0
+                                },
+                                "name": {
+                                    "title": "Name",
+                                    "type": "string",
+                                    "description": "Visible label.",
+                                    "example": "Over ons"
+                                },
+                                "link": {
+                                    "title": "Link",
+                                    "type": "string",
+                                    "description": "Route or URL this item points at. An in-site route matches a page's `route`.",
+                                    "example": "/over-ons"
+                                },
+                                "description": {
+                                    "title": "Description",
+                                    "type": "string",
+                                    "description": "Optional supporting text shown with the item.",
+                                    "example": "Wie wij zijn"
+                                },
+                                "icon": {
+                                    "title": "Icon",
+                                    "type": "string",
+                                    "description": "Icon name from the shared semantic icon vocabulary.",
+                                    "example": "Information"
+                                },
+                                "groups": {
+                                    "title": "Groups",
+                                    "type": "array",
+                                    "description": "Groups this item is visible to. Empty means everyone.",
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "example": []
+                                },
+                                "hideBeforeLogin": {
+                                    "title": "Hide before login",
+                                    "type": "boolean",
+                                    "description": "Hide this item from visitors with no session.",
+                                    "example": false
+                                },
+                                "hideAfterLogin": {
+                                    "title": "Hide after login",
+                                    "type": "boolean",
+                                    "description": "Hide this item from visitors who are signed in.",
+                                    "example": false
+                                },
+                                "items": {
+                                    "title": "Sub-items",
+                                    "type": "array",
+                                    "description": "One level of sub-items. A sub-item MUST NOT declare its own `items` — three-level nesting is rejected.",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "order": {
+                                                "title": "Order",
+                                                "type": "integer",
+                                                "description": "Sort order within the parent item.",
+                                                "example": 0
+                                            },
+                                            "name": {
+                                                "title": "Name",
+                                                "type": "string",
+                                                "description": "Visible label.",
+                                                "example": "Contact"
+                                            },
+                                            "link": {
+                                                "title": "Link",
+                                                "type": "string",
+                                                "description": "Route or URL this sub-item points at.",
+                                                "example": "/contact"
+                                            },
+                                            "icon": {
+                                                "title": "Icon",
+                                                "type": "string",
+                                                "description": "Icon name from the shared semantic icon vocabulary.",
+                                                "example": "Email"
+                                            },
+                                            "groups": {
+                                                "title": "Groups",
+                                                "type": "array",
+                                                "description": "Groups this sub-item is visible to.",
+                                                "items": {
+                                                    "type": "string"
+                                                },
+                                                "example": []
+                                            },
+                                            "hideBeforeLogin": {
+                                                "title": "Hide before login",
+                                                "type": "boolean",
+                                                "description": "Hide from visitors with no session.",
+                                                "example": false
+                                            },
+                                            "hideAfterLogin": {
+                                                "title": "Hide after login",
+                                                "type": "boolean",
+                                                "description": "Hide from visitors who are signed in.",
+                                                "example": false
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "page": {
+                "slug": "page",
+                "icon": "FileDocument",
+                "version": "0.1.0",
+                "title": "Page",
+                "description": "One page of a website (ADR-086 §4). Its body is EITHER a widget grid — the same manifest-v2 widget placement OpenBuild authors, on a 12-column grid — OR markdown, stored and served as source so a Docusaurus build consumes it with no HTML round-trip. The two are not a hierarchy: a landing page is grid-first, a documentation page is markdown-first, and both are pages.",
+                "type": "object",
+                "required": [
+                    "title",
+                    "route",
+                    "website",
+                    "status"
+                ],
+                "x-openregister": {
+                    "publicRead": true,
+                    "publicWrite": false
+                },
+                "properties": {
+                    "title": {
+                        "title": "Title",
+                        "type": "string",
+                        "description": "Page title, used as the heading and the document title.",
+                        "example": "Over ons"
+                    },
+                    "route": {
+                        "title": "Route",
+                        "type": "string",
+                        "description": "In-site path this page is served at, leading slash included. Unique within a website.",
+                        "example": "/over-ons"
+                    },
+                    "website": {
+                        "title": "Website",
+                        "type": "string",
+                        "description": "The website this page belongs to. REQUIRED — content is always resolved within a site.",
+                        "example": "open-tilburg"
+                    },
+                    "status": {
+                        "title": "Status",
+                        "type": "string",
+                        "description": "Lifecycle status. An unpublished page is not served, and its absence is indistinguishable from a route that does not exist — no existence oracle.",
+                        "enum": [
+                            "draft",
+                            "published"
+                        ],
+                        "example": "published"
+                    },
+                    "locale": {
+                        "title": "Locale",
+                        "type": "string",
+                        "description": "Locale of this page's content. Part of the content cache key.",
+                        "example": "nl"
+                    },
+                    "summary": {
+                        "title": "Summary",
+                        "type": "string",
+                        "description": "Short description used for listings, search results and the page's meta description.",
+                        "example": "Wie wij zijn en waar wij voor staan."
+                    },
+                    "body": {
+                        "title": "Body",
+                        "type": "object",
+                        "description": "The page content. Exactly one of `markdown` or `widgets` is meaningful, selected by `type`.",
+                        "required": [
+                            "type"
+                        ],
+                        "properties": {
+                            "type": {
+                                "title": "Body type",
+                                "type": "string",
+                                "description": "Which body this page carries. `grid` places widgets on the shared 12-column manifest grid; `markdown` holds prose.",
+                                "enum": [
+                                    "grid",
+                                    "markdown"
+                                ],
+                                "example": "markdown"
+                            },
+                            "markdown": {
+                                "title": "Markdown",
+                                "type": "string",
+                                "description": "Markdown SOURCE for a markdown body. Served as source, never converted to HTML by the API — a consumer that renders markdown itself needs no parsing step, and no fidelity is lost to a round-trip.",
+                                "example": "## Over ons\n\nWij zijn ..."
+                            },
+                            "widgets": {
+                                "title": "Widgets",
+                                "type": "array",
+                                "description": "Widget placements for a grid body, in the canonical manifest-v2 widgetEntry shape. gridX + gridWidth must not exceed 12 — a constraint JSON Schema cannot express over siblings, enforced at render time with the existing canonical message.",
+                                "items": {
+                                    "type": "object",
+                                    "required": [
+                                        "widgetKey",
+                                        "gridX",
+                                        "gridY",
+                                        "gridWidth",
+                                        "gridHeight"
+                                    ],
+                                    "properties": {
+                                        "id": {
+                                            "title": "Id",
+                                            "type": "string",
+                                            "description": "Stable kebab-case identity for this placement.",
+                                            "example": "intro"
+                                        },
+                                        "widgetKey": {
+                                            "title": "Widget key",
+                                            "type": "string",
+                                            "description": "Registry key identifying the widget component. Resolved against nc-vue's communal dashboardWidgetRegistry — the SAME catalog LaunchPad and OpenBuild consume. Only entries flagged public render at a public origin; anything else renders an inert placeholder.",
+                                            "example": "markdown"
+                                        },
+                                        "slot": {
+                                            "title": "Slot",
+                                            "type": "string",
+                                            "description": "Placement slot on the page.",
+                                            "example": "body"
+                                        },
+                                        "gridX": {
+                                            "title": "Grid X",
+                                            "type": "integer",
+                                            "description": "Zero-based column.",
+                                            "example": 0
+                                        },
+                                        "gridY": {
+                                            "title": "Grid Y",
+                                            "type": "integer",
+                                            "description": "Zero-based row.",
+                                            "example": 0
+                                        },
+                                        "gridWidth": {
+                                            "title": "Grid width",
+                                            "type": "integer",
+                                            "description": "Width in grid columns, of twelve.",
+                                            "example": 12
+                                        },
+                                        "gridHeight": {
+                                            "title": "Grid height",
+                                            "type": "integer",
+                                            "description": "Height in grid rows.",
+                                            "example": 4
+                                        },
+                                        "props": {
+                                            "title": "Props",
+                                            "type": "object",
+                                            "description": "Serialisable configuration handed to the widget.",
+                                            "additionalProperties": true
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "glossaryTerm": {
+                "slug": "glossaryTerm",
+                "icon": "BookAlphabet",
+                "version": "0.1.0",
+                "title": "Glossary Term",
+                "description": "One begrippenlijst entry, scoped to a website (ADR-086 §5). Moves out of OpenCatalogi with the rest of the CMS. A renderer MAY auto-link occurrences of a term in page prose to its definition; that linking happens at render time and never alters the stored markdown.",
+                "type": "object",
+                "required": [
+                    "term",
+                    "definition",
+                    "website"
+                ],
+                "x-openregister": {
+                    "publicRead": true,
+                    "publicWrite": false
+                },
+                "properties": {
+                    "term": {
+                        "title": "Term",
+                        "type": "string",
+                        "description": "The term being defined.",
+                        "example": "Woo-verzoek"
+                    },
+                    "definition": {
+                        "title": "Definition",
+                        "type": "string",
+                        "description": "The definition, in plain language.",
+                        "example": "Een verzoek om openbaarmaking van overheidsinformatie."
+                    },
+                    "website": {
+                        "title": "Website",
+                        "type": "string",
+                        "description": "The website this term belongs to. REQUIRED — a relation to a term on another website is rejected.",
+                        "example": "open-tilburg"
+                    },
+                    "synonyms": {
+                        "title": "Synonyms",
+                        "type": "array",
+                        "description": "Alternative spellings or names, also auto-linked when auto-linking is enabled.",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "Wob-verzoek"
+                        ]
+                    },
+                    "source": {
+                        "title": "Source",
+                        "type": "string",
+                        "description": "Where the definition comes from — a statute, a standard, or a published vocabulary.",
+                        "example": "Wet open overheid, artikel 4.1"
+                    },
+                    "relations": {
+                        "title": "Related terms",
+                        "type": "array",
+                        "description": "Other glossary terms on the SAME website that this one relates to.",
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "example": []
                     }
                 }
             }

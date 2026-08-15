@@ -7,7 +7,7 @@
     "npm": "^10.0.0"
   },
   "scripts": {
-    "build": "npm run build:admin && npm run build:portal",
+    "build": "npm run build:admin && npm run build:portal && npm run build:site",
     "build:admin": "NODE_ENV=production webpack --config webpack.config.js --progress",
     "dev": "NODE_ENV=development webpack --config webpack.config.js --progress",
     "watch": "NODE_ENV=development webpack --config webpack.config.js --progress --watch",
@@ -28,7 +28,9 @@
     "check:registry": "node tests/registry.spec.js",
     "check:json-strict": "node tests/validate-json-strict.js",
     "check:specs": "npm run check:json-strict && npm run check:manifest-v2 && npm run check:register && npm run check:registry",
-    "prepare": "git config core.hooksPath .githooks || true"
+    "prepare": "git config core.hooksPath .githooks || true",
+    "build:site": "NODE_ENV=production webpack --config webpack.site.js --progress",
+    "watch:site": "NODE_ENV=development webpack --config webpack.site.js --progress --watch"
   },
   "browserslist": [
     "extends @nextcloud/browserslist-config"

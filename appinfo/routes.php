@@ -25,11 +25,41 @@ return [
         // Health check endpoint.
         ['name' => 'health#index', 'url' => '/api/health', 'verb' => 'GET'],
 
+        // Headless content API (ADR-086 §1) — the CMS contract. Public and
+        // read-only: a Docusaurus build or any third-party front-end reads
+        // these with no Nextcloud session, which is what makes the CMS
+        // headless rather than a portal with an API attached. Portaliq's own
+        // built-in portal reads exactly the same endpoints and gets no
+        // privileged path of its own.
+        //
+        // Registered BEFORE /portal so none of them is swallowed by the SPA
+        // catch-all. The page route is a catch-all over the rest of the path,
+        // because an in-site route is arbitrary depth ('/beleid/2026/woo').
+        ['name' => 'content#site', 'url' => '/api/content/site', 'verb' => 'GET'],
+        ['name' => 'content#menus', 'url' => '/api/content/menus', 'verb' => 'GET'],
+        ['name' => 'content#pages', 'url' => '/api/content/pages', 'verb' => 'GET'],
+        ['name' => 'content#glossary', 'url' => '/api/content/glossary', 'verb' => 'GET'],
+        ['name' => 'content#page', 'url' => '/api/content/page', 'verb' => 'GET'],
+        [
+            'name' => 'content#page',
+            'url' => '/api/content/page/{route}',
+            'verb' => 'GET',
+            'requirements' => ['route' => '.+'],
+            'postfix' => 'byroute',
+        ],
+
         // Public portal SPA (external clients + suppliers) — served with public
         // chrome via #[PublicPage]. The portalPage#catchAll route handles
         // client-side deep links. Registered BEFORE the dashboard catch-all so
         // /portal is not swallowed by /{path}.
         ['name' => 'portalPage#index', 'url' => '/portal', 'verb' => 'GET'],
+
+        // The built-in SITE renderer (ADR-084) — the Vue replacement for the
+        // React portal above. Served alongside it while parity is being
+        // measured: a comparison against a portal that has already been
+        // deleted is not a comparison. `/site` retires `/portal` once the
+        // control pair is recorded, not before.
+        ['name' => 'portalPage#site', 'url' => '/site', 'verb' => 'GET'],
 
         // Portal auth-edge API (supplier-portal T02). session#index resolves the
         // caller's bearer (fail-closed); devLogin is debug-gated; logout ends the

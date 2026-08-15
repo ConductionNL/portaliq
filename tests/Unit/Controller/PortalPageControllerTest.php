@@ -8,6 +8,7 @@ use OCA\Portaliq\Controller\PortalPageController;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\IRequest;
+use OCP\IURLGenerator;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -87,7 +88,7 @@ class PortalPageControllerTest extends TestCase {
 		);
 		$request->method('getHeader')->willReturnMap([['Accept-Language', 'en-US,en;q=0.9,nl;q=0.8']]);
 
-		(new PortalPageController($request, $resolver))->index();
+		(new PortalPageController($request, $resolver, $this->createMock(IURLGenerator::class)))->index();
 
 		$this->assertSame('en-US', $received);
 
@@ -116,7 +117,15 @@ class PortalPageControllerTest extends TestCase {
 		$resolver = $this->createMock(PortalOrganisationConfigService::class);
 		$resolver->method('resolve')->willReturn(array_merge($default, $resolved));
 
-		return new PortalPageController($request, $resolver);
+		// The site renderer (`site()`) needs a URL generator to hand the
+		// content API base to the client. Returning the real route shape here
+		// rather than an empty string keeps the assertion in
+		// testSiteRendersSiteTemplateAsPublic meaningful.
+		$urlGenerator = $this->createMock(IURLGenerator::class);
+		$urlGenerator->method('linkToRoute')
+			->willReturn('/index.php/apps/portaliq/api/content/site');
+
+		return new PortalPageController($request, $resolver, $urlGenerator);
 	}//end controller()
 
 }//end class
