@@ -188,3 +188,81 @@ menu, a grid page, two markdown pages, a draft, two glossary terms).
   A pixel diff between them would be noise dressed as a metric. What is
   compared is stated in `docs/portal-parity.md`: what each renders, what each
   costs, and what the Vue one does that the React one cannot.
+
+---
+
+## S13 — No serious or critical accessibility violations
+
+| | |
+| --- | --- |
+| **Spec** | ADR-010 / WCAG 2.2 AA; `portaliq-cms` |
+| **Runs in** | `site-accessibility.spec.ts` |
+
+- **GIVEN** a grid page, a markdown page and the not-found state
+- **WHEN** axe-core runs against the renderer's root at WCAG 2.2 AA
+- **THEN** no violation is serious or critical
+- **NOTE** scoped to `[data-testid="site-root"]`, not the document: served
+  inside Nextcloud here, and this suite must not report Nextcloud's markup as a
+  Portaliq defect. The not-found state is included because error states are
+  where accessibility is usually skipped and where a confused visitor needs it
+  most.
+- **CONTROL** a button with no accessible name was injected into the page and
+  axe reported `button-name`. Without that, "axe found nothing" is
+  indistinguishable from axe not running.
+
+## S14 — Keyboard-only navigation
+
+| | |
+| --- | --- |
+| **Spec** | WCAG 2.2 AA SC 2.1.1 |
+| **Runs in** | `site-accessibility.spec.ts` |
+
+- **GIVEN** the site at its root
+- **WHEN** a visitor tabs to the skip link and then to a menu item and presses
+  Enter
+- **THEN** the skip link targets the renderer's main region, and the menu item
+  navigates
+- **NOTE** deliberately `keyboard.press('Enter')`, not `click()` — a control
+  that only works with a mouse passes a click-based test and fails a real
+  visitor. The skip link's *position* is not asserted: inside Nextcloud's
+  chrome, Nextcloud's own skip link comes first, and asserting position would
+  test the host page.
+
+## S15 — Visible focus indicator
+
+| | |
+| --- | --- |
+| **Spec** | WCAG 2.2 AA SC 2.4.7 / 2.4.11 |
+| **Runs in** | `site-accessibility.spec.ts` |
+
+- **WHEN** a menu link is focused
+- **THEN** an outline or box-shadow renders
+- **NOTE** `outline: none` with no replacement is the usual way a design review
+  removes the only cue a keyboard user has.
+
+## S16 — A phone viewport does not scroll horizontally
+
+| | |
+| --- | --- |
+| **Spec** | WCAG 2.2 AA SC 1.4.10 (Reflow) |
+| **Runs in** | `site-accessibility.spec.ts` |
+
+- **GIVEN** a 360×740 viewport
+- **THEN** the document does not scroll horizontally
+- **AND** the two half-width grid widgets stack rather than squeeze — a
+  6-column cell on a 360px screen is unreadable, so the renderer drops the grid
+  rather than scaling it
+- **NOTE** a municipal public site is majority mobile; this is the default
+  case, not an edge one.
+
+## S17 — Author content cannot break the layout
+
+| | |
+| --- | --- |
+| **Spec** | `portaliq-cms` — a page body must be either a widget grid or markdown |
+| **Runs in** | `site-accessibility.spec.ts` |
+
+- **GIVEN** a markdown page containing a wide table, on a phone viewport
+- **THEN** the table scrolls inside its own container and the document does not
+- **NOTE** content an editor controls must not be able to break the page for
+  every visitor.
