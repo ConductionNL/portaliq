@@ -113,8 +113,9 @@ const API_BASE = `${APP_BASE}/api`
  */
 async function spaBase(page: Page): Promise<string> {
 	const base = await page.evaluate(() =>
-		(window as unknown as { OC: { generateUrl: (_path: string) => string } })
-			.OC.generateUrl('/apps/portaliq'),
+		(
+			window as unknown as { OC: { generateUrl: (_path: string) => string } }
+		).OC.generateUrl('/apps/portaliq'),
 	)
 	expect(base, 'OC.generateUrl must resolve the app base').toBeTruthy()
 	return base
