@@ -2,7 +2,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V.
  * SPDX-License-Identifier: EUPL-1.2
  *
- * Scenarios S5–S7 — one installation serving several websites, resolved by
+ * Scenarios S5–S7 — one installation serving several portals, resolved by
  * host, with domain verification deciding which hosts serve at all.
  *
  * These run against the API rather than the rendered page: host resolution is
@@ -27,7 +27,7 @@ const API = `${BASE}/index.php/apps/portaliq/api/content`
  *
  * So the host-header specs check this first and skip with a reason rather than
  * failing. The requirement itself is not left uncovered: `resolveByHost()` is
- * unit-tested in tests/Unit/Service/WebsiteResolverTest.php across eight cases
+ * unit-tested in tests/Unit/Service/PortalResolverTest.php across eight cases
  * including the verified/unverified pair and the single-configured-site trap.
  *
  * @param request The Playwright request context.
@@ -52,17 +52,17 @@ async function alternateHostsAreTrusted(request: {
 }
 
 test.describe('site renderer — multi-site', () => {
-	test('S5: two websites publish the same route and do not leak into each other', async ({
+	test('S5: two portals publish the same route and do not leak into each other', async ({
 		request,
 	}) => {
 		// Requested by explicit slug so the assertion does not depend on the
 		// runner's own hostname. Both sites really do publish `/over-ons`;
 		// a fixture with only one would pass even if scoping did not exist.
 		const tilburg = await request.get(
-			`${API}/page?route=/over-ons&site=open-tilburg`,
+			`${API}/page?route=/over-ons&portal=open-tilburg`,
 		)
 		const venray = await request.get(
-			`${API}/page?route=/over-ons&site=open-venray`,
+			`${API}/page?route=/over-ons&portal=open-venray`,
 		)
 
 		expect(tilburg.status()).toBe(200)
@@ -74,10 +74,10 @@ test.describe('site renderer — multi-site', () => {
 
 	test('S5b: a page listing carries only its own site', async ({ request }) => {
 		const tilburg = await (
-			await request.get(`${API}/pages?site=open-tilburg`)
+			await request.get(`${API}/pages?portal=open-tilburg`)
 		).json()
 		const venray = await (
-			await request.get(`${API}/pages?site=open-venray`)
+			await request.get(`${API}/pages?portal=open-venray`)
 		).json()
 
 		const tilburgTitles = tilburg.pages.map((p: { title: string }) => p.title)
@@ -95,7 +95,7 @@ test.describe('site renderer — multi-site', () => {
 		test.skip(
 			!(await alternateHostsAreTrusted(request)),
 			'venray.localhost / unverified.localhost are not in trusted_domains on this instance; '
-				+ 'host resolution is covered by WebsiteResolverTest',
+				+ 'host resolution is covered by PortalResolverTest',
 		)
 
 		// The REFUSAL. `unverified.localhost` is bound to open-venray with
@@ -105,7 +105,7 @@ test.describe('site renderer — multi-site', () => {
 		})
 		expect(refused.status()).toBe(404)
 
-		// The ACCEPTANCE, on the SAME website. Without this half, a verifier
+		// The ACCEPTANCE, on the SAME portal. Without this half, a verifier
 		// that refuses everything would pass the test above and look correct.
 		const served = await request.get(`${API}/site`, {
 			headers: { Host: 'venray.localhost' },
@@ -120,7 +120,7 @@ test.describe('site renderer — multi-site', () => {
 		test.skip(
 			!(await alternateHostsAreTrusted(request)),
 			'alternate hosts are not in trusted_domains on this instance; '
-				+ 'host resolution is covered by WebsiteResolverTest',
+				+ 'host resolution is covered by PortalResolverTest',
 		)
 
 		const response = await request.get(`${API}/site`, {
@@ -129,7 +129,7 @@ test.describe('site renderer — multi-site', () => {
 
 		expect(response.status()).toBe(404)
 
-		// A fallback to "the first website" would return 200 and look entirely
+		// A fallback to "the first portal" would return 200 and look entirely
 		// correct on screen. Assert on the body, not only the status: no site's
 		// identity may appear in a miss.
 		const text = await response.text()
@@ -142,9 +142,9 @@ test.describe('site renderer — multi-site', () => {
 	test('S7b: a named site that does not exist does not fall through to the host', async ({
 		request,
 	}) => {
-		// `?site=typo` must not quietly serve whichever site owns the hostname
+		// `?portal=typo` must not quietly serve whichever site owns the hostname
 		// the request happened to arrive on.
-		const response = await request.get(`${API}/site?site=does-not-exist`)
+		const response = await request.get(`${API}/site?portal=does-not-exist`)
 		expect(response.status()).toBe(404)
 	})
 
@@ -164,10 +164,10 @@ test.describe('site renderer — multi-site', () => {
 		// suite reads as "covered, temporarily off", which is exactly the wrong
 		// impression for a requirement that is not implemented at all.
 		const tilburg = await (
-			await request.get(`${API}/site?site=open-tilburg`)
+			await request.get(`${API}/site?portal=open-tilburg`)
 		).json()
 		const venray = await (
-			await request.get(`${API}/site?site=open-venray`)
+			await request.get(`${API}/site?portal=open-venray`)
 		).json()
 
 		expect(tilburg.theme).toBe('vng')

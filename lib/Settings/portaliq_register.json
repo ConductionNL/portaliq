@@ -9,7 +9,7 @@
         "type": "application",
         "app": "portaliq",
         "openregister": "^v0.2.10",
-        "description": "Portaliq \u2014 the fleet's shared external portal for clients and suppliers (ADR-046).",
+        "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046).",
         "rbac": true,
         "multitenancy": true
     },
@@ -26,6 +26,7 @@
                     "glossaryTerm",
                     "menu",
                     "page",
+                    "portal",
                     "portalAccount",
                     "portalAuditEntry",
                     "portalMessage",
@@ -33,8 +34,7 @@
                     "portalOidcState",
                     "portalPage",
                     "portalSession",
-                    "portalSubmission",
-                    "website"
+                    "portalSubmission"
                 ]
             }
         },
@@ -136,7 +136,7 @@
                         "blocks": [
                             {
                                 "type": "richText",
-                                "markdown": "## Meld een probleem\nDien een melding in \u2014 geen account nodig. Bekende melders zien hun eigen meldingen hierboven; een anonieme melding heeft geen koppeling met een account."
+                                "markdown": "## Meld een probleem\nDien een melding in — geen account nodig. Bekende melders zien hun eigen meldingen hierboven; een anonieme melding heeft geen koppeling met een account."
                             },
                             {
                                 "type": "action",
@@ -341,7 +341,7 @@
                     "audience": {
                         "title": "Audience",
                         "type": "string",
-                        "description": "Which external audience this account belongs to. Open string set (contract v2 A2) \u2014 e.g. supplier, client, citizen, organisation, student, parent, external-employee, data-subject, signer, participant, vendor-org. Not enum-constrained so new audiences need no schema change.",
+                        "description": "Which external audience this account belongs to. Open string set (contract v2 A2) — e.g. supplier, client, citizen, organisation, student, parent, external-employee, data-subject, signer, participant, vendor-org. Not enum-constrained so new audiences need no schema change.",
                         "example": "supplier"
                     },
                     "identityType": {
@@ -400,7 +400,7 @@
                     "needsAlternativeContact": {
                         "title": "Needs alternative contact",
                         "type": "boolean",
-                        "description": "portal-notifications-dispatch (WMEBV notificatieplicht fallback, ~Awb 2:11): set true by NotificationDispatchJob after N consecutive failed out-of-band notification attempts for this account \u2014 signals an operator must reach the subject by another channel. Reset to false on the next successful dispatch.",
+                        "description": "portal-notifications-dispatch (WMEBV notificatieplicht fallback, ~Awb 2:11): set true by NotificationDispatchJob after N consecutive failed out-of-band notification attempts for this account — signals an operator must reach the subject by another channel. Reset to false on the next successful dispatch.",
                         "example": false
                     },
                     "lastLoginAt": {
@@ -412,7 +412,7 @@
                     "claims": {
                         "title": "Claims",
                         "type": "object",
-                        "description": "Server-managed per-app claim map linking this account to domain identities: {appId: {claimName: uuid}} (ADR-046 contract v2, A4). Written only by Portaliq server code / admin tooling \u2014 never accepted from a client. Collections select a claim via scopeClaim.",
+                        "description": "Server-managed per-app claim map linking this account to domain identities: {appId: {claimName: uuid}} (ADR-046 contract v2, A4). Written only by Portaliq server code / admin tooling — never accepted from a client. Collections select a claim via scopeClaim.",
                         "example": {
                             "pipelinq": {
                                 "linkedContactId": "00000000-0000-0000-0000-000000000000"
@@ -455,7 +455,7 @@
                     "audience": {
                         "title": "Audience",
                         "type": "string",
-                        "description": "The external audience of this session. Open string set (contract v2 A2) \u2014 not enum-constrained so new audiences need no schema change.",
+                        "description": "The external audience of this session. Open string set (contract v2 A2) — not enum-constrained so new audiences need no schema change.",
                         "example": "supplier"
                     },
                     "organisation": {
@@ -602,20 +602,20 @@
                     "nature": {
                         "title": "Aard",
                         "type": "string",
-                        "description": "WMEBV art 2:10 (2027 readiness): the nature of the message/decision. Optional \u2014 rendered only when the contributing app supplies it; absent means no such field renders.",
+                        "description": "WMEBV art 2:10 (2027 readiness): the nature of the message/decision. Optional — rendered only when the contributing app supplies it; absent means no such field renders.",
                         "example": "Beschikking"
                     },
                     "rechtsgevolg": {
                         "title": "Rechtsgevolg",
                         "type": "string",
-                        "description": "WMEBV art 2:10 (2027 readiness): the legal effect of the message/decision. Optional \u2014 rendered only when supplied.",
+                        "description": "WMEBV art 2:10 (2027 readiness): the legal effect of the message/decision. Optional — rendered only when supplied.",
                         "example": "De aanvraag is toegewezen."
                     },
                     "term": {
                         "title": "Termijn",
                         "type": "string",
                         "format": "date-time",
-                        "description": "WMEBV art 2:10 (2027 readiness): the deadline associated with the message/decision (e.g. an objection period). Optional \u2014 rendered only when supplied."
+                        "description": "WMEBV art 2:10 (2027 readiness): the deadline associated with the message/decision (e.g. an objection period). Optional — rendered only when supplied."
                     },
                     "referenceId": {
                         "title": "Reference id",
@@ -626,7 +626,7 @@
                     "dataCopy": {
                         "title": "Data copy",
                         "type": "object",
-                        "description": "WMEBV ontvangstbevestiging (wmebv-submission-receipts): a copy of the WHITELISTED submitted field data \u2014 the subject's right to a copy of what they submitted. Present only on a receipt message; never contains a non-whitelisted or raw client field.",
+                        "description": "WMEBV ontvangstbevestiging (wmebv-submission-receipts): a copy of the WHITELISTED submitted field data — the subject's right to a copy of what they submitted. Present only on a receipt message; never contains a non-whitelisted or raw client field.",
                         "example": {
                             "title": "Voorbeeldaanvraag"
                         }
@@ -680,7 +680,7 @@
                     "payloadCopy": {
                         "title": "Payload copy",
                         "type": "object",
-                        "description": "A copy of the WHITELISTED submitted field data \u2014 the same map the domain create persisted, never the raw client body.",
+                        "description": "A copy of the WHITELISTED submitted field data — the same map the domain create persisted, never the raw client body.",
                         "example": {
                             "title": "Voorbeeldaanvraag"
                         }
@@ -700,7 +700,7 @@
                     "deliveryStatus": {
                         "title": "Delivery status",
                         "type": "string",
-                        "description": "The receipt's retriability signal: `delivered` once the receipt message was written, `failed` when the receipt/log side-effect threw (retriable \u2014 the domain create itself is never lost).",
+                        "description": "The receipt's retriability signal: `delivered` once the receipt message was written, `failed` when the receipt/log side-effect threw (retriable — the domain create itself is never lost).",
                         "enum": [
                             "pending",
                             "delivered",
@@ -715,7 +715,7 @@
                 "icon": "ShieldCheckOutline",
                 "version": "0.1.0",
                 "title": "Portal Audit Entry",
-                "description": "Append-only, portal-owned audit-trail fact record (portal-session-hardening-v2): written on every portal mutation (create/update/forward), every download, and every session event (login/logout/refresh). Never carries payload content \u2014 records THAT a verb happened against a target, not the data. Exposed count-only via MetricsController; never publicly readable. Retention is OpenRegister's records-management concern (Archiefwet) \u2014 see openspec/changes/portal-session-hardening-v2/design.md.",
+                "description": "Append-only, portal-owned audit-trail fact record (portal-session-hardening-v2): written on every portal mutation (create/update/forward), every download, and every session event (login/logout/refresh). Never carries payload content — records THAT a verb happened against a target, not the data. Exposed count-only via MetricsController; never publicly readable. Retention is OpenRegister's records-management concern (Archiefwet) — see openspec/changes/portal-session-hardening-v2/design.md.",
                 "type": "object",
                 "required": [
                     "subjectRef",
@@ -799,7 +799,7 @@
                 "icon": "BellOutline",
                 "version": "0.1.0",
                 "title": "Portal Notification",
-                "description": "Append-only per-attempt log of an out-of-band (email) nudge dispatched by NotificationDispatchJob when a contributing app's manifest `notifications` rule key matches a portalMessage create or a successful status transition (portal-notifications-dispatch). One row per attempt \u2014 never updated in place \u2014 so the burden-of-proof/audit trail is complete. Never publicly readable; recipients are never exposed via metrics.",
+                "description": "Append-only per-attempt log of an out-of-band (email) nudge dispatched by NotificationDispatchJob when a contributing app's manifest `notifications` rule key matches a portalMessage create or a successful status transition (portal-notifications-dispatch). One row per attempt — never updated in place — so the burden-of-proof/audit trail is complete. Never publicly readable; recipients are never exposed via metrics.",
                 "type": "object",
                 "required": [
                     "accountRef",
@@ -876,7 +876,7 @@
                 "icon": "ShieldLock",
                 "version": "0.1.0",
                 "title": "Portal OIDC State",
-                "description": "Short-lived, single-use server-side storage for one OIDC authorization-code + PKCE round trip (portal-oidc-broker-login). Written by SessionController::oidcStart(), consumed exactly once by SessionController::oidcCallback(); a reused or expired row fails the callback closed. Never publicly readable \u2014 it briefly carries the PKCE code_verifier.",
+                "description": "Short-lived, single-use server-side storage for one OIDC authorization-code + PKCE round trip (portal-oidc-broker-login). Written by SessionController::oidcStart(), consumed exactly once by SessionController::oidcCallback(); a reused or expired row fails the callback closed. Never publicly readable — it briefly carries the PKCE code_verifier.",
                 "type": "object",
                 "required": [
                     "state",
@@ -894,7 +894,7 @@
                     "state": {
                         "title": "State",
                         "type": "string",
-                        "description": "The OIDC `state` parameter \u2014 the single-use lookup key for this row (CSRF guard).",
+                        "description": "The OIDC `state` parameter — the single-use lookup key for this row (CSRF guard).",
                         "example": "9f8e7d6c0000400080000000000000009f8e7d6c00004000800000000000"
                     },
                     "nonce": {
@@ -937,7 +937,7 @@
                         "title": "Expires at",
                         "type": "string",
                         "format": "date-time",
-                        "description": "When this row becomes unusable \u2014 a TTL bound on the whole start\u2192callback round trip, independent of `used`."
+                        "description": "When this row becomes unusable — a TTL bound on the whole start→callback round trip, independent of `used`."
                     },
                     "used": {
                         "title": "Used",
@@ -952,7 +952,7 @@
                 "icon": "WebBox",
                 "version": "0.2.0",
                 "title": "Portal Page",
-                "description": "A data-provisioned portal contribution (ADR-046, portal-page-provisioning). Mirrors the IPortalContributionProvider manifest shape 1:1 so Portaliq's built-in provider can read this object and hand it to the same PortalManifestNormaliser every PHP provider's output passes through. Owned by the app that provisions the page; never publicly readable \u2014 the built-in provider is the only reader, server-side.",
+                "description": "A data-provisioned portal contribution (ADR-046, portal-page-provisioning). Mirrors the IPortalContributionProvider manifest shape 1:1 so Portaliq's built-in provider can read this object and hand it to the same PortalManifestNormaliser every PHP provider's output passes through. Owned by the app that provisions the page; never publicly readable — the built-in provider is the only reader, server-side.",
                 "type": "object",
                 "required": [
                     "label",
@@ -973,13 +973,13 @@
                     "audience": {
                         "title": "Audience",
                         "type": "string",
-                        "description": "Which external audience this contribution serves. Open string set (contract v2 A2), same vocabulary as portalAccount.audience \u2014 e.g. supplier, client, citizen. Not enum-constrained.",
+                        "description": "Which external audience this contribution serves. Open string set (contract v2 A2), same vocabulary as portalAccount.audience — e.g. supplier, client, citizen. Not enum-constrained.",
                         "example": "citizen"
                     },
                     "minTrust": {
                         "title": "Minimum trust",
                         "type": "string",
-                        "description": "Contribution-level default minimum trust (low|substantial|high, contract v2 A3). Absent defaults to low. Individual collections/actions may override with their own minTrust. Mutually exclusive with an entry's own `anonymous: true` \u2014 the normaliser drops `anonymous` on an entry that also declares a non-low minTrust.",
+                        "description": "Contribution-level default minimum trust (low|substantial|high, contract v2 A3). Absent defaults to low. Individual collections/actions may override with their own minTrust. Mutually exclusive with an entry's own `anonymous: true` — the normaliser drops `anonymous` on an entry that also declares a non-low minTrust.",
                         "enum": [
                             "low",
                             "substantial",
@@ -1018,7 +1018,7 @@
                                 "register": {
                                     "title": "Register",
                                     "type": "string",
-                                    "description": "The OpenRegister register slug the collection reads from. A plain string, not an OR object relation \u2014 this selects a (register, schema) pair, it does not reference a specific object instance (ADR-062's $ref/format:uuid relation dialect applies to same-register object foreign keys, not cross-register schema selectors).",
+                                    "description": "The OpenRegister register slug the collection reads from. A plain string, not an OR object relation — this selects a (register, schema) pair, it does not reference a specific object instance (ADR-062's $ref/format:uuid relation dialect applies to same-register object foreign keys, not cross-register schema selectors).",
                                     "example": "openbuild"
                                 },
                                 "schema": {
@@ -1030,7 +1030,7 @@
                                 "scopeField": {
                                     "title": "Scope field",
                                     "type": "string",
-                                    "description": "The property rows are scoped by (contract v2). Omit or leave absent on an anonymous collection \u2014 there is no subject to scope by.",
+                                    "description": "The property rows are scoped by (contract v2). Omit or leave absent on an anonymous collection — there is no subject to scope by.",
                                     "example": "subjectRef"
                                 },
                                 "scopeClaim": {
@@ -1180,7 +1180,7 @@
                                 "register": {
                                     "title": "Register",
                                     "type": "string",
-                                    "description": "Target register for create/update. Plain string schema-selector, not an OR relation \u2014 see the collections.register note.",
+                                    "description": "Target register for create/update. Plain string schema-selector, not an OR relation — see the collections.register note.",
                                     "example": "openbuild"
                                 },
                                 "schema": {
@@ -1237,7 +1237,7 @@
                                 "anonymous": {
                                     "title": "Anonymous",
                                     "type": "boolean",
-                                    "description": "When true and type=create, this action is reachable via POST /portal/api/collections/{register}/{schema} with NO bearer session \u2014 the write is unowned (no subjectRef/organisation stamped). Mutually exclusive with a non-low minTrust on the SAME entry (fail-closed: the normaliser drops anonymous when both are set, falling back to requiring authentication). Default false.",
+                                    "description": "When true and type=create, this action is reachable via POST /portal/api/collections/{register}/{schema} with NO bearer session — the write is unowned (no subjectRef/organisation stamped). Mutually exclusive with a non-low minTrust on the SAME entry (fail-closed: the normaliser drops anonymous when both are set, falling back to requiring authentication). Default false.",
                                     "example": true
                                 },
                                 "submitLabel": {
@@ -1313,7 +1313,7 @@
                                 "blocks": {
                                     "title": "Blocks",
                                     "type": "array",
-                                    "description": "Ordered UI blocks composing the page. type \u2208 collection|action|detail|richText|cta (PortalManifestNormaliser::BLOCK_TYPES) \u2014 an unrecognised type or an unresolvable collection/action reference is dropped by the normaliser, never rendered as broken.",
+                                    "description": "Ordered UI blocks composing the page. type ∈ collection|action|detail|richText|cta (PortalManifestNormaliser::BLOCK_TYPES) — an unrecognised type or an unresolvable collection/action reference is dropped by the normaliser, never rendered as broken.",
                                     "items": {
                                         "type": "object",
                                         "required": [
@@ -1323,7 +1323,7 @@
                                             "type": {
                                                 "title": "Block type",
                                                 "type": "string",
-                                                "description": "The block's kind \u2014 which of the below reference fields applies, and how the SPA renders it (PortalManifestNormaliser::BLOCK_TYPES).",
+                                                "description": "The block's kind — which of the below reference fields applies, and how the SPA renders it (PortalManifestNormaliser::BLOCK_TYPES).",
                                                 "enum": [
                                                     "collection",
                                                     "action",
@@ -1355,12 +1355,12 @@
                     }
                 }
             },
-            "website": {
-                "slug": "website",
+            "portal": {
+                "slug": "portal",
                 "icon": "Web",
                 "version": "0.1.0",
-                "title": "Website",
-                "description": "One public site Portaliq serves (ADR-086 §2). Owns its domains, theme, authentication configuration, locales and publication status. Every menu, page and glossary term belongs to exactly one website; an Organisation may run several (a public site, a supplier portal, a docs site), each branded and authenticated differently. Supersedes the never-implemented white-label-on-Organisation requirement in supplier-portal T08.",
+                "title": "Portal",
+                "description": "One portal Portaliq serves (ADR-086 §2). Owns its domains, theme, authentication configuration, locales and publication status. Every menu, page and glossary term belongs to exactly one portal; an Organisation may run several portals (a public site, a supplier portal, a docs site), each branded and authenticated differently. Supersedes the never-implemented white-label-on-Organisation requirement in supplier-portal T08.",
                 "type": "object",
                 "required": [
                     "title",
@@ -1381,13 +1381,13 @@
                     "slug": {
                         "title": "Slug",
                         "type": "string",
-                        "description": "Stable machine identifier for this website, used to scope content and to address the site from a consumer that is not resolving by host (a Docusaurus build, a CLI).",
+                        "description": "Stable machine identifier for this portal, used to scope content and to address the portal from a consumer that is not resolving by host (a Docusaurus build, a CLI).",
                         "example": "open-tilburg"
                     },
                     "status": {
                         "title": "Status",
                         "type": "string",
-                        "description": "Lifecycle status. Only a published website is served; a draft lets an editor stage a whole site without exposing it.",
+                        "description": "Lifecycle status. Only a published portal is served; a draft lets an editor stage a whole portal without exposing it.",
                         "enum": [
                             "draft",
                             "published"
@@ -1397,7 +1397,7 @@
                     "domains": {
                         "title": "Domains",
                         "type": "array",
-                        "description": "Hostnames this website answers on. A request is routed by its Host header; an unknown host resolves to NO website and returns 404 — there is deliberately no default or first-match fallback, because that is exactly how a multi-tenant host serves one tenant's content under another tenant's domain.",
+                        "description": "Hostnames this portal answers on. A request is routed by its Host header; an unknown host resolves to NO portal and returns 404 — there is deliberately no default or first-match fallback, because that is exactly how a multi-tenant host serves one tenant's content under another tenant's domain.",
                         "items": {
                             "type": "object",
                             "required": [
@@ -1407,7 +1407,7 @@
                                 "hostname": {
                                     "title": "Hostname",
                                     "type": "string",
-                                    "description": "The host this website answers on, without scheme or port.",
+                                    "description": "The host this portal answers on, without scheme or port.",
                                     "example": "portal.example.com"
                                 },
                                 "verified": {
@@ -1419,7 +1419,7 @@
                                 "verificationToken": {
                                     "title": "Verification token",
                                     "type": "string",
-                                    "description": "Per-website nonce the tenant must publish as TXT _portaliq-verify.<hostname>. Per-website so a record published for one site cannot verify another.",
+                                    "description": "Per-portal nonce the tenant must publish as TXT _portaliq-verify.<hostname>. Per-portal so a record published for one portal cannot verify another.",
                                     "example": "portaliq-site-verification=9f2c..."
                                 },
                                 "verifiedAt": {
@@ -1459,7 +1459,7 @@
                     "authentication": {
                         "title": "Authentication",
                         "type": "object",
-                        "description": "How visitors to THIS website authenticate (ADR-086 §8). Absent or unparseable configuration fails closed to public READ-ONLY — never to an authenticated-looking session, and never granting write.",
+                        "description": "How visitors to THIS portal authenticate (ADR-086 §8). Absent or unparseable configuration fails closed to public READ-ONLY — never to an authenticated-looking session, and never granting write.",
                         "properties": {
                             "modes": {
                                 "title": "Modes",
@@ -1503,7 +1503,7 @@
                     "frameAncestors": {
                         "title": "Frame ancestors",
                         "type": "array",
-                        "description": "Origins permitted to embed this site in an iframe, used to build Content-Security-Policy: frame-ancestors per website. An empty list forbids framing. This replaces the portal-wide wildcard, which let ANY origin iframe a portal carrying a bearer token.",
+                        "description": "Origins permitted to embed this portal in an iframe, used to build Content-Security-Policy: frame-ancestors per portal. An empty list forbids framing. This replaces the portal-wide wildcard, which let ANY origin iframe a portal carrying a bearer token.",
                         "items": {
                             "type": "string"
                         },
@@ -1512,7 +1512,7 @@
                     "organisation": {
                         "title": "Organisation",
                         "type": "string",
-                        "description": "The tenant this website belongs to. One Organisation may own several websites.",
+                        "description": "The tenant this portal belongs to. One Organisation may own several portals.",
                         "example": "dev-org"
                     }
                 }
@@ -1522,11 +1522,11 @@
                 "icon": "Menu",
                 "version": "0.1.0",
                 "title": "Menu",
-                "description": "A navigation menu for one website (ADR-086 §3). The shape is preserved EXACTLY as OpenCatalogi deploys it today — two levels, `order`/`name`/`link`/`icon`/`groups`/`hideBeforeLogin`/`hideAfterLogin` — so the handover needs no data migration across the ten live municipal deployments.",
+                "description": "A navigation menu for one portal (ADR-086 §3). The shape is preserved EXACTLY as OpenCatalogi deploys it today — two levels, `order`/`name`/`link`/`icon`/`groups`/`hideBeforeLogin`/`hideAfterLogin` — so the handover needs no data migration across the ten live municipal deployments.",
                 "type": "object",
                 "required": [
                     "title",
-                    "website"
+                    "portal"
                 ],
                 "x-openregister": {
                     "publicRead": true,
@@ -1539,16 +1539,10 @@
                         "description": "Display title of the menu.",
                         "example": "Hoofdmenu"
                     },
-                    "website": {
-                        "title": "Website",
-                        "type": "string",
-                        "description": "The website this menu belongs to. REQUIRED — an unscoped content object cannot be served, because resolution starts from the site.",
-                        "example": "open-tilburg"
-                    },
                     "position": {
                         "title": "Position",
                         "type": "integer",
-                        "description": "Ordering of this menu relative to others on the same website (a header menu versus a footer menu).",
+                        "description": "Ordering of this menu relative to others on the same portal (a header menu versus a footer menu).",
                         "example": 0
                     },
                     "items": {
@@ -1669,6 +1663,12 @@
                                 }
                             }
                         }
+                    },
+                    "portal": {
+                        "title": "Portal",
+                        "type": "string",
+                        "description": "The portal this menu belongs to. REQUIRED — an unscoped content object cannot be served, because resolution starts from the site.",
+                        "example": "open-tilburg"
                     }
                 }
             },
@@ -1677,12 +1677,12 @@
                 "icon": "FileDocument",
                 "version": "0.1.0",
                 "title": "Page",
-                "description": "One page of a website (ADR-086 §4). Its body is EITHER a widget grid — the same manifest-v2 widget placement OpenBuild authors, on a 12-column grid — OR markdown, stored and served as source so a Docusaurus build consumes it with no HTML round-trip. The two are not a hierarchy: a landing page is grid-first, a documentation page is markdown-first, and both are pages.",
+                "description": "One page of a portal (ADR-086 §4). Its body is EITHER a widget grid — the same manifest-v2 widget placement OpenBuild authors, on a 12-column grid — OR markdown, stored and served as source so a Docusaurus build consumes it with no HTML round-trip. The two are not a hierarchy: a landing page is grid-first, a documentation page is markdown-first, and both are pages.",
                 "type": "object",
                 "required": [
                     "title",
                     "route",
-                    "website",
+                    "portal",
                     "status"
                 ],
                 "x-openregister": {
@@ -1699,14 +1699,8 @@
                     "route": {
                         "title": "Route",
                         "type": "string",
-                        "description": "In-site path this page is served at, leading slash included. Unique within a website.",
+                        "description": "In-portal path this page is served at, leading slash included. Unique within a portal.",
                         "example": "/over-ons"
-                    },
-                    "website": {
-                        "title": "Website",
-                        "type": "string",
-                        "description": "The website this page belongs to. REQUIRED — content is always resolved within a site.",
-                        "example": "open-tilburg"
                     },
                     "status": {
                         "title": "Status",
@@ -1820,6 +1814,12 @@
                                 }
                             }
                         }
+                    },
+                    "portal": {
+                        "title": "Portal",
+                        "type": "string",
+                        "description": "The portal this page belongs to. REQUIRED — content is always resolved within a site.",
+                        "example": "open-tilburg"
                     }
                 }
             },
@@ -1828,12 +1828,12 @@
                 "icon": "BookAlphabet",
                 "version": "0.1.0",
                 "title": "Glossary Term",
-                "description": "One begrippenlijst entry, scoped to a website (ADR-086 §5). Moves out of OpenCatalogi with the rest of the CMS. A renderer MAY auto-link occurrences of a term in page prose to its definition; that linking happens at render time and never alters the stored markdown.",
+                "description": "One begrippenlijst entry, scoped to a portal (ADR-086 §5). Moves out of OpenCatalogi with the rest of the CMS. A renderer MAY auto-link occurrences of a term in page prose to its definition; that linking happens at render time and never alters the stored markdown.",
                 "type": "object",
                 "required": [
                     "term",
                     "definition",
-                    "website"
+                    "portal"
                 ],
                 "x-openregister": {
                     "publicRead": true,
@@ -1851,12 +1851,6 @@
                         "type": "string",
                         "description": "The definition, in plain language.",
                         "example": "Een verzoek om openbaarmaking van overheidsinformatie."
-                    },
-                    "website": {
-                        "title": "Website",
-                        "type": "string",
-                        "description": "The website this term belongs to. REQUIRED — a relation to a term on another website is rejected.",
-                        "example": "open-tilburg"
                     },
                     "synonyms": {
                         "title": "Synonyms",
@@ -1878,12 +1872,18 @@
                     "relations": {
                         "title": "Related terms",
                         "type": "array",
-                        "description": "Other glossary terms on the SAME website that this one relates to.",
+                        "description": "Other glossary terms on the SAME portal that this one relates to.",
                         "items": {
                             "type": "string",
                             "format": "uuid"
                         },
                         "example": []
+                    },
+                    "portal": {
+                        "title": "Portal",
+                        "type": "string",
+                        "description": "The portal this term belongs to. REQUIRED — a relation to a term on another portal is rejected.",
+                        "example": "open-tilburg"
                     }
                 }
             }

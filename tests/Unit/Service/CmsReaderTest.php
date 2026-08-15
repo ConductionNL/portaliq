@@ -103,17 +103,17 @@ class CmsReaderTest extends TestCase {
 
 
 	/**
-	 * The website must change the key.
+	 * The portal must change the key.
 	 *
 	 * @return void
 	 */
-	public function testWebsiteIsPartOfTheCacheKey(): void {
+	public function testPortalIsPartOfTheCacheKey(): void {
 		$this->assertNotSame(
 			$this->reader->cacheKey('open-tilburg', 'page', '/over-ons', 'nl', 'anonymous'),
 			$this->reader->cacheKey('open-venray', 'page', '/over-ons', 'nl', 'anonymous'),
 			'Two sites publishing the same route MUST NOT share a cache entry.'
 		);
-	}//end testWebsiteIsPartOfTheCacheKey()
+	}//end testPortalIsPartOfTheCacheKey()
 
 
 	/**
@@ -148,7 +148,7 @@ class CmsReaderTest extends TestCase {
 
 
 	/**
-	 * Invalidation must clear by website prefix.
+	 * Invalidation must clear by portal prefix.
 	 *
 	 * The prefix clear is what reaches per-route page entries, whose keys
 	 * cannot be enumerated from here. Those entries include NEGATIVE results,
@@ -157,19 +157,19 @@ class CmsReaderTest extends TestCase {
 	 *
 	 * @return void
 	 */
-	public function testInvalidateClearsTheWebsitePrefix(): void {
+	public function testInvalidateClearsThePortalPrefix(): void {
 		$this->cache->expects($this->once())
 			->method('clear')
 			->with('open-tilburg|');
 
 		$this->reader->invalidate('open-tilburg');
-	}//end testInvalidateClearsTheWebsitePrefix()
+	}//end testInvalidateClearsThePortalPrefix()
 
 
 	/**
 	 * An unscoped query must return nothing rather than everything.
 	 *
-	 * A read with no website is not a broad read — it is a read that would
+	 * A read with no portal is not a broad read — it is a read that would
 	 * serve one tenant's content under another's domain. Failing closed here
 	 * is the difference between an empty page and a cross-tenant leak.
 	 *
@@ -304,7 +304,7 @@ class CmsReaderTest extends TestCase {
 			]
 		);
 
-		$menus = $this->reader->menus(website: 'open-tilburg', locale: 'nl', audience: 'anonymous');
+		$menus = $this->reader->menus(portal: 'open-tilburg', locale: 'nl', audience: 'anonymous');
 
 		$this->assertSame(['First', 'Second'], array_column($menus, 'title'));
 		$this->assertSame(['A', 'B'], array_column($menus[0]['items'], 'name'));
@@ -334,7 +334,7 @@ class CmsReaderTest extends TestCase {
 		);
 
 		$page = $this->reader->page(
-			website: 'open-tilburg',
+			portal: 'open-tilburg',
 			route: '/over-ons',
 			locale: 'nl',
 			audience: 'anonymous'
@@ -394,7 +394,7 @@ class CmsReaderTest extends TestCase {
 		);
 
 		$page = $this->reader->page(
-			website: 'open-tilburg',
+			portal: 'open-tilburg',
 			route: '/',
 			locale: 'nl',
 			audience: 'anonymous'
@@ -426,7 +426,7 @@ class CmsReaderTest extends TestCase {
 
 		$this->assertNull(
 			$this->reader->page(
-				website: 'open-tilburg',
+				portal: 'open-tilburg',
 				route: '/over-ons',
 				locale: 'nl',
 				audience: 'anonymous'
@@ -456,7 +456,7 @@ class CmsReaderTest extends TestCase {
 			]
 		);
 
-		$pages = $this->reader->pages(website: 'open-tilburg', locale: 'nl', audience: 'anonymous');
+		$pages = $this->reader->pages(portal: 'open-tilburg', locale: 'nl', audience: 'anonymous');
 
 		$this->assertSame(['/alpha', '/zeta'], array_column($pages, 'route'));
 		$this->assertSame(['grid', 'markdown'], array_column($pages, 'bodyType'));
@@ -478,7 +478,7 @@ class CmsReaderTest extends TestCase {
 			]
 		);
 
-		$terms = $this->reader->glossary(website: 'open-tilburg', locale: 'nl', audience: 'anonymous');
+		$terms = $this->reader->glossary(portal: 'open-tilburg', locale: 'nl', audience: 'anonymous');
 
 		$this->assertSame(['Aanvraag', 'besluit', 'zaak'], array_column($terms, 'term'));
 	}//end testGlossaryTermsAreAlphabetical()
@@ -493,7 +493,7 @@ class CmsReaderTest extends TestCase {
 		$this->cache->method('get')->willReturn(json_encode([['title' => 'from cache', 'position' => 0, 'items' => []]]));
 		$this->container->expects($this->never())->method('get');
 
-		$menus = $this->reader->menus(website: 'open-tilburg', locale: 'nl', audience: 'anonymous');
+		$menus = $this->reader->menus(portal: 'open-tilburg', locale: 'nl', audience: 'anonymous');
 
 		$this->assertSame('from cache', $menus[0]['title']);
 	}//end testACachedReadSkipsTheQuery()

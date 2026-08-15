@@ -3,7 +3,7 @@
 /**
  * Portaliq CMS Reader
  *
- * Reads website-scoped CMS content (menus, pages, glossary) for the headless
+ * Reads portal-scoped CMS content (menus, pages, glossary) for the headless
  * content API (ADR-086 §§1, 3, 4, 5, 9).
  *
  * @category Service
@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/specs/portaliq-cms/spec.md#requirement-all-content-must-be-scoped-to-a-website
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-all-content-must-be-scoped-to-a-portal
  */
 
 declare(strict_types=1);
@@ -34,14 +34,14 @@ use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * Reads the CMS content of ONE website.
+ * Reads the CMS content of ONE portal.
  *
- * Every method takes the website slug and filters on it. There is no
+ * Every method takes the portal slug and filters on it. There is no
  * "read all pages" — an unscoped content query is the bug this class exists
  * to make impossible to write by accident.
  *
  * CACHING. Responses are cached under a key of
- * `website + kind + route + locale + AUDIENCE`. The audience component is the
+ * `portal + kind + route + locale + AUDIENCE`. The audience component is the
  * one that carries risk: without it, a page rendered for a signed-in visitor
  * is served to everyone who asks for the same URL. The unit test for this is
  * written so that removing the audience component makes it FAIL — the check is
@@ -105,7 +105,7 @@ class CmsReader {
 	/**
 	 * Build the cache key for a content read.
 	 *
-	 * @param string $website  The website slug.
+	 * @param string $portal  The portal slug.
 	 * @param string $kind     What is being read (menus, page, pages, glossary).
 	 * @param string $selector The route or other selector, '' when not applicable.
 	 * @param string $locale   The locale.
@@ -115,36 +115,36 @@ class CmsReader {
 	 *
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-public-content-reads-must-be-cached-keyed-by-audience
 	 */
-	public function cacheKey(string $website, string $kind, string $selector, string $locale, string $audience): string {
+	public function cacheKey(string $portal, string $kind, string $selector, string $locale, string $audience): string {
 		// `audience` is NOT optional and NOT last-by-accident. Dropping it is
 		// the single change that turns this cache into a cross-visitor data
 		// leak, so it is part of the key's identity, not a suffix.
 		return implode(
 			'|',
-			[$website, $kind, $selector, $locale, $audience]
+			[$portal, $kind, $selector, $locale, $audience]
 		);
 	}//end cacheKey()
 
 
 	/**
-	 * Read the menus of a website.
+	 * Read the menus of a portal.
 	 *
-	 * @param string $website  The website slug.
+	 * @param string $portal  The portal slug.
 	 * @param string $locale   The locale.
 	 * @param string $audience The requesting audience.
 	 *
 	 * @return array The menus, ordered by position.
 	 *
-	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-all-content-must-be-scoped-to-a-website
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-all-content-must-be-scoped-to-a-portal
 	 */
-	public function menus(string $website, string $locale, string $audience): array {
-		$key = $this->cacheKey(website: $website, kind: 'menus', selector: '', locale: $locale, audience: $audience);
+	public function menus(string $portal, string $locale, string $audience): array {
+		$key = $this->cacheKey(portal: $portal, kind: 'menus', selector: '', locale: $locale, audience: $audience);
 		$hit = $this->cache->get($key);
 		if ($hit !== null) {
 			return json_decode($hit, true) ?? [];
 		}
 
-		$rows = $this->query(schema: 'menu', filters: ['website' => $website]);
+		$rows = $this->query(schema: 'menu', filters: ['portal' => $portal]);
 		usort($rows, static fn ($a, $b) => (int)($a['position'] ?? 0) <=> (int)($b['position'] ?? 0));
 
 		$menus = array_map(fn (array $row) => $this->shapeMenu(row: $row), $rows);
@@ -155,24 +155,24 @@ class CmsReader {
 
 
 	/**
-	 * Read the published pages of a website, without their bodies.
+	 * Read the published pages of a portal, without their bodies.
 	 *
-	 * @param string $website  The website slug.
+	 * @param string $portal  The portal slug.
 	 * @param string $locale   The locale.
 	 * @param string $audience The requesting audience.
 	 *
 	 * @return array The page summaries.
 	 *
-	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-all-content-must-be-scoped-to-a-website
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-all-content-must-be-scoped-to-a-portal
 	 */
-	public function pages(string $website, string $locale, string $audience): array {
-		$key = $this->cacheKey(website: $website, kind: 'pages', selector: '', locale: $locale, audience: $audience);
+	public function pages(string $portal, string $locale, string $audience): array {
+		$key = $this->cacheKey(portal: $portal, kind: 'pages', selector: '', locale: $locale, audience: $audience);
 		$hit = $this->cache->get($key);
 		if ($hit !== null) {
 			return json_decode($hit, true) ?? [];
 		}
 
-		$rows = $this->query(schema: 'page', filters: ['website' => $website, 'status' => 'published']);
+		$rows = $this->query(schema: 'page', filters: ['portal' => $portal, 'status' => 'published']);
 		$pages = [];
 		foreach ($rows as $row) {
 			$pages[] = [
@@ -194,7 +194,7 @@ class CmsReader {
 	/**
 	 * Read one published page by route.
 	 *
-	 * @param string $website  The website slug.
+	 * @param string $portal  The portal slug.
 	 * @param string $route    The in-site route.
 	 * @param string $locale   The locale.
 	 * @param string $audience The requesting audience.
@@ -203,8 +203,8 @@ class CmsReader {
 	 *
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
 	 */
-	public function page(string $website, string $route, string $locale, string $audience): ?array {
-		$key = $this->cacheKey(website: $website, kind: 'page', selector: $route, locale: $locale, audience: $audience);
+	public function page(string $portal, string $route, string $locale, string $audience): ?array {
+		$key = $this->cacheKey(portal: $portal, kind: 'page', selector: $route, locale: $locale, audience: $audience);
 		$hit = $this->cache->get($key);
 		if ($hit !== null) {
 			$decoded = json_decode($hit, true);
@@ -219,7 +219,7 @@ class CmsReader {
 		// must never reach this process's memory, let alone a response: an
 		// unpublished route and a non-existent route are answered identically,
 		// so the API is not an existence oracle for unreleased content.
-		$rows = $this->query(schema: 'page', filters: ['website' => $website, 'route' => $route, 'status' => 'published']);
+		$rows = $this->query(schema: 'page', filters: ['portal' => $portal, 'route' => $route, 'status' => 'published']);
 		$page = null;
 		foreach ($rows as $row) {
 			if ((string)($row['route'] ?? '') === $route) {
@@ -235,24 +235,24 @@ class CmsReader {
 
 
 	/**
-	 * Read the glossary of a website.
+	 * Read the glossary of a portal.
 	 *
-	 * @param string $website  The website slug.
+	 * @param string $portal  The portal slug.
 	 * @param string $locale   The locale.
 	 * @param string $audience The requesting audience.
 	 *
 	 * @return array The glossary terms, alphabetical.
 	 *
-	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-all-content-must-be-scoped-to-a-website
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-all-content-must-be-scoped-to-a-portal
 	 */
-	public function glossary(string $website, string $locale, string $audience): array {
-		$key = $this->cacheKey(website: $website, kind: 'glossary', selector: '', locale: $locale, audience: $audience);
+	public function glossary(string $portal, string $locale, string $audience): array {
+		$key = $this->cacheKey(portal: $portal, kind: 'glossary', selector: '', locale: $locale, audience: $audience);
 		$hit = $this->cache->get($key);
 		if ($hit !== null) {
 			return json_decode($hit, true) ?? [];
 		}
 
-		$rows = $this->query(schema: 'glossaryTerm', filters: ['website' => $website]);
+		$rows = $this->query(schema: 'glossaryTerm', filters: ['portal' => $portal]);
 		$terms = [];
 		foreach ($rows as $row) {
 			$terms[] = [
@@ -271,25 +271,25 @@ class CmsReader {
 
 
 	/**
-	 * Drop every cached entry for a website.
+	 * Drop every cached entry for a portal.
 	 *
 	 * Invalidation is event-driven, not expiry-driven: an editor who publishes
 	 * and then has to wait out a TTL will conclude the CMS is broken, and will
 	 * be right.
 	 *
-	 * @param string $website The website slug.
+	 * @param string $portal The portal slug.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-public-content-reads-must-be-cached-keyed-by-audience
 	 */
-	public function invalidate(string $website): void {
+	public function invalidate(string $portal): void {
 		// Prefix clear covers everything for this site, INCLUDING per-route
 		// page entries, whose keys are not enumerable from here. That matters
 		// more than it looks: the page cache stores negative results too, so a
 		// missed invalidation leaves a newly created route 404ing for the rest
 		// of the TTL while the object plainly exists.
-		$this->cache->clear($website . '|');
+		$this->cache->clear($portal . '|');
 
 		// Belt and braces for backends whose clear() ignores the prefix: the
 		// keys that can be named are removed by name as well. Cheap, and the
@@ -297,7 +297,7 @@ class CmsReader {
 		foreach (['menus', 'pages', 'glossary'] as $kind) {
 			foreach (['anonymous', 'authenticated'] as $audience) {
 				foreach (['', 'nl', 'en'] as $locale) {
-					$this->cache->remove($this->cacheKey(website: $website, kind: $kind, selector: '', locale: $locale, audience: $audience));
+					$this->cache->remove($this->cacheKey(portal: $portal, kind: $kind, selector: '', locale: $locale, audience: $audience));
 				}
 			}
 		}
@@ -417,12 +417,12 @@ class CmsReader {
 	 * Query one CMS schema with the given property filters.
 	 *
 	 * @param string $schema  The schema slug.
-	 * @param array  $filters The property filters, always including `website`.
+	 * @param array  $filters The property filters, always including `portal`.
 	 *
 	 * @return array The rows, as plain arrays.
 	 */
 	private function query(string $schema, array $filters): array {
-		if (($filters['website'] ?? '') === '') {
+		if (($filters['portal'] ?? '') === '') {
 			// Refusing here rather than returning everything: an unscoped read
 			// would silently serve one site's content under another's domain,
 			// and the response would look entirely normal.

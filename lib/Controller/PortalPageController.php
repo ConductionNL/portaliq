@@ -180,11 +180,11 @@ class PortalPageController extends Controller {
 			Application::APP_ID,
 			'site',
 			[
-				'siteConfig' => [
+				'portalConfig' => [
 					// The ONLY thing resolved server-side: which site, when the
 					// caller named one. Host resolution — the normal path —
 					// needs nothing here at all.
-					'site'    => (string)$this->request->getParam('site', ''),
+					'portal'  => (string)$this->request->getParam('portal', ''),
 					'apiBase' => $this->urlGenerator->linkToRoute('portaliq.content.site'),
 				],
 			],

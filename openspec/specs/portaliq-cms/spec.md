@@ -5,17 +5,22 @@
 **OpenSpec changes**:
 
 - [portal-cms-content-model](../../changes/portal-cms-content-model/)
-- [portal-website-scoping-and-auth](../../changes/portal-website-scoping-and-auth/)
+- [portal-scoping-and-auth](../../changes/portal-scoping-and-auth/)
 - [portal-headless-content-api](../../changes/portal-headless-content-api/)
 - [portal-shared-runtime](../../changes/portal-shared-runtime/)
 
 ## Purpose
 
 Portaliq is the fleet's headless CMS (ADR-086). Its public content API is the
-contract; the built-in site renderer (ADR-084) is one consumer of that API,
-with no privileged path of its own. Content is scoped to a `website`, which
+contract; the built-in portal renderer (ADR-084) is one consumer of that API,
+with no privileged path of its own. Content is scoped to a `portal`, which
 owns its domains, theme, authentication and locales, so one Organisation can
-run several branded sites.
+run several branded portals.
+
+> **Vocabulary.** The unit was called `website` in the first draft of this
+> spec and in the register schema. It is `portal` everywhere now — schema id,
+> property name, query parameter, service and test class. `website` in an
+> older document means `portal`; there is no second concept.
 
 This document is the CANONICAL spec for the implemented subset. Requirements
 still being designed live in the change deltas listed above until they ship.
@@ -27,9 +32,9 @@ Verified live on a disposable rig 2026-08-15 (`portaliq-p2-rig`, :8321), with
 
 | Requirement | State |
 | --- | --- |
-| A request resolves to exactly one website, or none | implemented |
+| A request resolves to exactly one portal, or none | implemented |
 | A custom domain is verified before it serves | **guard** implemented; the DNS TXT check that SETS the flag is not |
-| All content is scoped to a website | implemented |
+| All content is scoped to a portal | implemented |
 | A page body is a grid or markdown | implemented |
 | Unpublished content is indistinguishable from absent | implemented |
 | Reads are cached, keyed by audience | implemented, with event-driven invalidation |
@@ -37,49 +42,52 @@ Verified live on a disposable rig 2026-08-15 (`portaliq-p2-rig`, :8321), with
 | Only explicitly public widgets render | implemented — via a local allow-list until nc-vue's registry carries `public` |
 | The renderer does not depend on Nextcloud globals | implemented |
 | The content API is sufficient without the built-in renderer | implemented — proven by a Docusaurus build |
+| Editors have an admin surface for CMS content | implemented — declarative manifest pages; the publish-time validation rules are not |
 
 **Not implemented, and specified elsewhere rather than left implied:**
 
-- Per-site theming renders nothing — the theme is a class with no tokens
-  behind it, so two differently-themed sites are visually identical
+- Per-portal theming renders nothing — the theme is a class with no tokens
+  behind it, so two differently-themed portals are visually identical
   (`portal-theme-application`).
-- Per-website authentication is declared in the schema and enforced nowhere.
-  Every site currently behaves as `public` read-only, which happens to match
+- Per-portal authentication is declared in the schema and enforced nowhere.
+  Every portal currently behaves as `public` read-only, which happens to match
   the specified fail-closed default. That is a coincidence, not an
   implementation.
-- There is no editorial surface; content is created through the object API
-  (`portal-cms-admin-ui`, which BLOCKS opencatalogi's `cms-handover`).
+- The admin surface creates and edits content, but enforces none of the
+  publish-time rules `portal-cms-admin-ui` specifies: a route is not checked
+  for uniqueness within its portal, a portal with no page at `/` can still be
+  published, and there is no domain-verification trigger.
 
 Related: ADR-086 (headless CMS), ADR-084 (the built-in renderer), ADR-022 /
 ADR-070 (OR-backed persistence), ADR-005 (fail-closed), ADR-082 (throttling).
 
 ## Requirements
 
-### Requirement: A request MUST resolve to exactly one website, or to none
+### Requirement: A request MUST resolve to exactly one portal, or to none
 
-The serving `website` SHALL be resolved from an explicit site slug, or from the
-request host taken from the trusted proxy configuration. An unresolved host
+The serving `portal` SHALL be resolved from an explicit portal slug, or from
+the request host taken from the trusted proxy configuration. An unresolved host
 SHALL produce a not-found response. There SHALL be no default, first or
-fallback website.
+fallback portal.
 
 #### Scenario: An unknown host reveals nothing
 
-- **GIVEN** a request whose host matches no website
+- **GIVEN** a request whose host matches no portal
 - **THEN** the response is 404
-- **AND** no site's title, theme or slug appears in the body
+- **AND** no portal's title, theme or slug appears in the body
 - @e2e `tests/e2e/site-multisite.spec.ts` (S7)
 
-#### Scenario: A single configured site is still not a default
+#### Scenario: A single configured portal is still not a default
 
-- **GIVEN** exactly one website exists
+- **GIVEN** exactly one portal exists
 - **WHEN** a request arrives for a host it does not claim
 - **THEN** nothing resolves
-- @e2e exclude unit-tested — `tests/Unit/Service/WebsiteResolverTest.php::testASingleConfiguredSiteIsStillNotADefault`; the single-site case is where a "just use the only one" shortcut is most tempting and would go unnoticed until a second site existed
+- @e2e exclude unit-tested — `tests/Unit/Service/PortalResolverTest.php::testASingleConfiguredSiteIsStillNotADefault`; the single-portal case is where a "just use the only one" shortcut is most tempting and would go unnoticed until a second portal existed
 
-#### Scenario: A named site that does not exist does not fall through to the host
+#### Scenario: A named portal that does not exist does not fall through to the host
 
-- **GIVEN** an explicit site slug that matches no website
-- **THEN** nothing resolves, and the request is not served by whichever site
+- **GIVEN** an explicit portal slug that matches no portal
+- **THEN** nothing resolves, and the request is not served by whichever portal
   owns the hostname it arrived on
 - @e2e `tests/e2e/site-multisite.spec.ts` (S7b)
 
@@ -90,36 +98,36 @@ domain SHALL behave exactly as an unknown host.
 
 #### Scenario: An unverified domain does not serve
 
-- **GIVEN** a domain bound to a website with `verified: false`
+- **GIVEN** a domain bound to a portal with `verified: false`
 - **THEN** requests for it return 404
 - @e2e `tests/e2e/site-multisite.spec.ts` (S6)
 
 #### Scenario: A verified domain does serve
 
-- **GIVEN** a verified domain on the SAME website
+- **GIVEN** a verified domain on the SAME portal
 - **THEN** requests for it are served
 - **AND** this positive case runs alongside the refusal, because a verifier
   that refuses everything is indistinguishable from a working one when only
   the refusal is tested
 - @e2e `tests/e2e/site-multisite.spec.ts` (S6)
 
-### Requirement: All content MUST be scoped to a website
+### Requirement: All content MUST be scoped to a portal
 
-Every menu, page and glossary term SHALL belong to exactly one website, and
+Every menu, page and glossary term SHALL belong to exactly one portal, and
 every read SHALL be filtered by it. An unscoped read SHALL return nothing
 rather than everything.
 
-#### Scenario: Two websites publishing the same route do not leak
+#### Scenario: Two portals publishing the same route do not leak
 
-- **GIVEN** two websites each publishing `/over-ons`
+- **GIVEN** two portals each publishing `/over-ons`
 - **THEN** each host returns its own page and neither is reachable from the
   other
 - @e2e `tests/e2e/site-multisite.spec.ts` (S5, S5b)
 
 #### Scenario: An unscoped read returns nothing
 
-- **GIVEN** a content read with no website
-- **THEN** it returns empty rather than every site's content
+- **GIVEN** a content read with no portal
+- **THEN** it returns empty rather than every portal's content
 - @e2e exclude unit-tested — `tests/Unit/Service/CmsReaderTest.php::testAnUnscopedReadReturnsNothing`; the failure mode is a cross-tenant leak that renders normally, so it is asserted at the seam rather than through the UI
 
 ### Requirement: A page body MUST be either a widget grid or markdown
@@ -157,7 +165,7 @@ that for a route that never existed.
 
 ### Requirement: Public content reads MUST be cached, keyed by audience
 
-Content responses SHALL be cached by website, kind, selector, locale AND
+Content responses SHALL be cached by portal, kind, selector, locale AND
 audience. Per-visitor responses SHALL be marked `private, no-store`; anonymous
 published content SHALL be publicly cacheable. Cached entries SHALL be
 invalidated on a content write, not by expiry alone.
@@ -185,7 +193,7 @@ invalidated on a content write, not by expiry alone.
 
 ### Requirement: Markdown MUST NOT execute at a public origin
 
-Markdown rendered by the site renderer SHALL be sanitised. No script,
+Markdown rendered by the portal renderer SHALL be sanitised. No script,
 `javascript:` href or event-handler attribute SHALL survive into the DOM.
 
 #### Scenario: Hostile markdown is neutralised and the prose survives
@@ -199,7 +207,7 @@ Markdown rendered by the site renderer SHALL be sanitised. No script,
 
 ### Requirement: Only explicitly public widgets MUST render at a public origin
 
-The site renderer SHALL mount only widget keys that are explicitly public.
+The portal renderer SHALL mount only widget keys that are explicitly public.
 Anything else SHALL render an inert placeholder without preventing the rest of
 the page from rendering.
 
@@ -210,13 +218,13 @@ the page from rendering.
   normally
 - @e2e `tests/e2e/site-security.spec.ts` (S10)
 
-### Requirement: The site renderer MUST NOT depend on Nextcloud globals
+### Requirement: The portal renderer MUST NOT depend on Nextcloud globals
 
 The renderer SHALL boot and render with `OC`, `OCA` and `OCP` absent, reading
 its configuration from the initial-state channel when present and from a
 runtime global otherwise.
 
-#### Scenario: The site renders with the globals deleted
+#### Scenario: The portal renders with the globals deleted
 
 - **GIVEN** the Nextcloud globals removed before the bundle runs
 - **THEN** the title, menu and page still render
@@ -226,13 +234,13 @@ runtime global otherwise.
 
 Every capability of the built-in renderer SHALL be reachable through the public
 content API, and a consumer that is not the renderer SHALL be able to
-reproduce a site from it alone.
+reproduce a portal from it alone.
 
-#### Scenario: A Docusaurus build reproduces a site from the API alone
+#### Scenario: A Docusaurus build reproduces a portal from the API alone
 
-- **GIVEN** a website with a menu, markdown pages and glossary terms
+- **GIVEN** a portal with a menu, markdown pages and glossary terms
 - **WHEN** the Docusaurus plugin builds against the public API
-- **THEN** the site is reproduced, and every request it made was a public
+- **THEN** the portal is reproduced, and every request it made was a public
   content endpoint
 - @e2e exclude proven by a separate consumer project rather than a browser
   test — `docusaurus-portaliq-proof` intercepts its own outbound calls and

@@ -28,7 +28,7 @@ const element = document.getElementById(MOUNT_ID)
 
 if (element) {
 	const config = runtimeConfig()
-	createApp(App, { siteSlug: config.site || '' }).mount(element)
+	createApp(App, { portalSlug: config.portal || '' }).mount(element)
 } else {
 	// Say so. A missing mount point is how a bundle ends up "loaded and doing
 	// nothing", which reads on screen as a blank page with no console output

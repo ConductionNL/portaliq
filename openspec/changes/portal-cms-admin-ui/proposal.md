@@ -49,7 +49,7 @@ is pages in its manifest, not a new front-end.
   404s on its own front door.
 - A page route must be unique within its website.
 
-**The domain-verification trigger belongs here** — `portal-website-scoping-and-auth`
+**The domain-verification trigger belongs here** — `portal-scoping-and-auth`
 implements the DNS check; this is the button that runs it and shows the TXT
 record to publish.
 

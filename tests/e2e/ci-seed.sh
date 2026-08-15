@@ -471,7 +471,7 @@ fi
 # site-security).
 #
 # Without these, every one of those specs fails — and fails MISLEADINGLY: with
-# no website seeded, WebsiteResolver correctly resolves nothing and the content
+# no portal seeded, PortalResolver correctly resolves nothing and the content
 # API correctly 404s, so the specs report "expected 200, got 404" as though the
 # API were broken. It is behaving exactly as specified; there is simply no
 # content. That is the failure this block prevents.

@@ -89,17 +89,17 @@ class CmsCacheInvalidationListenerTest extends TestCase {
 
 
 	/**
-	 * A content write invalidates that website.
+	 * A content write invalidates that portal.
 	 *
 	 * @return void
 	 */
-	public function testACreatedContentObjectInvalidatesItsWebsite(): void {
+	public function testACreatedContentObjectInvalidatesItsPortal(): void {
 		$this->reader->expects($this->once())
 			->method('invalidate')
-			->with(website: 'open-tilburg');
+			->with(portal: 'open-tilburg');
 
-		$this->listener->handle(new ObjectCreatedEvent($this->entity(data: ['website' => 'open-tilburg'])));
-	}//end testACreatedContentObjectInvalidatesItsWebsite()
+		$this->listener->handle(new ObjectCreatedEvent($this->entity(data: ['portal' => 'open-tilburg'])));
+	}//end testACreatedContentObjectInvalidatesItsPortal()
 
 
 	/**
@@ -107,11 +107,11 @@ class CmsCacheInvalidationListenerTest extends TestCase {
 	 *
 	 * @return void
 	 */
-	public function testAnUpdatedContentObjectInvalidatesItsWebsite(): void {
-		$this->reader->expects($this->once())->method('invalidate')->with(website: 'open-venray');
+	public function testAnUpdatedContentObjectInvalidatesItsPortal(): void {
+		$this->reader->expects($this->once())->method('invalidate')->with(portal: 'open-venray');
 
-		$this->listener->handle(new ObjectUpdatedEvent($this->entity(data: ['website' => 'open-venray'])));
-	}//end testAnUpdatedContentObjectInvalidatesItsWebsite()
+		$this->listener->handle(new ObjectUpdatedEvent($this->entity(data: ['portal' => 'open-venray'])));
+	}//end testAnUpdatedContentObjectInvalidatesItsPortal()
 
 
 	/**
@@ -122,31 +122,31 @@ class CmsCacheInvalidationListenerTest extends TestCase {
 	 *
 	 * @return void
 	 */
-	public function testADeletedContentObjectInvalidatesItsWebsite(): void {
-		$this->reader->expects($this->once())->method('invalidate')->with(website: 'open-tilburg');
+	public function testADeletedContentObjectInvalidatesItsPortal(): void {
+		$this->reader->expects($this->once())->method('invalidate')->with(portal: 'open-tilburg');
 
-		$this->listener->handle(new ObjectDeletedEvent($this->entity(data: ['website' => 'open-tilburg'])));
-	}//end testADeletedContentObjectInvalidatesItsWebsite()
+		$this->listener->handle(new ObjectDeletedEvent($this->entity(data: ['portal' => 'open-tilburg'])));
+	}//end testADeletedContentObjectInvalidatesItsPortal()
 
 
 	/**
-	 * A website object invalidates itself, keyed by its own slug.
+	 * A portal object invalidates itself, keyed by its own slug.
 	 *
-	 * A `website` has no `website` property — it IS one — so without the slug
+	 * A `portal` has no `portal` property — it IS one — so without the slug
 	 * fallback, editing a site's own theme or title would never clear its
 	 * cached presentation.
 	 *
 	 * @return void
 	 */
-	public function testAWebsiteObjectInvalidatesItselfByItsSlug(): void {
-		$this->reader->expects($this->once())->method('invalidate')->with(website: 'open-tilburg');
+	public function testAPortalObjectInvalidatesItselfByItsSlug(): void {
+		$this->reader->expects($this->once())->method('invalidate')->with(portal: 'open-tilburg');
 
 		$this->listener->handle(new ObjectUpdatedEvent($this->entity(data: ['slug' => 'open-tilburg'])));
-	}//end testAWebsiteObjectInvalidatesItselfByItsSlug()
+	}//end testAPortalObjectInvalidatesItselfByItsSlug()
 
 
 	/**
-	 * An object belonging to no website invalidates nothing.
+	 * An object belonging to no portal invalidates nothing.
 	 *
 	 * OpenRegister emits these events for EVERY object in the instance, most of
 	 * which have nothing to do with the CMS. Invalidating on all of them would
@@ -185,7 +185,7 @@ class CmsCacheInvalidationListenerTest extends TestCase {
 	public function testAnInvalidationFailureDoesNotBreakTheWrite(): void {
 		$this->reader->method('invalidate')->willThrowException(new RuntimeException('cache down'));
 
-		$this->listener->handle(new ObjectCreatedEvent($this->entity(data: ['website' => 'open-tilburg'])));
+		$this->listener->handle(new ObjectCreatedEvent($this->entity(data: ['portal' => 'open-tilburg'])));
 
 		// Reaching here without an exception IS the assertion.
 		$this->addToAssertionCount(1);
@@ -202,7 +202,7 @@ class CmsCacheInvalidationListenerTest extends TestCase {
 	 */
 	public function testTheDeclaredCmsSchemasAreTheCachedOnes(): void {
 		$this->assertSame(
-			['website', 'menu', 'page', 'glossaryTerm'],
+			['portal', 'menu', 'page', 'glossaryTerm'],
 			CmsCacheInvalidationListener::cmsSchemas()
 		);
 	}//end testTheDeclaredCmsSchemasAreTheCachedOnes()

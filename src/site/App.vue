@@ -103,7 +103,7 @@ export default {
 
 	props: {
 		/** Explicit site slug, when not resolving by host. */
-		siteSlug: {
+		portalSlug: {
 			type: String,
 			default: '',
 		},
@@ -184,9 +184,9 @@ export default {
 		async loadSite() {
 			try {
 				const [site, menus, glossary] = await Promise.all([
-					fetchSite(this.siteSlug),
-					fetchMenus(this.siteSlug),
-					fetchGlossary(this.siteSlug),
+					fetchSite(this.portalSlug),
+					fetchMenus(this.portalSlug),
+					fetchGlossary(this.portalSlug),
 				])
 				this.site = site
 				this.menus = menus
@@ -206,7 +206,7 @@ export default {
 			this.loading = true
 			this.error = null
 			try {
-				this.page = await fetchPage(route, this.siteSlug)
+				this.page = await fetchPage(route, this.portalSlug)
 			} catch (error) {
 				this.page = null
 				// A 404 is information, not a fault — an unknown route and an

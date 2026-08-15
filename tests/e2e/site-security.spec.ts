@@ -175,7 +175,7 @@ test.describe('site renderer — cache invalidation', () => {
 			data: {
 				title: 'Invalidatieproef',
 				route,
-				website: 'open-tilburg',
+				portal: 'open-tilburg',
 				status: 'published',
 				locale: 'nl',
 				summary: 'Controle op cache-invalidatie.',

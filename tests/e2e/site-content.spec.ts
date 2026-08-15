@@ -21,7 +21,7 @@ test.describe('site renderer — content', () => {
 	}) => {
 		await page.goto(SITE)
 
-		// The title comes from the website object, not from a constant in the
+		// The title comes from the portal object, not from a constant in the
 		// bundle. Asserting the literal seeded value is the point: a renderer
 		// that fell back to a product name would still show *a* title.
 		await expect(page.getByTestId('site-title')).toHaveText('Open Tilburg')

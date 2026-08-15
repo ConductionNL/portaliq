@@ -38,7 +38,7 @@ export function runtimeConfig() {
 		// `loadState` throws when the initial-state element is absent — which
 		// is exactly the public-origin case, where Nextcloud never rendered
 		// one. The throw is the signal, not an error.
-		return loadState('portaliq', 'siteConfig', {}) || {}
+		return loadState('portaliq', 'portalConfig', {}) || {}
 	} catch {
 		return window.PORTALIQ_SITE_CONFIG || {}
 	}
@@ -97,41 +97,41 @@ async function get(path, query = {}) {
 }
 
 /**
- * @param {string} [site] Explicit site slug.
- * @return {Promise<object>} The resolved site's presentation record.
+ * @param {string} [portal] Explicit portal slug.
+ * @return {Promise<object>} The resolved portal's presentation record.
  */
-export const fetchSite = (site) => get('/site', { site })
+export const fetchSite = (portal) => get('/site', { portal })
 
 /**
- * @param {string} [site] Explicit site slug.
- * @return {Promise<Array>} The site's menus.
+ * @param {string} [portal] Explicit portal slug.
+ * @return {Promise<Array>} The portal's menus.
  */
-export async function fetchMenus(site) {
-	const body = await get('/menus', { site })
+export async function fetchMenus(portal) {
+	const body = await get('/menus', { portal })
 	return body.menus || []
 }
 
 /**
- * @param {string} [site] Explicit site slug.
- * @return {Promise<Array>} The site's published page summaries.
+ * @param {string} [portal] Explicit portal slug.
+ * @return {Promise<Array>} The portal's published page summaries.
  */
-export async function fetchPages(site) {
-	const body = await get('/pages', { site })
+export async function fetchPages(portal) {
+	const body = await get('/pages', { portal })
 	return body.pages || []
 }
 
 /**
- * @param {string} [site] Explicit site slug.
- * @return {Promise<Array>} The site's glossary terms.
+ * @param {string} [portal] Explicit portal slug.
+ * @return {Promise<Array>} The portal's glossary terms.
  */
-export async function fetchGlossary(site) {
-	const body = await get('/glossary', { site })
+export async function fetchGlossary(portal) {
+	const body = await get('/glossary', { portal })
 	return body.terms || []
 }
 
 /**
  * @param {string} route  The in-site route.
- * @param {string} [site]  Explicit site slug.
+ * @param {string} [portal] Explicit portal slug.
  * @return {Promise<object>} One published page by route.
  */
-export const fetchPage = (route, site) => get('/page', { route, site })
+export const fetchPage = (route, portal) => get('/page', { route, portal })

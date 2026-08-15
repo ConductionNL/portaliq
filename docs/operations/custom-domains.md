@@ -5,7 +5,7 @@ sidebar_label: Custom domains
 
 # Publishing a portal on your own domain
 
-A Portaliq `website` is normally reachable at the platform host. To publish it
+A Portaliq `portal` is normally reachable at the platform host. To publish it
 at a customer's own name — `portal.example.com` — three things have to line up:
 **DNS** points the name at Portaliq, **verification** proves the customer
 controls that name, and **TLS** terminates somewhere with a valid certificate.
@@ -22,8 +22,8 @@ generic recipe for any other DNS provider.
 
 ## 1. Add the domain in Portaliq
 
-In the website's settings, add `portal.example.com` to **Domains**. Portaliq
-issues a verification token for that website, shown next to the pending domain:
+In the portal's settings, add `portal.example.com` to **Domains**. Portaliq
+issues a verification token for that portal, shown next to the pending domain:
 
 ```
 _portaliq-verify.portal.example.com   TXT   "portaliq-site-verification=<token>"
@@ -144,7 +144,7 @@ theming or asset problem and is actually a routing one.
 
 ## Caching, when a CDN is in front
 
-Portaliq caches public content keyed by **website + route + locale + audience**
+Portaliq caches public content keyed by **portal + route + locale + audience**
 and marks its responses accordingly:
 
 | Response | Header |
@@ -166,10 +166,10 @@ overriding them.
 
 ## Framing
 
-Each website declares which origins may embed it. Portaliq derives
-`Content-Security-Policy: frame-ancestors` from that configuration per site. If
-a customer needs the portal in an iframe on their own site, add that origin to
-the website's configuration — do not disable the header.
+Each portal declares which origins may embed it. Portaliq derives
+`Content-Security-Policy: frame-ancestors` from that configuration per portal.
+If a customer needs the portal in an iframe on their own site, add that origin
+to the portal's configuration — do not disable the header.
 
 ---
 
@@ -181,7 +181,7 @@ do not own the trademark to; the TXT record is the proof that whoever asked
 Portaliq to serve `portal.example.com` also controls `example.com`.
 
 This is why an unverified domain returns 404 rather than falling back to a
-default site. **An unknown `Host` resolves to no website at all** — a fallback
+default portal. **An unknown `Host` resolves to no portal at all** — a fallback
 would mean showing some tenant's content to a visitor who asked for another's.
 
 ---
@@ -195,7 +195,7 @@ would mean showing some tenant's content to a visitor who asked for another's.
 | Certificate warning | Proxied with SSL/TLS mode set to Flexible, or ACME has not completed. |
 | Page loads, links point at the platform host | `trusted_domains` / `overwrite*` not set. |
 | Signed-in content shown to anonymous visitors | A CDN cache rule caching by URL alone. Remove it. |
-| Portal will not load in a customer's iframe | The origin is not in the website's `frame-ancestors` configuration. |
+| Portal will not load in a customer's iframe | The origin is not in the portal's `frame-ancestors` configuration. |
 | Redirect loop | Proxied with SSL/TLS mode Flexible while the origin redirects HTTP → HTTPS. Use Full (strict). |
 
 ---

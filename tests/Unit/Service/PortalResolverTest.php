@@ -1,7 +1,7 @@
 <?php
 
 /**
- * WebsiteResolverTest
+ * PortalResolverTest
  *
  * @category Test
  * @package  OCA\Portaliq\Tests\Unit\Service
@@ -20,7 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
-use OCA\Portaliq\Service\WebsiteResolver;
+use OCA\Portaliq\Service\PortalResolver;
 use PHPUnit\Framework\TestCase;
 use OCP\IRequest;
 use Psr\Container\ContainerInterface;
@@ -35,14 +35,14 @@ use RuntimeException;
  * boundary, and a decision that can only be tested end-to-end tends not to be
  * tested at all.
  */
-class WebsiteResolverTest extends TestCase {
+class PortalResolverTest extends TestCase {
 
 	/**
 	 * The resolver under test.
 	 *
-	 * @var WebsiteResolver
+	 * @var PortalResolver
 	 */
-	private WebsiteResolver $resolver;
+	private PortalResolver $resolver;
 
 	/**
 	 * Two sites: one with a verified domain, one without.
@@ -60,7 +60,7 @@ class WebsiteResolverTest extends TestCase {
 	protected function setUp(): void {
 		parent::setUp();
 
-		$this->resolver = new WebsiteResolver(
+		$this->resolver = new PortalResolver(
 			$this->createMock(ContainerInterface::class),
 			$this->createMock(LoggerInterface::class)
 		);
@@ -196,9 +196,9 @@ class WebsiteResolverTest extends TestCase {
 	 *
 	 * @param array|null $rows The rows findAll() returns, or null to throw.
 	 *
-	 * @return WebsiteResolver The resolver, wired.
+	 * @return PortalResolver The resolver, wired.
 	 */
-	private function resolverReturning(?array $rows): WebsiteResolver {
+	private function resolverReturning(?array $rows): PortalResolver {
 		$container = $this->createMock(ContainerInterface::class);
 
 		if ($rows === null) {
@@ -265,7 +265,7 @@ class WebsiteResolverTest extends TestCase {
 			);
 		}
 
-		return new WebsiteResolver($container, $this->createMock(LoggerInterface::class));
+		return new PortalResolver($container, $this->createMock(LoggerInterface::class));
 	}//end resolverReturning()
 
 
@@ -286,7 +286,7 @@ class WebsiteResolverTest extends TestCase {
 	/**
 	 * An unknown slug resolves to nothing and does NOT fall through to the host.
 	 *
-	 * `?site=typo` must not quietly serve whichever site owns the hostname the
+	 * `?portal=typo` must not quietly serve whichever site owns the hostname the
 	 * request happened to arrive on.
 	 *
 	 * @return void
@@ -339,7 +339,7 @@ class WebsiteResolverTest extends TestCase {
 	public function testAnOpenRegisterFailureFailsClosed(): void {
 		$resolver = $this->resolverReturning(null);
 
-		$this->assertSame([], $resolver->allPublishedSites());
+		$this->assertSame([], $resolver->allPublishedPortals());
 		$this->assertNull($resolver->resolve($this->createMock(IRequest::class), 'open-tilburg'));
 	}//end testAnOpenRegisterFailureFailsClosed()
 

@@ -3,7 +3,7 @@
 /**
  * Portaliq CMS Cache Invalidation Listener
  *
- * Drops cached content for a website the moment one of its objects is
+ * Drops cached content for a portal the moment one of its objects is
  * written (ADR-086 §9).
  *
  * @category Listener
@@ -62,7 +62,7 @@ class CmsCacheInvalidationListener implements IEventListener {
 	 *
 	 * @var string[]
 	 */
-	private const CMS_SCHEMAS = ['website', 'menu', 'page', 'glossaryTerm'];
+	private const CMS_SCHEMAS = ['portal', 'menu', 'page', 'glossaryTerm'];
 
 
 	/**
@@ -105,15 +105,15 @@ class CmsCacheInvalidationListener implements IEventListener {
 				return;
 			}
 
-			$website = (string)($data['website'] ?? $data['slug'] ?? '');
-			if ($website === '') {
+			$portal = (string)($data['portal'] ?? $data['slug'] ?? '');
+			if ($portal === '') {
 				return;
 			}
 
 			// Cheap enough to run unconditionally: this is a cache drop, not
 			// I/O, and getting it wrong the other way (skipping an
 			// invalidation) is invisible until someone reports stale content.
-			$this->reader->invalidate(website: $website);
+			$this->reader->invalidate(portal: $portal);
 		} catch (Throwable $e) {
 			// Never let a cache concern break a write. A stale cache is a
 			// nuisance; a failed save is data loss.

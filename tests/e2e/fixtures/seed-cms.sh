@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Seed the CMS fixtures the phase-two e2e suite and the Docusaurus headless
-# proof both read: two websites (so cross-site isolation is testable with a
+# proof both read: two portals (so cross-site isolation is testable with a
 # real second site, not a hypothetical one), a menu, markdown and grid pages,
 # and glossary terms.
 #
@@ -35,10 +35,38 @@ for o in (d.get('results') or []):
 " "$2" "$3"
 }
 
+# True when an existing object carries the `portal` scope the reader filters on.
+scoped_to_portal() { # schema id
+	req "${API}/$1/$2" | python3 -c "
+import json,sys
+try:
+    o=json.load(sys.stdin)
+except Exception:
+    sys.exit(1)
+sys.exit(0 if o.get('portal') else 1)
+"
+}
+
 upsert() { # schema property value json
 	local existing
 	existing="$(find_by "$1" "$2" "$3")"
 	if [ -n "$existing" ]; then
+		# Found by key — but "found" is not "usable". This seeder only ever
+		# CREATES; it never updates. So an object left behind by an older
+		# schema satisfies the key lookup and is skipped, and the seed reports
+		# success while every content read returns empty.
+		#
+		# That is not hypothetical. The `website` -> `portal` rename orphaned
+		# all eleven fixtures: `CmsReader` filters on `portal`, the objects
+		# still carried `website`, and this script printed "Seed complete."
+		# over a portal serving nothing.
+		#
+		# So assert the scoping property the reader actually filters on. A
+		# fixture that cannot be read is a failure, not a skip.
+		if [ "$1" != portal ] && ! scoped_to_portal "$1" "$existing"; then
+			echo "seed: $1/$existing matches $2=$3 but carries no 'portal' — stale fixture from an older schema; delete it or migrate it before re-seeding" >&2
+			return 1
+		fi
 		echo "$existing"
 		return
 	fi
@@ -52,8 +80,8 @@ print(i)
 "
 }
 
-echo "==> websites"
-SITE=$(upsert website slug open-tilburg '{
+echo "==> portals"
+SITE=$(upsert portal slug open-tilburg '{
   "title":"Open Tilburg","slug":"open-tilburg","status":"published",
   "domains":[{"hostname":"localhost","verified":true}],
   "theme":"vng","locales":["nl","en"],
@@ -62,7 +90,7 @@ SITE=$(upsert website slug open-tilburg '{
 }')
 echo "    open-tilburg = $SITE"
 
-# A second site exists so "content does not leak across websites" can be
+# A second site exists so "content does not leak across portals" can be
 # tested against a real other site. A single-site fixture makes that scenario
 # unfalsifiable — it would pass even if scoping were not implemented at all.
 #
@@ -70,7 +98,7 @@ echo "    open-tilburg = $SITE"
 # unverified case would leave a permanently-refusing verifier
 # indistinguishable from a working one; testing only the verified case would
 # leave the refusal untested. Both directions live in the fixture.
-SITE2=$(upsert website slug open-venray '{
+SITE2=$(upsert portal slug open-venray '{
   "title":"Gemeente Venray","slug":"open-venray","status":"published",
   "domains":[
     {"hostname":"venray.localhost","verified":true},
@@ -84,7 +112,7 @@ echo "    open-venray  = $SITE2 (venray.localhost verified, unverified.localhost
 
 echo "==> menu"
 upsert menu title Hoofdmenu '{
-  "title":"Hoofdmenu","website":"open-tilburg","position":0,
+  "title":"Hoofdmenu","portal":"open-tilburg","position":0,
   "items":[
     {"order":0,"name":"Home","link":"/","icon":"Home"},
     {"order":1,"name":"Over ons","link":"/over-ons","icon":"Information",
@@ -96,7 +124,7 @@ echo "    Hoofdmenu (2 levels)"
 
 echo "==> pages"
 upsert page route / '{
-  "title":"Welkom","route":"/","website":"open-tilburg","status":"published","locale":"nl",
+  "title":"Welkom","route":"/","portal":"open-tilburg","status":"published","locale":"nl",
   "summary":"De startpagina van Open Tilburg.",
   "body":{"type":"grid","widgets":[
     {"id":"intro","widgetKey":"markdown","slot":"body","gridX":0,"gridY":0,"gridWidth":12,"gridHeight":4,
@@ -110,14 +138,14 @@ upsert page route / '{
 echo "    / (grid, 3 widgets)"
 
 upsert page route /over-ons '{
-  "title":"Over ons","route":"/over-ons","website":"open-tilburg","status":"published","locale":"nl",
+  "title":"Over ons","route":"/over-ons","portal":"open-tilburg","status":"published","locale":"nl",
   "summary":"Wie wij zijn en waar wij voor staan.",
   "body":{"type":"markdown","markdown":"## Over ons\n\nWij publiceren overheidsinformatie op grond van de **Wet open overheid**.\n\n- Transparant\n- Toegankelijk\n- Actueel\n\n### Een Woo-verzoek indienen\n\nDat kan via het contactformulier.\n\n```text\nvoorbeeldcode blijft intact\n```\n\n| Kolom | Waarde |\n| --- | --- |\n| Een | 1 |\n| Twee | 2 |\n"}
 }' >/dev/null
 echo "    /over-ons (markdown, incl. code fence + table)"
 
 upsert page route /contact '{
-  "title":"Contact","route":"/contact","website":"open-tilburg","status":"published","locale":"nl",
+  "title":"Contact","route":"/contact","portal":"open-tilburg","status":"published","locale":"nl",
   "summary":"Hoe u ons bereikt.",
   "body":{"type":"markdown","markdown":"## Contact\n\nBel 14 013 of mail info@tilburg.nl.\n"}
 }' >/dev/null
@@ -126,7 +154,7 @@ echo "    /contact (markdown)"
 # A draft page proves the published filter does something. Without it, the
 # "unpublished pages are not served" scenario passes vacuously.
 upsert page route /concept '{
-  "title":"Nog niet klaar","route":"/concept","website":"open-tilburg","status":"draft","locale":"nl",
+  "title":"Nog niet klaar","route":"/concept","portal":"open-tilburg","status":"draft","locale":"nl",
   "summary":"Deze pagina hoort niet zichtbaar te zijn.",
   "body":{"type":"markdown","markdown":"Dit is een concept."}
 }' >/dev/null
@@ -138,7 +166,7 @@ echo "    /concept (DRAFT — must never be served)"
 # same as the Tilburg page. A route-keyed lookup here would either match the
 # wrong site's page or (as it did) match nothing and duplicate on every run.
 upsert page title 'Over Venray' '{
-  "title":"Over Venray","route":"/over-ons","website":"open-venray","status":"published","locale":"nl",
+  "title":"Over Venray","route":"/over-ons","portal":"open-venray","status":"published","locale":"nl",
   "summary":"Venray, niet Tilburg.",
   "body":{"type":"markdown","markdown":"## Over Venray\n\nDit is de Venray-site.\n"}
 }' >/dev/null
@@ -149,7 +177,7 @@ echo "    /over-ons on open-venray (same route, other site)"
 # while the console carries an error on every visit — the shape of defect that
 # survives for months because the page looks right.
 upsert page title 'Begrippenlijst' '{
-  "title":"Begrippenlijst","route":"/begrippen","website":"open-tilburg","status":"published","locale":"nl",
+  "title":"Begrippenlijst","route":"/begrippen","portal":"open-tilburg","status":"published","locale":"nl",
   "summary":"Uitleg van veelgebruikte begrippen.",
   "body":{"type":"markdown","markdown":"Hieronder staan de begrippen die op deze site worden gebruikt.\n"}
 }' >/dev/null
@@ -159,7 +187,7 @@ echo "    /begrippen (markdown; the menu links here)"
 # sanitiser that threw the whole document away would pass a test that only
 # checked "no script ran".
 upsert page title 'Sanitisatieproef' '{
-  "title":"Sanitisatieproef","route":"/xss-probe","website":"open-tilburg","status":"published","locale":"nl",
+  "title":"Sanitisatieproef","route":"/xss-probe","portal":"open-tilburg","status":"published","locale":"nl",
   "summary":"Fixture voor sanitisatie.",
   "body":{"type":"markdown","markdown":"## Veilige tekst blijft staan\n\n<script>window.__pqXssRan = true;<\/script>\n\n[klik mij](javascript:window.__pqXssRan=true)\n\n<img src=x onerror=\"window.__pqXssRan=true\">\n\nEinde van de pagina.\n"}
 }' >/dev/null
@@ -168,7 +196,7 @@ echo "    /xss-probe (hostile markdown + surviving prose)"
 # A grid page mixing a public widget key with one that is not public, so
 # "degrades instead of blanking" is observable rather than assumed.
 upsert page title 'Widgetproef' '{
-  "title":"Widgetproef","route":"/widget-probe","website":"open-tilburg","status":"published","locale":"nl",
+  "title":"Widgetproef","route":"/widget-probe","portal":"open-tilburg","status":"published","locale":"nl",
   "summary":"Fixture voor widget-gating.",
   "body":{"type":"grid","widgets":[
     {"id":"ok-one","widgetKey":"markdown","slot":"body","gridX":0,"gridY":0,"gridWidth":6,"gridHeight":2,
@@ -183,12 +211,12 @@ echo "    /widget-probe (1 non-public widget among 2 public)"
 
 echo "==> glossary"
 upsert glossaryTerm term Woo-verzoek '{
-  "term":"Woo-verzoek","website":"open-tilburg",
+  "term":"Woo-verzoek","portal":"open-tilburg",
   "definition":"Een verzoek om openbaarmaking van overheidsinformatie.",
   "synonyms":["Wob-verzoek"],"source":"Wet open overheid, artikel 4.1"
 }' >/dev/null
 upsert glossaryTerm term Publicatie '{
-  "term":"Publicatie","website":"open-tilburg",
+  "term":"Publicatie","portal":"open-tilburg",
   "definition":"Een document dat de gemeente actief openbaar maakt.",
   "synonyms":[],"source":"Wet open overheid, artikel 3.3"
 }' >/dev/null

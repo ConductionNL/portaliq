@@ -22,7 +22,7 @@ content models against different data:
 | --- | --- | --- |
 | Audience | An authenticated supplier/citizen | Anonymous public visitor |
 | Auth | Bearer session (`portaliq_token`) | None |
-| Content | Subject-scoped OR collections, actions, inbox | Website CMS: menus, pages, glossary |
+| Content | Subject-scoped OR collections, actions, inbox | Portal CMS: menus, pages, glossary |
 | Source | `/portal/api/contributions` | `/api/content/*` |
 | Layout | Linear stack of typed blocks | 12-column manifest grid, or markdown |
 
@@ -121,7 +121,7 @@ Both are corrected.
 - Per-site theming renders nothing (above). Until `portal-theme-application`
   lands, no visual comparison here supports a parity claim against a themed
   Tilburg deployment.
-- Per-website authentication is declared in the schema and enforced nowhere.
+- Per-portal authentication is declared in the schema and enforced nowhere.
   Every site currently behaves as `public` read-only, which happens to match
   the specified fail-closed default — a coincidence, not an implementation.
 - Domain verification enforces the `verified` flag but nothing performs the DNS

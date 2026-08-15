@@ -21,7 +21,7 @@ use OCP\Util;
 $appId = OCA\Portaliq\AppInfo\Application::APP_ID;
 
 \OC::$server->get(\OCP\IInitialStateService::class)
-    ->provideInitialState($appId, 'siteConfig', $_['siteConfig'] ?? []);
+    ->provideInitialState($appId, 'portalConfig', $_['portalConfig'] ?? []);
 
 Util::addScript($appId, $appId . '-site');
 ?>

@@ -11,7 +11,7 @@ same machinery *can* say yes — a domain verifier that always refuses, a
 `published` filter that hides everything, or a sanitiser that strips
 everything, would each pass a one-sided test while being completely broken.
 
-Fixtures: `tests/e2e/fixtures/seed-cms.sh` (idempotent; two websites, one
+Fixtures: `tests/e2e/fixtures/seed-cms.sh` (idempotent; two portals, one
 menu, a grid page, two markdown pages, a draft, two glossary terms).
 
 ---
@@ -24,7 +24,7 @@ menu, a grid page, two markdown pages, a draft, two glossary terms).
 | **Spec** | `portal-headless-content-api` — the API must expose navigation, pages, glossary |
 | **Runs in** | `site-content.spec.ts` |
 
-- **GIVEN** the seeded `open-tilburg` website
+- **GIVEN** the seeded `open-tilburg` portal
 - **WHEN** a visitor with no session opens `/site`
 - **THEN** the header shows the site's own title from the API — not a
   hard-coded product name
@@ -73,14 +73,14 @@ menu, a grid page, two markdown pages, a draft, two glossary terms).
 - **AND** the published `/over-ons` returns 200 — the positive control, without
   which a `status` filter that hides *everything* would pass this scenario
 
-## S5 — Content does not cross websites
+## S5 — Content does not cross portals
 
 | | |
 | --- | --- |
-| **Spec** | `portaliq-cms` — all content must be scoped to a website |
+| **Spec** | `portaliq-cms` — all content must be scoped to a portal |
 | **Runs in** | `site-multisite.spec.ts` |
 
-- **GIVEN** two websites that each publish a page at `/over-ons`
+- **GIVEN** two portals that each publish a page at `/over-ons`
 - **WHEN** `/over-ons` is requested on the Tilburg host
 - **THEN** the Tilburg page is returned
 - **AND WHEN** it is requested on the Venray host
@@ -91,10 +91,10 @@ menu, a grid page, two markdown pages, a draft, two glossary terms).
 
 | | |
 | --- | --- |
-| **Spec** | `portal-website-scoping-and-auth` — a custom domain must be verified before it serves |
+| **Spec** | `portal-scoping-and-auth` — a custom domain must be verified before it serves |
 | **Runs in** | `site-multisite.spec.ts` |
 
-- **GIVEN** one website carrying a verified domain and an unverified one
+- **GIVEN** one portal carrying a verified domain and an unverified one
 - **WHEN** the unverified host is requested
 - **THEN** it returns 404, identical to an unknown host
 - **AND WHEN** the verified host is requested
@@ -103,18 +103,18 @@ menu, a grid page, two markdown pages, a draft, two glossary terms).
   always refuses looks exactly like a working one when only the refusal is
   tested.
 
-## S7 — An unknown host resolves to no site at all
+## S7 — An unknown host resolves to no portal at all
 
 | | |
 | --- | --- |
-| **Spec** | `portal-website-scoping-and-auth` — a request must resolve to exactly one website, or to none |
+| **Spec** | `portal-scoping-and-auth` — a request must resolve to exactly one portal, or to none |
 | **Runs in** | `site-multisite.spec.ts` |
 
-- **GIVEN** a host bound to no website
+- **GIVEN** a host bound to no portal
 - **WHEN** any content endpoint is requested
 - **THEN** it returns 404
-- **AND** the response body contains no site's title, theme or slug — a
-  fallback to "the first website" would render perfectly and be invisible
+- **AND** the response body contains no portal's title, theme or slug — a
+  fallback to "the first portal" would render perfectly and be invisible
 
 ## S8 — Caching separates anonymous from authenticated
 

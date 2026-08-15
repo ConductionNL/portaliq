@@ -22,7 +22,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\ContentController;
 use OCA\Portaliq\Service\CmsReader;
-use OCA\Portaliq\Service\WebsiteResolver;
+use OCA\Portaliq\Service\PortalResolver;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -42,14 +42,14 @@ use PHPUnit\Framework\TestCase;
 class ContentControllerTest extends TestCase {
 
 	/**
-	 * Resolves the serving website.
+	 * Resolves the serving portal.
 	 *
-	 * @var WebsiteResolver&MockObject
+	 * @var PortalResolver&MockObject
 	 */
-	private WebsiteResolver $resolver;
+	private PortalResolver $resolver;
 
 	/**
-	 * Reads website-scoped content.
+	 * Reads portal-scoped content.
 	 *
 	 * @var CmsReader&MockObject
 	 */
@@ -71,7 +71,7 @@ class ContentControllerTest extends TestCase {
 	protected function setUp(): void {
 		parent::setUp();
 
-		$this->resolver = $this->createMock(WebsiteResolver::class);
+		$this->resolver = $this->createMock(PortalResolver::class);
 		$this->reader = $this->createMock(CmsReader::class);
 		$this->request = $this->createMock(IRequest::class);
 	}//end setUp()
@@ -105,11 +105,11 @@ class ContentControllerTest extends TestCase {
 
 
 	/**
-	 * A published website fixture.
+	 * A published portal fixture.
 	 *
-	 * @return array The website.
+	 * @return array The portal.
 	 */
-	private function website(): array {
+	private function portal(): array {
 		return [
 			'title' => 'Open Tilburg',
 			'slug' => 'open-tilburg',
@@ -117,7 +117,7 @@ class ContentControllerTest extends TestCase {
 			'locales' => ['nl', 'en'],
 			'authentication' => ['modes' => ['public']],
 		];
-	}//end website()
+	}//end portal()
 
 
 	/**
@@ -167,7 +167,7 @@ class ContentControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function testAResolvedSiteReturnsItsPresentation(): void {
-		$this->resolver->method('resolve')->willReturn($this->website());
+		$this->resolver->method('resolve')->willReturn($this->portal());
 
 		$data = $this->controller()->site()->getData();
 
@@ -187,9 +187,9 @@ class ContentControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function testProviderConfigurationIsNotExposed(): void {
-		$website = $this->website();
-		$website['authentication']['oidc'] = ['issuer' => 'https://idp.example', 'clientId' => 'secret-ish'];
-		$this->resolver->method('resolve')->willReturn($website);
+		$portal = $this->portal();
+		$portal['authentication']['oidc'] = ['issuer' => 'https://idp.example', 'clientId' => 'secret-ish'];
+		$this->resolver->method('resolve')->willReturn($portal);
 
 		$data = $this->controller()->site()->getData();
 
@@ -204,7 +204,7 @@ class ContentControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnAnonymousResponseIsPubliclyCacheable(): void {
-		$this->resolver->method('resolve')->willReturn($this->website());
+		$this->resolver->method('resolve')->willReturn($this->portal());
 		$this->reader->method('menus')->willReturn([]);
 
 		$headers = $this->controller()->menus()->getHeaders();
@@ -223,7 +223,7 @@ class ContentControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnAuthenticatedResponseIsNeverShared(): void {
-		$this->resolver->method('resolve')->willReturn($this->website());
+		$this->resolver->method('resolve')->willReturn($this->portal());
 		$this->reader->method('menus')->willReturn([]);
 
 		$headers = $this->controller(authorization: 'Bearer whatever')->menus()->getHeaders();
@@ -243,10 +243,10 @@ class ContentControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnInvalidBearerIsStillTreatedAsAuthenticated(): void {
-		$this->resolver->method('resolve')->willReturn($this->website());
+		$this->resolver->method('resolve')->willReturn($this->portal());
 		$this->reader->expects($this->once())
 			->method('menus')
-			->with(website: 'open-tilburg', locale: 'nl', audience: 'authenticated')
+			->with(portal: 'open-tilburg', locale: 'nl', audience: 'authenticated')
 			->willReturn([]);
 
 		$this->controller(authorization: 'Bearer definitely-not-valid')->menus();
@@ -259,13 +259,13 @@ class ContentControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnUnknownLocaleFallsBackToTheSiteDefault(): void {
-		$this->resolver->method('resolve')->willReturn($this->website());
+		$this->resolver->method('resolve')->willReturn($this->portal());
 		$this->reader->expects($this->once())
 			->method('menus')
-			->with(website: 'open-tilburg', locale: 'nl', audience: 'anonymous')
+			->with(portal: 'open-tilburg', locale: 'nl', audience: 'anonymous')
 			->willReturn([]);
 
-		$this->controller()->menus(site: 'open-tilburg', locale: 'de');
+		$this->controller()->menus(portal: 'open-tilburg', locale: 'de');
 	}//end testAnUnknownLocaleFallsBackToTheSiteDefault()
 
 
@@ -278,13 +278,13 @@ class ContentControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function testASupportedLocaleIsHonoured(): void {
-		$this->resolver->method('resolve')->willReturn($this->website());
+		$this->resolver->method('resolve')->willReturn($this->portal());
 		$this->reader->expects($this->once())
 			->method('menus')
-			->with(website: 'open-tilburg', locale: 'en', audience: 'anonymous')
+			->with(portal: 'open-tilburg', locale: 'en', audience: 'anonymous')
 			->willReturn([]);
 
-		$this->controller()->menus(site: 'open-tilburg', locale: 'en');
+		$this->controller()->menus(portal: 'open-tilburg', locale: 'en');
 	}//end testASupportedLocaleIsHonoured()
 
 
@@ -294,10 +294,10 @@ class ContentControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function testARouteIsNormalisedToALeadingSlash(): void {
-		$this->resolver->method('resolve')->willReturn($this->website());
+		$this->resolver->method('resolve')->willReturn($this->portal());
 		$this->reader->expects($this->once())
 			->method('page')
-			->with(website: 'open-tilburg', route: '/over-ons', locale: 'nl', audience: 'anonymous')
+			->with(portal: 'open-tilburg', route: '/over-ons', locale: 'nl', audience: 'anonymous')
 			->willReturn(['title' => 'Over ons']);
 
 		$this->controller()->page(route: 'over-ons');
@@ -310,7 +310,7 @@ class ContentControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function testAMissingPageIsTheSameNotFound(): void {
-		$this->resolver->method('resolve')->willReturn($this->website());
+		$this->resolver->method('resolve')->willReturn($this->portal());
 		$this->reader->method('page')->willReturn(null);
 
 		$response = $this->controller()->page(route: '/nope');
@@ -327,7 +327,7 @@ class ContentControllerTest extends TestCase {
 	 */
 	public function testAFoundPageIsReturnedUnchanged(): void {
 		$page = ['title' => 'Over ons', 'body' => ['type' => 'markdown', 'markdown' => '## Hoi']];
-		$this->resolver->method('resolve')->willReturn($this->website());
+		$this->resolver->method('resolve')->willReturn($this->portal());
 		$this->reader->method('page')->willReturn($page);
 
 		$this->assertSame($page, $this->controller()->page(route: '/over-ons')->getData());
@@ -335,24 +335,24 @@ class ContentControllerTest extends TestCase {
 
 
 	/**
-	 * The glossary and page listing are website-scoped.
+	 * The glossary and page listing are portal-scoped.
 	 *
 	 * @return void
 	 */
-	public function testListingsAreScopedToTheResolvedWebsite(): void {
-		$this->resolver->method('resolve')->willReturn($this->website());
+	public function testListingsAreScopedToTheResolvedPortal(): void {
+		$this->resolver->method('resolve')->willReturn($this->portal());
 		$this->reader->expects($this->once())
 			->method('glossary')
-			->with(website: 'open-tilburg', locale: 'nl', audience: 'anonymous')
+			->with(portal: 'open-tilburg', locale: 'nl', audience: 'anonymous')
 			->willReturn([]);
 		$this->reader->expects($this->once())
 			->method('pages')
-			->with(website: 'open-tilburg', locale: 'nl', audience: 'anonymous')
+			->with(portal: 'open-tilburg', locale: 'nl', audience: 'anonymous')
 			->willReturn([]);
 
 		$this->controller()->glossary();
 		$this->controller()->pages();
-	}//end testListingsAreScopedToTheResolvedWebsite()
+	}//end testListingsAreScopedToTheResolvedPortal()
 
 
 }//end class

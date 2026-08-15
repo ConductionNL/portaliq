@@ -28,7 +28,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Service\CmsReader;
-use OCA\Portaliq\Service\WebsiteResolver;
+use OCA\Portaliq\Service\PortalResolver;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -40,7 +40,7 @@ use OCP\IRequest;
 /**
  * Public, read-only content endpoints.
  *
- * Every route is public — this is a public website's content, and a Docusaurus
+ * Every route is public — this is a public portal's content, and a Docusaurus
  * build or a third-party front-end has to be able to read it with no Nextcloud
  * session at all. That is what makes the CMS headless rather than a portal
  * with an API bolted on.
@@ -60,15 +60,15 @@ class ContentController extends Controller {
 	 *
 	 * @param string          $appName  The app id.
 	 * @param IRequest        $request  The request.
-	 * @param WebsiteResolver $resolver Resolves the serving website.
-	 * @param CmsReader       $reader   Reads website-scoped content.
+	 * @param PortalResolver $resolver Resolves the serving portal.
+	 * @param CmsReader       $reader   Reads portal-scoped content.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly WebsiteResolver $resolver,
+		private readonly PortalResolver $resolver,
 		private readonly CmsReader $reader,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -78,32 +78,32 @@ class ContentController extends Controller {
 	/**
 	 * The resolved site's own presentation record.
 	 *
-	 * @param string|null $site   Explicit site slug, for a consumer not using the host.
+	 * @param string|null $portal Explicit portal slug, for a consumer not using the host.
 	 * @param string|null $locale Requested locale.
 	 *
 	 * @return JSONResponse The site, or 404.
 	 *
-	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-request-must-resolve-to-exactly-one-website-or-to-none
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-request-must-resolve-to-exactly-one-portal-or-to-none
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 240, period: 60)]
-	public function site(?string $site = null, ?string $locale = null): JSONResponse {
-		$website = $this->resolver->resolve(request: $this->request, siteSlug: $site);
-		if ($website === null) {
+	public function site(?string $portal = null, ?string $locale = null): JSONResponse {
+		$portal = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
+		if ($portal === null) {
 			return $this->notFound();
 		}
 
-		$auth = (array)($website['authentication'] ?? []);
+		$auth = (array)($portal['authentication'] ?? []);
 
 		return $this->publicJson(
 			payload: [
-				'title'   => (string)($website['title'] ?? ''),
-				'slug'    => (string)($website['slug'] ?? ''),
-				'theme'   => (string)($website['theme'] ?? ''),
-				'logo'    => (string)($website['logo'] ?? ''),
-				'locales' => array_values((array)($website['locales'] ?? [])),
-				'locale'  => $this->locale(website: $website, requested: $locale),
+				'title'   => (string)($portal['title'] ?? ''),
+				'slug'    => (string)($portal['slug'] ?? ''),
+				'theme'   => (string)($portal['theme'] ?? ''),
+				'logo'    => (string)($portal['logo'] ?? ''),
+				'locales' => array_values((array)($portal['locales'] ?? [])),
+				'locale'  => $this->locale(portal: $portal, requested: $locale),
 				// The MODES are public — a visitor has to know how to sign in.
 				// Provider secrets are not here and never will be; they live in
 				// the credential broker.
@@ -116,27 +116,27 @@ class ContentController extends Controller {
 	/**
 	 * The site's menus.
 	 *
-	 * @param string|null $site   Explicit site slug.
+	 * @param string|null $portal Explicit portal slug.
 	 * @param string|null $locale Requested locale.
 	 *
 	 * @return JSONResponse The menus, or 404.
 	 *
-	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-all-content-must-be-scoped-to-a-website
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-all-content-must-be-scoped-to-a-portal
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 240, period: 60)]
-	public function menus(?string $site = null, ?string $locale = null): JSONResponse {
-		$website = $this->resolver->resolve(request: $this->request, siteSlug: $site);
-		if ($website === null) {
+	public function menus(?string $portal = null, ?string $locale = null): JSONResponse {
+		$portal = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
+		if ($portal === null) {
 			return $this->notFound();
 		}
 
 		return $this->publicJson(
 			payload: [
 				'menus' => $this->reader->menus(
-					website: (string)$website['slug'],
-					locale: $this->locale(website: $website, requested: $locale),
+					portal: (string)$portal['slug'],
+					locale: $this->locale(portal: $portal, requested: $locale),
 					audience: $this->audience()
 				),
 			]
@@ -147,27 +147,27 @@ class ContentController extends Controller {
 	/**
 	 * The site's published pages, without their bodies.
 	 *
-	 * @param string|null $site   Explicit site slug.
+	 * @param string|null $portal Explicit portal slug.
 	 * @param string|null $locale Requested locale.
 	 *
 	 * @return JSONResponse The page summaries, or 404.
 	 *
-	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-all-content-must-be-scoped-to-a-website
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-all-content-must-be-scoped-to-a-portal
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 240, period: 60)]
-	public function pages(?string $site = null, ?string $locale = null): JSONResponse {
-		$website = $this->resolver->resolve(request: $this->request, siteSlug: $site);
-		if ($website === null) {
+	public function pages(?string $portal = null, ?string $locale = null): JSONResponse {
+		$portal = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
+		if ($portal === null) {
 			return $this->notFound();
 		}
 
 		return $this->publicJson(
 			payload: [
 				'pages' => $this->reader->pages(
-					website: (string)$website['slug'],
-					locale: $this->locale(website: $website, requested: $locale),
+					portal: (string)$portal['slug'],
+					locale: $this->locale(portal: $portal, requested: $locale),
 					audience: $this->audience()
 				),
 			]
@@ -179,7 +179,7 @@ class ContentController extends Controller {
 	 * One published page by route.
 	 *
 	 * @param string|null $route  The in-site route, leading slash optional.
-	 * @param string|null $site   Explicit site slug.
+	 * @param string|null $portal Explicit portal slug.
 	 * @param string|null $locale Requested locale.
 	 *
 	 * @return JSONResponse The page, or 404.
@@ -189,17 +189,17 @@ class ContentController extends Controller {
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 240, period: 60)]
-	public function page(?string $route = null, ?string $site = null, ?string $locale = null): JSONResponse {
-		$website = $this->resolver->resolve(request: $this->request, siteSlug: $site);
-		if ($website === null) {
+	public function page(?string $route = null, ?string $portal = null, ?string $locale = null): JSONResponse {
+		$portal = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
+		if ($portal === null) {
 			return $this->notFound();
 		}
 
 		$normalised = '/'.ltrim((string)($route ?? ''), '/');
 		$page = $this->reader->page(
-			website: (string)$website['slug'],
+			portal: (string)$portal['slug'],
 			route: $normalised,
-			locale: $this->locale(website: $website, requested: $locale),
+			locale: $this->locale(portal: $portal, requested: $locale),
 			audience: $this->audience()
 		);
 
@@ -215,27 +215,27 @@ class ContentController extends Controller {
 	/**
 	 * The site's glossary.
 	 *
-	 * @param string|null $site   Explicit site slug.
+	 * @param string|null $portal Explicit portal slug.
 	 * @param string|null $locale Requested locale.
 	 *
 	 * @return JSONResponse The terms, or 404.
 	 *
-	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-all-content-must-be-scoped-to-a-website
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-all-content-must-be-scoped-to-a-portal
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 240, period: 60)]
-	public function glossary(?string $site = null, ?string $locale = null): JSONResponse {
-		$website = $this->resolver->resolve(request: $this->request, siteSlug: $site);
-		if ($website === null) {
+	public function glossary(?string $portal = null, ?string $locale = null): JSONResponse {
+		$portal = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
+		if ($portal === null) {
 			return $this->notFound();
 		}
 
 		return $this->publicJson(
 			payload: [
 				'terms' => $this->reader->glossary(
-					website: (string)$website['slug'],
-					locale: $this->locale(website: $website, requested: $locale),
+					portal: (string)$portal['slug'],
+					locale: $this->locale(portal: $portal, requested: $locale),
 					audience: $this->audience()
 				),
 			]
@@ -267,13 +267,13 @@ class ContentController extends Controller {
 	/**
 	 * Resolve the locale for this request against the site's own set.
 	 *
-	 * @param array       $website   The resolved website.
+	 * @param array       $portal   The resolved portal.
 	 * @param string|null $requested The requested locale.
 	 *
 	 * @return string The locale to serve.
 	 */
-	private function locale(array $website, ?string $requested): string {
-		$locales = array_values((array)($website['locales'] ?? []));
+	private function locale(array $portal, ?string $requested): string {
+		$locales = array_values((array)($portal['locales'] ?? []));
 		$default = (string)($locales[0] ?? 'nl');
 
 		if ($requested === null || $requested === '') {
