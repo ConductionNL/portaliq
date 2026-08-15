@@ -1,6 +1,6 @@
 # portaliq-cms Specification
 
-**Status**: in-progress
+**Status**: partially implemented — see "What is implemented" below
 **Scope**: portaliq
 **OpenSpec changes**:
 
@@ -19,6 +19,36 @@ run several branded sites.
 
 This document is the CANONICAL spec for the implemented subset. Requirements
 still being designed live in the change deltas listed above until they ship.
+
+## What is implemented
+
+Verified live on a disposable rig 2026-08-15 (`portaliq-p2-rig`, :8321), with
+24 e2e tests and 21 unit tests. Every requirement below carries its evidence.
+
+| Requirement | State |
+| --- | --- |
+| A request resolves to exactly one website, or none | implemented |
+| A custom domain is verified before it serves | **guard** implemented; the DNS TXT check that SETS the flag is not |
+| All content is scoped to a website | implemented |
+| A page body is a grid or markdown | implemented |
+| Unpublished content is indistinguishable from absent | implemented |
+| Reads are cached, keyed by audience | implemented, with event-driven invalidation |
+| Markdown does not execute at a public origin | implemented |
+| Only explicitly public widgets render | implemented — via a local allow-list until nc-vue's registry carries `public` |
+| The renderer does not depend on Nextcloud globals | implemented |
+| The content API is sufficient without the built-in renderer | implemented — proven by a Docusaurus build |
+
+**Not implemented, and specified elsewhere rather than left implied:**
+
+- Per-site theming renders nothing — the theme is a class with no tokens
+  behind it, so two differently-themed sites are visually identical
+  (`portal-theme-application`).
+- Per-website authentication is declared in the schema and enforced nowhere.
+  Every site currently behaves as `public` read-only, which happens to match
+  the specified fail-closed default. That is a coincidence, not an
+  implementation.
+- There is no editorial surface; content is created through the object API
+  (`portal-cms-admin-ui`, which BLOCKS opencatalogi's `cms-handover`).
 
 Related: ADR-086 (headless CMS), ADR-084 (the built-in renderer), ADR-022 /
 ADR-070 (OR-backed persistence), ADR-005 (fail-closed), ADR-082 (throttling).
