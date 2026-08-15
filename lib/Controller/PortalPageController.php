@@ -43,6 +43,8 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
+use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PortalThemeResolver;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -67,11 +69,18 @@ class PortalPageController extends Controller {
 	 *                                                     white-label presentation.
 	 * @param IURLGenerator $urlGenerator Builds the content API base handed to
 	 *                                    the site renderer.
+	 * @param PortalResolver $portalResolver Resolves the serving portal, so the
+	 *                                       shell knows whose theme to load.
+	 * @param PortalThemeResolver $themeResolver Maps that portal's theme
+	 *                                           reference to a real themiq
+	 *                                           token stylesheet.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PortalOrganisationConfigService $orgResolver,
 		private readonly IURLGenerator $urlGenerator,
+		private readonly PortalResolver $portalResolver,
+		private readonly PortalThemeResolver $themeResolver,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -180,13 +189,24 @@ class PortalPageController extends Controller {
 			Application::APP_ID,
 			'site',
 			[
+				// The ONLY things resolved server-side: which site, when the
+				// caller named one, and which token stylesheet to load.
+				// Host resolution — the normal path — needs nothing here.
 				'portalConfig' => [
-					// The ONLY thing resolved server-side: which site, when the
-					// caller named one. Host resolution — the normal path —
-					// needs nothing here at all.
 					'portal'  => (string)$this->request->getParam('portal', ''),
 					'apiBase' => $this->urlGenerator->linkToRoute('portaliq.content.site'),
 				],
+				// THEME TOKENS ARE THE ONE THING THAT CANNOT WAIT FOR THE API.
+				// Everything else this renderer shows is fetched after boot,
+				// and that is the point of the headless split. Colours are
+				// different in kind: resolving them client-side means the
+				// first paint is unthemed and the page visibly repaints into
+				// its brand a moment later. A consumer that is NOT this
+				// renderer gets the same information — `theme` is on
+				// `/api/content/site` — so this resolves no content the
+				// contract withholds; it only decides which stylesheet tag to
+				// emit.
+				'themeStylesheet' => $this->siteThemeStylesheet(),
 			],
 			TemplateResponse::RENDER_AS_PUBLIC
 		);
@@ -200,6 +220,40 @@ class PortalPageController extends Controller {
 
 		return $response;
 	}//end site()
+
+
+	/**
+	 * The token stylesheet the serving portal's theme resolves to, or ''.
+	 *
+	 * Returns the empty string for every failure — unknown host, no theme,
+	 * theme app absent, theme file missing. That is deliberate and it is the
+	 * same answer in each case: the page renders UNSTYLED rather than in
+	 * whichever brand happened to be first. A portal quietly wearing another
+	 * municipality's colours looks correct in every screenshot; an unstyled
+	 * one gets reported within the hour.
+	 *
+	 * @return string The stylesheet path relative to the theme app's css/, or ''.
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
+	 */
+	private function siteThemeStylesheet(): string {
+		try {
+			$portal = $this->portalResolver->resolve(
+				request: $this->request,
+				portalSlug: (string)$this->request->getParam('portal', '')
+			);
+		} catch (\Throwable) {
+			return '';
+		}
+
+		if ($portal === null) {
+			return '';
+		}
+
+		return (string)$this->themeResolver->stylesheetFor(
+			theme: (string)($portal['theme'] ?? '')
+		);
+	}//end siteThemeStylesheet()
 
 	/**
 	 * Resolve the visitor's locale from the `Accept-Language` header

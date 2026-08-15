@@ -16,12 +16,25 @@
 // all, `src/site/lib/contentApi.js` falls back to a `window` global; that
 // fallback is the only thing that differs between the two hosts.
 
+use OCA\Portaliq\Service\PortalThemeResolver;
 use OCP\Util;
 
 $appId = OCA\Portaliq\AppInfo\Application::APP_ID;
 
 \OC::$server->get(\OCP\IInitialStateService::class)
     ->provideInitialState($appId, 'portalConfig', $_['portalConfig'] ?? []);
+
+// The resolved portal's themiq tokens, emitted BEFORE the bundle so the first
+// paint is already in the tenant's brand rather than repainting into it.
+//
+// The controller has already checked that this file exists; an empty value
+// means the theme did not resolve, and the page renders UNSTYLED on purpose —
+// a portal silently wearing another municipality's colours is the failure
+// nobody screenshots (ADR-086 §6).
+$themeStylesheet = (string)($_['themeStylesheet'] ?? '');
+if ($themeStylesheet !== '') {
+    Util::addStyle(PortalThemeResolver::THEME_APP, $themeStylesheet);
+}
 
 Util::addScript($appId, $appId . '-site');
 ?>

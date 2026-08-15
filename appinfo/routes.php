@@ -39,6 +39,10 @@ return [
         ['name' => 'content#menus', 'url' => '/api/content/menus', 'verb' => 'GET'],
         ['name' => 'content#pages', 'url' => '/api/content/pages', 'verb' => 'GET'],
         ['name' => 'content#glossary', 'url' => '/api/content/glossary', 'verb' => 'GET'],
+        // The contribution bridge (ADR-046 + ADR-086 §1). Anonymous surfaces
+        // only; a visitor with a session reads their own aggregate through
+        // `/api/contributions`, which is subject-scoped and never cacheable.
+        ['name' => 'content#contributions', 'url' => '/api/content/contributions', 'verb' => 'GET'],
         ['name' => 'content#page', 'url' => '/api/content/page', 'verb' => 'GET'],
         [
             'name' => 'content#page',

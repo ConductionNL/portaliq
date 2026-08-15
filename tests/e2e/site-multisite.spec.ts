@@ -16,6 +16,7 @@ import { resolveBaseURL } from './base-url'
 
 const BASE = resolveBaseURL()
 const API = `${BASE}/index.php/apps/portaliq/api/content`
+const SITE = `${BASE}/index.php/apps/portaliq/site`
 
 /**
  * Whether this instance can be reached under an alternate Host header at all.
@@ -157,18 +158,17 @@ test.describe('site renderer — multi-site', () => {
 	test('S6b: the API reports a distinct theme REFERENCE per site', async ({
 		request,
 	}) => {
-		// SCOPE, stated because an earlier version of this test was described
-		// as covering per-site theming and did not: it asserts only that the
-		// API returns different theme STRINGS. Nothing here shows that the two
-		// sites render differently — and measured on 2026-08-15 they do not.
-		// Both compute `rgb(26,26,26)` for the heading, because the renderer
-		// sets a `<variant>-theme` class and no tokens define it (gap 2.1 in
-		// hydra/openspec/changes/portaliq-phase-two/gap-analysis.md).
+		// SCOPE: this asserts only that the API returns different theme
+		// STRINGS. It says nothing about what a visitor sees, and for a while
+		// that gap was the whole story — both portals computed
+		// `rgb(26,26,26)` because the renderer set a `<variant>-theme` class
+		// that no tokens defined.
 		//
-		// The rendered-difference assertion belongs to `portal-theme-application`
-		// and is deliberately NOT written here as a skipped test: a skip in the
-		// suite reads as "covered, temporarily off", which is exactly the wrong
-		// impression for a requirement that is not implemented at all.
+		// That is now fixed, and S20 below is the test that would have caught
+		// it: it asserts the COMPUTED colour. This one is kept because the
+		// reference and the rendering are separate claims — the API can be
+		// right while the stylesheet wiring is wrong, and knowing which of the
+		// two broke is worth one extra test.
 		const tilburg = await (
 			await request.get(`${API}/site?portal=open-tilburg`)
 		).json()
@@ -179,5 +179,49 @@ test.describe('site renderer — multi-site', () => {
 		expect(tilburg.theme).toBe('vng')
 		expect(venray.theme).toBe('venray')
 		expect(tilburg.theme).not.toBe(venray.theme)
+	})
+
+	// @e2e portaliq-cms::two-portals-compute-different-styles
+	test('S20: two portals compute DIFFERENT styles, not just different class names', async ({
+		page,
+	}) => {
+		// THE ASSERTION IS ON THE COMPUTED VALUE, AND THAT IS THE WHOLE TEST.
+		// Before the theme bridge existed, the renderer put a `<theme>-theme`
+		// class on its root and nothing ever defined tokens for it — so two
+		// differently-themed portals were pixel-identical while a test that
+		// asserted the CLASS STRING passed. That test read as covering
+		// theming for weeks. This one cannot pass that way.
+		const sample = async (portal: string) => {
+			await page.goto(`${SITE}?portal=${portal}`)
+			await expect(page.getByTestId('site-title')).toBeVisible()
+
+			return page.evaluate(() => {
+				const title = document.querySelector('[data-testid="site-title"]')
+				const root = document.querySelector('[data-testid="site-root"]')
+				return {
+					heading: getComputedStyle(title as Element).color,
+					text: getComputedStyle(root as Element).color,
+					stylesheets: Array.from(document.styleSheets)
+						.map((s) => s.href || '')
+						.filter((h) => h.includes('/tokens/'))
+						.map((h) => (h.split('/').pop() as string).split('?')[0]),
+				}
+			})
+		}
+
+		const tilburg = await sample('open-tilburg')
+		const venray = await sample('open-venray')
+
+		// Each portal loads its OWN token file, and only its own.
+		expect(tilburg.stylesheets).toContain('vng.css')
+		expect(tilburg.stylesheets).not.toContain('venray.css')
+		expect(venray.stylesheets).toContain('venray.css')
+		expect(venray.stylesheets).not.toContain('vng.css')
+
+		// And it makes a difference a visitor can see.
+		expect(
+			tilburg.heading,
+			'two portals with different themes must not compute the same heading colour',
+		).not.toBe(venray.heading)
 	})
 })

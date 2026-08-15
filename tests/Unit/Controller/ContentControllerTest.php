@@ -20,6 +20,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
+use OCA\Portaliq\Contribution\PortalContributionFilter;
+use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\ContentController;
 use OCA\Portaliq\Service\CmsReader;
 use OCA\Portaliq\Service\PortalResolver;
@@ -27,6 +29,7 @@ use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 
 /**
  * The public content API's boundary behaviour.
@@ -54,6 +57,14 @@ class ContentControllerTest extends TestCase {
 	 * @var CmsReader&MockObject
 	 */
 	private CmsReader $reader;
+
+	/**
+	 * Aggregates the leaf apps' contributions. Nullable so the tests that
+	 * predate the contribution bridge construct the controller unchanged.
+	 *
+	 * @var (PortalContributionRegistry&MockObject)|null
+	 */
+	private ?PortalContributionRegistry $registry = null;
 
 	/**
 	 * The incoming request.
@@ -99,7 +110,10 @@ class ContentControllerTest extends TestCase {
 			appName: 'portaliq',
 			request: $this->request,
 			resolver: $this->resolver,
-			reader: $this->reader
+			reader: $this->reader,
+			registry: ($this->registry ?? $this->createMock(PortalContributionRegistry::class)),
+			contribFilter: new PortalContributionFilter(),
+			logger: $this->createMock(LoggerInterface::class)
 		);
 	}//end controller()
 
@@ -353,6 +367,101 @@ class ContentControllerTest extends TestCase {
 		$this->controller()->glossary();
 		$this->controller()->pages();
 	}//end testListingsAreScopedToTheResolvedPortal()
+
+
+	/**
+	 * The contribution bridge asks for the ANONYMOUS aggregate, and scopes it
+	 * to the resolved portal — both halves asserted from one call.
+	 *
+	 * @return void
+	 */
+	public function testContributionsAreAnonymousAndScopedToThePortal(): void {
+		$this->resolver->method('resolve')->willReturn($this->portal());
+		$this->registry = $this->createMock(PortalContributionRegistry::class);
+		$this->registry->expects($this->once())
+			->method('aggregateAnonymous')
+			->willReturn(
+				[
+					'contributions' => [
+						['app' => 'procest', 'label' => 'Zaken'],
+						['app' => 'shillinq', 'portals' => ['open-venray']],
+					],
+				]
+			);
+
+		$data = $this->controller()->contributions()->getData();
+
+		$this->assertSame(
+			['procest'],
+			array_column($data['contributions'], 'app'),
+			'the untargeted contribution is kept; the one aimed at another portal is not'
+		);
+	}//end testContributionsAreAnonymousAndScopedToThePortal()
+
+
+	/**
+	 * A visitor's OWN aggregate must never come from this endpoint. It is
+	 * publicly cacheable, so a subject-scoped response here would be pooled
+	 * across visitors at the edge — where this installation's logs never look.
+	 *
+	 * Asserted by the collaborator called, not by inspecting the body: a
+	 * `aggregateFor()` that happened to return nothing today would make a
+	 * body-only assertion pass while the wrong call was being made.
+	 *
+	 * @return void
+	 */
+	public function testTheSubjectScopedAggregateIsNeverServedPublicly(): void {
+		$this->resolver->method('resolve')->willReturn($this->portal());
+		$this->registry = $this->createMock(PortalContributionRegistry::class);
+		$this->registry->expects($this->never())->method('aggregateFor');
+		$this->registry->method('aggregateAnonymous')->willReturn(['contributions' => []]);
+
+		$response = $this->controller()->contributions();
+
+		$this->assertStringContainsString(
+			'public',
+			(string)$response->getHeaders()['Cache-Control'],
+			'and the response really is the publicly cacheable kind, so the rule above matters'
+		);
+	}//end testTheSubjectScopedAggregateIsNeverServedPublicly()
+
+
+	/**
+	 * A provider that throws costs the visitor a section, not the portal.
+	 * ADR-046 reaches third-party code through a duck-typed call; treating
+	 * that as fatal would let any leaf app take down every portal's content
+	 * API.
+	 *
+	 * @return void
+	 */
+	public function testAThrowingRegistryDegradesToAnEmptyList(): void {
+		$this->resolver->method('resolve')->willReturn($this->portal());
+		$this->registry = $this->createMock(PortalContributionRegistry::class);
+		$this->registry->method('aggregateAnonymous')
+			->willThrowException(new \RuntimeException('provider exploded'));
+
+		$response = $this->controller()->contributions();
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['contributions' => []], $response->getData());
+	}//end testAThrowingRegistryDegradesToAnEmptyList()
+
+
+	/**
+	 * An unresolved portal answers with the SAME 404 as every other content
+	 * endpoint — the contribution bridge must not become the one route that
+	 * tells a caller whether a host is claimed.
+	 *
+	 * @return void
+	 */
+	public function testAnUnresolvedPortalGetsTheSharedNotFound(): void {
+		$this->resolver->method('resolve')->willReturn(null);
+
+		$response = $this->controller()->contributions();
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+		$this->assertSame(['error' => 'not_found'], $response->getData());
+	}//end testAnUnresolvedPortalGetsTheSharedNotFound()
 
 
 }//end class

@@ -6,6 +6,8 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\PortalPageController;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
+use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PortalThemeResolver;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\IRequest;
 use OCP\IURLGenerator;
@@ -88,7 +90,15 @@ class PortalPageControllerTest extends TestCase {
 		);
 		$request->method('getHeader')->willReturnMap([['Accept-Language', 'en-US,en;q=0.9,nl;q=0.8']]);
 
-		(new PortalPageController($request, $resolver, $this->createMock(IURLGenerator::class)))->index();
+		// index() does not consult the portal/theme resolvers — that is site()'s
+		// job — so they are inert mocks here rather than configured ones.
+		(new PortalPageController(
+			$request,
+			$resolver,
+			$this->createMock(IURLGenerator::class),
+			$this->createMock(PortalResolver::class),
+			$this->createMock(PortalThemeResolver::class)
+		))->index();
 
 		$this->assertSame('en-US', $received);
 
@@ -125,7 +135,22 @@ class PortalPageControllerTest extends TestCase {
 		$urlGenerator->method('linkToRoute')
 			->willReturn('/index.php/apps/portaliq/api/content/site');
 
-		return new PortalPageController($request, $resolver, $urlGenerator);
+		// The portal + theme resolvers decide which token stylesheet `site()`
+		// emits. Both are mocked to resolve NOTHING here, so these pre-existing
+		// assertions keep measuring what they always did: an unthemed shell.
+		// The themed path has its own tests in PortalThemeResolverTest.
+		$portalResolver = $this->createMock(PortalResolver::class);
+		$portalResolver->method('resolve')->willReturn(null);
+		$themeResolver = $this->createMock(PortalThemeResolver::class);
+		$themeResolver->method('stylesheetFor')->willReturn(null);
+
+		return new PortalPageController(
+			$request,
+			$resolver,
+			$urlGenerator,
+			$portalResolver,
+			$themeResolver
+		);
 	}//end controller()
 
 }//end class

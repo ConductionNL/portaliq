@@ -230,6 +230,59 @@ runtime global otherwise.
 - **THEN** the title, menu and page still render
 - @e2e `tests/e2e/site-security.spec.ts` (S11)
 
+### Requirement: A contribution MUST be scoped to the portal it targets
+
+A leaf app's contribution SHALL appear on a portal it targets and SHALL NOT
+appear on one it does not. A contribution that declares no target SHALL appear
+on every portal — the ADR-046 contract is unchanged, and a contribution is a
+capability descriptor rather than tenant data. A malformed target SHALL fail
+closed. The public endpoint SHALL serve only the ANONYMOUS aggregate.
+
+#### Scenario: A declared target includes and excludes in one comparison
+
+- **GIVEN** a contribution naming one portal
+- **THEN** that portal receives it and another does not
+- **AND** both are asserted from one input, because a filter that kept nothing
+  would satisfy the exclusion alone
+- @e2e exclude unit-tested — `tests/Unit/Contribution/PortalContributionFilterTest.php`; the rig has no multi-portal contribution fixture, and the failure mode is a cross-tenant surface that renders normally, so it is asserted at the seam and mutation-tested (both fail-closed branches observed breaking the suite when flipped)
+
+#### Scenario: An untargeted contribution still reaches every portal
+
+- **GIVEN** a provider written before portal targeting existed
+- **THEN** it appears unchanged on every portal
+- @e2e exclude unit-tested — `tests/Unit/Contribution/PortalContributionFilterTest.php::testAContributionWithNoTargetAppearsOnEveryPortal`
+
+#### Scenario: The subject-scoped aggregate is never served publicly
+
+- **GIVEN** the public contributions endpoint
+- **THEN** it consults only the anonymous aggregate, and its response is
+  publicly cacheable — a per-visitor aggregate in a shared cache slot is a
+  leak that happens at the edge
+- @e2e `tests/e2e/site-content.spec.ts` (S19)
+
+### Requirement: A portal's theme MUST change what a visitor sees
+
+The serving portal's `theme` SHALL resolve to a themiq token stylesheet that is
+loaded before the renderer boots. Two portals referencing different themes
+SHALL compute different styles. A theme that does not resolve SHALL render
+UNSTYLED rather than in another portal's brand.
+
+#### Scenario: Two portals compute different styles
+
+- **GIVEN** two portals referencing different themiq themes
+- **WHEN** each is rendered
+- **THEN** their COMPUTED heading colours differ — asserted on the computed
+  value, never on the theme class name, because a class with no tokens behind
+  it is exactly the state this requirement replaced
+- @e2e `tests/e2e/site-multisite.spec.ts` (S20)
+
+#### Scenario: An unresolvable theme renders unstyled, not misbranded
+
+- **GIVEN** a portal whose theme names no shipped stylesheet
+- **THEN** no token stylesheet is emitted and the page renders with its own
+  defaults
+- @e2e exclude unit-tested — `tests/Unit/Service/PortalThemeResolverTest.php`; a portal quietly wearing another municipality's colours renders perfectly and is invisible to a screenshot, so the refusal is asserted where the decision is made
+
 ### Requirement: The content API MUST be sufficient without the built-in renderer
 
 Every capability of the built-in renderer SHALL be reachable through the public

@@ -27,6 +27,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
+use OCA\Portaliq\Contribution\PortalContributionFilter;
+use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\CmsReader;
 use OCA\Portaliq\Service\PortalResolver;
 use OCP\AppFramework\Controller;
@@ -36,6 +38,7 @@ use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use Psr\Log\LoggerInterface;
 
 /**
  * Public, read-only content endpoints.
@@ -58,10 +61,13 @@ class ContentController extends Controller {
 	/**
 	 * Constructor.
 	 *
-	 * @param string          $appName  The app id.
-	 * @param IRequest        $request  The request.
-	 * @param PortalResolver $resolver Resolves the serving portal.
-	 * @param CmsReader       $reader   Reads portal-scoped content.
+	 * @param string                     $appName      The app id.
+	 * @param IRequest                   $request      The request.
+	 * @param PortalResolver             $resolver     Resolves the serving portal.
+	 * @param CmsReader                  $reader       Reads portal-scoped content.
+	 * @param PortalContributionRegistry $registry     Aggregates leaf apps' contributions.
+	 * @param PortalContributionFilter   $contribFilter Scopes that aggregate to one portal.
+	 * @param LoggerInterface            $logger       Records a provider failure the visitor never sees.
 	 *
 	 * @return void
 	 */
@@ -70,6 +76,9 @@ class ContentController extends Controller {
 		IRequest $request,
 		private readonly PortalResolver $resolver,
 		private readonly CmsReader $reader,
+		private readonly PortalContributionRegistry $registry,
+		private readonly PortalContributionFilter $contribFilter,
+		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -241,6 +250,64 @@ class ContentController extends Controller {
 			]
 		);
 	}//end glossary()
+
+
+	/**
+	 * The leaf apps' contributed surfaces for the resolved portal.
+	 *
+	 * THIS IS THE BRIDGE, AND IT IS DELIBERATELY ON THE PUBLIC CONTRACT.
+	 * The built-in renderer could have reached `PortalContributionRegistry`
+	 * directly — it runs inside Nextcloud and the service is right there. It
+	 * does not, because the moment it does, the renderer can show something a
+	 * Docusaurus build cannot, and "headless" becomes a claim rather than a
+	 * property (ADR-084, ADR-086 §1). Every consumer sees the same surfaces.
+	 *
+	 * ANONYMOUS ONLY, AND THAT IS NOT A LIMITATION OF THIS ENDPOINT — it is
+	 * the boundary. `aggregateAnonymous()` asks each provider only for what it
+	 * publishes to callers with no identity. A visitor with a session reads
+	 * their own aggregate through `/api/contributions`, which resolves a
+	 * subject from the bearer and scopes every collection to it. Serving a
+	 * subject-scoped aggregate from a PUBLICLY CACHEABLE endpoint is how one
+	 * visitor's inbox ends up in a CDN slot, so the two never meet.
+	 *
+	 * @param string|null $portal Explicit portal slug, for a consumer not using the host.
+	 *
+	 * @return JSONResponse `{contributions: []}`, or the shared 404.
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-contribution-must-be-scoped-to-the-portal-it-targets
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 240, period: 60)]
+	public function contributions(?string $portal = null): JSONResponse {
+		$portal = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
+		if ($portal === null) {
+			return $this->notFound();
+		}
+
+		// A provider is third-party code reached through a duck-typed call
+		// (ADR-046). One that throws must not take the portal's whole content
+		// API down with it — the registry already logs and skips per provider,
+		// and this is the outer belt for anything that escapes it.
+		try {
+			$aggregate = $this->registry->aggregateAnonymous();
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'Portaliq: anonymous contribution aggregation failed',
+				['reason' => $e->getMessage()]
+			);
+			$aggregate = ['contributions' => []];
+		}
+
+		return $this->publicJson(
+			payload: [
+				'contributions' => $this->contribFilter->forPortal(
+					contributions: (array)($aggregate['contributions'] ?? []),
+					portalSlug: (string)$portal['slug']
+				),
+			]
+		);
+	}//end contributions()
 
 
 	/**

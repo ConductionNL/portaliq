@@ -74,6 +74,37 @@
 					</template>
 				</dl>
 			</section>
+
+			<!--
+				Contributed surfaces (ADR-046). Rendered as an INDEX, not as
+				live data: each entry names a collection or an action a leaf
+				app publishes on this portal, and following it is what fetches
+				anything. That distinction is the whole safety story here —
+				this section is built from a publicly cacheable, anonymous
+				response, so it must never itself carry a visitor's rows.
+			-->
+			<section
+				v-if="contributions.length"
+				class="pq-site__contributions"
+				data-testid="site-contributions">
+				<h2>Diensten</h2>
+				<div
+					v-for="contribution in contributions"
+					:key="contribution.app"
+					class="pq-site__contribution"
+					:data-testid="`contribution-${contribution.app}`"
+					:data-app="contribution.app">
+					<h3>{{ contribution.label || contribution.app }}</h3>
+					<ul>
+						<li
+							v-for="entry in entriesOf(contribution)"
+							:key="entry.id || entry.label"
+							data-testid="contribution-entry">
+							{{ entry.label || entry.id }}
+						</li>
+					</ul>
+				</div>
+			</section>
 		</main>
 
 		<footer class="pq-site__footer" data-testid="site-footer">
@@ -86,7 +117,13 @@
 import MarkdownBlock from './components/MarkdownBlock.vue'
 import SiteMenu from './components/SiteMenu.vue'
 import WidgetGrid from './components/WidgetGrid.vue'
-import { fetchGlossary, fetchMenus, fetchPage, fetchSite } from './lib/contentApi.js'
+import {
+	fetchContributions,
+	fetchGlossary,
+	fetchMenus,
+	fetchPage,
+	fetchSite,
+} from './lib/contentApi.js'
 
 /**
  * The built-in site renderer.
@@ -114,6 +151,7 @@ export default {
 			site: {},
 			menus: [],
 			glossary: [],
+			contributions: [],
 			page: null,
 			route: '/',
 			loading: true,
@@ -217,7 +255,45 @@ export default {
 				this.glossary = glossary
 			} catch (error) {
 				this.error = error
+				return
 			}
+
+			// Contributions load SEPARATELY and never reject into the block
+			// above. They come from third-party apps reached through a
+			// duck-typed provider (ADR-046): a leaf app that is broken, half
+			// installed, or simply absent must cost the visitor a section, not
+			// the whole portal. The CMS content above is the portal; this is
+			// an addition to it.
+			try {
+				this.contributions = await fetchContributions(this.portalSlug)
+			} catch {
+				this.contributions = []
+			}
+		},
+
+		/**
+		 * The entries of one contribution, as an index of what it offers.
+		 *
+		 * Collections and actions are shown together on purpose. To a visitor
+		 * "my invoices" and "submit a declaration" are two things the portal
+		 * can do; the split between reading a collection and invoking an
+		 * action is an implementation detail of the contract, not a category
+		 * a citizen recognises.
+		 *
+		 * @param {object} contribution One contribution.
+		 * @return {Array} Its collections and actions.
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-contribution-must-be-scoped-to-the-portal-it-targets
+		 */
+		entriesOf(contribution) {
+			const collections = Array.isArray(contribution.collections)
+				? contribution.collections
+				: []
+			const actions = Array.isArray(contribution.actions)
+				? contribution.actions
+				: []
+
+			return [...collections, ...actions]
 		},
 
 		/**
@@ -268,11 +344,51 @@ export default {
 </script>
 
 <style scoped>
+/*
+ * THE THEME BRIDGE. Before this block the renderer read `--pq-*` variables
+ * that NOTHING EVER SET, so every portal fell through to the same hardcoded
+ * fallbacks and two differently-themed portals were pixel-identical. The
+ * themiq token file was already loading; it was simply never consumed.
+ *
+ * Each `--pq-*` is now a CHAIN, not a single lookup, because the 44 themiq
+ * themes do not share one vocabulary — `vng.css` and `venray.css` have
+ * literally no token name in common. A single `var(--nldesign-color-text)`
+ * would theme a third of the fleet and silently miss the rest. The chain ends
+ * in the original hardcoded value, so a portal with no theme, or a theme that
+ * defines none of these, renders exactly as it did before.
+ *
+ * Portaliq still defines NO tokens of its own (ADR-086 §6). It only decides
+ * which themiq token a given surface reads.
+ */
 .pq-site {
-	font-family: var(--pq-font-family, system-ui, sans-serif);
-	color: var(--pq-text-color, #1a1a1a);
+	--pq-font-family: var(
+		--nldesign-typography-sans-serif-font-family,
+		system-ui,
+		sans-serif
+	);
+	--pq-text-color: var(
+		--nldesign-color-text,
+		var(--nldesign-color-black, #1a1a1a)
+	);
+	--pq-heading-color: var(
+		--nldesign-color-primary,
+		var(--nldesign-color-text, #1a1a1a)
+	);
+	--pq-border-color: var(--nldesign-color-border, #d0d0d0);
+	--pq-muted-color: var(--nldesign-color-text-muted, #6b6b6b);
+	--pq-link-color: var(
+		--nldesign-color-link,
+		var(--nldesign-color-primary, #0b5cab)
+	);
+
+	font-family: var(--pq-font-family);
+	color: var(--pq-text-color);
 	background: var(--pq-bg-color, #ffffff);
 	min-height: 100vh;
+}
+
+.pq-site :any-link {
+	color: var(--pq-link-color);
 }
 
 .pq-site__skip {

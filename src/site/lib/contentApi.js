@@ -135,3 +135,25 @@ export async function fetchGlossary(portal) {
  * @return {Promise<object>} One published page by route.
  */
 export const fetchPage = (route, portal) => get('/page', { route, portal })
+
+/**
+ * The leaf apps' contributed surfaces for this portal (ADR-046).
+ *
+ * Reached over the SAME public contract as everything else here. The renderer
+ * runs inside Nextcloud and could call `PortalContributionRegistry` directly;
+ * it does not, because a surface only this renderer can show is a surface a
+ * Docusaurus build cannot, and that is the end of "headless".
+ *
+ * Anonymous only, by construction — the endpoint is publicly cacheable, and a
+ * subject-scoped aggregate served from a cacheable slot is how one visitor's
+ * inbox reaches another. A signed-in visitor's own surfaces come from
+ * `/api/contributions`, which is a different endpoint with a different cache
+ * policy.
+ *
+ * @param {string} [portal] Explicit portal slug.
+ * @return {Promise<Array>} The contributions, or [] when none apply.
+ */
+export async function fetchContributions(portal) {
+	const body = await get('/contributions', { portal })
+	return body.contributions || []
+}

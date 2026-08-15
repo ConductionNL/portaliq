@@ -169,4 +169,41 @@ test.describe('site renderer — content', () => {
 		// not a warning: a budget nobody fails is a budget nobody keeps.
 		expect(total).toBeLessThan(400 * 1024)
 	})
+
+	// @e2e portaliq-cms::the-subject-scoped-aggregate-is-never-served-publicly
+	test('S19: contributed surfaces reach the portal over the public contract', async ({
+		page,
+		request,
+	}) => {
+		// The API half. `anonymous: true` on every entry is the load-bearing
+		// assertion: this endpoint is publicly cacheable, so anything
+		// subject-scoped appearing here would be pooled across visitors at a
+		// CDN — a leak that happens at the edge, where our logs never look.
+		const response = await request.get(
+			`${API}/contributions?portal=open-tilburg`,
+		)
+		expect(response.status()).toBe(200)
+		expect(
+			response.headers()['cache-control'],
+			'the response must really be the publicly cacheable kind',
+		).toContain('public')
+
+		const body = await response.json()
+		expect(
+			Array.isArray(body.contributions),
+			'the bridge must answer with a list, not an object or an error',
+		).toBe(true)
+
+		// The renderer half. A section that the API feeds but the page never
+		// shows is a bridge that is only half built.
+		await page.goto(SITE)
+		await expect(page.getByTestId('site-title')).toBeVisible()
+
+		if (body.contributions.length > 0) {
+			await expect(
+				page.getByTestId('site-contributions'),
+				'the API returned contributions, so the page must render them',
+			).toBeVisible()
+		}
+	})
 })
