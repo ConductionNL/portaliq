@@ -17,6 +17,7 @@ import AccountBoxOutline from 'vue-material-design-icons/AccountBoxOutline.vue'
 import AccountKey from 'vue-material-design-icons/AccountKey.vue'
 import AlertCircleOutline from 'vue-material-design-icons/AlertCircleOutline.vue'
 import BellOutline from 'vue-material-design-icons/BellOutline.vue'
+import BookAlphabet from 'vue-material-design-icons/BookAlphabet.vue'
 import BookOpenVariantOutline from 'vue-material-design-icons/BookOpenVariantOutline.vue'
 import Email from 'vue-material-design-icons/Email.vue'
 import EmailOutline from 'vue-material-design-icons/EmailOutline.vue'
@@ -27,11 +28,13 @@ import FileDocumentOutline from 'vue-material-design-icons/FileDocumentOutline.v
 import FolderOutline from 'vue-material-design-icons/FolderOutline.vue'
 import History from 'vue-material-design-icons/History.vue'
 import MapMarkerPath from 'vue-material-design-icons/MapMarkerPath.vue'
+import Menu from 'vue-material-design-icons/Menu.vue'
 import MessageTextOutline from 'vue-material-design-icons/MessageTextOutline.vue'
 import ShieldCheckOutline from 'vue-material-design-icons/ShieldCheckOutline.vue'
 import ShieldLock from 'vue-material-design-icons/ShieldLock.vue'
 import Ticket from 'vue-material-design-icons/Ticket.vue'
 import ViewDashboardOutline from 'vue-material-design-icons/ViewDashboardOutline.vue'
+import Web from 'vue-material-design-icons/Web.vue'
 import WebBox from 'vue-material-design-icons/WebBox.vue'
 
 export default {
@@ -40,6 +43,7 @@ export default {
 	AccountKey,
 	AlertCircleOutline,
 	BellOutline,
+	BookAlphabet,
 	BookOpenVariantOutline,
 	Email,
 	EmailOutline,
@@ -50,10 +54,12 @@ export default {
 	FolderOutline,
 	History,
 	MapMarkerPath,
+	Menu,
 	MessageTextOutline,
 	ShieldCheckOutline,
 	ShieldLock,
 	Ticket,
 	ViewDashboardOutline,
+	Web,
 	WebBox,
 }

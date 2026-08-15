@@ -68,6 +68,7 @@ use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Http\Response;
 use OCP\IRequest;
+use Psr\Log\LoggerInterface;
 
 /**
  * Serves the authenticated subject's aggregated portal contributions.
@@ -124,6 +125,9 @@ class ContributionController extends Controller implements PortalProtected {
 	 *                                                          (portal-notifications-dispatch) on a
 	 *                                                          successful transition; fail-safe,
 	 *                                                          never affects the response.
+	 * @param LoggerInterface $logger Records the CAUSE of a translated storage
+	 *                                failure. The cause is logged and never
+	 *                                returned — see writeScoped().
 	 */
 	public function __construct(
 		IRequest $request,
@@ -140,9 +144,77 @@ class ContributionController extends Controller implements PortalProtected {
 		private readonly AuditTrailService $auditor,
 		private readonly SubmissionReceiptService $receiptService,
 		private readonly NotificationDispatchService $notificationDispatch,
+		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
+
+	/**
+	 * Perform an ownership-scoped write and translate every way it can fail.
+	 *
+	 * The callers are `#[PublicPage]`. An untranslated throw from the storage
+	 * layer becomes a framework 500 carrying a stack trace, and that response
+	 * reaches an ANONYMOUS caller — so the throw is caught here rather than
+	 * left to the dispatcher.
+	 *
+	 * \Throwable is deliberate, not lazy. It is a superset of the storage
+	 * exceptions; a catch naming only the known ones would leave every
+	 * unlisted failure to become that same 500. The CAUSE is logged and never
+	 * returned: a storage message can name a register, a schema or an id
+	 * belonging to another tenant, which is precisely what the 404 below
+	 * exists to withhold.
+	 *
+	 * Returning `array|JSONResponse` keeps both failure paths — the refusal
+	 * and the fault — on one branch at each call site. That matters beyond
+	 * tidiness: inlining the try/catch pushed `update()` past three phpmd
+	 * thresholds at once (cyclomatic 10, NPath 288, length 100), and a guard
+	 * that cannot be added without tripping the complexity budget is a guard
+	 * that gets left out.
+	 *
+	 * @param string $register The register to write to.
+	 * @param string $schema The schema to write to.
+	 * @param string $scopeField The field carrying the ownership scope.
+	 * @param string $subjectRef The resolved ownership scope value.
+	 * @param string $organisation The subject's organisation.
+	 * @param string $id The object id (never trusted; ownership re-checked in the writer).
+	 * @param array<string, mixed> $data The literal fields to write.
+	 * @param string $context Short label naming the caller, for the log line only.
+	 *
+	 * @return array<string, mixed>|JSONResponse The updated object, or the response to return.
+	 */
+	private function writeScoped(
+		string $register,
+		string $schema,
+		string $scopeField,
+		string $subjectRef,
+		string $organisation,
+		string $id,
+		array $data,
+		string $context,
+	): array|JSONResponse {
+		try {
+			$updated = $this->writer->updateObject(
+				register: $register,
+				schema: $schema,
+				scopeField: $scopeField,
+				subjectRef: $subjectRef,
+				organisation: $organisation,
+				id: $id,
+				data: $data
+			);
+		} catch (\Throwable $e) {
+			$this->logger->error($context . ' failed: ' . $e->getMessage(), ['exception' => $e]);
+			return new JSONResponse(['error' => 'server_error'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+
+		// Null = ownership re-verification failed OR the row does not exist —
+		// a single 404, indistinguishable, and nothing was written.
+		if ($updated === null) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		return $updated;
+	}//end writeScoped()
 
 	/**
 	 * Resolve the subject from the bearer (fail-closed). PortalAuthMiddleware
@@ -287,20 +359,18 @@ class ContributionController extends Controller implements PortalProtected {
 		// The LITERAL payload — never the request body. Whatever extra fields a
 		// client sends are simply never read, so `read` is the only field this
 		// endpoint can ever change.
-		$updated = $this->writer->updateObject(
+		$updated = $this->writeScoped(
 			register: $register,
 			schema: $schema,
 			scopeField: (string)($collection['scopeField'] ?? 'subjectRef'),
 			subjectRef: $scopeValue,
 			organisation: (string)($subject['organisation'] ?? ''),
 			id: $id,
-			data: ['read' => true]
+			data: ['read' => true],
+			context: 'markRead'
 		);
-
-		// Null = ownership re-verification failed OR the row does not exist —
-		// a single 404, indistinguishable, and nothing was written.
-		if ($updated === null) {
-			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		if ($updated instanceof JSONResponse) {
+			return $updated;
 		}
 
 		return new JSONResponse(['object' => $updated]);
@@ -533,11 +603,13 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse The attached file metadata, or 401 / 403 / 404 / 400 / 502.
 	 *
+	 * The rate limit below is tighter than the read paths: an upload costs
+	 * storage, not just a query.
+	 *
 	 * @spec openspec/specs/portal-contribution-contract/spec.md#scoped-file-attachment-on-a-subject-owned-object
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
-	// Tighter than the read paths: an upload costs storage, not just a query.
 	#[AnonRateLimit(limit: 20, period: 60)]
 	public function uploadFile(string $register, string $schema, string $id): JSONResponse {
 		$subject = $this->subject();
@@ -1064,20 +1136,18 @@ class ContributionController extends Controller implements PortalProtected {
 			}
 		}
 
-		$updated = $this->writer->updateObject(
+		$updated = $this->writeScoped(
 			register: $register,
 			schema: $schema,
 			scopeField: (string)($action['scopeField'] ?? 'subjectRef'),
 			subjectRef: $scopeValue,
 			organisation: (string)($subject['organisation'] ?? ''),
 			id: $id,
-			data: $data
+			data: $data,
+			context: 'update'
 		);
-
-		// Null = ownership re-verification failed OR the row does not exist —
-		// a single 404, indistinguishable, and nothing was written.
-		if ($updated === null) {
-			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		if ($updated instanceof JSONResponse) {
+			return $updated;
 		}
 
 		$this->auditor->record(

@@ -71,6 +71,15 @@ class HealthController extends Controller {
 	/**
 	 * Health check JSON. Public endpoint.
 	 *
+	 * The rate limit is deliberately generous: monitoring polls this on a
+	 * short interval, and a ceiling that trips on a normal probe cadence turns
+	 * the health check into the outage it was meant to detect.
+	 *
+	 * (Folded into this docblock rather than left as a `//` comment above the
+	 * attribute — phpcs reads the last comment before a declaration as its
+	 * function comment, so a `//` there is an ERROR, and moving it above the
+	 * docblock does not help either.)
+	 *
 	 * @PublicPage
 	 * @NoCSRFRequired
 	 *
@@ -78,9 +87,6 @@ class HealthController extends Controller {
 	 *
 	 * @spec openspec/specs/observability/spec.md#REQ-OBS-002
 	 */
-	// Generous: monitoring polls this on a short interval, and a ceiling that
-	// trips on a normal probe cadence turns the health check into the outage it
-	// was meant to detect.
 	#[AnonRateLimit(limit: 240, period: 60)]
 	public function index(): JSONResponse {
 		try {

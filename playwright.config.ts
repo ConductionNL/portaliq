@@ -93,7 +93,13 @@ export default defineConfig({
 		// PR pipelines don't reshoot screenshots on every push.
 		{
 			name: 'chromium',
-			testIgnore: ['**/docs-screenshots.spec.ts'],
+			// `tests/e2e/visual/` is excluded for the same reason as the docs
+			// capture spec: those specs write review artifacts against a live
+			// instance and carry no assertion a PR should gate on. The one
+			// assertion that IS worth gating — the public first-load budget —
+			// lives in site-content.spec.ts (S18) instead, so excluding these
+			// does not quietly drop it.
+			testIgnore: ['**/docs-screenshots.spec.ts', '**/visual/**'],
 			use: { ...devices['Desktop Chrome'] },
 		},
 		// Documentation capture project (ADR-030 / journeydoc). Opt-in:

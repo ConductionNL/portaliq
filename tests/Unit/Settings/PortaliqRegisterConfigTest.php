@@ -25,6 +25,32 @@ class PortaliqRegisterConfigTest extends TestCase {
 	 */
 	private static array $register = [];
 
+	/**
+	 * Assert a schema is NOT readable by an anonymous visitor.
+	 *
+	 * Reads `authorization.read`, which is the only thing that decides this.
+	 * OpenRegister has a special `public` group; its presence in a read rule
+	 * is what grants anonymous access, and its absence is what withholds it.
+	 *
+	 * @param string $name The schema name.
+	 *
+	 * @return void
+	 */
+	private function assertNeverPublic(string $name): void {
+		$schema = self::$register['components']['schemas'][$name];
+		$read = $schema['authorization']['read'] ?? [];
+
+		$this->assertNotEmpty($read, $name . ' must declare its read authorization');
+
+		$groups = array_map(
+			static fn ($rule) => is_array($rule) ? ($rule['group'] ?? null) : $rule,
+			$read
+		);
+
+		$this->assertNotContains('public', $groups, $name . ' must never be anonymously readable');
+	}//end assertNeverPublic()
+
+
 	public static function setUpBeforeClass(): void {
 		$json = (string)file_get_contents(__DIR__ . '/../../../lib/Settings/portaliq_register.json');
 		self::$register = (array)json_decode($json, true);
@@ -173,8 +199,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(self::NIL_UUID, $claims['example']['pipelinq']['linkedContactId']);
 
 		// The claim map lives on a never-public schema (Risk 3 in proposal.md).
-		$this->assertFalse($account['x-openregister']['publicRead']);
-		$this->assertFalse($account['x-openregister']['publicWrite']);
+		$this->assertNeverPublic('portalAccount');
 
 	}//end testPortalAccountClaimsPropertyIsServerManagedShape()
 
@@ -199,8 +224,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertArrayHasKey('portalNotification', $schemas, 'portalNotification schema must exist');
 
 		$notification = $schemas['portalNotification'];
-		$this->assertFalse($notification['x-openregister']['publicRead']);
-		$this->assertFalse($notification['x-openregister']['publicWrite']);
+		$this->assertNeverPublic('portalNotification');
 		$this->assertSame(
 			['accountRef', 'ruleKey', 'channel', 'status', 'attempts', 'lastAttemptAt'],
 			$notification['required']
@@ -229,8 +253,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertArrayHasKey('portalOidcState', $schemas, 'portalOidcState schema must exist');
 
 		$state = $schemas['portalOidcState'];
-		$this->assertFalse($state['x-openregister']['publicRead']);
-		$this->assertFalse($state['x-openregister']['publicWrite']);
+		$this->assertNeverPublic('portalOidcState');
 		$this->assertSame(
 			['state', 'nonce', 'codeVerifier', 'org', 'provider', 'expiresAt'],
 			$state['required']
@@ -274,5 +297,126 @@ class PortaliqRegisterConfigTest extends TestCase {
 		}
 
 	}//end testSeedAccountsUsePlaceholdersAndProveBothClaimStates()
+
+	/**
+	 * The public surface, pinned BY NAME.
+	 *
+	 * This is the list that decides what an anonymous visitor can read once
+	 * `portal-public-search` ships, so it is asserted per schema rather than
+	 * by count — a count passes while the wrong three are public, and the
+	 * wrong ones here are sessions and submissions.
+	 *
+	 * ⚠️ `x-openregister.publicRead` / `publicWrite` USED TO SIT ON THESE
+	 * SCHEMAS AND WERE NEVER A THING. Not an unenforced flag — not part of
+	 * OpenRegister's schema contract at all: zero consumers in its lib, its
+	 * JS, its migrations, or as a property on the Schema entity. They came in
+	 * with the app scaffold (`nextcloud-app-template`, which ships them and no
+	 * `authorization` block) and were removed here. Public access is granted
+	 * ONLY by OR's special `public` group in a read rule.
+	 *
+	 * @return void
+	 */
+	public function testExactlyThreeSchemasAreReadableByAnonymousVisitors(): void {
+		$schemas = self::$register['components']['schemas'];
+
+		$public = [];
+		foreach ($schemas as $name => $schema) {
+			foreach (($schema['authorization']['read'] ?? []) as $rule) {
+				$group = is_array($rule) ? ($rule['group'] ?? null) : $rule;
+				if ($group === 'public') {
+					$public[] = $name;
+				}
+			}
+		}
+
+		sort($public);
+		$this->assertSame(
+			['glossaryTerm', 'menu', 'page'],
+			$public,
+			'the anonymous-readable set changed — this is the portal public surface'
+		);
+	}//end testExactlyThreeSchemasAreReadableByAnonymousVisitors()
+
+
+	/**
+	 * Every schema declares its authorization; none relies on the default.
+	 *
+	 * OpenRegister's absent-authorization default is fail-OPEN today
+	 * (`rbac-default-authenticated` changes that). Until it does, a schema
+	 * that declares nothing is readable — so "we did not say" must not be a
+	 * state any portaliq schema is in, whichever way the default lands.
+	 *
+	 * @return void
+	 */
+	public function testNoSchemaFallsThroughToTheRbacDefault(): void {
+		$unmarked = [];
+		foreach (self::$register['components']['schemas'] as $name => $schema) {
+			if (empty($schema['authorization']['read'] ?? []) === true) {
+				$unmarked[] = $name;
+			}
+		}
+
+		$this->assertSame([], $unmarked, 'these schemas would inherit whatever the default happens to be');
+	}//end testNoSchemaFallsThroughToTheRbacDefault()
+
+
+	/**
+	 * The portal record is NOT anonymously readable, and that is deliberate.
+	 *
+	 * `portal` carries `domains[].verificationToken` — the DNS proof-of-control
+	 * nonce — and `authentication.oidc` provider configuration. A blanket
+	 * public read would hand any anonymous caller another tenant's
+	 * verification token, which is the whole of what stops a tenant claiming a
+	 * domain it does not own.
+	 *
+	 * The portal's PUBLIC face is a curated projection served by the content
+	 * API (title, slug, theme, logo, locales, authentication.modes) — chosen
+	 * fields, not the row.
+	 *
+	 * @return void
+	 */
+	public function testThePortalRecordIsNotAnonymouslyReadable(): void {
+		$portal = self::$register['components']['schemas']['portal'];
+
+		$groups = array_map(
+			static fn ($rule) => is_array($rule) ? ($rule['group'] ?? null) : $rule,
+			$portal['authorization']['read']
+		);
+
+		$this->assertNotContains('public', $groups);
+		$this->assertContains('authenticated', $groups);
+
+		// The fields that make this decision non-negotiable. If either is ever
+		// removed from the schema, revisit the rule rather than the test.
+		$this->assertArrayHasKey('verificationToken', $portal['properties']['domains']['items']['properties']);
+		$this->assertArrayHasKey('oidc', $portal['properties']['authentication']['properties']);
+	}//end testThePortalRecordIsNotAnonymouslyReadable()
+
+
+	/**
+	 * A published page is anonymously readable; a draft is not.
+	 *
+	 * Expressed as a MATCH inside the rule rather than left to the reader,
+	 * mirroring how opencatalogi gates `publication` on `publicationDate`. RBAC
+	 * then answers both questions at once — may this caller read it, and is it
+	 * ready to be seen — instead of relying on every call site to remember the
+	 * second.
+	 *
+	 * @return void
+	 */
+	public function testPageIsPublicOnlyWhilePublished(): void {
+		$read = self::$register['components']['schemas']['page']['authorization']['read'];
+
+		$publicRule = null;
+		foreach ($read as $rule) {
+			if (is_array($rule) === true && ($rule['group'] ?? null) === 'public') {
+				$publicRule = $rule;
+			}
+		}
+
+		$this->assertNotNull($publicRule, 'page must carry a public read rule');
+		$this->assertSame(['status' => 'published'], $publicRule['match'] ?? null);
+		$this->assertContains('authenticated', $read, 'an editor must still read drafts');
+	}//end testPageIsPublicOnlyWhilePublished()
 
 }//end class

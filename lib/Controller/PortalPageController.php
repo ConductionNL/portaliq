@@ -43,6 +43,8 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
+use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PortalThemeResolver;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -51,6 +53,7 @@ use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\ContentSecurityPolicy;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\IRequest;
+use OCP\IURLGenerator;
 
 /**
  * Serves the public Portaliq SPA shell.
@@ -64,10 +67,20 @@ class PortalPageController extends Controller {
 	 * @param IRequest $request The request
 	 * @param PortalOrganisationConfigService $orgResolver Resolves the tenant's
 	 *                                                     white-label presentation.
+	 * @param IURLGenerator $urlGenerator Builds the content API base handed to
+	 *                                    the site renderer.
+	 * @param PortalResolver $portalResolver Resolves the serving portal, so the
+	 *                                       shell knows whose theme to load.
+	 * @param PortalThemeResolver $themeResolver Maps that portal's theme
+	 *                                           reference to a real themiq
+	 *                                           token stylesheet.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PortalOrganisationConfigService $orgResolver,
+		private readonly IURLGenerator $urlGenerator,
+		private readonly PortalResolver $portalResolver,
+		private readonly PortalThemeResolver $themeResolver,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -84,6 +97,10 @@ class PortalPageController extends Controller {
 	 * renders through this same method so every portal URL carries the
 	 * resolved config.
 	 *
+	 * This is the one genuinely public HTML page in the fleet (ADR-081). The
+	 * rate-limit ceiling below is generous on purpose: a citizen reloading a
+	 * form must never be the thing that trips it.
+	 *
 	 * @return TemplateResponse
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T08
@@ -94,9 +111,6 @@ class PortalPageController extends Controller {
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[NoAdminRequired]
-	// The portal shell — the one genuinely public HTML page in the fleet
-	// (ADR-081). A generous ceiling: a citizen reloading a form must never be
-	// the thing that trips it.
 	#[AnonRateLimit(limit: 120, period: 60)]
 	public function index(): TemplateResponse {
 		$orgSlug = (string)$this->request->getParam('org', '');
@@ -148,6 +162,98 @@ class PortalPageController extends Controller {
 	public function catchAll(string $path = ''): TemplateResponse {
 		return $this->index();
 	}//end catchAll()
+
+	/**
+	 * The built-in SITE renderer shell (ADR-084).
+	 *
+	 * Deliberately thin. Unlike `index()`, this template resolves nothing
+	 * server-side beyond an explicit site slug: title, theme, menus, pages and
+	 * glossary all come from the PUBLIC content API at runtime, exactly as they
+	 * do for a Docusaurus build. The moment this method starts resolving
+	 * content, the built-in renderer has a privileged path no other consumer
+	 * can use, and the CMS stops being headless (ADR-086 §1).
+	 *
+	 * Served alongside `/portal` while parity is measured — a comparison
+	 * against a portal that has already been deleted is not a comparison.
+	 *
+	 * @return TemplateResponse The site shell.
+	 *
+	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[NoAdminRequired]
+	#[AnonRateLimit(limit: 120, period: 60)]
+	public function site(): TemplateResponse {
+		$response = new TemplateResponse(
+			Application::APP_ID,
+			'site',
+			[
+				// The ONLY things resolved server-side: which site, when the
+				// caller named one, and which token stylesheet to load.
+				// Host resolution — the normal path — needs nothing here.
+				'portalConfig' => [
+					'portal'  => (string)$this->request->getParam('portal', ''),
+					'apiBase' => $this->urlGenerator->linkToRoute('portaliq.content.site'),
+				],
+				// THEME TOKENS ARE THE ONE THING THAT CANNOT WAIT FOR THE API.
+				// Everything else this renderer shows is fetched after boot,
+				// and that is the point of the headless split. Colours are
+				// different in kind: resolving them client-side means the
+				// first paint is unthemed and the page visibly repaints into
+				// its brand a moment later. A consumer that is NOT this
+				// renderer gets the same information — `theme` is on
+				// `/api/content/site` — so this resolves no content the
+				// contract withholds; it only decides which stylesheet tag to
+				// emit.
+				'themeStylesheet' => $this->siteThemeStylesheet(),
+			],
+			TemplateResponse::RENDER_AS_PUBLIC
+		);
+
+		// Deny framing unless the resolved site says otherwise. Same posture
+		// as index(): clear the `'self'` default first, or a site with no
+		// configured embedders still allows same-origin framing.
+		$csp = new ContentSecurityPolicy();
+		$csp->disallowFrameAncestorDomain('\'self\'');
+		$response->setContentSecurityPolicy($csp);
+
+		return $response;
+	}//end site()
+
+
+	/**
+	 * The token stylesheet the serving portal's theme resolves to, or ''.
+	 *
+	 * Returns the empty string for every failure — unknown host, no theme,
+	 * theme app absent, theme file missing. That is deliberate and it is the
+	 * same answer in each case: the page renders UNSTYLED rather than in
+	 * whichever brand happened to be first. A portal quietly wearing another
+	 * municipality's colours looks correct in every screenshot; an unstyled
+	 * one gets reported within the hour.
+	 *
+	 * @return string The stylesheet path relative to the theme app's css/, or ''.
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
+	 */
+	private function siteThemeStylesheet(): string {
+		try {
+			$portal = $this->portalResolver->resolve(
+				request: $this->request,
+				portalSlug: (string)$this->request->getParam('portal', '')
+			);
+		} catch (\Throwable) {
+			return '';
+		}
+
+		if ($portal === null) {
+			return '';
+		}
+
+		return (string)$this->themeResolver->stylesheetFor(
+			theme: (string)($portal['theme'] ?? '')
+		);
+	}//end siteThemeStylesheet()
 
 	/**
 	 * Resolve the visitor's locale from the `Accept-Language` header
