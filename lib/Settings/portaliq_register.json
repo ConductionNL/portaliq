@@ -338,10 +338,6 @@
                     "subjectRef",
                     "organisation"
                 ],
-                "x-openregister": {
-                    "publicRead": false,
-                    "publicWrite": false
-                },
                 "properties": {
                     "audience": {
                         "title": "Audience",
@@ -445,10 +441,6 @@
                     "jti",
                     "expiresAt"
                 ],
-                "x-openregister": {
-                    "publicRead": false,
-                    "publicWrite": false
-                },
                 "properties": {
                     "accountRef": {
                         "title": "Account reference",
@@ -530,10 +522,6 @@
                     "subjectRef",
                     "title"
                 ],
-                "x-openregister": {
-                    "publicRead": false,
-                    "publicWrite": false
-                },
                 "properties": {
                     "subjectRef": {
                         "title": "Subject reference",
@@ -578,10 +566,6 @@
                     "subjectRef",
                     "subject"
                 ],
-                "x-openregister": {
-                    "publicRead": false,
-                    "publicWrite": false
-                },
                 "properties": {
                     "subjectRef": {
                         "title": "Subject reference",
@@ -673,10 +657,6 @@
                     "submittedAt",
                     "deliveryStatus"
                 ],
-                "x-openregister": {
-                    "publicRead": false,
-                    "publicWrite": false
-                },
                 "properties": {
                     "subjectRef": {
                         "title": "Subject reference",
@@ -754,10 +734,6 @@
                     "timestamp"
                 ],
                 "appendOnly": true,
-                "x-openregister": {
-                    "publicRead": false,
-                    "publicWrite": false
-                },
                 "properties": {
                     "jti": {
                         "title": "Token id (jti)",
@@ -844,10 +820,6 @@
                     "attempts",
                     "lastAttemptAt"
                 ],
-                "x-openregister": {
-                    "publicRead": false,
-                    "publicWrite": false
-                },
                 "properties": {
                     "accountRef": {
                         "title": "Account reference",
@@ -926,10 +898,6 @@
                     "provider",
                     "expiresAt"
                 ],
-                "x-openregister": {
-                    "publicRead": false,
-                    "publicWrite": false
-                },
                 "properties": {
                     "state": {
                         "title": "State",
@@ -1004,10 +972,6 @@
                     "audience",
                     "status"
                 ],
-                "x-openregister": {
-                    "publicRead": false,
-                    "publicWrite": false
-                },
                 "properties": {
                     "label": {
                         "title": "Label",
@@ -1417,10 +1381,6 @@
                     "slug",
                     "status"
                 ],
-                "x-openregister": {
-                    "publicRead": true,
-                    "publicWrite": false
-                },
                 "properties": {
                     "title": {
                         "title": "Title",
@@ -1583,10 +1543,6 @@
                     "title",
                     "portal"
                 ],
-                "x-openregister": {
-                    "publicRead": true,
-                    "publicWrite": false
-                },
                 "properties": {
                     "title": {
                         "title": "Title",
@@ -1751,10 +1707,6 @@
                     "portal",
                     "status"
                 ],
-                "x-openregister": {
-                    "publicRead": true,
-                    "publicWrite": false
-                },
                 "properties": {
                     "title": {
                         "title": "Title",
@@ -1906,10 +1858,6 @@
                     "definition",
                     "portal"
                 ],
-                "x-openregister": {
-                    "publicRead": true,
-                    "publicWrite": false
-                },
                 "properties": {
                     "term": {
                         "title": "Term",

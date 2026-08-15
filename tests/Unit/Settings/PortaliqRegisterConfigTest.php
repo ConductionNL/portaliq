@@ -25,6 +25,32 @@ class PortaliqRegisterConfigTest extends TestCase {
 	 */
 	private static array $register = [];
 
+	/**
+	 * Assert a schema is NOT readable by an anonymous visitor.
+	 *
+	 * Reads `authorization.read`, which is the only thing that decides this.
+	 * OpenRegister has a special `public` group; its presence in a read rule
+	 * is what grants anonymous access, and its absence is what withholds it.
+	 *
+	 * @param string $name The schema name.
+	 *
+	 * @return void
+	 */
+	private function assertNeverPublic(string $name): void {
+		$schema = self::$register['components']['schemas'][$name];
+		$read = $schema['authorization']['read'] ?? [];
+
+		$this->assertNotEmpty($read, $name . ' must declare its read authorization');
+
+		$groups = array_map(
+			static fn ($rule) => is_array($rule) ? ($rule['group'] ?? null) : $rule,
+			$read
+		);
+
+		$this->assertNotContains('public', $groups, $name . ' must never be anonymously readable');
+	}//end assertNeverPublic()
+
+
 	public static function setUpBeforeClass(): void {
 		$json = (string)file_get_contents(__DIR__ . '/../../../lib/Settings/portaliq_register.json');
 		self::$register = (array)json_decode($json, true);
@@ -173,8 +199,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(self::NIL_UUID, $claims['example']['pipelinq']['linkedContactId']);
 
 		// The claim map lives on a never-public schema (Risk 3 in proposal.md).
-		$this->assertFalse($account['x-openregister']['publicRead']);
-		$this->assertFalse($account['x-openregister']['publicWrite']);
+		$this->assertNeverPublic('portalAccount');
 
 	}//end testPortalAccountClaimsPropertyIsServerManagedShape()
 
@@ -199,8 +224,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertArrayHasKey('portalNotification', $schemas, 'portalNotification schema must exist');
 
 		$notification = $schemas['portalNotification'];
-		$this->assertFalse($notification['x-openregister']['publicRead']);
-		$this->assertFalse($notification['x-openregister']['publicWrite']);
+		$this->assertNeverPublic('portalNotification');
 		$this->assertSame(
 			['accountRef', 'ruleKey', 'channel', 'status', 'attempts', 'lastAttemptAt'],
 			$notification['required']
@@ -229,8 +253,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertArrayHasKey('portalOidcState', $schemas, 'portalOidcState schema must exist');
 
 		$state = $schemas['portalOidcState'];
-		$this->assertFalse($state['x-openregister']['publicRead']);
-		$this->assertFalse($state['x-openregister']['publicWrite']);
+		$this->assertNeverPublic('portalOidcState');
 		$this->assertSame(
 			['state', 'nonce', 'codeVerifier', 'org', 'provider', 'expiresAt'],
 			$state['required']
@@ -283,11 +306,13 @@ class PortaliqRegisterConfigTest extends TestCase {
 	 * by count — a count passes while the wrong three are public, and the
 	 * wrong ones here are sessions and submissions.
 	 *
-	 * ⚠️ `x-openregister.publicRead` IS NOT THIS CONTROL, and must not be
-	 * mistaken for it. Measured 2026-08-15: that flag is read by NOTHING —
-	 * zero consumers in openregister's lib, its JS, its migrations, or even as
-	 * a property on the Schema entity. It is an intent marker that reads like
-	 * an access control and enforces nothing. `authorization` is the control.
+	 * ⚠️ `x-openregister.publicRead` / `publicWrite` USED TO SIT ON THESE
+	 * SCHEMAS AND WERE NEVER A THING. Not an unenforced flag — not part of
+	 * OpenRegister's schema contract at all: zero consumers in its lib, its
+	 * JS, its migrations, or as a property on the Schema entity. They came in
+	 * with the app scaffold (`nextcloud-app-template`, which ships them and no
+	 * `authorization` block) and were removed here. Public access is granted
+	 * ONLY by OR's special `public` group in a read rule.
 	 *
 	 * @return void
 	 */
