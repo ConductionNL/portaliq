@@ -263,7 +263,7 @@ test.describe('admin SPA + admin settings + operator contracts', () => {
 	// vue-router 4 introduced when it removed the bare `path: '*'` glob.
 	//
 	// @e2e dashboard-page::deep-link-to-an-in-app-route
-	test('a deep link to /features-roadmap serves the SPA and the router keeps the path', async ({
+	test('a deep link to /features-roadmap renders FeaturesRoadmap and the router keeps the path', async ({
 		page,
 	}) => {
 		await loginToNextcloud(page, ADMIN_USER, ADMIN_PASS)
@@ -278,6 +278,22 @@ test.describe('admin SPA + admin settings + operator contracts', () => {
 			timeout: 60_000,
 		})
 		await expect(page).toHaveURL(/\/features-roadmap$/)
+
+		// The URL and a non-empty #content are BOTH satisfied by the app shell
+		// alone — the catch-all could resolve to a blank view and this test
+		// would still pass. So assert the view put its OWN heading on screen.
+		//
+		// `Features` is the page's h2, read off the rendered page rather than
+		// guessed; the h3 below it is prose and would make a brittle anchor.
+		//
+		// This is also the reference gate-26 asks for. `FeaturesRoadmap` had
+		// only ever appeared in this file's COMMENTS, and the gate reads
+		// EXECUTABLE text — a mention is not coverage, which is exactly the
+		// distinction the gate exists to draw.
+		await expect(
+			page.getByRole('heading', { name: 'Features', exact: true }),
+			'FeaturesRoadmap must render its own heading, not just the shell',
+		).toBeVisible({ timeout: 30_000 })
 	})
 
 	// REQ-UI-001 and REQ-UI-002 are two halves of one join, and the join key is
