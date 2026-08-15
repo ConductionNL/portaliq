@@ -15,7 +15,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * portal-white-label-runtime-config: the shell renders through
- * TemplateResponse::RENDER_AS_PUBLIC with the resolved runtime config passed
+ * TemplateResponse::RENDER_AS_BASE with the resolved runtime config passed
  * as a template param, and the CSP's frame-ancestors is built from the
  * resolved Organisation's allowed embed origins — 'none' when empty, NEVER
  * the previous hard-coded '*'. catchAll() renders through the same index()
@@ -28,14 +28,25 @@ use PHPUnit\Framework\TestCase;
  */
 class PortalPageControllerTest extends TestCase {
 
-	public function testIndexRendersPortalTemplateAsPublic(): void {
+	/**
+	 * BASE, not PUBLIC. `layout.public.php` emits a VISIBLE `<header
+	 * id="header">` carrying the Nextcloud logo and instance title, which on a
+	 * white-label portal is another product's brand sitting above the
+	 * municipality's own — the plainest contradiction of the very spec this
+	 * class cites. `layout.base.php` emits `#content` and nothing else, while
+	 * still shipping the CSS, scripts and initial state the shell boots from.
+	 *
+	 * Asserted by NAME rather than "not public": RENDER_AS_BLANK would also
+	 * drop the header, and would do it by shipping no assets at all.
+	 */
+	public function testIndexRendersPortalTemplateAsBase(): void {
 		$controller = $this->controller(orgSlug: '');
 		$response = $controller->index();
 
 		$this->assertInstanceOf(TemplateResponse::class, $response);
-		$this->assertSame(TemplateResponse::RENDER_AS_PUBLIC, $response->getRenderAs());
+		$this->assertSame(TemplateResponse::RENDER_AS_BASE, $response->getRenderAs());
 
-	}//end testIndexRendersPortalTemplateAsPublic()
+	}//end testIndexRendersPortalTemplateAsBase()
 
 	public function testNoAllowedEmbedOriginsYieldsFrameAncestorsNone(): void {
 		$controller = $this->controller(orgSlug: '', resolved: ['allowedEmbedOrigins' => []]);
@@ -69,7 +80,10 @@ class PortalPageControllerTest extends TestCase {
 		foreach (['contracts/123', 'invoices/456'] as $path) {
 			$response = $controller->catchAll($path);
 			$this->assertInstanceOf(TemplateResponse::class, $response);
-			$this->assertSame(TemplateResponse::RENDER_AS_PUBLIC, $response->getRenderAs());
+			// Every deep link renders through index(), so the chrome fix has to
+			// hold here too — a portal that is clean at `/portal` and branded
+			// at `/portal/invoices/456` is still branded to the visitor.
+			$this->assertSame(TemplateResponse::RENDER_AS_BASE, $response->getRenderAs());
 		}
 
 	}//end testCatchAllDelegatesToIndexForDistinctPaths()
@@ -104,6 +118,23 @@ class PortalPageControllerTest extends TestCase {
 
 	}//end testIndexPassesTheFirstAcceptLanguageTagToTheResolver()
 
+	/**
+	 * The site shell carries no platform chrome either.
+	 *
+	 * `site()` had NO unit assertion on its render mode at all — the helper
+	 * below even referenced a `testSiteRendersSiteTemplateAsPublic` that was
+	 * never written, so the reference read as coverage that did not exist.
+	 * index() and catchAll() were pinned; the route that replaces them was not.
+	 */
+	public function testSiteRendersSiteTemplateAsBase(): void {
+		$controller = $this->controller(orgSlug: '');
+		$response = $controller->site();
+
+		$this->assertInstanceOf(TemplateResponse::class, $response);
+		$this->assertSame(TemplateResponse::RENDER_AS_BASE, $response->getRenderAs());
+
+	}//end testSiteRendersSiteTemplateAsBase()
+
 	private function controller(string $orgSlug, array $resolved = []): PortalPageController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getParam')->willReturnCallback(
@@ -130,7 +161,7 @@ class PortalPageControllerTest extends TestCase {
 		// The site renderer (`site()`) needs a URL generator to hand the
 		// content API base to the client. Returning the real route shape here
 		// rather than an empty string keeps the assertion in
-		// testSiteRendersSiteTemplateAsPublic meaningful.
+		// testSiteRendersSiteTemplateAsBase meaningful.
 		$urlGenerator = $this->createMock(IURLGenerator::class);
 		$urlGenerator->method('linkToRoute')
 			->willReturn('/index.php/apps/portaliq/api/content/site');
