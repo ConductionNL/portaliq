@@ -115,4 +115,56 @@ test.describe('site renderer — content', () => {
 		await expect(page.getByTestId('site-glossary')).toContainText('Woo-verzoek')
 		await expect(page.getByTestId('site-glossary')).toContainText('Wob-verzoek')
 	})
+
+	test('S18: the site bundle stays inside the public first-load budget', async ({
+		page,
+	}) => {
+		// Measured on TRANSFERRED bytes for an empty cache, not on the build's
+		// own report of what it emitted. Those differ whenever compression or
+		// code-splitting is involved, and the one a visitor pays is this one.
+		//
+		// The path is matched loosely on purpose. An earlier version matched
+		// `/custom_apps/portaliq/js/` — the layout of one developer rig — and
+		// scored 0 bytes in CI, where the app installs under `/apps/`. It then
+		// failed on `0 > 0`, which says nothing about what went wrong. Matching
+		// the app segment alone survives either layout, and the miss case below
+		// says what happened rather than asserting a number.
+		const transferred: Record<string, number> = {}
+		page.on('response', async (response) => {
+			const url = response.url()
+			if (!/\/portaliq\/js\/.*\.js/.test(url)) {
+				return
+			}
+			try {
+				transferred[url.split('/').pop() as string] = (
+					await response.body()
+				).length
+			} catch {
+				// A body no longer available is reported as absent rather than
+				// failing the measurement.
+			}
+		})
+
+		await page.goto(SITE)
+		await expect(page.getByTestId('site-title')).toBeVisible()
+
+		const total = Object.values(transferred).reduce((a, b) => a + b, 0)
+		// eslint-disable-next-line no-console
+		console.log(
+			'site bundle bytes:',
+			JSON.stringify(transferred),
+			'total',
+			total,
+		)
+
+		expect(
+			total,
+			'no portaliq js was transferred — the URL filter no longer matches how '
+				+ 'this instance serves the app, so nothing was measured',
+		).toBeGreaterThan(0)
+
+		// A public, first-visit, mobile-visited surface. This is a failure and
+		// not a warning: a budget nobody fails is a budget nobody keeps.
+		expect(total).toBeLessThan(400 * 1024)
+	})
 })

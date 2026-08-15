@@ -14,8 +14,13 @@
  * what each cannot — is recorded in docs/portal-parity.md, and the numbers
  * there come from this spec.
  *
- * Opt-in, like the docs-capture project: run with
+ * OPT-IN. Excluded from the default chromium project in playwright.config.ts,
+ * the same way docs-screenshots.spec.ts is: these write review artifacts
+ * against a live instance and have no assertion a PR should gate on. Run with
  *   npx playwright test tests/e2e/visual/portal-comparison.spec.ts
+ *
+ * The first-load BUDGET moved to site-content.spec.ts (S18), because that one
+ * IS worth gating on.
  */
 
 import { expect, test } from '@playwright/test'
@@ -78,49 +83,5 @@ test.describe('portal comparison', () => {
 			path: `${OUT}/current-vue/vue-site-markdown-1280.png`,
 			fullPage: true,
 		})
-	})
-
-	test('S12: record what each renderer costs on a first visit', async ({
-		page,
-	}) => {
-		// Measured on TRANSFERRED bytes for an empty cache, not on the build's
-		// own report of what it emitted. Those two numbers differ whenever
-		// compression, code-splitting or a service worker is involved, and the
-		// one a visitor pays is this one.
-		const measure = async (url: string, marker: () => Promise<void>) => {
-			const transferred: Record<string, number> = {}
-			page.on('response', async (response) => {
-				const url = response.url()
-				if (!url.includes('/custom_apps/portaliq/js/')) {
-					return
-				}
-				try {
-					const body = await response.body()
-					transferred[url.split('/').pop() as string] = body.length
-				} catch {
-					// A response whose body is no longer available is not worth
-					// failing a measurement over; it is reported as absent.
-				}
-			})
-
-			await page.goto(url)
-			await marker()
-			page.removeAllListeners('response')
-			return transferred
-		}
-
-		const vue = await measure(VUE_SITE, async () => {
-			await expect(page.getByTestId('site-title')).toBeVisible()
-		})
-
-		const total = Object.values(vue).reduce((a, b) => a + b, 0)
-		// eslint-disable-next-line no-console
-		console.log('vue site bundle bytes:', JSON.stringify(vue), 'total', total)
-
-		// The site bundle must stay inside the public-surface budget. This is a
-		// failure, not a warning: a budget nobody fails is a budget nobody
-		// keeps.
-		expect(total).toBeGreaterThan(0)
-		expect(total).toBeLessThan(400 * 1024)
 	})
 })
