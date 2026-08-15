@@ -22,8 +22,10 @@ namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\Service\WebsiteResolver;
 use PHPUnit\Framework\TestCase;
+use OCP\IRequest;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Host resolution, tested at the one method that does not need OpenRegister.
@@ -187,6 +189,159 @@ class WebsiteResolverTest extends TestCase {
 
 		$this->assertSame('good', $this->resolver->resolveByHost('good.example', $sites)['slug']);
 	}//end testMalformedDomainEntriesAreSkipped()
+
+
+	/**
+	 * Wire the container to an ObjectService double returning fixed rows.
+	 *
+	 * @param array|null $rows The rows findAll() returns, or null to throw.
+	 *
+	 * @return WebsiteResolver The resolver, wired.
+	 */
+	private function resolverReturning(?array $rows): WebsiteResolver {
+		$container = $this->createMock(ContainerInterface::class);
+
+		if ($rows === null) {
+			$container->method('get')->willThrowException(new RuntimeException('OR is down'));
+		} else {
+			$container->method('get')->willReturn(
+				new class($rows) {
+
+					/**
+					 * The rows to return.
+					 *
+					 * @var array
+					 */
+					public array $rows;
+
+
+					/**
+					 * Constructor.
+					 *
+					 * @param array $rows The rows.
+					 */
+					public function __construct(array $rows) {
+						$this->rows = $rows;
+					}
+
+
+					/**
+					 * Set the register context.
+					 *
+					 * @param string $register The register slug.
+					 *
+					 * @return void
+					 */
+					public function setRegister(string $register): void {
+					}
+
+
+					/**
+					 * Set the schema context.
+					 *
+					 * @param string $schema The schema slug.
+					 *
+					 * @return void
+					 */
+					public function setSchema(string $schema): void {
+					}
+
+
+					/**
+					 * Return the fixed rows.
+					 *
+					 * @param array $config        The query config.
+					 * @param bool  $_rbac         RBAC toggle.
+					 * @param bool  $_multitenancy Multitenancy toggle.
+					 *
+					 * @return array The rows.
+					 */
+					public function findAll(array $config = [], bool $_rbac = true, bool $_multitenancy = true): array {
+						return $this->rows;
+					}
+
+
+				}
+			);
+		}
+
+		return new WebsiteResolver($container, $this->createMock(LoggerInterface::class));
+	}//end resolverReturning()
+
+
+	/**
+	 * A request naming a site by slug gets that site.
+	 *
+	 * @return void
+	 */
+	public function testAnExplicitSlugResolvesThatSite(): void {
+		$resolver = $this->resolverReturning($this->sites);
+
+		$site = $resolver->resolve($this->createMock(IRequest::class), 'open-venray');
+
+		$this->assertSame('open-venray', $site['slug']);
+	}//end testAnExplicitSlugResolvesThatSite()
+
+
+	/**
+	 * An unknown slug resolves to nothing and does NOT fall through to the host.
+	 *
+	 * `?site=typo` must not quietly serve whichever site owns the hostname the
+	 * request happened to arrive on.
+	 *
+	 * @return void
+	 */
+	public function testAnUnknownSlugDoesNotFallThroughToTheHost(): void {
+		$request = $this->createMock(IRequest::class);
+		$request->method('getServerHost')->willReturn('tilburg.example');
+
+		$this->assertNull($this->resolverReturning($this->sites)->resolve($request, 'does-not-exist'));
+	}//end testAnUnknownSlugDoesNotFallThroughToTheHost()
+
+
+	/**
+	 * With no slug, resolution falls to the host.
+	 *
+	 * @return void
+	 */
+	public function testWithNoSlugTheHostDecides(): void {
+		$request = $this->createMock(IRequest::class);
+		$request->method('getServerHost')->willReturn('tilburg.example:8321');
+
+		$site = $this->resolverReturning($this->sites)->resolve($request);
+
+		// The port is stripped before matching; a host carrying one would
+		// otherwise never match a stored hostname.
+		$this->assertSame('open-tilburg', $site['slug']);
+	}//end testWithNoSlugTheHostDecides()
+
+
+	/**
+	 * No published sites means nothing resolves.
+	 *
+	 * @return void
+	 */
+	public function testAnInstanceWithNoSitesResolvesNothing(): void {
+		$this->assertNull(
+			$this->resolverReturning([])->resolve($this->createMock(IRequest::class), 'open-tilburg')
+		);
+	}//end testAnInstanceWithNoSitesResolvesNothing()
+
+
+	/**
+	 * An OpenRegister failure fails CLOSED.
+	 *
+	 * Returning "some site" on an error would serve the wrong tenant silently.
+	 * An empty list means every request 404s, which is visible immediately.
+	 *
+	 * @return void
+	 */
+	public function testAnOpenRegisterFailureFailsClosed(): void {
+		$resolver = $this->resolverReturning(null);
+
+		$this->assertSame([], $resolver->allPublishedSites());
+		$this->assertNull($resolver->resolve($this->createMock(IRequest::class), 'open-tilburg'));
+	}//end testAnOpenRegisterFailureFailsClosed()
 
 
 }//end class
