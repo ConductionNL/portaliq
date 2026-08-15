@@ -96,6 +96,30 @@ const E2E_PASS = process.env.PORTALIQ_E2E_PASS ?? 'e2e-reader-pw-2026'
 const APP_BASE = '/index.php/apps/portaliq'
 const API_BASE = `${APP_BASE}/api`
 
+/**
+ * The base the SPA's ROUTER owns, read off the running instance.
+ *
+ * `APP_BASE` above is fine for API calls — PHP routing accepts the
+ * `/index.php/` form and the pretty form alike. The router is different:
+ * `src/main.js` builds its history from `generateUrl('/apps/portaliq')`, which
+ * DROPS `index.php` when mod_rewrite is working and keeps it when it is not.
+ *
+ * Navigating a page to the wrong form is not a 404 — it is worse. The location
+ * falls outside the router's base, so the path matches the catch-all
+ * (`/:pathMatch(.*)*`) and is redirected to `/`. The deep link is silently
+ * lost, the app shell renders perfectly, and the only tell is the URL.
+ *
+ * So resolve the base from the instance instead of hardcoding either form.
+ */
+async function spaBase(page: Page): Promise<string> {
+	const base = await page.evaluate(() =>
+		(window as unknown as { OC: { generateUrl: (_path: string) => string } })
+			.OC.generateUrl('/apps/portaliq'),
+	)
+	expect(base, 'OC.generateUrl must resolve the app base').toBeTruthy()
+	return base
+}
+
 /** Anonymous marker for `newIdentity()`. */
 type Identity = { user: string; pass: string } | 'anonymous'
 
@@ -268,7 +292,11 @@ test.describe('admin SPA + admin settings + operator contracts', () => {
 	}) => {
 		await loginToNextcloud(page, ADMIN_USER, ADMIN_PASS)
 
-		const response = await page.goto(`${APP_BASE}/features-roadmap`)
+		// Deep-link through the base the ROUTER owns, not a hardcoded URL form
+		// — see `spaBase()`. A mismatch here does not fail loudly; it redirects
+		// to the app root and drops the path.
+		const base = await spaBase(page)
+		const response = await page.goto(`${base}/features-roadmap`)
 		expect(
 			response?.status(),
 			'the catch-all route must serve the SPA for an in-app sub-path',
