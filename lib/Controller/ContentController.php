@@ -55,6 +55,11 @@ use Psr\Log\LoggerInterface;
  * unreleased content and for which tenants exist on this installation.
  *
  * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-content-api-must-be-sufficient-without-the-built-in-renderer
+ *
+ * @SuppressWarnings(PHPMD.StaticAccess)             -- PortalSessionService::trustSatisfies
+ * is deliberately THE single trust comparator (contract-v2 design decision);
+ * every re-check calls it statically so the ordering can never fork. Same
+ * reasoning, and the same suppression, as ContributionController.
  */
 class ContentController extends Controller {
 
