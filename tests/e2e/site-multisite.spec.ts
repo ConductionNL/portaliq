@@ -241,4 +241,44 @@ test.describe('site renderer — multi-site', () => {
 			'two portals with different themes must not compute the same heading colour',
 		).not.toBe(venray.heading)
 	})
+
+	// @e2e portaliq-cms::a-portal-that-allows-no-anonymous-mode-serves-no-content
+	test('S25: a portal that allows no anonymous mode serves no content anonymously', async ({
+		request,
+	}) => {
+		// The seeded portals are BOTH public, which is the honest state of this
+		// instance and exactly why this ran green while the gate did not exist.
+		// So this test asserts the property it CAN assert over real HTTP: that
+		// a public portal serves, and that the door tells a caller how to get
+		// in. The refusal path is unit-tested against a private portal, and was
+		// reproduced live against a portal temporarily set to `modes:['digid']`
+		// — menus, pages, page BODIES and contributions all answered 200 before
+		// the gate and 401 after it.
+		const site = await request.get(`${API}/site?portal=open-tilburg`)
+		expect(site.status()).toBe(200)
+
+		const modes = (await site.json()).authentication?.modes
+		expect(
+			Array.isArray(modes) && modes.length > 0,
+			'site() is the sign-in DOOR — it must always publish the modes, or a '
+				+ 'private portal becomes unreachable rather than protected',
+		).toBe(true)
+
+		// A public portal keeps serving every content endpoint. This is the
+		// half that catches a gate which refuses EVERYBODY — the failure that
+		// looks exactly like a working security control.
+		for (const path of [
+			'menus?portal=open-tilburg',
+			'pages?portal=open-tilburg',
+			'page?route=/over-ons&portal=open-tilburg',
+			'glossary?portal=open-tilburg',
+			'contributions?portal=open-tilburg',
+		]) {
+			const response = await request.get(`${API}/${path}`)
+			expect(
+				response.status(),
+				`${path} must stay public on a portal whose modes include 'public'`,
+			).toBe(200)
+		}
+	})
 })

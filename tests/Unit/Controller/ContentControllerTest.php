@@ -25,6 +25,7 @@ use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\ContentController;
 use OCA\Portaliq\Service\CmsReader;
 use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -65,6 +66,9 @@ class ContentControllerTest extends TestCase {
 	 * @var (PortalContributionRegistry&MockObject)|null
 	 */
 	private ?PortalContributionRegistry $registry = null;
+
+	/** Set by the gate tests; null means the gate is never consulted. */
+	private ?PortalSessionService $session = null;
 
 	/**
 	 * The incoming request.
@@ -113,7 +117,12 @@ class ContentControllerTest extends TestCase {
 			reader: $this->reader,
 			registry: ($this->registry ?? $this->createMock(PortalContributionRegistry::class)),
 			contribFilter: new PortalContributionFilter(),
-			logger: $this->createMock(LoggerInterface::class)
+			logger: $this->createMock(LoggerInterface::class),
+			// Resolves nobody unless a test says otherwise. Every pre-existing
+			// assertion here uses a portal whose modes include `public`, so the
+			// content gate never consults this — which is the point: adding the
+			// gate must not change what a public portal serves.
+			session: ($this->session ?? $this->createMock(PortalSessionService::class))
 		);
 	}//end controller()
 
@@ -462,6 +471,161 @@ class ContentControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
 		$this->assertSame(['error' => 'not_found'], $response->getData());
 	}//end testAnUnresolvedPortalGetsTheSharedNotFound()
+
+
+	/**
+	 * A portal fixture that does NOT allow anonymous visitors.
+	 *
+	 * @param string|null $minTrust The assurance floor, or null for none.
+	 *
+	 * @return array The portal.
+	 */
+	private function privatePortal(?string $minTrust = null): array {
+		$portal = $this->portal();
+		$portal['slug'] = 'open-venray';
+		$portal['authentication'] = ['modes' => ['digid']];
+		if ($minTrust !== null) {
+			$portal['authentication']['minTrust'] = $minTrust;
+		}
+
+		return $portal;
+	}//end privatePortal()
+
+
+	/**
+	 * A portal that allows no anonymous mode serves no CONTENT anonymously.
+	 *
+	 * `authentication.modes` was declared, documented, echoed by `site()` and
+	 * enforced NOWHERE. Measured on a live rig before this gate existed: a
+	 * portal set to `modes: ['digid']` served its menus, its page list and full
+	 * page BODIES to an anonymous caller, every one of them HTTP 200.
+	 *
+	 * Every content endpoint is asserted, not a representative one — the gate
+	 * is five separate call sites and a miss on any single one is the whole
+	 * leak.
+	 *
+	 * @return void
+	 */
+	public function testAPrivatePortalServesNoContentAnonymously(): void {
+		$this->resolver->method('resolve')->willReturn($this->privatePortal());
+		$controller = $this->controller();
+
+		$responses = [
+			'menus'         => $controller->menus(),
+			'pages'         => $controller->pages(),
+			'page'          => $controller->page(route: '/over-ons'),
+			'glossary'      => $controller->glossary(),
+			'contributions' => $controller->contributions(),
+		];
+
+		foreach ($responses as $name => $response) {
+			$this->assertSame(
+				Http::STATUS_UNAUTHORIZED,
+				$response->getStatus(),
+				"{$name} served a private portal's content to an anonymous caller"
+			);
+			$this->assertSame('authentication_required', $response->getData()['error']);
+			// NEVER publicly cacheable: a refusal pooled at a CDN becomes the
+			// answer every later visitor gets, including those who signed in.
+			$this->assertStringContainsString(
+				'no-store',
+				$response->getHeaders()['Cache-Control'],
+				"{$name} let a refusal become publicly cacheable"
+			);
+		}
+	}//end testAPrivatePortalServesNoContentAnonymously()
+
+
+	/**
+	 * The DOOR stays public even when the rooms are not.
+	 *
+	 * A visitor to a DigiD-only portal must still be able to load its title,
+	 * theme and above all its MODES, or the renderer has nothing to draw a
+	 * sign-in door from. Gating `site()` too would make a private portal
+	 * unreachable rather than protected — the same reason a login page is
+	 * anonymous.
+	 *
+	 * @return void
+	 */
+	public function testAPrivatePortalStillPublishesItsSignInDoor(): void {
+		$this->resolver->method('resolve')->willReturn($this->privatePortal());
+
+		$response = $this->controller()->site();
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['digid'], $response->getData()['authentication']['modes']);
+	}//end testAPrivatePortalStillPublishesItsSignInDoor()
+
+
+	/**
+	 * A portal with NO authentication block keeps serving publicly.
+	 *
+	 * The schema's own words: absent or unparseable configuration fails closed
+	 * to public READ-ONLY. This is what stops the gate from taking every
+	 * existing site off the air the day it ships — an outage filed as a
+	 * security fix is how a security fix gets reverted.
+	 *
+	 * @return void
+	 */
+	public function testAPortalWithoutAuthenticationStaysPublic(): void {
+		$portal = $this->portal();
+		unset($portal['authentication']);
+		$this->resolver->method('resolve')->willReturn($portal);
+		$this->reader->method('menus')->willReturn([]);
+
+		$this->assertSame(Http::STATUS_OK, $this->controller()->menus()->getStatus());
+	}//end testAPortalWithoutAuthenticationStaysPublic()
+
+
+	/**
+	 * A real session below the portal's assurance floor is refused — with a
+	 * DIFFERENT answer from "no session at all".
+	 *
+	 * 403 rather than 401 on purpose: the caller did authenticate, so telling
+	 * them to authenticate again would loop them through the same means that
+	 * just succeeded. The level is the problem and the status has to say so.
+	 *
+	 * @return void
+	 */
+	public function testASessionBelowTheTrustFloorIsRefusedAsForbidden(): void {
+		$this->resolver->method('resolve')->willReturn($this->privatePortal(minTrust: 'high'));
+		$session = $this->createMock(PortalSessionService::class);
+		$session->method('resolveFromBearer')->willReturn(
+			['subjectRef' => 's-1', 'audience' => 'client', 'organisation' => 'org-1', 'trust' => 'low']
+		);
+		$this->session = $session;
+
+		$response = $this->controller(authorization: 'Bearer real-token')->pages();
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		$this->assertSame('insufficient_trust', $response->getData()['error']);
+	}//end testASessionBelowTheTrustFloorIsRefusedAsForbidden()
+
+
+	/**
+	 * A session that MEETS the floor is served.
+	 *
+	 * The other half of the pair. Without it, a gate that refused everybody
+	 * would pass every assertion above while making the portal unusable — the
+	 * failure mode that looks exactly like a working security control.
+	 *
+	 * @return void
+	 */
+	public function testASessionMeetingTheTrustFloorIsServed(): void {
+		$this->resolver->method('resolve')->willReturn($this->privatePortal(minTrust: 'substantial'));
+		$session = $this->createMock(PortalSessionService::class);
+		$session->method('resolveFromBearer')->willReturn(
+			['subjectRef' => 's-1', 'audience' => 'client', 'organisation' => 'org-1', 'trust' => 'high']
+		);
+		$this->session = $session;
+		$this->reader->method('menus')->willReturn([]);
+
+		$response = $this->controller(authorization: 'Bearer real-token')->menus();
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		// And it must not be poolable across visitors.
+		$this->assertStringContainsString('no-store', $response->getHeaders()['Cache-Control']);
+	}//end testASessionMeetingTheTrustFloorIsServed()
 
 
 }//end class
