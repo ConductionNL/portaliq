@@ -31,9 +31,52 @@ webpackConfig.entry = {
 	},
 }
 
-// Use local source when available (monorepo dev), otherwise fall back to npm package
+// Use local source only when explicitly opted in, otherwise the npm package.
+//
+// USE_LOCAL_LIB is opt-IN (ADR-090): building against a developer's working
+// checkout is the wrong default for a build that can ship. This app previously
+// had NO version check at all, so an unset variable silently built from whatever
+// sibling happened to be on disk.
+//
+// The sibling must satisfy this app's own declared range. It is 2.0.5 today
+// against a declared 2.2.0-vue3.16 — a Vue 3 library, but not the version this
+// app asked for. That skew breaks the build in a non-obvious way: building from
+// the sibling's SOURCE also resolves packages out of the SIBLING's node_modules,
+// where a stale vue-demi shim (postinstall picks v2/v2.7/v3 and does not re-run
+// on `npm install`) yields
+//   export 'default' (imported as 'Vue') was not found in 'vue'
+//
+// Fail CLOSED: if the check cannot run, the sibling is refused.
 const localLib = path.resolve(__dirname, '../nextcloud-vue/src')
-const useLocalLib = process.env.USE_LOCAL_LIB !== 'false' && fs.existsSync(localLib)
+const localLibPkg = path.resolve(__dirname, '../nextcloud-vue/package.json')
+let useLocalLib = process.env.USE_LOCAL_LIB === 'true' && fs.existsSync(localLib)
+if (useLocalLib) {
+	let localVersion = 'unreadable'
+	let satisfied = false
+	try {
+		// eslint-disable-next-line n/no-extraneous-require
+		const semver = require('semver')
+		const required =
+			require('./package.json').dependencies['@conduction/nextcloud-vue']
+		localVersion = String(
+			JSON.parse(fs.readFileSync(localLibPkg, 'utf8')).version || '',
+		)
+		satisfied = semver.satisfies(localVersion, required, {
+			includePrerelease: true,
+		})
+	} catch (e) {
+		satisfied = false
+	}
+
+	if (!satisfied) {
+		// eslint-disable-next-line no-console
+		console.warn(
+			`[portaliq] IGNORING sibling @conduction/nextcloud-vue@${localVersion} — `
+				+ "it does not satisfy this app's declared range. Building against the npm dist.",
+		)
+		useLocalLib = false
+	}
+}
 
 // Extend the base resolve config (preserves defaults from @nextcloud/webpack-vue-config)
 webpackConfig.resolve = webpackConfig.resolve || {}
