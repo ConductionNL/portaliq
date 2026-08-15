@@ -533,11 +533,13 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse The attached file metadata, or 401 / 403 / 404 / 400 / 502.
 	 *
+	 * The rate limit below is tighter than the read paths: an upload costs
+	 * storage, not just a query.
+	 *
 	 * @spec openspec/specs/portal-contribution-contract/spec.md#scoped-file-attachment-on-a-subject-owned-object
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
-	// Tighter than the read paths: an upload costs storage, not just a query.
 	#[AnonRateLimit(limit: 20, period: 60)]
 	public function uploadFile(string $register, string $schema, string $id): JSONResponse {
 		$subject = $this->subject();

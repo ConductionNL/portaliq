@@ -88,6 +88,10 @@ class PortalPageController extends Controller {
 	 * renders through this same method so every portal URL carries the
 	 * resolved config.
 	 *
+	 * This is the one genuinely public HTML page in the fleet (ADR-081). The
+	 * rate-limit ceiling below is generous on purpose: a citizen reloading a
+	 * form must never be the thing that trips it.
+	 *
 	 * @return TemplateResponse
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T08
@@ -98,9 +102,6 @@ class PortalPageController extends Controller {
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[NoAdminRequired]
-	// The portal shell — the one genuinely public HTML page in the fleet
-	// (ADR-081). A generous ceiling: a citizen reloading a form must never be
-	// the thing that trips it.
 	#[AnonRateLimit(limit: 120, period: 60)]
 	public function index(): TemplateResponse {
 		$orgSlug = (string)$this->request->getParam('org', '');

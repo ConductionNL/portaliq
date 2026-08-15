@@ -69,12 +69,14 @@ class WooController extends Controller {
 	/**
 	 * Serve the SPA entry (`/woo`).
 	 *
+	 * Woo is the Dutch open-government publication surface — public access is
+	 * the statutory point of it, so the rate limit below is a runaway ceiling,
+	 * not a gate.
+	 *
 	 * @return Response
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
-	// Woo is the Dutch open-government publication surface — public access is
-	// the statutory point of it, so this is a runaway ceiling, not a gate.
 	#[AnonRateLimit(limit: 120, period: 60)]
 	public function serve(): Response {
 		return $this->render(path: '');
