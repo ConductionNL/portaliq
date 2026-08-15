@@ -76,6 +76,8 @@ export default {
 		 *
 		 * @param {string} key The registry key.
 		 * @return {object|null} The component, or null when the key is not public.
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-only-explicitly-public-widgets-must-render-at-a-public-origin
 		 */
 		componentFor(key) {
 			return Object.hasOwn(PUBLIC_WIDGETS, key) ? PUBLIC_WIDGETS[key] : null
@@ -91,6 +93,8 @@ export default {
 		 *
 		 * @param {object} widget The placement.
 		 * @return {object} The component props.
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-only-explicitly-public-widgets-must-render-at-a-public-origin
 		 */
 		propsFor(widget) {
 			const props = widget.props || {}
@@ -107,6 +111,8 @@ export default {
 		 *
 		 * @param {string} key The registry key.
 		 * @return {string} The placeholder text.
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-only-explicitly-public-widgets-must-render-at-a-public-origin
 		 */
 		placeholderText(key) {
 			return `Widget "${key}" is niet beschikbaar op een openbare pagina.`
@@ -127,6 +133,8 @@ export default {
 		 *
 		 * @param {object} widget The placement.
 		 * @return {object} The style bindings.
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
 		 */
 		cellStyle(widget) {
 			const x = Math.max(0, Math.min(11, Number(widget.gridX) || 0))

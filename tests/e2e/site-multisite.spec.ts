@@ -52,6 +52,7 @@ async function alternateHostsAreTrusted(request: {
 }
 
 test.describe('site renderer — multi-site', () => {
+	// @e2e portaliq-cms::two-portals-publishing-the-same-route-do-not-leak
 	test('S5: two portals publish the same route and do not leak into each other', async ({
 		request,
 	}) => {
@@ -89,6 +90,9 @@ test.describe('site renderer — multi-site', () => {
 		expect(venrayTitles).not.toContain('Over ons')
 	})
 
+	// Both directions live in ONE test, so both anchors point here.
+	// @e2e portaliq-cms::an-unverified-domain-does-not-serve
+	// @e2e portaliq-cms::a-verified-domain-does-serve
 	test('S6: a domain serves once verified and not before — both directions', async ({
 		request,
 	}) => {
@@ -114,6 +118,7 @@ test.describe('site renderer — multi-site', () => {
 		expect((await served.json()).slug).toBe('open-venray')
 	})
 
+	// @e2e portaliq-cms::an-unknown-host-reveals-nothing
 	test('S7: an unknown host resolves to nothing and reveals nothing', async ({
 		request,
 	}) => {
@@ -139,6 +144,7 @@ test.describe('site renderer — multi-site', () => {
 		expect(text).not.toContain('Gemeente Venray')
 	})
 
+	// @e2e portaliq-cms::a-named-portal-that-does-not-exist-does-not-fall-through-to-the-host
 	test('S7b: a named site that does not exist does not fall through to the host', async ({
 		request,
 	}) => {

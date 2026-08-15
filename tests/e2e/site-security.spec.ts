@@ -18,6 +18,7 @@ const SITE = `${BASE}/index.php/apps/portaliq/site`
 const API = `${BASE}/index.php/apps/portaliq/api/content`
 
 test.describe('site renderer — security properties', () => {
+	// @e2e portaliq-cms::a-draft-and-an-unknown-route-answer-identically
 	test('S4: a draft page and a non-existent route are indistinguishable', async ({
 		request,
 	}) => {
@@ -36,6 +37,7 @@ test.describe('site renderer — security properties', () => {
 		expect(published.status()).toBe(200)
 	})
 
+	// @e2e portaliq-cms::anonymous-and-authenticated-responses-are-marked-differently
 	test('S8: anonymous and authenticated responses are marked for different caches', async ({
 		request,
 	}) => {
@@ -52,6 +54,7 @@ test.describe('site renderer — security properties', () => {
 		expect(authenticated.headers()['cache-control']).not.toContain('public')
 	})
 
+	// @e2e portaliq-cms::hostile-markdown-is-neutralised-and-the-prose-survives
 	test('S9: hostile markdown does not execute, and the safe prose survives', async ({
 		page,
 	}) => {
@@ -97,6 +100,7 @@ test.describe('site renderer — security properties', () => {
 		expect(consoleErrors).toEqual([])
 	})
 
+	// @e2e portaliq-cms::a-non-public-widget-degrades-and-the-page-survives
 	test('S10: a non-public widget degrades and the rest of the page survives', async ({
 		page,
 	}) => {
@@ -117,6 +121,7 @@ test.describe('site renderer — security properties', () => {
 		await expect(blocked).not.toContainText('/geheim')
 	})
 
+	// @e2e portaliq-cms::the-portal-renders-with-the-globals-deleted
 	test('S11: the renderer works with the Nextcloud globals deleted', async ({
 		page,
 	}) => {
@@ -148,6 +153,7 @@ test.describe('site renderer — security properties', () => {
 })
 
 test.describe('site renderer — cache invalidation', () => {
+	// @e2e portaliq-cms::creating-a-page-clears-the-cached-miss-for-its-route
 	test('S8b: creating a page clears the cached miss for its route', async ({
 		request,
 	}) => {

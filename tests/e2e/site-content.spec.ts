@@ -16,6 +16,7 @@ const SITE = `${BASE}/index.php/apps/portaliq/site`
 const API = `${BASE}/index.php/apps/portaliq/api/content`
 
 test.describe('site renderer — content', () => {
+	// @e2e portaliq-cms::a-grid-page-renders-on-the-shared-12-column-geometry
 	test('S1: renders the site title, menu and grid page from the API', async ({
 		page,
 	}) => {
@@ -53,6 +54,7 @@ test.describe('site renderer — content', () => {
 		expect(help!.x).toBeGreaterThan(side!.x)
 	})
 
+	// @e2e portaliq-cms::markdown-is-served-as-source
 	test('S2: markdown is served as source and rendered with its structure intact', async ({
 		page,
 		request,

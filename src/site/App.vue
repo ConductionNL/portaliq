@@ -131,17 +131,31 @@ export default {
 		 * rather than silently restyled to somebody else's brand.
 		 *
 		 * @return {string} The theme class, or ''.
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-request-must-resolve-to-exactly-one-portal-or-to-none
 		 */
 		themeClass() {
 			return this.site.theme ? `${this.site.theme}-theme` : ''
 		},
 
-		/** @return {boolean} Whether the glossary section is shown. */
+		/**
+		 * @return {boolean} Whether the glossary section is shown.
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-content-api-must-be-sufficient-without-the-built-in-renderer
+		 */
 		showGlossary() {
 			return this.route === '/begrippen' && this.glossary.length > 0
 		},
 	},
 
+	/**
+	 * Boot: resolve the route, then load the portal and its first page —
+	 * entirely from the public content API, with no Nextcloud global read.
+	 *
+	 * @return {Promise<void>} Resolves when the first page is on screen.
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portal-renderer-must-not-depend-on-nextcloud-globals
+	 */
 	async mounted() {
 		this.route = this.routeFromLocation()
 		window.addEventListener('popstate', this.onPopState)
@@ -158,6 +172,8 @@ export default {
 		 * The in-site route this browser location represents.
 		 *
 		 * @return {string} The route, always with a leading slash.
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portal-renderer-must-not-depend-on-nextcloud-globals
 		 */
 		routeFromLocation() {
 			const params = new URLSearchParams(window.location.search)
@@ -169,7 +185,13 @@ export default {
 			return '/'
 		},
 
-		/** Handle browser back/forward. */
+		/**
+		 * Handle browser back/forward.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
+		 */
 		onPopState() {
 			const next = this.routeFromLocation()
 			this.route = next
@@ -177,9 +199,11 @@ export default {
 		},
 
 		/**
-		 * Load the site record, its menus and its glossary.
+		 * Load the portal record, its menus and its glossary.
 		 *
 		 * @return {Promise<void>} Resolves when loaded.
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-request-must-resolve-to-exactly-one-portal-or-to-none
 		 */
 		async loadSite() {
 			try {
@@ -199,8 +223,10 @@ export default {
 		/**
 		 * Load one page by route.
 		 *
-		 * @param {string} route The in-site route.
+		 * @param {string} route The in-portal route.
 		 * @return {Promise<void>} Resolves when loaded.
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-unpublished-content-must-be-indistinguishable-from-absent-content
 		 */
 		async loadRoute(route) {
 			this.loading = true
@@ -223,6 +249,8 @@ export default {
 		 *
 		 * @param {string} link The target route.
 		 * @return {void}
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
 		 */
 		go(link) {
 			if (!link || !link.startsWith('/')) {

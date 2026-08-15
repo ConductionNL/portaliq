@@ -68,6 +68,7 @@ use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Http\Response;
 use OCP\IRequest;
+use Psr\Log\LoggerInterface;
 
 /**
  * Serves the authenticated subject's aggregated portal contributions.
@@ -140,6 +141,7 @@ class ContributionController extends Controller implements PortalProtected {
 		private readonly AuditTrailService $auditor,
 		private readonly SubmissionReceiptService $receiptService,
 		private readonly NotificationDispatchService $notificationDispatch,
+		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -287,15 +289,30 @@ class ContributionController extends Controller implements PortalProtected {
 		// The LITERAL payload — never the request body. Whatever extra fields a
 		// client sends are simply never read, so `read` is the only field this
 		// endpoint can ever change.
-		$updated = $this->writer->updateObject(
-			register: $register,
-			schema: $schema,
-			scopeField: (string)($collection['scopeField'] ?? 'subjectRef'),
-			subjectRef: $scopeValue,
-			organisation: (string)($subject['organisation'] ?? ''),
-			id: $id,
-			data: ['read' => true]
-		);
+		//
+		// The write is wrapped because this method is `#[PublicPage]`: an
+		// untranslated throw from the storage layer becomes a framework 500
+		// carrying a stack trace, and that response reaches an ANONYMOUS
+		// caller. Catching \Throwable rather than the individual storage
+		// exceptions is deliberate — it is a superset, and a narrower catch
+		// would leave every unlisted failure to become that same 500.
+		try {
+			$updated = $this->writer->updateObject(
+				register: $register,
+				schema: $schema,
+				scopeField: (string)($collection['scopeField'] ?? 'subjectRef'),
+				subjectRef: $scopeValue,
+				organisation: (string)($subject['organisation'] ?? ''),
+				id: $id,
+				data: ['read' => true]
+			);
+		} catch (\Throwable $e) {
+			// The CAUSE goes to the log, never to the caller: a storage message
+			// can name a register, a schema or an id belonging to another
+			// tenant, which is exactly what the 404 above exists to withhold.
+			$this->logger->error('markRead failed: ' . $e->getMessage(), ['exception' => $e]);
+			return new JSONResponse(['error' => 'server_error'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
 
 		// Null = ownership re-verification failed OR the row does not exist —
 		// a single 404, indistinguishable, and nothing was written.
@@ -1066,15 +1083,27 @@ class ContributionController extends Controller implements PortalProtected {
 			}
 		}
 
-		$updated = $this->writer->updateObject(
-			register: $register,
-			schema: $schema,
-			scopeField: (string)($action['scopeField'] ?? 'subjectRef'),
-			subjectRef: $scopeValue,
-			organisation: (string)($subject['organisation'] ?? ''),
-			id: $id,
-			data: $data
-		);
+		// Wrapped for the same reason as markRead(): this method is
+		// `#[PublicPage]`, so an untranslated storage throw becomes a framework
+		// 500 with a stack trace, delivered to an ANONYMOUS caller. \Throwable
+		// is a superset of the storage exceptions; a narrower catch would leave
+		// the unlisted ones to become that same 500.
+		try {
+			$updated = $this->writer->updateObject(
+				register: $register,
+				schema: $schema,
+				scopeField: (string)($action['scopeField'] ?? 'subjectRef'),
+				subjectRef: $scopeValue,
+				organisation: (string)($subject['organisation'] ?? ''),
+				id: $id,
+				data: $data
+			);
+		} catch (\Throwable $e) {
+			// The cause is logged, never returned — a storage message can name
+			// another tenant's register, schema or id.
+			$this->logger->error('contribution update failed: ' . $e->getMessage(), ['exception' => $e]);
+			return new JSONResponse(['error' => 'server_error'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
 
 		// Null = ownership re-verification failed OR the row does not exist —
 		// a single 404, indistinguishable, and nothing was written.

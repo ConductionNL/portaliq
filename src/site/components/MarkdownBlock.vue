@@ -48,7 +48,11 @@ export default {
 	},
 
 	computed: {
-		/** @return {string} The rendered HTML. */
+		/**
+		 * @return {string} The rendered HTML.
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-markdown-must-not-execute-at-a-public-origin
+		 */
 		html() {
 			if (!this.source) {
 				return ''
