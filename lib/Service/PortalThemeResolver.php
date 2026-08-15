@@ -5,11 +5,12 @@
  *
  * Resolves a portal's theme reference to a real token stylesheet (ADR-086 §6).
  *
- * @category Service
- * @package  OCA\Portaliq\Service
- * @author   Conduction B.V. <info@conduction.nl>
- * @license  EUPL-1.2
- * @link     https://github.com/ConductionNL/portaliq
+ * @category  Service
+ * @package   OCA\Portaliq\Service
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ * @link      https://github.com/ConductionNL/portaliq
  */
 
 declare(strict_types=1);

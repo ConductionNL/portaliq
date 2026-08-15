@@ -508,7 +508,6 @@ export default {
 		--nldesign-color-link,
 		var(--nldesign-color-primary, #0b5cab)
 	);
-
 	font-family: var(--pq-font-family);
 	color: var(--pq-text-color);
 	background: var(--pq-bg-color, #ffffff);

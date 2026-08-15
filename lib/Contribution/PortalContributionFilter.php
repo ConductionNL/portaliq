@@ -5,11 +5,12 @@
  *
  * Scopes an aggregated contribution set to ONE portal (ADR-086 §2, ADR-046).
  *
- * @category Service
- * @package  OCA\Portaliq\Contribution
- * @author   Conduction B.V. <info@conduction.nl>
- * @license  EUPL-1.2
- * @link     https://github.com/ConductionNL/portaliq
+ * @category  Service
+ * @package   OCA\Portaliq\Contribution
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ * @link      https://github.com/ConductionNL/portaliq
  */
 
 declare(strict_types=1);
@@ -48,8 +49,16 @@ class PortalContributionFilter {
 	/**
 	 * Keep only the contributions that belong on `$portalSlug`.
 	 *
-	 * @param array<int, array<string, mixed>> $contributions The aggregate.
-	 * @param string                           $portalSlug    The serving portal's slug.
+	 * The parameter is `array<int, mixed>` and NOT `array<int, array<…>>`,
+	 * which phpstan is right to insist on: the aggregate is assembled from
+	 * third-party providers reached by a duck-typed call (ADR-046), so a
+	 * member really can be a string, a null, or anything else a broken
+	 * provider returned. Declaring the stricter type made the `is_array()`
+	 * guard below dead code by contract while it was load-bearing in fact —
+	 * a type that promises what the boundary cannot deliver.
+	 *
+	 * @param array<int, mixed> $contributions The aggregate, as received.
+	 * @param string            $portalSlug    The serving portal's slug.
 	 *
 	 * @return array<int, array<string, mixed>> The contributions for this portal.
 	 *

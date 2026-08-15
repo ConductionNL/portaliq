@@ -3,11 +3,12 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @category Test
- * @package  OCA\Portaliq\Tests\Unit\Service
- * @author   Conduction B.V. <info@conduction.nl>
- * @license  EUPL-1.2
- * @link     https://github.com/ConductionNL/portaliq
+ * @category  Test
+ * @package   OCA\Portaliq\Tests\Unit\Service
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ * @link      https://github.com/ConductionNL/portaliq
  */
 
 declare(strict_types=1);
