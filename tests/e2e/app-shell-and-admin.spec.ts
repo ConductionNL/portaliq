@@ -110,15 +110,32 @@ const API_BASE = `${APP_BASE}/api`
  * lost, the app shell renders perfectly, and the only tell is the URL.
  *
  * So resolve the base from the instance instead of hardcoding either form.
+ *
+ * MEASURED BEHAVIOURALLY, NOT READ OFF A GLOBAL. An earlier version of this
+ * helper evaluated `OC.generateUrl(...)` in the page. That passed locally and
+ * failed in CI with `Cannot read properties of undefined (reading
+ * 'generateUrl')`: `loginToNextcloud()` waits for `#header`, which Nextcloud
+ * renders SERVER-side, so the helper could run before core's JS had defined
+ * `OC` at all. A global is a race; the router's own behaviour is not.
+ *
+ * So: open the app root through `APP_BASE`, wait for the SPA to mount, and ask
+ * where the router put us. Whatever base it owns, it normalises the root to
+ * exactly that — `/apps/portaliq/` when mod_rewrite rewrites, and
+ * `/index.php/apps/portaliq/` when it does not. Reading the answer back beats
+ * predicting it.
  */
 async function spaBase(page: Page): Promise<string> {
-	const base = await page.evaluate(() =>
-		(
-			window as unknown as { OC: { generateUrl: (_path: string) => string } }
-		).OC.generateUrl('/apps/portaliq'),
-	)
-	expect(base, 'OC.generateUrl must resolve the app base').toBeTruthy()
-	return base
+	await page.goto(`${APP_BASE}/`)
+	await expect(page.locator('#content > *').first()).toBeVisible({
+		timeout: 60_000,
+	})
+	const settled = new URL(page.url()).pathname
+	expect(
+		settled,
+		'the app root must settle inside the router base, not on a login or error page',
+	).toContain('/apps/portaliq')
+	// Drop the trailing slash so callers append `/<route>` unambiguously.
+	return settled.replace(/\/+$/, '')
 }
 
 /** Anonymous marker for `newIdentity()`. */
