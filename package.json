@@ -41,7 +41,7 @@
     "@babel/preset-env": "^7.29.5",
     "@babel/preset-react": "^7.27.1",
     "@babel/runtime": "^7.23.6",
-    "@conduction/nextcloud-vue": "2.2.0-vue3.16",
+    "@conduction/nextcloud-vue": "^2.3.0",
     "@nextcloud/auth": "^2.5.0",
     "@nextcloud/axios": "~2.5.2",
     "@nextcloud/capabilities": "^1.2.1",
@@ -70,10 +70,7 @@
   "overrides": {
     "libxmljs2": "^0.37.0",
     "@nextcloud/axios": "~2.5.2",
-    "@nextcloud/vue": "^9.9.0",
-    "@conduction/nextcloud-vue": {
-      "eslint": "$eslint"
-    }
+    "@nextcloud/vue": "^9.9.0"
   },
   "devDependencies": {
     "@cyclonedx/cyclonedx-npm": "^6.0.0",
