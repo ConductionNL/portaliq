@@ -139,3 +139,33 @@ Both are corrected.
   renderer composes library helpers rather than the manifest runtime.
 - Supplier-facing capability (collections, inbox, actions, uploads) is not
   ported. `/portal` stays until it is.
+
+## Structural comparison against :8306, run 2026-08-15
+
+⚠️ **Read what :8306 actually serves before comparing to it.** The container is
+`twu-themes2` — the tilburg-woo-ui codebase — but it is serving
+**Softwarecatalogus** content ("342 gemeenten", "336 leveranciers"), not a
+Tilburg WOO deployment. So CONTENT is not comparable and any claim of the form
+"the new portal matches :8306" would be comparing two different products.
+Structure and chrome are comparable; that is what was measured.
+
+| Surface | :8306 (tilburg-woo-ui) | new renderer | verdict |
+| --- | --- | --- | --- |
+| Skip link | yes | yes | parity |
+| Header + site name | yes | yes | parity |
+| Two-level nav | yes | yes | parity |
+| Footer | yes | yes | parity |
+| Glossary | yes | yes | parity |
+| **Browser tab title** | the site's own name | **"Nextcloud"** | **DEFECT — fixed** |
+| Search | yes | no | gap, not started |
+| Sign-in affordance | yes | yes, when declared | parity |
+
+**The tab title was a real defect and is fixed.** A white-label portal whose
+entire purpose is that a visitor never learns what it runs on was filing itself
+in every bookmark, history entry, window-switcher and search result under the
+name of the hosting platform. It appears in no screenshot, which is why it
+survived a visual review. Now `Page - Portal`, asserted by S22.
+
+**Search is a genuine gap and is NOT started.** The old portal searches its
+publications; the new one has no search of any kind. It is listed here rather
+than in a spec because no change owns it yet.

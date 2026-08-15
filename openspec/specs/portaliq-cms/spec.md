@@ -46,17 +46,32 @@ Verified live on a disposable rig 2026-08-15 (`portaliq-p2-rig`, :8321), with
 
 **Not implemented, and specified elsewhere rather than left implied:**
 
-- Per-portal theming renders nothing — the theme is a class with no tokens
-  behind it, so two differently-themed portals are visually identical
-  (`portal-theme-application`).
-- Per-portal authentication is declared in the schema and enforced nowhere.
+- Per-portal authentication is declared in the schema and ENFORCED NOWHERE.
   Every portal currently behaves as `public` read-only, which happens to match
   the specified fail-closed default. That is a coincidence, not an
-  implementation.
+  implementation. The renderer now offers the sign-in door where a portal
+  declares one; nothing guards what is behind it.
 - The admin surface creates and edits content, but enforces none of the
   publish-time rules `portal-cms-admin-ui` specifies: a route is not checked
   for uniqueness within its portal, a portal with no page at `/` can still be
   published, and there is no domain-verification trigger.
+
+> Per-portal theming WAS on this list and is not any more — the token
+> stylesheet is resolved server-side and consumed by the renderer, and two
+> portals now compute different colours. See the theme requirement below.
+
+**A measured consequence of the authentication gap, stated because the
+contribution bridge otherwise reads as under-delivering:** twelve apps ship a
+`PortalContributionProvider` and all twelve conform to ADR-046 — conventional
+FQCN, `getContribution()`, and eleven of twelve correctly do NOT implement
+Portaliq's interface (the twelfth is Portaliq's own). But surveyed on
+2026-08-15, **only Portaliq's own provider publishes an ANONYMOUS surface**;
+every leaf app publishes exclusively to `citizen`, `client`, `supplier` or
+`employee`, all authenticated audiences.
+
+So the public contributions endpoint correctly returns one contribution today.
+That is the contract working, not the bridge failing — and a visitor will see
+the leaf apps' services only once authentication is enforced.
 
 Related: ADR-086 (headless CMS), ADR-084 (the built-in renderer), ADR-022 /
 ADR-070 (OR-backed persistence), ADR-005 (fail-closed), ADR-082 (throttling).
@@ -259,6 +274,35 @@ closed. The public endpoint SHALL serve only the ANONYMOUS aggregate.
   publicly cacheable — a per-visitor aggregate in a shared cache slot is a
   leak that happens at the edge
 - @e2e `tests/e2e/site-content.spec.ts` (S19)
+
+### Requirement: A portal MUST offer only the sign-in routes it declares
+
+The renderer SHALL derive its sign-in affordances from the portal's declared
+`authentication.modes`, read from the public content API. A portal declaring
+only `public` SHALL offer NO sign-in affordance. An unknown or malformed mode
+SHALL produce none.
+
+This requirement covers the DOOR, not a guard. Per-portal authentication is
+still enforced nowhere — see "Not implemented" above — and nothing in the
+renderer's auth surface may be read as gating content.
+
+#### Scenario: A public-only portal offers no way to sign in
+
+- **GIVEN** a portal declaring `modes: ['public']`
+- **THEN** no sign-in affordance renders
+- **AND** a portal declaring `digid` alongside it DOES offer one — the pair is
+  asserted together, because a derivation that returned nothing at all would
+  satisfy the first half by itself
+- @e2e exclude unit-tested — `tests/site-auth.spec.mjs`; ten assertions over
+  the mode derivation, including the mixed list, an unknown mode and a
+  malformed value. The rig's portals are all `public`, so a browser test could
+  only ever observe the absence
+
+#### Scenario: A signed-out visitor still gets the portal
+
+- **GIVEN** an auth edge that cannot be reached
+- **THEN** the page still renders its public content, signed out
+- @e2e `tests/e2e/site-content.spec.ts` (S21)
 
 ### Requirement: A portal's theme MUST change what a visitor sees
 

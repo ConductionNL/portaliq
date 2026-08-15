@@ -12,6 +12,40 @@
 				{{ site.title || '…' }}
 			</h1>
 
+			<!--
+				The sign-in affordance appears ONLY when the portal declares a
+				mode other than `public`. A portal with no accounts must show
+				no login button: an inert one is a support ticket from every
+				visitor who presses it.
+
+				This offers the door. It does not guard anything — per-portal
+				authentication is declared in the schema and enforced nowhere
+				yet, and nothing here should be read as if it were a gate.
+			-->
+			<div
+				v-if="session || signInRoutes.length"
+				class="pq-site__auth"
+				data-testid="site-auth">
+				<template v-if="session">
+					<span data-testid="site-auth-subject">{{ sessionLabel }}</span>
+					<button
+						type="button"
+						data-testid="site-signout"
+						@click="signOut">
+						Uitloggen
+					</button>
+				</template>
+				<a
+					v-for="entry in signInRoutes"
+					v-else
+					:key="entry.mode"
+					:href="entry.href"
+					:data-mode="entry.mode"
+					data-testid="site-signin">
+					{{ entry.label }}
+				</a>
+			</div>
+
 			<SiteMenu
 				v-for="menu in menus"
 				:key="menu.title"
@@ -117,12 +151,14 @@
 import MarkdownBlock from './components/MarkdownBlock.vue'
 import SiteMenu from './components/SiteMenu.vue'
 import WidgetGrid from './components/WidgetGrid.vue'
+import { authBaseFrom, fetchSession, signInRoutes } from './lib/authApi.js'
 import {
 	fetchContributions,
 	fetchGlossary,
 	fetchMenus,
 	fetchPage,
 	fetchSite,
+	resolveApiBase,
 } from './lib/contentApi.js'
 
 /**
@@ -152,6 +188,7 @@ export default {
 			menus: [],
 			glossary: [],
 			contributions: [],
+			session: null,
 			page: null,
 			route: '/',
 			loading: true,
@@ -183,6 +220,34 @@ export default {
 		 */
 		showGlossary() {
 			return this.route === '/begrippen' && this.glossary.length > 0
+		},
+
+		/**
+		 * The sign-in routes this portal offers, from its DECLARED modes.
+		 *
+		 * Derived from `/api/content/site`, so the decision travels on the
+		 * public contract even though the act of signing in does not.
+		 *
+		 * @return {Array} Zero or more routes.
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portal-must-offer-only-the-sign-in-routes-it-declares
+		 */
+		signInRoutes() {
+			return signInRoutes(this.site, authBaseFrom(resolveApiBase()))
+		},
+
+		/**
+		 * @return {string} How to name the signed-in visitor.
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portal-must-offer-only-the-sign-in-routes-it-declares
+		 */
+		sessionLabel() {
+			return (
+				this.session?.name
+				|| this.session?.subject
+				|| this.session?.sub
+				|| 'Ingelogd'
+			)
 		},
 	},
 
@@ -269,6 +334,69 @@ export default {
 			} catch {
 				this.contributions = []
 			}
+
+			// The session is read last and cannot fail the page. A portal whose
+			// auth edge is down must still serve its public content, which is
+			// the overwhelming majority of what it serves; `fetchSession`
+			// resolves null rather than throwing for exactly that reason.
+			this.session = await fetchSession(authBaseFrom(resolveApiBase()))
+
+			this.applyDocumentTitle()
+		},
+
+		/**
+		 * Put the PORTAL's name in the browser tab.
+		 *
+		 * Found by comparing against the portal this replaces: that one titles
+		 * its tab properly and this one said "Nextcloud" — the hosting
+		 * platform's name, on a white-label portal whose entire purpose is
+		 * that a visitor never learns what it is built on.
+		 *
+		 * It is not a cosmetic detail. The tab title is the bookmark name, the
+		 * history entry, the window-switcher label and the search-result
+		 * heading. A municipality's portal filed under "Nextcloud" is wrong in
+		 * every one of those places at once, and none of them appear in a
+		 * screenshot of the page.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-request-must-resolve-to-exactly-one-portal-or-to-none
+		 */
+		applyDocumentTitle() {
+			const portalName = this.site.title
+			if (!portalName) {
+				return
+			}
+
+			const pageName = this.page?.title
+			document.title =
+				pageName && pageName !== portalName
+					? `${pageName} - ${portalName}`
+					: portalName
+		},
+
+		/**
+		 * End the portal session and return to the signed-out view.
+		 *
+		 * The local state is cleared even when the edge refuses, because the
+		 * alternative is a page that says "signed in" to somebody who has just
+		 * asked, twice, not to be.
+		 *
+		 * @return {Promise<void>} Resolves when signed out.
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portal-must-offer-only-the-sign-in-routes-it-declares
+		 */
+		async signOut() {
+			try {
+				await fetch(`${authBaseFrom(resolveApiBase())}/session`, {
+					method: 'DELETE',
+					credentials: 'include',
+				})
+			} catch {
+				// Reported by the state change below, not by an alert.
+			}
+
+			this.session = null
 		},
 
 		/**

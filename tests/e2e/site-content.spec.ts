@@ -206,4 +206,41 @@ test.describe('site renderer — content', () => {
 			).toBeVisible()
 		}
 	})
+
+	// @e2e portaliq-cms::a-signed-out-visitor-still-gets-the-portal
+	test('S21: the portal renders signed-out, and offers no login it cannot honour', async ({
+		page,
+	}) => {
+		await page.goto(SITE)
+		await expect(page.getByTestId('site-title')).toHaveText('Open Tilburg')
+
+		// The seeded portals declare `modes: ['public']`. A public-only portal
+		// must show NO sign-in affordance: an inert login button on a portal
+		// with no accounts is a support ticket from every visitor who presses
+		// it, and it is exactly what a naive `modes.length > 0` check renders.
+		await expect(page.getByTestId('site-signin')).toHaveCount(0)
+		await expect(page.getByTestId('site-signout')).toHaveCount(0)
+
+		// And the content is all there anyway — the session lookup must never
+		// be able to cost a visitor the public page.
+		await expect(page.getByTestId('site-page')).toBeVisible()
+	})
+
+	test('S22: the browser tab carries the PORTAL name, not the platform name', async ({
+		page,
+	}) => {
+		// Found by comparing against the portal this replaces, which titles its
+		// tab properly while this one said "Nextcloud" — the hosting platform,
+		// on a white-label portal whose whole purpose is that a visitor never
+		// learns what it runs on.
+		//
+		// The tab title is the bookmark name, the history entry, the
+		// window-switcher label and the search-result heading. None of those
+		// appear in a screenshot, which is why this went unnoticed.
+		await page.goto(SITE)
+		await expect(page.getByTestId('site-title')).toHaveText('Open Tilburg')
+
+		await expect(page).toHaveTitle(/Open Tilburg/)
+		await expect(page).not.toHaveTitle(/Nextcloud/)
+	})
 })
