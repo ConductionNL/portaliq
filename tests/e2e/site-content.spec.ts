@@ -244,6 +244,48 @@ test.describe('site renderer — content', () => {
 		await expect(page).not.toHaveTitle(/Nextcloud/)
 	})
 
+	// @e2e portaliq-cms::an-anonymous-visitor-is-not-an-error
+	test('S24: an anonymous visitor is the ordinary state, not a console error', async ({
+		page,
+		request,
+	}) => {
+		// Every public page load probes the auth edge once. It used to answer
+		// 401, so a correctly-working public portal logged a red console error
+		// on every visit. The renderer never cared — it reads the
+		// `authenticated` FLAG, not the status.
+		const anon = await request.get(
+			`${BASE}/index.php/apps/portaliq/portal/api/session`,
+		)
+		expect(
+			anon.status(),
+			'no credential offered is the ordinary anonymous state, not a failure',
+		).toBe(200)
+		expect((await anon.json()).authenticated).toBe(false)
+
+		// THE PAIR. A change that answered 200 to everything would pass the
+		// assertion above while silently retiring the failure signal for an
+		// expired or tampered bearer, which is the one that matters.
+		const bogus = await request.get(
+			`${BASE}/index.php/apps/portaliq/portal/api/session`,
+			{ headers: { Authorization: 'Bearer totally-invalid-token' } },
+		)
+		expect(
+			bogus.status(),
+			'a bearer that is PRESENT and does not resolve is still a 401',
+		).toBe(401)
+
+		// And the page itself loads clean for a visitor who never signs in.
+		const errors: string[] = []
+		page.on('console', (m) => {
+			if (m.type() === 'error') errors.push(m.text())
+		})
+		await page.goto(SITE)
+		await expect(page.getByTestId('site-title')).toHaveText('Open Tilburg')
+		expect(errors, 'a working public portal must log no console errors').toEqual(
+			[],
+		)
+	})
+
 	// @e2e portaliq-cms::the-site-wears-no-platform-chrome
 	test('S23: the site wears no platform chrome — no Nextcloud header', async ({
 		page,
