@@ -72,7 +72,7 @@ if (useLocalLib) {
 		// eslint-disable-next-line no-console
 		console.warn(
 			`[portaliq] IGNORING sibling @conduction/nextcloud-vue@${localVersion} — `
-				+ 'it does not satisfy this app\'s declared range. Building against the npm dist.',
+				+ "it does not satisfy this app's declared range. Building against the npm dist.",
 		)
 		useLocalLib = false
 	}
