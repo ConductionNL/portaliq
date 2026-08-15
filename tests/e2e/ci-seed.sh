@@ -466,4 +466,28 @@ if [ "${GITHUB_ACTIONS:-}" = "true" ] || [ "${CI:-}" = "true" ]; then
 	esac
 fi
 
+# ---------------------------------------------------------------------------
+# CMS fixtures for the site-renderer specs (site-content / site-multisite /
+# site-security).
+#
+# Without these, every one of those specs fails — and fails MISLEADINGLY: with
+# no website seeded, WebsiteResolver correctly resolves nothing and the content
+# API correctly 404s, so the specs report "expected 200, got 404" as though the
+# API were broken. It is behaving exactly as specified; there is simply no
+# content. That is the failure this block prevents.
+#
+# Note the two specs that would pass ANYWAY on an empty instance — S7 (unknown
+# host) and S7b (unknown site slug) both assert a 404. They are the reason the
+# seed matters: a suite where the negative cases pass vacuously and the
+# positive ones are absent reads as "mostly working".
+echo "[ci-seed] seeding CMS fixtures..."
+if NC_URL="$BASE" NC_AUTH="${USER_NAME}:${USER_PASS}" bash "$(dirname "$0")/fixtures/seed-cms.sh"; then
+	echo "[ci-seed] CMS fixtures seeded."
+else
+	echo "::error::CMS seeding failed. The site-renderer specs would fail with"
+	echo "::error::'expected 200, got 404' — which is the API behaving CORRECTLY"
+	echo "::error::against an empty instance, not a defect in it."
+	exit 1
+fi
+
 echo "[ci-seed] done."

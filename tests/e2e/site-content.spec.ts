@@ -16,7 +16,9 @@ const SITE = `${BASE}/index.php/apps/portaliq/site`
 const API = `${BASE}/index.php/apps/portaliq/api/content`
 
 test.describe('site renderer — content', () => {
-	test('S1: renders the site title, menu and grid page from the API', async ({ page }) => {
+	test('S1: renders the site title, menu and grid page from the API', async ({
+		page,
+	}) => {
 		await page.goto(SITE)
 
 		// The title comes from the website object, not from a constant in the
@@ -34,7 +36,9 @@ test.describe('site renderer — content', () => {
 		// The home page is a GRID body: three markdown widgets in declared cells.
 		const grid = page.getByTestId('widget-grid')
 		await expect(grid).toBeVisible()
-		await expect(page.getByTestId('widget-intro')).toContainText('Welkom bij Open Tilburg')
+		await expect(page.getByTestId('widget-intro')).toContainText(
+			'Welkom bij Open Tilburg',
+		)
 		await expect(page.getByTestId('widget-side')).toContainText('Actueel')
 		await expect(page.getByTestId('widget-help')).toContainText('Hulp nodig?')
 
@@ -45,11 +49,14 @@ test.describe('site renderer — content', () => {
 		const help = await page.getByTestId('widget-help').boundingBox()
 		expect(side).not.toBeNull()
 		expect(help).not.toBeNull()
-		expect(Math.abs((side!.y) - (help!.y))).toBeLessThan(4)
+		expect(Math.abs(side!.y - help!.y)).toBeLessThan(4)
 		expect(help!.x).toBeGreaterThan(side!.x)
 	})
 
-	test('S2: markdown is served as source and rendered with its structure intact', async ({ page, request }) => {
+	test('S2: markdown is served as source and rendered with its structure intact', async ({
+		page,
+		request,
+	}) => {
 		const response = await request.get(`${API}/page?route=/over-ons`)
 		expect(response.status()).toBe(200)
 		const body = await response.json()
@@ -72,7 +79,9 @@ test.describe('site renderer — content', () => {
 		await expect(page.locator('#pq-main table td').first()).toBeVisible()
 	})
 
-	test('S3: in-site navigation updates the page and marks the current item', async ({ page }) => {
+	test('S3: in-site navigation updates the page and marks the current item', async ({
+		page,
+	}) => {
 		await page.goto(SITE)
 		await expect(page.getByTestId('page-title')).toHaveText('Welkom')
 
@@ -82,7 +91,10 @@ test.describe('site renderer — content', () => {
 			;(window as unknown as Record<string, unknown>).__pqNoReload = true
 		})
 
-		await page.getByTestId('site-menu').getByRole('link', { name: 'Over ons' }).click()
+		await page
+			.getByTestId('site-menu')
+			.getByRole('link', { name: 'Over ons' })
+			.click()
 
 		await expect(page.getByTestId('page-title')).toHaveText('Over ons')
 		await expect(
@@ -90,7 +102,8 @@ test.describe('site renderer — content', () => {
 		).toHaveAttribute('aria-current', 'page')
 
 		const survived = await page.evaluate(
-			() => (window as unknown as Record<string, unknown>).__pqNoReload === true,
+			() =>
+				(window as unknown as Record<string, unknown>).__pqNoReload === true,
 		)
 		expect(survived).toBe(true)
 	})

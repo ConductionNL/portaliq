@@ -106,19 +106,28 @@ export const fetchSite = (site) => get('/site', { site })
  * @param {string} [site] Explicit site slug.
  * @return {Promise<Array>} The site's menus.
  */
-export const fetchMenus = (site) => get('/menus', { site }).then((d) => d.menus || [])
+export async function fetchMenus(site) {
+	const body = await get('/menus', { site })
+	return body.menus || []
+}
 
 /**
  * @param {string} [site] Explicit site slug.
  * @return {Promise<Array>} The site's published page summaries.
  */
-export const fetchPages = (site) => get('/pages', { site }).then((d) => d.pages || [])
+export async function fetchPages(site) {
+	const body = await get('/pages', { site })
+	return body.pages || []
+}
 
 /**
  * @param {string} [site] Explicit site slug.
  * @return {Promise<Array>} The site's glossary terms.
  */
-export const fetchGlossary = (site) => get('/glossary', { site }).then((d) => d.terms || [])
+export async function fetchGlossary(site) {
+	const body = await get('/glossary', { site })
+	return body.terms || []
+}
 
 /**
  * @param {string} route  The in-site route.

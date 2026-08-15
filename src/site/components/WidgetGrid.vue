@@ -130,7 +130,10 @@ export default {
 		 */
 		cellStyle(widget) {
 			const x = Math.max(0, Math.min(11, Number(widget.gridX) || 0))
-			const width = Math.max(1, Math.min(12 - x, Number(widget.gridWidth) || 12))
+			const width = Math.max(
+				1,
+				Math.min(12 - x, Number(widget.gridWidth) || 12),
+			)
 			const height = Math.max(1, Number(widget.gridHeight) || 1)
 
 			return {

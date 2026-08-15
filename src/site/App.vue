@@ -21,16 +21,26 @@
 		</header>
 
 		<main id="pq-main" class="pq-site__main">
-			<p v-if="loading" data-testid="site-loading">
-				Bezig met laden…
-			</p>
+			<p v-if="loading" data-testid="site-loading">Bezig met laden…</p>
 
 			<!-- A failed load says so. Rendering an empty page instead would
 			     make a broken deployment look exactly like an empty site — the
 			     one confusion this surface can least afford. -->
 			<div v-else-if="error" role="alert" data-testid="site-error">
-				<h2>{{ error.status === 404 ? 'Pagina niet gevonden' : 'Er ging iets mis' }}</h2>
-				<p>{{ error.status === 404 ? 'Deze pagina bestaat niet (meer).' : 'De inhoud kon niet worden geladen.' }}</p>
+				<h2>
+					{{
+						error.status === 404
+							? 'Pagina niet gevonden'
+							: 'Er ging iets mis'
+					}}
+				</h2>
+				<p>
+					{{
+						error.status === 404
+							? 'Deze pagina bestaat niet (meer).'
+							: 'De inhoud kon niet worden geladen.'
+					}}
+				</p>
 			</div>
 
 			<article v-else-if="page" data-testid="site-page">

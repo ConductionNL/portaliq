@@ -18,7 +18,9 @@ const SITE = `${BASE}/index.php/apps/portaliq/site`
 const API = `${BASE}/index.php/apps/portaliq/api/content`
 
 test.describe('site renderer — security properties', () => {
-	test('S4: a draft page and a non-existent route are indistinguishable', async ({ request }) => {
+	test('S4: a draft page and a non-existent route are indistinguishable', async ({
+		request,
+	}) => {
 		const draft = await request.get(`${API}/page?route=/concept`)
 		const missing = await request.get(`${API}/page?route=/does-not-exist`)
 
@@ -34,7 +36,9 @@ test.describe('site renderer — security properties', () => {
 		expect(published.status()).toBe(200)
 	})
 
-	test('S8: anonymous and authenticated responses are marked for different caches', async ({ request }) => {
+	test('S8: anonymous and authenticated responses are marked for different caches', async ({
+		request,
+	}) => {
 		const anonymous = await request.get(`${API}/menus`)
 		const authenticated = await request.get(`${API}/menus`, {
 			headers: { Authorization: 'Bearer irrelevant-for-this-assertion' },
@@ -48,7 +52,9 @@ test.describe('site renderer — security properties', () => {
 		expect(authenticated.headers()['cache-control']).not.toContain('public')
 	})
 
-	test('S9: hostile markdown does not execute, and the safe prose survives', async ({ page }) => {
+	test('S9: hostile markdown does not execute, and the safe prose survives', async ({
+		page,
+	}) => {
 		const consoleErrors: string[] = []
 		page.on('pageerror', (error) => consoleErrors.push(error.message))
 
@@ -70,7 +76,9 @@ test.describe('site renderer — security properties', () => {
 			return {
 				scripts: main.querySelectorAll('script').length,
 				jsHrefs: Array.from(main.querySelectorAll('a')).filter((a) =>
-					(a.getAttribute('href') || '').toLowerCase().startsWith('javascript:'),
+					(a.getAttribute('href') || '')
+						.toLowerCase()
+						.startsWith('javascript:'),
 				).length,
 				onerror: main.querySelectorAll('[onerror]').length,
 			}
@@ -81,18 +89,26 @@ test.describe('site renderer — security properties', () => {
 
 		// POSITIVE CONTROL. A sanitiser that discarded the whole document would
 		// satisfy every assertion above.
-		await expect(page.locator('#pq-main')).toContainText('Veilige tekst blijft staan')
+		await expect(page.locator('#pq-main')).toContainText(
+			'Veilige tekst blijft staan',
+		)
 		await expect(page.locator('#pq-main')).toContainText('Einde van de pagina')
 
 		expect(consoleErrors).toEqual([])
 	})
 
-	test('S10: a non-public widget degrades and the rest of the page survives', async ({ page }) => {
+	test('S10: a non-public widget degrades and the rest of the page survives', async ({
+		page,
+	}) => {
 		await page.goto(`${SITE}?route=/widget-probe`)
 
 		// The two public widgets render their content.
-		await expect(page.getByTestId('widget-ok-one')).toContainText('Publieke widget een')
-		await expect(page.getByTestId('widget-ok-two')).toContainText('Publieke widget twee')
+		await expect(page.getByTestId('widget-ok-one')).toContainText(
+			'Publieke widget een',
+		)
+		await expect(page.getByTestId('widget-ok-two')).toContainText(
+			'Publieke widget twee',
+		)
 
 		// The non-public one renders a placeholder, not its own content, and
 		// crucially does not take the page down with it.
@@ -101,15 +117,26 @@ test.describe('site renderer — security properties', () => {
 		await expect(blocked).not.toContainText('/geheim')
 	})
 
-	test('S11: the renderer works with the Nextcloud globals deleted', async ({ page }) => {
+	test('S11: the renderer works with the Nextcloud globals deleted', async ({
+		page,
+	}) => {
 		// Removed BEFORE any bundle runs. This is the closest a
 		// Nextcloud-hosted test gets to a public origin: without it, "does not
 		// depend on Nextcloud" and "Nextcloud happened to be there" are the
 		// same observation.
 		await page.addInitScript(() => {
-			Object.defineProperty(window, 'OC', { value: undefined, configurable: true })
-			Object.defineProperty(window, 'OCA', { value: undefined, configurable: true })
-			Object.defineProperty(window, 'OCP', { value: undefined, configurable: true })
+			Object.defineProperty(window, 'OC', {
+				value: undefined,
+				configurable: true,
+			})
+			Object.defineProperty(window, 'OCA', {
+				value: undefined,
+				configurable: true,
+			})
+			Object.defineProperty(window, 'OCP', {
+				value: undefined,
+				configurable: true,
+			})
 		})
 
 		await page.goto(SITE)
@@ -121,7 +148,9 @@ test.describe('site renderer — security properties', () => {
 })
 
 test.describe('site renderer — cache invalidation', () => {
-	test('S8b: creating a page clears the cached miss for its route', async ({ request }) => {
+	test('S8b: creating a page clears the cached miss for its route', async ({
+		request,
+	}) => {
 		// The read cache stores NEGATIVE results, so this is the case that
 		// matters: a route 404s, its page is then created, and the route must
 		// serve immediately rather than after the TTL. With expiry-only
@@ -129,10 +158,15 @@ test.describe('site renderer — cache invalidation', () => {
 		// minutes — and concludes, correctly, that the CMS does not work.
 		const route = `/invalidation-probe-${Date.now()}`
 		const objects = `${BASE}/index.php/apps/openregister/api/objects/portaliq/page`
-		const auth = { Authorization: `Basic ${Buffer.from('admin:admin').toString('base64')}`, 'OCS-APIRequest': 'true' }
+		const auth = {
+			Authorization: `Basic ${Buffer.from('admin:admin').toString('base64')}`,
+			'OCS-APIRequest': 'true',
+		}
 
 		// 1. Cache the miss.
-		const before = await request.get(`${API}/page?route=${encodeURIComponent(route)}`)
+		const before = await request.get(
+			`${API}/page?route=${encodeURIComponent(route)}`,
+		)
 		expect(before.status()).toBe(404)
 
 		// 2. Create the page.
@@ -145,7 +179,10 @@ test.describe('site renderer — cache invalidation', () => {
 				status: 'published',
 				locale: 'nl',
 				summary: 'Controle op cache-invalidatie.',
-				body: { type: 'markdown', markdown: 'Deze pagina bestond een moment geleden nog niet.\n' },
+				body: {
+					type: 'markdown',
+					markdown: 'Deze pagina bestond een moment geleden nog niet.\n',
+				},
 			},
 		})
 		expect(created.ok()).toBe(true)
@@ -153,7 +190,9 @@ test.describe('site renderer — cache invalidation', () => {
 
 		try {
 			// 3. Immediately — no sleep, no TTL.
-			const after = await request.get(`${API}/page?route=${encodeURIComponent(route)}`)
+			const after = await request.get(
+				`${API}/page?route=${encodeURIComponent(route)}`,
+			)
 			expect(after.status()).toBe(200)
 			expect((await after.json()).title).toBe('Invalidatieproef')
 		} finally {

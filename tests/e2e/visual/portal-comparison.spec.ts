@@ -43,7 +43,10 @@ test.describe('portal comparison', () => {
 		)
 
 		if (!login.ok()) {
-			test.skip(true, 'dev-login unavailable; set portaliq dev_login_enabled=yes on the target')
+			test.skip(
+				true,
+				'dev-login unavailable; set portaliq dev_login_enabled=yes on the target',
+			)
 		}
 
 		const { token } = await login.json()
@@ -77,7 +80,9 @@ test.describe('portal comparison', () => {
 		})
 	})
 
-	test('S12: record what each renderer costs on a first visit', async ({ page }) => {
+	test('S12: record what each renderer costs on a first visit', async ({
+		page,
+	}) => {
 		// Measured on TRANSFERRED bytes for an empty cache, not on the build's
 		// own report of what it emitted. Those two numbers differ whenever
 		// compression, code-splitting or a service worker is involved, and the

@@ -19,11 +19,16 @@
 				     anything deeper, so a consumer never has to guess how far
 				     the tree can go. -->
 				<ul v-if="item.items && item.items.length" class="pq-menu__sublist">
-					<li v-for="child in item.items" :key="child.name" class="pq-menu__item">
+					<li
+						v-for="child in item.items"
+						:key="child.name"
+						class="pq-menu__item">
 						<a
 							class="pq-menu__link pq-menu__link--child"
 							:href="child.link"
-							:aria-current="isCurrent(child.link) ? 'page' : undefined"
+							:aria-current="
+								isCurrent(child.link) ? 'page' : undefined
+							"
 							@click.prevent="$emit('navigate', child.link)">
 							{{ child.name }}
 						</a>
