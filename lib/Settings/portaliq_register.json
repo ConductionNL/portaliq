@@ -323,6 +323,11 @@
         "schemas": {
             "portalAccount": {
                 "slug": "portalAccount",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
                 "icon": "AccountKey",
                 "version": "0.5.0",
                 "title": "Portal Account",
@@ -423,6 +428,11 @@
             },
             "portalSession": {
                 "slug": "portalSession",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
                 "icon": "Ticket",
                 "version": "0.3.0",
                 "title": "Portal Session",
@@ -505,6 +515,11 @@
             },
             "exampleDocument": {
                 "slug": "exampleDocument",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
                 "icon": "FileDocumentOutline",
                 "version": "0.1.0",
                 "title": "Example Document",
@@ -548,6 +563,11 @@
             },
             "portalMessage": {
                 "slug": "portalMessage",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
                 "icon": "EmailOutline",
                 "version": "0.2.0",
                 "title": "Portal Message",
@@ -635,6 +655,11 @@
             },
             "portalSubmission": {
                 "slug": "portalSubmission",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
                 "icon": "FileCheckOutline",
                 "version": "0.1.0",
                 "title": "Portal Submission",
@@ -712,6 +737,11 @@
             },
             "portalAuditEntry": {
                 "slug": "portalAuditEntry",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
                 "icon": "ShieldCheckOutline",
                 "version": "0.1.0",
                 "title": "Portal Audit Entry",
@@ -796,6 +826,11 @@
             },
             "portalNotification": {
                 "slug": "portalNotification",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
                 "icon": "BellOutline",
                 "version": "0.1.0",
                 "title": "Portal Notification",
@@ -873,6 +908,11 @@
             },
             "portalOidcState": {
                 "slug": "portalOidcState",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
                 "icon": "ShieldLock",
                 "version": "0.1.0",
                 "title": "Portal OIDC State",
@@ -949,6 +989,11 @@
             },
             "portalPage": {
                 "slug": "portalPage",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
                 "icon": "WebBox",
                 "version": "0.2.0",
                 "title": "Portal Page",
@@ -1360,6 +1405,11 @@
                 "icon": "Web",
                 "version": "0.1.0",
                 "title": "Portal",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
                 "description": "One portal Portaliq serves (ADR-086 §2). Owns its domains, theme, authentication configuration, locales and publication status. Every menu, page and glossary term belongs to exactly one portal; an Organisation may run several portals (a public site, a supplier portal, a docs site), each branded and authenticated differently. Supersedes the never-implemented white-label-on-Organisation requirement in supplier-portal T08.",
                 "type": "object",
                 "required": [
@@ -1522,6 +1572,11 @@
                 "icon": "Menu",
                 "version": "0.1.0",
                 "title": "Menu",
+                "authorization": {
+                    "read": [
+                        "public"
+                    ]
+                },
                 "description": "A navigation menu for one portal (ADR-086 §3). The shape is preserved EXACTLY as OpenCatalogi deploys it today — two levels, `order`/`name`/`link`/`icon`/`groups`/`hideBeforeLogin`/`hideAfterLogin` — so the handover needs no data migration across the ten live municipal deployments.",
                 "type": "object",
                 "required": [
@@ -1677,6 +1732,17 @@
                 "icon": "FileDocument",
                 "version": "0.1.0",
                 "title": "Page",
+                "authorization": {
+                    "read": [
+                        {
+                            "group": "public",
+                            "match": {
+                                "status": "published"
+                            }
+                        },
+                        "authenticated"
+                    ]
+                },
                 "description": "One page of a portal (ADR-086 §4). Its body is EITHER a widget grid — the same manifest-v2 widget placement OpenBuild authors, on a 12-column grid — OR markdown, stored and served as source so a Docusaurus build consumes it with no HTML round-trip. The two are not a hierarchy: a landing page is grid-first, a documentation page is markdown-first, and both are pages.",
                 "type": "object",
                 "required": [
@@ -1828,6 +1894,11 @@
                 "icon": "BookAlphabet",
                 "version": "0.1.0",
                 "title": "Glossary Term",
+                "authorization": {
+                    "read": [
+                        "public"
+                    ]
+                },
                 "description": "One begrippenlijst entry, scoped to a portal (ADR-086 §5). Moves out of OpenCatalogi with the rest of the CMS. A renderer MAY auto-link occurrences of a term in page prose to its definition; that linking happens at render time and never alters the stored markdown.",
                 "type": "object",
                 "required": [
