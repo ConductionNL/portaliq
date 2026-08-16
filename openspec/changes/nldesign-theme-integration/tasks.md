@@ -2,18 +2,20 @@
 
 ## 1. Adoption — a portal picks a real token set
 
-- [ ] 1.1 Read the catalogue via `nldesign`'s `CatalogController` (`GET /apps/nldesign/api/token-sets`) rather than probing the filesystem for `css/tokens/<theme>.css`.
-- [ ] 1.2 Establish that the catalogue endpoint is safe for an ANONYMOUS caller, not merely for a non-admin one. If it is not, add an anonymous-safe projection rather than widening the existing route.
-- [ ] 1.3 `PortalThemeResolver` resolves `portal.theme` against the catalogue and returns null when the id is unknown — never a default, never another portal's theme.
+- [x] 1.1 Read the catalogue rather than probing the filesystem for `css/tokens/<theme>.css`. Resolved server-side from the theme app's `token-sets.json` — the same file `CatalogController` serves — because the renderer runs for ANONYMOUS visitors and the endpoint is deliberately not public (see 1.2).
+- [x] 1.2 Establish that the catalogue endpoint is safe for an ANONYMOUS caller, not merely a non-admin one. **It is not, by design.** `CatalogController::tokenSets()` is `#[NoAdminRequired]` and deliberately not `#[PublicPage]`: its docblock states that exposing admin-uploaded custom sets to anonymous traffic "would be a new information-disclosure surface with no consumer need". The route was left alone; the public renderer reads the catalogue from disk, and the authenticated admin UI remains the endpoint's consumer.
+- [x] 1.3 `PortalThemeResolver` resolves `portal.theme` against the catalogue and returns null when the id is unknown. A file present on disk but absent from the catalogue — a generated variant, a leftover — is no longer adoptable.
 - [ ] 1.4 Surface the resolvable set to the admin UI so `portal.theme` becomes a chosen id rather than free text.
-- [ ] 1.5 Test: an unknown id renders UNSTYLED and says so in a log line; it must not fall back.
+- [x] 1.5 Test: an unknown id renders UNSTYLED and does not fall back. Covered per branch: uncatalogued file, catalogued-but-missing file, and an unreadable catalogue (fails closed).
 
 ## 2. Generation — dark variants and fonts
 
-- [ ] 2.1 Link `css/tokens/dark/<id>.css` when `nldesign` has generated one, after the light layer so its media-query rules win.
-- [ ] 2.2 Respect the instance's dark-mode toggle the same way `CssInjectionService` does; a portal must not invent a second switch.
+- [x] 2.1 ~~Link `css/tokens/dark/<id>.css`~~ **Withdrawn on measurement, and the withdrawal is the deliverable.** Implemented, rendered and measured twice: the artefact as generated changed **0 of 1,152,000 pixels**; after `nldesign` was fixed (see 2.5) it changed 53% and left **10 of 11 text nodes below 4.5:1**. This site has no token-driven surface layer. Backed out, with the numbers recorded in `templates/site.php` and pinned by a test so re-adding the line is deliberate.
+- [ ] 2.2 Respect the instance's dark-mode toggle the same way `CssInjectionService` does; a portal must not invent a second switch. **Blocked on 2.6.**
 - [ ] 2.3 Consume `FontService` for the theme's declared fonts instead of `portaliq/css/nlds/nlds-fonts.css`, which currently re-declares faces by hand because the vendored CSS carried root-relative urls.
-- [ ] 2.4 Test: with a generated dark variant present, a `prefers-color-scheme: dark` visitor gets it; with none, nothing changes.
+- [ ] 2.4 Test: with a generated dark variant present, a `prefers-color-scheme: dark` visitor gets it. **Blocked on 2.6.**
+- [x] 2.5 Fix the generator in `nldesign` — three defects found by chasing the 0-pixel result, each of which produced output that reads as a successful run (ConductionNL/nldesign#353): `var()` aliases were never darkened (an alias declared on `:root` resolves there, and the dark block scopes to `body`, a descendant — so only 13 of 600 `--utrecht-*` tokens survived); text was classified as surface outside the `--nldesign-*` naming convention; and `GENERATOR_VERSION` was stamped into every header and read by nothing, so an algorithm fix regenerated **0 of 41 sets**.
+- [ ] 2.6 Give the site a token-driven surface layer — bands, cards and the page itself. Painting `body` from `--utrecht-document-*` is verified harmless (0 pixels changed in light mode) and insufficient alone: the inner bands stayed white. This is the real prerequisite for dark mode, and it is a change to the site's own CSS, not to the theme app.
 
 ## 3. Contrast and compliance — at adoption time, not after a review
 

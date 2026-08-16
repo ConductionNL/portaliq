@@ -16,18 +16,40 @@ token sets. An id absent from the catalogue MUST resolve to nothing.
 A portal wearing another municipality's colours looks correct in every
 screenshot and is wrong in the only way that matters.
 
-### Requirement: A portal MUST serve the generated dark variant when one exists
+### Requirement: A portal MUST paint its surfaces from tokens before it serves a dark variant
 
-#### Scenario: A dark variant is present
+This requirement replaces "a portal MUST serve the generated dark variant when
+one exists", which was written, implemented and then **measured**. Linking the
+variant is one line, and both versions of the artefact were rendered on a live
+portal:
 
-- **WHEN** `nldesign` has generated `css/tokens/dark/<id>.css` for the adopted set
-- **AND** the instance's dark-mode toggle is on
-- **THEN** the portal links it AFTER the light layer
+| artefact | result |
+| --- | --- |
+| as generated then | **0 of 1,152,000 pixels changed** — it rewrote `--nldesign-color-*` and the site is painted from `--utrecht-*` |
+| after `nldesign` was fixed to darken those too | **53% of pixels changed** and **10 of 11 text nodes fell below 4.5:1** — `#e5e5e5` headings on white bands, ratio **1.26** |
 
-#### Scenario: No dark variant exists
+The cause is upstream of the theme app: this site has no token-driven surface
+layer. Its bands paint their own backgrounds, and the page itself is unpainted
+— the white is the browser canvas, with no rule setting it. Painting `body`
+from `--utrecht-document-*` was tried and verified harmless (0 pixels changed
+in light mode) and is **not sufficient on its own**: the inner bands stayed
+white.
 
-- **WHEN** no generated variant exists for the adopted set
-- **THEN** the portal links only the light layer and renders unchanged
+#### Scenario: The surfaces read their tokens
+
+- **WHEN** every band, card and page surface derives its background from the adopted token set
+- **THEN** a portal MAY link `css/tokens/dark/<id>.css` after the light layer
+- **AND** the dark rendering MUST be measured for contrast before it ships,
+  because a half-darkened page is worse than an undarkened one
+
+#### Scenario: The surfaces do not read their tokens
+
+- **WHEN** any painted surface takes its background from something other than the token set
+- **THEN** the portal MUST NOT link the dark variant
+- **AND** the refusal MUST carry the measurement, so it is not mistaken for an oversight
+
+A dark mode that darkens text and not the surfaces behind it is not an
+incomplete feature; it is an unreadable public government page.
 
 ### Requirement: An adopted theme MUST be contrast-checked against the surfaces the portal paints
 
