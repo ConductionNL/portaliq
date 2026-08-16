@@ -115,6 +115,16 @@ export default {
 			type: Array,
 			default: () => [],
 		},
+
+		/**
+		 * The portal's glossary rows, for a page that places a `glossary`
+		 * block. Fetched once by the host over the public contract; see
+		 * `propsFor()` for why the block does not fetch its own.
+		 */
+		glossary: {
+			type: Array,
+			default: () => [],
+		},
 	},
 
 	computed: {
@@ -201,6 +211,21 @@ export default {
 
 			if (widget.widgetKey === 'markdown') {
 				return { source: props.markdown || '' }
+			}
+
+			// THE GLOSSARY'S ROWS ARE DATA, NOT PAGE CONFIGURATION.
+			//
+			// Every other block is fully described by what its author typed.
+			// This one is not: the terms live in the portal's own store and
+			// this app already fetched them over the public contract. So the
+			// host supplies the rows and the author supplies the wording — a
+			// block that fetched for itself could not render at a public
+			// origin, which is the entire premise of that entry point.
+			//
+			// Authored props win, so a page can override any label; `terms`
+			// comes first so a page that names none still gets them.
+			if (widget.widgetKey === 'glossary') {
+				return { terms: this.glossary, ...props }
 			}
 
 			return props

@@ -204,7 +204,8 @@
 
 					<WidgetGrid
 						v-if="page.body && page.body.type === 'grid'"
-						:widgets="page.body.widgets || []" />
+						:widgets="page.body.widgets || []"
+						:glossary="glossary" />
 
 					<div v-else class="container">
 						<MarkdownBlock
@@ -508,15 +509,6 @@ export default {
 			return footers.reduce((highest, menu) =>
 				(menu.position || 0) > (highest.position || 0) ? menu : highest,
 			)
-		},
-
-		/**
-		 * @return {boolean} Whether the glossary section is shown.
-		 *
-		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-content-api-must-be-sufficient-without-the-built-in-renderer
-		 */
-		showGlossary() {
-			return this.route === '/begrippen' && this.glossary.length > 0
 		},
 
 		/**

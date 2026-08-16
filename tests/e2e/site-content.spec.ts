@@ -125,10 +125,28 @@ test.describe('site renderer — content', () => {
 
 	test('S1b: the glossary is reachable and rendered', async ({ page }) => {
 		await page.goto(`${SITE}?route=/begrippen`)
-		const terms = page.getByTestId('glossary-term')
-		await expect(terms.first()).toBeVisible()
-		await expect(page.getByTestId('site-glossary')).toContainText('Woo-verzoek')
-		await expect(page.getByTestId('site-glossary')).toContainText('Wob-verzoek')
+
+		// LOCATED BY THE BLOCK'S OWN CLASSES, not by test hooks.
+		//
+		// This spec used to look for `data-testid="site-glossary"` and
+		// `glossary-term`, which the renderer emitted back when the glossary
+		// was a hard-coded <section>. It is now `CnSiteGlossary` from the
+		// shared public entry point, and that library ships semantic classes
+		// rather than another consumer's test attributes.
+		const glossary = page.locator('.ac-glossary')
+		await expect(glossary.locator('.ac-glossary__term').first()).toBeVisible()
+
+		// The term AND its synonym. Someone searching for the old name has only
+		// the old name; a glossary that renders "Woo-verzoek" alone tells them
+		// the concept was abolished rather than renamed.
+		await expect(glossary).toContainText('Woo-verzoek')
+		await expect(glossary).toContainText('Wob-verzoek')
+
+		// A description list, because that is what makes a screen reader
+		// announce term/definition pairs instead of a run of text — and a
+		// stack of divs looks identical on screen.
+		await expect(glossary.locator('dl dt').first()).toBeVisible()
+		await expect(glossary.locator('dl dd').first()).toBeVisible()
 	})
 
 	test('S18: the site bundle stays inside the public first-load budget', async ({
