@@ -932,7 +932,21 @@ body.layout-base .pq-site {
 	 * (Marianne) while the portal rendered inside the NC shell. It does
 	 * not render there any more, so the workaround outlived its cause.
 	 */
-	color: var(--pq-text-color);
+	/*
+	 * NO DOCUMENT COLOUR. This is the THIRD rule of this shape removed from
+	 * this renderer, after `.pq-site :any-link` and MarkdownBlock's heading
+	 * colour, and it failed the same way.
+	 *
+	 * It set `#333` on the whole portal. The design system does not: measured
+	 * on the reference, `html`, `body` and every ancestor of a card are
+	 * rgb(0, 0, 0) — the browser default — and text that should be grey gets
+	 * there through `utrecht-paragraph`, per element, on a known surface.
+	 *
+	 * Inheriting #333 instead put card headings at rgb(51, 51, 51) against the
+	 * design's rgb(0, 0, 0). The description matched only by coincidence: #333
+	 * is what `utrecht-paragraph` sets anyway, so the blanket rule looked
+	 * right everywhere it happened to agree and was wrong everywhere else.
+	 */
 	background: var(--pq-bg-color, #ffffff);
 	min-height: 100vh;
 
