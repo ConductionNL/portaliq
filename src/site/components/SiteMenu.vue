@@ -104,40 +104,24 @@ export default {
 </script>
 
 <style scoped>
-.pq-menu__list,
-.pq-menu__sublist {
-	list-style: none;
-	margin: 0;
-	padding: 0;
-}
-
-.pq-menu__list {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 1.25rem;
-}
-
-.pq-menu__sublist {
-	display: flex;
-	gap: 0.75rem;
-	margin-top: 0.25rem;
-}
-
-.pq-menu__link {
-	color: var(--pq-link-color, #004488);
-	text-decoration: underline;
-	font-weight: 600;
-}
-
-.pq-menu__link--child {
-	font-weight: 400;
-	font-size: 0.9em;
-}
-
-.pq-menu__link[aria-current='page'] {
-	text-decoration-thickness: 3px;
-}
-
+/*
+ * PRESENTATION LIVES IN THE DESIGN SYSTEM, NOT HERE.
+ *
+ * These elements now also carry `ac-c-navigation__*`, and `nlds-app.css`
+ * styles them — list reset, flex layout, 18px padding, colours and
+ * `.ac-c-navigation__primary { font-weight: 500 }`. Every rule this file used
+ * to add was a second opinion on the same pixels, and scoped styles win, so
+ * the design system silently lost.
+ *
+ * MEASURED, ours against the reference, with the block still in place: the nav
+ * bar came out 54px against 55px everywhere it appears — bar, container, ul,
+ * link — because `font-weight: 600` here beat the system's 500 and a heavier
+ * glyph is one pixel taller. Nothing else differed by then.
+ *
+ * Only the focus ring stays: it is an accessibility guarantee this app owes
+ * its visitors regardless of which stylesheet is loaded, and it changes no
+ * geometry.
+ */
 .pq-menu__link:focus-visible {
 	outline: 2px solid var(--pq-focus-color, #1a1a1a);
 	outline-offset: 2px;

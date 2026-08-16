@@ -1,0 +1,90 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * WEBFONTS FOR THE STANDALONE SITE RENDERER.
+ *
+ * WHY THIS FILE EXISTS AT ALL
+ *
+ * The vendored NLDS stylesheets were captured from the reference application,
+ * where they are served from that site's ROOT. Their `@font-face` rules
+ * therefore carry ROOT-RELATIVE urls:
+ *
+ *     @font-face { font-family: Roboto; src: url(/static/fonts/b009a76ad6afe.woff2) }
+ *
+ * A root-relative url resolves against the ORIGIN, not against the stylesheet.
+ * Served from `/apps/portaliq/css/nlds/`, those rules ask Nextcloud for
+ * `/static/fonts/…` — a path this app does not own and never will.
+ *
+ * MEASURED, before this file existed: four font requests, four 404s, and
+ * `document.fonts` reporting `Roboto 400/500/700 error`. Nothing looked
+ * broken. The page rendered in Arial and the only visible symptom was that
+ * the navigation bar came out 54px against the reference's 55px — one pixel,
+ * because a fallback face has a different intrinsic line box. A missing
+ * webfont does not fail loudly; it silently redraws the entire site in
+ * something else.
+ *
+ * So this file re-declares the faces with urls RELATIVE TO ITSELF. It must be
+ * linked AFTER the vendored sheets: same family, same weight, same style, and
+ * the last declaration wins.
+ *
+ * WHAT IS AND IS NOT IN THIS REPOSITORY
+ *
+ * Only fonts we are licensed to redistribute ship here. The reference
+ * application's font set is mostly not: reading the name tables out of the
+ * files it serves shows Avenir LT W01 and Gill Sans W01 (Monotype/Linotype,
+ * "all rights reserved", with an explicit notification-of-licence clause) and
+ * Tisa Sans Pro (Monotype). Committing any of those to a EUPL-1.2 repository
+ * would redistribute commercial font software we hold no licence for.
+ *
+ *   - Roboto 400/500/700 — Apache-2.0, redistributable, COMMITTED, and the
+ *     face that carries essentially all body and navigation text.
+ *   - Avenir — proprietary, NOT COMMITTED. Declared below as a DROP-IN SLOT:
+ *     a deployment holding a Monotype licence places the file at the path
+ *     named there and the heading renders in Avenir; every other deployment
+ *     falls through the stack to Roboto and renders correctly, just not
+ *     identically to a licensed one.
+ *
+ * `font-display: swap` throughout, matching the reference: text is readable
+ * during the fetch rather than invisible.
+ */
+
+@font-face {
+	font-family: Roboto;
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+	src: url(../fonts/roboto-400.woff2) format('woff2');
+}
+
+@font-face {
+	font-family: Roboto;
+	font-style: normal;
+	font-weight: 500;
+	font-display: swap;
+	src: url(../fonts/roboto-500.woff2) format('woff2');
+}
+
+@font-face {
+	font-family: Roboto;
+	font-style: normal;
+	font-weight: 700;
+	font-display: swap;
+	src: url(../fonts/roboto-700.woff2) format('woff2');
+}
+
+/*
+ * THE LICENSED DROP-IN SLOT.
+ *
+ * `css/fonts/licensed/` is gitignored. When the file is absent the browser
+ * records one failed fetch for this face and moves down the font stack — it
+ * does NOT block rendering and it does not error anywhere a visitor can see.
+ * That is the intended behaviour for every deployment without the licence.
+ */
+@font-face {
+	font-family: Avenir;
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+	src: url(../fonts/licensed/avenir-lt-55-roman.woff2) format('woff2');
+}

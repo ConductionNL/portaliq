@@ -34,14 +34,50 @@ import { loadState } from '@nextcloud/initial-state'
  * @return {object} The runtime config, possibly empty.
  */
 export function runtimeConfig() {
-	try {
-		// `loadState` throws when the initial-state element is absent — which
-		// is exactly the public-origin case, where Nextcloud never rendered
-		// one. The throw is the signal, not an error.
-		return loadState('portaliq', 'portalConfig', {}) || {}
-	} catch {
-		return window.PORTALIQ_SITE_CONFIG || {}
+	// ORDER IS EXPLICIT, NOT EXCEPTION-DRIVEN.
+	//
+	// This used to be `try { loadState('portaliq', 'portalConfig', {}) } catch
+	// { …fallbacks… }`, with a comment stating that `loadState` THROWS when the
+	// initial-state element is absent and that the throw was the signal. It
+	// does not throw when a FALLBACK is supplied — the `{}` third argument is
+	// returned instead. So the catch was unreachable and every fallback below
+	// it was dead code.
+	//
+	// MEASURED once the standalone shell shipped: `runtimeConfig()` returned
+	// `{}`, `resolveApiBase()` fell through to its root-relative default, and
+	// the portal requested `/api/content/menus` instead of
+	// `/apps/portaliq/api/content/menus` — four 404s, an empty menu bar, and a
+	// page that still looked half-alive because the shell itself rendered fine.
+	//
+	// So ask each channel directly, in the order they can exist.
+
+	// 1. The standalone shell's block. Present only when `templates/site.php`
+	//    rendered the whole document, so its presence IS the host signal.
+	const el = document.getElementById('portaliq-site-config')
+	if (el && el.textContent) {
+		try {
+			const parsed = JSON.parse(el.textContent)
+			if (parsed && typeof parsed === 'object') {
+				return parsed
+			}
+		} catch {
+			// A malformed block must not take the portal down — fall through.
+		}
 	}
+
+	// 2. Nextcloud's initial-state channel, when some other route still renders
+	//    this bundle inside a Nextcloud layout.
+	try {
+		const state = loadState('portaliq', 'portalConfig', null)
+		if (state && typeof state === 'object') {
+			return state
+		}
+	} catch {
+		// No initial-state element at all: keep going.
+	}
+
+	// 3. A plain global, for a genuinely external host that sets one.
+	return window.PORTALIQ_SITE_CONFIG || {}
 }
 
 /**

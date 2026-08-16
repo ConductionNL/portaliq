@@ -1,72 +1,143 @@
 <?php
 // SPDX-License-Identifier: EUPL-1.2
 //
-// Shell for the built-in SITE renderer (ADR-084).
+// STANDALONE shell for the built-in SITE renderer (ADR-084).
 //
-// Deliberately minimal. The renderer resolves everything it needs — title,
-// theme, menus, pages, glossary — from the PUBLIC content API at runtime, the
-// same way any other consumer does. Nothing about the site is baked in here,
-// because the moment it is, the built-in renderer has a privileged path that
-// a Docusaurus build cannot use, and the CMS stops being headless.
+// THIS TEMPLATE EMITS THE WHOLE DOCUMENT, and that is the point.
 //
-// The config goes through IInitialStateService — the CSP-safe channel the
-// app's admin template already uses. An inline <script> would need a nonce
-// (the app sets `inlineScriptAllowed = false`), and the nonce manager is not
-// public API. At a PUBLIC origin, where there is no initial-state channel at
-// all, `src/site/lib/contentApi.js` falls back to a `window` global; that
-// fallback is the only thing that differs between the two hosts.
+// It previously rendered through a Nextcloud layout. Even `RENDER_AS_BASE` —
+// the barest one that still ships assets — pulls in `server.css` (587 rules)
+// and the instance's theme chain (`lasuite.css`, `defaults.css`,
+// `brand-override.css`, …). Measured against the reference implementation with
+// that layout in place:
+//
+//     .ac-header__navigation-main   reference 1280x96@0    ours 1235x96@69
+//     .logo-text                    reference Avenir       ours Marianne
+//
+// The heights and the nav typography already matched — the design system was
+// working. What did not match was everything Nextcloud's own CSS still had an
+// opinion about: the content column's width and offset, and bare `h1`. An
+// ancestry walk showed every wrapper at width 1280 with zero padding, so the
+// inset was not something this app could reset from its own root; it came from
+// rules on `#content` and `h1` that outrank anything scoped here.
+//
+// Out-specifying `server.css` selector by selector is a losing game and an
+// unreadable one. A public government portal should not be loading the host
+// platform's stylesheet at all, so it no longer does: `RENDER_AS_BLANK` gives
+// this file the entire response, and it links exactly the assets the portal
+// needs — the NLDS token set, the NLDS component CSS, and the site bundle.
+//
+// WHAT THIS COSTS, stated plainly: `Util::addScript`/`addStyle` and the
+// initial-state channel all live in the layout, so this file resolves its own
+// URLs and passes config through a JSON `<script>` block instead. That block is
+// `type="application/json"` deliberately — it is DATA, not code, so no CSP
+// nonce is involved and nothing inline executes.
+
+declare(strict_types=1);
 
 use OCA\Portaliq\Service\PortalThemeResolver;
-use OCP\Util;
 
-$appId = OCA\Portaliq\AppInfo\Application::APP_ID;
+/** @var array $_ */
+/** @var \OCP\IURLGenerator $urlGenerator */
+$appId = 'portaliq';
 
-\OC::$server->get(\OCP\IInitialStateService::class)
-    ->provideInitialState($appId, 'portalConfig', $_['portalConfig'] ?? []);
-
-// The resolved portal's themiq tokens, emitted BEFORE the bundle so the first
-// paint is already in the tenant's brand rather than repainting into it.
+// Cache-buster from the FILE'S OWN MTIME, not the app version.
 //
-// The controller has already checked that this file exists; an empty value
-// means the theme did not resolve, and the page renders UNSTYLED on purpose —
-// a portal silently wearing another municipality's colours is the failure
-// nobody screenshots (ADR-086 §6).
+// Nextcloud's `?v=` is keyed on the app version, which does not move when you
+// rebuild a bundle — so a rebuilt asset keeps its URL and browsers keep the
+// old bytes until someone hard-reloads. Measured here: the served bundle
+// carried the fix, the disk carried the fix, and the page still ran the
+// previous build. Keying on mtime means every rebuild is a new URL and the
+// question never arises.
+$appManager = \OCP\Server::get(\OCP\App\IAppManager::class);
+$url = \OCP\Server::get(\OCP\IURLGenerator::class);
+$appRoot = $appManager->getAppPath($appId);
+
+$asset = static function (string $app, string $path) use ($url, $appManager): string {
+    $href = $url->linkTo($app, $path);
+    try {
+        $file = $appManager->getAppPath($app) . '/' . $path;
+        $stamp = is_file($file) ? (string)filemtime($file) : '0';
+    } catch (\Throwable) {
+        // An app we cannot locate still gets a URL — just an unversioned one.
+        $stamp = '0';
+    }
+
+    return $href . '?v=' . urlencode($stamp);
+};
+
+// NOTE ON THE SCRIPT TAG (see the bottom of this file): Nextcloud's CSP is
+// `script-src-elem 'strict-dynamic' 'nonce-…'` and it applies to this response
+// even though no Nextcloud layout rendered it. A plain `<script src>` is
+// BLOCKED — measured: the bundle never loaded and the page sat at its
+// server-rendered title with an empty mount. `strict-dynamic` also means a
+// host allowlist would be ignored, so `'self'` is not an escape either; the
+// nonce is the only way in.
+//
+// `emit_script_tag()` is core's own template helper and stamps both the nonce
+// and `defer`. Reaching for the nonce manager directly would mean importing
+// `OC\Security\CSP\…` — private API, and it is not in `OCP` at all: trying
+// that first returned a 500, "Could not resolve … ContentSecurityPolicyNonceManager".
+
+$portalConfig = ($_['portalConfig'] ?? []);
 $themeStylesheet = (string)($_['themeStylesheet'] ?? '');
-if ($themeStylesheet !== '') {
-    Util::addStyle(PortalThemeResolver::THEME_APP, $themeStylesheet);
-}
-
-// The NL Design System tokens THIS app ships, loaded AFTER the theme app's so
-// the `--utrecht-*` names the component CSS actually reads win. The theme
-// app's hand-converted files define none of them, which is why a themed
-// portal still rendered with Utrecht's built-in defaults.
 $nldsStylesheet = (string)($_['nldsStylesheet'] ?? '');
+$locale = (string)($_['locale'] ?? 'nl');
+
+// Stylesheet order is load-bearing: tokens first so the component CSS resolves
+// against the serving portal's values, then the components, then the reference
+// application's own layout CSS.
+$stylesheets = [];
+if ($themeStylesheet !== '') {
+    $stylesheets[] = $asset(PortalThemeResolver::THEME_APP, 'css/' . $themeStylesheet . '.css');
+}
+
 if ($nldsStylesheet !== '') {
-    Util::addStyle($appId, $nldsStylesheet);
+    $stylesheets[] = $asset($appId, 'css/' . $nldsStylesheet . '.css');
 }
 
-// THE REFERENCE IMPLEMENTATION'S OWN STYLESHEETS, vendored verbatim.
-//
-// ORDER IS LOAD-BEARING, and it is the reverse of what looks natural: these
-// come AFTER the token file so the components resolve against the serving
-// portal's tokens, and BEFORE the site bundle's own scoped styles so anything
-// Portaliq states explicitly still wins.
-//
-// `nlds-components` is the full Utrecht/NLDS component set (334KB) — a
-// superset of the per-component packages the bundle imports, kept because the
-// reference's layout reaches for components the site does not import yet.
-// `nlds-app` (318KB) is the reference application's own layout CSS.
-//
-// ⚠️ `nlds-app` IS NOT GENERIC. It is dominated by softwarecatalogus classes
-// (`ac-*` 1362 selectors, `con-*` 633) and styles that app's DOM, not a
-// portal's. Loading it does nothing on its own — it pays off only as this
-// renderer emits the matching structure, which is the next increment.
-// Deliberate per the decision to start from what exists and abstract later;
-// recorded here so the size is not mistaken for value already delivered.
 foreach (['nlds/nlds-components', 'nlds/nlds-vendor-a', 'nlds/nlds-vendor-b', 'nlds/nlds-app'] as $sheet) {
-    Util::addStyle($appId, $sheet);
+    $stylesheets[] = $asset($appId, 'css/' . $sheet . '.css');
 }
 
-Util::addScript($appId, $appId . '-site');
-?>
-<div id="portaliq-site"></div>
+// LAST, AND THE POSITION IS THE WHOLE MECHANISM.
+//
+// The vendored sheets above were captured from the reference application,
+// where they are served from that site's ROOT, so their `@font-face` urls are
+// root-relative (`/static/fonts/…`). A root-relative url resolves against the
+// ORIGIN, not the stylesheet, so from `/apps/portaliq/css/nlds/` they ask
+// Nextcloud for a path this app does not own — measured: four requests, four
+// 404s, `document.fonts` reporting `Roboto 400/500/700 error`, and the whole
+// portal quietly drawn in Arial.
+//
+// `nlds-fonts.css` re-declares the same families and weights with urls
+// relative to itself. Same family + weight + style means the LAST declaration
+// wins, so this link must stay after the vendored ones.
+$stylesheets[] = $asset($appId, 'css/nlds/nlds-fonts.css');
+
+?><!DOCTYPE html>
+<html lang="<?php p($locale); ?>">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><?php p($portalConfig['title'] ?? 'Portaal'); ?></title>
+    <?php foreach ($stylesheets as $href) { ?>
+    <link rel="stylesheet" href="<?php p($href); ?>">
+    <?php } ?>
+</head>
+<body>
+    <!--
+        DATA, NOT CODE. `type="application/json"` is not executed, so this
+        needs no CSP nonce and cannot become an injection vector; the bundle
+        parses it. `contentApi.js` already had a public-origin fallback for
+        exactly this case — running with no Nextcloud initial-state channel.
+    -->
+    <script type="application/json" id="portaliq-site-config"><?php
+        print_unescaped(json_encode($portalConfig, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT));
+    ?></script>
+
+    <div id="portaliq-site"></div>
+
+    <?php emit_script_tag($asset($appId, 'js/portaliq-site.js')); ?>
+</body>
+</html>

@@ -83,7 +83,13 @@ class AdminSettings implements ISettings {
 	/**
 	 * Get the section ID this settings page belongs to.
 	 *
-	 * @return string
+	 * Places the form in Portaliq's own admin section rather than a shared
+	 * one, which is what keeps `getForm()`'s secret-configured indicator in
+	 * front of the operator who owns the portal auth edge.
+	 *
+	 * @return string The settings section ID.
+	 *
+	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.4
 	 */
 	public function getSection(): string {
 		return 'portaliq';
@@ -92,7 +98,9 @@ class AdminSettings implements ISettings {
 	/**
 	 * Get the priority for ordering within the section.
 	 *
-	 * @return int
+	 * @return int The ordering priority within the section.
+	 *
+	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.4
 	 */
 	public function getPriority(): int {
 		return 10;
