@@ -419,4 +419,54 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertContains('authenticated', $read, 'an editor must still read drafts');
 	}//end testPageIsPublicOnlyWhilePublished()
 
+	/**
+	 * portaliq-mcp-adoption T02: `portalMessage` declares the ADR-063
+	 * read-only dialect — `search` + `get` only, both `scope: read` and
+	 * `readOnlyHint: true`, and `search.filters` naming only real declared
+	 * properties (so `McpAnnotationValidator::validateFilters()` accepts the
+	 * schema at import).
+	 *
+	 * @return void
+	 */
+	public function testPortalMessageDeclaresReadOnlyMcpDialect(): void {
+		$message = self::$register['components']['schemas']['portalMessage'];
+		$dialect = $message['x-openregister-mcp'];
+
+		$this->assertSame(['search', 'get'], array_keys($dialect), 'only search and get may be declared');
+
+		foreach ($dialect as $verb) {
+			$this->assertSame('read', $verb['scope']);
+			$this->assertTrue($verb['readOnlyHint']);
+			$this->assertNotEmpty($verb['description'], 'every verb needs agent-facing description prose');
+		}
+
+		$declaredProperties = array_keys((array)$message['properties']);
+		foreach ($dialect['search']['filters'] as $filter) {
+			$this->assertContains($filter, $declaredProperties, "filter '{$filter}' must name a real portalMessage property");
+		}
+
+	}//end testPortalMessageDeclaresReadOnlyMcpDialect()
+
+	/**
+	 * portaliq-mcp-adoption T03: `portalAccount` (raw IdP claims),
+	 * `portalSession` (live session/credential metadata) and `exampleDocument`
+	 * (template scaffold, not a domain noun) MUST NOT carry `x-openregister-mcp`
+	 * — for read verbs as well as write verbs, so no derived tool can ever
+	 * return an IdP claims blob or a session `jti`.
+	 *
+	 * @return void
+	 */
+	public function testIdentityAndSessionSchemasCarryNoMcpDialect(): void {
+		$schemas = self::$register['components']['schemas'];
+
+		foreach (['portalAccount', 'portalSession', 'exampleDocument'] as $slug) {
+			$this->assertArrayNotHasKey(
+				'x-openregister-mcp',
+				$schemas[$slug],
+				"{$slug} must never declare x-openregister-mcp (Risk 1, portaliq-mcp-adoption)"
+			);
+		}
+
+	}//end testIdentityAndSessionSchemasCarryNoMcpDialect()
+
 }//end class

@@ -38,7 +38,6 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\AppInfo;
 
-use OCA\Portaliq\Mcp\ExampleToolProvider;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectDeletedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
@@ -81,13 +80,11 @@ class Application extends App implements IBootstrap {
 		// during the Coordinator pass, blanks the whole Settings framework and
 		// blocks the app's own version-upgrade from recording). info.xml is the
 		// NC34-supported mechanism and already declares this step.
-		// AI Chat Companion (hydra ADR-034/035): expose this app's capabilities to the in-app AI
-		// by registering an IMcpToolProvider under the alias OCA\OpenRegister\Mcp\IMcpToolProvider::{appId}.
-		// OpenRegister's McpToolsService discovers providers by this alias. See lib/Mcp/ExampleToolProvider.php.
-		$context->registerServiceAlias(
-			'OCA\\OpenRegister\\Mcp\\IMcpToolProvider::' . self::APP_ID,
-			ExampleToolProvider::class
-		);
+		// AI Chat Companion (hydra ADR-034/035): this app no longer registers a
+		// hand-written IMcpToolProvider. Its tools are derived from the
+		// `x-openregister-mcp` dialect declared on the schemas in
+		// lib/Settings/portaliq_register.json, so ExampleToolProvider.php was
+		// deleted rather than filled in.
 
 		// Fail-closed bearer guard for PortalProtected controllers (e.g.
 		// ContributionController). Public auth-edge routes are untouched.
