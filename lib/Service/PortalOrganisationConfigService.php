@@ -242,6 +242,52 @@ class PortalOrganisationConfigService {
 		return $this->claimMapper->applyPreset(provider: $provider, rawConfig: $rawConfig);
 	}//end resolveOidcConfig()
 
+
+	/**
+	 * Whether this organisation is permitted to start a login with this
+	 * provider — a SECRET-FREE policy question.
+	 *
+	 * Separated from {@see resolveOidcConfig()} deliberately. That method
+	 * answers two questions at once and returns null for both: "is this
+	 * org+provider allowed" and "give me the client secret". A public entry
+	 * point should state its authorisation decision on its own, before any
+	 * secret-bearing resolution, so the policy has a name, can be tested
+	 * alone, and is legible to a reader who does not follow the resolver two
+	 * frames down.
+	 *
+	 * Grants nothing new: it is exactly the conditions `resolveOidcConfig()`
+	 * already applied — the provider must be in the closed
+	 * {@see self::OIDC_PROVIDERS} allow-list, the organisation must resolve,
+	 * and it must have declared this provider. Callers still fail closed on
+	 * the resolver afterwards, so a change here cannot widen access on its
+	 * own.
+	 *
+	 * @param string $orgSlug  The `?org=` slug.
+	 * @param string $provider One of `digid|eherkenning|eidas|generic`.
+	 *
+	 * @return bool Whether a login may be started.
+	 *
+	 * @spec openspec/specs/supplier-portal/spec.md#oidc-start-builds-a-state-nonce-pkce-authorization-request
+	 */
+	public function isLoginProviderAllowed(string $orgSlug, string $provider): bool {
+		if ($orgSlug === '' || in_array($provider, self::OIDC_PROVIDERS, true) === false) {
+			return false;
+		}
+
+		$organisation = $this->findOrganisationBySlug(slug: $orgSlug);
+		if ($organisation === null) {
+			return false;
+		}
+
+		$overrides = $this->presentationOverrides(organisationUuid: $organisation['uuid']);
+		$oidc = ($overrides['oidc'] ?? null);
+		if (is_array($oidc) === false) {
+			return false;
+		}
+
+		return is_array(($oidc[$provider] ?? null));
+	}//end isLoginProviderAllowed()
+
 	/**
 	 * Store an organisation's OIDC client secret for one provider, via a
 	 * DEDICATED `sensitive`-flagged `IAppConfig` entry — NEVER inside the

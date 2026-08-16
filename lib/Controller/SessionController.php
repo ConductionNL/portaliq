@@ -258,6 +258,17 @@ class SessionController extends Controller {
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 30, period: 60)]
 	public function oidcStart(string $org = '', string $provider = ''): Response {
+		// THE AUTHORISATION DECISION, MADE EXPLICITLY AND BEFORE ANY SECRET IS
+		// TOUCHED. `resolveOidcConfig()` answers two different questions at
+		// once — "may this org+provider start a login" and "give me the client
+		// secret to do it" — and returns null for both. Splitting them means
+		// the public entry point states its policy in one named predicate that
+		// can be tested on its own, and the secret-bearing resolver is only
+		// reached once that policy has said yes.
+		if ($this->orgConfig->isLoginProviderAllowed(orgSlug: $org, provider: $provider) === false) {
+			return $this->oidcGenericError();
+		}
+
 		$config = $this->orgConfig->resolveOidcConfig(orgSlug: $org, provider: $provider);
 		if ($config === null) {
 			return $this->oidcGenericError();
