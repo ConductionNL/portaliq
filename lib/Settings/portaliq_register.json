@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Register containing all schemas owned by the Portaliq external-portal application.",
-        "version": "0.12.0"
+        "version": "0.14.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification and audit entry the app reads and writes.",
-                "version": "0.12.0",
+                "version": "0.14.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -1367,7 +1367,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.1.0",
+                "version": "0.2.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -1387,6 +1387,12 @@
                         "type": "string",
                         "description": "Display name of the site, shown as the portal header and page title. Replaces the hard-coded literal 'Portaliq' every tenant currently sees.",
                         "example": "Gemeente Tilburg"
+                    },
+                    "tagline": {
+                        "title": "Tagline",
+                        "type": "string",
+                        "description": "One supporting line shown under the portal name in the footer's logo block. The NL Design System reference carries one; without this field every portal's footer showed a bare title.",
+                        "example": "Één plek voor alle publicaties van de gemeente"
                     },
                     "slug": {
                         "title": "Slug",

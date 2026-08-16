@@ -115,12 +115,44 @@ foreach (['nlds/nlds-components', 'nlds/nlds-vendor-a', 'nlds/nlds-vendor-b', 'n
 // wins, so this link must stay after the vendored ones.
 $stylesheets[] = $asset($appId, 'css/nlds/nlds-fonts.css');
 
+// The tab icon. A portal's declared logo wins; otherwise the theme app's own
+// favicon, which every NLDS theme ships.
+// The theme app ships a per-brand logo under `img/logos/<theme>.svg`; the
+// reference application serves an SVG favicon the same way. `img/favicon.ico`
+// does NOT exist there — linking it would have traded a 404 on
+// /favicon.ico for a 404 on a path of our own invention, which is not a fix.
+$favicon = (string)($portalConfig['logo'] ?? '');
+if ($favicon === '' && $themeStylesheet !== '') {
+    $themeName = basename($themeStylesheet);
+    try {
+        $logo = $appManager->getAppPath(PortalThemeResolver::THEME_APP)
+            . '/img/logos/' . $themeName . '.svg';
+        if (is_file($logo) === true) {
+            $favicon = $asset(PortalThemeResolver::THEME_APP, 'img/logos/' . $themeName . '.svg');
+        }
+    } catch (\Throwable) {
+        // No theme app: fall through to this app's own mark.
+    }
+}
+
+if ($favicon === '') {
+    $favicon = $asset($appId, 'img/app.svg');
+}
+
 ?><!DOCTYPE html>
 <html lang="<?php p($locale); ?>">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?php p($portalConfig['title'] ?? 'Portaal'); ?></title>
+    <?php
+    // FAVICON. Without one the browser requests /favicon.ico against the
+    // ORIGIN, which on a Nextcloud host is not this app's to answer — measured,
+    // a 404 on every page load and a blank tab icon. The portal's own logo when
+    // it has one, otherwise the theme app's, so a tab is identifiable either
+    // way.
+    ?>
+    <link rel="icon" href="<?php p($favicon); ?>">
     <?php foreach ($stylesheets as $href) { ?>
     <link rel="stylesheet" href="<?php p($href); ?>">
     <?php } ?>

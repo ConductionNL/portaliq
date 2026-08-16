@@ -213,56 +213,23 @@
 					</div>
 				</article>
 
-				<section
-					v-if="showGlossary"
-					class="container"
-					data-testid="site-glossary">
-					<h2>Begrippenlijst</h2>
-					<dl>
-						<template v-for="term in glossary" :key="term.term">
-							<dt data-testid="glossary-term">
-								{{ term.term }}
-							</dt>
-							<dd>
-								{{ term.definition }}
-								<em v-if="term.synonyms && term.synonyms.length">
-									(ook: {{ term.synonyms.join(', ') }})
-								</em>
-							</dd>
-						</template>
-					</dl>
-				</section>
-
 				<!--
-				Contributed surfaces (ADR-046). Rendered as an INDEX, not as
-				live data: each entry names a collection or an action a leaf
-				app publishes on this portal, and following it is what fetches
-				anything. That distinction is the whole safety story here —
-				this section is built from a publicly cacheable, anonymous
-				response, so it must never itself carry a visitor's rows.
-			-->
-				<section
-					v-if="contributions.length"
-					class="pq-site__contributions"
-					data-testid="site-contributions">
-					<h2>Diensten</h2>
-					<div
-						v-for="contribution in contributions"
-						:key="contribution.app"
-						class="pq-site__contribution"
-						:data-testid="`contribution-${contribution.app}`"
-						:data-app="contribution.app">
-						<h3>{{ contribution.label || contribution.app }}</h3>
-						<ul>
-							<li
-								v-for="entry in entriesOf(contribution)"
-								:key="entry.id || entry.label"
-								data-testid="contribution-entry">
-								{{ entry.label || entry.id }}
-							</li>
-						</ul>
-					</div>
-				</section>
+					NEITHER THE GLOSSARY NOR THE CONTRIBUTED SURFACES ARE
+					HARD-CODED HERE ANY MORE.
+
+					They were two `<section>`s carrying literal
+					`<h2>Begrippenlijst</h2>` and `<h2>Diensten</h2>`, rendered on
+					every page that happened to satisfy a condition. That made
+					them impossible for a portal to move, rename, translate,
+					reorder or leave out — "Diensten / Meldingen" appeared under
+					the content of pages whose author never asked for it, and the
+					glossary could only ever live at one route.
+
+					Both are CONTENT, so both belong in a page body as blocks an
+					author places. The data still reaches this component and is
+					still fetched over the same public contract; what changed is
+					that nothing renders it unless a page asks.
+				-->
 			</div>
 		</main>
 
@@ -304,6 +271,71 @@
 						<h3 class="ac-footer__menu-title">{{ menu.title }}</h3>
 						<ul>
 							<li v-for="item in menu.items" :key="item.name">
+								<!--
+									The reference marks every footer link with an
+									external-link glyph. It is DECORATIVE here —
+									`aria-hidden` — because the link already has
+									its own text; announcing "external link"
+									twice per item helps nobody.
+								-->
+								<a
+									class="ac-footer__link"
+									:href="item.link"
+									:target="
+										isExternal(item.link) ? '_blank' : undefined
+									"
+									:rel="
+										isExternal(item.link)
+											? 'noopener noreferrer'
+											: undefined
+									"
+									@click="onFooterLink($event, item.link)">
+									<CnSiteIcon
+										v-if="isExternal(item.link)"
+										name="external-link"
+										:size="18" />
+									<span>{{ item.name }}</span>
+								</a>
+							</li>
+						</ul>
+					</nav>
+
+					<div class="ac-footer__logo">
+						<div class="con-logo-container footer" />
+						<span>
+							<span>{{ site.title }}</span>
+							<!-- The reference's footer logo carries a tagline under
+							     the name. It is portal CONTENT, so it comes from the
+							     portal record rather than a constant. -->
+							<span
+								v-if="site.tagline"
+								data-testid="site-footer-tagline">
+								{{ site.tagline }}
+							</span>
+						</span>
+					</div>
+				</div>
+			</section>
+
+			<section class="ac-footer__sub-footer">
+				<div class="container">
+					<!--
+						The reference's strip is a HORIZONTAL NAV of legal links
+						(Privacy, Algemene voorwaarden, Disclaimer, FAQ), not a
+						colophon line. `.ac-footer__sub-footer-horizontal` is the
+						class its CSS separates with a pipe between items.
+
+						Driven by a menu so it is configurable per portal — the
+						colophon it replaces was the portal title and nothing
+						else, which no portal could change.
+					-->
+					<nav
+						v-if="subFooterMenu"
+						class="ac-footer__sub-footer-links"
+						:aria-label="subFooterMenu.title"
+						data-testid="site-subfooter-menu">
+						<ul class="ac-footer__sub-footer-horizontal">
+							<li v-for="item in subFooterMenu.items" :key="item.name">
 								<a
 									:href="item.link"
 									@click.prevent="go(item.link)"
@@ -313,18 +345,7 @@
 						</ul>
 					</nav>
 
-					<div class="ac-footer__logo">
-						<div class="con-logo-container footer" />
-						<span>
-							<span>{{ site.title }}</span>
-						</span>
-					</div>
-				</div>
-			</section>
-
-			<section class="ac-footer__sub-footer">
-				<div class="container">
-					<p data-testid="site-footer-colophon">{{ site.title }}</p>
+					<p v-else data-testid="site-footer-colophon">{{ site.title }}</p>
 				</div>
 			</section>
 		</footer>
@@ -332,6 +353,7 @@
 </template>
 
 <script>
+import { CnSiteIcon } from '@conduction/nextcloud-vue/public'
 import MarkdownBlock from './components/MarkdownBlock.vue'
 import SiteMenu from './components/SiteMenu.vue'
 import WidgetGrid from './components/WidgetGrid.vue'
@@ -356,7 +378,7 @@ import {
 export default {
 	name: 'App',
 
-	components: { MarkdownBlock, SiteMenu, WidgetGrid },
+	components: { CnSiteIcon, MarkdownBlock, SiteMenu, WidgetGrid },
 
 	props: {
 		/** Explicit site slug, when not resolving by host. */
@@ -455,7 +477,37 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-content-api-must-be-sufficient-without-the-built-in-renderer
 		 */
 		footerMenus() {
-			return this.menus.filter((menu) => (menu.position || 0) !== 0)
+			return this.menus.filter(
+				(menu) => (menu.position || 0) !== 0 && menu !== this.subFooterMenu,
+			)
+		},
+
+		/**
+		 * The legal strip at the very bottom, if the portal declares one.
+		 *
+		 * CONVENTION, read off the existing `position` field rather than added
+		 * to the schema: the HIGHEST position is the sub-footer. The reference
+		 * puts Privacy / Algemene voorwaarden / Disclaimer / FAQ there, visually
+		 * separate from the link columns above, and a portal needs some way to
+		 * say which menu that is.
+		 *
+		 * Requires at least two footer menus, so a portal with a single footer
+		 * menu keeps it as a COLUMN rather than having it silently demoted to
+		 * the strip — one menu is far more likely to be links than legalese.
+		 *
+		 * @return {object|null} The sub-footer menu, or null.
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-content-api-must-be-sufficient-without-the-built-in-renderer
+		 */
+		subFooterMenu() {
+			const footers = this.menus.filter((menu) => (menu.position || 0) !== 0)
+			if (footers.length < 2) {
+				return null
+			}
+
+			return footers.reduce((highest, menu) =>
+				(menu.position || 0) > (highest.position || 0) ? menu : highest,
+			)
 		},
 
 		/**
@@ -701,6 +753,42 @@ export default {
 		 *
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
 		 */
+		/**
+		 * Whether a link leaves this portal.
+		 *
+		 * An absolute URL to another origin is external; everything else is an
+		 * in-site route this renderer handles itself. The distinction decides
+		 * both the icon and whether the click is intercepted — calling
+		 * `preventDefault` on an outbound link would strand the visitor on a
+		 * dead control.
+		 *
+		 * @param {string} link The href.
+		 * @return {boolean} True when it points off-site.
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-content-api-must-be-sufficient-without-the-built-in-renderer
+		 */
+		isExternal(link) {
+			return /^https?:\/\//i.test(String(link || ''))
+		},
+
+		/**
+		 * Follow a footer link, in-site or out.
+		 *
+		 * @param {MouseEvent} event The click.
+		 * @param {string} link The href.
+		 * @return {void}
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-content-api-must-be-sufficient-without-the-built-in-renderer
+		 */
+		onFooterLink(event, link) {
+			if (this.isExternal(link)) {
+				return
+			}
+
+			event.preventDefault()
+			this.go(link)
+		},
+
 		go(link) {
 			if (!link || !link.startsWith('/')) {
 				return
