@@ -223,7 +223,11 @@ const TILE_LINK_TYPES = new Set(['app', 'url'])
 function rendererContractLint(manifest) {
 	const errors = []
 	const dashboards = (manifest.pages || []).filter(
-		(p) => p && p.type === 'dashboard' && p.config && Array.isArray(p.config.widgets),
+		(p) =>
+			p
+			&& p.type === 'dashboard'
+			&& p.config
+			&& Array.isArray(p.config.widgets),
 	)
 
 	// A check that inspects nothing must not report success. If the manifest
@@ -232,8 +236,8 @@ function rendererContractLint(manifest) {
 	if (dashboards.length === 0) {
 		return [
 			'renderer contract: found NO dashboard pages with a config.widgets array. '
-			+ 'Either the manifest changed shape or this lint is looking in the wrong place; '
-			+ 'a check that inspected nothing is not a passing check.',
+				+ 'Either the manifest changed shape or this lint is looking in the wrong place; '
+				+ 'a check that inspected nothing is not a passing check.',
 		]
 	}
 
@@ -248,7 +252,7 @@ function rendererContractLint(manifest) {
 			if (!placed.has(widget.id)) {
 				errors.push(
 					`pages[${page.id}].config: widget "${widget.id}" has no layout entry — `
-					+ 'it will not render (CnDashboardPage iterates layout, not widgets)',
+						+ 'it will not render (CnDashboardPage iterates layout, not widgets)',
 				)
 			}
 
@@ -259,7 +263,7 @@ function rendererContractLint(manifest) {
 			if (!RENDERABLE_WIDGET_TYPES.has(widget.type)) {
 				errors.push(
 					`pages[${page.id}].config: widget "${widget.id}" has type "${widget.type}", `
-					+ `which CnDashboardPage cannot mount (renderable: ${[...RENDERABLE_WIDGET_TYPES].join(', ')})`,
+						+ `which CnDashboardPage cannot mount (renderable: ${[...RENDERABLE_WIDGET_TYPES].join(', ')})`,
 				)
 			}
 
@@ -272,7 +276,7 @@ function rendererContractLint(manifest) {
 				if (!TILE_LINK_TYPES.has(widget.linkType)) {
 					errors.push(
 						`pages[${page.id}].config: tile "${widget.id}" has linkType "${widget.linkType}" — `
-						+ `CnTileWidget resolves only ${[...TILE_LINK_TYPES].join(' / ')} and would use linkValue as a raw href`,
+							+ `CnTileWidget resolves only ${[...TILE_LINK_TYPES].join(' / ')} and would use linkValue as a raw href`,
 					)
 				}
 
@@ -285,7 +289,11 @@ function rendererContractLint(manifest) {
 		}
 
 		for (const entry of layout) {
-			if (entry && entry.widgetId && !widgets.some((w) => w && w.id === entry.widgetId)) {
+			if (
+				entry
+				&& entry.widgetId
+				&& !widgets.some((w) => w && w.id === entry.widgetId)
+			) {
 				errors.push(
 					`pages[${page.id}].config.layout: entry references unknown widget "${entry.widgetId}"`,
 				)
@@ -295,7 +303,7 @@ function rendererContractLint(manifest) {
 
 	console.log(
 		`[validate-manifest] renderer contract: inspected ${dashboards.length} dashboard page(s), `
-		+ `${dashboards.reduce((n, p) => n + p.config.widgets.length, 0)} widget(s)`,
+			+ `${dashboards.reduce((n, p) => n + p.config.widgets.length, 0)} widget(s)`,
 	)
 
 	return errors
