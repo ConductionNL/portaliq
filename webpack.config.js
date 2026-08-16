@@ -31,9 +31,52 @@ webpackConfig.entry = {
 	},
 }
 
-// Use local source when available (monorepo dev), otherwise fall back to npm package
+// Use local source when explicitly opted in, otherwise the npm package.
+//
+// USE_LOCAL_LIB is opt-IN (ADR-090): building against a developer's working
+// checkout is the wrong default for a build that can ship. This app previously
+// had NO version check at all, so an unset variable silently built from whatever
+// sibling happened to be on disk.
+//
+// The sibling must satisfy this app's own declared range. It is 2.0.5 today
+// against a declared 2.2.0-vue3.16 — a Vue 3 library, but not the version this
+// app asked for. That skew breaks the build in a non-obvious way: building from
+// the sibling's SOURCE also resolves packages out of the SIBLING's node_modules,
+// where a stale vue-demi shim (postinstall picks v2/v2.7/v3 and does not re-run
+// on `npm install`) yields
+//   export 'default' (imported as 'Vue') was not found in 'vue'
+//
+// Fail CLOSED: if the check cannot run, the sibling is refused.
 const localLib = path.resolve(__dirname, '../nextcloud-vue/src')
-const useLocalLib = process.env.USE_LOCAL_LIB !== 'false' && fs.existsSync(localLib)
+const localLibPkg = path.resolve(__dirname, '../nextcloud-vue/package.json')
+let useLocalLib = process.env.USE_LOCAL_LIB === 'true' && fs.existsSync(localLib)
+if (useLocalLib) {
+	let localVersion = 'unreadable'
+	let satisfied = false
+	try {
+		// eslint-disable-next-line n/no-extraneous-require
+		const semver = require('semver')
+		const required =
+			require('./package.json').dependencies['@conduction/nextcloud-vue']
+		localVersion = String(
+			JSON.parse(fs.readFileSync(localLibPkg, 'utf8')).version || '',
+		)
+		satisfied = semver.satisfies(localVersion, required, {
+			includePrerelease: true,
+		})
+	} catch (e) {
+		satisfied = false
+	}
+
+	if (!satisfied) {
+		// eslint-disable-next-line no-console
+		console.warn(
+			`[portaliq] IGNORING sibling @conduction/nextcloud-vue@${localVersion} — `
+				+ "it does not satisfy this app's declared range. Building against the npm dist.",
+		)
+		useLocalLib = false
+	}
+}
 
 // Extend the base resolve config (preserves defaults from @nextcloud/webpack-vue-config)
 webpackConfig.resolve = webpackConfig.resolve || {}
@@ -91,19 +134,28 @@ webpackConfig.resolve.alias = {
 	'@nextcloud/axios$': path.resolve(__dirname, 'node_modules/@nextcloud/axios'),
 }
 
-// This app emits TWO independent bundles into the SAME `js/` directory:
-// the Vue admin SPA (this config) and the React public portal
-// (webpack.portal.js). @nextcloud/webpack-vue-config sets
-// `output.clean: true`, so the admin build WIPES js/ — including
-// `portaliq-portal.js`, which is only ever written by the other config.
+// This app emits THREE independent bundles into the SAME `js/` directory:
+// the Vue admin SPA (this config), the React public portal
+// (webpack.portal.js) and the Vue site renderer (webpack.site.js).
+// @nextcloud/webpack-vue-config sets `output.clean: true`, so the admin build
+// WIPES js/ — including bundles only the other configs ever write.
 //
-// `npm run build` survives that only by accident of ordering (admin then
-// portal). Anything that rebuilds the admin bundle alone — `npm run
-// build:admin`, `npm run watch` — silently deletes the portal bundle, and
-// the public portal then serves a bare `<div id="portaliq-portal">` with a
-// 404 on its script and NO console error. webpack.portal.js already sets
-// `clean: false` to protect the admin side; this is the missing other half.
-webpackConfig.output.clean = { keep: /^portaliq-portal\.js/ }
+// `npm run build` survives that only by accident of ordering (admin first).
+// Anything that rebuilds the admin bundle alone — `npm run build:admin`,
+// `npm run watch` — silently deletes the others, and the affected page then
+// serves a bare mount `<div>` with a 404 on its script and NO console error.
+// The other two configs set `clean: false` to protect this side; this is the
+// missing other half.
+//
+// EVERY foreign entry must be listed. It was not: the site renderer was added
+// after this guard and never added to it, so `build:admin` deleted
+// `portaliq-site.js` and `/site` rendered an empty div — silently, because a
+// script that 404s produces no console error and an unmounted Vue app logs
+// nothing. Keep this in step with the `entry` blocks of webpack.portal.js and
+// webpack.site.js.
+webpackConfig.output.clean = {
+	keep: /^portaliq-(portal|site)\.js/,
+}
 
 // Add SCSS rule to the existing module rules
 webpackConfig.module.rules.push({

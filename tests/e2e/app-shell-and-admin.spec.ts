@@ -96,6 +96,48 @@ const E2E_PASS = process.env.PORTALIQ_E2E_PASS ?? 'e2e-reader-pw-2026'
 const APP_BASE = '/index.php/apps/portaliq'
 const API_BASE = `${APP_BASE}/api`
 
+/**
+ * The base the SPA's ROUTER owns, read off the running instance.
+ *
+ * `APP_BASE` above is fine for API calls — PHP routing accepts the
+ * `/index.php/` form and the pretty form alike. The router is different:
+ * `src/main.js` builds its history from `generateUrl('/apps/portaliq')`, which
+ * DROPS `index.php` when mod_rewrite is working and keeps it when it is not.
+ *
+ * Navigating a page to the wrong form is not a 404 — it is worse. The location
+ * falls outside the router's base, so the path matches the catch-all
+ * (`/:pathMatch(.*)*`) and is redirected to `/`. The deep link is silently
+ * lost, the app shell renders perfectly, and the only tell is the URL.
+ *
+ * So resolve the base from the instance instead of hardcoding either form.
+ *
+ * MEASURED BEHAVIOURALLY, NOT READ OFF A GLOBAL. An earlier version of this
+ * helper evaluated `OC.generateUrl(...)` in the page. That passed locally and
+ * failed in CI with `Cannot read properties of undefined (reading
+ * 'generateUrl')`: `loginToNextcloud()` waits for `#header`, which Nextcloud
+ * renders SERVER-side, so the helper could run before core's JS had defined
+ * `OC` at all. A global is a race; the router's own behaviour is not.
+ *
+ * So: open the app root through `APP_BASE`, wait for the SPA to mount, and ask
+ * where the router put us. Whatever base it owns, it normalises the root to
+ * exactly that — `/apps/portaliq/` when mod_rewrite rewrites, and
+ * `/index.php/apps/portaliq/` when it does not. Reading the answer back beats
+ * predicting it.
+ */
+async function spaBase(page: Page): Promise<string> {
+	await page.goto(`${APP_BASE}/`)
+	await expect(page.locator('#content > *').first()).toBeVisible({
+		timeout: 60_000,
+	})
+	const settled = new URL(page.url()).pathname
+	expect(
+		settled,
+		'the app root must settle inside the router base, not on a login or error page',
+	).toContain('/apps/portaliq')
+	// Drop the trailing slash so callers append `/<route>` unambiguously.
+	return settled.replace(/\/+$/, '')
+}
+
 /** Anonymous marker for `newIdentity()`. */
 type Identity = { user: string; pass: string } | 'anonymous'
 
@@ -263,12 +305,16 @@ test.describe('admin SPA + admin settings + operator contracts', () => {
 	// vue-router 4 introduced when it removed the bare `path: '*'` glob.
 	//
 	// @e2e dashboard-page::deep-link-to-an-in-app-route
-	test('a deep link to /features-roadmap serves the SPA and the router keeps the path', async ({
+	test('a deep link to /features-roadmap renders FeaturesRoadmap and the router keeps the path', async ({
 		page,
 	}) => {
 		await loginToNextcloud(page, ADMIN_USER, ADMIN_PASS)
 
-		const response = await page.goto(`${APP_BASE}/features-roadmap`)
+		// Deep-link through the base the ROUTER owns, not a hardcoded URL form
+		// — see `spaBase()`. A mismatch here does not fail loudly; it redirects
+		// to the app root and drops the path.
+		const base = await spaBase(page)
+		const response = await page.goto(`${base}/features-roadmap`)
 		expect(
 			response?.status(),
 			'the catch-all route must serve the SPA for an in-app sub-path',
@@ -278,6 +324,22 @@ test.describe('admin SPA + admin settings + operator contracts', () => {
 			timeout: 60_000,
 		})
 		await expect(page).toHaveURL(/\/features-roadmap$/)
+
+		// The URL and a non-empty #content are BOTH satisfied by the app shell
+		// alone — the catch-all could resolve to a blank view and this test
+		// would still pass. So assert the view put its OWN heading on screen.
+		//
+		// `Features` is the page's h2, read off the rendered page rather than
+		// guessed; the h3 below it is prose and would make a brittle anchor.
+		//
+		// This is also the reference gate-26 asks for. `FeaturesRoadmap` had
+		// only ever appeared in this file's COMMENTS, and the gate reads
+		// EXECUTABLE text — a mention is not coverage, which is exactly the
+		// distinction the gate exists to draw.
+		await expect(
+			page.getByRole('heading', { name: 'Features', exact: true }),
+			'FeaturesRoadmap must render its own heading, not just the shell',
+		).toBeVisible({ timeout: 30_000 })
 	})
 
 	// REQ-UI-001 and REQ-UI-002 are two halves of one join, and the join key is

@@ -38,6 +38,11 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\AppInfo;
 
+use OCA\Portaliq\Mcp\ExampleToolProvider;
+use OCA\OpenRegister\Event\ObjectCreatedEvent;
+use OCA\OpenRegister\Event\ObjectDeletedEvent;
+use OCA\OpenRegister\Event\ObjectUpdatedEvent;
+use OCA\Portaliq\Listener\CmsCacheInvalidationListener;
 use OCA\Portaliq\Middleware\PortalAuthMiddleware;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
@@ -76,6 +81,13 @@ class Application extends App implements IBootstrap {
 		// during the Coordinator pass, blanks the whole Settings framework and
 		// blocks the app's own version-upgrade from recording). info.xml is the
 		// NC34-supported mechanism and already declares this step.
+		// AI Chat Companion (hydra ADR-034/035): expose this app's capabilities to the in-app AI
+		// by registering an IMcpToolProvider under the alias OCA\OpenRegister\Mcp\IMcpToolProvider::{appId}.
+		// OpenRegister's McpToolsService discovers providers by this alias. See lib/Mcp/ExampleToolProvider.php.
+		$context->registerServiceAlias(
+			'OCA\\OpenRegister\\Mcp\\IMcpToolProvider::' . self::APP_ID,
+			ExampleToolProvider::class
+		);
 
 		// Fail-closed bearer guard for PortalProtected controllers (e.g.
 		// ContributionController). Public auth-edge routes are untouched.
@@ -85,6 +97,14 @@ class Application extends App implements IBootstrap {
 		// (OCA\{Namespace}\Portal\PortalContributionProvider) — see
 		// PortalContributionRegistry — so no per-provider registration is needed
 		// here; the DI container constructs each app's provider by reflection.
+
+		// Drop cached public content when a CMS object is written (ADR-086 §9).
+		// The read cache holds NEGATIVE results too, so without this a route
+		// keeps 404ing for the rest of the TTL after its page is created — the
+		// editor sees a broken site and is right.
+		foreach ([ObjectCreatedEvent::class, ObjectUpdatedEvent::class, ObjectDeletedEvent::class] as $event) {
+			$context->registerEventListener($event, CmsCacheInvalidationListener::class);
+		}
 	}//end register()
 
 	/**

@@ -26,6 +26,7 @@ use OCP\Http\Client\IResponse;
 use OCP\IRequest;
 use OCP\IURLGenerator;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
@@ -1537,7 +1538,8 @@ class ContributionControllerTest extends TestCase {
 			$this->forwarder(request: $request, session: $session),
 			$this->createMock(AuditTrailService::class),
 			$this->createMock(SubmissionReceiptService::class),
-			$this->createMock(NotificationDispatchService::class)
+			$this->createMock(NotificationDispatchService::class),
+			$this->createMock(LoggerInterface::class)
 		);
 
 		$response = $controller->uploadFile('portaliq', 'exampleDocument', 'd-1');
@@ -1814,7 +1816,8 @@ class ContributionControllerTest extends TestCase {
 			$this->forwarder(request: $request, session: $session),
 			$this->createMock(AuditTrailService::class),
 			$this->createMock(SubmissionReceiptService::class),
-			$this->createMock(NotificationDispatchService::class)
+			$this->createMock(NotificationDispatchService::class),
+			$this->createMock(LoggerInterface::class)
 		);
 
 	}//end controllerWithCollectionParam()
@@ -1930,7 +1933,8 @@ class ContributionControllerTest extends TestCase {
 			),
 			($auditor ?? $this->createMock(AuditTrailService::class)),
 			($receiptService ?? $this->createMock(SubmissionReceiptService::class)),
-			($notificationDispatch ?? $this->createMock(NotificationDispatchService::class))
+			($notificationDispatch ?? $this->createMock(NotificationDispatchService::class)),
+			$this->createMock(LoggerInterface::class)
 		);
 
 	}//end controller()

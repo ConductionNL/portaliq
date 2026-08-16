@@ -126,9 +126,15 @@ class SessionController extends Controller {
 	}//end __construct()
 
 	/**
-	 * Resolve the caller's bearer to a subject. Fails closed with 401.
+	 * Resolve the caller's bearer to a subject.
 	 *
-	 * @return JSONResponse 200 with the subject, or 401 when unauthenticated.
+	 * Fails closed on a bearer it cannot resolve (401). Reports the absence of
+	 * a bearer as the ordinary anonymous state (200, `authenticated: false`) —
+	 * see the body for why the distinction is load-bearing.
+	 *
+	 * @return JSONResponse 200 with the subject, 200 `authenticated: false`
+	 *                      when no credential was offered, or 401 when one was
+	 *                      offered and rejected.
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T05
@@ -137,7 +143,25 @@ class SessionController extends Controller {
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 60, period: 60)]
 	public function index(): JSONResponse {
-		$subject = $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
+		$authorization = $this->request->getHeader('Authorization');
+
+		// ABSENCE IS NOT A FAILURE. Every anonymous visitor to a public portal
+		// loads this endpoint once, sends no Authorization header, and is told
+		// 401 — which the browser records as a console error on a page that is
+		// working exactly as designed. The site renderer already treats the
+		// answer as `authenticated: false` either way (`fetchSession()` reads
+		// the FLAG, not the status), so the 401 bought nothing and cost a red
+		// line in the console of every public page load.
+		//
+		// The distinction that matters is kept: a bearer that is PRESENT and
+		// does not resolve — expired, tampered, revoked — is a real
+		// authentication failure and still answers 401. Only "no credential
+		// offered" is reported as the ordinary state it is.
+		if ($authorization === '') {
+			return new JSONResponse(['authenticated' => false]);
+		}
+
+		$subject = $this->session->resolveFromBearer($authorization);
 		if ($subject === null) {
 			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
 		}

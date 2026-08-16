@@ -69,6 +69,35 @@ class SessionControllerTest extends TestCase {
 
 	}//end testIndexReturns401ForAnInvalidBearer()
 
+	/**
+	 * The anonymous visitor is the COMMON case on a public portal, not an error.
+	 *
+	 * Every public page load hit this endpoint with no Authorization header and
+	 * got 401, which the browser records as a console error on a page working
+	 * exactly as designed. The renderer never cared — `fetchSession()` reads the
+	 * `authenticated` FLAG, not the status — so the 401 bought nothing.
+	 *
+	 * Asserted as a PAIR with the test above, because "no credential offered"
+	 * and "credential offered and rejected" must not collapse into one answer:
+	 * a change that returned 200 to both would pass this test alone while
+	 * silently retiring the failure signal for an expired or tampered bearer.
+	 */
+	public function testIndexReturns200AuthenticatedFalseWhenNoBearerIsOffered(): void {
+		$session = $this->createMock(PortalSessionService::class);
+		// resolveFromBearer must not even be consulted — there is nothing to
+		// resolve, and calling it would make an absent header indistinguishable
+		// from a rejected one at the service layer too.
+		$session->expects($this->never())->method('resolveFromBearer');
+
+		$response = $this->controller(session: $session, authorization: '')->index();
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertFalse($response->getData()['authenticated']);
+		// No subject fields may leak into the anonymous answer.
+		$this->assertArrayNotHasKey('subjectRef', $response->getData());
+
+	}//end testIndexReturns200AuthenticatedFalseWhenNoBearerIsOffered()
+
 	public function testDevLoginReturns404WhenGateIsClosed(): void {
 		$config = $this->createMock(IConfig::class);
 		$config->method('getSystemValueBool')->willReturn(false);
@@ -454,9 +483,13 @@ class SessionControllerTest extends TestCase {
 		?OidcStateStoreService $stateStore = null,
 		?PortalAccountService $accounts = null,
 		?IURLGenerator $urlGenerator = null,
+		string $authorization = 'Bearer some-token',
 	): SessionController {
 		$request = $this->createMock(IRequest::class);
-		$request->method('getHeader')->willReturnMap([['Authorization', 'Bearer some-token']]);
+		// Defaults to a bearer being PRESENT, which is what every pre-existing
+		// assertion here assumes. `''` models the anonymous visitor who offers
+		// no credential at all — a different case, and now a different answer.
+		$request->method('getHeader')->willReturnMap([['Authorization', $authorization]]);
 
 		return new SessionController(
 			$request,
