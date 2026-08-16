@@ -50,6 +50,62 @@ test.describe('site renderer — NL Design System adoption', () => {
 	})
 
 	// @e2e portaliq-cms::a-portals-theme-must-change-what-a-visitor-sees
+	test('the design system token layer is actually present', async ({ page }) => {
+		// THE PAGE RENDERS WITHOUT TOKENS. Every `ac-*` and `utrecht-*` rule
+		// resolves its `var(--utrecht-…)` to the declaration's own fallback, so
+		// the markup is intact, the text is readable, nothing errors — and the
+		// site is unstyled. There is no console message and no failed request
+		// to notice.
+		//
+		// This has happened once already: this app shipped its own copy of the
+		// VNG token set, the copy was removed in favour of the `nldesign` app
+		// owning it, and for a while NEITHER supplied them. A check of eleven
+		// individual computed properties would have caught it — but only if it
+		// were re-run, and a page that is merely unstyled looks like a page
+		// that loaded slowly.
+		//
+		// So assert the LAYER, not a symptom of it: a handful of tokens the
+		// component CSS actually reads, each required to be non-empty.
+		const tokens = await page.evaluate<Record<string, string>>(`
+			(() => {
+				const root = document.querySelector('[data-testid="site-root"]')
+				const s = getComputedStyle(root)
+				const names = [
+					'--utrecht-document-font-family',
+					'--utrecht-heading-2-font-size',
+					'--utrecht-heading-2-color',
+					'--tilburg-color-blue-500',
+				]
+				return Object.fromEntries(names.map((n) => [n, s.getPropertyValue(n).trim()]))
+			})()
+		`)
+
+		for (const [name, value] of Object.entries(tokens)) {
+			expect(
+				value,
+				`${name} resolved to nothing — the token layer is not loaded`,
+			).not.toBe('')
+		}
+
+		// And the tokens must reach the PAGE, not merely be declared: a set
+		// scoped to a selector the renderer does not use would satisfy the
+		// check above on `:root` and style nothing.
+		//
+		// ASSERTED ON THE NAVIGATION BAR, not the hero. The hero was the first
+		// choice and it was wrong: this suite's default portal has no hero
+		// block, so the locator never resolved and the guard failed on a
+		// perfectly styled page. A token check that depends on optional page
+		// CONTENT tests the fixture, not the token layer.
+		//
+		// The secondary navigation bar exists on every portal and takes its
+		// colour straight from the token set.
+		await expect(page.locator('.ac-header__navigation-secondary')).toHaveCSS(
+			'background-color',
+			'rgb(0, 120, 200)',
+		)
+	})
+
+	// @e2e portaliq-cms::a-portals-theme-must-change-what-a-visitor-sees
 	test('the webfonts this repository ships actually load', async ({ page }) => {
 		const faces = await page.evaluate<{ family: string; status: string }[]>(`
 			Array.from(document.fonts).map((f) => ({ family: f.family, status: f.status }))
