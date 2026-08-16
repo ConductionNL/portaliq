@@ -382,7 +382,7 @@ export default {
 		/**
 		 * The menus shown as columns in the footer's first band.
 		 *
-		 * The counterpart of {@see headerMenus}: every menu the header does not
+		 * The counterpart of `headerMenus`: every menu the header does not
 		 * claim. Before this split, EVERY menu rendered in the header bar and
 		 * the footer had no links at all — a portal could not express a footer
 		 * column even though its data model already had the field to do it.
