@@ -84,16 +84,34 @@ $themeStylesheet = (string)($_['themeStylesheet'] ?? '');
 $nldsStylesheet = (string)($_['nldsStylesheet'] ?? '');
 $locale = (string)($_['locale'] ?? 'nl');
 
-// Stylesheet order is load-bearing: tokens first so the component CSS resolves
-// against the serving portal's values, then the components, then the reference
-// application's own layout CSS.
+// STYLESHEET ORDER IS LOAD-BEARING, AND THE TOKENS GO LAST.
+//
+// They used to go first, on the reasoning that "the component CSS resolves
+// against the serving portal's values". That reasoning does not hold for custom
+// properties: `var()` is resolved where it is USED, not where it is declared, so
+// a token declared after the rule that reads it still applies. What order DOES
+// decide is which declaration of the same custom property wins.
+//
+// And the component CSS declares its own. Measured: `nlds-app.css` sets
+// `--conduction-primary-top-nav-background-color: #fff` on `:root`, so with the
+// token file first the navigation bar rendered WHITE instead of rgb(0, 120, 200)
+// — the design system overriding the theme with its own fallback.
+//
+// This did not surface earlier only because the theme file then in use scoped
+// its tokens to `.vng-theme`, a class on the renderer's root DIV. A custom
+// property is inherited from the NEAREST ancestor that declares it, so the div
+// beat `html` whatever the stylesheet order was. Moving the tokens into
+// nldesign — where a shipped set must be one flat `:root` block, because a
+// shared applier rewrites that selector to scope it — removed that proximity
+// advantage and exposed the ordering for what it always was.
 $stylesheets = [];
+$tokenStylesheets = [];
 if ($themeStylesheet !== '') {
-    $stylesheets[] = $asset(PortalThemeResolver::THEME_APP, 'css/' . $themeStylesheet . '.css');
+    $tokenStylesheets[] = $asset(PortalThemeResolver::THEME_APP, 'css/' . $themeStylesheet . '.css');
 }
 
 if ($nldsStylesheet !== '') {
-    $stylesheets[] = $asset($appId, 'css/' . $nldsStylesheet . '.css');
+    $tokenStylesheets[] = $asset($appId, 'css/' . $nldsStylesheet . '.css');
 }
 
 foreach (['nlds/nlds-components', 'nlds/nlds-vendor-a', 'nlds/nlds-vendor-b', 'nlds/nlds-app', 'nlds/nlds-controls'] as $sheet) {
@@ -114,6 +132,12 @@ foreach (['nlds/nlds-components', 'nlds/nlds-vendor-a', 'nlds/nlds-vendor-b', 'n
 // relative to itself. Same family + weight + style means the LAST declaration
 // wins, so this link must stay after the vendored ones.
 $stylesheets[] = $asset($appId, 'css/nlds/nlds-fonts.css');
+
+// The token layer, last, so a theme's value beats the component CSS's own
+// `:root` fallback for the same custom property.
+foreach ($tokenStylesheets as $href) {
+    $stylesheets[] = $href;
+}
 
 // The tab icon. A portal's declared logo wins; otherwise the theme app's own
 // favicon, which every NLDS theme ships.
