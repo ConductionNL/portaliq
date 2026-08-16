@@ -121,7 +121,15 @@ class PortalPageController extends Controller {
 			Application::APP_ID,
 			'portal',
 			['runtimeConfig' => $runtimeConfig],
-			TemplateResponse::RENDER_AS_PUBLIC
+			// BASE, NOT PUBLIC — same leak, same reasoning as site() below.
+			// This route's own docblock calls it "the one genuinely public HTML
+			// page in the fleet" and it is governed by
+			// portal-white-label-runtime-config, which makes Nextcloud's header
+			// bar sitting above it the plainest contradiction of its spec.
+			// Fixed here as well as in site() because /portal is still served
+			// while parity with /site is measured, and a leak on the route
+			// being retired is still a leak today.
+			TemplateResponse::RENDER_AS_BASE
 		);
 
 		// Per-tenant frame-ancestors (portal-white-label-runtime-config): the
@@ -208,7 +216,25 @@ class PortalPageController extends Controller {
 				// emit.
 				'themeStylesheet' => $this->siteThemeStylesheet(),
 			],
-			TemplateResponse::RENDER_AS_PUBLIC
+			// BASE, NOT PUBLIC — a white-label site may not wear Nextcloud's
+			// chrome. `layout.public.php` emits `<header id="header">` with
+			// `header-appname`, the Nextcloud logo and a `header-info` title,
+			// and it is VISIBLE (measured 108x33 at the top of the viewport on
+			// an anonymous load). A municipality's portal was rendering another
+			// product's brand above its own, to visitors who never logged in.
+			//
+			// This is the same class of leak as the document title, and it hid
+			// the same way: every check looked at the content area, where the
+			// portal renders correctly, so nothing screenshot-shaped ever saw
+			// the bar above it.
+			//
+			// `layout.base.php` emits no header at all — just `#content` —
+			// while still emitting the CSS/script tags and initial state the
+			// renderer boots from. The skip link is not lost either: the site
+			// renders its OWN localised one ("Direct naar de inhoud"), so
+			// dropping core's English duplicate removes a second, conflicting
+			// skip target rather than the only one.
+			TemplateResponse::RENDER_AS_BASE
 		);
 
 		// Deny framing unless the resolved site says otherwise. Same posture

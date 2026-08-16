@@ -243,4 +243,35 @@ test.describe('site renderer — content', () => {
 		await expect(page).toHaveTitle(/Open Tilburg/)
 		await expect(page).not.toHaveTitle(/Nextcloud/)
 	})
+
+	// @e2e portaliq-cms::the-site-wears-no-platform-chrome
+	test('S23: the site wears no platform chrome — no Nextcloud header', async ({
+		page,
+	}) => {
+		// S22's sibling, found the same way and hidden the same way. The site
+		// rendered with `RENDER_AS_PUBLIC`, and `layout.public.php` emits
+		// `<header id="header">` carrying `header-appname`, the Nextcloud logo
+		// and a `header-info` title. It was VISIBLE — 108x33 at the very top of
+		// an anonymous viewport — so a municipality's portal displayed another
+		// product's brand above its own, to visitors who never logged in.
+		//
+		// It survived every earlier check because those all inspected the
+		// CONTENT area, where the portal renders perfectly. Nothing looked at
+		// the bar above it.
+		await page.goto(SITE)
+		await expect(page.getByTestId('site-title')).toHaveText('Open Tilburg')
+
+		await expect(page.locator('#header, header.header')).toHaveCount(0)
+
+		// Assert the ABSENCE of the word, not just of the element: a future
+		// layout could reintroduce the branding under a different selector and
+		// this test would still pass on the element check alone.
+		await expect(page.locator('body')).not.toContainText('Nextcloud')
+
+		// And the portal must still be whole — `RENDER_AS_BLANK` would also
+		// satisfy both assertions above while shipping no CSS or initial state
+		// at all, i.e. by breaking the page rather than by fixing the leak.
+		await expect(page.getByTestId('site-page')).toBeVisible()
+		await expect(page.locator('nav a').first()).toBeVisible()
+	})
 })
