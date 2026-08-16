@@ -4,32 +4,67 @@
   -->
 
 <template>
-	<div class="pq-grid" data-testid="widget-grid">
-		<div
-			v-for="widget in widgets"
-			:key="widget.id || `${widget.gridX}-${widget.gridY}`"
-			class="pq-grid__cell"
-			:data-testid="`widget-${widget.id || widget.widgetKey}`"
-			:data-widget-key="widget.widgetKey"
-			:style="cellStyle(widget)">
-			<component
-				:is="componentFor(widget.widgetKey)"
-				v-if="componentFor(widget.widgetKey)"
-				v-bind="propsFor(widget)" />
+	<!--
+		BANDS ARE NOT LAID OUT IN THE GRID, and that is the whole reason this
+		template has two arms.
 
-			<!-- Anything not public, or not known, degrades to an inert
-			     placeholder. It does NOT throw: a public page with one bad
-			     widget must still show its other three, and a page that blanks
-			     is a worse failure than a visibly missing tile. -->
-			<p v-else class="pq-grid__placeholder" data-testid="widget-placeholder">
-				{{ placeholderText(widget.widgetKey) }}
-			</p>
-		</div>
+		A band paints edge to edge and brings its own `.container`. Putting one
+		in a grid cell inside the page's content column clamps it: measured
+		against the reference, a hero rendered that way came out 1168px wide
+		against the design's 1280, and nothing inside the hero could recover the
+		width because the limit was an ancestor.
+
+		The reference's own structure is the model — `main` is full-bleed, every
+		`section` carries a container — so bands are emitted as direct children
+		here and only the remaining widgets get grid geometry, inside a
+		container of their own.
+	-->
+	<div data-testid="widget-grid">
+		<template v-for="(run, runIndex) in runs" :key="`run-${runIndex}`">
+			<!-- A BAND: full bleed, brings its own container. -->
+			<component
+				:is="componentFor(run.widget.widgetKey)"
+				v-if="run.band && componentFor(run.widget.widgetKey)"
+				:data-testid="`widget-${run.widget.id || run.widget.widgetKey}`"
+				:data-widget-key="run.widget.widgetKey"
+				v-bind="propsFor(run.widget)" />
+
+			<!-- A RUN of ordinary widgets: one grid, inside one container. The
+			     container is here rather than around the whole component so a
+			     band between two runs still reaches the viewport edge. -->
+			<div v-else-if="!run.band" class="container">
+				<div class="pq-grid">
+					<div
+						v-for="widget in run.widgets"
+						:key="widget.id || `${widget.gridX}-${widget.gridY}`"
+						class="pq-grid__cell"
+						:data-testid="`widget-${widget.id || widget.widgetKey}`"
+						:data-widget-key="widget.widgetKey"
+						:style="cellStyle(widget)">
+						<component
+							:is="componentFor(widget.widgetKey)"
+							v-if="componentFor(widget.widgetKey)"
+							v-bind="propsFor(widget)" />
+
+						<!-- Anything not public, or not known, degrades to an inert
+						     placeholder. It does NOT throw: a public page with one bad
+						     widget must still show its other three, and a page that blanks
+						     is a worse failure than a visibly missing tile. -->
+						<p
+							v-else
+							class="pq-grid__placeholder"
+							data-testid="widget-placeholder">
+							{{ placeholderText(widget.widgetKey) }}
+						</p>
+					</div>
+				</div>
+			</div>
+		</template>
 	</div>
 </template>
 
 <script>
-import { siteBlockRegistry } from '@conduction/nextcloud-vue/public'
+import { siteBlockIsBand, siteBlockRegistry } from '@conduction/nextcloud-vue/public'
 import MarkdownBlock from './MarkdownBlock.vue'
 
 /**
@@ -82,7 +117,60 @@ export default {
 		},
 	},
 
+	computed: {
+		/**
+		 * The widget list split into alternating BANDS and RUNS.
+		 *
+		 * A band is emitted on its own so it can paint edge to edge; the
+		 * widgets between bands are grouped into one grid inside one
+		 * `.container`. Grouping matters: wrapping each cell in its own
+		 * container would put every widget in a separate grid and destroy the
+		 * 12-column placement they were authored against.
+		 *
+		 * Order is preserved exactly as authored — a band does not float to the
+		 * top, it splits the page where the author put it.
+		 *
+		 * @return {Array} Alternating `{band: true, widget}` / `{band: false, widgets}` entries.
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-grid-page-renders-on-the-shared-12-column-geometry
+		 */
+		runs() {
+			const out = []
+			for (const widget of this.widgets) {
+				if (this.isBand(widget.widgetKey)) {
+					out.push({ band: true, widget })
+					continue
+				}
+
+				const last = out[out.length - 1]
+				if (last && last.band === false) {
+					last.widgets.push(widget)
+				} else {
+					out.push({ band: false, widgets: [widget] })
+				}
+			}
+
+			return out
+		},
+	},
+
 	methods: {
+		/**
+		 * Whether a block is a full-bleed band that owns its own container.
+		 *
+		 * Answered by the LIBRARY rather than by a list here, so a block added
+		 * upstream arrives with its layout contract instead of needing this app
+		 * to learn about it separately.
+		 *
+		 * @param {string} key The registry key.
+		 * @return {boolean} True when it must not be wrapped in a grid cell.
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-grid-page-renders-on-the-shared-12-column-geometry
+		 */
+		isBand(key) {
+			return siteBlockIsBand(key)
+		},
+
 		/**
 		 * The component that renders a widget key at a public origin.
 		 *

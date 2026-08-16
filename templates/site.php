@@ -96,7 +96,7 @@ if ($nldsStylesheet !== '') {
     $stylesheets[] = $asset($appId, 'css/' . $nldsStylesheet . '.css');
 }
 
-foreach (['nlds/nlds-components', 'nlds/nlds-vendor-a', 'nlds/nlds-vendor-b', 'nlds/nlds-app'] as $sheet) {
+foreach (['nlds/nlds-components', 'nlds/nlds-vendor-a', 'nlds/nlds-vendor-b', 'nlds/nlds-app', 'nlds/nlds-controls'] as $sheet) {
     $stylesheets[] = $asset($appId, 'css/' . $sheet . '.css');
 }
 

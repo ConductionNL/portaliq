@@ -139,13 +139,32 @@
 			the design system can produce, and the only place it happened.
 		-->
 		<main id="pq-main" class="ac-app-main pq-site__main">
-			<div class="container">
-				<p v-if="loading" data-testid="site-loading">Bezig met laden…</p>
+			<!--
+				MAIN IS FULL-BLEED AND THE CONTAINER MOVED INWARDS.
+
+				It used to wrap everything here, which was right while the only
+				block was markdown and wrong the moment bands existed: a hero
+				inside this column measured 1168px against the reference's 1280,
+				and nothing inside the hero could recover the width because the
+				clamp was an ancestor.
+
+				This is the reference's own structure — `main` full-bleed, every
+				`section` bringing its own `.container` — so each region below
+				takes one, and `WidgetGrid` decides per block whether to.
+			-->
+			<div>
+				<p v-if="loading" class="container" data-testid="site-loading">
+					Bezig met laden…
+				</p>
 
 				<!-- A failed load says so. Rendering an empty page instead would
 			     make a broken deployment look exactly like an empty site — the
 			     one confusion this surface can least afford. -->
-				<div v-else-if="error" role="alert" data-testid="site-error">
+				<div
+					v-else-if="error"
+					class="container"
+					role="alert"
+					data-testid="site-error">
 					<h2>
 						{{
 							error.status === 404
@@ -177,24 +196,27 @@
 						the duplication is a property of what the page actually
 						renders, not of what an author remembered to tick.
 					-->
-					<h2
-						v-if="!bodyProvidesHeading"
-						class="utrecht-heading-2"
-						data-testid="page-title">
-						{{ page.title }}
-					</h2>
+					<div v-if="!bodyProvidesHeading" class="container">
+						<h2 class="utrecht-heading-2" data-testid="page-title">
+							{{ page.title }}
+						</h2>
+					</div>
 
 					<WidgetGrid
 						v-if="page.body && page.body.type === 'grid'"
 						:widgets="page.body.widgets || []" />
 
-					<MarkdownBlock
-						v-else
-						data-testid="page-markdown"
-						:source="(page.body && page.body.markdown) || ''" />
+					<div v-else class="container">
+						<MarkdownBlock
+							data-testid="page-markdown"
+							:source="(page.body && page.body.markdown) || ''" />
+					</div>
 				</article>
 
-				<section v-if="showGlossary" data-testid="site-glossary">
+				<section
+					v-if="showGlossary"
+					class="container"
+					data-testid="site-glossary">
 					<h2>Begrippenlijst</h2>
 					<dl>
 						<template v-for="term in glossary" :key="term.term">
