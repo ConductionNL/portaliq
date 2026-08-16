@@ -1,6 +1,36 @@
 // SPDX-License-Identifier: EUPL-1.2
 // Copyright (C) 2026 Conduction B.V.
 
+// WHERE THIS BUNDLE'S LAZY CHUNKS LIVE — RESOLVED AT RUNTIME, NOT BUILT IN.
+//
+// `@nextcloud/webpack-vue-config` bakes `output.publicPath = '/apps/<app>/js/'`
+// into the bundle. That is one of the two places an app can be served from: an
+// app installed under `custom_apps` is served from `/custom_apps/<app>/js/`,
+// which is where this app's own `<script>` tags point.
+//
+// The eager bundles are unaffected — PHP emits their URLs — so the app shell,
+// the navigation and every EAGER page render perfectly. Only the lazily-loaded
+// route chunks are requested by webpack itself, at the built-in path, and there
+// the wrong URL does not even 404: it matches the app's greedy `/{path}` SPA
+// catch-all, which answers 200 with the app's HTML. The browser then refuses to
+// execute HTML as a script and the route silently never mounts.
+//
+// Measured before this line existed: `/apps/portaliq/portals/<uuid>` returned
+// HTTP 200 with an EMPTY content area — no error banner, no empty state, no
+// failed request in the network panel (the chunk request was a 200) — and one
+// console line, `ChunkLoadError`. Every detail page in the app was blank.
+//
+// `generateFilePath` asks the server where the app actually is, so this works
+// under `apps/` and `custom_apps/` alike. It must run BEFORE the first dynamic
+// import, which is why it is the first statement in the entry point.
+import { generateFilePath } from '@nextcloud/router'
+
+// `__webpack_public_path__` is a free variable webpack replaces at build time;
+// eslint cannot see it declared anywhere, which is why it is disabled here
+// rather than added to the globals list — it exists only inside a bundle.
+// eslint-disable-next-line no-undef
+__webpack_public_path__ = generateFilePath('portaliq', '', 'js/')
+
 import {
 	CnPageRenderer,
 	defaultPageTypes,
