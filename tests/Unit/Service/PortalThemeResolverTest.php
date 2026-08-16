@@ -106,6 +106,61 @@ class PortalThemeResolverTest extends TestCase {
 
 
 	/**
+	 * The NLDS token set this app ships resolves for a theme it has.
+	 *
+	 * The positive control for `nldsStylesheetFor()`. Without it, every
+	 * refusal below is satisfied by a method that returns null unconditionally
+	 * — and a portal would render with the component library's own defaults
+	 * while every test still passed.
+	 *
+	 * @return void
+	 */
+	public function testAShippedNldsTokenSetResolves(): void {
+		$this->assertSame('themes/vng', $this->resolver()->nldsStylesheetFor(theme: 'vng'));
+		$this->assertSame('themes/venray', $this->resolver()->nldsStylesheetFor(theme: 'venray'));
+	}//end testAShippedNldsTokenSetResolves()
+
+
+	/**
+	 * A theme this app ships no token set for resolves to NOTHING.
+	 *
+	 * Same posture as `stylesheetFor()`: never fall back to another theme's
+	 * tokens, because a portal wearing another municipality's colours looks
+	 * correct in every screenshot.
+	 *
+	 * @return void
+	 */
+	public function testAThemeWithoutAnNldsTokenSetResolvesToNull(): void {
+		$this->assertNull($this->resolver()->nldsStylesheetFor(theme: 'no-such-municipality'));
+	}//end testAThemeWithoutAnNldsTokenSetResolvesToNull()
+
+
+	/**
+	 * The NLDS path is built by concatenation too, so it takes the same
+	 * traversal refusal as `stylesheetFor()`. Asserted separately rather than
+	 * assumed: the two methods share a guard today, and a later refactor that
+	 * split them would leave this one open with nothing to notice.
+	 *
+	 * @return void
+	 */
+	public function testATraversalAttemptIsRefusedForNldsToo(): void {
+		foreach (
+			[
+				'../../../../etc/passwd',
+				'vng/../../../secret',
+				'../vng',
+				'',
+			] as $hostile
+		) {
+			$this->assertNull(
+				$this->resolver()->nldsStylesheetFor(theme: $hostile),
+				"nldsStylesheetFor() accepted a hostile theme reference: {$hostile}"
+			);
+		}
+	}//end testATraversalAttemptIsRefusedForNldsToo()
+
+
+	/**
 	 * The value is editor-controlled and gets concatenated into a path.
 	 *
 	 * @return void
