@@ -38,7 +38,8 @@
 	<nav
 		class="ac-c-navigation__primary pq-menu"
 		:aria-label="menu.title"
-		data-testid="site-menu">
+		data-testid="site-menu"
+		@keydown.esc="open = null">
 		<ul class="ac-c-navigation__ul pq-menu__list">
 			<li
 				v-for="item in menu.items"
@@ -55,7 +56,7 @@
 					:aria-expanded="
 						hasChildren(item) ? String(open === item.name) : undefined
 					"
-					@click.prevent="$emit('navigate', item.link)">
+					@click.prevent="select(item.link)">
 					<div class="ac-c-navigation__label">{{ item.name }}</div>
 				</a>
 
@@ -77,7 +78,7 @@
 							:aria-current="
 								isCurrent(child.link) ? 'page' : undefined
 							"
-							@click.prevent="$emit('navigate', child.link)">
+							@click.prevent="select(child.link)">
 							<div class="ac-c-navigation__label">
 								{{ child.name }}
 							</div>
@@ -134,6 +135,34 @@ export default {
 		},
 
 		/**
+		 * Navigate, and CLOSE THE DROPDOWN.
+		 *
+		 * Closing is not tidiness, it is the fix for a page that stops
+		 * responding. Activating a parent item leaves focus on its anchor, and
+		 * `focusin` is one of the two things that opens the submenu — so after
+		 * a click the dropdown stayed open with nothing to dismiss it. Being
+		 * `position: absolute` it then sat OVER the content: measured 110x55 at
+		 * (119, 151), directly under the navigation bar, and
+		 * `document.elementFromPoint` at its centre returned the dropdown's own
+		 * label rather than the page beneath.
+		 *
+		 * So the visitor navigated, landed on the new page, and found a
+		 * rectangle in the top-left of the content that swallowed every click.
+		 * Nothing errored and nothing looked broken — the menu simply never
+		 * closed. Moving the mouse away fixed it, which is exactly why it reads
+		 * as intermittent.
+		 *
+		 * @param {string} link The route to navigate to.
+		 * @return {void}
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
+		 */
+		select(link) {
+			this.open = null
+			this.$emit('navigate', link)
+		},
+
+		/**
 		 * Close the dropdown when focus leaves the item ENTIRELY.
 		 *
 		 * `focusout` fires when moving between two children of the same item,
@@ -146,6 +175,8 @@ export default {
 		 * @param {FocusEvent} event The focusout event.
 		 * @param {string} name The item's name.
 		 * @return {void}
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
 		 */
 		onFocusOut(event, name) {
 			if (

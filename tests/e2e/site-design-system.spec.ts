@@ -50,18 +50,72 @@ test.describe('site renderer — NL Design System adoption', () => {
 	})
 
 	// @e2e portaliq-cms::a-portals-theme-must-change-what-a-visitor-sees
-	test('the declared webfonts actually load', async ({ page }) => {
+	test('the webfonts this repository ships actually load', async ({ page }) => {
 		const faces = await page.evaluate<{ family: string; status: string }[]>(`
 			Array.from(document.fonts).map((f) => ({ family: f.family, status: f.status }))
 		`)
 
-		// A FAILED face reports 'error' and the page keeps rendering in the
-		// fallback, so nothing else in this suite would notice.
-		expect(faces.filter((f) => f.status === 'error')).toEqual([])
-
+		// SCOPED TO WHAT WE SHIP, and the scope is the point.
+		//
+		// The first version of this asserted that NO face reports 'error'. That
+		// is false on a correct deployment: the reference application's font
+		// set is mostly commercial (Avenir LT W01, Gill Sans W01, Tisa Sans
+		// Pro), those files are deliberately NOT in this repository, and
+		// `css/fonts/licensed/` is a gitignored drop-in slot. So on CI — and on
+		// every deployment without a Monotype licence — the Avenir face fetches
+		// nothing and reports 'error' BY DESIGN, falling through to Roboto.
+		//
+		// Asserting no errors at all therefore encoded "a licensed deployment"
+		// as the only correct one, and failed on the very configuration this
+		// repository is meant to ship. What must never fail is the face we DO
+		// ship, which carries the body copy and the navigation, and whose
+		// absence silently redraws the whole portal in Arial.
 		const roboto = faces.filter((f) => f.family === 'Roboto')
 		expect(roboto.length).toBeGreaterThan(0)
+		expect(roboto.filter((f) => f.status === 'error')).toEqual([])
 		expect(roboto.some((f) => f.status === 'loaded')).toBe(true)
+
+		// And the metrics are REAL, not just a matching family name.
+		// `getComputedStyle().fontFamily` returns the declared string whether or
+		// not the file ever arrived, so it reports "Roboto" just as confidently
+		// while the page renders in Arial. Measuring rendered text is what
+		// tells the two apart.
+		//
+		// COMPARED AGAINST THE FALLBACK, NOT AGAINST A CONSTANT. Pinning the
+		// absolute width was the first attempt and it is not portable: the same
+		// string in the same declared font measured 294.27 in one Chromium and
+		// 296 in Playwright's, because glyph rasterisation and the available
+		// system faces differ per browser build. A constant would have to be
+		// re-measured per environment, and the first thing anyone would do with
+		// a failing magic number is widen it until it passed — which is exactly
+		// the tolerance that would let a missing webfont through.
+		//
+		// The difference between "the stack as declared" and "the fallback
+		// alone" is stable in a way the absolute number is not: it is non-zero
+		// if and only if a real webfont is being used.
+		const { resolved, fallback } = await page.evaluate<{
+			resolved: number
+			fallback: number
+		}>(`
+			(() => {
+				const el = document.querySelector('.ac-c-navigation__label')
+				const c = getComputedStyle(el)
+				const probe = 'Softwarecatalogus Hamburgefonstiv 123'
+				const measure = (family) => {
+					const ctx = document.createElement('canvas').getContext('2d')
+					ctx.font = c.fontStyle + ' ' + c.fontWeight + ' ' + c.fontSize + '/' + c.lineHeight + ' ' + family
+					return ctx.measureText(probe).width
+				}
+				return { resolved: measure(c.fontFamily), fallback: measure('arial, sans-serif') }
+			})()
+		`)
+
+		// Both must actually measure something — a broken canvas probe returns
+		// 0 for everything, and 0 !== 0 is false, so the inequality below would
+		// pass on an instrument that measured nothing at all.
+		expect(resolved).toBeGreaterThan(0)
+		expect(fallback).toBeGreaterThan(0)
+		expect(Math.abs(resolved - fallback)).toBeGreaterThan(1)
 	})
 
 	// @e2e portaliq-cms::a-portals-theme-must-change-what-a-visitor-sees
@@ -96,6 +150,81 @@ test.describe('site renderer — NL Design System adoption', () => {
 			'aria-expanded',
 			'true',
 		)
+	})
+
+	// @e2e portaliq-cms::a-portals-theme-must-change-what-a-visitor-sees
+	test('an open dropdown never survives navigation and blocks the page', async ({
+		page,
+	}) => {
+		// THE BUG THIS PINS, AND IT IS A KEYBOARD BUG. Activating a parent item
+		// leaves focus on its anchor, and `focusin` is one of the two things
+		// that opens the submenu — so after activation the dropdown stayed
+		// open. Being `position: absolute` it then sat OVER the content:
+		// measured 110x55 at (119, 151), with elementFromPoint at its centre
+		// returning the dropdown's own label instead of the page beneath.
+		//
+		// A MOUSE user escapes it, because moving the pointer off the item
+		// fires `mouseleave` and that clears the state. A KEYBOARD user has no
+		// pointer to move: they press Enter, land on the new page, and a
+		// rectangle in the top-left of the content silently swallows clicks
+		// with nothing able to dismiss it.
+		//
+		// So this test activates by KEYBOARD. Driving it with `.click()` would
+		// prove nothing — Playwright leaves the real pointer hovering the item
+		// afterwards, so the menu stays open for the legitimate reason and the
+		// assertion fails against correct code.
+		const parent = page.locator('.ac-c-navigation__li', {
+			has: page.getByTestId('site-menu-dropdown'),
+		})
+		const dropdown = page.getByTestId('site-menu-dropdown')
+
+		const parentLink = parent.locator('a').first()
+		await parentLink.focus()
+		await expect(dropdown).toBeVisible()
+
+		await parentLink.press('Enter')
+		await expect(dropdown).toBeHidden()
+
+		// And the space it occupied belongs to the page again. Asserted by
+		// HIT TESTING rather than by visibility, because "hidden" and "not
+		// intercepting clicks" are different claims and only the second one is
+		// what the visitor experienced.
+		const blocked = await page.evaluate(`
+			(() => {
+				const el = document.elementFromPoint(174, 178)
+				return el ? el.closest('[data-testid="site-menu-dropdown"]') !== null : false
+			})()
+		`)
+		expect(blocked).toBe(false)
+	})
+
+	// @e2e portaliq-cms::a-portals-theme-must-change-what-a-visitor-sees
+	test('Escape dismisses an open dropdown', async ({ page }) => {
+		// A separate test on a FRESH page, deliberately. Re-focusing the same
+		// anchor at the end of the test above would not reopen the menu: it
+		// still holds focus after Enter, so `.focus()` is a no-op and fires no
+		// `focusin`. That is correct behaviour — activating an item should not
+		// spring its submenu back open — but it means the reopen has to start
+		// from a page where the item has not been focused yet.
+		//
+		// Opened by FOCUS rather than hover, and the two are not
+		// interchangeable: the handler sits on the <nav> and a key event goes
+		// to document.activeElement, so after a hover (focus still on <body>)
+		// the keydown never reaches it. A hover-opened menu is dismissed by
+		// moving the pointer, which is the affordance that context has.
+		const parentLink = page
+			.locator('.ac-c-navigation__li', {
+				has: page.getByTestId('site-menu-dropdown'),
+			})
+			.locator('a')
+			.first()
+		const dropdown = page.getByTestId('site-menu-dropdown')
+
+		await parentLink.focus()
+		await expect(dropdown).toBeVisible()
+
+		await parentLink.press('Escape')
+		await expect(dropdown).toBeHidden()
 	})
 
 	// @e2e portaliq-cms::a-portals-theme-must-change-what-a-visitor-sees
