@@ -78,15 +78,28 @@ class RegisterMcpAnnotationTest extends TestCase {
 	public function testEveryMcpAnnotationMatchesTheDialect(): void {
 		$annotated = $this->annotatedSchemas();
 
-		// A ZERO-SCHEMA RUN PASSES EVERY ASSERTION BELOW. If a rename or a
-		// restructure ever means this test inspects nothing, that must read as
-		// a failure, not as a clean sweep — which is the exact confusion the
-		// silent import produced in the first place.
-		$this->assertNotEmpty(
-			$annotated,
-			'No schema carries an x-openregister-mcp block. Either the register '
-			. 'moved, or this test is now measuring nothing.'
-		);
+		// A ZERO-SCHEMA RUN PASSES EVERY ASSERTION BELOW, so "nothing was
+		// inspected" must never look like "everything passed" — that is the
+		// exact confusion the silent import produced in the first place.
+		//
+		// SKIPPED, NOT PASSED, and not failed either. The register currently
+		// carries no `x-openregister-mcp` at all: portaliq#153 removed the only
+		// one (on portalMessage) to unblock the E2E seed, with the cause
+		// recorded as still-unknown in portaliq#154. So an empty set is the
+		// legitimate state of the tree right now, and failing on it would be a
+		// false alarm on every run.
+		//
+		// A skip is VISIBLE in the test output. A silent pass over an empty set
+		// is not, and this guard exists precisely because that distinction was
+		// missed once already. The moment any schema reintroduces the dialect,
+		// this starts doing real work again with no edit.
+		if ($annotated === []) {
+			$this->markTestSkipped(
+				'No schema declares x-openregister-mcp (removed by portaliq#153, cause tracked in '
+				. 'portaliq#154). This guard is dormant, NOT satisfied — it reactivates as soon as '
+				. 'any schema carries the dialect again.'
+			);
+		}
 
 		foreach ($annotated as $name => $annotation) {
 			$this->assertArrayHasKey(

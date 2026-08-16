@@ -253,6 +253,20 @@ class SessionController extends Controller {
 	 *
 	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T06
 	 * @spec openspec/specs/supplier-portal/spec.md#oidc-start-builds-a-state-nonce-pkce-authorization-request
+	 *
+	 * @no-admin-idor-exempt the lookup is unscoped because it MUST be: this is
+	 * the anonymous entry point to a portal's login, so a caller with no
+	 * session has to be able to name the org and provider it wants. Nothing
+	 * about the resolved config reaches the caller — the response is either a
+	 * 302 to the broker carrying only the public clientId, PKCE challenge,
+	 * state and nonce, or oidcGenericError(). `clientSecret` is read only in
+	 * the callback's server-to-server token exchange, never here.
+	 *
+	 * Enumeration is closed off by design rather than by scoping: an unknown
+	 * org, an unknown provider, unreachable discovery and a failed state-store
+	 * write all return the SAME generic error and never a redirect, so a caller
+	 * cannot learn which orgs exist by trying them. AnonRateLimit(30/60) bounds
+	 * the attempt rate on top of that.
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
