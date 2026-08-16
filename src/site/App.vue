@@ -471,6 +471,59 @@ export default {
 }
 </script>
 
+<!--
+	THE PAGE SHELL. Unscoped on purpose: these rules target Nextcloud's own
+	`body` and `#content`, which are not this component's elements and which a
+	scoped block therefore cannot reach.
+
+	MEASURED on a live instance before this block existed — a white-label
+	government portal was rendering as a 451px-wide white column floating on
+	Nextcloud's blue theming WALLPAPER:
+
+	    body      position: fixed; background: rgb(0,103,158)
+	                                url(/apps/theming/img/background/jo-my…)
+	    #content  position: fixed; margin: 50px 8px 8px      <- app chrome
+	    .pq-site  451px of 1264    <- shrink-wrapped: NC makes #content a flex
+	                                  container and the site never claimed width
+
+	Removing the header (RENDER_AS_BASE) took away the bar at the top and left
+	all of that behind. A visitor still saw Nextcloud — just without its name
+	on it, which is arguably worse than the header was.
+
+	So the public site resets the page it is served in: no wallpaper, no fixed
+	positioning, no app-chrome offsets, full width. Guarded by `.layout-base`
+	and `#content.app-public` so it can only ever apply on the public site
+	route, never to the admin SPA rendered by the same app.
+-->
+<style>
+body.layout-base {
+	position: static;
+	width: 100%;
+	min-height: 100vh;
+	margin: 0;
+	background-image: none;
+	background-color: var(--nldesign-color-page-background, #fff);
+	overflow: auto;
+}
+
+body.layout-base #content.app-public {
+	position: static;
+	display: block;
+	width: 100%;
+	max-width: none;
+	min-height: 100vh;
+	margin: 0;
+	padding: 0;
+	border-radius: 0;
+	background: transparent;
+}
+
+body.layout-base .pq-site {
+	width: 100%;
+	min-height: 100vh;
+}
+</style>
+
 <style scoped>
 /*
  * THE THEME BRIDGE. Before this block the renderer read `--pq-*` variables
@@ -489,10 +542,21 @@ export default {
  * which themiq token a given surface reads.
  */
 .pq-site {
+	/*
+	 * `--nldesign-font-family` FIRST, because it is the one the themes
+	 * actually define. Measured: `vng.css` contains ZERO occurrences of
+	 * `--nldesign-typography-sans-serif-font-family` and defines
+	 * `--nldesign-font-family: 'Avenir', …, Roboto, …`. So this chain resolved
+	 * to `system-ui` on every themed portal — the theme was loaded, consumed
+	 * for colour, and silently ignored for type.
+	 *
+	 * This is the disjoint-vocabulary problem the comment above describes,
+	 * caught in the block that was written to avoid it: I picked a token name
+	 * without checking it against a real theme file.
+	 */
 	--pq-font-family: var(
-		--nldesign-typography-sans-serif-font-family,
-		system-ui,
-		sans-serif
+		--nldesign-font-family,
+		var(--nldesign-typography-sans-serif-font-family, system-ui, sans-serif)
 	);
 	--pq-text-color: var(
 		--nldesign-color-text,
