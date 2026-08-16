@@ -215,6 +215,12 @@ class PortalPageController extends Controller {
 				// contract withholds; it only decides which stylesheet tag to
 				// emit.
 				'themeStylesheet' => $this->siteThemeStylesheet(),
+				// The NLDS token set this app ships for the serving portal's
+				// theme, when it has one. Separate from the line above because
+				// they answer different questions: that one is "which theme
+				// app file", this one is "do we have the `--utrecht-*` tokens
+				// the component CSS reads".
+				'nldsStylesheet'  => $this->siteNldsStylesheet(),
 			],
 			// BASE, NOT PUBLIC — a white-label site may not wear Nextcloud's
 			// chrome. `layout.public.php` emits `<header id="header">` with
@@ -280,6 +286,38 @@ class PortalPageController extends Controller {
 			theme: (string)($portal['theme'] ?? '')
 		);
 	}//end siteThemeStylesheet()
+
+
+	/**
+	 * The NLDS token stylesheet this app ships for the serving portal, or ''.
+	 *
+	 * Same fail-quiet posture as `siteThemeStylesheet()`: every failure — no
+	 * portal, unknown theme, no token file for it — returns the empty string
+	 * and the page renders with the component library's own defaults rather
+	 * than another municipality's colours.
+	 *
+	 * @return string The stylesheet path relative to this app's `css/`, or ''.
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
+	 */
+	private function siteNldsStylesheet(): string {
+		try {
+			$portal = $this->portalResolver->resolve(
+				request: $this->request,
+				portalSlug: (string)$this->request->getParam('portal', '')
+			);
+		} catch (\Throwable) {
+			return '';
+		}
+
+		if ($portal === null) {
+			return '';
+		}
+
+		return (string)$this->themeResolver->nldsStylesheetFor(
+			theme: (string)($portal['theme'] ?? '')
+		);
+	}//end siteNldsStylesheet()
 
 	/**
 	 * Resolve the visitor's locale from the `Accept-Language` header

@@ -36,6 +36,15 @@ if ($themeStylesheet !== '') {
     Util::addStyle(PortalThemeResolver::THEME_APP, $themeStylesheet);
 }
 
+// The NL Design System tokens THIS app ships, loaded AFTER the theme app's so
+// the `--utrecht-*` names the component CSS actually reads win. The theme
+// app's hand-converted files define none of them, which is why a themed
+// portal still rendered with Utrecht's built-in defaults.
+$nldsStylesheet = (string)($_['nldsStylesheet'] ?? '');
+if ($nldsStylesheet !== '') {
+    Util::addStyle($appId, $nldsStylesheet);
+}
+
 Util::addScript($appId, $appId . '-site');
 ?>
 <div id="portaliq-site"></div>

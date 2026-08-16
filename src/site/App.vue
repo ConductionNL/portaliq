@@ -5,10 +5,16 @@
 
 <template>
 	<div class="pq-site" :class="themeClass" data-testid="site-root">
-		<a class="pq-site__skip" href="#pq-main">Direct naar de inhoud</a>
+		<a
+			class="utrecht-skip-link utrecht-skip-link--visible-on-focus pq-site__skip"
+			href="#pq-main"
+			>Direct naar de inhoud</a
+		>
 
-		<header class="pq-site__header" data-testid="site-header">
-			<h1 class="pq-site__title" data-testid="site-title">
+		<header
+			class="utrecht-page-header pq-site__header"
+			data-testid="site-header">
+			<h1 class="utrecht-heading-1 pq-site__title" data-testid="site-title">
 				{{ site.title || '…' }}
 			</h1>
 
@@ -77,8 +83,11 @@
 				</p>
 			</div>
 
-			<article v-else-if="page" data-testid="site-page">
-				<h2 data-testid="page-title">
+			<article
+				v-else-if="page"
+				class="utrecht-article"
+				data-testid="site-page">
+				<h2 class="utrecht-heading-2" data-testid="page-title">
 					{{ page.title }}
 				</h2>
 

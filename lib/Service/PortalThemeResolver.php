@@ -98,6 +98,47 @@ class PortalThemeResolver {
 
 
 	/**
+	 * The NL Design System token stylesheet this app ships for a theme, or
+	 * null.
+	 *
+	 * WHY THIS EXISTS ALONGSIDE `stylesheetFor()`. The theme app's
+	 * `css/tokens/*.css` files are hand-converted and define `--nldesign-*`
+	 * names. The Utrecht/NLDS component CSS the public site renders with reads
+	 * `--utrecht-*` — and the hand-converted VNG file contains **zero** of
+	 * those, so every component fell back to its own default no matter which
+	 * theme was selected. That is why a themed portal still looked like
+	 * Nextcloud.
+	 *
+	 * These files are the real generated token sets (vng: 605 `--utrecht-*`,
+	 * venray: 532), scoped `.vng-theme` / `.venray-theme` — the class
+	 * `App.vue` already puts on the site root.
+	 *
+	 * Served as a LINKED stylesheet rather than bundled: the two themes total
+	 * 215KB, which took the site bundle from 203KB to 696KB and blew the
+	 * 400KB public first-load budget e2e S18 enforces — for themes a given
+	 * visitor will never both need.
+	 *
+	 * @param string $theme The portal's theme reference, e.g. 'vng'.
+	 *
+	 * @return string|null The stylesheet path relative to this app's `css/`,
+	 *                     or null when this app ships no tokens for it.
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
+	 */
+	public function nldsStylesheetFor(string $theme): ?string {
+		if ($this->isSafeThemeName(theme: $theme) === false) {
+			return null;
+		}
+
+		if (is_file(__DIR__ . '/../../css/themes/' . $theme . '.css') === false) {
+			return null;
+		}
+
+		return 'themes/' . $theme;
+	}//end nldsStylesheetFor()
+
+
+	/**
 	 * Whether a theme reference is safe to put in a filesystem path.
 	 *
 	 * The value comes from an OpenRegister object an editor controls, and it
