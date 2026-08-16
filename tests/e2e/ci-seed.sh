@@ -111,6 +111,27 @@ fi
 # See note (2) in the header. `config:app:set` is preferred over
 # `config:system:set debug --value=true` on purpose.
 if [ -n "$OCC" ]; then
+	# THE THEME APP, because this app no longer ships design tokens.
+	#
+	# `css/themes/` was deleted when the VNG token set moved to `nldesign`, so
+	# `nldesign` is now a RUNTIME DEPENDENCY of the public portal rather than a
+	# nice-to-have. Without it the site renders with no `--utrecht-*` at all:
+	# every rule falls back to the value baked into its own declaration, so the
+	# markup is intact, the text is readable, nothing 404s — and the portal is
+	# unstyled. `site-design-system.spec.ts` asserts the token layer is present
+	# precisely so that state fails loudly instead of being noticed by eye.
+	#
+	# Enabled BEST-EFFORT and reported either way: a runner without the app
+	# checked out should say so here, once, rather than surface as a wall of
+	# style assertions in the suite.
+	if $OCC app:enable nldesign >/dev/null 2>&1; then
+		echo "[ci-seed] nldesign enabled (design tokens available)"
+	else
+		echo "[ci-seed] WARNING: could not enable nldesign — the portal will render"
+		echo "[ci-seed]          UNSTYLED and the design-system specs will fail."
+		echo "[ci-seed]          portaliq ships no tokens of its own since css/themes/ was removed."
+	fi
+
 	echo "[ci-seed] enabling portaliq/dev_login_enabled"
 	$OCC config:app:set portaliq dev_login_enabled --value=yes
 	echo "[ci-seed] dev_login_enabled = $($OCC config:app:get portaliq dev_login_enabled 2>/dev/null || echo '<unset>')"
