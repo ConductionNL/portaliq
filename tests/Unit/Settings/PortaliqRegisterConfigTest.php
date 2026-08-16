@@ -86,10 +86,23 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// longer collides with OpenRegister's reserved object-id key (which made
 		// every append-only audit write fail). 0.8.0 added the `portalPage` schema
 		// (data-provisioned portal contributions, ADR-046). Both additive.
-		$this->assertSame('0.12.0', self::$register['info']['version']);
+		// 0.13.0 (portalMessage 0.3.0): corrected `x-openregister-mcp` to the
+		// dialect's actual shape — `{enabled, tools}` rather than verbs at the
+		// top level. Without the `enabled` gate OpenRegister's save-time
+		// validator REJECTED portalMessage, so the importer dropped that one
+		// schema and still reported "Configuration imported successfully": 12
+		// of 13 schemas landed and every Playwright run died in its seed on
+		// "schemas missing after import: ['portalMessage']". The version bump
+		// is load-bearing, not bookkeeping — an import SKIPS a schema whose
+		// deployed version already meets the declared one, and the escape
+		// hatch compares only properties/required/authorization, never the
+		// annotation. Without the bump the fix would never reach an instance
+		// that already has the schema.
+		$this->assertSame('0.13.0', self::$register['info']['version']);
 		$this->assertSame('0.5.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalSession']['version']);
+		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalMessage']['version']);
 
 	}//end testRegisterJsonParsesAndVersionsAreBumped()
 
@@ -423,8 +436,19 @@ class PortaliqRegisterConfigTest extends TestCase {
 	 * portaliq-mcp-adoption T02: `portalMessage` declares the ADR-063
 	 * read-only dialect — `search` + `get` only, both `scope: read` and
 	 * `readOnlyHint: true`, and `search.filters` naming only real declared
-	 * properties (so `McpAnnotationValidator::validateFilters()` accepts the
-	 * schema at import).
+	 * properties.
+	 *
+	 * THIS TEST USED TO ASSERT THE BROKEN SHAPE, and its docblock claimed the
+	 * assertion was what made `McpAnnotationValidator` accept the schema at
+	 * import. It asserted `array_keys($dialect) === ['search', 'get']` — verbs
+	 * at the TOP level, no `enabled` gate — which is precisely the shape the
+	 * validator rejects. It never ran the validator, so it pinned the defect in
+	 * place and read as coverage of it: `portalMessage` was silently dropped
+	 * from every fresh import while this test stayed green, and the Playwright
+	 * seed died on the missing schema for as long as that lasted.
+	 *
+	 * The dialect is `{ enabled: bool, tools: { <verb>: {...} } }`. Verbs are
+	 * addressed through `tools` below for that reason.
 	 *
 	 * @return void
 	 */
@@ -432,16 +456,21 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$message = self::$register['components']['schemas']['portalMessage'];
 		$dialect = $message['x-openregister-mcp'];
 
-		$this->assertSame(['search', 'get'], array_keys($dialect), 'only search and get may be declared');
+		// The opt-in gate. Its ABSENCE is what dropped the schema.
+		$this->assertTrue(($dialect['enabled'] ?? null), 'portalMessage must opt in via `enabled: true`');
+		$this->assertSame(['enabled', 'tools'], array_keys($dialect), 'the dialect has exactly these two keys');
 
-		foreach ($dialect as $verb) {
+		$tools = $dialect['tools'];
+		$this->assertSame(['search', 'get'], array_keys($tools), 'only search and get may be declared');
+
+		foreach ($tools as $verb) {
 			$this->assertSame('read', $verb['scope']);
 			$this->assertTrue($verb['readOnlyHint']);
 			$this->assertNotEmpty($verb['description'], 'every verb needs agent-facing description prose');
 		}
 
 		$declaredProperties = array_keys((array)$message['properties']);
-		foreach ($dialect['search']['filters'] as $filter) {
+		foreach ($tools['search']['filters'] as $filter) {
 			$this->assertContains($filter, $declaredProperties, "filter '{$filter}' must name a real portalMessage property");
 		}
 
