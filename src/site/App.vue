@@ -166,7 +166,21 @@
 					v-else-if="page"
 					class="utrecht-article"
 					data-testid="site-page">
-					<h2 class="utrecht-heading-2" data-testid="page-title">
+					<!--
+						THE RENDERER'S OWN TITLE HEADING IS A FALLBACK, not a
+						fixture. A page whose body opens with a hero already
+						declares its heading, and emitting this one as well
+						printed the same sentence twice — once here in black
+						above the band, once inside the band.
+
+						The check is on the BODY rather than on a flag, because
+						the duplication is a property of what the page actually
+						renders, not of what an author remembered to tick.
+					-->
+					<h2
+						v-if="!bodyProvidesHeading"
+						class="utrecht-heading-2"
+						data-testid="page-title">
 						{{ page.title }}
 					</h2>
 
@@ -359,6 +373,27 @@ export default {
 		 */
 		themeClass() {
 			return this.site.theme ? `${this.site.theme}-theme` : ''
+		},
+
+		/**
+		 * Whether the page body already opens with its own heading.
+		 *
+		 * Only a `hero` qualifies today: it is the one block that renders a
+		 * page-level heading. Asking the BODY rather than trusting a flag keeps
+		 * this true by construction — a page gains or loses its own heading by
+		 * gaining or losing the block that draws one.
+		 *
+		 * @return {boolean} True when the renderer must not add a title heading.
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
+		 */
+		bodyProvidesHeading() {
+			const body = this.page.body || {}
+			if (body.type !== 'grid') {
+				return false
+			}
+
+			return (body.widgets || []).some((w) => w.widgetKey === 'hero')
 		},
 
 		/**

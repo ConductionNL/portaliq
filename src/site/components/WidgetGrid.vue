@@ -29,18 +29,16 @@
 </template>
 
 <script>
+import { siteBlockRegistry } from '@conduction/nextcloud-vue/public'
 import MarkdownBlock from './MarkdownBlock.vue'
 
 /**
  * The widget keys this renderer will mount at a PUBLIC origin, mapped to the
  * component that renders each.
  *
- * ADR-084 §5: public exposure is opt-in and default-closed. The shared
- * `dashboardWidgetRegistry` does not carry a `public` flag yet — that is
- * nextcloud-vue chain link 2 — so until it does, this map is the
- * default-closed stand-in. It is an allow-list, never a deny-list: a widget
- * added to the shared catalog must not become anonymously mountable simply by
- * existing.
+ * ADR-084 §5: public exposure is opt-in and default-closed. It is an
+ * allow-list, never a deny-list: a widget added to the shared catalog must not
+ * become anonymously mountable simply by existing.
  *
  * THE MAP IS THE GATE. An earlier version of this component kept a separate
  * `Set` of allowed keys and then rendered on a hard-coded
@@ -50,11 +48,25 @@ import MarkdownBlock from './MarkdownBlock.vue'
  * and was not. Keeping the decision and the rendering in ONE structure is what
  * makes it real — and what makes a mutation of it observable.
  *
- * When the shared registry gains `public`, this map is replaced by a filter
- * over it, and nothing already listed here may change behaviour.
+ * CHAIN LINK 2 HAS LANDED. This file used to say the shared registry carried no
+ * `public` flag, so a one-key map stood in for it. `@conduction/nextcloud-vue/public`
+ * is that flag, expressed as a separate ENTRY POINT rather than a boolean:
+ * everything reachable from it is verified — by a transitive import walk in the
+ * library's own CI — to pull no `@nextcloud/*` runtime, which is precisely what
+ * "safe to mount at a public origin" means here.
+ *
+ * That distinction is not academic. A DIRECT import check on the library's
+ * existing widgets said 12 of 13 were clean; following relative imports through
+ * the tree showed 12 of 13 reach `@nextcloud/l10n`, and one also reaches
+ * `@nextcloud/vue`, `@nextcloud/auth` and `@nextcloud/event-bus`. A boolean
+ * flag on the shared catalog would have been set from the first check.
+ *
+ * `markdown` stays owned here: it renders untrusted authored content and its
+ * sanitisation posture is this app's decision, not a library default.
  */
 const PUBLIC_WIDGETS = {
 	markdown: MarkdownBlock,
+	...siteBlockRegistry,
 }
 
 export default {
