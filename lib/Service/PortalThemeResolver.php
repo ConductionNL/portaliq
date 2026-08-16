@@ -126,15 +126,31 @@ class PortalThemeResolver {
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
 	 */
 	public function nldsStylesheetFor(string $theme): ?string {
-		if ($this->isSafeThemeName(theme: $theme) === false) {
-			return null;
-		}
+		// DELIBERATELY RETURNS NULL, ALWAYS — and the method stays because
+		// `templates/site.php` still asks the question.
+		//
+		// This app used to ship its own `css/themes/<theme>.css`: 600
+		// `--utrecht-*` and 254 `--tilburg-*` tokens, vendored from the
+		// reference implementation. That made a SECOND source of truth for a
+		// theme the `nldesign` app already owns — two derivations of one
+		// upstream file (`tilburg-woo-ui/.../_tokens-vng.scss`), maintained
+		// separately and already drifted apart.
+		//
+		// Worse, the halves were disjoint: measured, ZERO overlap between the
+		// tokens nldesign's chain defined and the ones this app's copy did. The
+		// portal was styled entirely from here, and nldesign's
+		// `utrecht-bridge.css` — which maps every Nextcloud-facing
+		// `--nldesign-component-*` from an `--utrecht-*` — had none of its 88
+		// inputs supplied, so the Nextcloud UI silently ran on Rijkshuisstijl
+		// fallbacks.
+		//
+		// The token set now lives in `nldesign/css/tokens/<theme>.css`, which
+		// `stylesheetFor()` already resolves, so one change styles both ends.
+		// PORTALIQ TRUSTS NLDESIGN FOR STYLING and ships no tokens of its own
+		// (ADR-086 §6 said as much; this makes it true).
+		unset($theme);
 
-		if (is_file(__DIR__ . '/../../css/themes/' . $theme . '.css') === false) {
-			return null;
-		}
-
-		return 'themes/' . $theme;
+		return null;
 	}//end nldsStylesheetFor()
 
 

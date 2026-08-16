@@ -106,19 +106,44 @@ class PortalThemeResolverTest extends TestCase {
 
 
 	/**
-	 * The NLDS token set this app ships resolves for a theme it has.
+	 * THIS APP SHIPS NO TOKENS AT ALL — for any theme, known or not.
 	 *
-	 * The positive control for `nldsStylesheetFor()`. Without it, every
-	 * refusal below is satisfied by a method that returns null unconditionally
-	 * — and a portal would render with the component library's own defaults
-	 * while every test still passed.
+	 * The assertion inverted, deliberately. It used to be the positive control
+	 * for `nldsStylesheetFor()`, expecting `themes/vng`, because this app
+	 * carried its own copy of the VNG token set: 600 `--utrecht-*` and 254
+	 * `--tilburg-*`, vendored from the reference implementation.
+	 *
+	 * That was a SECOND source of truth for a theme `nldesign` already owns,
+	 * and the two halves were measured to have ZERO tokens in common — the
+	 * portal was styled from here while nldesign's `utrecht-bridge.css` ran
+	 * every one of its 88 inputs on fallbacks. The set now lives in
+	 * `nldesign/css/tokens/<theme>.css` and `stylesheetFor()` resolves it.
+	 *
+	 * A KNOWN theme is asserted alongside an unknown one on purpose: "returns
+	 * null because the theme is unknown" and "returns null because this app
+	 * ships nothing" are different claims, and only the second one is true now.
 	 *
 	 * @return void
 	 */
-	public function testAShippedNldsTokenSetResolves(): void {
-		$this->assertSame('themes/vng', $this->resolver()->nldsStylesheetFor(theme: 'vng'));
-		$this->assertSame('themes/venray', $this->resolver()->nldsStylesheetFor(theme: 'venray'));
-	}//end testAShippedNldsTokenSetResolves()
+	public function testThisAppShipsNoTokenSetOfItsOwn(): void {
+		$this->assertNull($this->resolver()->nldsStylesheetFor(theme: 'vng'));
+		$this->assertNull($this->resolver()->nldsStylesheetFor(theme: 'venray'));
+	}//end testThisAppShipsNoTokenSetOfItsOwn()
+
+
+	/**
+	 * The theme app's OWN token set still resolves — that is where styling
+	 * comes from now, and this is the positive control for it.
+	 *
+	 * Without this, every null-returning assertion in this class would be
+	 * satisfied by a resolver that resolved nothing at all, and a portal would
+	 * render unstyled while the suite stayed green.
+	 *
+	 * @return void
+	 */
+	public function testTheThemeAppsTokenSetIsWhatResolves(): void {
+		$this->assertSame('tokens/vng', $this->resolver()->stylesheetFor(theme: 'vng'));
+	}//end testTheThemeAppsTokenSetIsWhatResolves()
 
 
 	/**
