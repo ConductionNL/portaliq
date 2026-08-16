@@ -556,23 +556,6 @@
                         "authenticated"
                     ]
                 },
-                "x-openregister-mcp": {
-                    "search": {
-                        "scope": "read",
-                        "readOnlyHint": true,
-                        "description": "Search the caller's own portal inbox messages, optionally filtered by read state, organisation, or subject reference. Never returns another subject's messages.",
-                        "filters": [
-                            "read",
-                            "organisation",
-                            "subjectRef"
-                        ]
-                    },
-                    "get": {
-                        "scope": "read",
-                        "readOnlyHint": true,
-                        "description": "Retrieve a single portal inbox message by id, scoped to the caller's own subject."
-                    }
-                },
                 "icon": "EmailOutline",
                 "version": "0.2.0",
                 "title": "Portal Message",

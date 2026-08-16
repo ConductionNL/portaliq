@@ -419,33 +419,18 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertContains('authenticated', $read, 'an editor must still read drafts');
 	}//end testPageIsPublicOnlyWhilePublished()
 
-	/**
-	 * portaliq-mcp-adoption T02: `portalMessage` declares the ADR-063
-	 * read-only dialect — `search` + `get` only, both `scope: read` and
-	 * `readOnlyHint: true`, and `search.filters` naming only real declared
-	 * properties (so `McpAnnotationValidator::validateFilters()` accepts the
-	 * schema at import).
-	 *
-	 * @return void
-	 */
-	public function testPortalMessageDeclaresReadOnlyMcpDialect(): void {
-		$message = self::$register['components']['schemas']['portalMessage'];
-		$dialect = $message['x-openregister-mcp'];
-
-		$this->assertSame(['search', 'get'], array_keys($dialect), 'only search and get may be declared');
-
-		foreach ($dialect as $verb) {
-			$this->assertSame('read', $verb['scope']);
-			$this->assertTrue($verb['readOnlyHint']);
-			$this->assertNotEmpty($verb['description'], 'every verb needs agent-facing description prose');
-		}
-
-		$declaredProperties = array_keys((array)$message['properties']);
-		foreach ($dialect['search']['filters'] as $filter) {
-			$this->assertContains($filter, $declaredProperties, "filter '{$filter}' must name a real portalMessage property");
-		}
-
-	}//end testPortalMessageDeclaresReadOnlyMcpDialect()
+		// The x-openregister-mcp dialect that used to be asserted here is GONE from
+	// portalMessage, and this test with it. #112 added the dialect; with it in
+	// place OpenRegister refuses to import the schema at all, so portalMessage
+	// was the one schema of thirteen missing after every seed and the whole
+	// portal SPA had no data surface. Bisected: ac96e1cc (before #112) seeds
+	// green, c287056f (the #112 merge) and everything after fails.
+	//
+	// testIdentityAndSessionSchemasCarryNoMcpDialect below is KEPT. It asserts
+	// that portalAccount, portalSession and exampleDocument carry no dialect,
+	// which is still the rule that matters — no derived tool may return an IdP
+	// claims blob or a session jti — and it will start doing real work again the
+	// moment a dialect is reintroduced anywhere.
 
 	/**
 	 * portaliq-mcp-adoption T03: `portalAccount` (raw IdP claims),
