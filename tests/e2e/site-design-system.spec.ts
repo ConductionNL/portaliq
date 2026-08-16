@@ -92,9 +92,10 @@ test.describe('site renderer — NL Design System adoption', () => {
 
 		// Out of flow, and announced.
 		await expect(dropdown).toHaveCSS('position', 'absolute')
-		await expect(
-			parent.locator('a[aria-expanded]').first(),
-		).toHaveAttribute('aria-expanded', 'true')
+		await expect(parent.locator('a[aria-expanded]').first()).toHaveAttribute(
+			'aria-expanded',
+			'true',
+		)
 	})
 
 	// @e2e portaliq-cms::a-portals-theme-must-change-what-a-visitor-sees
@@ -120,9 +121,7 @@ test.describe('site renderer — NL Design System adoption', () => {
 	})
 
 	// @e2e portaliq-cms::a-portals-theme-must-change-what-a-visitor-sees
-	test('footer text is readable against the band it sits on', async ({
-		page,
-	}) => {
+	test('footer text is readable against the band it sits on', async ({ page }) => {
 		const band = page.locator('.ac-footer > section').first()
 
 		const { bg, fg } = await band.evaluate((el) => {
@@ -142,7 +141,9 @@ test.describe('site renderer — NL Design System adoption', () => {
 		const distance = (a: string, b: string): number => {
 			const nums = (s: string) => (s.match(/\d+/g) ?? []).map(Number)
 			const [x, y] = [nums(a), nums(b)]
-			return Math.abs(x[0] - y[0]) + Math.abs(x[1] - y[1]) + Math.abs(x[2] - y[2])
+			return (
+				Math.abs(x[0] - y[0]) + Math.abs(x[1] - y[1]) + Math.abs(x[2] - y[2])
+			)
 		}
 
 		expect(distance(fg, bg)).toBeGreaterThan(150)
