@@ -45,6 +45,28 @@ if ($nldsStylesheet !== '') {
     Util::addStyle($appId, $nldsStylesheet);
 }
 
+// THE REFERENCE IMPLEMENTATION'S OWN STYLESHEETS, vendored verbatim.
+//
+// ORDER IS LOAD-BEARING, and it is the reverse of what looks natural: these
+// come AFTER the token file so the components resolve against the serving
+// portal's tokens, and BEFORE the site bundle's own scoped styles so anything
+// Portaliq states explicitly still wins.
+//
+// `nlds-components` is the full Utrecht/NLDS component set (334KB) — a
+// superset of the per-component packages the bundle imports, kept because the
+// reference's layout reaches for components the site does not import yet.
+// `nlds-app` (318KB) is the reference application's own layout CSS.
+//
+// ⚠️ `nlds-app` IS NOT GENERIC. It is dominated by softwarecatalogus classes
+// (`ac-*` 1362 selectors, `con-*` 633) and styles that app's DOM, not a
+// portal's. Loading it does nothing on its own — it pays off only as this
+// renderer emits the matching structure, which is the next increment.
+// Deliberate per the decision to start from what exists and abstract later;
+// recorded here so the size is not mistaken for value already delivered.
+foreach (['nlds/nlds-components', 'nlds/nlds-vendor-a', 'nlds/nlds-vendor-b', 'nlds/nlds-app'] as $sheet) {
+    Util::addStyle($appId, $sheet);
+}
+
 Util::addScript($appId, $appId . '-site');
 ?>
 <div id="portaliq-site"></div>

@@ -24,3 +24,8 @@ l10n/
 # verbatim apart from stripping SCSS-style `//` comment lines that webpack
 # rejects. Reformatting them would make the next re-import an unreadable diff.
 css/themes/
+
+# Vendored NL Design System / reference-app stylesheets — built artefacts
+# imported verbatim. Reformatting them would make the next re-import an
+# unreadable diff.
+css/nlds/
