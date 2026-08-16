@@ -31,7 +31,20 @@ test.describe('site renderer — content', () => {
 		await expect(menu.getByRole('link', { name: 'Home' })).toBeVisible()
 		await expect(menu.getByRole('link', { name: 'Over ons' })).toBeVisible()
 		await expect(menu.getByRole('link', { name: 'Begrippen' })).toBeVisible()
-		// Two levels, one nested under 'Over ons'.
+
+		// Two levels, one nested under 'Over ons' — and the second level is a
+		// DROPDOWN, so it is present but hidden until its parent is opened.
+		//
+		// This assertion used to be a bare `toBeVisible()` on 'Contact', which
+		// passed for the wrong reason: the child list was tagged with the
+		// top-level bar class, so it rendered as an in-flow second row and the
+		// navigation bar came out 110px against the reference's 55. The link
+		// was permanently visible because the submenu was permanently open.
+		const parent = menu.locator('.ac-c-navigation__li', {
+			has: page.getByTestId('site-menu-dropdown'),
+		})
+		await expect(menu.getByRole('link', { name: 'Contact' })).toBeHidden()
+		await parent.hover()
 		await expect(menu.getByRole('link', { name: 'Contact' })).toBeVisible()
 
 		// The home page is a GRID body: three markdown widgets in declared cells.

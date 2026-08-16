@@ -40,16 +40,18 @@
 		class="pq-site ac-app-container"
 		:class="themeClass"
 		data-testid="site-root">
-		<header class="ac-header pq-site__header" data-testid="site-header">
-			<p>
-				<a
-					id="skip-link"
-					class="utrecht-skip-link utrecht-skip-link--visible-on-focus pq-site__skip"
-					href="#pq-main"
-					>Direct naar de inhoud</a
-				>
-			</p>
+		<!--
+			NO SKIP LINK HERE — it is emitted by `templates/site.php`, ahead of
+			this mount point.
 
+			It lived here, and here it did not exist until the bundle had
+			downloaded, parsed and mounted. The visitor who most needs a skip
+			link is the one tabbing into a page that is still loading, and for
+			them there was nothing to find. The shell owns the document, so the
+			shell owns the SC 2.4.1 affordance; a second one at this level would
+			be a duplicate tab stop announcing the same target twice.
+		-->
+		<header class="ac-header pq-site__header" data-testid="site-header">
 			<div class="ac-header__navigation-main">
 				<div class="ac-header__logo">
 					<div>
@@ -827,16 +829,19 @@ body.layout-base .pq-site {
  * which renders body copy on a known light surface.
  */
 
-.pq-site__skip {
-	position: absolute;
-	left: -9999px;
-}
-
-.pq-site__skip:focus {
-	position: static;
-	display: inline-block;
-	padding: 0.5rem 1rem;
-}
+/*
+ * The `.pq-site__skip` rules that sat here are gone with the element they
+ * styled. They were a hand-rolled `left: -9999px` / `position: static on
+ * focus` pair, and they could never have applied to the skip link's new home
+ * anyway: these styles are SCOPED, so they carry a `data-v-*` attribute
+ * selector that markup emitted by `templates/site.php` does not have.
+ *
+ * `@utrecht/skip-link-css` — already imported by `main.js` — does the job
+ * properly. MEASURED on the server-rendered link: `position: fixed`, parked at
+ * y=-1440 while unfocused and snapping to y=0 on focus. The off-left trick
+ * this file used is the older, worse version of that; some screen readers
+ * treat a far-off-screen element as decorative.
+ */
 
 /*
  * NO LAYOUT HERE. These elements now also carry the reference implementation's

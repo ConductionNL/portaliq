@@ -127,6 +127,32 @@ $stylesheets[] = $asset($appId, 'css/nlds/nlds-fonts.css');
 </head>
 <body>
     <!--
+        THE SKIP LINK IS SERVER-RENDERED, AND THAT IS THE WHOLE POINT.
+
+        It used to live in App.vue, which meant it did not exist until the
+        bundle had downloaded, parsed and mounted. An affordance that appears
+        after hydration is not an affordance: the visitor most likely to need
+        it is the one tabbing into a page that has not finished loading, and
+        for them the first focusable element was whatever the app happened to
+        render first.
+
+        Emitting it here also makes it TRUE OF THE RESPONSE rather than of the
+        runtime — the document this app now owns (RENDER_AS_BLANK) carries its
+        own SC 2.4.1 affordance, which is exactly what a document owner is
+        responsible for. First element in <body>, so it is the first tab stop.
+
+        `#pq-main` is rendered by the bundle. Before boot there is no main
+        landmark because there is no content yet — with the content, the target
+        arrives. Same classes and copy as the markup it replaces, so the
+        existing styling and the accessibility spec keep addressing it.
+    -->
+    <p>
+        <a id="skip-link"
+           class="utrecht-skip-link utrecht-skip-link--visible-on-focus pq-site__skip"
+           href="#pq-main">Direct naar de inhoud</a>
+    </p>
+
+    <!--
         DATA, NOT CODE. `type="application/json"` is not executed, so this
         needs no CSP nonce and cannot become an injection vector; the bundle
         parses it. `contentApi.js` already had a public-origin fallback for
