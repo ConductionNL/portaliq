@@ -114,6 +114,28 @@ if ($nldsStylesheet !== '') {
     $tokenStylesheets[] = $asset($appId, 'css/' . $nldsStylesheet . '.css');
 }
 
+// NO DARK LAYER IS LINKED HERE, AND THAT IS A MEASURED DECISION.
+//
+// The theme app generates `css/tokens/dark/{set}.css` and linking it is one
+// line. Both versions of that file were rendered and measured on this page:
+//
+//   the artefact as generated before  0 of 1,152,000 pixels changed. It rewrites
+//                                     `--nldesign-color-*`, and this page is
+//                                     painted from `--utrecht-*`. A dark mode
+//                                     that changes nothing reads as a working one.
+//   the artefact after the theme app  53% of pixels changed and 10 of 11 text
+//   was fixed to darken those too     nodes fell below 4.5:1 — #e5e5e5 headings
+//                                     left on the white bands, ratio 1.26.
+//
+// The reason is upstream of the theme app: this site has no token-driven
+// surface layer. Its bands paint their own backgrounds and the page itself is
+// unpainted (the white is the browser canvas — no rule sets it). Darkening the
+// text tokens while the surfaces stay light is strictly worse than having no
+// dark mode, and this is a public government portal.
+//
+// So dark mode waits for the surfaces to read their tokens. Painting `body`
+// from `--utrecht-document-*` was tried and verified harmless (0 pixels changed
+// in light mode) but insufficient on its own — the inner bands stayed white.
 foreach (['nlds/nlds-components', 'nlds/nlds-vendor-a', 'nlds/nlds-vendor-b', 'nlds/nlds-app', 'nlds/nlds-controls'] as $sheet) {
     $stylesheets[] = $asset($appId, 'css/' . $sheet . '.css');
 }

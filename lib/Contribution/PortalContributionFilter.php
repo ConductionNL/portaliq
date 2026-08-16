@@ -42,6 +42,8 @@ namespace OCA\Portaliq\Contribution;
  * the public one. Both directions are tested: a declared target must EXCLUDE
  * the portals it does not name, and must INCLUDE the one it does — a filter
  * that dropped everything would satisfy the first test alone.
+ *
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-contribution-must-be-scoped-to-the-portal-it-targets
  */
 class PortalContributionFilter {
 

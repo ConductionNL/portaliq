@@ -43,6 +43,8 @@ use OCP\App\IAppManager;
  * reported, and gets fixed. So a missing theme yields `null` and the caller
  * renders unthemed; ADR-086 §6 requires the failure to name the theme rather
  * than disguise it.
+ *
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
  */
 class PortalThemeResolver {
 
@@ -85,16 +87,84 @@ class PortalThemeResolver {
 			return null;
 		}
 
-		// The file must EXIST. Emitting a link to a stylesheet that 404s is
-		// indistinguishable, on screen, from having no theme — and it moves
-		// the failure from a place we can check to a place only the browser
-		// sees.
+		// RESOLVED AGAINST THE THEME APP'S OWN CATALOGUE, not just the
+		// filesystem. `token-sets.json` is what that app treats as the list of
+		// sets it offers; a `.css` file sitting beside it is not necessarily a
+		// set on offer — a generated dark variant, a work-in-progress or a
+		// leftover would all pass a bare `is_file()` and none of them is a
+		// theme a portal may adopt.
+		//
+		// Asking the catalogue also means a portal and the theme app agree on
+		// what exists, which is the whole point of one app owning theming.
+		if ($this->catalogueHas(theme: $theme) === false) {
+			return null;
+		}
+
+		// AND the file must EXIST. Both checks, because they fail differently:
+		// a catalogued set with no file means a broken install, and emitting a
+		// link that 404s is indistinguishable on screen from having no theme —
+		// it moves the failure from somewhere we can check to somewhere only
+		// the browser sees.
 		if (is_file($root . '/css/tokens/' . $theme . '.css') === false) {
 			return null;
 		}
 
 		return 'tokens/' . $theme;
 	}//end stylesheetFor()
+
+
+	/**
+	 * Whether the theme app's catalogue offers this set.
+	 *
+	 * Reads `token-sets.json` from disk rather than calling the app's
+	 * `/api/token-sets` endpoint. That endpoint is `#[NoAdminRequired]` and
+	 * DELIBERATELY not `#[PublicPage]` — its own docblock records that exposing
+	 * admin-uploaded custom sets to anonymous traffic would be an information-
+	 * disclosure surface with no consumer need. The site renderer serves
+	 * anonymous visitors, so it must not become that consumer; the admin UI,
+	 * which is authenticated, is the endpoint's intended caller and uses it for
+	 * the theme picker.
+	 *
+	 * An unreadable or malformed catalogue answers NO. A portal then renders
+	 * unstyled, which is the same fail-closed posture as an unknown theme.
+	 *
+	 * @param string $theme The theme reference.
+	 *
+	 * @return bool Whether the catalogue lists it.
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
+	 */
+	private function catalogueHas(string $theme): bool {
+		$root = $this->themeAppPath();
+		if ($root === null) {
+			return false;
+		}
+
+		$path = $root . '/token-sets.json';
+		if (is_file($path) === false) {
+			return false;
+		}
+
+		$decoded = json_decode((string)file_get_contents($path), true);
+		if (is_array($decoded) === false) {
+			return false;
+		}
+
+		// The file ships as a LIST of set objects; tolerate a keyed map too,
+		// because which of the two it is has changed upstream before.
+		$entries = $decoded;
+		if (array_is_list($decoded) === false) {
+			$entries = array_values($decoded);
+		}
+
+		foreach ($entries as $entry) {
+			if (is_array($entry) === true && ($entry['id'] ?? null) === $theme) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end catalogueHas()
 
 
 	/**

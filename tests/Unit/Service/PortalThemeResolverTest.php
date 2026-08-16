@@ -39,7 +39,14 @@ class PortalThemeResolverTest extends TestCase {
 
 
 	/**
-	 * Build a throwaway theme app directory with two real token files.
+	 * Build a throwaway theme app directory: a catalogue, two real token files
+	 * and one generated dark variant.
+	 *
+	 * The CATALOGUE is part of the fixture because resolution now asks it, not
+	 * only the filesystem. `orphan.css` exists deliberately and is NOT listed —
+	 * a stray `.css` beside the catalogued sets (a work in progress, a leftover)
+	 * is not a theme a portal may adopt, and a bare `is_file()` cannot tell the
+	 * difference.
 	 *
 	 * @return void
 	 */
@@ -47,9 +54,18 @@ class PortalThemeResolverTest extends TestCase {
 		$this->appManager = $this->createMock(IAppManager::class);
 
 		$this->themeRoot = sys_get_temp_dir() . '/pq-theme-' . bin2hex(random_bytes(6));
-		mkdir($this->themeRoot . '/css/tokens', 0o777, true);
+		mkdir($this->themeRoot . '/css/tokens/dark', 0o777, true);
 		file_put_contents($this->themeRoot . '/css/tokens/vng.css', ':root{--nldesign-color-text:#333}');
 		file_put_contents($this->themeRoot . '/css/tokens/venray.css', ':root{}');
+		file_put_contents($this->themeRoot . '/css/tokens/orphan.css', ':root{}');
+		file_put_contents($this->themeRoot . '/css/tokens/dark/vng.css', '@media (prefers-color-scheme: dark){:root{}}');
+		file_put_contents(
+			$this->themeRoot . '/token-sets.json',
+			(string)json_encode([
+				['id' => 'vng', 'name' => 'VNG'],
+				['id' => 'venray', 'name' => 'Venray'],
+			])
+		);
 	}//end setUp()
 
 
@@ -58,10 +74,16 @@ class PortalThemeResolverTest extends TestCase {
 	 */
 	protected function tearDown(): void {
 		// Only what this test created, and only under the system temp dir.
+		foreach (glob($this->themeRoot . '/css/tokens/dark/*.css') ?: [] as $file) {
+			unlink($file);
+		}
+
 		foreach (glob($this->themeRoot . '/css/tokens/*.css') ?: [] as $file) {
 			unlink($file);
 		}
 
+		@unlink($this->themeRoot . '/token-sets.json');
+		@rmdir($this->themeRoot . '/css/tokens/dark');
 		@rmdir($this->themeRoot . '/css/tokens');
 		@rmdir($this->themeRoot . '/css');
 		@rmdir($this->themeRoot);
@@ -241,6 +263,85 @@ class PortalThemeResolverTest extends TestCase {
 
 		$this->assertNull($resolver->stylesheetFor(theme: 'vng'));
 	}//end testAThrowingAppManagerDegradesToUnthemed()
+
+
+	/**
+	 * A `.css` that the catalogue does not list is NOT a theme.
+	 *
+	 * `orphan.css` exists on disk in the fixture. A bare `is_file()` check —
+	 * which is what this resolver used to do — accepts it, and a portal could
+	 * then adopt a generated variant, a work in progress or a leftover as if it
+	 * were an offered theme. The theme app's catalogue is what says which sets
+	 * it offers.
+	 *
+	 * @return void
+	 */
+	public function testAFileNotListedInTheCatalogueDoesNotResolve(): void {
+		$this->assertFileExists($this->themeRoot . '/css/tokens/orphan.css');
+		$this->assertNull($this->resolver()->stylesheetFor(theme: 'orphan'));
+	}//end testAFileNotListedInTheCatalogueDoesNotResolve()
+
+
+	/**
+	 * A catalogued set with NO file on disk does not resolve either.
+	 *
+	 * Both halves are checked because they fail differently: this one means a
+	 * broken install, and emitting a link that 404s is indistinguishable on
+	 * screen from having no theme at all.
+	 *
+	 * @return void
+	 */
+	public function testACataloguedSetWithNoFileDoesNotResolve(): void {
+		file_put_contents(
+			$this->themeRoot . '/token-sets.json',
+			(string)json_encode([['id' => 'ghost', 'name' => 'Ghost']])
+		);
+
+		$this->assertNull($this->resolver()->stylesheetFor(theme: 'ghost'));
+	}//end testACataloguedSetWithNoFileDoesNotResolve()
+
+
+	/**
+	 * An unreadable catalogue resolves NOTHING rather than falling back.
+	 *
+	 * @return void
+	 */
+	public function testAMissingCatalogueFailsClosed(): void {
+		unlink($this->themeRoot . '/token-sets.json');
+		$this->assertNull($this->resolver()->stylesheetFor(theme: 'vng'));
+	}//end testAMissingCatalogueFailsClosed()
+
+
+	/**
+	 * THE DARK VARIANT IS NOT RESOLVED, AND THAT IS THE DECISION UNDER TEST.
+	 *
+	 * The theme app generates `css/tokens/dark/<id>.css`; the fixture has one
+	 * for `vng`. Serving it is one line, it was written, and it was measured on
+	 * a live portal twice:
+	 *
+	 *   before the theme app was fixed  0 of 1,152,000 pixels changed — the
+	 *                                   artefact rewrote `--nldesign-color-*`
+	 *                                   and the page is painted from
+	 *                                   `--utrecht-*`
+	 *   after                           53% of pixels changed and 10 of 11 text
+	 *                                   nodes fell below 4.5:1 — #e5e5e5
+	 *                                   headings on white bands, ratio 1.26
+	 *
+	 * The site has no token-driven surface layer, so darkening the text without
+	 * the surfaces is worse than no dark mode. This test exists so that adding
+	 * the one line back is a deliberate act with a red test attached, rather
+	 * than an obvious-looking improvement.
+	 *
+	 * @return void
+	 */
+	public function testTheDarkVariantIsDeliberatelyNotResolved(): void {
+		$this->assertFileExists($this->themeRoot . '/css/tokens/dark/vng.css');
+		$this->assertFalse(
+			method_exists($this->resolver(), 'darkStylesheetFor'),
+			'A dark variant must not be resolvable until the site paints its surfaces from tokens '
+			. '— see templates/site.php for the measurements.'
+		);
+	}//end testTheDarkVariantIsDeliberatelyNotResolved()
 
 
 }//end class

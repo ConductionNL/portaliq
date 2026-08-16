@@ -97,8 +97,11 @@ function loadAjv() {
 	// "https://json-schema.org/draft/2020-12/schema"). Standard Ajv (v7+)
 	// does not auto-load the 2020 meta-schema; we need the `ajv/dist/2020`
 	// entry point.
-	let Ajv2020 = null
-	let addFormats = null
+	// Declared without initialisers: every path below assigns before use, and
+	// the `= null` seeds were dead stores (eslint no-useless-assignment). Both
+	// callers test falsiness, so an unassigned binding behaves identically.
+	let Ajv2020
+	let addFormats
 	try {
 		// Ajv 8+ ships the 2020 draft entry point.
 		Ajv2020 = require('ajv/dist/2020').default || require('ajv/dist/2020')
@@ -185,6 +188,137 @@ function structuralLint(manifest) {
 	return errors
 }
 
+// Widget types CnDashboardPage can actually MOUNT, in its own branch order
+// (see node_modules/@conduction/nextcloud-vue/src/components/CnDashboardPage/
+// CnDashboardPage.vue — isTile / isChart / isStatsBlock). Anything else falls
+// through to the "unavailable" placeholder: the page renders, the widget does
+// not, and nothing fails.
+const RENDERABLE_WIDGET_TYPES = new Set(['tile', 'chart', 'stats-block'])
+
+// The only link types CnTileWidget resolves (see its `tileUrl` computed).
+// There is no default branch: anything else is used verbatim as an href.
+const TILE_LINK_TYPES = new Set(['app', 'url'])
+
+/**
+ * Check what the schema cannot: that a dashboard page's widgets will actually
+ * appear on screen.
+ *
+ * TWO WAYS A VALID MANIFEST RENDERS A BLANK PAGE, both found in this repo:
+ *
+ *   no layout entry    CnDashboardPage iterates `config.layout`, not
+ *                      `config.widgets`. A page declaring three widgets and no
+ *                      layout renders its empty state — "No widgets
+ *                      configured" — which reads as "nothing was configured
+ *                      yet" rather than "your configuration is unreachable".
+ *   unrenderable type  `text` and `object-table` are not in the renderer's
+ *                      vocabulary. They validate, they round-trip, and they
+ *                      mount nothing.
+ *
+ * Neither is a schema violation: the schema describes the manifest's SHAPE,
+ * and both of these are true statements about a component's behaviour.
+ *
+ * @param {object} manifest Parsed manifest object.
+ * @return {string[]} Human-readable problems; empty when the manifest is sound.
+ */
+function rendererContractLint(manifest) {
+	const errors = []
+	const dashboards = (manifest.pages || []).filter(
+		(p) => p && p.type === 'dashboard' && p.config && Array.isArray(p.config.widgets),
+	)
+
+	// A check that inspects nothing must not report success. If the manifest
+	// stops using dashboard pages, or their shape moves, this lint would
+	// otherwise pass by vacuum — the failure mode it exists to catch.
+	if (dashboards.length === 0) {
+		return [
+			'renderer contract: found NO dashboard pages with a config.widgets array. '
+			+ 'Either the manifest changed shape or this lint is looking in the wrong place; '
+			+ 'a check that inspected nothing is not a passing check.',
+		]
+	}
+
+	for (const page of dashboards) {
+		const widgets = page.config.widgets
+		const layout = Array.isArray(page.config.layout) ? page.config.layout : []
+		const placed = new Set(layout.map((l) => l && l.widgetId))
+
+		for (const widget of widgets) {
+			if (!widget || typeof widget !== 'object') continue
+
+			if (!placed.has(widget.id)) {
+				errors.push(
+					`pages[${page.id}].config: widget "${widget.id}" has no layout entry — `
+					+ 'it will not render (CnDashboardPage iterates layout, not widgets)',
+				)
+			}
+
+			// NC Dashboard API widgets are mounted by their own branch and
+			// carry no renderable `type`.
+			if (widget.itemApiVersions) continue
+
+			if (!RENDERABLE_WIDGET_TYPES.has(widget.type)) {
+				errors.push(
+					`pages[${page.id}].config: widget "${widget.id}" has type "${widget.type}", `
+					+ `which CnDashboardPage cannot mount (renderable: ${[...RENDERABLE_WIDGET_TYPES].join(', ')})`,
+				)
+			}
+
+			// A tile's linkType is `'app' | 'url'` and nothing else. CnTileWidget
+			// has no default branch: an unrecognised linkType falls through to
+			// the raw linkValue as an href, so `{linkType: 'route', linkValue:
+			// '/portals'}` renders a perfectly good-looking tile that navigates
+			// to a 404 — the tile is styled, clickable and wrong.
+			if (widget.type === 'tile') {
+				if (!TILE_LINK_TYPES.has(widget.linkType)) {
+					errors.push(
+						`pages[${page.id}].config: tile "${widget.id}" has linkType "${widget.linkType}" — `
+						+ `CnTileWidget resolves only ${[...TILE_LINK_TYPES].join(' / ')} and would use linkValue as a raw href`,
+					)
+				}
+
+				if (!widget.linkValue) {
+					errors.push(
+						`pages[${page.id}].config: tile "${widget.id}" has no linkValue — it would link to "#"`,
+					)
+				}
+			}
+		}
+
+		for (const entry of layout) {
+			if (entry && entry.widgetId && !widgets.some((w) => w && w.id === entry.widgetId)) {
+				errors.push(
+					`pages[${page.id}].config.layout: entry references unknown widget "${entry.widgetId}"`,
+				)
+			}
+		}
+	}
+
+	console.log(
+		`[validate-manifest] renderer contract: inspected ${dashboards.length} dashboard page(s), `
+		+ `${dashboards.reduce((n, p) => n + p.config.widgets.length, 0)} widget(s)`,
+	)
+
+	return errors
+}
+
+/**
+ * Run the renderer-contract lint and exit non-zero when it finds anything.
+ *
+ * @param {object} manifest Parsed manifest object.
+ * @return {void}
+ */
+function enforceRendererContract(manifest) {
+	const errors = rendererContractLint(manifest)
+	if (errors.length === 0) {
+		console.log('[validate-manifest] renderer contract: PASS (0 issues)')
+		return
+	}
+
+	console.error('[validate-manifest] renderer contract: FAIL')
+	for (const err of errors) console.error(`  - ${err}`)
+	process.exit(1)
+}
+
 function main() {
 	if (!fs.existsSync(MANIFEST_PATH)) {
 		console.error(`[validate-manifest] manifest not found: ${MANIFEST_PATH}`)
@@ -211,6 +345,7 @@ function main() {
 		const errors = structuralLint(manifest)
 		if (errors.length === 0) {
 			console.log('[validate-manifest] structural lint: PASS (0 issues)')
+			enforceRendererContract(manifest)
 			process.exit(0)
 		}
 		console.error('[validate-manifest] structural lint: FAIL')
@@ -228,6 +363,7 @@ function main() {
 			console.log(
 				'[validate-manifest] structural lint (no Ajv): PASS (0 issues)',
 			)
+			enforceRendererContract(manifest)
 			process.exit(0)
 		}
 		console.error('[validate-manifest] structural lint (no Ajv): FAIL')
@@ -241,6 +377,7 @@ function main() {
 	const ok = validate(manifest)
 	if (ok) {
 		console.log('[validate-manifest] Ajv validation: PASS (0 errors)')
+		enforceRendererContract(manifest)
 		process.exit(0)
 	}
 	console.error('[validate-manifest] Ajv validation: FAIL')
