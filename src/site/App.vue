@@ -4,63 +4,112 @@
   -->
 
 <template>
-	<div class="pq-site" :class="themeClass" data-testid="site-root">
-		<a
-			class="utrecht-skip-link utrecht-skip-link--visible-on-focus pq-site__skip"
-			href="#pq-main"
-			>Direct naar de inhoud</a
-		>
+	<!--
+		THE `ac-*` SKELETON IS THE REFERENCE IMPLEMENTATION'S, ON PURPOSE.
 
-		<header
-			class="utrecht-page-header pq-site__header"
-			data-testid="site-header">
-			<h1 class="utrecht-heading-1 pq-site__title" data-testid="site-title">
-				{{ site.title || '…' }}
-			</h1>
+		`nlds-app.css` is 1362 `ac-*` selectors and 633 `con-*` against 157
+		`utrecht-*` — it styles the reference's DOM, not a portal's, so loading
+		it changed nothing on screen until this renderer emitted the matching
+		structure. Captured from the running reference rather than guessed:
 
-			<!--
-				The sign-in affordance appears ONLY when the portal declares a
-				mode other than `public`. A portal with no accounts must show
-				no login button: an inert one is a support ticket from every
-				visitor who presses it.
+		  .ac-app-container
+		    header.ac-header                       1280x151
+		      .ac-header__navigation-main          1280x96
+		      .ac-header__navigation-secondary     1280x55
+		      .ac-header__navigation-breadcrumb
+		    main.ac-app-main
+		    footer.ac-footer
+		      section.ac-footer__sub-footer
 
-				This offers the door. It does not guard anything — per-portal
-				authentication is declared in the schema and enforced nowhere
-				yet, and nothing here should be read as if it were a gate.
-			-->
-			<div
-				v-if="session || signInRoutes.length"
-				class="pq-site__auth"
-				data-testid="site-auth">
-				<template v-if="session">
-					<span data-testid="site-auth-subject">{{ sessionLabel }}</span>
-					<button
-						type="button"
-						data-testid="site-signout"
-						@click="signOut">
-						Uitloggen
-					</button>
-				</template>
+		`pq-site` and the `data-testid`s stay so the existing e2e keeps
+		addressing the same nodes.
+	-->
+	<div
+		class="pq-site ac-app-container"
+		:class="themeClass"
+		data-testid="site-root">
+		<header class="ac-header pq-site__header" data-testid="site-header">
+			<p>
 				<a
-					v-for="entry in signInRoutes"
-					v-else
-					:key="entry.mode"
-					:href="entry.href"
-					:data-mode="entry.mode"
-					data-testid="site-signin">
-					{{ entry.label }}
-				</a>
+					id="skip-link"
+					class="utrecht-skip-link utrecht-skip-link--visible-on-focus pq-site__skip"
+					href="#pq-main"
+					>Direct naar de inhoud</a
+				>
+			</p>
+
+			<div class="ac-header__navigation-main">
+				<div class="ac-header__logo">
+					<div>
+						<div class="con-logo-container header" />
+						<span class="sr-only">Logo</span>
+						<h1 class="logo-text" data-testid="site-title">
+							{{ site.title || '…' }}
+						</h1>
+					</div>
+				</div>
+
+				<!--
+					The sign-in affordance appears ONLY when the portal declares
+					a mode other than `public`. A portal with no accounts must
+					show no login button: an inert one is a support ticket from
+					every visitor who presses it.
+
+					It sits in the reference's `__right-section` / `ac-navigation`
+					slot, which is where that implementation puts
+					Aanmelden/Inloggen.
+				-->
+				<div class="ac-header__right-section">
+					<div
+						v-if="session || signInRoutes.length"
+						class="ac-navigation pq-site__auth"
+						data-testid="site-auth">
+						<template v-if="session">
+							<span data-testid="site-auth-subject">{{
+								sessionLabel
+							}}</span>
+							<button
+								type="button"
+								data-testid="site-signout"
+								@click="signOut">
+								Uitloggen
+							</button>
+						</template>
+						<nav v-else aria-label="Gebruikersmenu">
+							<ul>
+								<li v-for="entry in signInRoutes" :key="entry.mode">
+									<a
+										:href="entry.href"
+										:data-mode="entry.mode"
+										data-testid="site-signin">
+										{{ entry.label }}
+									</a>
+								</li>
+							</ul>
+						</nav>
+					</div>
+				</div>
 			</div>
 
-			<SiteMenu
-				v-for="menu in menus"
-				:key="menu.title"
-				:menu="menu"
-				:currentRoute="route"
-				@navigate="go" />
+			<div class="ac-header__navigation-secondary">
+				<div class="container">
+					<div class="ac-c-navigation__container">
+						<SiteMenu
+							v-for="menu in menus"
+							:key="menu.title"
+							:menu="menu"
+							:currentRoute="route"
+							@navigate="go" />
+					</div>
+				</div>
+			</div>
+
+			<div class="ac-header__navigation-breadcrumb">
+				<div class="container" />
+			</div>
 		</header>
 
-		<main id="pq-main" class="pq-site__main">
+		<main id="pq-main" class="ac-app-main pq-site__main">
 			<p v-if="loading" data-testid="site-loading">Bezig met laden…</p>
 
 			<!-- A failed load says so. Rendering an empty page instead would
@@ -150,8 +199,12 @@
 			</section>
 		</main>
 
-		<footer class="pq-site__footer" data-testid="site-footer">
-			<p>{{ site.title }}</p>
+		<footer class="ac-footer pq-site__footer" data-testid="site-footer">
+			<section class="ac-footer__sub-footer">
+				<div class="container">
+					<p>{{ site.title }}</p>
+				</div>
+			</section>
 		</footer>
 	</div>
 </template>

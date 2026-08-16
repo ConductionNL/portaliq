@@ -4,33 +4,59 @@
   -->
 
 <template>
-	<nav class="pq-menu" :aria-label="menu.title" data-testid="site-menu">
-		<ul class="pq-menu__list">
-			<li v-for="item in menu.items" :key="item.name" class="pq-menu__item">
+	<!--
+		Emits the reference implementation's `ac-c-navigation__*` structure so
+		`nlds-app.css` styles it, captured from the running reference:
+
+		  nav.ac-c-navigation__primary > ul.ac-c-navigation__ul
+		    > li.ac-c-navigation__li
+		      > a.ac-c-navigation__link-container
+		        > div.ac-c-navigation__label
+
+		The label is a `div` INSIDE the anchor, not the anchor's own text —
+		that indirection is what the CSS targets, so flattening it renders an
+		unstyled link that still passes any test asserting on link text.
+
+		`pq-menu*` and the `data-testid`s are kept alongside so the existing
+		e2e and scoped styles keep addressing the same nodes.
+	-->
+	<nav
+		class="ac-c-navigation__primary pq-menu"
+		:aria-label="menu.title"
+		data-testid="site-menu">
+		<ul class="ac-c-navigation__ul pq-menu__list">
+			<li
+				v-for="item in menu.items"
+				:key="item.name"
+				class="ac-c-navigation__li pq-menu__item">
 				<a
-					class="pq-menu__link"
+					class="ac-c-navigation__link-container pq-menu__link"
 					:href="item.link"
 					:aria-current="isCurrent(item.link) ? 'page' : undefined"
 					@click.prevent="$emit('navigate', item.link)">
-					{{ item.name }}
+					<div class="ac-c-navigation__label">{{ item.name }}</div>
 				</a>
 
 				<!-- Exactly one level of children. The API already drops
 				     anything deeper, so a consumer never has to guess how far
 				     the tree can go. -->
-				<ul v-if="item.items && item.items.length" class="pq-menu__sublist">
+				<ul
+					v-if="item.items && item.items.length"
+					class="ac-c-navigation__ul pq-menu__sublist">
 					<li
 						v-for="child in item.items"
 						:key="child.name"
-						class="pq-menu__item">
+						class="ac-c-navigation__li pq-menu__item">
 						<a
-							class="pq-menu__link pq-menu__link--child"
+							class="ac-c-navigation__link-container pq-menu__link pq-menu__link--child"
 							:href="child.link"
 							:aria-current="
 								isCurrent(child.link) ? 'page' : undefined
 							"
 							@click.prevent="$emit('navigate', child.link)">
-							{{ child.name }}
+							<div class="ac-c-navigation__label">
+								{{ child.name }}
+							</div>
 						</a>
 					</li>
 				</ul>
