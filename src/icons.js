@@ -18,6 +18,7 @@ import AccountKey from 'vue-material-design-icons/AccountKey.vue'
 import AlertCircleOutline from 'vue-material-design-icons/AlertCircleOutline.vue'
 import BellOutline from 'vue-material-design-icons/BellOutline.vue'
 import BookAlphabet from 'vue-material-design-icons/BookAlphabet.vue'
+import BookOpenVariant from 'vue-material-design-icons/BookOpenVariant.vue'
 import BookOpenVariantOutline from 'vue-material-design-icons/BookOpenVariantOutline.vue'
 import ChartLine from 'vue-material-design-icons/ChartLine.vue'
 import Email from 'vue-material-design-icons/Email.vue'
@@ -35,6 +36,7 @@ import Palette from 'vue-material-design-icons/Palette.vue'
 import ShieldCheckOutline from 'vue-material-design-icons/ShieldCheckOutline.vue'
 import ShieldKeyOutline from 'vue-material-design-icons/ShieldKeyOutline.vue'
 import ShieldLock from 'vue-material-design-icons/ShieldLock.vue'
+import Sitemap from 'vue-material-design-icons/Sitemap.vue'
 import Ticket from 'vue-material-design-icons/Ticket.vue'
 import ViewDashboardOutline from 'vue-material-design-icons/ViewDashboardOutline.vue'
 import Web from 'vue-material-design-icons/Web.vue'
@@ -47,6 +49,7 @@ export default {
 	AlertCircleOutline,
 	BellOutline,
 	BookAlphabet,
+	BookOpenVariant,
 	BookOpenVariantOutline,
 	ChartLine,
 	Email,
@@ -64,6 +67,7 @@ export default {
 	ShieldCheckOutline,
 	ShieldKeyOutline,
 	ShieldLock,
+	Sitemap,
 	Ticket,
 	ViewDashboardOutline,
 	Web,

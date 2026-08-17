@@ -910,7 +910,7 @@
             "id": "portal-menus",
             "type": "object-list",
             "title": "Menus",
-            "icon": "Menu",
+            "icon": "Sitemap",
             "content": {
               "register": "portaliq",
               "schema": "menu",
@@ -941,7 +941,7 @@
             "id": "portal-glossary",
             "type": "object-list",
             "title": "Glossary",
-            "icon": "BookAlphabet",
+            "icon": "BookOpenVariant",
             "content": {
               "register": "portaliq",
               "schema": "glossaryTerm",
