@@ -7,10 +7,29 @@ where the work is, what is done, what is next, and the traps that cost time.
 
 | Section | Then | Now |
 | --- | --- | --- |
+| Docusaurus plugin | unpublished | **published** — [ConductionNL/docusaurus-plugin-portaliq](https://github.com/ConductionNL/docusaurus-plugin-portaliq), public, EUPL-1.2, 19 tests |
 | Contributed-page actions (6.2) | open | **closed** — and the endpoint was never the problem |
-| Traffic analytics | 20 open | **0 open, 3 partial** |
-| nldesign theme | 14 open | **13 open** — 2.6, the one blocking dark mode, is closed |
-| Page composition | 25 open | 25 open — **not started** |
+| Traffic analytics | 20 open | **0 open, 3 partial** — the sweep runs, retention is enforced |
+| nldesign theme | 14 open | 13 open — 2.6, the one blocking dark mode, is **closed** |
+| Page composition | 25 open | 20 open, 1 partial — the **region model** is closed |
+
+### What is genuinely left, and how big each piece is
+
+- **The editor (§4, 7 tasks) is a project, not a task.** Canvas mounting the
+  real blocks, a block library, a field-config-driven inspector, a layer tree,
+  a breakpoint switcher, undo/redo, and a test that the canvas and the public
+  route render the same DOM. Everything else in page composition is small by
+  comparison; this is not.
+- **Retiring the hard-coded shell (§2, 3 tasks)** is the next real step and is
+  now unblocked by the region model. The acceptance test is the hard part and
+  it already exists in principle: an existing portal must render byte-identically
+  before and after, which the painted-surface enumeration in
+  `tests/site-surfaces.spec.mjs` can check the same way 2.6 was checked.
+- **Dark mode (theme 2.2/2.4)** is unblocked by 2.6 and is the highest-value
+  small item. Expect to add text colour, which 2.6 deliberately left out.
+- **Theme sharing (§4, 4 tasks)** needs `nldesign` as well as this repo.
+- **The OpenRegister ownership fix** (theme 6.3) is the one finding that leaves
+  this repo: an anonymous write is stamped with the session user's id.
 
 **Two findings from this pass are worth more than the tasks they came from.**
 
@@ -64,11 +83,12 @@ workstream. Edit the worktree, or copy into it and commit there.
 
 ## Next, in the order I would do it
 
-### 1. Publish the Docusaurus plugin — needs a human
+### 1. ~~Publish the Docusaurus plugin~~ — DONE
 
-`ConductionNL/docusaurus-plugin-portaliq` does not exist. Creating a public repo
-under the org is outward-facing, so it was left. The code is committed locally at
-`df37d74` and passes 17 tests.
+Live at `ConductionNL/docusaurus-plugin-portaliq`, public, default branch `main`,
+EUPL-1.2 text shipped alongside the licence the package declared, 19 tests
+passing. Scanned before publishing: the only token-shaped string in the repo is
+a synthetic fixture used to assert redaction.
 
 ### 2. ~~Task 6.2~~ — CLOSED, and the diagnosis below was wrong
 
@@ -208,6 +228,18 @@ variant actually works — it composites alpha and self-tests before judging.
   client's "stores nothing when disabled" tests passed against a deliberately
   removed guard, because the consent gate was blocking the send instead. Stand
   the other gates down in each case.
+- **`<background-jobs>` in `info.xml` is read only on install and upgrade.** The
+  declaration was in place and `oc_jobs` held zero portaliq rows. Register at
+  boot behind a config flag if the job must exist on an instance that is already
+  running the app.
+- **phpcs demands named arguments into framework code, and a guessed name is a
+  FATAL, not a lint failure.** `setInterval(interval:)` threw "Unknown named
+  parameter" at construction. Read the signature; do not infer it from the
+  setter's name.
+- **A task's premise can be stale — check it before implementing.** Three were:
+  6.2 asked which of two things to change when the answer was neither, 6.1 of
+  the traffic change asks to replace counters on a page that does not exist, and
+  the skipped-heading defect turned out to be data, not code.
 
 ## How to check the work
 
