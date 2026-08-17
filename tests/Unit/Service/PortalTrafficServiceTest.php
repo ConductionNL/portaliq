@@ -54,6 +54,19 @@ class PortalTrafficServiceTest extends TestCase {
 		parent::setUp();
 		$this->written = [];
 
+		$this->service = new PortalTrafficService(
+			$this->recordingWriter(),
+			$this->createMock(LoggerInterface::class)
+		);
+	}//end setUp()
+
+
+	/**
+	 * A writer that records what it was asked to store.
+	 *
+	 * @return PortalObjectWriter The double.
+	 */
+	private function recordingWriter(): PortalObjectWriter {
 		$writer = $this->createMock(PortalObjectWriter::class);
 		$writer->method('createAnonymousObject')->willReturnCallback(
 			function (string $register, string $schema, array $data): array {
@@ -62,11 +75,69 @@ class PortalTrafficServiceTest extends TestCase {
 			}
 		);
 
-		$this->service = new PortalTrafficService(
-			$writer,
-			$this->createMock(LoggerInterface::class)
+		return $writer;
+	}//end recordingWriter()
+
+
+	/**
+	 * A service backed by a working in-memory distributed cache.
+	 *
+	 * A REAL COUNTER, NOT A MOCK THAT RETURNS A NUMBER. The behaviour under
+	 * test is that the count accumulates across calls and then bites; a mock
+	 * scripted to return the count would be asserting the script.
+	 *
+	 * @return PortalTrafficService The service.
+	 */
+	private function rateLimitedService(): PortalTrafficService {
+		$store = [];
+
+		$cache = new class($store) implements \OCP\ICache {
+
+			/**
+			 * @param array<string, mixed> $store Backing store, by reference.
+			 */
+			public function __construct(private array &$store) {
+			}
+
+			public function get($key) {
+				return ($this->store[$key] ?? null);
+			}
+
+			public function set($key, $value, $ttl = 0) {
+				$this->store[$key] = $value;
+				return true;
+			}
+
+			public function hasKey($key) {
+				return isset($this->store[$key]);
+			}
+
+			public function remove($key) {
+				unset($this->store[$key]);
+				return true;
+			}
+
+			public function clear($prefix = '') {
+				$this->store = [];
+				return true;
+			}
+
+			public static function isAvailable(): bool {
+				return true;
+			}
+
+		};
+
+		$factory = $this->createMock(\OCP\ICacheFactory::class);
+		$factory->method('isAvailable')->willReturn(true);
+		$factory->method('createDistributed')->willReturn($cache);
+
+		return new PortalTrafficService(
+			$this->recordingWriter(),
+			$this->createMock(LoggerInterface::class),
+			$factory
 		);
-	}//end setUp()
+	}//end rateLimitedService()
 
 
 	/**
@@ -294,6 +365,117 @@ class PortalTrafficServiceTest extends TestCase {
 		$this->assertStringNotContainsString($address, (string)$encoded);
 		$this->assertStringNotContainsString('203.0.113', (string)$encoded);
 	}//end testNoStoredFieldEverContainsAnIpAddress()
+
+
+	/**
+	 * One client id cannot fill a portal's analytics on its own.
+	 *
+	 * A LOOPING CLIENT IS THE THREAT MODEL, not an attacker — a client id is
+	 * chosen by the client, so anything determined simply rotates it, and the
+	 * control that bounds an abusive SOURCE is the controller's
+	 * `#[AnonRateLimit]`. What this asserts is that a beacon stuck in a retry
+	 * loop stops being written before it becomes the portal's traffic.
+	 *
+	 * @return void
+	 */
+	public function testOneClientIdIsRateLimitedWithinAWindow(): void {
+		$service = $this->rateLimitedService();
+
+		$events = [];
+		for ($i = 0; $i < 320; $i++) {
+			$events[] = $this->event(overrides: ['sequence' => $i]);
+		}
+
+		// Sent as batches the controller would accept, because the limit is
+		// per WINDOW and must hold across separate requests rather than only
+		// within one.
+		$stored = 0;
+		foreach (array_chunk($events, 40) as $batch) {
+			$stored += $service->record(portal: $this->portal(), events: $batch, region: '');
+		}
+
+		$this->assertSame(300, $stored, 'the limit did not bite at the configured ceiling');
+		$this->assertSame(20, ($service->refusals()['rate_limited'] ?? 0));
+	}//end testOneClientIdIsRateLimitedWithinAWindow()
+
+
+	/**
+	 * A SECOND client id is not punished for the first one's behaviour.
+	 *
+	 * The failure this guards against is a limiter keyed on nothing in
+	 * particular, which reads as "the limit works" on the first test and
+	 * silently stops measuring every other visitor on a busy portal.
+	 *
+	 * @return void
+	 */
+	public function testAnotherClientIdIsUnaffectedByTheFirstsLimit(): void {
+		$service = $this->rateLimitedService();
+
+		$flood = [];
+		for ($i = 0; $i < 320; $i++) {
+			$flood[] = $this->event(overrides: ['sequence' => $i]);
+		}
+		foreach (array_chunk($flood, 40) as $batch) {
+			$service->record(portal: $this->portal(), events: $batch, region: '');
+		}
+
+		$stored = $service->record(
+			portal: $this->portal(),
+			events: [$this->event(overrides: ['clientId' => 'c-2', 'sessionId' => 's-2'])],
+			region: ''
+		);
+
+		$this->assertSame(1, $stored, 'an unrelated visitor was throttled by another visitor');
+	}//end testAnotherClientIdIsUnaffectedByTheFirstsLimit()
+
+
+	/**
+	 * With no cache available the collector still measures.
+	 *
+	 * FAILING OPEN IS THE DECISION HERE and it is asserted rather than assumed:
+	 * an instance with no memcache configured must not silently stop recording
+	 * traffic, because that loss would present as "nobody visits this portal".
+	 *
+	 * @return void
+	 */
+	public function testWithoutACacheTheCollectorStillRecords(): void {
+		$stored = $this->service->record(
+			portal: $this->portal(),
+			events: [$this->event()],
+			region: ''
+		);
+
+		$this->assertSame(1, $stored);
+		$this->assertArrayNotHasKey('rate_limited', $this->service->refusals());
+	}//end testWithoutACacheTheCollectorStillRecords()
+
+
+	/**
+	 * A refusal is counted under the reason it actually had.
+	 *
+	 * "One fewer was stored" is true of every failure mode at once. Asserting
+	 * the REASON is what makes a refusal visible to an operator as the thing it
+	 * was, and what stops a future change from silently reclassifying it.
+	 *
+	 * @return void
+	 */
+	public function testEachRefusalIsCountedUnderItsOwnReason(): void {
+		$this->service->record(
+			portal: $this->portal(events: ['page_view']),
+			events: [
+				$this->event(overrides: ['name' => 'search', 'sequence' => 1]),
+				$this->event(overrides: ['clientId' => '', 'sequence' => 2]),
+				$this->event(overrides: ['sequence' => 3]),
+				$this->event(overrides: ['sequence' => 3]),
+			],
+			region: ''
+		);
+
+		$this->assertSame(
+			['event_not_permitted' => 1, 'incomplete' => 1, 'duplicate_sequence' => 1],
+			$this->service->refusals()
+		);
+	}//end testEachRefusalIsCountedUnderItsOwnReason()
 
 
 	/**

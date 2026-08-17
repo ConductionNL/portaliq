@@ -32,6 +32,7 @@ use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\CmsReader;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\PortalTrafficService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -75,6 +76,7 @@ class ContentController extends Controller {
 	 * @param PortalContributionFilter   $contribFilter Scopes that aggregate to one portal.
 	 * @param LoggerInterface            $logger       Records a provider failure the visitor never sees.
 	 * @param PortalSessionService       $session      Resolves the caller's portal session for the content gate.
+	 * @param PortalTrafficService       $traffic      Owns what a portal's traffic configuration means.
 	 *
 	 * @return void
 	 */
@@ -87,6 +89,7 @@ class ContentController extends Controller {
 		private readonly PortalContributionFilter $contribFilter,
 		private readonly LoggerInterface $logger,
 		private readonly PortalSessionService $session,
+		private readonly PortalTrafficService $traffic,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -252,6 +255,11 @@ class ContentController extends Controller {
 					'register'      => trim((string)($auth['register'] ?? '')),
 					'registerLabel' => trim((string)($auth['registerLabel'] ?? '')),
 				],
+				// What this portal asks its visitors' browsers to measure. The
+				// client sends only what it finds here, so a portal that has
+				// not enabled measurement produces a client that does nothing
+				// at all rather than one the collector silently refuses.
+				'traffic' => $this->traffic->clientConfig(portal: $portal),
 			]
 		);
 	}//end site()

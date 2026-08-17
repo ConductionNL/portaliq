@@ -607,6 +607,7 @@ import {
 	resolveApiBase,
 } from './lib/contentApi.js'
 import { parseContributionRoute } from './lib/contributionApi.js'
+import { trafficClientFor } from './lib/traffic.js'
 
 /**
  * The built-in site renderer.
@@ -649,6 +650,13 @@ export default {
 			route: '/',
 			loading: true,
 			error: null,
+			/**
+			 * The traffic client, or null until the portal's config arrives.
+			 *
+			 * NOT REACTIVE STATE IN ANY MEANINGFUL SENSE — nothing renders from
+			 * it. It sits here so `beforeUnmount` can flush what is queued.
+			 */
+			traffic: null,
 		}
 	},
 
@@ -927,11 +935,32 @@ export default {
 		this.route = this.routeFromLocation()
 		window.addEventListener('popstate', this.onPopState)
 		await this.loadSite()
+
+		// BUILT AFTER THE SITE LOADS, because the portal's own configuration is
+		// what decides whether it exists at all. A client constructed before
+		// the config arrives would have to default to something, and the only
+		// safe default — measure nothing — would then need un-defaulting,
+		// which is a race nobody wins.
+		this.traffic = trafficClientFor({
+			config: this.site.traffic,
+			apiBase: resolveApiBase(),
+			portal: this.portalSlug,
+		})
+
+		// The queue must survive the page going away: the last page of a visit
+		// is the one that tells you where visitors leave, and it is exactly the
+		// one still in the queue when they do.
+		window.addEventListener('pagehide', this.flushTraffic)
+		document.addEventListener('visibilitychange', this.onVisibilityChange)
+
 		await this.loadRoute(this.route)
 	},
 
 	beforeUnmount() {
 		window.removeEventListener('popstate', this.onPopState)
+		window.removeEventListener('pagehide', this.flushTraffic)
+		document.removeEventListener('visibilitychange', this.onVisibilityChange)
+		this.flushTraffic()
 	},
 
 	methods: {
@@ -963,6 +992,32 @@ export default {
 			const next = this.routeFromLocation()
 			this.route = next
 			this.loadRoute(next)
+		},
+
+		/**
+		 * Send whatever is queued.
+		 *
+		 * @return {void}
+		 */
+		flushTraffic() {
+			if (this.traffic) {
+				this.traffic.flush()
+			}
+		},
+
+		/**
+		 * Flush when the page is hidden.
+		 *
+		 * `visibilitychange` fires where `pagehide` does not — a tab switch on
+		 * mobile that never comes back is the common way a visit ends, and it
+		 * produces no unload at all.
+		 *
+		 * @return {void}
+		 */
+		onVisibilityChange() {
+			if (document.visibilityState === 'hidden') {
+				this.flushTraffic()
+			}
 		},
 
 		/**
@@ -1120,6 +1175,7 @@ export default {
 				this.page = null
 				this.error = this.contributionPage === null ? { status: 404 } : null
 				this.loading = false
+				this.recordPageView(this.contributionPage === null)
 				return
 			}
 
@@ -1134,7 +1190,32 @@ export default {
 				this.error = error
 			} finally {
 				this.loading = false
+				this.recordPageView(this.page === null)
 			}
+		},
+
+		/**
+		 * Report that a page was shown.
+		 *
+		 * A MISSING PAGE IS STILL A PAGE VIEW, and it is flagged rather than
+		 * dropped: the routes visitors reach and find nothing at are the ones
+		 * an editor most needs to see, and silently not counting them makes a
+		 * broken link look like a link nobody follows.
+		 *
+		 * Deferred to the next tick so the document title the renderer sets for
+		 * this route is the one reported, rather than the previous route's.
+		 *
+		 * @param {boolean} notFound Whether the route resolved to nothing.
+		 * @return {void}
+		 */
+		recordPageView(notFound = false) {
+			if (this.traffic === null) {
+				return
+			}
+
+			this.$nextTick(() => {
+				this.traffic.pageView(notFound === true ? { notFound: '1' } : {})
+			})
 		},
 
 		/**

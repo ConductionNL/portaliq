@@ -25,7 +25,9 @@ use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\ContentController;
 use OCA\Portaliq\Service\CmsReader;
 use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\PortalTrafficService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -122,7 +124,16 @@ class ContentControllerTest extends TestCase {
 			// assertion here uses a portal whose modes include `public`, so the
 			// content gate never consults this — which is the point: adding the
 			// gate must not change what a public portal serves.
-			session: ($this->session ?? $this->createMock(PortalSessionService::class))
+			session: ($this->session ?? $this->createMock(PortalSessionService::class)),
+			// A REAL service, not a mock. What `site` publishes under `traffic`
+			// is a projection with rules of its own — a disabled portal must
+			// publish an empty event list, an unconfigured one must publish
+			// `consent.required: true` — and a mock returning whatever a test
+			// scripted would assert the script rather than the projection.
+			traffic: new PortalTrafficService(
+				$this->createMock(PortalObjectWriter::class),
+				$this->createMock(LoggerInterface::class)
+			)
 		);
 	}//end controller()
 
@@ -198,6 +209,61 @@ class ContentControllerTest extends TestCase {
 		$this->assertSame('vng', $data['theme']);
 		$this->assertSame(['public'], $data['authentication']['modes']);
 	}//end testAResolvedSiteReturnsItsPresentation()
+
+
+	/**
+	 * A portal that has not enabled measurement tells the client so.
+	 *
+	 * THE CLIENT'S SILENCE DEPENDS ON THIS PAYLOAD, which is why it is asserted
+	 * here as well as in the client's own tests: the client sends only what
+	 * this endpoint lists, so an empty list is the mechanism, not a formality.
+	 * `consent.required` defaults to true for the same reason — asking when it
+	 * was unnecessary is recoverable, measuring because a field was absent is
+	 * not.
+	 *
+	 * @return void
+	 */
+	public function testAPortalWithoutTrafficPublishesAnEmptyEventList(): void {
+		$this->resolver->method('resolve')->willReturn($this->portal());
+
+		$traffic = $this->controller()->site()->getData()['traffic'];
+
+		$this->assertFalse($traffic['enabled']);
+		$this->assertSame([], $traffic['events']);
+		$this->assertTrue($traffic['consent']['required']);
+	}//end testAPortalWithoutTrafficPublishesAnEmptyEventList()
+
+
+	/**
+	 * The published event list is what the COLLECTOR would accept.
+	 *
+	 * A portal naming an event outside the shipped vocabulary must not have it
+	 * echoed back: the client would then send something the collector refuses,
+	 * and the refusal would be counted against a portal whose configuration
+	 * looked, from the outside, exactly like it was working.
+	 *
+	 * The retention and region settings are NOT published — they are decisions
+	 * this server acts on alone, and a publicly cacheable endpoint is the wrong
+	 * place for a portal's data-retention posture.
+	 *
+	 * @return void
+	 */
+	public function testTheClientIsToldOnlyWhatTheCollectorWouldAccept(): void {
+		$portal = $this->portal();
+		$portal['traffic'] = [
+			'enabled' => true,
+			'events' => ['page_view', 'not_a_real_event'],
+			'retentionDays' => 90,
+			'regionGranularity' => 'country',
+		];
+		$this->resolver->method('resolve')->willReturn($portal);
+
+		$traffic = $this->controller()->site()->getData()['traffic'];
+
+		$this->assertSame(['page_view'], $traffic['events']);
+		$this->assertArrayNotHasKey('retentionDays', $traffic);
+		$this->assertArrayNotHasKey('regionGranularity', $traffic);
+	}//end testTheClientIsToldOnlyWhatTheCollectorWouldAccept()
 
 
 	/**

@@ -27,13 +27,14 @@
     "check:register": "node tests/validate-register.js",
     "check:registry": "node tests/registry.spec.js",
     "check:json-strict": "node tests/validate-json-strict.js",
-    "check:specs": "npm run check:json-strict && npm run check:manifest-v2 && npm run check:register && npm run check:registry && npm run check:site-auth && npm run check:site-grid && npm run check:site-contribution",
+    "check:specs": "npm run check:json-strict && npm run check:manifest-v2 && npm run check:register && npm run check:registry && npm run check:site-auth && npm run check:site-grid && npm run check:site-contribution && npm run check:traffic-client",
     "prepare": "git config core.hooksPath .githooks || true",
     "build:site": "NODE_ENV=production webpack --config webpack.site.js --progress",
     "watch:site": "NODE_ENV=development webpack --config webpack.site.js --progress --watch",
     "check:site-auth": "node tests/site-auth.spec.mjs",
     "check:site-grid": "node tests/site-grid.spec.mjs",
     "check:site-contribution": "node tests/site-contribution.spec.mjs",
+    "check:traffic-client": "node tests/traffic-client.spec.mjs",
     "check:surfaces": "node tests/site-surfaces.spec.mjs"
   },
   "browserslist": [

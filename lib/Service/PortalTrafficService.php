@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCP\ICacheFactory;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -72,6 +73,24 @@ class PortalTrafficService {
 	private const MAX_PARAMS = 20;
 
 	/**
+	 * Events one client id may have stored per window.
+	 *
+	 * Generous on purpose. This is not a security control — a client id is
+	 * chosen by the client, so anything determined to flood simply rotates it,
+	 * and the control that actually bounds an abusive source is the request-
+	 * level `#[AnonRateLimit]` on the controller. What this bounds is a client
+	 * that has gone WRONG: a loop firing `page_view` on every scroll frame, a
+	 * beacon retried without backoff. Set below what such a bug produces and
+	 * far above what a person browsing produces.
+	 */
+	private const MAX_EVENTS_PER_WINDOW = 300;
+
+	/**
+	 * The rate-limit window, in seconds.
+	 */
+	private const WINDOW_SECONDS = 60;
+
+	/**
 	 * Refusals since this process started, by reason.
 	 *
 	 * @var array<string, int>
@@ -79,12 +98,14 @@ class PortalTrafficService {
 	private array $refusals = [];
 
 	/**
-	 * @param PortalObjectWriter $writer Stores the events.
-	 * @param LoggerInterface    $logger Records refusal counts.
+	 * @param PortalObjectWriter $writer       Stores the events.
+	 * @param LoggerInterface    $logger       Records refusal counts.
+	 * @param ICacheFactory|null $cacheFactory Backs the per-client rate limit; null means no limit.
 	 */
 	public function __construct(
 		private readonly PortalObjectWriter $writer,
 		private readonly LoggerInterface $logger,
+		private readonly ?ICacheFactory $cacheFactory = null,
 	) {
 	}//end __construct()
 
@@ -162,6 +183,60 @@ class PortalTrafficService {
 
 
 	/**
+	 * The traffic configuration a CLIENT needs, and nothing further.
+	 *
+	 * PROJECTED, NOT RELAYED. `retentionDays` and `regionGranularity` are
+	 * decisions this server acts on alone; publishing them would put a portal's
+	 * data-retention posture on an anonymous, publicly cacheable endpoint for
+	 * no consumer at all. What a browser genuinely needs is the switch, the
+	 * event list it may send, when a session lapses, and what it may do before
+	 * consent.
+	 *
+	 * A DISABLED PORTAL PROJECTS AN EMPTY EVENT LIST, not a missing key. The
+	 * client's rule then reads the same in both cases — send only what is
+	 * listed — instead of needing a second branch for "the field was absent",
+	 * which is the branch that gets written to default to sending something.
+	 *
+	 * `consent.required` defaults to TRUE on a partial or unreadable config.
+	 * The safe direction is asking when it was not necessary, never measuring
+	 * because a field was missing.
+	 *
+	 * It lives HERE, beside the collector that enforces the same configuration,
+	 * so the answer a client is given and the answer the collector acts on come
+	 * from one place.
+	 *
+	 * @param array<string, mixed> $portal The resolved portal record.
+	 *
+	 * @return array<string, mixed> The client's view of the traffic config.
+	 *
+	 * @spec openspec/changes/portal-traffic-analytics/tasks.md
+	 */
+	public function clientConfig(array $portal): array {
+		$traffic = (array)($portal['traffic'] ?? []);
+		$enabled = $this->enabledFor(portal: $portal);
+		$consent = (array)($traffic['consent'] ?? []);
+
+		$events = [];
+		if ($enabled === true) {
+			$events = $this->permittedEvents(portal: $portal);
+		}
+
+		return [
+			'enabled' => $enabled,
+			'events' => $events,
+			'sessionTimeoutMinutes' => max(1, (int)($traffic['sessionTimeoutMinutes'] ?? 30)),
+			'consent' => [
+				'required' => (bool)($consent['required'] ?? true),
+				'preConsentEvents' => array_values(array_filter(
+					(array)($consent['preConsentEvents'] ?? []),
+					static fn ($event): bool => is_string($event) === true && $event !== ''
+				)),
+			],
+		];
+	}//end clientConfig()
+
+
+	/**
 	 * Count a refusal, so it is visible to an operator rather than silent.
 	 *
 	 * A collector that drops what it cannot accept and says nothing is
@@ -180,6 +255,70 @@ class PortalTrafficService {
 			['reason' => $reason, 'count' => $this->refusals[$reason]]
 		);
 	}//end countRefusal()
+
+
+	/**
+	 * The refusals recorded so far, by reason.
+	 *
+	 * PER REQUEST, NOT PER PORTAL'S LIFETIME. The counts live on the service
+	 * instance and the log line is the durable record; this accessor exists so
+	 * a test can assert that a refusal was counted under the reason it claims,
+	 * rather than that a number came back smaller. "One fewer was stored" is
+	 * true of every failure mode at once, which is why it is not an assertion.
+	 *
+	 * @return array<string, int> Reason to count.
+	 *
+	 * @spec openspec/changes/portal-traffic-analytics/tasks.md
+	 */
+	public function refusals(): array {
+		return $this->refusals;
+	}//end refusals()
+
+
+	/**
+	 * Whether this client id may store one more event in the current window.
+	 *
+	 * TWO LIMITS GUARD THIS ENDPOINT AND THEY GUARD DIFFERENT THINGS. The
+	 * controller's `#[AnonRateLimit]` bounds a SOURCE, which is the one an
+	 * abuser cannot choose; this bounds a CLIENT ID, which an abuser can
+	 * rotate freely. Presenting the second as an anti-abuse control would be a
+	 * false claim — it exists so one broken or looping client cannot fill a
+	 * portal's own analytics with noise that reads as traffic.
+	 *
+	 * FAILS OPEN, DELIBERATELY. With no cache configured there is nowhere to
+	 * keep a counter, and the choice is between dropping real measurements and
+	 * accepting them unbounded. An analytics collector is the wrong place to
+	 * fail closed: the request-level limit still stands above it, and losing a
+	 * portal's traffic because its instance has no memcache would be a silent
+	 * data loss nobody would connect to the cause.
+	 *
+	 * @param string $clientId The client-reported id.
+	 *
+	 * @return bool True when the event may be stored.
+	 *
+	 * @spec openspec/changes/portal-traffic-analytics/tasks.md
+	 */
+	private function withinRate(string $clientId): bool {
+		if ($this->cacheFactory === null || $this->cacheFactory->isAvailable() === false) {
+			return true;
+		}
+
+		$cache = $this->cacheFactory->createDistributed('portaliq_traffic_rate');
+
+		// A FIXED window, keyed by the window's own number. A rolling window
+		// would need the timestamps kept, and keeping per-client timestamps is
+		// precisely the shape of record this endpoint exists not to hold.
+		$window = (int)floor(time() / self::WINDOW_SECONDS);
+		$key = $window . ':' . hash('sha256', $clientId);
+
+		$count = (int)$cache->get($key);
+		if ($count >= self::MAX_EVENTS_PER_WINDOW) {
+			return false;
+		}
+
+		$cache->set($key, ($count + 1), (self::WINDOW_SECONDS * 2));
+		return true;
+	}//end withinRate()
 
 
 	/**
@@ -225,6 +364,16 @@ class PortalTrafficService {
 			$clientId = trim((string)($event['clientId'] ?? ''));
 			$sessionId = trim((string)($event['sessionId'] ?? ''));
 			$sequence = (int)($event['sequence'] ?? -1);
+
+			// Checked after the shape checks and before the write, so a
+			// throttled client costs a cache read rather than an object write,
+			// and so a malformed event is reported as malformed rather than as
+			// throttled.
+			if ($this->withinRate(clientId: $clientId) === false) {
+				$this->countRefusal(reason: 'rate_limited');
+				continue;
+			}
+
 			$seen[$sessionId . ':' . $sequence] = true;
 
 			$created = $this->writer->createAnonymousObject(
