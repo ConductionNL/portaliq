@@ -3,6 +3,35 @@
 Written 2026-08-17 as a handoff. Everything here is measured, not remembered:
 where the work is, what is done, what is next, and the traps that cost time.
 
+## Status after the 2026-08-17 execution pass
+
+| Section | Then | Now |
+| --- | --- | --- |
+| Contributed-page actions (6.2) | open | **closed** — and the endpoint was never the problem |
+| Traffic analytics | 20 open | **0 open, 3 partial** |
+| nldesign theme | 14 open | **13 open** — 2.6, the one blocking dark mode, is closed |
+| Page composition | 25 open | 25 open — **not started** |
+
+**Two findings from this pass are worth more than the tasks they came from.**
+
+*An "anonymous" write is stamped with the Nextcloud user id of a visitor who
+happens to hold a session on the same instance.* Measured, not inferred: the
+same submission stored `__system__` from `curl` and `admin` from a browser
+holding an admin cookie, while the page it came from promises "niet aan een
+account gekoppeld". The cause is in OpenRegister —
+`SaveObject::applyOwnerAttribution()` is documented as the sole authoritative
+setter and stamps the session user unconditionally, so a caller-set owner is
+honoured only when there is no session. **No portaliq-side change closes it.**
+It needs a narrow OpenRegister change: an explicit unowned-write opt-in on
+`saveObject()`, defaulting to today's behaviour so no REST caller can reach it.
+Recorded as theme task 6.3 and in `docs/traffic-privacy.md`.
+
+*Task premises go stale, and two of them were.* 6.2 asked which of two things to
+change and the answer was neither — the endpoint honoured the flag all along and
+the renderer posted to the wrong route. 6.1 of the traffic change asks to
+replace three placeholder counters on a Traffic page that does not exist in this
+repo under any spelling. **Check the premise before implementing the task.**
+
 ## Where the work lives
 
 | What | Where | Branch | State |
@@ -41,7 +70,17 @@ workstream. Edit the worktree, or copy into it and commit there.
 under the org is outward-facing, so it was left. The code is committed locally at
 `df37d74` and passes 17 tests.
 
-### 2. Task 6.2 — La Franken advertises a route that does not exist
+### 2. ~~Task 6.2~~ — CLOSED, and the diagnosis below was wrong
+
+Kept because being wrong about it is the lesson. `anonymous: true` **is**
+honoured — on a `type: create` action, through
+`POST /portal/api/collections/{register}/{schema}`, which admits a caller with
+no bearer. Proven before touching anything: an unauthenticated `curl` created an
+object on the first try. The renderer was posting every action to the
+endpoint-FORWARD route, which refuses a create with or without a session. The
+"either/or" framing below assumed the endpoint was at fault; it was not.
+
+### 2b. What replaced it — the original text
 
 The manifest declares the "Melding indienen" action `anonymous: true`
 ("geen account nodig"), but `ContributionController::action()` answers **401
@@ -51,7 +90,31 @@ or the manifest stops offering it. The renderer already reports the endpoint's
 real behaviour rather than the manifest's claim, so nothing is lying on screen —
 but the contract disagrees with itself.
 
-### 3. Traffic — 20 tasks left, in three shippable groups
+### 3. Traffic — CLOSED except three parts, each named
+
+- **The scheduled job.** `expiredIds()` decides what is past retention and
+  `aggregate()` produces the figures; **nothing calls either on a timer.**
+  Retention is therefore not enforced yet. This is the largest remaining gap
+  and it is a background job, not new logic.
+- **The Traffic page.** Does not exist in this repo. `GET /api/traffic/summary`
+  serves everything it would need — sessions, engaged sessions, visitors, page
+  views, ranked entrances, exits and transitions — and returns `{measured:
+  false}` with **no counter keys** for a portal that measures nothing, so a
+  renderer cannot plot zeroes it was never given.
+- **Task 7.2's other half.** The reason OpenRegister's read log is not the
+  traffic source is written in `docs/traffic-privacy.md`; it is not yet mirrored
+  into the `openregister` repo, which is where the next person will look.
+
+Three CORS defects were fixed getting a statically built portal to report at
+all, and only a real browser on a real second origin found them: the script's
+obvious URL 401s for anonymous callers, neither public endpoint sent any CORS
+header and the collector's preflight answered 405, and **`sendBeacon` always
+sends credentials-include so the browser rejects a wildcard CORS response** —
+the client now keeps the beacon same-origin and uses a keepalive fetch with
+credentials omitted elsewhere, which keeps the server strict rather than
+loosening it to an origin echo.
+
+### 3b. The original traffic plan, for reference
 
 - **Client library (5.1–5.5).** The collector has nothing sending to it. One
   first-party script, shipped from **both** the Docusaurus plugin and the
@@ -76,11 +139,22 @@ Regions and a wireframe editor. Nothing in it is blocked; it is simply big.
 Worth splitting into "regions as data" and "the editor" and shipping the first
 alone.
 
-### 5. Theme integration — 14 tasks
+### 5. Theme integration — 13 tasks, and dark mode is now unblocked
 
-The valuable remainder is **2.6**: give the site a token-driven surface layer
-(bands, cards, the page itself). It is the real prerequisite for dark mode —
-2.2 and 2.4 are blocked on it and say so.
+**2.6 is done.** All eight painted surfaces resolve
+`--nldesign-site-{surface,surface-raised,surface-sunken}` →
+`--utrecht-document-background-color` → the literal, so a generated dark variant
+reaches the page. Verified by moving them: setting the utrecht token alone
+repaints all eight, where before it repainted none. Light mode is provably
+unchanged — every fallback is the colour measured beforehand, and re-enumerating
+the eleven painted surfaces afterwards returns identical colours and areas.
+
+**2.2 and 2.4 are the natural next step** and are no longer blocked. Expect to
+need text colour too: it was deliberately left out of 2.6 because
+`--utrecht-document-color` is `#1b1b23` while body text computes to
+`rgb(0, 0, 0)`, so including it would have been a visible change disguised as a
+no-op refactor. `tests/site-surfaces.spec.mjs` is what will say whether the dark
+variant actually works — it composites alpha and self-tests before judging.
 
 ## Traps that cost time here
 
@@ -112,13 +186,36 @@ The valuable remainder is **2.6**: give the site a token-driven surface layer
   3.01). Deviations from it are deliberate and commented where they occur.
 - **The reference shuffles its skyline per load.** Ours is fixed on purpose, so
   a screenshot diff means something.
+- **A schema declared in `portaliq_register.json` is not a schema that exists.**
+  `portal.traffic` had been added and marked done; the live table had no
+  `traffic` column, so no portal could ever have been configured.
+  `POST /api/settings/load` applies it. **Ask the database.**
+- **New routes need the route cache cleared**, and `occ maintenance:repair`
+  takes ~9 minutes and leaves the instance in maintenance mode while it runs.
+  `docker exec nextcloud apachectl graceful` clears APCu in seconds and is
+  enough. If a repair does get started, **wait for it** — killing the
+  `docker exec` does not kill the process inside the container, and the 503 that
+  follows is maintenance mode still held by a live repair.
+- **A 43-byte response is a 401.** It cost time twice in one session: once
+  comparing an md5 of a login page against a bundle, once probing a script URL.
+  Check the status before believing the body.
+- **The browser caches the bundle even when the server has the new bytes.** A
+  fetch from devtools gets fresh bytes while the page runs the cached script, so
+  "the server is serving my fix" and "the page is running my fix" are different
+  claims. The traffic client is cached an hour by design; bust it explicitly
+  when testing.
+- **Prove an absence test can fail, and fail for its OWN reason.** The traffic
+  client's "stores nothing when disabled" tests passed against a deliberately
+  removed guard, because the consent gate was blocking the send instead. Stand
+  the other gates down in each case.
 
 ## How to check the work
 
 ```sh
 cd apps-extra/portaliq
 npm run check:surfaces     # 12 combos, self-testing; needs the instance at :8080
-npm run check:specs        # json, manifest, register, registry, site-auth, site-grid
+npm run check:specs        # + site-contribution and traffic-client
+npm run build:traffic      # the standalone client, budgeted at 8 KiB (it is 3.9)
 npm run build:site         # fails the 400 KiB budget as an ERROR, not a warning
 docker exec -u www-data -w /var/www/html/custom_apps/portaliq nextcloud \
   php vendor/bin/phpunit --no-coverage   # 568 tests
