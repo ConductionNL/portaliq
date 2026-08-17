@@ -107,6 +107,22 @@ $locale = (string)($_['locale'] ?? 'nl');
 $stylesheets = [];
 $tokenStylesheets = [];
 if ($themeStylesheet !== '') {
+    // THE BRIDGE GOES FIRST, AND THE ORDER IS THE WHOLE MECHANISM.
+    //
+    // A shipped token set is a Layer-3 `--nldesign-*` override list — correct
+    // for theming Nextcloud, and inert here, because this page paints from the
+    // vendored `--utrecht-*` / `--tilburg-*` component roles. Measured with the
+    // real `frankendesk` set applied: its violet resolved perfectly at
+    // `--nldesign-color-primary` while `--utrecht-document-color` was unset and
+    // the header painted transparent. The theme loaded and did nothing.
+    //
+    // `public-bridge.css` maps one family onto the other, once, for all 46
+    // sets. It is linked BEFORE the set so that a set carrying component roles
+    // of its own — `vng`, `conduction-new` — still wins on declaration order
+    // and keeps its bespoke values. `var()` resolves against the element's
+    // final computed value, so the bridge referencing tokens the set declares
+    // afterwards is correct.
+    $tokenStylesheets[] = $asset(PortalThemeResolver::THEME_APP, 'css/public-bridge.css');
     $tokenStylesheets[] = $asset(PortalThemeResolver::THEME_APP, 'css/' . $themeStylesheet . '.css');
 }
 
