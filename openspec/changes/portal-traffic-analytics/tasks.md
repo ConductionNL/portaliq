@@ -10,25 +10,25 @@
 
 ## 1. The event contract
 
-- [ ] 1.1 Define the event envelope: `clientId`, `sessionId`, `sequence`, `name`, `timestamp` (client clock), `pageLocation`, `pageReferrer`, `pageTitle`, plus a bounded `params` map.
-- [ ] 1.2 Define the shipped event vocabulary — `page_view`, `session_start`, `scroll`, `outbound_click`, `file_download`, `search`, `form_submit` — with the GA4 name for each, so a number here and a number in GA4 mean the same thing.
-- [ ] 1.3 Define the `portalTrafficEvent` schema in the register.
-- [ ] 1.4 Test: an event whose `sequence` repeats within a session is rejected — a client that resets its counter must not silently corrupt a journey.
+- [x] 1.1 Define the event envelope: `clientId`, `sessionId`, `sequence`, `name`, `timestamp` (client clock), `pageLocation`, `pageReferrer`, `pageTitle`, plus a bounded `params` map.
+- [x] 1.2 Define the shipped event vocabulary — `page_view`, `session_start`, `scroll`, `outbound_click`, `file_download`, `search`, `form_submit` — with the GA4 name for each, so a number here and a number in GA4 mean the same thing.
+- [x] 1.3 Define the `portalTrafficEvent` schema in the register.
+- [x] 1.4 Test: an event whose `sequence` repeats within a session is rejected — a client that resets its counter must not silently corrupt a journey.
 
 ## 2. Per-portal configuration
 
-- [ ] 2.1 Extend the `portal` schema: `traffic: { enabled, events[], dimensions[], sessionTimeoutMinutes, retentionDays, consent: { required, preConsentEvents[] }, regionGranularity }`.
+- [x] 2.1 Extend the `portal` schema: `traffic: { enabled, events[], dimensions[], sessionTimeoutMinutes, retentionDays, consent: { required, preConsentEvents[] }, regionGranularity }`.
 - [ ] 2.2 Serve the resolved configuration to the client over the public content contract, so the client sends only what the portal asked for.
-- [ ] 2.3 Test: a portal enabling only `page_view` gets exactly that — the collector refuses `search`, and the refusal is counted, not silent.
-- [ ] 2.4 Test: a configuration field is not merely stored — assert the collector's BEHAVIOUR changes with it. A declared-but-unread config field is this codebase's most repeated defect.
+- [x] 2.3 Test: a portal enabling only `page_view` gets exactly that — the collector refuses `search`, and the refusal is counted, not silent.
+- [x] 2.4 Test: a configuration field is not merely stored — assert the collector's BEHAVIOUR changes with it. A declared-but-unread config field is this codebase's most repeated defect.
 
 ## 3. The collector
 
-- [ ] 3.1 `POST /api/traffic` — anonymous, batched, `sendBeacon`-compatible, responding 204 with no body and no cookie.
-- [ ] 3.2 Resolve the serving portal the same way the renderer does (host, then explicit slug), so an event cannot be attributed to a portal the caller names.
-- [ ] 3.3 Derive coarse region from the request IP and DISCARD the IP in the same request. Test that no stored field, log line or aggregate contains it.
+- [x] 3.1 `POST /api/traffic` — anonymous, batched, `sendBeacon`-compatible, responding 204 with no body and no cookie.
+- [x] 3.2 Resolve the serving portal the same way the renderer does (host, then explicit slug), so an event cannot be attributed to a portal the caller names.
+- [~] 3.3 Derive coarse region from the request IP and DISCARD the IP in the same request. Test that no stored field, log line or aggregate contains it. **Half done, and the half that is done is the guarantee.** The address is resolved and dropped inside `TrafficController::collect()`; `PortalTrafficService` takes a region string and has no parameter that could carry an address, so the signature enforces it rather than a comment. Asserted by searching the WHOLE stored record for the address, so passing one as the region would still fail. NO GEO RESOLVER IS WIRED IN: `regionFor()` returns '' rather than a plausible-looking country, because an unmeasured value sitting beside measured ones is worse than an empty field.
 - [ ] 3.4 Rate-limit per client id and per source, refusing the excess with a counted reason.
-- [ ] 3.5 Refuse an oversized or malformed batch WHOLE — never store a partial batch.
+- [x] 3.5 Refuse an oversized or malformed batch WHOLE — never store a partial batch.
 - [ ] 3.6 Test: the endpoint is genuinely anonymous. A guard nobody has watched refuse is untested — assert a real anonymous request succeeds AND that a disabled portal's collector refuses.
 
 ## 4. Sessionisation and aggregation

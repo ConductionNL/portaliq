@@ -34,7 +34,8 @@
           "portalOidcState",
           "portalPage",
           "portalSession",
-          "portalSubmission"
+          "portalSubmission",
+          "portalTrafficEvent"
         ]
       }
     },
@@ -422,6 +423,100 @@
             }
           }
         }
+      },
+      "portalTrafficEvent": {
+        "type": "object",
+        "slug": "portalTrafficEvent",
+        "icon": "ChartLine",
+        "version": "0.1.0",
+        "title": "Portal Traffic Event",
+        "description": "One client-reported interaction on a public portal. CLIENT-REPORTED because nothing else can answer the question: `portalSession` exists only for authenticated visitors and carries no page, OpenRegister's read log is an AVG verwerkingsregister with no visit or ordering, and a Docusaurus-rendered portal is served as static HTML with portaliq nowhere in the request path. It holds NO personal data and no IP address: the client id is a client-generated opaque string, and the request IP is used to derive a coarse region and discarded in the same request.",
+        "authorization": {
+          "read": [
+            "admin"
+          ]
+        },
+        "properties": {
+          "portal": {
+            "title": "Portal",
+            "type": "string",
+            "description": "The portal slug the event belongs to. Resolved SERVER-side from the request, never taken from the payload — a caller must not be able to attribute traffic to a portal it does not serve."
+          },
+          "clientId": {
+            "title": "Client id",
+            "type": "string",
+            "description": "Opaque client-generated identifier, stable across a visitor's sessions on one browser. Not a person and not derived from one."
+          },
+          "sessionId": {
+            "title": "Session id",
+            "type": "string",
+            "description": "Opaque client-generated identifier for one visit, restarted after the portal's configured idle timeout."
+          },
+          "sequence": {
+            "title": "Sequence",
+            "type": "integer",
+            "description": "Monotonic counter within a session, so a journey can be ordered without trusting the client clock. A repeat within one session is refused rather than stored: a client that resets its counter would otherwise corrupt the journey silently."
+          },
+          "name": {
+            "title": "Event name",
+            "type": "string",
+            "enum": [
+              "page_view",
+              "session_start",
+              "scroll",
+              "outbound_click",
+              "file_download",
+              "search",
+              "form_submit"
+            ],
+            "description": "The shipped vocabulary, named to match GA4 so a number here and a number there mean the same thing."
+          },
+          "timestamp": {
+            "title": "Client timestamp",
+            "type": "string",
+            "format": "date-time",
+            "description": "The CLIENT clock, kept as reported and never trusted for ordering — that is what `sequence` is for. Stored so clock skew is visible rather than hidden."
+          },
+          "receivedAt": {
+            "title": "Received at",
+            "type": "string",
+            "format": "date-time",
+            "description": "The server clock when the batch arrived. The only timestamp any aggregate should group by."
+          },
+          "pageLocation": {
+            "title": "Page location",
+            "type": "string",
+            "description": "The path and query of the page, with the origin stripped server-side."
+          },
+          "pageReferrer": {
+            "title": "Page referrer",
+            "type": "string"
+          },
+          "pageTitle": {
+            "title": "Page title",
+            "type": "string"
+          },
+          "region": {
+            "title": "Coarse region",
+            "type": "string",
+            "description": "Derived from the request IP at collection time and stored INSTEAD of it. Granularity is the portal's choice; the IP never reaches storage, a log line or an aggregate."
+          },
+          "params": {
+            "title": "Parameters",
+            "type": "object",
+            "description": "A bounded map of event-specific values. Bounded because an unbounded one is how personal data arrives in an analytics store by accident.",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "portal",
+          "clientId",
+          "sessionId",
+          "sequence",
+          "name"
+        ]
       },
       "portalSession": {
         "slug": "portalSession",
@@ -1558,6 +1653,73 @@
             "description": "Per-portal overrides of NL Design System tokens, layered over the portal theme. Keys are token names without the leading dashes (e.g. \"nldesign-color-primary\"); values are plain CSS values. This is how two portals on one theme differ, and how an organisation brands a portal without a new token set.",
             "additionalProperties": {
               "type": "string"
+            }
+          },
+          "traffic": {
+            "type": "object",
+            "title": "Traffic measurement",
+            "description": "What this portal measures, if anything. Absent or disabled means the client sends nothing at all — measurement is opt-in per portal, because a public government portal that measures its visitors has to have decided to.",
+            "properties": {
+              "enabled": {
+                "type": "boolean",
+                "default": false,
+                "title": "Enabled"
+              },
+              "events": {
+                "type": "array",
+                "title": "Permitted events",
+                "description": "The event names this portal collects. The collector REFUSES anything else and counts the refusal; a portal enabling only `page_view` gets exactly that.",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "page_view",
+                    "session_start",
+                    "scroll",
+                    "outbound_click",
+                    "file_download",
+                    "search",
+                    "form_submit"
+                  ]
+                }
+              },
+              "sessionTimeoutMinutes": {
+                "type": "integer",
+                "default": 30,
+                "title": "Session idle timeout"
+              },
+              "retentionDays": {
+                "type": "integer",
+                "default": 90,
+                "title": "Retention"
+              },
+              "regionGranularity": {
+                "type": "string",
+                "enum": [
+                  "none",
+                  "country",
+                  "province"
+                ],
+                "default": "country",
+                "title": "Region granularity",
+                "description": "How coarsely the request IP is resolved before it is discarded. `none` stores no region at all."
+              },
+              "consent": {
+                "type": "object",
+                "title": "Consent",
+                "properties": {
+                  "required": {
+                    "type": "boolean",
+                    "default": true
+                  },
+                  "preConsentEvents": {
+                    "type": "array",
+                    "description": "Events permitted before consent is given. Empty means nothing is sent until it is.",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
             }
           },
           "footer": {

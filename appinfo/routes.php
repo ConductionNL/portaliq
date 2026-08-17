@@ -136,6 +136,11 @@ return [
         // PortalAuthMiddleware; registered before the /portal/{path} catch-all.
         ['name' => 'contribution#action', 'url' => '/portal/api/actions/{appId}/{actionId}', 'verb' => 'POST'],
 
+        // THE TRAFFIC COLLECTOR. Anonymous, batched and `sendBeacon`-shaped: it
+        // answers 204 with no body and sets no cookie, so a beacon fired during
+        // page unload has nothing to read and nothing to be identified by.
+        ['name' => 'traffic#collect', 'url' => '/api/traffic', 'verb' => 'POST'],
+
         ['name' => 'portalPage#catchAll', 'url' => '/portal/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
 
         // Hosted tilburg-woo-ui (Open Tilburg WOO SPA) — public. Registered
