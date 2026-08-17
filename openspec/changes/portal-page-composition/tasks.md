@@ -41,7 +41,7 @@
 
 ## 5. Guardrails
 
-- [ ] 5.1 Surface a skipped heading level as the author creates it.
+- [~] 5.1 Surface a skipped heading level as the author creates it. **Detected, but on the rendered page rather than in an editor** — there is no editor yet (§4), so the check lives in `tests/site-surfaces.spec.mjs`, which walks the visible outline across 12 page/width combinations and names the jump (`h1 → h3 at "Verhuizing doorgeven"`) rather than counting it. Only DOWNWARD jumps count; coming back up is how a document starts a new section, and flagging that would make the check cry wolf on every well-structured page. It is in the self-test too, so a run that cannot detect an injected `h4`-after-`h2` refuses to report a pass. **It found a real defect on its first run**: `/aanvragen` rendered `h1` then four `h3` cards, because `CnSiteCard` takes a `headingLevel` prop precisely to avoid this and that page's grid omitted it while the home page's sets it to 2. Fixed in the data. Moving this to authoring time is what §4 would add.
 - [ ] 5.2 Warn on a block placed where its text fails contrast against the painted band behind it, naming the measured ratio — walking to the first ancestor that PAINTS a background, because comparing against the nearest named band produced a false failure in this codebase once already, and the "fix" for it made a working form invisible.
 - [ ] 5.3 Keep the grid the only layout primitive: no absolute positioning, no per-block CSS.
 

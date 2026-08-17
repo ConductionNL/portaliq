@@ -151,9 +151,36 @@ const probe = () => {
 		}
 	}
 
+	// SKIPPED HEADING LEVELS — an h2 followed by an h4.
+	//
+	// A screen-reader user navigates by heading level, and a skipped level
+	// reads as a missing section: the h4 sounds like it belongs to an h3 that
+	// was never announced. It is invisible on screen, which is exactly why it
+	// survives a visual review and has to be measured instead.
+	//
+	// Only DOWNWARD jumps count. Coming back UP — h4 then h2 — is how a
+	// document legitimately starts a new section, and flagging it would make
+	// the check cry wolf on every well-structured page.
+	const outline = [...document.querySelectorAll('h1,h2,h3,h4,h5,h6')]
+		.filter((h) => h.getClientRects().length > 0)
+		.map((h) => ({
+			level: Number(h.tagName.slice(1)),
+			text: (h.textContent || '').trim().slice(0, 40),
+		}))
+
+	const skipped = []
+	for (let i = 1; i < outline.length; i++) {
+		if (outline[i].level - outline[i - 1].level > 1) {
+			skipped.push(
+				`h${outline[i - 1].level} → h${outline[i].level} at "${outline[i].text}"`,
+			)
+		}
+	}
+
 	return {
 		failures,
 		measured,
+		skipped,
 		headings: [...document.querySelectorAll('h1')].map((h) =>
 			(h.textContent || '').trim().slice(0, 40),
 		),
@@ -254,7 +281,24 @@ async function selfTest() {
 		missed.push('heading count (a second h1 went uncounted)')
 	}
 
-	// 3. HORIZONTAL OVERFLOW — something wider than the viewport.
+	// 3. A SKIPPED HEADING LEVEL — an h4 straight after an h2.
+	//    Invisible on screen, which is exactly why a visual review never
+	//    catches it and why the probe has to be shown failing on one.
+	const levels = await page.evaluate((probeSource) => {
+		const anchor = document.querySelector('h2') || document.querySelector('h1')
+		const deep = document.createElement('h4')
+		deep.textContent = 'Injected deep heading'
+		anchor.parentNode.insertBefore(deep, anchor.nextSibling)
+		// eslint-disable-next-line no-eval
+		const result = eval(`(${probeSource})`)()
+		deep.remove()
+		return result
+	}, probe.toString())
+	if (levels.skipped.length === 0) {
+		missed.push('heading order (an h4 straight after an h2 went undetected)')
+	}
+
+	// 4. HORIZONTAL OVERFLOW — something wider than the viewport.
 	const overflow = await page.evaluate((probeSource) => {
 		const wide = document.createElement('div')
 		wide.style.cssText = 'inline-size: 3000px; block-size: 4px;'
@@ -282,7 +326,9 @@ if (undetected.length > 0) {
 	await browser.close()
 	process.exit(1)
 }
-console.log('  self-test ok — contrast, heading count and overflow all detected\n')
+console.log(
+	'  self-test ok — contrast, heading count, heading order and overflow all detected\n',
+)
 
 for (const width of WIDTHS) {
 	const page = await browser.newPage({ viewport: { width, height: 1000 } })
@@ -317,6 +363,11 @@ for (const width of WIDTHS) {
 			problems.push(
 				`${r.headings.length} h1 elements: ${JSON.stringify(r.headings)}`,
 			)
+		}
+		if (r.skipped.length) {
+			// NAMED, not counted. "One skipped level" sends somebody hunting;
+			// `h2 → h4 at "Onze diensten"` sends them to the block.
+			problems.push(`skipped heading level: ${r.skipped.join('; ')}`)
 		}
 		if (r.overflow > 0) {
 			problems.push(`${r.overflow}px of horizontal overflow`)

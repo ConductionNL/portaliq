@@ -65,7 +65,12 @@ class PortalRegionResolver {
 	 * inheritance still applies. That distinction is the whole of task 1.3, and
 	 * getting it backwards would blank the header on every existing page.
 	 *
-	 * @param array<int, array<string, mixed>> $widgets The page's widgets.
+	 * Typed `mixed` per element on purpose: this is stored JSON, so a
+	 * non-array element is a thing that can actually arrive, and the guard
+	 * below is not dead code. Declaring the element type would make phpstan
+	 * right that the check is unreachable and make the code wrong.
+	 *
+	 * @param array<int, mixed> $widgets The page's widgets.
 	 *
 	 * @return array{regions: array<string, array<int, array<string, mixed>>>, unknown: array<int, string>}
 	 *

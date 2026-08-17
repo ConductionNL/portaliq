@@ -90,6 +90,7 @@ class CmsReader {
 	 * @param ContainerInterface $container    For the lazy OpenRegister lookup.
 	 * @param ICacheFactory      $cacheFactory Creates the distributed cache.
 	 * @param LoggerInterface    $logger       The logger.
+	 * @param PortalRegionResolver $regions    Groups a page's widgets into regions.
 	 *
 	 * @return void
 	 */
