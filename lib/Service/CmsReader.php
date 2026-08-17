@@ -97,6 +97,7 @@ class CmsReader {
 		private readonly ContainerInterface $container,
 		ICacheFactory $cacheFactory,
 		private readonly LoggerInterface $logger,
+		private readonly PortalRegionResolver $regions = new PortalRegionResolver(),
 	) {
 		$this->cache = $cacheFactory->createDistributed('portaliq_cms');
 	}//end __construct()
@@ -408,6 +409,22 @@ class CmsReader {
 		);
 
 		$shaped['body']['widgets'] = $widgets;
+
+		// REGIONS TRAVEL ALONGSIDE THE FLAT LIST, not instead of it.
+		//
+		// `widgets` is what every existing consumer reads — the built-in
+		// renderer, the Docusaurus plugin, the e2e grid check — and removing it
+		// to ship regions would break all three for a feature none of them use
+		// yet. Adding the grouping is additive: a consumer that understands
+		// regions reads `regions`, one that does not keeps working unchanged.
+		//
+		// `unknownRegions` carries the slot names that matched no region, by
+		// name. A widget assigned to a region that does not exist is an
+		// authoring mistake, and one that silently vanishes is debugged by
+		// guessing.
+		$grouped = $this->regions->regionsFromWidgets(widgets: $widgets);
+		$shaped['body']['regions'] = $grouped['regions'];
+		$shaped['body']['unknownRegions'] = $grouped['unknown'];
 
 		return $shaped;
 	}//end shapePage()

@@ -10,10 +10,10 @@
 
 ## 1. The region model
 
-- [ ] 1.1 Extend the page shape to `regions: { header, hero, main, aside, footer }`, each an ordered widget list with the existing geometry.
-- [ ] 1.2 Honour `slot` as the region key, and report an unknown region visibly rather than dropping the widget.
-- [ ] 1.3 Resolve regions portal-first, page-override, with an explicitly-empty region meaning NONE rather than "unset".
-- [ ] 1.4 Test all three states per region — inherited, overridden, explicitly empty — because a resolver that treats empty as unset passes the first two.
+- [x] 1.1 Extend the page shape to `regions: { header, hero, main, aside, footer }`. **Done** — the public contract now carries `body.regions` and `body.unknownRegions` ALONGSIDE the flat `body.widgets`, not instead of it. Every existing consumer reads `widgets` (the built-in renderer, the Docusaurus plugin, the e2e grid check) and removing it to ship regions would break all three for a feature none of them use yet. The region list is CLOSED: a widget can be placed in one of five regions and nowhere else.
+- [x] 1.2 Honour `slot` as the region key, and report an unknown region visibly. **Done.** `slot: "body"` — which nine seeded widgets carry and nothing has ever read — means `main`, so regions arrived with no data migration; verified on the live contract, which reports `regions: {main: 3}`. A slot matching no region is collected into `unknownRegions` **by name**: a widget assigned to a region that does not exist is an authoring mistake, and one that silently vanishes is debugged by guessing.
+- [x] 1.3 Resolve regions portal-first, page-override, explicitly-empty meaning NONE. **Done**, and the implementation detail is the whole task: `array_key_exists`, never `isset` or `??`, both of which treat a present-but-empty value as absent and collapse "emptied" into "inherited". The emptied state is what lets one landing page drop the portal's hero without deleting it for every other page.
+- [x] 1.4 Test all three states per region. **Done, for every region rather than a representative one, and checked against a deliberate break**: swapping the resolver to the naive `empty()` test fails exactly the emptied case ("empty was read as unset") and passes the other two, which is the failure mode the task predicted. A separate test pins the other half — a flat legacy list must leave unmentioned regions INHERITABLE, or shipping regions would strip the chrome from every existing page at once.
 
 ## 2. Retire the hard-coded shell
 
