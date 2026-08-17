@@ -51,6 +51,141 @@
 }
 
 /*
+ * THE HEADER IS STICKY, because the reference's is.
+ *
+ * Measured: `position: sticky; top: 0; z-index: 100`. On a documentation site
+ * the navigation is how you move, and a 636px footer plus a full page of content
+ * is a long way back to it.
+ *
+ * The default is `static`, so a portal that names no z-index keeps a header that
+ * scrolls away — sticky chrome over a government form is a choice, not an
+ * improvement, and it costs vertical space on a short viewport.
+ */
+.pq-site .ac-header {
+	position: var(--nldesign-header-position, static);
+	inset-block-start: 0;
+	z-index: var(--nldesign-header-z-index, auto);
+
+	/*
+	 * THE BAR'S HEIGHT, bridged on the element that owns the variable.
+	 *
+	 * `.ac-header__navigation-main` sizes itself from `--navigation-bar-height`,
+	 * and `.ac-header` declares that variable on ITSELF (96px, 72px under
+	 * 1024px). A custom property resolves from the nearest ancestor that
+	 * declares it, so bridging this at `:root` had no effect at all — and
+	 * `min-block-size` cannot shrink a bar whose `block-size` is already set.
+	 * The measured symptom was a 96px bar against the reference's 60px while
+	 * `--nldesign-header-height: 60px` sat there resolving correctly and
+	 * reaching nothing.
+	 */
+	--navigation-bar-height: var(--nldesign-header-height, 96px);
+}
+
+/*
+ * The logo block's own inset.
+ *
+ * The vendored markup puts an unclassed `div` inside `.ac-header__logo` with a
+ * 16px start margin, so the mark began 72px from the viewport edge against the
+ * reference's 56px — the bar's padding plus a margin nobody asked for. The
+ * default keeps the 16px, so only a theme naming this moves.
+ */
+.pq-site .ac-header__logo > div {
+	margin-inline-start: var(--nldesign-header-logo-inset, 16px);
+	display: flex;
+	align-items: center;
+}
+
+/*
+ * THE BRAND MARK.
+ *
+ * Square by default and shaped by a token, so the same slot takes a
+ * municipality's square logo or Conduction's hexagon without either knowing
+ * about the other. The initial fallback centres one character on the shape.
+ */
+.pq-site__logo-mark {
+	flex: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	inline-size: var(--nldesign-header-logo-size, 0);
+	block-size: var(--nldesign-header-logo-size, 0);
+	margin-inline-end: var(--nldesign-header-logo-gap, 0);
+	clip-path: var(--nldesign-header-logo-clip, none);
+	object-fit: contain;
+}
+
+.pq-site__logo-mark--initial {
+	background-color: var(--nldesign-header-logo-background, transparent);
+	color: var(--nldesign-header-logo-color, inherit);
+	font-family: var(--nldesign-header-logo-font, inherit);
+	font-size: var(--nldesign-header-logo-font-size, inherit);
+	font-weight: var(--nldesign-header-logo-font-weight, inherit);
+	line-height: 1;
+}
+
+/*
+ * THE WORDMARK beside it.
+ *
+ * The vendored `.logo-text` is 16px, weight 400 and UPPERCASED; the reference's
+ * is 22px/700 in sentence case, tracked -0.44px. Uppercasing a portal's name is
+ * also a content decision the CSS should not be making on its own — "Gemeente La
+ * Franken" is not spelled "GEMEENTE LA FRANKEN".
+ */
+.pq-site .logo-text {
+	font-family: var(--nldesign-header-wordmark-font, inherit);
+	font-size: var(--nldesign-header-wordmark-size, inherit);
+	font-weight: var(--nldesign-header-wordmark-weight, inherit);
+	letter-spacing: var(--nldesign-header-wordmark-spacing, normal);
+	text-transform: var(--nldesign-header-wordmark-transform, none);
+}
+
+/*
+ * REGISTER AND SIGN IN, as two weights of one control.
+ *
+ * Every value is a token defaulting to inert, so a portal that names none of
+ * them still gets the plain links it had — the emphasis is opt-in, and a
+ * half-styled button is worse than a link.
+ */
+/*
+ * THE SELECTOR CARRIES `.ac-navigation li a` TO WIN.
+ *
+ * The vendored CSS treats the controls in this slot as a grouped pill:
+ * `.ac-navigation li:first-of-type a` rounds the left corners and its sibling
+ * rounds the right, at (0,2,2). Two separate buttons came out as one segmented
+ * control with square inner edges — measured `0px 6px 6px 0px` on the register
+ * button while the token asked for 6px all round.
+ */
+.pq-site .ac-navigation li a.pq-site__auth-action,
+.pq-site .pq-site__auth-action {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: var(--nldesign-header-action-padding, 0);
+	border-radius: var(--nldesign-header-action-radius, 0);
+	font-size: var(--nldesign-header-action-font-size, inherit);
+	font-weight: var(--nldesign-header-action-font-weight, inherit);
+	line-height: var(--nldesign-header-action-line-height, normal);
+	text-decoration: var(--nldesign-header-action-decoration, underline);
+	border: var(--nldesign-header-action-border-width, 0) solid transparent;
+	white-space: nowrap;
+}
+
+.pq-site .pq-site__auth-action--primary {
+	background-color: var(--nldesign-header-action-primary-background, transparent);
+	color: var(--nldesign-header-action-primary-color, inherit);
+	border-color: var(--nldesign-header-action-primary-border-color, transparent);
+}
+
+.pq-site .pq-site__auth-action--secondary {
+	background-color: var(
+		--nldesign-header-action-secondary-background,
+		transparent
+	);
+	color: var(--nldesign-header-action-secondary-color, inherit);
+	border-color: var(--nldesign-header-action-secondary-border-color, transparent);
+}
+
+/*
  * A portal offering TWO sign-in routes ran them together as one string —
  * "Inloggen met uw accountInloggen met DigiD" — because the list had no
  * spacing and list markers are suppressed globally. It only showed up on the
@@ -669,6 +804,16 @@ body,
  * treatment meant for a menu.
  */
 .pq-site .ac-footer__links a {
+	/*
+	 * INLINE, so the link's box is its text.
+	 *
+	 * The vendored anchor is a flex row (it carries an external-link glyph), so
+	 * every column link measured the full 198px column instead of the 59px the
+	 * reference's does — and a focus ring or a hover underline then spanned the
+	 * whole column for a two-word link. `inline` puts the glyph back in the text
+	 * flow beside the label, which is where it reads anyway.
+	 */
+	display: inline;
 	font-family: var(--nldesign-footer-link-font, inherit);
 	font-size: var(--nldesign-footer-link-size, inherit);
 	line-height: var(--nldesign-footer-link-line-height, inherit);
@@ -784,6 +929,77 @@ body,
 
 .pq-site .pq-canal__bench-window {
 	fill: var(--nldesign-footer-quay-highlight-color, transparent);
+}
+
+/*
+ * WHAT IS ON THE WATER.
+ *
+ * The strip sits between the quay and the footer's content, and each vessel is
+ * placed as a percentage of it so the canal stays populated at any width — the
+ * reference's pixel offsets were measured at 1440 and would bunch everything to
+ * the left on a wider screen.
+ */
+.pq-site .pq-canal__water {
+	position: relative;
+	block-size: var(--nldesign-footer-water-height, 0);
+	overflow: hidden;
+	/*
+	 * The strip IS the water, so it carries the water's surface — without this
+	 * the boats floated on the page's white background above a navy band that
+	 * started below them, which reads as boats on ice.
+	 */
+	background-color: var(--nldesign-footer-water-background, transparent);
+}
+
+.pq-site .pq-canal__boat {
+	position: absolute;
+	inset-block-end: var(--nldesign-footer-boat-offset, 0);
+}
+
+.pq-site .pq-canal__hull {
+	fill: var(--nldesign-footer-boat-color, transparent);
+}
+
+.pq-site .pq-canal__hull-stroke {
+	stroke: var(--nldesign-footer-boat-color, transparent);
+	fill: none;
+}
+
+.pq-site .pq-canal__porthole {
+	fill: var(--nldesign-footer-window-lit-color, transparent);
+}
+
+.pq-site .pq-canal__wake {
+	stroke: var(--nldesign-footer-boat-color, transparent);
+	fill: none;
+	opacity: 0.55;
+}
+
+.pq-site .pq-canal__shadow {
+	fill: var(--nldesign-footer-boat-color, transparent);
+	opacity: 0.4;
+}
+
+.pq-site .pq-canal__mark {
+	fill: var(--nldesign-footer-boat-mark-color, transparent);
+}
+
+.pq-site .pq-canal__mark-letter {
+	fill: var(--nldesign-footer-boat-color, transparent);
+	font-family: inherit;
+	font-weight: 900;
+}
+
+.pq-site .pq-canal__flag-red {
+	fill: var(--nldesign-footer-flag-top-color, transparent);
+}
+
+.pq-site .pq-canal__flag-white {
+	fill: var(--nldesign-footer-flag-middle-color, transparent);
+}
+
+.pq-site .pq-canal__flag-blue {
+	fill: var(--nldesign-footer-flag-bottom-color, transparent);
 }
 
 /*

@@ -88,6 +88,204 @@
 				</template>
 			</svg>
 		</div>
+
+		<!--
+			WHAT IS ON THE WATER.
+
+			Seven vessels, each at its own place across the canal. Their fills
+			come from classes rather than the reference's inline
+			`var(--c-orange-knvb)`, so a theme's own accent paints them — copying
+			the colour reference verbatim would have hardcoded Conduction's
+			orange into every portal that ever turns this on.
+		-->
+		<div class="pq-canal__water">
+			<!-- The tour boat, with the tricolour at its stern. -->
+			<svg
+				class="pq-canal__boat"
+				viewBox="0 -10 120 28"
+				width="120"
+				style="inset-inline-start: 61.7%"
+				focusable="false">
+				<line
+					x1="2"
+					y1="14"
+					x2="2"
+					y2="-9"
+					class="pq-canal__hull-stroke"
+					stroke-width="0.9" />
+				<rect
+					x="2.5"
+					y="-9"
+					width="9"
+					height="2"
+					class="pq-canal__flag-red" />
+				<rect
+					x="2.5"
+					y="-7"
+					width="9"
+					height="2"
+					class="pq-canal__flag-white" />
+				<rect
+					x="2.5"
+					y="-5"
+					width="9"
+					height="2"
+					class="pq-canal__flag-blue" />
+				<path
+					d="M 0,16 L 6,18 L 114,18 L 120,16 L 120,11 L 0,11 Z"
+					class="pq-canal__hull" />
+				<rect x="8" y="5" width="104" height="6" class="pq-canal__hull" />
+				<path d="M 8,5 Q 60,0 112,5 L 8,5 Z" class="pq-canal__hull" />
+				<g class="pq-canal__porthole">
+					<rect
+						v-for="n in 12"
+						:key="n"
+						:x="6 + n * 8"
+						y="7"
+						width="6"
+						height="3" />
+				</g>
+			</svg>
+
+			<!-- A small motor launch. -->
+			<svg
+				class="pq-canal__boat"
+				viewBox="0 -2 50 20"
+				width="50"
+				style="inset-inline-start: 21.4%"
+				focusable="false">
+				<path
+					d="M 0,12 L 4,16 L 46,16 L 50,12 L 50,8 L 0,8 Z"
+					class="pq-canal__hull" />
+				<rect
+					x="20"
+					y="2"
+					width="12"
+					height="6"
+					rx="1"
+					class="pq-canal__hull" />
+				<circle cx="26" cy="0" r="1.4" class="pq-canal__hull" />
+			</svg>
+
+			<!-- A rowing boat, oars out. -->
+			<svg
+				class="pq-canal__boat"
+				viewBox="-2 0 48 16"
+				width="44"
+				style="inset-inline-start: 8%"
+				focusable="false">
+				<path d="M 0,10 L 4,14 L 40,14 L 44,10 Z" class="pq-canal__hull" />
+				<line
+					x1="8"
+					y1="10"
+					x2="0"
+					y2="3"
+					class="pq-canal__hull-stroke"
+					stroke-width="1.2"
+					stroke-linecap="round" />
+				<line
+					x1="36"
+					y1="10"
+					x2="44"
+					y2="3"
+					class="pq-canal__hull-stroke"
+					stroke-width="1.2"
+					stroke-linecap="round" />
+				<circle cx="22" cy="7" r="1.6" class="pq-canal__hull" />
+			</svg>
+
+			<!-- A duck, with its wake. -->
+			<svg
+				class="pq-canal__boat"
+				viewBox="-3 0 30 10"
+				width="26"
+				style="inset-inline-start: 1.2%"
+				focusable="false">
+				<ellipse cx="13" cy="6" rx="7" ry="1.4" class="pq-canal__hull" />
+				<circle cx="17" cy="4" r="1.7" class="pq-canal__hull" />
+				<line
+					x1="13"
+					y1="5"
+					x2="11"
+					y2="3"
+					class="pq-canal__hull-stroke"
+					stroke-width="1"
+					stroke-linecap="round" />
+				<line
+					x1="-3"
+					y1="6"
+					x2="2"
+					y2="6"
+					class="pq-canal__wake"
+					stroke-width="0.7" />
+				<line
+					x1="0"
+					y1="8"
+					x2="3"
+					y2="8"
+					class="pq-canal__wake"
+					stroke-width="0.7" />
+			</svg>
+
+			<!-- A mooring post. -->
+			<svg
+				class="pq-canal__boat"
+				viewBox="-3 -2 18 28"
+				width="14"
+				style="inset-inline-start: 43.5%"
+				focusable="false">
+				<rect x="4" y="4" width="2" height="18" class="pq-canal__hull" />
+				<rect x="0" y="0" width="9" height="3" class="pq-canal__hull" />
+				<rect x="4" y="3" width="2" height="2" class="pq-canal__hull" />
+				<ellipse cx="5" cy="24" rx="7" ry="0.9" class="pq-canal__shadow" />
+			</svg>
+
+			<!-- A swan. -->
+			<svg
+				class="pq-canal__boat"
+				viewBox="-3 -4 82 22"
+				width="76"
+				style="inset-inline-start: 54.6%"
+				focusable="false">
+				<path
+					d="M 0,12 Q 0,4 26,3 Q 54,2 64,7 L 72,4 L 68,9 L 72,14 L 64,11 Q 54,14 26,14 Q 6,14 0,12 Z"
+					class="pq-canal__hull" />
+				<g class="pq-canal__wake" stroke-width="1" stroke-linecap="round">
+					<line x1="22" y1="2" x2="20" y2="-3" />
+					<line x1="25" y1="2" x2="25" y2="-4" />
+					<line x1="28" y1="2" x2="30" y2="-3" />
+				</g>
+			</svg>
+
+			<!-- The house boat carrying the brand mark. -->
+			<svg
+				class="pq-canal__boat"
+				viewBox="0 -4 74 28"
+				width="74"
+				style="inset-inline-start: 30%"
+				focusable="false">
+				<ellipse cx="37" cy="22" rx="37" ry="2.5" class="pq-canal__shadow" />
+				<path d="M 6,18 L 10,10 L 64,10 L 68,18 Z" class="pq-canal__hull" />
+				<path d="M 14,10 Q 37,-4 60,10 L 14,10 Z" class="pq-canal__hull" />
+				<ellipse
+					cx="37"
+					cy="4"
+					rx="16"
+					ry="3.2"
+					class="pq-canal__porthole" />
+				<polygon
+					points="37,11 42,13.5 42,16.5 37,19 32,16.5 32,13.5"
+					class="pq-canal__mark" />
+				<text
+					x="37"
+					y="17.4"
+					font-size="4"
+					text-anchor="middle"
+					class="pq-canal__mark-letter">
+					C
+				</text>
+			</svg>
+		</div>
 	</div>
 </template>
 

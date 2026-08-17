@@ -316,11 +316,18 @@ class ContentControllerTest extends TestCase {
 
 
 	/**
-	 * Only the authentication MODES are exposed.
+	 * Only the authentication MODES and the register destination are exposed.
 	 *
 	 * Provider configuration belongs in the credential broker; a public
 	 * endpoint that echoes it back is the kind of leak nobody notices because
 	 * the response still looks like an ordinary site record.
+	 *
+	 * THE WHOLE ARRAY IS ASSERTED, not just the absence of `oidc`. That is the
+	 * point of the test: a projection that grows a key silently is exactly how
+	 * the next secret gets published, so adding one here has to be a deliberate
+	 * edit to this expectation. `register` and `registerLabel` are that edit —
+	 * both are destinations a visitor is meant to follow, and neither can carry
+	 * a credential.
 	 *
 	 * @return void
 	 */
@@ -331,8 +338,12 @@ class ContentControllerTest extends TestCase {
 
 		$data = $this->controller()->site()->getData();
 
-		$this->assertSame(['modes' => ['public']], $data['authentication']);
+		$this->assertSame(
+			['modes' => ['public'], 'register' => '', 'registerLabel' => ''],
+			$data['authentication']
+		);
 		$this->assertStringNotContainsString('idp.example', json_encode($data));
+		$this->assertStringNotContainsString('secret-ish', json_encode($data));
 	}//end testProviderConfigurationIsNotExposed()
 
 

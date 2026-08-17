@@ -55,8 +55,35 @@
 			<div class="ac-header__navigation-main">
 				<div class="ac-header__logo">
 					<div>
-						<div class="con-logo-container header" />
-						<span class="sr-only">Logo</span>
+						<!--
+							THE MARK, AND IT HAS TO RENDER SOMETHING.
+
+							`.con-logo-container.header` is the vendored slot and it
+							measured 0x0 on this portal: the reference fills it with
+							its own asset and we had nothing to put there, so the
+							header opened with bare text where the brand's mark
+							belongs.
+
+							A portal's own `logo` wins when it has one. Without it,
+							the fallback is the portal's initial on the brand shape —
+							not a generic placeholder glyph, and not somebody else's
+							logo. Both are `aria-hidden`: the site name is right
+							beside them and announcing "logo" adds nothing.
+						-->
+						<img
+							v-if="site.logo"
+							class="pq-site__logo-mark"
+							:src="site.logo"
+							alt=""
+							aria-hidden="true"
+							data-testid="site-logo-mark" />
+						<span
+							v-else
+							class="pq-site__logo-mark pq-site__logo-mark--initial"
+							aria-hidden="true"
+							data-testid="site-logo-mark">
+							{{ logoInitial }}
+						</span>
 						<!--
 							A SPAN, NOT AN `h1`.
 
@@ -126,10 +153,34 @@
 								Uitloggen
 							</button>
 						</template>
+						<!--
+							REGISTER IS SECONDARY, SIGNING IN IS PRIMARY.
+
+							Two controls in one row, and the emphasis is the whole
+							point: on a portal most visitors already have an account,
+							so signing in is the action and registering is the way
+							out for the minority who cannot. Rendering both as plain
+							links made the two look equally likely, which is the one
+							thing a header can get wrong here.
+
+							Register only appears when the portal DECLARES where to
+							send somebody. A "Registreren" button that leads nowhere
+							is worse than no button, and this renderer cannot invent
+							a registration flow that the portal has not configured.
+						-->
 						<nav v-else aria-label="Gebruikersmenu">
 							<ul>
+								<li v-if="registerRoute">
+									<a
+										class="pq-site__auth-action pq-site__auth-action--secondary"
+										:href="registerRoute.href"
+										data-testid="site-register">
+										{{ registerRoute.label }}
+									</a>
+								</li>
 								<li v-for="entry in signInRoutes" :key="entry.mode">
 									<a
+										class="pq-site__auth-action pq-site__auth-action--primary"
 										:href="entry.href"
 										:data-mode="entry.mode"
 										data-testid="site-signin">
@@ -705,6 +756,40 @@ export default {
 			return footers.reduce((highest, menu) =>
 				(menu.position || 0) > (highest.position || 0) ? menu : highest,
 			)
+		},
+
+		/**
+		 * The portal's initial, for the fallback logo mark.
+		 *
+		 * One character, uppercased, and empty when there is no title yet — a
+		 * mark reading "…" while the contract loads is worse than an empty one,
+		 * because it settles into a letter a moment later.
+		 *
+		 * @return {string} A single character, or ''.
+		 */
+		logoInitial() {
+			const title = this.site && this.site.title ? String(this.site.title) : ''
+			return title.trim().slice(0, 1).toUpperCase()
+		},
+
+		/**
+		 * Where a visitor without an account registers, if the portal says.
+		 *
+		 * DECLARED, never derived. There is no way to infer a registration
+		 * destination from the sign-in modes — `nextcloud` accounts are created
+		 * by an administrator, DigiD accounts by the state — so a portal that
+		 * has not named one offers no register control at all.
+		 *
+		 * @return {object|null} `{label, href}` or null.
+		 */
+		registerRoute() {
+			const auth = (this.site && this.site.authentication) || {}
+			const href = String(auth.register || '').trim()
+			if (href === '') {
+				return null
+			}
+
+			return { href, label: String(auth.registerLabel || 'Registreren') }
 		},
 
 		/**

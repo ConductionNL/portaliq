@@ -1497,6 +1497,16 @@
                   "public"
                 ]
               },
+              "register": {
+                "title": "Registration destination",
+                "type": "string",
+                "description": "Where a visitor without an account goes to get one — a portal route or an absolute URL. DECLARED, never derived: nothing about the enabled modes says how an account is created, since `nextcloud` accounts are made by an administrator and DigiD accounts by the state. Absent means the header offers no register control at all, which is correct for a portal whose accounts are provisioned elsewhere."
+              },
+              "registerLabel": {
+                "title": "Registration label",
+                "type": "string",
+                "description": "The register control's label. Defaults to \"Registreren\" when a destination is set but no label is."
+              },
               "minTrust": {
                 "title": "Minimum trust",
                 "type": "string",

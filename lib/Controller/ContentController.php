@@ -241,7 +241,17 @@ class ContentController extends Controller {
 				// The MODES are public — a visitor has to know how to sign in.
 				// Provider secrets are not here and never will be; they live in
 				// the credential broker.
-				'authentication' => ['modes' => array_values((array)($auth['modes'] ?? ['public']))],
+				//
+				// `register` joins them because a visitor without an account has
+				// to know there is a way to get one. It is a DESTINATION the
+				// portal declares, never derived from the modes: `nextcloud`
+				// accounts are created by an administrator and DigiD accounts by
+				// the state, so there is nothing to infer.
+				'authentication' => [
+					'modes'         => array_values((array)($auth['modes'] ?? ['public'])),
+					'register'      => trim((string)($auth['register'] ?? '')),
+					'registerLabel' => trim((string)($auth['registerLabel'] ?? '')),
+				],
 			]
 		);
 	}//end site()
