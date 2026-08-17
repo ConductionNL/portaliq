@@ -93,7 +93,7 @@
     "sass": "^1.99.0",
     "sass-loader": "^17.0.0",
     "style-loader": "~4.0.0",
-    "stylelint": "^15.11.0",
+    "stylelint": "^17.14.1",
     "terser-webpack-plugin": "^5.3.14",
     "vue-eslint-parser": "^10.3.0",
     "vue-loader": "^17.4.2",
