@@ -18,14 +18,17 @@
 				<!--
 					AN ACTION IS A FORM, AND A FORM NEEDS SOMEWHERE TO POST.
 
-					`ContributionController::action()` answers 401 without a
-					session — for EVERY action, including those a manifest marks
-					`anonymous`. So a signed-out visitor is told that plainly
-					rather than given a form that collects their answers and
-					loses them at submit. The mismatch between the manifest's
-					flag and the endpoint's posture is real and recorded as
-					task 6.2; this renderer reports the behaviour the visitor
-					actually meets.
+					A manifest's `anonymous: true` IS honoured by the server —
+					on a `type: create` action, through the collection route,
+					which admits a caller with no bearer and stamps no
+					ownership. This renderer used to post every action to the
+					endpoint-forward route instead, which refuses a create and
+					requires a session, so an anonymous submission La Franken
+					offers ("geen account nodig") was shown as sign-in-required
+					while the server would have accepted it. The form is now
+					offered exactly when the server will take it, and the
+					sign-in notice appears only for the actions that genuinely
+					need one.
 				-->
 				<section
 					v-else-if="block.type === 'action'"
@@ -37,7 +40,7 @@
 						</h2>
 
 						<p
-							v-if="!session"
+							v-if="!submittable(block.action)"
 							class="utrecht-paragraph"
 							data-testid="action-signin-required">
 							U moet ingelogd zijn om dit formulier te versturen.
@@ -64,6 +67,21 @@
 							<button type="submit" :disabled="busy === block.action">
 								{{ busy === block.action ? 'Bezig…' : 'Versturen' }}
 							</button>
+
+							<!--
+								Said before submitting, not after. An unowned
+								submission cannot be looked up again, and a
+								visitor who would rather sign in first has to
+								learn that while they still can.
+							-->
+							<p
+								v-if="!session"
+								class="utrecht-paragraph pq-action__note"
+								data-testid="action-anonymous-note">
+								U verstuurt dit zonder account. De melding wordt
+								niet aan een account gekoppeld en is later niet
+								terug te vinden.
+							</p>
 						</form>
 
 						<!--
@@ -91,7 +109,7 @@
 
 <script>
 import MarkdownBlock from './MarkdownBlock.vue'
-import { submitAction } from '../lib/contributionApi.js'
+import { isAnonymouslySubmittable, submitAction } from '../lib/contributionApi.js'
 
 /**
  * One page a contributing app publishes on this portal (ADR-046).
@@ -178,6 +196,26 @@ export default {
 		},
 
 		/**
+		 * Whether THIS visitor can submit this action right now.
+		 *
+		 * A session is sufficient for anything declared; without one, only an
+		 * anonymously-submittable action qualifies. Asked in one place so the
+		 * form's presence and the submit path cannot disagree — offering a
+		 * form the post will refuse is the defect this replaces, inverted.
+		 *
+		 * @param {string} id The action id.
+		 * @return {boolean} Whether to render the form.
+		 */
+		submittable(id) {
+			const action = this.actionFor(id)
+			if (action === null) {
+				return false
+			}
+
+			return Boolean(this.session) || isAnonymouslySubmittable(action)
+		},
+
+		/**
 		 * A DOM id for a field, unique per action.
 		 *
 		 * @param {string} action The action id.
@@ -201,7 +239,7 @@ export default {
 		 */
 		async submit(id) {
 			const action = this.actionFor(id)
-			if (!action || this.busy) {
+			if (!action || this.busy || this.submittable(id) === false) {
 				return
 			}
 
@@ -215,7 +253,7 @@ export default {
 				await submitAction({
 					apiBase: this.apiBase,
 					appId: this.contribution.app,
-					actionId: id,
+					action,
 					payload,
 					token: this.session ? this.session.token : '',
 				})
@@ -223,7 +261,13 @@ export default {
 					...this.result,
 					[id]: {
 						ok: true,
-						message: 'Verstuurd. U ontvangt een bevestiging.',
+						// An unowned submission produces no receipt — the
+						// server issues one against a subject, and there is
+						// none. Promising a confirmation that will not arrive
+						// is worse than saying less.
+						message: this.session
+							? 'Verstuurd. U ontvangt een bevestiging.'
+							: 'Verstuurd. Deze melding is anoniem verstuurd en niet aan een account gekoppeld.',
 					},
 				}
 				for (const field of action.fields || []) {

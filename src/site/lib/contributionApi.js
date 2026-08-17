@@ -52,23 +52,76 @@ export function parseContributionRoute(route) {
 }
 
 /**
+ * Whether an action can be submitted with no session at all.
+ *
+ * BOTH HALVES ARE LOAD-BEARING. The manifest's `anonymous` flag is only
+ * honoured by the server on a `type: create` action — that is the one path
+ * with a route (`POST /portal/api/collections/…`) that admits a caller with no
+ * bearer. An `anonymous: true` on any other type is a claim the server will
+ * not keep, so this reads the type as well as the flag rather than trusting
+ * the flag alone.
+ *
+ * @param {object} action The declared action.
+ * @return {boolean} Whether a signed-out visitor can submit it.
+ */
+export function isAnonymouslySubmittable(action) {
+	return Boolean(action)
+		&& (action.type || '') === 'create'
+		&& action.anonymous === true
+}
+
+/**
+ * The URL one declared action posts to.
+ *
+ * THE TWO ROUTES ARE NOT INTERCHANGEABLE, AND THIS RENDERER USED THE WRONG ONE.
+ *
+ * `POST /portal/api/actions/{appId}/{actionId}` forwards to a contributing
+ * app's own HTTP endpoint. `ContributionController::action()` matches it with
+ * `authorisedEndpointAction()`, which refuses anything not forwardable — so a
+ * `type: create` action sent there is refused whether or not the visitor is
+ * signed in. Creates belong on the collection route, where `create()` handles
+ * the bearer case and `createAnonymous()` the unowned one.
+ *
+ * The consequence was visible on La Franken: an action the server accepts from
+ * a signed-out visitor, and has accepted all along, was rendered as
+ * "u moet ingelogd zijn".
+ *
+ * @param {object} options         The call.
+ * @param {string} options.apiBase The portal auth/API base.
+ * @param {string} options.appId   The contributing app.
+ * @param {object} options.action  The declared action.
+ * @return {string} The absolute URL to post to.
+ */
+export function actionUrl({ apiBase, appId, action }) {
+	const base = String(apiBase || '').replace(/\/$/, '')
+
+	if ((action && action.type) === 'create') {
+		const register = encodeURIComponent(String(action.register || ''))
+		const schema = encodeURIComponent(String(action.schema || ''))
+		return `${base}/collections/${register}/${schema}`
+	}
+
+	const id = encodeURIComponent(String((action && action.id) || ''))
+	return `${base}/actions/${encodeURIComponent(appId)}/${id}`
+}
+
+/**
  * Post one declared action.
  *
  * THROWS an object carrying the status rather than returning a flag: the caller
  * has to tell "not signed in" (401) from "not allowed" (403) from "the app
  * behind it is unreachable" (502), and a boolean cannot.
  *
- * @param {object} options          The call.
- * @param {string} options.apiBase  The portal auth/API base.
- * @param {string} options.appId    The contributing app.
- * @param {string} options.actionId The declared action.
- * @param {object} options.payload  The whitelisted field values.
- * @param {string} options.token    The session bearer.
+ * @param {object} options         The call.
+ * @param {string} options.apiBase The portal auth/API base.
+ * @param {string} options.appId   The contributing app.
+ * @param {object} options.action  The declared action, whose `type` chooses the route.
+ * @param {object} options.payload The whitelisted field values.
+ * @param {string} options.token   The session bearer, empty on the anonymous path.
  * @return {Promise<object>} The relayed response body.
  */
-export async function submitAction({ apiBase, appId, actionId, payload, token }) {
-	const base = String(apiBase || '').replace(/\/$/, '')
-	const url = `${base}/actions/${encodeURIComponent(appId)}/${encodeURIComponent(actionId)}`
+export async function submitAction({ apiBase, appId, action, payload, token }) {
+	const url = actionUrl({ apiBase, appId, action })
 
 	const headers = { 'Content-Type': 'application/json' }
 	if (token) {
