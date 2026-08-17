@@ -323,6 +323,69 @@
 
 			<section>
 				<div class="container ac-footer__container">
+					<!--
+						THE BRAND COLUMN COMES FIRST.
+
+						It used to be last, after the link menus, which is the one
+						order the reference does not use: measured on
+						docs.conduction.nl the grid is brand-then-columns, at
+						297px against three of 198px. A footer that opens with
+						"Documentation" and names its owner in the far right
+						column reads as three menus and an afterthought.
+					-->
+					<div class="ac-footer__logo pq-footer__brand">
+						<div class="con-logo-container footer" />
+						<span class="pq-footer__wordmark">{{ site.title }}</span>
+
+						<!-- The line under the wordmark. Portal CONTENT, from the
+						     portal record — a renderer cannot know what a portal
+						     is for. -->
+						<p
+							v-if="footerContent.description"
+							class="pq-footer__brand-text"
+							data-testid="site-footer-description">
+							{{ footerContent.description }}
+						</p>
+
+						<!-- The tagline predates the brand line and is kept: a
+						     portal that set one must not lose it. -->
+						<p
+							v-else-if="site.tagline"
+							class="pq-footer__brand-text"
+							data-testid="site-footer-tagline">
+							{{ site.tagline }}
+						</p>
+
+						<!--
+							SOCIALS CARRY A VISIBLE-TO-SCREEN-READER NAME, ALWAYS.
+
+							The glyph is decorative and the anchor has no text of
+							its own, so without the `sr-only` label these are five
+							links announced as "link". The reference uses brand
+							glyphs we do not ship; `external-link` is the honest
+							stand-in rather than an invented logo.
+						-->
+						<ul
+							v-if="footerContent.socials.length"
+							class="pq-footer__socials"
+							data-testid="site-footer-socials">
+							<li
+								v-for="social in footerContent.socials"
+								:key="social.href">
+								<a
+									:href="social.href"
+									:aria-label="social.label"
+									target="_blank"
+									rel="noopener noreferrer">
+									<CnSiteIcon
+										:name="social.icon || 'external-link'"
+										:size="18" />
+									<span class="sr-only">{{ social.label }}</span>
+								</a>
+							</li>
+						</ul>
+					</div>
+
 					<nav
 						v-for="menu in footerMenus"
 						:key="menu.title"
@@ -360,53 +423,87 @@
 							</li>
 						</ul>
 					</nav>
-
-					<div class="ac-footer__logo">
-						<div class="con-logo-container footer" />
-						<span>
-							<span>{{ site.title }}</span>
-							<!-- The reference's footer logo carries a tagline under
-							     the name. It is portal CONTENT, so it comes from the
-							     portal record rather than a constant. -->
-							<span
-								v-if="site.tagline"
-								data-testid="site-footer-tagline">
-								{{ site.tagline }}
-							</span>
-						</span>
-					</div>
 				</div>
 			</section>
 
 			<section class="ac-footer__sub-footer">
-				<div class="container">
+				<div class="container pq-footer__legal">
 					<!--
-						The reference's strip is a HORIZONTAL NAV of legal links
-						(Privacy, Algemene voorwaarden, Disclaimer, FAQ), not a
-						colophon line. `.ac-footer__sub-footer-horizontal` is the
-						class its CSS separates with a pipe between items.
+						THE LEGAL BAR HAS TWO SIDES, and the left one is not a menu.
 
-						Driven by a menu so it is configurable per portal — the
-						colophon it replaces was the portal title and nothing
-						else, which no portal could change.
+						This used to be a horizontal nav of legal links and nothing
+						else. The reference puts the COLOPHON first — the legal
+						entity, its chamber-of-commerce number and its VAT number —
+						then the legal links inline after it, and certification
+						badges on the right. The links alone name who to complain
+						to but not who is responsible.
 					-->
-					<nav
-						v-if="subFooterMenu"
-						class="ac-footer__sub-footer-links"
-						:aria-label="subFooterMenu.title"
-						data-testid="site-subfooter-menu">
-						<ul class="ac-footer__sub-footer-horizontal">
-							<li v-for="item in subFooterMenu.items" :key="item.name">
-								<a
-									:href="item.link"
-									@click.prevent="go(item.link)"
-									>{{ item.name }}</a
-								>
-							</li>
-						</ul>
-					</nav>
+					<div class="pq-footer__legal-left">
+						<!--
+							THE PORTAL TITLE IS THE FALLBACK COLOPHON, and removing
+							it was a regression: a portal that has never set a
+							`footer` block — which is every portal that existed
+							before this field — showed its name here, and for one
+							build showed nothing at all. An empty legal bar on a
+							government site names nobody as responsible.
+						-->
+						<span
+							v-if="footerContent.colophon || site.title"
+							class="pq-footer__colophon"
+							data-testid="site-footer-colophon">
+							{{ footerContent.colophon || site.title }}
+						</span>
 
-					<p v-else data-testid="site-footer-colophon">{{ site.title }}</p>
+						<!--
+							The separator is a decorative character between links,
+							so it is `aria-hidden`: read aloud, a list of four
+							links becomes "Privacy middle dot Terms middle dot".
+						-->
+						<span
+							v-if="legalLinks.length"
+							class="pq-footer__legal-links"
+							data-testid="site-footer-legal-links">
+							<template
+								v-for="(item, i) in legalLinks"
+								:key="item.href">
+								<span v-if="i > 0" aria-hidden="true">·</span>
+								<a
+									:href="item.href"
+									@click.prevent="go(item.href)"
+									>{{ item.label }}</a
+								>
+							</template>
+						</span>
+					</div>
+
+					<!--
+						BADGES ARE ONLY LINKS WHEN THEY LEAD SOMEWHERE. A
+						certification badge with no certificate behind it is a
+						claim; rendering it as an inert `span` rather than an
+						anchor at least does not promise evidence that is missing.
+					-->
+					<ul
+						v-if="footerContent.badges.length"
+						class="pq-footer__badges"
+						data-testid="site-footer-badges">
+						<li
+							v-for="badge in footerContent.badges"
+							:key="badge.mark + badge.value">
+							<component
+								:is="badge.href ? 'a' : 'span'"
+								class="pq-footer__badge"
+								:href="badge.href || null"
+								:target="badge.href ? '_blank' : null"
+								:rel="badge.href ? 'noopener noreferrer' : null">
+								<span class="pq-footer__badge-mark">{{
+									badge.mark
+								}}</span>
+								<span class="pq-footer__badge-value">{{
+									badge.value
+								}}</span>
+							</component>
+						</li>
+					</ul>
 				</div>
 			</section>
 		</footer>
@@ -597,6 +694,61 @@ export default {
 			return footers.reduce((highest, menu) =>
 				(menu.position || 0) > (highest.position || 0) ? menu : highest,
 			)
+		},
+
+		/**
+		 * The footer's authored content, always the same SHAPE.
+		 *
+		 * The contract's `footer` object is optional and every list inside it
+		 * is optional, so the template would otherwise guard each one
+		 * separately — and the first guard anybody forgets is the one that
+		 * throws on a portal that has never set a footer.
+		 *
+		 * @return {object} `{description, colophon, socials, badges}`.
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-content-api-must-be-sufficient-without-the-built-in-renderer
+		 */
+		footerContent() {
+			const footer = (this.site && this.site.footer) || {}
+			const list = (value) => (Array.isArray(value) ? value : [])
+
+			return {
+				description: String(footer.description || ''),
+				colophon: String(footer.colophon || ''),
+				socials: list(footer.socials),
+				badges: list(footer.badges),
+			}
+		},
+
+		/**
+		 * The legal links, from the portal's footer or from its last menu.
+		 *
+		 * PREFERS THE PORTAL RECORD but falls back to the sub-footer menu,
+		 * because that menu is where every portal's legal links live today. A
+		 * new field that silently empties an existing footer is a regression
+		 * dressed as a feature.
+		 *
+		 * @return {Array} `{label, href}` entries.
+		 */
+		legalLinks() {
+			const authored =
+				(this.site && this.site.footer && this.site.footer.legalLinks) || []
+			if (Array.isArray(authored) && authored.length) {
+				return authored.map((item) => ({
+					label: String(item.label || ''),
+					href: String(item.href || ''),
+				}))
+			}
+
+			const menu = this.subFooterMenu
+			if (!menu) {
+				return []
+			}
+
+			return (menu.items || []).map((item) => ({
+				label: String(item.name || ''),
+				href: String(item.link || ''),
+			}))
 		},
 
 		/**

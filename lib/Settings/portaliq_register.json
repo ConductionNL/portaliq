@@ -1548,6 +1548,92 @@
             "additionalProperties": {
               "type": "string"
             }
+          },
+          "footer": {
+            "type": "object",
+            "title": "Footer content",
+            "description": "The footer's authored content. The link COLUMNS come from footer menus; this carries what a menu cannot express: the brand line under the wordmark, the social links, the colophon naming the legal entity, and any certification badges. Entries missing a label or a destination are dropped before they reach the public contract.",
+            "properties": {
+              "description": {
+                "type": "string",
+                "title": "Brand line",
+                "description": "A sentence or two under the wordmark, saying what this portal is."
+              },
+              "colophon": {
+                "type": "string",
+                "title": "Colophon",
+                "description": "The legal line — entity, chamber-of-commerce and VAT numbers — shown in the legal bar. A footer naming the wrong legal entity is something a government portal cannot ship, which is why this is portal configuration and not a renderer constant."
+              },
+              "socials": {
+                "type": "array",
+                "title": "Social links",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "label": {
+                      "type": "string",
+                      "title": "Accessible name"
+                    },
+                    "href": {
+                      "type": "string",
+                      "title": "Destination"
+                    },
+                    "icon": {
+                      "type": "string",
+                      "title": "Icon name"
+                    }
+                  },
+                  "required": [
+                    "label",
+                    "href"
+                  ]
+                }
+              },
+              "legalLinks": {
+                "type": "array",
+                "title": "Legal links",
+                "description": "Privacy, terms and the like, shown inline in the legal bar.",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "label": {
+                      "type": "string",
+                      "title": "Label"
+                    },
+                    "href": {
+                      "type": "string",
+                      "title": "Destination"
+                    }
+                  },
+                  "required": [
+                    "label",
+                    "href"
+                  ]
+                }
+              },
+              "badges": {
+                "type": "array",
+                "title": "Certification badges",
+                "description": "A mark and a value, e.g. \"ISO\" and \"27001:2022\", with an optional destination.",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "mark": {
+                      "type": "string",
+                      "title": "Mark"
+                    },
+                    "value": {
+                      "type": "string",
+                      "title": "Value"
+                    },
+                    "href": {
+                      "type": "string",
+                      "title": "Destination"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       },

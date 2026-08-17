@@ -229,6 +229,15 @@ class ContentController extends Controller {
 				// and a renderer guessing structure from colour is a renderer
 				// nobody can predict.
 				'headerVariant' => $this->headerVariant(portal: $portal),
+				// The footer's own content: the brand line under the wordmark,
+				// the social links, the colophon and any certification badges.
+				//
+				// It is PORTAL CONFIGURATION, not a renderer constant. The
+				// footer previously showed a bare title because there was
+				// nowhere for a portal to say anything else — and a colophon
+				// naming the wrong legal entity is the kind of thing a
+				// government portal cannot ship.
+				'footer' => $this->footer(portal: $portal),
 				// The MODES are public — a visitor has to know how to sign in.
 				// Provider secrets are not here and never will be; they live in
 				// the credential broker.
@@ -259,6 +268,99 @@ class ContentController extends Controller {
 
 		return 'double';
 	}//end headerVariant()
+
+
+	/**
+	 * The footer's authored content, shaped and filtered.
+	 *
+	 * EVERY LIST IS REBUILT RATHER THAN PASSED THROUGH. This response is
+	 * public and anonymous, so what reaches it is exactly the keys named here
+	 * with exactly the types named here — a portal record that grows a field
+	 * must not start publishing it because the footer happened to be nearby.
+	 *
+	 * Entries missing a label or a destination are DROPPED. An empty footer
+	 * link is a control a visitor can focus and learn nothing from, and the
+	 * renderer should not have to decide that a second time.
+	 *
+	 * @param array<string, mixed> $portal The resolved portal record.
+	 *
+	 * @return array<string, mixed> The footer contract.
+	 *
+	 * @spec openspec/changes/portal-page-composition/specs/portal-page-composition/spec.md#requirement-every-region-of-a-portal-page-must-be-composed-from-widgets
+	 */
+	private function footer(array $portal): array {
+		$footer = (array)($portal['footer'] ?? []);
+
+		return [
+			'description' => trim((string)($footer['description'] ?? '')),
+			'colophon'    => trim((string)($footer['colophon'] ?? '')),
+			'socials'     => $this->projectedList(
+				entries: (array)($footer['socials'] ?? []),
+				keys: ['label', 'href', 'icon'],
+				requireAnyOf: ['label', 'href']
+			),
+			'legalLinks'  => $this->projectedList(
+				entries: (array)($footer['legalLinks'] ?? []),
+				keys: ['label', 'href'],
+				requireAnyOf: ['label', 'href']
+			),
+			// A badge needs only ONE of its two halves — "ISO 27001:2022" reads
+			// fine as a mark and a value, and a mark on its own is still a
+			// claim somebody chose to make.
+			'badges'      => $this->projectedList(
+				entries: (array)($footer['badges'] ?? []),
+				keys: ['mark', 'value', 'href'],
+				requireAnyOf: []
+			),
+		];
+	}//end footer()
+
+
+	/**
+	 * Project a list of authored entries onto exactly the keys named.
+	 *
+	 * Extracted because the footer's three lists are the same operation, and
+	 * three copies of "trim these keys, drop the incomplete ones" is three
+	 * places for the filter to drift out of step with the contract.
+	 *
+	 * `requireAnyOf` names the keys that must ALL be non-empty for an entry to
+	 * survive — every list needs some such rule, because an entry with a
+	 * destination and no label is a control a visitor can focus and learn
+	 * nothing from, and one with a label and no destination is a dead link. An
+	 * empty list means only that the entry must not be blank altogether.
+	 *
+	 * @param array<int, mixed>    $entries      The authored entries.
+	 * @param array<int, string>   $keys         The keys to keep, in order.
+	 * @param array<int, string>   $requireAnyOf Keys that must all be non-empty.
+	 *
+	 * @return array<int, array<string, string>> The projected entries.
+	 */
+	private function projectedList(array $entries, array $keys, array $requireAnyOf): array {
+		$out = [];
+
+		foreach ($entries as $entry) {
+			$entry     = (array)$entry;
+			$projected = [];
+			foreach ($keys as $key) {
+				$projected[$key] = trim((string)($entry[$key] ?? ''));
+			}
+
+			$missing = false;
+			foreach ($requireAnyOf as $key) {
+				if (($projected[$key] ?? '') === '') {
+					$missing = true;
+				}
+			}
+
+			if ($missing === true || implode('', $projected) === '') {
+				continue;
+			}
+
+			$out[] = $projected;
+		}
+
+		return $out;
+	}//end projectedList()
 
 
 	/**

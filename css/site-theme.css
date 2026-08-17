@@ -644,6 +644,7 @@ body,
  */
 .pq-site .ac-footer section {
 	padding-block-start: var(--nldesign-footer-padding-block, 0);
+	padding-block-end: var(--nldesign-footer-padding-block-end, 0);
 }
 
 .pq-site .ac-footer h2:not(.sr-only),
@@ -651,15 +652,32 @@ body,
 .pq-site .ac-footer .ac-footer__title {
 	font-family: var(--nldesign-footer-heading-font, inherit);
 	font-size: var(--nldesign-footer-heading-size, inherit);
+	font-weight: var(--nldesign-footer-heading-weight, inherit);
 	color: var(--nldesign-footer-heading-color, inherit);
 	letter-spacing: var(--nldesign-footer-heading-spacing, normal);
+	line-height: var(--nldesign-footer-heading-line-height, normal);
+	text-transform: var(--nldesign-footer-heading-transform, none);
+	margin-block-end: var(--nldesign-footer-heading-margin-block-end, 0);
 }
 
-.pq-site .ac-footer a {
+/*
+ * The COLUMN links, and only those.
+ *
+ * This was `.ac-footer a`, which is every anchor in the footer — the socials and
+ * the legal links included. They are different controls at different sizes, and
+ * catching them here is what made the legal strip inherit an 11px mono
+ * treatment meant for a menu.
+ */
+.pq-site .ac-footer__links a {
 	font-family: var(--nldesign-footer-link-font, inherit);
 	font-size: var(--nldesign-footer-link-size, inherit);
+	line-height: var(--nldesign-footer-link-line-height, inherit);
 	color: var(--nldesign-footer-link-color, inherit);
 	text-decoration: var(--nldesign-footer-link-decoration, none);
+}
+
+.pq-site .ac-footer__links li {
+	margin-block-end: var(--nldesign-footer-item-margin-block-end, 0);
 }
 
 /*
@@ -696,4 +714,249 @@ body,
 	font-family: var(--nldesign-footer-legal-font, inherit);
 	font-size: var(--nldesign-footer-legal-size, inherit);
 	color: var(--nldesign-footer-legal-color, inherit);
+}
+
+/*
+ * THE FOOTER'S GRID: a brand column and then the link columns.
+ *
+ * Measured on docs.conduction.nl: 297px for the brand and 198px for each of
+ * three link columns, 48px apart. Expressed as a brand width plus equal
+ * remainder rather than four fixed tracks, so a portal with two or four menus
+ * still fills its row instead of leaving a hole.
+ *
+ * The default is `none`, which leaves the vendored grid exactly as it was.
+ */
+/*
+ * EVERY SELECTOR IN THIS SECTION CARRIES `section:first-of-type`, and it is not
+ * decoration — it is the specificity needed to win.
+ *
+ * The vendored footer rules are all of the form
+ * `.ac-footer section:first-of-type <element>`, which is (0,2,2) to (0,3,3).
+ * The obvious `.pq-site .ac-footer__container` is (0,2,0) and loses silently:
+ * the token resolved correctly, the declaration was in the CSSOM, and the
+ * computed value was still the vendored one. Nothing about that is visible
+ * without asking the browser which rule won.
+ */
+.pq-site .ac-footer section:first-of-type .ac-footer__container {
+	grid-template-columns: var(--nldesign-footer-grid-columns, none);
+	column-gap: var(--nldesign-footer-column-gap, normal);
+}
+
+/*
+ * THE FOOTER COLUMNS STACK BEFORE THEY OVERFLOW.
+ *
+ * The grid above names FIXED track widths, measured from the reference — which
+ * is right at desktop and impossible at 390px: a 297px brand column plus one
+ * 198px track plus a 48px gap is already 543px, and the page scrolled sideways
+ * by 177px. Fixed tracks cannot shrink, so the breakpoint is not optional.
+ */
+@media (max-width: 900px) {
+	.pq-site .ac-footer section:first-of-type .ac-footer__container {
+		grid-template-columns: var(--nldesign-footer-grid-columns-sm, 1fr);
+		row-gap: var(--nldesign-footer-row-gap-sm, 2rem);
+	}
+}
+
+/*
+ * THE BRAND COLUMN IS A COLUMN.
+ *
+ * `.ac-footer__logo` is a vendored flex ROW with its own gap, which is right
+ * for a mark beside a name and wrong for a mark above a name above a paragraph
+ * above five links: measured, the wordmark came out 121x234 — a flex item
+ * stretched down the full height of the row.
+ *
+ * The gap goes to 0 because the children carry their own margins; two spacing
+ * systems on one axis is how a 12px margin becomes 12px plus whatever the
+ * vendored gap happens to be.
+ */
+.pq-site .ac-footer .pq-footer__brand {
+	flex-direction: column;
+	/* STRETCH, not `flex-start`: with the children shrink-wrapped to their text
+	   the wordmark measured 242px in a 297px column, so nothing in the brand
+	   column shared an edge with anything below it. */
+	align-items: stretch;
+	gap: 0;
+}
+
+/* The column heading's rhythm, at the vendored rules' specificity. */
+.pq-site .ac-footer section:first-of-type h2:not(.sr-only),
+.pq-site .ac-footer section:first-of-type h3,
+.pq-site .ac-footer section:first-of-type .ac-footer__title {
+	margin-block-end: var(--nldesign-footer-heading-margin-block-end, 0);
+}
+
+/*
+ * And the LINK list's. `:not(:last-child)` mirrors the vendored selector so the
+ * last item keeps no trailing space.
+ *
+ * Scoped to `.ac-footer__links`, because the first version said `ul li` and the
+ * socials are a `ul` too: a horizontal row of five 34px targets picked up 9px of
+ * vertical item spacing and grew to 43px. Any rule that says "every list in the
+ * footer" is wrong the moment the footer has two kinds of list.
+ */
+.pq-site .ac-footer section:first-of-type .ac-footer__links ul li:not(:last-child) {
+	margin-block-end: var(--nldesign-footer-item-margin-block-end, 0);
+}
+
+/*
+ * THE LIST MARKER.
+ *
+ * Our footer lists carried an orange disc and the reference's carry nothing —
+ * a difference no property in the parity fixture covered, because a marker is
+ * drawn by a pseudo-element nobody thinks to measure. The bullet is not even a
+ * design decision here: the vendored reset only removes markers from lists that
+ * carry a class (`ul:where([class])`), these do not, so it is the browser's
+ * default painted in the brand's accent by the footer marker token.
+ *
+ * The default stays `disc` so every portal that has shipped with bullets keeps
+ * them; a theme that wants the reference's look says so.
+ */
+.pq-site .ac-footer section:first-of-type .ac-footer__links ul li {
+	list-style-type: var(--nldesign-footer-item-marker, disc);
+}
+
+.pq-site .pq-footer__wordmark {
+	display: block;
+	font-family: var(--nldesign-footer-wordmark-font, inherit);
+	font-size: var(--nldesign-footer-wordmark-size, inherit);
+	line-height: var(--nldesign-footer-wordmark-line-height, normal);
+	font-weight: var(--nldesign-footer-wordmark-weight, inherit);
+	color: var(--nldesign-footer-wordmark-color, inherit);
+	letter-spacing: var(--nldesign-footer-wordmark-spacing, normal);
+}
+
+.pq-site .pq-footer__brand-text {
+	font-family: var(--nldesign-footer-brand-font, inherit);
+	font-size: var(--nldesign-footer-brand-size, inherit);
+	line-height: var(--nldesign-footer-brand-line-height, inherit);
+	color: var(--nldesign-footer-brand-color, inherit);
+	margin-block: var(--nldesign-footer-brand-margin-block, 0);
+	max-inline-size: var(--nldesign-footer-brand-measure, none);
+}
+
+/*
+ * SOCIALS.
+ *
+ * A row of square targets, not text links, so they get their own size rather
+ * than the footer link's. 34px on the reference — comfortably above the 24px
+ * minimum a pointer target should be, which is worth keeping when a theme
+ * retunes it.
+ */
+.pq-site .pq-footer__socials {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--nldesign-footer-social-gap, 0.5rem);
+	margin-block: var(--nldesign-footer-social-margin-block, 0);
+	padding: 0;
+	list-style: none;
+}
+
+.pq-site .pq-footer__socials a {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	inline-size: var(--nldesign-footer-social-size, auto);
+	block-size: var(--nldesign-footer-social-size, auto);
+	border-radius: var(--nldesign-footer-social-radius, 0);
+	border: var(--nldesign-footer-social-border-width, 0) solid
+		var(--nldesign-footer-social-border-color, transparent);
+	color: var(--nldesign-footer-social-color, inherit);
+	/* Its own size, not the footer link's 11px mono. */
+	font-size: inherit;
+}
+
+/*
+ * THE LEGAL BAR: colophon and links on the left, badges on the right.
+ *
+ * The reference separates it from the columns with a 1px rule at 10% white and
+ * 24px of air, and lays it out `space-between`. Both defaults here are inert.
+ */
+.pq-site .pq-footer__legal {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--nldesign-footer-legal-gap, 1rem);
+	border-block-start: var(--nldesign-footer-legal-rule-width, 0) solid
+		var(--nldesign-footer-legal-rule-color, transparent);
+	padding-block-start: var(--nldesign-footer-legal-padding-block-start, 0);
+}
+
+.pq-site .pq-footer__legal-left {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--nldesign-footer-legal-gap, 1rem);
+}
+
+.pq-site .pq-footer__legal-links {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--nldesign-footer-legal-link-gap, 0.5rem);
+}
+
+/*
+ * The legal links are 12px, NOT the footer link's 11px mono.
+ *
+ * `.ac-footer a` above sets every anchor in the footer to the column-link
+ * treatment. These sit in running legal text and follow it instead — the same
+ * reason the socials opt out of it.
+ */
+.pq-site .pq-footer__legal-links a,
+.pq-site .pq-footer__badge {
+	font-family: var(--nldesign-footer-legal-font, inherit);
+	font-size: var(--nldesign-footer-legal-size, inherit);
+	line-height: var(--nldesign-footer-legal-line-height, normal);
+	color: var(--nldesign-footer-legal-link-color, inherit);
+	text-decoration: var(--nldesign-footer-legal-link-decoration, underline);
+}
+
+.pq-site .pq-footer__colophon {
+	font-family: var(--nldesign-footer-legal-font, inherit);
+	font-size: var(--nldesign-footer-legal-size, inherit);
+	line-height: var(--nldesign-footer-legal-line-height, normal);
+	color: var(--nldesign-footer-legal-color, inherit);
+}
+
+/*
+ * CERTIFICATION BADGES: an outlined chip of a mark and a value.
+ *
+ * The mark is heavier than the value on the reference, which is what makes
+ * "ISO 27001:2022" read as a mark and a standard rather than as one string.
+ */
+.pq-site .pq-footer__badges {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--nldesign-footer-badge-gap, 0.5rem);
+	margin-block: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.pq-site .pq-footer__badge {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--nldesign-footer-badge-inner-gap, 0.35rem);
+	padding: var(--nldesign-footer-badge-padding, 0);
+	border: var(--nldesign-footer-badge-border-width, 0) solid
+		var(--nldesign-footer-badge-border-color, transparent);
+	border-radius: var(--nldesign-footer-badge-radius, 0);
+	color: var(--nldesign-footer-badge-color, inherit);
+	text-decoration: none;
+}
+
+.pq-site .pq-footer__badge-mark {
+	font-family: var(--nldesign-footer-badge-font, inherit);
+	font-size: var(--nldesign-footer-badge-size, inherit);
+	line-height: var(--nldesign-footer-badge-line-height, normal);
+	font-weight: var(--nldesign-footer-badge-mark-weight, inherit);
+	letter-spacing: var(--nldesign-footer-badge-mark-spacing, normal);
+}
+
+.pq-site .pq-footer__badge-value {
+	font-family: var(--nldesign-footer-badge-font, inherit);
+	font-size: var(--nldesign-footer-badge-size, inherit);
+	line-height: var(--nldesign-footer-badge-line-height, normal);
+	font-weight: var(--nldesign-footer-badge-value-weight, inherit);
+	letter-spacing: var(--nldesign-footer-badge-value-spacing, normal);
 }

@@ -201,6 +201,78 @@ class ContentControllerTest extends TestCase {
 
 
 	/**
+	 * A portal with NO footer block still answers with the footer's shape.
+	 *
+	 * The renderer reads `footer.socials.length` and friends. If the key is
+	 * absent the shape has to come from somewhere, and "somewhere" was the
+	 * template guarding each list separately — which works until one guard is
+	 * missed on the portal that has never set a footer, i.e. every existing one.
+	 *
+	 * @return void
+	 */
+	public function testAPortalWithoutAFooterStillGetsTheFooterShape(): void {
+		$this->resolver->method('resolve')->willReturn($this->portal());
+
+		$footer = $this->controller()->site()->getData()['footer'];
+
+		$this->assertSame('', $footer['description']);
+		$this->assertSame('', $footer['colophon']);
+		$this->assertSame([], $footer['socials']);
+		$this->assertSame([], $footer['legalLinks']);
+		$this->assertSame([], $footer['badges']);
+	}//end testAPortalWithoutAFooterStillGetsTheFooterShape()
+
+
+	/**
+	 * The footer's lists are PROJECTED, and incomplete entries are dropped.
+	 *
+	 * Two things are being asserted at once because they are the same rule: the
+	 * response carries exactly the keys this endpoint names — a portal record
+	 * that grows a field must not start publishing it because the footer
+	 * happened to be nearby — and an entry missing a label or a destination
+	 * never reaches the page. A social link with no label is announced as
+	 * "link"; one with no href is a dead control.
+	 *
+	 * @return void
+	 */
+	public function testFooterEntriesAreProjectedAndIncompleteOnesDropped(): void {
+		$portal           = $this->portal();
+		$portal['footer'] = [
+			'description' => '  Wat dit portaal is.  ',
+			'colophon'    => 'Gemeente X · KvK 1',
+			'socials'     => [
+				['label' => 'GitHub', 'href' => 'https://example.test', 'icon' => 'globe', 'secret' => 'nope'],
+				['label' => 'No destination', 'href' => ''],
+				['label' => '', 'href' => 'https://orphan.test'],
+			],
+			'legalLinks'  => [
+				['label' => 'Privacy', 'href' => '/privacy'],
+				['label' => 'Broken'],
+			],
+			'badges'      => [
+				['mark' => 'ISO', 'value' => '27001:2022'],
+				// Neither half: nothing to render, nothing to claim.
+				['mark' => '', 'value' => ''],
+			],
+		];
+		$this->resolver->method('resolve')->willReturn($portal);
+
+		$footer = $this->controller()->site()->getData()['footer'];
+
+		$this->assertSame('Wat dit portaal is.', $footer['description']);
+		$this->assertCount(1, $footer['socials']);
+		$this->assertSame(
+			['label' => 'GitHub', 'href' => 'https://example.test', 'icon' => 'globe'],
+			$footer['socials'][0]
+		);
+		$this->assertCount(1, $footer['legalLinks']);
+		$this->assertSame(['label' => 'Privacy', 'href' => '/privacy'], $footer['legalLinks'][0]);
+		$this->assertCount(1, $footer['badges']);
+		$this->assertSame(['mark' => 'ISO', 'value' => '27001:2022', 'href' => ''], $footer['badges'][0]);
+	}//end testFooterEntriesAreProjectedAndIncompleteOnesDropped()
+
+
+	/**
 	 * Only the authentication MODES are exposed.
 	 *
 	 * Provider configuration belongs in the credential broker; a public
