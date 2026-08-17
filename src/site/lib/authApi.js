@@ -172,12 +172,13 @@ export function signInRoutes(site, authBase) {
 	// sign-in started from portal B arrived at the edge looking like portal A
 	// and was refused with `mode_not_offered`. Measured: the button led to a
 	// 404 whose body named a mode the visitor's portal does in fact offer.
-	const slug = (site && site.slug) ? String(site.slug) : ''
+	const slug = site && site.slug ? String(site.slug) : ''
 	const scope = slug ? `portal=${encodeURIComponent(slug)}` : ''
 	// Come back to the page the visitor was actually on, not the portal root.
-	const returnTo = (typeof window !== 'undefined' && window.location)
-		? `returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`
-		: ''
+	const returnTo =
+		typeof window !== 'undefined' && window.location
+			? `returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`
+			: ''
 	const query = [scope, returnTo].filter(Boolean).join('&')
 
 	return modes

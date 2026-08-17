@@ -44,13 +44,30 @@
 				a publicly cacheable, anonymous response, so it must never
 				itself carry a visitor's rows.
 			-->
+			<!--
+				THE ENTRIES ARE LINKS NOW.
+
+				They were plain text while contributed pages had no site route:
+				a control that goes nowhere is worse than words. The route
+				exists, so the false affordance is gone — and an entry whose app
+				publishes no page for it STAYS text, because the alternative is
+				a link to a 404.
+			-->
 			<ul class="pq-contributions__entries">
 				<li
 					v-for="entry in entriesOf(contribution)"
 					:key="entry.id || entry.label"
 					class="pq-contributions__entry"
 					data-testid="contribution-entry">
-					{{ entry.label || entry.id }}
+					<a
+						v-if="routeFor(contribution, entry)"
+						:href="routeFor(contribution, entry)"
+						@click.prevent="
+							$emit('navigate', routeFor(contribution, entry))
+						">
+						{{ entry.label || entry.id }}
+					</a>
+					<template v-else>{{ entry.label || entry.id }}</template>
 				</li>
 			</ul>
 		</div>
@@ -64,6 +81,8 @@
 </template>
 
 <script>
+import { contributionRoute } from '../lib/contributionApi.js'
+
 /**
  * The contributed surfaces a portal offers — the "what can I do here" index.
  *
@@ -149,6 +168,8 @@ export default {
 		},
 	},
 
+	emits: ['navigate'],
+
 	computed: {
 		/**
 		 * @return {string} The heading element to render.
@@ -202,6 +223,34 @@ export default {
 		 *
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-contribution-must-be-scoped-to-the-portal-it-targets
 		 */
+		/**
+		 * The in-site route for an entry, when its app publishes a page for it.
+		 *
+		 * An entry is an action or a collection; a PAGE is what a visitor opens.
+		 * They are matched by id, or by a page whose blocks invoke that action.
+		 * No match returns null so the caller renders text rather than a dead link.
+		 *
+		 * @param {object} contribution The contributing app's record.
+		 * @param {object} entry        The action or collection.
+		 * @return {string|null} The route, or null.
+		 */
+		routeFor(contribution, entry) {
+			const pages = Array.isArray(contribution.pages) ? contribution.pages : []
+			const id = entry.id || ''
+			const page = pages.find(
+				(pg) =>
+					pg
+					&& (pg.id === id
+						|| (Array.isArray(pg.blocks)
+							&& pg.blocks.some((b) => b && b.action === id))),
+			)
+			if (!page) {
+				return null
+			}
+
+			return contributionRoute(contribution.app, page.id)
+		},
+
 		entriesOf(contribution) {
 			const collections = Array.isArray(contribution.collections)
 				? contribution.collections

@@ -44,6 +44,9 @@ const PAGES = [
 	['lafranken', '/mijn-zaken'],
 	['lafranken', '/aanvragen'],
 	['lafranken', '/begrippen'],
+	// A contributed page: a different renderer, and the only route that mounts a
+	// form, so it fails differently from every CMS page above.
+	['lafranken', '/diensten/portaliq/meldingen'],
 ]
 
 const WIDTHS = [1440, 390]

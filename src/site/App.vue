@@ -269,6 +269,18 @@
 					</p>
 				</div>
 
+				<!--
+					A CONTRIBUTED PAGE, when the route names one. Checked before
+					the CMS page because the two can never both be set: a
+					`/diensten/…` route never reaches the content API.
+				-->
+				<ContributionPage
+					v-else-if="contributionPage"
+					:page="contributionPage.page"
+					:contribution="contributionPage.contribution"
+					:session="session"
+					:apiBase="authBase" />
+
 				<article
 					v-else-if="page"
 					class="utrecht-article"
@@ -305,7 +317,8 @@
 						v-if="page.body && page.body.type === 'grid'"
 						:widgets="page.body.widgets || []"
 						:glossary="glossary"
-						:contributions="contributions" />
+						:contributions="contributions"
+						@navigate="go" />
 
 					<div v-else class="container">
 						<MarkdownBlock
@@ -573,6 +586,7 @@
 
 <script>
 import { CnSiteIcon } from '@conduction/nextcloud-vue/public'
+import ContributionPage from './components/ContributionPage.vue'
 import FooterCanal from './components/FooterCanal.vue'
 import MarkdownBlock from './components/MarkdownBlock.vue'
 import SiteMenu from './components/SiteMenu.vue'
@@ -592,6 +606,7 @@ import {
 	fetchSite,
 	resolveApiBase,
 } from './lib/contentApi.js'
+import { parseContributionRoute } from './lib/contributionApi.js'
 
 /**
  * The built-in site renderer.
@@ -604,7 +619,14 @@ import {
 export default {
 	name: 'App',
 
-	components: { CnSiteIcon, FooterCanal, MarkdownBlock, SiteMenu, WidgetGrid },
+	components: {
+		CnSiteIcon,
+		ContributionPage,
+		FooterCanal,
+		MarkdownBlock,
+		SiteMenu,
+		WidgetGrid,
+	},
 
 	props: {
 		/** Explicit site slug, when not resolving by host. */
@@ -620,6 +642,8 @@ export default {
 			menus: [],
 			glossary: [],
 			contributions: [],
+			/** The resolved contributed page, when the route names one. */
+			contributionPage: null,
 			session: null,
 			page: null,
 			route: '/',
@@ -858,8 +882,22 @@ export default {
 		 *
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portal-must-offer-only-the-sign-in-routes-it-declares
 		 */
+		/**
+		 * The portal auth/API base.
+		 *
+		 * Derived once rather than at each call site — three methods already
+		 * re-derived it, and a contributed action posting to a different base
+		 * than the session was minted against is a 401 nobody would look for in
+		 * this file.
+		 *
+		 * @return {string} The base.
+		 */
+		authBase() {
+			return authBaseFrom(resolveApiBase())
+		},
+
 		signInRoutes() {
-			return signInRoutes(this.site, authBaseFrom(resolveApiBase()))
+			return signInRoutes(this.site, this.authBase)
 		},
 
 		/**
@@ -1040,9 +1078,52 @@ export default {
 		 *
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-unpublished-content-must-be-indistinguishable-from-absent-content
 		 */
+		/**
+		 * Find a contributed page in the contributions already loaded.
+		 *
+		 * Returns the page AND its contribution, because rendering an action needs
+		 * the sibling `actions` list — a block names an action by id and nothing
+		 * else.
+		 *
+		 * @param {object} ref The `{appId, pageId}` from the route.
+		 * @return {object|null} `{page, contribution}` or null.
+		 */
+		resolveContribution(ref) {
+			const contribution = (this.contributions || []).find(
+				(c) => c && c.app === ref.appId,
+			)
+			if (!contribution) {
+				return null
+			}
+
+			const page = (contribution.pages || []).find(
+				(pg) => pg && pg.id === ref.pageId,
+			)
+			if (!page) {
+				return null
+			}
+
+			return { page, contribution }
+		},
+
 		async loadRoute(route) {
 			this.loading = true
 			this.error = null
+
+			// A CONTRIBUTED PAGE IS RESOLVED FROM DATA ALREADY LOADED, not from
+			// a second request: the contributions contract carries every page a
+			// leaf app publishes, so asking the CMS for `/diensten/…` would be a
+			// guaranteed 404 followed by the lookup that should have come first.
+			const contributed = parseContributionRoute(route)
+			if (contributed !== null) {
+				this.contributionPage = this.resolveContribution(contributed)
+				this.page = null
+				this.error = this.contributionPage === null ? { status: 404 } : null
+				this.loading = false
+				return
+			}
+
+			this.contributionPage = null
 			try {
 				this.page = await fetchPage(route, this.portalSlug)
 			} catch (error) {

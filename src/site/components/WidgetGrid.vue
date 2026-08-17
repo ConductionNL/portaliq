@@ -44,7 +44,8 @@
 						<component
 							:is="componentFor(widget.widgetKey)"
 							v-if="componentFor(widget.widgetKey)"
-							v-bind="propsFor(widget)" />
+							v-bind="propsFor(widget)"
+							@navigate="$emit('navigate', $event)" />
 
 						<!-- Anything not public, or not known, degrades to an inert
 						     placeholder. It does NOT throw: a public page with one bad
@@ -151,6 +152,9 @@ export default {
 			default: () => [],
 		},
 	},
+
+	// A block deep in the grid may ask to navigate; the router lives in App.vue.
+	emits: ['navigate'],
 
 	computed: {
 		/**
