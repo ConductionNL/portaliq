@@ -40,11 +40,13 @@ use OCA\Portaliq\Service\OidcClientService;
 use OCA\Portaliq\Service\OidcStateStoreService;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
+use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\BruteForceProtection;
+use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
@@ -53,6 +55,7 @@ use OCP\AppFramework\Http\Response;
 use OCP\IConfig;
 use OCP\IRequest;
 use OCP\IURLGenerator;
+use OCP\IUserSession;
 
 /**
  * Public auth-edge endpoints for the portal SPA.
@@ -110,6 +113,11 @@ class SessionController extends Controller {
 	 * @param PortalAccountService $accounts Find-or-create `portalAccount`.
 	 * @param IURLGenerator $urlGenerator Builds the callback redirect_uri
 	 *                                    + the final SPA redirect.
+	 * @param IUserSession $userSession The Nextcloud session, which IS the
+	 *                                  credential for the `nextcloud` mode.
+	 * @param PortalResolver $portals Resolves which portal is being signed
+	 *                                into, so a mode it does not declare
+	 *                                cannot be used against it.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -121,6 +129,8 @@ class SessionController extends Controller {
 		private readonly OidcStateStoreService $stateStore,
 		private readonly PortalAccountService $accounts,
 		private readonly IURLGenerator $urlGenerator,
+		private readonly IUserSession $userSession,
+		private readonly PortalResolver $portals,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -479,6 +489,124 @@ class SessionController extends Controller {
 	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#3.1
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T05
 	 */
+	/**
+	 * Sign in with a Nextcloud account — the `nextcloud` authentication mode.
+	 *
+	 * THE MODE WAS ALREADY OFFERED AND LED NOWHERE. `signInRoutes()` has always
+	 * rendered "Inloggen met uw account" for a portal declaring `nextcloud`,
+	 * pointing at `/portal/api/session/nextcloud`. No such route existed, so the
+	 * button 404'd: a sign-in option that looks identical to a working one right
+	 * up to the moment somebody uses it.
+	 *
+	 * WHY THIS IS NOT `#[PublicPage]`. It is the one endpoint here that WANTS a
+	 * Nextcloud session — that session is the credential. An anonymous caller is
+	 * sent to Nextcloud's own login form and comes back; this app never sees a
+	 * password, and there is no password field of ours to attack.
+	 *
+	 * THE PORTAL MUST DECLARE THE MODE. A portal that does not offer
+	 * `nextcloud` cannot be entered through it, even by a logged-in user who
+	 * types the URL. A mode that is enforced only by which buttons are drawn is
+	 * not enforced at all.
+	 *
+	 * THE ACCOUNT MUST ALREADY EXIST. This mints a session for an existing
+	 * `portalAccount` whose `subjectRef` is the Nextcloud user id — it does not
+	 * create one. Auto-creating would make every account on the instance a
+	 * citizen of every portal that enables this mode.
+	 *
+	 * @param string $portal   The portal slug to sign in to.
+	 * @param string $returnTo Where to send the browser afterwards.
+	 *
+	 * @return Response A redirect carrying the bearer in the URL fragment.
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portal-must-offer-only-the-sign-in-routes-it-declares
+	 */
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	public function nextcloud(string $portal = '', string $returnTo = ''): Response {
+		$uid = $this->currentNextcloudUid();
+		if ($uid === '') {
+			// Not signed in to Nextcloud yet: hand the visitor to the platform's
+			// own login form and come back here. The password is Nextcloud's
+			// business, never ours.
+			return new RedirectResponse(
+				$this->urlGenerator->linkToRoute(
+					'core.login.showLoginForm',
+					['redirect_url' => $this->request->getRequestUri()]
+				),
+				Http::STATUS_FOUND
+			);
+		}
+
+		$site = $this->portalFor(slug: $portal);
+		if ($site === null) {
+			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$modes = ($site['authentication']['modes'] ?? []);
+		if (is_array($modes) === false || in_array('nextcloud', $modes, true) === false) {
+			// Refused with the same shape as an unknown portal: which modes a
+			// portal offers is not something an anonymous prober should be able
+			// to enumerate one 403 at a time.
+			return new JSONResponse(['error' => 'mode_not_offered'], Http::STATUS_NOT_FOUND);
+		}
+
+		$account = $this->accounts->findBySubjectRef(subjectRef: $uid);
+		if ($account === null || ($account['status'] ?? 'active') !== 'active') {
+			return new JSONResponse(['error' => 'no_portal_account'], Http::STATUS_FORBIDDEN);
+		}
+
+		$audience = (string)($account['audience'] ?? 'client');
+		$issued = $this->session->issueSession(
+			subjectRef: $uid,
+			audience: $audience,
+			organisation: (string)($account['organisation'] ?? 'dev-org'),
+			// A username and password on this instance is an eIDAS-'low'
+			// assurance, the same as dev-login and deliberately BELOW DigiD:
+			// a portal gating on trust must not be fooled by the fact that
+			// this login felt more effortful.
+			trust: 'low',
+			roles: [$audience . ':read']
+		);
+
+		if ($issued === null) {
+			return new JSONResponse(['error' => 'not_configured'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
+
+		// Same hand-off as the OIDC callback: the bearer travels in the URL
+		// FRAGMENT, which is never sent to a server and never reaches a log.
+		$target = ($returnTo !== '' ? $returnTo : '/apps/portaliq/site?portal=' . rawurlencode((string)($site['slug'] ?? '')));
+
+		return new RedirectResponse(
+			$this->urlGenerator->getAbsoluteURL($target) . '#token=' . rawurlencode($issued['token']),
+			Http::STATUS_FOUND
+		);
+	}//end nextcloud()
+
+
+	/**
+	 * The signed-in Nextcloud user id, or '' when there is none.
+	 *
+	 * @return string The uid.
+	 */
+	private function currentNextcloudUid(): string {
+		$user = $this->userSession->getUser();
+
+		return ($user === null) ? '' : $user->getUID();
+	}//end currentNextcloudUid()
+
+
+	/**
+	 * Resolve the portal being signed in to, by slug or by host.
+	 *
+	 * @param string $slug The requested slug, or ''.
+	 *
+	 * @return array<string, mixed>|null The portal record, or null.
+	 */
+	private function portalFor(string $slug): ?array {
+		return $this->portals->resolve(request: $this->request, portalSlug: $slug);
+	}//end portalFor()
+
+
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 30, period: 60)]

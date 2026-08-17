@@ -10,11 +10,13 @@ use OCA\Portaliq\Service\OidcClientService;
 use OCA\Portaliq\Service\OidcStateStoreService;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
+use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Http;
 use OCP\IConfig;
 use OCP\IRequest;
 use OCP\IURLGenerator;
+use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -556,6 +558,8 @@ class SessionControllerTest extends TestCase {
 		?PortalAccountService $accounts = null,
 		?IURLGenerator $urlGenerator = null,
 		string $authorization = 'Bearer some-token',
+		?IUserSession $userSession = null,
+		?PortalResolver $portals = null,
 	): SessionController {
 		$request = $this->createMock(IRequest::class);
 		// Defaults to a bearer being PRESENT, which is what every pre-existing
@@ -572,7 +576,9 @@ class SessionControllerTest extends TestCase {
 			($claimMapper ?? $this->createMock(OidcClaimMapperService::class)),
 			($stateStore ?? $this->createMock(OidcStateStoreService::class)),
 			($accounts ?? $this->createMock(PortalAccountService::class)),
-			($urlGenerator ?? $this->createMock(IURLGenerator::class))
+			($urlGenerator ?? $this->createMock(IURLGenerator::class)),
+			($userSession ?? $this->createMock(IUserSession::class)),
+			($portals ?? $this->createMock(PortalResolver::class))
 		);
 
 	}//end controller()

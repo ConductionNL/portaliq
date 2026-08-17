@@ -370,7 +370,13 @@ import { CnSiteIcon } from '@conduction/nextcloud-vue/public'
 import MarkdownBlock from './components/MarkdownBlock.vue'
 import SiteMenu from './components/SiteMenu.vue'
 import WidgetGrid from './components/WidgetGrid.vue'
-import { authBaseFrom, fetchSession, signInRoutes } from './lib/authApi.js'
+import {
+	adoptSessionToken,
+	authBaseFrom,
+	clearSessionToken,
+	fetchSession,
+	signInRoutes,
+} from './lib/authApi.js'
 import {
 	fetchContributions,
 	fetchGlossary,
@@ -688,15 +694,22 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portal-must-offer-only-the-sign-in-routes-it-declares
 		 */
 		async signOut() {
+			const token = adoptSessionToken()
 			try {
 				await fetch(`${authBaseFrom(resolveApiBase())}/session`, {
 					method: 'DELETE',
 					credentials: 'include',
+					// The edge revokes the session the BEARER names. Without it
+					// the request is anonymous, the server revokes nothing, and
+					// only this tab forgets — a sign-out that leaves a live
+					// token behind is the one failure mode that matters here.
+					headers: token ? { Authorization: `Bearer ${token}` } : {},
 				})
 			} catch {
 				// Reported by the state change below, not by an alert.
 			}
 
+			clearSessionToken()
 			this.session = null
 		},
 

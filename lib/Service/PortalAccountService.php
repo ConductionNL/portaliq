@@ -146,6 +146,64 @@ class PortalAccountService {
 	 *
 	 * @return array<string, mixed>|null
 	 */
+	/**
+	 * The account a `subjectRef` belongs to, or null.
+	 *
+	 * Used by the `nextcloud` sign-in mode, where the Nextcloud user id IS the
+	 * subjectRef. It looks up rather than creates on purpose: minting an
+	 * account here would make every user on the instance a citizen of every
+	 * portal that enables the mode.
+	 *
+	 * @param string $subjectRef The subject reference to look up.
+	 *
+	 * @return array<string, mixed>|null The account, or null when there is none.
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portal-must-offer-only-the-sign-in-routes-it-declares
+	 */
+	public function findBySubjectRef(string $subjectRef): ?array {
+		if ($subjectRef === '') {
+			return null;
+		}
+
+		$rows = $this->reader->readCollection(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: 'subjectRef',
+			subjectRef: $subjectRef,
+			// No organisation filter: a subjectRef is unique across the
+			// instance, and requiring the caller to know the tenant first
+			// would mean guessing it at the one moment nothing is known yet.
+			organisation: '',
+			limit: 5
+		);
+
+		foreach ($rows as $row) {
+			// The scope filter is trusted for the query, not for the answer: a
+			// reader that ignored `scopeField` would otherwise hand back the
+			// first account on the instance and this method would sign the
+			// visitor in as somebody else.
+			if (($row['subjectRef'] ?? '') === $subjectRef) {
+				return $row;
+			}
+		}
+
+		return null;
+	}//end findBySubjectRef()
+
+
+	/**
+	 * The account for one external identity within one organisation, or null.
+	 *
+	 * Matched on all three of `identityType`, `identityRef` and `organisation`:
+	 * the same identity reference issued by two different providers, or held in
+	 * two tenants, is two different accounts.
+	 *
+	 * @param string $identityType The identity provider type.
+	 * @param string $identityRef The provider's reference for the identity.
+	 * @param string $organisation The tenant.
+	 *
+	 * @return array<string, mixed>|null The account, or null when there is none.
+	 */
 	private function findExisting(string $identityType, string $identityRef, string $organisation): ?array {
 		$rows = $this->reader->readCollection(
 			register: self::REGISTER,

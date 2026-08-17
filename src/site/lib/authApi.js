@@ -47,10 +47,84 @@ export function authBaseFrom(apiBase) {
  * @param {string} authBase The auth edge base.
  * @return {Promise<object|null>} The session subject, or null.
  */
+/**
+ * Where the portal bearer lives in the browser.
+ *
+ * `sessionStorage`, not `localStorage`: a portal session is a visit, not a
+ * standing relationship, and a citizen's session on a shared machine should not
+ * outlive the tab. It still survives a refresh, which `localStorage` is usually
+ * reached for by mistake.
+ */
+const TOKEN_KEY = 'portaliq.session.token'
+
+/**
+ * Adopt a bearer handed back in the URL fragment, and remove it from the URL.
+ *
+ * THE EDGE HAS ALWAYS REDIRECTED WITH `#token=…` AND NOTHING EVER READ IT. Both
+ * the OIDC callback and the Nextcloud sign-in end by sending the browser back
+ * with the bearer in the fragment — the fragment precisely because it is never
+ * sent to a server and never reaches a log. Without this the round-trip
+ * completed, the URL carried a valid token, and the portal still rendered
+ * signed-out: a login that looks like a silent failure and is actually an
+ * un-collected success.
+ *
+ * The fragment is stripped once adopted, so the token does not sit in the
+ * address bar, in `history`, or in the next screenshot someone pastes into a
+ * ticket.
+ *
+ * @return {string} The adopted token, or the stored one, or ''.
+ */
+export function adoptSessionToken() {
+	if (typeof window === 'undefined') {
+		return ''
+	}
+
+	const hash = String(window.location.hash || '')
+	const match = hash.match(/[#&]token=([^&]+)/)
+	if (match) {
+		const token = decodeURIComponent(match[1])
+		try {
+			window.sessionStorage.setItem(TOKEN_KEY, token)
+		} catch {
+			// Private mode, or storage disabled. The session then lasts exactly
+			// this page view, which is a degraded login rather than a broken one.
+		}
+
+		const clean = window.location.pathname + window.location.search
+		window.history.replaceState(null, '', clean)
+		return token
+	}
+
+	try {
+		return window.sessionStorage.getItem(TOKEN_KEY) || ''
+	} catch {
+		return ''
+	}
+}
+
+/**
+ * Forget the stored bearer.
+ *
+ * @return {void}
+ */
+export function clearSessionToken() {
+	try {
+		window.sessionStorage.removeItem(TOKEN_KEY)
+	} catch {
+		// Nothing stored, nothing to forget.
+	}
+}
+
 export async function fetchSession(authBase) {
 	try {
+		const token = adoptSessionToken()
+		const headers = { Accept: 'application/json' }
+		if (token) {
+			headers.Authorization = `Bearer ${token}`
+		}
+
 		const response = await fetch(`${authBase}/session`, {
-			headers: { Accept: 'application/json' },
+			headers,
 			credentials: 'include',
 		})
 		if (!response.ok) {
@@ -92,6 +166,20 @@ export function signInRoutes(site, authBase) {
 		eidas: 'Inloggen met eIDAS',
 	}
 
+	// THE PORTAL SLUG TRAVELS WITH THE LINK, and leaving it off is not a
+	// cosmetic omission. The auth edge falls back to resolving the portal by
+	// HOST, and several portals share one host on a development instance — so a
+	// sign-in started from portal B arrived at the edge looking like portal A
+	// and was refused with `mode_not_offered`. Measured: the button led to a
+	// 404 whose body named a mode the visitor's portal does in fact offer.
+	const slug = (site && site.slug) ? String(site.slug) : ''
+	const scope = slug ? `portal=${encodeURIComponent(slug)}` : ''
+	// Come back to the page the visitor was actually on, not the portal root.
+	const returnTo = (typeof window !== 'undefined' && window.location)
+		? `returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`
+		: ''
+	const query = [scope, returnTo].filter(Boolean).join('&')
+
 	return modes
 		.filter((mode) => mode !== 'public' && Object.hasOwn(labels, mode))
 		.map((mode) => ({
@@ -99,9 +187,9 @@ export function signInRoutes(site, authBase) {
 			label: labels[mode],
 			href:
 				mode === 'nextcloud'
-					? `${authBase}/session/nextcloud`
+					? `${authBase}/session/nextcloud${query ? `?${query}` : ''}`
 					: `${authBase}/session/oidc/start?provider=${encodeURIComponent(
 							mode === 'local' ? 'generic' : mode,
-						)}`,
+						)}${query ? `&${query}` : ''}`,
 		}))
 }
