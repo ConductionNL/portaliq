@@ -297,6 +297,58 @@ class PortalTrafficAggregator {
 
 
 	/**
+	 * Aggregate per UTC day.
+	 *
+	 * A JOURNEY IS ASSIGNED TO THE DAY IT STARTED, whole. Splitting one at
+	 * midnight would turn a single late-evening visit into two sessions with a
+	 * fabricated entrance and a fabricated exit either side of the boundary —
+	 * and on a portal people read in the evening that is not a rounding error,
+	 * it is a nightly spike in the session count that nothing caused.
+	 *
+	 * UTC rather than local time, because the alternative is a figure that
+	 * shifts twice a year and a day that is 23 or 25 hours long.
+	 *
+	 * @param array<int, array<string, mixed>> $events         The stored events.
+	 * @param int                              $timeoutMinutes The portal's idle window.
+	 *
+	 * @return array<string, array<string, mixed>> Aggregate by `YYYY-MM-DD`, oldest first.
+	 *
+	 * @spec openspec/changes/portal-traffic-analytics/tasks.md
+	 */
+	public function aggregateByDay(array $events, int $timeoutMinutes = 30): array {
+		$byDay = [];
+		foreach ($this->journeys(events: $events, timeoutMinutes: $timeoutMinutes) as $journey) {
+			$startedAt = $this->timeOf(event: $journey[0]);
+			if ($startedAt === null) {
+				continue;
+			}
+
+			$byDay[gmdate('Y-m-d', $startedAt)][] = $journey;
+		}
+
+		ksort($byDay);
+
+		$aggregates = [];
+		foreach ($byDay as $day => $journeys) {
+			// The journeys are already grouped and ordered; flattening them back
+			// into events lets `aggregate()` stay the single implementation of
+			// what the figures MEAN. Two implementations would drift, and the
+			// daily one is the half nobody would check.
+			$flat = [];
+			foreach ($journeys as $journey) {
+				foreach ($journey as $event) {
+					$flat[] = $event;
+				}
+			}
+
+			$aggregates[$day] = $this->aggregate(events: $flat, timeoutMinutes: $timeoutMinutes);
+		}
+
+		return $aggregates;
+	}//end aggregateByDay()
+
+
+	/**
 	 * Which stored events are past a portal's retention window.
 	 *
 	 * RETURNS THE IDS RATHER THAN DELETING THEM. Deciding what is expired and

@@ -34,6 +34,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PortalTrafficReporter;
 use OCA\Portaliq\Service\PortalTrafficService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -82,6 +83,7 @@ class TrafficController extends Controller {
 	 * @param PortalResolver       $resolver Resolves the serving portal.
 	 * @param PortalTrafficService $traffic  Validates and stores events.
 	 * @param IAppManager|null     $appManager Locates the built client bundle.
+	 * @param PortalTrafficReporter|null $reporter Reads traffic back for an operator.
 	 */
 	public function __construct(
 		string $appName,
@@ -89,6 +91,7 @@ class TrafficController extends Controller {
 		private readonly PortalResolver $resolver,
 		private readonly PortalTrafficService $traffic,
 		private readonly ?IAppManager $appManager = null,
+		private readonly ?PortalTrafficReporter $reporter = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -234,7 +237,11 @@ class TrafficController extends Controller {
 			return new DataResponse(data: ['error' => 'not_found'], statusCode: Http::STATUS_NOT_FOUND);
 		}
 
-		return new DataResponse(data: $this->traffic->summaryFor(portal: $resolved));
+		if ($this->reporter === null) {
+			return new DataResponse(data: ['measured' => false]);
+		}
+
+		return new DataResponse(data: $this->reporter->summaryFor(portal: $resolved));
 	}//end summary()
 
 

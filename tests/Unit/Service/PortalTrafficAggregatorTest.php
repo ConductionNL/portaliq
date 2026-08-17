@@ -281,6 +281,54 @@ class PortalTrafficAggregatorTest extends TestCase {
 
 
 	/**
+	 * A journey that crosses midnight is counted ONCE, on the day it started.
+	 *
+	 * Splitting at midnight would turn one late-evening visit into two
+	 * sessions with a fabricated entrance and a fabricated exit either side of
+	 * the boundary. On a portal people read in the evening that is not a
+	 * rounding error — it is a nightly spike in the session count that nothing
+	 * caused.
+	 *
+	 * @return void
+	 */
+	public function testAJourneyCrossingMidnightBelongsToTheDayItStarted(): void {
+		// 23:50 and 00:05, ten minutes apart, so it is genuinely one session.
+		$before = $this->view(session: 's1', sequence: 0, page: '/');
+		$before['receivedAt'] = '2026-08-17T23:50:00+00:00';
+		$after = $this->view(session: 's1', sequence: 1, page: '/diensten');
+		$after['receivedAt'] = '2026-08-18T00:05:00+00:00';
+
+		$byDay = $this->aggregator->aggregateByDay(events: [$before, $after]);
+
+		$this->assertSame(['2026-08-17'], array_keys($byDay));
+		$this->assertSame(1, $byDay['2026-08-17']['sessions']);
+		$this->assertSame(2, $byDay['2026-08-17']['pageViews']);
+	}//end testAJourneyCrossingMidnightBelongsToTheDayItStarted()
+
+
+	/**
+	 * Separate days produce separate rows.
+	 *
+	 * The companion to the midnight case — without it, "one day" would be
+	 * satisfied by an implementation that never splits at all.
+	 *
+	 * @return void
+	 */
+	public function testSeparateDaysAreAggregatedSeparately(): void {
+		$monday = $this->view(session: 's1', sequence: 0, page: '/');
+		$monday['receivedAt'] = '2026-08-17T10:00:00+00:00';
+		$tuesday = $this->view(session: 's2', sequence: 0, page: '/');
+		$tuesday['receivedAt'] = '2026-08-18T10:00:00+00:00';
+
+		$byDay = $this->aggregator->aggregateByDay(events: [$tuesday, $monday]);
+
+		$this->assertSame(['2026-08-17', '2026-08-18'], array_keys($byDay));
+		$this->assertSame(1, $byDay['2026-08-17']['sessions']);
+		$this->assertSame(1, $byDay['2026-08-18']['sessions']);
+	}//end testSeparateDaysAreAggregatedSeparately()
+
+
+	/**
 	 * Retention expires old rows and keeps recent ones.
 	 *
 	 * @return void

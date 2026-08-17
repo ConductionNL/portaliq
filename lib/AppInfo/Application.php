@@ -41,12 +41,16 @@ namespace OCA\Portaliq\AppInfo;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectDeletedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
+use OCA\Portaliq\BackgroundJob\TrafficMaintenanceJob;
 use OCA\Portaliq\Listener\CmsCacheInvalidationListener;
 use OCA\Portaliq\Middleware\PortalAuthMiddleware;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
+use OCP\BackgroundJob\IJobList;
+use OCP\IAppConfig;
+use Throwable;
 
 /**
  * Main application class for the Portaliq Nextcloud app.
@@ -114,5 +118,46 @@ class Application extends App implements IBootstrap {
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
 	 */
 	public function boot(IBootContext $context): void {
+		$this->ensureTrafficJob(context: $context);
 	}//end boot()
+
+
+	/**
+	 * Make sure the traffic sweep is actually in the job list.
+	 *
+	 * `appinfo/info.xml` declares it, and that is the correct declarative home
+	 * — but Nextcloud only reads `<background-jobs>` on install and upgrade, so
+	 * an instance already running this app never gets the job until its version
+	 * happens to change. Measured on the rig: the declaration was in place and
+	 * `oc_jobs` held **zero** portaliq rows. A retention sweep that exists only
+	 * on instances that upgraded afterwards is a retention policy that
+	 * silently does not apply.
+	 *
+	 * GUARDED BY AN APP-CONFIG FLAG, so this is one config read per request
+	 * rather than a job-list query. `IJobList::add()` is itself idempotent;
+	 * the flag exists to keep the common path cheap, not for correctness.
+	 *
+	 * Never throws. A failure here must cost the sweep, never the request.
+	 *
+	 * @param IBootContext $context The boot context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-traffic-analytics/tasks.md
+	 */
+	private function ensureTrafficJob(IBootContext $context): void {
+		try {
+			$config = $context->getServerContainer()->get(IAppConfig::class);
+			if ($config->getValueBool(Application::APP_ID, 'traffic_job_registered') === true) {
+				return;
+			}
+
+			$context->getServerContainer()->get(IJobList::class)->add(TrafficMaintenanceJob::class);
+			$config->setValueBool(Application::APP_ID, 'traffic_job_registered', true);
+		} catch (Throwable $e) {
+			// Deliberately silent to the request. The job is re-attempted on
+			// the next boot because the flag was never set.
+			return;
+		}
+	}//end ensureTrafficJob()
 }//end class

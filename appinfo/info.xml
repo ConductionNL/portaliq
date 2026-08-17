@@ -75,6 +75,20 @@
         </install>
     </repair-steps>
 
+    <!--
+        The traffic sweep: summarise each measuring portal's day into a durable
+        aggregate, then delete raw events past that portal's retention window.
+
+        Without it `retentionDays` is a setting that does nothing — the decision
+        existed as a tested pure function with no caller, which is exactly the
+        shape a declared-but-unenforced config takes.
+
+        @spec openspec/changes/portal-traffic-analytics/tasks.md
+    -->
+    <background-jobs>
+        <job>OCA\Portaliq\BackgroundJob\TrafficMaintenanceJob</job>
+    </background-jobs>
+
     <settings>
         <admin>OCA\Portaliq\Settings\AdminSettings</admin>
         <admin-section>OCA\Portaliq\Sections\SettingsSection</admin-section>

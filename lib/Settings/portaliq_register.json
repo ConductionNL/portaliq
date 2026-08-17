@@ -35,6 +35,7 @@
           "portalPage",
           "portalSession",
           "portalSubmission",
+          "portalTrafficAggregate",
           "portalTrafficEvent"
         ]
       }
@@ -516,6 +517,86 @@
           "sessionId",
           "sequence",
           "name"
+        ]
+      },
+      "portalTrafficAggregate": {
+        "type": "object",
+        "slug": "portalTrafficAggregate",
+        "icon": "ChartBar",
+        "version": "0.1.0",
+        "title": "Portal Traffic Aggregate",
+        "description": "One portal's traffic for one day, summarised. THIS IS WHAT SURVIVES RETENTION: raw `portalTrafficEvent` rows are deleted once past the portal's window, and without a durable summary a portal would lose its own history every time the retention job ran — which would make a short, privacy-respecting retention and a usable trend line mutually exclusive. It is derivable entirely from rows that no longer exist, holds no client id and no session id, and is therefore not personal data even in the sense the raw events arguably are.",
+        "authorization": {
+          "read": [
+            "admin"
+          ]
+        },
+        "properties": {
+          "portal": {
+            "title": "Portal",
+            "type": "string",
+            "description": "The portal slug this aggregate belongs to."
+          },
+          "day": {
+            "title": "Day",
+            "type": "string",
+            "description": "The UTC day, as `YYYY-MM-DD`. Together with `portal` this is the identity of the row: re-running the aggregation for a day REPLACES it rather than adding a second, which is what makes the job idempotent."
+          },
+          "sessions": {
+            "title": "Sessions",
+            "type": "integer"
+          },
+          "engagedSessions": {
+            "title": "Engaged sessions",
+            "type": "integer",
+            "description": "Sessions with at least two page views. GA4's other two limbs — ten seconds, or a conversion — are unanswerable from what this collector stores, so only this one is counted and it is named as such rather than presented as the same metric."
+          },
+          "visitors": {
+            "title": "Visitors",
+            "type": "integer",
+            "description": "Distinct client ids. A client id is a browser, not a person: one person on a phone and a laptop is two, and two people sharing a device are one."
+          },
+          "pageViews": {
+            "title": "Page views",
+            "type": "integer"
+          },
+          "views": {
+            "title": "Views per page",
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "entrances": {
+            "title": "Entrances",
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "exits": {
+            "title": "Exits",
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "transitions": {
+            "title": "Transitions",
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "computedAt": {
+            "title": "Computed at",
+            "type": "string",
+            "description": "When this summary was last produced. A stale aggregate and a quiet day look identical without it."
+          }
+        },
+        "required": [
+          "portal",
+          "day"
         ]
       },
       "portalSession": {

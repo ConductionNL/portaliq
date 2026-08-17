@@ -25,7 +25,10 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\PortalTrafficAggregator;
+use OCA\Portaliq\Service\PortalTrafficReporter;
 use OCA\Portaliq\Service\PortalTrafficService;
+use OCA\Portaliq\Service\PortalUnscopedStore;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -77,6 +80,24 @@ class PortalTrafficServiceTest extends TestCase {
 
 		return $writer;
 	}//end recordingWriter()
+
+
+	/**
+	 * A reporter over an empty store.
+	 *
+	 * The store returns nothing, which is what makes the two summary
+	 * assertions below meaningful: they are about the SHAPE the reporter
+	 * produces for a portal with no data, not about the data.
+	 *
+	 * @return PortalTrafficReporter The reporter.
+	 */
+	private function reporter(): PortalTrafficReporter {
+		return new PortalTrafficReporter(
+			$this->recordingWriter(),
+			$this->createMock(PortalUnscopedStore::class),
+			new PortalTrafficAggregator()
+		);
+	}//end reporter()
 
 
 	/**
@@ -490,7 +511,7 @@ class PortalTrafficServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnUnmeasuredPortalReportsNoCountersRatherThanZeroes(): void {
-		$summary = $this->service->summaryFor(portal: ['slug' => 'demo']);
+		$summary = $this->reporter()->summaryFor(portal: ['slug' => 'demo']);
 
 		$this->assertSame(['measured' => false], $summary);
 		$this->assertArrayNotHasKey('sessions', $summary);
@@ -507,7 +528,7 @@ class PortalTrafficServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testAMeasuredPortalWithNoDataReportsZeroesAndIsMarkedMeasured(): void {
-		$summary = $this->service->summaryFor(portal: $this->portal());
+		$summary = $this->reporter()->summaryFor(portal: $this->portal());
 
 		$this->assertTrue($summary['measured']);
 		$this->assertSame(0, $summary['sessions']);

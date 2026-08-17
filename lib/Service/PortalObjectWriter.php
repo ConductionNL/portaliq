@@ -128,22 +128,34 @@ class PortalObjectWriter {
 	 * @param string $register The register slug/id.
 	 * @param string $schema The schema slug.
 	 * @param array<string, mixed> $data The client-supplied fields (already whitelisted + defaults applied).
+	 * @param string $uuid An existing object to REPLACE; empty (the default) creates.
 	 *
 	 * @return array<string, mixed>|null The created object, or null on failure.
 	 *
 	 * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
 	 */
-	public function createAnonymousObject(string $register, string $schema, array $data): ?array {
+	public function createAnonymousObject(string $register, string $schema, array $data, string $uuid = ''): ?array {
 		$objectService = $this->objectService();
 		if ($objectService === null) {
 			return null;
 		}
 
+		$target = null;
+		if ($uuid !== '') {
+			$target = $uuid;
+		}
+
 		try {
+			// A SUPPLIED UUID MAKES THIS AN UPDATE, and that is what keeps the
+			// aggregation job idempotent: re-running a day REPLACES its row
+			// instead of adding a second one that doubles every figure. The
+			// default stays a create, so the anonymous-submission path is
+			// untouched — it must never be able to overwrite an existing row.
 			$saved = $objectService->saveObject(
 				object: $data,
 				register: $register,
 				schema: $schema,
+				uuid: $target,
 				_rbac: false,
 				_multitenancy: false
 			);
@@ -186,51 +198,6 @@ class PortalObjectWriter {
 			return 0;
 		}
 	}//end countObjects()
-
-	/**
-	 * Read rows from a register/schema matching a set of property filters.
-	 *
-	 * A READ ON THE WRITER, for the same reason `countObjects()` is: these are
-	 * the UNSCOPED, operator-facing paths, and they have no subject to scope
-	 * by. `PortalObjectReader` exists to enforce a per-row ownership boundary
-	 * and every method on it takes a subject — putting an unscoped read there
-	 * would place a method with no boundary among methods whose whole purpose
-	 * is the boundary, which is how one gets called by mistake.
-	 *
-	 * Fails closed to an empty list. A traffic summary that 500s because the
-	 * register is unreachable is worse than one that reports nothing yet.
-	 *
-	 * @param string               $register The register slug/id.
-	 * @param string               $schema   The schema slug.
-	 * @param array<string, mixed> $filters  Property filters.
-	 * @param int                  $limit    The most rows to return.
-	 *
-	 * @return array<int, array<string, mixed>> The rows, or [].
-	 *
-	 * @spec openspec/changes/portal-traffic-analytics/tasks.md
-	 */
-	public function readObjects(string $register, string $schema, array $filters = [], int $limit = 5000): array {
-		$objectService = $this->objectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		try {
-			$objectService->setRegister(register: $register);
-			$objectService->setSchema(schema: $schema);
-			$rows = $objectService->findAll(config: ['filters' => $filters, 'limit' => $limit]);
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: OR read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
-			return [];
-		}
-
-		$normalised = [];
-		foreach ($rows as $row) {
-			$normalised[] = $this->normalise(row: $row);
-		}
-
-		return $normalised;
-	}//end readObjects()
 
 	/**
 	 * Update an object owned by the subject (portal-scoped-crud, ADR-062
