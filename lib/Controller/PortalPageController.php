@@ -383,8 +383,11 @@ class PortalPageController extends Controller {
 			return '';
 		}
 
-		return (string)$this->themeResolver->stylesheetFor(
-			theme: (string)($portal['theme'] ?? '')
+		// The CHAIN, not one sheet: a set may extend another, and the parent
+		// has to load first for the child to be a delta rather than a copy.
+		return implode(
+			',',
+			$this->themeResolver->stylesheetChainFor(theme: (string)($portal['theme'] ?? ''))
 		);
 	}//end siteThemeStylesheet()
 

@@ -167,7 +167,7 @@ class PortalPageControllerTest extends TestCase {
 		$controller = $this->controller(
 			orgSlug: '',
 			portal: ['theme' => 'vng'],
-			themeStylesheet: 'themes/vng',
+			themeChain: ['themes/vng'],
 			nldsStylesheet: 'themes/vng-tokens'
 		);
 
@@ -177,6 +177,31 @@ class PortalPageControllerTest extends TestCase {
 		$this->assertSame('themes/vng-tokens', $params['nldsStylesheet']);
 
 	}//end testSiteEmitsBothStylesheetsForAThemedPortal()
+
+
+	/**
+	 * An EXTENDING theme emits its whole chain, PARENT FIRST.
+	 *
+	 * A set that extends another ships only its delta, so the order is the
+	 * behaviour: parent first and the child overrides it; child first and the
+	 * parent silently wins every shared declaration. That is invisible in a
+	 * unit test asserting only membership, so this pins the string.
+	 *
+	 * Frankendesk extends La Suite in the real catalogue, which is why the
+	 * two-element case is worth a test of its own rather than a parameter.
+	 */
+	public function testSiteEmitsTheExtendsChainParentFirst(): void {
+		$controller = $this->controller(
+			orgSlug: '',
+			portal: ['theme' => 'frankendesk'],
+			themeChain: ['themes/lasuite', 'themes/frankendesk']
+		);
+
+		$params = $controller->site()->getParams();
+
+		$this->assertSame('themes/lasuite,themes/frankendesk', $params['themeStylesheet']);
+
+	}//end testSiteEmitsTheExtendsChainParentFirst()
 
 	/**
 	 * A THROWING portal resolver yields an UNSTYLED page, not somebody else's brand.
@@ -222,7 +247,7 @@ class PortalPageControllerTest extends TestCase {
 	 * @param string      $orgSlug             The `org` request param.
 	 * @param array       $resolved            Overrides for the resolved org config.
 	 * @param array|null  $portal              The portal the portal resolver returns.
-	 * @param string|null $themeStylesheet     What `stylesheetFor()` returns.
+	 * @param array       $themeChain          What `stylesheetChainFor()` returns.
 	 * @param string|null $nldsStylesheet      What `nldsStylesheetFor()` returns.
 	 * @param bool        $portalResolverThrows Whether the portal resolver throws.
 	 *
@@ -232,7 +257,7 @@ class PortalPageControllerTest extends TestCase {
 		string $orgSlug,
 		array $resolved = [],
 		?array $portal = null,
-		?string $themeStylesheet = null,
+		array $themeChain = [],
 		?string $nldsStylesheet = null,
 		bool $portalResolverThrows = false
 	): PortalPageController {
@@ -279,8 +304,12 @@ class PortalPageControllerTest extends TestCase {
 			$portalResolver->method('resolve')->willReturn($portal);
 		}
 
+		// `stylesheetChainFor`, NOT `stylesheetFor`: the controller stopped asking
+		// for one sheet when token sets gained `extends`. Mocking the old method
+		// still passed type-checking and still returned a value — it was simply
+		// never called, so the assertion saw '' and the theme silently vanished.
 		$themeResolver = $this->createMock(PortalThemeResolver::class);
-		$themeResolver->method('stylesheetFor')->willReturn($themeStylesheet);
+		$themeResolver->method('stylesheetChainFor')->willReturn($themeChain);
 		$themeResolver->method('nldsStylesheetFor')->willReturn($nldsStylesheet);
 
 		return new PortalPageController(

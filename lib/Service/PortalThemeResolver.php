@@ -53,6 +53,14 @@ class PortalThemeResolver {
 	 */
 	public const THEME_APP = 'nldesign';
 
+	/**
+	 * How many `extends` hops are followed before giving up.
+	 *
+	 * The bound is also the answer to a cycle: a chain this long is a
+	 * catalogue mistake, not a theme.
+	 */
+	private const MAX_EXTENDS_DEPTH = 4;
+
 
 	/**
 	 * Constructor.
@@ -114,40 +122,128 @@ class PortalThemeResolver {
 
 
 	/**
-	 * Whether the theme app's catalogue offers this set.
+	 * The chain of stylesheets for a theme: every ancestor first, then the
+	 * theme itself.
 	 *
-	 * Reads `token-sets.json` from disk rather than calling the app's
+	 * A SET MAY EXTEND ANOTHER, and several do. `frankendesk` says so in its own
+	 * header — "same identity values as lasuite, distinguished only by the
+	 * logo" — which described a COPY: 21 declarations duplicated into 22, kept
+	 * in step by hand and drifting the moment either side is edited. Declaring
+	 * `extends` in the catalogue turns the copy into a delta: the parent loads
+	 * first, the child second, and the child contains only what it changes.
+	 *
+	 * Depth-bounded and cycle-guarded, because the catalogue is data: two sets
+	 * naming each other must cost a bounded number of lookups, not the request.
+	 *
+	 * @param string $theme The portal's theme reference.
+	 *
+	 * @return string[] Stylesheet paths relative to the theme app's `css/`,
+	 *                  ancestors first. Empty when the theme does not resolve.
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
+	 */
+	public function stylesheetChainFor(string $theme): array {
+		$own = $this->stylesheetFor(theme: $theme);
+		if ($own === null) {
+			return [];
+		}
+
+		$chain = [$own];
+		$seen = [$theme => true];
+		$current = $theme;
+
+		for ($hop = 0; $hop < self::MAX_EXTENDS_DEPTH; $hop++) {
+			$parent = $this->parentOf(theme: $current);
+			if ($parent === null || isset($seen[$parent]) === true) {
+				break;
+			}
+
+			$parentSheet = $this->stylesheetFor(theme: $parent);
+			if ($parentSheet === null) {
+				// A named parent that does not resolve is NOT fatal: the child
+				// still styles the page, just without the values it expected to
+				// inherit. Failing the whole theme over a broken reference
+				// would take a working portal down for a catalogue typo.
+				break;
+			}
+
+			array_unshift($chain, $parentSheet);
+			$seen[$parent] = true;
+			$current = $parent;
+		}
+
+		return $chain;
+	}//end stylesheetChainFor()
+
+
+	/**
+	 * The set a theme extends, or null.
+	 *
+	 * @param string $theme The theme reference.
+	 *
+	 * @return string|null The parent set id, or null.
+	 */
+	private function parentOf(string $theme): ?string {
+		$entry = $this->catalogueEntry(theme: $theme);
+		if ($entry === null) {
+			return null;
+		}
+
+		$parent = ($entry['extends'] ?? null);
+		if (is_string($parent) === false || $parent === '') {
+			return null;
+		}
+
+		// A parent name reaches the filesystem through `stylesheetFor()`, so it
+		// gets the same validation as a portal-supplied theme. The catalogue is
+		// shipped rather than user input today, but it is admin-writable and the
+		// check costs nothing.
+		if ($this->isSafeThemeName(theme: $parent) === false) {
+			return null;
+		}
+
+		return $parent;
+	}//end parentOf()
+
+
+	/**
+	 * The catalogue entry for a set, or null when it lists no such set.
+	 *
+	 * Extracted because `catalogueHas()` and `parentOf()` ask two questions of
+	 * the same file and had grown two copies of the read — including two copies
+	 * of the list-or-map tolerance below, which is exactly the kind of thing
+	 * that gets fixed in one place and not the other.
+	 *
+	 * Reads `token-sets.json` from disk rather than calling the theme app's
 	 * `/api/token-sets` endpoint. That endpoint is `#[NoAdminRequired]` and
 	 * DELIBERATELY not `#[PublicPage]` — its own docblock records that exposing
 	 * admin-uploaded custom sets to anonymous traffic would be an information-
 	 * disclosure surface with no consumer need. The site renderer serves
-	 * anonymous visitors, so it must not become that consumer; the admin UI,
-	 * which is authenticated, is the endpoint's intended caller and uses it for
-	 * the theme picker.
+	 * anonymous visitors, so it must not become that consumer.
 	 *
-	 * An unreadable or malformed catalogue answers NO. A portal then renders
-	 * unstyled, which is the same fail-closed posture as an unknown theme.
+	 * An unreadable or malformed catalogue answers null, so every caller
+	 * fails closed.
 	 *
 	 * @param string $theme The theme reference.
 	 *
-	 * @return bool Whether the catalogue lists it.
+	 * @return array|null The entry, or null.
 	 *
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
 	 */
-	private function catalogueHas(string $theme): bool {
+	private function catalogueEntry(string $theme): ?array {
 		$root = $this->themeAppPath();
 		if ($root === null) {
-			return false;
+			return null;
 		}
 
 		$path = $root . '/token-sets.json';
 		if (is_file($path) === false) {
-			return false;
+			return null;
 		}
 
 		$decoded = json_decode((string)file_get_contents($path), true);
 		if (is_array($decoded) === false) {
-			return false;
+			return null;
 		}
 
 		// The file ships as a LIST of set objects; tolerate a keyed map too,
@@ -159,11 +255,29 @@ class PortalThemeResolver {
 
 		foreach ($entries as $entry) {
 			if (is_array($entry) === true && ($entry['id'] ?? null) === $theme) {
-				return true;
+				return $entry;
 			}
 		}
 
-		return false;
+		return null;
+	}//end catalogueEntry()
+
+
+	/**
+	 * Whether the theme app's catalogue offers this set.
+	 *
+	 * An unreadable or malformed catalogue answers NO. A portal then renders
+	 * unstyled, which is the same fail-closed posture as an unknown theme —
+	 * see `catalogueEntry()` for why the file is read rather than the API.
+	 *
+	 * @param string $theme The theme reference.
+	 *
+	 * @return bool Whether the catalogue lists it.
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
+	 */
+	private function catalogueHas(string $theme): bool {
+		return $this->catalogueEntry(theme: $theme) !== null;
 	}//end catalogueHas()
 
 

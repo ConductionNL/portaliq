@@ -57,9 +57,22 @@
 					<div>
 						<div class="con-logo-container header" />
 						<span class="sr-only">Logo</span>
-						<h1 class="logo-text" data-testid="site-title">
+						<!--
+							A SPAN, NOT AN `h1`.
+
+							The site name in the header used to be an `h1`, which
+							gave the home page two competing level-one headings —
+							the portal's name and the page's own hero title. A
+							screen-reader user asking for the page heading got the
+							site name, which is the one thing already announced by
+							the document title.
+
+							The page's content owns the `h1`. Addressed by
+							`data-testid` in the specs, so the tag can change.
+						-->
+						<span class="logo-text" data-testid="site-title">
 							{{ site.title || '…' }}
-						</h1>
+						</span>
 					</div>
 				</div>
 
@@ -220,10 +233,21 @@
 						the duplication is a property of what the page actually
 						renders, not of what an author remembered to tick.
 					-->
+					<!--
+						AN `h1`, NOT AN `h2` — this is the page's own heading.
+
+						It was an `h2` because the site name in the header was the
+						`h1`, which put the portal's name above the page's subject
+						in the outline of every page. With the header title
+						demoted to a span, a page whose body declares no heading
+						of its own had NO level-one heading at all: measured 0 on
+						three of four pages, which is a worse outline than the two
+						competing ones it replaced.
+					-->
 					<div v-if="!bodyProvidesHeading" class="container">
-						<h2 class="utrecht-heading-2" data-testid="page-title">
+						<h1 class="utrecht-heading-1" data-testid="page-title">
 							{{ page.title }}
-						</h2>
+						</h1>
 					</div>
 
 					<WidgetGrid

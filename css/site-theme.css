@@ -21,11 +21,11 @@
  * THE VALUE IS A TOKEN, NOT A COLOUR. A theme whose hero band is light must be
  * able to say so; white is only the default because every band in the shipped
  * sets is dark.
+ *
+ * `.ac-hero__title`'s own colour is declared with its geometry further down —
+ * one rule per selector, so nothing about this heading can be set in two places
+ * that disagree.
  */
-
-.ac-hero__title {
-	color: var(--nldesign-hero-title-color, #fff);
-}
 
 .ac-hero__description,
 .ac-hero__subtitle {
@@ -167,6 +167,81 @@ body,
 .ac-section--hero {
 	border-end-start-radius: var(--nldesign-hero-radius, 0);
 	border-end-end-radius: var(--nldesign-hero-radius, 0);
+	padding-block-start: var(--nldesign-hero-padding-block-start, 0);
+	padding-block-end: var(--nldesign-hero-padding-block-end, 0);
+}
+
+.ac-hero__title {
+	/* See the top of this file for why the band's own heading names a colour at
+	   all — it paints its background, so it must name its foreground. */
+	color: var(--nldesign-hero-title-color, #fff);
+	font-size: var(--nldesign-hero-title-size, inherit);
+	font-weight: var(--nldesign-hero-title-weight, inherit);
+	line-height: var(--nldesign-hero-title-line-height, inherit);
+	font-family: var(--nldesign-hero-title-font, inherit);
+	margin-block-end: var(--nldesign-hero-title-gap, 0);
+}
+
+/*
+ * THE HERO'S OWN INTERNAL RHYTHM.
+ *
+ * With the heading painted (a portal whose hero title is the page's subject
+ * rather than the search prompt), a 48px headline, its subtitle and the search
+ * card had NO space between them at all — the three sat as one block of text.
+ * Nothing above sets these, because until the heading was painted there was
+ * nothing to space.
+ */
+.pq-site .ac-hero__description,
+.pq-site .ac-hero__subtitle {
+	font-size: var(--nldesign-hero-body-size, inherit);
+	line-height: var(--nldesign-hero-body-line-height, inherit);
+	font-weight: var(--nldesign-hero-body-weight, inherit);
+	margin-block-end: var(--nldesign-hero-body-gap, 0);
+	max-inline-size: var(--nldesign-hero-body-measure, none);
+}
+
+/*
+ * THE RHYTHM BETWEEN A BAND AND THE CONTENT THAT FOLLOWS IT.
+ *
+ * A band paints edge to edge and the run after it opens its own container, so
+ * nothing in between carried any spacing: measured 0px between the hero's
+ * bottom edge and the first card on the La Franken landing page, which reads as
+ * the cards being glued to the band rather than as a section of their own.
+ *
+ * Expressed on the CONTAINER that follows a band rather than on the band's
+ * own margin, because a band may also be the last thing on a page — a trailing
+ * margin there would push the footer down for no reason.
+ *
+ * Zero by default, so a theme that names no rhythm looks exactly as it did.
+ */
+.pq-site .ac-hero + .container,
+.pq-site .ac-section--hero + .container {
+	padding-block-start: var(--nldesign-section-gap, 0);
+}
+
+/* Space between two stacked runs, for the same reason. */
+.pq-site .container + .container {
+	padding-block-start: var(--nldesign-section-gap, 0);
+}
+
+/*
+ * A PAGE THAT DOES NOT OPEN WITH A BAND STILL NEEDS AIR ABOVE ITS TITLE.
+ *
+ * The rules above space content that FOLLOWS something. On a page whose first
+ * block is ordinary content — every La Franken page except the landing one —
+ * there is nothing above it but the header, and the title sat against the
+ * navigation. A band brings its own padding, so this deliberately does not
+ * apply when one opens the page.
+ */
+.pq-site .utrecht-article > .container:first-child,
+.pq-site [data-testid='widget-grid']:first-child > .container:first-child {
+	padding-block-start: var(--nldesign-page-gap, var(--nldesign-section-gap, 0));
+}
+
+/* And air BELOW the last block, for the same reason: the final line of content
+   sat directly on the footer's top edge. */
+.pq-site .pq-site__main {
+	padding-block-end: var(--nldesign-page-gap, var(--nldesign-section-gap, 0));
 }
 
 /*
@@ -203,6 +278,7 @@ body,
  * them keeps today's flat outline.
  */
 .pq-grid .ac-card {
+	padding: var(--nldesign-card-padding, 0);
 	background-color: var(--nldesign-card-background, transparent);
 	border: var(--nldesign-card-border-width, 0) solid
 		var(--nldesign-card-border-color, transparent);
@@ -210,8 +286,13 @@ body,
 	block-size: 100%;
 }
 
+/*
+ * The inset sits on the CARD, not on its content wrapper — that is where the
+ * reference puts it, and it is what makes the border-to-text distance equal on
+ * all four sides regardless of which children a block renders.
+ */
 .pq-grid .ac-card .ac-card__content {
-	padding: var(--nldesign-card-padding, 0);
+	padding: 0;
 	display: flex;
 	flex-direction: column;
 	gap: var(--nldesign-card-gap, 0);
@@ -222,10 +303,54 @@ body,
 .pq-grid .ac-card .utrecht-heading-4 {
 	color: var(--nldesign-card-heading-color, inherit);
 	font-weight: var(--nldesign-card-heading-weight, inherit);
+	font-size: var(--nldesign-card-heading-size, inherit);
+	font-family: var(--nldesign-card-heading-font, inherit);
 }
 
 .pq-grid .ac-card .utrecht-paragraph {
 	color: var(--nldesign-card-body-color, inherit);
+	font-size: var(--nldesign-card-body-size, inherit);
+	line-height: var(--nldesign-card-body-line-height, inherit);
+	font-family: var(--nldesign-card-body-font, inherit);
+}
+
+/*
+ * THE CONTRIBUTED-SURFACE INDEX.
+ *
+ * It is an INDEX, not a menu, and it is styled to look like one. Each entry
+ * names a collection or an action a leaf app publishes here; contributed pages
+ * have no site route yet, so nothing follows from clicking one. Giving the
+ * entries link colour and an underline would therefore be a false affordance —
+ * every visitor would press one and nothing would happen. They stay plain text
+ * on purpose, with the spacing and weight of a list somebody meant to write.
+ *
+ * When contributed pages become routable, the entries become links and this
+ * comment is the thing to delete.
+ */
+.pq-site .pq-contributions {
+	padding-block-start: var(--nldesign-section-gap, 0);
+}
+
+.pq-site .pq-contributions__app {
+	padding-block-start: var(--nldesign-list-gap, 0);
+}
+
+.pq-site .pq-contributions__entries {
+	margin-block: 0;
+	padding-inline-start: 0;
+	list-style: none;
+	display: flex;
+	flex-direction: column;
+	gap: var(--nldesign-list-gap, 0);
+}
+
+.pq-site .pq-contributions__entry {
+	color: var(--nldesign-card-body-color, inherit);
+	font-size: var(--nldesign-card-body-size, inherit);
+	line-height: var(--nldesign-card-body-line-height, inherit);
+	border-block-start: var(--nldesign-list-rule-width, 0) solid
+		var(--nldesign-list-rule-color, transparent);
+	padding-block-start: var(--nldesign-list-gap, 0);
 }
 
 /*
@@ -278,6 +403,35 @@ body,
 	font-size: var(--nldesign-footer-link-size, inherit);
 	color: var(--nldesign-footer-link-color, inherit);
 	text-decoration: var(--nldesign-footer-link-decoration, none);
+}
+
+/*
+ * The legal strip's own background.
+ *
+ * The vendored CSS paints this band from the BRAND PRIMARY, which left footer
+ * links sitting on two different backgrounds — measured 4.28:1 on the navy band
+ * and 2.18:1 on the primary one, so no single link colour could satisfy both.
+ * Naming it lets a theme give the footer one surface.
+ *
+ * THE DEFAULT IS THE FOOTER'S OWN BACKGROUND, NOT `transparent`.
+ *
+ * `transparent` was the first default, on the reasoning that it changes
+ * nothing — and that was wrong: this rule OVERRIDES a background the vendored
+ * CSS actually paints, so "transparent" removed the band. Frankendesk's legal
+ * text is `rgba(255,255,255,0.55)`, chosen against a dark footer; with the band
+ * gone it landed on the white page at 1.0:1 and the municipality's own name
+ * disappeared. A default that silently unpaints something is not a neutral
+ * default.
+ *
+ * Falling back to the footer surface deliberately drops the vendored two-tone
+ * footer for themed portals. That is the intent: the second tone was a brand
+ * colour with no text colour defined against it.
+ */
+.pq-site .ac-footer section:last-of-type:not(:only-of-type) {
+	background-color: var(
+		--nldesign-footer-legal-background,
+		var(--nldesign-color-footer-background, transparent)
+	);
 }
 
 .pq-site .ac-footer__sub-footer,

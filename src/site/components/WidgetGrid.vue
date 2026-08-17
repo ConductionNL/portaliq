@@ -40,7 +40,7 @@
 						class="pq-grid__cell"
 						:data-testid="`widget-${widget.id || widget.widgetKey}`"
 						:data-widget-key="widget.widgetKey"
-						:style="cellStyle(widget)">
+						:style="cellStyle(widget, run.rowOffset)">
 						<component
 							:is="componentFor(widget.widgetKey)"
 							v-if="componentFor(widget.widgetKey)"
@@ -67,6 +67,7 @@
 import { siteBlockIsBand, siteBlockRegistry } from '@conduction/nextcloud-vue/public'
 import ContributionsBlock from './ContributionsBlock.vue'
 import MarkdownBlock from './MarkdownBlock.vue'
+import { cellStyle, runsFor } from '../lib/gridPlacement.js'
 
 /**
  * The widget keys this renderer will mount at a PUBLIC origin, mapped to the
@@ -156,27 +157,21 @@ export default {
 		 * Order is preserved exactly as authored — a band does not float to the
 		 * top, it splits the page where the author put it.
 		 *
-		 * @return {Array} Alternating `{band: true, widget}` / `{band: false, widgets}` entries.
+		 * EACH RUN CARRIES A `rowOffset`, and without it splitting the list
+		 * leaves HOLES. `gridY` is absolute over the whole page, so a run whose
+		 * first widget sits at row 4 opened its own grid with four empty rows
+		 * above it — rows reserved for a band that is not in this grid at all.
+		 * Measured on the La Franken landing page as a 320px void between the
+		 * hero and the first line of text. The offset re-bases every run on its
+		 * own first row; relative placement within the run is untouched, so the
+		 * 12-column geometry an author laid out still holds.
+		 *
+		 * @return {Array} Alternating `{band: true, widget}` / `{band: false, widgets, rowOffset}` entries.
 		 *
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
 		 */
 		runs() {
-			const out = []
-			for (const widget of this.widgets) {
-				if (this.isBand(widget.widgetKey)) {
-					out.push({ band: true, widget })
-					continue
-				}
-
-				const last = out[out.length - 1]
-				if (last && last.band === false) {
-					last.widgets.push(widget)
-				} else {
-					out.push({ band: false, widgets: [widget] })
-				}
-			}
-
-			return out
+			return runsFor(this.widgets, (key) => this.isBand(key))
 		},
 	},
 
@@ -270,33 +265,17 @@ export default {
 		/**
 		 * Place one widget on the 12-column grid.
 		 *
-		 * The geometry is the manifest's, not a portal variant: 12 columns,
-		 * `gridX`/`gridY` zero-based, `gridWidth`/`gridHeight` spans. A page
-		 * authored in OpenBuild's Page Designer therefore lands in the same
-		 * cells here.
+		 * Delegates to `lib/gridPlacement.js` — see there for the clamping and
+		 * the row re-basing, and `tests/site-grid.spec.mjs` for what pins them.
 		 *
-		 * `gridX + gridWidth > 12` is clamped rather than thrown on. The
-		 * manifest validator already rejects it at author time with the
-		 * canonical message; at render time on a public page, clamping shows
-		 * the content and a throw shows nothing.
-		 *
-		 * @param {object} widget The placement.
+		 * @param {object} widget    The placement.
+		 * @param {number} rowOffset The run's first authored row.
 		 * @return {object} The style bindings.
 		 *
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
 		 */
-		cellStyle(widget) {
-			const x = Math.max(0, Math.min(11, Number(widget.gridX) || 0))
-			const width = Math.max(
-				1,
-				Math.min(12 - x, Number(widget.gridWidth) || 12),
-			)
-			const height = Math.max(1, Number(widget.gridHeight) || 1)
-
-			return {
-				gridColumn: `${x + 1} / span ${width}`,
-				gridRow: `${(Number(widget.gridY) || 0) + 1} / span ${height}`,
-			}
+		cellStyle(widget, rowOffset = 0) {
+			return cellStyle(widget, rowOffset)
 		},
 	},
 }

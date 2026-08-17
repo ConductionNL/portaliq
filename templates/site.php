@@ -123,7 +123,16 @@ if ($themeStylesheet !== '') {
     // final computed value, so the bridge referencing tokens the set declares
     // afterwards is correct.
     $tokenStylesheets[] = $asset(PortalThemeResolver::THEME_APP, 'css/public-bridge.css');
-    $tokenStylesheets[] = $asset(PortalThemeResolver::THEME_APP, 'css/' . $themeStylesheet . '.css');
+
+    // The theme CHAIN — ancestors first. A set that declares `extends` in the
+    // catalogue is a DELTA of its parent, so `frankendesk` ships the logo and
+    // whatever Conduction deliberately changes instead of a hand-maintained
+    // copy of `lasuite` that drifts the moment either side is edited.
+    foreach (explode(',', $themeStylesheet) as $sheet) {
+        if ($sheet !== '') {
+            $tokenStylesheets[] = $asset(PortalThemeResolver::THEME_APP, 'css/' . $sheet . '.css');
+        }
+    }
 }
 
 if ($nldsStylesheet !== '') {
@@ -185,6 +194,22 @@ $stylesheets[] = $asset($appId, 'css/nlds/nlds-fonts.css');
 // must not make its visitors' browsers announce themselves to a third party to
 // read a page.
 $stylesheets[] = $asset(PortalThemeResolver::THEME_APP, 'css/fonts-conduction.css');
+
+// INTER, FROM ITS ONE CANONICAL DECLARATION.
+//
+// The La Suite layer already self-hosts Inter (@fontsource/inter v5.3.0, OFL,
+// ten faces, licence alongside), and it is the family the `lasuite` and
+// `frankendesk` sets name. `fonts-conduction.css` briefly declared a competing
+// variable face under the same family name; being linked later it WON the
+// cascade, and because that file carried almost no glyphs the citizen portal
+// was drawn in DejaVu Sans while every instrument short of Chromium's
+// `CSS.getPlatformFontsForNode` reported Inter loaded and in use.
+//
+// Linked for every portal rather than only the La Suite chain: a browser
+// downloads a face only when something actually uses the family, so a portal
+// on another theme pays nothing, and one fewer conditional is one fewer way
+// for a theme to lose its typeface.
+$stylesheets[] = $asset(PortalThemeResolver::THEME_APP, 'css/systems/lasuite/fonts.css');
 
 // THE LICENSED FACES ARE LINKED ONLY WHEN THEY EXIST, AND THE CHECK IS THE FIX.
 //
