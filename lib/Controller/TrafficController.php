@@ -40,7 +40,10 @@ use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
+use OCP\AppFramework\Http\DataDisplayResponse;
 use OCP\AppFramework\Http\DataResponse;
+use OCP\AppFramework\Http\Response;
+use OCP\App\IAppManager;
 use OCP\IRequest;
 
 /**
@@ -77,12 +80,14 @@ class TrafficController extends Controller {
 	 * @param IRequest             $request  The request.
 	 * @param PortalResolver       $resolver Resolves the serving portal.
 	 * @param PortalTrafficService $traffic  Validates and stores events.
+	 * @param IAppManager|null     $appManager Locates the built client bundle.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
 		private readonly PortalResolver $resolver,
 		private readonly PortalTrafficService $traffic,
+		private readonly ?IAppManager $appManager = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -113,7 +118,7 @@ class TrafficController extends Controller {
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 120, period: 60)]
 	public function collect(?array $events = null, string $portal = ''): DataResponse {
-		$empty = new DataResponse([], Http::STATUS_NO_CONTENT);
+		$empty = $this->cors(response: new DataResponse(data: [], statusCode: Http::STATUS_NO_CONTENT));
 
 		$resolved = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
 		if ($resolved === null) {
@@ -137,6 +142,95 @@ class TrafficController extends Controller {
 
 		return $empty;
 	}//end collect()
+
+
+	/**
+	 * Answer the browser's preflight for a cross-origin beacon.
+	 *
+	 * WITHOUT THIS, A STATICALLY BUILT PORTAL CANNOT REPORT ANYTHING. A beacon
+	 * carrying `application/json` is not a simple request, so the browser asks
+	 * first; an unanswered preflight fails the send silently, on the visitor's
+	 * side, where nobody operating the portal can see it. Measured before it
+	 * was written: the collector answered 204 to `curl` and had no
+	 * `Access-Control-Allow-Origin` at all.
+	 *
+	 * @return DataResponse An empty 204 carrying the CORS headers.
+	 *
+	 * @spec openspec/changes/portal-traffic-analytics/tasks.md
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	public function preflight(): DataResponse {
+		return $this->cors(response: new DataResponse(data: [], statusCode: Http::STATUS_NO_CONTENT));
+	}//end preflight()
+
+
+	/**
+	 * Serve the traffic client to a portal this app does not render.
+	 *
+	 * A ROUTE, NOT A FILE PATH, and the difference is not cosmetic. The obvious
+	 * URL — `/index.php/apps/portaliq/js/portaliq-traffic.js` — answers **401**
+	 * to an anonymous caller on this instance, which is every caller this
+	 * script exists for; only the deployment-dependent `/custom_apps/…` path
+	 * serves it, and that path is not the same on every instance. A declared
+	 * public route is stable and framework-controlled, so the URL a built site
+	 * bakes in keeps working.
+	 *
+	 * Cached for an hour rather than immutably: the client is the one file a
+	 * portal cannot rebuild its visitors' copies of, and a privacy fix has to
+	 * reach them without anyone rebuilding a static site.
+	 *
+	 * @return Response The script, or 404 when the bundle was never built.
+	 *
+	 * @spec openspec/changes/portal-traffic-analytics/tasks.md
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	public function client(): Response {
+		$path = '';
+		if ($this->appManager !== null) {
+			$path = ($this->appManager->getAppPath('portaliq') . '/js/portaliq-traffic.js');
+		}
+
+		if ($path === '' || file_exists($path) === false) {
+			return new DataResponse(data: [], statusCode: Http::STATUS_NOT_FOUND);
+		}
+
+		$response = new DataDisplayResponse(
+			(string)file_get_contents($path),
+			Http::STATUS_OK,
+			['Content-Type' => 'application/javascript; charset=utf-8']
+		);
+		$response->addHeader('Cache-Control', 'public, max-age=3600, must-revalidate');
+
+		return $this->cors(response: $response);
+	}//end client()
+
+
+	/**
+	 * Allow any origin to reach this endpoint, without credentials.
+	 *
+	 * `*` IS CORRECT HERE AND CREDENTIALS ARE NOT ALLOWED. The collector is
+	 * anonymous, sets no cookie and returns no body — there is nothing an
+	 * origin could read that it could not read by making the request itself.
+	 * Naming allowed origins instead would mean maintaining a list of every
+	 * host a portal is published on, and a portal that quietly stops being
+	 * measured after a domain change is worse than no list.
+	 *
+	 * @param T $response The response to decorate.
+	 *
+	 * @return T The same response, so a caller keeps the type it passed in.
+	 *
+	 * @template T of Response
+	 */
+	private function cors(Response $response): Response {
+		$response->addHeader('Access-Control-Allow-Origin', '*');
+		$response->addHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+		$response->addHeader('Access-Control-Allow-Headers', 'Content-Type');
+		$response->addHeader('Access-Control-Max-Age', '3600');
+
+		return $response;
+	}//end cors()
 
 
 }//end class

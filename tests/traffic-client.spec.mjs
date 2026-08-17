@@ -84,7 +84,7 @@ function build(config, extras = {}) {
 
 	const win = {
 		document: { title: 'Meldingen', referrer: 'https://example.gov/' },
-		location: { href: 'https://portal.example/diensten/melden' },
+		location: { href: 'https://portal.example/diensten/melden', origin: 'https://portal.example' },
 		Blob: undefined,
 		...(extras.win || {}),
 	}
@@ -289,6 +289,56 @@ console.log('delivery')
 	assertEqual('a refused beacon falls back to fetch', sent.length, 1)
 	assertEqual('with keepalive, so an unloading page still delivers', sent[0].init.keepalive, true)
 	assertEqual('as JSON', sent[0].init.headers['Content-Type'], 'application/json')
+}
+
+{
+	// A CROSS-ORIGIN COLLECTOR MUST NOT BE SENT A BEACON, and this pins a
+	// defect a browser found that no unit test would have: `sendBeacon` always
+	// sends with credentials mode `include`, so the browser refuses a response
+	// carrying `Access-Control-Allow-Origin: *`. A statically built portal
+	// reporting to its portal's collector is exactly that case, and it failed
+	// with "must not be the wildcard '*' when the request's credentials mode
+	// is 'include'". The transport switches; the server stays strict.
+	const beacons = []
+	const sent = []
+	const client = createTrafficClient({
+		config: ENABLED,
+		endpoint: 'https://portal.example/index.php/apps/portaliq/api/traffic',
+		portal: 'demo',
+		storage: recordingStorage(),
+		navigator: {
+			sendBeacon: (url, payload) => {
+				beacons.push(String(payload))
+				return true
+			},
+		},
+		// The page is on the STATIC host, the collector is on the portal.
+		window: { document: {}, location: { href: 'https://static.example/x', origin: 'https://static.example' } },
+		now: () => 1,
+		fetchImpl: (url, init) => {
+			sent.push(init)
+			return Promise.resolve({ ok: true })
+		},
+	})
+
+	client.pageView()
+	client.flush()
+
+	assertEqual('no beacon is sent cross-origin', beacons.length, 0)
+	assertEqual('a keepalive fetch is used instead', sent.length, 1)
+	assertEqual('carrying no credentials at all', sent[0].credentials, 'omit')
+	assertEqual('and still surviving unload', sent[0].keepalive, true)
+}
+
+{
+	// SAME-ORIGIN STILL PREFERS THE BEACON — it is the only transport a
+	// browser guarantees during unload, and the credentials problem does not
+	// arise. Asserted so the cross-origin fix above cannot quietly disable it
+	// everywhere.
+	const { client, beacons } = build(ENABLED)
+	client.pageView()
+	client.flush()
+	assertEqual('a same-origin collector gets a beacon', beacons.length, 1)
 }
 
 {

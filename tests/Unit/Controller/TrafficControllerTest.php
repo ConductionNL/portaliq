@@ -210,6 +210,51 @@ class TrafficControllerTest extends TestCase {
 
 
 	/**
+	 * The collector is readable cross-origin, without credentials.
+	 *
+	 * A STATICALLY BUILT PORTAL IS ON ANOTHER HOST — that is the entire point
+	 * of the Docusaurus plugin — so without these headers its visitors report
+	 * nothing and the failure happens in their browser, where nobody operating
+	 * the portal can see it.
+	 *
+	 * `*` with no `Allow-Credentials` is the deliberate pairing. The
+	 * alternative, echoing the caller's origin and allowing credentials, would
+	 * let any site send this instance's cookies to an endpoint built to have
+	 * none.
+	 *
+	 * @return void
+	 */
+	public function testTheCollectorIsReachableCrossOriginWithoutCredentials(): void {
+		$headers = $this->controller(portal: ['slug' => 'demo'])
+			->collect(events: $this->batch())
+			->getHeaders();
+
+		$this->assertSame('*', $headers['Access-Control-Allow-Origin']);
+		$this->assertArrayNotHasKey('Access-Control-Allow-Credentials', $headers);
+	}//end testTheCollectorIsReachableCrossOriginWithoutCredentials()
+
+
+	/**
+	 * The preflight is answered, and answered permissively enough to pass.
+	 *
+	 * A beacon carrying JSON is not a simple request, so a browser asks first.
+	 * An unanswered preflight fails the send silently — measured on the rig
+	 * before this existed: `OPTIONS /api/traffic` answered **405**.
+	 *
+	 * @return void
+	 */
+	public function testThePreflightIsAnswered(): void {
+		$response = $this->controller(portal: null)->preflight();
+		$headers = $response->getHeaders();
+
+		$this->assertSame(Http::STATUS_NO_CONTENT, $response->getStatus());
+		$this->assertSame('*', $headers['Access-Control-Allow-Origin']);
+		$this->assertStringContainsString('POST', $headers['Access-Control-Allow-Methods']);
+		$this->assertStringContainsString('Content-Type', $headers['Access-Control-Allow-Headers']);
+	}//end testThePreflightIsAnswered()
+
+
+	/**
 	 * THE RESPONSE NEVER TELLS THE CALLER ANYTHING.
 	 *
 	 * Accepted, refused, unknown portal — all 204 with no body. A beacon fired

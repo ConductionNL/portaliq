@@ -7,7 +7,7 @@
     "npm": "^11.0.0"
   },
   "scripts": {
-    "build": "npm run build:admin && npm run build:portal && npm run build:site",
+    "build": "npm run build:admin && npm run build:portal && npm run build:site && npm run build:traffic",
     "build:admin": "NODE_ENV=production webpack --config webpack.config.js --progress",
     "dev": "NODE_ENV=development webpack --config webpack.config.js --progress",
     "watch": "NODE_ENV=development webpack --config webpack.config.js --progress --watch",
@@ -30,6 +30,7 @@
     "check:specs": "npm run check:json-strict && npm run check:manifest-v2 && npm run check:register && npm run check:registry && npm run check:site-auth && npm run check:site-grid && npm run check:site-contribution && npm run check:traffic-client",
     "prepare": "git config core.hooksPath .githooks || true",
     "build:site": "NODE_ENV=production webpack --config webpack.site.js --progress",
+    "build:traffic": "NODE_ENV=production webpack --config webpack.traffic.js --progress",
     "watch:site": "NODE_ENV=development webpack --config webpack.site.js --progress --watch",
     "check:site-auth": "node tests/site-auth.spec.mjs",
     "check:site-grid": "node tests/site-grid.spec.mjs",

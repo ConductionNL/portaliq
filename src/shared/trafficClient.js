@@ -320,8 +320,22 @@ export function createTrafficClient({
 		const body = JSON.stringify({ events: queue, portal })
 		queue = []
 
+		// `sendBeacon` IS ONLY USABLE SAME-ORIGIN, and this is measured, not
+		// cautious. A beacon is always sent with credentials mode `include`,
+		// so the browser refuses a response whose `Access-Control-Allow-Origin`
+		// is `*` — the exact error a statically built portal produced against
+		// the live collector:
+		//
+		//   "The value of the 'Access-Control-Allow-Origin' header in the
+		//    response must not be the wildcard '*' when the request's
+		//    credentials mode is 'include'."
+		//
+		// The alternative was to echo the caller's origin and allow
+		// credentials, which would let any site send this instance's cookies
+		// to an endpoint that deliberately has none. Keeping the server strict
+		// and switching the transport keeps "no credentials, ever" true.
 		const beacon = nav.sendBeacon
-		if (typeof beacon === 'function') {
+		if (typeof beacon === 'function' && sameOrigin() === true) {
 			// A Blob carries the content type; `sendBeacon` with a bare string
 			// sends `text/plain`, which the collector does not parse as JSON.
 			const Ctor = win.Blob
@@ -339,7 +353,16 @@ export function createTrafficClient({
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body,
+				// `keepalive` is what lets this survive the page going away —
+				// it is the reason a fetch is an acceptable substitute for a
+				// beacon at all.
 				keepalive: true,
+				// EXPLICIT, NOT INHERITED. The default for a cross-origin
+				// fetch is already `same-origin`, but saying it here is what
+				// keeps the wildcard CORS response valid, and it states the
+				// property the endpoint's whole posture rests on: this request
+				// carries no identity.
+				credentials: 'omit',
 			}).catch(() => {
 				// A collector that is down must never surface in a visitor's
 				// console on a government portal.
@@ -389,6 +412,28 @@ export function createTrafficClient({
 		scheduleFlush()
 
 		return true
+	}
+
+	/**
+	 * Whether the collector is on the page's own origin.
+	 *
+	 * A relative endpoint always is. An absolute one is compared properly
+	 * rather than by prefix: `https://portal.example.evil.test` starts with
+	 * the same characters as `https://portal.example` and is a different site.
+	 *
+	 * @return {boolean} Whether the collector shares this page's origin.
+	 */
+	function sameOrigin() {
+		const here = (win.location && win.location.origin) || ''
+		if (endpoint.startsWith('http') === false) {
+			return true
+		}
+
+		try {
+			return new URL(endpoint, here || undefined).origin === here
+		} catch {
+			return false
+		}
 	}
 
 	/** The pending idle-flush handle, so only one is ever outstanding. */

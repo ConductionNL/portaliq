@@ -682,6 +682,19 @@ class ContentController extends Controller {
 		if ($this->audience() === 'anonymous') {
 			$response->addHeader('Cache-Control', 'public, max-age=300, must-revalidate');
 
+			// READABLE CROSS-ORIGIN, BECAUSE THAT IS THE POINT OF A HEADLESS
+			// CONTRACT. A portal built by the Docusaurus plugin is static HTML
+			// on another host; without this its pages can be BUILT from the
+			// contract but nothing on them can read it at runtime.
+			//
+			// `*` and never credentials. This branch serves the anonymous
+			// audience — the same bytes any visitor could fetch by opening the
+			// URL — so there is nothing here a permissive origin could reach
+			// that it could not reach without one. The authenticated branch
+			// below deliberately sends no such header: a response varying by
+			// bearer must not be readable by a page that did not send it.
+			$response->addHeader('Access-Control-Allow-Origin', '*');
+
 			return $response;
 		}
 

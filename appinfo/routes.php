@@ -141,6 +141,21 @@ return [
         // page unload has nothing to read and nothing to be identified by.
         ['name' => 'traffic#collect', 'url' => '/api/traffic', 'verb' => 'POST'],
 
+        // The browser's preflight for a CROSS-ORIGIN beacon. A statically
+        // built portal lives on another host and its beacon carries JSON,
+        // which is not a simple request — without an answer here the send
+        // fails silently on the visitor's side, where nobody operating the
+        // portal can see it.
+        ['name' => 'traffic#preflight', 'url' => '/api/traffic', 'verb' => 'OPTIONS'],
+
+        // The client script itself, as a ROUTE rather than a file path.
+        // `/index.php/apps/portaliq/js/portaliq-traffic.js` answers 401 to the
+        // anonymous callers this script exists for, and the path that does
+        // serve it (`/custom_apps/…`) differs between deployments. A declared
+        // public route is stable, so the URL a built site bakes in keeps
+        // working.
+        ['name' => 'traffic#client', 'url' => '/api/traffic-client.js', 'verb' => 'GET'],
+
         ['name' => 'portalPage#catchAll', 'url' => '/portal/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
 
         // Hosted tilburg-woo-ui (Open Tilburg WOO SPA) — public. Registered
