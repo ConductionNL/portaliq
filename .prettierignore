@@ -19,3 +19,13 @@ woo/
 # Written by the translation workflow — a formatter here would fight its own
 # generator on every run.
 l10n/
+
+# Vendored NL Design System token sets — generated upstream, imported
+# verbatim apart from stripping SCSS-style `//` comment lines that webpack
+# rejects. Reformatting them would make the next re-import an unreadable diff.
+css/themes/
+
+# Vendored NL Design System / reference-app stylesheets — built artefacts
+# imported verbatim. Reformatting them would make the next re-import an
+# unreadable diff.
+css/nlds/

@@ -31,7 +31,20 @@ test.describe('site renderer — content', () => {
 		await expect(menu.getByRole('link', { name: 'Home' })).toBeVisible()
 		await expect(menu.getByRole('link', { name: 'Over ons' })).toBeVisible()
 		await expect(menu.getByRole('link', { name: 'Begrippen' })).toBeVisible()
-		// Two levels, one nested under 'Over ons'.
+
+		// Two levels, one nested under 'Over ons' — and the second level is a
+		// DROPDOWN, so it is present but hidden until its parent is opened.
+		//
+		// This assertion used to be a bare `toBeVisible()` on 'Contact', which
+		// passed for the wrong reason: the child list was tagged with the
+		// top-level bar class, so it rendered as an in-flow second row and the
+		// navigation bar came out 110px against the reference's 55. The link
+		// was permanently visible because the submenu was permanently open.
+		const parent = menu.locator('.ac-c-navigation__li', {
+			has: page.getByTestId('site-menu-dropdown'),
+		})
+		await expect(menu.getByRole('link', { name: 'Contact' })).toBeHidden()
+		await parent.hover()
 		await expect(menu.getByRole('link', { name: 'Contact' })).toBeVisible()
 
 		// The home page is a GRID body: three markdown widgets in declared cells.
@@ -112,10 +125,28 @@ test.describe('site renderer — content', () => {
 
 	test('S1b: the glossary is reachable and rendered', async ({ page }) => {
 		await page.goto(`${SITE}?route=/begrippen`)
-		const terms = page.getByTestId('glossary-term')
-		await expect(terms.first()).toBeVisible()
-		await expect(page.getByTestId('site-glossary')).toContainText('Woo-verzoek')
-		await expect(page.getByTestId('site-glossary')).toContainText('Wob-verzoek')
+
+		// LOCATED BY THE BLOCK'S OWN CLASSES, not by test hooks.
+		//
+		// This spec used to look for `data-testid="site-glossary"` and
+		// `glossary-term`, which the renderer emitted back when the glossary
+		// was a hard-coded <section>. It is now `CnSiteGlossary` from the
+		// shared public entry point, and that library ships semantic classes
+		// rather than another consumer's test attributes.
+		const glossary = page.locator('.ac-glossary')
+		await expect(glossary.locator('.ac-glossary__term').first()).toBeVisible()
+
+		// The term AND its synonym. Someone searching for the old name has only
+		// the old name; a glossary that renders "Woo-verzoek" alone tells them
+		// the concept was abolished rather than renamed.
+		await expect(glossary).toContainText('Woo-verzoek')
+		await expect(glossary).toContainText('Wob-verzoek')
+
+		// A description list, because that is what makes a screen reader
+		// announce term/definition pairs instead of a run of text — and a
+		// stack of divs looks identical on screen.
+		await expect(glossary.locator('dl dt').first()).toBeVisible()
+		await expect(glossary.locator('dl dd').first()).toBeVisible()
 	})
 
 	test('S18: the site bundle stays inside the public first-load budget', async ({

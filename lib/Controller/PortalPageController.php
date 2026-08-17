@@ -215,6 +215,21 @@ class PortalPageController extends Controller {
 				// contract withholds; it only decides which stylesheet tag to
 				// emit.
 				'themeStylesheet' => $this->siteThemeStylesheet(),
+				// The NLDS token set this app ships for the serving portal's
+				// theme, when it has one. Separate from the line above because
+				// they answer different questions: that one is "which theme
+				// app file", this one is "do we have the `--utrecht-*` tokens
+				// the component CSS reads".
+				'nldsStylesheet'  => $this->siteNldsStylesheet(),
+				// The standalone shell owns the whole document now, so it needs
+				// the document language. Resolved from Accept-Language the same
+				// way index() does — the visitor is unauthenticated here, so
+				// there is no session locale to prefer.
+				//
+				// Never the empty string: this value becomes `<html lang="">`,
+				// which is a WCAG failure and is exactly the shape a request
+				// carrying no Accept-Language would otherwise produce.
+				'locale'          => $this->siteLocale(),
 			],
 			// BASE, NOT PUBLIC — a white-label site may not wear Nextcloud's
 			// chrome. `layout.public.php` emits `<header id="header">` with
@@ -233,19 +248,60 @@ class PortalPageController extends Controller {
 			// renderer boots from. The skip link is not lost either: the site
 			// renders its OWN localised one ("Direct naar de inhoud"), so
 			// dropping core's English duplicate removes a second, conflicting
-			// skip target rather than the only one.
-			TemplateResponse::RENDER_AS_BASE
+			// BLANK — the template renders the WHOLE document.
+			//
+			// `RENDER_AS_BASE` was the previous answer and it was not enough:
+			// even the barest Nextcloud layout ships `server.css` (587 rules)
+			// and the instance theme chain, which kept the content column
+			// inset (1235px at +50px against the reference's 1280 at 0) and
+			// rendered bare `h1` in the platform's typeface. Those rules
+			// outrank anything this app can scope, so the fix is to stop
+			// loading them: see the long note at the top of templates/site.php.
+			TemplateResponse::RENDER_AS_BLANK
 		);
 
+		// The NLDS component CSS requests its webfonts from Google's font
+		// CDN. Nextcloud's default `font-src 'self' data:` blocks them, and a
+		// blocked font is not a console curiosity here — it is the portal
+		// rendering in a fallback face while every token says otherwise, which
+		// is exactly the class of mismatch this whole change exists to remove.
+		// Allowed narrowly: the font origin and its stylesheet host, nothing
+		// else.
+		//
 		// Deny framing unless the resolved site says otherwise. Same posture
 		// as index(): clear the `'self'` default first, or a site with no
 		// configured embedders still allows same-origin framing.
 		$csp = new ContentSecurityPolicy();
 		$csp->disallowFrameAncestorDomain('\'self\'');
+		$csp->addAllowedFontDomain('https://fonts.gstatic.com');
+		$csp->addAllowedStyleDomain('https://fonts.googleapis.com');
 		$response->setContentSecurityPolicy($csp);
 
 		return $response;
 	}//end site()
+
+
+	/**
+	 * The document language for the standalone shell, never empty.
+	 *
+	 * `resolveLocale()` answers '' when the request carries no usable
+	 * `Accept-Language`, which is the ordinary case for a bot, a curl, or a
+	 * browser with the header stripped. Passing that through would emit
+	 * `<html lang="">` — a WCAG 3.1.1 failure that no screenshot shows and no
+	 * functional test notices, because the page otherwise renders perfectly.
+	 *
+	 * @return string A non-empty BCP-47 tag.
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-request-must-resolve-to-exactly-one-portal-or-to-none
+	 */
+	private function siteLocale(): string {
+		$locale = $this->resolveLocale();
+		if ($locale === '') {
+			return 'nl';
+		}
+
+		return $locale;
+	}//end siteLocale()
 
 
 	/**
@@ -280,6 +336,38 @@ class PortalPageController extends Controller {
 			theme: (string)($portal['theme'] ?? '')
 		);
 	}//end siteThemeStylesheet()
+
+
+	/**
+	 * The NLDS token stylesheet this app ships for the serving portal, or ''.
+	 *
+	 * Same fail-quiet posture as `siteThemeStylesheet()`: every failure — no
+	 * portal, unknown theme, no token file for it — returns the empty string
+	 * and the page renders with the component library's own defaults rather
+	 * than another municipality's colours.
+	 *
+	 * @return string The stylesheet path relative to this app's `css/`, or ''.
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
+	 */
+	private function siteNldsStylesheet(): string {
+		try {
+			$portal = $this->portalResolver->resolve(
+				request: $this->request,
+				portalSlug: (string)$this->request->getParam('portal', '')
+			);
+		} catch (\Throwable) {
+			return '';
+		}
+
+		if ($portal === null) {
+			return '';
+		}
+
+		return (string)$this->themeResolver->nldsStylesheetFor(
+			theme: (string)($portal['theme'] ?? '')
+		);
+	}//end siteNldsStylesheet()
 
 	/**
 	 * Resolve the visitor's locale from the `Accept-Language` header

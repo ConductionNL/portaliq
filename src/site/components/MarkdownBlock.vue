@@ -57,17 +57,87 @@ export default {
 			if (!this.source) {
 				return ''
 			}
-			return cnRenderMarkdown(this.source)
+
+			return this.withDesignSystemClasses(cnRenderMarkdown(this.source))
+		},
+	},
+
+	methods: {
+		/**
+		 * Tag rendered markdown with the design system's typography classes.
+		 *
+		 * MARKDOWN EMITS BARE ELEMENTS. `## Onderwerpen` becomes `<h2>` with no
+		 * class, and the NL Design System styles `\u002eutrecht-heading-2`, not `h2`.
+		 * So the tokens were right, the stylesheet was loaded, and the heading
+		 * still rendered in the document's fallback: measured against the
+		 * reference, Roboto 24px rgb(0, 56, 101) where the design says Avenir
+		 * 32px rgb(26, 26, 26). Nothing was missing except the class.
+		 *
+		 * Applied AFTER sanitisation, never before — this runs on the sanitiser's
+		 * output and only ever ADDS a class attribute to elements that are
+		 * already in the tree. It cannot reintroduce anything the sanitiser
+		 * removed.
+		 *
+		 * A class is added only where one is absent, so authored HTML that
+		 * already carries design-system classes is left alone.
+		 *
+		 * @param {string} html Sanitised HTML.
+		 * @return {string} The same HTML, with typography classes applied.
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
+		 */
+		withDesignSystemClasses(html) {
+			const template = document.createElement('template')
+			template.innerHTML = html
+
+			const MAP = {
+				H1: 'utrecht-heading-1',
+				H2: 'utrecht-heading-2',
+				H3: 'utrecht-heading-3',
+				H4: 'utrecht-heading-4',
+				H5: 'utrecht-heading-5',
+				H6: 'utrecht-heading-6',
+				P: 'utrecht-paragraph',
+				A: 'utrecht-link',
+				UL: 'utrecht-unordered-list',
+				OL: 'utrecht-ordered-list',
+				BLOCKQUOTE: 'utrecht-blockquote',
+			}
+
+			for (const [tag, className] of Object.entries(MAP)) {
+				for (const el of template.content.querySelectorAll(
+					tag.toLowerCase(),
+				)) {
+					if (el.className === '') {
+						el.className = className
+					}
+				}
+			}
+
+			return template.innerHTML
 		},
 	},
 }
 </script>
 
 <style scoped>
+/*
+ * NO HEADING OR LINK COLOUR HERE — the design system owns both now.
+ *
+ * These rules predate the markdown output carrying design-system classes. Once
+ * it did, they became a second opinion on the same pixels, and a scoped style
+ * wins: measured against the reference, the heading resolved
+ * `--utrecht-heading-2-color` correctly to #1a1a1a and still rendered
+ * rgb(0, 56, 101), because this rule overrode it after the fact. Font family,
+ * size and weight all matched; only the colour was ours.
+ *
+ * Same shape as the `.pq-site :any-link` rule removed from App.vue, and the
+ * same lesson: a blanket colour applied without reference to the surface it
+ * lands on cannot be right for every surface.
+ */
 .pq-markdown :deep(h1),
 .pq-markdown :deep(h2),
 .pq-markdown :deep(h3) {
-	color: var(--pq-heading-color, #1a1a1a);
 	line-height: 1.25;
 	margin: 0 0 0.5em;
 }
@@ -75,10 +145,6 @@ export default {
 .pq-markdown :deep(p) {
 	margin: 0 0 1em;
 	line-height: 1.6;
-}
-
-.pq-markdown :deep(a) {
-	color: var(--pq-link-color, #004488);
 }
 
 .pq-markdown :deep(pre) {

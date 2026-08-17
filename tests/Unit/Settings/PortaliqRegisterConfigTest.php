@@ -86,7 +86,12 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// longer collides with OpenRegister's reserved object-id key (which made
 		// every append-only audit write fail). 0.8.0 added the `portalPage` schema
 		// (data-provisioned portal contributions, ADR-046). Both additive.
-		$this->assertSame('0.12.0', self::$register['info']['version']);
+		// 0.14.0 (portal 0.2.0): declared `tagline` — the supporting line under
+		// the portal name in the footer's logo block. The reference carries one
+		// and this schema had no field for it, so every portal's footer showed
+		// a bare title with no way to change it.
+		$this->assertSame('0.14.0', self::$register['info']['version']);
+		$this->assertSame('0.2.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('0.5.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalSession']['version']);

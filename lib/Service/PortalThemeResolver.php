@@ -43,6 +43,8 @@ use OCP\App\IAppManager;
  * reported, and gets fixed. So a missing theme yields `null` and the caller
  * renders unthemed; ADR-086 §6 requires the failure to name the theme rather
  * than disguise it.
+ *
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
  */
 class PortalThemeResolver {
 
@@ -85,16 +87,141 @@ class PortalThemeResolver {
 			return null;
 		}
 
-		// The file must EXIST. Emitting a link to a stylesheet that 404s is
-		// indistinguishable, on screen, from having no theme — and it moves
-		// the failure from a place we can check to a place only the browser
-		// sees.
+		// RESOLVED AGAINST THE THEME APP'S OWN CATALOGUE, not just the
+		// filesystem. `token-sets.json` is what that app treats as the list of
+		// sets it offers; a `.css` file sitting beside it is not necessarily a
+		// set on offer — a generated dark variant, a work-in-progress or a
+		// leftover would all pass a bare `is_file()` and none of them is a
+		// theme a portal may adopt.
+		//
+		// Asking the catalogue also means a portal and the theme app agree on
+		// what exists, which is the whole point of one app owning theming.
+		if ($this->catalogueHas(theme: $theme) === false) {
+			return null;
+		}
+
+		// AND the file must EXIST. Both checks, because they fail differently:
+		// a catalogued set with no file means a broken install, and emitting a
+		// link that 404s is indistinguishable on screen from having no theme —
+		// it moves the failure from somewhere we can check to somewhere only
+		// the browser sees.
 		if (is_file($root . '/css/tokens/' . $theme . '.css') === false) {
 			return null;
 		}
 
 		return 'tokens/' . $theme;
 	}//end stylesheetFor()
+
+
+	/**
+	 * Whether the theme app's catalogue offers this set.
+	 *
+	 * Reads `token-sets.json` from disk rather than calling the app's
+	 * `/api/token-sets` endpoint. That endpoint is `#[NoAdminRequired]` and
+	 * DELIBERATELY not `#[PublicPage]` — its own docblock records that exposing
+	 * admin-uploaded custom sets to anonymous traffic would be an information-
+	 * disclosure surface with no consumer need. The site renderer serves
+	 * anonymous visitors, so it must not become that consumer; the admin UI,
+	 * which is authenticated, is the endpoint's intended caller and uses it for
+	 * the theme picker.
+	 *
+	 * An unreadable or malformed catalogue answers NO. A portal then renders
+	 * unstyled, which is the same fail-closed posture as an unknown theme.
+	 *
+	 * @param string $theme The theme reference.
+	 *
+	 * @return bool Whether the catalogue lists it.
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
+	 */
+	private function catalogueHas(string $theme): bool {
+		$root = $this->themeAppPath();
+		if ($root === null) {
+			return false;
+		}
+
+		$path = $root . '/token-sets.json';
+		if (is_file($path) === false) {
+			return false;
+		}
+
+		$decoded = json_decode((string)file_get_contents($path), true);
+		if (is_array($decoded) === false) {
+			return false;
+		}
+
+		// The file ships as a LIST of set objects; tolerate a keyed map too,
+		// because which of the two it is has changed upstream before.
+		$entries = $decoded;
+		if (array_is_list($decoded) === false) {
+			$entries = array_values($decoded);
+		}
+
+		foreach ($entries as $entry) {
+			if (is_array($entry) === true && ($entry['id'] ?? null) === $theme) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end catalogueHas()
+
+
+	/**
+	 * The NL Design System token stylesheet this app ships for a theme, or
+	 * null.
+	 *
+	 * WHY THIS EXISTS ALONGSIDE `stylesheetFor()`. The theme app's
+	 * `css/tokens/*.css` files are hand-converted and define `--nldesign-*`
+	 * names. The Utrecht/NLDS component CSS the public site renders with reads
+	 * `--utrecht-*` — and the hand-converted VNG file contains **zero** of
+	 * those, so every component fell back to its own default no matter which
+	 * theme was selected. That is why a themed portal still looked like
+	 * Nextcloud.
+	 *
+	 * These files are the real generated token sets (vng: 605 `--utrecht-*`,
+	 * venray: 532), scoped `.vng-theme` / `.venray-theme` — the class
+	 * `App.vue` already puts on the site root.
+	 *
+	 * Served as a LINKED stylesheet rather than bundled: the two themes total
+	 * 215KB, which took the site bundle from 203KB to 696KB and blew the
+	 * 400KB public first-load budget e2e S18 enforces — for themes a given
+	 * visitor will never both need.
+	 *
+	 * @param string $theme The portal's theme reference, e.g. 'vng'.
+	 *
+	 * @return string|null The stylesheet path relative to this app's `css/`,
+	 *                     or null when this app ships no tokens for it.
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
+	 */
+	public function nldsStylesheetFor(string $theme): ?string {
+		// DELIBERATELY RETURNS NULL, ALWAYS — and the method stays because
+		// `templates/site.php` still asks the question.
+		//
+		// This app used to ship its own `css/themes/<theme>.css`: 600
+		// `--utrecht-*` and 254 `--tilburg-*` tokens, vendored from the
+		// reference implementation. That made a SECOND source of truth for a
+		// theme the `nldesign` app already owns — two derivations of one
+		// upstream file (`tilburg-woo-ui/.../_tokens-vng.scss`), maintained
+		// separately and already drifted apart.
+		//
+		// Worse, the halves were disjoint: measured, ZERO overlap between the
+		// tokens nldesign's chain defined and the ones this app's copy did. The
+		// portal was styled entirely from here, and nldesign's
+		// `utrecht-bridge.css` — which maps every Nextcloud-facing
+		// `--nldesign-component-*` from an `--utrecht-*` — had none of its 88
+		// inputs supplied, so the Nextcloud UI silently ran on Rijkshuisstijl
+		// fallbacks.
+		//
+		// The token set now lives in `nldesign/css/tokens/<theme>.css`, which
+		// `stylesheetFor()` already resolves, so one change styles both ends.
+		// PORTALIQ TRUSTS NLDESIGN FOR STYLING and ships no tokens of its own
+		// (ADR-086 §6 said as much; this makes it true).
+		unset($theme);
+
+		return null;
+	}//end nldsStylesheetFor()
 
 
 	/**

@@ -231,8 +231,43 @@ class SessionControllerTest extends TestCase {
 
 	}//end testOidcStartFailsClosedWhenTheOrgProviderIsUnconfigured()
 
+	/**
+	 * The SECOND guard, reached only once the policy has already said yes.
+	 *
+	 * `oidcStart()` asks two questions in sequence: may this org+provider
+	 * start a login, and can the secret-bearing config actually be resolved.
+	 * The test above is named for the second and measures the first — it
+	 * leaves `isLoginProviderAllowed` at the mock's default `false`, so it
+	 * returns at the policy guard and never executes the config guard at all.
+	 *
+	 * That arm is not redundant. The policy reads the presentation-override
+	 * blob; the resolver additionally requires the client secret from its own
+	 * dedicated `sensitive` entry. An organisation that declares a provider
+	 * but whose secret is missing or has been rotated away lands exactly here,
+	 * and it must produce the SAME generic error — a distinguishable response
+	 * would tell an anonymous caller which tenants have half-configured
+	 * identity providers.
+	 */
+	public function testOidcStartFailsClosedWhenThePolicyAllowsButTheConfigWillNotResolve(): void {
+		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
+		$orgConfig->method('isLoginProviderAllowed')->willReturn(true);
+		$orgConfig->method('resolveOidcConfig')->willReturn(null);
+
+		$oidc = $this->createMock(OidcClientService::class);
+		$oidc->expects($this->never())->method('discover');
+
+		$response = $this->controller(session: $this->createMock(PortalSessionService::class), orgConfig: $orgConfig, oidc: $oidc)
+			->oidcStart(org: 'gemeente-x', provider: 'eherkenning');
+
+		// Byte-identical to the policy refusal above, deliberately.
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+		$this->assertSame('oidc_failed', $response->getData()['error']);
+
+	}//end testOidcStartFailsClosedWhenThePolicyAllowsButTheConfigWillNotResolve()
+
 	public function testOidcStartFailsClosedWhenDiscoveryIsUnreachable(): void {
 		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
+		$orgConfig->method('isLoginProviderAllowed')->willReturn(true);
 		$orgConfig->method('resolveOidcConfig')->willReturn($this->oidcConfigFixture());
 
 		$oidc = $this->createMock(OidcClientService::class);
@@ -248,6 +283,7 @@ class SessionControllerTest extends TestCase {
 
 	public function testOidcStartFailsClosedWhenTheStateCannotBeStored(): void {
 		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
+		$orgConfig->method('isLoginProviderAllowed')->willReturn(true);
 		$orgConfig->method('resolveOidcConfig')->willReturn($this->oidcConfigFixture());
 
 		$oidc = $this->createMock(OidcClientService::class);
@@ -266,8 +302,43 @@ class SessionControllerTest extends TestCase {
 
 	}//end testOidcStartFailsClosedWhenTheStateCannotBeStored()
 
+	/**
+	 * The policy predicate GATES, and it gates BEFORE any secret is resolved.
+	 *
+	 * The pair to the redirect test below. Splitting the authorisation
+	 * decision out of `resolveOidcConfig()` is only worth anything if the
+	 * decision is actually consulted — a refactor that named the predicate and
+	 * then ignored it would pass every other test in this class, because the
+	 * resolver still fails closed on its own.
+	 *
+	 * `resolveOidcConfig` is asserted NEVER called: a caller the policy has
+	 * already refused must not reach the method that reads the client secret.
+	 */
+	public function testOidcStartRefusesBeforeResolvingAnySecretWhenThePolicyDeclines(): void {
+		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
+		$orgConfig->method('isLoginProviderAllowed')->willReturn(false);
+		$orgConfig->expects($this->never())->method('resolveOidcConfig');
+
+		$oidc = $this->createMock(OidcClientService::class);
+		$oidc->expects($this->never())->method('discover');
+
+		$response = $this->controller(
+			session: $this->createMock(PortalSessionService::class),
+			orgConfig: $orgConfig,
+			oidc: $oidc
+		)->oidcStart(org: 'gemeente-x', provider: 'eherkenning');
+
+		// The SAME generic error every other failure returns — an unknown org
+		// and a declined one must be indistinguishable, or the endpoint
+		// becomes an existence oracle for which tenants exist here.
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+
+	}//end testOidcStartRefusesBeforeResolvingAnySecretWhenThePolicyDeclines()
+
+
 	public function testOidcStartRedirectsToTheBrokerWithStateNonceAndPkce(): void {
 		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
+		$orgConfig->method('isLoginProviderAllowed')->willReturn(true);
 		$orgConfig->method('resolveOidcConfig')->willReturn($this->oidcConfigFixture());
 
 		$oidc = $this->createMock(OidcClientService::class);
@@ -373,6 +444,7 @@ class SessionControllerTest extends TestCase {
 	 */
 	public function testOidcCallbackMintsASessionAndRedirectsWithTheBearerInTheFragment(): void {
 		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
+		$orgConfig->method('isLoginProviderAllowed')->willReturn(true);
 		$orgConfig->method('resolveOidcConfig')->willReturn($this->oidcConfigFixture());
 
 		$oidc = $this->createMock(OidcClientService::class);

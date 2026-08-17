@@ -211,6 +211,11 @@ class ContentController extends Controller {
 				'slug'    => (string)($portal['slug'] ?? ''),
 				'theme'   => (string)($portal['theme'] ?? ''),
 				'logo'    => (string)($portal['logo'] ?? ''),
+				// The line under the name in the footer's logo block. The
+				// reference carries one ("Één plek voor alle publicaties van
+				// Gemeente Tilburg") and this app had no field for it at all,
+				// so every portal's footer showed a bare title.
+				'tagline' => (string)($portal['tagline'] ?? ''),
 				'locales' => array_values((array)($portal['locales'] ?? [])),
 				'locale'  => $this->locale(portal: $portal, requested: $locale),
 				// The MODES are public — a visitor has to know how to sign in.

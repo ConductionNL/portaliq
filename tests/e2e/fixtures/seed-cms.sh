@@ -123,6 +123,13 @@ upsert menu title Hoofdmenu '{
 echo "    Hoofdmenu (2 levels)"
 
 echo "==> pages"
+# The contributed surfaces (ADR-046) are a BLOCK an author places, exactly like
+# the glossary below, and for the same reason: a hard-coded <h2>Diensten</h2>
+# under every page is not something a municipality can move, rename, translate
+# or leave out. When the section came out of `App.vue`, nothing placed the
+# block — so `/api/content/contributions` kept answering with entries that no
+# page rendered. That is invisible from either side on its own: the API is
+# green and the page looks complete. The home page must ASK for them.
 upsert page route / '{
   "title":"Welkom","route":"/","portal":"open-tilburg","status":"published","locale":"nl",
   "summary":"De startpagina van Open Tilburg.",
@@ -132,10 +139,13 @@ upsert page route / '{
     {"id":"side","widgetKey":"markdown","slot":"body","gridX":0,"gridY":4,"gridWidth":6,"gridHeight":3,
      "props":{"markdown":"## Actueel\n\nHet laatste nieuws."}},
     {"id":"help","widgetKey":"markdown","slot":"body","gridX":6,"gridY":4,"gridWidth":6,"gridHeight":3,
-     "props":{"markdown":"## Hulp nodig?\n\nNeem contact met ons op."}}
+     "props":{"markdown":"## Hulp nodig?\n\nNeem contact met ons op."}},
+    {"id":"diensten","widgetKey":"contributions","slot":"body","gridX":0,"gridY":7,"gridWidth":12,"gridHeight":4,
+     "props":{"title":"Diensten",
+              "emptyLabel":"Er zijn nog geen diensten beschikbaar op dit portaal."}}
   ]}
 }' >/dev/null
-echo "    / (grid, 3 widgets)"
+echo "    / (grid: 3 markdown widgets + contributions block)"
 
 upsert page route /over-ons '{
   "title":"Over ons","route":"/over-ons","portal":"open-tilburg","status":"published","locale":"nl",
@@ -176,12 +186,24 @@ echo "    /over-ons on open-venray (same route, other site)"
 # link resolves to a 404 the visitor never sees (the glossary still renders)
 # while the console carries an error on every visit — the shape of defect that
 # survives for months because the page looks right.
+# The glossary is a BLOCK an author places, not a section the renderer emits
+# on a route it recognises. It used to be the latter: a hard-coded <section>
+# with a literal <h2>Begrippenlijst</h2> that no portal could move, rename,
+# translate or leave out. When that came out, nothing placed the block — so
+# this page rendered its heading and intro over nothing while the terms sat
+# unused behind the public contract. The page must ASK for the glossary.
 upsert page title 'Begrippenlijst' '{
   "title":"Begrippenlijst","route":"/begrippen","portal":"open-tilburg","status":"published","locale":"nl",
   "summary":"Uitleg van veelgebruikte begrippen.",
-  "body":{"type":"markdown","markdown":"Hieronder staan de begrippen die op deze site worden gebruikt.\n"}
+  "body":{"type":"grid","widgets":[
+    {"id":"intro","widgetKey":"markdown","slot":"body","gridX":0,"gridY":0,"gridWidth":12,"gridHeight":2,
+     "props":{"markdown":"Hieronder staan de begrippen die op deze site worden gebruikt.\n"}},
+    {"id":"terms","widgetKey":"glossary","slot":"body","gridX":0,"gridY":2,"gridWidth":12,"gridHeight":6,
+     "props":{"synonymsLabel":"Ook bekend als:","sourceLabel":"Bron:",
+              "emptyLabel":"Er zijn nog geen begrippen vastgelegd."}}
+  ]}
 }' >/dev/null
-echo "    /begrippen (markdown; the menu links here)"
+echo "    /begrippen (grid: intro + glossary block; the menu links here)"
 
 # Hostile markdown. The page also carries ordinary prose on purpose: a
 # sanitiser that threw the whole document away would pass a test that only

@@ -225,6 +225,75 @@ class PortalOrganisationConfigServiceTest extends TestCase {
 	}//end testResolveOidcConfigRejectsAnUnknownProviderString()
 
 	/**
+	 * `isLoginProviderAllowed()` ADMITS only a declared provider on a
+	 * resolvable organisation.
+	 *
+	 * This is the positive control for the four refusal tests below. Without
+	 * it they are worthless: a method that returned `false` unconditionally
+	 * would satisfy every one of them, and "fails closed" would be indis-
+	 * tinguishable from "never works".
+	 */
+	public function testIsLoginProviderAllowedAdmitsADeclaredProvider(): void {
+		$service = $this->oidcService(
+			overridesJson: json_encode(['oidc' => ['digid' => ['issuer' => 'https://broker.example/idp']]]),
+			secret: 's3cret'
+		);
+
+		$this->assertTrue($service->isLoginProviderAllowed('gemeente-x', 'digid'));
+
+	}//end testIsLoginProviderAllowedAdmitsADeclaredProvider()
+
+	/**
+	 * Every way this can refuse, exercised one at a time.
+	 *
+	 * The method has four independent guards and they fail for different
+	 * reasons: no tenant named, a provider outside the closed allow-list, an
+	 * organisation that does not resolve, and an organisation carrying no
+	 * `oidc` block at all. A single "returns false" test would pass while
+	 * three of the four were dead.
+	 *
+	 * The provider allow-list matters most: it is a CLOSED set, so an
+	 * attacker-supplied `?provider=` string can never reach the resolver.
+	 *
+	 * @param string $orgSlug  The tenant slug under test.
+	 * @param string $provider The provider under test.
+	 * @param bool   $resolvable Whether the organisation resolves.
+	 * @param string $overrides  The presentation-override JSON.
+	 *
+	 * @dataProvider refusedLoginProvider
+	 */
+	public function testIsLoginProviderAllowedRefuses(
+		string $orgSlug,
+		string $provider,
+		bool $resolvable,
+		string $overrides
+	): void {
+		$service = ($resolvable === true)
+			? $this->oidcService(overridesJson: $overrides, secret: 's3cret')
+			: $this->service(overridesJson: $overrides);
+
+		$this->assertFalse($service->isLoginProviderAllowed($orgSlug, $provider));
+
+	}//end testIsLoginProviderAllowedRefuses()
+
+	/**
+	 * @return array<string, array{0: string, 1: string, 2: bool, 3: string}>
+	 */
+	public static function refusedLoginProvider(): array {
+		$declared = '{"oidc":{"digid":{"issuer":"https://broker.example/idp"}}}';
+
+		return [
+			'no tenant named' => ['', 'digid', true, $declared],
+			'provider outside the closed allow-list' => ['gemeente-x', 'not-a-real-provider', true, $declared],
+			'organisation does not resolve' => ['gemeente-x', 'digid', false, $declared],
+			'organisation declares no oidc block' => ['gemeente-x', 'digid', true, '{}'],
+			'oidc block is not an object' => ['gemeente-x', 'digid', true, '{"oidc":"yes"}'],
+			'provider absent from a populated oidc block' => ['gemeente-x', 'eidas', true, $declared],
+		];
+
+	}//end refusedLoginProvider()
+
+	/**
 	 * Builds a service against a resolvable "gemeente-x" organisation, with
 	 * `getValueString` returning `$overridesJson` for the presentation-
 	 * override key and `$secret` for ANY `oidc_secret_*` key.

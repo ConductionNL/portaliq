@@ -19,6 +19,7 @@ import AlertCircleOutline from 'vue-material-design-icons/AlertCircleOutline.vue
 import BellOutline from 'vue-material-design-icons/BellOutline.vue'
 import BookAlphabet from 'vue-material-design-icons/BookAlphabet.vue'
 import BookOpenVariantOutline from 'vue-material-design-icons/BookOpenVariantOutline.vue'
+import ChartLine from 'vue-material-design-icons/ChartLine.vue'
 import Email from 'vue-material-design-icons/Email.vue'
 import EmailOutline from 'vue-material-design-icons/EmailOutline.vue'
 import FileCheckOutline from 'vue-material-design-icons/FileCheckOutline.vue'
@@ -30,7 +31,9 @@ import History from 'vue-material-design-icons/History.vue'
 import MapMarkerPath from 'vue-material-design-icons/MapMarkerPath.vue'
 import Menu from 'vue-material-design-icons/Menu.vue'
 import MessageTextOutline from 'vue-material-design-icons/MessageTextOutline.vue'
+import Palette from 'vue-material-design-icons/Palette.vue'
 import ShieldCheckOutline from 'vue-material-design-icons/ShieldCheckOutline.vue'
+import ShieldKeyOutline from 'vue-material-design-icons/ShieldKeyOutline.vue'
 import ShieldLock from 'vue-material-design-icons/ShieldLock.vue'
 import Ticket from 'vue-material-design-icons/Ticket.vue'
 import ViewDashboardOutline from 'vue-material-design-icons/ViewDashboardOutline.vue'
@@ -45,6 +48,7 @@ export default {
 	BellOutline,
 	BookAlphabet,
 	BookOpenVariantOutline,
+	ChartLine,
 	Email,
 	EmailOutline,
 	FileCheckOutline,
@@ -56,7 +60,9 @@ export default {
 	MapMarkerPath,
 	Menu,
 	MessageTextOutline,
+	Palette,
 	ShieldCheckOutline,
+	ShieldKeyOutline,
 	ShieldLock,
 	Ticket,
 	ViewDashboardOutline,

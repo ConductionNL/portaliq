@@ -142,3 +142,15 @@ bom-npm.cdx.json
 # tests/e2e/visual/portal-comparison.spec.ts against a live instance; they are
 # review artifacts, not fixtures, and binary churn in review is noise.
 tests/e2e/visual/**/*.png
+
+# Commercially licensed webfonts, dropped in per deployment.
+#
+# The NL Design System reference application uses Monotype/Linotype faces
+# (Avenir LT W01, Gill Sans W01) and Tisa Sans Pro. Their name tables carry
+# "all rights reserved" and a notification-of-licence clause, so redistributing
+# them from a EUPL-1.2 repository is not ours to do. `css/nlds/nlds-fonts.css`
+# points at this directory; a deployment holding the licence fills it in, and
+# every other deployment falls through to Roboto (Apache-2.0), which IS
+# committed. See css/fonts/README.md.
+css/fonts/licensed/*
+!css/fonts/licensed/.gitkeep

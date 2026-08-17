@@ -132,7 +132,18 @@ jobs:
       # empty shell. Pinned to `development`, not `main`: this app tracks
       # `development`, and pinning the foundation to `main` makes a CI instance
       # behave unlike any environment the app is actually developed against.
-      additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"development"}]'
+      #
+      # `nldesign` is here for the same reason, one layer up: this app ships NO
+      # design tokens, so without the theme app a portal renders UNSTYLED — and
+      # an unstyled page has intact markup, readable text, no console message
+      # and no failed request. Nothing about it looks wrong. The site suite
+      # asserts the token layer is present precisely because that failure is
+      # invisible, and without the theme app installed that assertion cannot
+      # pass on any instance: `--utrecht-document-font-family resolved to
+      # nothing` is the CI environment telling the truth. Provision it rather
+      # than soften the assertion — a guard that skips when the thing it guards
+      # is missing protects nothing.
+      additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"development"},{"repo":"ConductionNL/nldesign","app":"nldesign","ref":"development"}]'
       enable-sbom: true
       # Run the Hydra mechanical quality gates against this PR's diff.
       #

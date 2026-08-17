@@ -13,31 +13,77 @@
       "order": 10
     },
     {
+      "id": "Portals",
+      "label": "Portals",
+      "icon": "Web",
+      "route": "Portals",
+      "order": 20,
+      "children": [
+        {
+          "id": "PortalsIndex",
+          "label": "All portals",
+          "icon": "Web",
+          "route": "Portals"
+        },
+        {
+          "id": "Menus",
+          "label": "Menus",
+          "icon": "Menu",
+          "route": "Menus"
+        },
+        {
+          "id": "Pages",
+          "label": "Pages",
+          "icon": "FileDocument",
+          "route": "Pages"
+        },
+        {
+          "id": "Glossary",
+          "label": "Glossary",
+          "icon": "BookAlphabet",
+          "route": "Glossary"
+        }
+      ]
+    },
+    {
       "id": "PortalAccounts",
-      "label": "Portal accounts",
+      "label": "Accounts",
       "icon": "Account",
       "route": "PortalAccounts",
-      "order": 20
+      "order": 30,
+      "children": [
+        {
+          "id": "PortalAccountsIndex",
+          "label": "All accounts",
+          "icon": "Account",
+          "route": "PortalAccounts"
+        },
+        {
+          "id": "PortalSessions",
+          "label": "Sessions",
+          "icon": "ShieldKeyOutline",
+          "route": "PortalSessions"
+        },
+        {
+          "id": "PortalMessages",
+          "label": "Messages",
+          "icon": "Email",
+          "route": "PortalMessages"
+        }
+      ]
     },
     {
-      "id": "PortalSessions",
-      "label": "Portal sessions",
-      "icon": "MessageTextOutline",
-      "route": "PortalSessions",
-      "order": 30
-    },
-    {
-      "id": "PortalMessages",
-      "label": "Portal messages",
-      "icon": "Email",
-      "route": "PortalMessages",
+      "id": "Themes",
+      "label": "Themes",
+      "icon": "Palette",
+      "route": "Themes",
       "order": 40
     },
     {
-      "id": "Documents",
-      "label": "Documents",
-      "icon": "FileDocumentMultipleOutline",
-      "route": "Documents",
+      "id": "Traffic",
+      "label": "Traffic",
+      "icon": "ChartLine",
+      "route": "Traffic",
       "order": 50
     },
     {
@@ -55,34 +101,6 @@
       "route": "FeaturesRoadmap",
       "section": "footer",
       "order": 100
-    },
-    {
-      "id": "Portals",
-      "label": "Portals",
-      "icon": "Web",
-      "route": "Portals",
-      "order": 40
-    },
-    {
-      "id": "Menus",
-      "label": "Menus",
-      "icon": "Menu",
-      "route": "Menus",
-      "order": 41
-    },
-    {
-      "id": "Pages",
-      "label": "Pages",
-      "icon": "FileDocument",
-      "route": "Pages",
-      "order": 42
-    },
-    {
-      "id": "Glossary",
-      "label": "Glossary",
-      "icon": "BookAlphabet",
-      "route": "Glossary",
-      "order": 43
     }
   ],
   "pages": [
@@ -168,6 +186,163 @@
           {
             "id": 3,
             "widgetId": "unread-messages",
+            "gridX": 8,
+            "gridY": 0,
+            "gridWidth": 4,
+            "gridHeight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "Themes",
+      "route": "/themes",
+      "type": "dashboard",
+      "title": "Themes",
+      "config": {
+        "widgets": [
+          {
+            "id": "themes-portals",
+            "title": "Themed portals",
+            "type": "stats-block",
+            "iconClass": "icon-category-customization",
+            "dataSource": {
+              "register": "portaliq",
+              "schema": "portal",
+              "aggregate": "count"
+            },
+            "props": {
+              "countLabel": "portals",
+              "variant": "primary"
+            }
+          },
+          {
+            "id": "themes-catalogue",
+            "title": "Theme catalogue",
+            "type": "tile",
+            "icon": "M12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2C17.5,2 22,6 22,11A5,5 0 0,1 17,16H15.2C14.9,16 14.7,16.2 14.7,16.5C14.7,16.6 14.75,16.7 14.8,16.8C15.1,17.2 15.2,17.6 15.2,18A2,2 0 0,1 13.2,20H12M6.5,10A1.5,1.5 0 0,0 5,11.5A1.5,1.5 0 0,0 6.5,13A1.5,1.5 0 0,0 8,11.5A1.5,1.5 0 0,0 6.5,10M9.5,6A1.5,1.5 0 0,0 8,7.5A1.5,1.5 0 0,0 9.5,9A1.5,1.5 0 0,0 11,7.5A1.5,1.5 0 0,0 9.5,6M14.5,6A1.5,1.5 0 0,0 13,7.5A1.5,1.5 0 0,0 14.5,9A1.5,1.5 0 0,0 16,7.5A1.5,1.5 0 0,0 14.5,6M17.5,10A1.5,1.5 0 0,0 16,11.5A1.5,1.5 0 0,0 17.5,13A1.5,1.5 0 0,0 19,11.5A1.5,1.5 0 0,0 17.5,10Z",
+            "iconType": "svg",
+            "backgroundColor": "#0078c8",
+            "textColor": "#ffffff",
+            "linkType": "url",
+            "linkValue": "/index.php/settings/admin/theming"
+          },
+          {
+            "id": "themes-portal-list",
+            "title": "Portals and their themes",
+            "type": "tile",
+            "icon": "M16,9H21.5L16,3.5V9M7,2H17L23,8V18A2,2 0 0,1 21,20H7C5.89,20 5,19.1 5,18V4A2,2 0 0,1 7,2M3,6V22H21V24H3A2,2 0 0,1 1,22V6H3Z",
+            "iconType": "svg",
+            "backgroundColor": "#003865",
+            "textColor": "#ffffff",
+            "linkType": "app",
+            "linkValue": "portaliq/portals"
+          }
+        ],
+        "layout": [
+          {
+            "id": 1,
+            "widgetId": "themes-portals",
+            "gridX": 0,
+            "gridY": 0,
+            "gridWidth": 4,
+            "gridHeight": 1
+          },
+          {
+            "id": 2,
+            "widgetId": "themes-catalogue",
+            "gridX": 4,
+            "gridY": 0,
+            "gridWidth": 4,
+            "gridHeight": 1
+          },
+          {
+            "id": 3,
+            "widgetId": "themes-portal-list",
+            "gridX": 8,
+            "gridY": 0,
+            "gridWidth": 4,
+            "gridHeight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "Traffic",
+      "route": "/traffic",
+      "type": "dashboard",
+      "title": "Traffic",
+      "config": {
+        "widgets": [
+          {
+            "id": "traffic-sessions",
+            "title": "Sessions",
+            "type": "stats-block",
+            "iconClass": "icon-user",
+            "dataSource": {
+              "register": "portaliq",
+              "schema": "portalSession",
+              "aggregate": "count"
+            },
+            "props": {
+              "countLabel": "sessions",
+              "variant": "primary"
+            }
+          },
+          {
+            "id": "traffic-revoked-sessions",
+            "title": "Revoked sessions",
+            "type": "stats-block",
+            "iconClass": "icon-category-security",
+            "dataSource": {
+              "register": "portaliq",
+              "schema": "portalSession",
+              "filter": {
+                "revoked": true
+              },
+              "aggregate": "count"
+            },
+            "props": {
+              "countLabel": "sessions",
+              "variant": "warning"
+            }
+          },
+          {
+            "id": "traffic-messages",
+            "title": "Messages",
+            "type": "stats-block",
+            "iconClass": "icon-mail",
+            "dataSource": {
+              "register": "portaliq",
+              "schema": "portalMessage",
+              "aggregate": "count"
+            },
+            "props": {
+              "countLabel": "messages",
+              "variant": "success"
+            }
+          }
+        ],
+        "layout": [
+          {
+            "id": 1,
+            "widgetId": "traffic-sessions",
+            "gridX": 0,
+            "gridY": 0,
+            "gridWidth": 4,
+            "gridHeight": 1
+          },
+          {
+            "id": 2,
+            "widgetId": "traffic-revoked-sessions",
+            "gridX": 4,
+            "gridY": 0,
+            "gridWidth": 4,
+            "gridHeight": 1
+          },
+          {
+            "id": 3,
+            "widgetId": "traffic-messages",
             "gridX": 8,
             "gridY": 0,
             "gridWidth": 4,
