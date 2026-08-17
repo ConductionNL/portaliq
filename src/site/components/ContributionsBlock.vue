@@ -152,6 +152,8 @@ export default {
 	computed: {
 		/**
 		 * @return {string} The heading element to render.
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
 		 */
 		headingTag() {
 			return `h${this.headingLevel}`
@@ -159,6 +161,8 @@ export default {
 
 		/**
 		 * @return {string} The heading's class, tracking its level.
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
 		 */
 		headingClass() {
 			return `utrecht-heading-${this.headingLevel}`
@@ -166,6 +170,8 @@ export default {
 
 		/**
 		 * @return {string} The per-app heading element, one level down.
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
 		 */
 		entryHeadingTag() {
 			return `h${this.headingLevel + 1}`
@@ -173,6 +179,8 @@ export default {
 
 		/**
 		 * @return {string} The per-app heading's class.
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
 		 */
 		entryHeadingClass() {
 			return `utrecht-heading-${this.headingLevel + 1}`
@@ -191,6 +199,8 @@ export default {
 		 *
 		 * @param {object} contribution One contribution.
 		 * @return {Array} Its collections and actions.
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-contribution-must-be-scoped-to-the-portal-it-targets
 		 */
 		entriesOf(contribution) {
 			const collections = Array.isArray(contribution.collections)
