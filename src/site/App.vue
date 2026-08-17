@@ -1436,7 +1436,24 @@ body.layout-base .pq-site {
 	 * is what `utrecht-paragraph` sets anyway, so the blanket rule looked
 	 * right everywhere it happened to agree and was wrong everywhere else.
 	 */
-	background: var(--pq-bg-color, #ffffff);
+	/*
+	 * CHAINED INTO THE SURFACE LAYER, not replaced by it.
+	 *
+	 * This scoped rule is `.pq-site[data-v-…]` and it is INJECTED AT RUNTIME by
+	 * style-loader, so it lands after every linked stylesheet and wins ties on
+	 * order rather than on specificity. `site-theme.css` cannot out-rank it
+	 * without an escalation that would then have to be maintained — measured:
+	 * the surface layer moved seven of eight surfaces and this container was
+	 * the one that did not budge.
+	 *
+	 * So it defers instead. `--pq-bg-color` stays first, because a portal that
+	 * already sets it must keep working; behind it sits the same chain every
+	 * other surface uses, and the literal last.
+	 */
+	background: var(
+		--pq-bg-color,
+		var(--nldesign-site-surface, var(--utrecht-document-background-color, #ffffff))
+	);
 	min-height: 100vh;
 
 	/*
