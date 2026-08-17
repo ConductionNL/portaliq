@@ -574,7 +574,10 @@ class SessionController extends Controller {
 
 		// Same hand-off as the OIDC callback: the bearer travels in the URL
 		// FRAGMENT, which is never sent to a server and never reaches a log.
-		$target = ($returnTo !== '' ? $returnTo : '/apps/portaliq/site?portal=' . rawurlencode((string)($site['slug'] ?? '')));
+		$target = '/apps/portaliq/site?portal=' . rawurlencode((string)($site['slug'] ?? ''));
+		if ($returnTo !== '') {
+			$target = $returnTo;
+		}
 
 		return new RedirectResponse(
 			$this->urlGenerator->getAbsoluteURL($target) . '#token=' . rawurlencode($issued['token']),
@@ -590,8 +593,11 @@ class SessionController extends Controller {
 	 */
 	private function currentNextcloudUid(): string {
 		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return '';
+		}
 
-		return ($user === null) ? '' : $user->getUID();
+		return $user->getUID();
 	}//end currentNextcloudUid()
 
 
@@ -607,6 +613,18 @@ class SessionController extends Controller {
 	}//end portalFor()
 
 
+	/**
+	 * End the portal session the bearer names.
+	 *
+	 * Public because a visitor whose token has already expired must still be
+	 * able to sign out: refusing the request would leave the browser holding a
+	 * token it cannot revoke.
+	 *
+	 * @return JSONResponse Always `{ok: true}` — a session that was already
+	 *                      gone is a successful sign-out, not an error.
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portal-must-offer-only-the-sign-in-routes-it-declares
+	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 30, period: 60)]

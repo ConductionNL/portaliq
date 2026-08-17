@@ -64,6 +64,32 @@
 }
 
 /*
+ * THE ONE-BAR HEADER.
+ *
+ * `.ac-header__navigation-main` is a flex row already; the navigation joins it
+ * between the logo and the right-hand controls. The reference puts the
+ * navigation immediately after the wordmark and pushes the controls to the far
+ * edge, which is what the auto margin does — the same slot docs.conduction.nl
+ * uses for its language selector and GitHub link, and where a portal's sign-in
+ * and register controls belong.
+ */
+.pq-site__header-nav {
+	display: flex;
+	align-items: center;
+	gap: var(--nldesign-header-nav-gap, 2rem);
+	margin-inline-end: auto;
+}
+
+.pq-site__header-nav ul {
+	display: flex;
+	align-items: center;
+	gap: var(--nldesign-header-nav-gap, 2rem);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+/*
  * SHAPE, NOT COLOUR — and every value is a token that defaults to the current
  * flat look.
  *
@@ -100,6 +126,63 @@
 .utrecht-card {
 	border-radius: var(--nldesign-card-radius, 0);
 	box-shadow: var(--nldesign-card-shadow, none);
+}
+
+/*
+ * CONTENT CARDS — scoped to the body grid, and that scope is the safety.
+ *
+ * `.ac-card` is not one component. The hero's search box is
+ * `.ac-card.ac-card--blue.ac-card--padding-lg`, and an earlier version of the
+ * rule below set padding on every `.ac-card`, flattening the search field out
+ * of its own band. `.pq-grid` limits this to cards an author placed in the page
+ * body, which is what "card" means to everybody except the CSS.
+ *
+ * The reference (docs.conduction.nl) is a white panel with a hairline border,
+ * a generous inset, a hexagon-framed icon, a bold heading in the brand colour
+ * and muted body copy. Every value is a token so a theme that names none of
+ * them keeps today's flat outline.
+ */
+.pq-grid .ac-card {
+	background-color: var(--nldesign-card-background, transparent);
+	border: var(--nldesign-card-border-width, 0) solid
+		var(--nldesign-card-border-color, transparent);
+	border-radius: var(--nldesign-card-radius, 0);
+	block-size: 100%;
+}
+
+.pq-grid .ac-card .ac-card__content {
+	padding: var(--nldesign-card-padding, 0);
+	display: flex;
+	flex-direction: column;
+	gap: var(--nldesign-card-gap, 0);
+}
+
+.pq-grid .ac-card .utrecht-heading-2,
+.pq-grid .ac-card .utrecht-heading-3,
+.pq-grid .ac-card .utrecht-heading-4 {
+	color: var(--nldesign-card-heading-color, inherit);
+	font-weight: var(--nldesign-card-heading-weight, inherit);
+}
+
+.pq-grid .ac-card .utrecht-paragraph {
+	color: var(--nldesign-card-body-color, inherit);
+}
+
+/*
+ * THE HEXAGON IS THE BRAND'S ONE UNMISTAKABLE SHAPE, so it is a token, not a
+ * hard-coded clip-path: a municipality using these same blocks must not
+ * inherit Conduction's geometry. `--nldesign-card-icon-clip` defaults to no
+ * clipping at all, which leaves a plain square icon tile.
+ */
+.pq-grid .ac-card .ac-card__content > svg:first-child,
+.pq-grid .ac-card .ac-icon:first-child {
+	inline-size: var(--nldesign-card-icon-size, auto);
+	block-size: var(--nldesign-card-icon-size, auto);
+	padding: var(--nldesign-card-icon-padding, 0);
+	background-color: var(--nldesign-card-icon-background, transparent);
+	color: var(--nldesign-card-icon-color, inherit);
+	clip-path: var(--nldesign-card-icon-clip, none);
+	box-sizing: border-box;
 }
 
 .ac-card:hover,

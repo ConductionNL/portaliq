@@ -218,6 +218,17 @@ class ContentController extends Controller {
 				'tagline' => (string)($portal['tagline'] ?? ''),
 				'locales' => array_values((array)($portal['locales'] ?? [])),
 				'locale'  => $this->locale(portal: $portal, requested: $locale),
+				// HOW MANY BARS THE HEADER HAS. `double` is the government
+				// pattern this renderer was built against — a title bar above a
+				// separate navigation bar. `single` is the one bar with the
+				// logo, the navigation and the sign-in controls on one line,
+				// which is what most product and documentation sites use.
+				//
+				// Projected here rather than inferred from the theme: two
+				// portals can share a palette and disagree about their chrome,
+				// and a renderer guessing structure from colour is a renderer
+				// nobody can predict.
+				'headerVariant' => $this->headerVariant(portal: $portal),
 				// The MODES are public — a visitor has to know how to sign in.
 				// Provider secrets are not here and never will be; they live in
 				// the credential broker.
@@ -225,6 +236,29 @@ class ContentController extends Controller {
 			]
 		);
 	}//end site()
+
+
+	/**
+	 * How many bars the portal's header has.
+	 *
+	 * Unknown values fall back to `double` rather than to the newer look: a
+	 * portal that has never heard of this field must keep the chrome it has,
+	 * and a typo must not silently restructure a live government site.
+	 *
+	 * @param array<string, mixed> $portal The resolved portal record.
+	 *
+	 * @return string `single` or `double`.
+	 *
+	 * @spec openspec/changes/portal-page-composition/specs/portal-page-composition/spec.md#requirement-every-region-of-a-portal-page-must-be-composed-from-widgets
+	 */
+	private function headerVariant(array $portal): string {
+		$variant = (string)($portal['headerVariant'] ?? '');
+		if ($variant === 'single') {
+			return 'single';
+		}
+
+		return 'double';
+	}//end headerVariant()
 
 
 	/**

@@ -73,6 +73,30 @@
 					slot, which is where that implementation puts
 					Aanmelden/Inloggen.
 				-->
+				<!--
+					SINGLE-BAR HEADER: the navigation joins the logo and the
+					sign-in controls on one line, the pattern documentation and
+					product sites use. In the `double` variant this renders
+					nothing and the navigation stays in its own bar below, which
+					is the government pattern this renderer was built against.
+
+					The menus are rendered in ONE place per variant, never both:
+					a hidden duplicate would put every link into the
+					accessibility tree twice and make "next link" announce the
+					same destination two times.
+				-->
+				<div
+					v-if="singleBarHeader"
+					class="ac-c-navigation__container pq-site__header-nav"
+					data-testid="site-header-nav">
+					<SiteMenu
+						v-for="menu in headerMenus"
+						:key="menu.title"
+						:menu="menu"
+						:currentRoute="route"
+						@navigate="go" />
+				</div>
+
 				<div class="ac-header__right-section">
 					<div
 						v-if="session || signInRoutes.length"
@@ -105,7 +129,7 @@
 				</div>
 			</div>
 
-			<div class="ac-header__navigation-secondary">
+			<div v-if="!singleBarHeader" class="ac-header__navigation-secondary">
 				<div class="container">
 					<div class="ac-c-navigation__container">
 						<SiteMenu
@@ -477,6 +501,28 @@ export default {
 		 */
 		headerMenus() {
 			return this.menus.filter((menu) => (menu.position || 0) === 0)
+		},
+
+		/**
+		 * Whether the header is one bar or two.
+		 *
+		 * `double` — a title bar above a separate navigation bar — is the
+		 * government pattern this renderer was built against and stays the
+		 * default, so no existing portal changes shape. `single` puts the logo,
+		 * the navigation and the sign-in controls on one line, which is what
+		 * documentation and product sites do.
+		 *
+		 * The portal decides, not the theme: two portals can share a palette
+		 * and disagree about their chrome, and a renderer that inferred
+		 * structure from colour would be unpredictable to whoever picks the
+		 * colour.
+		 *
+		 * @return {boolean} True for the one-bar header.
+		 *
+		 * @spec openspec/changes/portal-page-composition/specs/portal-page-composition/spec.md#requirement-every-region-of-a-portal-page-must-be-composed-from-widgets
+		 */
+		singleBarHeader() {
+			return this.site?.headerVariant === 'single'
 		},
 
 		/**
