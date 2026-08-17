@@ -479,6 +479,43 @@ class PortalTrafficServiceTest extends TestCase {
 
 
 	/**
+	 * A portal that does not measure reports NO COUNTERS AT ALL.
+	 *
+	 * Not zeroes. A page handed `{sessions: 0}` cannot tell "nobody visited"
+	 * from "nothing was ever collected", and it will draw the same empty chart
+	 * for both — which reads as the first. Withholding the keys entirely means
+	 * there is nothing for a renderer to plot by accident, which is a stronger
+	 * guarantee than asking every future renderer to check a flag.
+	 *
+	 * @return void
+	 */
+	public function testAnUnmeasuredPortalReportsNoCountersRatherThanZeroes(): void {
+		$summary = $this->service->summaryFor(portal: ['slug' => 'demo']);
+
+		$this->assertSame(['measured' => false], $summary);
+		$this->assertArrayNotHasKey('sessions', $summary);
+		$this->assertArrayNotHasKey('pageViews', $summary);
+	}//end testAnUnmeasuredPortalReportsNoCountersRatherThanZeroes()
+
+
+	/**
+	 * A MEASURED portal with no visitors yet reports zeroes, and says so.
+	 *
+	 * The companion to the case above — without it, "reports nothing" would be
+	 * satisfied by a summary that never reports anything.
+	 *
+	 * @return void
+	 */
+	public function testAMeasuredPortalWithNoDataReportsZeroesAndIsMarkedMeasured(): void {
+		$summary = $this->service->summaryFor(portal: $this->portal());
+
+		$this->assertTrue($summary['measured']);
+		$this->assertSame(0, $summary['sessions']);
+		$this->assertSame(0, $summary['pageViews']);
+	}//end testAMeasuredPortalWithNoDataReportsZeroesAndIsMarkedMeasured()
+
+
+	/**
 	 * A portal asking for no region gets none.
 	 *
 	 * @return void

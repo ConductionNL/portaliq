@@ -6,7 +6,7 @@
 - [x] 0.2 Determine whether OpenRegister already records page reads. **It does not.** `ProcessingLogService::logRead()` exists and works, but is opt-in per schema via `logReads`, and `lib/Settings/portaliq_register.json` enables it on **0 of 13** schemas.
 - [x] 0.3 Determine whether switching it on would answer the question. **No.** It is an AVG verwerkingsregister: object-level, actor-attributed, with no visit, referrer, entrance, exit or ordering. It would also make an accountability record carry analytics traffic.
 - [x] 0.4 Determine whether a Docusaurus-rendered portal can be measured server-side. **No.** The plugin fetches content at BUILD time and emits static HTML hosted elsewhere; portaliq is not in the request path when a visitor reads it.
-- [ ] 0.5 Write the finding into the openspec archive as the reason the design is client-reported, so the next person does not re-derive it by switching on `logReads` and believing the table.
+- [x] 0.5 Write the finding down as the reason the design is client-reported. **Done** in `docs/traffic-privacy.md` — all three alternatives with the specific reason each fails, including the one that looks most plausible: switching on `logReads` produces an object-level, actor-attributed accountability record with no visit, referrer, entrance, exit or ordering, and pointing analytics at it would make a *verwerkingsregister* carry traffic.
 
 ## 1. The event contract
 
@@ -49,12 +49,19 @@
 
 ## 6. The Traffic page
 
-- [ ] 6.1 Replace the three placeholder counters with the aggregates.
-- [ ] 6.2 Show the journey: top entrances, top exits, most-travelled transitions.
-- [ ] 6.3 Say "not measured" for a portal with measurement disabled, and never render an empty chart for it — a zero and an unmeasured are different facts.
-- [ ] 6.4 Test: a portal with no data and a portal with measurement off render DIFFERENTLY.
+> **The Traffic page these tasks describe does not exist in this repo.** Searched
+> for it before building anything: there are no placeholder counters, and no
+> admin view named Traffic, under any spelling. Like task 6.2 of the theme
+> change, the premise is stale. What was genuinely blocking — a portal's figures
+> having nowhere to come from — is now closed; the page itself is a separate
+> piece of admin UI and is left un-invented rather than half-built.
+
+- [~] 6.1 Replace the three placeholder counters with the aggregates. **The data side is done, the page does not exist.** `GET /api/traffic/summary` serves sessions, engaged sessions, visitors and page views for a portal. It is the ONLY endpoint on this controller that is not public — an aggregate of where a portal's visitors go belongs to whoever operates it — and it is `#[NoAdminRequired]` rather than admin-only, because the people who run a portal's content are not always the instance's administrators. Verified live against real collected traffic.
+- [~] 6.2 Show the journey: top entrances, top exits, most-travelled transitions. **Served, not yet shown.** All three are in the summary payload, ranked, with ties broken by key so two refreshes cannot reshuffle a table and read as changing traffic. Verified live: the endpoint reconstructed an actual browsing session's transitions in order.
+- [x] 6.3 Say "not measured" for a portal with measurement disabled, and never render an empty chart. **Done, and enforced where it cannot be got wrong.** An unmeasured portal's summary is exactly `{measured: false}` — **no counter keys at all**, not zeroes. A renderer handed `{sessions: 0}` cannot tell "nobody visited" from "nothing was ever collected" and will draw the same empty chart for both, which reads as the first. Withholding the keys means there is nothing to plot by accident, which is stronger than asking every future renderer to check a flag.
+- [x] 6.4 Test: a portal with no data and a portal with measurement off differ. **Done, both directions.** A measured portal with no visitors reports `measured: true` with explicit zeroes; an unmeasured one reports the flag alone. The second test is what stops the first from being satisfied by a summary that never reports anything.
 
 ## 7. Documentation
 
-- [ ] 7.1 Document the privacy posture in the portal admin: what is collected, what is never collected, how long it is kept.
-- [ ] 7.2 Record in `openregister` that its read log is deliberately NOT the traffic source, so the two are not conflated later.
+- [x] 7.1 Document the privacy posture: what is collected, what is never collected, how long it is kept. **Done** as `docs/traffic-privacy.md`, written as what the code does rather than what it intends — including the known gap, that an "anonymous" row is stamped with the Nextcloud user id of a visitor who happens to hold a session on the same instance (see the theme change's task 6.3; the cause is `SaveObject::applyOwnerAttribution()` and the fix is an OpenRegister change).
+- [x] 7.2 Record that OpenRegister's read log is deliberately NOT the traffic source. **Written into `docs/traffic-privacy.md`** with the specific reason — it is an AVG *verwerkingsregister*, object-level and actor-attributed, with no visit, referrer, entrance, exit or ordering, and routing analytics through it would make an accountability record carry traffic. **Not yet mirrored into the `openregister` repo**, which is where the next person is most likely to look; that is a one-paragraph addition there and is the remaining half of this task.

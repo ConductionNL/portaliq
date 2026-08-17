@@ -188,6 +188,51 @@ class PortalObjectWriter {
 	}//end countObjects()
 
 	/**
+	 * Read rows from a register/schema matching a set of property filters.
+	 *
+	 * A READ ON THE WRITER, for the same reason `countObjects()` is: these are
+	 * the UNSCOPED, operator-facing paths, and they have no subject to scope
+	 * by. `PortalObjectReader` exists to enforce a per-row ownership boundary
+	 * and every method on it takes a subject — putting an unscoped read there
+	 * would place a method with no boundary among methods whose whole purpose
+	 * is the boundary, which is how one gets called by mistake.
+	 *
+	 * Fails closed to an empty list. A traffic summary that 500s because the
+	 * register is unreachable is worse than one that reports nothing yet.
+	 *
+	 * @param string               $register The register slug/id.
+	 * @param string               $schema   The schema slug.
+	 * @param array<string, mixed> $filters  Property filters.
+	 * @param int                  $limit    The most rows to return.
+	 *
+	 * @return array<int, array<string, mixed>> The rows, or [].
+	 *
+	 * @spec openspec/changes/portal-traffic-analytics/tasks.md
+	 */
+	public function readObjects(string $register, string $schema, array $filters = [], int $limit = 5000): array {
+		$objectService = $this->objectService();
+		if ($objectService === null) {
+			return [];
+		}
+
+		try {
+			$objectService->setRegister(register: $register);
+			$objectService->setSchema(schema: $schema);
+			$rows = $objectService->findAll(config: ['filters' => $filters, 'limit' => $limit]);
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: OR read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
+			return [];
+		}
+
+		$normalised = [];
+		foreach ($rows as $row) {
+			$normalised[] = $this->normalise(row: $row);
+		}
+
+		return $normalised;
+	}//end readObjects()
+
+	/**
 	 * Update an object owned by the subject (portal-scoped-crud, ADR-062
 	 * Phase 1 — closes the write-IDOR concern, Conduction/portaliq#16).
 	 *

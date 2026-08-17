@@ -38,6 +38,7 @@ use OCA\Portaliq\Service\PortalTrafficService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
+use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\DataDisplayResponse;
@@ -205,6 +206,36 @@ class TrafficController extends Controller {
 
 		return $this->cors(response: $response);
 	}//end client()
+
+
+	/**
+	 * What a portal's traffic looks like, for whoever operates it.
+	 *
+	 * NOT PUBLIC, AND NOT CORS-ENABLED. Everything else on this controller is
+	 * anonymous because a visitor's browser has to reach it; this is the one
+	 * that reads BACK, and an aggregate of where a portal's visitors go is a
+	 * portal operator's business rather than the open web's. `#[NoAdminRequired]`
+	 * rather than admin-only: the people who run a portal's content are not
+	 * always the instance's administrators.
+	 *
+	 * The `measured` flag is produced by the service, not by this method, so a
+	 * renderer cannot be handed zeroes for a portal that measures nothing.
+	 *
+	 * @param string $portal An explicit portal slug.
+	 *
+	 * @return DataResponse The summary, or a 404 when no portal resolves.
+	 *
+	 * @spec openspec/changes/portal-traffic-analytics/tasks.md
+	 */
+	#[NoAdminRequired]
+	public function summary(string $portal = ''): DataResponse {
+		$resolved = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
+		if ($resolved === null) {
+			return new DataResponse(data: ['error' => 'not_found'], statusCode: Http::STATUS_NOT_FOUND);
+		}
+
+		return new DataResponse(data: $this->traffic->summaryFor(portal: $resolved));
+	}//end summary()
 
 
 	/**

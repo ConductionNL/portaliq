@@ -101,11 +101,13 @@ class PortalTrafficService {
 	 * @param PortalObjectWriter $writer       Stores the events.
 	 * @param LoggerInterface    $logger       Records refusal counts.
 	 * @param ICacheFactory|null $cacheFactory Backs the per-client rate limit; null means no limit.
+	 * @param PortalTrafficAggregator $aggregator Turns stored events into figures.
 	 */
 	public function __construct(
 		private readonly PortalObjectWriter $writer,
 		private readonly LoggerInterface $logger,
 		private readonly ?ICacheFactory $cacheFactory = null,
+		private readonly PortalTrafficAggregator $aggregator = new PortalTrafficAggregator(),
 	) {
 	}//end __construct()
 
@@ -234,6 +236,44 @@ class PortalTrafficService {
 			],
 		];
 	}//end clientConfig()
+
+
+	/**
+	 * What this portal's traffic looks like, or that it is not measured.
+	 *
+	 * A ZERO AND AN UNMEASURED ARE DIFFERENT FACTS, and the distinction is
+	 * made HERE rather than left to whatever renders it. A page handed
+	 * `{sessions: 0}` has no way to tell "nobody visited" from "nothing was
+	 * ever collected", and it will draw an empty chart for both — which reads
+	 * as the first. So a portal that does not measure gets `measured: false`
+	 * and NO counters at all: there is nothing for a renderer to plot by
+	 * accident.
+	 *
+	 * @param array<string, mixed> $portal The resolved portal.
+	 *
+	 * @return array<string, mixed> `{measured: false}` or `{measured: true, ...}`.
+	 *
+	 * @spec openspec/changes/portal-traffic-analytics/tasks.md
+	 */
+	public function summaryFor(array $portal): array {
+		if ($this->enabledFor(portal: $portal) === false) {
+			return ['measured' => false];
+		}
+
+		$traffic = (array)($portal['traffic'] ?? []);
+		$events = $this->writer->readObjects(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			filters: ['portal' => (string)($portal['slug'] ?? '')]
+		);
+
+		$aggregate = $this->aggregator->aggregate(
+			events: $events,
+			timeoutMinutes: (int)($traffic['sessionTimeoutMinutes'] ?? 30)
+		);
+
+		return array_merge(['measured' => true], $aggregate);
+	}//end summaryFor()
 
 
 	/**

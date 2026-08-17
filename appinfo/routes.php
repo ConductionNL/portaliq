@@ -156,6 +156,11 @@ return [
         // working.
         ['name' => 'traffic#client', 'url' => '/api/traffic-client.js', 'verb' => 'GET'],
 
+        // Reading BACK. The only endpoint on this controller that is not
+        // public: an aggregate of where a portal's visitors go belongs to
+        // whoever operates the portal, not to the open web.
+        ['name' => 'traffic#summary', 'url' => '/api/traffic/summary', 'verb' => 'GET'],
+
         ['name' => 'portalPage#catchAll', 'url' => '/portal/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
 
         // Hosted tilburg-woo-ui (Open Tilburg WOO SPA) — public. Registered
