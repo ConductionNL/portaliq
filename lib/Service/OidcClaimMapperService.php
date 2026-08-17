@@ -62,7 +62,7 @@ class OidcClaimMapperService {
 	 * override outside this set is a misconfiguration and must fail closed,
 	 * never silently widen to an arbitrary string.
 	 */
-	private const VALID_IDENTITY_TYPES = ['eherkenning', 'digid', 'eidas', 'generic', 'dev'];
+	private const VALID_IDENTITY_TYPES = ['eherkenning', 'digid', 'eidas', 'generic', 'nextcloud', 'dev'];
 
 	/**
 	 * Broker-agnostic provider presets (design.md). `generic` has no natural

@@ -32,7 +32,8 @@
     "build:site": "NODE_ENV=production webpack --config webpack.site.js --progress",
     "watch:site": "NODE_ENV=development webpack --config webpack.site.js --progress --watch",
     "check:site-auth": "node tests/site-auth.spec.mjs",
-    "check:site-grid": "node tests/site-grid.spec.mjs"
+    "check:site-grid": "node tests/site-grid.spec.mjs",
+    "check:surfaces": "node tests/site-surfaces.spec.mjs"
   },
   "browserslist": [
     "extends @nextcloud/browserslist-config"

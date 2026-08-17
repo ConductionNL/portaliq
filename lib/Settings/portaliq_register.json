@@ -348,12 +348,13 @@
           "identityType": {
             "title": "Identity type",
             "type": "string",
-            "description": "The external identity provider that authenticated this account. `generic` is a broker-agnostic OIDC provider preset (portal-oidc-broker-login) for a broker that is none of digid/eherkenning/eidas.",
+            "description": "The external identity provider that authenticated this account. `generic` is a broker-agnostic OIDC provider preset (portal-oidc-broker-login) for a broker that is none of digid/eherkenning/eidas. `nextcloud` is a real account on THIS instance, authenticated by its own username and password — distinct from `dev`, which is the development bypass: typing the two the same makes an instance login and a bypass indistinguishable in an audit, and any policy keyed on identityType cannot tell them apart. Both are eIDAS-`low`.",
             "enum": [
               "eherkenning",
               "digid",
               "eidas",
               "generic",
+              "nextcloud",
               "dev"
             ],
             "example": "eherkenning"

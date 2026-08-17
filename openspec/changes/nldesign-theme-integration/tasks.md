@@ -21,8 +21,8 @@
 
 - [ ] 3.1 Call `ContrastController` for the adopted theme and record the verdict against the portal.
 - [ ] 3.2 Refuse — or loudly warn on — a theme whose own tokens fail AA for the surfaces a portal actually paints (bands, cards, footer).
-- [ ] 3.3 Add the portal's own rendered surfaces to the check, walking to the first ancestor that PAINTS a background. Comparing against the nearest NAMED band produced a false failure in this codebase once already, and the "fix" for it made a working form invisible.
-- [ ] 3.4 Test: a deliberately low-contrast token set is rejected/flagged; a compliant one passes.
+- [x] 3.3 Add the portal's own rendered surfaces to the check, walking to the first ancestor that PAINTS a background. Comparing against the nearest NAMED band produced a false failure in this codebase once already, and the "fix" for it made a working form invisible. **Done** as `tests/site-surfaces.spec.mjs` (`npm run check:surfaces`): ten page/width combinations across both demo portals, walking to the first ancestor that actually paints and skipping scrims below 30% alpha. It also COMPOSITES translucent text over that backdrop before measuring — without it `rgba(255,255,255,0.22)` scored 17.85:1 against a navy band, and a deliberate break passed the check.
+- [ ] 3.4 Test: a deliberately low-contrast token set is rejected/flagged; a compliant one passes. **Partially done**: the control has been run by hand — dropping the footer link colour to 22% white fails 8 of 38 nodes and exits non-zero, restoring it passes — but it is not yet an automated case, so nothing stops the check from silently ceasing to fire.
 
 ## 4. Sharing — adopt a theme that came from elsewhere
 
