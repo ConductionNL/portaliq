@@ -301,9 +301,57 @@ function rendererContractLint(manifest) {
 		}
 	}
 
+	// DETAIL PAGES HAVE THE SAME LAYOUT TRAP, and this lint used to look right
+	// past them. `CnDetailPage` feeds the same grid engine, so a widget with no
+	// layout entry is just as unreachable there — it simply does not appear,
+	// and the page looks like an object that has nothing to show.
+	//
+	// Their TYPES are not checked. A detail page mounts `data`, `related`,
+	// `integration` and `object-geo` directly and resolves everything else
+	// through the shared widget-type registry, which apps extend at runtime —
+	// so an allow-list here would be a guess about what is registered, and a
+	// wrong guess would fail a working page. The pairing is checkable without
+	// guessing; the type is not.
+	const details = (manifest.pages || []).filter(
+		(p) =>
+			p && p.type === 'detail' && p.config && Array.isArray(p.config.widgets),
+	)
+
+	for (const page of details) {
+		const widgets = page.config.widgets
+		const layout = Array.isArray(page.config.layout) ? page.config.layout : []
+		const placed = new Set(layout.map((l) => l && l.widgetId))
+
+		for (const widget of widgets) {
+			if (!widget || typeof widget !== 'object') continue
+			if (!placed.has(widget.id)) {
+				errors.push(
+					`pages[${page.id}].config: widget "${widget.id}" has no layout entry — `
+						+ 'a detail-page widget without one never renders',
+				)
+			}
+		}
+
+		for (const entry of layout) {
+			if (
+				entry
+				&& entry.widgetId
+				&& !widgets.some((w) => w && w.id === entry.widgetId)
+			) {
+				errors.push(
+					`pages[${page.id}].config.layout: entry references unknown widget "${entry.widgetId}"`,
+				)
+			}
+		}
+	}
+
 	console.log(
-		`[validate-manifest] renderer contract: inspected ${dashboards.length} dashboard page(s), `
-			+ `${dashboards.reduce((n, p) => n + p.config.widgets.length, 0)} widget(s)`,
+		`[validate-manifest] renderer contract: inspected ${dashboards.length} dashboard page(s) `
+			+ `and ${details.length} detail page(s), `
+			+ `${
+				dashboards.reduce((n, p) => n + p.config.widgets.length, 0)
+				+ details.reduce((n, p) => n + p.config.widgets.length, 0)
+			} widget(s)`,
 	)
 
 	return errors
