@@ -45,6 +45,7 @@ use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalThemeResolver;
+use OCA\Portaliq\Service\PortalTokenCss;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -74,6 +75,9 @@ class PortalPageController extends Controller {
 	 * @param PortalThemeResolver $themeResolver Maps that portal's theme
 	 *                                           reference to a real themiq
 	 *                                           token stylesheet.
+	 * @param PortalTokenCss $tokenCss Renders the portal's OWN token
+	 *                                 overrides — the layer that lets two
+	 *                                 portals on one theme differ.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -81,6 +85,7 @@ class PortalPageController extends Controller {
 		private readonly IURLGenerator $urlGenerator,
 		private readonly PortalResolver $portalResolver,
 		private readonly PortalThemeResolver $themeResolver,
+		private readonly PortalTokenCss $tokenCss,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -221,6 +226,9 @@ class PortalPageController extends Controller {
 				// app file", this one is "do we have the `--utrecht-*` tokens
 				// the component CSS reads".
 				'nldsStylesheet'  => $this->siteNldsStylesheet(),
+				// The portal's OWN token overrides, rendered last so a portal
+				// differs from its shared theme by exactly what it names.
+				'portalTokenCss'  => $this->sitePortalTokenCss(),
 				// The standalone shell owns the whole document now, so it needs
 				// the document language. Resolved from Accept-Language the same
 				// way index() does — the visitor is unauthenticated here, so
@@ -313,6 +321,49 @@ class PortalPageController extends Controller {
 	 * whichever brand happened to be first. A portal quietly wearing another
 	 * municipality's colours looks correct in every screenshot; an unstyled
 	 * one gets reported within the hour.
+	 *
+	 * @return string The stylesheet path relative to the theme app's css/, or ''.
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
+	 */
+	/**
+	 * The serving portal's token overrides as CSS, or ''.
+	 *
+	 * Same fail-quiet posture as the stylesheet resolvers: a portal that cannot
+	 * be resolved, or that overrides nothing, contributes no rule at all rather
+	 * than an empty one.
+	 *
+	 * @return string The CSS, or ''.
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
+	 */
+	private function sitePortalTokenCss(): string {
+		try {
+			$portal = $this->portalResolver->resolve(
+				request: $this->request,
+				portalSlug: (string)$this->request->getParam('portal', '')
+			);
+		} catch (\Throwable) {
+			return '';
+		}
+
+		if ($portal === null) {
+			return '';
+		}
+
+		return $this->tokenCss->render(portal: $portal);
+	}//end sitePortalTokenCss()
+
+
+	/**
+	 * The token stylesheet the serving portal's theme resolves to, or ''.
+	 *
+	 * Returns the empty string for every failure — unknown host, no theme,
+	 * theme app absent, theme file missing. That is deliberate and it is the
+	 * same answer in each case: the page renders UNSTYLED rather than in
+	 * whichever brand happened to be first. A portal quietly wearing another
+	 * municipality's colours looks correct in every screenshot; an unstyled one
+	 * gets reported within the hour.
 	 *
 	 * @return string The stylesheet path relative to the theme app's css/, or ''.
 	 *

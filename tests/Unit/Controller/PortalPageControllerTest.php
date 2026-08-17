@@ -8,6 +8,7 @@ use OCA\Portaliq\Controller\PortalPageController;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalThemeResolver;
+use OCA\Portaliq\Service\PortalTokenCss;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\IRequest;
 use OCP\IURLGenerator;
@@ -111,7 +112,8 @@ class PortalPageControllerTest extends TestCase {
 			$resolver,
 			$this->createMock(IURLGenerator::class),
 			$this->createMock(PortalResolver::class),
-			$this->createMock(PortalThemeResolver::class)
+			$this->createMock(PortalThemeResolver::class),
+			new PortalTokenCss()
 		))->index();
 
 		$this->assertSame('en-US', $received);
@@ -286,7 +288,10 @@ class PortalPageControllerTest extends TestCase {
 			$resolver,
 			$urlGenerator,
 			$portalResolver,
-			$themeResolver
+			$themeResolver,
+			// The REAL renderer, not a mock: its whole job is refusing values,
+			// and a mock would happily return whatever the test asked for.
+			new PortalTokenCss()
 		);
 	}//end controller()
 

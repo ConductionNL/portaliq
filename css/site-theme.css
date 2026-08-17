@@ -80,6 +80,66 @@
 	margin-inline-end: auto;
 }
 
+/*
+ * CHROME GEOMETRY, MEASURED FROM THE REFERENCE RATHER THAN EYEBALLED.
+ *
+ * Every default below is what the page looks like today, so a theme naming
+ * none of them is unchanged. The Conduction set names them with the values
+ * read off docs.conduction.nl in a browser — header padding 56px, a 1px
+ * #DCE3F0 rule under it, 14px/500 navigation, a 1320px content column with
+ * 24px gutters.
+ *
+ * Reading them from the live reference matters more than it sounds: my own
+ * estimates from a screenshot had the container at 1280 and the nav at 15px.
+ * Close enough to look right in a comparison, wrong enough that nothing ever
+ * lines up.
+ */
+.pq-site .ac-header__navigation-main {
+	background-color: var(--nldesign-header-background, transparent);
+	padding-inline: var(--nldesign-header-padding-inline, 0);
+	border-block-end: var(--nldesign-header-border-width, 0) solid
+		var(--nldesign-header-border-color, transparent);
+	min-block-size: var(--nldesign-header-height, auto);
+}
+
+/*
+ * THE TYPEFACE, SET ON OUR OWN ROOT.
+ *
+ * The vendored CSS declares `font-family: Roboto, arial, sans-serif` on the app
+ * container directly, not through a token, so a theme naming Figtree got
+ * Figtree in `--tilburg-document-font-family` and Roboto on the page. The face
+ * was loading correctly the whole time — `document.fonts.check('16px Figtree')`
+ * returned true while every glyph on the page was Roboto — which is the
+ * failure mode a font check cannot see.
+ */
+body,
+.pq-site {
+	font-family: var(--nldesign-body-font-family, inherit);
+}
+
+/*
+ * NAVIGATION LINKS.
+ *
+ * They are plain anchors, not `.utrecht-link`, so `--utrecht-link-color` never
+ * reached them and they rendered in the browser's default rgb(0, 0, 238) — the
+ * one colour on the page nobody chose, on the most-used control in the header.
+ */
+.pq-site__header-nav a,
+.pq-site .ac-header__navigation-secondary a {
+	color: var(--nldesign-nav-link-color, inherit);
+	font-family: inherit;
+	font-size: var(--nldesign-nav-font-size, inherit);
+	font-weight: var(--nldesign-nav-font-weight, inherit);
+	padding-inline: var(--nldesign-nav-item-padding-inline, 0);
+	text-decoration: var(--nldesign-nav-link-decoration, none);
+}
+
+.pq-site .container {
+	max-inline-size: var(--nldesign-container-max, none);
+	padding-inline: var(--nldesign-container-padding-inline, 0);
+	margin-inline: auto;
+}
+
 .pq-site__header-nav ul {
 	display: flex;
 	align-items: center;
@@ -188,4 +248,41 @@
 .ac-card:hover,
 .utrecht-card:hover {
 	box-shadow: var(--nldesign-card-shadow-hover, var(--nldesign-card-shadow, none));
+}
+
+/*
+ * FOOTER — measured on docs.conduction.nl, not estimated.
+ *
+ * The reference's footer is a navy #0A172F band with 88px of top padding,
+ * Figtree 22px column headings in white, IBM Plex Mono 11px links in #0082C9,
+ * and a legal line in Plex Mono 12px at 55% white. The mono is the detail that
+ * makes it recognisable and the one nobody guesses from a screenshot.
+ *
+ * Defaults keep today's appearance, so only a theme naming these changes.
+ */
+.pq-site .ac-footer section {
+	padding-block-start: var(--nldesign-footer-padding-block, 0);
+}
+
+.pq-site .ac-footer h2:not(.sr-only),
+.pq-site .ac-footer h3,
+.pq-site .ac-footer .ac-footer__title {
+	font-family: var(--nldesign-footer-heading-font, inherit);
+	font-size: var(--nldesign-footer-heading-size, inherit);
+	color: var(--nldesign-footer-heading-color, inherit);
+	letter-spacing: var(--nldesign-footer-heading-spacing, normal);
+}
+
+.pq-site .ac-footer a {
+	font-family: var(--nldesign-footer-link-font, inherit);
+	font-size: var(--nldesign-footer-link-size, inherit);
+	color: var(--nldesign-footer-link-color, inherit);
+	text-decoration: var(--nldesign-footer-link-decoration, none);
+}
+
+.pq-site .ac-footer__sub-footer,
+.pq-site .ac-footer section:last-of-type:not(:only-of-type) {
+	font-family: var(--nldesign-footer-legal-font, inherit);
+	font-size: var(--nldesign-footer-legal-size, inherit);
+	color: var(--nldesign-footer-legal-color, inherit);
 }

@@ -176,6 +176,16 @@ foreach (['nlds/nlds-components', 'nlds/nlds-vendor-a', 'nlds/nlds-vendor-b', 'n
 // wins, so this link must stay after the vendored ones.
 $stylesheets[] = $asset($appId, 'css/nlds/nlds-fonts.css');
 
+// The theme app's self-hosted brand faces. A token set may NAME a typeface —
+// the Conduction set has asked for Figtree since it was written — but naming
+// one is not serving one: every portal rendered Roboto, silently, because the
+// declaration fell through its own fallback chain and nothing reported it.
+//
+// Self-hosted rather than linked to a font CDN: a public government portal
+// must not make its visitors' browsers announce themselves to a third party to
+// read a page.
+$stylesheets[] = $asset(PortalThemeResolver::THEME_APP, 'css/fonts-conduction.css');
+
 // THE LICENSED FACES ARE LINKED ONLY WHEN THEY EXIST, AND THE CHECK IS THE FIX.
 //
 // `css/fonts/licensed/` is a gitignored drop-in slot, so on every deployment
@@ -201,6 +211,21 @@ if (is_file($appRoot . '/css/fonts/licensed/avenir-lt-55-roman.woff2') === true)
 foreach ($tokenStylesheets as $href) {
     $stylesheets[] = $href;
 }
+
+// PER-PORTAL TOKEN OVERRIDES — the last layer, so a portal differs from its
+// theme by exactly what it names.
+//
+// A theme is shared. Without this layer two portals on one theme cannot differ,
+// and an organisation wanting its own accent has to commission a whole token
+// set for one colour. The cascade is bridge → theme → portal.
+//
+// Emitted inline rather than as a linked asset because it is per-portal data,
+// not a file: linking it would mean a route, a cache key and an invalidation
+// path for a handful of declarations that change when the portal record does.
+// It is a <style> element, which the CSP allows with the same nonce mechanism
+// the script tag uses — and it contains only name/value pairs that
+// `PortalTokenCss` has validated against an allow-list, never authored CSS.
+$portalTokenCss = (string)($_['portalTokenCss'] ?? '');
 
 // The tab icon. A portal's declared logo wins; otherwise the theme app's own
 // favicon, which every NLDS theme ships.
@@ -242,6 +267,9 @@ if ($favicon === '') {
     <link rel="icon" href="<?php p($favicon); ?>">
     <?php foreach ($stylesheets as $href) { ?>
     <link rel="stylesheet" href="<?php p($href); ?>">
+    <?php } ?>
+    <?php if ($portalTokenCss !== '') { ?>
+    <style><?php print_unescaped($portalTokenCss); ?></style>
     <?php } ?>
 </head>
 <body>

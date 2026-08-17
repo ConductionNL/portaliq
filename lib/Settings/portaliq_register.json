@@ -1540,6 +1540,14 @@
             "default": "double",
             "title": "Header variant",
             "description": "How many bars the header has. \"double\" is the government pattern — a title bar above a separate navigation bar. \"single\" puts the logo, navigation and sign-in controls on one line, as documentation and product sites do. Unknown values fall back to \"double\" so a portal that never sets it keeps the chrome it has."
+          },
+          "tokens": {
+            "type": "object",
+            "title": "Design token overrides",
+            "description": "Per-portal overrides of NL Design System tokens, layered over the portal theme. Keys are token names without the leading dashes (e.g. \"nldesign-color-primary\"); values are plain CSS values. This is how two portals on one theme differ, and how an organisation brands a portal without a new token set.",
+            "additionalProperties": {
+              "type": "string"
+            }
           }
         }
       },
