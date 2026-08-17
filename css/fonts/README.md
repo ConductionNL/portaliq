@@ -33,12 +33,28 @@ to redistribute them, so they are not in this repository and must never be
 committed here.
 
 A deployment that **does** hold the licence places the file at the name
-`nlds-fonts.css` expects:
+[`../nlds/nlds-fonts-licensed.css`](../nlds/nlds-fonts-licensed.css) expects:
 
 ```
 css/fonts/licensed/avenir-lt-55-roman.woff2
 ```
 
-and the affected headings render in Avenir. Without it the browser records one
-failed fetch for that face and falls through to Roboto. Nothing breaks; the
-page is simply not glyph-identical to a licensed deployment.
+and the affected headings render in Avenir.
+
+`templates/site.php` links that sheet **only when the file is on disk**, and
+that condition is load-bearing rather than tidy. This section previously said
+the absent case cost "one failed fetch" and that "nothing breaks". It cost two
+console errors on every anonymous page load:
+
+| request | status |
+| --- | --- |
+| `/apps/portaliq/css/fonts/licensed/avenir-lt-55-roman.woff2` | **401** — Nextcloud answers a missing app asset with 401, not 404 |
+| `/75d49df91bd25d7364df.woff2` | **404** — the vendored `nlds-app.css` Avenir face, reached because a failed `@font-face` source falls back to the previous matching rule |
+
+e2e **S24** asserts a public portal logs no console errors, and it failed on
+both. Without the licence the page now makes neither request:
+`nlds-fonts.css` declares Avenir as `local('Avenir'), …, url(roboto-400.woff2)`
+— `local()` first so an installed copy is used with no download, a shipped file
+last so the source list resolves and the vendored 404 is never reached. The
+rendering is the documented Roboto fall-through either way; only the failures
+are gone.

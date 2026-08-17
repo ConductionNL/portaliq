@@ -155,6 +155,26 @@ foreach (['nlds/nlds-components', 'nlds/nlds-vendor-a', 'nlds/nlds-vendor-b', 'n
 // wins, so this link must stay after the vendored ones.
 $stylesheets[] = $asset($appId, 'css/nlds/nlds-fonts.css');
 
+// THE LICENSED FACES ARE LINKED ONLY WHEN THEY EXIST, AND THE CHECK IS THE FIX.
+//
+// `css/fonts/licensed/` is a gitignored drop-in slot, so on every deployment
+// without a Monotype licence — which is every deployment this repository ships
+// to — it is empty. The slot used to be declared inside `nlds-fonts.css`,
+// which is linked unconditionally, so the browser requested a file that was
+// not there. Nextcloud answers a missing app asset with **401**, not 404, so
+// an anonymous visitor to a public government portal collected a red
+// `401 (Unauthorized)` on every single page load; the failure then fell back
+// to the vendored root-relative Avenir face and logged a `404` as well.
+// Measured in the CI trace for e2e S24, which exists to catch precisely this.
+//
+// A sheet linked only when its resources are on disk cannot fail that way at
+// all. `nlds-fonts.css` keeps a neutralised Avenir face that ends in a shipped
+// Roboto file, so the unlicensed rendering is unchanged and silent; this sheet
+// comes after it, so a licensed deployment still gets the real face.
+if (is_file($appRoot . '/css/fonts/licensed/avenir-lt-55-roman.woff2') === true) {
+    $stylesheets[] = $asset($appId, 'css/nlds/nlds-fonts-licensed.css');
+}
+
 // The token layer, last, so a theme's value beats the component CSS's own
 // `:root` fallback for the same custom property.
 foreach ($tokenStylesheets as $href) {

@@ -114,18 +114,25 @@ test.describe('site renderer — NL Design System adoption', () => {
 		// SCOPED TO WHAT WE SHIP, and the scope is the point.
 		//
 		// The first version of this asserted that NO face reports 'error'. That
-		// is false on a correct deployment: the reference application's font
+		// was false on a correct deployment: the reference application's font
 		// set is mostly commercial (Avenir LT W01, Gill Sans W01, Tisa Sans
-		// Pro), those files are deliberately NOT in this repository, and
-		// `css/fonts/licensed/` is a gitignored drop-in slot. So on CI — and on
-		// every deployment without a Monotype licence — the Avenir face fetches
-		// nothing and reports 'error' BY DESIGN, falling through to Roboto.
+		// Pro) and those files are deliberately NOT in this repository, so the
+		// vendored sheets' faces for them could not resolve. Asserting no
+		// errors at all encoded "a licensed deployment" as the only correct
+		// one, and failed on the very configuration this repository ships.
 		//
-		// Asserting no errors at all therefore encoded "a licensed deployment"
-		// as the only correct one, and failed on the very configuration this
-		// repository is meant to ship. What must never fail is the face we DO
-		// ship, which carries the body copy and the navigation, and whose
-		// absence silently redraws the whole portal in Arial.
+		// The unlicensed case is no longer an error at all — it is silent.
+		// S24 caught what "an error BY DESIGN" actually cost: two red console
+		// entries on every anonymous page load, a 401 for the empty drop-in
+		// slot and a 404 for the vendored fallback behind it. `nlds-fonts.css`
+		// now declares Avenir as `local(), …, url(roboto-400.woff2)`, so the
+		// source list resolves without a download the deployment cannot serve,
+		// and `nlds-fonts-licensed.css` is linked only when the licensed file
+		// is really on disk.
+		//
+		// This assertion stays scoped to Roboto regardless, because that is the
+		// face we DO ship — it carries the body copy and the navigation, and
+		// its absence silently redraws the whole portal in Arial.
 		const roboto = faces.filter((f) => f.family === 'Roboto')
 		expect(roboto.length).toBeGreaterThan(0)
 		expect(roboto.filter((f) => f.status === 'error')).toEqual([])

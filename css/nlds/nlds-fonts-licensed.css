@@ -1,0 +1,36 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * THE LICENSED DROP-IN SLOT — linked only when it can actually be served.
+ *
+ * `css/fonts/licensed/` is gitignored and ships empty. This sheet declares the
+ * faces that live there, and `templates/site.php` links it ONLY after checking
+ * the file exists on disk. That check is the whole point of the split.
+ *
+ * The slot used to be one more `@font-face` inside `nlds-fonts.css`, which is
+ * linked unconditionally. On every deployment WITHOUT the licence — which is
+ * every deployment this repository ships to — the browser requested a file
+ * that is not there. Nextcloud answers a missing app asset with `401`, so an
+ * anonymous visitor to a public government portal collected a red
+ * `401 (Unauthorized)` in the console on every page load, and then a second
+ * error when the failure fell back to the vendored root-relative Avenir face
+ * (`404`). e2e S24 exists to catch exactly that, and did.
+ *
+ * A stylesheet that is linked only when its resources exist cannot produce
+ * that class of failure at all. The unlicensed case is now silent by
+ * construction rather than by a comment claiming it is silent.
+ *
+ * TO USE IT: place the file at the name below and nothing else changes.
+ * `nlds-fonts.css` declares the same family with `local()` first and a shipped
+ * Roboto file last; this sheet is linked after it, so a real Avenir wins where
+ * it is licensed and the Roboto fall-through applies everywhere else.
+ */
+
+@font-face {
+	font-family: Avenir;
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+	src: url(../fonts/licensed/avenir-lt-55-roman.woff2) format('woff2');
+}
