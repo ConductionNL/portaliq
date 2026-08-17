@@ -16,6 +16,7 @@
 - [ ] 2.4 Test: with a generated dark variant present, a `prefers-color-scheme: dark` visitor gets it. **Blocked on 2.6.**
 - [x] 2.5 Fix the generator in `nldesign` — three defects found by chasing the 0-pixel result, each of which produced output that reads as a successful run (ConductionNL/nldesign#353): `var()` aliases were never darkened (an alias declared on `:root` resolves there, and the dark block scopes to `body`, a descendant — so only 13 of 600 `--utrecht-*` tokens survived); text was classified as surface outside the `--nldesign-*` naming convention; and `GENERATOR_VERSION` was stamped into every header and read by nothing, so an algorithm fix regenerated **0 of 41 sets**.
 - [ ] 2.6 Give the site a token-driven surface layer — bands, cards and the page itself. Painting `body` from `--utrecht-document-*` is verified harmless (0 pixels changed in light mode) and insufficient alone: the inner bands stayed white. This is the real prerequisite for dark mode, and it is a change to the site's own CSS, not to the theme app.
+- [ ] 2.7 **Stop shipping the design system's CSS twice.** Measured on the rendered Conduction portal: 287 KiB of CSS is injected from `portaliq-site.js` by `style-loader` — `.utrecht-heading-1`, `.ac-c-navigation__primary`, `.utrecht-skip-link` and the rest — while `templates/site.php` ALSO links twelve stylesheets carrying the same `ac-*` / `utrecht-*` system. That injected CSS is the bulk of a 393.6 KiB bundle whose budget is 400 KiB (e2e S18, measured on transferred bytes), which leaves 6.4 KiB of headroom for every future feature: adding the contributed-page renderer alone took it to 415.6 KiB and the work had to be backed out. Extract it (`mini-css-extract-plugin`, or drop the imports the linked files already cover) and link one file instead. This is the prerequisite for §6 and for anything else the site renderer grows.
 
 ## 3. Contrast and compliance — at adoption time, not after a review
 
@@ -30,6 +31,11 @@
 - [ ] 4.2 Route every shared set through `CustomTokenSetValidator` before it can be linked. Shared configuration is input from another instance and must not be able to inject CSS.
 - [ ] 4.3 Decide and document what happens when a shared theme is withdrawn while a portal is using it — the portal must not silently lose its styling.
 - [ ] 4.4 Test: a shared set with a hostile declaration is refused, and the refusal is visible.
+
+## 6. Contributed pages — routable, once there is room for them
+
+- [ ] 6.1 Route `/diensten/{app}/{page}` to the page a contributing app publishes, rendering its `richText` and `action` blocks, and turn the contributions index entries into links. **Built and backed out on measurement (2.7):** the renderer plus its API module cost 22 KiB against 6.4 KiB of headroom, even with the component split into its own lazy chunk. The index entries stay plain text until then — deliberately, because a link that goes nowhere is worse than words.
+- [ ] 6.2 Reconcile `anonymous` actions with the endpoint. A manifest may declare `anonymous: true` — La Franken's "Melding indienen — geen account nodig" does — but `ContributionController::action()` answers 401 without a session, for every action. Either the endpoint honours the flag or the manifest stops offering it; today a citizen portal advertises an anonymous route that does not exist.
 
 ## 5. Documentation
 
