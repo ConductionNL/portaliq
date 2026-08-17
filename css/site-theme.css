@@ -305,6 +305,7 @@ body,
 	font-weight: var(--nldesign-card-heading-weight, inherit);
 	font-size: var(--nldesign-card-heading-size, inherit);
 	font-family: var(--nldesign-card-heading-font, inherit);
+	margin-block-end: var(--nldesign-card-heading-margin-block-end, 0);
 }
 
 .pq-grid .ac-card .utrecht-paragraph {
@@ -358,16 +359,55 @@ body,
  * hard-coded clip-path: a municipality using these same blocks must not
  * inherit Conduction's geometry. `--nldesign-card-icon-clip` defaults to no
  * clipping at all, which leaves a plain square icon tile.
+ *
+ * THE SELECTOR IS THE LEADING ICON'S ROW, NOT `.ac-icon:first-child`.
+ *
+ * `:first-child` counts ELEMENTS, and the arrow inside a card's link is
+ * preceded only by a text node — so it was the first element child of its
+ * anchor and every one of these declarations landed on it. A 16px arrow was
+ * blown up to a 56px hexagon tile sitting across the link's own label. The
+ * card's leading icon lives in the heading row and nowhere else, so that is
+ * what this names; an icon inside an anchor is explicitly excluded, because
+ * the next component to put an icon somewhere new should not inherit this.
  */
-.pq-grid .ac-card .ac-card__content > svg:first-child,
-.pq-grid .ac-card .ac-icon:first-child {
+.pq-grid .ac-card .ac-flex > .ac-icon:first-child {
 	inline-size: var(--nldesign-card-icon-size, auto);
-	block-size: var(--nldesign-card-icon-size, auto);
+	/* A pointy-top hexagon is TALLER than it is wide — measured 44x50 on the
+	   reference. One square token drew it 44x44 and quietly squashed the shape
+	   that is the whole point of the clip-path. */
+	block-size: var(
+		--nldesign-card-icon-block-size,
+		var(--nldesign-card-icon-size, auto)
+	);
 	padding: var(--nldesign-card-icon-padding, 0);
 	background-color: var(--nldesign-card-icon-background, transparent);
 	color: var(--nldesign-card-icon-color, inherit);
 	clip-path: var(--nldesign-card-icon-clip, none);
 	box-sizing: border-box;
+	flex: none;
+}
+
+/*
+ * The reference stacks the icon ABOVE the title (measured: icon at 25px from
+ * the card's top edge, heading at 89px). The component renders them as a flex
+ * ROW, which is the right default for a compact card, so the direction is a
+ * token and the row is what a theme naming nothing still gets.
+ */
+.pq-grid .ac-card .ac-card__content > .ac-flex {
+	flex-direction: var(--nldesign-card-heading-direction, row);
+	align-items: var(--nldesign-card-heading-align, center);
+	gap: var(--nldesign-card-icon-gap, 0.5rem);
+}
+
+/* The card's link keeps its own arrow at text size — see above for what
+   happens when a rule meant for the leading icon reaches it. */
+.pq-grid .ac-card a .ac-icon {
+	inline-size: 1em;
+	block-size: 1em;
+	clip-path: none;
+	background-color: transparent;
+	padding: 0;
+	vertical-align: middle;
 }
 
 .ac-card:hover,
