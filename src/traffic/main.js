@@ -76,7 +76,7 @@ async function start() {
 	const appPath = setting('appPath') || '/index.php/apps/portaliq'
 	const base = origin + appPath
 
-	let config = {}
+	let config
 	try {
 		const url = new URL(base + '/api/content/site', origin || window.location.origin)
 		if (portal) {
