@@ -66,6 +66,7 @@
 <script>
 import { siteBlockIsBand, siteBlockRegistry } from '@conduction/nextcloud-vue/public'
 import ContributionsBlock from './ContributionsBlock.vue'
+import HeroBlock from './HeroBlock.vue'
 import MarkdownBlock from './MarkdownBlock.vue'
 import { cellStyle, runsFor } from '../lib/gridPlacement.js'
 
@@ -104,17 +105,24 @@ import { cellStyle, runsFor } from '../lib/gridPlacement.js'
  * `contributions` stays owned here for the same class of reason: a
  * contribution is portaliq's own contract (ADR-046), described by this app's
  * provider protocol rather than by the design system.
+ *
+ * `hero` is the library's band WITH calls to action, and it is listed AFTER the
+ * spread on purpose — the spread would otherwise put the library's version
+ * back. See `HeroBlock.vue` for why the actions live here rather than upstream.
+ * The key is unchanged, so `siteBlockIsBand('hero')` still answers yes and the
+ * band still paints edge to edge.
  */
 const PUBLIC_WIDGETS = {
 	markdown: MarkdownBlock,
 	contributions: ContributionsBlock,
 	...siteBlockRegistry,
+	hero: HeroBlock,
 }
 
 export default {
 	name: 'WidgetGrid',
 
-	components: { ContributionsBlock, MarkdownBlock },
+	components: { ContributionsBlock, HeroBlock, MarkdownBlock },
 
 	props: {
 		/** Widget placements in the canonical manifest-v2 widgetEntry shape. */

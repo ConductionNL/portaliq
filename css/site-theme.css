@@ -183,6 +183,54 @@ body,
 }
 
 /*
+ * THE HERO'S CALLS TO ACTION.
+ *
+ * Measured on docs.conduction.nl: two buttons on one row under the lead, 51px
+ * tall, 6px radius, 13px/22px padding, 15px/500 type — the primary in the
+ * brand's orange, the secondary white on the band.
+ *
+ * Every value is a token and every default is inert: with none of them named
+ * these render as plain inline links, which is what a portal that has not
+ * thought about buttons should get rather than a half-styled control.
+ */
+.pq-site .pq-hero__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--nldesign-hero-action-gap, 1rem);
+	margin-block-start: var(--nldesign-hero-action-margin-block-start, 0);
+}
+
+.pq-site .pq-hero__action {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: var(--nldesign-hero-action-padding, 0);
+	border-radius: var(--nldesign-hero-action-radius, 0);
+	font-size: var(--nldesign-hero-action-font-size, inherit);
+	font-weight: var(--nldesign-hero-action-font-weight, inherit);
+	/* The button's height is line-height + padding + border, and the first of
+	   those is the one easily forgotten: 15px type with the browser's `normal`
+	   leading made a 44px control against the reference's 51px, with padding and
+	   font size already matching exactly. */
+	line-height: var(--nldesign-hero-action-line-height, normal);
+	font-family: inherit;
+	text-decoration: var(--nldesign-hero-action-decoration, underline);
+	border: var(--nldesign-hero-action-border-width, 0) solid transparent;
+}
+
+.pq-site .pq-hero__action--primary {
+	background-color: var(--nldesign-hero-action-primary-background, transparent);
+	color: var(--nldesign-hero-action-primary-color, inherit);
+	border-color: var(--nldesign-hero-action-primary-border-color, transparent);
+}
+
+.pq-site .pq-hero__action--secondary {
+	background-color: var(--nldesign-hero-action-secondary-background, transparent);
+	color: var(--nldesign-hero-action-secondary-color, inherit);
+	border-color: var(--nldesign-hero-action-secondary-border-color, transparent);
+}
+
+/*
  * THE HERO'S OWN INTERNAL RHYTHM.
  *
  * With the heading painted (a portal whose hero title is the page's subject
