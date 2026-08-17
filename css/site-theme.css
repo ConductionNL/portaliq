@@ -183,6 +183,175 @@ body,
 }
 
 /*
+ * THE HERO'S TWO COLUMNS: content, and an illustration beside it.
+ *
+ * Measured on docs.conduction.nl: the content column is 531px and the
+ * illustration 557px, right-aligned and vertically centred in a 1152px band.
+ * The illustration is decoration, so it is the half that disappears first —
+ * below the breakpoint it is not rendered narrower, it is not rendered.
+ */
+.pq-site .pq-hero__layout {
+	display: flex;
+	align-items: center;
+	gap: var(--nldesign-hero-column-gap, 0);
+}
+
+.pq-site .pq-hero__content {
+	flex: 1 1 auto;
+	min-inline-size: 0;
+}
+
+.pq-site .pq-hero__illustration {
+	flex: 0 0 auto;
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
+}
+
+/*
+ * THE HEADING IS A ROW when it carries an icon tile.
+ *
+ * The tile is 80x92 on the reference — a pointy-top hexagon, so taller than it
+ * is wide — with a 38px glyph centred in it and 22px to the title text. It uses
+ * its own clip token rather than the card's, because a theme may well want the
+ * brand shape in one place and not the other.
+ */
+.pq-site .ac-hero__title {
+	display: flex;
+	align-items: center;
+	gap: var(--nldesign-hero-title-icon-gap, 0);
+}
+
+.pq-site .pq-hero__title-icon {
+	flex: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	inline-size: var(--nldesign-hero-title-icon-size, auto);
+	block-size: var(
+		--nldesign-hero-title-icon-block-size,
+		var(--nldesign-hero-title-icon-size, auto)
+	);
+	background-color: var(--nldesign-hero-title-icon-background, transparent);
+	color: var(--nldesign-hero-title-icon-color, inherit);
+	clip-path: var(--nldesign-hero-title-icon-clip, none);
+}
+
+/*
+ * THE HONEYCOMB: six cells ringing one, in the arrangement the reference uses.
+ *
+ * The geometry is a hexagonal lattice, so it is expressed as one — a cell size
+ * and the two steps that tile it, rather than seven hand-placed pairs.
+ *
+ * BOTH STEPS ARE MEASURED, NOT DERIVED. Deriving the vertical step as three
+ * quarters of the cell height is the textbook answer and it is 1.5px out: the
+ * reference tiles at 78px against a derived 79.5px, so its rows overlap very
+ * slightly more than the maths says. The default keeps the derivation for a
+ * theme that names no step.
+ *
+ * The centre cell is LAST in the DOM so it paints over its neighbours' points
+ * without needing a z-index.
+ */
+.pq-site .pq-hero__honeycomb {
+	/*
+	 * The two steps are resolved ONCE here and inherited by the cells, so every
+	 * placement below is a short multiple. Written inline on each cell, the
+	 * nested `var(..., calc(...))` fallback wrapped over five lines under
+	 * prettier and then failed stylelint's indentation rule — a formatting fight
+	 * that disappears once the value has a name.
+	 */
+	--pq-step-inline: calc(var(--nldesign-hero-cell-size, 92px) * 0.5);
+	--pq-step-block: var(--nldesign-hero-cell-step-block, 79.5px);
+	position: relative;
+	inline-size: calc(var(--nldesign-hero-cell-size, 92px) * 3);
+	block-size: calc(var(--nldesign-hero-cell-block-size, 106px) * 2.5);
+}
+
+.pq-site .pq-hero__cell {
+	position: absolute;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	inline-size: var(--nldesign-hero-cell-size, 92px);
+	block-size: var(--nldesign-hero-cell-block-size, 106px);
+	background-color: var(--nldesign-hero-cell-background, transparent);
+	color: var(--nldesign-hero-cell-color, inherit);
+	clip-path: var(--nldesign-hero-cell-clip, none);
+	font-size: var(--nldesign-hero-cell-font-size, inherit);
+	font-weight: var(--nldesign-hero-cell-font-weight, inherit);
+}
+
+.pq-site .pq-hero__cell--accent {
+	background-color: var(--nldesign-hero-cell-accent-background, transparent);
+	color: var(--nldesign-hero-cell-accent-color, inherit);
+}
+
+/* Top row: two cells, offset half a cell inwards. */
+.pq-site .pq-hero__cell:nth-child(1) {
+	inset-inline-start: var(--pq-step-inline);
+	inset-block-start: 0;
+}
+
+.pq-site .pq-hero__cell:nth-child(2) {
+	inset-inline-start: calc(var(--pq-step-inline) * 3);
+	inset-block-start: 0;
+}
+
+/* Middle row: the two outer cells, flush to the lattice edges. */
+.pq-site .pq-hero__cell:nth-child(3) {
+	inset-inline-start: 0;
+	inset-block-start: var(--pq-step-block);
+}
+
+.pq-site .pq-hero__cell:nth-child(4) {
+	inset-inline-start: calc(var(--pq-step-inline) * 4);
+	inset-block-start: var(--pq-step-block);
+}
+
+/* Bottom row: two cells, mirroring the top. */
+.pq-site .pq-hero__cell:nth-child(5) {
+	inset-inline-start: var(--pq-step-inline);
+	inset-block-start: calc(var(--pq-step-block) * 2);
+}
+
+.pq-site .pq-hero__cell:nth-child(6) {
+	inset-inline-start: calc(var(--pq-step-inline) * 3);
+	inset-block-start: calc(var(--pq-step-block) * 2);
+}
+
+/* The centre, painted last so it covers its neighbours' points. */
+.pq-site .pq-hero__cell:nth-child(7) {
+	inset-inline-start: calc(var(--pq-step-inline) * 2);
+	inset-block-start: var(--pq-step-block);
+}
+
+/*
+ * The illustration is the first thing to go on a narrow viewport. It carries no
+ * information, and a honeycomb squeezed beside a headline on a phone costs the
+ * headline its measure.
+ */
+@media (max-width: 900px) {
+	.pq-site .pq-hero__illustration {
+		display: none;
+	}
+
+	/*
+	 * The heading's icon tile shrinks with it. Left at its desktop 80x92 it took
+	 * 102px of a 342px content column before the first letter, which is what
+	 * pushed a fluid headline off the screen anyway. The reference goes to 48x55
+	 * here and so does this.
+	 */
+	.pq-site .pq-hero__title-icon {
+		inline-size: var(--nldesign-hero-title-icon-size-sm, 48px);
+		block-size: var(--nldesign-hero-title-icon-block-size-sm, 55px);
+	}
+
+	.pq-site .ac-hero__title {
+		gap: var(--nldesign-hero-title-icon-gap-sm, 14px);
+	}
+}
+
+/*
  * THE HERO'S CALLS TO ACTION.
  *
  * Measured on docs.conduction.nl: two buttons on one row under the lead, 51px
