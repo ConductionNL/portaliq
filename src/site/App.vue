@@ -205,7 +205,8 @@
 					<WidgetGrid
 						v-if="page.body && page.body.type === 'grid'"
 						:widgets="page.body.widgets || []"
-						:glossary="glossary" />
+						:glossary="glossary"
+						:contributions="contributions" />
 
 					<div v-else class="container">
 						<MarkdownBlock
@@ -230,6 +231,17 @@
 					author places. The data still reaches this component and is
 					still fetched over the same public contract; what changed is
 					that nothing renders it unless a page asks.
+
+					BOTH HALVES OF THAT MOVE ARE NEEDED, and only one of them
+					shipped first. The `glossary` block existed and was placed;
+					the contributed surfaces lost their section and gained no
+					block, so the public contract kept answering with
+					contributions that no page could render — a bridge built
+					from one side, which is invisible because the page still
+					looks complete. `contributions` is now a block too, and it
+					takes its rows from here for the same reason the glossary
+					does: this renderer runs at a public origin, so a block that
+					fetched for itself could not mount there.
 				-->
 			</div>
 		</main>
@@ -689,31 +701,6 @@ export default {
 		},
 
 		/**
-		 * The entries of one contribution, as an index of what it offers.
-		 *
-		 * Collections and actions are shown together on purpose. To a visitor
-		 * "my invoices" and "submit a declaration" are two things the portal
-		 * can do; the split between reading a collection and invoking an
-		 * action is an implementation detail of the contract, not a category
-		 * a citizen recognises.
-		 *
-		 * @param {object} contribution One contribution.
-		 * @return {Array} Its collections and actions.
-		 *
-		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-contribution-must-be-scoped-to-the-portal-it-targets
-		 */
-		entriesOf(contribution) {
-			const collections = Array.isArray(contribution.collections)
-				? contribution.collections
-				: []
-			const actions = Array.isArray(contribution.actions)
-				? contribution.actions
-				: []
-
-			return [...collections, ...actions]
-		},
-
-		/**
 		 * Load one page by route.
 		 *
 		 * @param {string} route The in-portal route.
@@ -781,6 +768,22 @@ export default {
 			this.go(link)
 		},
 
+		/**
+		 * Navigate to an in-site route without leaving the document.
+		 *
+		 * The counterpart to `onPopState`: this one pushes the entry, that one
+		 * consumes it, and both end in `loadRoute` so forward and back render
+		 * by the same path.
+		 *
+		 * ONLY ROOT-RELATIVE LINKS ARE FOLLOWED HERE. Anything else — an
+		 * absolute URL, a `mailto:`, a protocol-relative `//host` — is left to
+		 * the browser, which is the only thing entitled to leave this origin.
+		 *
+		 * @param {string} link The in-portal route, e.g. `/begrippen`.
+		 * @return {void}
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
+		 */
 		go(link) {
 			if (!link || !link.startsWith('/')) {
 				return

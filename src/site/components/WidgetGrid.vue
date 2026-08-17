@@ -65,6 +65,7 @@
 
 <script>
 import { siteBlockIsBand, siteBlockRegistry } from '@conduction/nextcloud-vue/public'
+import ContributionsBlock from './ContributionsBlock.vue'
 import MarkdownBlock from './MarkdownBlock.vue'
 
 /**
@@ -98,16 +99,21 @@ import MarkdownBlock from './MarkdownBlock.vue'
  *
  * `markdown` stays owned here: it renders untrusted authored content and its
  * sanitisation posture is this app's decision, not a library default.
+ *
+ * `contributions` stays owned here for the same class of reason: a
+ * contribution is portaliq's own contract (ADR-046), described by this app's
+ * provider protocol rather than by the design system.
  */
 const PUBLIC_WIDGETS = {
 	markdown: MarkdownBlock,
+	contributions: ContributionsBlock,
 	...siteBlockRegistry,
 }
 
 export default {
 	name: 'WidgetGrid',
 
-	components: { MarkdownBlock },
+	components: { ContributionsBlock, MarkdownBlock },
 
 	props: {
 		/** Widget placements in the canonical manifest-v2 widgetEntry shape. */
@@ -122,6 +128,16 @@ export default {
 		 * `propsFor()` for why the block does not fetch its own.
 		 */
 		glossary: {
+			type: Array,
+			default: () => [],
+		},
+
+		/**
+		 * The portal's contributed surfaces, for a page that places a
+		 * `contributions` block. Supplied by the host for the same reason the
+		 * glossary rows are; see `propsFor()`.
+		 */
+		contributions: {
 			type: Array,
 			default: () => [],
 		},
@@ -142,7 +158,7 @@ export default {
 		 *
 		 * @return {Array} Alternating `{band: true, widget}` / `{band: false, widgets}` entries.
 		 *
-		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-grid-page-renders-on-the-shared-12-column-geometry
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
 		 */
 		runs() {
 			const out = []
@@ -175,7 +191,7 @@ export default {
 		 * @param {string} key The registry key.
 		 * @return {boolean} True when it must not be wrapped in a grid cell.
 		 *
-		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-grid-page-renders-on-the-shared-12-column-geometry
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
 		 */
 		isBand(key) {
 			return siteBlockIsBand(key)
@@ -226,6 +242,14 @@ export default {
 			// comes first so a page that names none still gets them.
 			if (widget.widgetKey === 'glossary') {
 				return { terms: this.glossary, ...props }
+			}
+
+			// SAME RULE, SECOND SUBJECT. The contributed surfaces are data the
+			// host fetched over the public contract (ADR-046), not page
+			// configuration, so the host supplies the rows and the author
+			// supplies the wording.
+			if (widget.widgetKey === 'contributions') {
+				return { contributions: this.contributions, ...props }
 			}
 
 			return props
