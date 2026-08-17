@@ -185,6 +185,102 @@ if ((await reachable()) === false) {
 const browser = await chromium.launch()
 let findings = 0
 
+/**
+ * Prove the instrument can FAIL before letting it report a pass.
+ *
+ * A check that has quietly stopped detecting anything is indistinguishable
+ * from a codebase with nothing to detect — both print "all pass". This one has
+ * already been that: its first version dropped the alpha channel, so
+ * `rgba(255,255,255,0.22)` on navy scored 17.85:1 and a deliberately broken
+ * footer colour sailed through.
+ *
+ * So every run starts by injecting three defects into a real rendered page —
+ * one per property the check claims to measure — and demanding that each one be
+ * caught. Injected in the BROWSER, never in the token files: a control that
+ * edits the repo can leave it dirty if the run dies halfway.
+ *
+ * @return {Promise<Array>} The names of any properties that failed to detect.
+ */
+async function selfTest() {
+	const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } })
+	const [portal, route] = PAGES[0]
+	await page.goto(
+		`${BASE}/index.php/apps/portaliq/site?portal=${portal}&route=${encodeURIComponent(route)}`,
+		{ waitUntil: 'domcontentloaded' },
+	)
+	await page
+		.waitForFunction(
+			() => !document.body.innerText.includes('Bezig met laden'),
+			{
+				timeout: 60000,
+			},
+		)
+		.catch(() => {})
+	await page.waitForTimeout(1700)
+
+	const missed = []
+
+	// 1. CONTRAST — text the reader cannot make out. Deliberately TRANSLUCENT,
+	//    because opaque-only detection is the exact defect this file shipped
+	//    with: it must fail on the alpha, not on the three channels.
+	const contrast = await page.evaluate((probeSource) => {
+		const style = document.createElement('style')
+		style.textContent =
+			'.ac-footer__links a, .ac-footer__links a span { color: rgba(255,255,255,0.18) !important; }'
+		document.head.appendChild(style)
+		// eslint-disable-next-line no-eval
+		const result = eval(`(${probeSource})`)()
+		style.remove()
+		return result
+	}, probe.toString())
+	if (contrast.failures.length === 0) {
+		missed.push('contrast (translucent text on a dark band went undetected)')
+	}
+
+	// 2. HEADING COUNT — a second `h1`.
+	const headings = await page.evaluate((probeSource) => {
+		const extra = document.createElement('h1')
+		extra.textContent = 'Injected second heading'
+		document.body.appendChild(extra)
+		// eslint-disable-next-line no-eval
+		const result = eval(`(${probeSource})`)()
+		extra.remove()
+		return result
+	}, probe.toString())
+	if (headings.headings.length < 2) {
+		missed.push('heading count (a second h1 went uncounted)')
+	}
+
+	// 3. HORIZONTAL OVERFLOW — something wider than the viewport.
+	const overflow = await page.evaluate((probeSource) => {
+		const wide = document.createElement('div')
+		wide.style.cssText = 'inline-size: 3000px; block-size: 4px;'
+		document.body.appendChild(wide)
+		// eslint-disable-next-line no-eval
+		const result = eval(`(${probeSource})`)()
+		wide.remove()
+		return result
+	}, probe.toString())
+	if (overflow.overflow <= 0) {
+		missed.push('overflow (a 3000px element did not widen the document)')
+	}
+
+	await page.close()
+	return missed
+}
+
+const undetected = await selfTest()
+if (undetected.length > 0) {
+	console.error('SELF-TEST FAILED — this check cannot detect what it claims to:')
+	undetected.forEach((m) => console.error(`  - ${m}`))
+	console.error(
+		'\nRefusing to report a pass from an instrument that does not fire.',
+	)
+	await browser.close()
+	process.exit(1)
+}
+console.log('  self-test ok — contrast, heading count and overflow all detected\n')
+
 for (const width of WIDTHS) {
 	const page = await browser.newPage({ viewport: { width, height: 1000 } })
 
