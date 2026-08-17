@@ -136,7 +136,12 @@ if ($nldsStylesheet !== '') {
 // So dark mode waits for the surfaces to read their tokens. Painting `body`
 // from `--utrecht-document-*` was tried and verified harmless (0 pixels changed
 // in light mode) but insufficient on its own — the inner bands stayed white.
-foreach (['nlds/nlds-components', 'nlds/nlds-vendor-a', 'nlds/nlds-vendor-b', 'nlds/nlds-app', 'nlds/nlds-controls'] as $sheet) {
+// `site-theme` is THIS APP'S own, and it is last of the non-token sheets on
+// purpose: it names the foreground of the bands that paint their own
+// background, which the vendored component CSS leaves unset (measured: a hero
+// title inheriting black on a cobalt band, 2.31:1). Its values are tokens, so a
+// theme still decides the colour.
+foreach (['nlds/nlds-components', 'nlds/nlds-vendor-a', 'nlds/nlds-vendor-b', 'nlds/nlds-app', 'nlds/nlds-controls', 'site-theme'] as $sheet) {
     $stylesheets[] = $asset($appId, 'css/' . $sheet . '.css');
 }
 

@@ -1,0 +1,108 @@
+/*
+ * SPDX-License-Identifier: EUPL-1.2
+ * Copyright (C) 2026 Conduction B.V.
+ *
+ * PORTALIQ'S OWN SITE RULES — the few places where a surface paints itself and
+ * therefore has to name its own foreground.
+ *
+ * Everything else on this page is themed through tokens, and deliberately so: a
+ * block lands on a surface it cannot know, and three separate defects in this
+ * app came from rules that coloured text without reference to its background.
+ * The exception is a band that paints its OWN background. It knows exactly what
+ * its text sits on, and if it stays silent the text falls back to the browser's
+ * black.
+ *
+ * Measured on the Conduction portal before this file existed: the hero band
+ * painted itself cobalt #21468B and its title inherited black — 2.31:1, a
+ * heading that fails AA on a page that otherwise looks deliberate and
+ * on-brand. `.ac-hero__title` carries no colour rule anywhere in the vendored
+ * component CSS, so there was nothing for a token to override.
+ *
+ * THE VALUE IS A TOKEN, NOT A COLOUR. A theme whose hero band is light must be
+ * able to say so; white is only the default because every band in the shipped
+ * sets is dark.
+ */
+
+.ac-hero__title {
+	color: var(--nldesign-hero-title-color, #fff);
+}
+
+.ac-hero__description,
+.ac-hero__subtitle {
+	color: var(--nldesign-hero-body-color, var(--nldesign-hero-title-color, #fff));
+}
+
+/*
+ * THE HEADER'S OWN CONTROLS, for the same reason as the hero title.
+ *
+ * The sign-in links and the sign-out button sit in the header band, which
+ * paints itself from the theme. Nothing gave them a colour, so they rendered in
+ * the browser's black: measured 2.31:1 on Conduction's cobalt header and
+ * 1.84:1 on La Franken's pine green — the single most important control on the
+ * page, and the least readable thing on it.
+ *
+ * `inherit` as the default is deliberate: the header already sets its own text
+ * colour for the logo, so an unthemed portal gets the right answer without
+ * naming anything.
+ */
+.pq-site__auth a,
+.pq-site__auth button {
+	color: var(--nldesign-header-link-color, inherit);
+}
+
+/*
+ * A portal offering TWO sign-in routes ran them together as one string —
+ * "Inloggen met uw accountInloggen met DigiD" — because the list had no
+ * spacing and list markers are suppressed globally. It only showed up on the
+ * citizen portal, which is the one with both DigiD and an account login, so a
+ * single-route portal looked fine throughout.
+ */
+.pq-site__auth ul {
+	display: flex;
+	gap: var(--nldesign-header-link-gap, 1.5rem);
+	align-items: center;
+}
+
+/*
+ * SHAPE, NOT COLOUR — and every value is a token that defaults to the current
+ * flat look.
+ *
+ * The vendored NL Design System components render square corners, no elevation
+ * and tight rhythm, which is right for a government portal and wrong for a
+ * brand whose own site is built from rounded cobalt panels and shadowed cards.
+ * A token set could change every colour on the page and the result still did
+ * not look like conduction.nl, because what differs is geometry.
+ *
+ * Each default below reproduces exactly what shipped before (0 radius, no
+ * shadow, unchanged padding), so a theme that sets nothing looks unchanged.
+ * A theme opts into shape by naming it.
+ */
+.ac-hero,
+.ac-section--hero {
+	border-end-start-radius: var(--nldesign-hero-radius, 0);
+	border-end-end-radius: var(--nldesign-hero-radius, 0);
+}
+
+/*
+ * RADIUS AND ELEVATION ONLY — never padding, never background.
+ *
+ * The first version of this rule also set `padding` and `background-color`,
+ * defaulting to `0` and `transparent`. `.ac-card` is not only the content card:
+ * the hero's search box is `.ac-card.ac-card--blue.ac-card--padding-lg`, so the
+ * blanket rule flattened its padding to zero and the search field burst out of
+ * its own band on the citizen portal. A rule broad enough to restyle every card
+ * is broad enough to break the ones that already had an opinion.
+ *
+ * Radius and shadow default to the component's existing look (square, flat), so
+ * a theme that names neither changes nothing.
+ */
+.ac-card,
+.utrecht-card {
+	border-radius: var(--nldesign-card-radius, 0);
+	box-shadow: var(--nldesign-card-shadow, none);
+}
+
+.ac-card:hover,
+.utrecht-card:hover {
+	box-shadow: var(--nldesign-card-shadow-hover, var(--nldesign-card-shadow, none));
+}
