@@ -294,6 +294,10 @@ class ContentController extends Controller {
 		return [
 			'description' => trim((string)($footer['description'] ?? '')),
 			'colophon'    => trim((string)($footer['colophon'] ?? '')),
+			// The decorative scene above the footer, by NAME. An unknown value
+			// becomes '' rather than a default illustration: a typo must not put
+			// somebody else's canal on a municipal portal.
+			'decoration'  => $this->decoration(footer: $footer),
 			'socials'     => $this->projectedList(
 				entries: (array)($footer['socials'] ?? []),
 				keys: ['label', 'href', 'icon'],
@@ -314,6 +318,29 @@ class ContentController extends Controller {
 			),
 		];
 	}//end footer()
+
+
+	/**
+	 * The footer's decorative scene, from a closed set of names.
+	 *
+	 * An ALLOW-LIST, for the same reason the widget map is one: this value
+	 * chooses which illustration a public page mounts, and "whatever the record
+	 * said" is not a decision anybody made.
+	 *
+	 * @param array<string, mixed> $footer The portal's footer block.
+	 *
+	 * @return string A known decoration name, or ''.
+	 */
+	private function decoration(array $footer): string {
+		$known = ['canal'];
+		$name  = trim((string)($footer['decoration'] ?? ''));
+
+		if (in_array($name, $known, true) === true) {
+			return $name;
+		}
+
+		return '';
+	}//end decoration()
 
 
 	/**

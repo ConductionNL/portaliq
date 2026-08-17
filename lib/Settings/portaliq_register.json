@@ -1564,6 +1564,16 @@
                 "title": "Colophon",
                 "description": "The legal line — entity, chamber-of-commerce and VAT numbers — shown in the legal bar. A footer naming the wrong legal entity is something a government portal cannot ship, which is why this is portal configuration and not a renderer constant."
               },
+              "decoration": {
+                "type": "string",
+                "enum": [
+                  "",
+                  "canal"
+                ],
+                "default": "",
+                "title": "Footer decoration",
+                "description": "A decorative scene above the footer. \"canal\" draws Conduction's canal-house roofline, a quay and ripples on the water; \"\" draws nothing. Opt-in by name and default-none on purpose: a municipality running this renderer must not inherit another organisation's illustration because it shares a footer component. Unknown values are treated as none."
+              },
               "socials": {
                 "type": "array",
                 "title": "Social links",

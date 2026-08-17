@@ -717,6 +717,107 @@ body,
 }
 
 /*
+ * THE CANAL SCENE — a roofline, a quay, and ripples on the water.
+ *
+ * Measured on docs.conduction.nl: a 152px strip of gabled facades in the brand
+ * accent, a 30px quay in a stone grey, and the navy footer band below with three
+ * polylines across it at 11% opacity.
+ *
+ * EVERY BAND IS ZERO-HEIGHT AND EVERY COLOUR IS TRANSPARENT BY DEFAULT, so a
+ * portal that does not ask for the decoration renders nothing even if the
+ * markup were mounted. Only a theme naming these makes a canal appear.
+ */
+.pq-site .pq-canal__skyline {
+	display: flex;
+	align-items: flex-end;
+	/* The clip is what makes a 144px house stand in a 152px band and lets the
+	   roofline break the strip's top edge. */
+	overflow: hidden;
+	block-size: var(--nldesign-footer-skyline-height, 0);
+}
+
+.pq-site .pq-canal__house {
+	flex: 0 0 auto;
+}
+
+.pq-site .pq-canal__house svg {
+	display: block;
+	inline-size: 100%;
+	block-size: 100%;
+}
+
+.pq-site .pq-canal__facade {
+	fill: var(--nldesign-footer-skyline-color, transparent);
+}
+
+.pq-site .pq-canal__lit {
+	fill: var(--nldesign-footer-window-lit-color, transparent);
+}
+
+.pq-site .pq-canal__dark,
+.pq-site .pq-canal__door {
+	fill: var(--nldesign-footer-window-dark-color, transparent);
+}
+
+.pq-site .pq-canal__quay {
+	position: relative;
+	block-size: var(--nldesign-footer-quay-height, 0);
+	background-color: var(--nldesign-footer-quay-color, transparent);
+}
+
+.pq-site .pq-canal__quay-item {
+	position: absolute;
+	inset-block-end: 0;
+}
+
+.pq-site .pq-canal__ink {
+	stroke: var(--nldesign-footer-quay-ink-color, transparent);
+}
+
+.pq-site .pq-canal__bench {
+	fill: var(--nldesign-footer-quay-ink-color, transparent);
+}
+
+.pq-site .pq-canal__bench-accent {
+	fill: var(--nldesign-footer-quay-accent-color, transparent);
+}
+
+.pq-site .pq-canal__bench-window {
+	fill: var(--nldesign-footer-quay-highlight-color, transparent);
+}
+
+/*
+ * THE RIPPLES, as a background on the water band rather than an element in it.
+ *
+ * They belong BEHIND the footer's columns, and an absolutely positioned sibling
+ * would have to be stacked against content that is itself in flow. A background
+ * image cannot be in front of anything, which is exactly the guarantee wanted —
+ * and it costs no DOM on a page where the whole scene is decoration.
+ *
+ * `repeating-linear-gradient` is deliberately NOT used: these are the
+ * reference's own three polylines, at its own three wavelengths, encoded as an
+ * inline SVG so the geometry stays the geometry.
+ */
+.pq-site .ac-footer section:first-of-type {
+	background-image: var(--nldesign-footer-ripple-image, none);
+	background-repeat: no-repeat;
+	background-size: 100% 100%;
+}
+
+/*
+ * THE SCENE GOES BEFORE THE TEXT DOES.
+ *
+ * Below the breakpoint the footer stacks to one column and the strip would take
+ * a third of the screen to say nothing. It is the first thing to go, as the
+ * hero's honeycomb is.
+ */
+@media (max-width: 900px) {
+	.pq-site .pq-canal {
+		display: none;
+	}
+}
+
+/*
  * THE FOOTER'S GRID: a brand column and then the link columns.
  *
  * Measured on docs.conduction.nl: 297px for the brand and 198px for each of

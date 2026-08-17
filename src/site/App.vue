@@ -321,6 +321,16 @@
 			     "footer". -->
 			<h2 class="sr-only">Footer</h2>
 
+			<!--
+				THE DECORATION IS OPT-IN, BY NAME.
+
+				A canal scene is Conduction's own illustration. A municipality
+				running this same renderer must not inherit it because it shares
+				a footer component, so the portal names the decoration it wants
+				and the default is none.
+			-->
+			<FooterCanal v-if="footerContent.decoration === 'canal'" />
+
 			<section>
 				<div class="container ac-footer__container">
 					<!--
@@ -512,6 +522,7 @@
 
 <script>
 import { CnSiteIcon } from '@conduction/nextcloud-vue/public'
+import FooterCanal from './components/FooterCanal.vue'
 import MarkdownBlock from './components/MarkdownBlock.vue'
 import SiteMenu from './components/SiteMenu.vue'
 import WidgetGrid from './components/WidgetGrid.vue'
@@ -542,7 +553,7 @@ import {
 export default {
 	name: 'App',
 
-	components: { CnSiteIcon, MarkdownBlock, SiteMenu, WidgetGrid },
+	components: { CnSiteIcon, FooterCanal, MarkdownBlock, SiteMenu, WidgetGrid },
 
 	props: {
 		/** Explicit site slug, when not resolving by host. */
@@ -715,6 +726,7 @@ export default {
 			return {
 				description: String(footer.description || ''),
 				colophon: String(footer.colophon || ''),
+				decoration: String(footer.decoration || ''),
 				socials: list(footer.socials),
 				badges: list(footer.badges),
 			}

@@ -273,6 +273,49 @@ class ContentControllerTest extends TestCase {
 
 
 	/**
+	 * The footer decoration is an ALLOW-LIST, not a passthrough.
+	 *
+	 * This value decides which illustration a public page mounts. A typo
+	 * reaching the renderer as-is is how one organisation's artwork ends up on
+	 * another's portal, so anything not named here is nothing.
+	 *
+	 * @return void
+	 */
+	public function testAnUnknownFooterDecorationIsTreatedAsNone(): void {
+		// One shared resolver mock, answering from a variable the loop moves —
+		// re-stubbing `resolve` per iteration would just overwrite the first stub.
+		$declared = '';
+		$this->resolver->method('resolve')->willReturnCallback(
+			function () use (&$declared): array {
+				$portal           = $this->portal();
+				$portal['footer'] = ['decoration' => $declared];
+				return $portal;
+			}
+		);
+		$controller = $this->controller();
+
+		$cases = [
+			// The one name the renderer knows.
+			'canal'  => 'canal',
+			// A near miss, a case difference and an empty value are all nothing.
+			'kanaal' => '',
+			'CANAL'  => '',
+			''       => '',
+		];
+
+		foreach ($cases as $given => $expected) {
+			$declared = (string)$given;
+
+			$this->assertSame(
+				$expected,
+				$controller->site()->getData()['footer']['decoration'],
+				sprintf('decoration %s should resolve to %s', var_export($given, true), var_export($expected, true))
+			);
+		}
+	}//end testAnUnknownFooterDecorationIsTreatedAsNone()
+
+
+	/**
 	 * Only the authentication MODES are exposed.
 	 *
 	 * Provider configuration belongs in the credential broker; a public
