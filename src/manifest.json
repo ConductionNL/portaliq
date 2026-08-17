@@ -17,60 +17,14 @@
       "label": "Portals",
       "icon": "Web",
       "route": "Portals",
-      "order": 20,
-      "children": [
-        {
-          "id": "PortalsIndex",
-          "label": "All portals",
-          "icon": "Web",
-          "route": "Portals"
-        },
-        {
-          "id": "Menus",
-          "label": "Menus",
-          "icon": "Menu",
-          "route": "Menus"
-        },
-        {
-          "id": "Pages",
-          "label": "Pages",
-          "icon": "FileDocument",
-          "route": "Pages"
-        },
-        {
-          "id": "Glossary",
-          "label": "Glossary",
-          "icon": "BookAlphabet",
-          "route": "Glossary"
-        }
-      ]
+      "order": 20
     },
     {
       "id": "PortalAccounts",
       "label": "Accounts",
       "icon": "Account",
       "route": "PortalAccounts",
-      "order": 30,
-      "children": [
-        {
-          "id": "PortalAccountsIndex",
-          "label": "All accounts",
-          "icon": "Account",
-          "route": "PortalAccounts"
-        },
-        {
-          "id": "PortalSessions",
-          "label": "Sessions",
-          "icon": "ShieldKeyOutline",
-          "route": "PortalSessions"
-        },
-        {
-          "id": "PortalMessages",
-          "label": "Messages",
-          "icon": "Email",
-          "route": "PortalMessages"
-        }
-      ]
+      "order": 30
     },
     {
       "id": "Themes",
@@ -392,7 +346,7 @@
         "register": "portaliq",
         "schema": "portalAccount",
         "documentationUrl": "https://portaliq.conduction.nl",
-        "_note": "Identity/access-holder archetype: a portalAccount links one external IdP identity (eHerkenning/DigiD/eIDAS) to the subjectRef domain apps scope data by, so its detail page answers 'who is this and what sessions have they used to access the portal'. ADR-062 rev3 update: the summaryAggregates header chips are retired in favour of an in-grid stats-block card (account-stats) placed top-right of the lead account-data widget, both sized h5 so the row closes together; account-sessions moves below as its own full-width row. account-sessions gets allowCreate:false — sessions are IdP-minted at login time, never hand-created — plus a viewAllRoute to the fleet-wide PortalSessions index (the only session-listing page; no per-account filtered page exists) with a token-resolved viewAllQuery so the link at least carries the account's id. portalMessage.subjectRef and exampleDocument.subjectRef remain plain IdP-issued strings, not object ids, so they stay NOT filterable by @objectId and deliberately absent here. No Related panel: portalAccount declares no object-reference properties of its own (organisation is a plain tenant string, not an OR ref). No files/calendar/contacts/talk leaves: this is an auth-edge identity record, not a document- or comms-bearing object. status is a genuine two-state lifecycle (active/suspended) so lifecycleActions is wired to it. Audit history stays a sidebar tab.",
+        "_note": "Identity/access-holder archetype: a portalAccount links one external IdP identity (eHerkenning/DigiD/eIDAS) to the subjectRef domain apps scope data by, so its detail page answers 'who is this and what sessions have they used to access the portal'. ADR-062 rev3 update: the summaryAggregates header chips are retired in favour of an in-grid stats-block card (account-stats) placed top-right of the lead account-data widget, both sized h5 so the row closes together; account-sessions moves below as its own full-width row. account-sessions gets allowCreate:false — sessions are IdP-minted at login time, never hand-created — plus a viewAllRoute to the fleet-wide PortalSessions index (the only session-listing page; no per-account filtered page exists) with a token-resolved viewAllQuery so the link at least carries the account's id. CORRECTION (measured): every filter on this page addressed `accountRef`, a property NO portalSession carries — the objects link to their account by `subjectRef`. A filter naming a property the rows do not have matches nothing and reports it as an honest zero, so the two session stats read 0 and the session list read 'No sessions issued yet' for every account, always, while looking perfectly configured. Now filtered on `subjectRef: @object.subjectRef`. Verified against the API before and after: `?accountRef=<id>` returned 0 of 100 sessions, `?subjectRef=e2e-smoke` returned 3 — the positive control that proves the mechanism works and the property was the fault. The same correction admits the messages list this note previously ruled out: subjectRef is not an object id, so `@objectId` indeed cannot filter it, but `@object.<field>` can and does (2 messages for dev-supplier). No Related panel: portalAccount declares no object-reference properties of its own (organisation is a plain tenant string, not an OR ref). No files/calendar/contacts/talk leaves: this is an auth-edge identity record, not a document- or comms-bearing object. status is a genuine two-state lifecycle (active/suspended) so lifecycleActions is wired to it. Audit history stays a sidebar tab.",
         "widgets": [
           {
             "id": "account-data",
@@ -416,7 +370,7 @@
                   "schema": "portalSession",
                   "metric": "count",
                   "filter": {
-                    "accountRef": "@objectId"
+                    "subjectRef": "@object.subjectRef"
                   }
                 }
               ]
@@ -435,7 +389,7 @@
                   "schema": "portalSession",
                   "metric": "count",
                   "filter": {
-                    "accountRef": "@objectId",
+                    "subjectRef": "@object.subjectRef",
                     "revoked": false
                   }
                 }
@@ -451,7 +405,7 @@
               "register": "portaliq",
               "schema": "portalSession",
               "filter": {
-                "accountRef": "@objectId"
+                "subjectRef": "@object.subjectRef"
               },
               "sort": {
                 "field": "issuedAt",
@@ -483,9 +437,44 @@
               "rowRoute": "PortalSessionDetail",
               "viewAllRoute": "PortalSessions",
               "viewAllQuery": {
-                "accountRef": "@objectId"
+                "subjectRef": "@object.subjectRef"
               },
               "emptyText": "No sessions issued yet",
+              "allowCreate": false
+            }
+          },
+          {
+            "id": "account-messages",
+            "type": "object-list",
+            "title": "Messages",
+            "icon": "Email",
+            "content": {
+              "register": "portaliq",
+              "schema": "portalMessage",
+              "filter": {
+                "subjectRef": "@object.subjectRef"
+              },
+              "sort": {
+                "field": "subject",
+                "dir": "asc"
+              },
+              "columns": [
+                {
+                  "key": "subject",
+                  "label": "Subject"
+                },
+                {
+                  "key": "read",
+                  "label": "Read"
+                }
+              ],
+              "limit": 25,
+              "rowRoute": "PortalMessageDetail",
+              "viewAllRoute": "PortalMessages",
+              "viewAllQuery": {
+                "subjectRef": "@object.subjectRef"
+              },
+              "emptyText": "No messages for this account",
               "allowCreate": false
             }
           }
@@ -520,6 +509,14 @@
             "widgetId": "account-sessions",
             "gridX": 0,
             "gridY": 5,
+            "gridWidth": 12,
+            "gridHeight": 4
+          },
+          {
+            "id": "4",
+            "widgetId": "account-messages",
+            "gridX": 0,
+            "gridY": 9,
             "gridWidth": 12,
             "gridHeight": 4
           }
@@ -863,6 +860,149 @@
       "config": {
         "register": "portaliq",
         "schema": "portal",
+        "_note": "A portal's menus, pages and glossary live HERE rather than as their own top-level navigation entries: they are not free-standing collections, they are what one portal is made of, and a fleet-wide list of 'all pages' answers no question an editor actually has. They are `object-list` widgets filtered on `portal: @object.slug` — the token resolves against the portal being viewed. NOT `@objectId`: these children reference their portal by SLUG, not by object id, and a filter naming a property the rows do not carry matches nothing and says nothing (see PortalAccountDetail, where exactly that went unnoticed). Each filter was run against the API before being written here: 7 pages, 1 menu, 2 glossary terms for open-tilburg.",
+        "widgets": [
+          {
+            "id": "portal-data",
+            "type": "data",
+            "title": "Portal details",
+            "icon": "Web",
+            "content": {
+              "columns": 2
+            }
+          },
+          {
+            "id": "portal-pages",
+            "type": "object-list",
+            "title": "Pages",
+            "icon": "FileDocument",
+            "content": {
+              "register": "portaliq",
+              "schema": "page",
+              "filter": {
+                "portal": "@object.slug"
+              },
+              "sort": {
+                "field": "route",
+                "dir": "asc"
+              },
+              "columns": [
+                {
+                  "key": "title",
+                  "label": "Title"
+                },
+                {
+                  "key": "route",
+                  "label": "Route"
+                },
+                {
+                  "key": "status",
+                  "label": "Status"
+                }
+              ],
+              "limit": 25,
+              "rowRoute": "PageDetail",
+              "viewAllRoute": "Pages",
+              "emptyText": "This portal has no pages yet"
+            }
+          },
+          {
+            "id": "portal-menus",
+            "type": "object-list",
+            "title": "Menus",
+            "icon": "Sitemap",
+            "content": {
+              "register": "portaliq",
+              "schema": "menu",
+              "filter": {
+                "portal": "@object.slug"
+              },
+              "sort": {
+                "field": "position",
+                "dir": "asc"
+              },
+              "columns": [
+                {
+                  "key": "title",
+                  "label": "Title"
+                },
+                {
+                  "key": "position",
+                  "label": "Position"
+                }
+              ],
+              "limit": 25,
+              "rowRoute": "MenuDetail",
+              "viewAllRoute": "Menus",
+              "emptyText": "This portal has no menus yet"
+            }
+          },
+          {
+            "id": "portal-glossary",
+            "type": "object-list",
+            "title": "Glossary",
+            "icon": "BookOpenVariant",
+            "content": {
+              "register": "portaliq",
+              "schema": "glossaryTerm",
+              "filter": {
+                "portal": "@object.slug"
+              },
+              "sort": {
+                "field": "term",
+                "dir": "asc"
+              },
+              "columns": [
+                {
+                  "key": "term",
+                  "label": "Term"
+                },
+                {
+                  "key": "definition",
+                  "label": "Definition"
+                }
+              ],
+              "limit": 25,
+              "rowRoute": "GlossaryDetail",
+              "viewAllRoute": "Glossary",
+              "emptyText": "This portal has no glossary terms yet"
+            }
+          }
+        ],
+        "layout": [
+          {
+            "id": "1",
+            "widgetId": "portal-data",
+            "gridX": 0,
+            "gridY": 0,
+            "gridWidth": 12,
+            "gridHeight": 5
+          },
+          {
+            "id": "2",
+            "widgetId": "portal-pages",
+            "gridX": 0,
+            "gridY": 5,
+            "gridWidth": 12,
+            "gridHeight": 5
+          },
+          {
+            "id": "3",
+            "widgetId": "portal-menus",
+            "gridX": 0,
+            "gridY": 10,
+            "gridWidth": 6,
+            "gridHeight": 4
+          },
+          {
+            "id": "4",
+            "widgetId": "portal-glossary",
+            "gridX": 6,
+            "gridY": 10,
+            "gridWidth": 6,
+            "gridHeight": 4
+          }
+        ],
         "sidebar": {
           "enabled": true,
           "showMetadata": true
