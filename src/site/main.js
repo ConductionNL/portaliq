@@ -49,16 +49,20 @@ import { runtimeConfig } from './lib/contentApi.js'
 //      bundle from 203KB to 696KB and blew the public first-load budget that
 //      e2e S18 enforces at 400KB — for two themes a given visitor will never
 //      both need.
+//      THE COMPONENT CSS PACKAGES ARE NOT IMPORTED, AND THAT IS MEASURED.
+//
+//      `templates/site.php` links the vendored NL Design System stylesheets,
+//      which already carry `.utrecht-heading-*`, `.utrecht-paragraph`,
+//      `.utrecht-link`, the nav list, the page header and footer and the
+//      article. Importing the `@utrecht/*-css` packages here shipped the same
+//      rules a second time, inside the JS.
+//
+//      Deleting every injected `<style>` on a rendered portal changed exactly
+//      ONE computed property across header, hero, cards, footer, navigation,
+//      buttons and headings — the skip link's `position`. That is why the skip
+//      link's CSS is the one import that stays: it is the only one the linked
+//      stylesheets do not provide.
 import '@utrecht/skip-link-css/dist/index.css'
-import '@utrecht/heading-1-css/dist/index.css'
-import '@utrecht/heading-2-css/dist/index.css'
-import '@utrecht/heading-3-css/dist/index.css'
-import '@utrecht/paragraph-css/dist/index.css'
-import '@utrecht/link-css/dist/index.css'
-import '@utrecht/nav-list-css/dist/index.css'
-import '@utrecht/page-header-css/dist/index.css'
-import '@utrecht/page-footer-css/dist/index.css'
-import '@utrecht/article-css/dist/index.css'
 
 const MOUNT_ID = 'portaliq-site'
 
