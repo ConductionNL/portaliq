@@ -20,7 +20,20 @@
 		-->
 		<FooterCanal v-if="content.decoration === 'canal'" />
 
-		<section>
+		<!--
+			EVERY BAND NAMES ITSELF (task 2.2).
+
+			These sections used to be styled positionally —
+			`section:first-of-type` and `section:last-of-type:not(:only-of-type)`
+			— which meant a footer could have exactly two bands. Adding a third
+			did not add a band; it RESTYLED the other two, because the third
+			became the new `:last-of-type` and inherited the legal bar's
+			typography while the legal bar silently became a content band.
+
+			With a class per band the styling follows the band's ROLE, so a
+			portal can have one, two or five and each keeps its own.
+		-->
+		<section class="pq-footer__band pq-footer__band--content">
 			<div class="container ac-footer__container">
 				<!--
 					THE BRAND COLUMN COMES FIRST.
@@ -125,7 +138,7 @@
 			</div>
 		</section>
 
-		<section class="ac-footer__sub-footer">
+		<section class="ac-footer__sub-footer pq-footer__band pq-footer__band--legal">
 			<div class="container pq-footer__legal">
 				<!--
 					THE LEGAL BAR HAS TWO SIDES, and the left one is not a menu.

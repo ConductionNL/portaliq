@@ -777,9 +777,28 @@ body,
  *
  * Defaults keep today's appearance, so only a theme naming these changes.
  */
-.pq-site .ac-footer section {
+/*
+ * PADDING IS PER BAND ROLE TOO (task 2.2), and this one was subtler than the
+ * selectors above.
+ *
+ * The rule used to be `.pq-site .ac-footer section`, one token for every band —
+ * which looks index-independent and is not. The measured symptom: adding a
+ * third band changed the LEGAL bar's `padding-block-start` from 0px to 88px,
+ * because the vendored sheet scopes the token itself positionally, so "the same
+ * token on every band" resolved to different values per position.
+ *
+ * Each role now reads its own token. The defaults reproduce today's footer
+ * exactly — the content band takes the theme's 88/28, the legal bar takes 0 —
+ * and neither depends on where it sits.
+ */
+.pq-site .ac-footer section.pq-footer__band--content {
 	padding-block-start: var(--nldesign-footer-padding-block, 0);
 	padding-block-end: var(--nldesign-footer-padding-block-end, 0);
+}
+
+.pq-site .ac-footer section.pq-footer__band--legal {
+	padding-block-start: var(--nldesign-footer-legal-padding-block, 0);
+	padding-block-end: var(--nldesign-footer-legal-padding-block-end, 0);
 }
 
 .pq-site .ac-footer h2:not(.sr-only),
@@ -847,7 +866,21 @@ body,
  * footer for themed portals. That is the intent: the second tone was a brand
  * colour with no text colour defined against it.
  */
-.pq-site .ac-footer section:last-of-type:not(:only-of-type) {
+/*
+ * BY ROLE, NOT BY POSITION (task 2.2).
+ *
+ * This was `section:last-of-type:not(:only-of-type)` — "the last band, unless
+ * it is the only one". It worked for exactly two bands and broke silently for
+ * three: the new last band inherited the legal bar's typography while the
+ * actual legal bar became a content band. A footer could therefore never grow
+ * a third band, which is task 0.1's finding.
+ *
+ * `section.pq-footer__band--legal` keeps the same specificity class count in
+ * the places it matters and moves the decision to the band's own name. The
+ * `:not(:only-of-type)` guard is gone because it is no longer needed: the class
+ * appears on the legal band and nowhere else.
+ */
+.pq-site .ac-footer section.pq-footer__band--legal {
 	background-color: var(
 		--nldesign-footer-legal-background,
 		var(--nldesign-color-footer-background, transparent)
@@ -855,7 +888,7 @@ body,
 }
 
 .pq-site .ac-footer__sub-footer,
-.pq-site .ac-footer section:last-of-type:not(:only-of-type) {
+.pq-site .ac-footer section.pq-footer__band--legal {
 	font-family: var(--nldesign-footer-legal-font, inherit);
 	font-size: var(--nldesign-footer-legal-size, inherit);
 	color: var(--nldesign-footer-legal-color, inherit);
@@ -1014,7 +1047,7 @@ body,
  * reference's own three polylines, at its own three wavelengths, encoded as an
  * inline SVG so the geometry stays the geometry.
  */
-.pq-site .ac-footer section:first-of-type {
+.pq-site .ac-footer section.pq-footer__band--content {
 	background-image: var(--nldesign-footer-ripple-image, none);
 	background-repeat: no-repeat;
 	background-size: 100% 100%;
@@ -1054,7 +1087,7 @@ body,
  * computed value was still the vendored one. Nothing about that is visible
  * without asking the browser which rule won.
  */
-.pq-site .ac-footer section:first-of-type .ac-footer__container {
+.pq-site .ac-footer section.pq-footer__band--content .ac-footer__container {
 	grid-template-columns: var(--nldesign-footer-grid-columns, none);
 	column-gap: var(--nldesign-footer-column-gap, normal);
 }
@@ -1068,7 +1101,7 @@ body,
  * by 177px. Fixed tracks cannot shrink, so the breakpoint is not optional.
  */
 @media (max-width: 900px) {
-	.pq-site .ac-footer section:first-of-type .ac-footer__container {
+	.pq-site .ac-footer section.pq-footer__band--content .ac-footer__container {
 		grid-template-columns: var(--nldesign-footer-grid-columns-sm, 1fr);
 		row-gap: var(--nldesign-footer-row-gap-sm, 2rem);
 	}
@@ -1096,9 +1129,9 @@ body,
 }
 
 /* The column heading's rhythm, at the vendored rules' specificity. */
-.pq-site .ac-footer section:first-of-type h2:not(.sr-only),
-.pq-site .ac-footer section:first-of-type h3,
-.pq-site .ac-footer section:first-of-type .ac-footer__title {
+.pq-site .ac-footer section.pq-footer__band--content h2:not(.sr-only),
+.pq-site .ac-footer section.pq-footer__band--content h3,
+.pq-site .ac-footer section.pq-footer__band--content .ac-footer__title {
 	margin-block-end: var(--nldesign-footer-heading-margin-block-end, 0);
 }
 
@@ -1111,7 +1144,7 @@ body,
  * vertical item spacing and grew to 43px. Any rule that says "every list in the
  * footer" is wrong the moment the footer has two kinds of list.
  */
-.pq-site .ac-footer section:first-of-type .ac-footer__links ul li:not(:last-child) {
+.pq-site .ac-footer section.pq-footer__band--content .ac-footer__links ul li:not(:last-child) {
 	margin-block-end: var(--nldesign-footer-item-margin-block-end, 0);
 }
 
@@ -1128,7 +1161,7 @@ body,
  * The default stays `disc` so every portal that has shipped with bullets keeps
  * them; a theme that wants the reference's look says so.
  */
-.pq-site .ac-footer section:first-of-type .ac-footer__links ul li {
+.pq-site .ac-footer section.pq-footer__band--content .ac-footer__links ul li {
 	list-style-type: var(--nldesign-footer-item-marker, disc);
 }
 
