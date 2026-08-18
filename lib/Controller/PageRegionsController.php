@@ -30,7 +30,6 @@ use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalUnscopedStore;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
-use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\DataResponse;
 use OCP\IRequest;
 
@@ -79,10 +78,20 @@ class PageRegionsController extends Controller {
 	/**
 	 * Replace one page's regions.
 	 *
-	 * `#[NoAdminRequired]` rather than admin-only: the people who edit a
-	 * portal's pages are not always the instance's administrators. CSRF
-	 * protection is NOT waived — this is a write from a first-party page that
-	 * has a request token, unlike the anonymous collector.
+	 * ADMIN-ONLY, for the reason gate-7 caught on this controller's sibling.
+	 * This method takes a portal SLUG and a route and REWRITES that page, so
+	 * with only "is anyone logged in" between them any authenticated user could
+	 * edit any tenant's pages by naming them. Scoping to the caller's
+	 * organisation would be the better answer and this app has no mechanism for
+	 * it — `AdminSettings` is deliberately a plain `ISettings` rather than
+	 * `IDelegatedSettings`, so there is no delegated portal-operator role to
+	 * scope BY, and inventing one here would assert a boundary that does not
+	 * exist.
+	 *
+	 * Carrying NO auth attribute is Nextcloud's "instance admin + CSRF"
+	 * default, the same posture as `SessionAdminController`. CSRF is
+	 * deliberately NOT waived: this is a write from a first-party page that has
+	 * a request token, unlike the anonymous collector.
 	 *
 	 * @param array|null $regions The regions to store.
 	 * @param string     $route   The page's route.
@@ -90,9 +99,14 @@ class PageRegionsController extends Controller {
 	 *
 	 * @return DataResponse The stored regions, or an error.
 	 *
+	 * @auth admin-only Takes a portal SLUG and a route and REWRITES that page,
+	 *       so the guard cannot be "is anyone logged in": with only that, any
+	 *       authenticated user could edit any tenant's pages by naming them.
+	 *       Carries no auth attribute deliberately — Nextcloud's default is
+	 *       instance admin + CSRF, the same posture as SessionAdminController.
+	 *
 	 * @spec openspec/changes/portal-page-composition/tasks.md
 	 */
-	#[NoAdminRequired]
 	public function update(?array $regions = null, string $route = '', string $portal = ''): DataResponse {
 		if (is_array($regions) === false) {
 			return new DataResponse(data: ['error' => 'regions_required'], statusCode: Http::STATUS_BAD_REQUEST);

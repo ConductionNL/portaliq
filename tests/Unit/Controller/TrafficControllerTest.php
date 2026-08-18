@@ -30,6 +30,7 @@ use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalTrafficService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
+use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\IRequest;
@@ -273,6 +274,100 @@ class TrafficControllerTest extends TestCase {
 			$this->assertSame([], $response->getData());
 		}
 	}//end testEveryOutcomeLooksIdenticalToTheCaller()
+
+
+	/**
+	 * The summary is NOT reachable by "any authenticated user".
+	 *
+	 * It takes a portal SLUG and returns that portal's figures, so the guard
+	 * cannot be "is anyone logged in" — with only that, any user could read any
+	 * tenant's traffic by naming it. Carrying no auth attribute is Nextcloud's
+	 * "instance admin + CSRF" default, which is the posture this asserts;
+	 * gate-7 caught the `#[NoAdminRequired]` this shipped with first.
+	 *
+	 * @return void
+	 */
+	public function testTheSummaryIsAdminOnly(): void {
+		$method = (new ReflectionClass(TrafficController::class))->getMethod('summary');
+
+		$this->assertEmpty($method->getAttributes(PublicPage::class));
+		$this->assertEmpty(
+			$method->getAttributes(NoAdminRequired::class),
+			'the summary takes a portal slug — NoAdminRequired makes it readable by any authenticated user'
+		);
+	}
+
+
+	/**
+	 * An unresolved portal is a 404 rather than an empty summary.
+	 *
+	 * @return void
+	 */
+	public function testTheSummaryAnswers404ForAnUnknownPortal(): void {
+		$response = $this->controller(portal: null)->summary(portal: 'nope');
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+	}
+
+
+	/**
+	 * With no reporter wired, the summary reports UNMEASURED rather than zeroes.
+	 *
+	 * @return void
+	 */
+	public function testTheSummaryWithoutAReporterReportsUnmeasured(): void {
+		$response = $this->controller(portal: ['slug' => 'demo'])->summary(portal: 'demo');
+
+		$this->assertSame(['measured' => false], $response->getData());
+	}
+
+
+	/**
+	 * The client script is public, throttled, and cacheable.
+	 *
+	 * PUBLIC because a statically built portal's visitors fetch it with no
+	 * session; THROTTLED because ADR-082 gives every public endpoint a ceiling;
+	 * and CACHEABLE for an hour because it is the one file a portal cannot
+	 * rebuild its visitors' copies of.
+	 *
+	 * @return void
+	 */
+	public function testTheClientScriptIsPublicAndThrottled(): void {
+		$method = (new ReflectionClass(TrafficController::class))->getMethod('client');
+
+		$this->assertNotEmpty($method->getAttributes(PublicPage::class));
+		$this->assertNotEmpty($method->getAttributes(NoCSRFRequired::class));
+
+		$limit = $method->getAttributes(AnonRateLimit::class);
+		$this->assertNotEmpty($limit, 'a public script route with no ceiling is an open fetch endpoint');
+		$this->assertGreaterThan(0, ($limit[0]->newInstance()->getLimit()));
+	}
+
+
+	/**
+	 * Without an app manager the script route 404s rather than 500s.
+	 *
+	 * @return void
+	 */
+	public function testTheClientScriptIs404WhenTheBundleCannotBeLocated(): void {
+		$response = $this->controller(portal: ['slug' => 'demo'])->client();
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+	}
+
+
+	/**
+	 * The preflight is throttled too.
+	 *
+	 * @return void
+	 */
+	public function testThePreflightIsThrottled(): void {
+		$method = (new ReflectionClass(TrafficController::class))->getMethod('preflight');
+		$limit = $method->getAttributes(AnonRateLimit::class);
+
+		$this->assertNotEmpty($limit);
+		$this->assertGreaterThan(0, ($limit[0]->newInstance()->getLimit()));
+	}
 
 
 }//end class

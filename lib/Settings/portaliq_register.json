@@ -491,11 +491,13 @@
           },
           "pageReferrer": {
             "title": "Page referrer",
-            "type": "string"
+            "type": "string",
+            "description": "Where the visitor came from, as the client reported it. Stored as sent; the collector strips no origin here because a referrer's whole value is the origin."
           },
           "pageTitle": {
             "title": "Page title",
-            "type": "string"
+            "type": "string",
+            "description": "The document title at the moment of the event — what the page called itself, which can differ from what the route suggests."
           },
           "region": {
             "title": "Coarse region",
@@ -544,7 +546,8 @@
           },
           "sessions": {
             "title": "Sessions",
-            "type": "integer"
+            "type": "integer",
+            "description": "Distinct journeys that day, split on the portal's idle window rather than on the client's session id alone."
           },
           "engagedSessions": {
             "title": "Engaged sessions",
@@ -558,35 +561,40 @@
           },
           "pageViews": {
             "title": "Page views",
-            "type": "integer"
+            "type": "integer",
+            "description": "Total page views that day, counting only `page_view` — a search or an outbound click happens ON a page and is not one."
           },
           "views": {
             "title": "Views per page",
             "type": "array",
             "items": {
               "type": "object"
-            }
+            },
+            "description": "Views per page, ranked, ties broken by path so two runs cannot reshuffle the table."
           },
           "entrances": {
             "title": "Entrances",
             "type": "array",
             "items": {
               "type": "object"
-            }
+            },
+            "description": "The page each journey STARTED on, ranked. Where visitors arrive, which is rarely the home page."
           },
           "exits": {
             "title": "Exits",
             "type": "array",
             "items": {
               "type": "object"
-            }
+            },
+            "description": "The page each journey ENDED on, ranked. Where visitors stop, which is where an editor usually needs to look."
           },
           "transitions": {
             "title": "Transitions",
             "type": "array",
             "items": {
               "type": "object"
-            }
+            },
+            "description": "Page-to-page steps within a journey, ranked — the routes visitors actually take between pages."
           },
           "computedAt": {
             "title": "Computed at",
@@ -1744,7 +1752,8 @@
               "enabled": {
                 "type": "boolean",
                 "default": false,
-                "title": "Enabled"
+                "title": "Enabled",
+                "description": "Whether this portal measures anything at all. Absent or false means the client sends nothing and stores nothing — measurement on a public government portal is a decision an operator makes, never a default."
               },
               "events": {
                 "type": "array",
@@ -1766,12 +1775,14 @@
               "sessionTimeoutMinutes": {
                 "type": "integer",
                 "default": 30,
-                "title": "Session idle timeout"
+                "title": "Session idle timeout",
+                "description": "How long a visitor may be idle before their next event starts a new journey. Measured from the LAST event, not from the journey's start, so a long read is one session rather than several."
               },
               "retentionDays": {
                 "type": "integer",
                 "default": 90,
-                "title": "Retention"
+                "title": "Retention",
+                "description": "How long raw events are kept. Daily aggregates outlive them, so a short window and a usable trend line are not in conflict. Zero means no retention policy, and deletes nothing."
               },
               "regionGranularity": {
                 "type": "string",
@@ -1790,16 +1801,20 @@
                 "properties": {
                   "required": {
                     "type": "boolean",
-                    "default": true
+                    "default": true,
+                    "title": "Consent required",
+                    "description": "When true, nothing is written to browser storage until the visitor consents; permitted pre-consent events still travel, carrying an id held only in memory."
                   },
                   "preConsentEvents": {
                     "type": "array",
                     "description": "Events permitted before consent is given. Empty means nothing is sent until it is.",
                     "items": {
                       "type": "string"
-                    }
+                    },
+                    "title": "Events permitted before consent"
                   }
-                }
+                },
+                "description": "What this portal may do before a visitor has consented."
               }
             }
           },
@@ -1836,22 +1851,26 @@
                   "properties": {
                     "label": {
                       "type": "string",
-                      "title": "Accessible name"
+                      "title": "Accessible name",
+                      "description": "The link's accessible name. REQUIRED in practice: the glyph is decorative, so without this the link is announced as just 'link'."
                     },
                     "href": {
                       "type": "string",
-                      "title": "Destination"
+                      "title": "Destination",
+                      "description": "Where the link goes. Opened in a new tab with `noopener`."
                     },
                     "icon": {
                       "type": "string",
-                      "title": "Icon name"
+                      "title": "Icon name",
+                      "description": "An icon name from the renderer's closed vocabulary. An unknown name renders nothing; raw SVG is never accepted, because page content is authored input."
                     }
                   },
                   "required": [
                     "label",
                     "href"
                   ]
-                }
+                },
+                "description": "Social or external profile links shown in the footer's brand column."
               },
               "legalLinks": {
                 "type": "array",
@@ -1862,11 +1881,13 @@
                   "properties": {
                     "label": {
                       "type": "string",
-                      "title": "Label"
+                      "title": "Label",
+                      "description": "The link's visible text, e.g. 'Privacy' or 'Toegankelijkheid'."
                     },
                     "href": {
                       "type": "string",
-                      "title": "Destination"
+                      "title": "Destination",
+                      "description": "Where the link goes. An in-site route is routed without reloading the document."
                     }
                   },
                   "required": [
@@ -1884,15 +1905,18 @@
                   "properties": {
                     "mark": {
                       "type": "string",
-                      "title": "Mark"
+                      "title": "Mark",
+                      "description": "The certification's short mark, e.g. 'ISO'."
                     },
                     "value": {
                       "type": "string",
-                      "title": "Value"
+                      "title": "Value",
+                      "description": "The certification's identifier or level, e.g. '27001'."
                     },
                     "href": {
                       "type": "string",
-                      "title": "Destination"
+                      "title": "Destination",
+                      "description": "Evidence for the claim. WITHOUT it the badge renders as inert text rather than a link — a certification with no certificate behind it should not look like one."
                     }
                   }
                 }

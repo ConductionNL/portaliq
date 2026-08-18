@@ -158,12 +158,18 @@ class TrafficController extends Controller {
 	 * was written: the collector answered 204 to `curl` and had no
 	 * `Access-Control-Allow-Origin` at all.
 	 *
+	 * A CEILING EVEN ON A PREFLIGHT (ADR-082). It is cheap to answer and cheaper
+	 * to send, which is exactly the shape a public endpoint gets hammered on;
+	 * generous enough that a page making one preflight per beacon never
+	 * notices.
+	 *
 	 * @return DataResponse An empty 204 carrying the CORS headers.
 	 *
 	 * @spec openspec/changes/portal-traffic-analytics/tasks.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 240, period: 60)]
 	public function preflight(): DataResponse {
 		return $this->cors(response: new DataResponse(data: [], statusCode: Http::STATUS_NO_CONTENT));
 	}//end preflight()
@@ -184,12 +190,17 @@ class TrafficController extends Controller {
 	 * portal cannot rebuild its visitors' copies of, and a privacy fix has to
 	 * reach them without anyone rebuilding a static site.
 	 *
+	 * The script is cached for an hour by the response below, so a real visitor
+	 * fetches it once a session; the ceiling below bounds a caller that ignores
+	 * the cache rather than one that uses it (ADR-082).
+	 *
 	 * @return Response The script, or 404 when the bundle was never built.
 	 *
 	 * @spec openspec/changes/portal-traffic-analytics/tasks.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 120, period: 60)]
 	public function client(): Response {
 		$path = '';
 		if ($this->appManager !== null) {
@@ -217,9 +228,24 @@ class TrafficController extends Controller {
 	 * NOT PUBLIC, AND NOT CORS-ENABLED. Everything else on this controller is
 	 * anonymous because a visitor's browser has to reach it; this is the one
 	 * that reads BACK, and an aggregate of where a portal's visitors go is a
-	 * portal operator's business rather than the open web's. `#[NoAdminRequired]`
-	 * rather than admin-only: the people who run a portal's content are not
-	 * always the instance's administrators.
+	 * portal operator's business rather than the open web's.
+	 *
+	 * ADMIN-ONLY, AND THE FIRST VERSION WAS NOT. It carried
+	 * `#[NoAdminRequired]` on the reasoning that the people who run a portal's
+	 * content are not always instance administrators — which is true, and
+	 * beside the point: this method takes a portal SLUG and returns that
+	 * portal's traffic, so with only "is anyone logged in" between them, any
+	 * authenticated user could read any tenant's figures by naming it. Caught
+	 * by gate-7 (no-admin-idor).
+	 *
+	 * Scoping to the caller's organisation would be the better answer and this
+	 * app has no mechanism for it: `AdminSettings` is deliberately a plain
+	 * `ISettings` rather than `IDelegatedSettings`, so there is no delegated
+	 * portal-operator role to scope BY. Inventing one here would be asserting a
+	 * boundary that does not exist. Carrying NO auth attribute is Nextcloud's
+	 * "instance admin + CSRF" default — the same posture, and the same
+	 * reasoning, as `SessionAdminController`. When delegated administration
+	 * arrives, this is one of the endpoints that should take it.
 	 *
 	 * The `measured` flag is produced by the service, not by this method, so a
 	 * renderer cannot be handed zeroes for a portal that measures nothing.
@@ -228,9 +254,14 @@ class TrafficController extends Controller {
 	 *
 	 * @return DataResponse The summary, or a 404 when no portal resolves.
 	 *
+	 * @auth admin-only Reads one portal's traffic aggregate by SLUG, so the
+	 *       guard cannot be "is anyone logged in": with only that, any
+	 *       authenticated user could read any tenant's figures by naming it.
+	 *       Carries no auth attribute deliberately — Nextcloud's default is
+	 *       instance admin + CSRF, the same posture as SessionAdminController.
+	 *
 	 * @spec openspec/changes/portal-traffic-analytics/tasks.md
 	 */
-	#[NoAdminRequired]
 	public function summary(string $portal = ''): DataResponse {
 		$resolved = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
 		if ($resolved === null) {

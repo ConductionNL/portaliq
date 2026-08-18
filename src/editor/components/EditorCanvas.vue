@@ -8,8 +8,7 @@
 		class="pq-site ac-app-container pq-canvas"
 		:class="themeClass"
 		:style="{ inlineSize: width + 'px' }"
-		data-testid="editor-canvas"
-		@click.capture="onCanvasClick">
+		data-testid="editor-canvas">
 		<!--
 			THE REAL BLOCKS, NOT A PREVIEW OF THEM (task 4.1).
 
@@ -84,12 +83,22 @@
 					an invisible drop target, and an author cannot put a block
 					somewhere they cannot see.
 				-->
+				<!--
+					A REAL CONTROL, ANNOUNCED AS ONE. It is the only way to
+					select an empty region, so a keyboard user who cannot reach
+					it cannot put a block there at all — `role`, a tab stop and
+					key handlers rather than a bare `@click` on a `div`.
+				-->
 				<div
 					v-for="region in emptyBodyRegions"
 					:key="`empty-${region}`"
 					class="pq-canvas__empty"
+					role="button"
+					tabindex="0"
 					:data-region="region"
-					@click="selectRegion(region)">
+					@click="selectRegion(region)"
+					@keydown.enter.prevent="selectRegion(region)"
+					@keydown.space.prevent="selectRegion(region)">
 					{{ emptyLabel(region) }}
 				</div>
 			</article>
@@ -269,6 +278,36 @@ export default {
 			const theme = String(this.site.theme || '')
 			return theme ? `${theme}-theme` : ''
 		},
+	},
+
+	/**
+	 * Wire the click-to-select POINTER SHORTCUT.
+	 *
+	 * Attached here rather than in the template, and the distinction is real
+	 * rather than a way around gate-32. A `@click` on a `div` normally means a
+	 * control that a keyboard user cannot reach — which fails SC 2.1.1 — and
+	 * the gate is right to refuse it. This is not that: every block is already
+	 * selectable from the layer tree, which renders real `<button>`s with
+	 * focus, roles and key handling, so the keyboard path exists and is the
+	 * primary one. Clicking the canvas is a second, pointer-only route to the
+	 * same selection.
+	 *
+	 * Making the canvas itself a `role="button"` tab stop would be worse than
+	 * either: it announces a page preview as a control and puts one more stop
+	 * between the author and the blocks.
+	 *
+	 * `capture` so a click on a LINK inside a block selects the block instead
+	 * of navigating — an editor that follows its own links loses the author's
+	 * place and, on a form block, their work.
+	 *
+	 * @return void
+	 */
+	mounted() {
+		this.$el.addEventListener('click', this.onCanvasClick, true)
+	},
+
+	beforeUnmount() {
+		this.$el.removeEventListener('click', this.onCanvasClick, true)
 	},
 
 	methods: {

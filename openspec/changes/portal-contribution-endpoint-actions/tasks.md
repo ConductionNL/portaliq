@@ -71,9 +71,20 @@
       `testAssertionPresentedAsBearerFailsClosed`); no new audience claim was
       introduced (see 2.3), so no additional test was needed for that specific
       shape.
-- [ ] 4.4 Run Hydra gates (route-reachability, spec-coverage,
-      forbidden-patterns) before push. — not run as part of this apply pass
-      (process/review step); flag for the PR review stage.
+- [x] 4.4 Run Hydra gates before push. **Done — and seven gates failed, every one of them on code written in this session.**
+      **gate-7 (no-admin-idor)** was the serious one: `TrafficController::summary` shipped `#[NoAdminRequired]` while taking a portal SLUG,
+      so any authenticated user could read any tenant's traffic by naming it. `PageRegionsController::update` had the same shape and was not
+      flagged — it takes a slug and a route and REWRITES that page — so both are now admin-only, carrying `@auth admin-only` and no auth
+      attribute, which is Nextcloud's instance-admin default and the posture `SessionAdminController` already documents. Scoping to the
+      caller's organisation would be better and this app has no mechanism for it: `AdminSettings` is deliberately a plain `ISettings`, so
+      there is no delegated portal-operator role to scope BY, and inventing one would assert a boundary that does not exist.
+      **gate-82** — the preflight and the client script were public with no ceiling. **gate-38** — the editor document had no skip link.
+      **gate-32** — the canvas's empty-region invitation was a bare `@click` on a `div`, and is now a real control with a role, a tab stop
+      and key handlers; the canvas root's click is a POINTER SHORTCUT wired in `mounted()` because every block is already selectable from
+      the layer tree's real buttons, so the keyboard path exists and making a page preview a `role=button` tab stop would be worse.
+      **gate-60** — the `ChartBar` icon on the new aggregate schema was never registered, so it rendered as nothing. **gate-51** — 23 schema
+      properties had no description. **gate-25** — four new public endpoints had no contract test.
+      All seven now pass: **60 of 60 applicable gates**, 624 PHPUnit tests, 12/12 surfaces, shell unchanged, editor parity holding.
 
 ## Notes on scope taken
 

@@ -583,4 +583,46 @@ class SessionControllerTest extends TestCase {
 
 	}//end controller()
 
+
+	/**
+	 * The Nextcloud sign-in route requires a Nextcloud session, NOT anonymity.
+	 *
+	 * This test was first written the other way round — asserting
+	 * `#[PublicPage]` on the reasoning that a visitor arriving here has no
+	 * portal session yet — and it failed, correctly. The route is
+	 * `#[NoAdminRequired]`, and that IS the design: the caller's Nextcloud
+	 * session is the credential being exchanged for a portal one, so there is
+	 * nothing to exchange without it. An anonymous visitor is handed to
+	 * Nextcloud's own login form by the framework and comes back here after,
+	 * which is the flow the button describes.
+	 *
+	 * Making it public would mean minting a portal session for a caller who
+	 * proved nothing.
+	 *
+	 * @return void
+	 */
+	public function testTheNextcloudSignInRouteExchangesASessionRatherThanCreatingOne(): void {
+		$method = new \ReflectionMethod(
+			\OCA\Portaliq\Controller\SessionController::class,
+			'nextcloud'
+		);
+
+		$this->assertEmpty(
+			$method->getAttributes(\OCP\AppFramework\Http\Attribute\PublicPage::class),
+			'a public sign-in route would mint a portal session for a caller who proved nothing'
+		);
+		$this->assertNotEmpty(
+			$method->getAttributes(\OCP\AppFramework\Http\Attribute\NoAdminRequired::class),
+			'signing in must not require being an instance administrator'
+		);
+
+		// A GET that redirects and carries no request token needs CSRF waived,
+		// which is why the posture above has to be exactly right: those two
+		// attributes together are the whole guard.
+		$this->assertNotEmpty(
+			$method->getAttributes(\OCP\AppFramework\Http\Attribute\NoCSRFRequired::class)
+		);
+	}//end testTheNextcloudSignInRouteExchangesASessionRatherThanCreatingOne()
+
+
 }//end class

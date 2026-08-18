@@ -39,6 +39,22 @@ $editorConfig = ($_['editorConfig'] ?? []);
 </head>
 <body class="pq-editor-body">
     <?php
+    // THE SKIP LINK IS SERVER-RENDERED, for the same reason it is on the public
+    // site: emitted by the bundle it would not exist until the bundle had
+    // downloaded, parsed and mounted, and the person who most needs it is the
+    // one tabbing into a page that has not finished loading.
+    //
+    // The editor's own first landmark is the canvas — the thing an author came
+    // to work on — and reaching it otherwise means tabbing past the whole block
+    // library and the layer tree on every load.
+    ?>
+    <p>
+        <a id="skip-link"
+           class="utrecht-skip-link utrecht-skip-link--visible-on-focus pq-site__skip"
+           href="#pq-main">Direct naar de pagina</a>
+    </p>
+
+    <?php
     // DATA, NOT CODE — `type="application/json"` is not executed, so it needs
     // no CSP nonce and cannot become an injection vector.
     ?>

@@ -310,6 +310,13 @@ class PortalPageController extends Controller {
 	 *
 	 * @return TemplateResponse The editor document.
 	 *
+	 * @contract tests/Unit/Controller/PortalPageControllerTest.php — asserts the
+	 *           posture rather than the body: this renders a document, and what
+	 *           matters on the wire is WHO reaches it. Its sibling `site()` is
+	 *           `#[PublicPage]` one method away, and an editor that inherited
+	 *           that would put a page-editing interface on the open web while
+	 *           looking entirely normal.
+	 *
 	 * @spec openspec/changes/portal-page-composition/tasks.md
 	 */
 	#[NoAdminRequired]

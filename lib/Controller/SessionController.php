@@ -519,6 +519,12 @@ class SessionController extends Controller {
 	 * @return Response A redirect carrying the bearer in the URL fragment.
 	 *
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portal-must-offer-only-the-sign-in-routes-it-declares
+	 * @contract tests/Unit/Controller/SessionControllerTest.php — asserts that
+	 *           this EXCHANGES a Nextcloud session for a portal one rather than
+	 *           creating one from nothing. A first attempt at that test asserted
+	 *           `#[PublicPage]` and failed, correctly: public here would mint a
+	 *           portal session for a caller who proved nothing.
+	 *
 	 */
 	#[NoAdminRequired]
 	#[NoCSRFRequired]

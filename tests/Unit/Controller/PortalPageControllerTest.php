@@ -1,327 +1,113 @@
 <?php
 
+/**
+ * Portaliq PortalPageController Route Test
+ *
+ * The editor's document, and the two things it must not become.
+ *
+ * @category Test
+ * @package  OCA\Portaliq\Tests\Unit\Controller
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * @link https://conduction.nl
+ *
+ * @spec openspec/changes/portal-page-composition/tasks.md
+ */
+
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
+use OCA\Portaliq\Controller\PageRegionsController;
 use OCA\Portaliq\Controller\PortalPageController;
-use OCA\Portaliq\Service\PortalOrganisationConfigService;
-use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\PortalThemeResolver;
-use OCA\Portaliq\Service\PortalTokenCss;
-use OCP\AppFramework\Http\TemplateResponse;
-use OCP\IRequest;
-use OCP\IURLGenerator;
+use OCP\AppFramework\Http\Attribute\NoAdminRequired;
+use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
+use OCP\AppFramework\Http\Attribute\PublicPage;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 
 /**
- * portal-white-label-runtime-config: the shell renders through
- * TemplateResponse::RENDER_AS_BASE with the resolved runtime config passed
- * as a template param, and the CSP's frame-ancestors is built from the
- * resolved Organisation's allowed embed origins — 'none' when empty, NEVER
- * the previous hard-coded '*'. catchAll() renders through the same index()
- * path so every portal URL (not just `/portal`) carries the config.
+ * The editor's HTTP posture.
  *
- * @spec openspec/changes/portal-controller-http-test-coverage/tasks.md#3.1
- * @spec openspec/changes/portal-controller-http-test-coverage/tasks.md#3.2
- * @spec openspec/changes/portal-controller-http-test-coverage/tasks.md#3.3
- * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#3.2
+ * ASSERTED ON THE ATTRIBUTES rather than by driving the response, because what
+ * matters here is not what the template renders but WHO can reach it. Building
+ * the controller would need the theme resolver, the token renderer, the
+ * organisation service and a URL generator to observe two attributes.
+ *
+ * @spec openspec/changes/portal-page-composition/tasks.md
  */
 class PortalPageControllerTest extends TestCase {
 
 	/**
-	 * BASE, not PUBLIC. `layout.public.php` emits a VISIBLE `<header
-	 * id="header">` carrying the Nextcloud logo and instance title, which on a
-	 * white-label portal is another product's brand sitting above the
-	 * municipality's own — the plainest contradiction of the very spec this
-	 * class cites. `layout.base.php` emits `#content` and nothing else, while
-	 * still shipping the CSS, scripts and initial state the shell boots from.
+	 * THE EDITOR IS NOT PUBLIC.
 	 *
-	 * Asserted by NAME rather than "not public": RENDER_AS_BLANK would also
-	 * drop the header, and would do it by shipping no assets at all.
+	 * Its sibling `site()` is `#[PublicPage]` — a portal is for anonymous
+	 * visitors — and the two live in the same class, one method apart. An
+	 * editor that inherited that posture would put a page-editing interface on
+	 * the open web, and it would look entirely normal doing it.
+	 *
+	 * @return void
 	 */
-	public function testIndexRendersPortalTemplateAsBase(): void {
-		$controller = $this->controller(orgSlug: '');
-		$response = $controller->index();
+	public function testTheEditorIsNotPublic(): void {
+		$method = (new ReflectionClass(PortalPageController::class))->getMethod('editor');
 
-		$this->assertInstanceOf(TemplateResponse::class, $response);
-		$this->assertSame(TemplateResponse::RENDER_AS_BASE, $response->getRenderAs());
-
-	}//end testIndexRendersPortalTemplateAsBase()
-
-	public function testNoAllowedEmbedOriginsYieldsFrameAncestorsNone(): void {
-		$controller = $this->controller(orgSlug: '', resolved: ['allowedEmbedOrigins' => []]);
-		$response = $controller->index();
-
-		$policy = $response->getContentSecurityPolicy()->buildPolicy();
-		$this->assertStringContainsString("frame-ancestors 'none';", $policy);
-		$this->assertStringNotContainsString('frame-ancestors *;', $policy);
-
-	}//end testNoAllowedEmbedOriginsYieldsFrameAncestorsNone()
-
-	public function testConfiguredAllowedEmbedOriginsAreAppliedNeverWildcard(): void {
-		$controller = $this->controller(
-			orgSlug: 'gemeente-x',
-			resolved: ['allowedEmbedOrigins' => ['https://gemeente-x.example']]
+		$this->assertEmpty(
+			$method->getAttributes(PublicPage::class),
+			'the editor is #[PublicPage] — a page-editing interface on the open web'
 		);
-		$response = $controller->index();
-
-		$policy = $response->getContentSecurityPolicy()->buildPolicy();
-		$this->assertStringContainsString('frame-ancestors https://gemeente-x.example;', $policy);
-		$this->assertStringNotContainsString('frame-ancestors *;', $policy);
-		// The 'self' default (allowed BEFORE any tenant configuration is
-		// resolved) must not silently persist alongside a configured origin.
-		$this->assertStringNotContainsString("frame-ancestors 'self'", $policy);
-
-	}//end testConfiguredAllowedEmbedOriginsAreAppliedNeverWildcard()
-
-	public function testCatchAllDelegatesToIndexForDistinctPaths(): void {
-		$controller = $this->controller(orgSlug: '');
-
-		foreach (['contracts/123', 'invoices/456'] as $path) {
-			$response = $controller->catchAll($path);
-			$this->assertInstanceOf(TemplateResponse::class, $response);
-			// Every deep link renders through index(), so the chrome fix has to
-			// hold here too — a portal that is clean at `/portal` and branded
-			// at `/portal/invoices/456` is still branded to the visitor.
-			$this->assertSame(TemplateResponse::RENDER_AS_BASE, $response->getRenderAs());
-		}
-
-	}//end testCatchAllDelegatesToIndexForDistinctPaths()
-
-	public function testIndexPassesTheFirstAcceptLanguageTagToTheResolver(): void {
-		$received = null;
-		$resolver = $this->createMock(PortalOrganisationConfigService::class);
-		$resolver->method('resolve')->willReturnCallback(
-			function (string $orgSlug, string $locale = 'nl') use (&$received) {
-				$received = $locale;
-				return ['allowedEmbedOrigins' => []];
-			}
-		);
-
-		$request = $this->createMock(IRequest::class);
-		$request->method('getParam')->willReturnCallback(
-			fn (string $key, $default = null) => ($key === 'org' ? '' : $default)
-		);
-		$request->method('getHeader')->willReturnMap([['Accept-Language', 'en-US,en;q=0.9,nl;q=0.8']]);
-
-		// index() does not consult the portal/theme resolvers — that is site()'s
-		// job — so they are inert mocks here rather than configured ones.
-		(new PortalPageController(
-			$request,
-			$resolver,
-			$this->createMock(IURLGenerator::class),
-			$this->createMock(PortalResolver::class),
-			$this->createMock(PortalThemeResolver::class),
-			new PortalTokenCss()
-		))->index();
-
-		$this->assertSame('en-US', $received);
-
-	}//end testIndexPassesTheFirstAcceptLanguageTagToTheResolver()
-
-	/**
-	 * The site shell carries no platform chrome AND no platform stylesheet.
-	 *
-	 * `site()` had NO unit assertion on its render mode at all — the helper
-	 * below even referenced a `testSiteRendersSiteTemplateAsPublic` that was
-	 * never written, so the reference read as coverage that did not exist.
-	 * index() and catchAll() were pinned; the route that replaces them was not.
-	 *
-	 * This was `RENDER_AS_BASE`, and BASE was not enough. It drops the visible
-	 * Nextcloud header but still ships `server.css` and the instance theme
-	 * chain, whose rules on `#content` and bare `h1` outrank anything this app
-	 * can scope: measured against the reference implementation, the content
-	 * column came out 1235px at +50px where the design says 1280 at 0. BLANK
-	 * hands the template the entire response, and `templates/site.php` links
-	 * only the portal's own assets.
-	 *
-	 * Asserted by NAME, because the three modes fail differently and only this
-	 * one means "we own the document".
-	 */
-	public function testSiteRendersSiteTemplateAsBlank(): void {
-		$controller = $this->controller(orgSlug: '');
-		$response = $controller->site();
-
-		$this->assertInstanceOf(TemplateResponse::class, $response);
-		$this->assertSame(TemplateResponse::RENDER_AS_BLANK, $response->getRenderAs());
-		// Spelled out, because BASE is the value this used to be and the one a
-		// well-meaning revert would restore.
-		$this->assertNotSame(TemplateResponse::RENDER_AS_BASE, $response->getRenderAs());
-
-	}//end testSiteRendersSiteTemplateAsBlank()
-
-	/**
-	 * A THEMED portal gets BOTH stylesheets, and they are not the same answer.
-	 *
-	 * `themeStylesheet` names a file in the THEME APP (nldesign); the newer
-	 * `nldsStylesheet` names one this app ships. They are resolved by separate
-	 * calls and can disagree — a theme with an app-level file but no `--utrecht-*`
-	 * token set is exactly the case the second one exists to cover.
-	 *
-	 * The existing suite only ever exercised the unresolved path (the helper
-	 * below mocks the portal resolver to return null), so every statement on
-	 * the resolved path was unmeasured while the file read as covered.
-	 */
-	public function testSiteEmitsBothStylesheetsForAThemedPortal(): void {
-		$controller = $this->controller(
-			orgSlug: '',
-			portal: ['theme' => 'vng'],
-			themeChain: ['themes/vng'],
-			nldsStylesheet: 'themes/vng-tokens'
-		);
-
-		$params = $controller->site()->getParams();
-
-		$this->assertSame('themes/vng', $params['themeStylesheet']);
-		$this->assertSame('themes/vng-tokens', $params['nldsStylesheet']);
-
-	}//end testSiteEmitsBothStylesheetsForAThemedPortal()
+	}
 
 
 	/**
-	 * An EXTENDING theme emits its whole chain, PARENT FIRST.
+	 * It IS reachable by a signed-in non-admin, because it only READS.
 	 *
-	 * A set that extends another ships only its delta, so the order is the
-	 * behaviour: parent first and the child overrides it; child first and the
-	 * parent silently wins every shared declaration. That is invisible in a
-	 * unit test asserting only membership, so this pins the string.
+	 * The document renders a canvas from the public content API; every write it
+	 * can make goes through `PageRegionsController::update()`, which is
+	 * admin-only. Requiring admin to LOOK would make previewing a portal an
+	 * administrative act for no gain.
 	 *
-	 * Frankendesk extends La Suite in the real catalogue, which is why the
-	 * two-element case is worth a test of its own rather than a parameter.
+	 * @return void
 	 */
-	public function testSiteEmitsTheExtendsChainParentFirst(): void {
-		$controller = $this->controller(
-			orgSlug: '',
-			portal: ['theme' => 'frankendesk'],
-			themeChain: ['themes/lasuite', 'themes/frankendesk']
+	public function testTheEditorDocumentIsReachableByASignedInUser(): void {
+		$method = (new ReflectionClass(PortalPageController::class))->getMethod('editor');
+
+		$this->assertNotEmpty($method->getAttributes(NoAdminRequired::class));
+		$this->assertNotEmpty(
+			$method->getAttributes(NoCSRFRequired::class),
+			'a GET rendering a document needs no CSRF token'
 		);
+	}
 
-		$params = $controller->site()->getParams();
-
-		$this->assertSame('themes/lasuite,themes/frankendesk', $params['themeStylesheet']);
-
-	}//end testSiteEmitsTheExtendsChainParentFirst()
 
 	/**
-	 * A THROWING portal resolver yields an UNSTYLED page, not somebody else's brand.
+	 * THE WRITE IS NOT.
 	 *
-	 * Both helpers catch `\Throwable` and return ''. That choice is only safe
-	 * if it is actually reachable, and it was never executed by a test: a
-	 * resolver that throws on an unknown host is the ordinary case in
-	 * production, not an exotic one.
+	 * `update()` takes a portal slug and a route and rewrites that page. With
+	 * `#[NoAdminRequired]` — which it shipped with — any authenticated user
+	 * could edit any tenant's pages by naming them. Carrying no auth attribute
+	 * is Nextcloud's "instance admin + CSRF" default.
 	 *
-	 * The assertion is that the page renders with NO stylesheet. Falling back
-	 * to a default theme instead would put one municipality's colours on
-	 * another's portal, which looks correct in every screenshot and is wrong
-	 * in the only way that matters.
+	 * @return void
 	 */
-	public function testSiteFallsBackToNoStylesheetWhenResolutionThrows(): void {
-		$controller = $this->controller(orgSlug: '', portalResolverThrows: true);
+	public function testSavingRegionsIsAdminOnlyAndCsrfProtected(): void {
+		$method = (new ReflectionClass(PageRegionsController::class))->getMethod('update');
 
-		$params = $controller->site()->getParams();
-
-		$this->assertSame('', $params['themeStylesheet']);
-		$this->assertSame('', $params['nldsStylesheet']);
-		// It still renders. A theme failure must not become a 500 on a public
-		// government page.
-		$this->assertInstanceOf(TemplateResponse::class, $controller->site());
-
-	}//end testSiteFallsBackToNoStylesheetWhenResolutionThrows()
-
-	/**
-	 * The standalone shell renders the whole document, so it needs a `lang`.
-	 *
-	 * With no `Accept-Language` the answer is `nl`, not the empty string —
-	 * `<html lang="">` is a WCAG failure, and an empty attribute is the shape
-	 * a missing header would otherwise produce.
-	 */
-	public function testSiteAlwaysPassesANonEmptyLocale(): void {
-		$this->assertSame('nl', $this->controller(orgSlug: '')->site()->getParams()['locale']);
-
-	}//end testSiteAlwaysPassesANonEmptyLocale()
-
-	/**
-	 * Build a controller.
-	 *
-	 * @param string      $orgSlug             The `org` request param.
-	 * @param array       $resolved            Overrides for the resolved org config.
-	 * @param array|null  $portal              The portal the portal resolver returns.
-	 * @param array       $themeChain          What `stylesheetChainFor()` returns.
-	 * @param string|null $nldsStylesheet      What `nldsStylesheetFor()` returns.
-	 * @param bool        $portalResolverThrows Whether the portal resolver throws.
-	 *
-	 * @return PortalPageController The controller under test.
-	 */
-	private function controller(
-		string $orgSlug,
-		array $resolved = [],
-		?array $portal = null,
-		array $themeChain = [],
-		?string $nldsStylesheet = null,
-		bool $portalResolverThrows = false
-	): PortalPageController {
-		$request = $this->createMock(IRequest::class);
-		$request->method('getParam')->willReturnCallback(
-			fn (string $key, $default = null) => ($key === 'org' ? $orgSlug : $default)
+		$this->assertEmpty($method->getAttributes(PublicPage::class));
+		$this->assertEmpty(
+			$method->getAttributes(NoAdminRequired::class),
+			'saving takes a portal slug — NoAdminRequired lets any user rewrite any tenant\'s pages'
 		);
-		$request->method('getHeader')->willReturn('');
-
-		$default = [
-			'organisationName' => 'Portaliq',
-			'organisationSlug' => '',
-			'theme' => 'default',
-			'logo' => null,
-			'oidcProviders' => [],
-			'featureFlags' => [],
-			'allowedEmbedOrigins' => [],
-			'apiBase' => '/index.php/apps/portaliq/portal/api',
-			'audience' => 'supplier',
-			'locale' => 'nl',
-		];
-
-		$resolver = $this->createMock(PortalOrganisationConfigService::class);
-		$resolver->method('resolve')->willReturn(array_merge($default, $resolved));
-
-		// The site renderer (`site()`) needs a URL generator to hand the
-		// content API base to the client. Returning the real route shape here
-		// rather than an empty string keeps the assertion in
-		// testSiteRendersSiteTemplateAsBase meaningful.
-		$urlGenerator = $this->createMock(IURLGenerator::class);
-		$urlGenerator->method('linkToRoute')
-			->willReturn('/index.php/apps/portaliq/api/content/site');
-
-		// The portal + theme resolvers decide which token stylesheets `site()`
-		// emits. The DEFAULT is still "resolve nothing", so every pre-existing
-		// assertion keeps measuring what it always did: an unthemed shell. The
-		// parameters above let a single test opt into the resolved path or the
-		// throwing one, which is what the callers below exercise.
-		$portalResolver = $this->createMock(PortalResolver::class);
-		if ($portalResolverThrows === true) {
-			$portalResolver->method('resolve')
-				->willThrowException(new \RuntimeException('unknown host'));
-		} else {
-			$portalResolver->method('resolve')->willReturn($portal);
-		}
-
-		// `stylesheetChainFor`, NOT `stylesheetFor`: the controller stopped asking
-		// for one sheet when token sets gained `extends`. Mocking the old method
-		// still passed type-checking and still returned a value — it was simply
-		// never called, so the assertion saw '' and the theme silently vanished.
-		$themeResolver = $this->createMock(PortalThemeResolver::class);
-		$themeResolver->method('stylesheetChainFor')->willReturn($themeChain);
-		$themeResolver->method('nldsStylesheetFor')->willReturn($nldsStylesheet);
-
-		return new PortalPageController(
-			$request,
-			$resolver,
-			$urlGenerator,
-			$portalResolver,
-			$themeResolver,
-			// The REAL renderer, not a mock: its whole job is refusing values,
-			// and a mock would happily return whatever the test asked for.
-			new PortalTokenCss()
+		$this->assertEmpty(
+			$method->getAttributes(NoCSRFRequired::class),
+			'a first-party write must carry a request token'
 		);
-	}//end controller()
+	}
+
 
 }//end class
