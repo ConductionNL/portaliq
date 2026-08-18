@@ -260,6 +260,12 @@ class ContentController extends Controller {
 				// not enabled measurement produces a client that does nothing
 				// at all rather than one the collector silently refuses.
 				'traffic' => $this->traffic->clientConfig(portal: $portal),
+				// THE PORTAL'S DEFAULT REGIONS, so a consumer can compose the
+				// shell rather than assume it. Projected as an OBJECT and never
+				// as null: a renderer that has to distinguish "no regions" from
+				// "an empty regions map" would need a branch, and the branch
+				// nobody writes is the one that blanks a portal's header.
+				'regions' => (object)(array)($portal['regions'] ?? []),
 			]
 		);
 	}//end site()

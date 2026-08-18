@@ -175,9 +175,25 @@
 						</h1>
 					</div>
 
+					<!--
+						THE BODY COMES FROM THE RESOLVED REGIONS, not from the
+						page's raw widget list.
+
+						Both were true for a while and only one was rendered: the
+						shell moved to regions while the body still read
+						`body.widgets`, so a PORTAL that filled its `hero` region
+						had that region silently ignored on every page — the
+						template applied, the contract served it, and nothing
+						appeared. Reading the same resolved regions the editor
+						edits is what makes the portal's own composition real.
+
+						A page's widgets still reach this through `slot`, so a
+						page that has never heard of regions renders exactly as
+						it did.
+					-->
 					<WidgetGrid
 						v-if="page.body && page.body.type === 'grid'"
-						:widgets="page.body.widgets || []"
+						:widgets="bodyWidgets"
 						:glossary="glossary"
 						:contributions="contributions"
 						@navigate="go" />
@@ -369,6 +385,32 @@ export default {
 		},
 
 		/**
+		 * Every body block, in one list, in region order.
+		 *
+		 * ONE GRID FOR THE PAGE, as it has always been — `hero`, `main` and
+		 * `aside` are flattened in that order rather than rendered as three
+		 * grids, because three would mean three content columns and three
+		 * independent grid flows where the design has one.
+		 *
+		 * @return {Array} The widget placements.
+		 *
+		 * @spec openspec/changes/portal-page-composition/tasks.md
+		 */
+		bodyWidgets() {
+			const widgets = []
+			let row = 0
+
+			for (const region of ['hero', 'main', 'aside']) {
+				for (const block of this.regions[region] || []) {
+					widgets.push({ ...block, slot: region, gridY: row })
+					row += (block.gridHeight || 4)
+				}
+			}
+
+			return widgets
+		},
+
+		/**
 		 * Theme class for the resolved site.
 		 *
 		 * Mirrors the fleet's theming convention — a `<variant>-theme` class
@@ -402,7 +444,11 @@ export default {
 				return false
 			}
 
-			return (body.widgets || []).some((w) => w.widgetKey === 'hero')
+			// READ FROM THE RESOLVED REGIONS, because a hero can now come from
+			// the PORTAL as well as from the page. Checking only the page's own
+			// widgets would emit a title `h1` above a portal-level hero that
+			// already carries one.
+			return this.bodyWidgets.some((w) => w.widgetKey === 'hero')
 		},
 
 		/**

@@ -1898,6 +1898,17 @@
                 }
               }
             }
+          },
+          "regions": {
+            "type": "object",
+            "title": "Regions",
+            "description": "The portal's DEFAULT page regions — header, hero, main, aside, footer — each an ordered list of block placements. A page inherits a region it does not mention, overrides one it fills, and blanks one it lists empty; that third state is why a page's own regions are read with a key-existence check rather than a truthiness test. Absent here means the renderer's own defaults apply, which reproduce the shell every portal had before regions existed — so adding this field changes no portal's appearance.",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            }
           }
         }
       },
