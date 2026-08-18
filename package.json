@@ -27,7 +27,7 @@
     "check:register": "node tests/validate-register.js",
     "check:registry": "node tests/registry.spec.js",
     "check:json-strict": "node tests/validate-json-strict.js",
-    "check:specs": "npm run check:json-strict && npm run check:manifest-v2 && npm run check:register && npm run check:registry && npm run check:site-auth && npm run check:site-grid && npm run check:site-contribution && npm run check:traffic-client",
+    "check:specs": "npm run check:json-strict && npm run check:manifest-v2 && npm run check:register && npm run check:registry && npm run check:site-auth && npm run check:site-grid && npm run check:site-contribution && npm run check:traffic-client && npm run check:site-regions",
     "prepare": "git config core.hooksPath .githooks || true",
     "build:site": "NODE_ENV=production webpack --config webpack.site.js --progress",
     "build:traffic": "NODE_ENV=production webpack --config webpack.traffic.js --progress",
@@ -35,6 +35,7 @@
     "check:site-auth": "node tests/site-auth.spec.mjs",
     "check:site-grid": "node tests/site-grid.spec.mjs",
     "check:site-contribution": "node tests/site-contribution.spec.mjs",
+    "check:site-regions": "node tests/site-regions.spec.mjs",
     "check:traffic-client": "node tests/traffic-client.spec.mjs",
     "check:surfaces": "node tests/site-surfaces.spec.mjs"
   },

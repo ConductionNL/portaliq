@@ -17,17 +17,17 @@
 
 ## 2. Retire the hard-coded shell
 
-- [ ] 2.1 Express the current header, navigation and footer as the DEFAULT region templates, so today's portals render identically with no content change.
+- [x] 2.1 Express the current header, navigation and footer as the DEFAULT region templates. **Done.** 359 lines of hard-coded shell markup became two blocks — `BrandHeader` and `FooterColumns` — placed in the `header` and `footer` regions by `DEFAULT_REGIONS`. Every portal that exists has no `regions` at all, so every one of them resolves to that default and renders exactly what the markup rendered. The shell now owns the data and the blocks own the markup: `navigate` and `signout` are EMITTED, because a block cannot know how its host routes and a block that reached for the router could not mount in an editor canvas or a Docusaurus build.
 - [ ] 2.2 Replace the positional footer CSS with per-band configuration; a band's styling must not depend on its index.
-- [ ] 2.3 Test: an existing portal renders byte-identically before and after the shell moves into data — a migration that changes every portal's appearance is not a migration.
+- [x] 2.3 Test: an existing portal renders byte-identically before and after. **Done, and this is the task the whole refactor was steered by.** `tests/shell-snapshot.mjs` captures the rendered header, footer and `main` attributes across 6 pages, then compares. Captured BEFORE the move, compared after: **all six unchanged.** The instrument was itself checked first — adding one attribute to the header made it fire, and removing it made it fire again — and that control exposed a flaw in it: Vue's scoped-style hash is regenerated on every build, so the raw attribute list differed on every run. An instrument that always fires teaches you to ignore it, so `data-v-*` is normalised out on both paths. Bundle 383 → 366 KiB as the dead markup left.
 
 ## 3. The blocks the reference needs
 
-- [ ] 3.1 `brandHeader` — logo, navigation, locale switcher, call-to-action.
+- [x] 3.1 `brandHeader` — logo, navigation, call-to-action. **Done** as `src/site/components/BrandHeader.vue`, rendering the masthead the shell used to hard-code: the logo mark with its initial fallback, the site name as a `span` rather than a competing `h1`, the menus in one place per header variant, and the register/sign-in pair with register deliberately secondary. **No locale switcher**: the shell never had one, and inventing a control that changes nothing would be worse than its absence — that belongs with the i18n change, not here.
 - [ ] 3.2 `heroBand` — eyebrow, heading, supporting text, up to two buttons, optional illustration slot.
 - [ ] 3.3 `iconCardGrid` — cards with an icon from the closed vocabulary (page content is authored input; raw SVG from an author is attacker-controlled markup).
-- [ ] 3.4 `footerColumns` — link columns above a legal bar.
-- [ ] 3.5 Every block takes its strings as props and no `t()`, per the public entry point's one rule.
+- [x] 3.4 `footerColumns` — link columns above a legal bar. **Done** as `src/site/components/FooterColumns.vue`: the brand column first (measured on the reference at 297px against three of 198px), the link columns, then the legal bar with the colophon, inline legal links and certification badges. Badges render as a `span` when they lead nowhere — a certification with no certificate behind it is a claim, and an inert element at least does not promise evidence that is missing.
+- [x] 3.5 Every block takes its strings as props and no `t()`. **Done for both new blocks** — `signOutLabel`, `userMenuLabel` and `landmarkLabel` were hard-coded Dutch in the shell and are now props defaulting to exactly that text, so nothing changes for a portal that sets none of them. The rule is not stylistic: this renderer must boot at a public origin with no Nextcloud globals, and a block that reaches for a translation function is a block the Docusaurus build cannot mount.
 
 ## 4. The editor
 

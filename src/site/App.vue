@@ -51,165 +51,27 @@
 			shell owns the SC 2.4.1 affordance; a second one at this level would
 			be a duplicate tab stop announcing the same target twice.
 		-->
-		<header class="ac-header pq-site__header" data-testid="site-header">
-			<div class="ac-header__navigation-main">
-				<div class="ac-header__logo">
-					<div>
-						<!--
-							THE MARK, AND IT HAS TO RENDER SOMETHING.
+		<!--
+			THE SHELL IS DATA NOW.
 
-							`.con-logo-container.header` is the vendored slot and it
-							measured 0x0 on this portal: the reference fills it with
-							its own asset and we had nothing to put there, so the
-							header opened with bare text where the brand's mark
-							belongs.
+			This was 159 lines of hard-coded header markup, which made the
+			chrome the one part of a portal only a developer could change: a
+			portal could not drop the navigation bar, reorder the masthead, or
+			put anything above the hero (task 0.1).
 
-							A portal's own `logo` wins when it has one. Without it,
-							the fallback is the portal's initial on the brand shape —
-							not a generic placeholder glyph, and not somebody else's
-							logo. Both are `aria-hidden`: the site name is right
-							beside them and announcing "logo" adds nothing.
-						-->
-						<img
-							v-if="site.logo"
-							class="pq-site__logo-mark"
-							:src="site.logo"
-							alt=""
-							aria-hidden="true"
-							data-testid="site-logo-mark" />
-						<span
-							v-else
-							class="pq-site__logo-mark pq-site__logo-mark--initial"
-							aria-hidden="true"
-							data-testid="site-logo-mark">
-							{{ logoInitial }}
-						</span>
-						<!--
-							A SPAN, NOT AN `h1`.
+			It is now whatever the `header` region contains — which, for a
+			portal that has said nothing, is a single `brandHeader` block
+			rendering exactly what this markup rendered. Held to that byte for
+			byte by `tests/shell-snapshot.mjs`.
+		-->
+		<component
+			:is="shellBlockFor(block.widgetKey)"
+			v-for="(block, i) in regions.header"
+			:key="`header-${i}`"
+			v-bind="shellPropsFor(block)"
+			@navigate="go"
+			@signout="signOut" />
 
-							The site name in the header used to be an `h1`, which
-							gave the home page two competing level-one headings —
-							the portal's name and the page's own hero title. A
-							screen-reader user asking for the page heading got the
-							site name, which is the one thing already announced by
-							the document title.
-
-							The page's content owns the `h1`. Addressed by
-							`data-testid` in the specs, so the tag can change.
-						-->
-						<span class="logo-text" data-testid="site-title">
-							{{ site.title || '…' }}
-						</span>
-					</div>
-				</div>
-
-				<!--
-					The sign-in affordance appears ONLY when the portal declares
-					a mode other than `public`. A portal with no accounts must
-					show no login button: an inert one is a support ticket from
-					every visitor who presses it.
-
-					It sits in the reference's `__right-section` / `ac-navigation`
-					slot, which is where that implementation puts
-					Aanmelden/Inloggen.
-				-->
-				<!--
-					SINGLE-BAR HEADER: the navigation joins the logo and the
-					sign-in controls on one line, the pattern documentation and
-					product sites use. In the `double` variant this renders
-					nothing and the navigation stays in its own bar below, which
-					is the government pattern this renderer was built against.
-
-					The menus are rendered in ONE place per variant, never both:
-					a hidden duplicate would put every link into the
-					accessibility tree twice and make "next link" announce the
-					same destination two times.
-				-->
-				<div
-					v-if="singleBarHeader"
-					class="ac-c-navigation__container pq-site__header-nav"
-					data-testid="site-header-nav">
-					<SiteMenu
-						v-for="menu in headerMenus"
-						:key="menu.title"
-						:menu="menu"
-						:currentRoute="route"
-						@navigate="go" />
-				</div>
-
-				<div class="ac-header__right-section">
-					<div
-						v-if="session || signInRoutes.length"
-						class="ac-navigation pq-site__auth"
-						data-testid="site-auth">
-						<template v-if="session">
-							<span data-testid="site-auth-subject">{{
-								sessionLabel
-							}}</span>
-							<button
-								type="button"
-								data-testid="site-signout"
-								@click="signOut">
-								Uitloggen
-							</button>
-						</template>
-						<!--
-							REGISTER IS SECONDARY, SIGNING IN IS PRIMARY.
-
-							Two controls in one row, and the emphasis is the whole
-							point: on a portal most visitors already have an account,
-							so signing in is the action and registering is the way
-							out for the minority who cannot. Rendering both as plain
-							links made the two look equally likely, which is the one
-							thing a header can get wrong here.
-
-							Register only appears when the portal DECLARES where to
-							send somebody. A "Registreren" button that leads nowhere
-							is worse than no button, and this renderer cannot invent
-							a registration flow that the portal has not configured.
-						-->
-						<nav v-else aria-label="Gebruikersmenu">
-							<ul>
-								<li v-if="registerRoute">
-									<a
-										class="pq-site__auth-action pq-site__auth-action--secondary"
-										:href="registerRoute.href"
-										data-testid="site-register">
-										{{ registerRoute.label }}
-									</a>
-								</li>
-								<li v-for="entry in signInRoutes" :key="entry.mode">
-									<a
-										class="pq-site__auth-action pq-site__auth-action--primary"
-										:href="entry.href"
-										:data-mode="entry.mode"
-										data-testid="site-signin">
-										{{ entry.label }}
-									</a>
-								</li>
-							</ul>
-						</nav>
-					</div>
-				</div>
-			</div>
-
-			<div v-if="!singleBarHeader" class="ac-header__navigation-secondary">
-				<div class="container">
-					<div class="ac-c-navigation__container">
-						<SiteMenu
-							v-for="menu in headerMenus"
-							:key="menu.title"
-							:menu="menu"
-							:currentRoute="route"
-							@navigate="go" />
-					</div>
-				</div>
-			</div>
-
-			<div class="ac-header__navigation-breadcrumb">
-				<div class="container" />
-			</div>
-		</header>
 
 		<!--
 			`.container` IS THE CONTENT COLUMN, AND IT IS NOT OPTIONAL.
@@ -379,215 +241,28 @@
 			So the sub-footer strip exists only when a second section does. Both
 			are emitted unconditionally.
 		-->
-		<footer class="ac-footer pq-site__footer" data-testid="site-footer">
-			<!-- The reference labels its footer for assistive tech and hides the
-			     heading visually; a landmark with no name is announced as just
-			     "footer". -->
-			<h2 class="sr-only">Footer</h2>
+		<!--
+			THE FOOTER IS DATA NOW, for the same reason the header is — and with
+			one extra: its two bands were selected in CSS by `:first-of-type`
+			and `:last-of-type:not(:only-of-type)`, so a third band was
+			impossible and adding one restyled the other two (task 0.1).
+		-->
+		<component
+			:is="shellBlockFor(block.widgetKey)"
+			v-for="(block, i) in regions.footer"
+			:key="`footer-${i}`"
+			v-bind="shellPropsFor(block)"
+			@navigate="go" />
 
-			<!--
-				THE DECORATION IS OPT-IN, BY NAME.
-
-				A canal scene is Conduction's own illustration. A municipality
-				running this same renderer must not inherit it because it shares
-				a footer component, so the portal names the decoration it wants
-				and the default is none.
-			-->
-			<FooterCanal v-if="footerContent.decoration === 'canal'" />
-
-			<section>
-				<div class="container ac-footer__container">
-					<!--
-						THE BRAND COLUMN COMES FIRST.
-
-						It used to be last, after the link menus, which is the one
-						order the reference does not use: measured on
-						docs.conduction.nl the grid is brand-then-columns, at
-						297px against three of 198px. A footer that opens with
-						"Documentation" and names its owner in the far right
-						column reads as three menus and an afterthought.
-					-->
-					<div class="ac-footer__logo pq-footer__brand">
-						<div class="con-logo-container footer" />
-						<span class="pq-footer__wordmark">{{ site.title }}</span>
-
-						<!-- The line under the wordmark. Portal CONTENT, from the
-						     portal record — a renderer cannot know what a portal
-						     is for. -->
-						<p
-							v-if="footerContent.description"
-							class="pq-footer__brand-text"
-							data-testid="site-footer-description">
-							{{ footerContent.description }}
-						</p>
-
-						<!-- The tagline predates the brand line and is kept: a
-						     portal that set one must not lose it. -->
-						<p
-							v-else-if="site.tagline"
-							class="pq-footer__brand-text"
-							data-testid="site-footer-tagline">
-							{{ site.tagline }}
-						</p>
-
-						<!--
-							SOCIALS CARRY A VISIBLE-TO-SCREEN-READER NAME, ALWAYS.
-
-							The glyph is decorative and the anchor has no text of
-							its own, so without the `sr-only` label these are five
-							links announced as "link". The reference uses brand
-							glyphs we do not ship; `external-link` is the honest
-							stand-in rather than an invented logo.
-						-->
-						<ul
-							v-if="footerContent.socials.length"
-							class="pq-footer__socials"
-							data-testid="site-footer-socials">
-							<li
-								v-for="social in footerContent.socials"
-								:key="social.href">
-								<a
-									:href="social.href"
-									:aria-label="social.label"
-									target="_blank"
-									rel="noopener noreferrer">
-									<CnSiteIcon
-										:name="social.icon || 'external-link'"
-										:size="18" />
-									<span class="sr-only">{{ social.label }}</span>
-								</a>
-							</li>
-						</ul>
-					</div>
-
-					<nav
-						v-for="menu in footerMenus"
-						:key="menu.title"
-						class="ac-footer__links"
-						:aria-label="menu.title"
-						data-testid="site-footer-menu">
-						<h3 class="ac-footer__menu-title">{{ menu.title }}</h3>
-						<ul>
-							<li v-for="item in menu.items" :key="item.name">
-								<!--
-									The reference marks every footer link with an
-									external-link glyph. It is DECORATIVE here —
-									`aria-hidden` — because the link already has
-									its own text; announcing "external link"
-									twice per item helps nobody.
-								-->
-								<a
-									class="ac-footer__link"
-									:href="item.link"
-									:target="
-										isExternal(item.link) ? '_blank' : undefined
-									"
-									:rel="
-										isExternal(item.link)
-											? 'noopener noreferrer'
-											: undefined
-									"
-									@click="onFooterLink($event, item.link)">
-									<CnSiteIcon
-										v-if="isExternal(item.link)"
-										name="external-link"
-										:size="18" />
-									<span>{{ item.name }}</span>
-								</a>
-							</li>
-						</ul>
-					</nav>
-				</div>
-			</section>
-
-			<section class="ac-footer__sub-footer">
-				<div class="container pq-footer__legal">
-					<!--
-						THE LEGAL BAR HAS TWO SIDES, and the left one is not a menu.
-
-						This used to be a horizontal nav of legal links and nothing
-						else. The reference puts the COLOPHON first — the legal
-						entity, its chamber-of-commerce number and its VAT number —
-						then the legal links inline after it, and certification
-						badges on the right. The links alone name who to complain
-						to but not who is responsible.
-					-->
-					<div class="pq-footer__legal-left">
-						<!--
-							THE PORTAL TITLE IS THE FALLBACK COLOPHON, and removing
-							it was a regression: a portal that has never set a
-							`footer` block — which is every portal that existed
-							before this field — showed its name here, and for one
-							build showed nothing at all. An empty legal bar on a
-							government site names nobody as responsible.
-						-->
-						<span
-							v-if="footerContent.colophon || site.title"
-							class="pq-footer__colophon"
-							data-testid="site-footer-colophon">
-							{{ footerContent.colophon || site.title }}
-						</span>
-
-						<!--
-							The separator is a decorative character between links,
-							so it is `aria-hidden`: read aloud, a list of four
-							links becomes "Privacy middle dot Terms middle dot".
-						-->
-						<span
-							v-if="legalLinks.length"
-							class="pq-footer__legal-links"
-							data-testid="site-footer-legal-links">
-							<template
-								v-for="(item, i) in legalLinks"
-								:key="item.href">
-								<span v-if="i > 0" aria-hidden="true">·</span>
-								<a
-									:href="item.href"
-									@click.prevent="go(item.href)"
-									>{{ item.label }}</a
-								>
-							</template>
-						</span>
-					</div>
-
-					<!--
-						BADGES ARE ONLY LINKS WHEN THEY LEAD SOMEWHERE. A
-						certification badge with no certificate behind it is a
-						claim; rendering it as an inert `span` rather than an
-						anchor at least does not promise evidence that is missing.
-					-->
-					<ul
-						v-if="footerContent.badges.length"
-						class="pq-footer__badges"
-						data-testid="site-footer-badges">
-						<li
-							v-for="badge in footerContent.badges"
-							:key="badge.mark + badge.value">
-							<component
-								:is="badge.href ? 'a' : 'span'"
-								class="pq-footer__badge"
-								:href="badge.href || null"
-								:target="badge.href ? '_blank' : null"
-								:rel="badge.href ? 'noopener noreferrer' : null">
-								<span class="pq-footer__badge-mark">{{
-									badge.mark
-								}}</span>
-								<span class="pq-footer__badge-value">{{
-									badge.value
-								}}</span>
-							</component>
-						</li>
-					</ul>
-				</div>
-			</section>
-		</footer>
 	</div>
 </template>
 
 <script>
 import { CnSiteIcon } from '@conduction/nextcloud-vue/public'
+import BrandHeader from './components/BrandHeader.vue'
 import ContributionPage from './components/ContributionPage.vue'
 import FooterCanal from './components/FooterCanal.vue'
+import FooterColumns from './components/FooterColumns.vue'
 import MarkdownBlock from './components/MarkdownBlock.vue'
 import SiteMenu from './components/SiteMenu.vue'
 import WidgetGrid from './components/WidgetGrid.vue'
@@ -607,6 +282,7 @@ import {
 	resolveApiBase,
 } from './lib/contentApi.js'
 import { parseContributionRoute } from './lib/contributionApi.js'
+import { resolveRegions } from './lib/regions.js'
 import { trafficClientFor } from './lib/traffic.js'
 
 /**
@@ -621,9 +297,11 @@ export default {
 	name: 'App',
 
 	components: {
+		BrandHeader,
 		CnSiteIcon,
 		ContributionPage,
 		FooterCanal,
+		FooterColumns,
 		MarkdownBlock,
 		SiteMenu,
 		WidgetGrid,
@@ -661,6 +339,25 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The regions this page renders, resolved page → portal → default.
+		 *
+		 * A PORTAL THAT HAS SAID NOTHING GETS TODAY'S SHELL. Every existing
+		 * portal has no `regions` at all, so every one of them resolves to
+		 * `DEFAULT_REGIONS` — a `brandHeader` and a `footerColumns`, which
+		 * render exactly the markup this component used to hard-code.
+		 *
+		 * @return {object} Every region, keyed, in render order.
+		 *
+		 * @spec openspec/changes/portal-page-composition/tasks.md
+		 */
+		regions() {
+			return resolveRegions(
+				(this.page && this.page.body && this.page.body.regions) || {},
+				this.site.regions || {},
+			)
+		},
+
 		/**
 		 * Theme class for the resolved site.
 		 *
@@ -964,6 +661,73 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * The component that renders one shell block.
+		 *
+		 * UNKNOWN RETURNS NULL, and `<component :is="null">` renders nothing —
+		 * deliberately, and only here. A missing BODY widget renders a visible
+		 * placeholder because an author put it there and needs to see it did
+		 * not work; a missing SHELL block is a portal misconfiguration, and
+		 * splashing "widget not available" across the masthead of a live
+		 * government site helps nobody who can act on it. The name still
+		 * reaches the console through the region contract's `unknownRegions`.
+		 *
+		 * @param {string} key The block key.
+		 * @return {object|null} The component.
+		 *
+		 * @spec openspec/changes/portal-page-composition/tasks.md
+		 */
+		shellBlockFor(key) {
+			return { brandHeader: BrandHeader, footerColumns: FooterColumns }[key] || null
+		},
+
+		/**
+		 * The props one shell block is rendered with.
+		 *
+		 * THE SHELL STILL OWNS THE DATA. A block takes strings and lists as
+		 * props and reaches for nothing — that is what lets the same component
+		 * mount in an editor canvas, or in a Docusaurus build, where none of
+		 * this component's state exists. The block's own authored props win
+		 * last, so a portal can override any label without touching code.
+		 *
+		 * @param {object} block The block placement.
+		 * @return {object} The props.
+		 *
+		 * @spec openspec/changes/portal-page-composition/tasks.md
+		 */
+		shellPropsFor(block) {
+			const authored = (block && block.props) || {}
+
+			if (block.widgetKey === 'brandHeader') {
+				return {
+					title: this.site.title || '',
+					logo: this.site.logo || '',
+					logoInitial: this.logoInitial,
+					menus: this.headerMenus,
+					currentRoute: this.route,
+					singleBar: this.singleBarHeader,
+					session: this.session,
+					sessionLabel: this.sessionLabel,
+					signInRoutes: this.signInRoutes,
+					registerRoute: this.registerRoute,
+					...authored,
+				}
+			}
+
+			if (block.widgetKey === 'footerColumns') {
+				return {
+					title: this.site.title || '',
+					tagline: this.site.tagline || '',
+					content: this.footerContent,
+					menus: this.footerMenus,
+					legalLinks: this.legalLinks,
+					...authored,
+				}
+			}
+
+			return authored
+		},
+
 		/**
 		 * The in-site route this browser location represents.
 		 *
