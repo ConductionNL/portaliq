@@ -284,6 +284,15 @@ import {
 } from './lib/contentApi.js'
 import { parseContributionRoute } from './lib/contributionApi.js'
 import { resolveRegions } from './lib/regions.js'
+import {
+	footerContentOf,
+	footerMenusOf,
+	headerMenusOf,
+	legalLinksOf,
+	logoInitialOf,
+	registerRouteOf,
+	subFooterMenuOf,
+} from './lib/shellData.js'
 import { trafficClientFor } from './lib/traffic.js'
 
 /**
@@ -413,7 +422,7 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-content-api-must-be-sufficient-without-the-built-in-renderer
 		 */
 		headerMenus() {
-			return this.menus.filter((menu) => (menu.position || 0) === 0)
+			return headerMenusOf(this.menus)
 		},
 
 		/**
@@ -455,9 +464,7 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-content-api-must-be-sufficient-without-the-built-in-renderer
 		 */
 		footerMenus() {
-			return this.menus.filter(
-				(menu) => (menu.position || 0) !== 0 && menu !== this.subFooterMenu,
-			)
+			return footerMenusOf(this.menus)
 		},
 
 		/**
@@ -478,14 +485,7 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-content-api-must-be-sufficient-without-the-built-in-renderer
 		 */
 		subFooterMenu() {
-			const footers = this.menus.filter((menu) => (menu.position || 0) !== 0)
-			if (footers.length < 2) {
-				return null
-			}
-
-			return footers.reduce((highest, menu) =>
-				(menu.position || 0) > (highest.position || 0) ? menu : highest,
-			)
+			return subFooterMenuOf(this.menus)
 		},
 
 		/**
@@ -498,8 +498,7 @@ export default {
 		 * @return {string} A single character, or ''.
 		 */
 		logoInitial() {
-			const title = this.site && this.site.title ? String(this.site.title) : ''
-			return title.trim().slice(0, 1).toUpperCase()
+			return logoInitialOf(this.site && this.site.title)
 		},
 
 		/**
@@ -513,13 +512,7 @@ export default {
 		 * @return {object|null} `{label, href}` or null.
 		 */
 		registerRoute() {
-			const auth = (this.site && this.site.authentication) || {}
-			const href = String(auth.register || '').trim()
-			if (href === '') {
-				return null
-			}
-
-			return { href, label: String(auth.registerLabel || 'Registreren') }
+			return registerRouteOf(this.site)
 		},
 
 		/**
@@ -535,16 +528,7 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-content-api-must-be-sufficient-without-the-built-in-renderer
 		 */
 		footerContent() {
-			const footer = (this.site && this.site.footer) || {}
-			const list = (value) => (Array.isArray(value) ? value : [])
-
-			return {
-				description: String(footer.description || ''),
-				colophon: String(footer.colophon || ''),
-				decoration: String(footer.decoration || ''),
-				socials: list(footer.socials),
-				badges: list(footer.badges),
-			}
+			return footerContentOf(this.site)
 		},
 
 		/**
@@ -558,24 +542,7 @@ export default {
 		 * @return {Array} `{label, href}` entries.
 		 */
 		legalLinks() {
-			const authored =
-				(this.site && this.site.footer && this.site.footer.legalLinks) || []
-			if (Array.isArray(authored) && authored.length) {
-				return authored.map((item) => ({
-					label: String(item.label || ''),
-					href: String(item.href || ''),
-				}))
-			}
-
-			const menu = this.subFooterMenu
-			if (!menu) {
-				return []
-			}
-
-			return (menu.items || []).map((item) => ({
-				label: String(item.name || ''),
-				href: String(item.link || ''),
-			}))
+			return legalLinksOf(this.site, this.menus)
 		},
 
 		/**

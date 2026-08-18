@@ -49,6 +49,22 @@ export const DEFAULT_REGIONS = {
 }
 
 /**
+ * Every region, keyed, with nothing in it.
+ *
+ * THE SHAPE MATTERS BEFORE THE CONTENT DOES. The editor renders a region list
+ * from the moment it mounts, which is before its fetch resolves — and a `{}`
+ * there throws `Cannot read properties of undefined (reading 'length')` on
+ * every region, three times, in a component whose stack trace is minified. The
+ * fix is not a guard at each read; it is never handing anyone a half-shaped
+ * regions map in the first place.
+ *
+ * @return {object} Every region key, each an empty array.
+ */
+export function emptyRegions() {
+	return Object.fromEntries(REGIONS.map((region) => [region, []]))
+}
+
+/**
  * Resolve one page's regions — page first, then portal, then the default.
  *
  * THE THIRD STATE IS THE POINT, and it is the same rule the server applies in

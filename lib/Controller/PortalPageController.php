@@ -290,6 +290,79 @@ class PortalPageController extends Controller {
 
 
 	/**
+	 * The page editor.
+	 *
+	 * RENDERED ON THE SITE'S OWN FURNITURE, not the admin SPA's, and that is
+	 * the decision the whole editor rests on. Its canvas mounts the REAL blocks
+	 * — the same components the public route mounts — and a block only looks
+	 * like itself under the stylesheets and token set the public document
+	 * links. Rendered inside Nextcloud's admin chrome it would be measurably a
+	 * different page: `server.css` alone is 587 rules that outrank anything
+	 * this app scopes, which is the finding that moved the site renderer to
+	 * `RENDER_AS_BLANK` in the first place.
+	 *
+	 * So it reuses the same theme resolution, the same stylesheet list and the
+	 * same blank layout, and adds only its own chrome. `tests/editor-parity.spec.mjs`
+	 * holds the canvas's DOM against the public route's.
+	 *
+	 * NOT PUBLIC. `#[NoAdminRequired]` rather than admin-only: the people who
+	 * edit a portal's pages are not always the instance's administrators.
+	 *
+	 * @return TemplateResponse The editor document.
+	 *
+	 * @spec openspec/changes/portal-page-composition/tasks.md
+	 */
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	public function editor(): TemplateResponse {
+		$response = new TemplateResponse(
+			Application::APP_ID,
+			'editor',
+			[
+				'editorConfig' => [
+					'portal'  => (string)$this->request->getParam('portal', ''),
+					'route'   => (string)$this->request->getParam('route', '/'),
+					'apiBase' => rtrim(
+						(string)preg_replace(
+							'#/site$#',
+							'',
+							$this->urlGenerator->linkToRoute('portaliq.content.site')
+						),
+						'/'
+					),
+					// THE CSRF TOKEN, BECAUSE THIS DOCUMENT HAS NO `window.OC`.
+					//
+					// `RENDER_AS_BLANK` means no Nextcloud layout, no core JS
+					// and therefore no `OC.requestToken` — the editor read it
+					// from there at first and every save answered **412**,
+					// which is Nextcloud's CSRF failure and not a precondition
+					// error, so it reads like a caching problem rather than a
+					// missing header.
+					//
+					// The editor's saves are NOT `#[NoCSRFRequired]`, unlike
+					// the anonymous collector: this is an authenticated write
+					// from a first-party page, and it should carry a token.
+					'requestToken' => \OCP\Util::callRegister(),
+				],
+				'themeStylesheet' => $this->siteThemeStylesheet(),
+				'nldsStylesheet'  => $this->siteNldsStylesheet(),
+				'portalTokenCss'  => $this->sitePortalTokenCss(),
+				'locale'          => $this->siteLocale(),
+			],
+			TemplateResponse::RENDER_AS_BLANK
+		);
+
+		$csp = new ContentSecurityPolicy();
+		$csp->disallowFrameAncestorDomain('\'self\'');
+		$csp->addAllowedFontDomain('https://fonts.gstatic.com');
+		$csp->addAllowedStyleDomain('https://fonts.googleapis.com');
+		$response->setContentSecurityPolicy($csp);
+
+		return $response;
+	}//end editor()
+
+
+	/**
 	 * The document language for the standalone shell, never empty.
 	 *
 	 * `resolveLocale()` answers '' when the request carries no usable

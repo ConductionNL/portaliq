@@ -65,6 +65,16 @@ return [
         // control pair is recorded, not before.
         ['name' => 'portalPage#site', 'url' => '/site', 'verb' => 'GET'],
 
+        // THE PAGE EDITOR. Rendered on the site's own document furniture, not
+        // the admin SPA's, because its canvas mounts the real blocks and a
+        // block only looks like itself under the real stylesheets.
+        ['name' => 'portalPage#editor', 'url' => '/editor', 'verb' => 'GET'],
+
+        // Where the editor saves. PUT rather than POST: the editor sends a
+        // page's regions in full, so the request replaces a known resource
+        // rather than appending to a collection.
+        ['name' => 'pageRegions#update', 'url' => '/api/pages/regions', 'verb' => 'PUT'],
+
         // Portal auth-edge API (supplier-portal T02). session#index resolves the
         // caller's bearer (fail-closed); devLogin is debug-gated; logout ends the
         // client session. Registered before the /portal/{path} SPA catch-all.

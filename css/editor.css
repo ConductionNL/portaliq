@@ -1,0 +1,290 @@
+/*
+ * SPDX-License-Identifier: EUPL-1.2
+ * Copyright (C) 2026 Conduction B.V.
+ *
+ * THE EDITOR'S OWN CHROME, and nothing else.
+ *
+ * Every selector here is under `.pq-editor` or `.pq-editor-body`. The canvas
+ * renders the real blocks under the real site stylesheets, and a rule from this
+ * file reaching into one would make the preview wrong in exactly the way the
+ * whole arrangement exists to prevent: the author would tune something that is
+ * not what ships, and the difference would only appear after publishing.
+ *
+ * That is also why there is no reset here and no element selectors: `button`,
+ * `select` and `input` are styled through `.pq-panel` and `.pq-editor`, so the
+ * canvas's own controls keep the design system's.
+ */
+
+.pq-editor-body {
+	margin: 0;
+	background: #eef0f4;
+	font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+	color: #1b1b23;
+}
+
+.pq-editor {
+	display: flex;
+	flex-direction: column;
+	block-size: 100vh;
+}
+
+.pq-editor__bar {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	padding: 8px 16px;
+	background: #fff;
+	border-block-end: 1px solid rgba(0, 0, 0, 0.12);
+	flex: none;
+}
+
+.pq-editor__title {
+	font-weight: 600;
+	margin-inline-end: auto;
+}
+
+.pq-editor__breakpoints button,
+.pq-editor__actions button {
+	padding: 6px 12px;
+	margin-inline-start: 4px;
+	border: 1px solid rgba(0, 0, 0, 0.2);
+	border-radius: 4px;
+	background: #fff;
+	cursor: pointer;
+	font: inherit;
+}
+
+.pq-editor__breakpoints button[aria-pressed='true'] {
+	background: #0b5cff;
+	border-color: #0b5cff;
+	color: #fff;
+}
+
+.pq-editor__actions button:disabled {
+	opacity: 0.45;
+	cursor: default;
+}
+
+.pq-editor__save {
+	background: #0b5cff !important;
+	border-color: #0b5cff !important;
+	color: #fff;
+}
+
+/*
+ * A WARNING IS A BANNER, NOT A TOAST.
+ *
+ * It names a measured ratio or a specific heading jump, which is something an
+ * author acts on rather than acknowledges — and a message that disappears on a
+ * timer is one they cannot go back and read.
+ */
+.pq-editor__warning {
+	margin: 0;
+	padding: 8px 16px;
+	background: #fff4d6;
+	border-block-end: 1px solid #e6c65c;
+	font-size: 13px;
+}
+
+.pq-editor__body {
+	display: grid;
+	grid-template-columns: 280px minmax(0, 1fr) 320px;
+	gap: 0;
+	flex: 1;
+	min-block-size: 0;
+}
+
+.pq-editor__side {
+	overflow-y: auto;
+	background: #fff;
+	border-inline: 1px solid rgba(0, 0, 0, 0.12);
+	padding: 12px;
+}
+
+.pq-editor__canvas {
+	overflow: auto;
+	padding: 24px;
+	background: #eef0f4;
+}
+
+.pq-panel {
+	margin-block-end: 24px;
+}
+
+.pq-panel__title {
+	font-size: 13px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: rgba(0, 0, 0, 0.55);
+	margin: 0 0 8px;
+}
+
+.pq-panel__group-title {
+	font-size: 12px;
+	color: rgba(0, 0, 0, 0.55);
+	margin: 12px 0 4px;
+}
+
+.pq-panel__list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.pq-panel__block {
+	display: block;
+	inline-size: 100%;
+	text-align: start;
+	padding: 8px;
+	margin-block-end: 4px;
+	border: 1px solid rgba(0, 0, 0, 0.14);
+	border-radius: 4px;
+	background: #fff;
+	cursor: pointer;
+	font: inherit;
+}
+
+.pq-panel__block:hover {
+	border-color: #0b5cff;
+}
+
+.pq-panel__block-label {
+	display: block;
+	font-weight: 600;
+}
+
+.pq-panel__block-description {
+	display: block;
+	font-size: 12px;
+	color: rgba(0, 0, 0, 0.62);
+}
+
+.pq-panel__field {
+	display: block;
+	margin-block-end: 12px;
+	font-size: 13px;
+}
+
+.pq-panel__field > span {
+	display: block;
+	margin-block-end: 4px;
+	font-weight: 600;
+}
+
+.pq-panel__field input[type='text'],
+.pq-panel__field input[type='number'],
+.pq-panel__field select,
+.pq-panel__field textarea {
+	inline-size: 100%;
+	padding: 6px 8px;
+	border: 1px solid rgba(0, 0, 0, 0.24);
+	border-radius: 4px;
+	font: inherit;
+	box-sizing: border-box;
+}
+
+.pq-panel__field textarea {
+	font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+	font-size: 12px;
+}
+
+.pq-panel__help {
+	display: block;
+	margin-block-start: 4px;
+	color: rgba(0, 0, 0, 0.6);
+	font-size: 12px;
+}
+
+.pq-panel__error {
+	display: block;
+	margin-block-start: 4px;
+	color: #8a1c1c;
+	font-size: 12px;
+}
+
+.pq-panel__empty,
+.pq-panel__subject {
+	font-size: 13px;
+	color: rgba(0, 0, 0, 0.7);
+}
+
+.pq-panel__subject span {
+	display: block;
+	font-size: 12px;
+	color: rgba(0, 0, 0, 0.6);
+}
+
+.pq-panel__danger {
+	margin-block-start: 8px;
+	padding: 6px 12px;
+	border: 1px solid #8a1c1c;
+	border-radius: 4px;
+	background: #fff;
+	color: #8a1c1c;
+	cursor: pointer;
+	font: inherit;
+}
+
+.pq-tree,
+.pq-tree ul {
+	list-style: none;
+	margin: 0;
+	padding-inline-start: 8px;
+}
+
+.pq-tree__region {
+	display: block;
+	font-size: 12px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: rgba(0, 0, 0, 0.5);
+	margin-block-start: 8px;
+}
+
+.pq-tree li {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.pq-tree > li {
+	display: block;
+}
+
+.pq-tree__block {
+	flex: 1;
+	text-align: start;
+	padding: 4px 6px;
+	border: 1px solid transparent;
+	border-radius: 4px;
+	background: none;
+	cursor: pointer;
+	font: inherit;
+	font-size: 13px;
+}
+
+.pq-tree__block[data-selected='true'] {
+	background: #e6efff;
+	border-color: #0b5cff;
+}
+
+.pq-tree__moves button {
+	border: 1px solid rgba(0, 0, 0, 0.18);
+	border-radius: 4px;
+	background: #fff;
+	cursor: pointer;
+	font: inherit;
+	line-height: 1;
+	padding: 2px 6px;
+}
+
+.pq-tree__moves button:disabled {
+	opacity: 0.35;
+	cursor: default;
+}
+
+.pq-tree__empty {
+	font-size: 12px;
+	color: rgba(0, 0, 0, 0.45);
+	padding-inline-start: 6px;
+}
