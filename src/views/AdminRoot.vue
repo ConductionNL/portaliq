@@ -97,6 +97,85 @@
 				}}
 			</p>
 		</NcSettingsSection>
+
+		<!--
+			THE THEME CATALOGUE, WITH ITS ACCESSIBILITY VERDICT (tasks 1.4, 3.1, 3.2).
+
+			`portal.theme` was free text against a catalogue nothing in this app
+			showed, so choosing one meant knowing an id — and getting it wrong
+			renders the portal UNSTYLED, deliberately and silently. This lists
+			what can actually be adopted.
+
+			The verdict travels with the choice rather than arriving in a review
+			weeks after a portal went live wearing the theme. A set is never
+			refused: naming the failing token, its ratio and the surface it
+			fails on is something an operator can act on, while blocking
+			adoption would be this app deciding a municipality may not use its
+			own brand — a decision it does not own, and one that would be worked
+			around by editing the record directly.
+		-->
+		<NcSettingsSection
+			:name="t('portaliq', 'Themes')"
+			:description="
+				t(
+					'portaliq',
+					'The token sets a portal can adopt. The contrast verdict is measured against the surfaces this renderer actually paints.',
+				)
+			">
+			<NcNoteCard v-if="themeError" type="error">
+				{{ themeError }}
+			</NcNoteCard>
+
+			<p v-else-if="themesLoading" class="portaliq-admin-settings__hint">
+				{{ t('portaliq', 'Loading themes…') }}
+			</p>
+
+			<table v-else-if="themes.length" class="portaliq-themes">
+				<thead>
+					<tr>
+						<th scope="col">{{ t('portaliq', 'Theme') }}</th>
+						<th scope="col">{{ t('portaliq', 'Id') }}</th>
+						<th scope="col">{{ t('portaliq', 'Contrast') }}</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr v-for="set in themes" :key="set.id">
+						<td>{{ set.label }}</td>
+						<td><code>{{ set.id }}</code></td>
+						<td>
+							<!--
+								THREE STATES, NEVER TWO. "Not checked" is
+								reported distinctly from "passes": 43 of the 46
+								shipped sets declare none of the tokens this
+								check reads, and calling those compliant is
+								exactly the false clean bill of health this
+								whole surface exists to avoid.
+							-->
+							<span v-if="!set.contrast.evaluated">
+								{{ t('portaliq', 'not checked — this set declares none of the surface tokens') }}
+							</span>
+							<span v-else-if="set.contrast.passes">
+								{{ t('portaliq', 'AA on {count} pair(s)', { count: set.contrast.measured }) }}
+							</span>
+							<span v-else class="portaliq-themes__fail">
+								<span
+									v-for="finding in set.contrast.findings"
+									:key="finding.token"
+									class="portaliq-themes__finding">
+									{{ finding.token }} — {{ finding.ratio }}:1 {{ t('portaliq', 'on the') }}
+									{{ finding.surface }} ({{ t('portaliq', 'AA wants') }}
+									{{ finding.threshold }})
+								</span>
+							</span>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+
+			<p v-else class="portaliq-admin-settings__hint">
+				{{ t('portaliq', 'No themes available — the theme app is not installed.') }}
+			</p>
+		</NcSettingsSection>
 	</div>
 </template>
 
@@ -128,6 +207,31 @@ export default {
 			organisationInput: '',
 			revoking: false,
 			revokeResult: null,
+
+			/** The adoptable token sets, each with its own contrast verdict. */
+			themes: [],
+			themesLoading: true,
+			themeError: '',
+		}
+	},
+
+	/**
+	 * Load the theme catalogue.
+	 *
+	 * @return {Promise<void>} Resolves once the table can render.
+	 */
+	async mounted() {
+		try {
+			const { data } = await axios.get(generateUrl('/apps/portaliq/api/themes'))
+			this.themes = data.sets || []
+		} catch (error) {
+			// SAID OUT LOUD. An empty table and a failed request look identical,
+			// and one of them means every portal's theme is unverifiable.
+			this.themeError = t('portaliq', 'Could not load the themes: {message}', {
+				message: error.message,
+			})
+		} finally {
+			this.themesLoading = false
 		}
 	},
 
@@ -181,5 +285,37 @@ export default {
 	align-items: flex-end;
 	gap: 8px;
 	margin-top: 12px;
+}
+
+.portaliq-themes {
+	inline-size: 100%;
+	border-collapse: collapse;
+	margin-block-start: 12px;
+}
+
+.portaliq-themes th,
+.portaliq-themes td {
+	text-align: start;
+	padding: 6px 8px;
+	border-block-end: 1px solid var(--color-border);
+	vertical-align: top;
+}
+
+.portaliq-themes th {
+	color: var(--color-text-maxcontrast);
+	font-weight: 600;
+}
+
+/*
+ * A FAILING VERDICT IS NOT SIGNALLED BY COLOUR ALONE (WCAG 1.4.1). Each
+ * finding names its token, its measured ratio and the surface it fails on, so
+ * the colour is emphasis on text that already carries the whole message.
+ */
+.portaliq-themes__fail {
+	color: var(--color-error);
+}
+
+.portaliq-themes__finding {
+	display: block;
 }
 </style>

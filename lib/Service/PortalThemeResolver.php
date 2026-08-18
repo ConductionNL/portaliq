@@ -221,14 +221,118 @@ class PortalThemeResolver {
 	 * disclosure surface with no consumer need. The site renderer serves
 	 * anonymous visitors, so it must not become that consumer.
 	 *
-	 * An unreadable or malformed catalogue answers null, so every caller
-	 * fails closed.
+	 * An unreadable or malformed catalogue answers an EMPTY LIST, so every
+	 * caller fails closed — a theme picker with nothing in it is visibly
+	 * broken, where one silently falling back to a default is not.
 	 *
-	 * @param string $theme The theme reference.
-	 *
-	 * @return array|null The entry, or null.
+	 * @return array<int, array<string, mixed>> Every set the catalogue offers.
 	 *
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
+	 * @spec openspec/changes/nldesign-theme-integration/tasks.md
+	 */
+	public function catalogue(): array {
+		$root = $this->themeAppPath();
+		if ($root === null) {
+			return [];
+		}
+
+		$path = $root . '/token-sets.json';
+		if (is_file($path) === false) {
+			return [];
+		}
+
+		$decoded = json_decode((string)file_get_contents($path), true);
+		if (is_array($decoded) === false) {
+			return [];
+		}
+
+		$entries = $decoded;
+		if (array_is_list($decoded) === false) {
+			$entries = array_values($decoded);
+		}
+
+		$sets = [];
+		foreach ($entries as $entry) {
+			if (is_array($entry) === true && is_string($entry['id'] ?? null) === true) {
+				$sets[] = $entry;
+			}
+		}
+
+		return $sets;
+	}//end catalogue()
+
+
+	/**
+	 * The token VALUES a set declares, flattened.
+	 *
+	 * READ FROM THE STYLESHEET, because that is where they are. The catalogue
+	 * names a set; only the file says what colour anything is. Declarations are
+	 * matched on the custom-property syntax rather than parsed as CSS: this is
+	 * a generated token file, one declaration per line, and a full parser would
+	 * be a dependency for no additional truth.
+	 *
+	 * A `var()` reference is resolved one hop against the same file, because a
+	 * set's roles are aliases of its own palette — unresolved, every role would
+	 * read as the literal string `var(--c-white)` and every contrast check
+	 * would report nothing rather than something.
+	 *
+	 * @param string $theme The set id.
+	 *
+	 * @return array<string, string> Token name to value.
+	 *
+	 * @spec openspec/changes/nldesign-theme-integration/tasks.md
+	 */
+	public function tokenValuesFor(string $theme): array {
+		$chain = $this->stylesheetChainFor(theme: $theme);
+		if ($chain === []) {
+			return [];
+		}
+
+		$root = $this->themeAppPath();
+		if ($root === null) {
+			return [];
+		}
+
+		$values = [];
+		foreach ($chain as $sheet) {
+			$path = $root . '/css/' . $sheet . '.css';
+			if (is_file($path) === false) {
+				continue;
+			}
+
+			preg_match_all(
+				'/(--[a-z0-9-]+)\s*:\s*([^;]+);/i',
+				(string)file_get_contents($path),
+				$matches,
+				PREG_SET_ORDER
+			);
+
+			foreach ($matches as $match) {
+				$values[trim($match[1])] = trim($match[2]);
+			}
+		}
+
+		// ONE HOP, not a full resolver. A role that aliases another role that
+		// aliases a palette entry is rare in these sets and a loop is not:
+		// resolving repeatedly would need cycle detection for a case that does
+		// not arise, and an unresolved value is reported as unevaluated rather
+		// than guessed at.
+		foreach ($values as $name => $value) {
+			if (preg_match('/^var\(\s*(--[a-z0-9-]+)/i', $value, $alias) === 1) {
+				$values[$name] = ($values[$alias[1]] ?? $value);
+			}
+		}
+
+		return $values;
+	}//end tokenValuesFor()
+
+
+	/**
+	 * One catalogue entry, by id.
+	 *
+	 * @param string $theme The set id.
+	 *
+	 * @return array<string, mixed>|null The entry.
 	 */
 	private function catalogueEntry(string $theme): ?array {
 		$root = $this->themeAppPath();

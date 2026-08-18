@@ -171,6 +171,12 @@ return [
         // whoever operates the portal, not to the open web.
         ['name' => 'traffic#summary', 'url' => '/api/traffic/summary', 'verb' => 'GET'],
 
+        // The adoptable theme catalogue, each set carrying its own AA verdict
+        // for the surfaces this renderer paints. Not public: the catalogue
+        // includes admin-uploaded custom sets, the same reason the theme app's
+        // own endpoint is not public either.
+        ['name' => 'theme#index', 'url' => '/api/themes', 'verb' => 'GET'],
+
         ['name' => 'portalPage#catchAll', 'url' => '/portal/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
 
         // Hosted tilburg-woo-ui (Open Tilburg WOO SPA) — public. Registered
