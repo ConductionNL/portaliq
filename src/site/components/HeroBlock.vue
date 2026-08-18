@@ -21,6 +21,19 @@
 					text, so the accessible name of the heading is still exactly
 					the title.
 				-->
+				<!--
+					THE EYEBROW IS A `p`, NOT A HEADING.
+
+					It labels the heading beneath it. Marked up as one, it would
+					add a second entry to the document outline for a single
+					section, and a screen-reader user navigating by heading
+					would land on "Diensten" and then immediately on the real
+					title — two stops for one place.
+				-->
+				<p v-if="eyebrow" class="pq-hero__eyebrow" data-testid="hero-eyebrow">
+					{{ eyebrow }}
+				</p>
+
 				<component :is="headingTag" v-if="title" :class="headingClass">
 					<span v-if="titleIcon" class="pq-hero__title-icon">
 						<CnSiteIcon :name="titleIcon" :size="38" />
@@ -134,6 +147,20 @@ export default {
 	components: { CnSiteIcon, CnSiteSearch, CnSiteSection },
 
 	props: {
+		/**
+		 * The short line above the heading — a section name, a category.
+		 *
+		 * NOT A HEADING, and deliberately not marked up as one. An eyebrow is
+		 * a label for the heading beneath it; promoting it to `h1`/`h2` would
+		 * put a second entry in the document outline for one section and make
+		 * a screen-reader user navigating by heading land on "Diensten" and
+		 * then immediately on the real title.
+		 */
+		eyebrow: {
+			type: String,
+			default: '',
+		},
+
 		/** The hero heading. */
 		title: {
 			type: String,
@@ -278,6 +305,14 @@ export default {
 
 			return this.actions
 				.filter((a) => a && typeof a === 'object' && a.label && a.href)
+				// AT MOST TWO (task 3.2), and the cap is real rather than
+				// advisory. A hero with four equally-weighted calls to action
+				// has none: the pattern this reproduces is one primary and one
+				// way out, and a row that wraps to a second line on a phone
+				// stops looking like a hero at all. Extra actions are dropped
+				// here rather than rendered small, so an author sees the third
+				// one missing and moves it somewhere it can work.
+				.slice(0, 2)
 				.map((a) => ({
 					label: String(a.label),
 					href: String(a.href),

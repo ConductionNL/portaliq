@@ -1406,3 +1406,25 @@ body,
  * It belongs with the dark variant (2.2/2.4), where the surfaces move and the
  * text has to move with them — and where the contrast check in
  * `tests/site-surfaces.spec.mjs` is what says whether it worked. */
+
+/*
+ * THE HERO'S EYEBROW — the short line above the heading (task 3.2).
+ *
+ * Every value is a token defaulting to inert, so a portal that names none of
+ * them gets an ordinary paragraph rather than a half-styled label. It sits on
+ * the hero band, which paints itself, so it names its own colour for the same
+ * reason the title does: nothing in the vendored CSS gives it one, and the
+ * fallback is the browser's black on a cobalt band.
+ */
+.pq-hero__eyebrow {
+	margin: 0 0 var(--nldesign-hero-eyebrow-gap, 0);
+	font-family: var(--nldesign-hero-eyebrow-font, inherit);
+	font-size: var(--nldesign-hero-eyebrow-size, inherit);
+	font-weight: var(--nldesign-hero-eyebrow-weight, inherit);
+	letter-spacing: var(--nldesign-hero-eyebrow-spacing, normal);
+	text-transform: var(--nldesign-hero-eyebrow-transform, none);
+	color: var(
+		--nldesign-hero-eyebrow-color,
+		var(--nldesign-hero-body-color, var(--nldesign-hero-title-color, #fff))
+	);
+}
