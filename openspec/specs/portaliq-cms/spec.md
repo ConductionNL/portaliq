@@ -327,6 +327,53 @@ UNSTYLED rather than in another portal's brand.
   defaults
 - @e2e exclude unit-tested — `tests/Unit/Service/PortalThemeResolverTest.php`; a portal quietly wearing another municipality's colours renders perfectly and is invisible to a screenshot, so the refusal is asserted where the decision is made
 
+### Requirement: Portaliq MUST consume the theme app's theming, not implement its own
+
+Portaliq SHALL own no colour, no palette and no font pipeline. Everything a
+portal wears SHALL come from the theme app — the token-set catalogue, the
+`--utrecht-*` public bridge, the generated dark variants, the shareable config
+type and the public font stylesheet — and this app SHALL contribute only the
+two things the theme app cannot know: which portal is being served, and which
+of its own surfaces need a token.
+
+> This replaces the flat statement that "Portaliq ships NO theming mechanism of
+> its own", which was true of the code and unhelpful as guidance: it said what
+> this app does not do without saying what it consumes instead, and the
+> consequence was a surface layer that read no tokens at all until it was
+> measured (see the `nldesign-theme-integration` change).
+>
+> ADR-086 is cited by number across these specs and **has no file** in
+> `openspec/architecture/` or in hydra's; this requirement is the statement
+> that ADR section was supposed to carry, written where it can actually be
+> found.
+
+#### Scenario: Every painted surface resolves through a token
+
+- **GIVEN** a rendered portal
+- **WHEN** the theme's `--utrecht-document-background-color` is changed
+- **THEN** every surface the page paints changes with it — measured on all
+  eight, because before the surface layer existed the same change moved none
+- @e2e exclude measured by `npm run check:surfaces` and by the computed-style
+  probe recorded in the change's task 2.6; a screenshot cannot tell a surface
+  that resolved a token from one that happens to be the same colour
+
+#### Scenario: A theme's accessibility verdict travels with the choice
+
+- **GIVEN** the theme catalogue served to an administrator
+- **THEN** each set carries the contrast verdict for the surfaces this renderer
+  paints, and a set whose tokens were never measured reports "not checked"
+  rather than a pass
+- @e2e exclude unit-tested — `tests/Unit/Service/PortalThemeContrastTest.php`;
+  the first implementation reported 46 of 46 sets passing with 43 of them
+  unmeasured, which renders identically to a genuine pass
+
+#### Scenario: A shared theme is validated before it can be adopted
+
+- **GIVEN** a token set shared from another instance
+- **WHEN** it carries a declaration the theme app's validator refuses
+- **THEN** nothing is adopted and the refusal names the declaration
+- @e2e exclude unit-tested — `tests/Unit/Service/PortalSharedThemeTest.php`
+
 ### Requirement: The content API MUST be sufficient without the built-in renderer
 
 Every capability of the built-in renderer SHALL be reachable through the public

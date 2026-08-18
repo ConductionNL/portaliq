@@ -267,6 +267,25 @@ if (is_file($appRoot . '/css/fonts/licensed/avenir-lt-55-roman.woff2') === true)
     $stylesheets[] = $asset($appId, 'css/nlds/nlds-fonts-licensed.css');
 }
 
+// ADMIN-UPLOADED FONT FACES, from the theme app's own public stylesheet.
+//
+// `FontController::css()` is `#[PublicPage]` deliberately — a CSS `url()` font
+// load carries no CSRF token and has to work before any session exists — so a
+// public portal can link it directly rather than this app re-implementing a
+// font pipeline. It is EMPTY (0 bytes) until an administrator uploads a face,
+// which is why linking it unconditionally is safe: a portal with no custom
+// fonts pays one cached request for nothing.
+//
+// IT DOES NOT REPLACE `nlds-fonts.css`, and the distinction matters (task 2.3
+// assumed it would). That file re-declares the VENDORED design system's own
+// faces — Roboto and friends — because the captured stylesheets carry
+// root-relative `url()`s that resolve against the origin and 404 from this
+// app's path; measured, four requests, four 404s and the whole portal drawn in
+// Arial. `FontService` manages an administrator's UPLOADED faces, which is a
+// different set of fonts solving a different problem. Dropping the hand-written
+// declarations would take the design system's own typography with it.
+$stylesheets[] = $url->linkToRoute(PortalThemeResolver::THEME_APP . '.font.css');
+
 // The token layer, last, so a theme's value beats the component CSS's own
 // `:root` fallback for the same custom property.
 foreach ($tokenStylesheets as $href) {
