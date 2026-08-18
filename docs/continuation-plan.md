@@ -1,55 +1,54 @@
 # Continuation plan — portal design programme
 
-Written 2026-08-17 as a handoff. Everything here is measured, not remembered:
-where the work is, what is done, what is next, and the traps that cost time.
+Written 2026-08-17, extended 2026-08-18. Everything here is measured, not
+remembered: where the work is, what is done, what is left, and the traps that
+cost time.
 
-## Status after the 2026-08-17 execution pass
+## Status
 
-| Section | Then | Now |
-| --- | --- | --- |
-| Docusaurus plugin | unpublished | **published** — [ConductionNL/docusaurus-plugin-portaliq](https://github.com/ConductionNL/docusaurus-plugin-portaliq), public, EUPL-1.2, 19 tests |
-| Contributed-page actions (6.2) | open | **closed** — and the endpoint was never the problem |
-| Traffic analytics | 20 open | **0 open, 3 partial** — the sweep runs, retention is enforced |
-| nldesign theme | 14 open | 13 open — 2.6, the one blocking dark mode, is **closed** |
-| Page composition | 25 open | 20 open, 1 partial — the **region model** is closed |
+**Every task in all four changes is closed.** 95 done, 0 open, 7 partial — and
+each partial names exactly what remains and why it is not in this repo.
 
-### What is genuinely left, and how big each piece is
+| Change | done | open | partial |
+| --- | --- | --- | --- |
+| portal-contribution-endpoint-actions | 12 | 0 | 0 |
+| portal-traffic-analytics | 32 | 0 | 3 |
+| portal-page-composition | 29 | 0 | 1 |
+| nldesign-theme-integration | 22 | 0 | 3 |
 
-- **The editor (§4, 7 tasks) is a project, not a task.** Canvas mounting the
-  real blocks, a block library, a field-config-driven inspector, a layer tree,
-  a breakpoint switcher, undo/redo, and a test that the canvas and the public
-  route render the same DOM. Everything else in page composition is small by
-  comparison; this is not.
-- **Retiring the hard-coded shell (§2, 3 tasks)** is the next real step and is
-  now unblocked by the region model. The acceptance test is the hard part and
-  it already exists in principle: an existing portal must render byte-identically
-  before and after, which the painted-surface enumeration in
-  `tests/site-surfaces.spec.mjs` can check the same way 2.6 was checked.
-- **Dark mode (theme 2.2/2.4)** is unblocked by 2.6 and is the highest-value
-  small item. Expect to add text colour, which 2.6 deliberately left out.
-- **Theme sharing (§4, 4 tasks)** needs `nldesign` as well as this repo.
-- **The OpenRegister ownership fix** (theme 6.3) is the one finding that leaves
-  this repo: an anonymous write is stamped with the session user's id.
+### What is genuinely still open, and where it lives
 
-**Two findings from this pass are worth more than the tasks they came from.**
+- **[openregister#2548](https://github.com/ConductionNL/openregister/pull/2548)** —
+  an unowned-write opt-in on `saveObject()`. Until it merges, an "anonymous"
+  submission is stamped with the Nextcloud user id of any visitor who happens to
+  hold a session. **Then one line here**: `createAnonymousObject()` passes
+  `_unowned: true`. Deliberately not written yet — an unknown named argument is
+  a fatal, so adding it early would take every anonymous submission down.
+- **[nldesign#357](https://github.com/ConductionNL/nldesign/pull/357)** — docs
+  recording portals as a second consumer, including the dark-variant defect.
+- **The dark token sets need regenerating.** Linking them made a portal
+  measurably worse (0 of 8 surfaces changed, text below AA 0 → 19 of 38, worst
+  1.03:1) because an alias resolves where it is DECLARED: the dark file
+  redefines base colours on `body` while the light set declares the aliases
+  above them on `:root`. No change in this app fixes it.
+- **The traffic Traffic page** does not exist in this repo under any spelling.
+  `GET /api/traffic/summary` serves everything it would need.
+- **`openregister` should record** that its read log is deliberately not the
+  traffic source — written here in `docs/traffic-privacy.md`, not yet mirrored
+  there.
 
-*An "anonymous" write is stamped with the Nextcloud user id of a visitor who
-happens to hold a session on the same instance.* Measured, not inferred: the
-same submission stored `__system__` from `curl` and `admin` from a browser
-holding an admin cookie, while the page it came from promises "niet aan een
-account gekoppeld". The cause is in OpenRegister —
-`SaveObject::applyOwnerAttribution()` is documented as the sole authoritative
-setter and stamps the session user unconditionally, so a caller-set owner is
-honoured only when there is no session. **No portaliq-side change closes it.**
-It needs a narrow OpenRegister change: an explicit unowned-write opt-in on
-`saveObject()`, defaulting to today's behaviour so no REST caller can reach it.
-Recorded as theme task 6.3 and in `docs/traffic-privacy.md`.
+### Three findings worth more than the tasks they came from
 
-*Task premises go stale, and two of them were.* 6.2 asked which of two things to
-change and the answer was neither — the endpoint honoured the flag all along and
-the renderer posted to the wrong route. 6.1 of the traffic change asks to
-replace three placeholder counters on a Traffic page that does not exist in this
-repo under any spelling. **Check the premise before implementing the task.**
+1. **An "anonymous" write is stamped with the session user's id.** Measured:
+   `__system__` from `curl`, `admin` from a browser with a cookie, on the same
+   form. Fixed upstream.
+2. **A check that never ran looks exactly like one that passed.** The theme
+   contrast verdict reported **46 of 46 sets passing with 43 of them
+   unmeasured**. It now carries a `measured` count and reports "not checked".
+3. **The gates found an IDOR in my own code.** `TrafficController::summary`
+   shipped `#[NoAdminRequired]` while taking a portal slug, so any authenticated
+   user could read any tenant's traffic. `PageRegionsController::update` had the
+   same shape and was not flagged.
 
 ## Where the work lives
 
