@@ -273,6 +273,7 @@ import {
 	fetchSession,
 	signInRoutes,
 } from './lib/authApi.js'
+import { withoutStyling } from './lib/blockProps.js'
 import {
 	fetchContributions,
 	fetchGlossary,
@@ -696,7 +697,10 @@ export default {
 		 * @spec openspec/changes/portal-page-composition/tasks.md
 		 */
 		shellPropsFor(block) {
-			const authored = (block && block.props) || {}
+			// STRIPPED, for the same reason the grid strips its blocks': `style`
+			// and `class` are fallthrough attributes, and a portal that could
+			// set them from data could position its own header out of the page.
+			const authored = withoutStyling((block && block.props) || {})
 
 			if (block.widgetKey === 'brandHeader') {
 				return {

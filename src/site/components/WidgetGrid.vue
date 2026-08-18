@@ -69,6 +69,7 @@ import { siteBlockIsBand, siteBlockRegistry } from '@conduction/nextcloud-vue/pu
 import ContributionsBlock from './ContributionsBlock.vue'
 import HeroBlock from './HeroBlock.vue'
 import MarkdownBlock from './MarkdownBlock.vue'
+import { withoutStyling } from '../lib/blockProps.js'
 import { cellStyle, runsFor } from '../lib/gridPlacement.js'
 
 /**
@@ -230,7 +231,7 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-only-explicitly-public-widgets-must-render-at-a-public-origin
 		 */
 		propsFor(widget) {
-			const props = widget.props || {}
+			const props = this.withoutStyling(widget.props || {})
 
 			if (widget.widgetKey === 'markdown') {
 				return { source: props.markdown || '' }
@@ -260,6 +261,22 @@ export default {
 			}
 
 			return props
+		},
+
+		/**
+		 * A block's props with every styling escape hatch removed.
+		 *
+		 * Delegates to `lib/blockProps.js` so the shell's own blocks and the
+		 * grid's blocks are stripped by ONE implementation — two would drift,
+		 * and the drifted half would be the one nobody tested.
+		 *
+		 * @param {object} props The authored props.
+		 * @return {object} The props, without styling keys.
+		 *
+		 * @spec openspec/changes/portal-page-composition/tasks.md
+		 */
+		withoutStyling(props) {
+			return withoutStyling(props)
 		},
 
 		/**

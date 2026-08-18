@@ -32,6 +32,7 @@
 // @spec openspec/changes/nldesign-theme-integration/specs/nldesign-theme-integration/spec.md
 
 import { chromium } from '@playwright/test'
+import { auditContrast } from '../src/site/lib/contrast.js'
 
 const BASE = process.env.PORTALIQ_BASE || 'http://localhost:8080'
 
@@ -60,96 +61,17 @@ const MIN_NODES = 5
  * Runs inside the browser, so it is written as a single self-contained
  * function with no imports.
  *
+ * THE CONTRAST HALF IS NOT WRITTEN HERE ANY MORE. It lives in
+ * `src/site/lib/contrast.js` and is injected below, because the page editor
+ * runs the same audit over its canvas (task 5.2) and two copies of a contrast
+ * rule would drift — with the drifted copy being the one telling an author
+ * their page is fine.
+ *
  * @return {object} Findings for this page.
  */
 const probe = () => {
-	// `rgb()` / `rgba()` to [r, g, b, a]. The ALPHA is the part that matters and
-	// the part an obvious implementation drops.
-	const parse = (colour) => {
-		const n = (colour.match(/[\d.]+/g) || ['0', '0', '0']).map(Number)
-		return [n[0] || 0, n[1] || 0, n[2] || 0, n.length > 3 ? n[3] : 1]
-	}
-
-	const luminance = ([r, g, b]) => {
-		const channel = (c) => {
-			c /= 255
-			return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
-		}
-		return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b)
-	}
-
-	// TRANSLUCENT TEXT IS COMPOSITED OVER ITS BACKDROP BEFORE IT IS MEASURED.
-	//
-	// Without this, `rgba(255,255,255,0.22)` is read as opaque white and scores
-	// 17.85:1 against a navy band it can barely be seen on. That is not a
-	// hypothetical: this footer is built from white at 0.55 to 0.85, and a
-	// deliberate break to 0.22 passed this check until the compositing was
-	// added. A contrast check that ignores alpha reports the colour somebody
-	// typed, not the colour anybody sees.
-	const composite = (fg, bg) => {
-		const [fr, fg_, fb, fa] = fg
-		const [br, bg_, bb] = bg
-		return [
-			fr * fa + br * (1 - fa),
-			fg_ * fa + bg_ * (1 - fa),
-			fb * fa + bb * (1 - fa),
-		]
-	}
-
-	// THE BACKDROP IS THE NEAREST ANCESTOR THAT ACTUALLY PAINTS ONE.
-	//
-	// Not the nearest NAMED band: comparing against that produced a false
-	// failure in this codebase once already. Nearly-transparent scrims are
-	// skipped too — an 8% white overlay is not the surface a reader perceives,
-	// the band under it is — and when nothing paints, the page's own background
-	// is the answer rather than an assumed white, which is what manufactured a
-	// 1.0 ratio for white text on a dark footer.
-	const backdrop = (el) => {
-		for (let node = el; node; node = node.parentElement) {
-			const bg = getComputedStyle(node).backgroundColor
-			const alpha = parseFloat((bg.match(/[\d.]+\)$/) || ['1)'])[0])
-			if (bg && !/rgba\(0, 0, 0, 0\)/.test(bg) && alpha > 0.3) {
-				return bg
-			}
-		}
-		return getComputedStyle(document.body).backgroundColor || 'rgb(255,255,255)'
-	}
-
-	const failures = []
-	let measured = 0
-
-	for (const el of document.querySelectorAll(
-		'h1,h2,h3,h4,p,a,span,button,li,dt,dd',
-	)) {
-		// Decoration is exempt: it carries no text a reader has to make out.
-		if (el.closest('[aria-hidden="true"]')) continue
-
-		const text = (el.textContent || '').trim()
-		if (!text || el.children.length) continue
-
-		const box = el.getBoundingClientRect()
-		if (box.width < 4 || box.height < 4) continue
-
-		const style = getComputedStyle(el)
-		const behind = parse(backdrop(el))
-		const front = composite(parse(style.color), behind)
-		const [lighter, darker] = [luminance(front), luminance(behind)].sort(
-			(a, b) => b - a,
-		)
-		const ratio = (lighter + 0.05) / (darker + 0.05)
-		measured++
-
-		// AA for body text. Large text is allowed 3:1, and treating it as 4.5
-		// only ever over-reports — which is the safe direction for a check.
-		if (ratio < 4.5) {
-			failures.push({
-				ratio: Number(ratio.toFixed(2)),
-				text: text.slice(0, 30),
-				colour: style.color,
-				on: backdrop(el),
-			})
-		}
-	}
+	// eslint-disable-next-line no-undef
+	const { failures, measured } = auditContrast(document.body)
 
 	// SKIPPED HEADING LEVELS — an h2 followed by an h4.
 	//
@@ -188,6 +110,21 @@ const probe = () => {
 			document.documentElement.scrollWidth
 			- document.documentElement.clientWidth,
 	}
+}
+
+/**
+ * The probe's source, with the shared contrast audit carried in with it.
+ *
+ * `page.evaluate` serialises a function and evaluates it in a context that has
+ * none of this file's imports, so the module the probe calls has to travel
+ * alongside it. Composed rather than duplicated: the editor imports the same
+ * `auditContrast` directly, and there is one definition of what "fails AA"
+ * means.
+ *
+ * @return {string} An expression evaluating to the probe.
+ */
+function probeSourceWithContrast() {
+	return `() => { const auditContrast = ${auditContrast.toString()}; return (${probe.toString()})() }`
 }
 
 /**
@@ -262,7 +199,7 @@ async function selfTest() {
 		const result = eval(`(${probeSource})`)()
 		style.remove()
 		return result
-	}, probe.toString())
+	}, probeSourceWithContrast())
 	if (contrast.failures.length === 0) {
 		missed.push('contrast (translucent text on a dark band went undetected)')
 	}
@@ -276,7 +213,7 @@ async function selfTest() {
 		const result = eval(`(${probeSource})`)()
 		extra.remove()
 		return result
-	}, probe.toString())
+	}, probeSourceWithContrast())
 	if (headings.headings.length < 2) {
 		missed.push('heading count (a second h1 went uncounted)')
 	}
@@ -293,7 +230,7 @@ async function selfTest() {
 		const result = eval(`(${probeSource})`)()
 		deep.remove()
 		return result
-	}, probe.toString())
+	}, probeSourceWithContrast())
 	if (levels.skipped.length === 0) {
 		missed.push('heading order (an h4 straight after an h2 went undetected)')
 	}
@@ -307,7 +244,7 @@ async function selfTest() {
 		const result = eval(`(${probeSource})`)()
 		wide.remove()
 		return result
-	}, probe.toString())
+	}, probeSourceWithContrast())
 	if (overflow.overflow <= 0) {
 		missed.push('overflow (a 3000px element did not widen the document)')
 	}
@@ -348,7 +285,16 @@ for (const width of WIDTHS) {
 		await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
 		await page.waitForTimeout(300)
 
-		const r = await page.evaluate(probe)
+		// `probeSourceWithContrast()`, not `probe` — the probe calls the shared
+		// contrast module, which does not exist in the page unless it travels
+		// in with it. Passing the bare function threw
+		// "auditContrast is not defined" here while the self-test above, which
+		// already used the composed source, went on passing.
+		const r = await page.evaluate(
+			// eslint-disable-next-line no-eval
+			(source) => eval(`(${source})`)(),
+			probeSourceWithContrast(),
+		)
 		const problems = []
 
 		if (r.measured < MIN_NODES) {
