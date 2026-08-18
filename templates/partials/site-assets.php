@@ -131,6 +131,42 @@ if ($themeStylesheet !== '') {
     foreach (explode(',', $themeStylesheet) as $sheet) {
         if ($sheet !== '') {
             $tokenStylesheets[] = $asset(PortalThemeResolver::THEME_APP, 'css/' . $sheet . '.css');
+
+            // NO DARK VARIANT IS LINKED, AND THIS IS THE SECOND MEASUREMENT
+            // THAT SAYS SO.
+            //
+            // Task 2.6 gave the site a token-driven surface layer, which was
+            // the recorded prerequisite, so the link was tried again. Measured
+            // on `conduction-klant` with `prefers-color-scheme: dark`:
+            //
+            //   surfaces that changed:   0 of 8
+            //   text below AA:           19 of 38  (was 0 of 38 in light)
+            //   worst:                   1.03:1, #141414 footer text on #0a172f
+            //
+            // Strictly worse than no dark mode, on a public government portal.
+            //
+            // THE CAUSE IS EXACT, and it is the same shape as this app's
+            // `--navigation-bar-height` finding: an alias resolves where it is
+            // DECLARED. The generated dark file scopes its overrides to `body`
+            // and redefines base colours there — `--c-white: #141414` — while
+            // the light set declares `--conduction-color-background-default:
+            // var(--c-white)` on `:root`. Read back live:
+            //
+            //   --c-white                              root #FFFFFF  body #141414
+            //   --conduction-color-background-default  root #FFFFFF  body #FFFFFF
+            //   --utrecht-document-background-color    root #FFFFFF  body #FFFFFF
+            //
+            // The surfaces therefore stay white while the direct text colours
+            // darken, which is exactly how a footer ends up at 1.03:1.
+            //
+            // NO CHANGE HERE CAN FIX IT. Re-declaring the bridge on `body`
+            // still reads an alias that resolves at `:root`; the chain breaks
+            // at its first `:root`-declared link, whichever end it is read
+            // from. The prerequisite is now the theme app's: the dark sets have
+            // to redefine the ALIASES (or scope their block to `:root` inside
+            // the media query), which is defect 1 of ConductionNL/nldesign#353
+            // — recorded as fixed in the generator, but not present in the
+            // artefacts this instance ships.
         }
     }
 }
