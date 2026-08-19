@@ -221,6 +221,11 @@ class PortalPageController extends Controller {
 				// app file", this one is "do we have the `--utrecht-*` tokens
 				// the component CSS reads".
 				'nldsStylesheet'  => $this->siteNldsStylesheet(),
+				// The standalone shell owns the whole document now, so it needs
+				// the document language. Resolved from Accept-Language the same
+				// way index() does — the visitor is unauthenticated here, so
+				// there is no session locale to prefer.
+				'locale'          => ($this->resolveLocale() ?: 'nl'),
 			],
 			// BASE, NOT PUBLIC — a white-label site may not wear Nextcloud's
 			// chrome. `layout.public.php` emits `<header id="header">` with
@@ -239,15 +244,33 @@ class PortalPageController extends Controller {
 			// renderer boots from. The skip link is not lost either: the site
 			// renders its OWN localised one ("Direct naar de inhoud"), so
 			// dropping core's English duplicate removes a second, conflicting
-			// skip target rather than the only one.
-			TemplateResponse::RENDER_AS_BASE
+			// BLANK — the template renders the WHOLE document.
+			//
+			// `RENDER_AS_BASE` was the previous answer and it was not enough:
+			// even the barest Nextcloud layout ships `server.css` (587 rules)
+			// and the instance theme chain, which kept the content column
+			// inset (1235px at +50px against the reference's 1280 at 0) and
+			// rendered bare `h1` in the platform's typeface. Those rules
+			// outrank anything this app can scope, so the fix is to stop
+			// loading them: see the long note at the top of templates/site.php.
+			TemplateResponse::RENDER_AS_BLANK
 		);
 
+		// The NLDS component CSS requests its webfonts from Google's font
+		// CDN. Nextcloud's default `font-src 'self' data:` blocks them, and a
+		// blocked font is not a console curiosity here — it is the portal
+		// rendering in a fallback face while every token says otherwise, which
+		// is exactly the class of mismatch this whole change exists to remove.
+		// Allowed narrowly: the font origin and its stylesheet host, nothing
+		// else.
+		//
 		// Deny framing unless the resolved site says otherwise. Same posture
 		// as index(): clear the `'self'` default first, or a site with no
 		// configured embedders still allows same-origin framing.
 		$csp = new ContentSecurityPolicy();
 		$csp->disallowFrameAncestorDomain('\'self\'');
+		$csp->addAllowedFontDomain('https://fonts.gstatic.com');
+		$csp->addAllowedStyleDomain('https://fonts.googleapis.com');
 		$response->setContentSecurityPolicy($csp);
 
 		return $response;

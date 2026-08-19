@@ -16,10 +16,22 @@
 		    header.ac-header                       1280x151
 		      .ac-header__navigation-main          1280x96
 		      .ac-header__navigation-secondary     1280x55
+		        .container                         1200 @ x=40
 		      .ac-header__navigation-breadcrumb
-		    main.ac-app-main
+		    main.ac-app-main                       1280 @ x=0, full bleed
+		      .container                           1200 @ x=40
 		    footer.ac-footer
-		      section.ac-footer__sub-footer
+		      h2.sr-only
+		      section                              96px band, blue-600
+		        .container.ac-footer__container     4-column grid, 28px gap
+		      section.ac-footer__sub-footer        28px band, blue-500
+
+		Two things in that tree are load-bearing in a way the class names do
+		NOT advertise, and both are explained where they are emitted below:
+		the footer needs TWO sections (the CSS selects on `:first-of-type` /
+		`:last-of-type:not(:only-of-type)`, never on `.ac-footer__sub-footer`),
+		and every reading region needs its own `.container` — `ac-app-main` is
+		deliberately full-bleed.
 
 		`pq-site` and the `data-testid`s stay so the existing e2e keeps
 		addressing the same nodes.
@@ -95,7 +107,7 @@
 				<div class="container">
 					<div class="ac-c-navigation__container">
 						<SiteMenu
-							v-for="menu in menus"
+							v-for="menu in headerMenus"
 							:key="menu.title"
 							:menu="menu"
 							:currentRoute="route"
@@ -109,65 +121,81 @@
 			</div>
 		</header>
 
-		<main id="pq-main" class="ac-app-main pq-site__main">
-			<p v-if="loading" data-testid="site-loading">Bezig met laden…</p>
+		<!--
+			`.container` IS THE CONTENT COLUMN, AND IT IS NOT OPTIONAL.
 
-			<!-- A failed load says so. Rendering an empty page instead would
+			`ac-app-main` itself is full-bleed — measured on the reference, 1280
+			wide at x=0 with zero padding — because the bands inside it paint
+			edge to edge. What holds the READING column is a `.container`:
+			`max-width: 1200px; margin: 0 40px; padding: 0 16px`, landing at
+			x=40, and every band in the header and footer already uses one.
+
+			Main was the only region emitting its content as a direct child, so
+			body copy started hard against the viewport edge at x=0 while the
+			navigation above it and the footer below both began at 40. On a wide
+			screen that is a full-width line of text — the least readable layout
+			the design system can produce, and the only place it happened.
+		-->
+		<main id="pq-main" class="ac-app-main pq-site__main">
+			<div class="container">
+				<p v-if="loading" data-testid="site-loading">Bezig met laden…</p>
+
+				<!-- A failed load says so. Rendering an empty page instead would
 			     make a broken deployment look exactly like an empty site — the
 			     one confusion this surface can least afford. -->
-			<div v-else-if="error" role="alert" data-testid="site-error">
-				<h2>
-					{{
-						error.status === 404
-							? 'Pagina niet gevonden'
-							: 'Er ging iets mis'
-					}}
-				</h2>
-				<p>
-					{{
-						error.status === 404
-							? 'Deze pagina bestaat niet (meer).'
-							: 'De inhoud kon niet worden geladen.'
-					}}
-				</p>
-			</div>
+				<div v-else-if="error" role="alert" data-testid="site-error">
+					<h2>
+						{{
+							error.status === 404
+								? 'Pagina niet gevonden'
+								: 'Er ging iets mis'
+						}}
+					</h2>
+					<p>
+						{{
+							error.status === 404
+								? 'Deze pagina bestaat niet (meer).'
+								: 'De inhoud kon niet worden geladen.'
+						}}
+					</p>
+				</div>
 
-			<article
-				v-else-if="page"
-				class="utrecht-article"
-				data-testid="site-page">
-				<h2 class="utrecht-heading-2" data-testid="page-title">
-					{{ page.title }}
-				</h2>
+				<article
+					v-else-if="page"
+					class="utrecht-article"
+					data-testid="site-page">
+					<h2 class="utrecht-heading-2" data-testid="page-title">
+						{{ page.title }}
+					</h2>
 
-				<WidgetGrid
-					v-if="page.body && page.body.type === 'grid'"
-					:widgets="page.body.widgets || []" />
+					<WidgetGrid
+						v-if="page.body && page.body.type === 'grid'"
+						:widgets="page.body.widgets || []" />
 
-				<MarkdownBlock
-					v-else
-					data-testid="page-markdown"
-					:source="(page.body && page.body.markdown) || ''" />
-			</article>
+					<MarkdownBlock
+						v-else
+						data-testid="page-markdown"
+						:source="(page.body && page.body.markdown) || ''" />
+				</article>
 
-			<section v-if="showGlossary" data-testid="site-glossary">
-				<h2>Begrippenlijst</h2>
-				<dl>
-					<template v-for="term in glossary" :key="term.term">
-						<dt data-testid="glossary-term">
-							{{ term.term }}
-						</dt>
-						<dd>
-							{{ term.definition }}
-							<em v-if="term.synonyms && term.synonyms.length">
-								(ook: {{ term.synonyms.join(', ') }})
-							</em>
-						</dd>
-					</template>
-				</dl>
-			</section>
+				<section v-if="showGlossary" data-testid="site-glossary">
+					<h2>Begrippenlijst</h2>
+					<dl>
+						<template v-for="term in glossary" :key="term.term">
+							<dt data-testid="glossary-term">
+								{{ term.term }}
+							</dt>
+							<dd>
+								{{ term.definition }}
+								<em v-if="term.synonyms && term.synonyms.length">
+									(ook: {{ term.synonyms.join(', ') }})
+								</em>
+							</dd>
+						</template>
+					</dl>
+				</section>
 
-			<!--
+				<!--
 				Contributed surfaces (ADR-046). Rendered as an INDEX, not as
 				live data: each entry names a collection or an action a leaf
 				app publishes on this portal, and following it is what fetches
@@ -175,34 +203,90 @@
 				this section is built from a publicly cacheable, anonymous
 				response, so it must never itself carry a visitor's rows.
 			-->
-			<section
-				v-if="contributions.length"
-				class="pq-site__contributions"
-				data-testid="site-contributions">
-				<h2>Diensten</h2>
-				<div
-					v-for="contribution in contributions"
-					:key="contribution.app"
-					class="pq-site__contribution"
-					:data-testid="`contribution-${contribution.app}`"
-					:data-app="contribution.app">
-					<h3>{{ contribution.label || contribution.app }}</h3>
-					<ul>
-						<li
-							v-for="entry in entriesOf(contribution)"
-							:key="entry.id || entry.label"
-							data-testid="contribution-entry">
-							{{ entry.label || entry.id }}
-						</li>
-					</ul>
-				</div>
-			</section>
+				<section
+					v-if="contributions.length"
+					class="pq-site__contributions"
+					data-testid="site-contributions">
+					<h2>Diensten</h2>
+					<div
+						v-for="contribution in contributions"
+						:key="contribution.app"
+						class="pq-site__contribution"
+						:data-testid="`contribution-${contribution.app}`"
+						:data-app="contribution.app">
+						<h3>{{ contribution.label || contribution.app }}</h3>
+						<ul>
+							<li
+								v-for="entry in entriesOf(contribution)"
+								:key="entry.id || entry.label"
+								data-testid="contribution-entry">
+								{{ entry.label || entry.id }}
+							</li>
+						</ul>
+					</div>
+				</section>
+			</div>
 		</main>
 
+		<!--
+			TWO SECTIONS, AND THE COUNT IS LOAD-BEARING.
+
+			`nlds-app.css` styles this footer by POSITION, not by class:
+
+			  .ac-footer section:first-of-type              { 96px band, blue-600 }
+			  .ac-footer section:first-of-type .container   { display: grid, 4 cols }
+			  .ac-footer section:last-of-type:not(:only-of-type)
+			                                               { 28px band, blue-500 }
+
+			`.ac-footer__sub-footer` appears in NO rule. This markup used to be a
+			single `<section class="ac-footer__sub-footer">`, which looked right
+			and rendered wrong: being the only section it was `:only-of-type`, so
+			it picked up the FIRST band's 96px padding and dark blue, and the
+			`:not(:only-of-type)` guard deliberately excluded it from the strip
+			rule it was named after. Measured against the reference: 211px against
+			368px, one band where there are two.
+
+			So the sub-footer strip exists only when a second section does. Both
+			are emitted unconditionally.
+		-->
 		<footer class="ac-footer pq-site__footer" data-testid="site-footer">
+			<!-- The reference labels its footer for assistive tech and hides the
+			     heading visually; a landmark with no name is announced as just
+			     "footer". -->
+			<h2 class="sr-only">Footer</h2>
+
+			<section>
+				<div class="container ac-footer__container">
+					<nav
+						v-for="menu in footerMenus"
+						:key="menu.title"
+						class="ac-footer__links"
+						:aria-label="menu.title"
+						data-testid="site-footer-menu">
+						<h3 class="ac-footer__menu-title">{{ menu.title }}</h3>
+						<ul>
+							<li v-for="item in menu.items" :key="item.name">
+								<a
+									:href="item.link"
+									@click.prevent="go(item.link)"
+									>{{ item.name }}</a
+								>
+							</li>
+						</ul>
+					</nav>
+
+					<div class="ac-footer__logo">
+						<div class="con-logo-container footer" />
+						<span>
+							<span>{{ site.title }}</span>
+						</span>
+					</div>
+				</div>
+			</section>
+
 			<section class="ac-footer__sub-footer">
 				<div class="container">
-					<p>{{ site.title }}</p>
+					<p data-testid="site-footer-colophon">{{ site.title }}</p>
 				</div>
 			</section>
 		</footer>
@@ -273,6 +357,46 @@ export default {
 		 */
 		themeClass() {
 			return this.site.theme ? `${this.site.theme}-theme` : ''
+		},
+
+		/**
+		 * The menus shown in the header bar.
+		 *
+		 * PLACEMENT COMES FROM `position`, WHICH IS WHAT THAT FIELD IS FOR — the
+		 * register describes it as "ordering of this menu relative to others on
+		 * the same portal (a header menu versus a footer menu)". So the rule is
+		 * read off the existing contract rather than added to it: no schema
+		 * change, no data migration, and a portal that declares one menu keeps
+		 * behaving exactly as it did.
+		 *
+		 * Position 0 is the header. Everything else is a footer column.
+		 *
+		 * @return {Array} The header menus.
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-content-api-must-be-sufficient-without-the-built-in-renderer
+		 */
+		headerMenus() {
+			return this.menus.filter((menu) => (menu.position || 0) === 0)
+		},
+
+		/**
+		 * The menus shown as columns in the footer's first band.
+		 *
+		 * The counterpart of `headerMenus`: every menu the header does not
+		 * claim. Before this split, EVERY menu rendered in the header bar and
+		 * the footer had no links at all — a portal could not express a footer
+		 * column even though its data model already had the field to do it.
+		 *
+		 * The band is a four-column grid, so a portal declaring more than three
+		 * footer menus wraps rather than overflowing; the logo occupies the
+		 * fourth cell.
+		 *
+		 * @return {Array} The footer menus.
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-content-api-must-be-sufficient-without-the-built-in-renderer
+		 */
+		footerMenus() {
+			return this.menus.filter((menu) => (menu.position || 0) !== 0)
 		},
 
 		/**
@@ -616,9 +740,25 @@ body.layout-base .pq-site {
 	 * caught in the block that was written to avoid it: I picked a token name
 	 * without checking it against a real theme file.
 	 */
+	/*
+	 * `--utrecht-document-font-family` FIRST, because that is the name the
+	 * NLDS component CSS and the generated token sets actually agree on, and
+	 * because WITHOUT it the portal inherits Nextcloud's own theme font.
+	 *
+	 * MEASURED on :8080: the vng token resolved correctly to `'Avenir',
+	 * sans-serif` at the portal root, no loaded stylesheet set a font on
+	 * `.logo-text` at all, and the heading still rendered in **Marianne** —
+	 * inherited from Nextcloud's `lasuite.css`. A themed portal was wearing
+	 * the host platform's typeface while every token was present and correct.
+	 * The `--nldesign-*` names below stay as the fallback chain for themes
+	 * that only define those.
+	 */
 	--pq-font-family: var(
-		--nldesign-font-family,
-		var(--nldesign-typography-sans-serif-font-family, system-ui, sans-serif)
+		--utrecht-document-font-family,
+		var(
+			--nldesign-font-family,
+			var(--nldesign-typography-sans-serif-font-family, system-ui, sans-serif)
+		)
 	);
 	--pq-text-color: var(
 		--nldesign-color-text,
@@ -634,15 +774,58 @@ body.layout-base .pq-site {
 		--nldesign-color-link,
 		var(--nldesign-color-primary, #0b5cab)
 	);
-	font-family: var(--pq-font-family);
+	/*
+	 * NO GLOBAL FONT. The design system assigns type PER COMPONENT:
+	 * measured on the reference, `.logo-text` is Avenir 36/700 while
+	 * `.ac-c-navigation__label` is Roboto 16/500 — two families on one
+	 * page, both token-driven. A blanket family here overrode the nav
+	 * with Avenir 600 and left the bar 1px short of the reference.
+	 *
+	 * This declaration existed to beat Nextcloud's own `lasuite.css`
+	 * (Marianne) while the portal rendered inside the NC shell. It does
+	 * not render there any more, so the workaround outlived its cause.
+	 */
 	color: var(--pq-text-color);
 	background: var(--pq-bg-color, #ffffff);
 	min-height: 100vh;
+
+	/*
+	 * FULL BLEED. Nextcloud's `#content` gives the app a padded, inset
+	 * column — correct for an app, wrong for a portal that is supposed to
+	 * BE the page. Measured against the reference: its container is
+	 * 1280x…@0 while ours rendered 1235 wide starting 50px down, so every
+	 * band (header, nav, footer) was narrower and lower than the design.
+	 * Reset the inherited box rather than fighting it per-element.
+	 */
+	margin: 0;
+	padding: 0;
+	width: 100%;
+	max-width: none;
 }
 
-.pq-site :any-link {
-	color: var(--pq-link-color);
-}
+/*
+ * THERE IS DELIBERATELY NO BLANKET LINK COLOUR HERE.
+ *
+ * `.pq-site :any-link { color: var(--pq-link-color) }` used to sit at this
+ * spot. One selector, every anchor on the portal, one colour — and because a
+ * scoped style loads last it beat every context-specific rule the design
+ * system has.
+ *
+ * MEASURED in the footer: `nlds-app.css` says `.ac-footer a { color: inherit }`
+ * so footer links take the band's white; ours computed rgb(0, 68, 136) against
+ * a rgb(0, 69, 137) background. Those two colours are one step apart. The links
+ * were not merely off-brand, they were INVISIBLE — a contrast failure on a
+ * government portal, produced by a rule whose whole purpose was to make links
+ * look right.
+ *
+ * The design system already colours links per context — `.ac-footer a`,
+ * `.ac-c-navigation__*`, `.utrecht-link` — each against the background it
+ * actually sits on, which is the only way contrast can be reasoned about. A
+ * portal-wide override cannot know that background and so cannot be correct.
+ *
+ * `--pq-link-color` is still defined above and still used by `MarkdownBlock`,
+ * which renders body copy on a known light surface.
+ */
 
 .pq-site__skip {
 	position: absolute;
@@ -655,27 +838,24 @@ body.layout-base .pq-site {
 	padding: 0.5rem 1rem;
 }
 
-.pq-site__header {
-	border-bottom: 1px solid var(--pq-border-color, #d0d0d0);
-	padding: 1.25rem 1.5rem;
-}
-
-.pq-site__title {
-	color: var(--pq-heading-color, #1a1a1a);
-	margin: 0 0 0.75rem;
-	font-size: 1.75rem;
-}
-
-.pq-site__main {
-	padding: 1.5rem;
-	max-width: 68rem;
-}
-
-.pq-site__footer {
-	border-top: 1px solid var(--pq-border-color, #d0d0d0);
-	padding: 1rem 1.5rem;
-	color: var(--pq-muted-color, #6b6b6b);
-}
+/*
+ * NO LAYOUT HERE. These elements now also carry the reference implementation's
+ * `ac-header` / `ac-app-main` / `ac-footer` classes, and `nlds-app.css` styles
+ * them. Anything this file says about their box wins — scoped styles carry a
+ * data-attribute and load last — so every rule below was silently overriding
+ * the design system it was supposed to be adopting.
+ *
+ * MEASURED, ours against the reference, before this block was removed:
+ *
+ *     .ac-header                 padding  0        <- 24px 20px   (this file)
+ *     .ac-header__navigation-main  width  1280px   <- 1232px      (consequence)
+ *     .ac-app-main               width    1280px   <- 1088px, max-width 1088
+ *     .ac-footer                 padding  0        <- 24px 16px
+ *
+ * Every delta traced back here, not to a missing rule in the vendored CSS. So
+ * the fix is deletion: let the design system own the layout, and keep this
+ * file for what is genuinely portal-specific.
+ */
 
 dt {
 	font-weight: 600;
