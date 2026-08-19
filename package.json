@@ -50,7 +50,7 @@
     "@nextcloud/l10n": "^3.4.1",
     "@nextcloud/router": "^3.1.0",
     "@nextcloud/vue": "^9.9.0",
-    "@utrecht/component-library-react": "^14.0.0",
+    "@utrecht/component-library-react": "^15.0.0",
     "@vueuse/core": "^14.3.0",
     "axios": "^1.7.9",
     "babel-loader": "^10.1.1",
