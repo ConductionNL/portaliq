@@ -1,6 +1,6 @@
 {
     "translations": {
-        "App Template settings": "App Template instellingen",
+        "Pre-boot configuration": "Configuratie vóór opstarten",
         "Configure the app settings": "Configureer de app-instellingen",
         "Configuration": "Configuratie",
         "Completed": "Afgerond",
@@ -39,7 +39,11 @@
         "Organisation": "Organisatie",
         "Organisation UUID": "Organisatie-UUID",
         "Revoke all sessions for this organisation": "Alle sessies voor deze organisatie intrekken",
-        "Revoked {count} session(s).": "{count} sessie(s) ingetrokken."
+        "Revoked {count} session(s).": "{count} sessie(s) ingetrokken.",
+        "Confirmation of receipt — reference %1$s": "Bevestiging van ontvangst — referentie %1$s",
+        "We received your submission on %2$s (reference %1$s). This message confirms receipt; we will contact you if further action is needed.": "Wij hebben uw indiening ontvangen op %2$s (referentie %1$s). Dit bericht bevestigt de ontvangst; u hoort van ons zodra er verdere actie nodig is.",
+        "You have a new message in the portal of %1$s": "Er staat een nieuw bericht voor u klaar in het portaal van %1$s",
+        "You have a new message in the portal of %1$s. Log in to view it: %2$s": "Er staat een nieuw bericht voor u klaar in het portaal van %1$s. Log in om het te bekijken: %2$s"
     },
     "plurals": ""
 }

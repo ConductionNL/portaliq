@@ -19,10 +19,13 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-change/tasks.md#task-9
+ * @spec openspec/specs/observability/spec.md#REQ-OBS-002
  *   (Illustrative stub per ADR-006 — every app MUST expose `GET /api/health`
  *   returning JSON, publicly accessible. Health check MUST verify OpenRegister
- *   connectivity for apps that depend on it.)
+ *   connectivity for apps that depend on it.
+ *
+ *   Point @spec at the canonical spec under `openspec/specs/`, never at
+ *   `openspec/changes/<name>/` — see ConductionNL/.github#228.)
  */
 
 declare(strict_types=1);
@@ -33,6 +36,7 @@ use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\SettingsService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use Psr\Log\LoggerInterface;
@@ -44,65 +48,73 @@ use Psr\Log\LoggerInterface;
  * Public (`@PublicPage` + `@NoCSRFRequired`) so external probes (Prometheus
  * blackbox exporter, K8s liveness/readiness) can poll without auth.
  */
-class HealthController extends Controller
-{
-    /**
-     * Constructor.
-     *
-     * @param IRequest        $request         The request object
-     * @param SettingsService $settingsService For OpenRegister availability check
-     * @param LoggerInterface $logger          The logger
-     *
-     * @return void
-     *
-     * @spec openspec/changes/example-change/tasks.md#task-9
-     */
-    public function __construct(
-        IRequest $request,
-        private SettingsService $settingsService,
-        private LoggerInterface $logger,
-    ) {
-        parent::__construct(appName: Application::APP_ID, request: $request);
-    }//end __construct()
+class HealthController extends Controller {
+	/**
+	 * Constructor.
+	 *
+	 * @param IRequest $request The request object
+	 * @param SettingsService $settingsService For OpenRegister availability check
+	 * @param LoggerInterface $logger The logger
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/observability/spec.md#REQ-OBS-002
+	 */
+	public function __construct(
+		IRequest $request,
+		private SettingsService $settingsService,
+		private LoggerInterface $logger,
+	) {
+		parent::__construct(appName: Application::APP_ID, request: $request);
+	}//end __construct()
 
-    /**
-     * Health check JSON. Public endpoint.
-     *
-     * @PublicPage
-     * @NoCSRFRequired
-     *
-     * @return JSONResponse
-     *
-     * @spec openspec/changes/example-change/tasks.md#task-9
-     */
-    public function index(): JSONResponse
-    {
-        try {
-            $openRegister = $this->settingsService->isOpenRegisterAvailable();
-            $status       = 'degraded';
-            $httpStatus   = Http::STATUS_SERVICE_UNAVAILABLE;
-            if ($openRegister === true) {
-                $status     = 'ok';
-                $httpStatus = Http::STATUS_OK;
-            }
+	/**
+	 * Health check JSON. Public endpoint.
+	 *
+	 * The rate limit is deliberately generous: monitoring polls this on a
+	 * short interval, and a ceiling that trips on a normal probe cadence turns
+	 * the health check into the outage it was meant to detect.
+	 *
+	 * (Folded into this docblock rather than left as a `//` comment above the
+	 * attribute — phpcs reads the last comment before a declaration as its
+	 * function comment, so a `//` there is an ERROR, and moving it above the
+	 * docblock does not help either.)
+	 *
+	 * @PublicPage
+	 * @NoCSRFRequired
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/specs/observability/spec.md#REQ-OBS-002
+	 */
+	#[AnonRateLimit(limit: 240, period: 60)]
+	public function index(): JSONResponse {
+		try {
+			$openRegister = $this->settingsService->isOpenRegisterAvailable();
+			$status = 'degraded';
+			$httpStatus = Http::STATUS_SERVICE_UNAVAILABLE;
+			if ($openRegister === true) {
+				$status = 'ok';
+				$httpStatus = Http::STATUS_OK;
+			}
 
-            return new JSONResponse(
-                [
-                    'status'       => $status,
-                    'app'          => Application::APP_ID,
-                    'version'      => '0.1.0',
-                    'dependencies' => [
-                        'openregister' => $openRegister,
-                    ],
-                ],
-                $httpStatus
-            );
-        } catch (\Throwable $e) {
-            $this->logger->error('Portaliq: health check failed', ['exception' => $e]);
-            return new JSONResponse(
-                ['status' => 'error', 'message' => 'Health check failed'],
-                Http::STATUS_INTERNAL_SERVER_ERROR
-            );
-        }//end try
-    }//end index()
+			return new JSONResponse(
+				[
+					'status' => $status,
+					'app' => Application::APP_ID,
+					'version' => '0.1.0',
+					'dependencies' => [
+						'openregister' => $openRegister,
+					],
+				],
+				$httpStatus
+			);
+		} catch (\Throwable $e) {
+			$this->logger->error('Portaliq: health check failed', ['exception' => $e]);
+			return new JSONResponse(
+				['status' => 'error', 'message' => 'Health check failed'],
+				Http::STATUS_INTERNAL_SERVER_ERROR
+			);
+		}//end try
+	}//end index()
 }//end class

@@ -1,0 +1,65 @@
+{
+  "src/portal/App.jsx": {
+    "no-unused-vars": {
+      "count": 2
+    }
+  },
+  "src/portal/components/ActionFieldsForm.jsx": {
+    "no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/portal/components/CollectionTable.jsx": {
+    "no-unused-vars": {
+      "count": 4
+    }
+  },
+  "src/portal/components/InboxPage.jsx": {
+    "no-unused-vars": {
+      "count": 2
+    }
+  },
+  "src/portal/components/PageView.jsx": {
+    "react-hooks/exhaustive-deps": {
+      "count": 1
+    }
+  },
+  "src/portal/components/RichText.jsx": {
+    "no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/portal/components/SchemaForm.jsx": {
+    "no-unused-vars": {
+      "count": 1
+    },
+    "react-hooks/exhaustive-deps": {
+      "count": 1
+    }
+  },
+  "src/portal/lib/portalApi.js": {
+    "no-unused-vars": {
+      "count": 5
+    }
+  },
+  "src/portal/main.jsx": {
+    "no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/store/modules/object.js": {
+    "no-console": {
+      "count": 2
+    }
+  },
+  "src/store/modules/settings.js": {
+    "no-console": {
+      "count": 2
+    }
+  },
+  "src/views/AdminRoot.vue": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  }
+}

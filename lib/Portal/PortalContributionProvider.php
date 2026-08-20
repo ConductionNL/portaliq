@@ -1,16 +1,42 @@
 <?php
 
 /**
- * Portaliq's own (demo) Portal Contribution Provider
+ * Portaliq's built-in, config-driven Portal Contribution Provider
  *
  * A contributing app exposes its portal contribution by implementing the class
  * `OCA\{Namespace}\Portal\PortalContributionProvider` (implementing
  * IPortalContributionProvider). PortalContributionRegistry discovers each app's
  * provider by that concrete FQCN — the DI container constructs any autoloadable
  * class by reflection, so discovery works across apps (mirroring OpenRegister's
- * MCP tool-provider discovery). This is Portaliq's own demo contribution so the
- * portal is exercisable before a real app (procest) ships its provider; delete
- * it once real contributions exist.
+ * MCP tool-provider discovery).
+ *
+ * portal-page-provisioning replaces this class's previous hardcoded-demo body
+ * (see git history) with a CONFIG-DRIVEN read: it reads ACTIVE (`status:
+ * active`) `portalPage` OpenRegister objects (register `portaliq`, schema
+ * `portalPage`) through the existing PortalObjectReader — no direct
+ * OpenRegister client call in this class (ADR-022) — and converts each 1:1
+ * into the manifest shape `IPortalContributionProvider::getContribution()`
+ * already documents, before handing it to the SAME `PortalManifestNormaliser`
+ * every provider's output passes through (no normaliser code change needed).
+ * This is the designed replacement point the previous demo's own docblock
+ * flagged ("delete it once real contributions exist" — see design.md Open
+ * Question OQ1): provisioning a citizen-facing portal page becomes writing a
+ * `portalPage` object through the standard OpenRegister objects API, zero
+ * Portaliq PHP per page. The former hardcoded demo manifest now ships as a
+ * seed `portalPage` object (`lib/Settings/portaliq_register.json`,
+ * `dev-citizen-intake`), preserving the dev-exercisable-out-of-the-box
+ * property this class always had.
+ *
+ * `readCollection()` is called with an EMPTY `scopeField`/`subjectRef` —
+ * deliberately: `portalPage` objects are configuration, not subject data,
+ * so there is no per-subject scope to enforce here. The `status: active`
+ * filter is the only narrowing; PortalObjectReader's per-row
+ * scope-verification is a no-op when `scopeField === ''` (its `verifyScope()`
+ * guard is `$scopeField !== '' && …`), so every active `portalPage` object
+ * legitimately comes back. A `draft` object is excluded by the filter and
+ * therefore never appears in any aggregate — including `aggregateAnonymous()`,
+ * which consults this SAME method (contract-v2's `getContribution()` duck
+ * type, called once per active audience).
  *
  * @category Portal
  * @package  OCA\Portaliq\Portal
@@ -26,6 +52,9 @@
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T04
  * @spec openspec/changes/contract-v2/tasks.md#T9
+ * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-an-app-must-be-able-to-provision-a-portal-page-as-data
+ * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-an-app-must-be-able-to-provision-a-portal-page-as-data
+ * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-an-app-must-be-able-to-provision-a-portal-page-as-data
  */
 
 declare(strict_types=1);
@@ -33,286 +62,246 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Portal;
 
 use OCA\Portaliq\Contribution\IPortalContributionProvider;
+use OCA\Portaliq\Service\PortalObjectReader;
+use Psr\Log\LoggerInterface;
 
 /**
- * Demo supplier contribution — illustrative only.
+ * Config-driven contribution provider: reads active `portalPage` objects.
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T04
+ * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-an-app-must-be-able-to-provision-a-portal-page-as-data
  */
-class PortalContributionProvider implements IPortalContributionProvider
-{
-    /**
-     * {@inheritDoc}
-     *
-     * @return string
-     *
-     * @spec openspec/changes/supplier-portal/tasks.md#T04
-     */
-    public function getAudience(): string
-    {
-        return 'supplier';
-    }//end getAudience()
+class PortalContributionProvider implements IPortalContributionProvider {
+	/**
+	 * The register/schema `portalPage` objects live in.
+	 */
+	private const REGISTER = 'portaliq';
 
-    /**
-     * The audiences this provider contributes to (contract v2, A2). The
-     * registry prefers this duck-typed list over getAudience(); the v1 method
-     * above stays as the demo of the backward-compatible fallback.
-     *
-     * @return array<int, string>
-     *
-     * @spec openspec/changes/contract-v2/tasks.md#T9
-     */
-    public function getAudiences(): array
-    {
-        return ['supplier'];
-    }//end getAudiences()
+	private const SCHEMA = 'portalPage';
 
-    /**
-     * {@inheritDoc}
-     *
-     * Exercises the full v2 vocabulary on a dev install: a claim-scoped
-     * collection (`scopeClaim` resolved against the seeded dev-supplier
-     * account's placeholder claim; the claimless dev-client seed proves the
-     * fail-closed empty path), an endpoint action with a placeholder
-     * instance-local path, and a `minTrust: substantial` action that a
-     * low-trust dev-login session never sees. The example collection also
-     * declares a `fields` projection whitelist so a dev install demonstrates
-     * read-side field projection (rows created via `createExample` come back
-     * as title/status + identifier only); the other collections stay
-     * undeclared as the full-row backward-compat reference.
-     *
-     * A reverse `via` (`match: 'scopeField'`, contract v2.2) collection is also
-     * declared, deliberately self-referential so it stays exercisable on a
-     * dev install with the existing demo schemas only — a realistic
-     * parent→child→grades reverse join needs a domain app's own schemas.
-     *
-     * A `type: update` action (portal-scoped-crud, ADR-062 Phase 1) patches the
-     * subject's OWN exampleDocument title, exercising the write-IDOR-safe update
-     * path (ownership re-verified against OR before any write; scope re-stamped).
-     *
-     * @param array<string, mixed> $subject The resolved subject.
-     *
-     * @return array<string, mixed>|null
-     *
-     * @spec openspec/changes/supplier-portal/tasks.md#T04
-     * @spec openspec/changes/contract-v2/tasks.md#T9
-     * @spec openspec/changes/field-projection/tasks.md#T3
-     * @spec openspec/changes/reverse-scope-join/tasks.md#T3
-     * @spec openspec/changes/portal-scoped-crud/tasks.md#T4
-     *
-     * @SuppressWarnings(PHPMD.ExcessiveMethodLength) -- this is a single
-     * declarative return: one manifest literal exercising the full contract
-     * vocabulary (collections, claim/via scoping, create/update/endpoint
-     * actions) so the demo portal stays the exercisable reference; it is data,
-     * not branching logic.
-     */
-    public function getContribution(array $subject): ?array
-    {
-        // Only contributes to suppliers; the registry already filters by
-        // audience, but a real provider would also check subject scope here.
-        if (($subject['audience'] ?? '') !== 'supplier') {
-            return null;
-        }
+	/**
+	 * Constructor.
+	 *
+	 * @param PortalObjectReader $objectReader Reads `portalPage` objects
+	 *                                         (ADR-022 — no direct OR client
+	 *                                         call in this class).
+	 * @param LoggerInterface $logger The logger.
+	 */
+	public function __construct(
+		private readonly PortalObjectReader $objectReader,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-        return [
-            'label'         => 'Voorbeeld',
-            'collections'   => [
-                [
-                    // Field projection (read-side): the portal returns ONLY
-                    // title + status (+ the row identifier) per row — the
-                    // scopeField value and any other property never leave.
-                    'id'          => 'exampleCollection',
-                    'register'    => 'portaliq',
-                    'schema'      => 'exampleDocument',
-                    'scopeField'  => 'subjectRef',
-                    'fields'      => ['title', 'status'],
-                    'label'       => 'Voorbeeldgegevens',
-                    'listable'    => true,
-                    // Contribution-manifest-v3 (presentation-only): per-column
-                    // render hints, a detail layout, and a default sort. None of
-                    // these widens access — a column naming a projected-away
-                    // field (e.g. the scopeField) renders blank, never leaks.
-                    'columns'     => [
-                        ['field' => 'title', 'label' => 'Onderwerp'],
-                        ['field' => 'status', 'label' => 'Status', 'render' => 'badge'],
-                    ],
-                    'detail'      => ['layout' => 'card', 'fields' => ['title', 'status']],
-                    'defaultSort' => ['field' => 'title', 'direction' => 'asc'],
-                    // Contribution-manifest-v3 (status transitions): per-row
-                    // buttons wired to a `type: update` action whose server-
-                    // enforced `set` fixes the transition target — a client can
-                    // never choose an arbitrary status.
-                    'rowActions'  => ['closeExample'],
-                    // Opt into the scoped file-upload block (ADR-063): a subject
-                    // may attach evidence/attachments to their OWN example object,
-                    // stored in the object's OpenRegister folder.
-                    'filesUpload' => true,
-                ],
-                [
-                    'id'         => 'inbox',
-                    'kind'       => 'inbox',
-                    'register'   => 'portaliq',
-                    'schema'     => 'portalMessage',
-                    'scopeField' => 'subjectRef',
-                    'label'      => 'Berichten',
-                    'listable'   => true,
-                ],
-                [
-                    // Contract v2 (A4): scoped by the server-managed claim
-                    // `claims.portaliq.exampleContactId` (bare form = own
-                    // namespace), not by the subjectRef.
-                    'id'         => 'exampleClaimScoped',
-                    'register'   => 'portaliq',
-                    'schema'     => 'exampleDocument',
-                    'scopeField' => 'subjectRef',
-                    'scopeClaim' => 'exampleContactId',
-                    'label'      => 'Gekoppelde voorbeeldgegevens',
-                    'listable'   => true,
-                ],
-                [
-                    // Contract v2.2 (reverse-scope-join): the reverse
-                    // `match: 'scopeField'` join mechanic, exercisable with the
-                    // existing demo schemas only. The join pre-pass resolves
-                    // the subject's OWN portalAccount (join scopeField
-                    // `subjectRef`), collects its `subjectRef` as the target
-                    // VALUE, then keeps `exampleDocument` rows whose OWN
-                    // `subjectRef` (the collection scopeField) is in that set.
-                    // Deliberately self-referential — a realistic
-                    // guardian→learner→grades reverse join needs a domain app's
-                    // schemas (scholiq), out of scope here — but it drives the
-                    // reverse code path end-to-end, so rows created via
-                    // `createExample` surface through it too.
-                    'id'         => 'exampleReverseJoin',
-                    'register'   => 'portaliq',
-                    'schema'     => 'exampleDocument',
-                    'scopeField' => 'subjectRef',
-                    'via'        => [
-                        'register'    => 'portaliq',
-                        'schema'      => 'portalAccount',
-                        'scopeField'  => 'subjectRef',
-                        'targetField' => 'subjectRef',
-                        'match'       => 'scopeField',
-                    ],
-                    'label'      => 'Voorbeeld omgekeerde koppeling',
-                    'listable'   => true,
-                ],
-            ],
-            'actions'       => [
-                [
-                    'id'               => 'createExample',
-                    'type'             => 'create',
-                    'label'            => 'Nieuw voorbeeld',
-                    'register'         => 'portaliq',
-                    'schema'           => 'exampleDocument',
-                    'fields'           => ['title', 'status'],
-                    // Contribution-manifest-v3 (presentation-only): per-field form
-                    // hints + option providers. `fieldConfigs` may only describe a
-                    // WHITELISTED field — a config for a field outside `fields` is
-                    // dropped by the normaliser, so it can never widen the submit.
-                    'fieldConfigs'     => [
-                        'title'  => ['label' => 'Onderwerp', 'required' => true, 'size' => 'large', 'placeholder' => 'Waar gaat het over?'],
-                        'status' => ['label' => 'Status'],
-                    ],
-                    'optionsProviders' => [
-                        // A static dropdown. A `collection` provider would instead
-                        // be, e.g.:
-                        // 'contract' => ['type' => 'collection',
-                        // 'register' => 'procest', 'schema' => 'supplierContract',
-                        // 'labelField' => 'name', 'valueField' => 'id']
-                        // and the portal populates it through the SUBJECT-SCOPED
-                        // collection endpoint, so it can only ever offer rows the
-                        // subject may already read.
-                        'status' => [
-                            'type'    => 'static',
-                            'options' => [
-                                ['value' => 'open', 'label' => 'Open'],
-                                ['value' => 'closed', 'label' => 'Afgehandeld'],
-                            ],
-                        ],
-                    ],
-                    'submitLabel'      => 'Aanmaken',
-                    'successMessage'   => 'Voorbeeld aangemaakt',
-                ],
-                [
-                    // Portal-scoped update (portal-scoped-crud, ADR-062 Phase 1):
-                    // patches ONLY the whitelisted `title` of the subject's OWN
-                    // exampleDocument. Ownership is re-verified against
-                    // OpenRegister before any write; the scope field is
-                    // re-stamped server-side, so the id can never be used to
-                    // patch another subject's row (closes #16).
-                    'id'       => 'updateExample',
-                    'type'     => 'update',
-                    'label'    => 'Voorbeeld bijwerken',
-                    'register' => 'portaliq',
-                    'schema'   => 'exampleDocument',
-                    'fields'   => ['title'],
-                ],
-                [
-                    // Contribution-manifest-v3 status transition: a `type: update`
-                    // action whose server-enforced `set` fixes `status` to
-                    // `closed`. Surfaced as a per-row button via the collection's
-                    // `rowActions`. The client sends no field data — the server
-                    // applies `set` (only whitelisted fields) and re-stamps the
-                    // scope, so the transition target can never be tampered with.
-                    'id'       => 'closeExample',
-                    'type'     => 'update',
-                    'label'    => 'Afhandelen',
-                    'register' => 'portaliq',
-                    'schema'   => 'exampleDocument',
-                    'fields'   => ['status'],
-                    'set'      => ['status' => 'closed'],
-                ],
-                [
-                    // Contract v2 (A6): endpoint bearer-forward action with a
-                    // placeholder instance-local path (the app's own public
-                    // health endpoint, so the forward is exercisable on dev).
-                    'id'       => 'exampleForward',
-                    'label'    => 'Voorbeeld-doorstuuractie',
-                    'endpoint' => '/apps/portaliq/api/health',
-                    'method'   => 'GET',
-                ],
-                [
-                    // Contract v2 (A3): gated above the dev-login trust level —
-                    // a `low` session proves the manifest filter by its absence.
-                    'id'       => 'exampleTrusted',
-                    'label'    => 'Vertrouwde voorbeeldactie',
-                    'endpoint' => '/apps/portaliq/api/health',
-                    'method'   => 'GET',
-                    'minTrust' => 'substantial',
-                ],
-            ],
-            // Contribution-manifest-v3: an explicit page composition. Every block
-            // reference resolves within THIS contribution (after trust filtering);
-            // an unresolvable/cross-contribution ref is dropped by the normaliser.
-            // Omit `pages` entirely to let Portaliq synthesise one default page per
-            // listable collection (the v2 rendering).
-            'pages'         => [
-                [
-                    'id'     => 'voorbeeld',
-                    'label'  => 'Voorbeeld',
-                    'icon'   => 'FileDocument',
-                    'blocks' => [
-                        [
-                            'type'     => 'richText',
-                            'markdown' => '## Voorbeeldportaal'."\n".'Beheer uw voorbeeldgegevens. Klik een rij aan voor details en bijlagen.',
-                        ],
-                        ['type' => 'action', 'action' => 'createExample'],
-                        ['type' => 'collection', 'collection' => 'exampleCollection'],
-                        // A detail block for the selected row — the filesUpload
-                        // opt-in on the collection surfaces the upload control here.
-                        ['type' => 'detail', 'collection' => 'exampleCollection'],
-                    ],
-                ],
-                [
-                    'id'     => 'berichten',
-                    'label'  => 'Berichten',
-                    'icon'   => 'Email',
-                    'blocks' => [
-                        ['type' => 'collection', 'collection' => 'inbox'],
-                    ],
-                ],
-            ],
-            'notifications' => [],
-        ];
-    }//end getContribution()
+	/**
+	 * {@inheritDoc}
+	 *
+	 * The v1 fallback the registry consults only when `getAudiences()` is
+	 * absent — it never is here, since this class always implements it — kept
+	 * for interface compliance (the method is NOT duck-typed/optional).
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/supplier-portal/tasks.md#T04
+	 */
+	public function getAudience(): string {
+		$audiences = $this->getAudiences();
+		return ($audiences[0] ?? '');
+	}//end getAudience()
+
+	/**
+	 * The distinct `audience` values across every ACTIVE `portalPage` object
+	 * (portal-page-provisioning) — dynamic, replacing the previous hardcoded
+	 * `['supplier']`. Empty when no `portalPage` objects exist yet, or when
+	 * OpenRegister is unavailable; this class degrades to contributing
+	 * nothing, never null/throws (the same fail-closed "provider degrades to
+	 * nothing" contract every duck-typed provider honours per
+	 * `PortalContributionRegistry::aggregateFor()`'s try/catch).
+	 *
+	 * @return array<int, string>
+	 *
+	 * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-an-app-must-be-able-to-provision-a-portal-page-as-data
+	 */
+	public function getAudiences(): array {
+		$audiences = [];
+		foreach ($this->activePortalPages() as $row) {
+			$audience = ($row['audience'] ?? null);
+			if (is_string($audience) === true && $audience !== '' && in_array($audience, $audiences, true) === false) {
+				$audiences[] = $audience;
+			}
+		}
+
+		return $audiences;
+	}//end getAudiences()
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * Reads every ACTIVE `portalPage` object whose `audience` matches the
+	 * subject's, converts the FIRST matching one (by object id, ascending —
+	 * deterministic) 1:1 into the manifest shape. Multiple active objects for
+	 * the SAME audience is a data-authoring concern (design.md, Open Question
+	 * OQ2): this NEVER merges — merging two independently-authored manifests
+	 * could silently combine an unrelated app's field whitelist with
+	 * another's — it picks one deterministically and logs a warning on the
+	 * collision.
+	 *
+	 * A collection/action entry that does not declare its OWN `minTrust`
+	 * inherits the contribution-level `minTrust` (the schema's documented
+	 * default-with-override semantics); an entry that DOES declare one is
+	 * never touched — the entry's own value always wins.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/supplier-portal/tasks.md#T04
+	 * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-an-app-must-be-able-to-provision-a-portal-page-as-data
+	 * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-an-app-must-be-able-to-provision-a-portal-page-as-data
+	 */
+	public function getContribution(array $subject): ?array {
+		$audience = (string)($subject['audience'] ?? '');
+		if ($audience === '') {
+			return null;
+		}
+
+		$matches = [];
+		foreach ($this->activePortalPages() as $row) {
+			if (($row['audience'] ?? null) === $audience) {
+				$matches[] = $row;
+			}
+		}
+
+		if ($matches === []) {
+			return null;
+		}
+
+		usort($matches, fn (array $a, array $b): int => $this->rowId(row: $a) <=> $this->rowId(row: $b));
+
+		if (count($matches) > 1) {
+			$this->logger->warning(
+				'Portaliq: multiple active portalPage objects for one audience — picking the first, not merging',
+				['audience' => $audience, 'count' => count($matches)]
+			);
+		}
+
+		return $this->toContribution(row: $matches[0]);
+	}//end getContribution()
+
+	/**
+	 * Convert one `portalPage` object row into the manifest shape every
+	 * provider's `getContribution()` returns.
+	 *
+	 * @param array<string, mixed> $row The `portalPage` object row.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function toContribution(array $row): array {
+		$contributionMinTrust = ($row['minTrust'] ?? null);
+		if (is_string($contributionMinTrust) === false || $contributionMinTrust === '') {
+			$contributionMinTrust = null;
+		}
+
+		$collections = (array)($row['collections'] ?? []);
+		$actions = (array)($row['actions'] ?? []);
+
+		$contribution = [
+			'label' => (string)($row['label'] ?? ''),
+			'collections' => $this->applyContributionMinTrust(entries: $collections, contributionMinTrust: $contributionMinTrust),
+			'actions' => $this->applyContributionMinTrust(entries: $actions, contributionMinTrust: $contributionMinTrust),
+			'pages' => (array)($row['pages'] ?? []),
+		];
+
+		// `notifications` is the per-rule-key opt-in NotificationDispatchService
+		// reads straight off the contribution (`$contribution['notifications']`)
+		// — an app declaring no matching key gets no out-of-band email for that
+		// trigger. It is forwarded only when the row actually declares a list,
+		// so the fail-closed default (no key => no email) is preserved exactly:
+		// an absent or malformed value leaves the array key off entirely, which
+		// is the same shape a provider that never declared one produces.
+		//
+		// Without this, `portal-page-provisioning`'s move to a config-driven
+		// provider left the opt-in UNREACHABLE for a data-provisioned page: the
+		// deleted hardcoded demo declared RULE_MESSAGE_CREATED and
+		// RULE_STATUS_CHANGED, and nothing carried them over.
+		$notifications = ($row['notifications'] ?? null);
+		if (is_array($notifications) === true && $notifications !== []) {
+			$contribution['notifications'] = array_values($notifications);
+		}
+
+		return $contribution;
+	}//end toContribution()
+
+	/**
+	 * Fill the contribution-level `minTrust` default onto every entry that
+	 * does not declare its OWN `minTrust`; an entry with its own value is
+	 * never touched — the entry-level value always wins (the schema's
+	 * documented default-with-override semantics).
+	 *
+	 * @param array<int, mixed> $entries The raw collections or actions.
+	 * @param string|null $contributionMinTrust The contribution-level default, or null when absent.
+	 *
+	 * @return array<int, mixed>
+	 */
+	private function applyContributionMinTrust(array $entries, ?string $contributionMinTrust): array {
+		if ($contributionMinTrust === null) {
+			return $entries;
+		}
+
+		foreach ($entries as $index => $entry) {
+			if (is_array($entry) === true && array_key_exists('minTrust', $entry) === false) {
+				$entries[$index]['minTrust'] = $contributionMinTrust;
+			}
+		}
+
+		return $entries;
+	}//end applyContributionMinTrust()
+
+	/**
+	 * Read every ACTIVE `portalPage` object. `scopeField`/`subjectRef` are
+	 * deliberately empty — `portalPage` rows are configuration, not subject
+	 * data, so PortalObjectReader's per-row scope check (a no-op when
+	 * `scopeField === ''`) never excludes a row; `status: active` is the
+	 * only narrowing filter. Degrades to `[]` on any OpenRegister error
+	 * (PortalObjectReader's own fail-closed contract).
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function activePortalPages(): array {
+		return $this->objectReader->readCollection(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: '',
+			subjectRef: '',
+			limit: 200,
+			filter: ['status' => 'active']
+		);
+	}//end activePortalPages()
+
+	/**
+	 * Resolve a row's identifier (`id`/`uuid`, flat or in `@self`) for the
+	 * deterministic first-match ordering.
+	 *
+	 * @param array<string, mixed> $row The normalised row.
+	 *
+	 * @return string
+	 */
+	private function rowId(array $row): string {
+		$self = ($row['@self'] ?? null);
+		$selfId = null;
+		$selfUuid = null;
+		if (is_array($self) === true) {
+			$selfId = ($self['id'] ?? null);
+			$selfUuid = ($self['uuid'] ?? null);
+		}
+
+		$candidates = [($row['id'] ?? null), ($row['uuid'] ?? null), $selfId, $selfUuid];
+		foreach ($candidates as $candidate) {
+			if ((is_string($candidate) === true || is_int($candidate) === true) && (string)$candidate !== '') {
+				return (string)$candidate;
+			}
+		}
+
+		return '';
+	}//end rowId()
 }//end class

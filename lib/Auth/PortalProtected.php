@@ -30,6 +30,5 @@ namespace OCA\Portaliq\Auth;
 /**
  * Opt-in marker for controllers guarded by PortalAuthMiddleware.
  */
-interface PortalProtected
-{
+interface PortalProtected {
 }//end interface

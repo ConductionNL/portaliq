@@ -33,6 +33,5 @@ use Exception;
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T02
  */
-class PortalUnauthorizedException extends Exception
-{
+class PortalUnauthorizedException extends Exception {
 }//end class

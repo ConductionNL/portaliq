@@ -48,6 +48,18 @@
  *   resolve within the SAME contribution; absent → one default page per listable
  *   collection is synthesised (v2 rendering preserved).
  *
+ * portal-page-provisioning adds one further optional, duck-typed field, on
+ * BOTH collections and actions:
+ *
+ * - `anonymous` (`bool`, default `false`) — when `true`, the entry is
+ *   surfaced by `PortalContributionRegistry::aggregateAnonymous()` and
+ *   reachable with NO bearer session at all (a `type: create` action) or
+ *   readable with no session (a collection). Mutually exclusive with a
+ *   non-`low` `minTrust` on the SAME entry — `PortalManifestNormaliser`
+ *   drops `anonymous` fail-closed when both are declared, so a malformed
+ *   manifest can never widen access. A provider that never sets `anonymous`
+ *   is byte-identical to today: every entry stays bearer-required.
+ *
  * @category Contribution
  * @package  OCA\Portaliq\Contribution
  *
@@ -62,6 +74,7 @@
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T04
  * @spec openspec/changes/contract-v2/tasks.md#T2
+ * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
  */
 
 declare(strict_types=1);
@@ -73,34 +86,33 @@ namespace OCA\Portaliq\Contribution;
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T04
  */
-interface IPortalContributionProvider
-{
-    /**
-     * The external audience this provider contributes to.
-     *
-     * @return string "supplier" or "client".
-     *
-     * @spec openspec/changes/supplier-portal/tasks.md#T04
-     */
-    public function getAudience(): string;
+interface IPortalContributionProvider {
+	/**
+	 * The external audience this provider contributes to.
+	 *
+	 * @return string "supplier" or "client".
+	 *
+	 * @spec openspec/changes/supplier-portal/tasks.md#T04
+	 */
+	public function getAudience(): string;
 
-    /**
-     * Describe this app's contribution for a specific authenticated subject, or
-     * null when the app has nothing to contribute to that subject.
-     *
-     * The returned array is a declarative manifest — never raw domain data:
-     * `app`, `label`, `collections` (each with register/schema/label), `actions`
-     * (each with id/label/endpoint), and `notifications` (rule keys). Portaliq
-     * renders it and reads the collections through OpenRegister, RBAC-scoped to
-     * the subject; the app is never called to *list* data (ADR-022).
-     *
-     * @param array<string, mixed> $subject The resolved subject (subjectRef,
-     *                                      audience, organisation, ...), all
-     *                                      server-derived.
-     *
-     * @return array<string, mixed>|null The contribution manifest, or null.
-     *
-     * @spec openspec/changes/supplier-portal/tasks.md#T04
-     */
-    public function getContribution(array $subject): ?array;
+	/**
+	 * Describe this app's contribution for a specific authenticated subject, or
+	 * null when the app has nothing to contribute to that subject.
+	 *
+	 * The returned array is a declarative manifest — never raw domain data:
+	 * `app`, `label`, `collections` (each with register/schema/label), `actions`
+	 * (each with id/label/endpoint), and `notifications` (rule keys). Portaliq
+	 * renders it and reads the collections through OpenRegister, RBAC-scoped to
+	 * the subject; the app is never called to *list* data (ADR-022).
+	 *
+	 * @param array<string, mixed> $subject The resolved subject (subjectRef,
+	 *                                      audience, organisation, ...), all
+	 *                                      server-derived.
+	 *
+	 * @return array<string, mixed>|null The contribution manifest, or null.
+	 *
+	 * @spec openspec/changes/supplier-portal/tasks.md#T04
+	 */
+	public function getContribution(array $subject): ?array;
 }//end interface

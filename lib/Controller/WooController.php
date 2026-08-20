@@ -28,150 +28,173 @@ namespace OCA\Portaliq\Controller;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
+use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\PublicPage;
-use OCP\AppFramework\Http\EmptyContentSecurityPolicy;
 use OCP\AppFramework\Http\DataDisplayResponse;
+use OCP\AppFramework\Http\EmptyContentSecurityPolicy;
 use OCP\AppFramework\Http\Response;
 use OCP\IRequest;
 
 /**
  * Serves the bundled tilburg-woo-ui SPA (`woo/`) as an in-app public page.
  */
-class WooController extends Controller
-{
-    /**
-     * Absolute path to the bundled built SPA.
-     *
-     * @var string
-     */
-    private string $root;
+class WooController extends Controller {
 
-    /**
-     * @param string   $appName The app id.
-     * @param IRequest $request The request.
-     */
-    public function __construct(string $appName, IRequest $request)
-    {
-        parent::__construct($appName, $request);
-        $resolved   = realpath(__DIR__.'/../../woo');
-        $this->root = ($resolved !== false) ? $resolved : (__DIR__.'/../../woo');
-    }//end __construct()
+	/**
+	 * Absolute path to the bundled built SPA.
+	 *
+	 * @var string
+	 */
+	private string $root;
 
-    /**
-     * Serve the SPA entry (`/woo`).
-     *
-     * @return Response
-     */
-    #[PublicPage]
-    #[NoCSRFRequired]
-    public function serve(): Response
-    {
-        return $this->render(path: '');
-    }//end serve()
+	/**
+	 * Constructor.
+	 *
+	 * @param string $appName The app id.
+	 * @param IRequest $request The request.
+	 */
+	public function __construct(string $appName, IRequest $request) {
+		parent::__construct(appName: $appName, request: $request);
 
-    /**
-     * Serve a bundled asset, or fall back to the SPA entry for client routes
-     * (`/woo/{path}`).
-     *
-     * @param string $path The requested sub-path.
-     *
-     * @return Response
-     */
-    #[PublicPage]
-    #[NoCSRFRequired]
-    public function servePath(string $path=''): Response
-    {
-        return $this->render(path: $path);
-    }//end servePath()
+		// Initialise to the unresolved path, then override when `realpath()`
+		// can canonicalise it (it returns false when the directory is absent,
+		// e.g. before the SPA bundle has been built).
+		$this->root = __DIR__ . '/../../woo';
+		$resolved = realpath($this->root);
+		if ($resolved !== false) {
+			$this->root = $resolved;
+		}
+	}//end __construct()
 
-    /**
-     * Resolve the request path to a bundled file (path-traversal safe) and
-     * return it, or the SPA `index.html` when the path is empty / not a real
-     * bundled file (react-router client route).
-     *
-     * @param string $path The requested sub-path.
-     *
-     * @return Response
-     */
-    private function render(string $path): Response
-    {
-        $relative = ltrim(str_replace('\\', '/', $path), '/');
-        $resolved = realpath($this->root.'/'.$relative);
+	/**
+	 * Serve the SPA entry (`/woo`).
+	 *
+	 * Woo is the Dutch open-government publication surface — public access is
+	 * the statutory point of it, so the rate limit below is a runaway ceiling,
+	 * not a gate.
+	 *
+	 * @return Response
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 120, period: 60)]
+	public function serve(): Response {
+		return $this->render(path: '');
+	}//end serve()
 
-        // SPA fallback: empty, traversal outside root, or not a real file.
-        if ($relative === ''
-            || $resolved === false
-            || strncmp($resolved, $this->root, strlen($this->root)) !== 0
-            || is_file($resolved) === false
-        ) {
-            $resolved = $this->root.'/index.html';
-        }
+	/**
+	 * Serve a bundled asset, or fall back to the SPA entry for client routes
+	 * (`/woo/{path}`).
+	 *
+	 * @param string $path The requested sub-path.
+	 *
+	 * @return Response
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 120, period: 60)]
+	public function servePath(string $path = ''): Response {
+		return $this->render(path: $path);
+	}//end servePath()
 
-        $content = file_get_contents($resolved);
-        if ($content === false) {
-            return new DataDisplayResponse('Not found', Http::STATUS_NOT_FOUND, ['Content-Type' => 'text/plain']);
-        }
+	/**
+	 * Resolve the request path to a bundled file (path-traversal safe) and
+	 * return it, or the SPA `index.html` when the path is empty / not a real
+	 * bundled file (react-router client route).
+	 *
+	 * @param string $path The requested sub-path.
+	 *
+	 * @return Response
+	 */
+	private function render(string $path): Response {
+		$relative = ltrim(str_replace('\\', '/', $path), '/');
+		$resolved = realpath($this->root . '/' . $relative);
 
-        $isIndex  = (substr($resolved, -10) === 'index.html');
-        $response = new DataDisplayResponse($content, Http::STATUS_OK, ['Content-Type' => $this->mimeFor(file: $resolved)]);
+		// SPA fallback: empty, traversal outside root, or not a real file.
+		if ($relative === ''
+			|| $resolved === false
+			|| strncmp($resolved, $this->root, strlen($this->root)) !== 0
+			|| is_file($resolved) === false
+		) {
+			$resolved = $this->root . '/index.html';
+		}
 
-        // runtime-config.js must never be cached — it is redeployed per instance.
-        $noCache = ($isIndex === true || substr($resolved, -17) === 'runtime-config.js');
-        if ($noCache === true) {
-            // The bundled SPA loads its own same-origin scripts/styles/fonts and
-            // boots via an inline script; relax the default (`default-src 'none'`)
-            // CSP so it can run. Everything stays same-origin ('self') + data:.
-            // Start from an EMPTY policy (no nonce / no strict-dynamic that would
-            // make the browser ignore 'self') and allow exactly what the bundled
-            // same-origin SPA needs. All script/style/font/img are 'self' + data:.
-            $csp = new EmptyContentSecurityPolicy();
-            $csp->allowInlineStyle(true);
-            $csp->addAllowedScriptDomain("'self'");
-            $csp->addAllowedStyleDomain("'self'");
-            $csp->addAllowedFontDomain("'self'");
-            $csp->addAllowedFontDomain('data:');
-            $csp->addAllowedFontDomain('https://fonts.gstatic.com');
-            $csp->addAllowedImageDomain("'self'");
-            $csp->addAllowedImageDomain('data:');
-            $csp->addAllowedConnectDomain("'self'");
-            $response->setContentSecurityPolicy($csp);
-        } else {
-            // Hash-named static assets are immutable.
-            $response->cacheFor(86400);
-        }
+		$content = file_get_contents($resolved);
+		if ($content === false) {
+			return new DataDisplayResponse('Not found', Http::STATUS_NOT_FOUND, ['Content-Type' => 'text/plain']);
+		}
 
-        return $response;
-    }//end render()
+		$isIndex = (substr($resolved, -10) === 'index.html');
+		$response = new DataDisplayResponse($content, Http::STATUS_OK, ['Content-Type' => $this->mimeFor(file: $resolved)]);
 
-    /**
-     * Map a file extension to a Content-Type.
-     *
-     * @param string $file The file path.
-     *
-     * @return string
-     */
-    private function mimeFor(string $file): string
-    {
-        $map = [
-            'html'  => 'text/html; charset=utf-8',
-            'js'    => 'application/javascript',
-            'css'   => 'text/css',
-            'json'  => 'application/json',
-            'svg'   => 'image/svg+xml',
-            'png'   => 'image/png',
-            'jpg'   => 'image/jpeg',
-            'jpeg'  => 'image/jpeg',
-            'gif'   => 'image/gif',
-            'ico'   => 'image/x-icon',
-            'webp'  => 'image/webp',
-            'woff'  => 'font/woff',
-            'woff2' => 'font/woff2',
-            'ttf'   => 'font/ttf',
-            'otf'   => 'font/otf',
-            'txt'   => 'text/plain; charset=utf-8',
-        ];
+		// Runtime-config.js must never be cached — it is redeployed per instance.
+		$noCache = ($isIndex === true || substr($resolved, -17) === 'runtime-config.js');
+		if ($noCache === false) {
+			// Hash-named static assets are immutable.
+			$response->cacheFor(86400);
+			return $response;
+		}
 
-        $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
-        return ($map[$ext] ?? 'application/octet-stream');
-    }//end mimeFor()
+		$this->applySpaCsp(response: $response);
+
+		return $response;
+	}//end render()
+
+	/**
+	 * Relax the default (`default-src 'none'`) CSP for the bundled SPA entry.
+	 *
+	 * The bundled SPA loads its own same-origin scripts/styles/fonts and boots
+	 * via an inline script. The policy starts EMPTY (no nonce / no
+	 * strict-dynamic that would make the browser ignore 'self') and allows
+	 * exactly what the bundled same-origin SPA needs — everything stays
+	 * same-origin ('self') + data:.
+	 *
+	 * @param DataDisplayResponse $response The response to attach the policy to.
+	 *
+	 * @return void
+	 */
+	private function applySpaCsp(DataDisplayResponse $response): void {
+		$csp = new EmptyContentSecurityPolicy();
+		$csp->allowInlineStyle(true);
+		$csp->addAllowedScriptDomain("'self'");
+		$csp->addAllowedStyleDomain("'self'");
+		$csp->addAllowedFontDomain("'self'");
+		$csp->addAllowedFontDomain('data:');
+		$csp->addAllowedFontDomain('https://fonts.gstatic.com');
+		$csp->addAllowedImageDomain("'self'");
+		$csp->addAllowedImageDomain('data:');
+		$csp->addAllowedConnectDomain("'self'");
+		$response->setContentSecurityPolicy($csp);
+	}//end applySpaCsp()
+
+	/**
+	 * Map a file extension to a Content-Type.
+	 *
+	 * @param string $file The file path.
+	 *
+	 * @return string
+	 */
+	private function mimeFor(string $file): string {
+		$map = [
+			'html' => 'text/html; charset=utf-8',
+			'js' => 'application/javascript',
+			'css' => 'text/css',
+			'json' => 'application/json',
+			'svg' => 'image/svg+xml',
+			'png' => 'image/png',
+			'jpg' => 'image/jpeg',
+			'jpeg' => 'image/jpeg',
+			'gif' => 'image/gif',
+			'ico' => 'image/x-icon',
+			'webp' => 'image/webp',
+			'woff' => 'font/woff',
+			'woff2' => 'font/woff2',
+			'ttf' => 'font/ttf',
+			'otf' => 'font/otf',
+			'txt' => 'text/plain; charset=utf-8',
+		];
+
+		$ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+		return ($map[$ext] ?? 'application/octet-stream');
+	}//end mimeFor()
 }//end class

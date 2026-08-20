@@ -5,11 +5,12 @@
 // (see webpack.portal.js) and is served by templates/portal.php via a
 // #[PublicPage] response. It is NOT a Nextcloud/Vue surface.
 
+import { loadState } from '@nextcloud/initial-state'
 import React from 'react'
 import { createRoot } from 'react-dom/client'
-import { loadState } from '@nextcloud/initial-state'
-import { createTranslator } from './i18n/index.js'
 import App from './App.jsx'
+import { createTranslator } from './i18n/index.js'
+
 // Shell-level NL Design System theme tokens (portal-spa-nl-design-system-styling).
 // The Utrecht components inject their own per-component CSS at runtime; this
 // supplies the surrounding shell tokens/layout. Fed through webpack.portal.js's
@@ -28,7 +29,9 @@ const RUNTIME_CONFIG = loadState('portaliq', 'runtimeConfig', {
 	organisationSlug: '',
 	theme: 'default',
 	logo: null,
-	idp: null,
+	// portal-oidc-broker-login: secret-free {provider, label} pairs the login
+	// buttons are built from; empty here means "no broker configured".
+	oidcProviders: [],
 	featureFlags: {},
 	allowedEmbedOrigins: [],
 	apiBase: '/index.php/apps/portaliq/portal/api',

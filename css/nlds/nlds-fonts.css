@@ -1,0 +1,138 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * WEBFONTS FOR THE STANDALONE SITE RENDERER.
+ *
+ * WHY THIS FILE EXISTS AT ALL
+ *
+ * The vendored NLDS stylesheets were captured from the reference application,
+ * where they are served from that site's ROOT. Their `@font-face` rules
+ * therefore carry ROOT-RELATIVE urls:
+ *
+ *     @font-face { font-family: Roboto; src: url(/static/fonts/b009a76ad6afe.woff2) }
+ *
+ * A root-relative url resolves against the ORIGIN, not against the stylesheet.
+ * Served from `/apps/portaliq/css/nlds/`, those rules ask Nextcloud for
+ * `/static/fonts/…` — a path this app does not own and never will.
+ *
+ * MEASURED, before this file existed: four font requests, four 404s, and
+ * `document.fonts` reporting `Roboto 400/500/700 error`. Nothing looked
+ * broken. The page rendered in Arial and the only visible symptom was that
+ * the navigation bar came out 54px against the reference's 55px — one pixel,
+ * because a fallback face has a different intrinsic line box. A missing
+ * webfont does not fail loudly; it silently redraws the entire site in
+ * something else.
+ *
+ * So this file re-declares the faces with urls RELATIVE TO ITSELF. It must be
+ * linked AFTER the vendored sheets: same family, same weight, same style, and
+ * the last declaration wins.
+ *
+ * WHAT IS AND IS NOT IN THIS REPOSITORY
+ *
+ * Only fonts we are licensed to redistribute ship here. The reference
+ * application's font set is mostly not: reading the name tables out of the
+ * files it serves shows Avenir LT W01 and Gill Sans W01 (Monotype/Linotype,
+ * "all rights reserved", with an explicit notification-of-licence clause) and
+ * Tisa Sans Pro (Monotype). Committing any of those to a EUPL-1.2 repository
+ * would redistribute commercial font software we hold no licence for.
+ *
+ *   - Roboto 400/500/700 — Apache-2.0, redistributable, COMMITTED, and the
+ *     face that carries essentially all body and navigation text.
+ *   - Avenir — proprietary, NOT COMMITTED. The drop-in slot for a licensed
+ *     deployment is `nlds-fonts-licensed.css`, which `templates/site.php`
+ *     links only when the file is actually on disk. See the Avenir block
+ *     below for why the slot had to move out of this file.
+ *
+ * `font-display: swap` throughout, matching the reference: text is readable
+ * during the fetch rather than invisible.
+ */
+
+@font-face {
+	font-family: Roboto;
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+	src: url(../fonts/roboto-400.woff2) format('woff2');
+}
+
+@font-face {
+	font-family: Roboto;
+	font-style: normal;
+	font-weight: 500;
+	font-display: swap;
+	src: url(../fonts/roboto-500.woff2) format('woff2');
+}
+
+@font-face {
+	font-family: Roboto;
+	font-style: normal;
+	font-weight: 700;
+	font-display: swap;
+	src: url(../fonts/roboto-700.woff2) format('woff2');
+}
+
+/*
+ * AVENIR — NEUTRALISED, AND THE LAST SOURCE HAS TO SUCCEED.
+ *
+ * This block used to BE the licensed drop-in slot: `src:
+ * url(../fonts/licensed/avenir-lt-55-roman.woff2)`, with a comment claiming
+ * that on a deployment without the licence "the browser records one failed
+ * fetch for this face and moves down the font stack — it does NOT error
+ * anywhere a visitor can see". Both halves of that sentence are wrong, and
+ * the second one is what e2e S24 caught: a failed subresource fetch IS a
+ * console error, and on a Nextcloud host a request for a file an app does not
+ * have is answered `401`, not `404`. Every anonymous visit to the portal
+ * therefore logged a red `401 (Unauthorized)`.
+ *
+ * IT LOGGED TWO. Measured in the CI trace and reproduced against a static
+ * server:
+ *
+ *     401  /apps/portaliq/css/fonts/licensed/avenir-lt-55-roman.woff2
+ *     404  /75d49df91bd25d7364df.woff2          ← 155ms later
+ *
+ * `nlds-app.css` also declares `@font-face { font-family: Avenir; src:
+ * url(/75d49df91bd25d7364df.woff2) }` — root-relative, captured from the
+ * reference application's own origin, unservable here. Two `@font-face` rules
+ * for the same family/weight/style do NOT simply let the last one win: they
+ * form one segmented face, and when the LAST source fails the browser falls
+ * back to the PREVIOUS matching rule. So overriding a broken vendored face
+ * with another broken face produces two failures rather than none.
+ *
+ * Measured, four variants, same page, same Chromium:
+ *
+ *     vendored rule alone                       1 error (404)
+ *     + late rule pointing at a missing file    2 errors (404 + 404)  ← shipped
+ *     + late rule with only `local()`, unmatched 1 error (404)   — falls back
+ *     + late rule ending in a file we DO ship   0 errors            ← this
+ *
+ * Hence the shape below. `local()` first, so a machine that actually has
+ * Avenir installed renders in it for free and with no download at all; a
+ * shipped Roboto file last, so the source list RESOLVES and the vendored
+ * 404 is never reached. Roboto is what the missing-licence case was always
+ * documented to fall through to — the rendering is unchanged, the two failed
+ * requests are gone.
+ *
+ * The real Avenir still wins where it is licensed: `nlds-fonts-licensed.css`
+ * redeclares this face against `css/fonts/licensed/`, and `templates/site.php`
+ * links that sheet ONLY when the file is on disk. A slot that is linked only
+ * when it can be served is a slot that cannot fail.
+ *
+ * STILL OUTSTANDING, measured and deliberately not changed here: the vendored
+ * sheets carry the same root-relative pattern for `Gill Sans`, `Tisa-sans-web-pro`,
+ * `Aldritch` and `ac-icons`, and five `Montserrat` faces pointing at
+ * `fonts.gstatic.com` — a third-party request from a government portal. None
+ * of them is reached by any text this renderer currently paints (zero requests
+ * in the trace), so none is neutralised here; they are landmines for the page
+ * that first uses one, and they want the same treatment.
+ */
+@font-face {
+	font-family: Avenir;
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+	src:
+		local('Avenir'),
+		local('Avenir LT Std 55 Roman'),
+		url(../fonts/roboto-400.woff2) format('woff2');
+}

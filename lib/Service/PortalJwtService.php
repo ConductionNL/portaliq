@@ -42,231 +42,238 @@ use RuntimeException;
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T02
  */
-class PortalJwtService
-{
-    /**
-     * HMAC algorithm — HS256.
-     */
-    public const ALG = 'HS256';
+class PortalJwtService {
+	/**
+	 * HMAC algorithm — HS256.
+	 */
+	public const ALG = 'HS256';
 
-    /**
-     * Hash function name passed to hash_hmac.
-     */
-    private const HASH_FN = 'sha256';
+	/**
+	 * Hash function name passed to hash_hmac.
+	 */
+	private const HASH_FN = 'sha256';
 
-    /**
-     * Token validity window in seconds (default 2 hours, matching procest's
-     * supplier session TTL).
-     */
-    public const DEFAULT_TTL = 7200;
+	/**
+	 * Token validity window in seconds (default 2 hours, matching procest's
+	 * supplier session TTL).
+	 */
+	public const DEFAULT_TTL = 7200;
 
-    /**
-     * Subject-assertion validity window in seconds (contract v2, A6). Short by
-     * design: the assertion only has to survive one server-to-server forward.
-     */
-    public const ASSERTION_TTL = 60;
+	/**
+	 * Subject-assertion validity window in seconds (contract v2, A6). Short by
+	 * design: the assertion only has to survive one server-to-server forward.
+	 */
+	public const ASSERTION_TTL = 60;
 
-    /**
-     * The `use` claim value marking an X-Portal-Subject assertion. Tokens
-     * carrying it are REJECTED by PortalSessionService::resolveFromBearer().
-     */
-    public const USE_ASSERTION = 'assertion';
+	/**
+	 * The `use` claim value marking an X-Portal-Subject assertion. Tokens
+	 * carrying it are REJECTED by PortalSessionService::resolveFromBearer().
+	 */
+	public const USE_ASSERTION = 'assertion';
 
-    /**
-     * Token issuer claim.
-     */
-    private const ISSUER = 'portaliq';
+	/**
+	 * Token issuer claim.
+	 */
+	private const ISSUER = 'portaliq';
 
-    /**
-     * Constructor.
-     *
-     * @param string $signingSecret Server-side HMAC signing secret (>= 16 chars).
-     *
-     * @throws InvalidArgumentException When the secret is too short.
-     */
-    public function __construct(
-        private readonly string $signingSecret,
-    ) {
-        if (strlen($this->signingSecret) < 16) {
-            throw new InvalidArgumentException('Portal JWT signing secret too short (<16 chars)');
-        }
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param string $signingSecret Server-side HMAC signing secret (>= 16 chars).
+	 *
+	 * @throws InvalidArgumentException When the secret is too short.
+	 */
+	public function __construct(
+		private readonly string $signingSecret,
+	) {
+		if (strlen($this->signingSecret) < 16) {
+			throw new InvalidArgumentException('Portal JWT signing secret too short (<16 chars)');
+		}
+	}//end __construct()
 
-    /**
-     * Mint a portal session token.
-     *
-     * @param string             $subjectRef   Server-derived subject reference (e.g. supplierRef).
-     * @param string             $audience     External audience ("supplier"|"client").
-     * @param string             $organisation Tenant (OpenRegister Organisation) the session is scoped to.
-     * @param string             $jti          Unique token id (for revocation).
-     * @param string             $trust        Assurance level (e.g. "EH3"); empty when not applicable.
-     * @param array<int, string> $roles        Roles carried inside the session.
-     * @param int|null           $ttl          Override the default TTL (seconds).
-     *
-     * @return string Compact JWT string.
-     *
-     * @spec openspec/changes/supplier-portal/tasks.md#T02
-     */
-    public function createSession(
-        string $subjectRef,
-        string $audience,
-        string $organisation,
-        string $jti,
-        string $trust='',
-        array $roles=[],
-        ?int $ttl=null
-    ): string {
-        $iat = time();
-        $exp = ($iat + ($ttl ?? self::DEFAULT_TTL));
+	/**
+	 * Mint a portal session token.
+	 *
+	 * @param string $subjectRef Server-derived subject reference (e.g. supplierRef).
+	 * @param string $audience External audience ("supplier"|"client").
+	 * @param string $organisation Tenant (OpenRegister Organisation) the session is scoped to.
+	 * @param string $jti Unique token id (for revocation).
+	 * @param string $trust Assurance level (e.g. "EH3"); empty when not applicable.
+	 * @param array<int, string> $roles Roles carried inside the session.
+	 * @param int|null $ttl Override the default TTL (seconds).
+	 * @param int|null $authTime Unix timestamp of the ORIGINAL login this session
+	 *                           chain descends from (portal-session-hardening-v2).
+	 *                           Carried forward unchanged across a refresh rotation
+	 *                           so the absolute session lifetime can be enforced from
+	 *                           the true origin, not the most recent mint. Defaults to
+	 *                           `$iat` (a fresh login) when not supplied.
+	 *
+	 * @return string Compact JWT string.
+	 *
+	 * @spec openspec/changes/supplier-portal/tasks.md#T02
+	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T01
+	 */
+	public function createSession(
+		string $subjectRef,
+		string $audience,
+		string $organisation,
+		string $jti,
+		string $trust = '',
+		array $roles = [],
+		?int $ttl = null,
+		?int $authTime = null,
+	): string {
+		$iat = time();
+		$exp = ($iat + ($ttl ?? self::DEFAULT_TTL));
 
-        $header = ['alg' => self::ALG, 'typ' => 'JWT'];
-        $claims = [
-            'sub'          => $subjectRef,
-            'audience'     => $audience,
-            'organisation' => $organisation,
-            'trust'        => $trust,
-            'roles'        => array_values($roles),
-            'jti'          => $jti,
-            'iat'          => $iat,
-            'exp'          => $exp,
-            'iss'          => self::ISSUER,
-        ];
+		$header = ['alg' => self::ALG, 'typ' => 'JWT'];
+		$claims = [
+			'sub' => $subjectRef,
+			'audience' => $audience,
+			'organisation' => $organisation,
+			'trust' => $trust,
+			'roles' => array_values($roles),
+			'jti' => $jti,
+			'iat' => $iat,
+			'exp' => $exp,
+			'iss' => self::ISSUER,
+			// The ORIGIN login's timestamp — unchanged by refresh — so the
+			// absolute session lifetime cap is measured from the true start of
+			// the session chain (portal-session-hardening-v2, design.md).
+			'authTime' => ($authTime ?? $iat),
+		];
 
-        $hPart = $this->b64UrlEncode(bytes: (string) json_encode($header, JSON_UNESCAPED_SLASHES));
-        $cPart = $this->b64UrlEncode(bytes: (string) json_encode($claims, JSON_UNESCAPED_SLASHES));
-        $sig   = $this->b64UrlEncode(bytes: $this->signRaw(input: $hPart.'.'.$cPart));
-        return $hPart.'.'.$cPart.'.'.$sig;
-    }//end createSession()
+		$hPart = $this->b64UrlEncode(bytes: (string)json_encode($header, JSON_UNESCAPED_SLASHES));
+		$cPart = $this->b64UrlEncode(bytes: (string)json_encode($claims, JSON_UNESCAPED_SLASHES));
+		$sig = $this->b64UrlEncode(bytes: $this->signRaw(input: $hPart . '.' . $cPart));
+		return $hPart . '.' . $cPart . '.' . $sig;
+	}//end createSession()
 
-    /**
-     * Mint a short-lived `X-Portal-Subject` assertion (contract v2, A6).
-     *
-     * Distinct from a session token: it carries `use: "assertion"` (rejected by
-     * the session resolver — token-confusion guard) and the ORIGINATING
-     * session's `jti`, so the receiving app can correlate the action to the
-     * revocable session for audit. Same HS256 signing + secret as sessions.
-     *
-     * @param string   $subjectRef   Server-derived subject reference.
-     * @param string   $audience     External audience of the subject.
-     * @param string   $organisation Tenant the subject is scoped to.
-     * @param string   $trust        Normalised trust level (`low|substantial|high`).
-     * @param string   $jti          The originating SESSION's token id.
-     * @param int|null $ttl          Override the assertion TTL (seconds).
-     *
-     * @return string Compact JWT string.
-     *
-     * @spec openspec/changes/contract-v2/tasks.md#T7
-     */
-    public function createAssertion(
-        string $subjectRef,
-        string $audience,
-        string $organisation,
-        string $trust,
-        string $jti,
-        ?int $ttl=null
-    ): string {
-        $iat = time();
-        $exp = ($iat + ($ttl ?? self::ASSERTION_TTL));
+	/**
+	 * Mint a short-lived `X-Portal-Subject` assertion (contract v2, A6).
+	 *
+	 * Distinct from a session token: it carries `use: "assertion"` (rejected by
+	 * the session resolver — token-confusion guard) and the ORIGINATING
+	 * session's `jti`, so the receiving app can correlate the action to the
+	 * revocable session for audit. Same HS256 signing + secret as sessions.
+	 *
+	 * @param string $subjectRef Server-derived subject reference.
+	 * @param string $audience External audience of the subject.
+	 * @param string $organisation Tenant the subject is scoped to.
+	 * @param string $trust Normalised trust level (`low|substantial|high`).
+	 * @param string $jti The originating SESSION's token id.
+	 * @param int|null $ttl Override the assertion TTL (seconds).
+	 *
+	 * @return string Compact JWT string.
+	 *
+	 * @spec openspec/changes/contract-v2/tasks.md#T7
+	 */
+	public function createAssertion(
+		string $subjectRef,
+		string $audience,
+		string $organisation,
+		string $trust,
+		string $jti,
+		?int $ttl = null,
+	): string {
+		$iat = time();
+		$exp = ($iat + ($ttl ?? self::ASSERTION_TTL));
 
-        $header = ['alg' => self::ALG, 'typ' => 'JWT'];
-        $claims = [
-            'sub'          => $subjectRef,
-            'audience'     => $audience,
-            'organisation' => $organisation,
-            'trust'        => $trust,
-            'jti'          => $jti,
-            'use'          => self::USE_ASSERTION,
-            'iat'          => $iat,
-            'exp'          => $exp,
-            'iss'          => self::ISSUER,
-        ];
+		$header = ['alg' => self::ALG, 'typ' => 'JWT'];
+		$claims = [
+			'sub' => $subjectRef,
+			'audience' => $audience,
+			'organisation' => $organisation,
+			'trust' => $trust,
+			'jti' => $jti,
+			'use' => self::USE_ASSERTION,
+			'iat' => $iat,
+			'exp' => $exp,
+			'iss' => self::ISSUER,
+		];
 
-        $hPart = $this->b64UrlEncode(bytes: (string) json_encode($header, JSON_UNESCAPED_SLASHES));
-        $cPart = $this->b64UrlEncode(bytes: (string) json_encode($claims, JSON_UNESCAPED_SLASHES));
-        $sig   = $this->b64UrlEncode(bytes: $this->signRaw(input: $hPart.'.'.$cPart));
-        return $hPart.'.'.$cPart.'.'.$sig;
-    }//end createAssertion()
+		$hPart = $this->b64UrlEncode(bytes: (string)json_encode($header, JSON_UNESCAPED_SLASHES));
+		$cPart = $this->b64UrlEncode(bytes: (string)json_encode($claims, JSON_UNESCAPED_SLASHES));
+		$sig = $this->b64UrlEncode(bytes: $this->signRaw(input: $hPart . '.' . $cPart));
+		return $hPart . '.' . $cPart . '.' . $sig;
+	}//end createAssertion()
 
-    /**
-     * Validate a JWT and return its claims.
-     *
-     * @param string $token Compact JWT.
-     *
-     * @return array<string, mixed> Claim set.
-     *
-     * @throws RuntimeException When the token is malformed, the signature does
-     *                          not match, the issuer is wrong, or it is expired.
-     *
-     * @spec openspec/changes/supplier-portal/tasks.md#T02
-     */
-    public function validate(string $token): array
-    {
-        $parts = explode('.', $token);
-        if (count($parts) !== 3) {
-            throw new RuntimeException('Malformed portal JWT');
-        }
+	/**
+	 * Validate a JWT and return its claims.
+	 *
+	 * @param string $token Compact JWT.
+	 *
+	 * @return array<string, mixed> Claim set.
+	 *
+	 * @throws RuntimeException When the token is malformed, the signature does
+	 *                          not match, the issuer is wrong, or it is expired.
+	 *
+	 * @spec openspec/changes/supplier-portal/tasks.md#T02
+	 */
+	public function validate(string $token): array {
+		$parts = explode('.', $token);
+		if (count($parts) !== 3) {
+			throw new RuntimeException('Malformed portal JWT');
+		}
 
-        [$hPart, $cPart, $sPart] = $parts;
+		[$hPart, $cPart, $sPart] = $parts;
 
-        $expected = $this->b64UrlEncode(bytes: $this->signRaw(input: $hPart.'.'.$cPart));
-        if (hash_equals($expected, $sPart) === false) {
-            throw new RuntimeException('Invalid portal JWT signature');
-        }
+		$expected = $this->b64UrlEncode(bytes: $this->signRaw(input: $hPart . '.' . $cPart));
+		if (hash_equals($expected, $sPart) === false) {
+			throw new RuntimeException('Invalid portal JWT signature');
+		}
 
-        $claims = json_decode($this->b64UrlDecode(encoded: $cPart), true);
-        if (is_array($claims) === false) {
-            throw new RuntimeException('Malformed portal JWT claims');
-        }
+		$claims = json_decode($this->b64UrlDecode(encoded: $cPart), true);
+		if (is_array($claims) === false) {
+			throw new RuntimeException('Malformed portal JWT claims');
+		}
 
-        if (($claims['iss'] ?? '') !== self::ISSUER) {
-            throw new RuntimeException('Unexpected portal JWT issuer');
-        }
+		if (($claims['iss'] ?? '') !== self::ISSUER) {
+			throw new RuntimeException('Unexpected portal JWT issuer');
+		}
 
-        if (isset($claims['exp']) === true && (int) $claims['exp'] < time()) {
-            throw new RuntimeException('Expired portal JWT');
-        }
+		if (isset($claims['exp']) === true && (int)$claims['exp'] < time()) {
+			throw new RuntimeException('Expired portal JWT');
+		}
 
-        return $claims;
-    }//end validate()
+		return $claims;
+	}//end validate()
 
-    /**
-     * Raw HMAC of the signing input.
-     *
-     * @param string $input Signing input (header.payload).
-     *
-     * @return string Raw HMAC bytes.
-     */
-    private function signRaw(string $input): string
-    {
-        return hash_hmac(self::HASH_FN, $input, $this->signingSecret, true);
-    }//end signRaw()
+	/**
+	 * Raw HMAC of the signing input.
+	 *
+	 * @param string $input Signing input (header.payload).
+	 *
+	 * @return string Raw HMAC bytes.
+	 */
+	private function signRaw(string $input): string {
+		return hash_hmac(self::HASH_FN, $input, $this->signingSecret, true);
+	}//end signRaw()
 
-    /**
-     * Base64-url encode (no padding).
-     *
-     * @param string $bytes Raw bytes.
-     *
-     * @return string
-     */
-    private function b64UrlEncode(string $bytes): string
-    {
-        return rtrim(strtr(base64_encode($bytes), '+/', '-_'), '=');
-    }//end b64UrlEncode()
+	/**
+	 * Base64-url encode (no padding).
+	 *
+	 * @param string $bytes Raw bytes.
+	 *
+	 * @return string
+	 */
+	private function b64UrlEncode(string $bytes): string {
+		return rtrim(strtr(base64_encode($bytes), '+/', '-_'), '=');
+	}//end b64UrlEncode()
 
-    /**
-     * Base64-url decode.
-     *
-     * @param string $encoded Encoded string.
-     *
-     * @return string Raw bytes.
-     */
-    private function b64UrlDecode(string $encoded): string
-    {
-        $pad = (4 - (strlen($encoded) % 4));
-        if ($pad < 4) {
-            $encoded .= str_repeat('=', $pad);
-        }
+	/**
+	 * Base64-url decode.
+	 *
+	 * @param string $encoded Encoded string.
+	 *
+	 * @return string Raw bytes.
+	 */
+	private function b64UrlDecode(string $encoded): string {
+		$pad = (4 - (strlen($encoded) % 4));
+		if ($pad < 4) {
+			$encoded .= str_repeat('=', $pad);
+		}
 
-        return (string) base64_decode(strtr($encoded, '-_', '+/'));
-    }//end b64UrlDecode()
+		return (string)base64_decode(strtr($encoded, '-_', '+/'));
+	}//end b64UrlDecode()
 }//end class

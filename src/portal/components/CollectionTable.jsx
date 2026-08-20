@@ -9,26 +9,36 @@
 
 import React from 'react'
 
+/**
+ *
+ * @param value
+ * @param render
+ */
 function formatCell(value, render) {
 	if (value === null || value === undefined || value === '') {
 		return ''
 	}
 	switch (render) {
-		case 'boolean':
-			return value ? 'Ja' : 'Nee'
-		case 'date':
-			try { return new Date(value).toLocaleDateString('nl-NL') } catch (e) { return String(value) }
-		case 'datetime':
-			try { return new Date(value).toLocaleString('nl-NL') } catch (e) { return String(value) }
-		case 'currency':
-			try { return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(Number(value)) } catch (e) { return String(value) }
-		default:
-			return String(value)
+	case 'boolean':
+		return value ? 'Ja' : 'Nee'
+	case 'date':
+		try { return new Date(value).toLocaleDateString('nl-NL') } catch (e) { return String(value) }
+	case 'datetime':
+		try { return new Date(value).toLocaleString('nl-NL') } catch (e) { return String(value) }
+	case 'currency':
+		try { return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(Number(value)) } catch (e) { return String(value) }
+	default:
+		return String(value)
 	}
 }
 
 // Derive columns: explicit manifest columns, else the union of row keys minus
 // the OR envelope / identifiers.
+/**
+ *
+ * @param collection
+ * @param objects
+ */
 function deriveColumns(collection, objects) {
 	if (Array.isArray(collection.columns) && collection.columns.length > 0) {
 		return collection.columns
@@ -49,6 +59,17 @@ function deriveColumns(collection, objects) {
 // per-row transition buttons (approve/reject/close). The server applies the
 // action's `set` values — the button sends no field data, so the transition
 // target can never be tampered with client-side.
+/**
+ *
+ * @param root0
+ * @param root0.collection
+ * @param root0.objects
+ * @param root0.loading
+ * @param root0.onSelect
+ * @param root0.rowActions
+ * @param root0.onRowAction
+ * @param root0.busyRow
+ */
 export default function CollectionTable({ collection, objects, loading, onSelect, rowActions, onRowAction, busyRow }) {
 	if (loading) {
 		return <p className="portaliq-loading">…</p>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  SPDX-FileCopyrightText: 2026 Conduction B.V.
+  SPDX-License-Identifier: EUPL-1.2
+
+  A neutral hero backdrop, served SAME-ORIGIN on purpose.
+
+  The reference implementation's hero pulls its image from another domain. A
+  portal may not: Nextcloud's CSP is `img-src 'self' data:`, so a third-party
+  URL is blocked outright (measured: resource status 0, hero silently flat) —
+  and even with the CSP opened, every visitor's IP would be handed to whoever
+  hosts the image, which is not a trade a government portal should make by
+  default for decoration.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 400" preserveAspectRatio="xMidYMid slice" role="presentation">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#003865"/>
+      <stop offset="55%" stop-color="#00447f"/>
+      <stop offset="100%" stop-color="#0078c8"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="400" fill="url(#g)"/>
+  <g fill="#ffffff" opacity="0.06">
+    <circle cx="1320" cy="90" r="190"/>
+    <circle cx="1480" cy="300" r="130"/>
+    <circle cx="1120" cy="330" r="90"/>
+  </g>
+  <g stroke="#ffffff" stroke-opacity="0.10" stroke-width="2" fill="none">
+    <path d="M0 320 Q 400 250 800 300 T 1600 260"/>
+    <path d="M0 360 Q 400 300 800 345 T 1600 310"/>
+  </g>
+</svg>

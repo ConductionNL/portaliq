@@ -1,6 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2026 Nextcloud App Template Contributors
- * SPDX-License-Identifier: AGPL-3.0-or-later
+ * SPDX-License-Identifier: EUPL-1.2
  *
  * Documentation screenshot capture suite — portaliq.
  *
@@ -27,11 +27,62 @@
  * Pattern reference: ADR-030 (hydra/openspec/architecture/).
  */
 
-import { test, type Page } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 import * as path from 'path'
 import * as fs from 'fs'
 
-const SHOT_ROOT = path.resolve(__dirname, '..', '..', 'docs', 'static', 'screenshots', 'tutorials')
+/** Nextcloud admin, as exported by the shared quality.yml Playwright step. */
+const ADMIN_USER = process.env.ADMIN_USER ?? process.env.NC_ADMIN_USER ?? 'admin'
+const ADMIN_PASS = process.env.ADMIN_PASSWORD ?? process.env.NC_ADMIN_PASS ?? 'admin'
+
+/**
+ * Sign in before capturing anything.
+ *
+ * THIS SPEC HAD NO LOGIN AT ALL, and the two tracks failed differently because
+ * of it — one loudly, one silently:
+ *
+ *   - the admin track waited 90s for `#portaliq-settings .settings-section`,
+ *     which an anonymous visitor can never be shown, and timed out;
+ *   - the user track "passed" by screenshotting whatever `/apps/portaliq/`
+ *     renders with no session — Nextcloud's LOGIN PAGE — and filing it as
+ *     `01-first-launch.png`. A green test producing a documentation image of
+ *     the wrong page is worse than the red one beside it, because nothing
+ *     about it asks to be looked at.
+ *
+ * So the login is shared, and each track asserts it actually landed somewhere
+ * authenticated before the shutter opens.
+ */
+async function signIn(page: Page): Promise<void> {
+	// IDEMPOTENT ON PURPOSE. Playwright runs the outer `beforeEach` and then the
+	// describe-level one, so this is called twice for the admin track. Posting
+	// the login form again on an already-authenticated session does not sign in
+	// twice — it re-enters a flow Nextcloud has already completed, and the
+	// second pass is where the admin capture was hanging.
+	await page.goto('/index.php/login')
+	if (/\/login(\?|$|\/)/.test(page.url()) === false) {
+		return
+	}
+	await page.locator('input[name="user"]').fill(ADMIN_USER)
+	await page.locator('input[name="password"]').fill(ADMIN_PASS)
+	await page.locator('button[type="submit"], input[type="submit"]').first().click()
+	// The global header renders only on authenticated pages.
+	await page.waitForSelector('#header, header.header', { timeout: 60_000 })
+	expect(
+		/\/login(\?|$|\/)/.test(page.url()),
+		`sign-in failed — still on ${page.url()}, so every capture below would `
+			+ 'photograph the login page and report success',
+	).toBe(false)
+}
+
+const SHOT_ROOT = path.resolve(
+	__dirname,
+	'..',
+	'..',
+	'docs',
+	'static',
+	'screenshots',
+	'tutorials',
+)
 
 /**
  * Save a screenshot under
@@ -39,7 +90,11 @@ const SHOT_ROOT = path.resolve(__dirname, '..', '..', 'docs', 'static', 'screens
  * Lives under `static/` so Docusaurus copies the PNG into the build
  * root — markdown image refs use `/screenshots/...` (root-absolute).
  */
-async function shoot(page: Page, track: 'user' | 'admin', file: string): Promise<void> {
+async function shoot(
+	page: Page,
+	track: 'user' | 'admin',
+	file: string,
+): Promise<void> {
 	const dir = path.join(SHOT_ROOT, track)
 	if (!fs.existsSync(dir)) {
 		fs.mkdirSync(dir, { recursive: true })
@@ -60,7 +115,11 @@ test.describe.configure({ mode: 'default' })
 
 test.beforeEach(async ({ page }) => {
 	page.setViewportSize({ width: 1280, height: 800 })
+	await signIn(page)
 	await page.goto('/apps/portaliq/')
+	// Assert the APP mounted, not merely that a document loaded — the whole
+	// point of a first-launch screenshot is that it shows the app.
+	await page.locator('#content > *').first().waitFor({ state: 'visible' })
 })
 
 // ---------------------------------------------------------------------------
@@ -82,8 +141,20 @@ test.describe('docs: user track', () => {
 
 test.describe('docs: admin track', () => {
 	test.beforeEach(async ({ page }) => {
-		await page.goto('/settings/admin/portaliq')
-		await page.waitForLoadState('networkidle')
+		await signIn(page)
+		await page.goto('/settings/admin/portaliq', {
+			waitUntil: 'domcontentloaded',
+		})
+		// Wait for CONTENT, not for the container. `#portaliq-settings` is the
+		// empty mount div `templates/settings/admin.php` emits — it is present
+		// in the very first byte of HTML, so waiting on it would be satisfied
+		// before Vue has rendered anything and the capture would be a
+		// screenshot of an empty page. `NcSettingsSection` renders the heading
+		// only after `src/settings.js` has mounted AdminRoot.vue.
+		await page
+			.locator('#portaliq-settings .settings-section')
+			.first()
+			.waitFor({ state: 'visible' })
 	})
 
 	test('AN admin-settings', async ({ page }) => {

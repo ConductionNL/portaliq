@@ -2,9 +2,8 @@
 	"Log out": "Uitloggen",
 	"Welcome": "Welkom",
 	"Log in to view your information.": "Log in om uw gegevens te bekijken.",
-	"Log in with eHerkenning": "Inloggen met eHerkenning",
-	"Log in with DigiD": "Inloggen met DigiD",
-	"Available once your organisation configures eHerkenning/DigiD.": "Beschikbaar zodra uw organisatie eHerkenning/DigiD heeft geconfigureerd.",
+	"Log in with {provider}": "Inloggen met {provider}",
+	"No login method is configured for this organisation yet.": "Er is nog geen inlogmethode geconfigureerd voor deze organisatie.",
 	"Dev-login (test)": "Dev-login (test)",
 	"Dev-login is disabled on this environment.": "Dev-login is uitgeschakeld op deze omgeving.",
 	"Dev-login request failed.": "Dev-login-verzoek is mislukt.",
@@ -17,5 +16,12 @@
 	"New document": "Nieuw document",
 	"{field}?": "{field}?",
 	"Confirm": "Bevestigen",
-	"Cancel": "Annuleren"
+	"Cancel": "Annuleren",
+	"Inbox": "Berichten",
+	"Unread": "Ongelezen",
+	"Nature": "Aard",
+	"Legal effect": "Rechtsgevolg",
+	"Deadline": "Termijn",
+	"Mark as read": "Markeren als gelezen",
+	"Read": "Gelezen"
 }

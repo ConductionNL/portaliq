@@ -15,13 +15,10 @@
   3. Reference it in manifest actions via
      { type: "open-modal", target: "<your-key>", props: { ... } }.
 
-  @spec openspec/changes/scaffold-v2/specs/scaffold-v2/spec.md
+  @spec openspec/specs/scaffold-components/spec.md#REQ-COMP-002
 -->
 <template>
-	<NcDialog
-		:name="title"
-		:open="open"
-		@update:open="$emit('update:open', $event)">
+	<NcDialog :name="title" :open="open" @update:open="$emit('update:open', $event)">
 		<p>{{ message }}</p>
 		<template #actions>
 			<NcButton @click="onConfirm">
@@ -51,11 +48,13 @@ export default {
 			type: Boolean,
 			default: false,
 		},
+
 		/** Modal heading (i18n key resolved by the caller). */
 		title: {
 			type: String,
 			default: 'Confirm action',
 		},
+
 		/** Modal body text. */
 		message: {
 			type: String,
@@ -76,6 +75,7 @@ export default {
 			this.$emit('confirm')
 			this.$emit('update:open', false)
 		},
+
 		/**
 		 * Relay a cancellation, then request the parent close the modal.
 		 *
