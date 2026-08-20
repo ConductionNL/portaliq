@@ -28,11 +28,21 @@ find_by() { # schema property value
 	req "${API}/$1?_limit=500" | python3 -c "
 import json,sys
 prop,val=sys.argv[1],sys.argv[2]
+portal=sys.argv[3] if len(sys.argv)>3 else ''
 d=json.load(sys.stdin)
 for o in (d.get('results') or []):
-    if o.get(prop)==val:
-        print(o.get('@self',{}).get('id') or o.get('id')); break
-" "$2" "$3"
+    if o.get(prop)!=val:
+        continue
+    # A ROUTE IS NOT UNIQUE ACROSS PORTALS. This fixture seeds two portals on
+    # purpose, and any other portal on the instance — portaliq's own install
+    # hook seeds one — also has a page at '/'. Matching on the key alone
+    # returned THAT object, so upsert() treated open-tilburg's home page as
+    # already seeded and never created it: the portal then resolved, served
+    # its chrome, and answered 404 for '/', taking every content spec with it.
+    if portal and o.get('portal') != portal:
+        continue
+    print(o.get('@self',{}).get('id') or o.get('id')); break
+" "$2" "$3" "$4"
 }
 
 # True when an existing object carries the `portal` scope the reader filters on.
@@ -48,8 +58,18 @@ sys.exit(0 if o.get('portal') else 1)
 }
 
 upsert() { # schema property value json
-	local existing
-	existing="$(find_by "$1" "$2" "$3")"
+	local existing portal
+	# The portal this object belongs to, read out of the payload being seeded.
+	# Passed to the lookup so a key collision with another portal's object
+	# cannot be mistaken for "already seeded".
+	portal="$(printf '%s' "$4" | python3 -c "
+import json,sys
+try:
+    print((json.load(sys.stdin).get('portal') or ''))
+except Exception:
+    print('')
+")"
+	existing="$(find_by "$1" "$2" "$3" "$portal")"
 	if [ -n "$existing" ]; then
 		# Found by key — but "found" is not "usable". This seeder only ever
 		# CREATES; it never updates. So an object left behind by an older

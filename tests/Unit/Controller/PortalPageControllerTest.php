@@ -232,7 +232,8 @@ class PortalPageControllerTest extends TestCase {
 		?array $portal = null,
 		?string $themeStylesheet = null,
 		?string $nldsStylesheet = null,
-		bool $portalResolverThrows = false
+		bool $portalResolverThrows = false,
+		?string $logoFile = null
 	): PortalPageController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getParam')->willReturnCallback(
@@ -261,6 +262,13 @@ class PortalPageControllerTest extends TestCase {
 		// rather than an empty string keeps the assertion in
 		// testSiteRendersSiteTemplateAsBase meaningful.
 		$urlGenerator = $this->createMock(IURLGenerator::class);
+		// `linkTo(app, path)` is what turns the theme app's relative logo path
+		// into a URL the browser can actually fetch; without it the assertion
+		// below would pass on an empty string.
+		$urlGenerator->method('linkTo')
+			->willReturnCallback(
+				static fn (string $app, string $file): string => ('/apps/' . $app . '/' . $file)
+			);
 		$urlGenerator->method('linkToRoute')
 			->willReturn('/index.php/apps/portaliq/api/content/site');
 
@@ -280,6 +288,7 @@ class PortalPageControllerTest extends TestCase {
 		$themeResolver = $this->createMock(PortalThemeResolver::class);
 		$themeResolver->method('stylesheetFor')->willReturn($themeStylesheet);
 		$themeResolver->method('nldsStylesheetFor')->willReturn($nldsStylesheet);
+		$themeResolver->method('logoFileFor')->willReturn($logoFile);
 
 		return new PortalPageController(
 			$request,
@@ -289,5 +298,69 @@ class PortalPageControllerTest extends TestCase {
 			$themeResolver
 		);
 	}//end controller()
+
+
+	/**
+	 * A themed portal whose set ships a logo gets an ABSOLUTE url for it.
+	 *
+	 * WHY THE CONTROLLER RESOLVES THIS AT ALL: token sets declare
+	 * `--nldesign-logo-url` relative to the token file, and a browser resolves
+	 * a relative `url()` inside a custom property against the stylesheet
+	 * CONSUMING it — this app's bundled CSS, not the theme app's. Measured on a
+	 * live rig, the header requested
+	 * `/custom_apps/portaliq/img/logos/opencatalogi.svg` and rendered no logo,
+	 * while every token in the chain held the right value.
+	 *
+	 * So the app that knows where the theme app lives resolves it once, here.
+	 */
+	public function testSiteEmitsAnAbsoluteLogoUrlForAThemedPortal(): void {
+		$controller = $this->controller(
+			orgSlug: '',
+			portal: ['theme' => 'opencatalogi'],
+			themeStylesheet: 'tokens/opencatalogi',
+			logoFile: 'img/logos/opencatalogi.svg'
+		);
+
+		$params = $controller->site()->getParams();
+
+		$this->assertNotSame('', $params['themeLogoUrl']);
+		$this->assertStringContainsString('img/logos/opencatalogi.svg', $params['themeLogoUrl']);
+
+	}//end testSiteEmitsAnAbsoluteLogoUrlForAThemedPortal()
+
+
+	/**
+	 * A set with NO logo file emits an empty string, not a path that 404s.
+	 *
+	 * A broken image is indistinguishable on screen from having no logo, and
+	 * moves the failure somewhere only the browser sees.
+	 */
+	public function testSiteEmitsNoLogoUrlWhenTheSetShipsNone(): void {
+		$controller = $this->controller(
+			orgSlug: '',
+			portal: ['theme' => 'vng'],
+			themeStylesheet: 'tokens/vng',
+			logoFile: null
+		);
+
+		$this->assertSame('', $controller->site()->getParams()['themeLogoUrl']);
+
+	}//end testSiteEmitsNoLogoUrlWhenTheSetShipsNone()
+
+
+	/**
+	 * An UNTHEMED portal has no logo either.
+	 *
+	 * The mark must never outlive the theme: a portal rendering unstyled while
+	 * still wearing another brand's logo is the confusing half-state the
+	 * resolver's null-rather-than-default posture exists to avoid.
+	 */
+	public function testAnUnthemedPortalEmitsNoLogoUrl(): void {
+		$controller = $this->controller(orgSlug: '', portalResolverThrows: true);
+
+		$this->assertSame('', $controller->site()->getParams()['themeLogoUrl']);
+
+	}//end testAnUnthemedPortalEmitsNoLogoUrl()
+
 
 }//end class
