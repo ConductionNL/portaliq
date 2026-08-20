@@ -562,6 +562,16 @@ export default {
 			return crumbs
 		},
 
+		/**
+		 * Whether this page's body is a widget grid rather than markdown.
+		 *
+		 * Decides whether the page wears `utrecht-article`, which carries a
+		 * prose `max-inline-size` — see the template.
+		 *
+		 * @return {boolean} True when the body is a grid.
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
+		 */
 		bodyIsGrid() {
 			return (
 				(this.page && this.page.body && this.page.body.type === 'grid')
@@ -569,6 +579,13 @@ export default {
 			)
 		},
 
+		/**
+		 * Whether the page body already declares its own heading.
+		 *
+		 * @return {boolean} True when the renderer must not add a title.
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
+		 */
 		bodyProvidesHeading() {
 			const body = this.page.body || {}
 			if (body.type !== 'grid') {
@@ -1032,6 +1049,18 @@ export default {
 			this.loadRoute(this.searchRoute)
 		},
 
+		/**
+		 * A real, shareable href for an in-site route.
+		 *
+		 * The breadcrumb intercepts the click, but the anchor still carries a
+		 * working URL so middle-click, "open in new tab" and a page whose
+		 * bundle failed to load all behave.
+		 *
+		 * @param {string} route The in-site route.
+		 * @return {string} The href.
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
+		 */
 		hrefForRoute(route) {
 			const url = new URL(window.location.href)
 			url.search = ''

@@ -340,4 +340,159 @@ class InitializeDemoPortalTest extends TestCase {
 
 	}//end testTheLegalMenuSitsInTheSubFooter()
 
+
+	/**
+	 * A writer whose Nth write returns null, every other write succeeding.
+	 *
+	 * Failure is addressed by ORDINAL rather than by schema because three of
+	 * the five writes share the schema `page`, and a double keyed on the
+	 * schema could not tell the home page's failure from the search page's —
+	 * which is exactly the distinction these tests exist to draw.
+	 *
+	 * @param integer $failAt Which write (1-based) returns null.
+	 * @param array   $writes Collected writes, by reference.
+	 *
+	 * @return PortalObjectWriter The double.
+	 */
+	private function writerFailingAt(int $failAt, array &$writes): PortalObjectWriter {
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('countObjects')->willReturn(0);
+		$writer->method('createAnonymousObject')
+			->willReturnCallback(
+				static function (string $register, string $schema, array $data) use (&$writes, $failAt): ?array {
+					$writes[] = ['schema' => $schema, 'data' => $data];
+					if (count($writes) === $failAt) {
+						return null;
+					}
+
+					return ['@self' => ['id' => 'seeded-' . $schema . '-' . count($writes)]];
+				}
+			);
+
+		return $writer;
+	}//end writerFailingAt()
+
+
+	/**
+	 * A portal that comes back without an id stops before any page is written.
+	 *
+	 * A write can succeed and still answer a body this step cannot use. Pages
+	 * reference the portal, so continuing here would seed pages belonging to
+	 * nothing — content that exists, resolves, and renders for no portal.
+	 *
+	 * @return void
+	 */
+	public function testAPortalWithoutAnIdStopsBeforeWritingPages(): void {
+		$writes = [];
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('countObjects')->willReturn(0);
+		$writer->method('createAnonymousObject')
+			->willReturnCallback(
+				static function (string $register, string $schema, array $data) use (&$writes): array {
+					$writes[] = ['schema' => $schema, 'data' => $data];
+					// Written, but carrying neither `@self.id` nor `id`.
+					return ['@self' => []];
+				}
+			);
+
+		$config = $this->createMock(IAppConfig::class);
+		$config->method('getValueString')->willReturn('');
+		$config->expects($this->never())->method('setValueString');
+
+		$output = $this->createMock(IOutput::class);
+		$output->expects($this->atLeastOnce())->method('warning');
+
+		$this->step($writer, $config)->run($output);
+
+		$this->assertCount(1, $writes, 'only the portal write should have been attempted');
+		$this->assertSame('portal', $writes[0]['schema']);
+
+	}//end testAPortalWithoutAnIdStopsBeforeWritingPages()
+
+
+	/**
+	 * When the home page fails, the marker stays unstamped.
+	 *
+	 * The marker is what makes the step refuse a second run, so stamping it
+	 * for a portal that has no home page would make the incomplete state
+	 * PERMANENT — the re-run that would have finished the job is the very
+	 * thing the marker turns away.
+	 *
+	 * @return void
+	 */
+	public function testAFailedHomePageLeavesTheMarkerUnstamped(): void {
+		$writes = [];
+		$config = $this->createMock(IAppConfig::class);
+		$config->method('getValueString')->willReturn('');
+		$config->expects($this->never())->method('setValueString');
+
+		$output = $this->createMock(IOutput::class);
+		$output->expects($this->atLeastOnce())->method('warning');
+
+		// Write 1 is the portal, write 2 is the home page.
+		$this->step($this->writerFailingAt(2, $writes), $config)->run($output);
+
+		$this->assertCount(2, $writes, 'it should stop at the failed home page');
+
+	}//end testAFailedHomePageLeavesTheMarkerUnstamped()
+
+
+	/**
+	 * When the search page fails, the marker stays unstamped.
+	 *
+	 * This is the failure that matters most and is the least visible: the
+	 * portal, its landing page and its menu all exist, so the install looks
+	 * successful and the site renders — with no search. Stamping the marker
+	 * here would make a portal whose entire purpose is federated search
+	 * permanently searchless.
+	 *
+	 * @return void
+	 */
+	public function testAFailedSearchPageLeavesTheMarkerUnstamped(): void {
+		$writes = [];
+		$config = $this->createMock(IAppConfig::class);
+		$config->method('getValueString')->willReturn('');
+		$config->expects($this->never())->method('setValueString');
+
+		$output = $this->createMock(IOutput::class);
+		$output->expects($this->atLeastOnce())->method('warning');
+
+		// Writes 1-4 are portal, home, detail and menu; write 5 is search.
+		$this->step($this->writerFailingAt(5, $writes), $config)->run($output);
+
+		$this->assertCount(5, $writes, 'every earlier write should still have happened');
+
+	}//end testAFailedSearchPageLeavesTheMarkerUnstamped()
+
+
+	/**
+	 * A completed run stamps the marker with the portal's id.
+	 *
+	 * Asserted on the VALUE, not merely that it was called: the marker doubles
+	 * as the pointer to what was seeded, and a marker holding the empty string
+	 * would still suppress the re-run while naming nothing.
+	 *
+	 * @return void
+	 */
+	public function testACompletedRunStampsTheMarkerWithThePortalId(): void {
+		$writes = [];
+
+		$stamped = [];
+		$config = $this->createMock(IAppConfig::class);
+		$config->method('getValueString')->willReturn('');
+		$config->method('setValueString')
+			->willReturnCallback(
+				static function (string $app, string $key, string $value) use (&$stamped): bool {
+					$stamped[$key] = $value;
+					return true;
+				}
+			);
+
+		$this->step($this->writer(0, $writes), $config)->run($this->silentOutput());
+
+		$this->assertArrayHasKey('demo_portal_provisioned', $stamped);
+		$this->assertSame('seeded-portal-1', $stamped['demo_portal_provisioned']);
+
+	}//end testACompletedRunStampsTheMarkerWithThePortalId()
+
 }//end class
