@@ -12,18 +12,31 @@
     <licence>EUPL-1.2</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Portaliq</namespace>
+    <!--
+        GitHub, not Codeberg. The fleet dropped Forgejo/Codeberg on
+        2026-08-19 and GitHub is the only forge again. The Codeberg URLs
+        these replace all still answer 200 from a stale mirror, so nothing
+        was broken enough to notice — but `bugs` pointed a reporter at an
+        issue tracker nobody reads, and this app's FIRST App Store
+        publication is what turns these links into its public identity.
+    -->
     <documentation>
-        <user>https://codeberg.org/Conduction/portaliq</user>
-        <admin>https://codeberg.org/Conduction/portaliq</admin>
-        <developer>https://codeberg.org/Conduction/portaliq</developer>
+        <user>https://github.com/ConductionNL/portaliq</user>
+        <admin>https://github.com/ConductionNL/portaliq</admin>
+        <developer>https://github.com/ConductionNL/portaliq</developer>
     </documentation>
     <category>tools</category>
-    <website>https://codeberg.org/Conduction/portaliq</website>
-    <discussion>https://codeberg.org/Conduction/portaliq/discussions</discussion>
-    <bugs>https://codeberg.org/Conduction/portaliq/issues</bugs>
-    <repository>https://codeberg.org/Conduction/portaliq</repository>
+    <website>https://github.com/ConductionNL/portaliq</website>
+    <discussion>https://github.com/ConductionNL/portaliq/discussions</discussion>
+    <bugs>https://github.com/ConductionNL/portaliq/issues</bugs>
+    <repository>https://github.com/ConductionNL/portaliq</repository>
 
-    <screenshot>https://codeberg.org/Conduction/portaliq/raw/branch/main/img/app-store.svg</screenshot>
+    <!--
+        Served from `main` on raw.githubusercontent.com, verified 200
+        image/svg+xml. The App Store fetches this URL itself, so a link that
+        resolves only inside the repo would publish an app with no image.
+    -->
+    <screenshot>https://raw.githubusercontent.com/ConductionNL/portaliq/main/img/app-store.svg</screenshot>
 
     <dependencies>
         <!--
