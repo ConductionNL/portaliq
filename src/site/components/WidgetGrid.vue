@@ -66,6 +66,7 @@
 <script>
 import { siteBlockIsBand, siteBlockRegistry } from '@conduction/nextcloud-vue/public'
 import ContributionsBlock from './ContributionsBlock.vue'
+import FederatedSearchBlock from './FederatedSearchBlock.vue'
 import MarkdownBlock from './MarkdownBlock.vue'
 
 /**
@@ -107,13 +108,21 @@ import MarkdownBlock from './MarkdownBlock.vue'
 const PUBLIC_WIDGETS = {
 	markdown: MarkdownBlock,
 	contributions: ContributionsBlock,
+	// `federatedSearch` stays owned here rather than coming from the shared
+	// registry, because what it is allowed to query is this app's decision.
+	// It reads OpenCatalogi's `@PublicPage` federation endpoint and applies no
+	// visibility rule of its own — the schema's authorization block, evaluated
+	// by OpenRegister inside OpenCatalogi, is the only one. A block in the
+	// shared catalog pointed at an arbitrary endpoint would make that
+	// guarantee a property of page configuration instead of code.
+	federatedSearch: FederatedSearchBlock,
 	...siteBlockRegistry,
 }
 
 export default {
 	name: 'WidgetGrid',
 
-	components: { ContributionsBlock, MarkdownBlock },
+	components: { ContributionsBlock, FederatedSearchBlock, MarkdownBlock },
 
 	props: {
 		/** Widget placements in the canonical manifest-v2 widgetEntry shape. */

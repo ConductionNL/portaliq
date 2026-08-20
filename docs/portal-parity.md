@@ -51,6 +51,33 @@ renderer and (once nc-vue chain links 1–2 land) the whole communal widget
 catalog come from the shared library instead of being reimplemented per
 front-end.
 
+### Re-measured 2026-08-20 — the figures above were stale by 84%
+
+The table above is kept as written because it is what was true in August and
+because the conclusion it draws still holds. The numbers are not current.
+Re-measured on `development` at 59486c3, `NODE_ENV=production`:
+
+| `portaliq-site.js` | Raw | Gzipped |
+| --- | ---: | ---: |
+| recorded 2026-08-15 | 162,907 B | 56,316 B |
+| measured 2026-08-20, before this change | 358,538 B | 103,209 B |
+| measured 2026-08-20, with `federatedSearch` | 386,945 B | **111,254 B** |
+
+**The baseline grew 83% gzipped in five days, and no entry in this file
+recorded it.** That is the failure this page exists to prevent: a parity
+document whose numbers are not re-measured asserts parity rather than
+measuring it, and it does so in the confident voice of something that once
+was checked.
+
+The `federatedSearch` block accounts for **+8,045 B gzipped (+7.8%)** of the
+current figure. That delta was measured by building the same tree twice with
+only the block's registration in `WidgetGrid.vue` reverted — not by
+subtracting an estimate, and not against the stale August baseline, which
+would have attributed the whole 55 KB of intervening growth to this change.
+
+Anyone touching this file: re-measure both bundles in the same run. A row here
+is worth exactly as much as the date beside it.
+
 ## What each renderer can do
 
 | Capability | React portal | Vue renderer |
@@ -61,6 +88,7 @@ front-end.
 | Multi-site by host | ✗ | ✓ |
 | Per-site theme | ✗ (per Organisation, via `?org=`) | **reference only — see below** |
 | Glossary | ✗ | ✓ |
+| Search | ✗ | ✓ — federated, over OpenCatalogi (2026-08-20) |
 | Subject-scoped collections | ✓ | ✗ — not this renderer's job |
 | Inbox, actions, file upload | ✓ | ✗ — not yet ported |
 | Boots without Nextcloud globals | ✗ | ✓ (asserted, S11) |
