@@ -14,6 +14,31 @@ name: Release
 # to a `release/v<version>` branch, tags THAT commit, and opens a pull request
 # to bring the integration branch up — so the tag and the package agree without
 # anything pushing at a protected branch.
+#
+# NODE 24, AND THE REASON IS npm, NOT NODE.
+#
+# The shared workflow still defaults `node-version` to 22, and every Node 22
+# release bundles npm 10 (22.23.2 ships 10.9.8). This repo's `.npmrc` uses
+# `min-release-age`, an npm 11+ feature, and `engines.npm` declares `^11.0.0`.
+# On npm 10 `npm ci` does not warn that it is the wrong major — it fails with
+# a lockfile error naming a package nothing here depends on directly:
+#
+#   npm error `npm ci` can only install packages when your package.json and
+#   npm error package-lock.json ... are in sync.
+#   npm error Missing: pinia@4.0.3 from lock file
+#
+# The lock is fine. EVERY Release run on this repo had failed this way —
+# beta and development alike — while Code Quality stayed green, because
+# quality.yml already defaults to 24. The two shared workflows drifted and
+# release.yml's own comment still claims it is "kept in step".
+#
+# opencatalogi measured both sides on identical bytes (2026-08-17, bc9136c5):
+#   npm 10.9.8 / Node 22  -> EUSAGE, Missing: pinia@4.0.3
+#   npm 11.17.0 / Node 24 -> clean, 1929 packages
+# Removing .npmrc changes neither result, so the cooldown is not the cause.
+#
+# Keep this in step with quality.yml's node-version. If the shared workflow's
+# default moves to 24, these three lines become redundant rather than wrong.
 
 on:
   push:
@@ -34,6 +59,7 @@ jobs:
     with:
       release-type: unstable
       app-name: portaliq
+      node-version: "24"
     secrets: inherit
 
   beta:
@@ -42,6 +68,7 @@ jobs:
     with:
       release-type: beta
       app-name: portaliq
+      node-version: "24"
     secrets: inherit
 
   stable:
@@ -50,4 +77,5 @@ jobs:
     with:
       release-type: stable
       app-name: portaliq
+      node-version: "24"
     secrets: inherit

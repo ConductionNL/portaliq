@@ -344,4 +344,84 @@ class PortalThemeResolverTest extends TestCase {
 	}//end testTheDarkVariantIsDeliberatelyNotResolved()
 
 
+
+
+	/**
+	 * A set with a logo yields the path relative to the THEME APP.
+	 *
+	 * WHY THIS MATTERS ENOUGH TO TEST: token sets declare
+	 * `--nldesign-logo-url` relative to the token file, and a browser resolves
+	 * a relative `url()` inside a custom property against the stylesheet
+	 * CONSUMING it — this app's bundled CSS. Measured on a live rig, the header
+	 * requested `/custom_apps/portaliq/img/logos/opencatalogi.svg` and rendered
+	 * no logo at all, while every token in the chain held the right value.
+	 *
+	 * So the caller needs a path it can turn into an absolute URL, and that is
+	 * what this returns.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
+	 */
+	public function testALogoResolvesToAPathInTheThemeApp(): void {
+		mkdir($this->themeRoot . '/img/logos', 0o777, true);
+		file_put_contents($this->themeRoot . '/img/logos/vng.svg', '<svg/>');
+
+		$this->assertSame('img/logos/vng.svg', $this->resolver()->logoFileFor(theme: 'vng'));
+
+	}//end testALogoResolvesToAPathInTheThemeApp()
+
+
+	/**
+	 * A catalogued set with NO logo file yields null, not a broken path.
+	 *
+	 * Emitting a path that 404s is indistinguishable on screen from having no
+	 * logo, and moves the failure from somewhere checkable to somewhere only
+	 * the browser sees.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
+	 */
+	public function testASetWithoutALogoFileResolvesToNull(): void {
+		$this->assertNull($this->resolver()->logoFileFor(theme: 'venray'));
+
+	}//end testASetWithoutALogoFileResolvesToNull()
+
+
+	/**
+	 * A theme that does not resolve has no logo either.
+	 *
+	 * The logo must never outlive the theme: a portal rendering unthemed while
+	 * still wearing another brand's mark is the confusing half-state the
+	 * resolver's null-rather-than-default posture exists to avoid.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
+	 */
+	public function testAnUnresolvableThemeHasNoLogo(): void {
+		mkdir($this->themeRoot . '/img/logos', 0o777, true);
+		// The file exists, but `orphan` is not in the catalogue — so the theme
+		// does not resolve and neither may its logo.
+		file_put_contents($this->themeRoot . '/img/logos/orphan.svg', '<svg/>');
+
+		$this->assertNull($this->resolver()->logoFileFor(theme: 'orphan'));
+
+	}//end testAnUnresolvableThemeHasNoLogo()
+
+
+	/**
+	 * A traversal attempt is refused for the logo path too.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
+	 */
+	public function testATraversalAttemptIsRefusedForTheLogo(): void {
+		$this->assertNull($this->resolver()->logoFileFor(theme: '../../etc/passwd'));
+
+	}//end testATraversalAttemptIsRefusedForTheLogo()
+
+
 }//end class

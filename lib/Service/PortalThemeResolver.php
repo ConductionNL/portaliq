@@ -114,6 +114,46 @@ class PortalThemeResolver {
 
 
 	/**
+	 * The theme app path of a set's logo, relative to that app, or null.
+	 *
+	 * WHY A CALLER NEEDS THIS AT ALL: token sets declare
+	 * `--nldesign-logo-url` as a path relative to the token file, which is
+	 * correct there and wrong once the token is consumed by a rule in a
+	 * DIFFERENT app — a browser resolves a relative `url()` inside a custom
+	 * property against the stylesheet doing the consuming. The portal's header
+	 * therefore requested the logo from Portaliq's own directory and rendered
+	 * nothing, with every token holding the right value.
+	 *
+	 * Existence is checked here rather than assumed, and a missing file yields
+	 * null so the page renders with NO logo instead of a broken image or
+	 * another brand's mark — the same posture `stylesheetFor()` takes.
+	 *
+	 * @param string $theme The portal's theme reference, e.g. 'opencatalogi'.
+	 *
+	 * @return string|null The path relative to the theme app, or null.
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
+	 */
+	public function logoFileFor(string $theme): ?string {
+		if ($this->stylesheetFor(theme: $theme) === null) {
+			return null;
+		}
+
+		$root = $this->themeAppPath();
+		if ($root === null) {
+			return null;
+		}
+
+		$relative = 'img/logos/' . $theme . '.svg';
+		if (is_file($root . '/' . $relative) === false) {
+			return null;
+		}
+
+		return $relative;
+	}//end logoFileFor()
+
+
+	/**
 	 * Whether the theme app's catalogue offers this set.
 	 *
 	 * Reads `token-sets.json` from disk rather than calling the app's
