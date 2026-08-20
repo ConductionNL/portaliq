@@ -150,109 +150,116 @@
 					v-if="!error"
 					class="pq-search__list"
 					data-testid="federated-search-results">
+					<!--
+						THE REFERENCE'S OWN CARD MARKUP, class names included.
+
+						`nlds-app.css` here is the same stylesheet opencatalogi.nl
+						serves, so emitting the structure it styles makes the card
+						match BY CONSTRUCTION instead of by me re-deriving padding,
+						radius and gaps from screenshots and getting them close.
+
+						Re-derivation is what the first attempt did, and it produced a
+						borderless card with 16px spacing against the reference's white
+						8px-radius card with a 24px inner and a 12px column gap.
+					-->
 					<li
 						v-for="result in results"
 						:key="result.key"
-						class="utrecht-card pq-search__result"
+						class="ac-card ac-card--search-result ac-card--padding-md pq-search__result"
 						data-testid="federated-search-result">
-						<!--
-							NOT `utrecht-card__heading`, and not `heading-3`.
+						<div class="ac-card__content">
+							<!--
+								THE TITLE IS TEXT, NOT A LINK, following the reference:
+								measured there as a `<span>` at rgb(0, 0, 0) weight 400,
+								no underline, with the arrow below as the only link.
+								Rendering the title as a link too gave a green underlined
+								heading matching nothing — and a link styled exactly like
+								body text has no affordance anyway.
+							-->
+							<h3 class="utrecht-heading-3 pq-search__result-title">
+								<span>{{ result.title }}</span>
+							</h3>
 
-							`.utrecht-card__heading` carries `order: 2` in the
-							bundled card CSS — that component puts its label
-							above its title by design — so a search result
-							rendered its summary and source ABOVE its own title.
-							Measured: heading order 2 inside a
-							`flex-direction: column` card.
-
-							`heading-4` for size while the element stays an
-							`h3`: the document outline needs the level, and the
-							RODS 3xl step is 40px, which is a page title rather
-							than a row in a list of eleven.
-						-->
-						<!--
-							THE TITLE IS TEXT, NOT A LINK, and that follows the
-							reference rather than diverging from it.
-
-							Measured on opencatalogi.nl: the card heading is a
-							`<span>` at rgb(0, 0, 0), weight 400, with no
-							underline; the only link in the card is
-							"Lees meer over <title>". Rendering the title as a
-							link as well produced a green underlined heading
-							that matched nothing.
-
-							It is also the better accessible shape: a link
-							styled to look exactly like body text has no
-							affordance, whereas "Lees meer over X" announces
-							both what it does and which publication it does it
-							to.
-						-->
-						<h3 class="utrecht-heading-3 pq-search__result-title">
-							<span>{{ result.title }}</span>
-						</h3>
-
-						<p v-if="result.summary" class="utrecht-paragraph">
-							{{ result.summary }}
-						</p>
-
-						<!--
-							THE METADATA ROW, as on the reference: small bold
-							items on the left, "Lees meer over X" on the right.
-
-							THE SOURCE IS ONE OF THOSE ITEMS, and it is the only
-							place federation is visible to a visitor. A federated
-							list that does not say where a row came from is
-							indistinguishable from a local one, which makes the
-							feature unverifiable from the page — including for
-							the person checking whether it works at all.
-						-->
-						<div class="pq-search__meta">
-							<div class="pq-search__meta-items">
-								<p
-									v-if="result.date"
-									class="utrecht-paragraph utrecht-paragraph--small pq-search__meta-item">
-									<small>{{ result.date }}</small>
-								</p>
-
-								<!--
-									Rendered only when a type is actually
-									known. This envelope returns `@self.schema`
-									as a numeric id and no title, so without an
-									authored `typeLabel` the chip would read
-									"17".
-								-->
-								<p
-									v-if="result.type || typeLabel"
-									class="utrecht-paragraph utrecht-paragraph--small pq-search__meta-item">
-									<small>{{ result.type || typeLabel }}</small>
-								</p>
-
-								<p
-									class="utrecht-paragraph utrecht-paragraph--small pq-search__meta-item"
-									data-testid="federated-search-source">
-									<small>
-										<span class="sr-only"
-											>{{ sourceLabel }}:
-										</span>
-										{{ result.directory }}
-									</small>
-								</p>
-							</div>
+							<p v-if="result.summary" class="utrecht-paragraph">
+								{{ result.summary }}
+							</p>
 
 							<!--
-								The accessible name names the publication, so a
-								screen-reader user listing links hears eleven
-								distinct ones instead of eleven "Lees meer".
+								THE METADATA ROW: small bold items separated by a dot,
+								and the arrow pushed to the right.
+
+								THE SOURCE IS ONE OF THOSE ITEMS, and it is the only place
+								federation is visible to a visitor. A federated list that
+								does not say where a row came from is indistinguishable
+								from a local one.
 							-->
-							<a
-								class="utrecht-link pq-search__more"
-								:href="detailHref(result)"
-								@click.prevent="openDetail(result)">
-								{{ moreLabel
-								}}<span class="sr-only">
-									over {{ result.title }}</span
-								>
-							</a>
+							<div
+								class="ac-flex ac-flex--justify-content-between meta">
+								<div
+									class="ac-flex ac-flex--spacing-sm ac-flex--align-items-center">
+									<template
+										v-for="(item, index) in metaItems(result)"
+										:key="item.key">
+										<!-- The reference separates items with an 8px
+										     circle, decorative and hidden from assistive
+										     tech. -->
+										<svg
+											v-if="index > 0"
+											width="8"
+											height="9"
+											viewBox="0 0 8 9"
+											fill="none"
+											aria-hidden="true">
+											<circle
+												cx="4"
+												cy="4.5"
+												r="4"
+												fill="#B9E4FC" />
+										</svg>
+										<p
+											class="utrecht-paragraph utrecht-paragraph--small pq-search__meta-item"
+											:data-testid="item.testid">
+											<small class="utrecht-paragraph__small">
+												<span
+													v-if="item.prefix"
+													class="sr-only"
+													>{{ item.prefix }}: </span
+												>{{ item.text }}
+											</small>
+										</p>
+									</template>
+								</div>
+
+								<!--
+									AN ARROW, with the words for assistive tech only —
+									exactly the reference's shape. The accessible name
+									names the publication, so a screen-reader user listing
+									links hears eleven distinct ones rather than eleven
+									"Lees meer".
+								-->
+								<a
+									class="utrecht-link utrecht-link--html-a pq-search__more"
+									:href="detailHref(result)"
+									data-testid="federated-search-result-link"
+									@click.prevent="openDetail(result)">
+									<span class="sr-only"
+										>{{ moreLabel }} over
+										{{ result.title }}</span
+									>
+									<svg
+										width="16"
+										height="14"
+										viewBox="0 0 16 14"
+										fill="none"
+										aria-hidden="true">
+										<path
+											fill="currentColor"
+											fill-rule="evenodd"
+											clip-rule="evenodd"
+											d="M8.29289 0.292893C8.68342 -0.0976311 9.31658 -0.0976311 9.70711 0.292893L15.7071 6.29289C16.0976 6.68342 16.0976 7.31658 15.7071 7.70711L9.70711 13.7071C9.31658 14.0976 8.68342 14.0976 8.29289 13.7071C7.90237 13.3166 7.90237 12.6834 8.29289 12.2929L12.5858 8H1C0.447715 8 0 7.55228 0 7C0 6.44772 0.447715 6 1 6H12.5858L8.29289 1.70711C7.90237 1.31658 7.90237 0.683417 8.29289 0.292893Z" />
+									</svg>
+								</a>
+							</div>
 						</div>
 					</li>
 				</ol>
@@ -816,6 +823,53 @@ export default {
 		},
 
 		/**
+		 * The small bold items in a card's metadata row.
+		 *
+		 * Assembled here rather than in the template so the DOT SEPARATOR can
+		 * be placed between items rather than after each one — a trailing dot
+		 * on the last item is the version of this that looks fine until you
+		 * notice it.
+		 *
+		 * The type is included only when one is actually known: this envelope
+		 * returns `@self.schema` as a numeric id and no title, so an
+		 * unconditional chip would read "17".
+		 *
+		 * @param {object} result A view-model row.
+		 * @return {Array<object>} `{key, text, prefix, testid}` items.
+		 */
+		metaItems(result) {
+			const items = []
+
+			if (result.date) {
+				items.push({
+					key: 'date',
+					text: result.date,
+					prefix: '',
+					testid: 'federated-search-date',
+				})
+			}
+
+			const type = result.type || this.typeLabel
+			if (type) {
+				items.push({
+					key: 'type',
+					text: type,
+					prefix: '',
+					testid: 'federated-search-type',
+				})
+			}
+
+			items.push({
+				key: 'source',
+				text: result.directory,
+				prefix: this.sourceLabel,
+				testid: 'federated-search-source',
+			})
+
+			return items
+		},
+
+		/**
 		 * Re-order the results.
 		 *
 		 * @param {string} value A `field:DIRECTION` pair, or '' for the default.
@@ -980,21 +1034,6 @@ export default {
 	gap: 8px;
 }
 
-.pq-search__meta {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 16px;
-	flex-wrap: wrap;
-}
-
-.pq-search__meta-items {
-	display: flex;
-	align-items: center;
-	gap: 16px;
-	flex-wrap: wrap;
-}
-
 .pq-search__meta-item {
 	/* Measured on the reference: 12px, weight 700, rgb(0, 56, 101). The colour
 	   comes from the token so a re-theme moves it. */
@@ -1016,20 +1055,18 @@ export default {
 }
 
 .pq-search__result {
-	/* The card family is themed by the token set; only spacing between cards
-	   belongs to this block. */
+	/* Spacing BETWEEN cards is all this block owns — padding, radius and the
+	   inner column gap come from `.ac-card`, which is the same rule the
+	   reference is styled by. */
 	margin-block-end: 16px;
-	padding: 16px;
 }
 
 .pq-search__result-title {
-	/* The card lays its children out with `order`, so the title states its own
-	   position rather than relying on source order. */
-	order: 0;
-	margin-block: 0 4px;
-	/* Measured on the reference: rgb(0, 0, 0), weight 400. The heading token
-	   sets a heavier weight for page titles, which a list row is not. */
-	color: var(--utrecht-card-heading-color, #000000);
+	/* Measured on the reference: rgb(0, 0, 0), weight 400, margin 0 and
+	   `flex: 1 1 0` so the title takes the row and the meta sits under it. */
+	margin: 0;
+	flex: 1 1 0;
+	color: #000000;
 	font-weight: 400;
 }
 
