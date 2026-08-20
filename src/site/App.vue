@@ -118,8 +118,48 @@
 				</div>
 			</div>
 
+			<!--
+				THE BREADCRUMB, matching the reference's `Kruimelpad` landmark.
+
+				It renders only BELOW the home route: a trail whose only entry
+				is the page you are on tells the visitor nothing and adds a
+				landmark for a screen reader to step through.
+
+				The last crumb is the current page and is NOT a link — an
+				anchor to where you already are is a control that does nothing.
+			-->
 			<div class="ac-header__navigation-breadcrumb">
-				<div class="container" />
+				<div class="container">
+					<nav
+						v-if="breadcrumbs.length > 1"
+						class="ac-breadcrumb"
+						aria-label="Kruimelpad"
+						data-testid="site-breadcrumb">
+						<ul class="ac-breadcrumb__list">
+							<li
+								v-for="(crumb, index) in breadcrumbs"
+								:key="crumb.route"
+								class="ac-breadcrumb__item">
+								<a
+									v-if="index < breadcrumbs.length - 1"
+									class="utrecht-link"
+									:href="hrefForRoute(crumb.route)"
+									@click.prevent="go(crumb.route)">
+									{{ crumb.label }}
+								</a>
+								<span v-else aria-current="page">{{
+									crumb.label
+								}}</span>
+								<span
+									v-if="index < breadcrumbs.length - 1"
+									class="ac-breadcrumb__separator"
+									aria-hidden="true">
+									›
+								</span>
+							</li>
+						</ul>
+					</nav>
+				</div>
 			</div>
 		</header>
 
@@ -224,7 +264,10 @@
 						v-if="page.body && page.body.type === 'grid'"
 						:widgets="page.body.widgets || []"
 						:glossary="glossary"
-						:contributions="contributions" />
+						:contributions="contributions"
+						:routeParam="routeParam"
+						@navigate="go"
+						@search="goSearch" />
 
 					<div v-else class="container">
 						<MarkdownBlock
@@ -428,6 +471,16 @@ export default {
 			session: null,
 			page: null,
 			route: '/',
+			// The trailing segment of a route that resolved to its PARENT
+			// page — the publication id in `/publicatie/<id>`. Empty for an
+			// ordinary page. See `loadRoute`.
+			routeParam: '',
+			// Where the hero's search box sends a term. A constant rather than
+			// a portal field for now: the seeded portal puts search at
+			// `/zoeken`, matching the reference, and a portal that moves it
+			// wants a `searchRoute` on the portal object rather than a guess
+			// here.
+			searchRoute: '/zoeken',
 			loading: true,
 			error: null,
 		}
@@ -472,6 +525,43 @@ export default {
 		 *
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
 		 */
+		/**
+		 * The breadcrumb trail for the current route.
+		 *
+		 * Built from the route's own segments, with the CURRENT page's title
+		 * used for the last crumb once the page has loaded. Intermediate
+		 * segments are humanised from the path rather than looked up — an
+		 * ancestor need not be a page at all (`/publicatie` is a page,
+		 * `/publicatie/<id>` is a subject), so asking the CMS for a title per
+		 * ancestor would 404 on the common case.
+		 *
+		 * @return {Array<object>} `{route, label}` crumbs, home first.
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
+		 */
+		breadcrumbs() {
+			const crumbs = [{ route: '/', label: 'Home' }]
+			const segments = String(this.route || '/')
+				.split('/')
+				.filter(Boolean)
+
+			segments.forEach((segment, index) => {
+				const route = `/${segments.slice(0, index + 1).join('/')}`
+				const isLast = index === segments.length - 1
+
+				// The id segment of `/publicatie/<id>` is not a word; the
+				// page's own title is what a visitor recognises.
+				let label = segment.charAt(0).toUpperCase() + segment.slice(1)
+				if (isLast === true && this.page && this.page.title) {
+					label = this.page.title
+				}
+
+				crumbs.push({ route, label })
+			})
+
+			return crumbs
+		},
+
 		bodyIsGrid() {
 			return (
 				(this.page && this.page.body && this.page.body.type === 'grid')
@@ -485,7 +575,16 @@ export default {
 				return false
 			}
 
-			return (body.widgets || []).some((w) => w.widgetKey === 'hero')
+			// A block that renders its SUBJECT's name owns the page heading.
+			//
+			// `hero` states the page's own title. `publicationDetail` states
+			// the publication's, which is the more specific and more useful
+			// one — so a detail page printed "Publicatie" as an h1 and then
+			// "Subsidieregister Rotterdam" as another, two page titles where
+			// the reference has one, and the generic one first.
+			return (body.widgets || []).some(
+				(w) => w.widgetKey === 'hero' || w.widgetKey === 'publicationDetail',
+			)
 		},
 
 		/**
@@ -548,12 +647,25 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-content-api-must-be-sufficient-without-the-built-in-renderer
 		 */
 		subFooterMenu() {
-			const footers = this.menus.filter((menu) => (menu.position || 0) !== 0)
-			if (footers.length < 2) {
+			// POSITION IS NOW A CONTRACT, not a comparison: 0 is the header, 1
+			// is a footer column, 2 or higher is the legal strip.
+			//
+			// It used to be "the highest position, when there are at least
+			// two" — which meant a portal could not have a legal strip WITHOUT
+			// also having a footer column. The reference has exactly that
+			// shape: one nav, in the strip, and a band above carrying only the
+			// title and tagline. Reproducing it required inventing a footer
+			// column the reference does not have.
+			//
+			// A portal with menus at 1 and 2 is unaffected; only a portal
+			// whose single menu sits at 2 or above moves, and moving it is the
+			// point.
+			const strip = this.menus.filter((menu) => (menu.position || 0) >= 2)
+			if (strip.length === 0) {
 				return null
 			}
 
-			return footers.reduce((highest, menu) =>
+			return strip.reduce((highest, menu) =>
 				(menu.position || 0) > (highest.position || 0) ? menu : highest,
 			)
 		},
@@ -746,9 +858,38 @@ export default {
 		async loadRoute(route) {
 			this.loading = true
 			this.error = null
+			this.routeParam = ''
 			try {
 				this.page = await fetchPage(route, this.portalSlug)
 			} catch (error) {
+				// A ROUTE CAN ADDRESS A THING RATHER THAN A PAGE.
+				//
+				// `/publicatie/8f21…` is one page and thousands of subjects; no
+				// CMS holds a page per publication. So an unresolved route
+				// falls back to its PARENT and hands the trailing segment to
+				// the page as `routeParam`, which is how `/publicatie/<id>`
+				// resolves to the `/publicatie` page rendering that id.
+				//
+				// Only ONE level, and only on a 404. Walking all the way up
+				// would make `/does/not/exist` render the home page — a
+				// mistyped URL answering with content is worse than answering
+				// with "not found", because nothing tells the visitor they are
+				// in the wrong place.
+				const parent = this.parentRoute(route)
+				if (this.isNotFound(error) === true && parent !== null) {
+					try {
+						this.page = await fetchPage(parent, this.portalSlug)
+						this.routeParam = route.slice(parent.length + 1)
+						this.loading = false
+						return
+					} catch (parentError) {
+						this.error = parentError
+						this.page = null
+						this.loading = false
+						return
+					}
+				}
+
 				this.page = null
 				// A 404 is information, not a fault — an unknown route and an
 				// unpublished page are answered identically by the API on
@@ -757,6 +898,41 @@ export default {
 			} finally {
 				this.loading = false
 			}
+		},
+
+		/**
+		 * The parent of a multi-segment route, or null when there is none.
+		 *
+		 * @param {string} route The in-site route.
+		 * @return {string|null} The parent route.
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
+		 */
+		parentRoute(route) {
+			const segments = String(route || '')
+				.split('/')
+				.filter(Boolean)
+
+			if (segments.length < 2) {
+				return null
+			}
+
+			return `/${segments.slice(0, -1).join('/')}`
+		},
+
+		/**
+		 * Whether a load error was a 404 rather than a real failure.
+		 *
+		 * Checked explicitly: retrying the parent on a 500 would turn a broken
+		 * backend into a page that renders, which hides the outage.
+		 *
+		 * @param {object} error The rejection from fetchPage.
+		 * @return {boolean} True when the route simply does not exist.
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
+		 */
+		isNotFound(error) {
+			return (error && error.status) === 404
 		},
 
 		/**
@@ -819,6 +995,53 @@ export default {
 		 *
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
 		 */
+		/**
+		 * A real, shareable href for an in-site route.
+		 *
+		 * The breadcrumb intercepts the click, but the anchor still carries a
+		 * working URL so middle-click, "open in new tab" and a page whose
+		 * bundle failed to load all behave.
+		 *
+		 * @param {string} route The in-site route.
+		 * @return {string} The href.
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
+		 */
+		/**
+		 * Take a term typed into the home page's hero straight to the results.
+		 *
+		 * The term travels in `_search`, which is the parameter the search
+		 * block reads on mount — so the landing page's box and the search
+		 * page's box produce the same URL, and that URL is shareable.
+		 *
+		 * @param {string} term The submitted term.
+		 * @return {void}
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
+		 */
+		goSearch(term) {
+			const url = new URL(window.location.href)
+			url.search = ''
+			url.searchParams.set('route', this.searchRoute)
+			if (term) {
+				url.searchParams.set('_search', term)
+			}
+
+			this.route = this.searchRoute
+			window.history.pushState({}, '', url)
+			this.loadRoute(this.searchRoute)
+		},
+
+		hrefForRoute(route) {
+			const url = new URL(window.location.href)
+			url.search = ''
+			if (route && route !== '/') {
+				url.searchParams.set('route', route)
+			}
+
+			return url.toString()
+		},
+
 		go(link) {
 			if (!link || !link.startsWith('/')) {
 				return
@@ -1058,5 +1281,28 @@ dt {
 
 dd {
 	margin: 0.25rem 0 0;
+}
+
+/*
+ * THE BREADCRUMB IS ONE LINE.
+ *
+ * `nlds-app.css` carries no rule for `.ac-breadcrumb`, so its list items were
+ * block-level and the separator dropped onto a line of its own — a three-line
+ * trail where the reference has one.
+ */
+.ac-breadcrumb__list {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.ac-breadcrumb__item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
 }
 </style>

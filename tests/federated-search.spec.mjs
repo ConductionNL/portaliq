@@ -29,7 +29,9 @@
 
 import {
 	buildRequestUrl,
+	formatDutchDate,
 	pageWindow,
+	paginationItems,
 	toBuckets,
 	toResult,
 } from '../src/site/lib/federatedSearch.js'
@@ -214,6 +216,9 @@ assertEqual(
 		summary: 'Een zaakgericht werken component',
 		href: 'https://example.org/gzac',
 		directory: 'opencatalogi.nl',
+		id: 'abc',
+		date: '',
+		type: '',
 	},
 )
 
@@ -240,7 +245,16 @@ assertEqual(
 assertEqual(
 	'degrades an almost-empty row to a titled entry instead of throwing',
 	toResult({}),
-	{ key: '', title: 'Zonder titel', summary: '', href: '', directory: 'local' },
+	{
+		key: '',
+		title: 'Zonder titel',
+		summary: '',
+		href: '',
+		directory: 'local',
+		id: '',
+		date: '',
+		type: '',
+	},
 )
 
 assertEqual(
@@ -264,6 +278,96 @@ assertEqual(
 assertEqual('does not run below page 1', pageWindow(1, 356), [1, 2, 3])
 assertEqual('does not run past the last page', pageWindow(356, 356), [354, 355, 356])
 assertEqual('collapses to a single page', pageWindow(1, 1), [1])
+
+console.log('sorting')
+
+assertTrue(
+	'omits _order entirely when no sort is chosen',
+	new URL(buildRequestUrl(BASE)).search.includes('_order') === false,
+)
+
+assertEqual(
+	'maps field:DIRECTION onto _order[field]',
+	new URL(
+		buildRequestUrl({ ...BASE, sort: 'publicationDate:DESC' }),
+	).searchParams.get('_order[publicationDate]'),
+	'DESC',
+)
+
+assertTrue(
+	'ignores a malformed sort rather than sending half of it',
+	new URL(buildRequestUrl({ ...BASE, sort: 'publicationDate' })).search.includes(
+		'_order',
+	) === false,
+)
+
+console.log('paginationItems')
+
+// MEASURED on opencatalogi.nl at page 1 of 36: `1 2 3 4 5 … 36`.
+assertEqual('matches the reference at page 1 of 36', paginationItems(1, 36), [
+	1,
+	2,
+	3,
+	4,
+	5,
+	'gap',
+	36,
+])
+assertEqual(
+	'windows around a middle page, with a gap either side',
+	paginationItems(18, 36),
+	[1, 'gap', 17, 18, 19, 'gap', 36],
+)
+assertEqual('reaches the last page', paginationItems(36, 36), [1, 'gap', 35, 36])
+assertEqual('collapses to one page', paginationItems(1, 1), [1])
+
+// A gap marker replacing ONE page would be longer than the page it hides.
+assertEqual(
+	'never emits a gap for a single skipped page',
+	paginationItems(1, 6),
+	[1, 2, 3, 4, 5, 6],
+)
+
+console.log('formatDutchDate')
+
+assertEqual(
+	'formats the way the reference does',
+	formatDutchDate('2026-01-30T00:00:00+00:00'),
+	'30 januari 2026',
+)
+assertEqual(
+	'formats a February date',
+	formatDutchDate('2026-02-18T12:00:00+00:00'),
+	'18 februari 2026',
+)
+assertEqual('survives an empty value', formatDutchDate(''), '')
+assertEqual('survives a nonsense value', formatDutchDate('not-a-date'), '')
+
+console.log('toResult — detail id, date and type')
+
+assertEqual(
+	'carries the id the detail route addresses',
+	toResult({ name: 'x', '@self': { id: 'abc-123' } }).id,
+	'abc-123',
+)
+assertEqual(
+	'formats publicationDate for the card',
+	toResult({ name: 'x', publicationDate: '2026-01-30T00:00:00+00:00' }).date,
+	'30 januari 2026',
+)
+
+// THE CASE THAT WOULD PUT "17" ON EVERY CARD. `@self.schema` is a numeric id
+// and is NOT a type name; an empty type means the chip is omitted.
+assertEqual(
+	'does not mistake the numeric schema id for a type name',
+	toResult({ name: 'x', '@self': { schema: 17 } }).type,
+	'',
+)
+assertEqual(
+	'uses a schema title when the instance supplies one',
+	toResult({ name: 'x', '@self': { schemaTitle: 'Publiccode' } }).type,
+	'Publiccode',
+)
 
 if (failures > 0) {
 	console.error(`\n${failures} assertion(s) failed`)

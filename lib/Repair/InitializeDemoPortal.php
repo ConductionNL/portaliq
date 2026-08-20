@@ -97,7 +97,7 @@ class InitializeDemoPortal implements IRepairStep {
 	 * nldesign is absent the portal renders unthemed rather than wrong, which
 	 * is that resolver's deliberate posture.
 	 */
-	private const THEME = 'rotterdam';
+	private const THEME = 'opencatalogi';
 
 	/**
 	 * The seeded portal's slug.
@@ -194,7 +194,8 @@ class InitializeDemoPortal implements IRepairStep {
 				// decision on a throwaway box; an app-store install must not
 				// make that decision for somebody's server.
 				//
-				// Until then the portal is reachable by slug: /site?portal=demo
+				// Until then the portal is reachable by slug, at
+				// /site?portal=demo.
 				'domains' => [],
 				'locales' => ['nl'],
 				// PUBLIC ONLY. Declaring a sign-in mode here would render a
@@ -220,12 +221,126 @@ class InitializeDemoPortal implements IRepairStep {
 			return;
 		}
 
+		// ---- the landing page ------------------------------------------
+		//
+		// A hero band carrying the prompt and the search box, then a section
+		// of prose — the shape opencatalogi.nl's home page has. Search lives
+		// at `/zoeken`, so the hero's box navigates there rather than
+		// searching in place.
+		$home = $this->writer->createAnonymousObject(
+			register: PortalResolver::REGISTER,
+			schema: 'page',
+			data: [
+				'title' => 'Home',
+				'route' => '/',
+				'status' => 'published',
+				'locale' => 'nl',
+				'summary' => 'Één plek voor alle publicaties.',
+				'portal' => self::SLUG,
+				'body' => [
+					'type' => 'grid',
+					'widgets' => [
+						[
+							'id' => 'demo-hero',
+							'widgetKey' => 'hero',
+							'gridX' => 0,
+							'gridY' => 0,
+							'gridWidth' => 12,
+							'gridHeight' => 4,
+							'props' => [
+								'title' => 'Waar bent u naar op zoek?',
+								'search' => true,
+								'submitLabel' => 'Zoeken',
+								'placeholder' => 'Zoek op naam of trefwoord',
+							],
+						],
+						[
+							'id' => 'demo-home-intro',
+							'widgetKey' => 'markdown',
+							'gridX' => 0,
+							'gridY' => 4,
+							'gridWidth' => 12,
+							'gridHeight' => 4,
+							'props' => [
+								'markdown' => "## Onderwerpen\n\n"
+									. 'Bekijk het overzicht van onderwerpen die relevant zijn voor '
+									. 'gemeenten en leveranciers binnen het domein van gemeentelijke ICT.',
+							],
+						],
+					],
+				],
+			]
+		);
+
+		if ($home === null) {
+			$output->warning('Demo portal created, but its home page was not.');
+			$this->logger->warning('[portaliq] demo home page not provisioned: page write returned null');
+			return;
+		}
+
+		// ---- the detail page -------------------------------------------
+		//
+		// ONE page for every publication. `/publicatie/<id>` resolves to this
+		// page via the renderer's parent-route fallback, which hands the
+		// trailing segment down as the subject id.
+		$this->writer->createAnonymousObject(
+			register: PortalResolver::REGISTER,
+			schema: 'page',
+			data: [
+				'title' => 'Publicatie',
+				'route' => '/publicatie',
+				'status' => 'published',
+				'locale' => 'nl',
+				'summary' => 'Details van één publicatie.',
+				'portal' => self::SLUG,
+				'body' => [
+					'type' => 'grid',
+					'widgets' => [
+						[
+							'id' => 'demo-publication-detail',
+							'widgetKey' => 'publicationDetail',
+							'gridX' => 0,
+							'gridY' => 0,
+							'gridWidth' => 12,
+							'gridHeight' => 8,
+							// The subject id is supplied by the host from the
+							// route and is deliberately NOT settable here — a
+							// placement that pinned it would make every
+							// publication URL render the same publication.
+							'props' => [
+								'endpoint' => '/index.php/apps/opencatalogi/api/federation/publications',
+							],
+						],
+					],
+				],
+			]
+		);
+
+		// ---- the legal strip -------------------------------------------
+		//
+		// Position 2 is the sub-footer by convention (0 header, 1 footer
+		// column, 2+ legal strip). The reference carries exactly these three.
+		$this->writer->createAnonymousObject(
+			register: PortalResolver::REGISTER,
+			schema: 'menu',
+			data: [
+				'title' => 'Sub footer menu 1',
+				'position' => 2,
+				'portal' => self::SLUG,
+				'items' => [
+					['name' => 'Cookies', 'link' => '/cookies'],
+					['name' => 'Privacy', 'link' => '/privacy'],
+					['name' => 'Disclaimer', 'link' => '/disclaimer'],
+				],
+			]
+		);
+
 		$page = $this->writer->createAnonymousObject(
 			register: PortalResolver::REGISTER,
 			schema: 'page',
 			data: [
 				'title' => 'Zoeken',
-				'route' => '/',
+				'route' => '/zoeken',
 				'status' => 'published',
 				'locale' => 'nl',
 				'summary' => 'Doorzoek publicaties uit alle aangesloten catalogi.',

@@ -215,6 +215,7 @@ class PortalPageController extends Controller {
 				// contract withholds; it only decides which stylesheet tag to
 				// emit.
 				'themeStylesheet' => $this->siteThemeStylesheet(),
+				'themeLogoUrl' => $this->siteThemeLogoUrl(),
 				// The NLDS token set this app ships for the serving portal's
 				// theme, when it has one. Separate from the line above because
 				// they answer different questions: that one is "which theme
@@ -336,6 +337,53 @@ class PortalPageController extends Controller {
 			theme: (string)($portal['theme'] ?? '')
 		);
 	}//end siteThemeStylesheet()
+
+
+	/**
+	 * An ABSOLUTE URL for the serving portal's theme logo, or ''.
+	 *
+	 * Token sets declare `--nldesign-logo-url` as a path relative to the token
+	 * file. That is correct there and wrong by the time it is used: the rule
+	 * consuming the token lives in THIS app's bundled NL Design System CSS,
+	 * and a browser resolves a relative `url()` inside a custom property
+	 * against the stylesheet doing the consuming.
+	 *
+	 * Measured on the demo rig: the header requested
+	 * `/custom_apps/portaliq/img/logos/opencatalogi.svg` — this app's
+	 * directory — and the portal rendered with no logo, while every token
+	 * involved held exactly the right value. Nothing about the tokens looked
+	 * wrong, because nothing about them was.
+	 *
+	 * So the resolution happens here, where the theme app's real path is
+	 * known, and the template emits the result after the token stylesheets.
+	 *
+	 * @return string An absolute URL, or '' when there is no logo to serve.
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
+	 */
+	private function siteThemeLogoUrl(): string {
+		$stylesheet = $this->siteThemeStylesheet();
+		if ($stylesheet === '') {
+			return '';
+		}
+
+		// `tokens/<theme>` → `<theme>`.
+		$theme = basename($stylesheet);
+		if ($theme === '') {
+			return '';
+		}
+
+		try {
+			$relative = $this->themeResolver->logoFileFor(theme: $theme);
+			if ($relative === null) {
+				return '';
+			}
+
+			return $this->urlGenerator->linkTo(PortalThemeResolver::THEME_APP, $relative);
+		} catch (\Throwable) {
+			return '';
+		}
+	}//end siteThemeLogoUrl()
 
 
 	/**

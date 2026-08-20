@@ -114,6 +114,21 @@ if ($nldsStylesheet !== '') {
     $tokenStylesheets[] = $asset($appId, 'css/' . $nldsStylesheet . '.css');
 }
 
+// THE LOGO URL HAS TO BE ABSOLUTE, and the reason is a CSS resolution rule
+// that only bites once a token crosses an app boundary.
+//
+// Token sets declare `--nldesign-logo-url: url('../../img/logos/x.svg')`,
+// which is correct relative to the token file. But the rule that CONSUMES it
+// lives in this app's `nlds-app.css`, and the browser resolves a relative
+// `url()` inside a custom property against the stylesheet doing the consuming.
+// Measured: the header requested
+//   /custom_apps/portaliq/img/logos/opencatalogi.svg
+// — this app's directory, where no such file exists — and the portal rendered
+// with NO logo at all while every token involved held exactly the right value.
+//
+// So the app that knows where the theme app lives resolves it, once, here.
+$themeLogoUrl = (string)($_['themeLogoUrl'] ?? '');
+
 // NO DARK LAYER IS LINKED HERE, AND THAT IS A MEASURED DECISION.
 //
 // The theme app generates `css/tokens/dark/{set}.css` and linking it is one
@@ -221,6 +236,14 @@ if ($favicon === '') {
     <link rel="icon" href="<?php p($favicon); ?>">
     <?php foreach ($stylesheets as $href) { ?>
     <link rel="stylesheet" href="<?php p($href); ?>">
+    <?php } ?>
+    <?php if ($themeLogoUrl !== '') { ?>
+    <!--
+        Emitted AFTER the token stylesheets so it wins, and inline because the
+        value is only knowable at request time — see the note where
+        $themeLogoUrl is resolved.
+    -->
+    <style>:root{--nldesign-logo-url:url("<?php p($themeLogoUrl); ?>")}</style>
     <?php } ?>
 </head>
 <body>

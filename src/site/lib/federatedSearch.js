@@ -54,6 +54,21 @@ export function buildRequestUrl(state) {
 		url.searchParams.append(state.facetField, value)
 	}
 
+	// `_order[<field>]=ASC|DESC`. Verified against the live endpoint on
+	// 2026-08-20: title ASC/DESC and publicationDate ASC/DESC each return a
+	// different first row, so the control changes something.
+	//
+	// NO "most relevant" OPTION. The reference portal offers one; nothing in
+	// this API implements relevance ordering, and a sort option that silently
+	// does nothing is the same class of defect as the directory filter that
+	// answers `total: 0`.
+	if (state.sort) {
+		const [field, direction] = String(state.sort).split(':')
+		if (field && direction) {
+			url.searchParams.set(`_order[${field}]`, direction)
+		}
+	}
+
 	return url.toString()
 }
 
@@ -82,6 +97,18 @@ export function toResult(row) {
 		// `local` is the API's own word for a row this instance owns, so an
 		// absent directory is named rather than left blank.
 		directory: self.directory || 'local',
+		// The id the portal's own detail route addresses. Falls back through
+		// the same chain as `key` so a row from an older peer still links.
+		id: self.id || (row || {}).id || '',
+		date: formatDutchDate((row || {}).publicationDate || self.published || ''),
+		// THE TYPE IS OFTEN NOT KNOWABLE FROM THIS ENVELOPE.
+		//
+		// The reference shows a type chip reading "Publiccode" — the SCHEMA
+		// TITLE. This API returns `@self.schema` as a numeric id (17) and no
+		// title, so rendering it would put "17" on every card. Empty means the
+		// component omits the chip rather than showing a number nobody can
+		// read; a page that knows its corpus supplies `typeLabel` instead.
+		type: self.schemaTitle || '',
 	}
 }
 
@@ -138,4 +165,91 @@ export function pageWindow(page, pages, span = 2) {
 	}
 
 	return out
+}
+
+/**
+ * The pagination row, including gap markers.
+ *
+ * Shaped to match the reference portal, measured on opencatalogi.nl at page 1
+ * of 36: `1 2 3 4 5 … 36`. So: a run around the current page, the FIRST and
+ * LAST page always reachable, and an ellipsis wherever the sequence skips.
+ *
+ * Returns numbers and the string `'gap'` rather than pre-rendered markup, so
+ * the component decides what a gap looks like and this stays testable.
+ *
+ * @param {number} page  Current 1-based page.
+ * @param {number} pages Total pages.
+ * @return {Array<number|string>} Page numbers interleaved with `'gap'`.
+ */
+export function paginationItems(page, pages) {
+	if (pages <= 1) {
+		return [1]
+	}
+
+	const shown = new Set([1, pages])
+
+	// Five consecutive pages at the start, matching the reference; once the
+	// visitor is past that, a symmetric window around where they actually are.
+	const start = page <= 4 ? 1 : page - 1
+	const end = page <= 4 ? Math.min(5, pages) : Math.min(page + 1, pages)
+
+	for (let index = start; index <= end; index++) {
+		shown.add(index)
+	}
+
+	const ordered = [...shown]
+		.filter((n) => n >= 1 && n <= pages)
+		.sort((a, b) => a - b)
+	const out = []
+
+	for (const [index, number] of ordered.entries()) {
+		// A gap marker only where the sequence actually skips. Emitting one for
+		// a single missing page would be longer than the page it replaces.
+		if (index > 0 && number - ordered[index - 1] > 1) {
+			out.push('gap')
+		}
+		out.push(number)
+	}
+
+	return out
+}
+
+/**
+ * Format an ISO date the way the reference portal does.
+ *
+ * `30 januari 2026` — day, Dutch month name, year. Built from a fixed table
+ * rather than `toLocaleDateString`, because this renders at a public origin
+ * where the visitor's locale decides what that function returns: the same
+ * publication would read "January 30, 2026" for a visitor whose browser is set
+ * to en-US, on a page that is otherwise entirely in Dutch.
+ *
+ * @param {string} value An ISO 8601 date string.
+ * @return {string} The formatted date, or '' when it does not parse.
+ */
+export function formatDutchDate(value) {
+	if (!value) {
+		return ''
+	}
+
+	const parsed = new Date(value)
+	if (Number.isNaN(parsed.getTime()) === true) {
+		return ''
+	}
+
+	const months = [
+		'januari',
+		'februari',
+		'maart',
+		'april',
+		'mei',
+		'juni',
+		'juli',
+		'augustus',
+		'september',
+		'oktober',
+		'november',
+		'december',
+	]
+
+	return `${parsed.getUTCDate()} ${months[parsed.getUTCMonth()]} ${parsed.getUTCFullYear()}`
 }

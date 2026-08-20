@@ -87,31 +87,6 @@
 				match", which is a different claim from "this deployment does not
 				facet".
 			-->
-			<aside
-				v-if="facetBuckets.length"
-				class="pq-search__facets"
-				data-testid="federated-search-facets">
-				<h3 class="utrecht-heading-3">{{ facetLabel }}</h3>
-				<ul class="pq-search__facet-list">
-					<li v-for="bucket in facetBuckets" :key="bucket.value">
-						<label
-							class="utrecht-form-label utrecht-form-label--checkbox">
-							<input
-								type="checkbox"
-								class="utrecht-checkbox"
-								:value="bucket.value"
-								:checked="selectedFacets.includes(bucket.value)"
-								:data-testid="`federated-search-facet-${bucket.value}`"
-								@change="toggleFacet(bucket.value)" />
-							{{ bucket.label }}
-							<span class="pq-search__facet-count"
-								>({{ bucket.count }})</span
-							>
-						</label>
-					</li>
-				</ul>
-			</aside>
-
 			<div class="pq-search__results">
 				<p
 					v-if="error"
@@ -121,8 +96,58 @@
 					{{ errorLabel }}
 				</p>
 
+				<!--
+					THE COUNT AND THE SORT SIT TOGETHER ABOVE THE LIST, as on
+					the reference: an `h2` reading "N resultaten" on the left
+					and the sort control on the right.
+
+					The heading is not decoration. It is the only place the
+					result count is a HEADING rather than a sentence, which is
+					what lets a screen-reader user jump to the results with
+					their heading navigation instead of tabbing past the form.
+				-->
+				<div v-if="!error" class="pq-search__results-header">
+					<h2
+						class="utrecht-heading-2 pq-search__count"
+						data-testid="federated-search-count">
+						{{ countLabel }}
+					</h2>
+
+					<div v-if="total > 0" class="pq-search__sort">
+						<label
+							class="utrecht-form-label"
+							for="pq-federated-search-sort">
+							{{ sortLabel }}
+						</label>
+						<select
+							id="pq-federated-search-sort"
+							class="utrecht-select"
+							:value="sort"
+							data-testid="federated-search-sort"
+							@change="onSort($event.target.value)">
+							<!--
+								NO "MEEST RELEVANT" OPTION.
+
+								The reference offers one. Nothing in this API
+								implements relevance ordering, so it would be a
+								control that changes the URL and not the list —
+								the same class of defect as a filter that
+								silently returns nothing. Every option below was
+								checked against the live endpoint and returns a
+								different first row.
+							-->
+							<option
+								v-for="option in sortOptions"
+								:key="option.value"
+								:value="option.value">
+								{{ option.label }}
+							</option>
+						</select>
+					</div>
+				</div>
+
 				<ol
-					v-else
+					v-if="!error"
 					class="pq-search__list"
 					data-testid="federated-search-results">
 					<li
@@ -145,16 +170,25 @@
 							RODS 3xl step is 40px, which is a page title rather
 							than a row in a list of eleven.
 						-->
-						<h3 class="utrecht-heading-4 pq-search__result-title">
-							<a
-								v-if="result.href"
-								class="utrecht-link"
-								:href="result.href"
-								rel="noopener noreferrer"
-								target="_blank">
-								{{ result.title }}
-							</a>
-							<template v-else>{{ result.title }}</template>
+						<!--
+							THE TITLE IS TEXT, NOT A LINK, and that follows the
+							reference rather than diverging from it.
+
+							Measured on opencatalogi.nl: the card heading is a
+							`<span>` at rgb(0, 0, 0), weight 400, with no
+							underline; the only link in the card is
+							"Lees meer over <title>". Rendering the title as a
+							link as well produced a green underlined heading
+							that matched nothing.
+
+							It is also the better accessible shape: a link
+							styled to look exactly like body text has no
+							affordance, whereas "Lees meer over X" announces
+							both what it does and which publication it does it
+							to.
+						-->
+						<h3 class="utrecht-heading-3 pq-search__result-title">
+							<span>{{ result.title }}</span>
 						</h3>
 
 						<p v-if="result.summary" class="utrecht-paragraph">
@@ -162,50 +196,165 @@
 						</p>
 
 						<!--
-							THE SOURCE IS SHOWN ON EVERY RESULT, and this is the
-							only place federation is visible to a visitor.
+							THE METADATA ROW, as on the reference: small bold
+							items on the left, "Lees meer over X" on the right.
 
-							A federated list that does not say where a row came
-							from is indistinguishable from a local one, which
-							makes the whole feature unverifiable from the page —
-							including for the person checking whether federation
-							is working at all.
+							THE SOURCE IS ONE OF THOSE ITEMS, and it is the only
+							place federation is visible to a visitor. A federated
+							list that does not say where a row came from is
+							indistinguishable from a local one, which makes the
+							feature unverifiable from the page — including for
+							the person checking whether it works at all.
 						-->
-						<p
-							class="pq-search__source"
-							data-testid="federated-search-source">
-							<span class="sr-only">{{ sourceLabel }}: </span>
-							{{ result.directory }}
-						</p>
+						<div class="pq-search__meta">
+							<div class="pq-search__meta-items">
+								<p
+									v-if="result.date"
+									class="utrecht-paragraph utrecht-paragraph--small pq-search__meta-item">
+									<small>{{ result.date }}</small>
+								</p>
+
+								<!--
+									Rendered only when a type is actually
+									known. This envelope returns `@self.schema`
+									as a numeric id and no title, so without an
+									authored `typeLabel` the chip would read
+									"17".
+								-->
+								<p
+									v-if="result.type || typeLabel"
+									class="utrecht-paragraph utrecht-paragraph--small pq-search__meta-item">
+									<small>{{ result.type || typeLabel }}</small>
+								</p>
+
+								<p
+									class="utrecht-paragraph utrecht-paragraph--small pq-search__meta-item"
+									data-testid="federated-search-source">
+									<small>
+										<span class="sr-only"
+											>{{ sourceLabel }}:
+										</span>
+										{{ result.directory }}
+									</small>
+								</p>
+							</div>
+
+							<!--
+								The accessible name names the publication, so a
+								screen-reader user listing links hears eleven
+								distinct ones instead of eleven "Lees meer".
+							-->
+							<a
+								class="utrecht-link pq-search__more"
+								:href="detailHref(result)"
+								@click.prevent="openDetail(result)">
+								{{ moreLabel
+								}}<span class="sr-only">
+									over {{ result.title }}</span
+								>
+							</a>
+						</div>
 					</li>
 				</ol>
-			</div>
-		</div>
 
-		<!--
-			PAGINATION IS A NAV OF LINKS, not buttons that only work with JS.
-			Each href carries the full query, so a page is addressable and
-			shareable — which is what `?_page=2` means on the reference portal
-			this mirrors.
-		-->
-		<nav
-			v-if="pages > 1"
-			class="ams-pagination"
-			:aria-label="paginationLabel"
-			data-testid="federated-search-pagination">
-			<ul class="ams-pagination__list">
-				<li v-for="entry in pageWindow" :key="entry">
-					<a
-						class="ams-pagination__button"
-						:href="hrefForPage(entry)"
-						:aria-current="entry === page ? 'page' : undefined"
-						:data-testid="`federated-search-page-${entry}`"
-						@click.prevent="goToPage(entry)">
-						{{ entry }}
-					</a>
-				</li>
-			</ul>
-		</nav>
+				<!--
+					PAGINATION IS A NAV OF LINKS, not buttons.
+
+					The reference uses buttons; these are anchors carrying the
+					full query. That is a deliberate, invisible divergence: it
+					renders identically and additionally survives middle-click,
+					"open in new tab" and a failed bundle — a paginated public
+					register is exactly the kind of page people deep-link into.
+
+					`1 2 3 4 5 … 36` including the gap marker, matching the
+					reference measured at page 1 of 36.
+				-->
+				<nav
+					v-if="pages > 1"
+					class="ams-pagination"
+					:aria-label="paginationLabel"
+					data-testid="federated-search-pagination">
+					<ul class="ams-pagination__list">
+						<li
+							v-for="(entry, index) in paginationRow"
+							:key="`${entry}-${index}`">
+							<span
+								v-if="entry === 'gap'"
+								class="pq-search__page-gap"
+								aria-hidden="true">
+								…
+							</span>
+							<a
+								v-else
+								class="ams-pagination__button"
+								:class="{
+									'ams-pagination__button--current':
+										entry === page,
+								}"
+								:href="hrefForPage(entry)"
+								:aria-current="entry === page ? 'page' : undefined"
+								:aria-label="
+									entry === page
+										? `Pagina ${entry}`
+										: `Ga naar pagina ${entry}`
+								"
+								:data-testid="`federated-search-page-${entry}`"
+								@click.prevent="goToPage(entry)">
+								{{ entry }}
+							</a>
+						</li>
+
+						<li v-if="page < pages">
+							<a
+								class="ams-pagination__button"
+								:href="hrefForPage(page + 1)"
+								aria-label="Volgende pagina"
+								data-testid="federated-search-page-next"
+								@click.prevent="goToPage(page + 1)">
+								›
+							</a>
+						</li>
+					</ul>
+				</nav>
+			</div>
+
+			<!--
+				FILTERS COME AFTER THE RESULTS IN THE DOM and before them on
+				screen, which is the reference's own arrangement: grid places
+				the column, source order decides what a screen reader reaches
+				first — and that is the results, which is what the visitor
+				asked for.
+
+				Rendered only when the API returned buckets. An empty filter
+				column that is always present reads as "no filters match",
+				which is a different claim from "this deployment does not
+				facet".
+			-->
+			<aside
+				v-if="facetBuckets.length"
+				class="pq-search__facets"
+				data-testid="federated-search-facets">
+				<h2 class="utrecht-heading-2">{{ facetLabel }}</h2>
+				<ul class="pq-search__facet-list">
+					<li v-for="bucket in facetBuckets" :key="bucket.value">
+						<label
+							class="utrecht-form-label utrecht-form-label--checkbox">
+							<input
+								type="checkbox"
+								class="utrecht-checkbox"
+								:value="bucket.value"
+								:checked="selectedFacets.includes(bucket.value)"
+								:data-testid="`federated-search-facet-${bucket.value}`"
+								@change="toggleFacet(bucket.value)" />
+							{{ bucket.label }}
+							<span class="pq-search__facet-count"
+								>({{ bucket.count }})</span
+							>
+						</label>
+					</li>
+				</ul>
+			</aside>
+		</div>
 	</section>
 </template>
 
@@ -245,6 +394,7 @@ import { CnSiteSearch } from '@conduction/nextcloud-vue/public'
 import {
 	buildRequestUrl,
 	pageWindow,
+	paginationItems,
 	toBuckets,
 	toResult,
 } from '../lib/federatedSearch.js'
@@ -287,7 +437,44 @@ export default {
 		/** Heading above the facet column. */
 		facetLabel: {
 			type: String,
-			default: 'Thema',
+			default: 'Filters',
+		},
+
+		/** Label beside the sort control. */
+		sortLabel: {
+			type: String,
+			default: 'Sorteren',
+		},
+
+		/** Text of the per-result link through to the detail page. */
+		moreLabel: {
+			type: String,
+			default: 'Lees meer',
+		},
+
+		/**
+		 * A type name for every row, when the corpus has exactly one type.
+		 *
+		 * The API returns `@self.schema` as a numeric id and no title, so the
+		 * component cannot derive "Publicatie" or "Publiccode" for itself. A
+		 * page whose catalogue holds one kind of thing can say so here; a
+		 * mixed catalogue leaves it empty and the chip is omitted rather than
+		 * mislabelling half the rows.
+		 */
+		typeLabel: {
+			type: String,
+			default: '',
+		},
+
+		/**
+		 * In-site route of the publication detail page.
+		 *
+		 * The id is appended. Kept a prop because the route is the portal's
+		 * own content structure, not something this block gets to decide.
+		 */
+		detailRoute: {
+			type: String,
+			default: '/publicatie',
 		},
 
 		/** Screen-reader prefix for a result's source directory. */
@@ -347,6 +534,8 @@ export default {
 		},
 	},
 
+	emits: ['navigate'],
+
 	data() {
 		return {
 			// What was actually searched for, as opposed to what is currently
@@ -355,6 +544,10 @@ export default {
 			// URL only ever reflects a real, shareable search.
 			query: '',
 			page: 1,
+			// `field:DIRECTION`, matching what `buildRequestUrl` expects.
+			// Empty means "no _order at all", which is the backend's own
+			// default rather than a fifth ordering invented here.
+			sort: '',
 			selectedFacets: [],
 			results: [],
 			facetBuckets: [],
@@ -386,18 +579,21 @@ export default {
 			}
 
 			if (this.total === 0) {
-				return 'Geen resultaten gevonden.'
+				return 'Zoekresultaten geladen. Geen resultaten gevonden.'
 			}
 
 			// Dutch has no "1 resultaten". The singular is worth the branch
 			// because this string is read out by a screen reader on every
 			// search, and a portal that cannot count to one in its own
 			// language is the first thing a citizen notices about it.
+			//
+			// "Zoekresultaten", with the `ta`. The reference announces
+			// "Zoekresulten"; a typo is not a pixel and is not worth matching.
 			if (this.total === 1) {
-				return '1 resultaat gevonden.'
+				return 'Zoekresultaten geladen. 1 resultaat gevonden.'
 			}
 
-			return `${this.total} resultaten gevonden.`
+			return `Zoekresultaten geladen. ${this.total} resultaten gevonden.`
 		},
 
 		/**
@@ -410,6 +606,47 @@ export default {
 		 */
 		pageWindow() {
 			return pageWindow(this.page, this.pages)
+		},
+
+		/**
+		 * Page numbers plus gap markers, as the reference renders them.
+		 *
+		 * @return {Array<number|string>} The pagination row.
+		 */
+		paginationRow() {
+			return paginationItems(this.page, this.pages)
+		},
+
+		/**
+		 * The result-count heading.
+		 *
+		 * @return {string} e.g. "11 resultaten".
+		 */
+		countLabel() {
+			if (this.total === 1) {
+				return '1 resultaat'
+			}
+
+			return `${this.total} resultaten`
+		},
+
+		/**
+		 * The orderings this API actually implements.
+		 *
+		 * Each was checked against the live endpoint on 2026-08-20 and returns
+		 * a different first row. The reference's "Meest relevant" is absent
+		 * because nothing here implements relevance ranking.
+		 *
+		 * @return {Array<object>} `{value, label}` options.
+		 */
+		sortOptions() {
+			return [
+				{ value: '', label: 'Standaardvolgorde' },
+				{ value: 'publicationDate:DESC', label: 'Datum - nieuw naar oud' },
+				{ value: 'publicationDate:ASC', label: 'Datum - oud naar nieuw' },
+				{ value: 'title:ASC', label: 'Naam - A naar Z' },
+				{ value: 'title:DESC', label: 'Naam - Z naar A' },
+			]
 		},
 	},
 
@@ -444,6 +681,7 @@ export default {
 
 			const facets = params.get('_facets')
 			this.selectedFacets = facets ? facets.split(',').filter(Boolean) : []
+			this.sort = params.get('_sort') || ''
 		},
 
 		/**
@@ -470,6 +708,7 @@ export default {
 			assign('_search', this.query)
 			assign('_page', this.page > 1 ? String(this.page) : '')
 			assign('_facets', this.selectedFacets.join(','))
+			assign('_sort', this.sort)
 
 			if (push === true) {
 				window.history.pushState({}, '', url)
@@ -502,6 +741,7 @@ export default {
 				query: this.query,
 				facetField: this.facetField,
 				selectedFacets: this.selectedFacets,
+				sort: this.sort,
 			})
 		},
 
@@ -576,6 +816,63 @@ export default {
 		},
 
 		/**
+		 * Re-order the results.
+		 *
+		 * @param {string} value A `field:DIRECTION` pair, or '' for the default.
+		 * @return {void}
+		 */
+		onSort(value) {
+			this.sort = value || ''
+			// Page 1, for the same reason a new query resets it: page 7 of the
+			// old ordering is a different set of rows from page 7 of the new
+			// one, and landing there looks like the sort lost the results.
+			this.page = 1
+			this.writeLocation(true)
+			this.search()
+		},
+
+		/**
+		 * The in-site href of a result's detail page.
+		 *
+		 * @param {object} result A view-model row.
+		 * @return {string} The href.
+		 */
+		detailHref(result) {
+			if (!result.id) {
+				// No id means no detail page to link to; fall back to whatever
+				// the row itself points at rather than emitting a dead link.
+				return result.href || '#'
+			}
+
+			const url = new URL(window.location.href)
+			url.search = ''
+			url.searchParams.set('route', `${this.detailRoute}/${result.id}`)
+
+			return url.toString()
+		},
+
+		/**
+		 * Navigate to a result's detail page.
+		 *
+		 * Emits rather than navigating directly: the host renderer owns
+		 * routing, and a block that called `history.pushState` itself would
+		 * move the URL without telling the renderer to load anything.
+		 *
+		 * @param {object} result A view-model row.
+		 * @return {void}
+		 */
+		openDetail(result) {
+			if (!result.id) {
+				if (result.href) {
+					window.location.href = result.href
+				}
+				return
+			}
+
+			this.$emit('navigate', `${this.detailRoute}/${result.id}`)
+		},
+
+		/**
 		 * Add or remove a facet value.
 		 *
 		 * @param {string} value The bucket value.
@@ -647,9 +944,68 @@ export default {
 
 .pq-search__layout--faceted {
 	display: grid;
+	/* Filters left, results right, while the DOM order is results-first —
+	   explicit column placement is what lets those two disagree. */
 	grid-template-columns: minmax(180px, 1fr) 3fr;
 	gap: 24px;
 	align-items: start;
+}
+
+.pq-search__layout--faceted .pq-search__facets {
+	grid-column: 1;
+	grid-row: 1;
+}
+
+.pq-search__layout--faceted .pq-search__results {
+	grid-column: 2;
+	grid-row: 1;
+}
+
+.pq-search__results-header {
+	display: flex;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: 16px;
+	flex-wrap: wrap;
+	margin-block-end: 16px;
+}
+
+.pq-search__count {
+	margin: 0;
+}
+
+.pq-search__sort {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.pq-search__meta {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	flex-wrap: wrap;
+}
+
+.pq-search__meta-items {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	flex-wrap: wrap;
+}
+
+.pq-search__meta-item {
+	/* Measured on the reference: 12px, weight 700, rgb(0, 56, 101). The colour
+	   comes from the token so a re-theme moves it. */
+	margin: 0;
+	color: var(--nldesign-color-info, #003865);
+	font-weight: 700;
+}
+
+.pq-search__page-gap {
+	display: inline-block;
+	padding: 6px 12px;
 }
 
 .pq-search__facet-list,
@@ -671,6 +1027,10 @@ export default {
 	   position rather than relying on source order. */
 	order: 0;
 	margin-block: 0 4px;
+	/* Measured on the reference: rgb(0, 0, 0), weight 400. The heading token
+	   sets a heavier weight for page titles, which a list row is not. */
+	color: var(--utrecht-card-heading-color, #000000);
+	font-weight: 400;
 }
 
 .pq-search__source {

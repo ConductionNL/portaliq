@@ -27,7 +27,9 @@
 				v-if="run.band && componentFor(run.widget.widgetKey)"
 				:data-testid="`widget-${run.widget.id || run.widget.widgetKey}`"
 				:data-widget-key="run.widget.widgetKey"
-				v-bind="propsFor(run.widget)" />
+				v-bind="propsFor(run.widget)"
+				@navigate="$emit('navigate', $event)"
+				@search="$emit('search', $event)" />
 
 			<!-- A RUN of ordinary widgets: one grid, inside one container. The
 			     container is here rather than around the whole component so a
@@ -44,7 +46,9 @@
 						<component
 							:is="componentFor(widget.widgetKey)"
 							v-if="componentFor(widget.widgetKey)"
-							v-bind="propsFor(widget)" />
+							v-bind="propsFor(widget)"
+							@navigate="$emit('navigate', $event)"
+							@search="$emit('search', $event)" />
 
 						<!-- Anything not public, or not known, degrades to an inert
 						     placeholder. It does NOT throw: a public page with one bad
@@ -65,9 +69,37 @@
 
 <script>
 import { siteBlockIsBand, siteBlockRegistry } from '@conduction/nextcloud-vue/public'
+import { defineAsyncComponent } from 'vue'
 import ContributionsBlock from './ContributionsBlock.vue'
-import FederatedSearchBlock from './FederatedSearchBlock.vue'
 import MarkdownBlock from './MarkdownBlock.vue'
+
+/**
+ * LOADED ON DEMAND, and that is a budget decision rather than a style one.
+ *
+ * `webpack.site.js` sets `performance.hints: 'error'` at 400 KiB because this
+ * bundle is downloaded by a first-time visitor on a phone before anything
+ * renders. Bundling the detail block eagerly pushed the entrypoint to 445 KiB
+ * and FAILED THE BUILD — which is the budget doing its job.
+ *
+ * The block is reachable from exactly one route (`/publicatie/<id>`), so every
+ * visitor who only searches was paying for a page they never opened.
+ */
+const PublicationDetailBlock = defineAsyncComponent(
+	() => import('./PublicationDetailBlock.vue'),
+)
+
+/**
+ * Loaded on demand for the same reason, and it saves more.
+ *
+ * The search block is reachable from `/zoeken`, not from the landing page —
+ * where the hero's box only collects a term and navigates. So the visitor who
+ * arrives at `/` was downloading the entire search implementation, its
+ * pagination, its facet handling and its date formatting before seeing a
+ * heading.
+ */
+const FederatedSearchBlock = defineAsyncComponent(
+	() => import('./FederatedSearchBlock.vue'),
+)
 
 /**
  * The widget keys this renderer will mount at a PUBLIC origin, mapped to the
@@ -116,13 +148,19 @@ const PUBLIC_WIDGETS = {
 	// shared catalog pointed at an arbitrary endpoint would make that
 	// guarantee a property of page configuration instead of code.
 	federatedSearch: FederatedSearchBlock,
+	// Owned here for the same reason: it reads OpenCatalogi's public endpoint
+	// and applies no visibility rule of its own.
+	publicationDetail: PublicationDetailBlock,
 	...siteBlockRegistry,
 }
 
 export default {
 	name: 'WidgetGrid',
 
-	components: { ContributionsBlock, FederatedSearchBlock, MarkdownBlock },
+	components: {
+		ContributionsBlock,
+		MarkdownBlock,
+	},
 
 	props: {
 		/** Widget placements in the canonical manifest-v2 widgetEntry shape. */
@@ -150,7 +188,26 @@ export default {
 			type: Array,
 			default: () => [],
 		},
+
+		/**
+		 * The trailing route segment when the route resolved to this page's
+		 * PARENT — the publication id in `/publicatie/<id>`.
+		 *
+		 * Supplied by the host for the same reason the glossary rows are: a
+		 * block that read `window.location` itself would work only at the one
+		 * route an author happened to place it on.
+		 */
+		routeParam: {
+			type: String,
+			default: '',
+		},
 	},
+
+	// `search` comes from the shared hero block, which renders a search box and
+	// emits the term. Without this forward the box is INERT — it submits, the
+	// event reaches this component, and nothing above ever hears it. Which route
+	// a search goes to is the host's decision, not a block's.
+	emits: ['navigate', 'search'],
 
 	computed: {
 		/**
@@ -259,6 +316,17 @@ export default {
 			// supplies the wording.
 			if (widget.widgetKey === 'contributions') {
 				return { contributions: this.contributions, ...props }
+			}
+
+			// SAME RULE, THIRD SUBJECT. Which publication the detail block
+			// shows is a property of the ROUTE, not of the placement, so the
+			// host supplies it and the author supplies the rest.
+			//
+			// The authored props come FIRST here, unlike above: `subjectId`
+			// must not be overridable from page configuration, or a placement
+			// could pin the page to one publication regardless of its URL.
+			if (widget.widgetKey === 'publicationDetail') {
+				return { ...props, subjectId: this.routeParam }
 			}
 
 			return props
