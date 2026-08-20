@@ -170,7 +170,54 @@ class InitializeDemoPortal implements IRepairStep {
 			return;
 		}
 
-		$portal = $this->writer->createAnonymousObject(
+		$portal = $this->createPortal();
+		if ($portal === null) {
+			$output->warning(
+				'Could not create the demo portal — OpenRegister may not be ready yet. '
+				. 'Install continues; re-run `occ maintenance:repair` once it is.'
+			);
+			$this->logger->warning('[portaliq] demo portal not provisioned: portal write returned null');
+			return;
+		}
+
+		$portalId = ($portal['@self']['id'] ?? ($portal['id'] ?? null));
+		if ($portalId === null) {
+			$output->warning('Demo portal created but carries no id — pages not linked.');
+			return;
+		}
+
+		if ($this->createHomePage() === null) {
+			$output->warning('Demo portal created, but its home page was not.');
+			$this->logger->warning('[portaliq] demo home page not provisioned: page write returned null');
+			return;
+		}
+
+		$this->createDetailPage();
+		$this->createLegalMenu();
+
+		if ($this->createSearchPage() === null) {
+			$output->warning('Demo portal created, but its search page was not — the portal will render empty.');
+			$this->logger->warning('[portaliq] demo portal page not provisioned: page write returned null');
+			return;
+		}
+
+		// Stamped only after every write landed. Setting it earlier would
+		// record success for a half-provisioned instance and then refuse the
+		// re-run that would have completed it.
+		$this->appConfig->setValueString(Application::APP_ID, self::MARKER_KEY, (string)$portalId);
+
+		$output->info('Provisioned the "Open Catalogi" portal with a landing page, search at /zoeken and publication detail pages.');
+	}//end run()
+
+	/**
+	 * The portal object itself.
+	 *
+	 * @return array<string, mixed>|null The created object, or null on failure.
+	 *
+	 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
+	 */
+	private function createPortal(): ?array {
+		return $this->writer->createAnonymousObject(
 			register: PortalResolver::REGISTER,
 			schema: 'portal',
 			data: [
@@ -205,29 +252,17 @@ class InitializeDemoPortal implements IRepairStep {
 				'authentication' => ['modes' => ['public']],
 			]
 		);
+	}//end createPortal()
 
-		if ($portal === null) {
-			$output->warning(
-				'Could not create the demo portal — OpenRegister may not be ready yet. '
-				. 'Install continues; re-run `occ maintenance:repair` once it is.'
-			);
-			$this->logger->warning('[portaliq] demo portal not provisioned: portal write returned null');
-			return;
-		}
-
-		$portalId = ($portal['@self']['id'] ?? ($portal['id'] ?? null));
-		if ($portalId === null) {
-			$output->warning('Demo portal created but carries no id — search page not linked.');
-			return;
-		}
-
-		// ---- the landing page ------------------------------------------
-		//
-		// A hero band carrying the prompt and the search box, then a section
-		// of prose — the shape opencatalogi.nl's home page has. Search lives
-		// at `/zoeken`, so the hero's box navigates there rather than
-		// searching in place.
-		$home = $this->writer->createAnonymousObject(
+	/**
+	 * The landing page: a hero band and a section, as on the reference.
+	 *
+	 * @return array<string, mixed>|null The created object, or null on failure.
+	 *
+	 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
+	 */
+	private function createHomePage(): ?array {
+		return $this->writer->createAnonymousObject(
 			register: PortalResolver::REGISTER,
 			schema: 'page',
 			data: [
@@ -271,19 +306,17 @@ class InitializeDemoPortal implements IRepairStep {
 				],
 			]
 		);
+	}//end createHomePage()
 
-		if ($home === null) {
-			$output->warning('Demo portal created, but its home page was not.');
-			$this->logger->warning('[portaliq] demo home page not provisioned: page write returned null');
-			return;
-		}
-
-		// ---- the detail page -------------------------------------------
-		//
-		// ONE page for every publication. `/publicatie/<id>` resolves to this
-		// page via the renderer's parent-route fallback, which hands the
-		// trailing segment down as the subject id.
-		$this->writer->createAnonymousObject(
+	/**
+	 * The single detail page every `/publicatie/<id>` route resolves to.
+	 *
+	 * @return array<string, mixed>|null The created object, or null on failure.
+	 *
+	 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
+	 */
+	private function createDetailPage(): ?array {
+		return $this->writer->createAnonymousObject(
 			register: PortalResolver::REGISTER,
 			schema: 'page',
 			data: [
@@ -315,12 +348,17 @@ class InitializeDemoPortal implements IRepairStep {
 				],
 			]
 		);
+	}//end createDetailPage()
 
-		// ---- the legal strip -------------------------------------------
-		//
-		// Position 2 is the sub-footer by convention (0 header, 1 footer
-		// column, 2+ legal strip). The reference carries exactly these three.
-		$this->writer->createAnonymousObject(
+	/**
+	 * The legal strip at position 2 (0 header, 1 footer column, 2+ strip).
+	 *
+	 * @return array<string, mixed>|null The created object, or null on failure.
+	 *
+	 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
+	 */
+	private function createLegalMenu(): ?array {
+		return $this->writer->createAnonymousObject(
 			register: PortalResolver::REGISTER,
 			schema: 'menu',
 			data: [
@@ -334,8 +372,17 @@ class InitializeDemoPortal implements IRepairStep {
 				],
 			]
 		);
+	}//end createLegalMenu()
 
-		$page = $this->writer->createAnonymousObject(
+	/**
+	 * The search page at `/zoeken`.
+	 *
+	 * @return array<string, mixed>|null The created object, or null on failure.
+	 *
+	 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
+	 */
+	private function createSearchPage(): ?array {
+		return $this->writer->createAnonymousObject(
 			register: PortalResolver::REGISTER,
 			schema: 'page',
 			data: [
@@ -395,18 +442,5 @@ class InitializeDemoPortal implements IRepairStep {
 				],
 			]
 		);
-
-		if ($page === null) {
-			$output->warning('Demo portal created, but its search page was not — the portal will render empty.');
-			$this->logger->warning('[portaliq] demo portal page not provisioned: page write returned null');
-			return;
-		}
-
-		// Stamped only after BOTH writes landed. Setting it earlier would
-		// record success for a half-provisioned instance and then refuse the
-		// re-run that would have completed it.
-		$this->appConfig->setValueString(Application::APP_ID, self::MARKER_KEY, (string)$portalId);
-
-		$output->info('Provisioned the "Open Catalogi" portal with a federated search page at /.');
-	}//end run()
+	}//end createSearchPage()
 }//end class
