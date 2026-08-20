@@ -5,7 +5,19 @@
 
 <template>
 	<section class="pq-search" data-testid="federated-search">
-		<h2 class="utrecht-heading-2">{{ title }}</h2>
+		<!--
+			OPTIONAL, and empty by default.
+
+			The host renderer already prints the PAGE's title above this block,
+			and a block that always emits its own heading produced two `h2`s
+			saying almost the same thing — "Zoeken" then "Zoeken in
+			publicaties". For a screen-reader user that is two section headings
+			where the page has one section.
+
+			An author who places this block among others on a grid passes a
+			`title` and gets one; a page that exists to BE the search does not.
+		-->
+		<h2 v-if="title" class="utrecht-heading-2">{{ title }}</h2>
 
 		<!--
 			THE BOX IS THE SHARED ONE, and deliberately not a second
@@ -53,7 +65,21 @@
 			{{ status }}
 		</p>
 
-		<div class="pq-search__layout">
+		<!--
+			THE FACET COLUMN IS ONLY RESERVED WHEN THERE IS ONE.
+
+			A fixed `180px 3fr` grid puts the results into the FIRST track when
+			the facet `<aside>` does not render — measured: one child, columns
+			`180px 514px`, results 180px wide with 514px of empty space beside
+			them. Every result then wrapped into a narrow ribbon.
+
+			Facets are absent whenever the API returns no buckets, which today
+			includes every federated search, so this was the DEFAULT state and
+			not an edge case.
+		-->
+		<div
+			class="pq-search__layout"
+			:class="{ 'pq-search__layout--faceted': facetBuckets.length > 0 }">
 			<!--
 				FACETS ARE RENDERED ONLY WHEN THE API RETURNED BUCKETS.
 
@@ -104,7 +130,22 @@
 						:key="result.key"
 						class="utrecht-card pq-search__result"
 						data-testid="federated-search-result">
-						<h3 class="utrecht-heading-3 utrecht-card__heading">
+						<!--
+							NOT `utrecht-card__heading`, and not `heading-3`.
+
+							`.utrecht-card__heading` carries `order: 2` in the
+							bundled card CSS — that component puts its label
+							above its title by design — so a search result
+							rendered its summary and source ABOVE its own title.
+							Measured: heading order 2 inside a
+							`flex-direction: column` card.
+
+							`heading-4` for size while the element stays an
+							`h3`: the document outline needs the level, and the
+							RODS 3xl step is 40px, which is a page title rather
+							than a row in a list of eleven.
+						-->
+						<h3 class="utrecht-heading-4 pq-search__result-title">
 							<a
 								v-if="result.href"
 								class="utrecht-link"
@@ -214,10 +255,15 @@ export default {
 	components: { CnSiteSearch },
 
 	props: {
-		/** Heading above the search form. */
+		/**
+		 * Heading above the search form.
+		 *
+		 * Empty by default so the block does not duplicate the page title the
+		 * host renderer already prints. See the template.
+		 */
 		title: {
 			type: String,
-			default: 'Zoeken',
+			default: '',
 		},
 
 		/** Visible label on the search input. */
@@ -241,7 +287,7 @@ export default {
 		/** Heading above the facet column. */
 		facetLabel: {
 			type: String,
-			default: 'Categorie',
+			default: 'Thema',
 		},
 
 		/** Screen-reader prefix for a result's source directory. */
@@ -283,13 +329,21 @@ export default {
 		/**
 		 * The object field to facet on.
 		 *
-		 * `categories` is the one the publiccode corpus actually populates;
-		 * faceting on a field the rows do not carry returns no buckets, and the
-		 * column then correctly does not render.
+		 * `themes` is what OpenCatalogi's `publication` schema DECLARES, and a
+		 * declared property is the only kind that can be faceted: an
+		 * undeclared field is stored, returned on the object, and invisible to
+		 * search — so faceting on one yields zero buckets and the column
+		 * silently does not render.
+		 *
+		 * That is not hypothetical. Seeding `categories` onto publications
+		 * produced rows that showed their categories in the API response and
+		 * still faceted to nothing, because `categories` belongs to the
+		 * publiccode/software schema and not to this one. A catalogue serving
+		 * that corpus should pass `facetField: "categories"`.
 		 */
 		facetField: {
 			type: String,
-			default: 'categories',
+			default: 'themes',
 		},
 	},
 
@@ -333,6 +387,14 @@ export default {
 
 			if (this.total === 0) {
 				return 'Geen resultaten gevonden.'
+			}
+
+			// Dutch has no "1 resultaten". The singular is worth the branch
+			// because this string is read out by a screen reader on every
+			// search, and a portal that cannot count to one in its own
+			// language is the first thing a citizen notices about it.
+			if (this.total === 1) {
+				return '1 resultaat gevonden.'
 			}
 
 			return `${this.total} resultaten gevonden.`
@@ -580,6 +642,10 @@ export default {
 }
 
 .pq-search__layout {
+	display: block;
+}
+
+.pq-search__layout--faceted {
 	display: grid;
 	grid-template-columns: minmax(180px, 1fr) 3fr;
 	gap: 24px;
@@ -598,6 +664,13 @@ export default {
 	   belongs to this block. */
 	margin-block-end: 16px;
 	padding: 16px;
+}
+
+.pq-search__result-title {
+	/* The card lays its children out with `order`, so the title states its own
+	   position rather than relying on source order. */
+	order: 0;
+	margin-block: 0 4px;
 }
 
 .pq-search__source {

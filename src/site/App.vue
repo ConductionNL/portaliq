@@ -181,9 +181,27 @@
 					</p>
 				</div>
 
+				<!--
+					`utrecht-article` IS A PROSE MEASURE, so a grid does not get
+					one.
+
+					The class carries `max-inline-size` in token sets that
+					define it — Rotterdam's is 750px, straight from RODS — and
+					that is exactly right for a column of running text. Applied
+					to a 12-column widget grid it clamps the whole page to a
+					reading width: measured at 1280px viewport, the article came
+					out 750px wide at x=0 while the header and footer
+					`.container`s sat at x=40 and 1200px, so the content was both
+					narrower than the design and misaligned with the furniture
+					above and below it.
+
+					The element stays an `<article>` either way — the page IS a
+					self-contained document, which is a question about semantics
+					and not about line length.
+				-->
 				<article
 					v-else-if="page"
-					class="utrecht-article"
+					:class="bodyIsGrid ? null : 'utrecht-article'"
 					data-testid="site-page">
 					<!--
 						THE RENDERER'S OWN TITLE HEADING IS A FALLBACK, not a
@@ -444,6 +462,23 @@ export default {
 		 *
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
 		 */
+		/**
+		 * Whether this page's body is a widget grid rather than markdown.
+		 *
+		 * Decides whether the page wears `utrecht-article`, which carries a
+		 * prose `max-inline-size` — see the template.
+		 *
+		 * @return {boolean} True when the body is a grid.
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
+		 */
+		bodyIsGrid() {
+			return (
+				(this.page && this.page.body && this.page.body.type === 'grid')
+				=== true
+			)
+		},
+
 		bodyProvidesHeading() {
 			const body = this.page.body || {}
 			if (body.type !== 'grid') {

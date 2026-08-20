@@ -72,6 +72,20 @@
         <install>
             <step>OCA\Portaliq\Repair\InitializeSettings</step>
             <step>OCA\Portaliq\Repair\InitializeActions</step>
+            <!--
+                LAST, and INSTALL-ONLY.
+
+                Last because it writes objects into the register the two steps
+                above create — running it first would seed into a register that
+                does not exist yet and warn its way to a no-op.
+
+                Install-only because it is the one step here that creates
+                CONTENT rather than configuration. A post-migration entry would
+                re-run it on every upgrade, and its "only when no portals
+                exist" guard would then quietly re-seed an instance whose
+                author had deliberately deleted theirs.
+            -->
+            <step>OCA\Portaliq\Repair\InitializeDemoPortal</step>
         </install>
     </repair-steps>
 
