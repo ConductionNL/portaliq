@@ -1,5 +1,6 @@
-{
-    "translations": {
+OC.L10N.register(
+    "portaliq",
+    {
         "Pre-boot configuration": "Configuratie vóór opstarten",
         "Configure the app settings": "Configureer de app-instellingen",
         "Configuration": "Configuratie",
@@ -45,6 +46,5 @@
         "You have a new message in the portal of %1$s": "Er staat een nieuw bericht voor u klaar in het portaal van %1$s",
         "You have a new message in the portal of %1$s. Log in to view it: %2$s": "Er staat een nieuw bericht voor u klaar in het portaal van %1$s. Log in om het te bekijken: %2$s"
     },
-    "plurals": "",
-    "pluralForm": "nplurals=2; plural=(n != 1);"
-}
+    "nplurals=2; plural=(n != 1);"
+)

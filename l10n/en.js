@@ -1,5 +1,6 @@
-{
-    "translations": {
+OC.L10N.register(
+    "portaliq",
+    {
         "Custom example component": "Custom example component",
         "Dashboard": "Dashboard",
         "Documentation": "Documentation",
@@ -28,6 +29,5 @@
         "You have a new message in the portal of %1$s": "You have a new message in the portal of %1$s",
         "You have a new message in the portal of %1$s. Log in to view it: %2$s": "You have a new message in the portal of %1$s. Log in to view it: %2$s"
     },
-    "plurals": "",
-    "pluralForm": "nplurals=2; plural=(n != 1);"
-}
+    "nplurals=2; plural=(n != 1);"
+)

@@ -264,7 +264,12 @@ jobs:
       # them are `woo/`, the committed COMPILED bundle of the separate WOO
       # portal front-end (hashed filenames, minified CSS), excluded on purpose
       # by .prettierignore. The 40 are this app's own hand-authored sources.
-      frontend-checks: '["check:specs", "check:manifest", "format"]'
+      # `check:l10n-js` regenerates l10n/<locale>.js from the JSON catalogue and
+      # fails when the committed file is stale. Nextcloud serves ONLY the JS half
+      # to a browser — raw JSON out of an app directory is a 404 — so a catalogue
+      # that exists only as JSON renders English in the entire UI while every
+      # server-rendered string is translated, with no error anywhere.
+      frontend-checks: '["check:specs", "check:manifest", "format", "check:l10n-js"]'
 
       # ── Coverage ratchet ─────────────────────────────────────────────────
       # `enable-coverage-guard` defaults to FALSE, which is why both
