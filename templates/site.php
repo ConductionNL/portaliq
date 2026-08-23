@@ -53,6 +53,12 @@ $appManager = \OCP\Server::get(\OCP\App\IAppManager::class);
 $url = \OCP\Server::get(\OCP\IURLGenerator::class);
 $appRoot = $appManager->getAppPath($appId);
 
+// Which id the theme app is installed under here — it is mid-rename from
+// `nldesign` to `thematiq`, and both spellings are in the field. Null when no
+// theme app is installed at all, which is a normal deployment: the portal then
+// renders unthemed rather than linking assets into an app that is not there.
+$themeApp = \OCP\Server::get(PortalThemeResolver::class)->themeAppId();
+
 $asset = static function (string $app, string $path) use ($url, $appManager): string {
     $href = $url->linkTo($app, $path);
     try {
@@ -106,8 +112,8 @@ $locale = (string)($_['locale'] ?? 'nl');
 // advantage and exposed the ordering for what it always was.
 $stylesheets = [];
 $tokenStylesheets = [];
-if ($themeStylesheet !== '') {
-    $tokenStylesheets[] = $asset(PortalThemeResolver::THEME_APP, 'css/' . $themeStylesheet . '.css');
+if ($themeStylesheet !== '' && $themeApp !== null) {
+    $tokenStylesheets[] = $asset($themeApp, 'css/' . $themeStylesheet . '.css');
 }
 
 if ($nldsStylesheet !== '') {
@@ -203,13 +209,13 @@ foreach ($tokenStylesheets as $href) {
 // does NOT exist there — linking it would have traded a 404 on
 // /favicon.ico for a 404 on a path of our own invention, which is not a fix.
 $favicon = (string)($portalConfig['logo'] ?? '');
-if ($favicon === '' && $themeStylesheet !== '') {
+if ($favicon === '' && $themeStylesheet !== '' && $themeApp !== null) {
     $themeName = basename($themeStylesheet);
     try {
-        $logo = $appManager->getAppPath(PortalThemeResolver::THEME_APP)
+        $logo = $appManager->getAppPath($themeApp)
             . '/img/logos/' . $themeName . '.svg';
         if (is_file($logo) === true) {
-            $favicon = $asset(PortalThemeResolver::THEME_APP, 'img/logos/' . $themeName . '.svg');
+            $favicon = $asset($themeApp, 'img/logos/' . $themeName . '.svg');
         }
     } catch (\Throwable) {
         // No theme app: fall through to this app's own mark.

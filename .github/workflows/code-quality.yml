@@ -155,7 +155,8 @@ jobs:
       # `development`, and pinning the foundation to `main` makes a CI instance
       # behave unlike any environment the app is actually developed against.
       #
-      # `nldesign` is here for the same reason, one layer up: this app ships NO
+      # `thematiq` (the app formerly published as `nldesign`) is here for the
+      # same reason, one layer up: this app ships NO
       # design tokens, so without the theme app a portal renders UNSTYLED — and
       # an unstyled page has intact markup, readable text, no console message
       # and no failed request. Nothing about it looks wrong. The site suite
@@ -165,7 +166,18 @@ jobs:
       # nothing` is the CI environment telling the truth. Provision it rather
       # than soften the assertion — a guard that skips when the thing it guards
       # is missing protects nothing.
-      additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"development"},{"repo":"ConductionNL/nldesign","app":"nldesign","ref":"development"}]'
+      #
+      # `app` MUST be the `<id>` from that ref's appinfo/info.xml, because the
+      # provisioning step enables it by that name (`occ app:enable <app>`) and
+      # Nextcloud resolves an app by its id. The theme app's id changed to
+      # `thematiq` on `development`, so `"app":"nldesign"` stopped resolving and
+      # every PHPUnit cell aborted with `Failed to enable required additional
+      # app 'nldesign'` — an ENVIRONMENT failure, not an app failure. The repo
+      # slug still redirects, which is why the checkout succeeded and only the
+      # enable broke. Re-check this against the pinned ref, not against another
+      # app's ref: buildiq pins the same fleet's docudesk to `main`, where that
+      # id has NOT moved yet.
+      additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"development"},{"repo":"ConductionNL/thematiq","app":"thematiq","ref":"development"}]'
       enable-sbom: true
       # Run the Hydra mechanical quality gates against this PR's diff.
       #

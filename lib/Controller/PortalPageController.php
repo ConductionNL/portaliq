@@ -379,7 +379,17 @@ class PortalPageController extends Controller {
 				return '';
 			}
 
-			return $this->urlGenerator->linkTo(PortalThemeResolver::THEME_APP, $relative);
+			// Link against the id this instance actually serves the theme app
+			// under, not a compiled-in guess: the app is mid-rename from
+			// `nldesign` to `thematiq`, and `linkTo()` will happily build a URL
+			// for an id nothing answers to — a 404 logo on an otherwise intact
+			// page.
+			$themeApp = $this->themeResolver->themeAppId();
+			if ($themeApp === null) {
+				return '';
+			}
+
+			return $this->urlGenerator->linkTo($themeApp, $relative);
 		} catch (\Throwable) {
 			return '';
 		}
