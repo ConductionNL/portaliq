@@ -315,6 +315,34 @@ class PortalThemeResolverTest extends TestCase {
 
 
 	/**
+	 * One candidate id throwing must not decide the answer for the others.
+	 * `isInstalled()` raises on some ids on some server versions, and asking
+	 * about the NEW name first means the old, working one sits behind it — a
+	 * single unhandled throw there would render every portal unthemed.
+	 *
+	 * @return void
+	 */
+	public function testACandidateThatThrowsDoesNotHideTheNextOne(): void {
+		$appManager = $this->createMock(IAppManager::class);
+		$appManager->method('isInstalled')->willReturnCallback(
+			static function (string $app): bool {
+				if ($app === 'thematiq') {
+					throw new \RuntimeException('no such app');
+				}
+
+				return $app === 'nldesign';
+			}
+		);
+		$appManager->method('getAppPath')->willReturn($this->themeRoot);
+
+		$resolver = new PortalThemeResolver(appManager: $appManager);
+
+		$this->assertSame('nldesign', $resolver->themeAppId());
+		$this->assertNotNull($resolver->stylesheetFor(theme: 'vng'));
+	}//end testACandidateThatThrowsDoesNotHideTheNextOne()
+
+
+	/**
 	 * A theme app that throws while being located must not take the portal
 	 * down with it — an unthemed page is still a working page.
 	 *

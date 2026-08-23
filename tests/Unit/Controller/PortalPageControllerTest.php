@@ -233,7 +233,8 @@ class PortalPageControllerTest extends TestCase {
 		?string $themeStylesheet = null,
 		?string $nldsStylesheet = null,
 		bool $portalResolverThrows = false,
-		?string $logoFile = null
+		?string $logoFile = null,
+		?string $themeAppId = 'thematiq'
 	): PortalPageController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getParam')->willReturnCallback(
@@ -293,7 +294,7 @@ class PortalPageControllerTest extends TestCase {
 		// mid-rename (`nldesign` -> `thematiq`), so the controller asks rather
 		// than compiling one in — a URL built for an id nothing answers to is a
 		// 404 logo on an otherwise intact page.
-		$themeResolver->method('themeAppId')->willReturn('thematiq');
+		$themeResolver->method('themeAppId')->willReturn($themeAppId);
 
 		return new PortalPageController(
 			$request,
@@ -332,6 +333,29 @@ class PortalPageControllerTest extends TestCase {
 		$this->assertStringContainsString('img/logos/opencatalogi.svg', $params['themeLogoUrl']);
 
 	}//end testSiteEmitsAnAbsoluteLogoUrlForAThemedPortal()
+
+
+	/**
+	 * With no theme app installed there is no id to build a logo URL against,
+	 * so the controller emits '' rather than a URL for an app that is not
+	 * there. `linkTo()` will happily build one for an unknown id — the result
+	 * is a 404 image on an otherwise intact page, which is exactly the kind of
+	 * quiet breakage this app refuses to ship.
+	 *
+	 * @return void
+	 */
+	public function testSiteEmitsNoLogoUrlWhenNoThemeAppIsInstalled(): void {
+		$controller = $this->controller(
+			orgSlug: '',
+			portal: ['theme' => 'opencatalogi'],
+			themeStylesheet: 'tokens/opencatalogi',
+			logoFile: 'img/logos/opencatalogi.svg',
+			themeAppId: null
+		);
+
+		$this->assertSame('', $controller->site()->getParams()['themeLogoUrl']);
+
+	}//end testSiteEmitsNoLogoUrlWhenNoThemeAppIsInstalled()
 
 
 	/**

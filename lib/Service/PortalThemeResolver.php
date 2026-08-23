@@ -303,6 +303,8 @@ class PortalThemeResolver {
 	 * Which theme-app id this instance actually answers to.
 	 *
 	 * @return string|null The installed id, or null when no candidate is.
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
 	 */
 	public function themeAppId(): ?string {
 		foreach (self::THEME_APP_IDS as $id) {
