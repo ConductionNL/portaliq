@@ -68,6 +68,14 @@ const APP_ID = (() => {
 /** Locales this app actually ships, so the test never demands one it has not got. */
 const LOCALES = ['nl', 'en']
 
+/**
+ * Same names the shared quality.yml Playwright step exports, and the same
+ * fallbacks `app-shell-and-admin.spec.ts` uses — this suite signs itself in
+ * rather than inheriting a session, so the two must agree.
+ */
+const ADMIN_USER = process.env.ADMIN_USER ?? process.env.NC_ADMIN_USER ?? 'admin'
+const ADMIN_PASS = process.env.ADMIN_PASSWORD ?? process.env.NC_ADMIN_PASS ?? 'admin'
+
 test.describe(`l10n browser catalogue (${APP_ID})`, () => {
 	// The literal 404 that made every translation unreachable.
 	test('the generated catalogue is served to the browser', async ({ page }) => {
@@ -118,9 +126,36 @@ test.describe(`l10n browser catalogue (${APP_ID})`, () => {
 	test('the running app has the catalogue registered, and t() resolves through it', async ({
 		page,
 	}) => {
+		// THIS APP'S SUITE RUNS SIGNED OUT BY DEFAULT. Most of its specs drive
+		// the PUBLIC portal, so playwright.config.ts declares no globalSetup and
+		// no storageState — unlike the rest of the fleet, where this spec can
+		// assume a session. Signed out, `/index.php/apps/<app>/` redirects to
+		// the core login page, which HAS `OC` defined and NO app catalogue: the
+		// probe below then reports "not registered" for a page that was never
+		// this app's. A true negative and a wrong page look identical here, so
+		// establish the session first, then assert we actually landed on the app.
 		await page.goto(`/index.php/apps/${APP_ID}/`, {
 			waitUntil: 'domcontentloaded',
 		})
+
+		if (page.url().includes('/login')) {
+			await page.locator('input[name="user"]').fill(ADMIN_USER)
+			await page.locator('input[name="password"]').fill(ADMIN_PASS)
+			await page.locator('button[type="submit"]').first().click()
+			await page.waitForURL((url) => !url.pathname.includes('/login'), {
+				timeout: 30_000,
+			})
+			await page.goto(`/index.php/apps/${APP_ID}/`, {
+				waitUntil: 'domcontentloaded',
+			})
+		}
+
+		expect(
+			page.url(),
+			'must be on the app page, not the login page — a catalogue missing '
+				+ 'from the login page says nothing about this app',
+		).not.toContain('/login')
+
 		await page.waitForFunction(
 			() => typeof (window as unknown as { OC?: unknown }).OC !== 'undefined',
 			null,
