@@ -289,6 +289,11 @@ class PortalPageControllerTest extends TestCase {
 		$themeResolver->method('stylesheetFor')->willReturn($themeStylesheet);
 		$themeResolver->method('nldsStylesheetFor')->willReturn($nldsStylesheet);
 		$themeResolver->method('logoFileFor')->willReturn($logoFile);
+		// The id the theme app is installed under on this instance. The app is
+		// mid-rename (`nldesign` -> `thematiq`), so the controller asks rather
+		// than compiling one in — a URL built for an id nothing answers to is a
+		// 404 logo on an otherwise intact page.
+		$themeResolver->method('themeAppId')->willReturn('thematiq');
 
 		return new PortalPageController(
 			$request,

@@ -49,9 +49,22 @@ use OCP\App\IAppManager;
 class PortalThemeResolver {
 
 	/**
-	 * The app that ships the token stylesheets.
+	 * The app that ships the token stylesheets, newest id first.
+	 *
+	 * The theme app was published as `nldesign` and is being renamed to
+	 * `thematiq`; its `<id>` has already moved on `development` while released
+	 * builds still ship the old one. This is a duck-typed cross-app lookup —
+	 * `isInstalled()` on a name nothing answers to returns false, so a single
+	 * hardcoded id does not error when it goes stale, it silently renders the
+	 * portal UNTHEMED. Intact markup, readable text, no console message, no
+	 * failed request: nothing about it looks wrong.
+	 *
+	 * So accept either id and use whichever is actually installed, rather than
+	 * picking a flag day. Drop `nldesign` once no supported build ships it.
+	 *
+	 * @var string[]
 	 */
-	public const THEME_APP = 'nldesign';
+	private const THEME_APP_IDS = ['thematiq', 'nldesign'];
 
 
 	/**
@@ -287,17 +300,40 @@ class PortalThemeResolver {
 
 
 	/**
+	 * Which theme-app id this instance actually answers to.
+	 *
+	 * @return string|null The installed id, or null when no candidate is.
+	 */
+	public function themeAppId(): ?string {
+		foreach (self::THEME_APP_IDS as $id) {
+			try {
+				if ($this->appManager->isInstalled($id) === true) {
+					return $id;
+				}
+			} catch (\Throwable) {
+				// Ask the next candidate: one unknown id must not decide the
+				// answer for the others.
+				continue;
+			}
+		}
+
+		return null;
+	}//end themeAppId()
+
+
+	/**
 	 * The theme app's directory, or null when it is not installed.
 	 *
 	 * @return string|null The path.
 	 */
 	private function themeAppPath(): ?string {
 		try {
-			if ($this->appManager->isInstalled(self::THEME_APP) === false) {
+			$id = $this->themeAppId();
+			if ($id === null) {
 				return null;
 			}
 
-			return $this->appManager->getAppPath(self::THEME_APP);
+			return $this->appManager->getAppPath($id);
 		} catch (\Throwable) {
 			// A missing theme app is a normal deployment, not a fault: a
 			// Portaliq that renders unthemed is still a working Portaliq.

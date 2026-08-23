@@ -249,6 +249,72 @@ class PortalThemeResolverTest extends TestCase {
 
 
 	/**
+	 * The theme app is mid-rename from `nldesign` to `thematiq`: the new id is
+	 * live on `development` while released builds still ship the old one. Both
+	 * must resolve, because `isInstalled()` on a name nothing answers to
+	 * returns false rather than raising — so a resolver pinned to one id does
+	 * not fail loudly when it goes stale, it renders the portal UNTHEMED.
+	 *
+	 * These are the tests that tell the ids apart. The rest of this class stubs
+	 * `isInstalled()` to true for any argument, so they pass under either name
+	 * and would not notice the constant going stale.
+	 *
+	 * @return void
+	 */
+	public function testTheThemeAppResolvesUnderItsRenamedId(): void {
+		$appManager = $this->createMock(IAppManager::class);
+		$appManager->method('isInstalled')->willReturnCallback(
+			static fn (string $app): bool => $app === 'thematiq'
+		);
+		$appManager->method('getAppPath')->willReturn($this->themeRoot);
+
+		$resolver = new PortalThemeResolver(appManager: $appManager);
+
+		$this->assertSame('thematiq', $resolver->themeAppId());
+		$this->assertNotNull($resolver->stylesheetFor(theme: 'vng'));
+	}//end testTheThemeAppResolvesUnderItsRenamedId()
+
+
+	/**
+	 * The other half of the rename: an instance still on the old id.
+	 *
+	 * @return void
+	 */
+	public function testTheThemeAppStillResolvesUnderItsFormerId(): void {
+		$appManager = $this->createMock(IAppManager::class);
+		$appManager->method('isInstalled')->willReturnCallback(
+			static fn (string $app): bool => $app === 'nldesign'
+		);
+		$appManager->method('getAppPath')->willReturn($this->themeRoot);
+
+		$resolver = new PortalThemeResolver(appManager: $appManager);
+
+		$this->assertSame('nldesign', $resolver->themeAppId());
+		$this->assertNotNull($resolver->stylesheetFor(theme: 'vng'));
+	}//end testTheThemeAppStillResolvesUnderItsFormerId()
+
+
+	/**
+	 * An unrelated app being installed must not be mistaken for the theme app.
+	 * Without this, a resolver that answered "installed" to anything would
+	 * satisfy both tests above.
+	 *
+	 * @return void
+	 */
+	public function testAnUnrelatedAppIsNotMistakenForTheThemeApp(): void {
+		$appManager = $this->createMock(IAppManager::class);
+		$appManager->method('isInstalled')->willReturnCallback(
+			static fn (string $app): bool => $app === 'openregister'
+		);
+
+		$resolver = new PortalThemeResolver(appManager: $appManager);
+
+		$this->assertNull($resolver->themeAppId());
+		$this->assertNull($resolver->stylesheetFor(theme: 'vng'));
+	}//end testAnUnrelatedAppIsNotMistakenForTheThemeApp()
+
+
+	/**
 	 * A theme app that throws while being located must not take the portal
 	 * down with it — an unthemed page is still a working page.
 	 *
