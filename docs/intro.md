@@ -39,7 +39,7 @@ Clone the template, rename `portaliq` to your slug, and build:
 
 ```bash
 cd /var/www/html/custom_apps
-git clone https://codeberg.org/Conduction/portaliq.git portaliq
+git clone https://github.com/ConductionNL/portaliq.git portaliq
 cd portaliq
 npm install && npm run build
 php occ app:enable portaliq
