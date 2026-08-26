@@ -59,7 +59,7 @@
     "axios": "^1.7.9",
     "babel-loader": "^10.1.1",
     "dexie": "^4.4.5",
-    "dompurify": "^3.4.12",
+    "dompurify": "^3.4.14",
     "gridstack": "^12.6.0",
     "marked": "^18.0.9",
     "node-polyfill-webpack-plugin": "^4.0.0",
