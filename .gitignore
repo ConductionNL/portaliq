@@ -154,3 +154,8 @@ tests/e2e/visual/**/*.png
 # committed. See css/fonts/README.md.
 css/fonts/licensed/*
 !css/fonts/licensed/.gitkeep
+
+# Agent/test scratch and tool caches — generated, never source.
+# Added by the 2026-08-25 fleet hygiene sweep (ADR-100 Decision 2).
+.stale/
+/.e2e-state/
