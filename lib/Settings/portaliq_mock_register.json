@@ -1713,7 +1713,7 @@
             "order": 1,
             "link": "Voorbeeld Link 1",
             "description": "Voorbeeld Description 1",
-            "icon": "Voorbeeld Icon 1",
+            "icon": "ViewDashboardOutline",
             "groups": [
               "Voorbeeld Groups 1"
             ],
@@ -1737,7 +1737,7 @@
             "order": 2,
             "link": "Voorbeeld Link 2",
             "description": "Voorbeeld Description 2",
-            "icon": "Voorbeeld Icon 2",
+            "icon": "BookOpenVariantOutline",
             "groups": [
               "Voorbeeld Groups 2"
             ],
@@ -1761,7 +1761,7 @@
             "order": 3,
             "link": "Voorbeeld Link 3",
             "description": "Voorbeeld Description 3",
-            "icon": "Voorbeeld Icon 3",
+            "icon": "MapMarkerPath",
             "groups": [
               "Voorbeeld Groups 3"
             ],
@@ -2256,7 +2256,7 @@
                 "type": "collection"
               }
             ],
-            "icon": "Voorbeeld Icon 1"
+            "icon": "ViewDashboardOutline"
           }
         ]
       },
@@ -2308,7 +2308,7 @@
                 "type": "action"
               }
             ],
-            "icon": "Voorbeeld Icon 2"
+            "icon": "BookOpenVariantOutline"
           }
         ]
       },
@@ -2360,7 +2360,7 @@
                 "type": "detail"
               }
             ],
-            "icon": "Voorbeeld Icon 3"
+            "icon": "MapMarkerPath"
           }
         ]
       },
