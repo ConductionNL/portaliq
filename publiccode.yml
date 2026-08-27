@@ -1,7 +1,7 @@
 publiccodeYmlVersion: "0.3"
 
 name: "App Template"
-url: "https://codeberg.org/Conduction/portaliq"
+url: "https://github.com/ConductionNL/portaliq"
 softwareVersion: "0.1.2"
 releaseDate: "2026-01-01"
 softwareType: "addon"

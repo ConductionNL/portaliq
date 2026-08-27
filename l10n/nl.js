@@ -1,5 +1,6 @@
-{
-    "translations": {
+OC.L10N.register(
+    "portaliq",
+    {
         "Pre-boot configuration": "Configuratie vóór opstarten",
         "Configure the app settings": "Configureer de app-instellingen",
         "Configuration": "Configuratie",
@@ -109,6 +110,5 @@
         "This is the canonical example of a custom-type page in the manifest renderer pattern. It is rendered when a manifest page declares `type: \"custom\"` and `component: \"CustomExample\"`.": "Dit is het standaardvoorbeeld van een pagina van het type custom in het manifest-renderpatroon. Het wordt getoond wanneer een manifestpagina `type: \"custom\"` en `component: \"CustomExample\"` declareert.",
         "Version Information": "Versie-informatie"
     },
-    "plurals": "",
-    "pluralForm": "nplurals=2; plural=(n != 1);"
-}
+    "nplurals=2; plural=(n != 1);"
+)

@@ -67,7 +67,47 @@ on:
 # Proven in openconnector#1158: its first-ever completed `development` push run
 # (31048998594) executed Coverage Baseline Check, SBOM and Features Extract.
 concurrency:
-  group: quality-${{ github.head_ref || github.ref_name }}${{ (github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'development')) && '-push' || '' }}
+  # SUFFIXED BY EVENT NAME, not just by `-push`.
+  #
+  # The previous expression gave a push on `development` its own lane
+  # (`-push`) but left EVERYTHING ELSE sharing `quality-development` — and
+  # that is not a quiet lane: `Sync to Beta` keeps a PR open whose head_ref
+  # IS `development`, so its run computes the same group and is re-triggered
+  # on every merge.
+  #
+  # A `workflow_dispatch` therefore shared a group with that PR and was
+  # cancelled by it. Measured on shillinq 2026-08-21: dispatch 32487948678
+  # cancelled by pull_request run 32490160836 (head_branch `development`).
+  # A run someone deliberately asked for could essentially never complete.
+  #
+  # That reaches past ad-hoc verification: the fleet gate-drift sweep
+  # (.github#523) dispatches per app with `--ref development`, because
+  # `schedule:` cannot choose a branch. Under the old group those runs are
+  # cancelled and report neither pass nor fail — and a routine that produces
+  # no verdict is indistinguishable from one that never ran.
+  #
+  # This is hermiq's form, already live there. Pull requests keep the bare
+  # group (so a PR still supersedes its own earlier run); push, dispatch and
+  # schedule each get their own lane.
+  #
+  # THE BRANCH RESTRICTION IS GONE, because it contradicted the sentence above.
+  #
+  # The suffix used to apply only when `ref_name` was `main` or `development`,
+  # so on every OTHER branch push and pull_request computed the SAME group —
+  # and `cancel-in-progress` made them kill each other. That became reachable
+  # when the push allow-list widened on 2026-08-14 to include `feat/**`,
+  # `fix/**`, `perf/**`, `refactor/**` and `chore/**`: those branches now get
+  # both a push run and a pull_request run for one commit.
+  #
+  # `quality / Quality Report` is a `needs:`-gated aggregator and reports
+  # FAILURE when its dependencies are CANCELLED, so the collision shows up as a
+  # red gate on a PR that was never actually evaluated — and re-running collides
+  # the same way. Measured on openregister#2821: a push run left queued and a
+  # pull_request run cancelled, 18 seconds apart, on one commit.
+  #
+  # A branch name is not a unique lane when two event types can each produce a
+  # run for it, so the event is now always part of the key.
+  group: quality-${{ github.head_ref || github.ref_name }}${{ github.event_name != 'pull_request' && format('-{0}', github.event_name) || '' }}
   cancel-in-progress: true
 
 # Permission CEILING for the called quality pipeline. GitHub statically
@@ -133,7 +173,8 @@ jobs:
       # `development`, and pinning the foundation to `main` makes a CI instance
       # behave unlike any environment the app is actually developed against.
       #
-      # `nldesign` is here for the same reason, one layer up: this app ships NO
+      # `thematiq` (the app formerly published as `nldesign`) is here for the
+      # same reason, one layer up: this app ships NO
       # design tokens, so without the theme app a portal renders UNSTYLED — and
       # an unstyled page has intact markup, readable text, no console message
       # and no failed request. Nothing about it looks wrong. The site suite
@@ -143,7 +184,18 @@ jobs:
       # nothing` is the CI environment telling the truth. Provision it rather
       # than soften the assertion — a guard that skips when the thing it guards
       # is missing protects nothing.
-      additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"development"},{"repo":"ConductionNL/nldesign","app":"nldesign","ref":"development"}]'
+      #
+      # `app` MUST be the `<id>` from that ref's appinfo/info.xml, because the
+      # provisioning step enables it by that name (`occ app:enable <app>`) and
+      # Nextcloud resolves an app by its id. The theme app's id changed to
+      # `thematiq` on `development`, so `"app":"nldesign"` stopped resolving and
+      # every PHPUnit cell aborted with `Failed to enable required additional
+      # app 'nldesign'` — an ENVIRONMENT failure, not an app failure. The repo
+      # slug still redirects, which is why the checkout succeeded and only the
+      # enable broke. Re-check this against the pinned ref, not against another
+      # app's ref: buildiq pins the same fleet's docudesk to `main`, where that
+      # id has NOT moved yet.
+      additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"development"},{"repo":"ConductionNL/thematiq","app":"thematiq","ref":"development"}]'
       enable-sbom: true
       # Run the Hydra mechanical quality gates against this PR's diff.
       #
@@ -242,7 +294,17 @@ jobs:
       # them are `woo/`, the committed COMPILED bundle of the separate WOO
       # portal front-end (hashed filenames, minified CSS), excluded on purpose
       # by .prettierignore. The 40 are this app's own hand-authored sources.
-      frontend-checks: '["check:specs", "check:manifest", "format"]'
+      # `check:l10n-js` regenerates l10n/<locale>.js from the JSON catalogue and
+      # fails when the committed file is stale. Nextcloud serves ONLY the JS half
+      # to a browser — raw JSON out of an app directory is a 404 — so a catalogue
+      # that exists only as JSON renders English in the entire UI while every
+      # server-rendered string is translated, with no error anywhere.
+      # `check:schema-l10n` is a RATCHET, not a gate. Every string inside a form
+      # comes from the schema and is a key in THIS app's catalogue; an absent key
+      # renders the English source inside an otherwise translated form, silently.
+      # The fleet had 30,459 such strings, so this records the current count and
+      # fails only when it GROWS — burning it down stays an ordinary PR.
+      frontend-checks: '["check:specs", "check:manifest", "format", "check:l10n-js", "check:schema-l10n"]'
 
       # ── Coverage ratchet ─────────────────────────────────────────────────
       # `enable-coverage-guard` defaults to FALSE, which is why both

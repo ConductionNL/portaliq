@@ -1,5 +1,6 @@
-{
-    "translations": {
+OC.L10N.register(
+    "portaliq",
+    {
         "Custom example component": "Custom example component",
         "Dashboard": "Dashboard",
         "Documentation": "Documentation",
@@ -109,6 +110,5 @@
         "This app needs OpenRegister to store and manage data. Please install OpenRegister from the app store to get started.": "This app needs OpenRegister to store and manage data. Please install OpenRegister from the app store to get started.",
         "User settings will appear here in a future update.": "User settings will appear here in a future update."
     },
-    "plurals": "",
-    "pluralForm": "nplurals=2; plural=(n != 1);"
-}
+    "nplurals=2; plural=(n != 1);"
+)
