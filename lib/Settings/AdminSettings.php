@@ -1,5 +1,4 @@
 <?php
-// SPDX-License-Identifier: EUPL-1.2
 
 /**
  * Portaliq Admin Settings
@@ -26,6 +25,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Settings;
 
 use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Service\PortalSessionService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\Settings\ISettings;
@@ -39,52 +39,70 @@ use OCP\Settings\ISettings;
  * OCP\Settings\IDelegatedSettings for the interface contract and
  * https://docs.nextcloud.com/server/latest/developer_manual/app_development/settings.html
  * for usage guidance. For most apps, ISettings is the correct choice.
+ *
+ * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.4
  */
-class AdminSettings implements ISettings
-{
-    /**
-     * Constructor.
-     *
-     * @param IAppManager $appManager The app manager.
-     */
-    public function __construct(
-        private readonly IAppManager $appManager,
-    ) {
-    }//end __construct()
+class AdminSettings implements ISettings {
+	/**
+	 * Constructor.
+	 *
+	 * @param IAppManager $appManager The app manager.
+	 * @param PortalSessionService $session Reports the signing-secret state.
+	 */
+	public function __construct(
+		private readonly IAppManager $appManager,
+		private readonly PortalSessionService $session,
+	) {
+	}//end __construct()
 
-    /**
-     * Get the settings form template.
-     *
-     * @return TemplateResponse
-     */
-    public function getForm(): TemplateResponse
-    {
-        $version = $this->appManager->getAppVersion(appId: Application::APP_ID);
+	/**
+	 * Get the settings form template.
+	 *
+	 * Surfaces whether the portal auth edge's dedicated `jwt_signing_secret`
+	 * is configured — never the secret's value — so an operator can see the
+	 * auth edge is not yet safe to use instead of discovering it via failed
+	 * supplier/client logins.
+	 *
+	 * @return TemplateResponse
+	 *
+	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.4
+	 */
+	public function getForm(): TemplateResponse {
+		$version = $this->appManager->getAppVersion(appId: Application::APP_ID);
 
-        return new TemplateResponse(
-            Application::APP_ID,
-            'settings/admin',
-            ['version' => $version]
-        );
-    }//end getForm()
+		return new TemplateResponse(
+			Application::APP_ID,
+			'settings/admin',
+			[
+				'version' => $version,
+				'jwtSigningSecretConfigured' => $this->session->isConfigured(),
+			]
+		);
+	}//end getForm()
 
-    /**
-     * Get the section ID this settings page belongs to.
-     *
-     * @return string
-     */
-    public function getSection(): string
-    {
-        return 'portaliq';
-    }//end getSection()
+	/**
+	 * Get the section ID this settings page belongs to.
+	 *
+	 * Places the form in Portaliq's own admin section rather than a shared
+	 * one, which is what keeps `getForm()`'s secret-configured indicator in
+	 * front of the operator who owns the portal auth edge.
+	 *
+	 * @return string The settings section ID.
+	 *
+	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.4
+	 */
+	public function getSection(): string {
+		return 'portaliq';
+	}//end getSection()
 
-    /**
-     * Get the priority for ordering within the section.
-     *
-     * @return int
-     */
-    public function getPriority(): int
-    {
-        return 10;
-    }//end getPriority()
+	/**
+	 * Get the priority for ordering within the section.
+	 *
+	 * @return int The ordering priority within the section.
+	 *
+	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.4
+	 */
+	public function getPriority(): int {
+		return 10;
+	}//end getPriority()
 }//end class

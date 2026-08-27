@@ -1,0 +1,15 @@
+/*! @babel/runtime/helpers/defineProperty */
+
+/*! @constants */
+
+/*! @views/ac-beheer/core/factories/con-beheer-page-config-factory */
+
+/*! lodash */
+
+/*!**********************************************************************!*\
+  !*** ./src/views/ac-beheer/core/components/ac-beheer.js + 3 modules ***!
+  \**********************************************************************/
+
+/*!*******************************************************************************!*\
+  !*** ./src/views/ac-beheer/core/factories/con-details-page-config-factory.js ***!
+  \*******************************************************************************/

@@ -1,0 +1,29 @@
+/*! @atoms */
+
+/*! @atoms/ac-column/ac-column */
+
+/*! @components */
+
+/*! @constants */
+
+/*! @molecules */
+
+/*! @stores */
+
+/*! @utrecht/component-library-react/dist/css-module */
+
+/*! @views/ac-beheer/core/utils/constants */
+
+/*! mobx-react-lite */
+
+/*! preact/jsx-runtime */
+
+/*! react */
+
+/*! react-router */
+
+/*! react-router-dom */
+
+/*!****************************************************************************!*\
+  !*** ./src/views/ac-nextcloud-authorization/ac-nextcloud-authorization.js ***!
+  \****************************************************************************/

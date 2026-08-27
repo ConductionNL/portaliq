@@ -1,0 +1,43 @@
+/*! ./ac-gemma-view */
+
+/*! @atoms */
+
+/*! @babel/runtime/helpers/defineProperty */
+
+/*! @components */
+
+/*! @conduction/archimate-diagram-engine */
+
+/*! @constants */
+
+/*! @molecules */
+
+/*! @src/index.web */
+
+/*! @stores */
+
+/*! @utrecht/component-library-react/dist/css-module */
+
+/*! clsx */
+
+/*! jointjs */
+
+/*! mobx-react-lite */
+
+/*! preact/jsx-runtime */
+
+/*! react */
+
+/*! react-router */
+
+/*! react-select */
+
+/*! svg-pan-zoom */
+
+/*!****************************************!*\
+  !*** ./src/views/ac-gemma/ac-gemma.js ***!
+  \****************************************/
+
+/*!*********************************************!*\
+  !*** ./src/views/ac-gemma/ac-gemma-view.js ***!
+  \*********************************************/

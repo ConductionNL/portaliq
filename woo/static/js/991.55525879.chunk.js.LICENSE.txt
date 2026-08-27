@@ -1,0 +1,63 @@
+/*! ../../validation/form-validations */
+
+/*! @babel/runtime/helpers/defineProperty */
+
+/*! @components/con-schema-enhanced-field/con-schema-enhanced-field */
+
+/*! @src/atoms */
+
+/*! @src/constants */
+
+/*! @src/constants/wizards.constants */
+
+/*! @src/molecules */
+
+/*! @stores */
+
+/*! @utrecht/component-library-react/dist/css-module */
+
+/*! @views/ac-beheer/shared/components/con-logo-upload-field */
+
+/*! libphonenumber-js */
+
+/*! mobx-react-lite */
+
+/*! preact/jsx-runtime */
+
+/*! react */
+
+/*! react-router-dom */
+
+/*! react-select */
+
+/*!***************************************************!*\
+  !*** ./src/views/ac-register/con-logo-preview.js ***!
+  \***************************************************/
+
+/*!***********************************************************!*\
+  !*** ./src/views/ac-forms/validation/form-validations.js ***!
+  \***********************************************************/
+
+/*!*********************************************************************!*\
+  !*** ./src/views/ac-forms/ac-forms-applicatie/utils/steps.utils.js ***!
+  \*********************************************************************/
+
+/*!*****************************************************************************!*\
+  !*** ./src/views/ac-forms/ac-forms-applicatie/utils/serialization.utils.js ***!
+  \*****************************************************************************/
+
+/*!*****************************************************************************************!*\
+  !*** ./src/views/ac-forms/ac-forms-applicatie/con-form-applicatie-type-select-stage.js ***!
+  \*****************************************************************************************/
+
+/*!***********************************************************************************************!*\
+  !*** ./src/views/ac-forms/ac-forms-applicatie/components/con-form-applicatie-versie-stage.js ***!
+  \***********************************************************************************************/
+
+/*!****************************************************************************************************!*\
+  !*** ./src/views/ac-forms/ac-forms-applicatie/components/con-form-applicatie-standaarden-stage.js ***!
+  \****************************************************************************************************/
+
+/*!**************************************************************************************************************!*\
+  !*** ./src/views/ac-forms/ac-forms-applicatie/components/con-form-applicatie-referentiecomponenten-stage.js ***!
+  \**************************************************************************************************************/

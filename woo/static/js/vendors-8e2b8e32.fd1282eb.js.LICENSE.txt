@@ -1,0 +1,23 @@
+/*! ../common/doctype.js */
+
+/*! ../common/error-codes.js */
+
+/*! ../common/foreign-content.js */
+
+/*! ../common/html.js */
+
+/*! ../common/token.js */
+
+/*! ../common/unicode.js */
+
+/*! ../tokenizer/index.js */
+
+/*! ../tree-adapters/default.js */
+
+/*! ./formatting-element-list.js */
+
+/*! ./open-element-stack.js */
+
+/*!**************************************************!*\
+  !*** ./node_modules/parse5/dist/parser/index.js ***!
+  \**************************************************/

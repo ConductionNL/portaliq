@@ -9,9 +9,9 @@ built_by: openspec/changes/scaffold-v2
 
 > ⚠️ **EXAMPLE SPEC** — This spec lives in the `portaliq` repository
 > as a demonstration of the OpenSpec format for the demo components the scaffold
-> ships under `src/cellRenderers/`, `src/modals/`, and `src/views/widgets/`.
+> ships under `src/cellRenderers/` and `src/modals/`.
 > Each is the canonical starting point for one of the five registry kinds
-> (hydra ADR-036): a cell-renderer, a modal, and a dashboard widget. Apps built
+> (hydra ADR-036): a cell-renderer and a modal. Apps built
 > from this template replace or delete these once they have their own; this spec
 > documents the small but real runtime behaviour each demonstrates so the
 > `@spec` references in the demo code resolve. The *registry-shape* requirements
@@ -30,12 +30,25 @@ per slot-bearing kind so a freshly-cloned template renders something real:
 - `ExampleModal.vue` (`kind: modal`) — a confirm/cancel dialog opened via a
   manifest `open-modal` action; it relays the user's choice to the parent via
   events and closes itself.
-- `ExampleWidget.vue` (`kind: widget`) — a dashboard widget that loads its rows
-  from an API on mount and degrades to an empty state on failure.
 
 ## Requirements
 
 ### REQ-COMP-001: Cell renderer derives a CSS-safe class from the value
+
+@e2e exclude `StatusBadge` is registered but can never bind, so no rendered
+table cell in this app is one. `src/registry.js` registers it with
+`appliesTo: { schema: 'example', property: 'status' }`, and the component's own
+docblock says `schema: "item"` — neither string is a schema in this app's
+register. `lib/Settings/portaliq_register.json` declares exactly nine schema
+slugs (`exampleDocument`, `portalAccount`, `portalAuditEntry`, `portalMessage`,
+`portalNotification`, `portalOidcState`, `portalPage`, `portalSession`,
+`portalSubmission`), and `tests/e2e/ci-seed.sh` verifies that list on every CI
+run. The object table therefore never substitutes this renderer for any column,
+and a browser test would assert against a badge that does not render. The
+mismatch is filed rather than silently repointed at `exampleDocument`: making a
+dead scaffold component live changes what the Documents table looks like, which
+is a product decision, not a test fix —
+[ConductionNL/portaliq#93](https://github.com/ConductionNL/portaliq/issues/93).
 
 The `StatusBadge` cell renderer MUST display the raw cell value and MUST derive
 a CSS-safe modifier class from a normalised form of that value, so that the
@@ -59,6 +72,18 @@ when the value is empty.
 
 ### REQ-COMP-002: Confirm/cancel modal relays the choice and closes
 
+@e2e exclude `ExampleModal` is opened only by a manifest action of
+`type: "open-modal"` targeting the registry key `example-modal`, and
+`src/manifest.json` contains no `open-modal` action at all
+(`grep -c open-modal src/manifest.json` → 0). There is consequently no control
+anywhere in the SPA that opens this dialog, so a browser test would have to
+add one — i.e. change the product to create its own subject. Same family as the
+`EmailField` exclusion on REQ-COMP-003 below, and the same disposition: the
+event contract (`confirm` / `cancel` plus `update:open` deferred to the parent,
+per the ADR-004 modal-isolation rule) is a component-level assertion, and
+wiring a demo action into the shipped manifest is a product decision —
+[ConductionNL/portaliq#93](https://github.com/ConductionNL/portaliq/issues/93).
+
 The `ExampleModal` MUST, on confirm, emit a `confirm` event and request closure
 (`update:open` with `false`); on cancel, it MUST emit a `cancel` event and
 request closure. The modal MUST NOT close itself directly — it MUST defer the
@@ -79,26 +104,37 @@ isolation, ADR-004).
 - THEN the component MUST emit `cancel`
 - AND it MUST emit `update:open` with `false`
 
-### REQ-COMP-003: Dashboard widget loads on mount and degrades gracefully
+### REQ-COMP-003: Form-field demo uses the Vue 3 v-model contract and a unique label id
 
-The `ExampleWidget` MUST fetch its row data from an API endpoint when it mounts,
-map each returned record to the `{ id, mainText }` shape NcDashboardWidget
-expects, and clear its loading flag when done. A failed fetch MUST be logged
-client-side and resolve to an empty item list with an empty-state message — a
-widget that throws on mount would break the whole dashboard, which MUST NOT
-happen (ADR-005 client-side analogue).
+The `EmailField` demo (`kind: form-field`, `appliesTo: { format: "email" }`)
+MUST implement the Vue 3 `v-model` contract: it takes the current value as the
+`modelValue` prop and reports edits by emitting `update:modelValue`. The Vue 2
+`value`/`input` pair is NOT a synonym — bound to a Vue 3 host it binds nothing
+and emits into the void, so the field would silently never save.
 
-#### Scenario: Widget loads data
+Each instance MUST also generate its own `id` and point its `<label for=...>`
+at it, so that several fields on one form remain individually labelled
+(WCAG 2.2 AA 1.3.1 / 4.1.2 — a duplicated `id` collapses the label
+association).
 
-- GIVEN the widget's API returns a `results` collection
-- WHEN the widget's `mounted` hook runs
-- THEN it MUST map each record to `{ id, mainText }` (preferring `title`, then `name`, then `#<id>`)
-- AND it MUST set `loading` to `false`
+@e2e exclude reachable only via a schema fixture this repo's e2e suite does not
+provision — `EmailField` IS registered in `src/registry.js` (kind `form-field`,
+`appliesTo: { format: "email" }`), so it is not dead code, but it binds only to
+an OpenRegister schema property declaring `format: "email"`, and no such
+property exists in the bundled manifest or in the seeded e2e fixtures. Reaching
+it in a browser would mean authoring a register/schema purely to host it; the
+v-model contract and the id uniqueness are component-level assertions.
 
-#### Scenario: Widget fetch fails
+#### Scenario: User edits the field
 
-- GIVEN the widget's API request rejects
-- WHEN `mounted` handles the failure
-- THEN it MUST log a client-side warning
-- AND it MUST leave `items` empty and show the empty-state message
-- AND it MUST set `loading` to `false`
+- GIVEN an `EmailField` rendered with `modelValue`
+- WHEN the user types into the `input`
+- THEN the component MUST emit `update:modelValue` with the new input value
+- AND the component MUST NOT mutate `modelValue` directly
+
+#### Scenario: Two fields on one form
+
+- GIVEN two `EmailField` instances rendered in the same form
+- WHEN the DOM is inspected
+- THEN each MUST carry a distinct `fieldId`
+- AND each `<label>`'s `for` attribute MUST match its own input's `id`

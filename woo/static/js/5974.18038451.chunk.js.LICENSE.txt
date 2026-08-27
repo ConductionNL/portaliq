@@ -1,0 +1,101 @@
+/*! ../ac-beheer/core/modals/ac-generic-beheer-delete-modal/ac-generic-beheer-delete-modal */
+
+/*! ../ac-register/con-logo-preview */
+
+/*! ./con-related-tabs-new */
+
+/*! @amsterdam/design-system-react */
+
+/*! @atoms */
+
+/*! @babel/runtime/helpers/defineProperty */
+
+/*! @components */
+
+/*! @config */
+
+/*! @constants */
+
+/*! @molecules */
+
+/*! @services/schemaCache.service */
+
+/*! @src/components/con-uuid-resolver/con-uuid-resolver */
+
+/*! @src/constants/wizards.constants */
+
+/*! @src/hooks/use-resolve-schema-ids.hook */
+
+/*! @src/services/ac-get-additional-info-row */
+
+/*! @src/services/ac-mapped-attachmend-row */
+
+/*! @src/utilities */
+
+/*! @src/utilities/ac-format-date */
+
+/*! @src/utilities/con-normalize-schema-name */
+
+/*! @stores */
+
+/*! @uiw/react-md-editor */
+
+/*! @utrecht/component-library-react */
+
+/*! @utrecht/component-library-react/dist/css-module */
+
+/*! @views/ac-beheer/core/hooks/use-related-create-actions */
+
+/*! @views/ac-publication/con-related-tabs-new */
+
+/*! mobx-react-lite */
+
+/*! preact/jsx-runtime */
+
+/*! react */
+
+/*! react-router-dom */
+
+/*! rehype-sanitize */
+
+/*! rehype-slug */
+
+/*! remark-definition-list */
+
+/*! remark-emoji */
+
+/*! remark-gfm */
+
+/*! remark-mark-highlight */
+
+/*! remark-rehype */
+
+/*! remark-supersub */
+
+/*!***********************************************************!*\
+  !*** ./src/views/ac-publication/ac-publication-dienst.js ***!
+  \***********************************************************/
+
+/*!***********************************************************!*\
+  !*** ./src/views/ac-publication/ac-publication-module.js ***!
+  \***********************************************************/
+
+/*!************************************************************!*\
+  !*** ./src/views/ac-publication/ac-publication-gebruik.js ***!
+  \************************************************************/
+
+/*!**************************************************************!*\
+  !*** ./src/views/ac-publication/ac-publication-formulier.js ***!
+  \**************************************************************/
+
+/*!**************************************************************!*\
+  !*** ./src/views/ac-publication/ac-publication-koppeling.js ***!
+  \**************************************************************/
+
+/*!*****************************************************************!*\
+  !*** ./src/views/ac-publication/ac-publication-moduleversie.js ***!
+  \*****************************************************************/
+
+/*!*****************************************************************!*\
+  !*** ./src/views/ac-publication/ac-publication-organisation.js ***!
+  \*****************************************************************/

@@ -2,10 +2,85 @@ name: Code Quality
 
 on:
   push:
-    branches: [main, development, feature/**, bugfix/**, hotfix/**]
+    # An ALLOW-LIST of branch prefixes is a gate with a hole in it, and the
+    # hole is SILENT: a branch matching nothing gets no CI at all, and its last
+    # visible status is whatever it inherited — indistinguishable, on every
+    # dashboard, from a branch that passed.
+    #
+    # Two live examples, both found 2026-08-14: `perf/**` was uncovered in
+    # openconnector, where a merge carrying unresolved conflict markers and 84
+    # failing tests was pushed and nothing ran; and `feat/**` was uncovered in
+    # openregister — note the list said `feature/**`, so every branch anyone
+    # named `feat/...` had been running unchecked.
+    #
+    # Prefixes are added rather than replaced with `**` because this workflow is
+    # expensive (PHPUnit matrix, Newman, Playwright). The fast structural checks
+    # DO run on `**` — see merge-hygiene.yml, added in the same change.
+    #
+    # ⚠️ Adding prefixes is not the durable fix; the next invented one is
+    # uncovered again. The durable fix is branch protection requiring a PR into
+    # development, which the pull_request trigger below already gates correctly.
+    branches:
+      - main
+      - development
+      - feature/**
+      - feat/**
+      - bugfix/**
+      - hotfix/**
+      - perf/**
+      - refactor/**
+      - chore/**
+      - fix/**
   pull_request:
     branches: [main, master, development, beta]
   workflow_dispatch:
+
+# Deduplicating a `push` run against the `pull_request` run for the SAME head
+# ref is the point of this block, and for a feature branch it is exactly right:
+# two runs of identical jobs, one of them wasted.
+#
+# It is wrong for `main` and `development`, because the push run there is NOT a
+# duplicate — it is the only carrier of the push-only jobs: "Coverage Baseline
+# Check" (`github.event_name == 'push'`), "SBOM" and "Features Extract". And
+# those two branches always have an open PR whose `head_ref` IS the branch
+# name: the standing "Release: merge development into beta" (#7 here).
+# `github.head_ref` on that PR run and `github.ref_name` on the push run both
+# render `development`, so both landed in the identical group
+# `quality-development`, and `cancel-in-progress` killed whichever started
+# first — always the push run, by a few seconds.
+#
+# Measured on this repo: 10 of the last 20 `development` push runs were
+# cancelled within ~112s of starting — e.g. 31045981646 (30s), 31038210395
+# (64s), 31018114597 (92s), 30978588242 (53s). That duration is the
+# discriminator: the shared workflow's `timeout-minutes: 45` cancellation lands
+# at 45m16s–45m28s, so these are concurrency kills.
+#
+# On the surviving PR run "Coverage Baseline Check" reports `skipped`, which is
+# CORRECT for a pull_request event and renders exactly like a pass. So the gate
+# appears on both runs and executes on neither — a dead gate of the
+# permanently-pending shape.
+#
+# Suffixing only the default-branch push keeps feature-branch dedup untouched
+# (`quality-feature/x` for both events, exactly as before) and gives the two
+# default branches' push runs a lane of their own.
+#
+# Proven in openconnector#1158: its first-ever completed `development` push run
+# (31048998594) executed Coverage Baseline Check, SBOM and Features Extract.
+concurrency:
+  group: quality-${{ github.head_ref || github.ref_name }}${{ (github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'development')) && '-push' || '' }}
+  cancel-in-progress: true
+
+# Permission CEILING for the called quality pipeline. GitHub statically
+# validates the called workflow's declared job permissions against this
+# grant — even for jobs that are disabled — so it must cover the maximum
+# any nested job declares: journeydoc-capture (contents+actions write),
+# update-baseline / features-extract (contents write), and the Quality
+# Report PR comment (issues / pull-requests write).
+permissions:
+  contents: write
+  actions: write
+  issues: write
+  pull-requests: write
 
 jobs:
   quality:
@@ -14,7 +89,35 @@ jobs:
       app-name: portaliq
       php-version: "8.3"
       php-test-versions: '["8.3", "8.4"]'
-      nextcloud-test-refs: '["stable31", "stable32", "stable33"]'
+      # stable31 is REMOVED, not "dropped for coverage". `additional-apps` below
+      # installs openregister, which declares min-version="32" and therefore
+      # cannot install on NC31 — `occ app:enable openregister` fails with only a
+      # ::warning::, so the run continued WITHOUT its data layer and every
+      # /apps/openregister/... call returned Nextcloud's HTML 404 page. A stable31
+      # leg was testing an impossible configuration, so its red said nothing.
+      #
+      # Order mattered as much as membership: newman, playwright and
+      # journeydoc-capture all pin `fromJSON(inputs.nextcloud-test-refs)[0]`, so
+      # stable31 sitting FIRST meant all three ran entirely on the version
+      # openregister cannot load.
+      #
+      # THE WHOLE DECLARED RANGE, NOT A POINT IN IT. appinfo/info.xml declares
+      # <nextcloud min-version="32" max-version="34"/>, and
+      # tests/Unit/AppInfoDependenciesTest::testFloorIsNotBelowTheOldestTestedVersion
+      # fails the build when the floor sits below the oldest tested leg. Adopting
+      # NC 34 by REPLACING the list left 32 and 33 advertised to the App Store
+      # with no job touching them; adding stable34 to the two legs that were
+      # already here covers 32, 33 and 34 — every major inside the declared
+      # range, which is also what testEveryTestedVersionIsInsideTheDeclaredRange
+      # checks from the other direction.
+      #
+      # stable34 is FIRST on purpose, for the same reason stable31 must not have
+      # been: [0] is the single server playwright and newman get, and NC 34 is
+      # the one this app had never been exercised on. That ordering immediately
+      # earned its keep — it caught tests/e2e/app-shell-and-admin.spec.ts
+      # scoping the admin nav to `#app-navigation`, markup NC 34 no longer
+      # renders.
+      nextcloud-test-refs: '["stable34", "stable32", "stable33"]'
       enable-psalm: true
       enable-phpstan: true
       enable-phpmetrics: true
@@ -22,6 +125,131 @@ jobs:
       enable-eslint: true
       enable-phpunit: true
       enable-newman: true
-      # additional-apps: '[]'  # Add app dependencies here if needed, e.g.:
-      # additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"main"}]'
+      # Portaliq cannot be exercised without OpenRegister: its register,
+      # schemas and every portal collection/action live there, and
+      # `PortalContributionProvider` is config-driven off `portalPage` OBJECTS
+      # (portal-page-provisioning) — with no OpenRegister the portal renders an
+      # empty shell. Pinned to `development`, not `main`: this app tracks
+      # `development`, and pinning the foundation to `main` makes a CI instance
+      # behave unlike any environment the app is actually developed against.
+      #
+      # `nldesign` is here for the same reason, one layer up: this app ships NO
+      # design tokens, so without the theme app a portal renders UNSTYLED — and
+      # an unstyled page has intact markup, readable text, no console message
+      # and no failed request. Nothing about it looks wrong. The site suite
+      # asserts the token layer is present precisely because that failure is
+      # invisible, and without the theme app installed that assertion cannot
+      # pass on any instance: `--utrecht-document-font-family resolved to
+      # nothing` is the CI environment telling the truth. Provision it rather
+      # than soften the assertion — a guard that skips when the thing it guards
+      # is missing protects nothing.
+      additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"development"},{"repo":"ConductionNL/nldesign","app":"nldesign","ref":"development"}]'
       enable-sbom: true
+      # Run the Hydra mechanical quality gates against this PR's diff.
+      #
+      # This tier has never executed in this repository. `enable-hydra-gates`
+      # defaults to false, so `quality / Hydra Gates` has been SKIPPED on every
+      # run here — and a skipped job is neither a pass nor a failure in the
+      # Quality Report rollup, so its absence has been indistinguishable from
+      # its success.
+      #
+      # Measured before switching on, not assumed. Running the v1.0.1 package
+      # locally against this repo's most recent merged PR diff reported ALL
+      # GATES PASSED (58 of 61 reporting; 4, 24 and 33 have no prerequisite
+      # here), and the whole-tree gate-61 audit finds no object-lifecycle
+      # listener debt in this repo at all.
+      #
+      # No count is written here on purpose: the number of gates depends on the
+      # gate package version in use and the number that run depends on this
+      # repo's diff and toolchain. The package prints both (`COVERAGE: N of M`)
+      # in the job log.
+      # See https://github.com/ConductionNL/.github/tree/main/hydra-gates
+      enable-hydra-gates: true
+      # No `hydra-gates-ref` here on purpose. The shared workflow defaults it
+      # to @main, and this workflow is itself consumed at @main, so the two
+      # sides move together and a gate fix reaches this repo without a commit
+      # in this repo. A pin is a silent expiry date: 22 repos sat on v1.0.1 and
+      # 16 gates were dead fleet-wide while every one reported PASS (.github#159),
+      # and a default flipped at @main later reached those old runners and made
+      # them red on gates they had no subject matter for (.github#173).
+      # To hold this repo still for a specific reason, set the input explicitly
+      # and say why — it is still honoured. To roll back for everyone, revert on
+      # ConductionNL/.github main.
+      # `enable-axe` deliberately NOT set: it produces the report gate-33
+      # consumes, and a vanilla Nextcloud already carries serious/critical axe
+      # violations, so enabling it here would mix "this repo has a defect" with
+      # "core does". Separate change. gate-33 reports SKIPPED meanwhile.
+
+      # ── E2E browser tests ────────────────────────────────────────────────
+      # Previously OFF (`additional-apps` was commented out entirely, so the
+      # job could not have worked even if enabled). Turned on together with
+      # tests/e2e/ci-seed.sh, which provisions the three things a fresh CI
+      # instance is missing and each of which fails SILENTLY:
+      #
+      #  1. The register + schemas + seed `portalPage` objects. The
+      #     `InitializeSettings` repair step is not a reliable sole path — it
+      #     calls `loadConfiguration(force: false)` (version-guarded) and
+      #     catches every \Throwable as a warning, so `occ app:enable portaliq`
+      #     exits 0 whether or not anything was imported. ci-seed.sh imports
+      #     explicitly over the admin HTTP API (forced) and then VERIFIES the
+      #     register slug, the nine schema slugs, and the active portalPage
+      #     rows.
+      #  2. `portaliq/dev_login_enabled`. Every portal spec mints its bearer
+      #     through the debug-gated `POST /portal/api/session/dev-login`, which
+      #     404s on a default instance. ci-seed.sh sets the DEDICATED app flag
+      #     (not blanket system `debug`, which would change error rendering and
+      #     log verbosity instance-wide) and then probes the endpoint.
+      #  3. Nothing, for `jwt_signing_secret` — that one is VERIFIED, never
+      #     generated, so a broken install path cannot hide behind a green run.
+      enable-playwright: true
+      # Double duty in the shared workflow: it is both the directory the
+      # "Validate Playwright tests exist" step counts *.spec.ts in, AND the
+      # FIRST place the run step looks for a config
+      # (`${playwright-test-path}/playwright.config.ts`), falling back to the
+      # repo root only if that file is absent. We ship
+      # tests/e2e/playwright.config.ts precisely so that lookup hits it: the run
+      # step passes no `--project`, so the ROOT config would also run
+      # `docs-capture` and re-shoot every documentation screenshot on every PR.
+      # The root config is untouched — the separate `Journeydoc Capture` job
+      # requires it to keep declaring that project.
+      playwright-test-path: tests/e2e
+      # cwd for this step is the Nextcloud server root, which is also what makes
+      # `php occ` directly runnable inside the script.
+      playwright-seed-command: 'bash apps/portaliq/tests/e2e/ci-seed.sh'
+
+      # ── Frontend Check legs ──────────────────────────────────────────────
+      # `frontend-checks` defaults to `[]`, and an empty list means the shared
+      # workflow emits NO "Frontend Check" job at all — so this repo's validator
+      # family ran nowhere while the run still looked complete.
+      # `check:specs` is the aggregate (json-strict + manifest-v2 + register +
+      # registry), listed as ONE leg rather than four because each leg is a
+      # fresh job with its own checkout + `npm ci`. `check:manifest` is separate:
+      # it is not part of that aggregate.
+      # Measured on this tree before enabling: `check:specs` PASSES,
+      # `check:manifest` FAILS (`pages[10].type: "roadmap" not in v1.1 enum`) —
+      # the same defect reproduces in 10 other fleet repos.
+      #
+      # `format` (prettier --check) is listed because the shared workflow has NO
+      # prettier job of its own — `quality.yml` runs eslint and stylelint and
+      # mentions prettier ZERO times. This repo already carries
+      # `@nextcloud/prettier-config` and a `format` script, so without this leg
+      # `npm run format` never runs outside a developer's editor and the tree
+      # drifts straight back out of format between merges — the same inert-
+      # formatter failure mode that made the old `.prettierrc` worth deleting.
+      # Centralising the config never stopped drift; the gate does.
+      # Measured on this tree before enabling: PASSES. Scope is only 40 of 364
+      # tracked frontend files, and that is CORRECT rather than a hole: 320 of
+      # them are `woo/`, the committed COMPILED bundle of the separate WOO
+      # portal front-end (hashed filenames, minified CSS), excluded on purpose
+      # by .prettierignore. The 40 are this app's own hand-authored sources.
+      frontend-checks: '["check:specs", "check:manifest", "format"]'
+
+      # ── Coverage ratchet ─────────────────────────────────────────────────
+      # `enable-coverage-guard` defaults to FALSE, which is why both
+      # "Coverage Baseline Protection" and "Coverage Baseline Check" have only
+      # ever reported `skipped`. It needs two inputs this repo did not have,
+      # both added in this commit: `scripts/coverage-guard.php` (byte-identical
+      # to openregister's) and `.coverage-baseline` = 79.28, this repo's own
+      # measured coverage (2674 of 3373 statements) read from clover.xml in the
+      # `coverage-report` artifact of run 30917641977.
+      enable-coverage-guard: true

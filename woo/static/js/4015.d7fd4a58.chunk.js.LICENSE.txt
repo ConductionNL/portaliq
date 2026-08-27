@@ -1,0 +1,15 @@
+/*! @atoms */
+
+/*! @components */
+
+/*! @stores */
+
+/*! @utrecht/component-library-react/dist/css-module */
+
+/*! mobx-react-lite */
+
+/*! preact/jsx-runtime */
+
+/*!********************************************************************!*\
+  !*** ./src/views/ac-fallback-error-page/ac-fallback-error-page.js ***!
+  \********************************************************************/

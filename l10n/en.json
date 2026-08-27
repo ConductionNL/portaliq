@@ -14,7 +14,19 @@
         "items": "items",
         "app-availability.title": "Required application unavailable",
         "app-availability.description": "This application requires OpenRegister to be installed and enabled.",
-        "app-availability.action": "Install OpenRegister"
+        "app-availability.action": "Install OpenRegister",
+        "Portal auth edge": "Portal auth edge",
+        "The public portal signs supplier/client sessions with a secret dedicated to this app — never the Nextcloud instance secret.": "The public portal signs supplier/client sessions with a secret dedicated to this app — never the Nextcloud instance secret.",
+        "A dedicated signing secret is configured. The portal auth edge is safe to use.": "A dedicated signing secret is configured. The portal auth edge is safe to use.",
+        "No dedicated signing secret is configured yet. The portal cannot issue or accept sessions until the next install/upgrade repair step runs.": "No dedicated signing secret is configured yet. The portal cannot issue or accept sessions until the next install/upgrade repair step runs.",
+        "Organisation": "Organisation",
+        "Organisation UUID": "Organisation UUID",
+        "Revoke all sessions for this organisation": "Revoke all sessions for this organisation",
+        "Revoked {count} session(s).": "Revoked {count} session(s).",
+        "Confirmation of receipt — reference %1$s": "Confirmation of receipt — reference %1$s",
+        "We received your submission on %2$s (reference %1$s). This message confirms receipt; we will contact you if further action is needed.": "We received your submission on %2$s (reference %1$s). This message confirms receipt; we will contact you if further action is needed.",
+        "You have a new message in the portal of %1$s": "You have a new message in the portal of %1$s",
+        "You have a new message in the portal of %1$s. Log in to view it: %2$s": "You have a new message in the portal of %1$s. Log in to view it: %2$s"
     },
     "plurals": ""
 }

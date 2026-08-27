@@ -16,7 +16,7 @@
      appropriate appliesTo.format or appliesTo.property.
   3. The form renderer will auto-bind it to matching properties.
 
-  @spec openspec/changes/scaffold-v2/specs/scaffold-v2/spec.md
+  @spec openspec/specs/scaffold-components/spec.md#REQ-COMP-003
 -->
 <template>
 	<div class="email-field">
@@ -27,9 +27,9 @@
 			:id="fieldId"
 			type="email"
 			class="email-field__input"
-			:value="value"
+			:value="modelValue"
 			:placeholder="placeholder"
-			@input="$emit('input', $event.target.value)">
+			@input="$emit('update:modelValue', $event.target.value)" />
 	</div>
 </template>
 
@@ -40,16 +40,24 @@ export default {
 	name: 'EmailField',
 
 	props: {
-		/** Current field value. */
-		value: {
+		/**
+		 * Current field value.
+		 *
+		 * Vue 3 `v-model` on a component binds `modelValue` and listens for
+		 * `update:modelValue`. The Vue 2 `value` / `input` pair is NOT a
+		 * synonym — it binds nothing and emits into the void.
+		 */
+		modelValue: {
 			type: String,
 			default: '',
 		},
+
 		/** Field label. */
 		label: {
 			type: String,
 			default: 'Email',
 		},
+
 		/** Placeholder text. */
 		placeholder: {
 			type: String,
@@ -57,7 +65,7 @@ export default {
 		},
 	},
 
-	emits: ['input'],
+	emits: ['update:modelValue'],
 
 	data() {
 		_counter += 1
@@ -82,7 +90,8 @@ export default {
 
 .email-field__input {
 	width: 100%;
-	padding: var(--default-grid-baseline, 4px) calc(var(--default-grid-baseline, 4px) * 2);
+	padding: var(--default-grid-baseline, 4px)
+		calc(var(--default-grid-baseline, 4px) * 2);
 	border: 1px solid var(--color-border-dark, #ccc);
 	border-radius: var(--border-radius, 4px);
 }

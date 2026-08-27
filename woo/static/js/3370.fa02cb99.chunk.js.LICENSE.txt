@@ -1,0 +1,113 @@
+/*! ../ac-beheer/core/modals/ac-generic-beheer-delete-modal/ac-generic-beheer-delete-modal */
+
+/*! ../ac-register/con-logo-preview */
+
+/*! ./con-related-tabs-new */
+
+/*! @amsterdam/design-system-react */
+
+/*! @atoms */
+
+/*! @babel/runtime/helpers/defineProperty */
+
+/*! @components */
+
+/*! @config */
+
+/*! @constants */
+
+/*! @constants/container.constants */
+
+/*! @constants/wizards.constants */
+
+/*! @molecules */
+
+/*! @services/schemaCache.service */
+
+/*! @src/components/con-uuid-resolver/con-uuid-resolver */
+
+/*! @src/constants/wizards.constants */
+
+/*! @src/hooks/use-resolve-schema-ids.hook */
+
+/*! @src/index.web */
+
+/*! @src/services/ac-mapped-attachmend-row */
+
+/*! @src/utilities */
+
+/*! @src/utilities/ac-format-date */
+
+/*! @src/utilities/con-format-by-json-schema */
+
+/*! @src/utilities/con-normalize-schema-name */
+
+/*! @src/utilities/con-resolve-uuids-in-text */
+
+/*! @stores */
+
+/*! @uiw/react-md-editor */
+
+/*! @utils/field-authorization */
+
+/*! @utils/organization-permissions */
+
+/*! @utrecht/component-library-react/dist/css-module */
+
+/*! @views/ac-beheer/core/hooks/use-related-create-actions */
+
+/*! lodash */
+
+/*! mobx-react-lite */
+
+/*! preact/jsx-runtime */
+
+/*! react */
+
+/*! react-router */
+
+/*! react-router-dom */
+
+/*! rehype-sanitize */
+
+/*! rehype-slug */
+
+/*! remark-definition-list */
+
+/*! remark-emoji */
+
+/*! remark-gfm */
+
+/*! remark-mark-highlight */
+
+/*! remark-rehype */
+
+/*! remark-supersub */
+
+/*!***************************************!*\
+  !*** ./src/services/con-get-title.js ***!
+  \***************************************/
+
+/*!**************************************************!*\
+  !*** ./src/services/ac-mapped-attachmend-row.js ***!
+  \**************************************************/
+
+/*!****************************************************!*\
+  !*** ./src/services/ac-get-additional-info-row.js ***!
+  \****************************************************/
+
+/*!************************************************************!*\
+  !*** ./src/views/ac-publication/ac-publication-default.js ***!
+  \************************************************************/
+
+/*!******************************************************************!*\
+  !*** ./src/views/ac-publication/ac-publication-contactperson.js ***!
+  \******************************************************************/
+
+/*!**********************************************************************!*\
+  !*** ./src/views/ac-beheer/core/hooks/use-related-create-actions.js ***!
+  \**********************************************************************/
+
+/*!**********************************************************************************************************!*\
+  !*** ./src/views/ac-beheer/core/modals/ac-generic-beheer-delete-modal/ac-generic-beheer-delete-modal.js ***!
+  \**********************************************************************************************************/

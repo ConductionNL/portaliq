@@ -1,6 +1,6 @@
 {
     "translations": {
-        "App Template settings": "App Template instellingen",
+        "Pre-boot configuration": "Configuratie vóór opstarten",
         "Configure the app settings": "Configureer de app-instellingen",
         "Configuration": "Configuratie",
         "Completed": "Afgerond",
@@ -31,7 +31,19 @@
         "User settings will appear here in a future update.": "Gebruikersinstellingen verschijnen hier in een toekomstige update.",
         "app-availability.title": "Vereiste applicatie niet beschikbaar",
         "app-availability.description": "Deze applicatie vereist dat OpenRegister is geïnstalleerd en ingeschakeld.",
-        "app-availability.action": "OpenRegister installeren"
+        "app-availability.action": "OpenRegister installeren",
+        "Portal auth edge": "Portaal-authenticatierand",
+        "The public portal signs supplier/client sessions with a secret dedicated to this app — never the Nextcloud instance secret.": "Het openbare portaal ondertekent leverancier-/klantsessies met een geheim dat exclusief voor deze app is — nooit het Nextcloud-instantiegeheim.",
+        "A dedicated signing secret is configured. The portal auth edge is safe to use.": "Er is een dedicated ondertekeningsgeheim geconfigureerd. De portaal-authenticatierand is veilig te gebruiken.",
+        "No dedicated signing secret is configured yet. The portal cannot issue or accept sessions until the next install/upgrade repair step runs.": "Er is nog geen dedicated ondertekeningsgeheim geconfigureerd. Het portaal kan geen sessies uitgeven of accepteren totdat de volgende install-/upgrade-reparatiestap is uitgevoerd.",
+        "Organisation": "Organisatie",
+        "Organisation UUID": "Organisatie-UUID",
+        "Revoke all sessions for this organisation": "Alle sessies voor deze organisatie intrekken",
+        "Revoked {count} session(s).": "{count} sessie(s) ingetrokken.",
+        "Confirmation of receipt — reference %1$s": "Bevestiging van ontvangst — referentie %1$s",
+        "We received your submission on %2$s (reference %1$s). This message confirms receipt; we will contact you if further action is needed.": "Wij hebben uw indiening ontvangen op %2$s (referentie %1$s). Dit bericht bevestigt de ontvangst; u hoort van ons zodra er verdere actie nodig is.",
+        "You have a new message in the portal of %1$s": "Er staat een nieuw bericht voor u klaar in het portaal van %1$s",
+        "You have a new message in the portal of %1$s. Log in to view it: %2$s": "Er staat een nieuw bericht voor u klaar in het portaal van %1$s. Log in om het te bekijken: %2$s"
     },
     "plurals": ""
 }

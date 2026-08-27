@@ -168,8 +168,8 @@ function SettingsPanel() {
 
 const WIDGETS = [
   {
-    title: 'Dashboard widget, ready to copy',
-    desc: 'The template ships a working ExampleWidget — PHP IWidget class, webpack entry, and a NcDashboardWidget renderer. Three files plus two registration points; rename and replace the data.',
+    title: 'Dashboard widget pattern',
+    desc: 'Add a Nextcloud Dashboard widget with three files plus two registration points — a PHP IWidget class, a webpack entry, and a NcDashboardWidget renderer. The README documents the full pattern.',
     panel: <DashboardPanel />,
   },
   {

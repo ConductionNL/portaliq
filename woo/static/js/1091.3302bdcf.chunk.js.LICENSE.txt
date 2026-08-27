@@ -1,0 +1,19 @@
+/*! @babel/runtime/helpers/defineProperty */
+
+/*! @babel/runtime/helpers/objectWithoutProperties */
+
+/*! @src/constants */
+
+/*! @src/molecules */
+
+/*! @utrecht/component-library-react/dist/css-module */
+
+/*! clsx */
+
+/*! preact/compat */
+
+/*! preact/jsx-runtime */
+
+/*!******************************************************************!*\
+  !*** ./src/views/ac-beheer/shared/components/con-action-menu.js ***!
+  \******************************************************************/

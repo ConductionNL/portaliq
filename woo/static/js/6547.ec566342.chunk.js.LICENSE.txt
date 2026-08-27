@@ -1,0 +1,35 @@
+/*! @amsterdam/design-system-react */
+
+/*! @atoms */
+
+/*! @babel/runtime/helpers/defineProperty */
+
+/*! @components */
+
+/*! @constants */
+
+/*! @molecules */
+
+/*! @molecules/con-cards */
+
+/*! @src/utilities/con-extract-text */
+
+/*! @stores */
+
+/*! @utils */
+
+/*! @utrecht/component-library-react/dist/css-module */
+
+/*! mobx-react-lite */
+
+/*! preact */
+
+/*! preact/jsx-runtime */
+
+/*! react */
+
+/*! react-router-dom */
+
+/*!******************************************!*\
+  !*** ./src/views/ac-search/ac-search.js ***!
+  \******************************************/

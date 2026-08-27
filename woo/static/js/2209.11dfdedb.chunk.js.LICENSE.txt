@@ -1,0 +1,21 @@
+/*! @atoms */
+
+/*! @components */
+
+/*! @constants */
+
+/*! @stores */
+
+/*! @utrecht/component-library-react/dist/css-module */
+
+/*! mobx-react-lite */
+
+/*! preact/jsx-runtime */
+
+/*! react */
+
+/*! react-select */
+
+/*!*************************************************************************************!*\
+  !*** ./src/views/ac-beheer/domains/ac-organisatie/modals/ac-add-remove-deelname.js ***!
+  \*************************************************************************************/

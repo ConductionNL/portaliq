@@ -1,0 +1,9 @@
+/*! @utrecht/components/dist/document/css/index.css */
+
+/*! react */
+
+/*! react/jsx-runtime */
+
+/*!***************************************************************************!*\
+  !*** ./node_modules/@gemeente-denhaag/components-react/dist/mjs/index.js ***!
+  \***************************************************************************/

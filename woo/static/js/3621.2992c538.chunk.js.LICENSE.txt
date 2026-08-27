@@ -1,0 +1,89 @@
+/*! @atoms */
+
+/*! @babel/runtime/helpers/defineProperty */
+
+/*! @babel/runtime/helpers/objectWithoutProperties */
+
+/*! @components */
+
+/*! @conduction/archimate-diagram-engine */
+
+/*! @constants */
+
+/*! @molecules */
+
+/*! @molecules/con-cards */
+
+/*! @services/schemaCache.service */
+
+/*! @src/atoms */
+
+/*! @src/config */
+
+/*! @src/constants */
+
+/*! @src/hooks */
+
+/*! @src/hooks/use-resolve-schema-ids.hook */
+
+/*! @src/index.web */
+
+/*! @src/utilities */
+
+/*! @stores */
+
+/*! @utils */
+
+/*! @utils/field-authorization */
+
+/*! @utrecht/component-library-react/dist/css-module */
+
+/*! @views/ac-beheer/core/factories/con-beheer-page-config-factory */
+
+/*! @views/ac-beheer/shared/components/con-action-menu */
+
+/*! @views/ac-beheer/shared/components/con-table */
+
+/*! clsx */
+
+/*! jointjs */
+
+/*! lodash */
+
+/*! mobx-react-lite */
+
+/*! preact */
+
+/*! preact/jsx-runtime */
+
+/*! react */
+
+/*! react-router */
+
+/*! react-select */
+
+/*! svg-pan-zoom */
+
+/*!*********************************************!*\
+  !*** ./src/views/ac-gemma/ac-gemma-view.js ***!
+  \*********************************************/
+
+/*!******************************************************!*\
+  !*** ./src/views/ac-publication/con-related-tabs.js ***!
+  \******************************************************/
+
+/*!*********************************************************************************!*\
+  !*** ./src/views/ac-beheer/shared/components/import-modal/con-file-dropzone.js ***!
+  \*********************************************************************************/
+
+/*!************************************************************************************!*\
+  !*** ./src/views/ac-beheer/shared/components/con-beheer-table/con-beheer-table.js ***!
+  \************************************************************************************/
+
+/*!************************************************************************************************!*\
+  !*** ./src/views/ac-beheer/shared/components/con-editable-standards/con-editable-standards.js ***!
+  \************************************************************************************************/
+
+/*!**************************************************************************************************************!*\
+  !*** ./src/views/ac-beheer/shared/components/con-object-upload-files/con-object-upload-files.js + 2 modules ***!
+  \**************************************************************************************************************/
