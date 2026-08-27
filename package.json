@@ -63,7 +63,7 @@
     "gridstack": "^12.6.0",
     "marked": "^18.0.11",
     "node-polyfill-webpack-plugin": "4.0.0",
-    "pinia": "^2.1.7",
+    "pinia": "^4.0.3",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.2",
