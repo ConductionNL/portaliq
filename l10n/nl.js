@@ -108,7 +108,9 @@ OC.L10N.register(
         "items": "items",
         "Replace the body of this component with whatever bespoke behaviour your page needs — realtime UI, vendor integrations, anything that does not fit the built-in page types.": "Vervang de inhoud van dit component door het maatwerk dat je pagina nodig heeft: realtime UI, koppelingen met leveranciers, alles wat niet in de ingebouwde paginatypen past.",
         "This is the canonical example of a custom-type page in the manifest renderer pattern. It is rendered when a manifest page declares `type: \"custom\"` and `component: \"CustomExample\"`.": "Dit is het standaardvoorbeeld van een pagina van het type custom in het manifest-renderpatroon. Het wordt getoond wanneer een manifestpagina `type: \"custom\"` en `component: \"CustomExample\"` declareert.",
-        "Version Information": "Versie-informatie"
+        "Version Information": "Versie-informatie",
+        "Flows": "Flows",
+        "Flow": "Flow"
     },
     "nplurals=2; plural=(n != 1);"
 )
