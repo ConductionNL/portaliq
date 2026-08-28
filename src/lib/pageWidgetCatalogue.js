@@ -26,10 +26,7 @@ import {
 } from '@conduction/nextcloud-vue'
 import FederatedSearchBlock from '../site/components/FederatedSearchBlock.vue'
 import PublicationDetailBlock from '../site/components/PublicationDetailBlock.vue'
-import {
-	publicWidgetFor,
-	publicWidgetKeys,
-} from '../site/components/WidgetGrid.vue'
+import { publicWidgetFor, publicWidgetKeys } from '../site/components/WidgetGrid.vue'
 
 /**
  * FORCE THE SHARED CATALOGUE TO EXIST BEFORE IT IS READ.
@@ -238,8 +235,7 @@ export function widgetCatalogue() {
 			key,
 			label: dashboardWidgetRegistry[key]?.displayName || humanise(key),
 			publicSafe: false,
-			reason:
-				'Deze widget wordt niet getoond op een openbare pagina — bezoekers zien een lege plek.',
+			reason: 'Deze widget wordt niet getoond op een openbare pagina — bezoekers zien een lege plek.',
 		})
 	}
 
@@ -268,9 +264,7 @@ export function fieldsFor(key) {
 	const hidden = HOST_SUPPLIED[key] || []
 
 	return Object.keys(component.props)
-		.filter(
-			(name) => !hidden.includes(name) && !NEVER_EDITABLE.includes(name),
-		)
+		.filter((name) => !hidden.includes(name) && !NEVER_EDITABLE.includes(name))
 		.map((name) => ({
 			name,
 			kind: kindFor(name, component.props[name]),

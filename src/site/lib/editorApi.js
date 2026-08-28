@@ -48,10 +48,7 @@ export function editorBaseFrom(apiBase) {
  */
 export async function fetchEditingContext(editorBase, route, portalSlug = '') {
 	try {
-		const url = new URL(
-			`${editorBase}/editing-context`,
-			window.location.origin,
-		)
+		const url = new URL(`${editorBase}/editing-context`, window.location.origin)
 		url.searchParams.set('route', route || '/')
 		if (portalSlug) {
 			url.searchParams.set('portal', portalSlug)

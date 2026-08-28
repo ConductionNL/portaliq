@@ -127,9 +127,11 @@
 				<span v-if="groupsError" data-testid="admin-editor-groups-error">{{
 					groupsError
 				}}</span>
-				<span v-else-if="groupsSaved" data-testid="admin-editor-groups-saved">{{
-					t('portaliq', 'Saved.')
-				}}</span>
+				<span
+					v-else-if="groupsSaved"
+					data-testid="admin-editor-groups-saved"
+					>{{ t('portaliq', 'Saved.') }}</span
+				>
 				<span v-else-if="editorGroups.length === 0">{{
 					t(
 						'portaliq',
@@ -145,7 +147,13 @@
 import axios from '@nextcloud/axios'
 import { loadState } from '@nextcloud/initial-state'
 import { generateUrl } from '@nextcloud/router'
-import { NcButton, NcNoteCard, NcSelect, NcSettingsSection, NcTextField } from '@nextcloud/vue'
+import {
+	NcButton,
+	NcNoteCard,
+	NcSelect,
+	NcSettingsSection,
+	NcTextField,
+} from '@nextcloud/vue'
 
 export default {
 	name: 'AdminRoot',

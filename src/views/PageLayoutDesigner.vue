@@ -80,10 +80,7 @@
 		<NcNoteCard v-else-if="notice" type="success" data-testid="designer-notice">
 			{{ notice }}
 		</NcNoteCard>
-		<NcNoteCard
-			v-else-if="dirty"
-			type="warning"
-			data-testid="designer-dirty">
+		<NcNoteCard v-else-if="dirty" type="warning" data-testid="designer-dirty">
 			{{ t('portaliq', 'Unsaved changes. Save the draft to keep them.') }}
 		</NcNoteCard>
 
@@ -144,9 +141,7 @@
 								}}</span>
 								<NcButton
 									variant="tertiary"
-									:aria-label="
-										t('portaliq', 'Remove this widget')
-									"
+									:aria-label="t('portaliq', 'Remove this widget')"
 									:data-testid="`designer-remove-${item.id}`"
 									@click.stop="remove(item.id)">
 									✕

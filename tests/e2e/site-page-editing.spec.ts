@@ -68,7 +68,11 @@ async function adminApi(): Promise<APIRequestContext> {
  * @param user the account name
  * @param pass the password
  */
-async function loginToNextcloud(page: Page, user: string, pass: string): Promise<void> {
+async function loginToNextcloud(
+	page: Page,
+	user: string,
+	pass: string,
+): Promise<void> {
 	await page.goto('/index.php/login')
 	await page.locator('input[name="user"]').fill(user)
 	await page.locator('input[name="password"]').fill(pass)
@@ -95,7 +99,9 @@ async function loginToNextcloud(page: Page, user: string, pass: string): Promise
  */
 async function spaBase(page: Page): Promise<string> {
 	await page.goto(`${BASE}/index.php/apps/portaliq/`)
-	await expect(page.locator('#content > *').first()).toBeVisible({ timeout: 60_000 })
+	await expect(page.locator('#content > *').first()).toBeVisible({
+		timeout: 60_000,
+	})
 	const settled = new URL(page.url()).pathname
 	expect(
 		settled,
@@ -114,8 +120,12 @@ async function spaBase(page: Page): Promise<string> {
  * @param api the request context
  * @return the placements
  */
-async function publishedWidgets(api: APIRequestContext): Promise<Array<Record<string, number | string>>> {
-	const response = await api.get(`${CONTENT}/page?route=${encodeURIComponent(ROUTE)}&portal=open-tilburg`)
+async function publishedWidgets(
+	api: APIRequestContext,
+): Promise<Array<Record<string, number | string>>> {
+	const response = await api.get(
+		`${CONTENT}/page?route=${encodeURIComponent(ROUTE)}&portal=open-tilburg`,
+	)
 	expect(response.status(), 'the fixture page must be publicly readable').toBe(200)
 	const body = await response.json()
 
@@ -162,7 +172,10 @@ test.beforeAll(async () => {
 			},
 		},
 	})
-	expect(created.ok(), `creating the fixture page failed: ${created.status()}`).toBe(true)
+	expect(
+		created.ok(),
+		`creating the fixture page failed: ${created.status()}`,
+	).toBe(true)
 	const row = await created.json()
 	pageId = row['@self']?.id ?? row.id
 	expect(pageId, 'the created page must report an id').toBeTruthy()
@@ -195,12 +208,18 @@ test.describe('portal page editing', () => {
 		// not load" rather than "the link was wrong". This run hit exactly that
 		// while being written, from a base-path mismatch.
 		const manifest = JSON.parse(
-			readFileSync(path.join(__dirname, '..', '..', 'src', 'manifest.json'), 'utf8'),
+			readFileSync(
+				path.join(__dirname, '..', '..', 'src', 'manifest.json'),
+				'utf8',
+			),
 		)
 		const declared = manifest.pages.find(
 			(entry: Record<string, string>) => entry.id === 'PageLayout',
 		)
-		expect(declared, 'the manifest must declare the PageLayout page').toBeTruthy()
+		expect(
+			declared,
+			'the manifest must declare the PageLayout page',
+		).toBeTruthy()
 		expect(declared.component).toBe('PageLayoutDesigner')
 
 		const api = await adminApi()
@@ -256,11 +275,16 @@ test.describe('portal page editing', () => {
 
 		await button.click()
 		await expect(button).toHaveAttribute('aria-expanded', 'true')
-		await expect(page.getByTestId('site-edit-menu')).toHaveAttribute('role', 'menu')
+		await expect(page.getByTestId('site-edit-menu')).toHaveAttribute(
+			'role',
+			'menu',
+		)
 
 		await page.getByTestId('site-edit-page').click()
 		await expect(page).toHaveURL(new RegExp(`/pages/${pageId}/layout$`))
-		await expect(page.getByTestId('designer-title')).toHaveText('E2E designer fixture')
+		await expect(page.getByTestId('designer-title')).toHaveText(
+			'E2E designer fixture',
+		)
 	})
 
 	// @e2e portal-page-designer::a-saved-draft-does-not-change-the-public-page
@@ -277,7 +301,9 @@ test.describe('portal page editing', () => {
 		await loginToNextcloud(page, ADMIN_USER, ADMIN_PASS)
 		const app = await spaBase(page)
 		await page.goto(`${BASE}${app}/pages/${pageId}/layout`)
-		await expect(page.getByTestId('designer-title')).toBeVisible({ timeout: 30_000 })
+		await expect(page.getByTestId('designer-title')).toBeVisible({
+			timeout: 30_000,
+		})
 
 		// MOVED BY KEYBOARD, deliberately: the pointer drag is GridStack's own
 		// and is covered by the library, while the keyboard path is the one
@@ -298,7 +324,10 @@ test.describe('portal page editing', () => {
 		// draft field exists for; without it, "save" and "publish" are two
 		// buttons doing one thing.
 		const afterDraft = await publishedWidgets(api)
-		expect(afterDraft[0].gridX, 'a draft must not move the published widget').toBe(0)
+		expect(
+			afterDraft[0].gridX,
+			'a draft must not move the published widget',
+		).toBe(0)
 		expect(
 			JSON.stringify(afterDraft),
 			'no part of the draft may appear in the public response',
@@ -309,7 +338,10 @@ test.describe('portal page editing', () => {
 		await expect(page.getByTestId('designer-has-draft')).toHaveCount(0)
 
 		const afterPublish = await publishedWidgets(api)
-		expect(afterPublish[0].gridX, 'publishing must move the published widget').toBe(1)
+		expect(
+			afterPublish[0].gridX,
+			'publishing must move the published widget',
+		).toBe(1)
 
 		await api.dispose()
 	})
@@ -323,7 +355,9 @@ test.describe('portal page editing', () => {
 		await loginToNextcloud(page, ADMIN_USER, ADMIN_PASS)
 		const app = await spaBase(page)
 		await page.goto(`${BASE}${app}/pages/${pageId}/layout`)
-		await expect(page.getByTestId('designer-title')).toBeVisible({ timeout: 30_000 })
+		await expect(page.getByTestId('designer-title')).toBeVisible({
+			timeout: 30_000,
+		})
 
 		await page.getByTestId('designer-add-widget').click()
 		const palette = page.getByTestId('widget-palette')

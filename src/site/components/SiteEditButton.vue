@@ -15,10 +15,7 @@
 		For a public government portal the honest rendering for a reader is
 		nothing at all.
 	-->
-	<div
-		v-if="context"
-		class="pq-edit"
-		data-testid="site-edit">
+	<div v-if="context" class="pq-edit" data-testid="site-edit">
 		<!--
 			The menu is rendered BEFORE the button in the DOM so that tabbing
 			forward from the button leaves the control entirely, while the menu
@@ -345,7 +342,10 @@ export default {
 	justify-content: center;
 	cursor: pointer;
 	color: var(--pq-edit-color, #fff);
-	background: var(--pq-edit-background, var(--utrecht-button-primary-action-background-color, #0078c8));
+	background: var(
+		--pq-edit-background,
+		var(--utrecht-button-primary-action-background-color, #0078c8)
+	);
 	box-shadow: 0 2px 8px rgb(0 0 0 / 30%);
 }
 

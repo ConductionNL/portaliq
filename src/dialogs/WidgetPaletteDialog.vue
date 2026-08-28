@@ -32,10 +32,7 @@
 		</p>
 
 		<ul class="palette__list">
-			<li
-				v-for="entry in entries"
-				:key="entry.key"
-				class="palette__item">
+			<li v-for="entry in entries" :key="entry.key" class="palette__item">
 				<button
 					type="button"
 					class="palette__button"
@@ -58,7 +55,9 @@
 		</ul>
 
 		<template #actions>
-			<NcButton data-testid="widget-palette-close" @click="$emit('update:open', false)">
+			<NcButton
+				data-testid="widget-palette-close"
+				@click="$emit('update:open', false)">
 				{{ t('portaliq', 'Cancel') }}
 			</NcButton>
 		</template>
