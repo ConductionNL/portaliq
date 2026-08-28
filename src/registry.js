@@ -41,6 +41,7 @@ import StatusBadge from './cellRenderers/StatusBadge.vue'
 import EmailField from './formFields/EmailField.vue'
 import ExampleModal from './modals/ExampleModal.vue'
 import CustomExample from './views/CustomExample.vue'
+import PageLayoutDesigner from './views/PageLayoutDesigner.vue'
 
 export default {
 	// -------------------------------------------------------------------------
@@ -86,6 +87,20 @@ export default {
 	CustomExample: {
 		kind: 'page',
 		component: CustomExample,
+	},
+
+	/**
+	 * The page layout designer — direct-manipulation editing of a portal
+	 * page's widget grid, reached from `/pages/:id/layout` and from the
+	 * floating editing control on the site itself.
+	 *
+	 * A custom page rather than a page type: what it edits is one schema's
+	 * `body.widgets`, on a grid whose geometry belongs to this app's CMS, and
+	 * the escape hatch is what ADR-036 offers for exactly that.
+	 */
+	PageLayoutDesigner: {
+		kind: 'page',
+		component: PageLayoutDesigner,
 	},
 
 	// -------------------------------------------------------------------------

@@ -1096,6 +1096,14 @@
       }
     },
     {
+      "id": "PageLayout",
+      "route": "/pages/:id/layout",
+      "type": "custom",
+      "title": "Page layout",
+      "component": "PageLayoutDesigner",
+      "_note": "A page body is a widget grid on the shared 12-column geometry, and no built-in page type edits one: the detail page renders the object as fields, which for body.widgets means an array of grid integers in a textarea. This custom page places, moves and resizes those widgets directly, and is what the floating editing control on the site links to."
+    },
+    {
       "id": "Glossary",
       "route": "/glossary",
       "type": "index",
