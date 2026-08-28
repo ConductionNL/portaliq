@@ -108,7 +108,8 @@ OC.L10N.register(
         "Settings saved successfully": "Settings saved successfully",
         "Saving...": "Saving...",
         "This app needs OpenRegister to store and manage data. Please install OpenRegister from the app store to get started.": "This app needs OpenRegister to store and manage data. Please install OpenRegister from the app store to get started.",
-        "User settings will appear here in a future update.": "User settings will appear here in a future update."
+        "User settings will appear here in a future update.": "User settings will appear here in a future update.",
+        "Page layout": "Page layout"
     },
     "nplurals=2; plural=(n != 1);"
 )

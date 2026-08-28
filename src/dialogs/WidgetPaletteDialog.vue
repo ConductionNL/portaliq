@@ -91,6 +91,8 @@ export default {
 		 * The catalogue, public entries first.
 		 *
 		 * @return {Array<object>} The entries.
+		 *
+		 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-palette-must-mark-widgets-that-cannot-render-on-a-public-page
 		 */
 		entries() {
 			return widgetCatalogue()
@@ -103,6 +105,8 @@ export default {
 		 *
 		 * @param {object} entry The catalogue entry.
 		 * @return {void}
+		 *
+		 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-palette-must-mark-widgets-that-cannot-render-on-a-public-page
 		 */
 		choose(entry) {
 			this.$emit('choose', entry.key)
