@@ -104,6 +104,10 @@ class CmsEditorControllerTest extends TestCase {
 		$this->assertSame('page-1', $data['pageId']);
 		$this->assertSame('/apps/portaliq/pages/page-1/layout', $data['designerUrl']);
 		$this->assertSame('/apps/portaliq/pages', $data['pagesUrl']);
+		// The shared index page opens its create dialog on `action=create` and
+		// on nothing else, so an invented spelling makes the menu's "new page"
+		// entry land on the listing with no dialog and no explanation.
+		$this->assertSame('/apps/portaliq/pages?action=create', $data['newPageUrl']);
 	}//end testAnEditorGetsTheDesignerLink()
 
 

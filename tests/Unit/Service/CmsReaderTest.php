@@ -263,6 +263,83 @@ class CmsReaderTest extends TestCase {
 
 
 	/**
+	 * An editor's route lookup finds the page behind a route, published or not.
+	 *
+	 * `identify()` is the one read on this class that deliberately does NOT
+	 * filter `status`: an editor's whole reason to ask is to open the draft.
+	 * That makes the DRAFT case the one worth asserting — a lookup that
+	 * silently inherited the public filter would work in every manual test
+	 * against a published page and fail exactly when an editor needed it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+	 */
+	public function testIdentifyFindsAnUnpublishedPageToo(): void {
+		$this->withRows(
+			[
+				[
+					'@self'  => ['id' => 'aa11'],
+					'route'  => '/concept',
+					'status' => 'draft',
+				],
+			]
+		);
+
+		$this->assertSame('aa11', $this->reader->identify('open-tilburg', '/concept'));
+	}//end testIdentifyFindsAnUnpublishedPageToo()
+
+
+	/**
+	 * A flat `id` is accepted as well as the `@self` envelope.
+	 *
+	 * OpenRegister returns both shapes depending on how a row was projected,
+	 * and a lookup that read only one of them returns null for a page that is
+	 * plainly there — which the site renders as "no editing available here".
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+	 */
+	public function testIdentifyReadsAFlatIdentifier(): void {
+		$this->withRows([['id' => 'bb22', 'route' => '/contact']]);
+
+		$this->assertSame('bb22', $this->reader->identify('open-tilburg', '/contact'));
+	}//end testIdentifyReadsAFlatIdentifier()
+
+
+	/**
+	 * A route with no page behind it identifies nothing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+	 */
+	public function testIdentifyReturnsNullForAnUnknownRoute(): void {
+		$this->withRows([['@self' => ['id' => 'cc33'], 'route' => '/ergens-anders']]);
+
+		$this->assertNull($this->reader->identify('open-tilburg', '/contact'));
+	}//end testIdentifyReturnsNullForAnUnknownRoute()
+
+
+	/**
+	 * An unscoped identify refuses rather than searching every portal.
+	 *
+	 * Same rule as every other read here: without a portal this would resolve a
+	 * route to whichever site happened to own it, and hand an editor of site A
+	 * the designer for site B's page.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+	 */
+	public function testIdentifyRefusesWithoutAPortalOrRoute(): void {
+		$this->assertNull($this->reader->identify('', '/contact'));
+		$this->assertNull($this->reader->identify('open-tilburg', ''));
+	}//end testIdentifyRefusesWithoutAPortalOrRoute()
+
+
+	/**
 	 * Wire the container to an ObjectService double returning fixed rows.
 	 *
 	 * @param array $rows The rows findAll() should return.

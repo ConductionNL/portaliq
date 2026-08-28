@@ -127,7 +127,13 @@ class CmsEditorController extends Controller {
 			'canEdit'     => true,
 			'pageId'      => $pageId,
 			'pagesUrl'    => $this->urls->linkToRoute('portaliq.dashboard.catchAll', ['path' => 'pages']),
-			'newPageUrl'  => $this->urls->linkToRoute('portaliq.dashboard.catchAll', ['path' => 'pages']).'?new=page',
+			// `action=create` is the shared index page's OWN contract
+			// (`CnIndexPage::maybeOpenCreateFromQuery()`), not a name invented
+			// here. A menu entry called "new page" that merely lands on the
+			// listing is a label promising more than the link delivers — and
+			// the first invented spelling, `?new=page`, did exactly that: the
+			// list opened, no dialog, nothing to tell the editor why.
+			'newPageUrl'  => $this->urls->linkToRoute('portaliq.dashboard.catchAll', ['path' => 'pages']).'?action=create',
 			'designerUrl' => null,
 		];
 
