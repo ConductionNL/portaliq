@@ -136,7 +136,7 @@ export default {
 	gap: 2px;
 	width: 100%;
 	padding: 10px 12px;
-	text-align: left;
+	text-align: start;
 	border: 1px solid var(--color-border);
 	border-radius: var(--border-radius);
 	background: var(--color-main-background);

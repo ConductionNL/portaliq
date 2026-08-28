@@ -796,8 +796,8 @@ export default {
 .designer__inspector {
 	flex: 0 0 320px;
 	max-width: 100%;
-	border-left: 1px solid var(--color-border);
-	padding-left: 16px;
+	border-inline-start: 1px solid var(--color-border);
+	padding-inline-start: 16px;
 }
 
 .designer__cell {
@@ -875,9 +875,9 @@ export default {
 	}
 
 	.designer__inspector {
-		border-left: none;
+		border-inline-start: none;
 		border-top: 1px solid var(--color-border);
-		padding-left: 0;
+		padding-inline-start: 0;
 		padding-top: 16px;
 		flex-basis: auto;
 		width: 100%;

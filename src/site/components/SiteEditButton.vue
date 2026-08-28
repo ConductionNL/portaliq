@@ -320,7 +320,7 @@ export default {
 <style scoped>
 .pq-edit {
 	position: fixed;
-	right: 1.5rem;
+	inset-inline-end: 1.5rem;
 	bottom: 1.5rem;
 	z-index: 100;
 	display: flex;
