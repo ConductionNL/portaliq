@@ -21,6 +21,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\Service\CmsReader;
+use OCA\Portaliq\Service\PortalRegisterContext;
 use OCP\ICache;
 use OCP\ICacheFactory;
 use PHPUnit\Framework\TestCase;
@@ -71,10 +72,18 @@ class CmsReaderTest extends TestCase {
 		$factory = $this->createMock(ICacheFactory::class);
 		$factory->method('createDistributed')->willReturn($this->cache);
 
+		// The context helper is a double that always succeeds: what it does —
+		// keeping another app's leftover schema ref out of this app's reads —
+		// has its own test, and stubbing it here keeps these assertions about
+		// the cache key rather than about OpenRegister's context handling.
+		$context = $this->createMock(PortalRegisterContext::class);
+		$context->method('apply')->willReturn(true);
+
 		$this->reader = new CmsReader(
 			$this->container,
 			$factory,
-			$this->createMock(LoggerInterface::class)
+			$this->createMock(LoggerInterface::class),
+			$context
 		);
 	}//end setUp()
 
@@ -183,6 +192,74 @@ class CmsReaderTest extends TestCase {
 		$this->assertSame([], $this->reader->glossary('', 'nl', 'anonymous'));
 		$this->assertNull($this->reader->page('', '/', 'nl', 'anonymous'));
 	}//end testAnUnscopedReadReturnsNothing()
+
+
+	/**
+	 * A page's unpublished draft must never reach the public API.
+	 *
+	 * THIS ASSERTS THE LEAK, NOT THE SHAPE. `shapePage()` copies named keys, so
+	 * a draft is excluded by omission — which is exactly the kind of guarantee
+	 * that survives until someone adds a convenience `+ $row` merge and nothing
+	 * anywhere fails. The fixture therefore carries a draft whose content is
+	 * distinguishable from the published body, and the assertion is that no
+	 * part of it appears in the response at all.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-a-page-must-carry-a-draft-body-that-is-never-served-publicly
+	 */
+	public function testADraftIsNeverServedPublicly(): void {
+		$this->cache->method('get')->willReturn(null);
+		$this->withRows(
+			[
+				[
+					'title'  => 'Welkom',
+					'route'  => '/',
+					'status' => 'published',
+					'body'   => [
+						'type'     => 'grid',
+						'widgets'  => [
+							[
+								'id'         => 'intro',
+								'widgetKey'  => 'markdown',
+								'gridX'      => 0,
+								'gridY'      => 0,
+								'gridWidth'  => 12,
+								'gridHeight' => 4,
+								'props'      => ['markdown' => 'PUBLISHED COPY'],
+							],
+						],
+					],
+					'draftBody' => [
+						'type'    => 'grid',
+						'widgets' => [
+							[
+								'id'         => 'secret',
+								'widgetKey'  => 'markdown',
+								'gridX'      => 0,
+								'gridY'      => 0,
+								'gridWidth'  => 12,
+								'gridHeight' => 4,
+								'props'      => ['markdown' => 'UNANNOUNCED REORGANISATION'],
+							],
+						],
+					],
+				],
+			]
+		);
+
+		$page = $this->reader->page('open-tilburg', '/', 'nl', 'anonymous');
+		$encoded = json_encode($page);
+
+		$this->assertStringNotContainsString(
+			'UNANNOUNCED REORGANISATION',
+			$encoded,
+			'An unpublished draft reached the public content API.'
+		);
+		$this->assertStringNotContainsString('draftBody', $encoded);
+		$this->assertStringNotContainsString('secret', $encoded);
+		$this->assertStringContainsString('PUBLISHED COPY', $encoded);
+	}//end testADraftIsNeverServedPublicly()
 
 
 	/**

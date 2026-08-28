@@ -154,6 +154,35 @@ const PUBLIC_WIDGETS = {
 	...siteBlockRegistry,
 }
 
+/**
+ * The public vocabulary, as data.
+ *
+ * ONE STRUCTURE, TWO READERS. The map above is the gate — a widget renders at
+ * a public origin if and only if it is in it — and the page designer has to
+ * offer exactly that set as "safe to place here". Copying the key list into the
+ * designer would create a second grammar that drifts from this one silently:
+ * a block added here would go on rendering publicly while the designer went on
+ * calling it unavailable, and neither side would be wrong on its own terms.
+ *
+ * So the designer reads THIS, derived from the same object the renderer
+ * resolves against.
+ *
+ * @return {Array<string>} The widget keys that render at a public origin.
+ */
+export function publicWidgetKeys() {
+	return Object.keys(PUBLIC_WIDGETS)
+}
+
+/**
+ * The component a public origin will mount for a widget key.
+ *
+ * @param {string} key The registry key.
+ * @return {object|null} The component, or null when the key is not public.
+ */
+export function publicWidgetFor(key) {
+	return Object.hasOwn(PUBLIC_WIDGETS, key) ? PUBLIC_WIDGETS[key] : null
+}
+
 export default {
 	name: 'WidgetGrid',
 
@@ -272,7 +301,7 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-only-explicitly-public-widgets-must-render-at-a-public-origin
 		 */
 		componentFor(key) {
-			return Object.hasOwn(PUBLIC_WIDGETS, key) ? PUBLIC_WIDGETS[key] : null
+			return publicWidgetFor(key)
 		},
 
 		/**

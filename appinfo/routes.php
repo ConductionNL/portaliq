@@ -52,6 +52,13 @@ return [
             'postfix' => 'byroute',
         ],
 
+        // The editing-context probe (portal-page-designer). NOT part of the
+        // headless content contract: it answers a question about the CALLER
+        // (may this session edit this route's page), which a third-party
+        // front-end has no equivalent of. Registered here so it sits ahead of
+        // the SPA catch-all like the content routes above.
+        ['name' => 'cmsEditor#editingContext', 'url' => '/api/cms/editing-context', 'verb' => 'GET'],
+
         // Public portal SPA (external clients + suppliers) — served with public
         // chrome via #[PublicPage]. The portalPage#catchAll route handles
         // client-side deep links. Registered BEFORE the dashboard catch-all so
