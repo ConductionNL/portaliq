@@ -110,7 +110,8 @@ OC.L10N.register(
         "This is the canonical example of a custom-type page in the manifest renderer pattern. It is rendered when a manifest page declares `type: \"custom\"` and `component: \"CustomExample\"`.": "Dit is het standaardvoorbeeld van een pagina van het type custom in het manifest-renderpatroon. Het wordt getoond wanneer een manifestpagina `type: \"custom\"` en `component: \"CustomExample\"` declareert.",
         "Version Information": "Versie-informatie",
         "Flows": "Flows",
-        "Flow": "Flow"
+        "Flow": "Flow",
+        "Page layout": "Pagina-indeling"
     },
     "nplurals=2; plural=(n != 1);"
 )
