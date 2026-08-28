@@ -68,6 +68,20 @@
 					@click="discardDraft">
 					{{ t('portaliq', 'Discard draft') }}
 				</NcButton>
+				<!--
+					THE WAY BACK. An editor arrives here from a floating control
+					on the page they were reading; without this they have to
+					find their way back through the app's navigation to a site
+					that is not in it. The link carries the page's own route, so
+					it returns them to the page they were editing rather than to
+					the portal's front door.
+				-->
+				<NcButton
+					v-if="page.route"
+					:href="siteUrl"
+					data-testid="designer-view-on-site">
+					{{ t('portaliq', 'View on the site') }}
+				</NcButton>
 			</div>
 		</header>
 
@@ -300,6 +314,17 @@ export default {
 		 */
 		pageId() {
 			return String(this.$route?.params?.id || '')
+		},
+
+		/**
+		 * Where this page is served on the public site.
+		 *
+		 * @return {string} The site URL for this page's route.
+		 */
+		siteUrl() {
+			const route = String(this.page.route || '/')
+
+			return `${generateUrl('/apps/portaliq/site')}?route=${encodeURIComponent(route)}`
 		},
 
 		/**
