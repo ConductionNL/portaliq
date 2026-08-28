@@ -68,6 +68,20 @@
 					@click="discardDraft">
 					{{ t('portaliq', 'Discard draft') }}
 				</NcButton>
+				<!--
+					THE WAY BACK. An editor arrives here from a floating control
+					on the page they were reading; without this they have to
+					find their way back through the app's navigation to a site
+					that is not in it. The link carries the page's own route, so
+					it returns them to the page they were editing rather than to
+					the portal's front door.
+				-->
+				<NcButton
+					v-if="page.route"
+					:href="siteUrl"
+					data-testid="designer-view-on-site">
+					{{ t('portaliq', 'View on the site') }}
+				</NcButton>
 			</div>
 		</header>
 
@@ -297,15 +311,32 @@ export default {
 		 * The page identifier from the route.
 		 *
 		 * @return {string} The id.
+		 *
+		 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-a-pages-widget-grid-must-be-editable-by-direct-manipulation
 		 */
 		pageId() {
 			return String(this.$route?.params?.id || '')
 		},
 
 		/**
+		 * Where this page is served on the public site.
+		 *
+		 * @return {string} The site URL for this page's route.
+		 *
+		 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+		 */
+		siteUrl() {
+			const route = String(this.page.route || '/')
+
+			return `${generateUrl('/apps/portaliq/site')}?route=${encodeURIComponent(route)}`
+		},
+
+		/**
 		 * The selected widget placement.
 		 *
 		 * @return {object|null} The placement.
+		 *
+		 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-a-pages-widget-grid-must-be-editable-by-direct-manipulation
 		 */
 		selected() {
 			return this.widgets.find((w) => w.id === this.selectedId) || null
@@ -315,6 +346,8 @@ export default {
 		 * The editable fields for the selected widget.
 		 *
 		 * @return {Array<object>} The fields.
+		 *
+		 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-a-pages-widget-grid-must-be-editable-by-direct-manipulation
 		 */
 		fields() {
 			return this.selected ? fieldsFor(this.selected.widgetKey) : []
@@ -363,6 +396,8 @@ export default {
 		 * The OpenRegister object URL for this page.
 		 *
 		 * @return {string} The URL.
+		 *
+		 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-a-page-must-carry-a-draft-body-that-is-never-served-publicly
 		 */
 		objectUrl() {
 			return generateUrl(
@@ -379,6 +414,8 @@ export default {
 		 *
 		 * @param {Array<object>} widgets The stored placements.
 		 * @return {Array<object>} The normalised placements.
+		 *
+		 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-a-pages-widget-grid-must-be-editable-by-direct-manipulation
 		 */
 		normalise(widgets) {
 			return widgets.map((widget, index) => ({
@@ -428,6 +465,8 @@ export default {
 		 *
 		 * @param {object} payload The grid's activate payload.
 		 * @return {void}
+		 *
+		 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-a-pages-widget-grid-must-be-editable-by-direct-manipulation
 		 */
 		onActivate(payload) {
 			if (payload?.item?.id) {
@@ -440,6 +479,8 @@ export default {
 		 *
 		 * @param {string} id The placement id.
 		 * @return {void}
+		 *
+		 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-a-pages-widget-grid-must-be-editable-by-direct-manipulation
 		 */
 		select(id) {
 			this.selectedId = id
@@ -486,6 +527,8 @@ export default {
 		 *
 		 * @param {string} key The widget key.
 		 * @return {string} The id.
+		 *
+		 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-a-pages-widget-grid-must-be-editable-by-direct-manipulation
 		 */
 		nextId(key) {
 			const taken = new Set(this.widgets.map((w) => w.id))
@@ -504,6 +547,8 @@ export default {
 		 *
 		 * @param {string} id The placement id.
 		 * @return {void}
+		 *
+		 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-a-pages-widget-grid-must-be-editable-by-direct-manipulation
 		 */
 		remove(id) {
 			this.widgets = this.widgets.filter((w) => w.id !== id)
@@ -530,6 +575,8 @@ export default {
 		 *
 		 * @param {string} key The widget key.
 		 * @return {object|null} The component.
+		 *
+		 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-palette-must-mark-widgets-that-cannot-render-on-a-public-page
 		 */
 		previewFor(key) {
 			return previewComponentFor(key)
@@ -550,6 +597,8 @@ export default {
 		 *
 		 * @param {object} widget The placement.
 		 * @return {object} The props.
+		 *
+		 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-palette-must-mark-widgets-that-cannot-render-on-a-public-page
 		 */
 		previewProps(widget) {
 			const props = widget.props || {}
@@ -565,6 +614,8 @@ export default {
 		 *
 		 * @param {object} field The field.
 		 * @return {string} The value.
+		 *
+		 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-a-pages-widget-grid-must-be-editable-by-direct-manipulation
 		 */
 		fieldValue(field) {
 			const value = this.selected?.props?.[field.name]
@@ -586,6 +637,8 @@ export default {
 		 * @param {object} field The field.
 		 * @param {string} raw   The typed value.
 		 * @return {void}
+		 *
+		 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-a-pages-widget-grid-must-be-editable-by-direct-manipulation
 		 */
 		onFieldInput(field, raw) {
 			if (field.kind === 'number') {
@@ -620,6 +673,8 @@ export default {
 		 * @param {string} name  The prop name.
 		 * @param {string|number|boolean|object|undefined} value The value; `undefined` deletes it.
 		 * @return {void}
+		 *
+		 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-a-pages-widget-grid-must-be-editable-by-direct-manipulation
 		 */
 		setProp(name, value) {
 			if (!this.selected) {
@@ -697,6 +752,8 @@ export default {
 		 * @param {object} payload The object to store.
 		 * @param {string} notice  The message on success.
 		 * @return {Promise<void>} Resolves when written.
+		 *
+		 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-a-page-must-carry-a-draft-body-that-is-never-served-publicly
 		 */
 		async write(payload, notice) {
 			this.saving = true
@@ -726,6 +783,8 @@ export default {
 		 * @param {object} error    The axios error.
 		 * @param {string} fallback The generic message.
 		 * @return {string} The message.
+		 *
+		 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-a-pages-widget-grid-must-be-editable-by-direct-manipulation
 		 */
 		messageFor(error, fallback) {
 			const status = error?.response?.status

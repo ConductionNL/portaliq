@@ -368,6 +368,64 @@ class PageEditorServiceTest extends TestCase {
 
 
 	/**
+	 * The picker is offered every group on the instance, id-sorted.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
+	 */
+	public function testAvailableGroupsAreListedForThePicker(): void {
+		$appConfig = $this->createMock(IAppConfig::class);
+		$appConfig->method('getValueString')->willReturn('');
+
+		$groupManager = $this->createMock(IGroupManager::class);
+		$groupManager->method('search')->willReturn(
+			[
+				$this->group('webmasters', 'Webmasters'),
+				$this->group('Redacteuren', 'Redacteuren'),
+				$this->group('ambtenaar', 'Ambtenaren'),
+			]
+		);
+
+		$service = new PageEditorService(
+			$appConfig,
+			$groupManager,
+			$this->createMock(IUserSession::class),
+			$this->createMock(ContainerInterface::class),
+			$this->createMock(LoggerInterface::class)
+		);
+
+		$this->assertSame(
+			[
+				['id' => 'ambtenaar', 'label' => 'Ambtenaren'],
+				['id' => 'Redacteuren', 'label' => 'Redacteuren'],
+				['id' => 'webmasters', 'label' => 'Webmasters'],
+			],
+			$service->availableGroups(),
+			'the list is case-insensitively id-sorted, so a picker does not order '
+			.'`Redacteuren` before `ambtenaar` on capitalisation alone'
+		);
+	}//end testAvailableGroupsAreListedForThePicker()
+
+
+	/**
+	 * A group double.
+	 *
+	 * @param string $gid   The group id.
+	 * @param string $label The display name.
+	 *
+	 * @return \OCP\IGroup The double.
+	 */
+	private function group(string $gid, string $label): \OCP\IGroup {
+		$group = $this->createMock(\OCP\IGroup::class);
+		$group->method('getGID')->willReturn($gid);
+		$group->method('getDisplayName')->willReturn($label);
+
+		return $group;
+	}//end group()
+
+
+	/**
 	 * A value stored by hand as a bare string configures that one group.
 	 *
 	 * @return void
