@@ -226,6 +226,87 @@ class PortalRegisterContextTest extends TestCase {
 
 
 	/**
+	 * The schema is resolved ONCE per request, not per read.
+	 *
+	 * Every content read on a page — site, menus, pages, glossary — applies the
+	 * context again. Re-querying the schema mapper for each would put four
+	 * lookups on the path of one anonymous page view, on the surface that gets
+	 * the most traffic.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-a-cms-read-must-not-inherit-another-apps-openregister-context
+	 */
+	public function testTheSchemaIsResolvedOncePerRequest(): void {
+		$lookups = 0;
+		$mapper = new class($lookups) {
+
+			/**
+			 * The lookup counter, by reference.
+			 *
+			 * @var int
+			 */
+			public int $calls = 0;
+
+
+			/**
+			 * Constructor.
+			 *
+			 * @param int $seed The starting count.
+			 */
+			public function __construct(int $seed) {
+				$this->calls = $seed;
+			}
+
+
+			/**
+			 * Resolve and count.
+			 *
+			 * @param string $slug        The slug.
+			 * @param string $application The owning app.
+			 *
+			 * @return object The entity.
+			 */
+			public function findByApplicationAndSlug(string $slug, string $application): object {
+				$this->calls++;
+
+				return (object) ['slug' => $slug];
+			}
+		};
+
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willReturn($mapper);
+		$context = new PortalRegisterContext($container, $this->createMock(LoggerInterface::class));
+
+		$context->apply($this->objectService(), 'page');
+		$context->apply($this->objectService(), 'page');
+		$context->apply($this->objectService(), 'menu');
+
+		$this->assertSame(2, $mapper->calls, 'one lookup per distinct slug, not per apply()');
+	}//end testTheSchemaIsResolvedOncePerRequest()
+
+
+	/**
+	 * OpenRegister being absent is refused quietly, not fatally.
+	 *
+	 * A leaf app whose OpenRegister is not installed must render an empty
+	 * portal, not a 500 — the caller checks the boolean and returns no rows.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-a-cms-read-must-not-inherit-another-apps-openregister-context
+	 */
+	public function testAnAbsentOpenRegisterIsRefusedQuietly(): void {
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willThrowException(new \RuntimeException('no OpenRegister here'));
+		$context = new PortalRegisterContext($container, $this->createMock(LoggerInterface::class));
+
+		$this->assertFalse($context->apply($this->objectService(), 'page'));
+		$this->assertSame([], $this->calls);
+	}//end testAnAbsentOpenRegisterIsRefusedQuietly()
+
+
+	/**
 	 * A schema this app does not own is refused, and nothing is applied.
 	 *
 	 * `page`, `menu` and `portal` are about as generic as slugs get, and this
