@@ -1,5 +1,88 @@
 {
   "$schema": "https://github.com/ConductionNL/nextcloud-vue/raw/main/src/schemas/app-manifest-v2.schema.json",
+    "walkthrough": {
+      "enabled": true,
+      "version": 1,
+      "completionConfigKey": "walkthrough_completed_version",
+      "tours": [
+        {
+          "id": "portaliq:getting-started",
+          "title": "Getting started",
+          "trigger": "first-visit",
+          "steps": [
+            {
+              "id": "welcome",
+              "placement": "center",
+              "title": "Welcome to Portaliq",
+              "body": "A short tour of the main screens. It takes under a minute, and you can close it at any point and pick it up again from the help menu.",
+              "target": {
+                "kind": "page",
+                "ref": "Dashboard"
+              },
+              "advanceOn": {
+                "type": "manual"
+              }
+            },
+            {
+              "id": "go-dashboard",
+              "placement": "right",
+              "body": "Open Dashboard from the menu.",
+              "task": "Click Dashboard in the menu",
+              "target": {
+                "kind": "nav-item",
+                "ref": "Dashboard"
+              },
+              "advanceOn": {
+                "type": "route-match",
+                "route": "Dashboard"
+              }
+            },
+            {
+              "id": "go-portals",
+              "placement": "right",
+              "body": "Open Portals from the menu.",
+              "task": "Click Portals in the menu",
+              "target": {
+                "kind": "nav-item",
+                "ref": "Portals"
+              },
+              "advanceOn": {
+                "type": "route-match",
+                "route": "Portals"
+              }
+            },
+            {
+              "id": "go-portalaccounts",
+              "placement": "right",
+              "body": "Open Accounts from the menu.",
+              "task": "Click Accounts in the menu",
+              "target": {
+                "kind": "nav-item",
+                "ref": "PortalAccounts"
+              },
+              "advanceOn": {
+                "type": "route-match",
+                "route": "PortalAccounts"
+              }
+            },
+            {
+              "id": "go-themes",
+              "placement": "right",
+              "body": "Open Themes from the menu.",
+              "task": "Click Themes in the menu",
+              "target": {
+                "kind": "nav-item",
+                "ref": "Themes"
+              },
+              "advanceOn": {
+                "type": "route-match",
+                "route": "Themes"
+              }
+            }
+          ]
+        }
+      ]
+    },
   "version": "0.2.0",
   "dependencies": [
     "openregister"
