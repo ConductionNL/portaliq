@@ -1,0 +1,1 @@
+"use strict";(globalThis.webpackChunkportaliq_docs=globalThis.webpackChunkportaliq_docs||[]).push([[8976],{8976(a,e,s){s.d(e,{createPieServices:()=>c.f});var c=s(6019);s(1400)}}]);

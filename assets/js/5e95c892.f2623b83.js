@@ -1,0 +1,1 @@
+"use strict";(globalThis.webpackChunkportaliq_docs=globalThis.webpackChunkportaliq_docs||[]).push([[9647],{7121(s,e,r){r.r(e),r.d(e,{default:()=>i});r(6540);var a=r(8215),c=r(7559),l=r(5500),o=r(2831),t=r(1827),u=r(4848);function i(s){return(0,u.jsx)(l.e3,{className:(0,a.A)(c.G.wrapper.docsPages),children:(0,u.jsx)(t.A,{children:(0,o.v)(s.route.routes)})})}}}]);

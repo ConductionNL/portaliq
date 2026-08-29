@@ -1,0 +1,1 @@
+"use strict";(globalThis.webpackChunkportaliq_docs=globalThis.webpackChunkportaliq_docs||[]).push([[8488],{8488(c,e,a){a.d(e,{createArchitectureServices:()=>r.S});var r=a(9221);a(1400)}}]);

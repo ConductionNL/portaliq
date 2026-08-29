@@ -1,0 +1,1 @@
+"use strict";(globalThis.webpackChunkportaliq_docs=globalThis.webpackChunkportaliq_docs||[]).push([[7671],{7671(a,e,s){s.d(e,{createTreemapServices:()=>c.d});var c=s(4687);s(1400)}}]);
