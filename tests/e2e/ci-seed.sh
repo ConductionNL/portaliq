@@ -508,6 +508,9 @@ else
 	echo "::error::CMS seeding failed. The site-renderer specs would fail with"
 	echo "::error::'expected 200, got 404' — which is the API behaving CORRECTLY"
 	echo "::error::against an empty instance, not a defect in it."
+	exit 1
+fi
+
 
 # ── Settle the demo-data decision ────────────────────────────────────────────
 # 🔴 OR THE SETUP WIZARD MASKS EVERY CLICK. ADR-111 added an OPTIONAL
@@ -536,23 +539,24 @@ DEMO_CODE="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 300 \
 	"${DEMO_BASE}/index.php/apps/portaliq/api/setup/action/skip-demo-data" || echo 000)"
 echo "[ci-seed] POST setup/action/skip-demo-data -> HTTP ${DEMO_CODE}"
 
+
 # ── Settle the first-visit walkthrough ───────────────────────────────────────
 # 🔴 OR THE TOUR DIMS EVERY CLICK. The walkthrough opens on a fresh profile as a
 # modal with a full-page dim inside role="dialog", in EVERY new browser context
 # — so once per spec, not once per suite.
 #
-# Measured on this fleet at the walkthrough merge: clicks resolved their button
+# Measured on development at the walkthrough merge: clicks resolved their button
 # and never landed, the Playwright call log naming the interceptor as
 #   <div class="cn-walkthrough__dim cn-walkthrough__dim--full">
-# learniq lost 7 specs and portaliq 2 to exactly this.
+# This app lost 2 specs to it and learniq 7.
 #
 # Marks the tour SEEN rather than disabling it: the manifest declares
-# `walkthrough.version: 1` and `completionConfigKey:
-# walkthrough_completed_version`, so storing that version is the same thing a
-# real operator does by finishing (or dismissing) the tour once.
+# `walkthrough.version: 1` with `completionConfigKey:
+# walkthrough_completed_version`, so storing that version is what a real
+# operator does by finishing or dismissing the tour once.
 #
-# Tolerant on purpose: an app with no walkthrough answers 400/404 here, and
-# that is not a seeding failure.
+# Tolerant on purpose: an app with no walkthrough answers 400 here, and that is
+# not a seeding failure.
 WT_BASE="${BASE_URL:-${NEXTCLOUD_URL:-http://localhost:8080}}"
 WT_CODE="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 60 \
 	-u "${ADMIN_USER:-admin}:${ADMIN_PASSWORD:-admin}" -X PUT \
@@ -560,7 +564,5 @@ WT_CODE="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 60 \
 	--data '{"value":"1"}' \
 	"${WT_BASE}/index.php/apps/portaliq/api/preferences/walkthrough_completed_version" || echo 000)"
 echo "[ci-seed] PUT preferences/walkthrough_completed_version -> HTTP ${WT_CODE}"
-	exit 1
-fi
 
 echo "[ci-seed] done."
