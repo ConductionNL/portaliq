@@ -95,7 +95,9 @@ test.describe('ADR-111 demo data', () => {
 	}) => {
 		const res = await api(page, 'GET', `${APP_BASE}/api/setup/status`)
 
-		expect(res.status, 'setup/status must answer an authenticated admin').toBe(200)
+		expect(res.status, 'setup/status must answer an authenticated admin').toBe(
+			200,
+		)
 
 		// A step the endpoint never MENTIONS resolves to `done: false` forever —
 		// no operator action can clear it, and the wizard then covers the app in
@@ -114,10 +116,19 @@ test.describe('ADR-111 demo data', () => {
 		// that the install WROTE something.
 		test.slow()
 
-		const res = await api(page, 'POST', `${APP_BASE}/api/setup/action/install-demo-data`)
+		const res = await api(
+			page,
+			'POST',
+			`${APP_BASE}/api/setup/action/install-demo-data`,
+		)
 
-		expect(res.status, 'the action must pass the admin-only middleware').toBe(200)
-		expect(res.json?.success, `install failed: ${JSON.stringify(res.json)}`).toBe(true)
+		expect(res.status, 'the action must pass the admin-only middleware').toBe(
+			200,
+		)
+		expect(
+			res.json?.success,
+			`install failed: ${JSON.stringify(res.json)}`,
+		).toBe(true)
 
 		// THE COUNTS ARE THE ASSERTION. "Demo data installed" with no numbers is
 		// indistinguishable from an import that wrote nothing.
@@ -130,10 +141,16 @@ test.describe('ADR-111 demo data', () => {
 		).toBe(true)
 	})
 
-	test('re-installing is safe, because the step promises it is', async ({ page }) => {
+	test('re-installing is safe, because the step promises it is', async ({
+		page,
+	}) => {
 		// The step body tells the operator it is "safe to run more than once".
 		// That sentence is a contract; this asserts the server keeps it.
-		const again = await api(page, 'POST', `${APP_BASE}/api/setup/action/install-demo-data`)
+		const again = await api(
+			page,
+			'POST',
+			`${APP_BASE}/api/setup/action/install-demo-data`,
+		)
 
 		expect(again.status).toBe(200)
 		expect(
