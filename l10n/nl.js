@@ -12,7 +12,7 @@ OC.L10N.register(
         "Click Accounts in the menu": "Klik op Accounts in het menu",
         "Open Themes from the menu.": "Open Themes via het menu.",
         "Click Themes in the menu": "Klik op Themes in het menu",
-        "Flows automate the repetitive parts of this app. Have a look — you do not have to build one now.": "Flows automatiseren het repeterende werk in deze app. Kijk gerust rond — je hoeft er nu geen te maken.",
+        "Flows automate the repetitive parts of this app. Have a look, though you do not have to build one now.": "Flows automatiseren het repeterende werk in deze app. Kijk gerust rond, je hoeft er nu geen te maken.",
         "Open Flows from the menu": "Open Flows via het menu",
         "Pre-boot configuration": "Configuratie vóór opstarten",
         "Configure the app settings": "Configureer de app-instellingen",
