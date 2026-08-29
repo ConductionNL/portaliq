@@ -29,7 +29,6 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCP\AppFramework\Controller;
-use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IAppConfig;
@@ -93,9 +92,20 @@ class SetupController extends Controller {
 	 *
 	 * @return JSONResponse The status document.
 	 *
+	 * @auth admin-only This app's AdminSettings implements ISettings, not
+	 *       IDelegatedSettings, so there is nothing to authorize against —
+	 *       and SettingsController already documents this app's posture as
+	 *       no auth attribute at all. Nextcloud's SecurityMiddleware
+	 *       requires an admin session for a method that does not opt out,
+	 *       and this method does not opt out, so this tag is the
+	 *       declaration. Deliberately NOT the authorized-admin-setting
+	 *       attribute (named without its bracket form on purpose: gate-5
+	 *       greps for that form, so writing it here would silently read as
+	 *       a real declaration), which would widen the route to delegated
+	 *       settings admins.
+	 *
 	 * @spec exclude Setup status document; ADR-042 contract, no per-app behavioural spec.
 	 */
-	#[AuthorizedAdminSetting(Application::APP_ID)]
 	public function status(): JSONResponse {
 		$demoDecided = $this->appConfig->getValueString(Application::APP_ID, self::DEMO_DECIDED_KEY, '') !== '';
 
@@ -120,9 +130,20 @@ class SetupController extends Controller {
 	 *
 	 * @return JSONResponse `{ success, message }`.
 	 *
+	 * @auth admin-only This app's AdminSettings implements ISettings, not
+	 *       IDelegatedSettings, so there is nothing to authorize against —
+	 *       and SettingsController already documents this app's posture as
+	 *       no auth attribute at all. Nextcloud's SecurityMiddleware
+	 *       requires an admin session for a method that does not opt out,
+	 *       and this method does not opt out, so this tag is the
+	 *       declaration. Deliberately NOT the authorized-admin-setting
+	 *       attribute (named without its bracket form on purpose: gate-5
+	 *       greps for that form, so writing it here would silently read as
+	 *       a real declaration), which would widen the route to delegated
+	 *       settings admins.
+	 *
 	 * @spec exclude Setup action dispatch; ADR-042 contract, no per-app behavioural spec.
 	 */
-	#[AuthorizedAdminSetting(Application::APP_ID)]
 	public function runAction(string $actionId): JSONResponse {
 		if ($actionId === 'install-demo-data') {
 			return $this->installDemoData();
