@@ -61,6 +61,24 @@ final class PortaliqAdminTest extends TestCase {
 	private const GUARDED_ENDPOINTS = ['status', 'runAction'];
 
 	/**
+	 * A marker instance built without running the inherited constructor.
+	 *
+	 * `PortaliqAdmin` extends `AdminSettings`, whose constructor requires an
+	 * `IAppManager` and a `PortalSessionService`. Neither is reachable from the
+	 * two methods under test — both return a constant — so constructing the
+	 * real collaborators, or mocks of them, would add failure modes (mock
+	 * generation against app services) to assertions that do not depend on
+	 * them. The dependencies stay uninitialised on purpose: any future method
+	 * that starts using them will fail loudly here rather than silently read a
+	 * stub.
+	 *
+	 * @return PortaliqAdmin The marker under test.
+	 */
+	private function marker(): PortaliqAdmin {
+		return (new ReflectionClass(PortaliqAdmin::class))->newInstanceWithoutConstructor();
+	}
+
+	/**
 	 * The marker must satisfy the attribute's own type constraint.
 	 *
 	 * `AuthorizedAdminSetting` takes a `class-string<IDelegatedSettings>`. The
@@ -68,12 +86,15 @@ final class PortaliqAdminTest extends TestCase {
 	 * that mismatch is the entire reason this subclass exists, so a change that
 	 * dropped the interface would make the attribute unresolvable at runtime.
 	 *
+	 * Asserted on the CLASS rather than an instance: the type constraint the
+	 * attribute carries is about the class-string, and checking it that way
+	 * needs no constructor at all.
+	 *
 	 * @return void
 	 */
 	public function testMarkerImplementsDelegatedSettings(): void {
-		$this->assertInstanceOf(
-			IDelegatedSettings::class,
-			new PortaliqAdmin(),
+		$this->assertTrue(
+			(new ReflectionClass(PortaliqAdmin::class))->implementsInterface(IDelegatedSettings::class),
 			'PortaliqAdmin must implement IDelegatedSettings or AuthorizedAdminSetting cannot name it.',
 		);
 	}
@@ -90,7 +111,7 @@ final class PortaliqAdminTest extends TestCase {
 	public function testMarkerGrantsNothingToDelegatedAdmins(): void {
 		$this->assertSame(
 			[],
-			(new PortaliqAdmin())->getAuthorizedAppConfig(),
+			$this->marker()->getAuthorizedAppConfig(),
 			'A non-empty grant map opens the setup endpoints to group-restricted sub-admins.',
 		);
 	}
@@ -101,7 +122,7 @@ final class PortaliqAdminTest extends TestCase {
 	 * @return void
 	 */
 	public function testMarkerDefersItsName(): void {
-		$this->assertNull((new PortaliqAdmin())->getName());
+		$this->assertNull($this->marker()->getName());
 	}
 
 	/**
