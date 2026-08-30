@@ -166,6 +166,6 @@ export default {
 .pq-markdown :deep(td) {
 	border: 1px solid var(--pq-border-color, #d0d0d0);
 	padding: 0.4rem 0.6rem;
-	text-align: left;
+	text-align: start;
 }
 </style>

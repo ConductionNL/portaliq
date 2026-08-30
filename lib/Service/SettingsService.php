@@ -57,6 +57,7 @@ class SettingsService {
 	 * @param IGroupManager $groupManager The group manager
 	 * @param IUserSession $userSession The user session
 	 * @param LoggerInterface $logger The logger
+	 * @param PageEditorService $pageEditor Owns the editor groups and the schema rules they become
 	 *
 	 * @return void
 	 */
@@ -67,6 +68,7 @@ class SettingsService {
 		private IGroupManager $groupManager,
 		private IUserSession $userSession,
 		private LoggerInterface $logger,
+		private PageEditorService $pageEditor,
 	) {
 	}//end __construct()
 
@@ -100,13 +102,23 @@ class SettingsService {
 		$user = $this->userSession->getUser();
 		$isAdmin = ($user !== null && $this->groupManager->isAdmin($user->getUID()));
 
-		return array_merge(
-			$settings,
-			[
-				'openregisters' => $this->isOpenRegisterAvailable(),
-				'isAdmin' => $isAdmin,
-			]
-		);
+		$extra = [
+			'openregisters' => $this->isOpenRegisterAvailable(),
+			'isAdmin' => $isAdmin,
+			'editor_groups' => $this->pageEditor->getEditorGroups(),
+			'mayEditPages' => $this->pageEditor->mayEdit(),
+		];
+
+		// The instance's full group list is offered to the picker that
+		// configures page editing, and to nobody else. It is not secret, but a
+		// non-admin has no field to put it in — and an endpoint that hands out
+		// the org chart to every authenticated caller because one admin form
+		// needed it is how that stops being true.
+		if ($isAdmin === true) {
+			$extra['availableGroups'] = $this->pageEditor->availableGroups();
+		}
+
+		return array_merge($settings, $extra);
 	}//end getSettings()
 
 	/**
@@ -123,6 +135,16 @@ class SettingsService {
 			if (isset($data[$key]) === true) {
 				$this->appConfig->setValueString(Application::APP_ID, $key, (string)$data[$key]);
 			}
+		}
+
+		// NOT one of CONFIG_KEYS, because it is not a string and storing it is
+		// not the whole write: the groups are pushed into the `page` schema's
+		// authorization block, which is where OpenRegister actually refuses a
+		// non-editor's write. See PageEditorService::setEditorGroups().
+		if (isset($data[PageEditorService::CONFIG_KEY]) === true
+			&& is_array($data[PageEditorService::CONFIG_KEY]) === true
+		) {
+			$this->pageEditor->setEditorGroups($data[PageEditorService::CONFIG_KEY]);
 		}
 
 		return $this->getSettings();
@@ -170,6 +192,14 @@ class SettingsService {
 
 			if (empty($result) === false) {
 				$this->logger->info('Portaliq: register configuration imported successfully');
+
+				// THE IMPORT CARRIES THE SEED'S OWN AUTHORIZATION BLOCK, which
+				// declares empty write rules — admin-only. Left alone, every
+				// upgrade would therefore silently un-configure page editing on
+				// an instance that had configured it, and the symptom would be
+				// an editor who could edit yesterday being refused today with
+				// the settings page still showing their group.
+				$this->pageEditor->applyToSchema($this->pageEditor->getEditorGroups());
 				return [
 					'success' => true,
 					'message' => 'Configuration imported successfully.',

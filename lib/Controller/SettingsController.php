@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Service\PageEditorService;
 use OCA\Portaliq\Service\SettingsService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\JSONResponse;
@@ -67,6 +68,12 @@ class SettingsController extends Controller {
 
 		if ($isAdmin === false) {
 			unset($settings['register']);
+			// Which groups may edit pages is an administrator's configuration,
+			// and naming them hands every authenticated caller a slice of the
+			// instance's group structure for a field they have no form for.
+			// `mayEditPages` stays: it says only what THIS caller may do, which
+			// is what the interface asking the question needs.
+			unset($settings[PageEditorService::CONFIG_KEY]);
 		}
 
 		return new JSONResponse($settings);

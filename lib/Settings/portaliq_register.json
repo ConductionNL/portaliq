@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Register containing all schemas owned by the Portaliq external-portal application.",
-        "version": "0.14.0"
+        "version": "0.15.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification and audit entry the app reads and writes.",
-                "version": "0.14.0",
+                "version": "0.15.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -1692,7 +1692,7 @@
             "page": {
                 "slug": "page",
                 "icon": "FileDocument",
-                "version": "0.1.0",
+                "version": "0.2.0",
                 "title": "Page",
                 "authorization": {
                     "read": [
@@ -1703,7 +1703,10 @@
                             }
                         },
                         "authenticated"
-                    ]
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
                 },
                 "description": "One page of a portal (ADR-086 §4). Its body is EITHER a widget grid — the same manifest-v2 widget placement OpenBuild authors, on a 12-column grid — OR markdown, stored and served as source so a Docusaurus build consumes it with no HTML round-trip. The two are not a hierarchy: a landing page is grid-first, a documentation page is markdown-first, and both are pages.",
                 "type": "object",
@@ -1752,6 +1755,97 @@
                         "title": "Body",
                         "type": "object",
                         "description": "The page content. Exactly one of `markdown` or `widgets` is meaningful, selected by `type`.",
+                        "required": [
+                            "type"
+                        ],
+                        "properties": {
+                            "type": {
+                                "title": "Body type",
+                                "type": "string",
+                                "description": "Which body this page carries. `grid` places widgets on the shared 12-column manifest grid; `markdown` holds prose.",
+                                "enum": [
+                                    "grid",
+                                    "markdown"
+                                ],
+                                "example": "markdown"
+                            },
+                            "markdown": {
+                                "title": "Markdown",
+                                "type": "string",
+                                "description": "Markdown SOURCE for a markdown body. Served as source, never converted to HTML by the API — a consumer that renders markdown itself needs no parsing step, and no fidelity is lost to a round-trip.",
+                                "example": "## Over ons\n\nWij zijn ..."
+                            },
+                            "widgets": {
+                                "title": "Widgets",
+                                "type": "array",
+                                "description": "Widget placements for a grid body, in the canonical manifest-v2 widgetEntry shape. gridX + gridWidth must not exceed 12 — a constraint JSON Schema cannot express over siblings, enforced at render time with the existing canonical message.",
+                                "items": {
+                                    "type": "object",
+                                    "required": [
+                                        "widgetKey",
+                                        "gridX",
+                                        "gridY",
+                                        "gridWidth",
+                                        "gridHeight"
+                                    ],
+                                    "properties": {
+                                        "id": {
+                                            "title": "Id",
+                                            "type": "string",
+                                            "description": "Stable kebab-case identity for this placement.",
+                                            "example": "intro"
+                                        },
+                                        "widgetKey": {
+                                            "title": "Widget key",
+                                            "type": "string",
+                                            "description": "Registry key identifying the widget component. Resolved against nc-vue's communal dashboardWidgetRegistry — the SAME catalog LaunchPad and OpenBuild consume. Only entries flagged public render at a public origin; anything else renders an inert placeholder.",
+                                            "example": "markdown"
+                                        },
+                                        "slot": {
+                                            "title": "Slot",
+                                            "type": "string",
+                                            "description": "Placement slot on the page.",
+                                            "example": "body"
+                                        },
+                                        "gridX": {
+                                            "title": "Grid X",
+                                            "type": "integer",
+                                            "description": "Zero-based column.",
+                                            "example": 0
+                                        },
+                                        "gridY": {
+                                            "title": "Grid Y",
+                                            "type": "integer",
+                                            "description": "Zero-based row.",
+                                            "example": 0
+                                        },
+                                        "gridWidth": {
+                                            "title": "Grid width",
+                                            "type": "integer",
+                                            "description": "Width in grid columns, of twelve.",
+                                            "example": 12
+                                        },
+                                        "gridHeight": {
+                                            "title": "Grid height",
+                                            "type": "integer",
+                                            "description": "Height in grid rows.",
+                                            "example": 4
+                                        },
+                                        "props": {
+                                            "title": "Props",
+                                            "type": "object",
+                                            "description": "Serialisable configuration handed to the widget.",
+                                            "additionalProperties": true
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "draftBody": {
+                        "title": "Draft body",
+                        "type": "object",
+                        "description": "UNPUBLISHED work in progress on this page's content, in exactly the shape of `body`. The content API projects `body` and never this field, so a draft is invisible to every consumer until it is published — publishing promotes this into `body` and clears it, discarding clears it and leaves `body` untouched.",
                         "required": [
                             "type"
                         ],

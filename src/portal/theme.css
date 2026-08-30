@@ -140,7 +140,7 @@
 }
 
 .portaliq-inbox-row--unread {
-	border-left: 4px solid var(--portaliq-color-accent);
+	border-inline-start: 4px solid var(--portaliq-color-accent);
 }
 
 .portaliq-inbox-row__header {
@@ -160,7 +160,7 @@
 }
 
 .portaliq-inbox-row__date {
-	margin-left: auto;
+	margin-inline-start: auto;
 	color: var(--portaliq-color-text-muted);
 	font-size: 0.85em;
 }
@@ -196,7 +196,7 @@
 .portaliq-badge-count {
 	display: inline-block;
 	min-width: 1.2em;
-	margin-left: 0.4em;
+	margin-inline-start: 0.4em;
 	padding: 0 0.35em;
 	border-radius: 999px;
 	background: var(--portaliq-color-accent);

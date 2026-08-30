@@ -35,14 +35,22 @@
 //   3. Add a manifest page entry with type: "custom", component: "<your-key>",
 //      and a _note explaining why a standard page type was not feasible.
 //
-// See: https://codeberg.org/Conduction/hydra → openspec/architecture/adr-036-universal-widget-manifest.md
+// See: https://github.com/ConductionNL/hydra → openspec/architecture/adr-036-universal-widget-manifest.md
 
 import StatusBadge from './cellRenderers/StatusBadge.vue'
 import EmailField from './formFields/EmailField.vue'
 import ExampleModal from './modals/ExampleModal.vue'
 import CustomExample from './views/CustomExample.vue'
+import FlowDetailSidebar from './views/flows/FlowDetailSidebar.vue'
+import PageLayoutDesigner from './views/PageLayoutDesigner.vue'
 
 export default {
+	// --- Flows (ADR-110 Decision 4). Only the SIDEBAR is an app component;
+	//     the list and the canvas are the shared `flows` / `flow-detail`
+	//     manifest page types. CnFlowSidebar has to mount in the NC app
+	//     sidebar for the canvas to keep full width. ---
+	FlowDetailSidebar: { kind: 'page', component: FlowDetailSidebar },
+
 	// -------------------------------------------------------------------------
 	// kind: "widget" — placeable in any allowed slot via grid coordinates
 	//
@@ -86,6 +94,20 @@ export default {
 	CustomExample: {
 		kind: 'page',
 		component: CustomExample,
+	},
+
+	/**
+	 * The page layout designer — direct-manipulation editing of a portal
+	 * page's widget grid, reached from `/pages/:id/layout` and from the
+	 * floating editing control on the site itself.
+	 *
+	 * A custom page rather than a page type: what it edits is one schema's
+	 * `body.widgets`, on a grid whose geometry belongs to this app's CMS, and
+	 * the escape hatch is what ADR-036 offers for exactly that.
+	 */
+	PageLayoutDesigner: {
+		kind: 'page',
+		component: PageLayoutDesigner,
 	},
 
 	// -------------------------------------------------------------------------
