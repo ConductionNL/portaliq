@@ -59,13 +59,6 @@ class CmsReader {
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
 	/**
-	 * The register the CMS schemas live in.
-	 *
-	 * @var string
-	 */
-	private const REGISTER = 'portaliq';
-
-	/**
 	 * Cache lifetime for a public content read, in seconds.
 	 *
 	 * Deliberately modest: invalidation is event-driven on the content
@@ -87,9 +80,10 @@ class CmsReader {
 	/**
 	 * Constructor.
 	 *
-	 * @param ContainerInterface $container    For the lazy OpenRegister lookup.
-	 * @param ICacheFactory      $cacheFactory Creates the distributed cache.
-	 * @param LoggerInterface    $logger       The logger.
+	 * @param ContainerInterface    $container    For the lazy OpenRegister lookup.
+	 * @param ICacheFactory         $cacheFactory Creates the distributed cache.
+	 * @param LoggerInterface       $logger       The logger.
+	 * @param PortalRegisterContext $context      Points the shared ObjectService at this app's schemas.
 	 *
 	 * @return void
 	 */
@@ -97,6 +91,7 @@ class CmsReader {
 		private readonly ContainerInterface $container,
 		ICacheFactory $cacheFactory,
 		private readonly LoggerInterface $logger,
+		private readonly PortalRegisterContext $context,
 	) {
 		$this->cache = $cacheFactory->createDistributed('portaliq_cms');
 	}//end __construct()
@@ -232,6 +227,81 @@ class CmsReader {
 
 		return $page;
 	}//end page()
+
+
+	/**
+	 * Resolve the stored identifier of a page at a route, published or not.
+	 *
+	 * FOR EDITORS ONLY, and the caller is what makes that true. Everything else
+	 * on this class answers a PUBLIC question and filters `status` in the query
+	 * so a draft never reaches this process; this method deliberately does not,
+	 * because an editor's whole reason to ask is to open the draft. The
+	 * `_rbac: false` read underneath it therefore has no authorization of its
+	 * own — {@see \OCA\Portaliq\Controller\CmsEditorController::editingContext()}
+	 * refuses before calling here, and this method must never be reached from a
+	 * path that does not.
+	 *
+	 * Nothing is cached. An editor who has just created a page and is looking
+	 * for the way into it is precisely the caller a stale negative would strand.
+	 *
+	 * @param string $portal The portal slug.
+	 * @param string $route  The in-site route, leading slash included.
+	 *
+	 * @return string|null The object identifier, or null when no page is there.
+	 *
+	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+	 */
+	public function identify(string $portal, string $route): ?string {
+		if ($portal === '' || $route === '') {
+			return null;
+		}
+
+		$rows = $this->query(schema: 'page', filters: ['portal' => $portal, 'route' => $route]);
+		foreach ($rows as $row) {
+			if ((string)($row['route'] ?? '') !== $route) {
+				continue;
+			}
+
+			$id = $this->rowId(row: $row);
+			if ($id !== null) {
+				return $id;
+			}
+		}
+
+		return null;
+	}//end identify()
+
+
+	/**
+	 * The identifier of a stored row, flat or inside the `@self` envelope.
+	 *
+	 * Both shapes are read because both occur: OpenRegister's object API
+	 * returns a flat `id` alongside the envelope, and a row that has been
+	 * projected or re-serialised elsewhere may carry only one of them.
+	 *
+	 * @param array $row The stored row.
+	 *
+	 * @return string|null The identifier, or null when the row carries none.
+	 */
+	private function rowId(array $row): ?string {
+		$self = ($row['@self'] ?? null);
+		$candidates = [
+			($row['id'] ?? null),
+			($row['uuid'] ?? null),
+		];
+		if (is_array($self) === true) {
+			$candidates[] = ($self['id'] ?? null);
+			$candidates[] = ($self['uuid'] ?? null);
+		}
+
+		foreach ($candidates as $candidate) {
+			if ((is_string($candidate) === true || is_int($candidate) === true) && (string)$candidate !== '') {
+				return (string)$candidate;
+			}
+		}
+
+		return null;
+	}//end rowId()
 
 
 	/**
@@ -432,8 +502,15 @@ class CmsReader {
 
 		try {
 			$objectService = $this->container->get(self::OBJECT_SERVICE);
-			$objectService->setRegister(register: self::REGISTER);
-			$objectService->setSchema(schema: $schema);
+			// Through the context helper, never through two slug setters: the
+			// slug form re-resolves whatever schema ref another app left
+			// pending on the shared ObjectService, and that took every content
+			// read here down with a slug this app does not own. See
+			// PortalRegisterContext.
+			if ($this->context->apply(objectService: $objectService, schemaSlug: $schema) === false) {
+				return [];
+			}
+
 			$rows = $objectService->findAll(
 				config: ['filters' => $filters, 'limit' => 500, 'offset' => 0],
 				_rbac: false,

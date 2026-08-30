@@ -90,7 +90,15 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// the portal name in the footer's logo block. The reference carries one
 		// and this schema had no field for it, so every portal's footer showed
 		// a bare title with no way to change it.
-		$this->assertSame('0.14.0', self::$register['info']['version']);
+		// 0.15.0 (page 0.2.0): declared `draftBody` — a page's unpublished layout,
+		// in exactly the shape of `body`, written by the page designer and never
+		// projected by the content API — and closed the schema's write rules,
+		// which did not exist at all. A schema with no create/update/delete rule
+		// is default-OPEN to every authenticated user in OpenRegister, so any
+		// account on the instance could rewrite a published portal page; the
+		// rules now name the configured editor groups (empty = admins only).
+		$this->assertSame('0.15.0', self::$register['info']['version']);
+		$this->assertSame('0.2.0', self::$register['components']['schemas']['page']['version']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('0.5.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalPage']['version']);

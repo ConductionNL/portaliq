@@ -21,6 +21,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\Service\CmsReader;
+use OCA\Portaliq\Service\PortalRegisterContext;
 use OCP\ICache;
 use OCP\ICacheFactory;
 use PHPUnit\Framework\TestCase;
@@ -71,10 +72,18 @@ class CmsReaderTest extends TestCase {
 		$factory = $this->createMock(ICacheFactory::class);
 		$factory->method('createDistributed')->willReturn($this->cache);
 
+		// The context helper is a double that always succeeds: what it does —
+		// keeping another app's leftover schema ref out of this app's reads —
+		// has its own test, and stubbing it here keeps these assertions about
+		// the cache key rather than about OpenRegister's context handling.
+		$context = $this->createMock(PortalRegisterContext::class);
+		$context->method('apply')->willReturn(true);
+
 		$this->reader = new CmsReader(
 			$this->container,
 			$factory,
-			$this->createMock(LoggerInterface::class)
+			$this->createMock(LoggerInterface::class),
+			$context
 		);
 	}//end setUp()
 
@@ -183,6 +192,151 @@ class CmsReaderTest extends TestCase {
 		$this->assertSame([], $this->reader->glossary('', 'nl', 'anonymous'));
 		$this->assertNull($this->reader->page('', '/', 'nl', 'anonymous'));
 	}//end testAnUnscopedReadReturnsNothing()
+
+
+	/**
+	 * A page's unpublished draft must never reach the public API.
+	 *
+	 * THIS ASSERTS THE LEAK, NOT THE SHAPE. `shapePage()` copies named keys, so
+	 * a draft is excluded by omission — which is exactly the kind of guarantee
+	 * that survives until someone adds a convenience `+ $row` merge and nothing
+	 * anywhere fails. The fixture therefore carries a draft whose content is
+	 * distinguishable from the published body, and the assertion is that no
+	 * part of it appears in the response at all.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-a-page-must-carry-a-draft-body-that-is-never-served-publicly
+	 */
+	public function testADraftIsNeverServedPublicly(): void {
+		$this->cache->method('get')->willReturn(null);
+		$this->withRows(
+			[
+				[
+					'title'  => 'Welkom',
+					'route'  => '/',
+					'status' => 'published',
+					'body'   => [
+						'type'     => 'grid',
+						'widgets'  => [
+							[
+								'id'         => 'intro',
+								'widgetKey'  => 'markdown',
+								'gridX'      => 0,
+								'gridY'      => 0,
+								'gridWidth'  => 12,
+								'gridHeight' => 4,
+								'props'      => ['markdown' => 'PUBLISHED COPY'],
+							],
+						],
+					],
+					'draftBody' => [
+						'type'    => 'grid',
+						'widgets' => [
+							[
+								'id'         => 'secret',
+								'widgetKey'  => 'markdown',
+								'gridX'      => 0,
+								'gridY'      => 0,
+								'gridWidth'  => 12,
+								'gridHeight' => 4,
+								'props'      => ['markdown' => 'UNANNOUNCED REORGANISATION'],
+							],
+						],
+					],
+				],
+			]
+		);
+
+		$page = $this->reader->page('open-tilburg', '/', 'nl', 'anonymous');
+		$encoded = json_encode($page);
+
+		$this->assertStringNotContainsString(
+			'UNANNOUNCED REORGANISATION',
+			$encoded,
+			'An unpublished draft reached the public content API.'
+		);
+		$this->assertStringNotContainsString('draftBody', $encoded);
+		$this->assertStringNotContainsString('secret', $encoded);
+		$this->assertStringContainsString('PUBLISHED COPY', $encoded);
+	}//end testADraftIsNeverServedPublicly()
+
+
+	/**
+	 * An editor's route lookup finds the page behind a route, published or not.
+	 *
+	 * `identify()` is the one read on this class that deliberately does NOT
+	 * filter `status`: an editor's whole reason to ask is to open the draft.
+	 * That makes the DRAFT case the one worth asserting — a lookup that
+	 * silently inherited the public filter would work in every manual test
+	 * against a published page and fail exactly when an editor needed it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+	 */
+	public function testIdentifyFindsAnUnpublishedPageToo(): void {
+		$this->withRows(
+			[
+				[
+					'@self'  => ['id' => 'aa11'],
+					'route'  => '/concept',
+					'status' => 'draft',
+				],
+			]
+		);
+
+		$this->assertSame('aa11', $this->reader->identify('open-tilburg', '/concept'));
+	}//end testIdentifyFindsAnUnpublishedPageToo()
+
+
+	/**
+	 * A flat `id` is accepted as well as the `@self` envelope.
+	 *
+	 * OpenRegister returns both shapes depending on how a row was projected,
+	 * and a lookup that read only one of them returns null for a page that is
+	 * plainly there — which the site renders as "no editing available here".
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+	 */
+	public function testIdentifyReadsAFlatIdentifier(): void {
+		$this->withRows([['id' => 'bb22', 'route' => '/contact']]);
+
+		$this->assertSame('bb22', $this->reader->identify('open-tilburg', '/contact'));
+	}//end testIdentifyReadsAFlatIdentifier()
+
+
+	/**
+	 * A route with no page behind it identifies nothing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+	 */
+	public function testIdentifyReturnsNullForAnUnknownRoute(): void {
+		$this->withRows([['@self' => ['id' => 'cc33'], 'route' => '/ergens-anders']]);
+
+		$this->assertNull($this->reader->identify('open-tilburg', '/contact'));
+	}//end testIdentifyReturnsNullForAnUnknownRoute()
+
+
+	/**
+	 * An unscoped identify refuses rather than searching every portal.
+	 *
+	 * Same rule as every other read here: without a portal this would resolve a
+	 * route to whichever site happened to own it, and hand an editor of site A
+	 * the designer for site B's page.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+	 */
+	public function testIdentifyRefusesWithoutAPortalOrRoute(): void {
+		$this->assertNull($this->reader->identify('', '/contact'));
+		$this->assertNull($this->reader->identify('open-tilburg', ''));
+	}//end testIdentifyRefusesWithoutAPortalOrRoute()
 
 
 	/**

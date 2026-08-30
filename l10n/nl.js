@@ -1,6 +1,11 @@
 OC.L10N.register(
     "portaliq",
     {
+        "Welcome": "Welkom",
+        "A short setup to get this app ready. Nothing here is required; you can close it and come back later.": "Een korte installatie om deze app klaar te zetten. Niets hiervan is verplicht; je kunt dit sluiten en later terugkomen.",
+        "Demo data (optional)": "Demovoorbeelddata (optioneel)",
+        "Load a small example dataset so the lists, detail pages and dashboards show a working product straight away. The data is obviously sample data, it is safe to run more than once, and it can be removed afterwards. Skip this on a production install.": "Laad een kleine voorbeeldset zodat de lijsten, detailpagina's en dashboards meteen een werkend product laten zien. De data is duidelijk voorbeelddata, veilig om meerdere keren uit te voeren en achteraf te verwijderen. Sla dit over op een productie-installatie.",
+        "All set": "Klaar",
         "Pre-boot configuration": "Configuratie vóór opstarten",
         "Configure the app settings": "Configureer de app-instellingen",
         "Configuration": "Configuratie",
@@ -108,7 +113,23 @@ OC.L10N.register(
         "items": "items",
         "Replace the body of this component with whatever bespoke behaviour your page needs — realtime UI, vendor integrations, anything that does not fit the built-in page types.": "Vervang de inhoud van dit component door het maatwerk dat je pagina nodig heeft: realtime UI, koppelingen met leveranciers, alles wat niet in de ingebouwde paginatypen past.",
         "This is the canonical example of a custom-type page in the manifest renderer pattern. It is rendered when a manifest page declares `type: \"custom\"` and `component: \"CustomExample\"`.": "Dit is het standaardvoorbeeld van een pagina van het type custom in het manifest-renderpatroon. Het wordt getoond wanneer een manifestpagina `type: \"custom\"` en `component: \"CustomExample\"` declareert.",
-        "Version Information": "Versie-informatie"
+        "Version Information": "Versie-informatie",
+        "Flows": "Flows",
+        "Flow": "Flow",
+        "Page layout": "Pagina-indeling",
+        "Getting started": "Aan de slag",
+        "Welcome to Portaliq": "Welkom bij Portaliq",
+        "A short tour of the main screens. It takes under a minute, and you can close it at any point and pick it up again from the help menu.": "Een korte rondleiding langs de belangrijkste schermen. Het duurt minder dan een minuut en je kunt op elk moment stoppen en later verder gaan via het helpmenu.",
+        "Open Dashboard from the menu.": "Open Dashboard via het menu.",
+        "Click Dashboard in the menu": "Klik op Dashboard in het menu",
+        "Open Portals from the menu.": "Open Portals via het menu.",
+        "Click Portals in the menu": "Klik op Portals in het menu",
+        "Open Accounts from the menu.": "Open Accounts via het menu.",
+        "Click Accounts in the menu": "Klik op Accounts in het menu",
+        "Open Themes from the menu.": "Open Themes via het menu.",
+        "Click Themes in the menu": "Klik op Themes in het menu",
+        "Flows automate the repetitive parts of this app. Have a look, though you do not have to build one now.": "Flows automatiseren het repeterende werk in deze app. Kijk gerust rond, je hoeft er nu geen te maken.",
+        "Open Flows from the menu": "Open Flows via het menu"
     },
     "nplurals=2; plural=(n != 1);"
 )

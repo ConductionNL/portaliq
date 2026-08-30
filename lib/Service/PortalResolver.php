@@ -73,14 +73,16 @@ class PortalResolver {
 	/**
 	 * Constructor.
 	 *
-	 * @param ContainerInterface $container For the lazy OpenRegister lookup.
-	 * @param LoggerInterface    $logger    The logger.
+	 * @param ContainerInterface    $container For the lazy OpenRegister lookup.
+	 * @param LoggerInterface       $logger    The logger.
+	 * @param PortalRegisterContext $context   Points the shared ObjectService at this app's schemas.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
+		private readonly PortalRegisterContext $context,
 	) {
 	}//end __construct()
 
@@ -195,8 +197,14 @@ class PortalResolver {
 	public function allPublishedPortals(): array {
 		try {
 			$objectService = $this->container->get(self::OBJECT_SERVICE);
-			$objectService->setRegister(register: self::REGISTER);
-			$objectService->setSchema(schema: 'portal');
+			// Applied through the context helper rather than by two slug
+			// setters, because the slug form inherits whatever schema ref an
+			// unrelated app left pending on the shared service — which took
+			// every public read of this portal down. See PortalRegisterContext.
+			if ($this->context->apply(objectService: $objectService, schemaSlug: 'portal') === false) {
+				return [];
+			}
+
 			// RBAC and multitenancy OFF: a public site is read by visitors who
 			// are not Nextcloud users at all, so OR's user-based scoping would
 			// filter every row out. The security boundary here is the

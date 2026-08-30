@@ -423,11 +423,20 @@
 				</div>
 			</section>
 		</footer>
+
+		<!--
+			THE EDITING DOOR, and it is last in the document on purpose: it is
+			an addition for the few visitors who may edit, so it comes after
+			everything every visitor came for. It renders nothing at all until
+			the probe has said yes — see `refreshEditingContext`.
+		-->
+		<SiteEditButton v-if="editing" :context="editing" />
 	</div>
 </template>
 
 <script>
 import { CnSiteIcon } from '@conduction/nextcloud-vue/public'
+import { defineAsyncComponent } from 'vue'
 import MarkdownBlock from './components/MarkdownBlock.vue'
 import SiteMenu from './components/SiteMenu.vue'
 import WidgetGrid from './components/WidgetGrid.vue'
@@ -440,6 +449,24 @@ import {
 	fetchSite,
 	resolveApiBase,
 } from './lib/contentApi.js'
+import { editorBaseFrom, fetchEditingContext } from './lib/editorApi.js'
+
+/**
+ * LOADED ON DEMAND, and the budget is why — the same reason the detail and
+ * search blocks are.
+ *
+ * `webpack.site.js` sets `performance.hints: 'error'` at 400 KiB because this
+ * bundle is downloaded by a first-time visitor on a phone before anything
+ * renders. Bundling the editing control eagerly took the entrypoint from 389
+ * KiB to 411 KiB and FAILED THE BUILD — which is the budget doing its job, on
+ * a control that almost every visitor to a public portal will never be shown.
+ *
+ * It is imported only once the probe has said this session may edit, so a
+ * reader never downloads it at all.
+ */
+const SiteEditButton = defineAsyncComponent(
+	() => import('./components/SiteEditButton.vue'),
+)
 
 /**
  * The built-in site renderer.
@@ -452,7 +479,7 @@ import {
 export default {
 	name: 'App',
 
-	components: { CnSiteIcon, MarkdownBlock, SiteMenu, WidgetGrid },
+	components: { CnSiteIcon, MarkdownBlock, SiteEditButton, SiteMenu, WidgetGrid },
 
 	props: {
 		/** Explicit site slug, when not resolving by host. */
@@ -483,6 +510,14 @@ export default {
 			searchRoute: '/zoeken',
 			loading: true,
 			error: null,
+			// The editing context for the route on screen, or null for every
+			// visitor who may not edit — which is almost all of them.
+			editing: null,
+			// Set once the probe has refused, and never unset for this page
+			// load. It is what keeps a reader's visit to one extra request in
+			// total rather than one per navigation: whether a session MAY edit
+			// does not change while they browse, only which page it is on.
+			editingDenied: false,
 		}
 	},
 
@@ -915,6 +950,43 @@ export default {
 			} finally {
 				this.loading = false
 			}
+
+			// After the page, never before it. The probe is an addition for
+			// editors and must not be able to delay — or fail — the content
+			// every other visitor came for.
+			await this.refreshEditingContext()
+		},
+
+		/**
+		 * Resolve whether this visitor may edit the page on screen.
+		 *
+		 * Asked at most ONCE for a visitor who may not: `canEdit` is a property
+		 * of the session, not of the route, so a refusal settles the question
+		 * for the whole visit. For an editor it is re-asked per route, because
+		 * WHICH page is behind a route is exactly what changes.
+		 *
+		 * @return {Promise<void>} Resolves when the context is settled.
+		 *
+		 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+		 */
+		async refreshEditingContext() {
+			if (this.editingDenied === true) {
+				return
+			}
+
+			const context = await fetchEditingContext(
+				editorBaseFrom(resolveApiBase()),
+				this.route,
+				this.portalSlug,
+			)
+
+			if (context === null) {
+				this.editingDenied = true
+				this.editing = null
+				return
+			}
+
+			this.editing = context
 		},
 
 		/**

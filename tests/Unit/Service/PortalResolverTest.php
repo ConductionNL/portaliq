@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\Portaliq\Service\PortalRegisterContext;
 use OCA\Portaliq\Service\PortalResolver;
 use PHPUnit\Framework\TestCase;
 use OCP\IRequest;
@@ -62,7 +63,8 @@ class PortalResolverTest extends TestCase {
 
 		$this->resolver = new PortalResolver(
 			$this->createMock(ContainerInterface::class),
-			$this->createMock(LoggerInterface::class)
+			$this->createMock(LoggerInterface::class),
+			$this->contextDouble()
 		);
 
 		$this->sites = [
@@ -265,8 +267,29 @@ class PortalResolverTest extends TestCase {
 			);
 		}
 
-		return new PortalResolver($container, $this->createMock(LoggerInterface::class));
+		return new PortalResolver(
+			$container,
+			$this->createMock(LoggerInterface::class),
+			$this->contextDouble()
+		);
 	}//end resolverReturning()
+
+
+	/**
+	 * A register-context helper that always applies.
+	 *
+	 * What the real one prevents — another app's leftover schema reference
+	 * capturing this app's read — is asserted in its own test. Here it must
+	 * simply not stand in the way of the host-matching assertions.
+	 *
+	 * @return PortalRegisterContext The double.
+	 */
+	private function contextDouble(): PortalRegisterContext {
+		$context = $this->createMock(PortalRegisterContext::class);
+		$context->method('apply')->willReturn(true);
+
+		return $context;
+	}//end contextDouble()
 
 
 	/**
