@@ -151,6 +151,37 @@ export default defineConfig({
 	use: {
 		// Single source of truth — see tests/e2e/base-url.ts.
 		baseURL: BASE_URL,
+		/*
+		 * Suppress the product walkthrough (ADR-043). NOT an auth path — see the
+		 * "NO globalSetup / storageState" note above, which stands: this carries
+		 * no cookies and no bearer, and every spec still authenticates itself.
+		 * It seeds ONE localStorage UI flag, which is why it is expressed as an
+		 * inline storageState object rather than a file a login step wrote.
+		 *
+		 * It became necessary with @conduction/nextcloud-vue 2.22.x. A
+		 * `placement: "center"` welcome step used to be parked in
+		 * `_pendingAutoTour` and never opened; the library now correctly starts
+		 * it on any route, so the tour actually appears on the app-side screens.
+		 * Its `cn-walkthrough__dim--full` layer is a `role="dialog"
+		 * aria-modal="true"` overlay: `site-page-editing.spec.ts` began timing
+		 * out clicking `designer-save-draft` behind it, with the dim layer named
+		 * as the intercepting element in the call log.
+		 *
+		 * The sentinel is higher than any real app version, so every step's
+		 * `sinceVersion` sorts below it and the tour composes to an empty step
+		 * set rather than merely starting dismissed.
+		 */
+		storageState: {
+			cookies: [],
+			origins: [
+				{
+					origin: new URL(BASE_URL).origin,
+					localStorage: [
+						{ name: 'cn-walkthrough-seen:portaliq', value: '999.0.0' },
+					],
+				},
+			],
+		},
 		// `on-first-retry` writes a trace only when a retry actually happens, so
 		// the trace artifact is a function of `retries`. Off CI `retries` is 0
 		// above, so a local failure has never produced a trace at all; on CI it

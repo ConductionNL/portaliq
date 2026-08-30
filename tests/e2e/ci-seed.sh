@@ -511,4 +511,58 @@ else
 	exit 1
 fi
 
+
+# ── Settle the demo-data decision ────────────────────────────────────────────
+# 🔴 OR THE SETUP WIZARD MASKS EVERY CLICK. ADR-111 added an OPTIONAL
+# `demo-data` step, and CnAppRoot opens the non-gating wizard as a full modal
+# mask while ANY optional step that is not info/summary is reported not-done —
+# in every fresh browser context, so once per spec.
+#
+# Measured on this app's development at the ADR-111 merge: clicks failed with
+# "locator resolved to <button ...> - attempting click action", the call log
+# naming <ol class="cn-wizard-dialog__progress"> as the interceptor. The element
+# was found; the click never landed.
+#
+# SKIPPED, not installed: recording the decision is what closes the wizard.
+# Installing would push the app's whole demo dataset into every list the suite
+# asserts on. `demo-data-setup-step.spec.ts` exercises the install deliberately.
+#
+# Uses the workflow's own exported credentials rather than this script's, so it
+# does not depend on where in the file it sits.
+#
+# Tolerant on purpose: an app whose wizard has no demo-data step answers 400
+# here, and that is not a seeding failure.
+DEMO_BASE="${BASE_URL:-${NEXTCLOUD_URL:-http://localhost:8080}}"
+DEMO_CODE="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 300 \
+	-u "${ADMIN_USER:-admin}:${ADMIN_PASSWORD:-admin}" -X POST \
+	-H 'Content-Type: application/json' -H 'OCS-APIRequest: true' --data '{}' \
+	"${DEMO_BASE}/index.php/apps/portaliq/api/setup/action/skip-demo-data" || echo 000)"
+echo "[ci-seed] POST setup/action/skip-demo-data -> HTTP ${DEMO_CODE}"
+
+
+# ── Settle the first-visit walkthrough ───────────────────────────────────────
+# 🔴 OR THE TOUR DIMS EVERY CLICK. The walkthrough opens on a fresh profile as a
+# modal with a full-page dim inside role="dialog", in EVERY new browser context
+# — so once per spec, not once per suite.
+#
+# Measured on development at the walkthrough merge: clicks resolved their button
+# and never landed, the Playwright call log naming the interceptor as
+#   <div class="cn-walkthrough__dim cn-walkthrough__dim--full">
+# This app lost 2 specs to it and learniq 7.
+#
+# Marks the tour SEEN rather than disabling it: the manifest declares
+# `walkthrough.version: 1` with `completionConfigKey:
+# walkthrough_completed_version`, so storing that version is what a real
+# operator does by finishing or dismissing the tour once.
+#
+# Tolerant on purpose: an app with no walkthrough answers 400 here, and that is
+# not a seeding failure.
+WT_BASE="${BASE_URL:-${NEXTCLOUD_URL:-http://localhost:8080}}"
+WT_CODE="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 60 \
+	-u "${ADMIN_USER:-admin}:${ADMIN_PASSWORD:-admin}" -X PUT \
+	-H 'Content-Type: application/json' -H 'OCS-APIRequest: true' \
+	--data '{"value":"1"}' \
+	"${WT_BASE}/index.php/apps/portaliq/api/preferences/walkthrough_completed_version" || echo 000)"
+echo "[ci-seed] PUT preferences/walkthrough_completed_version -> HTTP ${WT_CODE}"
+
 echo "[ci-seed] done."
