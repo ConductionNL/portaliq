@@ -73,8 +73,8 @@
   },
   "overrides": {
     "libxmljs2": "^0.37.0",
-    "@nextcloud/axios": "~2.5.2",
-    "@nextcloud/vue": "^9.9.0"
+    "@nextcloud/axios": "$@nextcloud/axios",
+    "@nextcloud/vue": "$@nextcloud/vue"
   },
   "devDependencies": {
     "@cyclonedx/cyclonedx-npm": "^6.0.0",
