@@ -42,6 +42,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\BackgroundJob;
 
+use DateTimeImmutable;
 use DateTimeInterface;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
@@ -159,19 +160,23 @@ class PortalTaskDeliveryJob extends TimedJob {
 		private readonly IURLGenerator $urlGenerator,
 		private readonly LoggerInterface $logger,
 	) {
-		parent::__construct($time);
-		$this->setInterval(self::INTERVAL);
-		$this->setTimeSensitivity(IJob::TIME_INSENSITIVE);
+		parent::__construct(time: $time);
+		$this->setInterval(seconds: self::INTERVAL);
+		$this->setTimeSensitivity(sensitivity: IJob::TIME_INSENSITIVE);
 	}//end __construct()
 
 	/**
 	 * Drain the ledger: settle every pending row, failures isolated per row.
 	 *
-	 * @param mixed $argument Unused (recurring job).
+	 * @param mixed $argument Unused — the TimedJob contract requires the
+	 *                        parameter; a recurring drain carries no payload.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-delivery-worker-settles-every-ledger-row-idempotently-and-in-isolation
+	 *
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) -- the base class dictates
+	 * the signature; dropping the parameter breaks the override.
 	 */
 	protected function run($argument): void {
 		$ledger = $this->ledger();
@@ -402,7 +407,7 @@ class PortalTaskDeliveryJob extends TimedJob {
 		}
 
 		try {
-			return (new \DateTimeImmutable($raw))->format('d-m-Y');
+			return (new DateTimeImmutable($raw))->format('d-m-Y');
 		} catch (Throwable) {
 			return '';
 		}

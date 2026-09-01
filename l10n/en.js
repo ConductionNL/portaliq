@@ -117,7 +117,11 @@ OC.L10N.register(
         "The reason: %1$s": "The reason: %1$s",
         "Open \"Mijn taken\" in the portal to complete this task.": "Open \"Mijn taken\" in the portal to complete this task.",
         "You have a new task in the portal of %1$s": "You have a new task in the portal of %1$s",
-        "You have a new task in the portal of %1$s. Log in to view it: %2$s": "You have a new task in the portal of %1$s. Log in to view it: %2$s"
+        "You have a new task in the portal of %1$s. Log in to view it: %2$s": "You have a new task in the portal of %1$s. Log in to view it: %2$s",
+        "Task uuid": "Task uuid",
+        "Delivery uuid": "Delivery uuid",
+        "The portal task this message announces (portal-task-delivery). The unified inbox renders a deep link into the \"Mijn taken\" surface when present; absent means no such link renders.": "The portal task this message announces (portal-task-delivery). The unified inbox renders a deep link into the \"Mijn taken\" surface when present; absent means no such link renders.",
+        "The openregister delivery ledger row this message settles (portal-task-delivery). The idempotency key: the worker probes it before writing, so a crash between write and settle never duplicates the message.": "The openregister delivery ledger row this message settles (portal-task-delivery). The idempotency key: the worker probes it before writing, so a crash between write and settle never duplicates the message."
     },
     "nplurals=2; plural=(n != 1);"
 )

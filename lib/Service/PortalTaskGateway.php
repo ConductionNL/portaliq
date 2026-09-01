@@ -34,6 +34,7 @@ namespace OCA\Portaliq\Service;
 
 use OCP\App\IAppManager;
 use OCP\Http\Client\IClientService;
+use OCP\Http\Client\IResponse;
 use OCP\IURLGenerator;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -244,9 +245,7 @@ class PortalTaskGateway {
 		}
 
 		try {
-			$client = $this->clientService->newClient();
-			$url = $this->urlGenerator->getAbsoluteURL($path);
-			$response = ($method === 'POST') ? $client->post($url, $options) : $client->get($url, $options);
+			$response = $this->send(method: $method, path: $path, options: $options);
 		} catch (Throwable $failure) {
 			$this->logger->warning('[PortalTaskGateway] Task forward failed in transport: ' . $failure->getMessage());
 
@@ -265,4 +264,23 @@ class PortalTaskGateway {
 
 		return ['status' => (int)$response->getStatusCode(), 'body' => $decoded];
 	}//end forward()
+
+	/**
+	 * Perform the HTTP call for one forward.
+	 *
+	 * @param string $method GET or POST.
+	 * @param string $path The instance-local seam path (with query).
+	 * @param array<string, mixed> $options The prepared client options.
+	 *
+	 * @return IResponse
+	 */
+	private function send(string $method, string $path, array $options): IResponse {
+		$client = $this->clientService->newClient();
+		$url = $this->urlGenerator->getAbsoluteURL($path);
+		if ($method === 'POST') {
+			return $client->post($url, $options);
+		}
+
+		return $client->get($url, $options);
+	}//end send()
 }//end class

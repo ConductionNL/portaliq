@@ -137,7 +137,11 @@ OC.L10N.register(
         "The reason: %1$s": "De reden: %1$s",
         "Open \"Mijn taken\" in the portal to complete this task.": "Open \"Mijn taken\" in het portaal om deze taak af te ronden.",
         "You have a new task in the portal of %1$s": "U heeft een nieuwe taak in het portaal van %1$s",
-        "You have a new task in the portal of %1$s. Log in to view it: %2$s": "U heeft een nieuwe taak in het portaal van %1$s. Log in om de taak te bekijken: %2$s"
+        "You have a new task in the portal of %1$s. Log in to view it: %2$s": "U heeft een nieuwe taak in het portaal van %1$s. Log in om de taak te bekijken: %2$s",
+        "Task uuid": "Taak-uuid",
+        "Delivery uuid": "Bezorgings-uuid",
+        "The portal task this message announces (portal-task-delivery). The unified inbox renders a deep link into the \"Mijn taken\" surface when present; absent means no such link renders.": "De portaaltaak waar dit bericht over gaat (portal-task-delivery). De gecombineerde berichtenlijst toont een link naar \"Mijn taken\" wanneer dit veld er is; zonder dit veld komt er geen link.",
+        "The openregister delivery ledger row this message settles (portal-task-delivery). The idempotency key: the worker probes it before writing, so a crash between write and settle never duplicates the message.": "De regel in het bezorgregister van openregister die dit bericht afhandelt (portal-task-delivery). De idempotentiesleutel: de worker controleert dit veld voor het schrijven, zodat een crash tussen schrijven en afronden nooit een dubbel bericht oplevert."
     },
     "nplurals=2; plural=(n != 1);"
 )
