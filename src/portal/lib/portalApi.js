@@ -139,6 +139,81 @@ export function createPortalApi(config) {
 		},
 
 		/**
+		 * The party's open portal tasks (portal-task-delivery): read through
+		 * portaliq's bearer-guarded proxy, which mints the server-side
+		 * X-Portal-Subject assertion — the browser never calls openregister.
+		 *
+		 * @return {Promise<{results: Array, total: number}>}
+		 */
+		async fetchTasks() {
+			const body = await get('/tasks')
+			return body && Array.isArray(body.results)
+				? body
+				: { results: [], total: 0 }
+		},
+
+		/**
+		 * One portal task's detail through the proxy.
+		 *
+		 * @param {string} uuid The task uuid.
+		 * @return {Promise<{ok: boolean, status: number, code: string, task: object|null}>}
+		 */
+		async fetchTask(uuid) {
+			const res = await fetch(`${base}/tasks/${encodeURIComponent(uuid)}`, {
+				headers: { Accept: 'application/json', ...authHeaders() },
+			})
+			const body = await res.json().catch(() => ({}))
+			if (!res.ok) {
+				return {
+					ok: false,
+					status: res.status,
+					code: body.code || '',
+					task: null,
+				}
+			}
+			return { ok: true, status: res.status, code: '', task: body }
+		},
+
+		/**
+		 * Complete a portal task: comment + files as multipart through the
+		 * proxy (never a direct openregister call). The browser leaves the
+		 * multipart Content-Type (with its boundary) to fetch().
+		 *
+		 * @param {string} uuid The task uuid.
+		 * @param {{comment?: string, files?: File[]}} payload The completion.
+		 * @return {Promise<{ok: boolean, status: number, code: string, body: object}>}
+		 */
+		async completeTask(uuid, { comment = '', files = [] } = {}) {
+			const form = new FormData()
+			if (comment) {
+				form.append('comment', comment)
+			}
+			for (const file of files) {
+				form.append('files[]', file, file.name)
+			}
+			let res
+			try {
+				res = await fetch(
+					`${base}/tasks/${encodeURIComponent(uuid)}/complete`,
+					{
+						method: 'POST',
+						headers: { Accept: 'application/json', ...authHeaders() },
+						body: form,
+					},
+				)
+			} catch {
+				return {
+					ok: false,
+					status: 0,
+					code: 'task-service-unreachable',
+					body: {},
+				}
+			}
+			const body = await res.json().catch(() => ({}))
+			return { ok: res.ok, status: res.status, code: body.code || '', body }
+		},
+
+		/**
 		 * Mark ONE inbox message read (portal-inbox-v2 T03). Ownership is
 		 * re-verified server-side; the endpoint can only ever set `read` —
 		 * this call never sends any other field.

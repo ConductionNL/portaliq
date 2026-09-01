@@ -34,8 +34,9 @@ function formatDateTime(value, locale) {
  * @param root0.t
  * @param root0.locale
  * @param root0.onRead
+ * @param root0.onOpenTask
  */
-export default function InboxPage({ api, t, locale, onRead }) {
+export default function InboxPage({ api, t, locale, onRead, onOpenTask }) {
 	const [state, setState] = useState({ loading: true, messages: [] })
 	const [busyId, setBusyId] = useState(null)
 
@@ -120,6 +121,16 @@ export default function InboxPage({ api, t, locale, onRead }) {
 									</div>
 								)}
 							</dl>
+						)}
+
+						{message.taskUuid && onOpenTask && (
+							<button
+								type="button"
+								className="portaliq-inbox-row__task-link"
+								onClick={() => onOpenTask(message.taskUuid)}
+							>
+								{t('View task')}
+							</button>
 						)}
 
 						<button
