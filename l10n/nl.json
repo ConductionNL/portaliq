@@ -128,7 +128,19 @@
         "Open Themes from the menu.": "Open Themes via het menu.",
         "Click Themes in the menu": "Klik op Themes in het menu",
         "Flows automate the repetitive parts of this app. Have a look, though you do not have to build one now.": "Flows automatiseren het repeterende werk in deze app. Kijk gerust rond, je hoeft er nu geen te maken.",
-        "Open Flows from the menu": "Open Flows via het menu"
+        "Open Flows from the menu": "Open Flows via het menu",
+        "You have a new task: %1$s": "U heeft een nieuwe taak: %1$s",
+        "Your task needs another look: %1$s": "Uw taak vraagt opnieuw uw aandacht: %1$s",
+        "Reminder about your task: %1$s": "Herinnering aan uw taak: %1$s",
+        "Please finish this task before %1$s.": "Rond deze taak af voor %1$s.",
+        "The reason: %1$s": "De reden: %1$s",
+        "Open \"Mijn taken\" in the portal to complete this task.": "Open \"Mijn taken\" in het portaal om deze taak af te ronden.",
+        "You have a new task in the portal of %1$s": "U heeft een nieuwe taak in het portaal van %1$s",
+        "You have a new task in the portal of %1$s. Log in to view it: %2$s": "U heeft een nieuwe taak in het portaal van %1$s. Log in om de taak te bekijken: %2$s",
+        "Task uuid": "Taak-uuid",
+        "Delivery uuid": "Bezorgings-uuid",
+        "The portal task this message announces (portal-task-delivery). The unified inbox renders a deep link into the \"Mijn taken\" surface when present; absent means no such link renders.": "De portaaltaak waar dit bericht over gaat (portal-task-delivery). De gecombineerde berichtenlijst toont een link naar \"Mijn taken\" wanneer dit veld er is; zonder dit veld komt er geen link.",
+        "The openregister delivery ledger row this message settles (portal-task-delivery). The idempotency key: the worker probes it before writing, so a crash between write and settle never duplicates the message.": "De regel in het bezorgregister van openregister die dit bericht afhandelt (portal-task-delivery). De idempotentiesleutel: de worker controleert dit veld voor het schrijven, zodat een crash tussen schrijven en afronden nooit een dubbel bericht oplevert."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

@@ -140,6 +140,14 @@ return [
         // PortalAuthMiddleware; registered before the /portal/{path} catch-all.
         ['name' => 'contribution#action', 'url' => '/portal/api/actions/{appId}/{actionId}', 'verb' => 'POST'],
 
+        // The resident task leg (portal-task-delivery): bearer-guarded proxy
+        // over openregister's portal task seam. Portaliq mints the
+        // X-Portal-Subject assertion server-side; the browser never calls
+        // openregister. Registered before the /portal/{path} SPA catch-all.
+        ['name' => 'portalTaskProxy#index', 'url' => '/portal/api/tasks', 'verb' => 'GET'],
+        ['name' => 'portalTaskProxy#show', 'url' => '/portal/api/tasks/{uuid}', 'verb' => 'GET', 'requirements' => ['uuid' => '[^/]+']],
+        ['name' => 'portalTaskProxy#complete', 'url' => '/portal/api/tasks/{uuid}/complete', 'verb' => 'POST', 'requirements' => ['uuid' => '[^/]+']],
+
         ['name' => 'portalPage#catchAll', 'url' => '/portal/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
 
         // Hosted tilburg-woo-ui (Open Tilburg WOO SPA) — public. Registered
