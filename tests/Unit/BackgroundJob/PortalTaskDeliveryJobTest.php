@@ -93,17 +93,27 @@ class FakeLedger {
 	/**
 	 * Constructor.
 	 *
-	 * @param array<int, object> $rows The pending rows to hand out.
+	 * @param array<int, mixed> $rows The pending rows to hand out.
+	 * @param bool $throwOnPending Whether pending() explodes.
+	 * @param bool $throwOnMarkFailed Whether markFailed() explodes.
 	 */
-	public function __construct(private readonly array $rows = []) {
+	public function __construct(
+		private readonly array $rows = [],
+		private readonly bool $throwOnPending = false,
+		private readonly bool $throwOnMarkFailed = false,
+	) {
 	}//end __construct()
 
 	/**
 	 * @param int $limit Page size (ignored by the fake).
 	 *
-	 * @return array<int, object>
+	 * @return array<int, mixed>
 	 */
 	public function pending(int $limit = 100): array {
+		if ($this->throwOnPending === true) {
+			throw new RuntimeException('ledger unreadable');
+		}
+
 		return $this->rows;
 	}//end pending()
 
@@ -112,6 +122,10 @@ class FakeLedger {
 	}//end markDelivered()
 
 	public function markFailed(string $uuid, string $error): void {
+		if ($this->throwOnMarkFailed === true) {
+			throw new RuntimeException('settle refused');
+		}
+
 		$this->failed[$uuid] = $error;
 	}//end markFailed()
 }//end class
@@ -123,6 +137,8 @@ class FakeLedger {
  * settled without a duplicate; a `mail` row goes through the account lookup
  * and the mailer, privacy-minimal; every failure marks the row failed with
  * its reason and NEVER blocks the remaining rows or escapes to cron.
+ *
+ * @covers \OCA\Portaliq\BackgroundJob\PortalTaskDeliveryJob
  *
  * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-delivery-worker-settles-every-ledger-row-idempotently-and-in-isolation
  */
@@ -327,6 +343,166 @@ class PortalTaskDeliveryJobTest extends TestCase {
 		$this->assertStringNotContainsString('Stuur uw bewijsstuk', $bodies['subject'] . $bodies['body']);
 		$this->assertStringNotContainsString('document van u nodig', $bodies['body']);
 	}//end testAMailRowSendsThePrivacyMinimalMail()
+
+	/**
+	 * A re-ask carries its reason and the due date in the message body; a
+	 * reminder gets the reminder subject; an unknown kind falls back to the
+	 * ask wording rather than failing the row.
+	 */
+	public function testKindsReasonsAndDueDatesShapeTheMessage(): void {
+		$message = self::MESSAGE;
+		$message['reason'] = 'De foto was onleesbaar.';
+		$ledger = new FakeLedger(
+			rows: [
+				new FakeDeliveryRow(uuid: 'd-1', party: 'party:s1', channel: 'portal-inbox', kind: 're-ask', message: $message),
+				new FakeDeliveryRow(uuid: 'd-2', party: 'party:s2', channel: 'portal-inbox', kind: 'reminder', message: self::MESSAGE),
+				new FakeDeliveryRow(uuid: 'd-3', party: 'party:s3', channel: 'portal-inbox', kind: 'escalation', message: ['taskUuid' => 't', 'title' => 'X', 'dueAt' => 'not-a-date']),
+			]
+		);
+
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('readCollection')->willReturn([]);
+
+		$written = [];
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('createObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, array $data) use (&$written) {
+				$written[] = $data;
+
+				return ['id' => 'm'];
+			}
+		);
+
+		$this->runJob(ledger: $ledger, reader: $reader, writer: $writer);
+
+		$this->assertSame(['d-1', 'd-2', 'd-3'], $ledger->delivered);
+		$this->assertStringContainsString('another look', $written[0]['subject']);
+		$this->assertStringContainsString('De foto was onleesbaar.', $written[0]['body']);
+		$this->assertStringContainsString('15-09-2026', $written[0]['body']);
+		$this->assertStringContainsString('Reminder', $written[1]['subject']);
+		// The unknown kind fell back to the ask wording, and the unparseable
+		// due date simply renders no due line.
+		$this->assertStringContainsString('new task', $written[2]['subject']);
+		$this->assertStringNotContainsString('not-a-date', $written[2]['body']);
+	}//end testKindsReasonsAndDueDatesShapeTheMessage()
+
+	/**
+	 * Mail failure modes are honest failures with their own reasons: an
+	 * invalid address, a throwing mailer, and reported failed recipients.
+	 */
+	public function testMailFailureModesAreNamed(): void {
+		$account = [['id' => 'a-1', 'email' => 'broken@@example', 'organisation' => '']];
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('readCollection')->willReturn($account);
+
+		$mailer = $this->createMock(IMailer::class);
+		$mailer->method('validateMailAddress')->willReturn(false);
+		$ledger = new FakeLedger(rows: [new FakeDeliveryRow(uuid: 'd-1', party: 'party:s1', channel: 'mail')]);
+		$this->runJob(ledger: $ledger, reader: $reader, writer: $this->createMock(PortalObjectWriter::class), mailer: $mailer);
+		$this->assertStringContainsString('valid mail address', $ledger->failed['d-1']);
+
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('readCollection')->willReturn([['id' => 'a-1', 'email' => 'ok@example.org', 'organisation' => '']]);
+		$mailer = $this->createMock(IMailer::class);
+		$mailer->method('validateMailAddress')->willReturn(true);
+		$mailer->method('createMessage')->willReturn($this->createMock(IMessage::class));
+		$mailer->method('send')->willThrowException(new RuntimeException('smtp down'));
+		$ledger = new FakeLedger(rows: [new FakeDeliveryRow(uuid: 'd-2', party: 'party:s1', channel: 'mail')]);
+		$this->runJob(ledger: $ledger, reader: $reader, writer: $this->createMock(PortalObjectWriter::class), mailer: $mailer);
+		$this->assertStringContainsString('mail send failed', $ledger->failed['d-2']);
+
+		$mailer = $this->createMock(IMailer::class);
+		$mailer->method('validateMailAddress')->willReturn(true);
+		$mailer->method('createMessage')->willReturn($this->createMock(IMessage::class));
+		$mailer->method('send')->willReturn(['ok@example.org']);
+		$ledger = new FakeLedger(rows: [new FakeDeliveryRow(uuid: 'd-3', party: 'party:s1', channel: 'mail')]);
+		$this->runJob(ledger: $ledger, reader: $reader, writer: $this->createMock(PortalObjectWriter::class), mailer: $mailer);
+		$this->assertStringContainsString('failed recipients', $ledger->failed['d-3']);
+	}//end testMailFailureModesAreNamed()
+
+	/**
+	 * An unknown channel, a non-object pending row and an unreadable ledger
+	 * are each absorbed: the unknown channel is an honest failure, the junk
+	 * row is skipped, and a pending() explosion ends the run quietly.
+	 */
+	public function testJunkRowsAndAnUnreadableLedgerAreAbsorbed(): void {
+		$ledger = new FakeLedger(
+			rows: [
+				'not-a-row',
+				new FakeDeliveryRow(uuid: 'd-1', party: 'party:s1', channel: 'carrier-pigeon'),
+			]
+		);
+		$this->runJob(ledger: $ledger, reader: $this->createMock(PortalObjectReader::class), writer: $this->createMock(PortalObjectWriter::class));
+		$this->assertStringContainsString('unknown delivery channel', $ledger->failed['d-1']);
+
+		$ledger = new FakeLedger(rows: [], throwOnPending: true);
+		$this->runJob(ledger: $ledger, reader: $this->createMock(PortalObjectReader::class), writer: $this->createMock(PortalObjectWriter::class));
+		$this->assertSame([], $ledger->delivered);
+	}//end testJunkRowsAndAnUnreadableLedgerAreAbsorbed()
+
+	/**
+	 * Even the settle-as-failed call may explode; the job logs it and moves
+	 * on — the row simply stays pending for the next run, and nothing ever
+	 * reaches the cron runner.
+	 */
+	public function testASettleFailureIsAbsorbed(): void {
+		$ledger = new FakeLedger(
+			rows: [
+				new FakeDeliveryRow(uuid: 'd-1', party: 'no-prefix', channel: 'portal-inbox'),
+				new FakeDeliveryRow(uuid: 'd-2', party: 'party:s2', channel: 'portal-inbox', message: self::MESSAGE),
+			],
+			throwOnMarkFailed: true
+		);
+
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('readCollection')->willReturn([]);
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('createObject')->willReturn(['id' => 'm-1']);
+
+		$this->runJob(ledger: $ledger, reader: $reader, writer: $writer);
+
+		// Row 1's failure could not be settled (markFailed throws) yet row 2
+		// was still processed and delivered.
+		$this->assertSame(['d-2'], $ledger->delivered);
+	}//end testASettleFailureIsAbsorbed()
+
+	/**
+	 * A container that answers with a non-object for the seam name reads as
+	 * "openregister absent", exactly like a container miss.
+	 */
+	public function testANonObjectSeamServiceReadsAsAbsent(): void {
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willReturn('not-a-service');
+
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->never())->method('createObject');
+
+		$job = new PortalTaskDeliveryJob(
+			$this->timeFactory(),
+			$container,
+			$this->createMock(PortalObjectReader::class),
+			$writer,
+			$this->createMock(PortalOrganisationConfigService::class),
+			$this->createMock(IMailer::class),
+			$this->createMock(IFactory::class),
+			$this->createMock(IURLGenerator::class),
+			$this->createMock(LoggerInterface::class)
+		);
+		$run = new ReflectionMethod($job, 'run');
+		$run->invoke($job, null);
+
+		$this->addToAssertionCount(1);
+	}//end testANonObjectSeamServiceReadsAsAbsent()
+
+	/**
+	 * A shared ITimeFactory mock.
+	 */
+	private function timeFactory(): ITimeFactory {
+		$time = $this->createMock(ITimeFactory::class);
+		$time->method('getDateTime')->willReturn(new \DateTime('2026-09-01T10:00:00+00:00'));
+
+		return $time;
+	}//end timeFactory()
 
 	/**
 	 * Build and run the job around a fake ledger (null = openregister absent).

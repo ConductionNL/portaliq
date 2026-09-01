@@ -41,6 +41,9 @@ use Psr\Log\LoggerInterface;
  * announcement: `tasks.enabled` for authenticated subjects only, and never on
  * the anonymous aggregate.
  *
+ * @covers \OCA\Portaliq\Controller\PortalTaskProxyController
+ * @covers \OCA\Portaliq\Controller\ContributionController
+ *
  * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
  * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-mijn-taken-lists-details-and-completes-the-partys-open-tasks
  */
@@ -128,6 +131,102 @@ class PortalTaskProxyControllerTest extends TestCase {
 	}//end testTransportFailureBecomesBadGateway()
 
 	/**
+	 * Multipart answers (a JSON object string), the single `file` field and
+	 * PHP's parallel-array `files[]` shape are all normalised before the
+	 * forward: the gateway sees one decoded answers map and a flat file list.
+	 */
+	public function testAnswersAndUploadsAreNormalisedForTheForward(): void {
+		$request = $this->createMock(IRequest::class);
+		$request->method('getHeader')->willReturn('Bearer token');
+		$request->method('getParam')->willReturnCallback(
+			static fn (string $key, $default = null) => ($key === 'answers' ? '{"veld": "waarde"}' : $default)
+		);
+		$request->method('getUploadedFile')->willReturnMap([
+			['file', ['name' => 'a.pdf', 'type' => 'application/pdf', 'tmp_name' => '/tmp/a', 'size' => 1]],
+			['files', [
+				'name' => ['b.pdf', 'c.png'],
+				'type' => ['application/pdf', 'image/png'],
+				'tmp_name' => ['/tmp/b', '/tmp/c'],
+				'size' => [2, 3],
+			]],
+		]);
+
+		$captured = [];
+		$gateway = $this->createMock(PortalTaskGateway::class);
+		$gateway->expects($this->once())->method('completeTask')->willReturnCallback(
+			function (array $subject, string $uuid, array $answers, ?string $comment, string $outcome, array $files) use (&$captured) {
+				$captured = ['answers' => $answers, 'files' => $files, 'outcome' => $outcome, 'comment' => $comment];
+
+				return ['status' => 200, 'body' => ['uuid' => $uuid]];
+			}
+		);
+
+		$response = $this->controllerWithRequest(request: $request, subject: self::SUBJECT, gateway: $gateway)
+			->complete('t-1', 'submitted', 'klaar');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['veld' => 'waarde'], $captured['answers']);
+		$this->assertSame('submitted', $captured['outcome']);
+		$this->assertSame('klaar', $captured['comment']);
+		$this->assertSame(['a.pdf', 'b.pdf', 'c.png'], array_column($captured['files'], 'name'));
+	}//end testAnswersAndUploadsAreNormalisedForTheForward()
+
+	/**
+	 * An already-decoded answers array passes through, a single-entry `files`
+	 * field (string tmp_name) is accepted, and malformed answers JSON reads as
+	 * no answers at all — never a crash, never a guessed payload.
+	 */
+	public function testArrayAnswersAndMalformedJsonAreHandled(): void {
+		$request = $this->createMock(IRequest::class);
+		$request->method('getHeader')->willReturn('Bearer token');
+		$request->method('getParam')->willReturnCallback(
+			static fn (string $key, $default = null) => ($key === 'answers' ? ['al' => 'array'] : $default)
+		);
+		$request->method('getUploadedFile')->willReturnMap([
+			['file', []],
+			['files', ['name' => 'solo.pdf', 'type' => 'application/pdf', 'tmp_name' => '/tmp/solo', 'size' => 5]],
+		]);
+
+		$captured = [];
+		$gateway = $this->createMock(PortalTaskGateway::class);
+		$gateway->method('completeTask')->willReturnCallback(
+			function (array $subject, string $uuid, array $answers, ?string $comment, string $outcome, array $files) use (&$captured) {
+				$captured = ['answers' => $answers, 'files' => $files];
+
+				return ['status' => 200, 'body' => []];
+			}
+		);
+
+		$this->controllerWithRequest(request: $request, subject: self::SUBJECT, gateway: $gateway)->complete('t-1');
+		$this->assertSame(['al' => 'array'], $captured['answers']);
+		$this->assertSame(['solo.pdf'], array_column($captured['files'], 'name'));
+
+		$request = $this->createMock(IRequest::class);
+		$request->method('getHeader')->willReturn('Bearer token');
+		$request->method('getParam')->willReturnCallback(
+			static fn (string $key, $default = null) => ($key === 'answers' ? '{not-json' : $default)
+		);
+		$request->method('getUploadedFile')->willReturn([]);
+
+		$this->controllerWithRequest(request: $request, subject: self::SUBJECT, gateway: $gateway)->complete('t-1');
+		$this->assertSame([], $captured['answers']);
+		$this->assertSame([], $captured['files']);
+	}//end testArrayAnswersAndMalformedJsonAreHandled()
+
+	/**
+	 * A task detail is relayed untouched on success.
+	 */
+	public function testADetailIsRelayed(): void {
+		$gateway = $this->createMock(PortalTaskGateway::class);
+		$gateway->method('getTask')->willReturn(['status' => 200, 'body' => ['uuid' => 't-1', 'title' => 'Stuur uw bewijsstuk']]);
+
+		$response = $this->controller(subject: self::SUBJECT, gateway: $gateway)->show('t-1');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame('t-1', $response->getData()['uuid']);
+	}//end testADetailIsRelayed()
+
+	/**
 	 * An authenticated contributions aggregate announces the tasks surface
 	 * when (and only when) the seam is available.
 	 */
@@ -183,6 +282,20 @@ class PortalTaskProxyControllerTest extends TestCase {
 
 		return new PortalTaskProxyController($request, $session, $gateway);
 	}//end controller()
+
+	/**
+	 * Build the proxy controller around a fully prepared request mock.
+	 *
+	 * @param IRequest $request The prepared request.
+	 * @param array<string, mixed>|null $subject The resolved subject, or null.
+	 * @param PortalTaskGateway $gateway The gateway mock.
+	 */
+	private function controllerWithRequest(IRequest $request, ?array $subject, PortalTaskGateway $gateway): PortalTaskProxyController {
+		$session = $this->createMock(PortalSessionService::class);
+		$session->method('resolveFromBearer')->willReturn($subject);
+
+		return new PortalTaskProxyController($request, $session, $gateway);
+	}//end controllerWithRequest()
 
 	/**
 	 * Build a ContributionController whose registry serves a minimal

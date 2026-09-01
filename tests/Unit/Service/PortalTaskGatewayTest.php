@@ -29,6 +29,8 @@ use RuntimeException;
  * both degrade to null (the proxy's 502/unavailable), and availability is
  * openregister + a configured secret, both required.
  *
+ * @covers \OCA\Portaliq\Service\PortalTaskGateway
+ *
  * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
  */
 class PortalTaskGatewayTest extends TestCase {
@@ -133,6 +135,87 @@ class PortalTaskGatewayTest extends TestCase {
 		$this->assertSame('klaar', $parts['comment']);
 		$this->assertSame('submitted', $parts['outcome']);
 	}//end testCompletionPostsMultipartWithTheAssertion()
+
+	/**
+	 * A readable upload becomes a `files[]` multipart part carrying its name
+	 * and media type; an unreadable tmp path is skipped rather than sent.
+	 */
+	public function testACompletionAttachesReadableFilesAndSkipsUnreadableOnes(): void {
+		$tmp = (string)tempnam(sys_get_temp_dir(), 'ptg');
+		file_put_contents($tmp, 'evidence-bytes');
+
+		$captured = [];
+		$client = $this->createMock(IClient::class);
+		$client->method('post')->willReturnCallback(
+			function (string $url, array $options) use (&$captured) {
+				$captured = ['url' => $url, 'options' => $options];
+
+				return $this->response(status: 200, body: '{"uuid": "t-1"}');
+			}
+		);
+
+		$answer = $this->gateway(client: $client)->completeTask(
+			subject: self::SUBJECT,
+			uuid: 't-1',
+			files: [
+				['name' => 'bewijs.pdf', 'type' => 'application/pdf', 'tmp_name' => $tmp, 'size' => 14],
+				['name' => 'ghost.pdf', 'type' => 'application/pdf', 'tmp_name' => '/nonexistent/ghost', 'size' => 1],
+				['name' => 'no-path.pdf'],
+			]
+		);
+		unlink($tmp);
+
+		$this->assertSame(200, $answer['status']);
+		$fileParts = array_values(array_filter(
+			$captured['options']['multipart'],
+			static fn (array $part): bool => $part['name'] === 'files[]'
+		));
+		$this->assertCount(1, $fileParts);
+		$this->assertSame('bewijs.pdf', $fileParts[0]['filename']);
+		$this->assertSame('application/pdf', $fileParts[0]['headers']['Content-Type']);
+		$this->assertIsResource($fileParts[0]['contents']);
+	}//end testACompletionAttachesReadableFilesAndSkipsUnreadableOnes()
+
+	/**
+	 * A non-JSON (or empty) seam body degrades to an empty array while the
+	 * status is still relayed — the proxy never chokes on a broken body.
+	 */
+	public function testANonJsonBodyDegradesToAnEmptyArray(): void {
+		$client = $this->createMock(IClient::class);
+		$client->method('get')->willReturn($this->response(status: 500, body: '<html>boom</html>'));
+
+		$answer = $this->gateway(client: $client)->getTask(subject: self::SUBJECT, uuid: 't-1');
+
+		$this->assertSame(500, $answer['status']);
+		$this->assertSame([], $answer['body']);
+
+		$client = $this->createMock(IClient::class);
+		$client->method('get')->willReturn($this->response(status: 204, body: ''));
+
+		$answer = $this->gateway(client: $client)->getTask(subject: self::SUBJECT, uuid: 't-1');
+		$this->assertSame(204, $answer['status']);
+		$this->assertSame([], $answer['body']);
+	}//end testANonJsonBodyDegradesToAnEmptyArray()
+
+	/**
+	 * The list page clamps its bounds: a non-positive limit forwards as 1 and
+	 * a negative offset as 0, so a hostile query never reaches the seam raw.
+	 */
+	public function testTheListPageClampsItsBounds(): void {
+		$captured = [];
+		$client = $this->createMock(IClient::class);
+		$client->method('get')->willReturnCallback(
+			function (string $url, array $options) use (&$captured) {
+				$captured['url'] = $url;
+
+				return $this->response(status: 200, body: '{"results": []}');
+			}
+		);
+
+		$this->gateway(client: $client)->listTasks(subject: self::SUBJECT, limit: 0, offset: -5);
+
+		$this->assertStringEndsWith('portal-tasks?limit=1&offset=0', $captured['url']);
+	}//end testTheListPageClampsItsBounds()
 
 	/**
 	 * Availability requires BOTH openregister and a configured signing secret.
