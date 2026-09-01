@@ -67,9 +67,9 @@
  * @spec openspec/specs/supplier-portal/spec.md#a-configured-provider-is-offered-an-unconfigured-one-is-not
  */
 
-import { test, expect } from '@playwright/test'
-import * as http from 'node:http'
+import { expect, test } from '@playwright/test'
 import * as crypto from 'node:crypto'
+import * as http from 'node:http'
 
 const API_BASE = '/apps/portaliq/portal/api'
 const LIVE = process.env.OIDC_E2E_LIVE === '1'
@@ -144,7 +144,7 @@ test.describe('portal-oidc-broker-login — happy path (stub broker, requires se
 
 	test('start→callback against a stub broker lands authenticated in the SPA; the configured provider button renders, an unconfigured one does not', async ({
 		page,
-		context,
+		_context,
 	}) => {
 		const orgSlug = process.env.OIDC_E2E_ORG_SLUG!
 		const clientId = process.env.OIDC_E2E_CLIENT_ID!
