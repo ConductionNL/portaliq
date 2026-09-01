@@ -27,9 +27,11 @@
  * Pattern reference: ADR-030 (hydra/openspec/architecture/).
  */
 
-import { expect, test, type Page } from '@playwright/test'
-import * as path from 'path'
+import type { Page } from '@playwright/test'
+
+import { expect, test } from '@playwright/test'
 import * as fs from 'fs'
+import * as path from 'path'
 
 /** Nextcloud admin, as exported by the shared quality.yml Playwright step. */
 const ADMIN_USER = process.env.ADMIN_USER ?? process.env.NC_ADMIN_USER ?? 'admin'

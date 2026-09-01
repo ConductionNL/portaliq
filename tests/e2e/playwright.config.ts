@@ -67,8 +67,7 @@
 
 import { defineConfig, devices } from '@playwright/test'
 import * as path from 'path'
-
-import { BASE_URL } from './base-url'
+import { BASE_URL } from './base-url.ts'
 
 const IGNORE = [
 	// Owned by the `docs-capture` project in the root config / the shared

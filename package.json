@@ -14,7 +14,7 @@
     "build:portal": "NODE_ENV=production webpack --config webpack.portal.js --progress",
     "watch:portal": "NODE_ENV=development webpack --config webpack.portal.js --progress --watch",
     "build:all": "npm run build",
-    "lint": "eslint src",
+    "lint": "eslint src tests scripts",
     "lint-fix": "npm run lint -- --fix",
     "test:e2e": "playwright test",
     "test:e2e:docs": "playwright test --project docs-capture",

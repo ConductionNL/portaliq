@@ -24,7 +24,7 @@
  */
 
 import { expect, test } from '@playwright/test'
-import { resolveBaseURL } from '../base-url'
+import { resolveBaseURL } from '../base-url.ts'
 
 const BASE = resolveBaseURL()
 const REACT_PORTAL = `${BASE}/index.php/apps/portaliq/portal`
