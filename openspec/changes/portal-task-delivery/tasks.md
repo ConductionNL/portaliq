@@ -14,8 +14,8 @@
   - Transport failure returns null (proxy answers 502); an unconfigured signing secret surfaces as unavailable, not a throw to the resident
   - `isAvailable()` is true only when openregister is installed and the signing secret is configured; drives the contributions announcement
 
-- [ ] T1 implemented
-- [ ] T1 tests green
+- [x] T1 implemented
+- [x] T1 tests green
 
 ### Task 2: Proxy controller + routes + contributions announcement
 - **spec_ref**: `openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser`
@@ -25,8 +25,8 @@
   - Refusal mapping per design D-3: 404/400/409 pass through with their codes; openregister 401 becomes 503 `task-service-unavailable`; transport null becomes 502 `task-service-unreachable`
   - `GET /portal/api/contributions` carries `tasks: {enabled: bool}` for authenticated subjects only; the anonymous aggregate never announces it
 
-- [ ] T2 implemented
-- [ ] T2 tests green
+- [x] T2 implemented
+- [x] T2 tests green
 
 ### Task 3: Delivery worker
 - **spec_ref**: `openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-delivery-worker-settles-every-ledger-row-idempotently-and-in-isolation`
@@ -37,8 +37,8 @@
   - `mail` row → portalAccount lookup by stripped `party:` reference, privacy-minimal bilingual mail via IMailer; missing/invalid address or send failure = `markFailed(reason)`; per-row try/catch so no row blocks another and nothing escapes to cron
   - `portalMessage` schema declares `taskUuid` + `deliveryUuid` (undeclared properties are dropped on save)
 
-- [ ] T3 implemented
-- [ ] T3 tests green
+- [x] T3 implemented
+- [x] T3 tests green
 
 ### Task 4: "Mijn taken" SPA surface + inbox deep link
 - **spec_ref**: `openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-mijn-taken-lists-details-and-completes-the-partys-open-tasks`
@@ -48,8 +48,8 @@
   - Completion form: comment + file input honouring `metadata.upload` (required/maxFiles/types/size) with client-side refusals in Dutch B1; multipart POST through the proxy; refusal codes map to the D-3 messages; success confirms and reloads the list
   - Inbox rows with `taskUuid` render "Bekijk taak", handing the uuid to the shell which opens the task detail
 
-- [ ] T4 implemented
-- [ ] T4 lint + build green
+- [x] T4 implemented
+- [x] T4 lint + build green
 
 ### Task 5: Quality gates + l10n
 - **spec_ref**: `openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-inbox-message-deep-links-to-the-task`
@@ -58,5 +58,5 @@
   - Server-side message/mail strings translated nl + en (English source keys); SPA strings in `src/portal/i18n`
   - phpcs, phpmd, psalm, phpstan, phpunit, npm lint + build, hydra gates (diff-scoped) all green
 
-- [ ] T5 implemented
-- [ ] T5 checks green
+- [x] T5 implemented
+- [x] T5 checks green
