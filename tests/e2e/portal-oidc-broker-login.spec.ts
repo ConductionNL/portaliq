@@ -144,7 +144,6 @@ test.describe('portal-oidc-broker-login — happy path (stub broker, requires se
 
 	test('start→callback against a stub broker lands authenticated in the SPA; the configured provider button renders, an unconfigured one does not', async ({
 		page,
-		_context,
 	}) => {
 		const orgSlug = process.env.OIDC_E2E_ORG_SLUG!
 		const clientId = process.env.OIDC_E2E_CLIENT_ID!
