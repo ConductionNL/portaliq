@@ -75,6 +75,12 @@
         <nextcloud min-version="32" max-version="34"/>
     </dependencies>
 
+    <!-- The resident task leg (portal-task-delivery): drains openregister's
+         portal delivery ledger into inbox messages and mails every 5 minutes. -->
+    <background-jobs>
+        <job>OCA\Portaliq\BackgroundJob\PortalTaskDeliveryJob</job>
+    </background-jobs>
+
     <!-- @spec openspec/architecture/adr-023-action-authorization.md -->
     <repair-steps>
         <post-migration>
