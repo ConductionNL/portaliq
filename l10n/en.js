@@ -121,7 +121,10 @@ OC.L10N.register(
         "Task uuid": "Task uuid",
         "Delivery uuid": "Delivery uuid",
         "The portal task this message announces (portal-task-delivery). The unified inbox renders a deep link into the \"Mijn taken\" surface when present; absent means no such link renders.": "The portal task this message announces (portal-task-delivery). The unified inbox renders a deep link into the \"Mijn taken\" surface when present; absent means no such link renders.",
-        "The openregister delivery ledger row this message settles (portal-task-delivery). The idempotency key: the worker probes it before writing, so a crash between write and settle never duplicates the message.": "The openregister delivery ledger row this message settles (portal-task-delivery). The idempotency key: the worker probes it before writing, so a crash between write and settle never duplicates the message."
+        "The openregister delivery ledger row this message settles (portal-task-delivery). The idempotency key: the worker probes it before writing, so a crash between write and settle never duplicates the message.": "The openregister delivery ledger row this message settles (portal-task-delivery). The idempotency key: the worker probes it before writing, so a crash between write and settle never duplicates the message.",
+        "Reports": "Reports",
+        "Pick a report to open it.": "Pick a report to open it.",
+        "How much your portals are used, and by whom.": "How much your portals are used, and by whom."
     },
     "nplurals=2; plural=(n != 1);"
 )
