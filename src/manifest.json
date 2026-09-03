@@ -59,19 +59,20 @@
       "order": 40
     },
     {
-      "id": "Traffic",
-      "label": "Traffic",
-      "icon": "ChartLine",
-      "route": "Traffic",
-      "order": 50
-    },
-    {
       "id": "Documentation",
       "label": "Documentation",
       "icon": "BookOpenVariantOutline",
       "href": "https://www.conduction.nl/academy",
       "section": "footer",
       "order": 90
+    },
+    {
+      "id": "ReportsMenu",
+      "label": "Reports",
+      "icon": "ChartBoxOutline",
+      "route": "Reports",
+      "section": "footer",
+      "order": 95
     },
     {
       "id": "FeaturesRoadmapMenu",
@@ -253,6 +254,25 @@
           }
         ]
       }
+    },
+    {
+      "id": "Reports",
+      "route": "/reports",
+      "type": "reports",
+      "title": "Reports",
+      "config": {
+        "description": "Pick a report to open it.",
+        "cards": [
+          {
+            "id": "Traffic",
+            "label": "Traffic",
+            "description": "How much your portals are used, and by whom.",
+            "icon": "ChartLine",
+            "route": "Traffic"
+          }
+        ]
+      },
+      "_note": "ADR-112 / ADR-114 Decision 3. Portaliq already had one report and it was a main-nav entry at order 50. Nothing is invented here: the Traffic page is untouched and stays routable at /traffic, and only its menu entry moves, becoming a card. Themes is NOT carded — it is configuration for how a portal looks, not a reading of what happened, and ADR-097 keeps a domain of the work in the main nav."
     },
     {
       "id": "Traffic",

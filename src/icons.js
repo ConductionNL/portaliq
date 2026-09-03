@@ -20,6 +20,7 @@ import BellOutline from 'vue-material-design-icons/BellOutline.vue'
 import BookAlphabet from 'vue-material-design-icons/BookAlphabet.vue'
 import BookOpenVariant from 'vue-material-design-icons/BookOpenVariant.vue'
 import BookOpenVariantOutline from 'vue-material-design-icons/BookOpenVariantOutline.vue'
+import ChartBoxOutline from 'vue-material-design-icons/ChartBoxOutline.vue'
 import ChartLine from 'vue-material-design-icons/ChartLine.vue'
 import Email from 'vue-material-design-icons/Email.vue'
 import EmailOutline from 'vue-material-design-icons/EmailOutline.vue'
@@ -51,6 +52,7 @@ export default {
 	BookAlphabet,
 	BookOpenVariant,
 	BookOpenVariantOutline,
+	ChartBoxOutline,
 	ChartLine,
 	Email,
 	EmailOutline,
