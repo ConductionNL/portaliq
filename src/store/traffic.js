@@ -56,6 +56,8 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		 * The folded summary of the loaded records.
 		 *
 		 * @return {object} See `summarise`.
+		 *
+		* @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
 		 */
 		summary() {
 			return summarise(this.records, this.dates)
@@ -67,6 +69,8 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		 * Point the shared object store at the two schemas, once.
 		 *
 		 * @return {object} The shared object store.
+		 *
+		* @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
 		 */
 		objects() {
 			const store = useObjectStore()
@@ -91,6 +95,8 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		 * first), then its records.
 		 *
 		 * @return {Promise<void>}
+		 *
+		* @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
 		 */
 		async load() {
 			this.loadingPortals = true
@@ -121,6 +127,8 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		 *
 		 * @param {string} slug The portal slug.
 		 * @return {Promise<void>}
+		 *
+		* @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
 		 */
 		async select(slug) {
 			if (slug === this.portalSlug) {
@@ -139,6 +147,8 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		 * hundred rows.
 		 *
 		 * @return {Promise<void>}
+		 *
+		* @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
 		 */
 		async loadRecords() {
 			this.records = []

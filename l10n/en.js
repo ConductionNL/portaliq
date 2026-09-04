@@ -124,7 +124,11 @@ OC.L10N.register(
         "The openregister delivery ledger row this message settles (portal-task-delivery). The idempotency key: the worker probes it before writing, so a crash between write and settle never duplicates the message.": "The openregister delivery ledger row this message settles (portal-task-delivery). The idempotency key: the worker probes it before writing, so a crash between write and settle never duplicates the message.",
         "Reports": "Reports",
         "Pick a report to open it.": "Pick a report to open it.",
-        "How much your portals are used, and by whom.": "How much your portals are used, and by whom."
+        "How much your portals are used, and by whom.": "How much your portals are used, and by whom.",
+        "Journeys": "Journeys",
+        "Per day": "Per day",
+        "Sources": "Sources",
+        "What visitors looked at over the last 30 days, and where they came from. Pick a portal at the top; the numbers come from the daily figures the aggregation job writes every fifteen minutes.": "What visitors looked at over the last 30 days, and where they came from. Pick a portal at the top; the numbers come from the daily figures the aggregation job writes every fifteen minutes."
     },
     "nplurals=2; plural=(n != 1);"
 )

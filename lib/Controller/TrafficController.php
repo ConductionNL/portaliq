@@ -175,6 +175,7 @@ class TrafficController extends Controller {
 		];
 		$this->ingestFor(slug: $portal, events: [$event], consent: false);
 
+		$this->stateless();
 		$response = new DataDisplayResponse(
 			(string)base64_decode(self::PIXEL, true),
 			Http::STATUS_OK,
@@ -202,6 +203,7 @@ class TrafficController extends Controller {
 	#[AnonRateLimit(limit: 300, period: 60)]
 	#[UserRateLimit(limit: 300, period: 60)]
 	public function client(): DataDisplayResponse {
+		$this->stateless();
 		$path = $this->clientPath();
 		if ($path === null) {
 			$missing = new DataDisplayResponse('', Http::STATUS_NOT_FOUND, ['Content-Type' => 'text/plain; charset=utf-8']);
@@ -282,11 +284,34 @@ class TrafficController extends Controller {
 	 * @return Response No content, not cacheable.
 	 */
 	private function noContent(): Response {
+		$this->stateless();
 		$response = new Response(Http::STATUS_NO_CONTENT);
 		$response->addHeader('Cache-Control', 'private, no-store');
 
 		return $response;
 	}//end noContent()
+
+
+	/**
+	 * Drop every cookie the platform queued for this response.
+	 *
+	 * Nextcloud opens a PHP session and sets its same-site guard cookies
+	 * before any controller runs, on every request, public ones included.
+	 * The collector needs none of that: it identifies nobody by cookie and
+	 * answers the same to everyone. Measured on the throwaway instance: the
+	 * first anonymous POST came back with the session cookie, which is
+	 * exactly the "no Set-Cookie" the contract promises a visitor. The
+	 * headers live on PHP's own list, not on the Response, so they are
+	 * removed there; a session that was never sent is a session that
+	 * cannot be resumed, and nothing here wants one.
+	 *
+	 * @return void
+	 */
+	private function stateless(): void {
+		if (headers_sent() === false) {
+			header_remove('Set-Cookie');
+		}
+	}//end stateless()
 
 
 	/**
@@ -297,6 +322,7 @@ class TrafficController extends Controller {
 	 * @return JSONResponse A 400.
 	 */
 	private function refusal(string $reason): JSONResponse {
+		$this->stateless();
 		$response = new JSONResponse(['error' => $reason], Http::STATUS_BAD_REQUEST);
 		$response->addHeader('Cache-Control', 'private, no-store');
 

@@ -145,7 +145,11 @@
         "Pick a report to open it.": "Kies een rapport om het te openen.",
         "How much your portals are used, and by whom.": "Hoeveel je portalen gebruikt worden, en door wie.",
         "Store": "Store",
-        "Install portal configurations that other organisations have published: a theme, a set of pages, or the flows behind a form.": "Installeer registers, schema's en flows die andere organisaties hebben gepubliceerd."
+        "Install portal configurations that other organisations have published: a theme, a set of pages, or the flows behind a form.": "Installeer registers, schema's en flows die andere organisaties hebben gepubliceerd.",
+        "Journeys": "Routes",
+        "Per day": "Per dag",
+        "Sources": "Bronnen",
+        "What visitors looked at over the last 30 days, and where they came from. Pick a portal at the top; the numbers come from the daily figures the aggregation job writes every fifteen minutes.": "Wat bezoekers de afgelopen 30 dagen bekeken, en waar ze vandaan kwamen. Kies bovenaan een portaal; de cijfers komen uit de dagcijfers die de samenvattingstaak elk kwartier schrijft."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

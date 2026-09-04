@@ -170,9 +170,8 @@ test.describe('traffic analytics: the collector and the client', () => {
 			heatmaps: false,
 			sessionRecording: false,
 		})
-		expect(String(tilburg.collector)).toMatch(
-			/\/index\.php\/apps\/portaliq\/api\/traffic$/,
-		)
+		// With or without index.php: an instance with pretty URLs drops it.
+		expect(String(tilburg.collector)).toMatch(/\/apps\/portaliq\/api\/traffic$/)
 
 		const disabled = await request.get(
 			`${APP}/api/content/site?portal=${DISABLED}`,

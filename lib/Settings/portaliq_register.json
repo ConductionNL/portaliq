@@ -2555,31 +2555,31 @@
                                 "path": {
                                     "title": "Path",
                                     "type": "string",
-                                    "description": "",
+                                    "description": "The page path, query stripped.",
                                     "example": "/"
                                 },
                                 "views": {
                                     "title": "Views",
                                     "type": "integer",
-                                    "description": "",
+                                    "description": "Page views of this path that day.",
                                     "example": 1
                                 },
                                 "entrances": {
                                     "title": "Entrances",
                                     "type": "integer",
-                                    "description": "",
+                                    "description": "Sessions that started on this path.",
                                     "example": 1
                                 },
                                 "exits": {
                                     "title": "Exits",
                                     "type": "integer",
-                                    "description": "",
+                                    "description": "Sessions that ended on this path.",
                                     "example": 1
                                 },
                                 "avgEngagementSeconds": {
                                     "title": "Average engagement (seconds)",
                                     "type": "number",
-                                    "description": "",
+                                    "description": "Mean seconds on this path before the next page view.",
                                     "example": 1
                                 }
                             }
@@ -2604,19 +2604,19 @@
                                 "from": {
                                     "title": "From",
                                     "type": "string",
-                                    "description": "",
+                                    "description": "The path the visitor came from.",
                                     "example": "/"
                                 },
                                 "to": {
                                     "title": "To",
                                     "type": "string",
-                                    "description": "",
+                                    "description": "The path the visitor went to.",
                                     "example": "/woo"
                                 },
                                 "count": {
                                     "title": "Count",
                                     "type": "integer",
-                                    "description": "",
+                                    "description": "How often this step was taken.",
                                     "example": 1
                                 }
                             }
@@ -2639,19 +2639,19 @@
                                 "host": {
                                     "title": "Host",
                                     "type": "string",
-                                    "description": "",
+                                    "description": "The referring host, empty for a direct visit.",
                                     "example": "www.google.com"
                                 },
                                 "channel": {
                                     "title": "Channel",
                                     "type": "string",
-                                    "description": "",
+                                    "description": "The channel derived from the referrer: organic search, referral, social, email or direct.",
                                     "example": "organic search"
                                 },
                                 "count": {
                                     "title": "Count",
                                     "type": "integer",
-                                    "description": "",
+                                    "description": "Sessions that arrived this way.",
                                     "example": 1
                                 }
                             }
@@ -2674,25 +2674,25 @@
                                 "campaign": {
                                     "title": "Campaign",
                                     "type": "string",
-                                    "description": "",
+                                    "description": "The campaign name from utm_campaign or a mail blast.",
                                     "example": ""
                                 },
                                 "source": {
                                     "title": "Source",
                                     "type": "string",
-                                    "description": "",
+                                    "description": "The source, such as newsletter or google.",
                                     "example": ""
                                 },
                                 "medium": {
                                     "title": "Medium",
                                     "type": "string",
-                                    "description": "",
+                                    "description": "The medium, such as email or cpc.",
                                     "example": ""
                                 },
                                 "sessions": {
                                     "title": "Sessions",
                                     "type": "integer",
-                                    "description": "",
+                                    "description": "Sessions attributed to this campaign.",
                                     "example": 1
                                 }
                             }
@@ -2765,13 +2765,13 @@
                                 "term": {
                                     "title": "Term",
                                     "type": "string",
-                                    "description": "",
+                                    "description": "The search term, as typed.",
                                     "example": ""
                                 },
                                 "count": {
                                     "title": "Count",
                                     "type": "integer",
-                                    "description": "",
+                                    "description": "How often it was searched.",
                                     "example": 1
                                 }
                             }
@@ -2788,13 +2788,13 @@
                                 "file": {
                                     "title": "File",
                                     "type": "string",
-                                    "description": "",
+                                    "description": "The downloaded file name.",
                                     "example": ""
                                 },
                                 "count": {
                                     "title": "Count",
                                     "type": "integer",
-                                    "description": "",
+                                    "description": "How often it was downloaded.",
                                     "example": 1
                                 }
                             }
@@ -2811,13 +2811,13 @@
                                 "url": {
                                     "title": "URL",
                                     "type": "string",
-                                    "description": "",
+                                    "description": "The outbound link that was followed.",
                                     "example": ""
                                 },
                                 "count": {
                                     "title": "Count",
                                     "type": "integer",
-                                    "description": "",
+                                    "description": "How often it was followed.",
                                     "example": 1
                                 }
                             }
@@ -2834,13 +2834,13 @@
                                 "goal": {
                                     "title": "Goal",
                                     "type": "string",
-                                    "description": "",
+                                    "description": "The goal name. Reserved for a later phase.",
                                     "example": ""
                                 },
                                 "conversions": {
                                     "title": "Conversions",
                                     "type": "integer",
-                                    "description": "",
+                                    "description": "How often the goal was reached.",
                                     "example": 1
                                 }
                             }
@@ -2855,13 +2855,13 @@
                             "opens": {
                                 "title": "Opens",
                                 "type": "integer",
-                                "description": "",
+                                "description": "Mail opens attributed to this portal by another app.",
                                 "example": 0
                             },
                             "clicks": {
                                 "title": "Clicks",
                                 "type": "integer",
-                                "description": "",
+                                "description": "Mail clicks attributed to this portal by another app.",
                                 "example": 0
                             }
                         },
