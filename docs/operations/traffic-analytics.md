@@ -132,8 +132,8 @@ New versus returning is only known where the portal switched on
 `traffic.sensitive.persistClientId`: the client then reports whether it
 found or created its id on each `session_start`, and the daily record
 carries `newVisitors` and `returningVisitors`. In cookieless mode both are
-`null`, not zero, and the Visitors widget says **not available in
-cookieless mode**. A daily hash cannot say whether it was here yesterday,
+`null`, not zero (the object API returns them as absent fields), and the
+Visitors widget says **not available in cookieless mode**. A daily hash cannot say whether it was here yesterday,
 and a zero would claim that nobody came back.
 
 ## Account linking

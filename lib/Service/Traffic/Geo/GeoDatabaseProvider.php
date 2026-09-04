@@ -39,6 +39,8 @@ interface GeoDatabaseProvider {
 	 * The provider id, as the settings name it.
 	 *
 	 * @return string One of GeoSettings::PROVIDERS, never `none`.
+	 *
+	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
 	 */
 	public function providerId(): string;
 
@@ -46,6 +48,8 @@ interface GeoDatabaseProvider {
 	 * The attribution line the operator owes for using the data.
 	 *
 	 * @return string The attribution, stored beside the database.
+	 *
+	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
 	 */
 	public function attribution(): string;
 
@@ -57,6 +61,8 @@ interface GeoDatabaseProvider {
 	 * @return string What was fetched, for the log: a URL or an edition.
 	 *
 	 * @throws RuntimeException When nothing usable could be fetched.
+	 *
+	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
 	 */
 	public function fetch(string $targetPath): string;
 }

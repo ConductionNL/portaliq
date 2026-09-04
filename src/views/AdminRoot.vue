@@ -345,6 +345,12 @@ export default {
 		},
 	},
 
+	/**
+	 * Load both admin blocks: the editor groups and the geography settings.
+	 *
+	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
+	 * @return {void}
+	 */
 	mounted() {
 		this.loadEditorGroups()
 		this.loadGeo()

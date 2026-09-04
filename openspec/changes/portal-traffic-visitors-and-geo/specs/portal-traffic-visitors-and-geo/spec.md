@@ -88,8 +88,9 @@ administrators only.
 hashes in cookieless mode, distinct client ids where the portal persists one.
 `newVisitors` and `returningVisitors` are counted only among visitors with a
 persisted client id, from the client's `visitorType` hint on
-`session_start`; in cookieless mode both are `null`, never zero, because a
-hash that does not survive the day cannot say whether it was here yesterday.
+`session_start`; in cookieless mode both are `null` (which the object API
+returns as an absent field), never zero, because a hash that does not
+survive the day cannot say whether it was here yesterday.
 
 #### Scenario: Cookieless returning visitors are not available
 

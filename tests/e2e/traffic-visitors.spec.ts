@@ -386,8 +386,10 @@ test.describe('traffic visitors and geography', () => {
 		const rollup = (await rollups(request)).find((r) => r.date === today)
 		expect(rollup, 'run the geography test first').toBeTruthy()
 		expect(Number(rollup!.visitors)).toBeGreaterThan(0)
-		expect(rollup!.returningVisitors, 'null, never zero').toBeNull()
-		expect(rollup!.newVisitors).toBeNull()
+		// The rollup writes null; OpenRegister hands a null field back as an
+		// absent one. Both are "not available"; neither is a zero.
+		expect(rollup!.returningVisitors ?? null, 'null, never zero').toBeNull()
+		expect(rollup!.newVisitors ?? null).toBeNull()
 
 		await login(page)
 		await page.goto(`${APP}/traffic`)

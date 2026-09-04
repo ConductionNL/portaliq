@@ -106,6 +106,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// null in cookieless mode, because a daily hash cannot say whether it
 		// was here yesterday and a zero would claim it can. Additive.
 		$this->assertSame('0.17.0', self::$register['info']['version']);
+		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalTrafficDaily']['version']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['page']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('0.5.0', self::$register['components']['schemas']['portalAccount']['version']);

@@ -60,6 +60,8 @@ class TrafficGeoRefresh extends Command {
 	 * Name and describe the command.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
 	 */
 	protected function configure(): void {
 		$this->setName(name: 'portaliq:traffic:geo-refresh');

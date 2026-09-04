@@ -79,6 +79,14 @@
 						{{ t('portaliq', 'Nothing recorded in this period.') }}
 					</p>
 					<table v-else class="traffic-visitors__table">
+						<thead class="traffic-visitors__head">
+							<tr>
+								<th scope="col">{{ list.title }}</th>
+								<th scope="col" class="traffic-visitors__number">
+									{{ t('portaliq', 'Sessions') }}
+								</th>
+							</tr>
+						</thead>
 						<tbody>
 							<tr v-for="row in list.rows" :key="row.value">
 								<td class="traffic-visitors__value">
@@ -187,9 +195,22 @@ export default {
 	font-size: 13px;
 }
 
-.traffic-visitors__table td {
+.traffic-visitors__table td,
+.traffic-visitors__table th {
 	padding: 4px 6px;
 	border-bottom: 1px solid var(--color-border);
+	text-align: start;
+}
+
+/* The heading above the table already names the dimension; the header
+   row stays for assistive technology and is hidden visually. */
+.traffic-visitors__head {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
 }
 
 .traffic-visitors__value {

@@ -76,6 +76,16 @@ class Application extends App implements IBootstrap {
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
 	 */
 	public function register(IRegistrationContext $context): void {
+		// The app's own composer dependencies (portal-traffic-visitors-and-geo
+		// added the first runtime one: maxmind-db/reader). Nextcloud loads
+		// an app's classes under OCA\ by convention and nothing else; the
+		// same include every fleet app with a vendored dependency carries.
+		// Measured before this line existed: the resolver logged
+		// 'Class "MaxMind\Db\Reader" not found' on the throwaway instance
+		// while the very same file opened fine under the test bootstrap,
+		// which loads the autoloader itself.
+		include_once __DIR__ . '/../../vendor/autoload.php';
+
 		// Initialize register and schemas on install/upgrade — registered via
 		// appinfo/info.xml <repair-steps> (pre- and post-migration). The
 		// programmatic IRegistrationContext::registerRepairStep() was removed in
