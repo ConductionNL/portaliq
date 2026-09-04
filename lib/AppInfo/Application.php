@@ -43,6 +43,8 @@ use OCA\OpenRegister\Event\ObjectDeletedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\Portaliq\Listener\CmsCacheInvalidationListener;
 use OCA\Portaliq\Middleware\PortalAuthMiddleware;
+use OCA\Portaliq\Service\Traffic\GeoResolverInterface;
+use OCA\Portaliq\Service\Traffic\NullGeoResolver;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
@@ -102,6 +104,12 @@ class Application extends App implements IBootstrap {
 		foreach ([ObjectCreatedEvent::class, ObjectUpdatedEvent::class, ObjectDeletedEvent::class] as $event) {
 			$context->registerEventListener($event, CmsCacheInvalidationListener::class);
 		}
+
+		// Traffic analytics (portal-traffic-analytics): where a visitor's
+		// address turns into a region. Phase 0 binds the resolver that
+		// answers nothing; a later phase swaps in an offline database here
+		// and the ingest path does not change.
+		$context->registerServiceAlias(GeoResolverInterface::class, NullGeoResolver::class);
 	}//end register()
 
 	/**
