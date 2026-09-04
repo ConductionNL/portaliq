@@ -97,9 +97,13 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// is default-OPEN to every authenticated user in OpenRegister, so any
 		// account on the instance could rewrite a published portal page; the
 		// rules now name the configured editor groups (empty = admins only).
-		$this->assertSame('0.15.0', self::$register['info']['version']);
+		// 0.16.0 (portal 0.3.0): declared `kind` (site or external) and the
+		// `traffic` block (portal-traffic-analytics), and added the
+		// `portalTrafficEvent` and `portalTrafficDaily` schemas. Additive;
+		// measurement stays OFF for every portal that does not switch it on.
+		$this->assertSame('0.16.0', self::$register['info']['version']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['page']['version']);
-		$this->assertSame('0.2.0', self::$register['components']['schemas']['portal']['version']);
+		$this->assertSame('0.3.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('0.5.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalSession']['version']);
