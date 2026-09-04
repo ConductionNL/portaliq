@@ -43,6 +43,26 @@ async function login(page: Page): Promise<void> {
 	await page.waitForSelector('#header, header.header', { timeout: 60_000 })
 }
 
+/**
+ * Dismiss the first-run setup wizard if it is open.
+ *
+ * ⚠️ On a FRESH instance CnSetupWizard opens over the app and its modal
+ * intercepts pointer events, so every nav click resolves its locator and then
+ * times out after 30s — a failure that reads like the navigation is broken.
+ * Tests that navigate by URL pass, which is what makes this so easy to miss:
+ * only the click-through tests fail, and only on a clean install.
+ *
+ * @param page The page.
+ */
+async function dismissSetupWizard(page: Page): Promise<void> {
+	const modal = page.locator('[data-testid="cn-modal"]')
+	if ((await modal.count()) === 0) {
+		return
+	}
+	await modal.first().getByRole('button', { name: 'Close' }).click()
+	await expect(modal).toHaveCount(0, { timeout: 15_000 })
+}
+
 test.describe('app chrome (ADR-114)', () => {
 	test.beforeEach(async ({ page }) => {
 		await login(page)
@@ -50,6 +70,7 @@ test.describe('app chrome (ADR-114)', () => {
 		await expect(page.locator('[data-testid="cn-nav"]')).toBeVisible({
 			timeout: 30_000,
 		})
+		await dismissSetupWizard(page)
 	})
 
 	test('the footer reads Documentation, Reports, Features & roadmap, each with a glyph', async ({
@@ -92,12 +113,19 @@ test.describe('app chrome (ADR-114)', () => {
 			nav.locator('[data-testid="cn-nav-entry-Traffic"]'),
 		).toHaveCount(0)
 
-		await nav.locator('[data-testid="cn-nav-entry-ReportsMenu"]').click()
+		await nav
+			.locator('[data-testid="cn-nav-entry-ReportsMenu"] a')
+			.first()
+			.click()
 		await expect(page).toHaveURL(/\/apps\/portaliq\/reports(\?|$)/, {
 			timeout: 15_000,
 		})
 		await expect(
-			page.getByText('Traffic', { exact: false }).first(),
+			page
+				.locator('main, .app-content')
+				.first()
+				.getByText('Traffic', { exact: false })
+				.first(),
 		).toBeVisible({ timeout: 15_000 })
 	})
 
@@ -139,6 +167,9 @@ test.describe('app chrome (ADR-114)', () => {
 
 		const admin = nav.locator('[data-testid="cn-nav-admin-settings"]')
 		await expect(admin).toBeAttached()
-		await expect(admin).toHaveAttribute('href', /\/settings\/admin\/portaliq$/)
+		await expect(admin.locator('a').first()).toHaveAttribute(
+			'href',
+			/\/settings\/admin\/portaliq$/,
+		)
 	})
 })
