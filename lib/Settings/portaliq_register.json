@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Register containing all schemas owned by the Portaliq external-portal application.",
-        "version": "0.15.0"
+        "version": "0.16.0"
     },
     "x-openregister": {
         "type": "application",
@@ -1704,7 +1704,7 @@
             "page": {
                 "slug": "page",
                 "icon": "FileDocument",
-                "version": "0.2.0",
+                "version": "0.3.0",
                 "title": "Page",
                 "authorization": {
                     "read": [
@@ -1762,6 +1762,12 @@
                         "type": "string",
                         "description": "Short description used for listings, search results and the page's meta description.",
                         "example": "Wie wij zijn en waar wij voor staan."
+                    },
+                    "heroImage": {
+                        "title": "Hero image",
+                        "type": "string",
+                        "description": "Reference/URL to an image shown by a hero-keyed widget when present. Optional — a page with no heroImage renders exactly as before this property existed.",
+                        "example": "https://example.org/images/webinar-hero.jpg"
                     },
                     "body": {
                         "title": "Body",
@@ -2015,6 +2021,276 @@
                         "type": "string",
                         "description": "The portal this term belongs to. REQUIRED — a relation to a term on another portal is rejected.",
                         "example": "open-tilburg"
+                    }
+                }
+            },
+            "form": {
+                "slug": "form",
+                "icon": "FormSelect",
+                "version": "0.1.0",
+                "title": "Form",
+                "authorization": {
+                    "read": [],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "A lead-capture form bound to a landing page, provisioned by the contribution-landing-page-action cross-app command (landing-page-provisioning). Never publicly readable through the OpenRegister API — the only reader is Portaliq’s own built-in PortalContributionProvider, server-side, which folds each ACTIVE form into the anonymous contribution aggregate as a synthesised type:create action. Mirrors the portalPage object’s “configuration, not subject data” convention (portal-page-provisioning).",
+                "type": "object",
+                "required": [
+                    "portal",
+                    "sourceApp",
+                    "fields",
+                    "submitLabel",
+                    "status"
+                ],
+                "properties": {
+                    "portal": {
+                        "title": "Portal",
+                        "type": "string",
+                        "description": "The portal (by slug) this form’s landing page belongs to.",
+                        "example": "open-tilburg"
+                    },
+                    "pageId": {
+                        "title": "Page id",
+                        "type": "string",
+                        "description": "The OpenRegister id of the page this form is bound to.",
+                        "example": "00000000-0000-0000-0000-000000000000"
+                    },
+                    "pageRoute": {
+                        "title": "Page route",
+                        "type": "string",
+                        "description": "The bound page’s route, stamped as a submission default so a submission always records where it was captured.",
+                        "example": "/campagne/webinar-ai-2026q4"
+                    },
+                    "sourceApp": {
+                        "title": "Source app",
+                        "type": "string",
+                        "description": "The contributing app that requested this form via LandingPageRequestedEvent — used to resolve the consumer event class a submission is relayed to.",
+                        "example": "pipelinq"
+                    },
+                    "externalReference": {
+                        "title": "External reference",
+                        "type": "string",
+                        "description": "The requesting app’s own reference (e.g. a campaign id), echoed back on every submission unchanged.",
+                        "example": "pipelinq:campaign:00000000-0000-0000-0000-000000000000"
+                    },
+                    "campaign": {
+                        "title": "Campaign",
+                        "type": "object",
+                        "description": "The UTM campaign/source/medium the requesting app declared at creation time — distinct from the per-submission utmFirstTouch/utmLastTouch, which are what the VISITOR actually arrived through.",
+                        "properties": {
+                            "campaign": {
+                                "type": "string",
+                                "example": "webinar-ai-2026q4"
+                            },
+                            "source": {
+                                "type": "string",
+                                "example": "newsletter"
+                            },
+                            "medium": {
+                                "type": "string",
+                                "example": "email"
+                            }
+                        }
+                    },
+                    "fields": {
+                        "title": "Fields",
+                        "type": "array",
+                        "description": "The visible form fields, in submission order. Each field id becomes an entry in the synthesised submission action’s whitelist.",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "id",
+                                "label",
+                                "type"
+                            ],
+                            "properties": {
+                                "id": {
+                                    "type": "string",
+                                    "example": "email"
+                                },
+                                "label": {
+                                    "type": "string",
+                                    "example": "E-mail"
+                                },
+                                "type": {
+                                    "type": "string",
+                                    "example": "email"
+                                },
+                                "required": {
+                                    "type": "boolean",
+                                    "example": true
+                                },
+                                "options": {
+                                    "type": "array",
+                                    "description": "Choices for a select/radio field.",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "submitLabel": {
+                        "title": "Submit label",
+                        "type": "string",
+                        "example": "Aanmelden"
+                    },
+                    "consentText": {
+                        "title": "Consent text",
+                        "type": "string",
+                        "description": "Shown next to the submit button; not itself a checkbox field unless the requesting app also declares one in fields.",
+                        "example": "Ik ga akkoord met de verwerking van mijn gegevens."
+                    },
+                    "status": {
+                        "title": "Status",
+                        "type": "string",
+                        "description": "Only active forms are folded into the anonymous contribution aggregate and become submittable.",
+                        "enum": [
+                            "active",
+                            "draft"
+                        ],
+                        "example": "active"
+                    }
+                }
+            },
+            "landingPageSubmission": {
+                "slug": "landingPageSubmission",
+                "icon": "FileCheckOutline",
+                "version": "0.1.0",
+                "title": "Landing Page Submission",
+                "authorization": {
+                    "read": [],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "One anonymous visitor submission of a landing-page form (landing-page-provisioning). Never publicly readable — unlike portalSubmission, this schema carries no subjectRef/organisation, because a landing-page visitor is not an authenticated portal account; reusing portalSubmission would either weaken its required fields for every other WMEBV consumer or stamp a fake subject onto an anonymous row. submittedAt and nonce are server-stamped; utmFirstTouch/utmLastTouch/referrer are client-observed advisory attribution data, not authorization-relevant (ADR-005).",
+                "type": "object",
+                "required": [
+                    "formId",
+                    "pageId",
+                    "portal",
+                    "sourceApp",
+                    "submittedAt",
+                    "nonce"
+                ],
+                "properties": {
+                    "formId": {
+                        "title": "Form id",
+                        "type": "string",
+                        "description": "The form this submission was made through.",
+                        "example": "00000000-0000-0000-0000-000000000000"
+                    },
+                    "pageId": {
+                        "title": "Page id",
+                        "type": "string",
+                        "example": "00000000-0000-0000-0000-000000000000"
+                    },
+                    "pageRoute": {
+                        "title": "Page route",
+                        "type": "string",
+                        "example": "/campagne/webinar-ai-2026q4"
+                    },
+                    "portal": {
+                        "title": "Portal",
+                        "type": "string",
+                        "example": "open-tilburg"
+                    },
+                    "sourceApp": {
+                        "title": "Source app",
+                        "type": "string",
+                        "description": "Copied from the bound form; used to resolve the consumer event class the submission is relayed to.",
+                        "example": "pipelinq"
+                    },
+                    "externalReference": {
+                        "title": "External reference",
+                        "type": "string",
+                        "example": "pipelinq:campaign:00000000-0000-0000-0000-000000000000"
+                    },
+                    "campaign": {
+                        "title": "Campaign",
+                        "type": "object",
+                        "description": "Copied from the bound form’s own campaign block.",
+                        "properties": {
+                            "campaign": {
+                                "type": "string"
+                            },
+                            "source": {
+                                "type": "string"
+                            },
+                            "medium": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "values": {
+                        "title": "Values",
+                        "type": "object",
+                        "description": "The whitelisted visible-field values the visitor submitted — only ids declared on the bound form’s fields[] ever appear here.",
+                        "additionalProperties": true,
+                        "example": {
+                            "name": "J. de Vries",
+                            "email": "JANE.DOE@EXAMPLE.COM"
+                        }
+                    },
+                    "utmFirstTouch": {
+                        "type": "object",
+                        "properties": {
+                            "campaign": {
+                                "type": "string"
+                            },
+                            "source": {
+                                "type": "string"
+                            },
+                            "medium": {
+                                "type": "string"
+                            },
+                            "term": {
+                                "type": "string"
+                            },
+                            "content": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "utmLastTouch": {
+                        "type": "object",
+                        "properties": {
+                            "campaign": {
+                                "type": "string"
+                            },
+                            "source": {
+                                "type": "string"
+                            },
+                            "medium": {
+                                "type": "string"
+                            },
+                            "term": {
+                                "type": "string"
+                            },
+                            "content": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "referrer": {
+                        "title": "Referrer",
+                        "type": "string",
+                        "description": "document.referrer captured at first touch, client-observed.",
+                        "example": "https://www.linkedin.com/"
+                    },
+                    "submittedAt": {
+                        "title": "Submitted at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Server-stamped, never client-supplied (ADR-005)."
+                    },
+                    "nonce": {
+                        "title": "Nonce",
+                        "type": "string",
+                        "description": "Server-generated (ISecureRandom), replay-resistance only — never client-supplied."
                     }
                 }
             }
