@@ -50,9 +50,10 @@ network hop and no new HTTP route.
 
 The listener MUST validate the full request BEFORE writing anything, and
 MUST set `error` (one of `unknown_portal`, `duplicate_route`,
-`invalid_article`, `invalid_form`) and `handled: true` with `pageId`/`formId`
-left `null` when validation fails. It MUST NOT create a `form` or a `page`
-object for a request that fails validation.
+`invalid_article`, `invalid_form`, or `write_failed` when validation passed
+but the OpenRegister write itself failed) and `handled: true` with
+`pageId`/`formId` left `null` when validation fails or a write fails. It MUST
+NOT create a `form` or a `page` object for a request that fails validation.
 
 #### Scenario: An unknown or unpublished portal is rejected
 

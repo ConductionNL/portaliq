@@ -128,6 +128,7 @@ so a future admin view could show delivery status; unused by this change.
 | `duplicate_route` | Another `page` in the same portal already has this `route` (case-insensitive) |
 | `invalid_article` | `article.summary` or `article.body` missing/empty |
 | `invalid_form` | `form.fields` empty, or any field missing `id`/`label`/`type`, or `submitLabel` empty |
+| `write_failed` | Validation passed but the OpenRegister write itself failed (platform fault, not a request error) — no page or form was created |
 
 ## Versioning
 
