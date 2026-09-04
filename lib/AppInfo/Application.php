@@ -43,6 +43,7 @@ use OCA\OpenRegister\Event\ObjectDeletedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\Portaliq\Listener\CmsCacheInvalidationListener;
 use OCA\Portaliq\Middleware\PortalAuthMiddleware;
+use OCA\Portaliq\Middleware\PublicApiCorsMiddleware;
 use OCA\Portaliq\Service\Traffic\GeoResolverInterface;
 use OCA\Portaliq\Service\Traffic\NullGeoResolver;
 use OCP\AppFramework\App;
@@ -91,6 +92,11 @@ class Application extends App implements IBootstrap {
 		// Fail-closed bearer guard for PortalProtected controllers (e.g.
 		// ContributionController). Public auth-edge routes are untouched.
 		$context->registerMiddleware(PortalAuthMiddleware::class);
+
+		// Reflect-Origin CORS on the public content and traffic responses, so
+		// a statically built site on its own domain can read content and post
+		// a traffic batch without a preflight (portal-traffic-analytics).
+		$context->registerMiddleware(PublicApiCorsMiddleware::class);
 
 		// Portal contributions are discovered by convention FQCN
 		// (OCA\{Namespace}\Portal\PortalContributionProvider) — see
