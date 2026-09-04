@@ -250,4 +250,83 @@ class TrafficConfigResolverTest extends TestCase {
 	}//end testRegionGranularityDefaultsToCountry()
 
 
+	/**
+	 * Every person-affecting switch is off until it is literally true.
+	 *
+	 * A string "true" from a hand-edited record or a 1 from a form must not
+	 * switch on the tracking that requires a consent banner.
+	 *
+	 * @return void
+	 */
+	public function testTheSensitiveSwitchesAreOffUnlessLiterallyTrue(): void {
+		$default = $this->resolver->resolve(portal: ['traffic' => ['enabled' => true]]);
+		$this->assertSame(
+			['persistClientId' => false, 'accountLinking' => false, 'heatmaps' => false, 'sessionRecording' => false],
+			$default['sensitive']
+		);
+		$this->assertFalse($default['persistClientId']);
+
+		$coerced = $this->resolver->resolve(
+			portal: ['traffic' => ['enabled' => true, 'sensitive' => ['persistClientId' => 'true', 'accountLinking' => 1]]]
+		);
+		$this->assertFalse($coerced['sensitive']['persistClientId']);
+		$this->assertFalse($coerced['sensitive']['accountLinking']);
+
+		$on = $this->resolver->resolve(
+			portal: ['traffic' => ['enabled' => true, 'sensitive' => ['persistClientId' => true]]]
+		);
+		$this->assertTrue($on['persistClientId']);
+		$this->assertTrue($on['sensitive']['persistClientId']);
+	}//end testTheSensitiveSwitchesAreOffUnlessLiterallyTrue()
+
+
+	/**
+	 * A dimension that exists under a switch follows the switch.
+	 *
+	 * @return void
+	 */
+	public function testSwitchedDimensionsFollowTheirSwitch(): void {
+		$off = $this->resolver->resolve(
+			portal: ['traffic' => ['enabled' => true, 'dimensions' => ['userRef', 'region', 'pageTitle'], 'regionGranularity' => 'none']]
+		);
+		$this->assertSame(['pageTitle'], $off['dimensions']);
+
+		$on = $this->resolver->resolve(
+			portal: [
+				'traffic' => [
+					'enabled' => true,
+					'dimensions' => ['userRef', 'region', 'pageTitle'],
+					'regionGranularity' => 'country',
+					'sensitive' => ['accountLinking' => true],
+				],
+			]
+		);
+		$this->assertSame(['userRef', 'region', 'pageTitle'], $on['dimensions']);
+	}//end testSwitchedDimensionsFollowTheirSwitch()
+
+
+	/**
+	 * A portal is a site unless it says it is external.
+	 *
+	 * @return void
+	 */
+	public function testKindDefaultsToSite(): void {
+		$this->assertSame('site', $this->resolver->resolve(portal: [])['kind']);
+		$this->assertSame('site', $this->resolver->resolve(portal: ['kind' => 'blog'])['kind']);
+		$this->assertSame('external', $this->resolver->resolve(portal: ['kind' => 'external'])['kind']);
+	}//end testKindDefaultsToSite()
+
+
+	/**
+	 * Mail events are for PHP callers only, whatever the portal enabled.
+	 *
+	 * @return void
+	 */
+	public function testMailEventsAreOnlyAllowedFromAServerSideCaller(): void {
+		$this->assertFalse($this->resolver->allowsCaller(event: 'email_open', serverSide: false));
+		$this->assertTrue($this->resolver->allowsCaller(event: 'email_open', serverSide: true));
+		$this->assertTrue($this->resolver->allowsCaller(event: 'page_view', serverSide: false));
+	}//end testMailEventsAreOnlyAllowedFromAServerSideCaller()
+
+
 }//end class

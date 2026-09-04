@@ -243,11 +243,15 @@ class TrafficEventValidatorTest extends TestCase {
 
 
 	/**
-	 * An event with no correlation ids cannot be part of a journey.
+	 * A cookieless event carries no correlation ids and is still accepted.
+	 *
+	 * The default mode stores nothing in the visitor's browser, so the client
+	 * has no id to send. Refusing that would make the privacy-preserving
+	 * default the one configuration that never records a visitor.
 	 *
 	 * @return void
 	 */
-	public function testMissingCorrelationIdsAreRefused(): void {
+	public function testACookielessEventNeedsNoCorrelationIds(): void {
 		$result = $this->validator->validate(
 			event: [
 				'name' => 'page_view',
@@ -259,9 +263,190 @@ class TrafficEventValidatorTest extends TestCase {
 			resolver: $this->resolver
 		);
 
-		$this->assertFalse($result['ok']);
-		$this->assertSame('missing-correlation-id', $result['reason']);
-	}//end testMissingCorrelationIdsAreRefused()
+		$this->assertTrue($result['ok']);
+		$this->assertSame('', $result['event']['clientId']);
+		$this->assertSame('', $result['event']['sessionId']);
+	}//end testACookielessEventNeedsNoCorrelationIds()
+
+
+	/**
+	 * A client id is kept ONLY when the portal switched persistence on.
+	 *
+	 * A stale client built against an older configuration keeps sending the
+	 * id it once stored. The portal said no, so the server drops it; the
+	 * event itself survives, because the visitor is still a visitor.
+	 *
+	 * @return void
+	 */
+	public function testAClientIdIsDroppedUnlessThePortalPersistsIds(): void {
+		$event = ['name' => 'page_view', 'sequence' => 0, 'pageLocation' => 'https://x/', 'clientId' => 'c-1'];
+
+		$dropped = $this->validator->validate(
+			event: $event,
+			config: $this->openConfig(),
+			hasConsent: true,
+			resolver: $this->resolver
+		);
+		$this->assertTrue($dropped['ok']);
+		$this->assertSame('', $dropped['event']['clientId'], 'The portal did not persist ids; none may be stored.');
+
+		$persisting = $this->resolver->resolve(
+			portal: ['traffic' => ['enabled' => true, 'sensitive' => ['persistClientId' => true]]]
+		);
+		$kept = $this->validator->validate(event: $event, config: $persisting, hasConsent: true, resolver: $this->resolver);
+		$this->assertSame('c-1', $kept['event']['clientId']);
+
+		// And even a persisting portal keeps nothing before consent.
+		$consenting = $this->resolver->resolve(
+			portal: [
+				'traffic' => [
+					'enabled' => true,
+					'sensitive' => ['persistClientId' => true],
+					'consent' => ['required' => true, 'preConsentEvents' => ['page_view']],
+				],
+			]
+		);
+		$before = $this->validator->validate(event: $event, config: $consenting, hasConsent: false, resolver: $this->resolver);
+		$this->assertTrue($before['ok']);
+		$this->assertSame('', $before['event']['clientId']);
+	}//end testAClientIdIsDroppedUnlessThePortalPersistsIds()
+
+
+	/**
+	 * A mail event is refused from a browser and accepted from PHP.
+	 *
+	 * Both halves. A validator that refused mail events everywhere would pass
+	 * the first assertion while breaking the mail integration that is the
+	 * only reason the events exist.
+	 *
+	 * @return void
+	 */
+	public function testMailEventsAreServerSideOnly(): void {
+		$config = $this->resolver->resolve(
+			portal: ['traffic' => ['enabled' => true, 'events' => ['email_open'], 'dimensions' => ['blastRef']]]
+		);
+		$event = ['name' => 'email_open', 'sequence' => 0, 'pageLocation' => 'mailto:blast/1', 'blastRef' => 'b-1'];
+
+		$fromBrowser = $this->validator->validate(event: $event, config: $config, hasConsent: true, resolver: $this->resolver);
+		$this->assertFalse($fromBrowser['ok']);
+		$this->assertSame('event-server-side-only', $fromBrowser['reason']);
+
+		$fromPhp = $this->validator->validate(
+			event: $event,
+			config: $config,
+			hasConsent: true,
+			resolver: $this->resolver,
+			context: ['serverSide' => true]
+		);
+		$this->assertTrue($fromPhp['ok']);
+		$this->assertSame('b-1', $fromPhp['event']['blastRef']);
+	}//end testMailEventsAreServerSideOnly()
+
+
+	/**
+	 * A derived dimension cannot be supplied by the client.
+	 *
+	 * `region` is computed from the address and then the address is
+	 * discarded. A client that could post it directly would decide what the
+	 * portal knows about a visitor, and the granularity setting would be
+	 * decoration.
+	 *
+	 * @return void
+	 */
+	public function testADerivedDimensionFromTheClientIsIgnored(): void {
+		$config = $this->resolver->resolve(
+			portal: ['traffic' => ['enabled' => true, 'dimensions' => ['region', 'deviceType', 'pageTitle']]]
+		);
+
+		$result = $this->validator->validate(
+			event: [
+				'name' => 'page_view',
+				'sequence' => 0,
+				'pageLocation' => 'https://x/',
+				'region' => 'NL-NB',
+				'deviceType' => 'tablet',
+				'pageTitle' => 'Home',
+			],
+			config: $config,
+			hasConsent: true,
+			resolver: $this->resolver
+		);
+
+		$this->assertTrue($result['ok']);
+		$this->assertArrayNotHasKey('region', $result['event']);
+		$this->assertArrayNotHasKey('deviceType', $result['event']);
+		$this->assertSame('Home', $result['event']['pageTitle'], 'a client dimension still passes');
+	}//end testADerivedDimensionFromTheClientIsIgnored()
+
+
+	/**
+	 * The params map is bounded in keys, key shape and value length, and a
+	 * non-scalar value is dropped rather than stored.
+	 *
+	 * @return void
+	 */
+	public function testParamsAreBounded(): void {
+		$params = [];
+		for ($i = 0; $i < 30; $i++) {
+			$params['k' . $i] = 'v';
+		}
+
+		$params['long'] = str_repeat('x', 1000);
+		$params['nested'] = ['not' => 'allowed'];
+		$params['bad key!'] = 'v';
+
+		$result = $this->validator->validate(
+			event: ['name' => 'page_view', 'sequence' => 0, 'pageLocation' => 'https://x/', 'params' => $params],
+			config: $this->openConfig(),
+			hasConsent: true,
+			resolver: $this->resolver
+		);
+
+		$this->assertTrue($result['ok']);
+		$stored = $result['event']['params'];
+		$this->assertLessThanOrEqual(TrafficEventValidator::MAX_PARAMS, count($stored));
+		$this->assertArrayNotHasKey('nested', $stored);
+		$this->assertArrayNotHasKey('bad key!', $stored);
+		foreach ($stored as $value) {
+			$this->assertLessThanOrEqual(TrafficEventValidator::MAX_PARAM_VALUE, mb_strlen((string)$value));
+		}
+	}//end testParamsAreBounded()
+
+
+	/**
+	 * The client clock is clamped to the server's, and refused when it is
+	 * not a clock problem any more.
+	 *
+	 * @return void
+	 */
+	public function testTheTimestampIsClampedToTheServerClock(): void {
+		$now = new \DateTimeImmutable('2026-09-04T10:00:00Z');
+		$base = ['name' => 'page_view', 'sequence' => 0, 'pageLocation' => 'https://x/'];
+		$run = fn (?string $stamp): array => $this->validator->validate(
+			event: ($base + ['timestamp' => $stamp]),
+			config: $this->openConfig(),
+			hasConsent: true,
+			resolver: $this->resolver,
+			now: $now
+		);
+
+		// Slightly ahead: clamped to now, not refused.
+		$ahead = $run('2026-09-04T10:02:00Z');
+		$this->assertTrue($ahead['ok']);
+		$this->assertSame('2026-09-04T10:00:00.000Z', $ahead['event']['occurredAt']);
+
+		// In the past within the window: kept as sent, in UTC.
+		$past = $run('2026-09-04T11:30:00+02:00');
+		$this->assertSame('2026-09-04T09:30:00.000Z', $past['event']['occurredAt']);
+
+		// Missing or garbage: now.
+		$this->assertSame('2026-09-04T10:00:00.000Z', $run(null)['event']['occurredAt']);
+		$this->assertSame('2026-09-04T10:00:00.000Z', $run('yesterday-ish')['event']['occurredAt']);
+
+		// Far ahead, or older than a week: refused with a reason.
+		$this->assertSame('timestamp-out-of-range', $run('2026-09-05T10:00:00Z')['reason']);
+		$this->assertSame('timestamp-out-of-range', $run('2026-08-01T10:00:00Z')['reason']);
+	}//end testTheTimestampIsClampedToTheServerClock()
 
 
 	/**
