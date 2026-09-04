@@ -2081,16 +2081,22 @@
                         "description": "The UTM campaign/source/medium the requesting app declared at creation time — distinct from the per-submission utmFirstTouch/utmLastTouch, which are what the VISITOR actually arrived through.",
                         "properties": {
                             "campaign": {
+                                "title": "Campaign",
                                 "type": "string",
-                                "example": "webinar-ai-2026q4"
+                                "example": "webinar-ai-2026q4",
+                                "description": "The UTM campaign value declared at creation time."
                             },
                             "source": {
+                                "title": "Source",
                                 "type": "string",
-                                "example": "newsletter"
+                                "example": "newsletter",
+                                "description": "The UTM source value declared at creation time."
                             },
                             "medium": {
+                                "title": "Medium",
                                 "type": "string",
-                                "example": "email"
+                                "example": "email",
+                                "description": "The UTM medium value declared at creation time."
                             }
                         }
                     },
@@ -2107,22 +2113,31 @@
                             ],
                             "properties": {
                                 "id": {
+                                    "title": "Field id",
                                     "type": "string",
-                                    "example": "email"
+                                    "example": "email",
+                                    "description": "Stable identifier; becomes the whitelisted key in a submission’s values."
                                 },
                                 "label": {
+                                    "title": "Label",
                                     "type": "string",
-                                    "example": "E-mail"
+                                    "example": "E-mail",
+                                    "description": "Displayed above the field."
                                 },
                                 "type": {
+                                    "title": "Type",
                                     "type": "string",
-                                    "example": "email"
+                                    "example": "email",
+                                    "description": "Rendering hint: text, email, tel, number, date, url, textarea or select."
                                 },
                                 "required": {
+                                    "title": "Required",
                                     "type": "boolean",
-                                    "example": true
+                                    "example": true,
+                                    "description": "Whether the field must be filled in before submitting."
                                 },
                                 "options": {
+                                    "title": "Options",
                                     "type": "array",
                                     "description": "Choices for a select/radio field.",
                                     "items": {
@@ -2135,7 +2150,8 @@
                     "submitLabel": {
                         "title": "Submit label",
                         "type": "string",
-                        "example": "Aanmelden"
+                        "example": "Aanmelden",
+                        "description": "Text shown on the submit button."
                     },
                     "consentText": {
                         "title": "Consent text",
@@ -2186,17 +2202,20 @@
                     "pageId": {
                         "title": "Page id",
                         "type": "string",
-                        "example": "00000000-0000-0000-0000-000000000000"
+                        "example": "00000000-0000-0000-0000-000000000000",
+                        "description": "The bound page’s id."
                     },
                     "pageRoute": {
                         "title": "Page route",
                         "type": "string",
-                        "example": "/campagne/webinar-ai-2026q4"
+                        "example": "/campagne/webinar-ai-2026q4",
+                        "description": "The bound page’s route, copied from the form at submission time."
                     },
                     "portal": {
                         "title": "Portal",
                         "type": "string",
-                        "example": "open-tilburg"
+                        "example": "open-tilburg",
+                        "description": "The portal the page belongs to."
                     },
                     "sourceApp": {
                         "title": "Source app",
@@ -2207,7 +2226,8 @@
                     "externalReference": {
                         "title": "External reference",
                         "type": "string",
-                        "example": "pipelinq:campaign:00000000-0000-0000-0000-000000000000"
+                        "example": "pipelinq:campaign:00000000-0000-0000-0000-000000000000",
+                        "description": "Copied unchanged from the bound form."
                     },
                     "campaign": {
                         "title": "Campaign",
@@ -2215,13 +2235,19 @@
                         "description": "Copied from the bound form’s own campaign block.",
                         "properties": {
                             "campaign": {
-                                "type": "string"
+                                "title": "Campaign",
+                                "type": "string",
+                                "description": "Copied from the bound form’s own campaign block."
                             },
                             "source": {
-                                "type": "string"
+                                "title": "Source",
+                                "type": "string",
+                                "description": "Copied from the bound form’s own campaign block."
                             },
                             "medium": {
-                                "type": "string"
+                                "title": "Medium",
+                                "type": "string",
+                                "description": "Copied from the bound form’s own campaign block."
                             }
                         }
                     },
@@ -2236,44 +2262,68 @@
                         }
                     },
                     "utmFirstTouch": {
+                        "title": "UTM first touch",
                         "type": "object",
                         "properties": {
                             "campaign": {
-                                "type": "string"
+                                "title": "Campaign",
+                                "type": "string",
+                                "description": "The utm_campaign query parameter, if present."
                             },
                             "source": {
-                                "type": "string"
+                                "title": "Source",
+                                "type": "string",
+                                "description": "The utm_source query parameter, if present."
                             },
                             "medium": {
-                                "type": "string"
+                                "title": "Medium",
+                                "type": "string",
+                                "description": "The utm_medium query parameter, if present."
                             },
                             "term": {
-                                "type": "string"
+                                "title": "Term",
+                                "type": "string",
+                                "description": "The utm_term query parameter, if present."
                             },
                             "content": {
-                                "type": "string"
+                                "title": "Content",
+                                "type": "string",
+                                "description": "The utm_content query parameter, if present."
                             }
-                        }
+                        },
+                        "description": "Campaign parameters captured client-side at the visitor’s first landing on this page, within the same browser session."
                     },
                     "utmLastTouch": {
+                        "title": "UTM last touch",
                         "type": "object",
                         "properties": {
                             "campaign": {
-                                "type": "string"
+                                "title": "Campaign",
+                                "type": "string",
+                                "description": "The utm_campaign query parameter, if present."
                             },
                             "source": {
-                                "type": "string"
+                                "title": "Source",
+                                "type": "string",
+                                "description": "The utm_source query parameter, if present."
                             },
                             "medium": {
-                                "type": "string"
+                                "title": "Medium",
+                                "type": "string",
+                                "description": "The utm_medium query parameter, if present."
                             },
                             "term": {
-                                "type": "string"
+                                "title": "Term",
+                                "type": "string",
+                                "description": "The utm_term query parameter, if present."
                             },
                             "content": {
-                                "type": "string"
+                                "title": "Content",
+                                "type": "string",
+                                "description": "The utm_content query parameter, if present."
                             }
-                        }
+                        },
+                        "description": "Campaign parameters captured client-side at the visitor’s most recent landing on this page, within the same browser session."
                     },
                     "referrer": {
                         "title": "Referrer",

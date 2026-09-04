@@ -184,6 +184,8 @@ export default {
 		/**
 		 * @param {object} field One declared form field.
 		 * @return {string} A stable element id for its label association.
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-public-page-may-embed-a-lead-capture-form-widget
 		 */
 		fieldElementId(field) {
 			return `pq-form-field-${this.formId || 'x'}-${field.id}`
@@ -194,6 +196,8 @@ export default {
 		 * @return {string} The `<input type>` to use — text-family types pass
 		 *  through, anything else (e.g. an author typo) degrades to `text`
 		 *  rather than rendering a browser-native control nobody asked for.
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-public-page-may-embed-a-lead-capture-form-widget
 		 */
 		inputType(field) {
 			const KNOWN = ['text', 'email', 'tel', 'number', 'date', 'url']
