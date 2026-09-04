@@ -30,7 +30,7 @@
     "openregister"
   ],
   "store": {
-    "_note": "Configuration exchange, not rows. A configuration set carries the registers, schemas, objects, views, flows, sources and mappings that make one way of working hold together. There is deliberately NO `installable` allowlist: a set exists to introduce schemas the instance does not have YET, so listing schemas this app already owns would refuse exactly the sets worth installing. The trust boundary for a bundle is its publisher, enforced by the engine's source allowlist and trusted-key check. \u26a0\ufe0f An EMPTY `installable` means install NOTHING, not install anything \u2014 omitting the key and declaring an empty list are different things.",
+    "_note": "Configuration exchange, not rows. A configuration set carries the registers, schemas, objects, views, flows, sources and mappings that make one way of working hold together. There is deliberately NO `installable` allowlist: a set exists to introduce schemas the instance does not have YET, so listing schemas this app already owns would refuse exactly the sets worth installing. The trust boundary for a bundle is its publisher, enforced by the engine's source allowlist and trusted-key check. ⚠️ An EMPTY `installable` means install NOTHING, not install anything — omitting the key and declaring an empty list are different things.",
     "types": [
       "openregister.configset",
       "openregister.flows"
@@ -308,83 +308,78 @@
       "type": "dashboard",
       "title": "Traffic",
       "config": {
+        "description": "What visitors looked at over the last 30 days, and where they came from. Pick a portal at the top; the numbers come from the daily figures the aggregation job writes every fifteen minutes.",
         "widgets": [
           {
-            "id": "traffic-sessions",
-            "title": "Sessions",
-            "type": "stats-block",
-            "iconClass": "icon-user",
-            "dataSource": {
-              "register": "portaliq",
-              "schema": "portalSession",
-              "aggregate": "count"
-            },
-            "props": {
-              "countLabel": "sessions",
-              "variant": "primary"
-            }
+            "id": "traffic-overview",
+            "type": "TrafficOverview",
+            "title": "Traffic"
           },
           {
-            "id": "traffic-revoked-sessions",
-            "title": "Revoked sessions",
-            "type": "stats-block",
-            "iconClass": "icon-category-security",
-            "dataSource": {
-              "register": "portaliq",
-              "schema": "portalSession",
-              "filter": {
-                "revoked": true
-              },
-              "aggregate": "count"
-            },
-            "props": {
-              "countLabel": "sessions",
-              "variant": "warning"
-            }
+            "id": "traffic-daily",
+            "type": "TrafficDaily",
+            "title": "Per day"
           },
           {
-            "id": "traffic-messages",
-            "title": "Messages",
-            "type": "stats-block",
-            "iconClass": "icon-mail",
-            "dataSource": {
-              "register": "portaliq",
-              "schema": "portalMessage",
-              "aggregate": "count"
-            },
-            "props": {
-              "countLabel": "messages",
-              "variant": "success"
-            }
+            "id": "traffic-pages",
+            "type": "TrafficPages",
+            "title": "Pages"
+          },
+          {
+            "id": "traffic-journeys",
+            "type": "TrafficJourneys",
+            "title": "Journeys"
+          },
+          {
+            "id": "traffic-sources",
+            "type": "TrafficSources",
+            "title": "Sources"
           }
         ],
         "layout": [
           {
             "id": 1,
-            "widgetId": "traffic-sessions",
+            "widgetId": "traffic-overview",
             "gridX": 0,
             "gridY": 0,
-            "gridWidth": 4,
-            "gridHeight": 1
+            "gridWidth": 12,
+            "gridHeight": 3
           },
           {
             "id": 2,
-            "widgetId": "traffic-revoked-sessions",
-            "gridX": 4,
-            "gridY": 0,
-            "gridWidth": 4,
-            "gridHeight": 1
+            "widgetId": "traffic-daily",
+            "gridX": 0,
+            "gridY": 3,
+            "gridWidth": 12,
+            "gridHeight": 3
           },
           {
             "id": 3,
-            "widgetId": "traffic-messages",
-            "gridX": 8,
-            "gridY": 0,
-            "gridWidth": 4,
-            "gridHeight": 1
+            "widgetId": "traffic-pages",
+            "gridX": 0,
+            "gridY": 6,
+            "gridWidth": 6,
+            "gridHeight": 4
+          },
+          {
+            "id": 4,
+            "widgetId": "traffic-journeys",
+            "gridX": 6,
+            "gridY": 6,
+            "gridWidth": 6,
+            "gridHeight": 4
+          },
+          {
+            "id": 5,
+            "widgetId": "traffic-sources",
+            "gridX": 0,
+            "gridY": 10,
+            "gridWidth": 12,
+            "gridHeight": 3
           }
         ]
-      }
+      },
+      "_note": "portal-traffic-analytics. The three stats-blocks this page used to carry counted portalSession, revoked portalSession and portalMessage rows: authenticated-session bookkeeping that said nothing about visitors (task 0.1). The five widgets here read portalTrafficDaily through the object API and say 'not measured' for a portal with measurement off instead of drawing a zero."
     },
     {
       "id": "PortalAccounts",

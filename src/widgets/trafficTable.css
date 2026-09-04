@@ -1,0 +1,41 @@
+/* SPDX-License-Identifier: EUPL-1.2 */
+/* SPDX-FileCopyrightText: 2026 Conduction B.V. */
+
+/* The three ranked tables on the Traffic page share one look. */
+
+.traffic-table {
+	padding: 4px;
+	overflow: auto;
+}
+
+.traffic-table__table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13px;
+}
+
+.traffic-table__table th,
+.traffic-table__table td {
+	padding: 6px 8px;
+	text-align: start;
+	border-bottom: 1px solid var(--color-border);
+	vertical-align: top;
+}
+
+.traffic-table__table th {
+	color: var(--color-text-maxcontrast);
+	font-weight: normal;
+}
+
+.traffic-table__number {
+	text-align: end;
+	white-space: nowrap;
+}
+
+.traffic-table__path {
+	word-break: break-all;
+}
+
+.traffic-table__muted {
+	color: var(--color-text-maxcontrast);
+}

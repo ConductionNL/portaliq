@@ -43,6 +43,22 @@ import ExampleModal from './modals/ExampleModal.vue'
 import CustomExample from './views/CustomExample.vue'
 import FlowDetailSidebar from './views/flows/FlowDetailSidebar.vue'
 import PageLayoutDesigner from './views/PageLayoutDesigner.vue'
+import TrafficDaily from './widgets/TrafficDaily.vue'
+import TrafficJourneys from './widgets/TrafficJourneys.vue'
+import TrafficOverview from './widgets/TrafficOverview.vue'
+import TrafficPages from './widgets/TrafficPages.vue'
+import TrafficSources from './widgets/TrafficSources.vue'
+
+// The Traffic page's widgets share one shape: a full-width panel on the
+// dashboard body. See the kind: "widget" block below for why they are
+// custom at all.
+const TRAFFIC_WIDGET_META = {
+	defaultSize: { w: 12, h: 3 },
+	minSize: { w: 6, h: 2 },
+	maxSize: { w: 12, h: 8 },
+	allowedSlots: ['body'],
+	propsSchema: null,
+}
 
 export default {
 	// --- Flows (ADR-110 Decision 4). Only the SIDEBAR is an app component;
@@ -54,9 +70,44 @@ export default {
 	// -------------------------------------------------------------------------
 	// kind: "widget" — placeable in any allowed slot via grid coordinates
 	//
-	// None yet. Create src/widgets/<YourWidget>.vue and add an entry with
-	// kind: "widget" + required metadata (defaultSize, allowedSlots, ...).
+	// The five Traffic widgets (portal-traffic-analytics). They are custom
+	// because no built-in widget can say "not measured": a stats-block or a
+	// chart over `portalTrafficDaily` renders a ZERO for a portal whose
+	// operator never switched measurement on, and a zero and an unmeasured
+	// are different facts. They also share one portal selector through a
+	// store, which a dataSource-driven widget has no way to do.
 	// -------------------------------------------------------------------------
+
+	TrafficOverview: {
+		kind: 'widget',
+		component: TrafficOverview,
+		...TRAFFIC_WIDGET_META,
+		_note: 'Portal selector plus four CnStatsBlock tiles (page views, sessions, visitors, engaged sessions, 30 days) read from portalTrafficDaily through the OR object API. Custom because it must render "Not measured for this portal" DIFFERENTLY from "No traffic recorded yet" and warn about the sensitive switches; a stats-block dataSource shows a zero for both.',
+	},
+	TrafficDaily: {
+		kind: 'widget',
+		component: TrafficDaily,
+		...TRAFFIC_WIDGET_META,
+		_note: 'CnChartWidget area chart of page views, sessions and visitors per day. Custom because a chart dataSource would draw an empty chart for an unmeasured portal, which the spec forbids, and because it follows the portal selected on TrafficOverview.',
+	},
+	TrafficPages: {
+		kind: 'widget',
+		component: TrafficPages,
+		...TRAFFIC_WIDGET_META,
+		_note: 'Top pages with entrances and exits, merged across the daily rollups of the selected portal. Custom because the rows live inside each rollup object (pages[]), which object-table cannot unfold or sum across objects.',
+	},
+	TrafficJourneys: {
+		kind: 'widget',
+		component: TrafficJourneys,
+		...TRAFFIC_WIDGET_META,
+		_note: 'Top page-to-page transitions, merged across the daily rollups. Custom for the same reason as TrafficPages: transitions[] is nested per rollup.',
+	},
+	TrafficSources: {
+		kind: 'widget',
+		component: TrafficSources,
+		...TRAFFIC_WIDGET_META,
+		_note: 'Referrers grouped by channel with the busiest hosts, merged across the daily rollups. Custom for the same reason as TrafficPages: referrers[] is nested per rollup.',
+	},
 
 	// -------------------------------------------------------------------------
 	// kind: "modal" — opened via actions[].type: "open-modal"

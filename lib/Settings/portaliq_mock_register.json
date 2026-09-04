@@ -1623,6 +1623,690 @@
             "example": "delivered"
           }
         }
+      },
+      "portalTrafficEvent": {
+        "slug": "portalTrafficEvent",
+        "authorization": {
+          "read": [
+            "admin"
+          ]
+        },
+        "icon": "CursorDefaultClickOutline",
+        "version": "0.1.0",
+        "title": "Portal Traffic Event",
+        "description": "One accepted traffic event, written by the collector through OpenRegister's raw append path and deleted once it passes the portal's retention window. Carries no IP address and no raw user agent: the visitor is a salted daily hash, and device, browser and region are derived in the request and the source discarded. Readable by instance admins only; reports read the daily aggregates instead.",
+        "type": "object",
+        "required": [
+          "portal",
+          "name",
+          "occurredAt",
+          "receivedAt",
+          "sequence",
+          "visitorHash",
+          "pageLocation",
+          "expires"
+        ],
+        "properties": {
+          "portal": {
+            "title": "Portal",
+            "type": "string",
+            "description": "The slug of the portal this event belongs to.",
+            "example": "open-tilburg"
+          },
+          "name": {
+            "title": "Event name",
+            "type": "string",
+            "description": "The event, in the GA4 spelling.",
+            "enum": [
+              "page_view",
+              "session_start",
+              "scroll",
+              "outbound_click",
+              "file_download",
+              "search",
+              "form_submit",
+              "email_open",
+              "email_click"
+            ],
+            "example": "page_view"
+          },
+          "occurredAt": {
+            "title": "Occurred at",
+            "type": "string",
+            "description": "When the client says the event happened, clamped to the server clock.",
+            "format": "date-time",
+            "example": "2026-09-04T10:00:00Z"
+          },
+          "receivedAt": {
+            "title": "Received at",
+            "type": "string",
+            "description": "When the collector accepted the event.",
+            "format": "date-time",
+            "example": "2026-09-04T10:00:01Z"
+          },
+          "sequence": {
+            "title": "Sequence",
+            "type": "integer",
+            "description": "The event's position within its session, as the client counted it. Journeys are ordered by this, never by arrival.",
+            "example": 3
+          },
+          "visitorHash": {
+            "title": "Visitor hash",
+            "type": "string",
+            "description": "A salted hash of the day, the portal, the address and the user agent. The salt rotates daily and is not kept, so the hash cannot be reversed and does not survive the day.",
+            "example": "5f2c..."
+          },
+          "clientId": {
+            "title": "Client id",
+            "type": "string",
+            "description": "The browser-stored identifier, present only when the portal persists a client id and the visitor consented.",
+            "example": ""
+          },
+          "sessionId": {
+            "title": "Session id",
+            "type": "string",
+            "description": "The client's session identifier when it keeps one; empty in cookieless mode, where aggregation derives sessions.",
+            "example": ""
+          },
+          "pageLocation": {
+            "title": "Page location",
+            "type": "string",
+            "description": "The full URL the event happened on, truncated to 512 characters.",
+            "example": "https://open-tilburg.nl/woo?utm_source=nieuwsbrief"
+          },
+          "pagePath": {
+            "title": "Page path",
+            "type": "string",
+            "description": "The path only, with the query string removed after campaign parameters were parsed out of it.",
+            "example": "/woo"
+          },
+          "pageReferrer": {
+            "title": "Referrer",
+            "type": "string",
+            "description": "The page the visitor came from, when the portal keeps it.",
+            "example": "https://www.google.com/"
+          },
+          "referrerHost": {
+            "title": "Referrer host",
+            "type": "string",
+            "description": "The referrer's hostname.",
+            "example": "www.google.com"
+          },
+          "channel": {
+            "title": "Channel",
+            "type": "string",
+            "description": "The acquisition channel derived from the referrer and campaign parameters.",
+            "enum": [
+              "direct",
+              "organic search",
+              "social",
+              "referral",
+              "email",
+              "campaign",
+              "internal"
+            ],
+            "example": "organic search"
+          },
+          "pageTitle": {
+            "title": "Page title",
+            "type": "string",
+            "description": "The document title, when the portal keeps it.",
+            "example": "Woo-verzoeken"
+          },
+          "deviceType": {
+            "title": "Device type",
+            "type": "string",
+            "description": "Derived from the user agent, which is then discarded.",
+            "enum": [
+              "desktop",
+              "mobile",
+              "tablet",
+              "other"
+            ],
+            "example": "desktop"
+          },
+          "browser": {
+            "title": "Browser",
+            "type": "string",
+            "description": "The browser family, without a version.",
+            "example": "Firefox"
+          },
+          "os": {
+            "title": "Operating system",
+            "type": "string",
+            "description": "The operating system family, without a version.",
+            "example": "Windows"
+          },
+          "language": {
+            "title": "Language",
+            "type": "string",
+            "description": "The visitor's first accepted language, as a two-letter code.",
+            "example": "nl"
+          },
+          "region": {
+            "title": "Region",
+            "type": "string",
+            "description": "A country or region code, no finer than the portal allows. Empty when the portal stores no location.",
+            "example": "NL"
+          },
+          "screen": {
+            "title": "Screen",
+            "type": "string",
+            "description": "The viewport bucket the client reported.",
+            "example": "1280x720"
+          },
+          "searchTerm": {
+            "title": "Search term",
+            "type": "string",
+            "description": "What the visitor searched for. Only kept when the portal enabled the dimension.",
+            "example": ""
+          },
+          "linkUrl": {
+            "title": "Link URL",
+            "type": "string",
+            "description": "The outbound link that was clicked.",
+            "example": ""
+          },
+          "fileName": {
+            "title": "File name",
+            "type": "string",
+            "description": "The file that was downloaded.",
+            "example": ""
+          },
+          "campaign": {
+            "title": "Campaign",
+            "type": "string",
+            "description": "The campaign name from utm_campaign or mtm_campaign, or carried by a mail event.",
+            "example": ""
+          },
+          "source": {
+            "title": "Source",
+            "type": "string",
+            "description": "The traffic source from utm_source or mtm_source.",
+            "example": ""
+          },
+          "medium": {
+            "title": "Medium",
+            "type": "string",
+            "description": "The medium from utm_medium or mtm_medium.",
+            "example": ""
+          },
+          "content": {
+            "title": "Content",
+            "type": "string",
+            "description": "The content variant from utm_content or mtm_content.",
+            "example": ""
+          },
+          "term": {
+            "title": "Term",
+            "type": "string",
+            "description": "The paid keyword from utm_term or mtm_kwd.",
+            "example": ""
+          },
+          "blastRef": {
+            "title": "Blast reference",
+            "type": "string",
+            "description": "The sending app's mailing identifier, on mail events only.",
+            "example": ""
+          },
+          "contactRef": {
+            "title": "Contact reference",
+            "type": "string",
+            "description": "The sending app's pseudonymous contact identifier, on mail events only.",
+            "example": ""
+          },
+          "userRef": {
+            "title": "User reference",
+            "type": "string",
+            "description": "The signed-in portal user's reference. Only present when the portal switched on account linking.",
+            "example": ""
+          },
+          "params": {
+            "title": "Parameters",
+            "type": "object",
+            "description": "A bounded map of extra values the client attached: at most 20 keys, scalar values, 256 characters each.",
+            "additionalProperties": true,
+            "example": {}
+          },
+          "consent": {
+            "title": "Consent",
+            "type": "boolean",
+            "description": "The visitor's consent state as the client knew it when the event was sent.",
+            "example": true
+          },
+          "expires": {
+            "title": "Expires",
+            "type": "string",
+            "description": "When this event is deleted: received at plus the portal's retention period.",
+            "format": "date-time",
+            "example": "2026-12-03T10:00:01Z"
+          }
+        }
+      },
+      "portalTrafficDaily": {
+        "slug": "portalTrafficDaily",
+        "authorization": {
+          "read": [
+            "authenticated"
+          ]
+        },
+        "icon": "ChartLine",
+        "version": "0.1.0",
+        "title": "Portal Traffic Daily",
+        "description": "One portal's traffic for one UTC day, recomputed from the raw events by the aggregation job every fifteen minutes. Contains counts only, never a visitor. The Traffic page and any export read these records through the ordinary object API.",
+        "type": "object",
+        "required": [
+          "portal",
+          "date"
+        ],
+        "properties": {
+          "portal": {
+            "title": "Portal",
+            "type": "string",
+            "description": "The portal's slug.",
+            "example": "open-tilburg"
+          },
+          "date": {
+            "title": "Date",
+            "type": "string",
+            "description": "The UTC day, as YYYY-MM-DD.",
+            "format": "date",
+            "example": "2026-09-04"
+          },
+          "pageViews": {
+            "title": "Page views",
+            "type": "integer",
+            "description": "Page view events that day.",
+            "example": 1240
+          },
+          "sessions": {
+            "title": "Sessions",
+            "type": "integer",
+            "description": "Distinct sessions that day.",
+            "example": 410
+          },
+          "visitors": {
+            "title": "Visitors",
+            "type": "integer",
+            "description": "Distinct visitors that day, by daily hash or client id.",
+            "example": 380
+          },
+          "newVisitors": {
+            "title": "New visitors",
+            "type": "integer",
+            "description": "Visitors whose first session that day was their first session in the retained window.",
+            "example": 120
+          },
+          "engagedSessions": {
+            "title": "Engaged sessions",
+            "type": "integer",
+            "description": "Sessions with more than one page view, a scroll, or at least ten seconds between events.",
+            "example": 210
+          },
+          "avgEngagementSeconds": {
+            "title": "Average engagement (seconds)",
+            "type": "number",
+            "description": "Mean seconds between a session's first and last event.",
+            "example": 74.5
+          },
+          "bounceRate": {
+            "title": "Bounce rate",
+            "type": "number",
+            "description": "The share of sessions that were not engaged, between 0 and 1.",
+            "example": 0.49
+          },
+          "events": {
+            "title": "Events",
+            "type": "object",
+            "description": "Event count per event name.",
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "example": {
+              "page_view": 1240,
+              "scroll": 300
+            }
+          },
+          "pages": {
+            "title": "Pages",
+            "type": "array",
+            "description": "Per-path views, entrances, exits and engagement.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "title": "Path",
+                  "type": "string",
+                  "description": "The page path, query stripped.",
+                  "example": "/"
+                },
+                "views": {
+                  "title": "Views",
+                  "type": "integer",
+                  "description": "Page views of this path that day.",
+                  "example": 1
+                },
+                "entrances": {
+                  "title": "Entrances",
+                  "type": "integer",
+                  "description": "Sessions that started on this path.",
+                  "example": 1
+                },
+                "exits": {
+                  "title": "Exits",
+                  "type": "integer",
+                  "description": "Sessions that ended on this path.",
+                  "example": 1
+                },
+                "avgEngagementSeconds": {
+                  "title": "Average engagement (seconds)",
+                  "type": "number",
+                  "description": "Mean seconds on this path before the next page view.",
+                  "example": 1
+                }
+              }
+            },
+            "example": [
+              {
+                "path": "/",
+                "views": 600,
+                "entrances": 300,
+                "exits": 200,
+                "avgEngagementSeconds": 40
+              }
+            ]
+          },
+          "transitions": {
+            "title": "Transitions",
+            "type": "array",
+            "description": "How often visitors moved from one path to the next within a session.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "from": {
+                  "title": "From",
+                  "type": "string",
+                  "description": "The path the visitor came from.",
+                  "example": "/"
+                },
+                "to": {
+                  "title": "To",
+                  "type": "string",
+                  "description": "The path the visitor went to.",
+                  "example": "/woo"
+                },
+                "count": {
+                  "title": "Count",
+                  "type": "integer",
+                  "description": "How often this step was taken.",
+                  "example": 1
+                }
+              }
+            },
+            "example": [
+              {
+                "from": "/",
+                "to": "/woo",
+                "count": 120
+              }
+            ]
+          },
+          "referrers": {
+            "title": "Referrers",
+            "type": "array",
+            "description": "Sessions per referring host and channel.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "host": {
+                  "title": "Host",
+                  "type": "string",
+                  "description": "The referring host, empty for a direct visit.",
+                  "example": "www.google.com"
+                },
+                "channel": {
+                  "title": "Channel",
+                  "type": "string",
+                  "description": "The channel derived from the referrer: organic search, referral, social, email or direct.",
+                  "example": "organic search"
+                },
+                "count": {
+                  "title": "Count",
+                  "type": "integer",
+                  "description": "Sessions that arrived this way.",
+                  "example": 1
+                }
+              }
+            },
+            "example": [
+              {
+                "host": "www.google.com",
+                "channel": "organic search",
+                "count": 150
+              }
+            ]
+          },
+          "campaigns": {
+            "title": "Campaigns",
+            "type": "array",
+            "description": "Sessions per campaign, source and medium.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "campaign": {
+                  "title": "Campaign",
+                  "type": "string",
+                  "description": "The campaign name from utm_campaign or a mail blast.",
+                  "example": ""
+                },
+                "source": {
+                  "title": "Source",
+                  "type": "string",
+                  "description": "The source, such as newsletter or google.",
+                  "example": ""
+                },
+                "medium": {
+                  "title": "Medium",
+                  "type": "string",
+                  "description": "The medium, such as email or cpc.",
+                  "example": ""
+                },
+                "sessions": {
+                  "title": "Sessions",
+                  "type": "integer",
+                  "description": "Sessions attributed to this campaign.",
+                  "example": 1
+                }
+              }
+            },
+            "example": []
+          },
+          "devices": {
+            "title": "Devices",
+            "type": "object",
+            "description": "Sessions per device type.",
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "example": {
+              "desktop": 250,
+              "mobile": 160
+            }
+          },
+          "browsers": {
+            "title": "Browsers",
+            "type": "object",
+            "description": "Sessions per browser family.",
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "example": {
+              "Firefox": 100
+            }
+          },
+          "os": {
+            "title": "Operating systems",
+            "type": "object",
+            "description": "Sessions per operating system family.",
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "example": {
+              "Windows": 200
+            }
+          },
+          "languages": {
+            "title": "Languages",
+            "type": "object",
+            "description": "Sessions per language.",
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "example": {
+              "nl": 400
+            }
+          },
+          "regions": {
+            "title": "Regions",
+            "type": "object",
+            "description": "Sessions per region code.",
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "example": {
+              "NL": 400
+            }
+          },
+          "searches": {
+            "title": "Searches",
+            "type": "array",
+            "description": "Search terms and their counts. Only when the portal keeps search terms.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "term": {
+                  "title": "Term",
+                  "type": "string",
+                  "description": "The search term, as typed.",
+                  "example": ""
+                },
+                "count": {
+                  "title": "Count",
+                  "type": "integer",
+                  "description": "How often it was searched.",
+                  "example": 1
+                }
+              }
+            },
+            "example": []
+          },
+          "downloads": {
+            "title": "Downloads",
+            "type": "array",
+            "description": "Downloaded files and their counts.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "file": {
+                  "title": "File",
+                  "type": "string",
+                  "description": "The downloaded file name.",
+                  "example": ""
+                },
+                "count": {
+                  "title": "Count",
+                  "type": "integer",
+                  "description": "How often it was downloaded.",
+                  "example": 1
+                }
+              }
+            },
+            "example": []
+          },
+          "outbound": {
+            "title": "Outbound links",
+            "type": "array",
+            "description": "Outbound links clicked and their counts.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "url": {
+                  "title": "URL",
+                  "type": "string",
+                  "description": "The outbound link that was followed.",
+                  "example": ""
+                },
+                "count": {
+                  "title": "Count",
+                  "type": "integer",
+                  "description": "How often it was followed.",
+                  "example": 1
+                }
+              }
+            },
+            "example": []
+          },
+          "goals": {
+            "title": "Goals",
+            "type": "array",
+            "description": "Goal conversions. Reserved for a later phase.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "goal": {
+                  "title": "Goal",
+                  "type": "string",
+                  "description": "The goal name. Reserved for a later phase.",
+                  "example": ""
+                },
+                "conversions": {
+                  "title": "Conversions",
+                  "type": "integer",
+                  "description": "How often the goal was reached.",
+                  "example": 1
+                }
+              }
+            },
+            "example": []
+          },
+          "emails": {
+            "title": "Emails",
+            "type": "object",
+            "description": "Mail opens and clicks attributed to this portal by another app in the instance.",
+            "properties": {
+              "opens": {
+                "title": "Opens",
+                "type": "integer",
+                "description": "Mail opens attributed to this portal by another app.",
+                "example": 0
+              },
+              "clicks": {
+                "title": "Clicks",
+                "type": "integer",
+                "description": "Mail clicks attributed to this portal by another app.",
+                "example": 0
+              }
+            },
+            "example": {
+              "opens": 0,
+              "clicks": 0
+            }
+          },
+          "aggregatedAt": {
+            "title": "Aggregated at",
+            "type": "string",
+            "description": "When this record was last recomputed.",
+            "format": "date-time",
+            "example": "2026-09-04T10:15:00Z"
+          },
+          "lastEventAt": {
+            "title": "Last event at",
+            "type": "string",
+            "description": "The newest event that went into this record.",
+            "format": "date-time",
+            "example": "2026-09-04T10:12:41Z"
+          }
+        }
       }
     },
     "objects": [
@@ -2471,6 +3155,342 @@
         "deliveryStatus": "failed",
         "payloadCopy": {},
         "receiptMessageRef": "Voorbeeld Receiptmessageref 3"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalTrafficDaily",
+          "slug": "portaltrafficdaily-portaltrafficdaily-1-1"
+        },
+        "portal": "Voorbeeld Portal 1",
+        "date": "2026-03-01",
+        "pageViews": 1,
+        "sessions": 1,
+        "visitors": 1,
+        "newVisitors": 1,
+        "engagedSessions": 1,
+        "avgEngagementSeconds": 1.0,
+        "bounceRate": 1.0,
+        "events": {},
+        "pages": [
+          {
+            "path": "Voorbeeld Path 1",
+            "views": 1,
+            "entrances": 1,
+            "exits": 1,
+            "avgEngagementSeconds": 1.0
+          }
+        ],
+        "transitions": [
+          {
+            "from": "Voorbeeld From 1",
+            "to": "Voorbeeld To 1",
+            "count": 1
+          }
+        ],
+        "referrers": [
+          {
+            "host": "Voorbeeld Host 1",
+            "channel": "Voorbeeld Channel 1",
+            "count": 1
+          }
+        ],
+        "campaigns": [
+          {
+            "campaign": "Voorbeeld Campaign 1",
+            "source": "Voorbeeld Source 1",
+            "medium": "Voorbeeld Medium 1",
+            "sessions": 1
+          }
+        ],
+        "devices": {},
+        "browsers": {},
+        "os": {},
+        "languages": {},
+        "regions": {},
+        "searches": [
+          {
+            "term": "Voorbeeld Term 1",
+            "count": 1
+          }
+        ],
+        "downloads": [
+          {
+            "file": "Voorbeeld File 1",
+            "count": 1
+          }
+        ],
+        "outbound": [
+          {
+            "url": "Voorbeeld Url 1",
+            "count": 1
+          }
+        ],
+        "goals": [
+          {
+            "goal": "Voorbeeld Goal 1",
+            "conversions": 1
+          }
+        ],
+        "emails": {
+          "opens": 1,
+          "clicks": 1
+        }
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalTrafficDaily",
+          "slug": "portaltrafficdaily-portaltrafficdaily-2-2"
+        },
+        "portal": "Voorbeeld Portal 2",
+        "date": "2026-03-02",
+        "pageViews": 2,
+        "sessions": 2,
+        "visitors": 2,
+        "newVisitors": 2,
+        "engagedSessions": 2,
+        "avgEngagementSeconds": 2.0,
+        "bounceRate": 2.0,
+        "events": {},
+        "pages": [
+          {
+            "path": "Voorbeeld Path 2",
+            "views": 2,
+            "entrances": 2,
+            "exits": 2,
+            "avgEngagementSeconds": 2.0
+          }
+        ],
+        "transitions": [
+          {
+            "from": "Voorbeeld From 2",
+            "to": "Voorbeeld To 2",
+            "count": 2
+          }
+        ],
+        "referrers": [
+          {
+            "host": "Voorbeeld Host 2",
+            "channel": "Voorbeeld Channel 2",
+            "count": 2
+          }
+        ],
+        "campaigns": [
+          {
+            "campaign": "Voorbeeld Campaign 2",
+            "source": "Voorbeeld Source 2",
+            "medium": "Voorbeeld Medium 2",
+            "sessions": 2
+          }
+        ],
+        "devices": {},
+        "browsers": {},
+        "os": {},
+        "languages": {},
+        "regions": {},
+        "searches": [
+          {
+            "term": "Voorbeeld Term 2",
+            "count": 2
+          }
+        ],
+        "downloads": [
+          {
+            "file": "Voorbeeld File 2",
+            "count": 2
+          }
+        ],
+        "outbound": [
+          {
+            "url": "Voorbeeld Url 2",
+            "count": 2
+          }
+        ],
+        "goals": [
+          {
+            "goal": "Voorbeeld Goal 2",
+            "conversions": 2
+          }
+        ],
+        "emails": {
+          "opens": 2,
+          "clicks": 2
+        }
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalTrafficDaily",
+          "slug": "portaltrafficdaily-portaltrafficdaily-3-3"
+        },
+        "portal": "Voorbeeld Portal 3",
+        "date": "2026-03-03",
+        "pageViews": 3,
+        "sessions": 3,
+        "visitors": 3,
+        "newVisitors": 3,
+        "engagedSessions": 3,
+        "avgEngagementSeconds": 3.0,
+        "bounceRate": 3.0,
+        "events": {},
+        "pages": [
+          {
+            "path": "Voorbeeld Path 3",
+            "views": 3,
+            "entrances": 3,
+            "exits": 3,
+            "avgEngagementSeconds": 3.0
+          }
+        ],
+        "transitions": [
+          {
+            "from": "Voorbeeld From 3",
+            "to": "Voorbeeld To 3",
+            "count": 3
+          }
+        ],
+        "referrers": [
+          {
+            "host": "Voorbeeld Host 3",
+            "channel": "Voorbeeld Channel 3",
+            "count": 3
+          }
+        ],
+        "campaigns": [
+          {
+            "campaign": "Voorbeeld Campaign 3",
+            "source": "Voorbeeld Source 3",
+            "medium": "Voorbeeld Medium 3",
+            "sessions": 3
+          }
+        ],
+        "devices": {},
+        "browsers": {},
+        "os": {},
+        "languages": {},
+        "regions": {},
+        "searches": [
+          {
+            "term": "Voorbeeld Term 3",
+            "count": 3
+          }
+        ],
+        "downloads": [
+          {
+            "file": "Voorbeeld File 3",
+            "count": 3
+          }
+        ],
+        "outbound": [
+          {
+            "url": "Voorbeeld Url 3",
+            "count": 3
+          }
+        ],
+        "goals": [
+          {
+            "goal": "Voorbeeld Goal 3",
+            "conversions": 3
+          }
+        ],
+        "emails": {
+          "opens": 3,
+          "clicks": 3
+        }
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalTrafficEvent",
+          "slug": "portaltrafficevent-page-view-1"
+        },
+        "portal": "Voorbeeld Portal 1",
+        "name": "page_view",
+        "occurredAt": "2026-03-01T09:00:00+00:00",
+        "receivedAt": "2026-03-01T09:00:00+00:00",
+        "sequence": 1,
+        "visitorHash": "Voorbeeld Visitorhash 1",
+        "pageLocation": "Voorbeeld Pagelocation 1",
+        "expires": "2026-03-01T09:00:00+00:00",
+        "clientId": "Voorbeeld Clientid 1",
+        "sessionId": "Voorbeeld Sessionid 1",
+        "pagePath": "Voorbeeld Pagepath 1",
+        "pageReferrer": "Voorbeeld Pagereferrer 1",
+        "referrerHost": "Voorbeeld Referrerhost 1",
+        "channel": "direct",
+        "pageTitle": "Voorbeeld Pagetitle 1",
+        "deviceType": "desktop",
+        "browser": "Voorbeeld Browser 1",
+        "os": "Voorbeeld Os 1",
+        "language": "Voorbeeld Language 1",
+        "region": "Voorbeeld Region 1",
+        "screen": "Voorbeeld Screen 1",
+        "searchTerm": "Voorbeeld Searchterm 1",
+        "linkUrl": "Voorbeeld Linkurl 1",
+        "fileName": "Voorbeeld Filename 1"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalTrafficEvent",
+          "slug": "portaltrafficevent-session-start-2"
+        },
+        "portal": "Voorbeeld Portal 2",
+        "name": "session_start",
+        "occurredAt": "2026-03-02T09:00:00+00:00",
+        "receivedAt": "2026-03-02T09:00:00+00:00",
+        "sequence": 2,
+        "visitorHash": "Voorbeeld Visitorhash 2",
+        "pageLocation": "Voorbeeld Pagelocation 2",
+        "expires": "2026-03-02T09:00:00+00:00",
+        "clientId": "Voorbeeld Clientid 2",
+        "sessionId": "Voorbeeld Sessionid 2",
+        "pagePath": "Voorbeeld Pagepath 2",
+        "pageReferrer": "Voorbeeld Pagereferrer 2",
+        "referrerHost": "Voorbeeld Referrerhost 2",
+        "channel": "organic search",
+        "pageTitle": "Voorbeeld Pagetitle 2",
+        "deviceType": "mobile",
+        "browser": "Voorbeeld Browser 2",
+        "os": "Voorbeeld Os 2",
+        "language": "Voorbeeld Language 2",
+        "region": "Voorbeeld Region 2",
+        "screen": "Voorbeeld Screen 2",
+        "searchTerm": "Voorbeeld Searchterm 2",
+        "linkUrl": "Voorbeeld Linkurl 2",
+        "fileName": "Voorbeeld Filename 2"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalTrafficEvent",
+          "slug": "portaltrafficevent-scroll-3"
+        },
+        "portal": "Voorbeeld Portal 3",
+        "name": "scroll",
+        "occurredAt": "2026-03-03T09:00:00+00:00",
+        "receivedAt": "2026-03-03T09:00:00+00:00",
+        "sequence": 3,
+        "visitorHash": "Voorbeeld Visitorhash 3",
+        "pageLocation": "Voorbeeld Pagelocation 3",
+        "expires": "2026-03-03T09:00:00+00:00",
+        "clientId": "Voorbeeld Clientid 3",
+        "sessionId": "Voorbeeld Sessionid 3",
+        "pagePath": "Voorbeeld Pagepath 3",
+        "pageReferrer": "Voorbeeld Pagereferrer 3",
+        "referrerHost": "Voorbeeld Referrerhost 3",
+        "channel": "social",
+        "pageTitle": "Voorbeeld Pagetitle 3",
+        "deviceType": "tablet",
+        "browser": "Voorbeeld Browser 3",
+        "os": "Voorbeeld Os 3",
+        "language": "Voorbeeld Language 3",
+        "region": "Voorbeeld Region 3",
+        "screen": "Voorbeeld Screen 3",
+        "searchTerm": "Voorbeeld Searchterm 3",
+        "linkUrl": "Voorbeeld Linkurl 3",
+        "fileName": "Voorbeeld Filename 3"
       }
     ]
   }
