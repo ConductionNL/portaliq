@@ -287,6 +287,8 @@ required = {
         'portalAccount', 'portalSession', 'exampleDocument', 'portalMessage',
         'portalSubmission', 'portalAuditEntry', 'portalNotification',
         'portalOidcState', 'portalPage',
+        # portal-traffic-analytics: the raw events and the daily rollups.
+        'portalTrafficEvent', 'portalTrafficDaily',
     ],
 }[kind]
 with open(path) as fh:
@@ -532,7 +534,12 @@ fi
 #
 # Tolerant on purpose: an app whose wizard has no demo-data step answers 400
 # here, and that is not a seeding failure.
-DEMO_BASE="${BASE_URL:-${NEXTCLOUD_URL:-http://localhost:8080}}"
+# The SAME target the rest of this script resolved above. These two calls
+# used to re-derive it from BASE_URL alone, so a run driven by
+# PLAYWRIGHT_BASE_URL (every local throwaway) posted to :8080 and logged
+# HTTP 000: the setup wizard then stayed open over the app and every click
+# test failed on a modal that had nothing to do with it.
+DEMO_BASE="$BASE"
 DEMO_CODE="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 300 \
 	-u "${ADMIN_USER:-admin}:${ADMIN_PASSWORD:-admin}" -X POST \
 	-H 'Content-Type: application/json' -H 'OCS-APIRequest: true' --data '{}' \
@@ -557,7 +564,7 @@ echo "[ci-seed] POST setup/action/skip-demo-data -> HTTP ${DEMO_CODE}"
 #
 # Tolerant on purpose: an app with no walkthrough answers 400 here, and that is
 # not a seeding failure.
-WT_BASE="${BASE_URL:-${NEXTCLOUD_URL:-http://localhost:8080}}"
+WT_BASE="$BASE"
 WT_CODE="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 60 \
 	-u "${ADMIN_USER:-admin}:${ADMIN_PASSWORD:-admin}" -X PUT \
 	-H 'Content-Type: application/json' -H 'OCS-APIRequest: true' \

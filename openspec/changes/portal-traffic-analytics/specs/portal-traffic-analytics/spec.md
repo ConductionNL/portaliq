@@ -261,6 +261,12 @@ reach the portal, the same posture as the portal itself.
 - **THEN** the response is 204 with no body and no Set-Cookie header
 - **AND** a refused event inside it is counted under its reason on `/api/metrics`
 
+#### Scenario: A pixel counts one event
+
+- **WHEN** a page that cannot run scripts requests `/api/traffic/pixel.gif` with a portal, an event name and a location
+- **THEN** one event goes through the same validation and the same rate limit as a posted batch
+- **AND** the answer is a 1x1 GIF that is never cached
+
 ### Requirement: The served client MUST be one file for every renderer
 
 `GET /api/traffic-client.js` serves the client to any origin with no session.
@@ -325,6 +331,18 @@ objects through OpenRegister's object API rather than a bespoke endpoint.
 - **WHEN** a portal has no measurement enabled
 - **THEN** the Traffic page says so for that portal
 - **AND** it does NOT render an empty chart
+
+#### Scenario: A measured portal without figures is not the same as an unmeasured one
+
+- **WHEN** a portal measures traffic but the aggregation job has written no daily record for the range
+- **THEN** the Traffic page says no traffic was recorded yet, in different words and a different element than "not measured"
+- **AND** neither state renders a chart
+
+#### Scenario: The page shows the numbers for a measured portal
+
+- **WHEN** a portal measures traffic and a daily record exists for the range
+- **THEN** the Traffic page shows page views, sessions, visitors and engaged sessions for the last 30 days, a chart per day, the top pages with entrances and exits, the top transitions, and the sources by channel
+- **AND** switching the portal selector to another portal switches every widget on the page
 
 A zero and an unmeasured are different facts, and a chart showing zero for a
 portal that was never instrumented is the more convincing of the two lies.
