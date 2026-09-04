@@ -8,6 +8,7 @@
 - [portal-scoping-and-auth](../../changes/portal-scoping-and-auth/)
 - [portal-headless-content-api](../../changes/portal-headless-content-api/)
 - [portal-shared-runtime](../../changes/portal-shared-runtime/)
+- [contribution-landing-page-action](../../changes/contribution-landing-page-action/)
 
 ## Purpose
 
