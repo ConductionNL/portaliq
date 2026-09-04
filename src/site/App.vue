@@ -266,6 +266,7 @@
 						:glossary="glossary"
 						:contributions="contributions"
 						:routeParam="routeParam"
+						:portal="site.slug || ''"
 						@navigate="go"
 						@search="goSearch" />
 
