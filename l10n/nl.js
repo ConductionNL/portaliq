@@ -144,7 +144,9 @@ OC.L10N.register(
         "The openregister delivery ledger row this message settles (portal-task-delivery). The idempotency key: the worker probes it before writing, so a crash between write and settle never duplicates the message.": "De regel in het bezorgregister van openregister die dit bericht afhandelt (portal-task-delivery). De idempotentiesleutel: de worker controleert dit veld voor het schrijven, zodat een crash tussen schrijven en afronden nooit een dubbel bericht oplevert.",
         "Reports": "Rapportages",
         "Pick a report to open it.": "Kies een rapport om het te openen.",
-        "How much your portals are used, and by whom.": "Hoeveel je portalen gebruikt worden, en door wie."
+        "How much your portals are used, and by whom.": "Hoeveel je portalen gebruikt worden, en door wie.",
+        "Store": "Store",
+        "Install portal configurations that other organisations have published: a theme, a set of pages, or the flows behind a form.": "Installeer registers, schema's en flows die andere organisaties hebben gepubliceerd."
     },
     "nplurals=2; plural=(n != 1);"
 )
