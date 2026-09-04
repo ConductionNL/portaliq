@@ -27,8 +27,8 @@ const SUBMISSION_SCHEMA = 'landingPageSubmission'
 const ROUTE = '/campagne/e2e-form-test'
 
 test.describe('site renderer — landing page form submission', () => {
-	// @e2e landing-page-provisioning::a-landing-pages-form-is-submittable-with-no-portal-session
-	// @e2e portaliq-cms::a-public-page-may-embed-a-lead-capture-form-widget
+	// @e2e landing-page-provisioning::a-visitor-submits-the-landing-pages-form-anonymously
+	// @e2e portaliq-cms::a-landing-page-renders-its-bound-form-and-accepts-a-submission
 	test('a visitor submits the landing page form and it is recorded', async ({
 		page,
 	}) => {
@@ -51,7 +51,7 @@ test.describe('site renderer — landing page form submission', () => {
 		await expect(page.getByTestId('form-status-success')).toBeVisible()
 	})
 
-	// @e2e landing-page-provisioning::utm-capture-is-first-party-portal-scoped-and-honest-about-being-advisory
+	// @e2e landing-page-provisioning::first-touch-is-captured-once-last-touch-is-overwritten
 	test('first touch is captured once and last touch is overwritten', async ({
 		page,
 	}) => {

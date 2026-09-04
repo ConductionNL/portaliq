@@ -20,10 +20,12 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification and audit entry the app reads and writes.",
-                "version": "0.15.0",
+                "version": "0.16.0",
                 "schemas": [
                     "exampleDocument",
+                    "form",
                     "glossaryTerm",
+                    "landingPageSubmission",
                     "menu",
                     "page",
                     "portal",
@@ -2030,12 +2032,14 @@
                 "version": "0.1.0",
                 "title": "Form",
                 "authorization": {
-                    "read": [],
+                    "read": [
+                        "authenticated"
+                    ],
                     "create": [],
                     "update": [],
                     "delete": []
                 },
-                "description": "A lead-capture form bound to a landing page, provisioned by the contribution-landing-page-action cross-app command (landing-page-provisioning). Never publicly readable through the OpenRegister API — the only reader is Portaliq’s own built-in PortalContributionProvider, server-side, which folds each ACTIVE form into the anonymous contribution aggregate as a synthesised type:create action. Mirrors the portalPage object’s “configuration, not subject data” convention (portal-page-provisioning).",
+                "description": "A lead-capture form bound to a landing page, provisioned by the contribution-landing-page-action cross-app command (landing-page-provisioning). Never publicly (anonymously) readable through the OpenRegister API — the field/config shape a visitor sees is embedded into the page's own body at creation time (LandingPageProvisioningService::buildBody()), not fetched live. Portaliq's own built-in PortalContributionProvider reads it server-side, bypassing RBAC (ADR-022), to fold each ACTIVE form into the anonymous contribution aggregate as a synthesised type:create action; an authenticated (staff) user may also read it via the generic objects API, matching portalSubmission's convention. Mirrors the portalPage object’s “configuration, not subject data” convention (portal-page-provisioning).",
                 "type": "object",
                 "required": [
                     "portal",
@@ -2177,12 +2181,14 @@
                 "version": "0.1.0",
                 "title": "Landing Page Submission",
                 "authorization": {
-                    "read": [],
+                    "read": [
+                        "authenticated"
+                    ],
                     "create": [],
                     "update": [],
                     "delete": []
                 },
-                "description": "One anonymous visitor submission of a landing-page form (landing-page-provisioning). Never publicly readable — unlike portalSubmission, this schema carries no subjectRef/organisation, because a landing-page visitor is not an authenticated portal account; reusing portalSubmission would either weaken its required fields for every other WMEBV consumer or stamp a fake subject onto an anonymous row. submittedAt and nonce are server-stamped; utmFirstTouch/utmLastTouch/referrer are client-observed advisory attribution data, not authorization-relevant (ADR-005).",
+                "description": "One anonymous visitor submission of a landing-page form (landing-page-provisioning). Never publicly (anonymously) readable — matching portalSubmission's own convention, an authenticated (staff) user may read it via the generic objects API. Unlike portalSubmission, this schema carries no subjectRef/organisation, because a landing-page visitor is not an authenticated portal account; reusing portalSubmission would either weaken its required fields for every other WMEBV consumer or stamp a fake subject onto an anonymous row. submittedAt and nonce are server-stamped; utmFirstTouch/utmLastTouch/referrer are client-observed advisory attribution data, not authorization-relevant (ADR-005).",
                 "type": "object",
                 "required": [
                     "formId",

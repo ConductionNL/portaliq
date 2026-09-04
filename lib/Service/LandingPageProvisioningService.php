@@ -215,6 +215,12 @@ class LandingPageProvisioningService {
 	 * (case-insensitive). Closes the route-uniqueness gap for THIS action's
 	 * own writes only (design.md Decision 7).
 	 *
+	 * The `portal` filter is also passed down to the reader so the query is
+	 * scoped server-side, but this loop re-checks `row['portal']` itself
+	 * rather than trusting that filter alone — belt and braces against a
+	 * reader that returns rows across portals, so a route never collides
+	 * with a same-named route that belongs to a DIFFERENT portal.
+	 *
 	 * @param string $portal The portal slug.
 	 * @param string $route The requested route.
 	 *
@@ -232,6 +238,10 @@ class LandingPageProvisioningService {
 
 		$needle = mb_strtolower($route);
 		foreach ($rows as $row) {
+			if (($row['portal'] ?? '') !== $portal) {
+				continue;
+			}
+
 			if (mb_strtolower((string)($row['route'] ?? '')) === $needle) {
 				return true;
 			}
