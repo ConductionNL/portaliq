@@ -207,7 +207,9 @@ OC.L10N.register(
         "UTM last touch": "UTM laatste bezoek",
         "Values": "Waarden",
         "Whether the field must be filled in before submitting.": "Of het veld verplicht moet worden ingevuld vóór het verzenden.",
-        "document.referrer captured at first touch, client-observed.": "document.referrer, clientside vastgelegd bij het eerste contactmoment."
+        "document.referrer captured at first touch, client-observed.": "document.referrer, clientside vastgelegd bij het eerste contactmoment.",
+        "Store": "Store",
+        "Install portal configurations that other organisations have published: a theme, a set of pages, or the flows behind a form.": "Installeer registers, schema's en flows die andere organisaties hebben gepubliceerd."
     },
     "nplurals=2; plural=(n != 1);"
 )

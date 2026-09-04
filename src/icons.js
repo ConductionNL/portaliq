@@ -39,6 +39,7 @@ import ShieldCheckOutline from 'vue-material-design-icons/ShieldCheckOutline.vue
 import ShieldKeyOutline from 'vue-material-design-icons/ShieldKeyOutline.vue'
 import ShieldLock from 'vue-material-design-icons/ShieldLock.vue'
 import Sitemap from 'vue-material-design-icons/Sitemap.vue'
+import StoreOutline from 'vue-material-design-icons/StoreOutline.vue'
 import Ticket from 'vue-material-design-icons/Ticket.vue'
 import ViewDashboardOutline from 'vue-material-design-icons/ViewDashboardOutline.vue'
 import Web from 'vue-material-design-icons/Web.vue'
@@ -72,6 +73,7 @@ export default {
 	ShieldKeyOutline,
 	ShieldLock,
 	Sitemap,
+	StoreOutline,
 	Ticket,
 	ViewDashboardOutline,
 	Web,
