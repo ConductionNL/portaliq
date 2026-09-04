@@ -20,6 +20,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\TrafficController;
 use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\Traffic\RawRequestBody;
 use OCA\Portaliq\Service\TrafficIngestService;
 use OCP\App\IAppManager;
@@ -57,6 +58,14 @@ class TrafficControllerTest extends TestCase {
 	 * @var string
 	 */
 	private string $appDir = '';
+
+	/**
+	 * The session service double a test installs, or null for one that
+	 * resolves nothing.
+	 *
+	 * @var PortalSessionService|null
+	 */
+	private ?PortalSessionService $session = null;
 
 
 	/**
@@ -129,7 +138,7 @@ class TrafficControllerTest extends TestCase {
 		$appManager = $this->createMock(IAppManager::class);
 		$appManager->method('getAppPath')->willReturn($this->appDir);
 
-		return new TrafficController('portaliq', $request, $resolver, $ingest, $raw, $appManager);
+		return new TrafficController('portaliq', $request, $resolver, $ingest, $raw, $appManager, $this->session ?? $this->createMock(PortalSessionService::class));
 	}//end controller()
 
 
@@ -349,4 +358,31 @@ class TrafficControllerTest extends TestCase {
 			$this->assertGreaterThanOrEqual($anon->getLimit(), $user->getLimit(), $name . '(): a signed-in caller must not be throttled below a visitor');
 		}
 	}//end testEveryRoutedMethodCarriesTheFullPublicPosture()
+	/**
+	 * A batch with a valid bearer hands the session's subjectRef to the
+	 * ingest service as `userRef`; without a bearer the field is ''. The
+	 * ingest service, not this edge, decides whether the portal keeps it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-account-linking-must-attach-only-a-pseudonymous-reference
+	 */
+	public function testABearerBecomesTheSubjectReferenceInTheContext(): void {
+		$this->session = $this->createMock(PortalSessionService::class);
+		$this->session->method('resolveFromBearer')->willReturnCallback(
+			static fn (?string $header): ?array => ($header === 'Bearer good') ? ['subjectRef' => 'subj-42', 'organisation' => 'dev-org'] : null
+		);
+
+		$this->controller($this->batch(1), headers: ['Authorization' => 'Bearer good'])->collect();
+		$this->assertSame('subj-42', $this->ingested[0][2]['userRef']);
+		$this->assertArrayNotHasKey('organisation', $this->ingested[0][2], 'only the reference travels, nothing else about the person');
+
+		$this->ingested = [];
+		$this->controller($this->batch(1), headers: ['Authorization' => 'Bearer forged'])->collect();
+		$this->assertSame('', $this->ingested[0][2]['userRef'], 'a bearer that does not resolve is nobody');
+
+		$this->ingested = [];
+		$this->controller($this->batch(1))->collect();
+		$this->assertSame('', $this->ingested[0][2]['userRef']);
+	}//end testABearerBecomesTheSubjectReferenceInTheContext()
 }//end class

@@ -32,7 +32,7 @@
 		:description="
 			t(
 				'portaliq',
-				'Measurement is on, but no daily figures exist for the last 30 days. The first figures appear within fifteen minutes of the first visit.',
+				'Measurement is on, but no daily figures exist for this period. The first figures appear within fifteen minutes of the first visit.',
 			)
 		"
 		variant="neutral"

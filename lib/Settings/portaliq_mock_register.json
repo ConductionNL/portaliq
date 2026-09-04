@@ -1933,9 +1933,30 @@
           },
           "newVisitors": {
             "title": "New visitors",
-            "type": "integer",
-            "description": "Visitors whose first session that day was their first session in the retained window.",
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Visitors with a persisted client id whose client reported its first session that day. Null in cookieless mode: a daily hash cannot say whether it was here yesterday, and a zero would claim it can.",
             "example": 120
+          },
+          "returningVisitors": {
+            "title": "Returning visitors",
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Visitors with a persisted client id whose client reported a returning session that day. Null in cookieless mode, never zero.",
+            "example": 260
+          },
+          "accounts": {
+            "title": "Accounts",
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Distinct signed-in portal accounts seen that day. Only counted when the portal switched on account linking; null otherwise.",
+            "example": 12
           },
           "engagedSessions": {
             "title": "Engaged sessions",
@@ -3168,6 +3189,8 @@
         "sessions": 1,
         "visitors": 1,
         "newVisitors": 1,
+        "returningVisitors": 1,
+        "accounts": null,
         "engagedSessions": 1,
         "avgEngagementSeconds": 1.0,
         "bounceRate": 1.0,
@@ -3249,6 +3272,8 @@
         "sessions": 2,
         "visitors": 2,
         "newVisitors": 2,
+        "returningVisitors": 2,
+        "accounts": null,
         "engagedSessions": 2,
         "avgEngagementSeconds": 2.0,
         "bounceRate": 2.0,
@@ -3330,6 +3355,8 @@
         "sessions": 3,
         "visitors": 3,
         "newVisitors": 3,
+        "returningVisitors": 3,
+        "accounts": null,
         "engagedSessions": 3,
         "avgEngagementSeconds": 3.0,
         "bounceRate": 3.0,

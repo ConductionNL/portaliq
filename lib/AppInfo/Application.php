@@ -44,8 +44,8 @@ use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\Portaliq\Listener\CmsCacheInvalidationListener;
 use OCA\Portaliq\Middleware\PortalAuthMiddleware;
 use OCA\Portaliq\Middleware\PublicApiCorsMiddleware;
+use OCA\Portaliq\Service\Traffic\Geo\MmdbGeoResolver;
 use OCA\Portaliq\Service\Traffic\GeoResolverInterface;
-use OCA\Portaliq\Service\Traffic\NullGeoResolver;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
@@ -111,11 +111,13 @@ class Application extends App implements IBootstrap {
 			$context->registerEventListener($event, CmsCacheInvalidationListener::class);
 		}
 
-		// Traffic analytics (portal-traffic-analytics): where a visitor's
-		// address turns into a region. Phase 0 binds the resolver that
-		// answers nothing; a later phase swaps in an offline database here
-		// and the ingest path does not change.
-		$context->registerServiceAlias(GeoResolverInterface::class, NullGeoResolver::class);
+		// Traffic analytics (portal-traffic-visitors-and-geo): where a
+		// visitor's address turns into a region. The offline MMDB lookup is
+		// bound here and the ingest path did not change from phase 0, which
+		// bound the resolver that answered nothing. NullGeoResolver stays
+		// for the tests and for an instance that wants no geography at all
+		// (the settings provider `none` makes this resolver answer null too).
+		$context->registerServiceAlias(GeoResolverInterface::class, MmdbGeoResolver::class);
 	}//end register()
 
 	/**

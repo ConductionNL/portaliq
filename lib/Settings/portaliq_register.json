@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Register containing all schemas owned by the Portaliq external-portal application.",
-        "version": "0.16.0"
+        "version": "0.17.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.16.0",
+                "version": "0.17.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -2511,9 +2511,30 @@
                     },
                     "newVisitors": {
                         "title": "New visitors",
-                        "type": "integer",
-                        "description": "Visitors whose first session that day was their first session in the retained window.",
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "description": "Visitors with a persisted client id whose client reported its first session that day. Null in cookieless mode: a daily hash cannot say whether it was here yesterday, and a zero would claim it can.",
                         "example": 120
+                    },
+                    "returningVisitors": {
+                        "title": "Returning visitors",
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "description": "Visitors with a persisted client id whose client reported a returning session that day. Null in cookieless mode, never zero.",
+                        "example": 260
+                    },
+                    "accounts": {
+                        "title": "Accounts",
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "description": "Distinct signed-in portal accounts seen that day. Only counted when the portal switched on account linking; null otherwise.",
+                        "example": 12
                     },
                     "engagedSessions": {
                         "title": "Engaged sessions",

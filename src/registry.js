@@ -48,6 +48,7 @@ import TrafficJourneys from './widgets/TrafficJourneys.vue'
 import TrafficOverview from './widgets/TrafficOverview.vue'
 import TrafficPages from './widgets/TrafficPages.vue'
 import TrafficSources from './widgets/TrafficSources.vue'
+import TrafficVisitors from './widgets/TrafficVisitors.vue'
 
 // The Traffic page's widgets share one shape: a full-width panel on the
 // dashboard body. See the kind: "widget" block below for why they are
@@ -107,6 +108,12 @@ export default {
 		component: TrafficSources,
 		...TRAFFIC_WIDGET_META,
 		_note: 'Referrers grouped by channel with the busiest hosts, merged across the daily rollups. Custom for the same reason as TrafficPages: referrers[] is nested per rollup.',
+	},
+	TrafficVisitors: {
+		kind: 'widget',
+		component: TrafficVisitors,
+		...TRAFFIC_WIDGET_META,
+		_note: 'Visitors, new versus returning, signed-in accounts, and the device, browser, OS, language and region breakdowns merged across the daily rollups (portal-traffic-visitors-and-geo). Custom because a cookieless portal must read "not available" for new versus returning rather than a zero, and a dimension the portal never enabled must read "not measured" rather than an empty list.',
 	},
 
 	// -------------------------------------------------------------------------

@@ -131,7 +131,16 @@ class TrafficAggregationService {
 		$days = $this->daysToRecompute(slug: $slug, since: $since, now: $now);
 		$done = 0;
 		foreach ($days as $date) {
-			$done += (int)$this->aggregateDay(slug: $slug, date: $date, timeoutMinutes: (int)$config['sessionTimeoutMinutes'], now: $now);
+			$done += (int)$this->aggregateDay(
+				slug: $slug,
+				date: $date,
+				timeoutMinutes: (int)$config['sessionTimeoutMinutes'],
+				now: $now,
+				options: [
+					'persistClientId' => (($config['sensitive']['persistClientId'] ?? false) === true),
+					'accountLinking' => (($config['sensitive']['accountLinking'] ?? false) === true),
+				]
+			);
 		}
 
 		$this->appConfig->setValueString(Application::APP_ID, $watermarkKey, $now->format('Y-m-d\TH:i:s\Z'));
@@ -180,12 +189,13 @@ class TrafficAggregationService {
 	 *
 	 * @param string            $slug           The portal slug.
 	 * @param string            $date           The UTC day.
-	 * @param int               $timeoutMinutes The portal's session timeout.
-	 * @param DateTimeImmutable $now            The clock.
+	 * @param int                 $timeoutMinutes The portal's session timeout.
+	 * @param DateTimeImmutable   $now            The clock.
+	 * @param array<string, bool> $options        The portal's persistClientId and accountLinking switches.
 	 *
 	 * @return bool True when a rollup was written.
 	 */
-	private function aggregateDay(string $slug, string $date, int $timeoutMinutes, DateTimeImmutable $now): bool {
+	private function aggregateDay(string $slug, string $date, int $timeoutMinutes, DateTimeImmutable $now, array $options): bool {
 		$from = $date . 'T00:00:00.000Z';
 		$to = (new DateTimeImmutable($date . ' 00:00:00', new DateTimeZone('UTC')))->modify('+1 day')->format('Y-m-d\TH:i:s.v\Z');
 		$events = $this->store->eventsBetween(portal: $slug, from: $from, to: $to);
@@ -194,7 +204,13 @@ class TrafficAggregationService {
 		}
 
 		$sessions = $this->sessioniser->sessions(events: $events, timeoutMinutes: $timeoutMinutes);
-		$record = $this->rollup->build(portal: $slug, date: $date, sessions: $sessions, aggregatedAt: $now->format('Y-m-d\TH:i:s\Z'));
+		$record = $this->rollup->build(
+			portal: $slug,
+			date: $date,
+			sessions: $sessions,
+			aggregatedAt: $now->format('Y-m-d\TH:i:s\Z'),
+			options: $options
+		);
 
 		$existing = $this->store->findDaily(portal: $slug, date: $date);
 		$uuid = null;

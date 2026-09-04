@@ -140,6 +140,114 @@
 				}}</span>
 			</p>
 		</NcSettingsSection>
+
+		<!--
+			Visitor geography (portal-traffic-visitors-and-geo, Ruben's
+			decision 7): DB-IP Lite by default, MaxMind with an account. The
+			licence key is write-only here: the server says whether one is
+			stored and never hands it back.
+		-->
+		<NcSettingsSection
+			:name="t('portaliq', 'Visitor geography')"
+			:description="
+				t(
+					'portaliq',
+					'Which offline database turns a visitor\'s address into a country or region. The address itself is never stored and never sent to a third party.',
+				)
+			">
+			<form class="portaliq-admin-settings__geo" @submit.prevent="saveGeo">
+				<NcSelect
+					v-model="geoProvider"
+					:inputLabel="t('portaliq', 'Provider')"
+					:options="geoProviderOptions"
+					:clearable="false"
+					:disabled="savingGeo"
+					label="label"
+					data-testid="admin-geo-provider" />
+
+				<template v-if="geoProvider && geoProvider.id === 'maxmind'">
+					<NcTextField
+						v-model="geoAccountId"
+						:label="t('portaliq', 'MaxMind account id')"
+						:disabled="savingGeo"
+						data-testid="admin-geo-account-id" />
+					<NcPasswordField
+						v-model="geoLicenseKey"
+						:label="t('portaliq', 'MaxMind licence key')"
+						:disabled="savingGeo"
+						autocomplete="off"
+						data-testid="admin-geo-license-key" />
+					<p
+						v-if="geoLicenseKeySet"
+						class="portaliq-admin-settings__hint"
+						data-testid="admin-geo-license-key-set">
+						{{
+							t(
+								'portaliq',
+								'A licence key is stored. Leave this empty to keep it, or enter a new one to replace it.',
+							)
+						}}
+					</p>
+					<NcSelect
+						v-model="geoEdition"
+						:inputLabel="t('portaliq', 'Edition')"
+						:options="geoEditionOptions"
+						:clearable="false"
+						:disabled="savingGeo"
+						label="label"
+						data-testid="admin-geo-edition" />
+				</template>
+
+				<NcButton
+					variant="primary"
+					:disabled="savingGeo || !geoProvider"
+					type="submit"
+					data-testid="admin-geo-save">
+					{{ t('portaliq', 'Save geography settings') }}
+				</NcButton>
+			</form>
+
+			<p class="portaliq-admin-settings__hint" role="status">
+				<span v-if="geoError" data-testid="admin-geo-error">{{
+					geoError
+				}}</span>
+				<span v-else-if="geoSaved" data-testid="admin-geo-saved">{{
+					t(
+						'portaliq',
+						'Saved. The database is fetched by the monthly background job, or now with occ portaliq:traffic:geo-refresh.',
+					)
+				}}</span>
+			</p>
+
+			<p class="portaliq-admin-settings__hint" data-testid="admin-geo-status">
+				<template v-if="geoStatus.present">
+					{{
+						t(
+							'portaliq',
+							'Database installed: {type}, fetched {fetchedAt}.',
+							{
+								type: geoStatus.metadata.databaseType || 'unknown',
+								fetchedAt: geoStatus.metadata.fetchedAt || 'unknown',
+							},
+						)
+					}}
+					<br />
+					{{
+						t('portaliq', 'Attribution: {attribution}', {
+							attribution: geoStatus.metadata.attribution || '',
+						})
+					}}
+				</template>
+				<template v-else>
+					{{
+						t(
+							'portaliq',
+							'No database installed yet. It is fetched when a portal first asks for a region, by the monthly job, or with occ portaliq:traffic:geo-refresh.',
+						)
+					}}
+				</template>
+			</p>
+		</NcSettingsSection>
 	</div>
 </template>
 
@@ -150,6 +258,7 @@ import { generateUrl } from '@nextcloud/router'
 import {
 	NcButton,
 	NcNoteCard,
+	NcPasswordField,
 	NcSelect,
 	NcSettingsSection,
 	NcTextField,
@@ -160,6 +269,7 @@ export default {
 	components: {
 		NcSettingsSection,
 		NcNoteCard,
+		NcPasswordField,
 		NcSelect,
 		NcTextField,
 		NcButton,
@@ -187,11 +297,57 @@ export default {
 			savingGroups: false,
 			groupsSaved: false,
 			groupsError: '',
+
+			// Visitor geography. The licence key field is write-only: it
+			// starts empty whether or not one is stored, and an empty
+			// field on save means "keep what is stored".
+			geoProvider: null,
+			geoAccountId: '',
+			geoLicenseKey: '',
+			geoLicenseKeySet: false,
+			geoEdition: null,
+			geoStatus: { present: false, metadata: {} },
+			savingGeo: false,
+			geoSaved: false,
+			geoError: '',
 		}
+	},
+
+	computed: {
+		/**
+		 * The three providers as select options.
+		 *
+		 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
+		 * @return {Array<{id: string, label: string}>} The options.
+		 */
+		geoProviderOptions() {
+			return [
+				{ id: 'none', label: t('portaliq', 'None (no geography)') },
+				{ id: 'dbip', label: t('portaliq', 'DB-IP Lite (free, CC BY 4.0)') },
+				{
+					id: 'maxmind',
+					label: t('portaliq', 'MaxMind (account required)'),
+				},
+			]
+		},
+
+		/**
+		 * The two MaxMind editions as select options.
+		 *
+		 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
+		 * @return {Array<{id: string, label: string}>} The options.
+		 */
+		geoEditionOptions() {
+			return [
+				{ id: 'GeoLite2-City', label: 'GeoLite2-City' },
+				{ id: 'GeoIP2-City', label: 'GeoIP2-City' },
+			]
+		},
 	},
 
 	mounted() {
 		this.loadEditorGroups()
+		this.loadGeo()
 	},
 
 	methods: {
@@ -255,6 +411,81 @@ export default {
 		},
 
 		/**
+		 * Load the geography settings and the database status. The
+		 * response carries whether a key is stored, never the key.
+		 *
+		 * @return {Promise<void>} Resolves when loaded.
+		 *
+		 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-maxmind-credentials-must-never-be-echoed-back
+		 */
+		async loadGeo() {
+			try {
+				const { data } = await axios.get(
+					generateUrl('/apps/portaliq/api/settings'),
+				)
+				const geo = data.traffic_geo || {}
+				this.geoProvider =
+					this.geoProviderOptions.find((o) => o.id === geo.provider)
+					|| this.geoProviderOptions[1]
+				this.geoAccountId = String(geo.maxmindAccountId || '')
+				this.geoLicenseKeySet = geo.maxmindLicenseKeySet === true
+				this.geoEdition =
+					this.geoEditionOptions.find((o) => o.id === geo.maxmindEdition)
+					|| this.geoEditionOptions[0]
+				this.geoStatus = {
+					present: Boolean(geo.status && geo.status.present),
+					metadata: (geo.status && geo.status.metadata) || {},
+				}
+			} catch {
+				this.geoError = t(
+					'portaliq',
+					'The geography settings could not be loaded.',
+				)
+			}
+		},
+
+		/**
+		 * Save the geography settings. The key travels only when typed.
+		 *
+		 * @return {Promise<void>} Resolves when saved.
+		 *
+		 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-maxmind-credentials-must-never-be-echoed-back
+		 */
+		async saveGeo() {
+			if (!this.geoProvider) {
+				return
+			}
+			this.savingGeo = true
+			this.geoSaved = false
+			this.geoError = ''
+			const block = {
+				provider: this.geoProvider.id,
+				maxmindAccountId: this.geoAccountId,
+				maxmindEdition: this.geoEdition
+					? this.geoEdition.id
+					: 'GeoLite2-City',
+			}
+			if (this.geoLicenseKey !== '') {
+				block.maxmindLicenseKey = this.geoLicenseKey
+			}
+			try {
+				await axios.put(generateUrl('/apps/portaliq/api/settings'), {
+					traffic_geo: block,
+				})
+				this.geoSaved = true
+				this.geoLicenseKey = ''
+				await this.loadGeo()
+			} catch {
+				this.geoError = t(
+					'portaliq',
+					'Saving the geography settings failed.',
+				)
+			} finally {
+				this.savingGeo = false
+			}
+		},
+
+		/**
 		 * Revoke every active portalSession for one organisation.
 		 *
 		 * The frontend half of the incident-response action whose backend twin
@@ -303,5 +534,14 @@ export default {
 	align-items: flex-end;
 	gap: 8px;
 	margin-top: 12px;
+}
+
+.portaliq-admin-settings__geo {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 8px;
+	margin-top: 12px;
+	max-width: 420px;
 }
 </style>

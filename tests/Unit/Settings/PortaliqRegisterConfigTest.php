@@ -101,7 +101,11 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// `traffic` block (portal-traffic-analytics), and added the
 		// `portalTrafficEvent` and `portalTrafficDaily` schemas. Additive;
 		// measurement stays OFF for every portal that does not switch it on.
-		$this->assertSame('0.16.0', self::$register['info']['version']);
+		// 0.17.0: `portalTrafficDaily` gains `returningVisitors` and `accounts`,
+		// and `newVisitors` becomes nullable (portal-traffic-visitors-and-geo):
+		// null in cookieless mode, because a daily hash cannot say whether it
+		// was here yesterday and a zero would claim it can. Additive.
+		$this->assertSame('0.17.0', self::$register['info']['version']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['page']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('0.5.0', self::$register['components']['schemas']['portalAccount']['version']);

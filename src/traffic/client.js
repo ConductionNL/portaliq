@@ -311,23 +311,51 @@ export function boot(win) {
 		}
 		const batches = chunk(state.queue)
 		state.queue = []
+		const bearer = linkedBearer()
 		batches.forEach((events) => {
 			const body = envelope(config.portal, state.consent, events)
 			if (
-				win.navigator.sendBeacon
+				bearer === ''
+				&& win.navigator.sendBeacon
 				&& win.navigator.sendBeacon(state.collector, body)
 			) {
 				return
 			}
+			const headers = { 'Content-Type': 'text/plain' }
+			if (bearer !== '') {
+				headers.Authorization = 'Bearer ' + bearer
+			}
 			win.fetch(state.collector, {
 				method: 'POST',
 				body,
-				headers: { 'Content-Type': 'text/plain' },
+				headers,
 				mode: 'cors',
 				credentials: 'omit',
 				keepalive: true,
 			}).catch(() => {})
 		})
+	}
+
+	/**
+	 * The portal session bearer, ONLY for a portal that links accounts
+	 * (Ruben, decision 6). The built-in portal keeps its session token in
+	 * local storage; a batch that carries it lets the collector attach the
+	 * account's pseudonymous reference. sendBeacon cannot carry a header,
+	 * so such a batch goes by fetch. Every other portal never reads the
+	 * token at all.
+	 *
+	 * @return {string} The bearer, or ''.
+	 */
+	function linkedBearer() {
+		const sensitive = state.traffic && state.traffic.sensitive
+		if (!sensitive || sensitive.accountLinking !== true) {
+			return ''
+		}
+		try {
+			return String(win.localStorage.getItem('portaliq_token') || '')
+		} catch {
+			return ''
+		}
 	}
 
 	/**
@@ -359,7 +387,7 @@ export function boot(win) {
 				state.sequence = 0
 				state.clientId = clientId
 				state.sessionId = sessionId
-				record('session_start', first ? { first: true } : {})
+				record('session_start', { visitorType: first ? 'new' : 'returning' })
 				return
 			}
 			state.sequence =

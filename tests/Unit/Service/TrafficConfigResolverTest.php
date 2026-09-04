@@ -329,4 +329,24 @@ class TrafficConfigResolverTest extends TestCase {
 	}//end testMailEventsAreOnlyAllowedFromAServerSideCaller()
 
 
+	/**
+	 * Account linking IS the userRef dimension: switching it on enables the
+	 * dimension without a second listing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-account-linking-must-attach-only-a-pseudonymous-reference
+	 */
+	public function testAccountLinkingEnablesTheUserRefDimension(): void {
+		$resolver = new TrafficConfigResolver();
+
+		$linked = $resolver->resolve(portal: ['traffic' => ['enabled' => true, 'sensitive' => ['accountLinking' => true]]]);
+		$this->assertContains('userRef', $linked['dimensions']);
+
+		$listedTwice = $resolver->resolve(portal: ['traffic' => ['enabled' => true, 'dimensions' => ['userRef'], 'sensitive' => ['accountLinking' => true]]]);
+		$this->assertSame(1, count(array_keys($listedTwice['dimensions'], 'userRef', true)));
+
+		$unlinked = $resolver->resolve(portal: ['traffic' => ['enabled' => true]]);
+		$this->assertNotContains('userRef', $unlinked['dimensions']);
+	}//end testAccountLinkingEnablesTheUserRefDimension()
 }//end class

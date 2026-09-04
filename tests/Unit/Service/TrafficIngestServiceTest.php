@@ -360,4 +360,31 @@ class TrafficIngestServiceTest extends TestCase {
 	}//end testTheVisitorHashDistinguishesBrowsers()
 
 
+	/**
+	 * The subject reference from the context is kept ONLY for a portal
+	 * that switched on account linking, and it is the only thing about
+	 * the person that is kept.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-account-linking-must-attach-only-a-pseudonymous-reference
+	 */
+	public function testTheSubjectReferenceIsKeptOnlyWithAccountLinking(): void {
+		$event = ['name' => 'page_view', 'sequence' => 0, 'pageLocation' => 'https://open-tilburg.nl/mijn'];
+		$context = $this->browser() + ['userRef' => 'subj-42'];
+
+		$linked = $this->service(portals: [$this->portal(['enabled' => true, 'sensitive' => ['accountLinking' => true]])]);
+		$linked->ingest(portalSlug: 'open-tilburg', events: [$event], context: $context);
+		$this->assertSame('subj-42', $this->stored[0]['userRef']);
+		$this->assertStringNotContainsString('203.0.113.9', json_encode($this->stored[0]));
+
+		$this->stored = [];
+		$unlinked = $this->service(portals: [$this->portal(['enabled' => true, 'dimensions' => ['userRef']])]);
+		$unlinked->ingest(portalSlug: 'open-tilburg', events: [$event], context: $context);
+		$this->assertArrayNotHasKey('userRef', $this->stored[0], 'listing the dimension without the switch stores nothing');
+
+		$this->stored = [];
+		$linked->ingest(portalSlug: 'open-tilburg', events: [$event], context: $this->browser());
+		$this->assertArrayNotHasKey('userRef', $this->stored[0], 'no bearer, no reference, no empty string either');
+	}//end testTheSubjectReferenceIsKeptOnlyWithAccountLinking()
 }//end class

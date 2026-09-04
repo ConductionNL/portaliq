@@ -35,9 +35,11 @@ use OCP\AppFramework\Utility\ITimeFactory;
  *
  * THIS IS THE ONE PLACE THE ADDRESS AND THE USER AGENT EXIST. They arrive in
  * `$context`, they are read to derive a visitor hash, a device family and
- * (in a later phase) a region, and they are not written anywhere: not to
- * the record, not to the log, not to the metrics. Every derived value is
- * only KEPT when the portal enabled its dimension.
+ * a region, and they are not written anywhere: not to the record, not to
+ * the log, not to the metrics. Every derived value is only KEPT when the
+ * portal enabled its dimension. A portal session bearer, when the batch
+ * carries one, becomes the account's pseudonymous reference on the same
+ * terms (portal-traffic-visitors-and-geo).
  *
  * Two callers: the HTTP collector, which resolved the portal by host, and
  * other apps in this instance (pipelinq's mail events), which name a portal
@@ -66,7 +68,7 @@ class TrafficIngestService {
 	 * @param VisitorHasher         $hasher    Derives the daily visitor hash.
 	 * @param UserAgentClassifier   $agents    Derives device, browser, os and the bot flag.
 	 * @param ReferrerClassifier    $referrers Derives host, channel, campaign and path.
-	 * @param GeoResolverInterface  $geo       Derives a region, in a later phase.
+	 * @param GeoResolverInterface  $geo       Derives a region from the address, offline.
 	 * @param ITimeFactory          $time      The clock.
 	 *
 	 * @return void
@@ -243,7 +245,30 @@ class TrafficIngestService {
 			}
 		}
 
-		return $record;
+		return $record + $this->linkedAccount(config: $config, context: $context);
+	}
+
+	/**
+	 * ACCOUNT LINKING (Ruben, decision 6). The reference is the portal
+	 * account's pseudonymous subjectRef, resolved at the edge from a
+	 * portal session bearer, and it is kept ONLY for a portal whose
+	 * operator switched the link on. Never a BSN, a KVK number, an email
+	 * address or a name: none of those are in the context.
+	 *
+	 * @param array<string, mixed> $config  The resolved configuration.
+	 * @param array<string, mixed> $context The request context.
+	 *
+	 * @return array<string, string> `['userRef' => ...]`, or [].
+	 *
+	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-account-linking-must-attach-only-a-pseudonymous-reference
+	 */
+	private function linkedAccount(array $config, array $context): array {
+		$userRef = trim((string)($context['userRef'] ?? ''));
+		if ($userRef === '' || ($config['sensitive']['accountLinking'] ?? false) !== true) {
+			return [];
+		}
+
+		return ['userRef' => mb_substr($userRef, 0, 128)];
 	}
 
 	/**
