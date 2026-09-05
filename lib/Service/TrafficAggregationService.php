@@ -24,6 +24,7 @@ use DateTimeImmutable;
 use DateTimeZone;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\Traffic\TrafficEventStore;
+use OCA\Portaliq\Service\Traffic\TrafficRecordingStore;
 use OCA\Portaliq\Service\Traffic\TrafficRollup;
 use OCA\Portaliq\Service\Traffic\TrafficRollupSum;
 use OCA\Portaliq\Service\Traffic\TrafficSegments;
@@ -87,12 +88,13 @@ class TrafficAggregationService {
 	 * @param LoggerInterface       $logger      The logger.
 	 * @param TrafficSegments       $segments    Filters sessions into a segment.
 	 * @param TrafficRollupSum      $rollupSum   Sums a roll-up portal's members.
+	 * @param TrafficRecordingStore $recordings  Purges expired session recordings (portal-traffic-experiments).
 	 *
 	 * @return void
 	 *
-	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- the two
-	 * collaborators phase 4a adds sit after the eight the earlier phases
-	 * injected; a facade over them would hide which step reads what.
+	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- the three
+	 * collaborators phases 4a and 4b add sit after the eight the earlier
+	 * phases injected; a facade over them would hide which step reads what.
 	 */
 	public function __construct(
 		private readonly PortalResolver $portals,
@@ -105,15 +107,17 @@ class TrafficAggregationService {
 		private readonly LoggerInterface $logger,
 		private readonly TrafficSegments $segments = new TrafficSegments(),
 		private readonly TrafficRollupSum $rollupSum = new TrafficRollupSum(),
+		private readonly ?TrafficRecordingStore $recordings = null,
 	) {
 	}
 
 	/**
 	 * Recompute every portal's open days, then purge expired raw events.
 	 *
-	 * @return array{portals: int, days: int, purged: int} What was done.
+	 * @return array{portals: int, days: int, purged: int, recordingsPurged: int} What was done.
 	 *
 	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
 	 */
 	public function run(): array {
 		$now = $this->now();
@@ -144,12 +148,19 @@ class TrafficAggregationService {
 		}
 
 		$purged = $this->store->purgeExpired();
+		// Session recordings expire on the same retention as the raw events
+		// they were taken beside, and the same run removes them.
+		$recordingsPurged = 0;
+		if ($this->recordings !== null) {
+			$recordingsPurged = $this->recordings->purgeExpired();
+		}
+
 		$this->logger->info(
 			'Portaliq: traffic aggregation ran',
-			['portals' => $portalsDone, 'days' => $daysDone, 'purged' => $purged]
+			['portals' => $portalsDone, 'days' => $daysDone, 'purged' => $purged, 'recordingsPurged' => $recordingsPurged]
 		);
 
-		return ['portals' => $portalsDone, 'days' => $daysDone, 'purged' => $purged];
+		return ['portals' => $portalsDone, 'days' => $daysDone, 'purged' => $purged, 'recordingsPurged' => $recordingsPurged];
 	}
 
 	/**
@@ -242,6 +253,8 @@ class TrafficAggregationService {
 			'goals' => ($config['goals'] ?? []),
 			'funnels' => ($config['funnels'] ?? []),
 			'customDimensions' => ($config['customDimensions'] ?? []),
+			'experiments' => ($config['experiments'] ?? []),
+			'heatmaps' => (($config['sensitive']['heatmaps'] ?? false) === true),
 		];
 		$existing = $this->existingBySegment(slug: $slug, date: $date);
 		$aggregatedAt = $now->format('Y-m-d\TH:i:s\Z');

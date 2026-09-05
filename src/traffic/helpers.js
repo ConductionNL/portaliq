@@ -29,6 +29,8 @@ export const KNOWN_EVENTS = [
 	'form_abandon',
 	'page_not_found',
 	'js_error',
+	'heat_click',
+	'heat_scroll',
 ]
 
 /**
@@ -465,4 +467,258 @@ function hashOf(value) {
 		hash = Math.imul(hash, 0x01000193) >>> 0
 	}
 	return ('0000000' + hash.toString(16)).slice(-8)
+}
+
+/**
+ * The viewport width buckets a heatmap sample is filed under, in pixels
+ * (portal-traffic-experiments). A bucket, not the width: the width is
+ * part of a fingerprint, the bucket is not.
+ */
+const WIDTH_BUCKETS = [480, 768, 1024, 1280, 1600]
+
+/**
+ * The in-site route a location represents: the `route` query parameter
+ * the built-in renderer uses on the platform host, else the path. The
+ * trailing slash is dropped so `/contact/` and `/contact` are one page.
+ *
+ * @param {string} location The page URL.
+ * @return {string} The route, always with a leading slash.
+ */
+export function siteRoute(location) {
+	const url = String(location || '')
+	const query = /\?([^#]*)/.exec(url)
+	let route = ''
+	if (query) {
+		const pairs = query[1].split('&')
+		for (let i = 0; i < pairs.length; i++) {
+			if (pairs[i].indexOf('route=') === 0) {
+				route = decodeSafe(pairs[i].substring(6))
+				break
+			}
+		}
+	}
+	if (route === '') {
+		const path = /^[a-z]+:\/\/[^/?#]+([^?#]*)/i.exec(url)
+		route = path ? path[1] : url.replace(/[?#].*$/, '')
+	}
+	if (route === '' || route.charAt(0) !== '/') {
+		route = '/' + route
+	}
+	if (route.length > 1) {
+		route = route.replace(/\/+$/, '')
+	}
+	return route === '' ? '/' : route
+}
+
+/**
+ * The running experiment on a route, or null (portal-traffic-experiments).
+ * The first declared one wins when two claim the same page.
+ *
+ * @param {object} traffic The resolved `traffic` block.
+ * @param {string} route   The current in-site route.
+ * @return {object|null} The experiment.
+ */
+export function experimentFor(traffic, route) {
+	const experiments = (traffic && traffic.experiments) || []
+	if (!Array.isArray(experiments)) {
+		return null
+	}
+	for (let i = 0; i < experiments.length; i++) {
+		const experiment = experiments[i]
+		if (
+			experiment
+			&& experiment.status === 'running'
+			&& siteRoute(String(experiment.page || '')) === route
+			&& Array.isArray(experiment.variants)
+			&& experiment.variants.length > 1
+		) {
+			return experiment
+		}
+	}
+	return null
+}
+
+/**
+ * Pick a variant by weight, deterministically for one seed: the same
+ * seed always lands on the same variant, which is what makes the pick
+ * sticky. The seed is the experiment id plus the visitor's client id when
+ * the portal persists one, else plus a random per page load.
+ *
+ * @param {Array<object>} variants The experiment's variants.
+ * @param {string}        seed     The seed.
+ * @return {object|null} The picked variant.
+ */
+export function pickVariant(variants, seed) {
+	if (!Array.isArray(variants) || variants.length === 0) {
+		return null
+	}
+	let total = 0
+	for (let i = 0; i < variants.length; i++) {
+		total += weightOf(variants[i])
+	}
+	const point = (parseInt(hashOf(String(seed)), 16) / 0x100000000) * total
+	let at = 0
+	for (let i = 0; i < variants.length; i++) {
+		at += weightOf(variants[i])
+		if (point < at) {
+			return variants[i]
+		}
+	}
+	return variants[variants.length - 1]
+}
+
+/**
+ * A variant's weight: a positive number, else 1.
+ *
+ * @param {object} variant The variant.
+ * @return {number} The weight.
+ */
+function weightOf(variant) {
+	const weight = Number(variant && variant.weight)
+	return weight > 0 && Number.isFinite(weight) ? weight : 1
+}
+
+/**
+ * Whether the session recorder may run at all: the switch on, a site
+ * this app serves (an external site's DOM is not ours to record), and
+ * consent where the portal requires it (portal-traffic-experiments).
+ *
+ * @param {object}  traffic The resolved `traffic` block.
+ * @param {boolean} consent The visitor's consent state.
+ * @return {boolean} True when recording may start.
+ */
+export function mayRecord(traffic, consent) {
+	if (!traffic || traffic.enabled !== true || !traffic.sensitive) {
+		return false
+	}
+	if (traffic.sensitive.sessionRecording !== true || traffic.kind === 'external') {
+		return false
+	}
+	return traffic.consentRequired !== true || consent === true
+}
+
+/**
+ * The params of a `heat_click`: where on the document the click was, as
+ * fractions, the viewport bucket, the element's tag and a short selector
+ * with nothing in it that could name a person.
+ *
+ * @param {object} click The click: `{ pageX, pageY, target }`.
+ * @param {object} size  The document: `{ width, height, viewport }`.
+ * @return {object|null} The params, or null off the page.
+ */
+export function heatClickParams(click, size) {
+	if (!click || !size || !(size.width > 0) || !(size.height > 0)) {
+		return null
+	}
+	const x = Number(click.pageX) / size.width
+	const y = Number(click.pageY) / size.height
+	if (!(x >= 0 && x <= 1 && y >= 0 && y <= 1)) {
+		return null
+	}
+	const target = click.target
+	return {
+		x: Math.round(x * 10000) / 10000,
+		y: Math.round(y * 10000) / 10000,
+		vw: widthBucket(size.viewport),
+		tag: String((target && target.tagName) || '')
+			.toLowerCase()
+			.substring(0, 32),
+		selector: safeSelector(target),
+	}
+}
+
+/**
+ * The bucket a viewport width falls in.
+ *
+ * @param {number} width The viewport width.
+ * @return {number} The bucket's upper bound, or 0 for wider than the last.
+ */
+export function widthBucket(width) {
+	for (let i = 0; i < WIDTH_BUCKETS.length; i++) {
+		if (Number(width) <= WIDTH_BUCKETS[i]) {
+			return WIDTH_BUCKETS[i]
+		}
+	}
+	return 0
+}
+
+/**
+ * A short selector for an element: up to three ancestors of tag and
+ * class names. No ids (an id is where a record number ends up), no
+ * attributes, and no class that carries digits (a generated class can
+ * carry one too).
+ *
+ * @param {object|null} element The element.
+ * @return {string} The selector, at most 128 characters.
+ */
+export function safeSelector(element) {
+	const parts = []
+	let node = element
+	while (node && node.nodeType === 1 && parts.length < 3) {
+		let part = String(node.tagName || '').toLowerCase()
+		const classes = String(
+			node.className && node.className.baseVal !== undefined
+				? node.className.baseVal
+				: node.className || '',
+		)
+			.split(/\s+/)
+			.filter((name) => name !== '' && !/\d/.test(name))
+			.slice(0, 2)
+		if (classes.length > 0) {
+			part += '.' + classes.join('.')
+		}
+		parts.unshift(part)
+		node = node.parentNode
+	}
+	return parts.join(' > ').substring(0, 128)
+}
+
+/**
+ * The deepest scroll position as a fraction of the document.
+ *
+ * @param {number} scrollTop  Pixels scrolled.
+ * @param {number} viewport   The viewport height.
+ * @param {number} pageHeight The document height.
+ * @return {number} 0 to 1, four decimals.
+ */
+export function scrollDepth(scrollTop, viewport, pageHeight) {
+	if (!(pageHeight > 0)) {
+		return 1
+	}
+	const seen = Math.min(
+		pageHeight,
+		Math.max(0, Number(scrollTop) || 0) + (Number(viewport) || 0),
+	)
+	return Math.round((seen / pageHeight) * 10000) / 10000
+}
+
+/**
+ * The URL of a variant page, in the shape the current location uses: the
+ * `route` query parameter replaced when the built-in renderer runs on
+ * the platform host, else the path replaced. The rest of the query
+ * (the portal, a campaign tag) travels along.
+ *
+ * @param {string} location  The current page URL.
+ * @param {string} pageRoute The variant's in-site route.
+ * @return {string} The URL to move to.
+ */
+export function variantUrl(location, pageRoute) {
+	const url = String(location || '')
+	const cut = url.search(/[?#]/)
+	const base = cut === -1 ? url : url.substring(0, cut)
+	const query = /\?([^#]*)/.exec(url)
+	const pairs = query && query[1] !== '' ? query[1].split('&') : []
+	let replaced = false
+	for (let i = 0; i < pairs.length; i++) {
+		if (pairs[i].indexOf('route=') === 0) {
+			pairs[i] = 'route=' + encodeURIComponent(pageRoute)
+			replaced = true
+		}
+	}
+	if (replaced) {
+		return base + '?' + pairs.join('&')
+	}
+	const origin = /^([a-z]+:\/\/[^/?#]+)/i.exec(base)
+	const path = origin ? origin[1] + pageRoute : pageRoute
+	return pairs.length > 0 ? path + '?' + pairs.join('&') : path
 }

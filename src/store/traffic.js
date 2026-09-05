@@ -37,6 +37,11 @@ export const RANGE_PRESETS = ['7', '30', '90']
  */
 const DEFAULT_PRESET = '30'
 
+/**
+ * The most recordings the page lists (portal-traffic-experiments).
+ */
+export const RECORDINGS_LIMIT = 100
+
 export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 	state: () => ({
 		portals: [],
@@ -55,6 +60,12 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		// The records hold every segment's rows; the summary folds the
 		// selected one's.
 		segment: '',
+		// The selected portal's session recordings
+		// (portal-traffic-experiments), newest first, loaded only for a
+		// portal whose operator switched recording on. The overview's
+		// warning counts them; the Recordings widget lists them.
+		recordings: [],
+		loadingRecordings: false,
 	}),
 
 	getters: {
@@ -122,6 +133,40 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		},
 
 		/**
+		 * Whether the selected portal records visits
+		 * (portal-traffic-experiments): the switch literally true.
+		 *
+		 * @return {boolean} True when on.
+		 *
+		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
+		 */
+		recordingOn() {
+			const portal = this.portal
+			return Boolean(
+				portal
+				&& portal.traffic
+				&& portal.traffic.sensitive
+				&& portal.traffic.sensitive.sessionRecording === true,
+			)
+		},
+
+		/**
+		 * How long the selected portal keeps raw events and recordings,
+		 * in days: its `retentionDays`, or the contract's ninety.
+		 *
+		 * @return {number} The days.
+		 *
+		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
+		 */
+		retentionDays() {
+			const portal = this.portal
+			const days = Number(
+				portal && portal.traffic && portal.traffic.retentionDays,
+			)
+			return days > 0 ? Math.round(days) : 90
+		},
+
+		/**
 		 * The export download for what the page shows: the portal, the
 		 * range and the segment (portal-traffic-reporting).
 		 *
@@ -169,6 +214,16 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 				store.registerObjectType(
 					'portalTrafficDaily',
 					'portalTrafficDaily',
+					REGISTER,
+				)
+			}
+			if (
+				!store.objectTypeRegistry
+				|| !store.objectTypeRegistry.portalTrafficRecording
+			) {
+				store.registerObjectType(
+					'portalTrafficRecording',
+					'portalTrafficRecording',
 					REGISTER,
 				)
 			}
@@ -323,6 +378,46 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 				this.error = String((error && error.message) || error)
 			} finally {
 				this.loadingRecords = false
+			}
+			await this.loadRecordings()
+		},
+
+		/**
+		 * Load the selected portal's session recordings, newest first, or
+		 * clear them for a portal that does not record
+		 * (portal-traffic-experiments). Bounded: the widget lists the
+		 * newest hundred, and the overview says "100 or more".
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
+		 */
+		async loadRecordings() {
+			this.recordings = []
+			if (!this.portalSlug || !this.recordingOn) {
+				return
+			}
+			this.loadingRecordings = true
+			try {
+				const rows = await this.objects().fetchCollection(
+					'portalTrafficRecording',
+					{
+						portal: this.portalSlug,
+						_limit: RECORDINGS_LIMIT,
+						'_order[startedAt]': 'desc',
+					},
+				)
+				this.recordings = (rows || [])
+					.filter((r) => r && r.portal === this.portalSlug)
+					.sort((a, b) =>
+						String(b.startedAt || '').localeCompare(
+							String(a.startedAt || ''),
+						),
+					)
+			} catch (error) {
+				this.error = String((error && error.message) || error)
+			} finally {
+				this.loadingRecordings = false
 			}
 		},
 	},

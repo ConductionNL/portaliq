@@ -21,7 +21,9 @@ import {
 	rollupOf,
 	segmentsOf,
 	summarise,
+	verdict,
 	warnedSwitches,
+	zTest,
 } from '../src/lib/trafficSummary.js'
 
 describe('lastDays', () => {
@@ -431,11 +433,36 @@ describe('segments, roll-ups and errors (portal-traffic-reporting)', () => {
 			slug: 'rollup',
 			traffic: {
 				segments: [
-					{ id: 'desktop', name: 'Desktop', conditions: [{ dimension: 'deviceType', operator: 'is', value: 'desktop' }] },
-					{ id: 'desktop', conditions: [{ dimension: 'os', operator: 'is', value: 'x' }] },
+					{
+						id: 'desktop',
+						name: 'Desktop',
+						conditions: [
+							{
+								dimension: 'deviceType',
+								operator: 'is',
+								value: 'desktop',
+							},
+						],
+					},
+					{
+						id: 'desktop',
+						conditions: [
+							{ dimension: 'os', operator: 'is', value: 'x' },
+						],
+					},
 					{ id: 'empty', conditions: [] },
-					{ id: 'bad id', conditions: [{ dimension: 'os', operator: 'is', value: 'x' }] },
-					{ id: 'unnamed', conditions: [{ dimension: 'os', operator: 'is', value: 'x' }] },
+					{
+						id: 'bad id',
+						conditions: [
+							{ dimension: 'os', operator: 'is', value: 'x' },
+						],
+					},
+					{
+						id: 'unnamed',
+						conditions: [
+							{ dimension: 'os', operator: 'is', value: 'x' },
+						],
+					},
 				],
 				rollupOf: ['open-tilburg', 'rollup', '', 7, 'open-venray'],
 			},
@@ -452,8 +479,29 @@ describe('segments, roll-ups and errors (portal-traffic-reporting)', () => {
 	it('merges script errors by message and source across the days', () => {
 		const summary = summarise(
 			[
-				{ date: '2026-09-03', errors: [{ message: 'boom', source: 'x/app.js', hits: 2, pages: ['/'] }] },
-				{ date: '2026-09-04', errors: [{ message: 'boom', source: 'x/app.js', hits: 3, pages: ['/', '/a'] }, { message: 'other', hits: 1, pages: [] }] },
+				{
+					date: '2026-09-03',
+					errors: [
+						{
+							message: 'boom',
+							source: 'x/app.js',
+							hits: 2,
+							pages: ['/'],
+						},
+					],
+				},
+				{
+					date: '2026-09-04',
+					errors: [
+						{
+							message: 'boom',
+							source: 'x/app.js',
+							hits: 3,
+							pages: ['/', '/a'],
+						},
+						{ message: 'other', hits: 1, pages: [] },
+					],
+				},
 			],
 			['2026-09-03', '2026-09-04'],
 		)
@@ -461,5 +509,100 @@ describe('segments, roll-ups and errors (portal-traffic-reporting)', () => {
 			{ message: 'boom', source: 'x/app.js', hits: 5, pages: ['/', '/a'] },
 			{ message: 'other', source: '', hits: 1, pages: [] },
 		])
+	})
+})
+
+describe('experiments and heatmaps (portal-traffic-experiments)', () => {
+	const day = (date, a, b, clicks) => ({
+		portal: 'p',
+		date,
+		sessions: 60,
+		experiments: [
+			{
+				id: 'hero',
+				name: 'Hero',
+				status: 'running',
+				variants: [
+					{ id: 'a', name: 'A', sessions: 30, conversions: a, rate: 0 },
+					{ id: 'b', name: 'B', sessions: 30, conversions: b, rate: 0 },
+				],
+				winner: '',
+				confidence: 0,
+			},
+		],
+		heatmaps: [
+			{
+				path: '/',
+				samples: clicks,
+				clicks: [{ x: 1, y: 2, count: clicks }],
+				scroll: [0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+			},
+		],
+	})
+
+	it('sums variants across days and re-derives the verdict from the sums', () => {
+		const summary = summarise(
+			[day('2026-09-01', 1, 6, 3), day('2026-09-02', 1, 6, 2)],
+			['2026-09-01', '2026-09-02'],
+		)
+		assert.equal(summary.experiments.length, 1)
+		const experiment = summary.experiments[0]
+		assert.deepEqual(experiment.variants[0], {
+			id: 'a',
+			name: 'A',
+			sessions: 60,
+			conversions: 2,
+			rate: 0.033,
+		})
+		assert.deepEqual(experiment.variants[1], {
+			id: 'b',
+			name: 'B',
+			sessions: 60,
+			conversions: 12,
+			rate: 0.2,
+		})
+		assert.equal(experiment.winner, 'b')
+		assert.equal(experiment.enough, true)
+		assert.ok(experiment.confidence > 0.95)
+	})
+
+	it('names no winner under thirty sessions per variant, and says so', () => {
+		// 1 of 30 against 5 of 30 is z = 1.72, a confidence of 0.915: enough
+		// sessions, not enough difference.
+		const one = summarise([day('2026-09-01', 1, 5, 1)], ['2026-09-01'])
+		assert.equal(one.experiments[0].winner, '')
+		assert.equal(one.experiments[0].enough, true)
+		assert.equal(one.experiments[0].confidence, 0.915)
+		const few = verdict([
+			{ id: 'a', sessions: 10, conversions: 0 },
+			{ id: 'b', sessions: 40, conversions: 20 },
+		])
+		assert.equal(few.winner, '')
+		assert.equal(few.enough, false)
+		assert.deepEqual(verdict([]), { winner: '', confidence: 0, enough: false })
+	})
+
+	it('matches the aggregation on a known table', () => {
+		assert.equal(zTest(50, 1000, 80, 1000), 0.993)
+		assert.equal(zTest(10, 100, 11, 100), 0.182)
+		assert.equal(zTest(5, 100, 5, 100), 0)
+		assert.equal(zTest(0, 0, 5, 100), 0)
+	})
+
+	it('sums a page heatmap across days', () => {
+		const summary = summarise(
+			[day('2026-09-01', 0, 0, 3), day('2026-09-02', 0, 0, 2)],
+			['2026-09-01', '2026-09-02'],
+		)
+		assert.deepEqual(summary.heatmaps, [
+			{
+				path: '/',
+				samples: 5,
+				clicks: [{ x: 1, y: 2, count: 5 }],
+				scroll: [0, 0, 0, 0, 0, 0, 0, 0, 0, 2],
+			},
+		])
+		assert.deepEqual(summarise([], ['2026-09-01']).heatmaps, [])
+		assert.deepEqual(summarise([], ['2026-09-01']).experiments, [])
 	})
 })

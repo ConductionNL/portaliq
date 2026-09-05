@@ -35,6 +35,7 @@ import History from 'vue-material-design-icons/History.vue'
 import MapMarkerPath from 'vue-material-design-icons/MapMarkerPath.vue'
 import Menu from 'vue-material-design-icons/Menu.vue'
 import MessageTextOutline from 'vue-material-design-icons/MessageTextOutline.vue'
+import MotionPlayOutline from 'vue-material-design-icons/MotionPlayOutline.vue'
 import Palette from 'vue-material-design-icons/Palette.vue'
 import ShieldCheckOutline from 'vue-material-design-icons/ShieldCheckOutline.vue'
 import ShieldKeyOutline from 'vue-material-design-icons/ShieldKeyOutline.vue'
@@ -69,6 +70,7 @@ export default {
 	History,
 	MapMarkerPath,
 	Menu,
+	MotionPlayOutline,
 	MessageTextOutline,
 	Palette,
 	ShieldCheckOutline,

@@ -46,12 +46,15 @@ import PageLayoutDesigner from './views/PageLayoutDesigner.vue'
 import TrafficDaily from './widgets/TrafficDaily.vue'
 import TrafficDimensions from './widgets/TrafficDimensions.vue'
 import TrafficErrors from './widgets/TrafficErrors.vue'
+import TrafficExperiments from './widgets/TrafficExperiments.vue'
 import TrafficForms from './widgets/TrafficForms.vue'
 import TrafficFunnels from './widgets/TrafficFunnels.vue'
 import TrafficGoals from './widgets/TrafficGoals.vue'
+import TrafficHeatmap from './widgets/TrafficHeatmap.vue'
 import TrafficJourneys from './widgets/TrafficJourneys.vue'
 import TrafficOverview from './widgets/TrafficOverview.vue'
 import TrafficPages from './widgets/TrafficPages.vue'
+import TrafficRecordings from './widgets/TrafficRecordings.vue'
 import TrafficSources from './widgets/TrafficSources.vue'
 import TrafficVisitors from './widgets/TrafficVisitors.vue'
 
@@ -149,6 +152,24 @@ export default {
 		component: TrafficDimensions,
 		...TRAFFIC_WIDGET_META,
 		_note: 'The portal\'s custom dimensions with their values ranked (portal-traffic-outcomes). Custom because a declared dimension with nothing recorded must still be listed, so "declared but never set" is visible.',
+	},
+	TrafficExperiments: {
+		kind: 'widget',
+		component: TrafficExperiments,
+		...TRAFFIC_WIDGET_META,
+		_note: 'Per page experiment the variants with visits, conversions and rate, and the verdict re-derived from the summed counts (portal-traffic-experiments). Custom because "not enough data" must be a state of its own, shown before any winner, and because experiments[] is nested per rollup.',
+	},
+	TrafficHeatmap: {
+		kind: 'widget',
+		component: TrafficHeatmap,
+		...TRAFFIC_WIDGET_META,
+		_note: 'A page picker, the click grid on a canvas over a plain rectangle, and the scroll deciles as bars (portal-traffic-experiments). Custom because no built-in widget draws a grid, and because a portal with the switch off must read "off" rather than "no clicks".',
+	},
+	TrafficRecordings: {
+		kind: 'widget',
+		component: TrafficRecordings,
+		...TRAFFIC_WIDGET_META,
+		_note: 'The newest session recordings of the portal with a player in its own modal (portal-traffic-experiments). Custom because the rows are read only for a portal that records, and a portal that does not must say so rather than show an empty table.',
 	},
 
 	// -------------------------------------------------------------------------

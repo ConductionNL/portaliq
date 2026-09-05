@@ -48,6 +48,18 @@ namespace OCA\Portaliq\Service\Traffic;
 class TrafficRollupSum {
 
 	/**
+	 * Constructor.
+	 *
+	 * @param TrafficExperiments $experiments Re-derives a summed experiment's verdict.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private readonly TrafficExperiments $experiments = new TrafficExperiments(),
+	) {
+	}
+
+	/**
 	 * The scalar counters that add up.
 	 *
 	 * @var string[]
@@ -112,7 +124,9 @@ class TrafficRollupSum {
 	 * @return array<string, mixed> Every counter at zero, every list empty.
 	 */
 	private function empty(): array {
-		$acc = ['seconds' => 0.0, 'converted' => 0.0, 'last' => '', 'pages' => [], 'goals' => [], 'funnels' => [], 'forms' => [], 'dimensions' => []];
+		$acc = ['seconds' => 0.0, 'converted' => 0.0, 'last' => '', 'pages' => [], 'goals' => [], 'funnels' => [], 'forms' => []];
+		$acc['dimensions'] = [];
+		$acc['experiments'] = [];
 		$acc['emails'] = ['opens' => 0, 'clicks' => 0];
 		$acc['lists'] = array_fill_keys(array_keys(self::LISTS), []);
 		foreach (self::COUNTERS as $key) {
@@ -166,6 +180,7 @@ class TrafficRollupSum {
 		$acc['funnels'] = $this->addFunnels(into: $acc['funnels'], rows: ($record['funnels'] ?? []));
 		$acc['forms'] = $this->addForms(into: $acc['forms'], rows: ($record['forms'] ?? []));
 		$acc['dimensions'] = $this->addDimensions(into: $acc['dimensions'], from: ($record['customDimensions'] ?? null));
+		$acc['experiments'] = $this->addExperiments(into: $acc['experiments'], rows: ($record['experiments'] ?? []));
 		$acc['emails']['opens'] += $this->int(value: ($record['emails']['opens'] ?? 0));
 		$acc['emails']['clicks'] += $this->int(value: ($record['emails']['clicks'] ?? 0));
 
@@ -207,6 +222,10 @@ class TrafficRollupSum {
 			$out['customDimensions'] = null;
 		}
 
+		$out['experiments'] = $this->finishExperiments(experiments: $acc['experiments']);
+		// A roll-up carries no heatmap: its members' pages are on different
+		// sites, and a click grid summed across sites draws nothing true.
+		$out['heatmaps'] = [];
 		$out['emails'] = $acc['emails'];
 		$out['aggregatedAt'] = $aggregatedAt;
 		$out['lastEventAt'] = $acc['last'];
@@ -415,6 +434,72 @@ class TrafficRollupSum {
 		}
 
 		return $into;
+	}
+
+	/**
+	 * Merge experiment rows by id, variants by id
+	 * (portal-traffic-experiments).
+	 *
+	 * @param array<string, array<string, mixed>> $into The accumulator.
+	 * @param mixed                               $rows The record's experiments.
+	 *
+	 * @return array<string, array<string, mixed>> The accumulator.
+	 */
+	private function addExperiments(array $into, mixed $rows): array {
+		if (is_array($rows) === false) {
+			return $into;
+		}
+
+		foreach ($rows as $row) {
+			if (is_array($row) === false || (string)($row['id'] ?? '') === '') {
+				continue;
+			}
+
+			$id = (string)$row['id'];
+			$experiment = $into[$id] ?? ['id' => $id, 'name' => $id, 'status' => 'running', 'variants' => []];
+			$experiment['name'] = (string)($row['name'] ?? $experiment['name']);
+			$experiment['status'] = (string)($row['status'] ?? $experiment['status']);
+			foreach ((array)($row['variants'] ?? []) as $variant) {
+				if (is_array($variant) === false || (string)($variant['id'] ?? '') === '') {
+					continue;
+				}
+
+				$variantId = (string)$variant['id'];
+				$summed = $experiment['variants'][$variantId]
+					?? ['id' => $variantId, 'name' => (string)($variant['name'] ?? $variantId), 'sessions' => 0, 'conversions' => 0];
+				$summed['sessions'] += $this->int(value: $variant['sessions'] ?? 0);
+				$summed['conversions'] += $this->int(value: $variant['conversions'] ?? 0);
+				$experiment['variants'][$variantId] = $summed;
+			}
+
+			$into[$id] = $experiment;
+		}
+
+		return $into;
+	}
+
+	/**
+	 * The summed experiments with each variant's rate and the verdict
+	 * re-derived from the summed counts.
+	 *
+	 * @param array<string, array<string, mixed>> $experiments The accumulator.
+	 *
+	 * @return array<int, array<string, mixed>> The rows.
+	 */
+	private function finishExperiments(array $experiments): array {
+		$out = [];
+		foreach ($experiments as $experiment) {
+			$variants = [];
+			foreach ($experiment['variants'] as $variant) {
+				$variant['rate'] = $this->rate(numerator: (float)$variant['conversions'], denominator: (int)$variant['sessions'], decimals: 3);
+				$variants[] = $variant;
+			}
+
+			$experiment['variants'] = $variants;
+			$out[] = $experiment + $this->experiments->verdict(variants: $variants);
+		}
+
+		return $out;
 	}
 
 	/**

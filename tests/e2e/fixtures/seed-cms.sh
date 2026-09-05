@@ -169,6 +169,22 @@ SITE3=$(upsert portal slug rollup-tilburg-venray '{
 }')
 echo "    rollup-tilburg-venray = $SITE3 (roll-up of open-tilburg and open-venray)"
 
+# An EXTERNAL portal (portal-traffic-experiments): a site this app does
+# not serve, measured through the tag on someone else's page. Session
+# recording is switched ON here on purpose, so the suite can prove that
+# an external portal never records even when the operator asked: the
+# client must not request the recorder for it and the collector must
+# refuse a chunk for it. No domain, so it is only ever reached by slug.
+SITE4=$(upsert portal slug open-extern '{
+  "title":"Extern Tilburg","slug":"open-extern","status":"published",
+  "kind":"external","domains":[],
+  "theme":"vng","locales":["nl"],
+  "authentication":{"modes":["public"]},
+  "frameAncestors":[],"organisation":"dev-org",
+  "traffic":{"enabled":true,"sensitive":{"sessionRecording":true}}
+}')
+echo "    open-extern = $SITE4 (external, recording switched on and never honoured)"
+
 echo "==> menu"
 upsert menu title Hoofdmenu '{
   "title":"Hoofdmenu","portal":"open-tilburg","position":0,

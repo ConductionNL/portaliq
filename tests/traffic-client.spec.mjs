@@ -14,7 +14,9 @@
 // script tag tells the client about where to post.
 
 import assert from 'node:assert/strict'
+import { existsSync, statSync } from 'node:fs'
 import { describe, it } from 'node:test'
+import { fileURLToPath } from 'node:url'
 import {
 	allowedEvent,
 	chunk,
@@ -22,15 +24,24 @@ import {
 	dimensionParams,
 	envelope,
 	errorParams,
+	experimentFor,
 	fieldIdOf,
 	formIdOf,
+	heatClickParams,
 	KNOWN_EVENTS,
 	mayPersist,
+	mayRecord,
 	optedOut,
+	pickVariant,
 	randomId,
 	readConfig,
+	safeSelector,
+	scrollDepth,
 	scrollPercent,
 	searchTermFrom,
+	siteRoute,
+	variantUrl,
+	widthBucket,
 } from '../src/traffic/helpers.js'
 
 describe('readConfig', () => {
@@ -265,7 +276,9 @@ describe('script errors (portal-traffic-reporting)', () => {
 			filename: 'https://portaal.example/js/site.js?v=123&token=secret#x',
 			lineno: 12,
 			colno: 4,
-			error: { stack: 'Error: boom\n at https://portaal.example/js/site.js?token=secret:12:4' },
+			error: {
+				stack: 'Error: boom\n at https://portaal.example/js/site.js?token=secret:12:4',
+			},
 		})
 		assert.deepEqual(params, {
 			message: 'boom',
@@ -350,5 +363,193 @@ describe('custom dimensions (portal-traffic-outcomes)', () => {
 		const out = dimensionParams(traffic, { lang: 'x'.repeat(300), audience: 7 })
 		assert.equal(out.cd_lang.length, 256)
 		assert.equal(out.cd_audience, '7')
+	})
+})
+
+describe('page experiments (portal-traffic-experiments)', () => {
+	const traffic = {
+		experiments: [
+			{
+				id: 'draft',
+				status: 'draft',
+				page: '/',
+				variants: [{ id: 'a' }, { id: 'b' }],
+			},
+			{
+				id: 'hero',
+				status: 'running',
+				page: '/over-ons/',
+				variants: [
+					{ id: 'a', weight: 1 },
+					{ id: 'b', weight: 3 },
+				],
+			},
+		],
+	}
+
+	it('reads the in-site route from the route parameter, else the path, without a trailing slash', () => {
+		assert.equal(
+			siteRoute(
+				'http://h/index.php/apps/portaliq/site?portal=x&route=%2Fover-ons%2F',
+			),
+			'/over-ons',
+		)
+		assert.equal(
+			siteRoute('https://open-tilburg.nl/contact/?utm_source=x'),
+			'/contact',
+		)
+		assert.equal(siteRoute('https://open-tilburg.nl/'), '/')
+		assert.equal(siteRoute('https://open-tilburg.nl'), '/')
+	})
+
+	it('finds the running experiment on a route and ignores a draft', () => {
+		assert.equal(experimentFor(traffic, '/over-ons').id, 'hero')
+		assert.equal(experimentFor(traffic, '/'), null, 'a draft is not served')
+		assert.equal(experimentFor(traffic, '/contact'), null)
+		assert.equal(experimentFor({}, '/'), null)
+	})
+
+	it('splits by weight: over many seeds the 3:1 variant gets about three quarters', () => {
+		const variants = traffic.experiments[1].variants
+		let b = 0
+		for (let i = 0; i < 2000; i++) {
+			if (pickVariant(variants, 'hero:' + randomId(undefined)).id === 'b') {
+				b++
+			}
+		}
+		assert.ok(b > 1350 && b < 1650, 'b got ' + b + ' of 2000')
+	})
+
+	it('is sticky: the same seed always lands on the same variant', () => {
+		const variants = traffic.experiments[1].variants
+		for (let i = 0; i < 50; i++) {
+			const seed = 'hero:' + randomId(undefined)
+			const first = pickVariant(variants, seed).id
+			for (let j = 0; j < 5; j++) {
+				assert.equal(pickVariant(variants, seed).id, first)
+			}
+		}
+		assert.equal(pickVariant([], 'x'), null)
+	})
+
+	it('builds the variant URL in the shape the location uses', () => {
+		assert.equal(
+			variantUrl(
+				'http://h/index.php/apps/portaliq/site?portal=x&route=%2Fover-ons',
+				'/contact',
+			),
+			'http://h/index.php/apps/portaliq/site?portal=x&route=%2Fcontact',
+		)
+		assert.equal(
+			variantUrl('https://open-tilburg.nl/over-ons?utm_source=x', '/contact'),
+			'https://open-tilburg.nl/contact?utm_source=x',
+		)
+		assert.equal(
+			variantUrl('https://open-tilburg.nl/over-ons', '/contact'),
+			'https://open-tilburg.nl/contact',
+		)
+	})
+})
+
+describe('heatmaps and recording (portal-traffic-experiments)', () => {
+	it('records a click as fractions, a width bucket, a tag and a safe selector', () => {
+		const target = {
+			nodeType: 1,
+			tagName: 'BUTTON',
+			className: 'cta btn-7 primary',
+			parentNode: {
+				nodeType: 1,
+				tagName: 'FORM',
+				className: '',
+				id: 'bsn-123',
+				parentNode: {
+					nodeType: 1,
+					tagName: 'MAIN',
+					className: 'content',
+					parentNode: { nodeType: 1, tagName: 'BODY', parentNode: null },
+				},
+			},
+		}
+		assert.deepEqual(
+			heatClickParams(
+				{ pageX: 250, pageY: 400, target },
+				{ width: 1000, height: 2000, viewport: 1300 },
+			),
+			{
+				x: 0.25,
+				y: 0.2,
+				vw: 1600,
+				tag: 'button',
+				selector: 'main.content > form > button.cta.primary',
+			},
+		)
+		assert.equal(
+			heatClickParams(
+				{ pageX: 1200, pageY: 1, target },
+				{ width: 1000, height: 2000, viewport: 800 },
+			),
+			null,
+			'off the page',
+		)
+		assert.equal(heatClickParams(null, null), null)
+	})
+
+	it('never puts an id or an attribute into a selector', () => {
+		const selector = safeSelector({
+			nodeType: 1,
+			tagName: 'A',
+			id: 'jan-jansen',
+			className: 'x1',
+			parentNode: null,
+		})
+		assert.equal(selector, 'a')
+		assert.equal(safeSelector(null), '')
+	})
+
+	it('buckets a width and computes a scroll depth', () => {
+		assert.equal(widthBucket(320), 480)
+		assert.equal(widthBucket(1024), 1024)
+		assert.equal(widthBucket(2560), 0)
+		assert.equal(scrollDepth(0, 500, 2000), 0.25)
+		assert.equal(scrollDepth(1500, 500, 2000), 1)
+		assert.equal(scrollDepth(0, 500, 0), 1)
+	})
+
+	it('records only when the switch is on, on a site this app serves, and with consent where required', () => {
+		const on = {
+			enabled: true,
+			kind: 'site',
+			sensitive: { sessionRecording: true },
+		}
+		assert.equal(mayRecord(on, false), true)
+		assert.equal(mayRecord({ ...on, consentRequired: true }, false), false)
+		assert.equal(mayRecord({ ...on, consentRequired: true }, true), true)
+		assert.equal(mayRecord({ ...on, kind: 'external' }, true), false)
+		assert.equal(
+			mayRecord({ ...on, sensitive: { sessionRecording: 'true' } }, true),
+			false,
+		)
+		assert.equal(mayRecord({ ...on, enabled: false }, true), false)
+		assert.equal(mayRecord(null, true), false)
+	})
+})
+
+describe('the built files (when built)', () => {
+	const here = fileURLToPath(new URL('.', import.meta.url))
+
+	it('holds the client under 20 KB and the recorder under 30 KB', () => {
+		const client = here + '../js/portaliq-traffic.js'
+		const recorder = here + '../js/portaliq-traffic-recorder.js'
+		if (!existsSync(client) || !existsSync(recorder)) {
+			return
+		}
+		assert.ok(
+			statSync(client).size <= 20 * 1024,
+			'client is ' + statSync(client).size + ' bytes',
+		)
+		assert.ok(
+			statSync(recorder).size <= 30 * 1024,
+			'recorder is ' + statSync(recorder).size + ' bytes',
+		)
 	})
 })

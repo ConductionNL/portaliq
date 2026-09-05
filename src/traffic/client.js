@@ -20,16 +20,24 @@ import {
 	dimensionParams,
 	envelope,
 	errorParams,
+	experimentFor,
 	fieldIdOf,
 	formIdOf,
+	heatClickParams,
 	mayPersist,
+	mayRecord,
 	optedOut,
 	PATH_ATTRIBUTE,
+	pickVariant,
 	randomId,
 	readConfig,
+	scrollDepth,
 	scrollPercent,
 	searchTermFrom,
+	siteRoute,
 	STATUS_ATTRIBUTE,
+	variantUrl,
+	widthBucket,
 } from './helpers.js'
 
 /**
@@ -58,7 +66,13 @@ const FLUSH_AT = 20
  */
 export function boot(win) {
 	const doc = win.document
-	const api = { track() {}, consent() {}, disable() {}, dimension() {} }
+	const api = {
+		track() {},
+		consent() {},
+		disable() {},
+		dimension() {},
+		recording: null,
+	}
 	win.portaliqTraffic = api
 
 	if (optedOut(win.navigator)) {
@@ -89,6 +103,17 @@ export function boot(win) {
 		// Custom dimensions the page set, by id, attached to what is sent.
 		dimensions: {},
 		notFound: false,
+		// Page experiments (portal-traffic-experiments): the experiment
+		// and variant this session was put on, once, and the random half
+		// of the seed that makes a cookieless pick sticky for the page
+		// load. Stored nowhere: a cookieless client writes nothing.
+		experiment: null,
+		loadId: randomId(win.crypto),
+		changes: null,
+		// Heatmaps: the deepest scroll of the current page view.
+		heatDepth: 0,
+		// Session recording: whether the recorder script was asked for.
+		recorderLoaded: false,
 	}
 
 	// A page sets its dimensions while this client is still asking the
@@ -135,6 +160,7 @@ export function boot(win) {
 			state.consent = granted === true
 			if (state.consent) {
 				restoreIdentity()
+				loadRecorder()
 				return
 			}
 			forgetIdentity()
@@ -143,6 +169,9 @@ export function boot(win) {
 			state.disabled = true
 			state.queue = []
 			forgetIdentity()
+			if (api.recording && typeof api.recording.stop === 'function') {
+				api.recording.stop()
+			}
 		}
 
 		doc.addEventListener('click', onClick, true)
@@ -153,8 +182,14 @@ export function boot(win) {
 		win.addEventListener('scroll', onScroll, { passive: true })
 		win.addEventListener('pagehide', () => {
 			abandonForms()
+			heatScroll()
 			flush()
 		})
+		if (heatmapsOn()) {
+			doc.addEventListener('click', onHeatClick, true)
+			win.addEventListener('scroll', onHeatScroll, { passive: true })
+		}
+		loadRecorder()
 		watchNotFound()
 		doc.addEventListener('visibilitychange', () => {
 			if (doc.visibilityState === 'hidden') {
@@ -178,9 +213,16 @@ export function boot(win) {
 		if (location === state.location) {
 			return
 		}
+		if (state.location !== '') {
+			heatScroll()
+		}
+		if (applyExperiment(location)) {
+			return
+		}
 		state.location = location
 		state.scrolled = false
 		state.notFound = false
+		state.heatDepth = 0
 		state.forms = {}
 		record('page_view', {})
 		notFoundCheck()
@@ -351,6 +393,226 @@ export function boot(win) {
 	}
 
 	/**
+	 * Put this session on a variant of the running experiment on this
+	 * page, once per session (portal-traffic-experiments), and apply it:
+	 * either move to the variant page without a reload, or change the
+	 * text the variant names. Returns true when the visitor was moved,
+	 * because the page view then belongs to the page they land on.
+	 *
+	 * The pick is sticky for the session: the seed is the experiment id
+	 * plus the client id when the portal persists one (so it survives a
+	 * reload) and plus a per-load random otherwise (so it survives the
+	 * client side navigation of one visit and nothing is stored).
+	 *
+	 * @param {string} location The page URL.
+	 * @return {boolean} True when the location changed.
+	 */
+	function applyExperiment(location) {
+		const route = siteRoute(location)
+		if (state.experiment === null) {
+			const experiment = experimentFor(state.traffic, route)
+			if (!experiment) {
+				return false
+			}
+			const variant = pickVariant(
+				experiment.variants,
+				experiment.id + ':' + (state.clientId || state.loadId),
+			)
+			if (!variant) {
+				return false
+			}
+			state.experiment = { id: String(experiment.id), variant }
+		}
+		const variant = state.experiment.variant
+		const page = experimentFor(state.traffic, route)
+		if (!page || String(page.id) !== state.experiment.id) {
+			watchChanges(null)
+			return false
+		}
+		if (variant.pageRoute && siteRoute(variant.pageRoute) !== route) {
+			const target = variantUrl(location, String(variant.pageRoute))
+			win.history.replaceState(win.history.state, '', target)
+			let event
+			try {
+				event = new win.PopStateEvent('popstate', {
+					state: win.history.state,
+				})
+			} catch {
+				event = doc.createEvent('Event')
+				event.initEvent('popstate', false, false)
+			}
+			win.dispatchEvent(event)
+			return true
+		}
+		watchChanges(Array.isArray(variant.changes) ? variant.changes : null)
+		return false
+	}
+
+	/**
+	 * Apply a variant's text changes now and whenever the page renders
+	 * again, or stop watching when the visitor left the experiment's page.
+	 *
+	 * @param {Array<object>|null} changes The changes, or null to stop.
+	 * @return {void}
+	 */
+	function watchChanges(changes) {
+		if (state.changes && state.changes.observer) {
+			state.changes.observer.disconnect()
+		}
+		state.changes = null
+		if (!changes || changes.length === 0) {
+			return
+		}
+		state.changes = { list: changes, observer: null, timer: null }
+		applyChanges()
+		if (typeof win.MutationObserver !== 'function' || !doc.documentElement) {
+			return
+		}
+		const observer = new win.MutationObserver(() => {
+			if (state.changes && state.changes.timer === null) {
+				state.changes.timer = win.setTimeout(() => {
+					if (state.changes) {
+						state.changes.timer = null
+						applyChanges()
+					}
+				}, 50)
+			}
+		})
+		observer.observe(doc.documentElement, {
+			childList: true,
+			subtree: true,
+			characterData: true,
+		})
+		state.changes.observer = observer
+	}
+
+	/**
+	 * Set the text of every element a change names, when it differs.
+	 * Text only, through textContent, so a variant can never add markup.
+	 *
+	 * @return {void}
+	 */
+	function applyChanges() {
+		if (!state.changes) {
+			return
+		}
+		state.changes.list.forEach((change) => {
+			let nodes
+			try {
+				nodes = doc.querySelectorAll(String(change.selector || ''))
+			} catch {
+				return
+			}
+			const text = String(change.text || '')
+			for (let i = 0; i < nodes.length; i++) {
+				if (nodes[i].textContent !== text) {
+					nodes[i].textContent = text
+				}
+			}
+		})
+	}
+
+	/**
+	 * Whether the portal switched heatmaps on (portal-traffic-experiments).
+	 *
+	 * @return {boolean} True when on.
+	 */
+	function heatmapsOn() {
+		return Boolean(
+			state.traffic
+			&& state.traffic.sensitive
+			&& state.traffic.sensitive.heatmaps === true,
+		)
+	}
+
+	/**
+	 * A click as a position on the document, never as what was clicked on
+	 * beyond its tag and a short selector.
+	 *
+	 * @param {MouseEvent} event The click.
+	 * @return {void}
+	 */
+	function onHeatClick(event) {
+		const root = doc.documentElement
+		const params = heatClickParams(event, {
+			width: Math.max(root.scrollWidth, doc.body ? doc.body.scrollWidth : 0),
+			height: Math.max(
+				root.scrollHeight,
+				doc.body ? doc.body.scrollHeight : 0,
+			),
+			viewport: win.innerWidth,
+		})
+		if (params) {
+			record('heat_click', params)
+		}
+	}
+
+	/**
+	 * Keep the deepest scroll of this page view.
+	 *
+	 * @return {void}
+	 */
+	function onHeatScroll() {
+		const root = doc.documentElement
+		const top = win.pageYOffset || root.scrollTop || 0
+		const height = Math.max(
+			root.scrollHeight,
+			doc.body ? doc.body.scrollHeight : 0,
+		)
+		state.heatDepth = Math.max(
+			state.heatDepth,
+			scrollDepth(top, win.innerHeight, height),
+		)
+	}
+
+	/**
+	 * Report the deepest scroll of the page view that is ending, once.
+	 *
+	 * @return {void}
+	 */
+	function heatScroll() {
+		if (!heatmapsOn() || state.location === '') {
+			return
+		}
+		onHeatScroll()
+		const depth = state.heatDepth
+		state.heatDepth = 0
+		record('heat_scroll', { depth, vw: widthBucket(win.innerWidth) })
+	}
+
+	/**
+	 * Load the session recorder, once, and only for a portal whose
+	 * operator switched recording on, that this app serves, and after
+	 * consent where consent is required (portal-traffic-experiments).
+	 * The recorder is a separate script so a portal that records nothing
+	 * never downloads the code that could.
+	 *
+	 * @return {void}
+	 */
+	function loadRecorder() {
+		if (
+			state.recorderLoaded
+			|| state.disabled
+			|| !mayRecord(state.traffic, state.consent)
+		) {
+			return
+		}
+		state.recorderLoaded = true
+		api.recording = {
+			id: randomId(win.crypto),
+			endpoint: config.origin + config.appPath + '/api/traffic/recording',
+			portal: config.portal,
+			consent: () => state.consent,
+			sessionId: () => state.sessionId,
+			route: () => siteRoute(String(win.location.href)),
+		}
+		const script = doc.createElement('script')
+		script.async = true
+		script.src = config.origin + config.appPath + '/api/traffic-recorder.js'
+		;(doc.head || doc.documentElement).appendChild(script)
+	}
+
+	/**
 	 * Report a script error (portal-traffic-reporting): message, source
 	 * file without its query string, line, column and a stack hash. Never
 	 * the stack. Only when the portal enabled `js_error`, which `record`
@@ -440,6 +702,10 @@ export function boot(win) {
 			}
 			params[key] = fields[key]
 		})
+		if (state.experiment !== null) {
+			params.experiment = state.experiment.id
+			params.variant = String(state.experiment.variant.id)
+		}
 		event.params = params
 		if (state.clientId) {
 			event.clientId = state.clientId

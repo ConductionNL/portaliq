@@ -18,6 +18,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\Traffic;
 
+use OCA\Portaliq\Service\Traffic\TrafficExperimentDefinitions;
+use OCA\Portaliq\Service\Traffic\TrafficOutcomeDefinitions;
 use OCA\Portaliq\Service\Traffic\TrafficRollup;
 use OCA\Portaliq\Service\Traffic\TrafficSessioniser;
 use PHPUnit\Framework\TestCase;
@@ -365,4 +367,37 @@ class TrafficRollupTest extends TestCase {
 		$this->assertSame([], $record['pages']);
 		$this->assertSame('', $record['lastEventAt']);
 	}//end testAnEmptyDayIsZeros()
+
+
+	/**
+	 * The record carries the experiments' variant counts and, only under
+	 * the switch, the heatmap of each page (portal-traffic-experiments).
+	 *
+	 * @return void
+	 */
+	public function testExperimentsAndHeatmapsAreOnTheRecord(): void {
+		$tag = ['params' => ['experiment' => 'hero', 'variant' => 'b']];
+		$events = [
+			$this->event(at: '2026-09-04T10:00:00.000Z', path: '/', extra: $tag),
+			$this->event(at: '2026-09-04T10:00:05.000Z', path: '/', name: 'heat_click', extra: ['params' => ['x' => 0.5, 'y' => 0.5]]),
+			$this->event(at: '2026-09-04T10:00:09.000Z', path: '/', name: 'heat_scroll', extra: ['params' => ['depth' => 0.95]]),
+			$this->event(at: '2026-09-04T10:00:10.000Z', path: '/contact', extra: $tag),
+		];
+		$experiments = (new TrafficExperimentDefinitions())->definitions(value: [
+			['id' => 'hero', 'status' => 'running', 'page' => '/', 'goal' => 'contact', 'variants' => [['id' => 'a'], ['id' => 'b']]],
+		]);
+		$goals = (new TrafficOutcomeDefinitions())->goals(value: [['id' => 'contact', 'type' => 'page_reached', 'match' => ['pathEquals' => '/contact']]]);
+
+		$off = $this->rollup(events: $events, options: ['experiments' => $experiments, 'goals' => $goals]);
+		$this->assertSame([], $off['heatmaps'], 'no heatmap without the switch');
+		$this->assertSame('hero', $off['experiments'][0]['id']);
+		$this->assertSame(['sessions' => 0, 'conversions' => 0], array_intersect_key($off['experiments'][0]['variants'][0], ['sessions' => 1, 'conversions' => 1]));
+		$this->assertSame(['sessions' => 1, 'conversions' => 1], array_intersect_key($off['experiments'][0]['variants'][1], ['sessions' => 1, 'conversions' => 1]));
+
+		$on = $this->rollup(events: $events, options: ['heatmaps' => true]);
+		$this->assertSame('/', $on['heatmaps'][0]['path']);
+		$this->assertSame([['x' => 25, 'y' => 25, 'count' => 1]], $on['heatmaps'][0]['clicks']);
+		$this->assertSame(1, $on['heatmaps'][0]['scroll'][9]);
+		$this->assertSame([], $on['experiments'], 'no definitions, no rows');
+	}//end testExperimentsAndHeatmapsAreOnTheRecord()
 }//end class

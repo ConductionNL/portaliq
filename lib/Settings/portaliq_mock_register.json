@@ -3729,6 +3729,87 @@
         "referrer": "https://www.google.nl/",
         "submittedAt": "2026-09-03T09:30:00+00:00",
         "nonce": "demo-nonce-nieuwsbrief-003"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalTrafficRecording",
+          "slug": "portaltrafficrecording-portaltrafficrecording-1-1"
+        },
+        "portal": "Voorbeeld Portal 1",
+        "recordingId": "Voorbeeld Recordingid 1",
+        "startedAt": "2026-03-01T09:00:00+00:00",
+        "expires": "2026-03-01T09:00:00+00:00",
+        "sessionId": "Voorbeeld Sessionid 1",
+        "lastChunkAt": "2026-03-01T09:00:00+00:00",
+        "pages": [
+          "Voorbeeld Pages 1"
+        ],
+        "durationMs": 1,
+        "bytes": 1,
+        "chunks": [
+          {
+            "at": "2026-03-01T09:00:00+00:00",
+            "page": "Voorbeeld Page 1",
+            "events": [
+              {}
+            ]
+          }
+        ]
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalTrafficRecording",
+          "slug": "portaltrafficrecording-portaltrafficrecording-2-2"
+        },
+        "portal": "Voorbeeld Portal 2",
+        "recordingId": "Voorbeeld Recordingid 2",
+        "startedAt": "2026-03-02T09:00:00+00:00",
+        "expires": "2026-03-02T09:00:00+00:00",
+        "sessionId": "Voorbeeld Sessionid 2",
+        "lastChunkAt": "2026-03-02T09:00:00+00:00",
+        "pages": [
+          "Voorbeeld Pages 2"
+        ],
+        "durationMs": 2,
+        "bytes": 2,
+        "chunks": [
+          {
+            "at": "2026-03-02T09:00:00+00:00",
+            "page": "Voorbeeld Page 2",
+            "events": [
+              {}
+            ]
+          }
+        ]
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalTrafficRecording",
+          "slug": "portaltrafficrecording-portaltrafficrecording-3-3"
+        },
+        "portal": "Voorbeeld Portal 3",
+        "recordingId": "Voorbeeld Recordingid 3",
+        "startedAt": "2026-03-03T09:00:00+00:00",
+        "expires": "2026-03-03T09:00:00+00:00",
+        "sessionId": "Voorbeeld Sessionid 3",
+        "lastChunkAt": "2026-03-03T09:00:00+00:00",
+        "pages": [
+          "Voorbeeld Pages 3"
+        ],
+        "durationMs": 3,
+        "bytes": 3,
+        "chunks": [
+          {
+            "at": "2026-03-03T09:00:00+00:00",
+            "page": "Voorbeeld Page 3",
+            "events": [
+              {}
+            ]
+          }
+        ]
       }
     ]
   }

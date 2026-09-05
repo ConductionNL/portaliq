@@ -30,6 +30,12 @@ export const ENABLED = 'open-tilburg'
  * sums open-tilburg and open-venray and has no visitors of its own.
  */
 export const ROLLUP = 'rollup-tilburg-venray'
+/**
+ * The external portal seed-cms.sh creates (portal-traffic-experiments):
+ * a site this app does not serve, with session recording switched on
+ * and never honoured.
+ */
+export const EXTERNAL = 'open-extern'
 export const ADMIN_USER = process.env.ADMIN_USER ?? 'admin'
 export const ADMIN_PASS = process.env.ADMIN_PASSWORD ?? 'admin'
 export const ADMIN_BASIC =
