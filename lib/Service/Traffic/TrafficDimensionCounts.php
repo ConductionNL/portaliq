@@ -88,8 +88,15 @@ class TrafficDimensionCounts {
 	}
 
 	/**
-	 * Sessions per value of one dimension, read off each session's first
-	 * event, as a map.
+	 * Sessions per value of one dimension, as a map.
+	 *
+	 * The value is the first NON-EMPTY one across the session's events, not
+	 * the first event's. A dimension such as the region is derived at ingest
+	 * from the portal's configuration of that moment, so a session that
+	 * started before an operator switched geography on has empty early
+	 * events and a filled later one; reading only the first event reported
+	 * that session as unknown for the whole day, and the Visitors widget
+	 * showed no region while the events plainly carried one.
 	 *
 	 * @param array<int, array<string, mixed>> $sessions The sessions.
 	 * @param string                           $key      The event field.
@@ -101,7 +108,14 @@ class TrafficDimensionCounts {
 	public function perSessionMap(array $sessions, string $key): array {
 		$map = [];
 		foreach ($sessions as $session) {
-			$value = trim((string)($session['events'][0][$key] ?? ''));
+			$value = '';
+			foreach (($session['events'] ?? []) as $event) {
+				$value = trim((string)($event[$key] ?? ''));
+				if ($value !== '') {
+					break;
+				}
+			}
+
 			if ($value === '') {
 				continue;
 			}

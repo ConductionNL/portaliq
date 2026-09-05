@@ -35,7 +35,8 @@ visible on `/api/metrics` rather than silently ineffective.
 Each event carries the page location, the referrer and the page title. On
 the server, and only when the portal enabled the dimension, it is extended
 with the device type, browser family, operating system family, language
-and a coarse region, all derived from the request and then discarded.
+and a coarse region, all derived from the request and then discarded. See
+"Where visitors are" for how the region is derived.
 
 ## What is never stored
 
@@ -82,6 +83,73 @@ Traffic page flags a portal that has any of them on.
 | `accountLinking` | The signed in portal user's reference is attached to their events, which links a named person to their browsing. Only defensible with a stated purpose and a privacy assessment. |
 | `heatmaps` | Reserved for a later phase. Records where visitors click and scroll on each page. |
 | `sessionRecording` | Reserved for a later phase. Replays whole visits, including what is typed. |
+
+## Where visitors are
+
+Each portal chooses how much geography it keeps with
+`traffic.regionGranularity`: `none` stores no location at all, `country`
+stores the ISO 3166-1 alpha-2 code (`NL`), `region` stores the country and
+its subdivision (`NL-NB`). The `region` dimension must also be enabled.
+The lookup is offline: the visitor's address is looked up in a database
+file in the app's data directory, the code is kept, and the address is
+discarded in the same request. No address is ever sent to a third party
+to be resolved.
+
+The instance chooses where that database comes from, under
+**Administration settings, Portaliq, Visitor geography**:
+
+| Provider | What it is | What it needs |
+| --- | --- | --- |
+| DB-IP Lite (default) | The free `dbip-city-lite` database, one file per month. | Nothing. The data is licensed CC BY 4.0, which requires attribution: the line "IP Geolocation by DB-IP (https://db-ip.com), licensed under CC BY 4.0" is stored beside the database, shown in the settings, and must appear wherever the regions are published, for example in a privacy statement or a report footer. |
+| MaxMind | GeoLite2-City (free with an account) or GeoIP2-City (paid). | A MaxMind account id and a licence key. The key is stored as a sensitive value and never shown again; the settings only say whether one is stored. MaxMind's own attribution line is stored beside the database. |
+| None | No geography for any portal, whatever a portal configured. | Nothing. |
+
+The database is fetched the first time a measuring portal asks for a region
+and none is installed, by a queued background job rather than inside the
+visitor's request. A monthly background job refreshes it, and
+`occ portaliq:traffic:geo-refresh` refreshes it on demand (exit 0 when
+refreshed and when geography is disabled, exit 1 when the download or the
+verification failed). Every download is opened as a database before it
+replaces the one in use, so a failed download leaves the previous database
+serving and the failure in the log. Until the first download completes,
+regions stay empty and nothing else changes.
+
+The file lives under the instance's data directory
+(`appdata_<instance>/portaliq/geo/traffic-geo.mmdb`, with the attribution
+in `traffic-geo.json` beside it), never in the app source, so an upgrade
+does not remove it. A database installed by hand at that path is used as
+is.
+
+## What "visitors" means
+
+`visitors` is the number of distinct visitors on a day: distinct daily
+hashes in the default cookieless mode, distinct client ids where the
+portal persists one. The two cannot be added across days, and the Traffic
+page does not pretend otherwise: the visitors tile over a range is the sum
+of the daily figures, which counts a returning visitor once per day.
+
+New versus returning is only known where the portal switched on
+`traffic.sensitive.persistClientId`: the client then reports whether it
+found or created its id on each `session_start`, and the daily record
+carries `newVisitors` and `returningVisitors`. In cookieless mode both are
+`null`, not zero (the object API returns them as absent fields), and the
+Visitors widget says **not available in cookieless mode**. A daily hash cannot say whether it was here yesterday,
+and a zero would claim that nobody came back.
+
+## Account linking
+
+With `traffic.sensitive.accountLinking` on, a batch posted by a signed in
+portal user carries their portal session bearer, and each stored event
+carries `userRef`: the portal account's pseudonymous `subjectRef`, the
+same value every other app in the fleet scopes data by. Never a BSN, a
+KVK number, an email address or a name. The daily record then counts
+distinct references as `accounts`, and the Visitors widget shows
+**Signed-in accounts**. Without the switch the bearer is read for nothing
+and the field is absent, whatever a client sends.
+
+This ties a named person to their browsing. Only switch it on with a
+stated purpose and a privacy assessment, and expect the Traffic page to
+flag the portal for it.
 
 ## Retention
 
@@ -146,10 +214,15 @@ parameters. Attribution is by campaign, not by person.
 
 ## What you see
 
-**Reports, Traffic** shows the last 30 days for one portal at a time: page
-views, sessions, visitors and engaged sessions, a chart per day, the top
-pages with entrances and exits, the most travelled steps between pages, and
-sources by channel. A portal with measurement off says **Not measured for
+**Reports, Traffic** shows one portal at a time over a period you choose
+(the last 7, 30 or 90 days, or a custom start and end): page views,
+sessions, visitors and engaged sessions, a chart per day, the top pages
+with entrances and exits, the most travelled steps between pages, sources
+by channel, and under **Visitors** the new versus returning split where the
+portal can tell, the signed in accounts where it links them, and the
+devices, browsers, operating systems, languages and regions. A breakdown
+the portal did not enable reads **not measured** rather than showing an
+empty list. A portal with measurement off says **Not measured for
 this portal**; a measured portal without figures yet says **No traffic
 recorded yet**. The two are different facts, and neither draws a chart.
 

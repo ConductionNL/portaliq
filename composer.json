@@ -20,7 +20,8 @@
         }
     },
     "require": {
-        "php": "^8.3"
+        "php": "^8.3",
+        "maxmind-db/reader": "^1.13"
     },
     "require-dev": {
         "conduction/coding-standard": "^1.0",

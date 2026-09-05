@@ -2,10 +2,10 @@
 <!-- SPDX-FileCopyrightText: 2026 Conduction B.V. -->
 
 <!--
-  TrafficOverview — the portal selector and the four headline numbers for
-  the last 30 days (portal-traffic-analytics).
+  TrafficOverview — the portal selector, the period selector and the four
+  headline numbers (portal-traffic-analytics, portal-traffic-visitors-and-geo).
 
-  The selector lives here and drives every other Traffic widget through
+  Both selectors live here and drive every other Traffic widget through
   the shared report store. The warning card lists which sensitive
   switches the selected portal has on, because a portal that persists a
   client id or links accounts is one whose report a privacy officer wants
@@ -25,6 +25,30 @@
 				label="label"
 				data-testid="traffic-portal-select"
 				@update:modelValue="onSelect" />
+			<NcSelect
+				:modelValue="selectedRange"
+				:inputLabel="t('portaliq', 'Period')"
+				:options="rangeOptions"
+				:clearable="false"
+				label="label"
+				data-testid="traffic-range-select"
+				@update:modelValue="onRange" />
+			<template v-if="report.rangePreset === 'custom'">
+				<NcDateTimePickerNative
+					id="traffic-range-from"
+					:modelValue="customFrom"
+					:label="t('portaliq', 'From')"
+					type="date"
+					data-testid="traffic-range-from"
+					@update:modelValue="onCustom('from', $event)" />
+				<NcDateTimePickerNative
+					id="traffic-range-to"
+					:modelValue="customTo"
+					:label="t('portaliq', 'To')"
+					type="date"
+					data-testid="traffic-range-to"
+					@update:modelValue="onCustom('to', $event)" />
+			</template>
 		</div>
 
 		<NcNoteCard v-if="report.error" type="error" data-testid="traffic-error">
@@ -56,26 +80,26 @@
 			<CnStatsBlock
 				:title="t('portaliq', 'Page views')"
 				:count="summary.totals.pageViews"
-				:countLabel="t('portaliq', 'in 30 days')"
+				:countLabel="rangeLabel"
 				:loading="loading"
 				variant="primary"
 				data-testid="traffic-tile-page-views" />
 			<CnStatsBlock
 				:title="t('portaliq', 'Sessions')"
 				:count="summary.totals.sessions"
-				:countLabel="t('portaliq', 'in 30 days')"
+				:countLabel="rangeLabel"
 				:loading="loading"
 				data-testid="traffic-tile-sessions" />
 			<CnStatsBlock
 				:title="t('portaliq', 'Visitors')"
 				:count="summary.totals.visitors"
-				:countLabel="t('portaliq', 'in 30 days')"
+				:countLabel="rangeLabel"
 				:loading="loading"
 				data-testid="traffic-tile-visitors" />
 			<CnStatsBlock
 				:title="t('portaliq', 'Engaged sessions')"
 				:count="summary.totals.engagedSessions"
-				:countLabel="t('portaliq', 'in 30 days')"
+				:countLabel="rangeLabel"
 				:loading="loading"
 				variant="success"
 				data-testid="traffic-tile-engaged" />
@@ -85,9 +109,10 @@
 
 <script>
 import { CnStatsBlock } from '@conduction/nextcloud-vue'
-import { NcNoteCard, NcSelect } from '@nextcloud/vue'
+import { NcDateTimePickerNative, NcNoteCard, NcSelect } from '@nextcloud/vue'
 import TrafficEmptyState from './TrafficEmptyState.vue'
 import { warnedSwitches } from '../lib/trafficSummary.js'
+import { RANGE_PRESETS } from '../store/traffic.js'
 import trafficWidgetMixin from './trafficWidgetMixin.js'
 
 export default {
@@ -95,6 +120,7 @@ export default {
 
 	components: {
 		CnStatsBlock,
+		NcDateTimePickerNative,
 		NcNoteCard,
 		NcSelect,
 		TrafficEmptyState,
@@ -132,6 +158,59 @@ export default {
 		},
 
 		/**
+		 * The range presets plus the custom entry, as select options.
+		 *
+		 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
+		 * @return {Array<{id: string, label: string}>} The options.
+		 */
+		rangeOptions() {
+			return RANGE_PRESETS.map((days) => ({
+				id: days,
+				label: this.n(
+					'portaliq',
+					'Last %n day',
+					'Last %n days',
+					Number(days),
+				),
+			})).concat([
+				{ id: 'custom', label: this.t('portaliq', 'Custom period') },
+			])
+		},
+
+		/**
+		 * The selected range option.
+		 *
+		 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
+		 * @return {object|null} The option.
+		 */
+		selectedRange() {
+			return (
+				this.rangeOptions.find((o) => o.id === this.report.rangePreset)
+				|| null
+			)
+		},
+
+		/**
+		 * The custom start as a Date for the picker, or null.
+		 *
+		 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
+		 * @return {Date|null} The date.
+		 */
+		customFrom() {
+			return this.asDate(this.report.customFrom)
+		},
+
+		/**
+		 * The custom end as a Date for the picker, or null.
+		 *
+		 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
+		 * @return {Date|null} The date.
+		 */
+		customTo() {
+			return this.asDate(this.report.customTo)
+		},
+
+		/**
 		 * The sensitive switches the selected portal has on.
 		 *
 		 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-sensitive-measurement-must-be-off-by-default-and-warned-in-the-admin-ui
@@ -158,6 +237,70 @@ export default {
 			if (option && option.id) {
 				this.report.select(option.id)
 			}
+		},
+
+		/**
+		 * Choose a range preset, or open the custom pickers.
+		 *
+		 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
+		 * @param {object|null} option The chosen option.
+		 * @return {void}
+		 */
+		onRange(option) {
+			if (option && option.id) {
+				this.report.setRange(option.id)
+			}
+		},
+
+		/**
+		 * One end of the custom range changed.
+		 *
+		 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
+		 * @param {string}    end   'from' or 'to'.
+		 * @param {Date|null} value The picked date.
+		 * @return {void}
+		 */
+		onCustom(end, value) {
+			const day = this.asDay(value)
+			const from = end === 'from' ? day : this.report.customFrom
+			const to = end === 'to' ? day : this.report.customTo
+			this.report.setCustomRange(from, to)
+		},
+
+		/**
+		 * A YYYY-MM-DD string as a local Date, or null.
+		 *
+		 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
+		 * @param {string} day The day.
+		 * @return {Date|null} The date.
+		 */
+		asDate(day) {
+			if (!/^\d{4}-\d{2}-\d{2}$/.test(String(day || ''))) {
+				return null
+			}
+			const [y, m, d] = String(day).split('-').map(Number)
+			return new Date(y, m - 1, d)
+		},
+
+		/**
+		 * A picked Date as YYYY-MM-DD in local time, or ''.
+		 *
+		 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
+		 * @param {Date|null} value The date.
+		 * @return {string} The day.
+		 */
+		asDay(value) {
+			if (!(value instanceof Date) || Number.isNaN(value.getTime())) {
+				return ''
+			}
+			const pad = (n) => String(n).padStart(2, '0')
+			return (
+				value.getFullYear()
+				+ '-'
+				+ pad(value.getMonth() + 1)
+				+ '-'
+				+ pad(value.getDate())
+			)
 		},
 
 		/**
@@ -204,7 +347,15 @@ export default {
 }
 
 .traffic-overview__toolbar {
-	max-width: 420px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	align-items: flex-end;
+}
+
+.traffic-overview__toolbar > * {
+	min-width: 200px;
+	max-width: 320px;
 }
 
 .traffic-overview__tiles {

@@ -47,8 +47,8 @@ use OCA\Portaliq\Listener\LandingPageRequestedEventListener;
 use OCA\Portaliq\Listener\LandingPageSubmissionDispatchListener;
 use OCA\Portaliq\Middleware\PortalAuthMiddleware;
 use OCA\Portaliq\Middleware\PublicApiCorsMiddleware;
+use OCA\Portaliq\Service\Traffic\Geo\MmdbGeoResolver;
 use OCA\Portaliq\Service\Traffic\GeoResolverInterface;
-use OCA\Portaliq\Service\Traffic\NullGeoResolver;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
@@ -90,6 +90,16 @@ class Application extends App implements IBootstrap {
 	 * @spec openspec/specs/landing-page-provisioning/spec.md#requirement-a-contributing-app-requests-a-landing-page-via-a-typed-event
 	 */
 	public function register(IRegistrationContext $context): void {
+		// The app's own composer dependencies (portal-traffic-visitors-and-geo
+		// added the first runtime one: maxmind-db/reader). Nextcloud loads
+		// an app's classes under OCA\ by convention and nothing else; the
+		// same include every fleet app with a vendored dependency carries.
+		// Measured before this line existed: the resolver logged
+		// 'Class "MaxMind\Db\Reader" not found' on the throwaway instance
+		// while the very same file opened fine under the test bootstrap,
+		// which loads the autoloader itself.
+		include_once __DIR__ . '/../../vendor/autoload.php';
+
 		// Initialize register and schemas on install/upgrade — registered via
 		// appinfo/info.xml <repair-steps> (pre- and post-migration). The
 		// programmatic IRegistrationContext::registerRepairStep() was removed in
@@ -132,11 +142,13 @@ class Application extends App implements IBootstrap {
 		$context->registerEventListener(LandingPageRequestedEvent::class, LandingPageRequestedEventListener::class);
 		$context->registerEventListener(ObjectCreatedEvent::class, LandingPageSubmissionDispatchListener::class);
 
-		// Traffic analytics (portal-traffic-analytics): where a visitor's
-		// address turns into a region. Phase 0 binds the resolver that
-		// answers nothing; a later phase swaps in an offline database here
-		// and the ingest path does not change.
-		$context->registerServiceAlias(GeoResolverInterface::class, NullGeoResolver::class);
+		// Traffic analytics (portal-traffic-visitors-and-geo): where a
+		// visitor's address turns into a region. The offline MMDB lookup is
+		// bound here and the ingest path did not change from phase 0, which
+		// bound the resolver that answered nothing. NullGeoResolver stays
+		// for the tests and for an instance that wants no geography at all
+		// (the settings provider `none` makes this resolver answer null too).
+		$context->registerServiceAlias(GeoResolverInterface::class, MmdbGeoResolver::class);
 	}//end register()
 
 	/**

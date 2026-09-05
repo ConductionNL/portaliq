@@ -13,7 +13,7 @@
 
 import { useObjectStore } from '@conduction/nextcloud-vue'
 import { defineStore } from 'pinia'
-import { lastDays, summarise } from '../lib/trafficSummary.js'
+import { daysBetween, lastDays, summarise } from '../lib/trafficSummary.js'
 
 /**
  * The register every Portaliq schema lives in.
@@ -21,9 +21,14 @@ import { lastDays, summarise } from '../lib/trafficSummary.js'
 const REGISTER = 'portaliq'
 
 /**
- * Days the page covers.
+ * The preset ranges, in days, and the one that is not a preset.
  */
-const DAYS = 30
+export const RANGE_PRESETS = ['7', '30', '90']
+
+/**
+ * The preset the page opens on.
+ */
+const DEFAULT_PRESET = '30'
 
 export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 	state: () => ({
@@ -33,6 +38,11 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		loadingPortals: false,
 		loadingRecords: false,
 		error: '',
+		// The range every widget reads (portal-traffic-visitors-and-geo):
+		// a preset number of days ending today, or a custom start and end.
+		rangePreset: DEFAULT_PRESET,
+		customFrom: '',
+		customTo: '',
 	}),
 
 	getters: {
@@ -46,18 +56,28 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 			state.portals.find((p) => p && p.slug === state.portalSlug) || null,
 
 		/**
-		 * The dates the page covers, oldest first.
+		 * The dates the page covers, oldest first: the preset's last days,
+		 * or the custom range when it is complete and in order. An
+		 * incomplete custom range shows nothing rather than a guess.
 		 *
+		 * @param {object} state The state.
 		 * @return {Array<string>} YYYY-MM-DD.
+		 *
+		 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
 		 */
-		dates: () => lastDays(DAYS, new Date()),
+		dates: (state) => {
+			if (state.rangePreset === 'custom') {
+				return daysBetween(state.customFrom, state.customTo)
+			}
+			return lastDays(Number(state.rangePreset) || 30, new Date())
+		},
 
 		/**
 		 * The folded summary of the loaded records.
 		 *
 		 * @return {object} See `summarise`.
 		 *
-		* @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+		 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
 		 */
 		summary() {
 			return summarise(this.records, this.dates)
@@ -70,7 +90,7 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		 *
 		 * @return {object} The shared object store.
 		 *
-		* @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+		 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
 		 */
 		objects() {
 			const store = useObjectStore()
@@ -96,7 +116,7 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		 *
 		 * @return {Promise<void>}
 		 *
-		* @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+		 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
 		 */
 		async load() {
 			this.loadingPortals = true
@@ -128,7 +148,7 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		 * @param {string} slug The portal slug.
 		 * @return {Promise<void>}
 		 *
-		* @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+		 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
 		 */
 		async select(slug) {
 			if (slug === this.portalSlug) {
@@ -139,16 +159,50 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		},
 
 		/**
-		 * Load the selected portal's daily records for the range.
+		 * Choose a preset range: 7, 30 or 90 days, or 'custom'.
 		 *
-		 * The filter is by portal; the date window is applied here, so the
-		 * request needs no operator syntax the object API might spell
-		 * differently across versions. A year of records is under four
-		 * hundred rows.
+		 * No reload: the records are the portal's, and the range only
+		 * decides which of them the summary folds.
+		 *
+		 * @param {string} preset One of RANGE_PRESETS or 'custom'.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
+		 */
+		setRange(preset) {
+			const value = String(preset)
+			if (value !== 'custom' && !RANGE_PRESETS.includes(value)) {
+				return
+			}
+			this.rangePreset = value
+		},
+
+		/**
+		 * Set the custom start and end, as YYYY-MM-DD, and switch to it.
+		 *
+		 * @param {string} from The first day.
+		 * @param {string} to   The last day.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
+		 */
+		setCustomRange(from, to) {
+			this.customFrom = String(from || '')
+			this.customTo = String(to || '')
+			this.rangePreset = 'custom'
+		},
+
+		/**
+		 * Load the selected portal's daily records.
+		 *
+		 * The filter is by portal only: the range is applied by the summary,
+		 * so changing it costs no request, and the request needs no operator
+		 * syntax the object API might spell differently across versions. A
+		 * year of records is under four hundred rows.
 		 *
 		 * @return {Promise<void>}
 		 *
-		* @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+		 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
 		 */
 		async loadRecords() {
 			this.records = []
@@ -165,13 +219,11 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 						_limit: 400,
 					},
 				)
-				const from = this.dates[0]
 				this.records = (rows || []).filter(
 					(r) =>
 						r
 						&& r.portal === this.portalSlug
-						&& typeof r.date === 'string'
-						&& r.date >= from,
+						&& typeof r.date === 'string',
 				)
 			} catch (error) {
 				this.error = String((error && error.message) || error)

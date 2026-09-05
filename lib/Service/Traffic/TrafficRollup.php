@@ -63,14 +63,31 @@ class TrafficRollup {
 	 * @param string                                    $date         The UTC day, YYYY-MM-DD.
 	 * @param array<int, array<string, mixed>>          $sessions     The day's sessions, each `{visitor, explicit, events}`.
 	 * @param string                                    $aggregatedAt When this record was computed, ISO 8601.
+	 * @param array<string, bool>                       $options      `persistClientId` and `accountLinking`, the portal's switches.
 	 *
 	 * @return array<string, mixed> The `portalTrafficDaily` fields.
 	 *
 	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-visitors-must-be-counted-honestly-in-each-mode
 	 */
-	public function build(string $portal, string $date, array $sessions, string $aggregatedAt): array {
+	public function build(string $portal, string $date, array $sessions, string $aggregatedAt, array $options = []): array {
 		$totals = $this->totals(sessions: $sessions);
 		$pages = $this->journeys->pages(sessions: $sessions);
+		// NULL, NOT ZERO, in cookieless mode (Ruben, decision 2). A hash
+		// that does not survive the day cannot say whether it was here
+		// yesterday, and a zero would read as "nobody came back". The same
+		// for accounts on a portal that does not link them.
+		$newVisitors = null;
+		$returningVisitors = null;
+		$accounts = null;
+		if (($options['persistClientId'] ?? false) === true) {
+			$newVisitors = $totals['newVisitors'];
+			$returningVisitors = $totals['returningVisitors'];
+		}
+
+		if (($options['accountLinking'] ?? false) === true) {
+			$accounts = $totals['accounts'];
+		}
 
 		return [
 			'portal' => $portal,
@@ -78,7 +95,9 @@ class TrafficRollup {
 			'pageViews' => $totals['pageViews'],
 			'sessions' => count($sessions),
 			'visitors' => $totals['visitors'],
-			'newVisitors' => $totals['newVisitors'],
+			'newVisitors' => $newVisitors,
+			'returningVisitors' => $returningVisitors,
+			'accounts' => $accounts,
 			'engagedSessions' => $totals['engaged'],
 			'avgEngagementSeconds' => $this->mean(sum: $totals['seconds'], count: count($sessions)),
 			'bounceRate' => $this->bounceRate(engaged: $totals['engaged'], sessions: count($sessions)),
@@ -125,11 +144,12 @@ class TrafficRollup {
 	 *
 	 * @param array<int, array<string, mixed>> $sessions The sessions.
 	 *
-	 * @return array<string, mixed> pageViews, visitors, newVisitors, engaged, seconds, events, lastEventAt.
+	 * @return array<string, mixed> pageViews, visitors, newVisitors, returningVisitors, accounts, engaged, seconds, events, lastEventAt.
 	 */
 	private function totals(array $sessions): array {
 		$visitors = [];
-		$newVisitors = [];
+		$types = [];
+		$accounts = [];
 		$events = [];
 		$pageViews = 0;
 		$engaged = 0;
@@ -137,8 +157,9 @@ class TrafficRollup {
 		$last = '';
 		foreach ($sessions as $session) {
 			$visitors[$session['visitor']] = true;
-			if ($this->isNew(session: $session) === true) {
-				$newVisitors[$session['visitor']] = true;
+			$type = $this->visitorType(session: $session);
+			if ($type !== '' && ($types[$session['visitor']] ?? '') !== 'new') {
+				$types[$session['visitor']] = $type;
 			}
 
 			$views = 0;
@@ -149,6 +170,10 @@ class TrafficRollup {
 				$views += (int)($name === 'page_view');
 				$scrolled = $scrolled || ($name === 'scroll');
 				$last = max($last, (string)($event['occurredAt'] ?? ''));
+				$userRef = trim((string)($event['userRef'] ?? ''));
+				if ($userRef !== '') {
+					$accounts[$userRef] = true;
+				}
 			}
 
 			$duration = $this->duration(session: $session);
@@ -162,7 +187,9 @@ class TrafficRollup {
 		return [
 			'pageViews' => $pageViews,
 			'visitors' => count($visitors),
-			'newVisitors' => count($newVisitors),
+			'newVisitors' => count(array_filter($types, static fn (string $t): bool => $t === 'new')),
+			'returningVisitors' => count(array_filter($types, static fn (string $t): bool => $t === 'returning')),
+			'accounts' => count($accounts),
 			'engaged' => $engaged,
 			'seconds' => $seconds,
 			'events' => $events,
@@ -171,29 +198,40 @@ class TrafficRollup {
 	}
 
 	/**
-	 * Whether a session's visitor is new.
+	 * Whether a session's visitor said it was new or returning, or nothing.
 	 *
-	 * A cookieless visitor is identified by a hash that does not survive
-	 * the day, so every one of them is new by construction. A visitor with
-	 * a persisted client id is new when the client said so on the session
-	 * it started right after creating that id.
+	 * Only a visitor with a persisted client id can say: the client sends
+	 * `visitorType` on `session_start` (or, from the phase 0 client,
+	 * `first: true`) right after creating or finding the id. A cookieless
+	 * visitor is a hash that does not survive the day, so it says nothing,
+	 * and the rollup reports both counts as not available rather than
+	 * calling every one of them new.
 	 *
 	 * @param array<string, mixed> $session The session.
 	 *
-	 * @return bool True when new.
+	 * @return string `new`, `returning`, or '' when unknown.
 	 */
-	private function isNew(array $session): bool {
-		if (str_starts_with((string)$session['visitor'], 'h:') === true) {
-			return true;
+	private function visitorType(array $session): string {
+		if (str_starts_with((string)$session['visitor'], 'c:') === false) {
+			return '';
 		}
 
 		foreach ($session['events'] as $event) {
-			if (($event['name'] ?? '') === 'session_start' && (($event['params']['first'] ?? false) === true)) {
-				return true;
+			if (($event['name'] ?? '') !== 'session_start') {
+				continue;
+			}
+
+			$type = (string)($event['params']['visitorType'] ?? '');
+			if ($type === 'new' || (($event['params']['first'] ?? false) === true)) {
+				return 'new';
+			}
+
+			if ($type === 'returning') {
+				return 'returning';
 			}
 		}
 
-		return false;
+		return '';
 	}
 
 	/**

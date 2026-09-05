@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.17.0"
+        "version": "0.18.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.16.0",
+                "version": "0.18.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -2477,7 +2477,7 @@
                     ]
                 },
                 "icon": "ChartLine",
-                "version": "0.1.0",
+                "version": "0.2.0",
                 "title": "Portal Traffic Daily",
                 "description": "One portal's traffic for one UTC day, recomputed from the raw events by the aggregation job every fifteen minutes. Contains counts only, never a visitor. The Traffic page and any export read these records through the ordinary object API.",
                 "type": "object",
@@ -2520,8 +2520,20 @@
                     "newVisitors": {
                         "title": "New visitors",
                         "type": "integer",
-                        "description": "Visitors whose first session that day was their first session in the retained window.",
+                        "description": "Visitors with a persisted client id whose client reported its first session that day. Absent (null) in cookieless mode: a daily hash cannot say whether it was here yesterday, and a zero would claim it can.",
                         "example": 120
+                    },
+                    "returningVisitors": {
+                        "title": "Returning visitors",
+                        "type": "integer",
+                        "description": "Visitors with a persisted client id whose client reported a returning session that day. Absent (null) in cookieless mode, never zero.",
+                        "example": 260
+                    },
+                    "accounts": {
+                        "title": "Accounts",
+                        "type": "integer",
+                        "description": "Distinct signed-in portal accounts seen that day. Only counted when the portal switched on account linking; absent (null) otherwise.",
+                        "example": 12
                     },
                     "engagedSessions": {
                         "title": "Engaged sessions",

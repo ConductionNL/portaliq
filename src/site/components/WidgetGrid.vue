@@ -70,8 +70,6 @@
 <script>
 import { siteBlockIsBand, siteBlockRegistry } from '@conduction/nextcloud-vue/public'
 import { defineAsyncComponent } from 'vue'
-import ContributionsBlock from './ContributionsBlock.vue'
-import FormBlock from './FormBlock.vue'
 import MarkdownBlock from './MarkdownBlock.vue'
 
 /**
@@ -100,6 +98,22 @@ const PublicationDetailBlock = defineAsyncComponent(
  */
 const FederatedSearchBlock = defineAsyncComponent(
 	() => import('./FederatedSearchBlock.vue'),
+)
+
+/**
+ * Loaded on demand as well. A landing page's form is reachable only from the
+ * page that carries it, and the block brings its submission client along;
+ * the visitor who reads any other page paid for both, and the public
+ * first-load budget (S18, 400 KiB) is what noticed.
+ */
+const FormBlock = defineAsyncComponent(() => import('./FormBlock.vue'))
+
+/**
+ * On demand too: the contributions list is one block on one kind of page,
+ * and the same first-load budget applies.
+ */
+const ContributionsBlock = defineAsyncComponent(
+	() => import('./ContributionsBlock.vue'),
 )
 
 /**

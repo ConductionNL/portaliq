@@ -54,6 +54,16 @@ export default {
 		},
 
 		/**
+		 * The wording under a tile: "in 30 days", "in 1 day".
+		 *
+		 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
+		 * @return {string} The label.
+		 */
+		rangeLabel() {
+			return this.n('portaliq', 'in %n day', 'in %n days', this.summary.days)
+		},
+
+		/**
 		 * Whether anything is still loading.
 		 *
 		 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-traffic-page-must-show-what-was-measured-and-say-when-it-was-not

@@ -22,6 +22,8 @@ namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\Service\PageEditorService;
 use OCA\Portaliq\Service\SettingsService;
+use OCA\Portaliq\Service\Traffic\Geo\GeoRefreshService;
+use OCA\Portaliq\Service\Traffic\Geo\GeoSettings;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
 use OCP\IGroupManager;
@@ -60,6 +62,19 @@ class SettingsServiceTest extends TestCase {
 		parent::setUp();
 		$this->stored = [];
 	}//end setUp()
+
+
+	/**
+	 * A refresh service double that reports no database installed.
+	 *
+	 * @return GeoRefreshService The double.
+	 */
+	private function geoRefresh(): GeoRefreshService {
+		$refresh = $this->createMock(GeoRefreshService::class);
+		$refresh->method('status')->willReturn(['provider' => 'dbip', 'present' => false, 'path' => null, 'metadata' => []]);
+
+		return $refresh;
+	}//end geoRefresh()
 
 
 	/**
@@ -115,7 +130,9 @@ class SettingsServiceTest extends TestCase {
 			$groupManager,
 			$session,
 			$this->createMock(LoggerInterface::class),
-			($pageEditor ?? $this->editor())
+			($pageEditor ?? $this->editor()),
+			new GeoSettings($appConfig),
+			$this->geoRefresh()
 		);
 	}//end service()
 

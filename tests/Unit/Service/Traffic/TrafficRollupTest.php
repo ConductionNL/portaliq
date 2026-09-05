@@ -53,14 +53,21 @@ class TrafficRollupTest extends TestCase {
 	/**
 	 * Roll a list of events up as one day.
 	 *
-	 * @param array<int, array<string, mixed>> $events The events.
+	 * @param array<int, array<string, mixed>> $events  The events.
+	 * @param array<string, bool>              $options The portal's switches.
 	 *
 	 * @return array<string, mixed> The record.
 	 */
-	private function rollup(array $events): array {
+	private function rollup(array $events, array $options = []): array {
 		$sessions = (new TrafficSessioniser())->sessions(events: $events, timeoutMinutes: 30);
 
-		return (new TrafficRollup())->build(portal: 'open-tilburg', date: '2026-09-04', sessions: $sessions, aggregatedAt: '2026-09-05T00:15:00Z');
+		return (new TrafficRollup())->build(
+			portal: 'open-tilburg',
+			date: '2026-09-04',
+			sessions: $sessions,
+			aggregatedAt: '2026-09-05T00:15:00Z',
+			options: $options
+		);
 	}//end rollup()
 
 
@@ -71,9 +78,9 @@ class TrafficRollupTest extends TestCase {
 	 * @return void
 	 */
 	public function testTwoPagesInOrderGiveAnEntranceAnExitAndATransition(): void {
-		$record = $this->rollup([
-			$this->event('2026-09-04T10:00:00.000Z', '/'),
-			$this->event('2026-09-04T10:00:30.000Z', '/begrippen'),
+		$record = $this->rollup(events: [
+			$this->event(at: '2026-09-04T10:00:00.000Z', path: '/'),
+			$this->event(at: '2026-09-04T10:00:30.000Z', path: '/begrippen'),
 		]);
 
 		$this->assertSame('open-tilburg', $record['portal']);
@@ -81,7 +88,9 @@ class TrafficRollupTest extends TestCase {
 		$this->assertSame(2, $record['pageViews']);
 		$this->assertSame(1, $record['sessions']);
 		$this->assertSame(1, $record['visitors']);
-		$this->assertSame(1, $record['newVisitors'], 'a cookieless visitor is new by construction');
+		$this->assertNull($record['newVisitors'], 'a cookieless visitor cannot say whether it is new');
+		$this->assertNull($record['returningVisitors'], 'not available, never zero');
+		$this->assertNull($record['accounts'], 'no account linking, no count');
 		$this->assertSame(1, $record['engagedSessions'], 'two pages is engaged');
 		$this->assertSame(30.0, $record['avgEngagementSeconds']);
 		$this->assertSame(0.0, $record['bounceRate']);
@@ -110,7 +119,7 @@ class TrafficRollupTest extends TestCase {
 	 * @return void
 	 */
 	public function testASinglePageViewIsABounce(): void {
-		$record = $this->rollup([$this->event('2026-09-04T10:00:00.000Z', '/')]);
+		$record = $this->rollup(events: [$this->event(at: '2026-09-04T10:00:00.000Z', path: '/')]);
 
 		$this->assertSame(1, $record['sessions']);
 		$this->assertSame(0, $record['engagedSessions']);
@@ -125,21 +134,21 @@ class TrafficRollupTest extends TestCase {
 	 * @return void
 	 */
 	public function testAScrollOrTenSecondsMakesASessionEngaged(): void {
-		$scrolled = $this->rollup([
-			$this->event('2026-09-04T10:00:00.000Z', '/', 'h1'),
-			$this->event('2026-09-04T10:00:02.000Z', '/', 'h1', 'scroll'),
+		$scrolled = $this->rollup(events: [
+			$this->event(at: '2026-09-04T10:00:00.000Z', path: '/', visitor: 'h1'),
+			$this->event(at: '2026-09-04T10:00:02.000Z', path: '/', visitor: 'h1', name: 'scroll'),
 		]);
 		$this->assertSame(1, $scrolled['engagedSessions']);
 
-		$lingered = $this->rollup([
-			$this->event('2026-09-04T10:00:00.000Z', '/', 'h2'),
-			$this->event('2026-09-04T10:00:10.000Z', '/', 'h2', 'form_submit'),
+		$lingered = $this->rollup(events: [
+			$this->event(at: '2026-09-04T10:00:00.000Z', path: '/', visitor: 'h2'),
+			$this->event(at: '2026-09-04T10:00:10.000Z', path: '/', visitor: 'h2', name: 'form_submit'),
 		]);
 		$this->assertSame(1, $lingered['engagedSessions']);
 
-		$quick = $this->rollup([
-			$this->event('2026-09-04T10:00:00.000Z', '/', 'h3'),
-			$this->event('2026-09-04T10:00:03.000Z', '/', 'h3', 'form_submit'),
+		$quick = $this->rollup(events: [
+			$this->event(at: '2026-09-04T10:00:00.000Z', path: '/', visitor: 'h3'),
+			$this->event(at: '2026-09-04T10:00:03.000Z', path: '/', visitor: 'h3', name: 'form_submit'),
 		]);
 		$this->assertSame(0, $quick['engagedSessions']);
 	}//end testAScrollOrTenSecondsMakesASessionEngaged()
@@ -152,17 +161,17 @@ class TrafficRollupTest extends TestCase {
 	 * @return void
 	 */
 	public function testDimensionsAreCountedPerSessionAndPerEvent(): void {
-		$record = $this->rollup([
-			$this->event('2026-09-04T10:00:00.000Z', '/', 'h1', 'page_view', [
+		$record = $this->rollup(events: [
+			$this->event(at: '2026-09-04T10:00:00.000Z', path: '/', visitor: 'h1', name: 'page_view', extra: [
 				'referrerHost' => 'www.google.nl', 'channel' => 'organic search', 'deviceType' => 'mobile',
 				'browser' => 'Safari', 'os' => 'iOS', 'language' => 'nl', 'region' => 'NL',
 				'campaign' => 'woo', 'source' => 'nieuwsbrief', 'medium' => 'email',
 			]),
-			$this->event('2026-09-04T10:00:05.000Z', '/zoeken', 'h1', 'search', ['searchTerm' => 'parkeren']),
-			$this->event('2026-09-04T10:00:09.000Z', '/zoeken', 'h1', 'search', ['params' => ['search_term' => 'parkeren']]),
-			$this->event('2026-09-04T10:00:12.000Z', '/docs', 'h1', 'file_download', ['fileName' => 'besluit.pdf']),
-			$this->event('2026-09-04T10:00:15.000Z', '/docs', 'h1', 'outbound_click', ['linkUrl' => 'https://rijksoverheid.nl/']),
-			$this->event('2026-09-04T11:00:00.000Z', '/', 'h2', 'page_view', ['deviceType' => 'desktop', 'referrerHost' => '', 'channel' => 'direct']),
+			$this->event(at: '2026-09-04T10:00:05.000Z', path: '/zoeken', visitor: 'h1', name: 'search', extra: ['searchTerm' => 'parkeren']),
+			$this->event(at: '2026-09-04T10:00:09.000Z', path: '/zoeken', visitor: 'h1', name: 'search', extra: ['params' => ['search_term' => 'parkeren']]),
+			$this->event(at: '2026-09-04T10:00:12.000Z', path: '/docs', visitor: 'h1', name: 'file_download', extra: ['fileName' => 'besluit.pdf']),
+			$this->event(at: '2026-09-04T10:00:15.000Z', path: '/docs', visitor: 'h1', name: 'outbound_click', extra: ['linkUrl' => 'https://rijksoverheid.nl/']),
+			$this->event(at: '2026-09-04T11:00:00.000Z', path: '/', visitor: 'h2', name: 'page_view', extra: ['deviceType' => 'desktop', 'referrerHost' => '', 'channel' => 'direct']),
 		]);
 
 		$this->assertSame(2, $record['sessions']);
@@ -185,26 +194,74 @@ class TrafficRollupTest extends TestCase {
 
 	/**
 	 * Mail events from pipelinq land under `emails`, and a persisted-id
-	 * visitor is only new when its first session said so.
+	 * visitor is new or returning only by what its client said.
 	 *
 	 * @return void
 	 */
 	public function testMailEventsAndReturningVisitors(): void {
-		$returning = $this->event('2026-09-04T10:00:00.000Z', '/', 'h1', 'session_start', ['clientId' => 'cid-1']);
-		$firstTimer = $this->event('2026-09-04T10:00:00.000Z', '/', 'h2', 'session_start', ['clientId' => 'cid-2', 'params' => ['first' => true]]);
+		$returning = $this->event(at: '2026-09-04T10:00:00.000Z', path: '/', visitor: 'h1', name: 'session_start', extra: ['clientId' => 'cid-1', 'params' => ['visitorType' => 'returning']]);
+		$firstTimer = $this->event(at: '2026-09-04T10:00:00.000Z', path: '/', visitor: 'h2', name: 'session_start', extra: ['clientId' => 'cid-2', 'params' => ['first' => true]]);
+		$silent = $this->event(at: '2026-09-04T10:00:00.000Z', path: '/', visitor: 'h3', name: 'session_start', extra: ['clientId' => 'cid-3']);
 
-		$record = $this->rollup([
-			$returning,
-			$firstTimer,
-			$this->event('2026-09-04T09:00:00.000Z', '/', 'contact-a', 'email_open', ['pageLocation' => 'mailto:blast/1']),
-			$this->event('2026-09-04T09:01:00.000Z', '/', 'contact-a', 'email_click', ['pageLocation' => 'https://open-tilburg.nl/woo']),
-		]);
+		$record = $this->rollup(
+			[
+				$returning,
+				$firstTimer,
+				$silent,
+				$this->event(at: '2026-09-04T09:00:00.000Z', path: '/', visitor: 'contact-a', name: 'email_open', extra: ['pageLocation' => 'mailto:blast/1']),
+				$this->event(at: '2026-09-04T09:01:00.000Z', path: '/', visitor: 'contact-a', name: 'email_click', extra: ['pageLocation' => 'https://open-tilburg.nl/woo']),
+			],
+			['persistClientId' => true]
+		);
 
 		$this->assertSame(['opens' => 1, 'clicks' => 1], $record['emails']);
-		$this->assertSame(3, $record['visitors']);
-		$this->assertSame(2, $record['newVisitors'], 'the contact hash is new by construction, cid-2 said first, cid-1 did not');
+		$this->assertSame(4, $record['visitors']);
+		$this->assertSame(1, $record['newVisitors'], 'cid-2 said first (the phase 0 hint)');
+		$this->assertSame(1, $record['returningVisitors'], 'cid-1 said returning; cid-3 said nothing and the contact hash cannot say');
 		$this->assertSame(0, $record['pageViews']);
 	}//end testMailEventsAndReturningVisitors()
+
+
+	/**
+	 * The same hints on a portal that does NOT persist ids are not
+	 * counted: a stale client's claim is not the portal's decision, and
+	 * both counts stay null.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-visitors-must-be-counted-honestly-in-each-mode
+	 */
+	public function testCookielessModeReportsNewAndReturningAsNotAvailable(): void {
+		$record = $this->rollup(events: [
+			$this->event(at: '2026-09-04T10:00:00.000Z', path: '/', visitor: 'h1', name: 'session_start', extra: ['clientId' => 'cid-1', 'params' => ['visitorType' => 'returning']]),
+			$this->event(at: '2026-09-04T11:00:00.000Z', path: '/', visitor: 'h2'),
+		]);
+
+		$this->assertSame(2, $record['visitors']);
+		$this->assertNull($record['newVisitors']);
+		$this->assertNull($record['returningVisitors']);
+	}//end testCookielessModeReportsNewAndReturningAsNotAvailable()
+
+
+	/**
+	 * Distinct account references are counted only when the portal links
+	 * accounts; a visitor with two sessions is one account.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-account-linking-must-attach-only-a-pseudonymous-reference
+	 */
+	public function testAccountsAreDistinctReferencesOnlyWhenLinked(): void {
+		$events = [
+			$this->event(at: '2026-09-04T10:00:00.000Z', path: '/', visitor: 'h1', name: 'page_view', extra: ['userRef' => 'subj-1']),
+			$this->event(at: '2026-09-04T13:00:00.000Z', path: '/', visitor: 'h1', name: 'page_view', extra: ['userRef' => 'subj-1']),
+			$this->event(at: '2026-09-04T10:00:00.000Z', path: '/', visitor: 'h2', name: 'page_view', extra: ['userRef' => 'subj-2']),
+			$this->event(at: '2026-09-04T10:00:00.000Z', path: '/', visitor: 'h3'),
+		];
+
+		$this->assertSame(2, $this->rollup($events, ['accountLinking' => true])['accounts']);
+		$this->assertNull($this->rollup($events)['accounts']);
+	}//end testAccountsAreDistinctReferencesOnlyWhenLinked()
 
 
 	/**
@@ -215,9 +272,9 @@ class TrafficRollupTest extends TestCase {
 	 */
 	public function testTheSameEventsGiveTheSameRecord(): void {
 		$events = [
-			$this->event('2026-09-04T10:00:00.000Z', '/'),
-			$this->event('2026-09-04T10:00:30.000Z', '/begrippen'),
-			$this->event('2026-09-04T12:00:00.000Z', '/', 'h2'),
+			$this->event(at: '2026-09-04T10:00:00.000Z', path: '/'),
+			$this->event(at: '2026-09-04T10:00:30.000Z', path: '/begrippen'),
+			$this->event(at: '2026-09-04T12:00:00.000Z', path: '/', visitor: 'h2'),
 		];
 
 		$this->assertSame($this->rollup($events), $this->rollup(array_reverse($events)));
@@ -229,6 +286,24 @@ class TrafficRollupTest extends TestCase {
 	 *
 	 * @return void
 	 */
+	/**
+	 * A session that started before geography was switched on carries
+	 * empty early events and a filled later one; the region is the first
+	 * non-empty value, so the session is not reported as unknown.
+	 *
+	 * @return void
+	 */
+	public function testARegionSeenLaterInTheSessionStillCounts(): void {
+		$record = $this->rollup(events: [
+			$this->event(at: '2026-09-04T10:00:00.000Z', path: '/', visitor: 'h7', name: 'page_view', extra: ['region' => '']),
+			$this->event(at: '2026-09-04T10:00:05.000Z', path: '/geo', visitor: 'h7', name: 'page_view', extra: ['region' => 'GB']),
+			$this->event(at: '2026-09-04T10:00:09.000Z', path: '/geo/next', visitor: 'h7', name: 'page_view', extra: ['region' => 'GB']),
+		]);
+
+		$this->assertSame(1, $record['sessions']);
+		$this->assertSame(['GB' => 1], $record['regions']);
+	}//end testARegionSeenLaterInTheSessionStillCounts()
+
 	public function testAnEmptyDayIsZeros(): void {
 		$record = (new TrafficRollup())->build(portal: 'p', date: '2026-09-04', sessions: [], aggregatedAt: 'x');
 

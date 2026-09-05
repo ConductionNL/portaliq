@@ -265,6 +265,14 @@ class TrafficConfigResolver {
 			}
 		));
 
+		// And the switch is the decision in the other direction too: an
+		// operator who turned account linking on, with its warning, has
+		// enabled the one dimension it exists for. Making them also list
+		// `userRef` would be a second switch for the same fact.
+		if ($sensitive['accountLinking'] === true && in_array('userRef', $dimensions, true) === false) {
+			$dimensions[] = 'userRef';
+		}
+
 		$consent = $traffic['consent'] ?? [];
 		if (is_array($consent) === false) {
 			$consent = [];

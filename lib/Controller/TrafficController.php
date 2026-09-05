@@ -29,6 +29,7 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\Traffic\RawRequestBody;
 use OCA\Portaliq\Service\TrafficEventValidator;
 use OCA\Portaliq\Service\TrafficIngestService;
@@ -62,6 +63,12 @@ use Throwable;
  * editor previewing their own site would be throttled before a visitor.
  *
  * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-collector-must-survive-being-a-public-endpoint
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the edge of the
+ * collector meets the resolver, the ingest, the body reader, the app
+ * manager, the session service and six response and attribute classes;
+ * thirteen, one over the threshold, and the one over is the session
+ * service account linking needs (portal-traffic-visitors-and-geo).
  */
 class TrafficController extends Controller {
 
@@ -84,6 +91,7 @@ class TrafficController extends Controller {
 	 * @param TrafficIngestService $ingest     Validates and stores events.
 	 * @param RawRequestBody       $body       Reads the text body.
 	 * @param IAppManager          $appManager Locates the built client on disk.
+	 * @param PortalSessionService $session    Resolves a portal session bearer to its subject, for account linking.
 	 *
 	 * @return void
 	 */
@@ -94,6 +102,7 @@ class TrafficController extends Controller {
 		private readonly TrafficIngestService $ingest,
 		private readonly RawRequestBody $body,
 		private readonly IAppManager $appManager,
+		private readonly PortalSessionService $session,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -263,6 +272,7 @@ class TrafficController extends Controller {
 			'acceptLanguage' => $this->request->getHeader('Accept-Language'),
 			'consent' => $consent,
 			'serverSide' => false,
+			'userRef' => $this->subjectRef(),
 		];
 
 		$portal = $this->resolver->resolveForCollector(request: $this->request, portalSlug: $slug);
@@ -276,6 +286,31 @@ class TrafficController extends Controller {
 		// `unknown-portal` and counts it, so a misconfigured tag is visible.
 		$this->ingest->ingest(portalSlug: (string)($slug ?? ''), events: $events, context: $context);
 	}//end ingestFor()
+
+
+	/**
+	 * The portal account's pseudonymous reference, when the batch carries
+	 * a valid portal session bearer; '' otherwise.
+	 *
+	 * Resolved here, at the edge, and handed to the ingest service as one
+	 * more piece of request context. The ingest service keeps it only for
+	 * a portal that switched on account linking; a bearer on a batch for
+	 * any other portal is read and forgotten like the address is.
+	 *
+	 * @return string The subjectRef, or ''.
+	 *
+	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-account-linking-must-attach-only-a-pseudonymous-reference
+	 */
+	private function subjectRef(): string {
+		$header = trim($this->request->getHeader('Authorization'));
+		if ($header === '') {
+			return '';
+		}
+
+		$subject = $this->session->resolveFromBearer($header);
+
+		return trim((string)($subject['subjectRef'] ?? ''));
+	}//end subjectRef()
 
 
 	/**

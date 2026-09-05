@@ -14,6 +14,8 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import {
+	daysBetween,
+	hasDimension,
 	isMeasured,
 	lastDays,
 	summarise,
@@ -24,6 +26,33 @@ describe('lastDays', () => {
 	it('ends today in UTC and counts back', () => {
 		const days = lastDays(3, new Date('2026-09-04T23:30:00Z'))
 		assert.deepEqual(days, ['2026-09-02', '2026-09-03', '2026-09-04'])
+	})
+})
+
+describe('daysBetween', () => {
+	it('is inclusive, in order, and empty when reversed or malformed', () => {
+		assert.deepEqual(daysBetween('2026-09-02', '2026-09-04'), [
+			'2026-09-02',
+			'2026-09-03',
+			'2026-09-04',
+		])
+		assert.deepEqual(daysBetween('2026-09-04', '2026-09-04'), ['2026-09-04'])
+		assert.deepEqual(daysBetween('2026-09-04', '2026-09-02'), [])
+		assert.deepEqual(daysBetween('', '2026-09-02'), [])
+		assert.deepEqual(daysBetween('yesterday', 'today'), [])
+	})
+
+	it('caps a custom range at a year from its start', () => {
+		assert.equal(daysBetween('2020-01-01', '2026-01-01').length, 366)
+	})
+})
+
+describe('hasDimension', () => {
+	it('is true only for a listed dimension; a portal that named none has the defaults', () => {
+		assert.equal(hasDimension({ traffic: { dimensions: ['region'] } }, 'region'), true)
+		assert.equal(hasDimension({ traffic: { dimensions: ['region'] } }, 'browser'), false)
+		assert.equal(hasDimension({ traffic: { enabled: true } }, 'region'), false)
+		assert.equal(hasDimension(null, 'region'), false)
 	})
 })
 
@@ -139,5 +168,59 @@ describe('summarise', () => {
 			engagedSessions: 0,
 		})
 		assert.deepEqual(summary.pages, [])
+	})
+})
+
+describe('summarise: visitors and breakdowns', () => {
+	const dates = ['2026-09-03', '2026-09-04']
+
+	it('reports new versus returning as not available when every day is null, never as zero', () => {
+		const summary = summarise(
+			[
+				{ date: '2026-09-03', visitors: 4, newVisitors: null, returningVisitors: null, accounts: null },
+				{ date: '2026-09-04', visitors: 6, newVisitors: null, returningVisitors: null, accounts: null },
+			],
+			dates,
+		)
+		assert.equal(summary.days, 2)
+		assert.equal(summary.visitors.visitors, 10)
+		assert.equal(summary.visitors.newReturningAvailable, false)
+		assert.equal(summary.visitors.accountsAvailable, false)
+	})
+
+	it('sums new, returning and accounts once any day carries a number', () => {
+		const summary = summarise(
+			[
+				{ date: '2026-09-03', visitors: 4, newVisitors: null, returningVisitors: null },
+				{ date: '2026-09-04', visitors: 6, newVisitors: 2, returningVisitors: 3, accounts: 1 },
+			],
+			dates,
+		)
+		assert.equal(summary.visitors.newReturningAvailable, true)
+		assert.equal(summary.visitors.newVisitors, 2)
+		assert.equal(summary.visitors.returningVisitors, 3)
+		assert.equal(summary.visitors.accountsAvailable, true)
+		assert.equal(summary.visitors.accounts, 1)
+	})
+
+	it('merges the five breakdown maps across days and ranks them', () => {
+		const summary = summarise(
+			[
+				{ date: '2026-09-03', devices: { desktop: 3, mobile: 1 }, regions: { NL: 2, GB: 1 }, languages: { nl: 4 } },
+				{ date: '2026-09-04', devices: { mobile: 5 }, regions: { GB: 2 }, browsers: { Chrome: 1 }, os: {} },
+			],
+			dates,
+		)
+		assert.deepEqual(summary.breakdowns.deviceType, [
+			{ value: 'mobile', count: 6 },
+			{ value: 'desktop', count: 3 },
+		])
+		assert.deepEqual(summary.breakdowns.region, [
+			{ value: 'GB', count: 3 },
+			{ value: 'NL', count: 2 },
+		])
+		assert.deepEqual(summary.breakdowns.language, [{ value: 'nl', count: 4 }])
+		assert.deepEqual(summary.breakdowns.browser, [{ value: 'Chrome', count: 1 }])
+		assert.deepEqual(summary.breakdowns.os, [])
 	})
 })
