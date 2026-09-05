@@ -4,7 +4,11 @@
   -->
 
 <template>
-	<form class="pq-form" data-testid="site-form" @submit.prevent="submit">
+	<form
+		class="pq-form"
+		data-testid="site-form"
+		:data-portaliq-form="formId || 'form'"
+		@submit.prevent="submit">
 		<p v-if="!fields.length" class="utrecht-paragraph pq-form__empty">
 			{{ emptyLabel }}
 		</p>
@@ -113,7 +117,7 @@ export default {
 	name: 'FormBlock',
 
 	props: {
-		/** The bound form's own id (for diagnostics; not sent to the server — the anonymous action's server-stamped `defaults` are the source of truth for `formId`). */
+		/** The bound form's own id. Not sent with the submission (the anonymous action's server-stamped `defaults` are the source of truth for `formId`); it is what the traffic client reports form analytics under, through `data-portaliq-form` (portal-traffic-outcomes). */
 		formId: {
 			type: String,
 			default: '',

@@ -20,6 +20,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Service\Traffic\TrafficOutcomeDefinitions;
+
 /**
  * Resolves one portal's traffic-measurement configuration, with the shipped
  * defaults filled in.
@@ -65,9 +67,36 @@ class TrafficConfigResolver {
 		'file_download',
 		'search',
 		'form_submit',
+		'form_start',
+		'form_field',
+		'form_abandon',
+		'page_not_found',
 		'email_open',
 		'email_click',
 	];
+
+	/**
+	 * The parameters a form event may carry, and the ONLY ones. A field's
+	 * id and how long it had focus say where a form loses people; what was
+	 * typed into it is the visitor's, and a client that sends it anyway
+	 * (portal-traffic-outcomes) has it stripped here rather than stored.
+	 *
+	 * @var string[]
+	 */
+	public const FORM_EVENT_PARAMS = ['formId', 'fieldId', 'lastFieldId', 'ms'];
+
+	/**
+	 * The events whose params are limited to FORM_EVENT_PARAMS.
+	 *
+	 * @var string[]
+	 */
+	public const FORM_EVENTS = ['form_start', 'form_field', 'form_abandon', 'form_submit'];
+
+	/**
+	 * The prefix of a custom dimension parameter (`cd_<id>`); an id the
+	 * portal did not declare is stripped.
+	 */
+	public const CUSTOM_DIMENSION_PREFIX = 'cd_';
 
 	/**
 	 * Events only another app in this instance may write, through the PHP
@@ -207,6 +236,18 @@ class TrafficConfigResolver {
 	public const DEFAULT_RETENTION_DAYS = 90;
 
 	/**
+	 * Constructor.
+	 *
+	 * @param TrafficOutcomeDefinitions $outcomes Normalises goals, funnels and custom dimensions.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private readonly TrafficOutcomeDefinitions $outcomes = new TrafficOutcomeDefinitions(),
+	) {
+	}
+
+	/**
 	 * Resolve a portal record's `traffic` block into a complete configuration.
 	 *
 	 * @param array<string, mixed> $portal The resolved portal record.
@@ -215,9 +256,13 @@ class TrafficConfigResolver {
 	 *               sessionTimeoutMinutes: int, retentionDays: int,
 	 *               consentRequired: bool, preConsentEvents: string[],
 	 *               regionGranularity: string, persistClientId: bool,
-	 *               sensitive: array<string, bool>} The effective configuration.
+	 *               sensitive: array<string, bool>,
+	 *               goals: array<int, array<string, mixed>>,
+	 *               funnels: array<int, array<string, mixed>>,
+	 *               customDimensions: array<int, array<string, string>>} The effective configuration.
 	 *
 	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
+	 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
 	 */
 	public function resolve(array $portal): array {
 		$traffic = $portal['traffic'] ?? [];
@@ -246,32 +291,7 @@ class TrafficConfigResolver {
 			fallback: self::DEFAULT_DIMENSIONS
 		);
 
-		// Two dimensions exist only under a switch that is elsewhere in the
-		// configuration, and the switch wins. Listing `userRef` without
-		// account linking, or `region` with the granularity set to none,
-		// would otherwise store what the operator explicitly turned off.
-		$dimensions = array_values(array_filter(
-			$dimensions,
-			static function (string $dimension) use ($sensitive, $regionGranularity): bool {
-				if ($dimension === 'userRef') {
-					return $sensitive['accountLinking'];
-				}
-
-				if ($dimension === 'region') {
-					return $regionGranularity !== 'none';
-				}
-
-				return true;
-			}
-		));
-
-		// And the switch is the decision in the other direction too: an
-		// operator who turned account linking on, with its warning, has
-		// enabled the one dimension it exists for. Making them also list
-		// `userRef` would be a second switch for the same fact.
-		if ($sensitive['accountLinking'] === true && in_array('userRef', $dimensions, true) === false) {
-			$dimensions[] = 'userRef';
-		}
+		$dimensions = $this->switched(dimensions: $dimensions, sensitive: $sensitive, regionGranularity: $regionGranularity);
 
 		$consent = $traffic['consent'] ?? [];
 		if (is_array($consent) === false) {
@@ -310,7 +330,55 @@ class TrafficConfigResolver {
 			// acts on: it decides whether anything is written to the browser.
 			'persistClientId' => $sensitive['persistClientId'],
 			'sensitive' => $sensitive,
+			// The outcomes (portal-traffic-outcomes): what the aggregation
+			// evaluates and what the validator lets through. Normalised
+			// here for the same reason as everything above: the job, the
+			// collector and the client must agree on what a goal is.
+			'goals' => $this->outcomes->goals(value: ($traffic['goals'] ?? null)),
+			'funnels' => $this->outcomes->funnels(value: ($traffic['funnels'] ?? null)),
+			'customDimensions' => $this->outcomes->customDimensions(value: ($traffic['customDimensions'] ?? null)),
 		];
+	}
+
+	/**
+	 * The dimensions after the switches had their say.
+	 *
+	 * Two dimensions exist only under a switch that is elsewhere in the
+	 * configuration, and the switch wins. Listing `userRef` without
+	 * account linking, or `region` with the granularity set to none,
+	 * would otherwise store what the operator explicitly turned off. And
+	 * the switch is the decision in the other direction too: an operator
+	 * who turned account linking on, with its warning, has enabled the one
+	 * dimension it exists for. Making them also list `userRef` would be a
+	 * second switch for the same fact.
+	 *
+	 * @param string[]            $dimensions        The requested, known dimensions.
+	 * @param array<string, bool> $sensitive         The resolved switches.
+	 * @param string              $regionGranularity The resolved granularity.
+	 *
+	 * @return string[] The effective dimensions.
+	 */
+	private function switched(array $dimensions, array $sensitive, string $regionGranularity): array {
+		$dimensions = array_values(array_filter(
+			$dimensions,
+			static function (string $dimension) use ($sensitive, $regionGranularity): bool {
+				if ($dimension === 'userRef') {
+					return $sensitive['accountLinking'];
+				}
+
+				if ($dimension === 'region') {
+					return $regionGranularity !== 'none';
+				}
+
+				return true;
+			}
+		));
+
+		if ($sensitive['accountLinking'] === true && in_array('userRef', $dimensions, true) === false) {
+			$dimensions[] = 'userRef';
+		}
+
+		return $dimensions;
 	}
 
 	/**

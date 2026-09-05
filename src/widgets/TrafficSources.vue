@@ -6,7 +6,10 @@
   search, referral, social, email, direct), with the busiest referring
   hosts per channel, over the last 30 days (portal-traffic-analytics).
 
+  Below it, the searched terms (portal-traffic-outcomes).
+
   @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-derived-dimensions-must-be-computed-on-the-server-and-never-accepted-from-the-client
+  @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-site-search-must-be-reported-by-the-built-in-search-box
 -->
 <template>
 	<div class="traffic-table" data-testid="traffic-sources">
@@ -36,6 +39,34 @@
 					<td colspan="3" class="traffic-table__muted">
 						{{ t('portaliq', 'No referrer recorded yet.') }}
 					</td>
+				</tr>
+			</tbody>
+		</table>
+
+		<!-- Searches (portal-traffic-outcomes): what visitors typed into the
+		     site's own search, from the URL and from the built-in search
+		     block alike. Only present when the portal keeps search terms. -->
+		<h3
+			v-if="emptyState === '' && summary.searches.length > 0"
+			class="traffic-table__subheading">
+			{{ t('portaliq', 'Searches') }}
+		</h3>
+		<table
+			v-if="emptyState === '' && summary.searches.length > 0"
+			class="traffic-table__table"
+			data-testid="traffic-searches">
+			<thead>
+				<tr>
+					<th scope="col">{{ t('portaliq', 'Search term') }}</th>
+					<th scope="col" class="traffic-table__number">
+						{{ t('portaliq', 'Times') }}
+					</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr v-for="row in summary.searches" :key="row.term">
+					<td class="traffic-table__path">{{ row.term }}</td>
+					<td class="traffic-table__number">{{ row.count }}</td>
 				</tr>
 			</tbody>
 		</table>

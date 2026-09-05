@@ -349,4 +349,38 @@ class TrafficConfigResolverTest extends TestCase {
 		$unlinked = $resolver->resolve(portal: ['traffic' => ['enabled' => true]]);
 		$this->assertNotContains('userRef', $unlinked['dimensions']);
 	}//end testAccountLinkingEnablesTheUserRefDimension()
+
+
+	/**
+	 * The outcomes (portal-traffic-outcomes) resolve to what can be acted
+	 * on, and a portal that declared none has empty lists rather than
+	 * absent keys, so the job, the validator and the client never guard.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
+	 */
+	public function testOutcomesResolveToUsableDefinitions(): void {
+		$resolver = new TrafficConfigResolver();
+
+		$none = $resolver->resolve(portal: ['traffic' => ['enabled' => true]]);
+		$this->assertSame([], $none['goals']);
+		$this->assertSame([], $none['funnels']);
+		$this->assertSame([], $none['customDimensions']);
+
+		$some = $resolver->resolve(portal: ['traffic' => [
+			'enabled' => true,
+			'events' => ['page_view', 'form_start', 'form_field', 'form_abandon', 'page_not_found', 'not_a_thing'],
+			'goals' => [['id' => 'contact', 'type' => 'page_reached', 'match' => ['pathEquals' => '/contact', 'bogus' => 'x'], 'value' => '2.5']],
+			'funnels' => [['id' => 'f', 'name' => 'F', 'steps' => [['name' => 'a', 'match' => ['pathPrefix' => '/a']]]]],
+			'customDimensions' => [['id' => 'audience', 'scope' => 'nowhere'], ['id' => 'bad id']],
+		]]);
+		$this->assertSame(['page_view', 'form_start', 'form_field', 'form_abandon', 'page_not_found'], $some['events']);
+		$this->assertSame(
+			[['id' => 'contact', 'name' => 'contact', 'type' => 'page_reached', 'match' => ['pathEquals' => '/contact'], 'value' => 2.5]],
+			$some['goals']
+		);
+		$this->assertSame('F', $some['funnels'][0]['name']);
+		$this->assertSame([['id' => 'audience', 'name' => 'audience', 'scope' => 'event']], $some['customDimensions'], 'an unknown scope is event; a bad id is dropped');
+	}//end testOutcomesResolveToUsableDefinitions()
 }//end class

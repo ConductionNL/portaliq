@@ -214,6 +214,23 @@ class SetupControllerTest extends TestCase {
 		$this->assertStringContainsString('30', $data['message']);
 	}
 
+	public function testTheLegacyActionOutranksAnEarlierNone(): void {
+		// An explicit request for the shipped set is an answer of its own: the
+		// e2e seed records "skipped" to close the wizard, and the demo-data
+		// spec then posts the legacy id deliberately. Deferring to the earlier
+		// "none" made that install load nothing and report success.
+		$this->appConfig->method('getValueString')
+			->willReturnCallback(static fn (string $app, string $key): string
+				=> ($key === 'demo_dataset' ? 'none' : ''));
+		$this->demoData->expects($this->once())->method('install')
+			->willReturn(['objects' => 30, 'registers' => 1, 'schemas' => 4]);
+
+		$data = $this->controller->runAction('install-demo-data')->getData();
+
+		$this->assertTrue($data['success']);
+		$this->assertStringContainsString('30', $data['message']);
+	}
+
 	public function testSkippingClosesBOTHStepsOrTheWizardNeverCloses(): void {
 		// Declining must be persisted, otherwise the wizard re-offers the import
 		// on every visit and "no thanks" is impossible to express.

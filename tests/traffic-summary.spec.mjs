@@ -49,8 +49,14 @@ describe('daysBetween', () => {
 
 describe('hasDimension', () => {
 	it('is true only for a listed dimension; a portal that named none has the defaults', () => {
-		assert.equal(hasDimension({ traffic: { dimensions: ['region'] } }, 'region'), true)
-		assert.equal(hasDimension({ traffic: { dimensions: ['region'] } }, 'browser'), false)
+		assert.equal(
+			hasDimension({ traffic: { dimensions: ['region'] } }, 'region'),
+			true,
+		)
+		assert.equal(
+			hasDimension({ traffic: { dimensions: ['region'] } }, 'browser'),
+			false,
+		)
 		assert.equal(hasDimension({ traffic: { enabled: true } }, 'region'), false)
 		assert.equal(hasDimension(null, 'region'), false)
 	})
@@ -177,8 +183,20 @@ describe('summarise: visitors and breakdowns', () => {
 	it('reports new versus returning as not available when every day is null, never as zero', () => {
 		const summary = summarise(
 			[
-				{ date: '2026-09-03', visitors: 4, newVisitors: null, returningVisitors: null, accounts: null },
-				{ date: '2026-09-04', visitors: 6, newVisitors: null, returningVisitors: null, accounts: null },
+				{
+					date: '2026-09-03',
+					visitors: 4,
+					newVisitors: null,
+					returningVisitors: null,
+					accounts: null,
+				},
+				{
+					date: '2026-09-04',
+					visitors: 6,
+					newVisitors: null,
+					returningVisitors: null,
+					accounts: null,
+				},
 			],
 			dates,
 		)
@@ -191,8 +209,19 @@ describe('summarise: visitors and breakdowns', () => {
 	it('sums new, returning and accounts once any day carries a number', () => {
 		const summary = summarise(
 			[
-				{ date: '2026-09-03', visitors: 4, newVisitors: null, returningVisitors: null },
-				{ date: '2026-09-04', visitors: 6, newVisitors: 2, returningVisitors: 3, accounts: 1 },
+				{
+					date: '2026-09-03',
+					visitors: 4,
+					newVisitors: null,
+					returningVisitors: null,
+				},
+				{
+					date: '2026-09-04',
+					visitors: 6,
+					newVisitors: 2,
+					returningVisitors: 3,
+					accounts: 1,
+				},
 			],
 			dates,
 		)
@@ -206,8 +235,19 @@ describe('summarise: visitors and breakdowns', () => {
 	it('merges the five breakdown maps across days and ranks them', () => {
 		const summary = summarise(
 			[
-				{ date: '2026-09-03', devices: { desktop: 3, mobile: 1 }, regions: { NL: 2, GB: 1 }, languages: { nl: 4 } },
-				{ date: '2026-09-04', devices: { mobile: 5 }, regions: { GB: 2 }, browsers: { Chrome: 1 }, os: {} },
+				{
+					date: '2026-09-03',
+					devices: { desktop: 3, mobile: 1 },
+					regions: { NL: 2, GB: 1 },
+					languages: { nl: 4 },
+				},
+				{
+					date: '2026-09-04',
+					devices: { mobile: 5 },
+					regions: { GB: 2 },
+					browsers: { Chrome: 1 },
+					os: {},
+				},
 			],
 			dates,
 		)
@@ -222,5 +262,163 @@ describe('summarise: visitors and breakdowns', () => {
 		assert.deepEqual(summary.breakdowns.language, [{ value: 'nl', count: 4 }])
 		assert.deepEqual(summary.breakdowns.browser, [{ value: 'Chrome', count: 1 }])
 		assert.deepEqual(summary.breakdowns.os, [])
+	})
+})
+
+describe('summarise: outcomes (portal-traffic-outcomes)', () => {
+	const dates = ['2026-09-03', '2026-09-04']
+	const records = [
+		{
+			date: '2026-09-03',
+			sessions: 4,
+			conversionRate: 0.5,
+			searches: [{ term: 'woo', count: 2 }],
+			goals: [
+				{
+					id: 'contact',
+					name: 'Contact',
+					conversions: 2,
+					completions: 3,
+					value: 20,
+				},
+			],
+			funnels: [
+				{
+					id: 'signup',
+					name: 'Sign up',
+					steps: [
+						{ name: 'Campaign', sessions: 4, dropOff: 0 },
+						{ name: 'Form', sessions: 2, dropOff: 0.5 },
+					],
+				},
+			],
+			forms: [
+				{
+					formId: 'aanmelden',
+					starts: 2,
+					submits: 1,
+					abandons: 1,
+					completionRate: 0.5,
+					fields: [
+						{ fieldId: 'email', avgMs: 3000, abandonedHere: 1 },
+						{ fieldId: 'name', avgMs: 1000, abandonedHere: 0 },
+					],
+				},
+			],
+			notFound: [{ path: '/oud', hits: 2 }],
+			customDimensions: { audience: { inwoner: 3, ondernemer: 1 } },
+		},
+		{
+			date: '2026-09-04',
+			sessions: 1,
+			conversionRate: 0,
+			searches: [
+				{ term: 'woo', count: 1 },
+				{ term: 'parkeren', count: 1 },
+			],
+			goals: [
+				{
+					id: 'contact',
+					name: 'Contact page',
+					conversions: 0,
+					completions: 0,
+					value: 0,
+				},
+			],
+			funnels: [
+				{
+					id: 'signup',
+					name: 'Sign up',
+					steps: [
+						{ name: 'Campaign', sessions: 1, dropOff: 0 },
+						{ name: 'Form', sessions: 0, dropOff: 1 },
+					],
+				},
+			],
+			forms: [
+				{
+					formId: 'aanmelden',
+					starts: 1,
+					submits: 0,
+					abandons: 0,
+					fields: [],
+				},
+			],
+			notFound: [
+				{ path: '/oud', hits: 1 },
+				{ path: '/weg', hits: 1 },
+			],
+			customDimensions: { audience: { inwoner: 1 } },
+		},
+	]
+
+	it('merges goals by id, keeps the latest name and re-derives the conversion rate from sessions', () => {
+		const summary = summarise(records, dates)
+		assert.deepEqual(summary.goals, [
+			{
+				id: 'contact',
+				name: 'Contact page',
+				conversions: 2,
+				completions: 3,
+				value: 20,
+			},
+		])
+		assert.equal(summary.conversionRate, 0.4)
+	})
+
+	it('sums funnel steps by position and recomputes the drop-off', () => {
+		const summary = summarise(records, dates)
+		assert.deepEqual(summary.funnels, [
+			{
+				id: 'signup',
+				name: 'Sign up',
+				steps: [
+					{ name: 'Campaign', sessions: 5, dropOff: 0 },
+					{ name: 'Form', sessions: 2, dropOff: 0.6 },
+				],
+			},
+		])
+	})
+
+	it('sums forms, ranks the fields by where people left and names the worst', () => {
+		const summary = summarise(records, dates)
+		assert.equal(summary.forms.length, 1)
+		const form = summary.forms[0]
+		assert.equal(form.starts, 3)
+		assert.equal(form.submits, 1)
+		assert.equal(form.abandons, 1)
+		assert.equal(form.completionRate, 0.333)
+		assert.equal(form.leaveField, 'email')
+		assert.equal(form.fields[0].fieldId, 'email')
+		assert.equal(form.fields[0].avgMs, 3000)
+	})
+
+	it('ranks searches, missing pages and dimension values', () => {
+		const summary = summarise(records, dates)
+		assert.deepEqual(summary.searches, [
+			{ term: 'woo', count: 3 },
+			{ term: 'parkeren', count: 1 },
+		])
+		assert.deepEqual(summary.notFound, [
+			{ path: '/oud', hits: 3 },
+			{ path: '/weg', hits: 1 },
+		])
+		assert.deepEqual(summary.customDimensions, {
+			audience: [
+				{ value: 'inwoner', count: 4 },
+				{ value: 'ondernemer', count: 1 },
+			],
+		})
+	})
+
+	it('is empty, not absent, for records without outcomes', () => {
+		const summary = summarise([{ date: '2026-09-03', sessions: 1 }], dates)
+		assert.deepEqual(summary.goals, [])
+		assert.equal(summary.conversionRate, 0)
+		assert.deepEqual(summary.funnels, [])
+		assert.deepEqual(summary.forms, [])
+		assert.deepEqual(summary.notFound, [])
+		assert.deepEqual(summary.customDimensions, {})
+		assert.deepEqual(summary.searches, [])
 	})
 })

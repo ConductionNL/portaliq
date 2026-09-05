@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.18.0"
+        "version": "0.19.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.18.0",
+                "version": "0.19.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -1383,7 +1383,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.3.0",
+                "version": "0.4.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -1573,7 +1573,7 @@
                             "events": {
                                 "title": "Events",
                                 "type": "array",
-                                "description": "The event names the collector accepts for this portal. Absent means page views and session starts only; an empty list means none. `email_open` and `email_click` are only ever written by another app in this instance, never by a browser.",
+                                "description": "The event names the collector accepts for this portal. Absent means page views and session starts only; an empty list means none. `form_start`, `form_field` and `form_abandon` switch on form analytics (ids and times only, never a value); `page_not_found` lists missing pages. `email_open` and `email_click` are only ever written by another app in this instance, never by a browser.",
                                 "items": {
                                     "type": "string",
                                     "enum": [
@@ -1584,6 +1584,10 @@
                                         "file_download",
                                         "search",
                                         "form_submit",
+                                        "form_start",
+                                        "form_field",
+                                        "form_abandon",
+                                        "page_not_found",
                                         "email_open",
                                         "email_click"
                                     ]
@@ -1682,6 +1686,10 @@
                                                 "file_download",
                                                 "search",
                                                 "form_submit",
+                                                "form_start",
+                                                "form_field",
+                                                "form_abandon",
+                                                "page_not_found",
                                                 "email_open",
                                                 "email_click"
                                             ]
@@ -1691,6 +1699,237 @@
                                         ]
                                     }
                                 }
+                            },
+                            "goals": {
+                                "title": "Goals",
+                                "type": "array",
+                                "description": "The outcomes this portal counts as a success. Each goal is evaluated per visit by the aggregation job; the collector does not change. A visit that meets a goal is one conversion however often it does so; each matching event is one completion.",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "title": "Id",
+                                            "type": "string",
+                                            "description": "A short token that names the goal in the figures, such as `contact`. Letters, digits, dash and underscore only.",
+                                            "example": "contact"
+                                        },
+                                        "name": {
+                                            "title": "Name",
+                                            "type": "string",
+                                            "description": "What the goal is called on the Traffic page.",
+                                            "example": "Contact page opened"
+                                        },
+                                        "type": {
+                                            "title": "Type",
+                                            "type": "string",
+                                            "description": "What kind of outcome this is: a page reached, an event, a file downloaded, a form submitted or a search made.",
+                                            "enum": [
+                                                "page_reached",
+                                                "event",
+                                                "download",
+                                                "form_submitted",
+                                                "search"
+                                            ],
+                                            "example": "page_reached"
+                                        },
+                                        "match": {
+                                            "title": "Match",
+                                            "type": "object",
+                                            "description": "What has to happen. Fill in one key: `pathEquals` or `pathPrefix` for a page reached, `eventName` for an event, `fileExtension` for a download, `formId` for a submitted form, `term` for a search (matched as part of the term, ignoring case). More than one key means all of them must hold.",
+                                            "properties": {
+                                                "pathPrefix": {
+                                                    "title": "Path prefix",
+                                                    "type": "string",
+                                                    "description": "A page path this one starts with, such as `/woo`. Counts a page view.",
+                                                    "example": "/woo"
+                                                },
+                                                "pathEquals": {
+                                                    "title": "Path equals",
+                                                    "type": "string",
+                                                    "description": "The exact page path, such as `/contact`. Counts a page view; a trailing slash does not matter.",
+                                                    "example": "/contact"
+                                                },
+                                                "eventName": {
+                                                    "title": "Event name",
+                                                    "type": "string",
+                                                    "description": "An event name, such as `scroll` or `outbound_click`.",
+                                                    "example": "scroll"
+                                                },
+                                                "fileExtension": {
+                                                    "title": "File extension",
+                                                    "type": "string",
+                                                    "description": "The extension of a downloaded file, such as `pdf`.",
+                                                    "example": "pdf"
+                                                },
+                                                "formId": {
+                                                    "title": "Form id",
+                                                    "type": "string",
+                                                    "description": "The id of a submitted form, as the page's form widget names it.",
+                                                    "example": "aanmelden"
+                                                },
+                                                "term": {
+                                                    "title": "Search term",
+                                                    "type": "string",
+                                                    "description": "Part of a search term, matched ignoring case.",
+                                                    "example": "woo"
+                                                }
+                                            }
+                                        },
+                                        "value": {
+                                            "title": "Value",
+                                            "type": "number",
+                                            "description": "What one conversion is worth, in whatever unit you report in. The figures multiply it by the conversions. Leave empty for none.",
+                                            "example": 10
+                                        }
+                                    }
+                                },
+                                "example": [
+                                    {
+                                        "id": "contact",
+                                        "name": "Contact page opened",
+                                        "type": "page_reached",
+                                        "match": {
+                                            "pathEquals": "/contact"
+                                        },
+                                        "value": 10
+                                    }
+                                ]
+                            },
+                            "funnels": {
+                                "title": "Funnels",
+                                "type": "array",
+                                "description": "Ordered paths you expect visitors to walk, such as campaign page, then form page, then form submitted. A visit counts for a step only after it completed the step before, so the figures say where people drop off.",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "title": "Id",
+                                            "type": "string",
+                                            "description": "A short token that names the funnel in the figures. Letters, digits, dash and underscore only.",
+                                            "example": "signup"
+                                        },
+                                        "name": {
+                                            "title": "Name",
+                                            "type": "string",
+                                            "description": "What the funnel is called on the Traffic page.",
+                                            "example": "Sign up"
+                                        },
+                                        "steps": {
+                                            "title": "Steps",
+                                            "type": "array",
+                                            "description": "The steps in order. Each step matches like a goal does.",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "name": {
+                                                        "title": "Name",
+                                                        "type": "string",
+                                                        "description": "What this step is called, such as `Campaign page`.",
+                                                        "example": "Campaign page"
+                                                    },
+                                                    "match": {
+                                                        "title": "Match",
+                                                        "type": "object",
+                                                        "description": "What has to happen. Fill in one key: `pathEquals` or `pathPrefix` for a page reached, `eventName` for an event, `fileExtension` for a download, `formId` for a submitted form, `term` for a search (matched as part of the term, ignoring case). More than one key means all of them must hold.",
+                                                        "properties": {
+                                                            "pathPrefix": {
+                                                                "title": "Path prefix",
+                                                                "type": "string",
+                                                                "description": "A page path this one starts with, such as `/woo`. Counts a page view.",
+                                                                "example": "/woo"
+                                                            },
+                                                            "pathEquals": {
+                                                                "title": "Path equals",
+                                                                "type": "string",
+                                                                "description": "The exact page path, such as `/contact`. Counts a page view; a trailing slash does not matter.",
+                                                                "example": "/contact"
+                                                            },
+                                                            "eventName": {
+                                                                "title": "Event name",
+                                                                "type": "string",
+                                                                "description": "An event name, such as `scroll` or `outbound_click`.",
+                                                                "example": "scroll"
+                                                            },
+                                                            "fileExtension": {
+                                                                "title": "File extension",
+                                                                "type": "string",
+                                                                "description": "The extension of a downloaded file, such as `pdf`.",
+                                                                "example": "pdf"
+                                                            },
+                                                            "formId": {
+                                                                "title": "Form id",
+                                                                "type": "string",
+                                                                "description": "The id of a submitted form, as the page's form widget names it.",
+                                                                "example": "aanmelden"
+                                                            },
+                                                            "term": {
+                                                                "title": "Search term",
+                                                                "type": "string",
+                                                                "description": "Part of a search term, matched ignoring case.",
+                                                                "example": "woo"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "example": [
+                                                {
+                                                    "name": "Campaign page",
+                                                    "match": {
+                                                        "pathPrefix": "/campagne"
+                                                    }
+                                                },
+                                                {
+                                                    "name": "Submitted",
+                                                    "match": {
+                                                        "formId": "aanmelden"
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                },
+                                "example": []
+                            },
+                            "customDimensions": {
+                                "title": "Custom dimensions",
+                                "type": "array",
+                                "description": "Extra values the page may attach to its events through `window.portaliqTraffic.dimension(id, value)`, such as the audience a page was written for. Only a declared id is stored; anything else is stripped. Do not declare a dimension that would identify a person.",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "title": "Id",
+                                            "type": "string",
+                                            "description": "The token the page uses, such as `audience`. Letters, digits, dash and underscore only. The event carries it as `cd_audience`.",
+                                            "example": "audience"
+                                        },
+                                        "name": {
+                                            "title": "Name",
+                                            "type": "string",
+                                            "description": "What the dimension is called on the Traffic page.",
+                                            "example": "Audience"
+                                        },
+                                        "scope": {
+                                            "title": "Scope",
+                                            "type": "string",
+                                            "description": "`session` counts each visit once, by the first value it carried; `event` counts every event that carried a value.",
+                                            "enum": [
+                                                "session",
+                                                "event"
+                                            ],
+                                            "default": "event",
+                                            "example": "session"
+                                        }
+                                    }
+                                },
+                                "example": [
+                                    {
+                                        "id": "audience",
+                                        "name": "Audience",
+                                        "scope": "session"
+                                    }
+                                ]
                             },
                             "sensitive": {
                                 "title": "Sensitive measurement",
@@ -2218,7 +2457,7 @@
                     ]
                 },
                 "icon": "CursorDefaultClickOutline",
-                "version": "0.1.0",
+                "version": "0.2.0",
                 "title": "Portal Traffic Event",
                 "description": "One accepted traffic event, written by the collector through OpenRegister's raw append path and deleted once it passes the portal's retention window. Carries no IP address and no raw user agent: the visitor is a salted daily hash, and device, browser and region are derived in the request and the source discarded. Readable by instance admins only; reports read the daily aggregates instead.",
                 "type": "object",
@@ -2251,6 +2490,10 @@
                             "file_download",
                             "search",
                             "form_submit",
+                            "form_start",
+                            "form_field",
+                            "form_abandon",
+                            "page_not_found",
                             "email_open",
                             "email_click"
                         ],
@@ -2450,7 +2693,7 @@
                     "params": {
                         "title": "Parameters",
                         "type": "object",
-                        "description": "A bounded map of extra values the client attached: at most 20 keys, scalar values, 256 characters each.",
+                        "description": "A bounded map of extra values the client attached: at most 20 keys, scalar values, 256 characters each. On a form event only `formId`, `fieldId`, `lastFieldId` and `ms` survive, so what was typed can never be stored; a `cd_<id>` custom dimension survives only when the portal declared the id.",
                         "additionalProperties": true,
                         "example": {}
                     },
@@ -2477,7 +2720,7 @@
                     ]
                 },
                 "icon": "ChartLine",
-                "version": "0.2.0",
+                "version": "0.3.0",
                 "title": "Portal Traffic Daily",
                 "description": "One portal's traffic for one UTC day, recomputed from the raw events by the aggregation job every fifteen minutes. Contains counts only, never a visitor. The Traffic page and any export read these records through the ordinary object API.",
                 "type": "object",
@@ -2847,25 +3090,211 @@
                     "goals": {
                         "title": "Goals",
                         "type": "array",
-                        "description": "Goal conversions. Reserved for a later phase.",
+                        "description": "What each of the portal's goals achieved that day.",
                         "items": {
                             "type": "object",
                             "properties": {
-                                "goal": {
-                                    "title": "Goal",
+                                "id": {
+                                    "title": "Id",
                                     "type": "string",
-                                    "description": "The goal name. Reserved for a later phase.",
-                                    "example": ""
+                                    "description": "The goal's id.",
+                                    "example": "contact"
+                                },
+                                "name": {
+                                    "title": "Name",
+                                    "type": "string",
+                                    "description": "The goal's name when it was computed.",
+                                    "example": "Contact page opened"
                                 },
                                 "conversions": {
                                     "title": "Conversions",
                                     "type": "integer",
-                                    "description": "How often the goal was reached.",
+                                    "description": "Sessions that met the goal at least once.",
+                                    "example": 1
+                                },
+                                "completions": {
+                                    "title": "Completions",
+                                    "type": "integer",
+                                    "description": "Events that matched the goal.",
+                                    "example": 1
+                                },
+                                "value": {
+                                    "title": "Value",
+                                    "type": "number",
+                                    "description": "The goal's value times its conversions.",
+                                    "example": 10
+                                }
+                            }
+                        },
+                        "example": []
+                    },
+                    "conversionRate": {
+                        "title": "Conversion rate",
+                        "type": "number",
+                        "description": "The share of sessions that met at least one goal, between 0 and 1. 0 for a portal without goals.",
+                        "example": 0.12
+                    },
+                    "funnels": {
+                        "title": "Funnels",
+                        "type": "array",
+                        "description": "How far sessions walked each of the portal's funnels that day.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "title": "Id",
+                                    "type": "string",
+                                    "description": "The funnel's id.",
+                                    "example": "signup"
+                                },
+                                "name": {
+                                    "title": "Name",
+                                    "type": "string",
+                                    "description": "The funnel's name when it was computed.",
+                                    "example": "Sign up"
+                                },
+                                "steps": {
+                                    "title": "Steps",
+                                    "type": "array",
+                                    "description": "The steps in order, with the sessions that reached each.",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "name": {
+                                                "title": "Name",
+                                                "type": "string",
+                                                "description": "The step's name.",
+                                                "example": "Campaign page"
+                                            },
+                                            "sessions": {
+                                                "title": "Sessions",
+                                                "type": "integer",
+                                                "description": "Sessions that reached this step after the one before it.",
+                                                "example": 1
+                                            },
+                                            "dropOff": {
+                                                "title": "Drop-off",
+                                                "type": "number",
+                                                "description": "The share of the previous step's sessions that did not reach this one, between 0 and 1.",
+                                                "example": 0.5
+                                            }
+                                        }
+                                    },
+                                    "example": []
+                                }
+                            }
+                        },
+                        "example": []
+                    },
+                    "forms": {
+                        "title": "Forms",
+                        "type": "array",
+                        "description": "What happened to each form that day: ids and times only, never a value.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "formId": {
+                                    "title": "Form id",
+                                    "type": "string",
+                                    "description": "The form's id.",
+                                    "example": "aanmelden"
+                                },
+                                "starts": {
+                                    "title": "Starts",
+                                    "type": "integer",
+                                    "description": "Sessions in which the form was first interacted with.",
+                                    "example": 1
+                                },
+                                "submits": {
+                                    "title": "Submits",
+                                    "type": "integer",
+                                    "description": "Times the form was submitted.",
+                                    "example": 1
+                                },
+                                "abandons": {
+                                    "title": "Abandons",
+                                    "type": "integer",
+                                    "description": "Times a started form was left without submitting.",
+                                    "example": 1
+                                },
+                                "completionRate": {
+                                    "title": "Completion rate",
+                                    "type": "number",
+                                    "description": "Submits divided by starts, between 0 and 1.",
+                                    "example": 0.5
+                                },
+                                "fields": {
+                                    "title": "Fields",
+                                    "type": "array",
+                                    "description": "Per field: the average time it held focus and how often people left the form on it.",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "fieldId": {
+                                                "title": "Field id",
+                                                "type": "string",
+                                                "description": "The field's id.",
+                                                "example": "email"
+                                            },
+                                            "avgMs": {
+                                                "title": "Average milliseconds",
+                                                "type": "integer",
+                                                "description": "Mean milliseconds the field held focus per visit.",
+                                                "example": 4000
+                                            },
+                                            "abandonedHere": {
+                                                "title": "Abandoned here",
+                                                "type": "integer",
+                                                "description": "Abandons whose last field was this one.",
+                                                "example": 1
+                                            }
+                                        }
+                                    },
+                                    "example": []
+                                }
+                            }
+                        },
+                        "example": []
+                    },
+                    "notFound": {
+                        "title": "Missing pages",
+                        "type": "array",
+                        "description": "Paths the renderer answered with not found, and how often.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "path": {
+                                    "title": "Path",
+                                    "type": "string",
+                                    "description": "The requested path.",
+                                    "example": "/oude-pagina"
+                                },
+                                "hits": {
+                                    "title": "Hits",
+                                    "type": "integer",
+                                    "description": "How often it was requested.",
                                     "example": 1
                                 }
                             }
                         },
                         "example": []
+                    },
+                    "customDimensions": {
+                        "title": "Custom dimensions",
+                        "type": "object",
+                        "description": "Per declared dimension id, a map of value to count: sessions for a session-scoped dimension, events for an event-scoped one.",
+                        "additionalProperties": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "integer"
+                            }
+                        },
+                        "example": {
+                            "audience": {
+                                "inwoner": 12,
+                                "ondernemer": 3
+                            }
+                        }
                     },
                     "emails": {
                         "title": "Emails",

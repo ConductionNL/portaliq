@@ -19,7 +19,10 @@ import {
 	allowedEvent,
 	chunk,
 	classifyLink,
+	dimensionParams,
 	envelope,
+	fieldIdOf,
+	formIdOf,
 	mayPersist,
 	optedOut,
 	randomId,
@@ -250,5 +253,72 @@ describe('randomId', () => {
 		const fake = { getRandomValues: (bytes) => bytes.fill(171) }
 		assert.equal(randomId(fake), 'ab'.repeat(16))
 		assert.match(randomId(undefined), /^[0-9a-f]{32}$/)
+	})
+})
+
+describe('form analytics (portal-traffic-outcomes)', () => {
+	const form = (attributes, id = '') => ({
+		id,
+		getAttribute: (name) => attributes[name] || null,
+	})
+
+	it('names a form by data-portaliq-form first, then id, name, action', () => {
+		assert.equal(
+			formIdOf(form({ 'data-portaliq-form': 'aanmelden' }, 'x')),
+			'aanmelden',
+		)
+		assert.equal(formIdOf(form({}, 'contact')), 'contact')
+		assert.equal(formIdOf(form({ name: 'n' })), 'n')
+		assert.equal(formIdOf(form({ action: '/post' })), '/post')
+		assert.equal(formIdOf(form({})), '')
+		assert.equal(formIdOf(null), '')
+	})
+
+	it('names a field by id or name and never reads its value', () => {
+		const field = {
+			tagName: 'input',
+			type: 'email',
+			id: 'email',
+			name: 'e',
+			value: 'jan@example.org',
+		}
+		assert.equal(fieldIdOf(field), 'email')
+		assert.equal(
+			fieldIdOf({ tagName: 'TEXTAREA', name: 'msg', value: 'x' }),
+			'msg',
+		)
+		assert.equal(fieldIdOf({ tagName: 'INPUT', type: 'hidden', id: 'csrf' }), '')
+		assert.equal(fieldIdOf({ tagName: 'INPUT', type: 'submit', id: 'go' }), '')
+		assert.equal(fieldIdOf({ tagName: 'BUTTON', id: 'b' }), '')
+		assert.equal(fieldIdOf(null), '')
+	})
+})
+
+describe('custom dimensions (portal-traffic-outcomes)', () => {
+	const traffic = {
+		customDimensions: [
+			{ id: 'audience', scope: 'session' },
+			{ id: 'lang', scope: 'event' },
+		],
+	}
+
+	it('attaches cd_<id> for declared ids with a value and nothing for the rest', () => {
+		assert.deepEqual(
+			dimensionParams(traffic, {
+				audience: 'inwoner',
+				lang: '',
+				secret: 'bsn',
+			}),
+			{ cd_audience: 'inwoner' },
+		)
+		assert.deepEqual(dimensionParams(traffic, {}), {})
+		assert.deepEqual(dimensionParams({}, { audience: 'x' }), {})
+		assert.deepEqual(dimensionParams(null, null), {})
+	})
+
+	it('bounds a value to 256 characters and stringifies it', () => {
+		const out = dimensionParams(traffic, { lang: 'x'.repeat(300), audience: 7 })
+		assert.equal(out.cd_lang.length, 256)
+		assert.equal(out.cd_audience, '7')
 	})
 })

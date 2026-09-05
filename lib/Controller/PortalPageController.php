@@ -203,6 +203,14 @@ class PortalPageController extends Controller {
 				'portalConfig' => [
 					'portal'  => (string)$this->request->getParam('portal', ''),
 					'apiBase' => $this->urlGenerator->linkToRoute('portaliq.content.site'),
+					// The serving portal's slug, resolved the same way the theme
+					// above is (host, or the named site). The renderer keeps
+					// resolving CONTENT through the API exactly as before; this
+					// only lets first-party campaign capture key its storage
+					// by portal at boot, synchronously, instead of after the
+					// site fetch, where a visitor who moved on quickly lost the
+					// landing that brought them.
+					'resolvedPortal' => $this->siteResolvedSlug(),
 				],
 				// THEME TOKENS ARE THE ONE THING THAT CANNOT WAIT FOR THE API.
 				// Everything else this renderer shows is fetched after boot,
@@ -303,6 +311,27 @@ class PortalPageController extends Controller {
 
 		return $locale;
 	}//end siteLocale()
+
+
+	/**
+	 * The serving portal's slug, or '' when the request resolves to none.
+	 *
+	 * @return string The slug.
+	 *
+	 * @spec openspec/specs/landing-page-provisioning/spec.md#requirement-utm-capture-is-first-party-portal-scoped-and-honest-about-being-advisory
+	 */
+	private function siteResolvedSlug(): string {
+		try {
+			$portal = $this->portalResolver->resolve(
+				request: $this->request,
+				portalSlug: (string)$this->request->getParam('portal', '')
+			);
+		} catch (\Throwable) {
+			return '';
+		}
+
+		return (string)($portal['slug'] ?? '');
+	}//end siteResolvedSlug()
 
 
 	/**

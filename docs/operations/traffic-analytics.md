@@ -30,6 +30,8 @@ visible on `/api/metrics` rather than silently ineffective.
 | `file_download` | A link to a document (pdf, docx, xlsx, zip and the like) was followed. |
 | `search` | A page was opened with a search term in `?q=`, `?zoek=` or `?search=`. |
 | `form_submit` | A form was submitted. Only the form's id or name is kept, never a value. |
+| `form_start`, `form_field`, `form_abandon` | Form analytics: a form was first interacted with, a field was left (its id and how long it had focus), a started form was left unsubmitted. Never a value; see "Form analytics". |
+| `page_not_found` | The site answered a request with not found. See "Missing pages". |
 | `email_open`, `email_click` | A mail sent by another app in this instance (pipelinq) was opened or clicked. Written server side only; a browser cannot claim them. |
 
 Each event carries the page location, the referrer and the page title. On
@@ -212,15 +214,110 @@ from the contact reference, salted per portal per day, so a mail event and a
 later site visit do not link unless the visit carries the same campaign
 parameters. Attribution is by campaign, not by person.
 
+## Goals
+
+A goal is an outcome the portal counts as a success. Each portal lists its
+own under `traffic.goals`, in the portal's settings:
+
+| Field | Meaning |
+| --- | --- |
+| `id` | A short token (letters, digits, dash, underscore) that names the goal in the figures. |
+| `name` | What the goal is called on the Traffic page. |
+| `type` | `page_reached`, `event`, `download`, `form_submitted` or `search`. |
+| `match` | What has to happen: `pathEquals` or `pathPrefix` for a page, `eventName` for an event, `fileExtension` for a download, `formId` for a form, `term` for part of a search term. More than one key means all must hold. |
+| `value` | Optional. What one conversion is worth, in whatever unit you report in. |
+
+Goals are evaluated by the aggregation job over the day's sessions; the
+collector and the client do not change, so adding a goal costs nothing on
+the page and applies to the next aggregation. The daily record carries per
+goal the **conversions** (sessions that met it at least once), the
+**completions** (matching events) and the value times the conversions, plus
+`conversionRate`, the share of sessions that met any goal. A visitor who
+downloads the same brochure three times is one conversion and three
+completions.
+
+## Funnels
+
+A funnel is an ordered path you expect visitors to walk: the campaign
+page, then the form page, then the form submitted. Each portal lists its
+own under `traffic.funnels`, each with an `id`, a `name` and `steps`, and
+each step has a `name` and a `match` in the same shape as a goal's. A
+session counts for a step only after it completed the step before, in the
+order its events happened, so a visitor who submitted the form and then
+wandered to the campaign page counts for the first step only. The daily
+record carries per step the sessions that reached it and the drop-off, the
+share of the previous step's sessions that did not.
+
+## Form analytics
+
+When a portal enables `form_start`, `form_field` and `form_abandon`, the
+client watches the forms the site renders (the landing-page form widget,
+and on an external page any `<form data-portaliq-form="...">`) and
+reports:
+
+- `form_start` the first time a field of the form gets focus;
+- `form_field` when a field loses focus, with the field's id and how many
+  milliseconds it held focus;
+- `form_abandon` when the page is hidden while a started form was not
+  submitted, with the field the visitor was last on;
+- `form_submit`, as before, now with the form's id.
+
+**What was typed is never read, never sent and never stored.** The client
+reads a field's id or name and the clock, nothing else. The collector
+keeps only `formId`, `fieldId`, `lastFieldId` and `ms` on a form event
+and strips anything else, so a value cannot reach storage even from a
+client that sends one. The Traffic page shows per form the starts, submits,
+abandons, the completion rate and the field most people left on, and the
+daily record carries per field the average time in it and how often it
+was the last one before an abandon.
+
+## Missing pages
+
+The built-in renderer marks its not-found state with
+`data-portaliq-status="404"` and names the route it could not find in
+`data-portaliq-path`; an external page may put the same attributes on its
+own not-found state. When the portal enables `page_not_found`, the client
+reports the location and that route, and the Traffic page lists the
+requested paths under **Pages, Missing pages**. A broken link in a newsletter then
+shows up where the person who can fix it is looking.
+
+## Custom dimensions
+
+A page can attach its own values to what it sends, such as the audience it
+was written for. The portal declares each under `traffic.customDimensions`
+with an `id` (a short token), a `name` and a `scope`: `session` counts each
+visit once, by the first value it carried; `event` counts every event that
+carried a value. The page sets a value with
+`window.portaliqTraffic.dimension('audience', 'inwoner')` and the client
+attaches it as `cd_audience` to everything it sends from then on. The
+collector strips any `cd_` parameter whose id the portal did not declare,
+which is the same rule every other dimension already follows. Do not
+declare a dimension that would identify a person: the id list is the
+portal's statement of what it collects.
+
+## Site search
+
+Search terms come from two places and land in one list. The client reads
+`?q=`, `?zoek=`, `?search=`, `?query=` and `?zoekterm=` from the page
+location, and the built-in renderer's search block reports the term and
+the result count itself when a search completes, so a site whose search
+does not put the term in the URL is counted the same. Both need the
+`search` event enabled, and the term is only stored when the portal
+enabled the `searchTerm` dimension, which is not a default: a search box
+receives names, case numbers and medical words. The terms are listed under
+**Sources, Searches**.
+
 ## What you see
 
 **Reports, Traffic** shows one portal at a time over a period you choose
 (the last 7, 30 or 90 days, or a custom start and end): page views,
 sessions, visitors and engaged sessions, a chart per day, the top pages
 with entrances and exits, the most travelled steps between pages, sources
-by channel, and under **Visitors** the new versus returning split where the
-portal can tell, the signed in accounts where it links them, and the
-devices, browsers, operating systems, languages and regions. A breakdown
+by channel with the searched terms, and under **Visitors** the new versus
+returning split where the portal can tell, the signed in accounts where it
+links them, and the devices, browsers, operating systems, languages and
+regions. Below those, **Goals**, **Funnels**, **Forms** and **Custom
+dimensions**, each saying so when the portal declared none. A breakdown
 the portal did not enable reads **not measured** rather than showing an
 empty list. A portal with measurement off says **Not measured for
 this portal**; a measured portal without figures yet says **No traffic

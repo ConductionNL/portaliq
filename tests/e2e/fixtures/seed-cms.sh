@@ -101,11 +101,19 @@ print(i)
 }
 
 echo "==> portals"
-# Open Tilburg MEASURES traffic (portal-traffic-analytics): five events on,
-# search terms kept, cookieless. Venray below has measurement OFF, so the
-# suite can tell "refused because disabled" from "accepted" against two
-# real portals, and the Traffic page's "not measured" state from its
-# "no data yet" state.
+# Open Tilburg MEASURES traffic (portal-traffic-analytics): the page,
+# scroll, click and search events on, search terms kept, cookieless.
+# Venray below has measurement OFF, so the suite can tell "refused because
+# disabled" from "accepted" against two real portals, and the Traffic
+# page's "not measured" state from its "no data yet" state.
+#
+# portal-traffic-outcomes adds the form and not-found events, one
+# page-reached goal, one two-step funnel and one session-scoped custom
+# dimension, so the outcomes spec can prove each against a real portal.
+# `form_submit` stays OFF: traffic-analytics.spec.ts proves the refusal
+# of a known but unenabled event with it.
+# tests/e2e/lib/traffic.ts carries the SAME block as `seededTraffic()`;
+# a spec that changes it restores this one.
 SITE=$(upsert portal slug open-tilburg '{
   "title":"Open Tilburg","slug":"open-tilburg","status":"published",
   "domains":[{"hostname":"localhost","verified":true}],
@@ -114,8 +122,14 @@ SITE=$(upsert portal slug open-tilburg '{
   "frameAncestors":[],"organisation":"dev-org",
   "traffic":{
     "enabled":true,
-    "events":["page_view","session_start","scroll","outbound_click","search"],
-    "dimensions":["pageReferrer","pageTitle","searchTerm","linkUrl","referrerHost","channel","deviceType","browser","os","language"]
+    "events":["page_view","session_start","scroll","outbound_click","search","form_start","form_field","form_abandon","page_not_found"],
+    "dimensions":["pageReferrer","pageTitle","searchTerm","linkUrl","referrerHost","channel","deviceType","browser","os","language"],
+    "goals":[{"id":"contact","name":"Contact page opened","type":"page_reached","match":{"pathEquals":"/contact"},"value":10}],
+    "funnels":[{"id":"contact-journey","name":"Home to contact","steps":[
+      {"name":"Home","match":{"pathEquals":"/"}},
+      {"name":"Contact","match":{"pathEquals":"/contact"}}
+    ]}],
+    "customDimensions":[{"id":"audience","name":"Audience","scope":"session"}]
   }
 }')
 echo "    open-tilburg = $SITE"

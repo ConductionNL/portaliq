@@ -318,7 +318,7 @@
       "type": "dashboard",
       "title": "Traffic",
       "config": {
-        "description": "What visitors looked at, who they were and where they came from. Pick a portal and a period at the top; the numbers come from the daily figures the aggregation job writes every fifteen minutes.",
+        "description": "What visitors looked at, who they were, where they came from and whether they did what the portal hoped. Pick a portal and a period at the top; the numbers come from the daily figures the aggregation job writes every fifteen minutes.",
         "widgets": [
           {
             "id": "traffic-overview",
@@ -349,6 +349,26 @@
             "id": "traffic-visitors",
             "type": "TrafficVisitors",
             "title": "Visitors"
+          },
+          {
+            "id": "traffic-goals",
+            "type": "TrafficGoals",
+            "title": "Goals"
+          },
+          {
+            "id": "traffic-funnels",
+            "type": "TrafficFunnels",
+            "title": "Funnels"
+          },
+          {
+            "id": "traffic-forms",
+            "type": "TrafficForms",
+            "title": "Forms"
+          },
+          {
+            "id": "traffic-dimensions",
+            "type": "TrafficDimensions",
+            "title": "Custom dimensions"
           }
         ],
         "layout": [
@@ -399,10 +419,42 @@
             "gridY": 13,
             "gridWidth": 12,
             "gridHeight": 5
+          },
+          {
+            "id": 7,
+            "widgetId": "traffic-goals",
+            "gridX": 0,
+            "gridY": 18,
+            "gridWidth": 6,
+            "gridHeight": 4
+          },
+          {
+            "id": 8,
+            "widgetId": "traffic-funnels",
+            "gridX": 6,
+            "gridY": 18,
+            "gridWidth": 6,
+            "gridHeight": 4
+          },
+          {
+            "id": 9,
+            "widgetId": "traffic-forms",
+            "gridX": 0,
+            "gridY": 22,
+            "gridWidth": 6,
+            "gridHeight": 4
+          },
+          {
+            "id": 10,
+            "widgetId": "traffic-dimensions",
+            "gridX": 6,
+            "gridY": 22,
+            "gridWidth": 6,
+            "gridHeight": 4
           }
         ]
       },
-      "_note": "portal-traffic-analytics. The three stats-blocks this page used to carry counted portalSession, revoked portalSession and portalMessage rows: authenticated-session bookkeeping that said nothing about visitors (task 0.1). The six widgets here read portalTrafficDaily through the object API and say 'not measured' for a portal with measurement off instead of drawing a zero. portal-traffic-visitors-and-geo added the period selector (on the overview, read by every widget through the report store) and the Visitors widget."
+      "_note": "portal-traffic-analytics. The three stats-blocks this page used to carry counted portalSession, revoked portalSession and portalMessage rows: authenticated-session bookkeeping that said nothing about visitors (task 0.1). The six widgets here read portalTrafficDaily through the object API and say 'not measured' for a portal with measurement off instead of drawing a zero. portal-traffic-visitors-and-geo added the period selector (on the overview, read by every widget through the report store) and the Visitors widget. portal-traffic-outcomes added Goals, Funnels, Forms and Custom dimensions, the missing pages under Pages and the searches under Sources."
     },
     {
       "id": "PortalAccounts",

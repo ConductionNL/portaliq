@@ -139,6 +139,9 @@ class TrafficAggregationService {
 				options: [
 					'persistClientId' => (($config['sensitive']['persistClientId'] ?? false) === true),
 					'accountLinking' => (($config['sensitive']['accountLinking'] ?? false) === true),
+					'goals' => ($config['goals'] ?? []),
+					'funnels' => ($config['funnels'] ?? []),
+					'customDimensions' => ($config['customDimensions'] ?? []),
 				]
 			);
 		}
@@ -191,7 +194,7 @@ class TrafficAggregationService {
 	 * @param string            $date           The UTC day.
 	 * @param int                 $timeoutMinutes The portal's session timeout.
 	 * @param DateTimeImmutable   $now            The clock.
-	 * @param array<string, bool> $options        The portal's persistClientId and accountLinking switches.
+	 * @param array<string, mixed> $options       The portal's switches and its goal, funnel and dimension definitions.
 	 *
 	 * @return bool True when a rollup was written.
 	 */

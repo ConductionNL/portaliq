@@ -39,3 +39,9 @@
 .traffic-table__muted {
 	color: var(--color-text-maxcontrast);
 }
+
+.traffic-table__subheading {
+	margin: 12px 8px 4px;
+	font-size: 14px;
+	font-weight: bold;
+}

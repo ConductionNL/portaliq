@@ -9,6 +9,7 @@
  * inventing a second way to find the app's root path.
  */
 
+import { compactTouch } from './campaignTracking.js'
 import { resolveApiBase } from './contentApi.js'
 
 const REGISTER = 'portaliq'
@@ -47,10 +48,13 @@ export async function submitLandingPageForm(values, tracking = {}) {
 		window.location.origin,
 	)
 
+	// Only captured parameters travel: a touch of nulls fails the store's
+	// validation of the nested strings, and the form could not be sent by
+	// anyone who arrived without a campaign link.
 	const body = {
 		...values,
-		utmFirstTouch: tracking.utmFirstTouch || null,
-		utmLastTouch: tracking.utmLastTouch || null,
+		utmFirstTouch: compactTouch(tracking.utmFirstTouch),
+		utmLastTouch: compactTouch(tracking.utmLastTouch),
 		referrer: tracking.referrer || '',
 	}
 
