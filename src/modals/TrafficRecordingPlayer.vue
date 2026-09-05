@@ -264,6 +264,13 @@ export default {
 	},
 
 	watch: {
+		/**
+		 * Start the replay when the player opens, stop it when it closes.
+		 *
+		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+		 * @param {boolean} value Whether the player is open.
+		 * @return {void}
+		 */
 		open(value) {
 			if (value) {
 				this.$nextTick(() => this.restart())

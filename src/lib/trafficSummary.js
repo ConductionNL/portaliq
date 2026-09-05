@@ -706,6 +706,7 @@ export const WINNING_CONFIDENCE = 0.95
  * two-proportion z-test, a winner only with enough sessions everywhere
  * and the confidence at or above the threshold.
  *
+ * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-winner-must-only-be-named-with-enough-sessions-and-a-significant-difference
  * @param {Array<{id: string, sessions: number, conversions: number}>} variants The rows.
  * @return {{winner: string, confidence: number, enough: boolean}} The verdict.
  */
@@ -742,6 +743,7 @@ export function verdict(variants) {
 /**
  * The two-proportion z-test as a two-sided confidence, three decimals.
  *
+ * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-winner-must-only-be-named-with-enough-sessions-and-a-significant-difference
  * @param {number} conversionsA Conversions of the first variant.
  * @param {number} sessionsA    Sessions of the first variant.
  * @param {number} conversionsB Conversions of the second variant.
