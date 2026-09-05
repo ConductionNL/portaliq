@@ -101,12 +101,22 @@ print(i)
 }
 
 echo "==> portals"
+# Open Tilburg MEASURES traffic (portal-traffic-analytics): five events on,
+# search terms kept, cookieless. Venray below has measurement OFF, so the
+# suite can tell "refused because disabled" from "accepted" against two
+# real portals, and the Traffic page's "not measured" state from its
+# "no data yet" state.
 SITE=$(upsert portal slug open-tilburg '{
   "title":"Open Tilburg","slug":"open-tilburg","status":"published",
   "domains":[{"hostname":"localhost","verified":true}],
   "theme":"vng","locales":["nl","en"],
   "authentication":{"modes":["public"]},
-  "frameAncestors":[],"organisation":"dev-org"
+  "frameAncestors":[],"organisation":"dev-org",
+  "traffic":{
+    "enabled":true,
+    "events":["page_view","session_start","scroll","outbound_click","search"],
+    "dimensions":["pageReferrer","pageTitle","searchTerm","linkUrl","referrerHost","channel","deviceType","browser","os","language"]
+  }
 }')
 echo "    open-tilburg = $SITE"
 
@@ -126,7 +136,8 @@ SITE2=$(upsert portal slug open-venray '{
   ],
   "theme":"venray","locales":["nl"],
   "authentication":{"modes":["public"]},
-  "frameAncestors":[],"organisation":"dev-org"
+  "frameAncestors":[],"organisation":"dev-org",
+  "traffic":{"enabled":false}
 }')
 echo "    open-venray  = $SITE2 (venray.localhost verified, unverified.localhost not)"
 

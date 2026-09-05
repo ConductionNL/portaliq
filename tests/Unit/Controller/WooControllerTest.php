@@ -101,7 +101,6 @@ class WooControllerTest extends TestCase {
 		$this->controller = new WooController('portaliq', $this->createMock(IRequest::class));
 
 		$root = (new ReflectionClass(WooController::class))->getProperty('root');
-		$root->setAccessible(true);
 		$root->setValue($this->controller, realpath($this->bundle));
 	}//end setUp()
 

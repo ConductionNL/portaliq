@@ -55,6 +55,16 @@ return [
             'postfix' => 'byroute',
         ],
 
+        // Traffic analytics (portal-traffic-analytics). Public like the
+        // content API above, for the same reason: a visitor's browser on a
+        // portal's own domain, or on a statically built site elsewhere, has
+        // no Nextcloud session. The collector resolves the portal by HOST
+        // first and accepts a slug only when the host resolves nothing.
+        // Registered here, ahead of the SPA catch-all.
+        ['name' => 'traffic#collect', 'url' => '/api/traffic', 'verb' => 'POST'],
+        ['name' => 'traffic#pixel', 'url' => '/api/traffic/pixel.gif', 'verb' => 'GET'],
+        ['name' => 'traffic#client', 'url' => '/api/traffic-client.js', 'verb' => 'GET'],
+
         // The editing-context probe (portal-page-designer). NOT part of the
         // headless content contract: it answers a question about the CALLER
         // (may this session edit this route's page), which a third-party

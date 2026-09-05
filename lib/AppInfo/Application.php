@@ -46,6 +46,9 @@ use OCA\Portaliq\Listener\CmsCacheInvalidationListener;
 use OCA\Portaliq\Listener\LandingPageRequestedEventListener;
 use OCA\Portaliq\Listener\LandingPageSubmissionDispatchListener;
 use OCA\Portaliq\Middleware\PortalAuthMiddleware;
+use OCA\Portaliq\Middleware\PublicApiCorsMiddleware;
+use OCA\Portaliq\Service\Traffic\GeoResolverInterface;
+use OCA\Portaliq\Service\Traffic\NullGeoResolver;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
@@ -97,6 +100,11 @@ class Application extends App implements IBootstrap {
 		// ContributionController). Public auth-edge routes are untouched.
 		$context->registerMiddleware(PortalAuthMiddleware::class);
 
+		// Reflect-Origin CORS on the public content and traffic responses, so
+		// a statically built site on its own domain can read content and post
+		// a traffic batch without a preflight (portal-traffic-analytics).
+		$context->registerMiddleware(PublicApiCorsMiddleware::class);
+
 		// Portal contributions are discovered by convention FQCN
 		// (OCA\{Namespace}\Portal\PortalContributionProvider) — see
 		// PortalContributionRegistry — so no per-provider registration is needed
@@ -116,6 +124,12 @@ class Application extends App implements IBootstrap {
 		// relay of a visitor's submission back to that app.
 		$context->registerEventListener(LandingPageRequestedEvent::class, LandingPageRequestedEventListener::class);
 		$context->registerEventListener(ObjectCreatedEvent::class, LandingPageSubmissionDispatchListener::class);
+
+		// Traffic analytics (portal-traffic-analytics): where a visitor's
+		// address turns into a region. Phase 0 binds the resolver that
+		// answers nothing; a later phase swaps in an offline database here
+		// and the ingest path does not change.
+		$context->registerServiceAlias(GeoResolverInterface::class, NullGeoResolver::class);
 	}//end register()
 
 	/**

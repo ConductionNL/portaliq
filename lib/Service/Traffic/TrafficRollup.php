@@ -1,0 +1,249 @@
+<?php
+
+/**
+ * Portaliq Traffic Rollup.
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2026 Conduction B.V.
+ *
+ * @category  Service
+ * @package   OCA\Portaliq
+ * @author    Conduction <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ * @link      https://portaliq.conduction.nl
+ *
+ * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Portaliq\Service\Traffic;
+
+/**
+ * One portal-day of sessions, counted the way the contract's section 3
+ * lists it.
+ *
+ * Pure, like the sessioniser: sessions in, one `portalTrafficDaily` record
+ * out, and the SAME sessions always give the SAME record. That property
+ * is what makes recomputing a day idempotent, and the aggregation job
+ * leans on it rather than on any bookkeeping of its own.
+ *
+ * Engagement follows the GA4 definition so the numbers mean what a
+ * communications officer already expects: a session is engaged when it
+ * lasted ten seconds or more, viewed more than one page, or scrolled.
+ *
+ * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+ */
+class TrafficRollup {
+
+	/**
+	 * Seconds a session must last to count as engaged (GA4: 10).
+	 */
+	private const ENGAGED_SECONDS = 10;
+
+	/**
+	 * Constructor.
+	 *
+	 * @param TrafficJourneyStats    $journeys   Counts pages and transitions.
+	 * @param TrafficDimensionCounts $dimensions Counts referrers, devices, searches and the like.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private readonly TrafficJourneyStats $journeys = new TrafficJourneyStats(),
+		private readonly TrafficDimensionCounts $dimensions = new TrafficDimensionCounts(),
+	) {
+	}
+
+	/**
+	 * Build the day's record.
+	 *
+	 * @param string                                    $portal       The portal slug.
+	 * @param string                                    $date         The UTC day, YYYY-MM-DD.
+	 * @param array<int, array<string, mixed>>          $sessions     The day's sessions, each `{visitor, explicit, events}`.
+	 * @param string                                    $aggregatedAt When this record was computed, ISO 8601.
+	 *
+	 * @return array<string, mixed> The `portalTrafficDaily` fields.
+	 *
+	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+	 */
+	public function build(string $portal, string $date, array $sessions, string $aggregatedAt): array {
+		$totals = $this->totals(sessions: $sessions);
+		$pages = $this->journeys->pages(sessions: $sessions);
+
+		return [
+			'portal' => $portal,
+			'date' => $date,
+			'pageViews' => $totals['pageViews'],
+			'sessions' => count($sessions),
+			'visitors' => $totals['visitors'],
+			'newVisitors' => $totals['newVisitors'],
+			'engagedSessions' => $totals['engaged'],
+			'avgEngagementSeconds' => $this->mean(sum: $totals['seconds'], count: count($sessions)),
+			'bounceRate' => $this->bounceRate(engaged: $totals['engaged'], sessions: count($sessions)),
+			'events' => $totals['events'],
+			'pages' => $pages['pages'],
+			'transitions' => $pages['transitions'],
+			'referrers' => $this->dimensions->perSession(
+				sessions: $sessions,
+				keys: ['referrerHost', 'channel'],
+				names: ['host', 'channel'],
+				countKey: 'count'
+			),
+			'campaigns' => $this->dimensions->perSession(
+				sessions: $sessions,
+				keys: ['campaign', 'source', 'medium'],
+				names: ['campaign', 'source', 'medium'],
+				countKey: 'sessions'
+			),
+			'devices' => $this->dimensions->perSessionMap(sessions: $sessions, key: 'deviceType'),
+			'browsers' => $this->dimensions->perSessionMap(sessions: $sessions, key: 'browser'),
+			'os' => $this->dimensions->perSessionMap(sessions: $sessions, key: 'os'),
+			'languages' => $this->dimensions->perSessionMap(sessions: $sessions, key: 'language'),
+			'regions' => $this->dimensions->perSessionMap(sessions: $sessions, key: 'region'),
+			'searches' => $this->dimensions->perEvent(sessions: $sessions, name: 'search', keys: ['searchTerm', 'params.search_term'], label: 'term'),
+			'downloads' => $this->dimensions->perEvent(
+				sessions: $sessions,
+				name: 'file_download',
+				keys: ['fileName', 'linkUrl', 'params.file_name'],
+				label: 'file'
+			),
+			'outbound' => $this->dimensions->perEvent(sessions: $sessions, name: 'outbound_click', keys: ['linkUrl', 'params.link_url'], label: 'url'),
+			'goals' => [],
+			'emails' => [
+				'opens' => (int)($totals['events']['email_open'] ?? 0),
+				'clicks' => (int)($totals['events']['email_click'] ?? 0),
+			],
+			'aggregatedAt' => $aggregatedAt,
+			'lastEventAt' => $totals['lastEventAt'],
+		];
+	}
+
+	/**
+	 * The session-level totals in one pass.
+	 *
+	 * @param array<int, array<string, mixed>> $sessions The sessions.
+	 *
+	 * @return array<string, mixed> pageViews, visitors, newVisitors, engaged, seconds, events, lastEventAt.
+	 */
+	private function totals(array $sessions): array {
+		$visitors = [];
+		$newVisitors = [];
+		$events = [];
+		$pageViews = 0;
+		$engaged = 0;
+		$seconds = 0.0;
+		$last = '';
+		foreach ($sessions as $session) {
+			$visitors[$session['visitor']] = true;
+			if ($this->isNew(session: $session) === true) {
+				$newVisitors[$session['visitor']] = true;
+			}
+
+			$views = 0;
+			$scrolled = false;
+			foreach ($session['events'] as $event) {
+				$name = (string)($event['name'] ?? '');
+				$events[$name] = ($events[$name] ?? 0) + 1;
+				$views += (int)($name === 'page_view');
+				$scrolled = $scrolled || ($name === 'scroll');
+				$last = max($last, (string)($event['occurredAt'] ?? ''));
+			}
+
+			$duration = $this->duration(session: $session);
+			$seconds += $duration;
+			$pageViews += $views;
+			$engaged += (int)($views > 1 || $scrolled === true || $duration >= self::ENGAGED_SECONDS);
+		}
+
+		ksort($events);
+
+		return [
+			'pageViews' => $pageViews,
+			'visitors' => count($visitors),
+			'newVisitors' => count($newVisitors),
+			'engaged' => $engaged,
+			'seconds' => $seconds,
+			'events' => $events,
+			'lastEventAt' => $last,
+		];
+	}
+
+	/**
+	 * Whether a session's visitor is new.
+	 *
+	 * A cookieless visitor is identified by a hash that does not survive
+	 * the day, so every one of them is new by construction. A visitor with
+	 * a persisted client id is new when the client said so on the session
+	 * it started right after creating that id.
+	 *
+	 * @param array<string, mixed> $session The session.
+	 *
+	 * @return bool True when new.
+	 */
+	private function isNew(array $session): bool {
+		if (str_starts_with((string)$session['visitor'], 'h:') === true) {
+			return true;
+		}
+
+		foreach ($session['events'] as $event) {
+			if (($event['name'] ?? '') === 'session_start' && (($event['params']['first'] ?? false) === true)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Seconds between a session's first and last event.
+	 *
+	 * @param array<string, mixed> $session The session.
+	 *
+	 * @return float The duration.
+	 */
+	private function duration(array $session): float {
+		$events = $session['events'];
+		if (count($events) < 2) {
+			return 0.0;
+		}
+
+		$first = (float)($events[0]['_at'] ?? 0);
+		$last = (float)($events[count($events) - 1]['_at'] ?? 0);
+
+		return max(0.0, $last - $first);
+	}
+
+	/**
+	 * A mean rounded to one decimal, 0 for an empty set.
+	 *
+	 * @param float $sum   The sum.
+	 * @param int   $count The count.
+	 *
+	 * @return float The mean.
+	 */
+	private function mean(float $sum, int $count): float {
+		if ($count <= 0) {
+			return 0.0;
+		}
+
+		return round($sum / $count, 1);
+	}
+
+	/**
+	 * The share of sessions that were not engaged, 0 with no sessions.
+	 *
+	 * @param int $engaged  Engaged sessions.
+	 * @param int $sessions All sessions.
+	 *
+	 * @return float Between 0 and 1, three decimals.
+	 */
+	private function bounceRate(int $engaged, int $sessions): float {
+		if ($sessions <= 0) {
+			return 0.0;
+		}
+
+		return round(($sessions - $engaged) / $sessions, 3);
+	}
+}

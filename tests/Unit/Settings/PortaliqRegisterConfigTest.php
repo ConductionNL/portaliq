@@ -97,16 +97,20 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// is default-OPEN to every authenticated user in OpenRegister, so any
 		// account on the instance could rewrite a published portal page; the
 		// rules now name the configured editor groups (empty = admins only).
-		// 0.16.0 (page 0.3.0): added the `form` and `landingPageSubmission`
-		// schemas (landing-page-provisioning) and declared `heroImage` on
-		// `page` — the contribution-landing-page-action cross-app command's
-		// own new capability. Both new schemas are listed in
-		// `components.registers.portaliq.schemas` (ImportHandler binds only
-		// what is listed there) and declare a non-empty `read` rule so
-		// neither falls through to OpenRegister's fail-open default.
-		$this->assertSame('0.16.0', self::$register['info']['version']);
+		// 0.17.0 (page 0.3.0, portal 0.3.0): two changes met here. Development
+		// declared `kind` (site or external) and the `traffic` block, and added
+		// the `portalTrafficEvent` and `portalTrafficDaily` schemas
+		// (portal-traffic-analytics). This branch added the `form` and
+		// `landingPageSubmission` schemas and declared `heroImage` on `page`
+		// (contribution-landing-page-action). Both bumped the register to
+		// 0.16.0 independently, so the merged register is 0.17.0. Every new
+		// schema is listed in `components.registers.portaliq.schemas`
+		// (ImportHandler binds only what is listed there) and declares a
+		// non-empty `read` rule, so none falls through to OpenRegister's
+		// fail-open default.
+		$this->assertSame('0.17.0', self::$register['info']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['page']['version']);
-		$this->assertSame('0.2.0', self::$register['components']['schemas']['portal']['version']);
+		$this->assertSame('0.3.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('0.5.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalSession']['version']);

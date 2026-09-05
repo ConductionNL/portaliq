@@ -79,6 +79,7 @@
          portal delivery ledger into inbox messages and mails every 5 minutes. -->
     <background-jobs>
         <job>OCA\Portaliq\BackgroundJob\PortalTaskDeliveryJob</job>
+        <job>OCA\Portaliq\BackgroundJob\TrafficAggregationJob</job>
     </background-jobs>
 
     <!-- @spec openspec/architecture/adr-023-action-authorization.md -->

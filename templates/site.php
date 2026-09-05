@@ -292,5 +292,22 @@ if ($favicon === '') {
     <div id="portaliq-site"></div>
 
     <?php emit_script_tag($asset($appId, 'js/portaliq-site.js')); ?>
+    <?php
+    // THE TRAFFIC CLIENT, AFTER THE SITE BUNDLE, FROM THE ROUTE (portal-
+    // traffic-analytics). The same URL a Docusaurus build loads, so the two
+    // renderers run the same bytes; a file path under js/ would answer 401
+    // to the anonymous visitor this page exists for. The nonce helper takes
+    // no data attributes, so the client derives its origin and app path from
+    // this tag's own src and the named portal (when one was named) from the
+    // config block above. It then asks /api/content/site what the portal
+    // measures and does nothing at all for a portal that measures nothing:
+    // whether to measure is the portal's decision, served by the API, not
+    // something this template resolves. The cache-buster is the built
+    // file's mtime for the same reason the bundle's is.
+    $trafficClient = $appRoot . '/js/portaliq-traffic.js';
+    if (is_file($trafficClient) === true) {
+        emit_script_tag($url->linkToRoute('portaliq.traffic.client') . '?v=' . urlencode((string)filemtime($trafficClient)));
+    }
+    ?>
 </body>
 </html>

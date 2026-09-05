@@ -2,8 +2,8 @@
     "openapi": "3.0.0",
     "info": {
         "title": "Portaliq Register",
-        "description": "Register containing all schemas owned by the Portaliq external-portal application.",
-        "version": "0.16.0"
+        "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
+        "version": "0.17.0"
     },
     "x-openregister": {
         "type": "application",
@@ -19,13 +19,11 @@
             "portaliq": {
                 "slug": "portaliq",
                 "title": "Portaliq Register",
-                "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification and audit entry the app reads and writes.",
+                "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
                 "version": "0.16.0",
                 "schemas": [
                     "exampleDocument",
-                    "form",
                     "glossaryTerm",
-                    "landingPageSubmission",
                     "menu",
                     "page",
                     "portal",
@@ -36,7 +34,11 @@
                     "portalOidcState",
                     "portalPage",
                     "portalSession",
-                    "portalSubmission"
+                    "portalSubmission",
+                    "portalTrafficDaily",
+                    "portalTrafficEvent",
+                    "form",
+                    "landingPageSubmission"
                 ]
             }
         },
@@ -1381,7 +1383,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.2.0",
+                "version": "0.3.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -1423,6 +1425,17 @@
                             "published"
                         ],
                         "example": "published"
+                    },
+                    "kind": {
+                        "title": "Kind",
+                        "type": "string",
+                        "description": "What this record describes. A `site` portal is one Portaliq serves itself, with menus, pages and a glossary. An `external` portal is a site served somewhere else (a Docusaurus build, a municipal website) that only reports its traffic here: it has domains and a traffic block, and no content. Absent means site.",
+                        "enum": [
+                            "site",
+                            "external"
+                        ],
+                        "default": "site",
+                        "example": "site"
                     },
                     "domains": {
                         "title": "Domains",
@@ -1544,6 +1557,177 @@
                         "type": "string",
                         "description": "The tenant this portal belongs to. One Organisation may own several portals.",
                         "example": "dev-org"
+                    },
+                    "traffic": {
+                        "title": "Traffic measurement",
+                        "type": "object",
+                        "description": "What this portal measures about its visitors, and under which conditions. OFF until an operator switches it on: an upgrade must not start recording a municipality's visitors. Measurement is cookieless by default; the switches under `sensitive` each carry their own warning.",
+                        "properties": {
+                            "enabled": {
+                                "title": "Enabled",
+                                "type": "boolean",
+                                "description": "Whether this portal measures traffic at all. Off means the collector refuses every event for it and the served client sends nothing.",
+                                "default": false,
+                                "example": false
+                            },
+                            "events": {
+                                "title": "Events",
+                                "type": "array",
+                                "description": "The event names the collector accepts for this portal. Absent means page views and session starts only; an empty list means none. `email_open` and `email_click` are only ever written by another app in this instance, never by a browser.",
+                                "items": {
+                                    "type": "string",
+                                    "enum": [
+                                        "page_view",
+                                        "session_start",
+                                        "scroll",
+                                        "outbound_click",
+                                        "file_download",
+                                        "search",
+                                        "form_submit",
+                                        "email_open",
+                                        "email_click"
+                                    ]
+                                },
+                                "example": [
+                                    "page_view",
+                                    "session_start",
+                                    "scroll"
+                                ]
+                            },
+                            "dimensions": {
+                                "title": "Dimensions",
+                                "type": "array",
+                                "description": "The extra fields kept on each event. Absent means referrer and page title. Search terms are not a default: a search box receives names, case numbers and medical words.",
+                                "items": {
+                                    "type": "string",
+                                    "enum": [
+                                        "pageReferrer",
+                                        "pageTitle",
+                                        "searchTerm",
+                                        "linkUrl",
+                                        "fileName",
+                                        "region",
+                                        "deviceType",
+                                        "browser",
+                                        "os",
+                                        "language",
+                                        "screen",
+                                        "referrerHost",
+                                        "channel",
+                                        "campaign",
+                                        "source",
+                                        "medium",
+                                        "content",
+                                        "term",
+                                        "blastRef",
+                                        "contactRef",
+                                        "userRef"
+                                    ]
+                                },
+                                "example": [
+                                    "pageReferrer",
+                                    "pageTitle",
+                                    "deviceType"
+                                ]
+                            },
+                            "sessionTimeoutMinutes": {
+                                "title": "Session timeout (minutes)",
+                                "type": "integer",
+                                "description": "Minutes of inactivity after which a visit counts as a new session. 30 is the convention every reporting tool shares.",
+                                "default": 30,
+                                "example": 30
+                            },
+                            "retentionDays": {
+                                "title": "Retention (days)",
+                                "type": "integer",
+                                "description": "How long raw events are kept before they are deleted. Daily aggregates outlive them. There is no unbounded option.",
+                                "default": 90,
+                                "example": 90
+                            },
+                            "regionGranularity": {
+                                "title": "Region granularity",
+                                "type": "string",
+                                "description": "The finest geography derived from the visitor's address, which is then discarded. `none` stores no location at all.",
+                                "enum": [
+                                    "none",
+                                    "country",
+                                    "region"
+                                ],
+                                "default": "country",
+                                "example": "country"
+                            },
+                            "consent": {
+                                "title": "Consent",
+                                "type": "object",
+                                "description": "Whether measurement waits for the visitor's consent, and which events are allowed before it.",
+                                "properties": {
+                                    "required": {
+                                        "title": "Consent required",
+                                        "type": "boolean",
+                                        "description": "When true, only the pre-consent events are accepted until the visitor consents.",
+                                        "default": false,
+                                        "example": false
+                                    },
+                                    "preConsentEvents": {
+                                        "title": "Pre-consent events",
+                                        "type": "array",
+                                        "description": "Events accepted before consent. Each must also be an enabled event.",
+                                        "items": {
+                                            "type": "string",
+                                            "enum": [
+                                                "page_view",
+                                                "session_start",
+                                                "scroll",
+                                                "outbound_click",
+                                                "file_download",
+                                                "search",
+                                                "form_submit",
+                                                "email_open",
+                                                "email_click"
+                                            ]
+                                        },
+                                        "example": [
+                                            "page_view"
+                                        ]
+                                    }
+                                }
+                            },
+                            "sensitive": {
+                                "title": "Sensitive measurement",
+                                "type": "object",
+                                "description": "Each switch here changes what the portal knows about a person, not just how much traffic it counts. All are off by default and each carries its own warning.",
+                                "properties": {
+                                    "persistClientId": {
+                                        "title": "Persist a client id",
+                                        "type": "boolean",
+                                        "description": "Warning: stores an identifier in the visitor's browser so return visits are recognised. This moves the portal out of the no-impact bracket of the cookie rules and a consent banner is then likely required. Off means visitors are counted per day from a salted hash that is never stored beyond the day.",
+                                        "default": false,
+                                        "example": false
+                                    },
+                                    "accountLinking": {
+                                        "title": "Link to the signed-in account",
+                                        "type": "boolean",
+                                        "description": "Warning: attaches the signed-in portal user's reference to their events, which links a named person to their browsing. Only defensible with a stated purpose and a privacy assessment.",
+                                        "default": false,
+                                        "example": false
+                                    },
+                                    "heatmaps": {
+                                        "title": "Heatmaps",
+                                        "type": "boolean",
+                                        "description": "Warning: records where visitors click and scroll on each page. That is personal data with no defensible purpose for a government portal, and it costs the consent exemption. Not yet implemented.",
+                                        "default": false,
+                                        "example": false
+                                    },
+                                    "sessionRecording": {
+                                        "title": "Session recording",
+                                        "type": "boolean",
+                                        "description": "Warning: replays a visitor's whole visit, including what they type. That is personal data with no defensible purpose for a government portal, and it costs the consent exemption. Not yet implemented.",
+                                        "default": false,
+                                        "example": false
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             },
@@ -2023,6 +2207,690 @@
                         "type": "string",
                         "description": "The portal this term belongs to. REQUIRED — a relation to a term on another portal is rejected.",
                         "example": "open-tilburg"
+                    }
+                }
+            },
+            "portalTrafficEvent": {
+                "slug": "portalTrafficEvent",
+                "authorization": {
+                    "read": [
+                        "admin"
+                    ]
+                },
+                "icon": "CursorDefaultClickOutline",
+                "version": "0.1.0",
+                "title": "Portal Traffic Event",
+                "description": "One accepted traffic event, written by the collector through OpenRegister's raw append path and deleted once it passes the portal's retention window. Carries no IP address and no raw user agent: the visitor is a salted daily hash, and device, browser and region are derived in the request and the source discarded. Readable by instance admins only; reports read the daily aggregates instead.",
+                "type": "object",
+                "required": [
+                    "portal",
+                    "name",
+                    "occurredAt",
+                    "receivedAt",
+                    "sequence",
+                    "visitorHash",
+                    "pageLocation",
+                    "expires"
+                ],
+                "properties": {
+                    "portal": {
+                        "title": "Portal",
+                        "type": "string",
+                        "description": "The slug of the portal this event belongs to.",
+                        "example": "open-tilburg"
+                    },
+                    "name": {
+                        "title": "Event name",
+                        "type": "string",
+                        "description": "The event, in the GA4 spelling.",
+                        "enum": [
+                            "page_view",
+                            "session_start",
+                            "scroll",
+                            "outbound_click",
+                            "file_download",
+                            "search",
+                            "form_submit",
+                            "email_open",
+                            "email_click"
+                        ],
+                        "example": "page_view"
+                    },
+                    "occurredAt": {
+                        "title": "Occurred at",
+                        "type": "string",
+                        "description": "When the client says the event happened, clamped to the server clock.",
+                        "format": "date-time",
+                        "example": "2026-09-04T10:00:00Z"
+                    },
+                    "receivedAt": {
+                        "title": "Received at",
+                        "type": "string",
+                        "description": "When the collector accepted the event.",
+                        "format": "date-time",
+                        "example": "2026-09-04T10:00:01Z"
+                    },
+                    "sequence": {
+                        "title": "Sequence",
+                        "type": "integer",
+                        "description": "The event's position within its session, as the client counted it. Journeys are ordered by this, never by arrival.",
+                        "example": 3
+                    },
+                    "visitorHash": {
+                        "title": "Visitor hash",
+                        "type": "string",
+                        "description": "A salted hash of the day, the portal, the address and the user agent. The salt rotates daily and is not kept, so the hash cannot be reversed and does not survive the day.",
+                        "example": "5f2c..."
+                    },
+                    "clientId": {
+                        "title": "Client id",
+                        "type": "string",
+                        "description": "The browser-stored identifier, present only when the portal persists a client id and the visitor consented.",
+                        "example": ""
+                    },
+                    "sessionId": {
+                        "title": "Session id",
+                        "type": "string",
+                        "description": "The client's session identifier when it keeps one; empty in cookieless mode, where aggregation derives sessions.",
+                        "example": ""
+                    },
+                    "pageLocation": {
+                        "title": "Page location",
+                        "type": "string",
+                        "description": "The full URL the event happened on, truncated to 512 characters.",
+                        "example": "https://open-tilburg.nl/woo?utm_source=nieuwsbrief"
+                    },
+                    "pagePath": {
+                        "title": "Page path",
+                        "type": "string",
+                        "description": "The path only, with the query string removed after campaign parameters were parsed out of it.",
+                        "example": "/woo"
+                    },
+                    "pageReferrer": {
+                        "title": "Referrer",
+                        "type": "string",
+                        "description": "The page the visitor came from, when the portal keeps it.",
+                        "example": "https://www.google.com/"
+                    },
+                    "referrerHost": {
+                        "title": "Referrer host",
+                        "type": "string",
+                        "description": "The referrer's hostname.",
+                        "example": "www.google.com"
+                    },
+                    "channel": {
+                        "title": "Channel",
+                        "type": "string",
+                        "description": "The acquisition channel derived from the referrer and campaign parameters.",
+                        "enum": [
+                            "direct",
+                            "organic search",
+                            "social",
+                            "referral",
+                            "email",
+                            "campaign",
+                            "internal"
+                        ],
+                        "example": "organic search"
+                    },
+                    "pageTitle": {
+                        "title": "Page title",
+                        "type": "string",
+                        "description": "The document title, when the portal keeps it.",
+                        "example": "Woo-verzoeken"
+                    },
+                    "deviceType": {
+                        "title": "Device type",
+                        "type": "string",
+                        "description": "Derived from the user agent, which is then discarded.",
+                        "enum": [
+                            "desktop",
+                            "mobile",
+                            "tablet",
+                            "other"
+                        ],
+                        "example": "desktop"
+                    },
+                    "browser": {
+                        "title": "Browser",
+                        "type": "string",
+                        "description": "The browser family, without a version.",
+                        "example": "Firefox"
+                    },
+                    "os": {
+                        "title": "Operating system",
+                        "type": "string",
+                        "description": "The operating system family, without a version.",
+                        "example": "Windows"
+                    },
+                    "language": {
+                        "title": "Language",
+                        "type": "string",
+                        "description": "The visitor's first accepted language, as a two-letter code.",
+                        "example": "nl"
+                    },
+                    "region": {
+                        "title": "Region",
+                        "type": "string",
+                        "description": "A country or region code, no finer than the portal allows. Empty when the portal stores no location.",
+                        "example": "NL"
+                    },
+                    "screen": {
+                        "title": "Screen",
+                        "type": "string",
+                        "description": "The viewport bucket the client reported.",
+                        "example": "1280x720"
+                    },
+                    "searchTerm": {
+                        "title": "Search term",
+                        "type": "string",
+                        "description": "What the visitor searched for. Only kept when the portal enabled the dimension.",
+                        "example": ""
+                    },
+                    "linkUrl": {
+                        "title": "Link URL",
+                        "type": "string",
+                        "description": "The outbound link that was clicked.",
+                        "example": ""
+                    },
+                    "fileName": {
+                        "title": "File name",
+                        "type": "string",
+                        "description": "The file that was downloaded.",
+                        "example": ""
+                    },
+                    "campaign": {
+                        "title": "Campaign",
+                        "type": "string",
+                        "description": "The campaign name from utm_campaign or mtm_campaign, or carried by a mail event.",
+                        "example": ""
+                    },
+                    "source": {
+                        "title": "Source",
+                        "type": "string",
+                        "description": "The traffic source from utm_source or mtm_source.",
+                        "example": ""
+                    },
+                    "medium": {
+                        "title": "Medium",
+                        "type": "string",
+                        "description": "The medium from utm_medium or mtm_medium.",
+                        "example": ""
+                    },
+                    "content": {
+                        "title": "Content",
+                        "type": "string",
+                        "description": "The content variant from utm_content or mtm_content.",
+                        "example": ""
+                    },
+                    "term": {
+                        "title": "Term",
+                        "type": "string",
+                        "description": "The paid keyword from utm_term or mtm_kwd.",
+                        "example": ""
+                    },
+                    "blastRef": {
+                        "title": "Blast reference",
+                        "type": "string",
+                        "description": "The sending app's mailing identifier, on mail events only.",
+                        "example": ""
+                    },
+                    "contactRef": {
+                        "title": "Contact reference",
+                        "type": "string",
+                        "description": "The sending app's pseudonymous contact identifier, on mail events only.",
+                        "example": ""
+                    },
+                    "userRef": {
+                        "title": "User reference",
+                        "type": "string",
+                        "description": "The signed-in portal user's reference. Only present when the portal switched on account linking.",
+                        "example": ""
+                    },
+                    "params": {
+                        "title": "Parameters",
+                        "type": "object",
+                        "description": "A bounded map of extra values the client attached: at most 20 keys, scalar values, 256 characters each.",
+                        "additionalProperties": true,
+                        "example": {}
+                    },
+                    "consent": {
+                        "title": "Consent",
+                        "type": "boolean",
+                        "description": "The visitor's consent state as the client knew it when the event was sent.",
+                        "example": true
+                    },
+                    "expires": {
+                        "title": "Expires",
+                        "type": "string",
+                        "description": "When this event is deleted: received at plus the portal's retention period.",
+                        "format": "date-time",
+                        "example": "2026-12-03T10:00:01Z"
+                    }
+                }
+            },
+            "portalTrafficDaily": {
+                "slug": "portalTrafficDaily",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "icon": "ChartLine",
+                "version": "0.1.0",
+                "title": "Portal Traffic Daily",
+                "description": "One portal's traffic for one UTC day, recomputed from the raw events by the aggregation job every fifteen minutes. Contains counts only, never a visitor. The Traffic page and any export read these records through the ordinary object API.",
+                "type": "object",
+                "required": [
+                    "portal",
+                    "date"
+                ],
+                "properties": {
+                    "portal": {
+                        "title": "Portal",
+                        "type": "string",
+                        "description": "The portal's slug.",
+                        "example": "open-tilburg"
+                    },
+                    "date": {
+                        "title": "Date",
+                        "type": "string",
+                        "description": "The UTC day, as YYYY-MM-DD.",
+                        "format": "date",
+                        "example": "2026-09-04"
+                    },
+                    "pageViews": {
+                        "title": "Page views",
+                        "type": "integer",
+                        "description": "Page view events that day.",
+                        "example": 1240
+                    },
+                    "sessions": {
+                        "title": "Sessions",
+                        "type": "integer",
+                        "description": "Distinct sessions that day.",
+                        "example": 410
+                    },
+                    "visitors": {
+                        "title": "Visitors",
+                        "type": "integer",
+                        "description": "Distinct visitors that day, by daily hash or client id.",
+                        "example": 380
+                    },
+                    "newVisitors": {
+                        "title": "New visitors",
+                        "type": "integer",
+                        "description": "Visitors whose first session that day was their first session in the retained window.",
+                        "example": 120
+                    },
+                    "engagedSessions": {
+                        "title": "Engaged sessions",
+                        "type": "integer",
+                        "description": "Sessions with more than one page view, a scroll, or at least ten seconds between events.",
+                        "example": 210
+                    },
+                    "avgEngagementSeconds": {
+                        "title": "Average engagement (seconds)",
+                        "type": "number",
+                        "description": "Mean seconds between a session's first and last event.",
+                        "example": 74.5
+                    },
+                    "bounceRate": {
+                        "title": "Bounce rate",
+                        "type": "number",
+                        "description": "The share of sessions that were not engaged, between 0 and 1.",
+                        "example": 0.49
+                    },
+                    "events": {
+                        "title": "Events",
+                        "type": "object",
+                        "description": "Event count per event name.",
+                        "additionalProperties": {
+                            "type": "integer"
+                        },
+                        "example": {
+                            "page_view": 1240,
+                            "scroll": 300
+                        }
+                    },
+                    "pages": {
+                        "title": "Pages",
+                        "type": "array",
+                        "description": "Per-path views, entrances, exits and engagement.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "path": {
+                                    "title": "Path",
+                                    "type": "string",
+                                    "description": "The page path, query stripped.",
+                                    "example": "/"
+                                },
+                                "views": {
+                                    "title": "Views",
+                                    "type": "integer",
+                                    "description": "Page views of this path that day.",
+                                    "example": 1
+                                },
+                                "entrances": {
+                                    "title": "Entrances",
+                                    "type": "integer",
+                                    "description": "Sessions that started on this path.",
+                                    "example": 1
+                                },
+                                "exits": {
+                                    "title": "Exits",
+                                    "type": "integer",
+                                    "description": "Sessions that ended on this path.",
+                                    "example": 1
+                                },
+                                "avgEngagementSeconds": {
+                                    "title": "Average engagement (seconds)",
+                                    "type": "number",
+                                    "description": "Mean seconds on this path before the next page view.",
+                                    "example": 1
+                                }
+                            }
+                        },
+                        "example": [
+                            {
+                                "path": "/",
+                                "views": 600,
+                                "entrances": 300,
+                                "exits": 200,
+                                "avgEngagementSeconds": 40
+                            }
+                        ]
+                    },
+                    "transitions": {
+                        "title": "Transitions",
+                        "type": "array",
+                        "description": "How often visitors moved from one path to the next within a session.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "from": {
+                                    "title": "From",
+                                    "type": "string",
+                                    "description": "The path the visitor came from.",
+                                    "example": "/"
+                                },
+                                "to": {
+                                    "title": "To",
+                                    "type": "string",
+                                    "description": "The path the visitor went to.",
+                                    "example": "/woo"
+                                },
+                                "count": {
+                                    "title": "Count",
+                                    "type": "integer",
+                                    "description": "How often this step was taken.",
+                                    "example": 1
+                                }
+                            }
+                        },
+                        "example": [
+                            {
+                                "from": "/",
+                                "to": "/woo",
+                                "count": 120
+                            }
+                        ]
+                    },
+                    "referrers": {
+                        "title": "Referrers",
+                        "type": "array",
+                        "description": "Sessions per referring host and channel.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "host": {
+                                    "title": "Host",
+                                    "type": "string",
+                                    "description": "The referring host, empty for a direct visit.",
+                                    "example": "www.google.com"
+                                },
+                                "channel": {
+                                    "title": "Channel",
+                                    "type": "string",
+                                    "description": "The channel derived from the referrer: organic search, referral, social, email or direct.",
+                                    "example": "organic search"
+                                },
+                                "count": {
+                                    "title": "Count",
+                                    "type": "integer",
+                                    "description": "Sessions that arrived this way.",
+                                    "example": 1
+                                }
+                            }
+                        },
+                        "example": [
+                            {
+                                "host": "www.google.com",
+                                "channel": "organic search",
+                                "count": 150
+                            }
+                        ]
+                    },
+                    "campaigns": {
+                        "title": "Campaigns",
+                        "type": "array",
+                        "description": "Sessions per campaign, source and medium.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "campaign": {
+                                    "title": "Campaign",
+                                    "type": "string",
+                                    "description": "The campaign name from utm_campaign or a mail blast.",
+                                    "example": ""
+                                },
+                                "source": {
+                                    "title": "Source",
+                                    "type": "string",
+                                    "description": "The source, such as newsletter or google.",
+                                    "example": ""
+                                },
+                                "medium": {
+                                    "title": "Medium",
+                                    "type": "string",
+                                    "description": "The medium, such as email or cpc.",
+                                    "example": ""
+                                },
+                                "sessions": {
+                                    "title": "Sessions",
+                                    "type": "integer",
+                                    "description": "Sessions attributed to this campaign.",
+                                    "example": 1
+                                }
+                            }
+                        },
+                        "example": []
+                    },
+                    "devices": {
+                        "title": "Devices",
+                        "type": "object",
+                        "description": "Sessions per device type.",
+                        "additionalProperties": {
+                            "type": "integer"
+                        },
+                        "example": {
+                            "desktop": 250,
+                            "mobile": 160
+                        }
+                    },
+                    "browsers": {
+                        "title": "Browsers",
+                        "type": "object",
+                        "description": "Sessions per browser family.",
+                        "additionalProperties": {
+                            "type": "integer"
+                        },
+                        "example": {
+                            "Firefox": 100
+                        }
+                    },
+                    "os": {
+                        "title": "Operating systems",
+                        "type": "object",
+                        "description": "Sessions per operating system family.",
+                        "additionalProperties": {
+                            "type": "integer"
+                        },
+                        "example": {
+                            "Windows": 200
+                        }
+                    },
+                    "languages": {
+                        "title": "Languages",
+                        "type": "object",
+                        "description": "Sessions per language.",
+                        "additionalProperties": {
+                            "type": "integer"
+                        },
+                        "example": {
+                            "nl": 400
+                        }
+                    },
+                    "regions": {
+                        "title": "Regions",
+                        "type": "object",
+                        "description": "Sessions per region code.",
+                        "additionalProperties": {
+                            "type": "integer"
+                        },
+                        "example": {
+                            "NL": 400
+                        }
+                    },
+                    "searches": {
+                        "title": "Searches",
+                        "type": "array",
+                        "description": "Search terms and their counts. Only when the portal keeps search terms.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "term": {
+                                    "title": "Term",
+                                    "type": "string",
+                                    "description": "The search term, as typed.",
+                                    "example": ""
+                                },
+                                "count": {
+                                    "title": "Count",
+                                    "type": "integer",
+                                    "description": "How often it was searched.",
+                                    "example": 1
+                                }
+                            }
+                        },
+                        "example": []
+                    },
+                    "downloads": {
+                        "title": "Downloads",
+                        "type": "array",
+                        "description": "Downloaded files and their counts.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "file": {
+                                    "title": "File",
+                                    "type": "string",
+                                    "description": "The downloaded file name.",
+                                    "example": ""
+                                },
+                                "count": {
+                                    "title": "Count",
+                                    "type": "integer",
+                                    "description": "How often it was downloaded.",
+                                    "example": 1
+                                }
+                            }
+                        },
+                        "example": []
+                    },
+                    "outbound": {
+                        "title": "Outbound links",
+                        "type": "array",
+                        "description": "Outbound links clicked and their counts.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "url": {
+                                    "title": "URL",
+                                    "type": "string",
+                                    "description": "The outbound link that was followed.",
+                                    "example": ""
+                                },
+                                "count": {
+                                    "title": "Count",
+                                    "type": "integer",
+                                    "description": "How often it was followed.",
+                                    "example": 1
+                                }
+                            }
+                        },
+                        "example": []
+                    },
+                    "goals": {
+                        "title": "Goals",
+                        "type": "array",
+                        "description": "Goal conversions. Reserved for a later phase.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "goal": {
+                                    "title": "Goal",
+                                    "type": "string",
+                                    "description": "The goal name. Reserved for a later phase.",
+                                    "example": ""
+                                },
+                                "conversions": {
+                                    "title": "Conversions",
+                                    "type": "integer",
+                                    "description": "How often the goal was reached.",
+                                    "example": 1
+                                }
+                            }
+                        },
+                        "example": []
+                    },
+                    "emails": {
+                        "title": "Emails",
+                        "type": "object",
+                        "description": "Mail opens and clicks attributed to this portal by another app in the instance.",
+                        "properties": {
+                            "opens": {
+                                "title": "Opens",
+                                "type": "integer",
+                                "description": "Mail opens attributed to this portal by another app.",
+                                "example": 0
+                            },
+                            "clicks": {
+                                "title": "Clicks",
+                                "type": "integer",
+                                "description": "Mail clicks attributed to this portal by another app.",
+                                "example": 0
+                            }
+                        },
+                        "example": {
+                            "opens": 0,
+                            "clicks": 0
+                        }
+                    },
+                    "aggregatedAt": {
+                        "title": "Aggregated at",
+                        "type": "string",
+                        "description": "When this record was last recomputed.",
+                        "format": "date-time",
+                        "example": "2026-09-04T10:15:00Z"
+                    },
+                    "lastEventAt": {
+                        "title": "Last event at",
+                        "type": "string",
+                        "description": "The newest event that went into this record.",
+                        "format": "date-time",
+                        "example": "2026-09-04T10:12:41Z"
                     }
                 }
             },

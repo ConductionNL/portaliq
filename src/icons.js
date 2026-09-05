@@ -22,6 +22,7 @@ import BookOpenVariant from 'vue-material-design-icons/BookOpenVariant.vue'
 import BookOpenVariantOutline from 'vue-material-design-icons/BookOpenVariantOutline.vue'
 import ChartBoxOutline from 'vue-material-design-icons/ChartBoxOutline.vue'
 import ChartLine from 'vue-material-design-icons/ChartLine.vue'
+import CursorDefaultClickOutline from 'vue-material-design-icons/CursorDefaultClickOutline.vue'
 import Email from 'vue-material-design-icons/Email.vue'
 import EmailOutline from 'vue-material-design-icons/EmailOutline.vue'
 import FileCheckOutline from 'vue-material-design-icons/FileCheckOutline.vue'
@@ -56,6 +57,7 @@ export default {
 	BookOpenVariantOutline,
 	ChartBoxOutline,
 	ChartLine,
+	CursorDefaultClickOutline,
 	Email,
 	EmailOutline,
 	FileCheckOutline,

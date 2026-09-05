@@ -6,6 +6,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\ContributionController;
 use OCA\Portaliq\Controller\SessionController;
+use OCA\Portaliq\Controller\TrafficController;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\BruteForceProtection;
 use PHPUnit\Framework\TestCase;
@@ -44,6 +45,11 @@ class RateLimitAttributesTest extends TestCase {
 			'contribution update' => [ContributionController::class, 'update'],
 			'contribution action' => [ContributionController::class, 'action'],
 			'contribution downloadFile' => [ContributionController::class, 'downloadFile'],
+			// portal-traffic-analytics: the public collector, its pixel and the
+			// served client (CONTRACT section 7, BUG-RATE-1).
+			'traffic collect' => [TrafficController::class, 'collect'],
+			'traffic pixel' => [TrafficController::class, 'pixel'],
+			'traffic client' => [TrafficController::class, 'client'],
 		];
 
 	}//end rateLimitedMethodProvider()
