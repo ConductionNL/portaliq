@@ -235,7 +235,9 @@ test.describe('traffic outcomes: goals, funnels, forms, missing pages and dimens
 	test('the form block reports form_start and form_field with the field id and no value', async ({
 		page,
 	}) => {
-		await page.goto(`${APP}/site?portal=${ENABLED}&route=/campagne/e2e-form-test`)
+		await page.goto(
+			`${APP}/site?portal=${ENABLED}&route=/campagne/e2e-form-test`,
+		)
 		const form = page.getByTestId('site-form')
 		await expect(form).toBeVisible({ timeout: 30_000 })
 		const formId = await form.getAttribute('data-portaliq-form')
@@ -269,6 +271,7 @@ test.describe('traffic outcomes: goals, funnels, forms, missing pages and dimens
 		)
 		const sent = await beacon
 		expect(String(sent.pageLocation)).toContain(MISSING)
+		expect((sent.params as Record<string, unknown>).path).toBe(`/${MISSING}`)
 
 		// The batch is posted on a timer; give the collector a moment
 		// before aggregating so the event is in the day.
@@ -278,7 +281,9 @@ test.describe('traffic outcomes: goals, funnels, forms, missing pages and dimens
 					(await newestEvents(request)).some(
 						(e) =>
 							e.name === 'page_not_found'
-							&& String(e.pagePath).includes(MISSING),
+							&& String(
+								(e.params as Record<string, unknown>)?.path,
+							).includes(MISSING),
 					),
 				{ timeout: 20_000 },
 			)

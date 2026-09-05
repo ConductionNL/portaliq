@@ -147,7 +147,7 @@ class TrafficRollup {
 			'notFound' => $this->dimensions->perEvent(
 				sessions: $sessions,
 				name: 'page_not_found',
-				keys: ['pagePath', 'pageLocation'],
+				keys: ['params.path', 'pagePath', 'pageLocation'],
 				label: 'path',
 				countKey: 'hits'
 			),

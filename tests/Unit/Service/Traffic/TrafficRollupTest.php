@@ -329,7 +329,7 @@ class TrafficRollupTest extends TestCase {
 			$this->event(at: '2026-09-04T10:00:20.000Z', path: '/contact', visitor: 'h1', name: 'form_start', extra: ['params' => ['formId' => 'contact']]),
 			$this->event(at: '2026-09-04T10:00:30.000Z', path: '/contact', visitor: 'h1', name: 'form_abandon', extra: ['params' => ['formId' => 'contact', 'lastFieldId' => 'email']]),
 			$this->event(at: '2026-09-04T11:00:00.000Z', path: '/', visitor: 'h2', extra: ['params' => ['cd_audience' => 'ondernemer']]),
-			$this->event(at: '2026-09-04T11:00:05.000Z', path: '/oud', visitor: 'h2', name: 'page_not_found'),
+			$this->event(at: '2026-09-04T11:00:05.000Z', path: '/', visitor: 'h2', name: 'page_not_found', extra: ['params' => ['path' => '/oud']]),
 		], options: $options);
 
 		$this->assertSame([['id' => 'contact', 'name' => 'Contact', 'conversions' => 1, 'completions' => 1, 'value' => 10.0]], $record['goals']);
@@ -337,7 +337,7 @@ class TrafficRollupTest extends TestCase {
 		$this->assertSame([2, 1], array_column($record['funnels'][0]['steps'], 'sessions'), 'both sessions saw the home page; one went on to contact');
 		$this->assertSame('contact', $record['forms'][0]['formId']);
 		$this->assertSame(1, $record['forms'][0]['abandons']);
-		$this->assertSame([['path' => '/oud', 'hits' => 1]], $record['notFound']);
+		$this->assertSame([['path' => '/oud', 'hits' => 1]], $record['notFound'], 'the route the renderer reported, not its own path');
 		$this->assertSame(['audience' => ['inwoner' => 1, 'ondernemer' => 1]], $record['customDimensions']);
 	}//end testOutcomesAreRolledUpFromTheDefinitions()
 

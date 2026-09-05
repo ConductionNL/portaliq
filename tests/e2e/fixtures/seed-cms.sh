@@ -110,6 +110,8 @@ echo "==> portals"
 # portal-traffic-outcomes adds the form and not-found events, one
 # page-reached goal, one two-step funnel and one session-scoped custom
 # dimension, so the outcomes spec can prove each against a real portal.
+# `form_submit` stays OFF: traffic-analytics.spec.ts proves the refusal
+# of a known but unenabled event with it.
 # tests/e2e/lib/traffic.ts carries the SAME block as `seededTraffic()`;
 # a spec that changes it restores this one.
 SITE=$(upsert portal slug open-tilburg '{
@@ -120,7 +122,7 @@ SITE=$(upsert portal slug open-tilburg '{
   "frameAncestors":[],"organisation":"dev-org",
   "traffic":{
     "enabled":true,
-    "events":["page_view","session_start","scroll","outbound_click","search","form_submit","form_start","form_field","form_abandon","page_not_found"],
+    "events":["page_view","session_start","scroll","outbound_click","search","form_start","form_field","form_abandon","page_not_found"],
     "dimensions":["pageReferrer","pageTitle","searchTerm","linkUrl","referrerHost","channel","deviceType","browser","os","language"],
     "goals":[{"id":"contact","name":"Contact page opened","type":"page_reached","match":{"pathEquals":"/contact"},"value":10}],
     "funnels":[{"id":"contact-journey","name":"Home to contact","steps":[

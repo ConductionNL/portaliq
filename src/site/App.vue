@@ -205,7 +205,8 @@
 					class="container"
 					role="alert"
 					data-testid="site-error"
-					:data-portaliq-status="error.status === 404 ? '404' : null">
+					:data-portaliq-status="error.status === 404 ? '404' : null"
+					:data-portaliq-path="error.status === 404 ? route : null">
 					<h2>
 						{{
 							error.status === 404

@@ -53,7 +53,6 @@ export function seededTraffic(
 			'scroll',
 			'outbound_click',
 			'search',
-			'form_submit',
 			'form_start',
 			'form_field',
 			'form_abandon',

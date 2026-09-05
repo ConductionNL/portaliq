@@ -274,10 +274,11 @@ was the last one before an abandon.
 ## Missing pages
 
 The built-in renderer marks its not-found state with
-`data-portaliq-status="404"`; an external page may put the same attribute
-on its own not-found state. When the portal enables `page_not_found`, the
-client reports the location, and the Traffic page lists the requested
-paths under **Pages, Missing pages**. A broken link in a newsletter then
+`data-portaliq-status="404"` and names the route it could not find in
+`data-portaliq-path`; an external page may put the same attributes on its
+own not-found state. When the portal enables `page_not_found`, the client
+reports the location and that route, and the Traffic page lists the
+requested paths under **Pages, Missing pages**. A broken link in a newsletter then
 shows up where the person who can fix it is looking.
 
 ## Custom dimensions

@@ -23,6 +23,7 @@ import {
 	formIdOf,
 	mayPersist,
 	optedOut,
+	PATH_ATTRIBUTE,
 	randomId,
 	readConfig,
 	scrollPercent,
@@ -357,9 +358,17 @@ export function boot(win) {
 		if (state.notFound || !doc.querySelector) {
 			return
 		}
-		if (doc.querySelector('[' + STATUS_ATTRIBUTE + '="404"]')) {
+		const marker = doc.querySelector('[' + STATUS_ATTRIBUTE + '="404"]')
+		if (marker) {
 			state.notFound = true
-			record('page_not_found', {})
+			// The route the renderer could not find, when it says: the
+			// built-in site carries its route in the query string, which
+			// the collector strips from the path.
+			const path = String(marker.getAttribute(PATH_ATTRIBUTE) || '')
+			record(
+				'page_not_found',
+				path === '' ? {} : { path: path.substring(0, 256) },
+			)
 		}
 	}
 

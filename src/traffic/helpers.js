@@ -36,6 +36,7 @@ export const KNOWN_EVENTS = [
  */
 export const FORM_ATTRIBUTE = 'data-portaliq-form'
 export const STATUS_ATTRIBUTE = 'data-portaliq-status'
+export const PATH_ATTRIBUTE = 'data-portaliq-path'
 
 /**
  * The prefix a custom dimension travels under (CONTRACT, phase 3).
