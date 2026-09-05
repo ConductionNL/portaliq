@@ -151,10 +151,10 @@ class TrafficRollup {
 				label: 'path',
 				countKey: 'hits'
 			),
-			'customDimensions' => $this->dimensions->custom(
-				sessions: $sessions,
-				definitions: $this->definitions(options: $options, key: 'customDimensions')
-			),
+			// Null, not {}, when nothing was carried: the object store
+			// refuses an empty object for a typed property and clears it
+			// on null.
+			'customDimensions' => $this->customDimensions(sessions: $sessions, options: $options),
 			'emails' => [
 				'opens' => (int)($totals['events']['email_open'] ?? 0),
 				'clicks' => (int)($totals['events']['email_click'] ?? 0),
@@ -162,6 +162,27 @@ class TrafficRollup {
 			'aggregatedAt' => $aggregatedAt,
 			'lastEventAt' => $totals['lastEventAt'],
 		];
+	}
+
+	/**
+	 * The custom dimension counts, or null when no declared dimension
+	 * carried a value.
+	 *
+	 * @param array<int, array<string, mixed>> $sessions The sessions.
+	 * @param array<string, mixed>             $options  The options.
+	 *
+	 * @return array<string, array<string, int>>|null The counts.
+	 */
+	private function customDimensions(array $sessions, array $options): ?array {
+		$counts = $this->dimensions->custom(
+			sessions: $sessions,
+			definitions: $this->definitions(options: $options, key: 'customDimensions')
+		);
+		if ($counts === []) {
+			return null;
+		}
+
+		return $counts;
 	}
 
 	/**

@@ -89,6 +89,13 @@ export function boot(win) {
 		notFound: false,
 	}
 
+	// A page sets its dimensions while this client is still asking the
+	// portal what to measure, so the setter works from the first moment
+	// and the values are attached once sending starts.
+	api.dimension = (id, value) => {
+		state.dimensions[String(id || '')] = value
+	}
+
 	const siteUrl =
 		config.origin
 		+ config.appPath
@@ -134,9 +141,6 @@ export function boot(win) {
 			state.disabled = true
 			state.queue = []
 			forgetIdentity()
-		}
-		api.dimension = (id, value) => {
-			state.dimensions[String(id || '')] = value
 		}
 
 		doc.addEventListener('click', onClick, true)

@@ -235,7 +235,7 @@ test.describe('traffic outcomes: goals, funnels, forms, missing pages and dimens
 	test('the form block reports form_start and form_field with the field id and no value', async ({
 		page,
 	}) => {
-		await page.goto(`${APP}/site/campagne/e2e-form-test?portal=${ENABLED}`)
+		await page.goto(`${APP}/site?portal=${ENABLED}&route=/campagne/e2e-form-test`)
 		const form = page.getByTestId('site-form')
 		await expect(form).toBeVisible({ timeout: 30_000 })
 		const formId = await form.getAttribute('data-portaliq-form')
@@ -262,7 +262,7 @@ test.describe('traffic outcomes: goals, funnels, forms, missing pages and dimens
 		request,
 	}) => {
 		const beacon = nextBeacon(page, 'page_not_found')
-		await page.goto(`${APP}/site/${MISSING}?portal=${ENABLED}`)
+		await page.goto(`${APP}/site?portal=${ENABLED}&route=/${MISSING}`)
 		await expect(page.getByTestId('site-error')).toHaveAttribute(
 			'data-portaliq-status',
 			'404',

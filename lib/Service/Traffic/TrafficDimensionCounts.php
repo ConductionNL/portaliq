@@ -175,6 +175,11 @@ class TrafficDimensionCounts {
 	 * session once, by the first non-empty value it carried; an
 	 * event-scoped one counts every event that carried the value.
 	 *
+	 * A declared id that nothing carried is LEFT OUT rather than written as
+	 * an empty map: the object store refuses an empty object for a typed
+	 * property, and the Traffic page lists declared dimensions from the
+	 * portal record, so "declared but never set" still shows.
+	 *
 	 * @param array<int, array<string, mixed>>   $sessions    The sessions.
 	 * @param array<int, array<string, string>>  $definitions The declared dimensions, `{id, name, scope}`.
 	 *
@@ -201,6 +206,10 @@ class TrafficDimensionCounts {
 						break;
 					}
 				}
+			}
+
+			if ($map === []) {
+				continue;
 			}
 
 			ksort($map);

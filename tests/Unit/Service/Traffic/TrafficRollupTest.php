@@ -354,7 +354,7 @@ class TrafficRollupTest extends TestCase {
 		$this->assertSame([], $empty['funnels']);
 		$this->assertSame([], $empty['forms']);
 		$this->assertSame([], $empty['notFound']);
-		$this->assertSame([], $empty['customDimensions']);
+		$this->assertNull($empty['customDimensions'], 'null, not an empty object the store refuses');
 
 		$record = (new TrafficRollup())->build(portal: 'p', date: '2026-09-04', sessions: [], aggregatedAt: 'x');
 
