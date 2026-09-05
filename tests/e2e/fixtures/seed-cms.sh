@@ -155,6 +155,20 @@ SITE2=$(upsert portal slug open-venray '{
 }')
 echo "    open-venray  = $SITE2 (venray.localhost verified, unverified.localhost not)"
 
+# A ROLL-UP portal (portal-traffic-reporting): it has no domain, no content
+# and no visitors of its own; its daily record is the sum of the two portals
+# above, computed after theirs. Venray measures nothing, so the sum equals
+# Tilburg's figures and "a member without data" is proven for free.
+SITE3=$(upsert portal slug rollup-tilburg-venray '{
+  "title":"Tilburg en Venray samen","slug":"rollup-tilburg-venray","status":"published",
+  "kind":"external","domains":[],
+  "theme":"vng","locales":["nl"],
+  "authentication":{"modes":["public"]},
+  "frameAncestors":[],"organisation":"dev-org",
+  "traffic":{"enabled":true,"rollupOf":["open-tilburg","open-venray"]}
+}')
+echo "    rollup-tilburg-venray = $SITE3 (roll-up of open-tilburg and open-venray)"
+
 echo "==> menu"
 upsert menu title Hoofdmenu '{
   "title":"Hoofdmenu","portal":"open-tilburg","position":0,

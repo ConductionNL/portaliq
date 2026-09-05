@@ -25,6 +25,11 @@ export const BASE = resolveBaseURL()
 export const APP = `${BASE}/index.php/apps/portaliq`
 export const OR_OBJECTS = `${BASE}/index.php/apps/openregister/api/objects/portaliq`
 export const ENABLED = 'open-tilburg'
+/**
+ * The roll-up portal seed-cms.sh creates (portal-traffic-reporting): it
+ * sums open-tilburg and open-venray and has no visitors of its own.
+ */
+export const ROLLUP = 'rollup-tilburg-venray'
 export const ADMIN_USER = process.env.ADMIN_USER ?? 'admin'
 export const ADMIN_PASS = process.env.ADMIN_PASSWORD ?? 'admin'
 export const ADMIN_BASIC =
@@ -155,17 +160,33 @@ export function occ(...args: string[]): string {
 }
 
 /**
- * Run the aggregation job once.
+ * Run one of this app's timed jobs once, by class name.
+ *
+ * @param className The job's short class name.
  */
-export function aggregate(): void {
+export function runJob(className: string): void {
 	const jobs = JSON.parse(
 		occ('background-job:list', '--output=json', '--limit', '500'),
 	) as Array<{ id: number; class: string }>
 	const job = jobs.find(
-		(j) => j.class === 'OCA\\Portaliq\\BackgroundJob\\TrafficAggregationJob',
+		(j) => j.class === `OCA\\Portaliq\\BackgroundJob\\${className}`,
 	)
-	expect(job, 'the aggregation job is registered').toBeTruthy()
+	expect(job, `the ${className} job is registered`).toBeTruthy()
 	occ('background-job:execute', String(job!.id), '--force-execute')
+}
+
+/**
+ * Run the aggregation job once.
+ */
+export function aggregate(): void {
+	runJob('TrafficAggregationJob')
+}
+
+/**
+ * Run the report and alert job once (portal-traffic-reporting).
+ */
+export function reportJob(): void {
+	runJob('TrafficReportJob')
 }
 
 /**
@@ -210,21 +231,48 @@ export async function setTraffic(
 }
 
 /**
- * The measured portal's rollups.
+ * A portal's rollups for one segment ('' for all visits). A record
+ * written before segments existed carries no `segment` and counts as
+ * all visits (portal-traffic-reporting).
+ *
+ * @param request The request context.
+ * @param portal The portal slug.
+ * @param segment The segment id.
+ */
+export async function rollupsOf(
+	request: APIRequestContext,
+	portal = ENABLED,
+	segment = '',
+): Promise<Array<Record<string, unknown>>> {
+	const res = await request.get(
+		`${OR_OBJECTS}/portalTrafficDaily?portal=${portal}&_limit=500`,
+		{ headers: ADMIN_HEADERS },
+	)
+	expect(res.status()).toBe(200)
+	const body = await res.json()
+	const rows = Array.isArray(body) ? body : (body.results ?? [])
+	return rows.filter(
+		(r: Record<string, unknown>) =>
+			r.portal === portal && String(r.segment ?? '') === segment,
+	)
+}
+
+/**
+ * The measured portal's "all visits" rollups.
  *
  * @param request The request context.
  */
 export async function rollups(
 	request: APIRequestContext,
 ): Promise<Array<Record<string, unknown>>> {
-	const res = await request.get(
-		`${OR_OBJECTS}/portalTrafficDaily?portal=${ENABLED}&_limit=100`,
-		{ headers: ADMIN_HEADERS },
-	)
-	expect(res.status()).toBe(200)
-	const body = await res.json()
-	const rows = Array.isArray(body) ? body : (body.results ?? [])
-	return rows.filter((r: Record<string, unknown>) => r.portal === ENABLED)
+	return rollupsOf(request)
+}
+
+/**
+ * Today's UTC date.
+ */
+export function today(): string {
+	return new Date().toISOString().substring(0, 10)
 }
 
 /**
@@ -235,8 +283,7 @@ export async function rollups(
 export async function todaysRollup(
 	request: APIRequestContext,
 ): Promise<Record<string, unknown>> {
-	const today = new Date().toISOString().substring(0, 10)
-	const daily = (await rollups(request)).find((r) => r.date === today)
+	const daily = (await rollups(request)).find((r) => r.date === today())
 	expect(daily, "today's rollup exists").toBeTruthy()
 	return daily!
 }

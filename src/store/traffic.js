@@ -17,6 +17,7 @@ import { defineStore } from 'pinia'
 import {
 	daysBetween,
 	lastDays,
+	rollupOf,
 	segmentsOf,
 	summarise,
 } from '../lib/trafficSummary.js'
@@ -193,9 +194,19 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 					(p) => p && typeof p.slug === 'string',
 				)
 				if (!this.portal) {
-					const measured = this.portals.find(
-						(p) => p.traffic && p.traffic.enabled === true,
-					)
+					// A measured portal with visitors of its own first; a
+					// roll-up (portal-traffic-reporting) only when nothing
+					// else measures, because its figures are a sum.
+					const measured =
+						this.portals.find(
+							(p) =>
+								p.traffic
+								&& p.traffic.enabled === true
+								&& rollupOf(p).length === 0,
+						)
+						|| this.portals.find(
+							(p) => p.traffic && p.traffic.enabled === true,
+						)
 					this.portalSlug = (measured || this.portals[0] || {}).slug || ''
 				}
 			} catch (error) {

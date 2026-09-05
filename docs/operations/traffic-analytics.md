@@ -32,6 +32,7 @@ visible on `/api/metrics` rather than silently ineffective.
 | `form_submit` | A form was submitted. Only the form's id or name is kept, never a value. |
 | `form_start`, `form_field`, `form_abandon` | Form analytics: a form was first interacted with, a field was left (its id and how long it had focus), a started form was left unsubmitted. Never a value; see "Form analytics". |
 | `page_not_found` | The site answered a request with not found. See "Missing pages". |
+| `js_error` | A script on the page threw. The message, the file (without its query string), the line, the column and a short hash of the stack; never the stack. See "Script errors". |
 | `email_open`, `email_click` | A mail sent by another app in this instance (pipelinq) was opened or clicked. Written server side only; a browser cannot claim them. |
 
 Each event carries the page location, the referrer and the page title. On
@@ -307,17 +308,202 @@ enabled the `searchTerm` dimension, which is not a default: a search box
 receives names, case numbers and medical words. The terms are listed under
 **Sources, Searches**.
 
+## Segments
+
+A segment is a saved filter over visits: desktop visitors, visits from a
+campaign, visits from one region, visits that met a goal. Each portal
+lists its own under `traffic.segments`, each with an `id`, a `name` and
+`conditions`, all of which must hold:
+
+| Field | Meaning |
+| --- | --- |
+| `dimension` | What is compared: `channel`, `deviceType`, `browser`, `os`, `language`, `region`, `campaign`, `source`, `medium`, `referrerHost` or `pageReferrer`; `visitorType` (`new` or `returning`, only known where the portal persists a client id); `userRef-present` (`true` or `false`); or `goal:<id>` (`true` when the visit met that goal). |
+| `operator` | `is`, `isNot`, `contains` or `startsWith`, ignoring case. |
+| `value` | What to compare with. |
+
+The aggregation job writes one extra daily record per segment, with
+`segment` set to its id, beside the record for all visits (`segment`
+empty). The Traffic page gets a **Segment** selector next to the portal
+and the period; every widget follows it. A segment with a condition the
+app cannot evaluate (an unknown dimension, an undeclared goal) is left
+out rather than reporting zero forever, and the record of a segment you
+remove is deleted on the next aggregation.
+
+## Roll-up portals
+
+A portal whose `traffic.rollupOf` names other portals' slugs is a
+roll-up: it has no visitors of its own, the collector refuses anything
+posted for it, and its daily record is the sum of its members' records
+for the day, computed after theirs. Page views, sessions, visitors and
+the events add up; pages, referrers, campaigns, goals, funnels and forms
+are merged by their key; rates are re-derived from the summed counts.
+The record says which portals it sums (`rollupOf`) and how many had data
+that day (`members`), and the Traffic page shows **Roll-up of N
+portals**. Visitors are a sum, not a distinct count: a visitor of two
+members counts twice, because a roll-up has no raw events to tell.
+
+## Scheduled reports
+
+Each portal lists its reports under `traffic.reports`:
+
+| Field | Meaning |
+| --- | --- |
+| `id`, `name` | A short token, and the name used in the subject line. |
+| `cadence` | `daily` (yesterday), `weekly` (the ISO week that ended on Sunday) or `monthly` (the previous month). |
+| `recipients` | Nextcloud user ids or e-mail addresses. |
+| `sections` | Any of `overview`, `pages`, `sources`, `visitors`, `goals`, `funnels`, `forms`; empty means the overview. |
+
+An hourly background job sends each report once per period, as soon as
+the period has ended, with every number set against the period before
+("Page views: 1240 (+12% on the previous period, 1107)") and a link to
+the Traffic page. The mail is sent in HTML and plain text through the
+instance's mail settings; a Nextcloud user also gets an in-app
+notification. A new report goes out on the job's next run with the last
+complete period's figures, which is how you check the recipients are
+right. The period that was sent is remembered per portal and report, so
+a report is never sent twice for one period.
+
+## Alerts
+
+Each portal lists its alerts under `traffic.alerts`:
+
+| Field | Meaning |
+| --- | --- |
+| `id`, `name` | A short token, and the name used in the subject line. |
+| `metric` | `pageViews`, `sessions`, `visitors`, `notFound` (hits on missing pages) or `goal:<id>` (conversions of that goal). |
+| `comparison` | `above` or `below` a threshold, or `changeAbove` a percentage against the previous period. |
+| `threshold` | The value, or the percentage for `changeAbove`. |
+| `period` | `day` or `week`. |
+| `recipients` | Nextcloud user ids or e-mail addresses. |
+
+`above` watches the current day or week and fires within the hour the
+threshold is crossed. `below` and `changeAbove` need the period to be
+over before they can say anything, so they judge the last complete day
+or week; `changeAbove` stays quiet when the period before had nothing to
+compare with. An alert fires once per period, by mail and as a
+notification, and not again however many times the job runs that period.
+
+## The read API and the export
+
+The daily records are the reporting API. Read them through the ordinary
+object API of OpenRegister, register `portaliq`, schema
+`portalTrafficDaily`:
+
+```text
+GET /index.php/apps/openregister/api/objects/portaliq/portalTrafficDaily
+    ?portal=open-tilburg
+    &date[gte]=2026-09-01&date[lte]=2026-09-30
+    &segment=desktop
+    &_order[date]=asc&_limit=500
+```
+
+Filter on `portal`, `date` (with `gte`, `lte`) and `segment` (empty for
+all visits; a record from before segments existed has no `segment`
+property and counts as all visits); order with `_order[date]`; page
+with `_limit` and `_offset`. Each record carries the fields listed under
+"Retention" and the phases above: the four headline numbers, the pages,
+transitions, referrers, campaigns, devices, browsers, operating systems,
+languages, regions, searches, downloads, outbound links, goals, funnels,
+forms, missing pages, script errors, custom dimensions and mail events.
+
+For a file, an administrator calls
+
+```text
+GET /index.php/apps/portaliq/api/traffic/export
+    ?portal=open-tilburg&from=2026-09-01&to=2026-09-30&segment=&format=csv
+```
+
+`format=csv` gives one row per portal-day-segment with the scalar
+metrics (`portal, date, segment, pageViews, sessions, visitors,
+newVisitors, returningVisitors, accounts, engagedSessions,
+avgEngagementSeconds, bounceRate, conversionRate`); `format=json` gives
+the records whole. A range longer than a year, a bad date or an unknown
+format is refused with a reason. The **Export** button on the Traffic
+page downloads exactly what the page shows: the selected portal, period
+and segment.
+
+## Server-side tracking
+
+A backend that serves pages itself (a form handler, a document server, a
+site whose visitors block scripts) can report on a visitor's behalf.
+Mint the portal's token once:
+
+```text
+occ portaliq:traffic:token open-tilburg
+```
+
+The token is printed once and the portal keeps only its hash under
+`traffic.serverToken`; minting again replaces it. Then post the
+collector's envelope to `POST /index.php/apps/portaliq/api/traffic/server`
+with `Authorization: Bearer <token>`, the portal's slug in `portal`, and
+the visitor's `remoteAddress` and `userAgent` on the batch or on each
+event:
+
+```json
+{
+  "portal": "open-tilburg",
+  "consent": true,
+  "remoteAddress": "203.0.113.9",
+  "userAgent": "Mozilla/5.0 ...",
+  "events": [
+    { "name": "page_view", "timestamp": "2026-09-05T10:00:00Z", "sequence": 0,
+      "pageLocation": "https://open-tilburg.nl/woo" }
+  ]
+}
+```
+
+The address and the agent go the way a live request's do: read for the
+visitor hash, the device family and the region, then dropped. The same
+validator, the same per-portal event list and the same refusals apply,
+and a browser's own mail events are still refused. A wrong or missing
+token answers 401 and stores nothing.
+
+## Importing an access log
+
+Traffic that happened before measurement was on, or on a server that
+cannot run the client, can be imported from an Apache or Nginx access
+log:
+
+```text
+occ portaliq:traffic:import-log open-tilburg /var/log/nginx/access.log     --format=combined --host=https://open-tilburg.nl
+```
+
+`--format=combined` reads the standard combined line; `--format=json`
+reads one JSON object per line (Nginx `escape=json` names, or the
+common shipper names `ip`, `timestamp`, `method`, `path`, `status`,
+`ua`). `--host` is the origin the paths belong to. Only a successful
+GET of a page becomes a `page_view`: other methods, redirects, errors,
+assets (stylesheets, scripts, images, fonts) and bots are skipped, and a
+line repeated within the file is counted once. The views go through the
+same ingest step as a beacon, per visitor, with the log's address and
+agent as the request and old timestamps allowed; the next aggregation
+recomputes the days they fall on. Importing the same file twice counts
+its views twice, so keep the files you have imported.
+
+## Script errors
+
+When the portal enables `js_error`, the client reports a script error
+on the page with the message, the script's host and path without its
+query string, the line, the column and a short hash of the stack. The
+stack itself is never sent: it can carry a URL with a token in it. The
+daily record carries `errors` (message, source, hits, pages) and the
+Traffic page lists them under **Script errors**, with "not measured"
+for a portal that did not enable the event.
+
 ## What you see
 
 **Reports, Traffic** shows one portal at a time over a period you choose
-(the last 7, 30 or 90 days, or a custom start and end): page views,
+(the last 7, 30 or 90 days, or a custom start and end) and, where the
+portal declared any, one segment at a time, with an **Export** button
+that downloads the same selection: page views,
 sessions, visitors and engaged sessions, a chart per day, the top pages
 with entrances and exits, the most travelled steps between pages, sources
 by channel with the searched terms, and under **Visitors** the new versus
 returning split where the portal can tell, the signed in accounts where it
 links them, and the devices, browsers, operating systems, languages and
-regions. Below those, **Goals**, **Funnels**, **Forms** and **Custom
-dimensions**, each saying so when the portal declared none. A breakdown
+regions. Below those, **Goals**, **Funnels**, **Forms**, **Custom
+dimensions** and **Script errors**, each saying so when the portal
+declared none or did not enable the event. A breakdown
 the portal did not enable reads **not measured** rather than showing an
 empty list. A portal with measurement off says **Not measured for
 this portal**; a measured portal without figures yet says **No traffic
