@@ -85,12 +85,6 @@
         <job>OCA\Portaliq\BackgroundJob\TrafficGeoRefreshJob</job>
     </background-jobs>
 
-    <!-- portal-traffic-visitors-and-geo: fetch the geography database now
-         rather than on the monthly schedule. -->
-    <commands>
-        <command>OCA\Portaliq\Command\TrafficGeoRefresh</command>
-    </commands>
-
     <!-- @spec openspec/architecture/adr-023-action-authorization.md -->
     <repair-steps>
         <post-migration>
@@ -117,6 +111,12 @@
             <step>OCA\Portaliq\Repair\InitializeDemoPortal</step>
         </install>
     </repair-steps>
+
+    <!-- portal-traffic-visitors-and-geo: fetch the geography database now
+         rather than on the monthly schedule. -->
+    <commands>
+        <command>OCA\Portaliq\Command\TrafficGeoRefresh</command>
+    </commands>
 
     <settings>
         <admin>OCA\Portaliq\Settings\AdminSettings</admin>

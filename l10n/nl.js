@@ -789,7 +789,16 @@ OC.L10N.register(
         "eIDAS-aligned assurance floor for the government modes. Absent means low.": "Op eIDAS afgestemde ondergrens voor het betrouwbaarheidsniveau van de overheidswijzen. Afwezig betekent low.",
         "items": "items",
         "portal-notifications-dispatch (WMEBV notificatieplicht fallback, ~Awb 2:11): set true by NotificationDispatchJob after N consecutive failed out-of-band notification attempts for this account — signals an operator must reach the subject by another channel. Reset to false on the next successful dispatch.": "portal-notifications-dispatch (WMEBV notificatieplicht, terugvaloptie, ~Awb 2:11): door NotificationDispatchJob op true gezet na N opeenvolgende mislukte meldingspogingen buiten het portaal voor dit account; geeft aan dat een beheerder het subject via een ander kanaal moet bereiken. Bij de volgende geslaagde verzending weer false.",
-        "sample": "voorbeeld"
+        "sample": "voorbeeld",
+        "Load example data?": "Voorbeeldgegevens laden?",
+        "Example data fills the lists, detail pages and dashboards so you can see the app working straight away. Pick \"None\" on a production install.": "Voorbeeldgegevens vullen de lijsten, detailpagina’s en dashboards, zodat je de app meteen ziet werken. Kies \"Geen\" op een productieomgeving.",
+        "Load the example data": "Laad de voorbeeldgegevens",
+        "Loads what you picked. The data is obviously sample data, it is safe to run more than once, and you can delete it afterwards.": "Laadt wat je koos. De gegevens zijn herkenbaar voorbeeldgegevens, je kunt dit meer dan een keer uitvoeren en je kunt ze daarna verwijderen.",
+        "None, I will set this up myself": "Geen, ik richt dit zelf in",
+        "Nothing is imported. You start with an empty app and add your own data.": "Er wordt niets geïmporteerd. Je begint met een lege app en voegt zelf gegevens toe.",
+        "Example data": "Voorbeeldgegevens",
+        "Sample values for every schema this app supplies, generated from the schemas themselves. It shows the lists, detail pages and dashboards working rather than telling a story. Safe to run more than once, and you can delete it afterwards.": "Voorbeeldwaarden voor elk schema dat deze app levert, gegenereerd uit de schema’s zelf. Het laat de lijsten, detailpagina’s en dashboards werkend zien in plaats van een verhaal te vertellen. Veilig om vaker uit te voeren, en je kunt het daarna verwijderen.",
+        "What visitors looked at, who they were and where they came from. Pick a portal and a period at the top; the numbers come from the daily figures the aggregation job writes every fifteen minutes.": "Waar bezoekers naar keken, wie ze waren en waar ze vandaan kwamen. Kies bovenaan een portaal en een periode; de cijfers komen uit de dagelijkse totalen die de aggregatietaak elk kwartier schrijft."
     },
     "nplurals=2; plural=(n != 1);"
 )
