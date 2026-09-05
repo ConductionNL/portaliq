@@ -50,6 +50,8 @@ class RateLimitAttributesTest extends TestCase {
 			'traffic collect' => [TrafficController::class, 'collect'],
 			'traffic pixel' => [TrafficController::class, 'pixel'],
 			'traffic client' => [TrafficController::class, 'client'],
+			// portal-traffic-reporting: the token-guarded server API.
+			'traffic server' => [TrafficController::class, 'server'],
 		];
 
 	}//end rateLimitedMethodProvider()
