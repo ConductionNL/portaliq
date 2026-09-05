@@ -12,8 +12,14 @@
 // endpoint.
 
 import { useObjectStore } from '@conduction/nextcloud-vue'
+import { generateUrl } from '@nextcloud/router'
 import { defineStore } from 'pinia'
-import { daysBetween, lastDays, summarise } from '../lib/trafficSummary.js'
+import {
+	daysBetween,
+	lastDays,
+	segmentsOf,
+	summarise,
+} from '../lib/trafficSummary.js'
 
 /**
  * The register every Portaliq schema lives in.
@@ -43,6 +49,11 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		rangePreset: DEFAULT_PRESET,
 		customFrom: '',
 		customTo: '',
+		// The segment every widget reads (portal-traffic-reporting): the
+		// id of one of the portal's saved segments, or '' for all visits.
+		// The records hold every segment's rows; the summary folds the
+		// selected one's.
+		segment: '',
 	}),
 
 	getters: {
@@ -73,14 +84,67 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		},
 
 		/**
-		 * The folded summary of the loaded records.
+		 * The portal's usable segments, `{id, name}` each.
+		 *
+		 * @return {Array<{id: string, name: string}>} The segments.
+		 *
+		 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
+		 */
+		segments() {
+			return segmentsOf(this.portal)
+		},
+
+		/**
+		 * The loaded records of the selected segment only. A record
+		 * written before segments existed has no `segment` and counts as
+		 * all visits.
+		 *
+		 * @return {Array<object>} The records.
+		 *
+		 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
+		 */
+		segmentRecords() {
+			return this.records.filter(
+				(r) => String(r.segment || '') === this.segment,
+			)
+		},
+
+		/**
+		 * The folded summary of the selected segment's records.
 		 *
 		 * @return {object} See `summarise`.
 		 *
 		 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
 		 */
 		summary() {
-			return summarise(this.records, this.dates)
+			return summarise(this.segmentRecords, this.dates)
+		},
+
+		/**
+		 * The export download for what the page shows: the portal, the
+		 * range and the segment (portal-traffic-reporting).
+		 *
+		 * @return {string} The URL, or '' when there is nothing to export.
+		 *
+		 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
+		 */
+		exportUrl() {
+			const dates = this.dates
+			if (!this.portalSlug || dates.length === 0) {
+				return ''
+			}
+			const query = new URLSearchParams({
+				portal: this.portalSlug,
+				from: dates[0],
+				to: dates[dates.length - 1],
+				segment: this.segment,
+				format: 'csv',
+			})
+			return (
+				generateUrl('/apps/portaliq/api/traffic/export')
+				+ '?'
+				+ query.toString()
+			)
 		},
 	},
 
@@ -155,7 +219,25 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 				return
 			}
 			this.portalSlug = slug
+			this.segment = ''
 			await this.loadRecords()
+		},
+
+		/**
+		 * Choose a segment, or '' for all visits. No reload: the records
+		 * of every segment are already here.
+		 *
+		 * @param {string} id The segment id.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
+		 */
+		setSegment(id) {
+			const value = String(id || '')
+			if (value !== '' && !this.segments.some((s) => s.id === value)) {
+				return
+			}
+			this.segment = value
 		},
 
 		/**
@@ -195,10 +277,11 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		/**
 		 * Load the selected portal's daily records.
 		 *
-		 * The filter is by portal only: the range is applied by the summary,
-		 * so changing it costs no request, and the request needs no operator
-		 * syntax the object API might spell differently across versions. A
-		 * year of records is under four hundred rows.
+		 * The filter is by portal only: the range and the segment are
+		 * applied by the summary, so changing either costs no request, and
+		 * the request needs no operator syntax the object API might spell
+		 * differently across versions. A year of records is under four
+		 * hundred rows per segment; the limit leaves room for a handful.
 		 *
 		 * @return {Promise<void>}
 		 *
@@ -216,7 +299,7 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 					'portalTrafficDaily',
 					{
 						portal: this.portalSlug,
-						_limit: 400,
+						_limit: 2000,
 					},
 				)
 				this.records = (rows || []).filter(

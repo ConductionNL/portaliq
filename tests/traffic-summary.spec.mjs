@@ -18,6 +18,8 @@ import {
 	hasDimension,
 	isMeasured,
 	lastDays,
+	rollupOf,
+	segmentsOf,
 	summarise,
 	warnedSwitches,
 } from '../src/lib/trafficSummary.js'
@@ -420,5 +422,44 @@ describe('summarise: outcomes (portal-traffic-outcomes)', () => {
 		assert.deepEqual(summary.notFound, [])
 		assert.deepEqual(summary.customDimensions, {})
 		assert.deepEqual(summary.searches, [])
+	})
+})
+
+describe('segments, roll-ups and errors (portal-traffic-reporting)', () => {
+	it('lists the usable segments once each and the roll-up members without the portal itself', () => {
+		const portal = {
+			slug: 'rollup',
+			traffic: {
+				segments: [
+					{ id: 'desktop', name: 'Desktop', conditions: [{ dimension: 'deviceType', operator: 'is', value: 'desktop' }] },
+					{ id: 'desktop', conditions: [{ dimension: 'os', operator: 'is', value: 'x' }] },
+					{ id: 'empty', conditions: [] },
+					{ id: 'bad id', conditions: [{ dimension: 'os', operator: 'is', value: 'x' }] },
+					{ id: 'unnamed', conditions: [{ dimension: 'os', operator: 'is', value: 'x' }] },
+				],
+				rollupOf: ['open-tilburg', 'rollup', '', 7, 'open-venray'],
+			},
+		}
+		assert.deepEqual(segmentsOf(portal), [
+			{ id: 'desktop', name: 'Desktop' },
+			{ id: 'unnamed', name: 'unnamed' },
+		])
+		assert.deepEqual(rollupOf(portal), ['open-tilburg', 'open-venray'])
+		assert.deepEqual(segmentsOf(null), [])
+		assert.deepEqual(rollupOf({ traffic: { enabled: true } }), [])
+	})
+
+	it('merges script errors by message and source across the days', () => {
+		const summary = summarise(
+			[
+				{ date: '2026-09-03', errors: [{ message: 'boom', source: 'x/app.js', hits: 2, pages: ['/'] }] },
+				{ date: '2026-09-04', errors: [{ message: 'boom', source: 'x/app.js', hits: 3, pages: ['/', '/a'] }, { message: 'other', hits: 1, pages: [] }] },
+			],
+			['2026-09-03', '2026-09-04'],
+		)
+		assert.deepEqual(summary.errors, [
+			{ message: 'boom', source: 'x/app.js', hits: 5, pages: ['/', '/a'] },
+			{ message: 'other', source: '', hits: 1, pages: [] },
+		])
 	})
 })

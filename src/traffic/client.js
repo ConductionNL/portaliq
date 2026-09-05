@@ -19,6 +19,7 @@ import {
 	classifyLink,
 	dimensionParams,
 	envelope,
+	errorParams,
 	fieldIdOf,
 	formIdOf,
 	mayPersist,
@@ -148,6 +149,7 @@ export function boot(win) {
 		doc.addEventListener('submit', onSubmit, true)
 		doc.addEventListener('focusin', onFocusIn, true)
 		doc.addEventListener('focusout', onFocusOut, true)
+		win.addEventListener('error', onError)
 		win.addEventListener('scroll', onScroll, { passive: true })
 		win.addEventListener('pagehide', () => {
 			abandonForms()
@@ -346,6 +348,22 @@ export function boot(win) {
 			})
 		})
 		state.forms = {}
+	}
+
+	/**
+	 * Report a script error (portal-traffic-reporting): message, source
+	 * file without its query string, line, column and a stack hash. Never
+	 * the stack. Only when the portal enabled `js_error`, which `record`
+	 * decides.
+	 *
+	 * @param {ErrorEvent} event The error event.
+	 * @return {void}
+	 */
+	function onError(event) {
+		const params = errorParams(event)
+		if (params) {
+			record('js_error', params)
+		}
 	}
 
 	/**

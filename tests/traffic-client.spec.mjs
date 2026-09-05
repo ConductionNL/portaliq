@@ -21,8 +21,10 @@ import {
 	classifyLink,
 	dimensionParams,
 	envelope,
+	errorParams,
 	fieldIdOf,
 	formIdOf,
+	KNOWN_EVENTS,
 	mayPersist,
 	optedOut,
 	randomId,
@@ -253,6 +255,34 @@ describe('randomId', () => {
 		const fake = { getRandomValues: (bytes) => bytes.fill(171) }
 		assert.equal(randomId(fake), 'ab'.repeat(16))
 		assert.match(randomId(undefined), /^[0-9a-f]{32}$/)
+	})
+})
+
+describe('script errors (portal-traffic-reporting)', () => {
+	it('keeps the message, the source without its query, the position and a stack hash, never the stack', () => {
+		const params = errorParams({
+			message: 'boom',
+			filename: 'https://portaal.example/js/site.js?v=123&token=secret#x',
+			lineno: 12,
+			colno: 4,
+			error: { stack: 'Error: boom\n at https://portaal.example/js/site.js?token=secret:12:4' },
+		})
+		assert.deepEqual(params, {
+			message: 'boom',
+			source: 'portaal.example/js/site.js',
+			line: 12,
+			column: 4,
+			stackHash: params.stackHash,
+		})
+		assert.match(params.stackHash, /^[0-9a-f]{8}$/)
+		assert.ok(!JSON.stringify(params).includes('secret'))
+		assert.equal(
+			errorParams({ message: 'boom', filename: '', error: null }).stackHash,
+			undefined,
+		)
+		assert.equal(errorParams({ message: '', filename: 'x.js' }), null)
+		assert.equal(errorParams(null), null)
+		assert.equal(KNOWN_EVENTS.includes('js_error'), true)
 	})
 })
 
