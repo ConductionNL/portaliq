@@ -41,7 +41,10 @@ namespace OCA\Portaliq\AppInfo;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectDeletedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
+use OCA\Portaliq\Event\LandingPageRequestedEvent;
 use OCA\Portaliq\Listener\CmsCacheInvalidationListener;
+use OCA\Portaliq\Listener\LandingPageRequestedEventListener;
+use OCA\Portaliq\Listener\LandingPageSubmissionDispatchListener;
 use OCA\Portaliq\Middleware\PortalAuthMiddleware;
 use OCA\Portaliq\Middleware\PublicApiCorsMiddleware;
 use OCA\Portaliq\Service\Traffic\GeoResolverInterface;
@@ -53,6 +56,15 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**
  * Main application class for the Portaliq Nextcloud app.
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) A bootstrap names every
+ *  service and listener the app registers, so its coupling counts the app's
+ *  wiring rather than this class's own complexity. Two independent changes met
+ *  here and each added its own: the traffic analytics resolver alias, and the
+ *  landing-page event listener pair. Splitting the bootstrap to lower the
+ *  number would move the same names one file along.
+ *
+ * @spec openspec/specs/landing-page-provisioning/spec.md#requirement-a-contributing-app-requests-a-landing-page-via-a-typed-event
  */
 class Application extends App implements IBootstrap {
 	public const APP_ID = 'portaliq';
@@ -74,6 +86,8 @@ class Application extends App implements IBootstrap {
 	 * @return void
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	 *
+	 * @spec openspec/specs/landing-page-provisioning/spec.md#requirement-a-contributing-app-requests-a-landing-page-via-a-typed-event
 	 */
 	public function register(IRegistrationContext $context): void {
 		// Initialize register and schemas on install/upgrade — registered via
@@ -111,6 +125,13 @@ class Application extends App implements IBootstrap {
 			$context->registerEventListener($event, CmsCacheInvalidationListener::class);
 		}
 
+		// Landing-page-provisioning (ADR-041, contribution-landing-page-action):
+		// a same-instance cross-app command letting a contributing app ask
+		// Portaliq to provision a draft landing page + form, and the fail-safe
+		// relay of a visitor's submission back to that app.
+		$context->registerEventListener(LandingPageRequestedEvent::class, LandingPageRequestedEventListener::class);
+		$context->registerEventListener(ObjectCreatedEvent::class, LandingPageSubmissionDispatchListener::class);
+
 		// Traffic analytics (portal-traffic-analytics): where a visitor's
 		// address turns into a region. Phase 0 binds the resolver that
 		// answers nothing; a later phase swaps in an offline database here
@@ -126,6 +147,8 @@ class Application extends App implements IBootstrap {
 	 * @return void
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	 *
+	 * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
 	 */
 	public function boot(IBootContext $context): void {
 	}//end boot()
