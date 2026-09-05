@@ -192,6 +192,42 @@ upsert page route /contact '{
 }' >/dev/null
 echo "    /contact (markdown)"
 
+# landing-page-provisioning fixture: a form + a bound landing page, seeded
+# directly as OpenRegister objects (the shape LandingPageProvisioningService
+# would write) rather than through the PHP event — the seeder has no way to
+# dispatch a Nextcloud event, and seeding the RESULT is exactly what this
+# suite's OTHER fixtures already do (a page/menu/portal is always seeded as
+# the object a real write would have produced, never by exercising the write
+# path itself). `sourceApp: "e2eFixture"` is a deliberately fake app name:
+# no consumer event class will ever exist for it, so a submission exercises
+# — and must survive — the dispatch listener's fail-safe skip path.
+FORM_ID=$(upsert form pageRoute /campagne/e2e-form-test '{
+  "portal":"open-tilburg","pageRoute":"/campagne/e2e-form-test",
+  "sourceApp":"e2eFixture","externalReference":"e2e-fixture-1",
+  "campaign":{"campaign":"e2e","source":"playwright","medium":"test"},
+  "fields":[{"id":"name","label":"Naam","type":"text","required":true},
+            {"id":"email","label":"E-mail","type":"email","required":true}],
+  "submitLabel":"Aanmelden","consentText":"Ik ga akkoord met de verwerking van mijn gegevens.",
+  "status":"active"
+}')
+echo "    form (e2e-form-test) = $FORM_ID"
+
+upsert page route /campagne/e2e-form-test '{
+  "title":"E2E formulier","route":"/campagne/e2e-form-test","portal":"open-tilburg",
+  "status":"published","locale":"nl","summary":"Testpagina met een formulier-widget.",
+  "body":{"type":"grid","widgets":[
+    {"id":"article","widgetKey":"markdown","slot":"body","gridX":0,"gridY":0,"gridWidth":12,"gridHeight":3,
+     "props":{"markdown":"## Meld u aan"}},
+    {"id":"form","widgetKey":"form","slot":"body","gridX":0,"gridY":3,"gridWidth":12,"gridHeight":6,
+     "props":{"formId":"'"$FORM_ID"'",
+              "fields":[{"id":"name","label":"Naam","type":"text","required":true},
+                        {"id":"email","label":"E-mail","type":"email","required":true}],
+              "submitLabel":"Aanmelden",
+              "consentText":"Ik ga akkoord met de verwerking van mijn gegevens."}}
+  ]}
+}' >/dev/null
+echo "    /campagne/e2e-form-test (grid: markdown + form widget)"
+
 # A draft page proves the published filter does something. Without it, the
 # "unpublished pages are not served" scenario passes vacuously.
 upsert page route /concept '{

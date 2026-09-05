@@ -62,6 +62,12 @@ use Psr\Log\LoggerInterface;
  * is deliberately THE single trust comparator (contract-v2 design decision);
  * every re-check calls it statically so the ordering can never fork. Same
  * reasoning, and the same suppression, as ContributionController.
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveParameterList)   -- ten parameters, of which
+ * `$appName` and `$request` are Nextcloud's own `Controller` contract and
+ * cannot be dropped or grouped. The class injects eight collaborators of its
+ * own, under the threshold; folding them into a parameter object would hide
+ * the dependencies from the container rather than remove them.
  */
 class ContentController extends Controller {
 
