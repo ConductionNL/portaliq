@@ -115,6 +115,25 @@ function shell(script: string): string {
 }
 
 /**
+ * The address the runner's requests arrive from, as the container sees
+ * it: the gateway of the container's network.
+ */
+function gateway(): string {
+	const out = execFileSync(
+		'docker',
+		[
+			'inspect',
+			'-f',
+			'{{range .NetworkSettings.Networks}}{{.Gateway}}{{end}}',
+			CONTAINER,
+		],
+		{ encoding: 'utf8', timeout: 60_000 },
+	).trim()
+	expect(out, 'the container has a network gateway').toMatch(/^[\d.:a-f]+$/i)
+	return out
+}
+
+/**
  * Run the aggregation job once.
  */
 function aggregate(): void {
@@ -229,7 +248,12 @@ async function login(page: Page): Promise<void> {
  * @param testId The tile's test id.
  */
 async function tile(page: Page, testId: string): Promise<number> {
-	const text = await page.getByTestId(testId).innerText()
+	// The value span only: the card also carries the range label ("30
+	// days"), whose digits would otherwise glue onto the count.
+	const text = await page
+		.getByTestId(testId)
+		.locator('.cn-stats-block__count-value')
+		.innerText()
 	return Number(text.replace(/[^\d]/g, '') || '0')
 }
 
@@ -265,12 +289,16 @@ test.describe('traffic visitors and geography', () => {
 
 	test.beforeAll(() => {
 		test.skip(CONTAINER === '', 'set E2E_CONTAINER to the Nextcloud container')
-		// The runner's requests reach the container from the docker bridge.
-		// Trusting that network lets X-Forwarded-For name the test address,
-		// which is the only way a documented address can reach the resolver
-		// from a Playwright run. Throwaway instance only.
-		occ('config:system:set', 'trusted_proxies', '0', '--value=0.0.0.0/0')
-		occ('config:system:set', 'trusted_proxies', '1', '--value=::/0')
+		// The runner's requests reach the container from the docker bridge
+		// gateway. Trusting THAT address, and only that address, lets
+		// X-Forwarded-For name the test address, which is the only way a
+		// documented address can reach the resolver from a Playwright run.
+		// Not 0.0.0.0/0: Nextcloud walks the header from the right and
+		// skips every hop that is itself a trusted proxy, so trusting the
+		// world makes the forwarded address a proxy too and the collector
+		// falls back to the gateway. Throwaway instance only.
+		occ('config:system:delete', 'trusted_proxies')
+		occ('config:system:set', 'trusted_proxies', '0', `--value=${gateway()}`)
 	})
 
 	test.afterAll(async ({ request }) => {
@@ -279,6 +307,7 @@ test.describe('traffic visitors and geography', () => {
 		}
 		await setTraffic(request, seededTraffic())
 		occ('config:app:set', 'portaliq', 'traffic.geo.provider', '--value=dbip')
+		occ('config:system:delete', 'trusted_proxies')
 	})
 
 	// @e2e portal-traffic-visitors-and-geo::the-command-with-provider-none-says-so-and-exits-0

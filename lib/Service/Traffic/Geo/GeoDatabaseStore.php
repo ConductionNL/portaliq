@@ -234,7 +234,7 @@ class GeoDatabaseStore {
 		$moved = rename($from, $to);
 		if ($moved === false) {
 			$moved = copy($from, $to);
-			if ($moved === true && is_file($from) === true) {
+			if ($moved === true) {
 				unlink($from);
 			}
 		}
