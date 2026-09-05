@@ -575,4 +575,67 @@ class TrafficEventValidatorTest extends TestCase {
 	}//end testADisabledPortalAcceptsNothing()
 
 
+	/**
+	 * A heatmap event is refused as sensitive-off until the portal's
+	 * operator accepts that warning, whatever the events list says; with
+	 * the switch on it is stored with positions only, and a selector
+	 * loses anything that looks like an id.
+	 *
+	 * @return void
+	 */
+	public function testHeatmapEventsFollowTheHeatmapsSwitch(): void {
+		$event = [
+			'name' => 'heat_click',
+			'sequence' => 0,
+			'pageLocation' => 'https://portaal.example.nl/',
+			'params' => ['x' => 0.25, 'y' => '0.5', 'vw' => 1280, 'tag' => 'BUTTON', 'selector' => 'main > form#bsn-123 button.cta[name=jan]', 'text' => 'Jan Jansen'],
+		];
+		$off = $this->resolver->resolve(portal: ['traffic' => ['enabled' => true, 'events' => ['page_view', 'heat_click']]]);
+		$refused = $this->validator->validate(event: $event, config: $off, hasConsent: true, resolver: $this->resolver);
+		$this->assertSame(['ok' => false, 'reason' => 'sensitive-off'], $refused);
+
+		$on = $this->resolver->resolve(portal: ['traffic' => ['enabled' => true, 'sensitive' => ['heatmaps' => true]]]);
+		$stored = $this->validator->validate(event: $event, config: $on, hasConsent: true, resolver: $this->resolver);
+		$this->assertTrue($stored['ok'], 'the switch enables the event without listing it');
+		$this->assertSame(
+			['x' => 0.25, 'y' => 0.5, 'vw' => 1280, 'tag' => 'button', 'selector' => 'main > form button.cta'],
+			$stored['event']['params']
+		);
+
+		$scroll = $this->validator->validate(
+			event: ['name' => 'heat_scroll', 'sequence' => 1, 'pageLocation' => 'https://portaal.example.nl/', 'params' => ['depth' => 1.2, 'vw' => 800]],
+			config: $on,
+			hasConsent: true,
+			resolver: $this->resolver
+		);
+		$this->assertSame(['vw' => 800], $scroll['event']['params'], 'a depth past the page is not a depth');
+	}//end testHeatmapEventsFollowTheHeatmapsSwitch()
+
+
+	/**
+	 * An experiment tag survives only when it names a running experiment
+	 * and one of its variants; half a tag or a stopped one is stripped.
+	 *
+	 * @return void
+	 */
+	public function testAnExperimentTagMustNameARunningExperiment(): void {
+		$config = $this->resolver->resolve(portal: ['traffic' => [
+			'enabled' => true,
+			'experiments' => [
+				['id' => 'hero', 'status' => 'running', 'page' => '/', 'variants' => [['id' => 'a'], ['id' => 'b']]],
+				['id' => 'old', 'status' => 'stopped', 'page' => '/', 'variants' => [['id' => 'a'], ['id' => 'b']]],
+			],
+		]]);
+		$validate = fn (array $params): array => $this->validator->validate(
+			event: ['name' => 'page_view', 'sequence' => 0, 'pageLocation' => 'https://portaal.example.nl/', 'params' => $params + ['keep' => 'me']],
+			config: $config,
+			hasConsent: true,
+			resolver: $this->resolver
+		)['event']['params'];
+
+		$this->assertSame(['experiment' => 'hero', 'variant' => 'b', 'keep' => 'me'], $validate(['experiment' => 'hero', 'variant' => 'b']));
+		$this->assertSame(['keep' => 'me'], $validate(['experiment' => 'hero', 'variant' => 'z']), 'not a variant');
+		$this->assertSame(['keep' => 'me'], $validate(['experiment' => 'old', 'variant' => 'a']), 'stopped');
+		$this->assertSame(['keep' => 'me'], $validate(['experiment' => 'hero']), 'half a tag');
+	}//end testAnExperimentTagMustNameARunningExperiment()
 }//end class

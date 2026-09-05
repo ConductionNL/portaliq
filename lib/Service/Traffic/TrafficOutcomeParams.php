@@ -33,8 +33,21 @@ use OCA\Portaliq\Service\TrafficConfigResolver;
  * STRIP, never refuse: the event is still a real start, field or view.
  *
  * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-form-analytics-must-never-carry-a-value
+ * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
  */
 class TrafficOutcomeParams {
+
+	/**
+	 * Constructor.
+	 *
+	 * @param TrafficExperiments $experiments Says which experiment tags name a running experiment.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private readonly TrafficExperiments $experiments = new TrafficExperiments(),
+	) {
+	}
 
 	/**
 	 * The params to store.
@@ -47,10 +60,13 @@ class TrafficOutcomeParams {
 	 *
 	 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-form-analytics-must-never-carry-a-value
 	 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-custom-dimensions-must-be-declared-before-they-are-stored
+	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
 	 */
 	public function filter(string $name, array $params, array $config): array {
 		$declared = $this->declared(config: $config);
 		$formEvent = in_array($name, TrafficConfigResolver::FORM_EVENTS, true);
+		$heatEvent = in_array($name, TrafficConfigResolver::HEAT_EVENTS, true);
+		$tagged = $this->tagged(params: $params, config: $config);
 		$out = [];
 		foreach ($params as $key => $value) {
 			if (str_starts_with($key, TrafficConfigResolver::CUSTOM_DIMENSION_PREFIX) === true) {
@@ -61,14 +77,88 @@ class TrafficOutcomeParams {
 				continue;
 			}
 
+			if (in_array($key, TrafficConfigResolver::EXPERIMENT_PARAMS, true) === true) {
+				if ($tagged === true) {
+					$out[$key] = $value;
+				}
+
+				continue;
+			}
+
 			if ($formEvent === true && in_array($key, TrafficConfigResolver::FORM_EVENT_PARAMS, true) === false) {
 				continue;
+			}
+
+			if ($heatEvent === true) {
+				$value = $this->heat(key: $key, value: $value);
+				if ($value === null) {
+					continue;
+				}
 			}
 
 			$out[$key] = $value;
 		}
 
 		return $out;
+	}
+
+	/**
+	 * Whether the params name a running experiment and one of its
+	 * variants. Half a tag, or a tag for an experiment that is not
+	 * running, is stripped whole: a session tagged with a stopped
+	 * experiment would be counted for a result that is already final.
+	 *
+	 * @param array<string, string|int|float|bool> $params The bounded params.
+	 * @param array<string, mixed>                 $config The resolved configuration.
+	 *
+	 * @return bool True when both tags may be stored.
+	 */
+	private function tagged(array $params, array $config): bool {
+		$experiment = $params['experiment'] ?? null;
+		$variant = $params['variant'] ?? null;
+		if (is_string($experiment) === false || is_string($variant) === false) {
+			return false;
+		}
+
+		return $this->experiments->acceptsTag(config: $config, experiment: $experiment, variant: $variant);
+	}
+
+	/**
+	 * One heatmap param as stored, or null to drop it: only the listed
+	 * keys, the fractions as numbers between 0 and 1, the selector without
+	 * anything that looks like an id.
+	 *
+	 * @param string                    $key   The param key.
+	 * @param string|int|float|bool     $value The bounded value.
+	 *
+	 * @return string|int|float|null The value to store.
+	 */
+	private function heat(string $key, string|int|float|bool $value): string|int|float|null {
+		if (in_array($key, TrafficConfigResolver::HEAT_EVENT_PARAMS, true) === false) {
+			return null;
+		}
+
+		if ($key === 'x' || $key === 'y' || $key === 'depth') {
+			if (is_numeric($value) === false || (float)$value < 0.0 || (float)$value > 1.0) {
+				return null;
+			}
+
+			return round((float)$value, 4);
+		}
+
+		if ($key === 'vw') {
+			return (int)$value;
+		}
+
+		if ($key === 'selector') {
+			// Tags and classes only: an id fragment or an attribute selector
+			// is where a name or a number ends up in a selector.
+			$clean = (string)preg_replace('/#[^\s>.]+|\[[^\]]*\]/', '', (string)$value);
+
+			return mb_substr(trim($clean), 0, 128);
+		}
+
+		return mb_substr(strtolower((string)$value), 0, 32);
 	}
 
 	/**

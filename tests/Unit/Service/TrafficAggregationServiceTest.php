@@ -21,7 +21,10 @@ namespace OCA\Portaliq\Tests\Unit\Service;
 use DateTime;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\Traffic\TrafficEventStore;
+use OCA\Portaliq\Service\Traffic\TrafficRecordingStore;
 use OCA\Portaliq\Service\Traffic\TrafficRollup;
+use OCA\Portaliq\Service\Traffic\TrafficRollupSum;
+use OCA\Portaliq\Service\Traffic\TrafficSegments;
 use OCA\Portaliq\Service\Traffic\TrafficSessioniser;
 use OCA\Portaliq\Service\TrafficAggregationService;
 use OCA\Portaliq\Service\TrafficConfigResolver;
@@ -65,6 +68,13 @@ class TrafficAggregationServiceTest extends TestCase {
 	private int $purges = 0;
 
 	/**
+	 * How many times the recording store's purgeExpired() was called.
+	 *
+	 * @var int
+	 */
+	private int $recordingPurges = 0;
+
+	/**
 	 * The shared app config, so the watermark can be read back.
 	 *
 	 * @var FakeAppConfig
@@ -92,6 +102,7 @@ class TrafficAggregationServiceTest extends TestCase {
 		$this->events = [];
 		$this->daily = [];
 		$this->purges = 0;
+		$this->recordingPurges = 0;
 		$this->portals = null;
 		$this->config = new FakeAppConfig();
 	}//end setUp()
@@ -170,6 +181,17 @@ class TrafficAggregationServiceTest extends TestCase {
 		$clock->method('getTime')->willReturn(self::NOW);
 		$clock->method('getDateTime')->willReturn(new DateTime('@' . self::NOW));
 
+		// Session recordings (portal-traffic-experiments) expire with the
+		// raw events and the same run purges them; the run must ask.
+		$recordings = $this->createMock(TrafficRecordingStore::class);
+		$recordings->method('purgeExpired')->willReturnCallback(
+			function (): int {
+				$this->recordingPurges++;
+
+				return 2;
+			}
+		);
+
 		return new TrafficAggregationService(
 			$portals,
 			new TrafficConfigResolver(),
@@ -178,7 +200,10 @@ class TrafficAggregationServiceTest extends TestCase {
 			new TrafficRollup(),
 			$this->config->mock($this),
 			$clock,
-			$this->createMock(LoggerInterface::class)
+			$this->createMock(LoggerInterface::class),
+			new TrafficSegments(),
+			new TrafficRollupSum(),
+			$recordings
 		);
 	}//end service()
 
@@ -247,8 +272,8 @@ class TrafficAggregationServiceTest extends TestCase {
 		$afterFirst = $this->daily;
 		$second = $service->run();
 
-		$this->assertSame(['portals' => 2, 'days' => 3, 'purged' => 3], $first);
-		$this->assertSame(['portals' => 2, 'days' => 3, 'purged' => 3], $second);
+		$this->assertSame(['portals' => 2, 'days' => 3, 'purged' => 3, 'recordingsPurged' => 2], $first);
+		$this->assertSame(['portals' => 2, 'days' => 3, 'purged' => 3, 'recordingsPurged' => 2], $second);
 		$this->assertCount(3, $this->daily, 'one object per portal-day, not one per run');
 		$this->assertSame($afterFirst, $this->daily, 'the second run replaced, it did not add');
 
@@ -258,6 +283,7 @@ class TrafficAggregationServiceTest extends TestCase {
 		$this->assertSame(1, $tilburg['2026-09-03']['pageViews']);
 		$this->assertSame(1, $this->rollupsFor('open-venray')['2026-09-04']['pageViews']);
 		$this->assertSame(2, $this->purges, 'expired raw events are purged on every run');
+		$this->assertSame(2, $this->recordingPurges, 'expired session recordings are purged on every run too');
 	}//end testRunningTwiceGivesTheSameNumbersAndOneObjectPerDay()
 
 

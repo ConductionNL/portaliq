@@ -70,6 +70,11 @@ return [
         // token-guarded), and an admin downloads the daily records.
         ['name' => 'traffic#server', 'url' => '/api/traffic/server', 'verb' => 'POST'],
         ['name' => 'trafficReport#export', 'url' => '/api/traffic/export', 'verb' => 'GET'],
+        // portal-traffic-experiments: a session recording chunk, and the
+        // recorder the client loads only for a portal that switched
+        // recording on. Both public for the collector's reasons.
+        ['name' => 'traffic#recording', 'url' => '/api/traffic/recording', 'verb' => 'POST'],
+        ['name' => 'traffic#recorder', 'url' => '/api/traffic-recorder.js', 'verb' => 'GET'],
 
         // The editing-context probe (portal-page-designer). NOT part of the
         // headless content contract: it answers a question about the CALLER

@@ -193,6 +193,8 @@ class TrafficEventValidator {
 	 * @param bool                  $serverSide Whether the caller is server-side.
 	 *
 	 * @return string|null The refusal reason, or null.
+	 *
+	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
 	 */
 	private function refusal(
 		array $event,
@@ -211,6 +213,14 @@ class TrafficEventValidator {
 		// every browser on the internet to report opening its mail.
 		if ($resolver->allowsCaller(event: $name, serverSide: $serverSide) === false) {
 			return 'event-server-side-only';
+		}
+
+		// A heatmap event on a portal whose operator did not accept that
+		// warning (portal-traffic-experiments). Named separately from
+		// "not enabled" because the remedy is a different switch, with a
+		// consent consequence the events list does not carry.
+		if (in_array($name, TrafficConfigResolver::HEAT_EVENTS, true) === true && ($config['sensitive']['heatmaps'] ?? false) !== true) {
+			return 'sensitive-off';
 		}
 
 		if ($resolver->acceptsEvent(config: $config, event: $name, hasConsent: $hasConsent) === false) {

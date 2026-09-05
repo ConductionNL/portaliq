@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Service\Traffic\TrafficExperimentDefinitions;
 use OCA\Portaliq\Service\Traffic\TrafficOutcomeDefinitions;
 use OCA\Portaliq\Service\Traffic\TrafficReportDefinitions;
 use OCA\Portaliq\Service\Traffic\TrafficSegments;
@@ -74,6 +75,8 @@ class TrafficConfigResolver {
 		'form_abandon',
 		'page_not_found',
 		'js_error',
+		'heat_click',
+		'heat_scroll',
 		'email_open',
 		'email_click',
 	];
@@ -94,6 +97,33 @@ class TrafficConfigResolver {
 	 * @var string[]
 	 */
 	public const FORM_EVENTS = ['form_start', 'form_field', 'form_abandon', 'form_submit'];
+
+	/**
+	 * The heatmap events (portal-traffic-experiments). They exist only
+	 * under the `heatmaps` switch: the switch enables them and its absence
+	 * refuses them as `sensitive-off`, whatever the events list says.
+	 *
+	 * @var string[]
+	 */
+	public const HEAT_EVENTS = ['heat_click', 'heat_scroll'];
+
+	/**
+	 * The parameters a heatmap event may carry, and the ONLY ones: two
+	 * fractions of the page, a viewport width bucket, the clicked element's
+	 * tag and a short selector, and the scroll depth. Never the text under
+	 * the pointer.
+	 *
+	 * @var string[]
+	 */
+	public const HEAT_EVENT_PARAMS = ['x', 'y', 'vw', 'tag', 'selector', 'depth'];
+
+	/**
+	 * The two params that tag an event with the experiment and the variant
+	 * a session was put on (portal-traffic-experiments).
+	 *
+	 * @var string[]
+	 */
+	public const EXPERIMENT_PARAMS = ['experiment', 'variant'];
 
 	/**
 	 * The prefix of a custom dimension parameter (`cd_<id>`); an id the
@@ -241,9 +271,10 @@ class TrafficConfigResolver {
 	/**
 	 * Constructor.
 	 *
-	 * @param TrafficOutcomeDefinitions $outcomes Normalises goals, funnels and custom dimensions.
-	 * @param TrafficSegments           $segments Normalises segments.
-	 * @param TrafficReportDefinitions  $reports  Normalises reports, alerts and roll-up members.
+	 * @param TrafficOutcomeDefinitions $outcomes    Normalises goals, funnels and custom dimensions.
+	 * @param TrafficSegments           $segments    Normalises segments.
+	 * @param TrafficReportDefinitions  $reports     Normalises reports, alerts and roll-up members.
+	 * @param TrafficExperimentDefinitions $experiments Normalises page experiments.
 	 *
 	 * @return void
 	 */
@@ -251,6 +282,7 @@ class TrafficConfigResolver {
 		private readonly TrafficOutcomeDefinitions $outcomes = new TrafficOutcomeDefinitions(),
 		private readonly TrafficSegments $segments = new TrafficSegments(),
 		private readonly TrafficReportDefinitions $reports = new TrafficReportDefinitions(),
+		private readonly TrafficExperimentDefinitions $experiments = new TrafficExperimentDefinitions(),
 	) {
 	}
 
@@ -268,11 +300,13 @@ class TrafficConfigResolver {
 	 *               funnels: array<int, array<string, mixed>>,
 	 *               customDimensions: array<int, array<string, string>>,
 	 *               segments: array<int, array<string, mixed>>, rollupOf: string[],
-	 *               reports: array<int, array<string, mixed>>, alerts: array<int, array<string, mixed>>} The effective configuration.
+	 *               reports: array<int, array<string, mixed>>, alerts: array<int, array<string, mixed>>,
+	 *               experiments: array<int, array<string, mixed>>} The effective configuration.
 	 *
 	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
 	 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
 	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
+	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
 	 */
 	public function resolve(array $portal): array {
 		$traffic = $portal['traffic'] ?? [];
@@ -293,6 +327,7 @@ class TrafficConfigResolver {
 		);
 
 		$sensitive = $this->sensitive(value: ($traffic['sensitive'] ?? null));
+		$events = $this->heatSwitched(events: $events, sensitive: $sensitive);
 		$regionGranularity = $this->regionGranularity(value: ($traffic['regionGranularity'] ?? null));
 
 		$dimensions = $this->intersect(
@@ -359,6 +394,9 @@ class TrafficConfigResolver {
 			'rollupOf' => $this->reports->rollupOf(value: ($traffic['rollupOf'] ?? null), self: (string)($portal['slug'] ?? '')),
 			'reports' => $this->reports->reports(value: ($traffic['reports'] ?? null)),
 			'alerts' => $this->reports->alerts(value: ($traffic['alerts'] ?? null), goals: $goals),
+			// Page experiments (portal-traffic-experiments): the running and
+			// stopped ones. A draft is nothing yet and is served to nobody.
+			'experiments' => $this->experiments->definitions(value: ($traffic['experiments'] ?? null)),
 		];
 	}
 
@@ -426,6 +464,31 @@ class TrafficConfigResolver {
 		}
 
 		return $dimensions;
+	}
+
+	/**
+	 * The events after the heatmaps switch had its say, on the same
+	 * reasoning as `switched()`: the switch is the decision. With it off
+	 * the heat events are removed whatever the list says, with it on they
+	 * are added, because an operator who accepted that warning has enabled
+	 * the two events it exists for.
+	 *
+	 * @param string[]            $events    The requested, known events.
+	 * @param array<string, bool> $sensitive The resolved switches.
+	 *
+	 * @return string[] The effective events.
+	 */
+	private function heatSwitched(array $events, array $sensitive): array {
+		$events = array_values(array_filter(
+			$events,
+			static fn (string $event): bool => in_array($event, self::HEAT_EVENTS, true) === false
+		));
+
+		if ($sensitive['heatmaps'] === true) {
+			return array_merge($events, self::HEAT_EVENTS);
+		}
+
+		return $events;
 	}
 
 	/**

@@ -383,4 +383,39 @@ class TrafficConfigResolverTest extends TestCase {
 		$this->assertSame('F', $some['funnels'][0]['name']);
 		$this->assertSame([['id' => 'audience', 'name' => 'audience', 'scope' => 'event']], $some['customDimensions'], 'an unknown scope is event; a bad id is dropped');
 	}//end testOutcomesResolveToUsableDefinitions()
+
+
+	/**
+	 * The heat events exist only under the heatmaps switch: listed but
+	 * off they are removed, on they are added without being listed
+	 * (portal-traffic-experiments).
+	 *
+	 * @return void
+	 */
+	public function testHeatEventsFollowTheHeatmapsSwitch(): void {
+		$off = $this->resolver->resolve(portal: ['traffic' => ['enabled' => true, 'events' => ['page_view', 'heat_click', 'heat_scroll']]]);
+		$this->assertSame(['page_view'], $off['events']);
+
+		$on = $this->resolver->resolve(portal: ['traffic' => ['enabled' => true, 'events' => ['page_view'], 'sensitive' => ['heatmaps' => true]]]);
+		$this->assertSame(['page_view', 'heat_click', 'heat_scroll'], $on['events']);
+	}//end testHeatEventsFollowTheHeatmapsSwitch()
+
+
+	/**
+	 * Experiments resolve like the other definitions: running and stopped
+	 * kept, drafts and the unusable dropped, and an unconfigured portal
+	 * has none.
+	 *
+	 * @return void
+	 */
+	public function testExperimentsResolveToUsableDefinitions(): void {
+		$this->assertSame([], $this->resolver->resolve(portal: ['traffic' => ['enabled' => true]])['experiments']);
+
+		$config = $this->resolver->resolve(portal: ['traffic' => ['enabled' => true, 'experiments' => [
+			['id' => 'hero', 'status' => 'running', 'page' => '/', 'goal' => 'contact', 'variants' => [['id' => 'a'], ['id' => 'b', 'pageRoute' => '/b']]],
+			['id' => 'draft', 'status' => 'draft', 'page' => '/', 'variants' => [['id' => 'a'], ['id' => 'b']]],
+		]]]);
+		$this->assertSame(['hero'], array_column($config['experiments'], 'id'));
+		$this->assertSame('/b', $config['experiments'][0]['variants'][1]['pageRoute']);
+	}//end testExperimentsResolveToUsableDefinitions()
 }//end class

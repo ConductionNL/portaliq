@@ -169,4 +169,44 @@ class TrafficRollupSumTest extends TestCase {
 		$this->assertSame([], $summed['pages']);
 		$this->assertNull($summed['customDimensions']);
 	}//end testNoRecordsIsAnEmptyDay()
+
+
+	/**
+	 * Experiments merge by id and variant with the verdict re-derived
+	 * from the summed counts, and a roll-up carries no heatmap
+	 * (portal-traffic-experiments).
+	 *
+	 * @return void
+	 */
+	public function testExperimentsAreSummedAndAHeatmapIsNot(): void {
+		$rows = static fn (int $a, int $b): array => [[
+			'id' => 'hero',
+			'name' => 'Hero',
+			'status' => 'running',
+			'variants' => [
+				['id' => 'a', 'name' => 'A', 'sessions' => 30, 'conversions' => $a, 'rate' => 0.0],
+				['id' => 'b', 'name' => 'B', 'sessions' => 30, 'conversions' => $b, 'rate' => 0.0],
+			],
+			'winner' => '',
+			'confidence' => 0.0,
+		]];
+		$summed = (new TrafficRollupSum())->sum(
+			portal: 'rollup',
+			date: '2026-09-04',
+			members: ['a', 'b'],
+			records: [
+				$this->record('a', ['experiments' => $rows(1, 6), 'heatmaps' => [['path' => '/', 'samples' => 1, 'clicks' => [], 'scroll' => []]]]),
+				$this->record('b', ['experiments' => $rows(1, 6)]),
+			],
+			aggregatedAt: '2026-09-05T00:15:00Z'
+		);
+
+		$this->assertSame([], $summed['heatmaps']);
+		$experiment = $summed['experiments'][0];
+		$this->assertSame('hero', $experiment['id']);
+		$this->assertSame(['id' => 'a', 'name' => 'A', 'sessions' => 60, 'conversions' => 2, 'rate' => 0.033], $experiment['variants'][0]);
+		$this->assertSame(['id' => 'b', 'name' => 'B', 'sessions' => 60, 'conversions' => 12, 'rate' => 0.2], $experiment['variants'][1]);
+		$this->assertSame('b', $experiment['winner']);
+		$this->assertGreaterThan(0.95, $experiment['confidence']);
+	}//end testExperimentsAreSummedAndAHeatmapIsNot()
 }//end class

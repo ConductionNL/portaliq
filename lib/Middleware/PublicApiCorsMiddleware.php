@@ -58,7 +58,7 @@ class PublicApiCorsMiddleware extends Middleware {
 	 * prefix so an unrelated public route in this app is not opened by
 	 * accident.
 	 */
-	private const PATHS = '#/api/(content|traffic)(/|$|-client\.js$)#';
+	private const PATHS = '#/api/(content|traffic)(/|$|-client\.js$|-recorder\.js$)#';
 
 	/**
 	 * Constructor.

@@ -50,7 +50,9 @@ class TrafficRollup {
 	 * @param TrafficGoals           $goals      Evaluates the portal's goals.
 	 * @param TrafficFunnels         $funnels    Walks the portal's funnels.
 	 * @param TrafficFormStats       $forms      Counts what happened to each form.
-	 * @param TrafficErrorStats      $errors     Counts the script errors.
+	 * @param TrafficErrorStats      $errors      Counts the script errors.
+	 * @param TrafficExperiments     $experiments Evaluates the page experiments.
+	 * @param TrafficHeatmapStats    $heatmaps    Buckets the clicks and scroll depths.
 	 *
 	 * @return void
 	 */
@@ -61,6 +63,8 @@ class TrafficRollup {
 		private readonly TrafficFunnels $funnels = new TrafficFunnels(),
 		private readonly TrafficFormStats $forms = new TrafficFormStats(),
 		private readonly TrafficErrorStats $errors = new TrafficErrorStats(),
+		private readonly TrafficExperiments $experiments = new TrafficExperiments(),
+		private readonly TrafficHeatmapStats $heatmaps = new TrafficHeatmapStats(),
 	) {
 	}
 
@@ -72,8 +76,9 @@ class TrafficRollup {
 	 * @param array<int, array<string, mixed>>          $sessions     The day's sessions, each `{visitor, explicit, events}`.
 	 * @param string                                    $aggregatedAt When this record was computed, ISO 8601.
 	 * @param array<string, mixed>                      $options      `persistClientId` and `accountLinking`, the portal's
-	 *                                                                switches; `goals`, `funnels` and `customDimensions`,
-	 *                                                                its resolved definitions.
+	 *                                                                switches; `goals`, `funnels`, `customDimensions` and
+	 *                                                                `experiments`, its resolved definitions; `heatmaps`,
+	 *                                                                whether the heatmap switch is on.
 	 *
 	 * @return array<string, mixed> The `portalTrafficDaily` fields.
 	 *
@@ -81,6 +86,7 @@ class TrafficRollup {
 	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-visitors-must-be-counted-honestly-in-each-mode
 	 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
 	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-script-errors-must-be-reported-without-the-stack-or-the-query-string
+	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
 	 */
 	public function build(string $portal, string $date, array $sessions, string $aggregatedAt, array $options = []): array {
 		$totals = $this->totals(sessions: $sessions);
@@ -158,6 +164,17 @@ class TrafficRollup {
 				countKey: 'hits'
 			),
 			'errors' => $this->errors->rows(sessions: $sessions),
+			// Page experiments (portal-traffic-experiments): per variant the
+			// sessions and the conversions on the experiment's goal, and a
+			// winner only when the numbers earn one.
+			'experiments' => $this->experiments->rows(
+				experiments: $this->definitions(options: $options, key: 'experiments'),
+				sessions: $sessions,
+				goals: $goalDefinitions
+			),
+			// Heatmaps only while the switch is on: an event that arrived
+			// under a switch since turned off is not drawn.
+			'heatmaps' => $this->heatmapRows(sessions: $sessions, options: $options),
 			// Null, not {}, when nothing was carried: the object store
 			// refuses an empty object for a typed property and clears it
 			// on null.
@@ -193,10 +210,26 @@ class TrafficRollup {
 	}
 
 	/**
+	 * The heatmap rows, or [] when the portal's switch is off.
+	 *
+	 * @param array<int, array<string, mixed>> $sessions The sessions.
+	 * @param array<string, mixed>             $options  The options.
+	 *
+	 * @return array<int, array<string, mixed>> The rows.
+	 */
+	private function heatmapRows(array $sessions, array $options): array {
+		if (($options['heatmaps'] ?? false) !== true) {
+			return [];
+		}
+
+		return $this->heatmaps->rows(sessions: $sessions);
+	}
+
+	/**
 	 * A list of definitions from the options, or [] when none were given.
 	 *
 	 * @param array<string, mixed> $options The options.
-	 * @param string               $key     `goals`, `funnels` or `customDimensions`.
+	 * @param string               $key     `goals`, `funnels`, `customDimensions` or `experiments`.
 	 *
 	 * @return array<int, array<string, mixed>> The definitions.
 	 */

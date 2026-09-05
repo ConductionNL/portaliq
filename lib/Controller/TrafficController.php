@@ -31,6 +31,7 @@ use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\Traffic\RawRequestBody;
+use OCA\Portaliq\Service\Traffic\TrafficRecordingService;
 use OCA\Portaliq\Service\Traffic\TrafficServerToken;
 use OCA\Portaliq\Service\TrafficEventValidator;
 use OCA\Portaliq\Service\TrafficIngestService;
@@ -67,10 +68,11 @@ use Throwable;
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the edge of the
  * collector meets the resolver, the ingest, the body reader, the app
- * manager, the session service, the token verifier and six response and
- * attribute classes; the two over the threshold are what account linking
- * (portal-traffic-visitors-and-geo) and the server API
- * (portal-traffic-reporting) each need.
+ * manager, the session service, the token verifier, the recording
+ * service and six response and attribute classes; the ones over the
+ * threshold are what account linking (portal-traffic-visitors-and-geo),
+ * the server API (portal-traffic-reporting) and session recording
+ * (portal-traffic-experiments) each need.
  */
 class TrafficController extends Controller {
 
@@ -78,6 +80,12 @@ class TrafficController extends Controller {
 	 * The most bytes a batch may carry: 64 KB.
 	 */
 	public const MAX_BODY_BYTES = 65536;
+
+	/**
+	 * The most bytes a recording chunk may carry on the wire: the 256 KB
+	 * the service keeps plus room for the envelope around it.
+	 */
+	public const MAX_RECORDING_BODY_BYTES = 294912;
 
 	/**
 	 * A 1x1 transparent GIF, the smallest image a mail client will fetch.
@@ -95,6 +103,7 @@ class TrafficController extends Controller {
 	 * @param IAppManager          $appManager Locates the built client on disk.
 	 * @param PortalSessionService $session    Resolves a portal session bearer to its subject, for account linking.
 	 * @param TrafficServerToken   $tokens     Verifies a backend's bearer token (portal-traffic-reporting).
+	 * @param TrafficRecordingService $recordings Stores a session recording chunk (portal-traffic-experiments).
 	 *
 	 * @return void
 	 */
@@ -107,6 +116,7 @@ class TrafficController extends Controller {
 		private readonly IAppManager $appManager,
 		private readonly PortalSessionService $session,
 		private readonly TrafficServerToken $tokens,
+		private readonly TrafficRecordingService $recordings,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -296,6 +306,68 @@ class TrafficController extends Controller {
 
 
 	/**
+	 * Accept one chunk of a session recording (portal-traffic-experiments).
+	 *
+	 * The same posture as `collect()`: public, text/plain, the portal by
+	 * host first, 204 with nothing said about why a chunk was not kept.
+	 * The service refuses a chunk for a portal whose operator did not
+	 * switch recording on, for an external portal, before consent where
+	 * consent is required, and past the per-chunk and per-visit budgets;
+	 * every refusal is counted on the metrics endpoint.
+	 *
+	 * @return Response 204, or a 400 with a reason.
+	 *
+	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 120, period: 60)]
+	#[UserRateLimit(limit: 120, period: 60)]
+	public function recording(): Response {
+		$raw = $this->body->read(max: self::MAX_RECORDING_BODY_BYTES);
+		if ($raw === null) {
+			return $this->refusal(reason: 'batch-too-large');
+		}
+
+		$chunk = json_decode($raw, true);
+		if (is_array($chunk) === false || is_array($chunk['events'] ?? null) === false || $chunk['events'] === []) {
+			return $this->refusal(reason: 'malformed-batch');
+		}
+
+		$slug = $chunk['portal'] ?? null;
+		if (is_string($slug) === false) {
+			$slug = null;
+		}
+
+		$portal = $this->resolver->resolveForCollector(request: $this->request, portalSlug: $slug);
+		if ($portal !== null) {
+			$this->recordings->ingest(portal: $portal, body: $chunk, context: ['consent' => (($chunk['consent'] ?? false) === true)]);
+		}
+
+		return $this->noContent();
+	}//end recording()
+
+
+	/**
+	 * The session recorder, served like the client and for the same
+	 * reason: it is public code, loaded by the client only for a portal
+	 * whose operator switched recording on, and a request for it proves
+	 * nothing about any portal.
+	 *
+	 * @return DataDisplayResponse The script, a 304, or a 404.
+	 *
+	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 300, period: 60)]
+	#[UserRateLimit(limit: 300, period: 60)]
+	public function recorder(): DataDisplayResponse {
+		return $this->script(file: 'portaliq-traffic-recorder.js');
+	}//end recorder()
+
+
+	/**
 	 * The no-script fallback: one event per image request.
 	 *
 	 * @param string|null $portal The portal slug, for an external site.
@@ -356,8 +428,21 @@ class TrafficController extends Controller {
 	#[AnonRateLimit(limit: 300, period: 60)]
 	#[UserRateLimit(limit: 300, period: 60)]
 	public function client(): DataDisplayResponse {
+		return $this->script(file: 'portaliq-traffic.js');
+	}//end client()
+
+
+	/**
+	 * One built script from the app's `js/` directory, with an ETag so a
+	 * returning browser fetches it once an hour and revalidates after.
+	 *
+	 * @param string $file The built file's name.
+	 *
+	 * @return DataDisplayResponse The script, a 304, or a 404.
+	 */
+	private function script(string $file): DataDisplayResponse {
 		$this->stateless();
-		$path = $this->clientPath();
+		$path = $this->clientPath(file: $file);
 		if ($path === null) {
 			$missing = new DataDisplayResponse('', Http::STATUS_NOT_FOUND, ['Content-Type' => 'text/plain; charset=utf-8']);
 			$missing->addHeader('Cache-Control', 'private, no-store');
@@ -376,17 +461,19 @@ class TrafficController extends Controller {
 		}
 
 		return new DataDisplayResponse((string)file_get_contents($path), Http::STATUS_OK, $headers);
-	}//end client()
+	}//end script()
 
 
 	/**
-	 * Where the built client lives, or null when it was never built.
+	 * Where a built script lives, or null when it was never built.
+	 *
+	 * @param string $file The built file's name.
 	 *
 	 * @return string|null The absolute path.
 	 */
-	private function clientPath(): ?string {
+	private function clientPath(string $file): ?string {
 		try {
-			$path = $this->appManager->getAppPath(Application::APP_ID) . '/js/portaliq-traffic.js';
+			$path = $this->appManager->getAppPath(Application::APP_ID) . '/js/' . $file;
 		} catch (Throwable) {
 			return null;
 		}

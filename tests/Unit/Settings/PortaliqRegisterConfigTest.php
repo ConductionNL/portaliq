@@ -113,15 +113,24 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// portal 0.5.0, portalTrafficEvent 0.3.0): segments, roll-ups,
 		// scheduled reports, alerts, the server token and script errors
 		// (portal-traffic-reporting); `js_error` joins the enum and the daily
-		// record gains `segment`, `rollupOf`, `members` and `errors`. Additive.
+		// record gains `segment`, `rollupOf`, `members` and `errors`. 0.21.0
+		// (portalTrafficDaily 0.5.0, portal 0.6.0, portalTrafficEvent 0.4.0,
+		// portalTrafficRecording 0.1.0 new): page experiments, heatmaps and
+		// session recording (portal-traffic-experiments); `heat_click` and
+		// `heat_scroll` join the enum, the daily record gains `experiments`
+		// and `heatmaps`, and the recording schema arrives, admin-readable
+		// like the raw events. Additive.
 		// Every new schema is listed in
 		// `components.registers.portaliq.schemas` (ImportHandler binds only
 		// what is listed there) and declares a non-empty `read` rule.
-		$this->assertSame('0.20.0', self::$register['info']['version']);
-		$this->assertSame('0.4.0', self::$register['components']['schemas']['portalTrafficDaily']['version']);
-		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalTrafficEvent']['version']);
+		$this->assertSame('0.21.0', self::$register['info']['version']);
+		$this->assertSame('0.5.0', self::$register['components']['schemas']['portalTrafficDaily']['version']);
+		$this->assertSame('0.4.0', self::$register['components']['schemas']['portalTrafficEvent']['version']);
+		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalTrafficRecording']['version']);
+		$this->assertSame(['admin'], self::$register['components']['schemas']['portalTrafficRecording']['authorization']['read']);
+		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['page']['version']);
-		$this->assertSame('0.5.0', self::$register['components']['schemas']['portal']['version']);
+		$this->assertSame('0.6.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('0.5.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalSession']['version']);
