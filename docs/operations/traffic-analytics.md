@@ -84,8 +84,15 @@ Traffic page flags a portal that has any of them on.
 | --- | --- |
 | `persistClientId` | An identifier is stored in the visitor's browser, so return visits are recognised. Consent is then likely required. |
 | `accountLinking` | The signed in portal user's reference is attached to their events, which links a named person to their browsing. Only defensible with a stated purpose and a privacy assessment. |
-| `heatmaps` | Reserved for a later phase. Records where visitors click and scroll on each page. |
-| `sessionRecording` | Reserved for a later phase. Replays whole visits, including what is typed. |
+| `heatmaps` | Where visitors click and how far they scroll is recorded per page, as positions on the page and never the text under the pointer. See [Heatmaps](#heatmaps). |
+| `sessionRecording` | Visits are recorded for replay with every text and typed value masked to its length before it leaves the browser. See [Session recording](#session-recording). |
+
+The four switches are edited as fields of the portal record, each with
+its warning in the field's description, and the Traffic page's overview
+repeats the warning for every switch that is on. A dedicated editor for
+the block (the four switches with a warning card each) was checked and
+is not possible on the current `@conduction/nextcloud-vue`: the library
+accepts a custom form field in the registry but nothing renders one yet.
 
 ## Where visitors are
 
@@ -490,6 +497,106 @@ daily record carries `errors` (message, source, hits, pages) and the
 Traffic page lists them under **Script errors**, with "not measured"
 for a portal that did not enable the event.
 
+## Page experiments
+
+An experiment shows two or more versions of a page to different visitors
+and counts which version meets a goal more often. Each portal lists its
+own under `traffic.experiments`:
+
+| Field | Meaning |
+| --- | --- |
+| `id`, `name` | A short token for the figures, and what the experiment is called on the Traffic page. |
+| `status` | `draft` while you set it up, `running` while visitors are split, `stopped` when it is over. Only a running experiment changes a page; a draft is served to nobody and counted for nobody. |
+| `page` | The route the experiment runs on, such as `/` or `/contact`. |
+| `variants` | At least two, each with an `id`, a `name`, a `weight` (visitors are split in proportion; default 1) and either a `pageRoute` (another published page shown in place of this one, without a reload) or `changes` (a list of `selector` and `text`: the text each matched element gets). A control variant has an empty `changes` list. |
+| `goal` | The id of one of the portal's goals. A visit converts when it meets it. |
+| `startedAt`, `stoppedAt` | When it was set running and when it was stopped. A visit after `stoppedAt` is not counted; the experiment's figures stay. |
+
+The client decides the variant in the browser, because that is where the
+page is changed. The pick is sticky for the visit: derived from the client
+id when the portal persists one (so it survives a reload), from a random
+per page load otherwise (so it survives the client side navigation of one
+visit and nothing is stored, decision 2). Every event of that visit then
+carries `experiment` and `variant` in its params; the collector strips a
+tag that names no running experiment. A visit takes part in the first
+experiment it meets.
+
+The aggregation counts, per variant, the visits and the visits that met
+the goal, and compares the two best rates with a two-proportion z-test.
+**A winner is named only when every variant has at least thirty visits
+and the confidence is at least 95 percent.** Under that the Experiments
+widget reads **Not enough data**; the confidence is still shown. The daily
+record carries `experiments` with the per-variant counts, the winner and
+the confidence; the Traffic page sums the range and derives the verdict
+from the sums, never from an average of days.
+
+Text changes go through `textContent`, so a variant can change what an
+element says and never add markup or a script. A variant page is another
+page of the same portal; the visitor's address bar shows it, and the page
+view is counted for the page they actually saw.
+
+## Heatmaps
+
+Off unless `traffic.sensitive.heatmaps` is literally `true`; the switch
+carries its warning. When on, the client sends two events the collector
+refuses otherwise (`sensitive-off`):
+
+- `heat_click`: where a click landed as fractions of the document width
+  and height (never pixels, so a phone and a desk land on the same grid),
+  a viewport width bucket, the element's tag and a short selector of tags
+  and classes with every id and attribute stripped;
+- `heat_scroll`: the deepest point a page view was scrolled to, as a
+  fraction, sent when the page view ends.
+
+Nothing else: not the text under the pointer, not the link, not the
+value. The daily record carries `heatmaps`, per page a click grid of
+fifty by fifty cells with counts and ten scroll deciles, and only while
+the switch is on. The Traffic page's **Heatmap** widget draws the grid on
+a plain rectangle and the deciles as bars. It is not a screenshot: the
+page is public, open it beside the map. A roll-up portal carries no
+heatmap; its members' pages are on different sites.
+
+## Session recording
+
+Off unless `traffic.sensitive.sessionRecording` is literally `true`; the
+switch carries its warning. When on, the client loads a separate
+recorder script from `/api/traffic-recorder.js`, so a portal that records
+nothing never downloads the code that could, and only:
+
+- on a portal this app serves. **An external portal never records**, even
+  with the switch on: that page's document is not ours, the tag on it may
+  sit beside anything, and we cannot promise the masking holds on markup
+  we did not render. The collector refuses a chunk for an external portal
+  as `external-portal` too.
+- after consent, where the portal requires it. The recorder is not even
+  requested until `window.portaliqTraffic.consent(true)` is called.
+
+**What a recording holds.** The page's structure and classes, so a replay
+lays out like the page, and its stylesheets, each sent once per visit
+and referred to by hash from every snapshot after (the built-in site
+carries its whole stylesheet inline, and it is the bulk of a snapshot);
+the pointer, the clicks, the scrolling, the viewport and the navigations,
+each with a time offset. **What it never
+holds.** Text and typed values: the recorder writes a text node as its
+length and an input as the length of its value, drops scripts, writes
+images and frames as grey boxes, and keeps only layout attributes (no
+`alt`, `title`, `placeholder`, `href`, `src`, `aria-*` or `data-*`; a
+stylesheet link is the one address kept). The collector walks every chunk
+again and drops anything else before storage, so a recorder that was
+tampered with cannot land a name through this door.
+
+**Bounds.** A chunk is at most 256 KB and a visit at most 2 MB; past that
+the recorder stops and the collector refuses (`recording-chunk-too-large`,
+`recording-full`, on the metrics endpoint like every refusal). A visit is
+one `portalTrafficRecording` object (admin-readable) that expires with the
+portal's raw events (`retentionDays`) and is deleted by the aggregation
+run. The Traffic page's **Session recordings** widget lists the newest
+hundred with when they started, the pages and the duration, and a player
+replays one in a frame with `sandbox="allow-same-origin"` and no
+`allow-scripts`: the rebuilt document cannot run code, and the blocks it
+shows are where text was, not what it said. The overview's warning says
+how many recordings exist and how long they are kept.
+
 ## What you see
 
 **Reports, Traffic** shows one portal at a time over a period you choose
@@ -502,8 +609,9 @@ by channel with the searched terms, and under **Visitors** the new versus
 returning split where the portal can tell, the signed in accounts where it
 links them, and the devices, browsers, operating systems, languages and
 regions. Below those, **Goals**, **Funnels**, **Forms**, **Custom
-dimensions** and **Script errors**, each saying so when the portal
-declared none or did not enable the event. A breakdown
+dimensions**, **Script errors**, **Experiments**, **Heatmap** and
+**Session recordings**, each saying so when the portal declared none,
+did not enable the event or did not accept the switch. A breakdown
 the portal did not enable reads **not measured** rather than showing an
 empty list. A portal with measurement off says **Not measured for
 this portal**; a measured portal without figures yet says **No traffic

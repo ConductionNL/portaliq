@@ -52,6 +52,7 @@ class TrafficRecordingMaskTest extends TestCase {
 					['n' => 'a', 'a' => ['href' => 'https://x/?token=secret', 'class' => 'cta']],
 					['n' => 'div', 'a' => ['style' => 'background: url(https://x/track.gif); color: red']],
 					['n' => 'style', 's' => '@import "x.css"; .a { background: url("t.png") } .b { color: blue }'],
+					['n' => 'style', 'h' => 'abc123', 's' => 7],
 					['n' => 'b<b>', 'c' => []],
 				],
 			],
@@ -80,7 +81,8 @@ class TrafficRecordingMaskTest extends TestCase {
 		$this->assertSame(['class' => 'cta'], $root['c'][5]['a'], 'an anchor loses its href');
 		$this->assertSame('background: none; color: red', $root['c'][6]['a']['style']);
 		$this->assertSame(' .a { background: none } .b { color: blue }', $root['c'][7]['s']);
-		$this->assertSame(['l' => 0], $root['c'][8], 'an impossible tag becomes nothing');
+		$this->assertSame(['n' => 'style', 'a' => [], 'h' => 'abc123', 'c' => []], $root['c'][8], 'a style by reference keeps its hash only');
+		$this->assertSame(['l' => 0], $root['c'][9], 'an impossible tag becomes nothing');
 	}//end testASnapshotKeepsLengthsAndLayoutOnly()
 
 
@@ -97,6 +99,7 @@ class TrafficRecordingMaskTest extends TestCase {
 			['k' => 'r', 't' => 300, 'x' => 0, 'y' => 400],
 			['k' => 'v', 't' => 400, 'w' => 800, 'h' => 600],
 			['k' => 'n', 't' => 500, 'p' => '/contact?bsn=123#top'],
+			['k' => 'y', 't' => 550, 'h' => 'DEADBEEF', 's' => '.a { background: url(x) } @import "y";'],
 			['k' => 'x', 't' => 600, 'payload' => 'anything'],
 			'not an event',
 		]);
@@ -107,6 +110,7 @@ class TrafficRecordingMaskTest extends TestCase {
 			['k' => 'r', 't' => 300, 'x' => 0, 'y' => 400],
 			['k' => 'v', 't' => 400, 'w' => 800, 'h' => 600],
 			['k' => 'n', 't' => 500, 'p' => '/contact'],
-		], $events);
+			['k' => 'y', 't' => 550, 'h' => '', 's' => '.a { background: none } '],
+		], $events, 'a stylesheet keeps its text without url() or @import, and an upper-case hash is not a hash');
 	}//end testMovesClicksScrollsAndNavigationsKeepNumbersOnly()
 }//end class

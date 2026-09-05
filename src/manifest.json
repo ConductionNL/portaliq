@@ -374,6 +374,21 @@
             "id": "traffic-errors",
             "type": "TrafficErrors",
             "title": "Script errors"
+          },
+          {
+            "id": "traffic-experiments",
+            "type": "TrafficExperiments",
+            "title": "Experiments"
+          },
+          {
+            "id": "traffic-heatmap",
+            "type": "TrafficHeatmap",
+            "title": "Heatmap"
+          },
+          {
+            "id": "traffic-recordings",
+            "type": "TrafficRecordings",
+            "title": "Session recordings"
           }
         ],
         "layout": [
@@ -464,10 +479,34 @@
             "gridY": 26,
             "gridWidth": 12,
             "gridHeight": 3
+          },
+          {
+            "id": 12,
+            "widgetId": "traffic-experiments",
+            "gridX": 0,
+            "gridY": 29,
+            "gridWidth": 12,
+            "gridHeight": 4
+          },
+          {
+            "id": 13,
+            "widgetId": "traffic-heatmap",
+            "gridX": 0,
+            "gridY": 33,
+            "gridWidth": 6,
+            "gridHeight": 5
+          },
+          {
+            "id": 14,
+            "widgetId": "traffic-recordings",
+            "gridX": 6,
+            "gridY": 33,
+            "gridWidth": 6,
+            "gridHeight": 5
           }
         ]
       },
-      "_note": "portal-traffic-analytics. The three stats-blocks this page used to carry counted portalSession, revoked portalSession and portalMessage rows: authenticated-session bookkeeping that said nothing about visitors (task 0.1). The six widgets here read portalTrafficDaily through the object API and say 'not measured' for a portal with measurement off instead of drawing a zero. portal-traffic-visitors-and-geo added the period selector (on the overview, read by every widget through the report store) and the Visitors widget. portal-traffic-outcomes added Goals, Funnels, Forms and Custom dimensions, the missing pages under Pages and the searches under Sources. portal-traffic-reporting added the segment selector and the Export button on the overview, the roll-up note, and the Script errors widget. The Export is a button on the overview widget rather than a manifest headerAction: nc-vue's dashboard header actions cannot read the portal, period and segment the page has selected, and a download of the wrong selection is worse than none."
+      "_note": "portal-traffic-analytics. The three stats-blocks this page used to carry counted portalSession, revoked portalSession and portalMessage rows: authenticated-session bookkeeping that said nothing about visitors (task 0.1). The six widgets here read portalTrafficDaily through the object API and say 'not measured' for a portal with measurement off instead of drawing a zero. portal-traffic-visitors-and-geo added the period selector (on the overview, read by every widget through the report store) and the Visitors widget. portal-traffic-outcomes added Goals, Funnels, Forms and Custom dimensions, the missing pages under Pages and the searches under Sources. portal-traffic-reporting added the segment selector and the Export button on the overview, the roll-up note, and the Script errors widget. The Export is a button on the overview widget rather than a manifest headerAction: nc-vue's dashboard header actions cannot read the portal, period and segment the page has selected, and a download of the wrong selection is worse than none. portal-traffic-experiments added Experiments, Heatmap and Session recordings; the last two say \"off for this portal\" unless the operator accepted the switch's warning."
     },
     {
       "id": "PortalAccounts",

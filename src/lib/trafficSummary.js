@@ -184,7 +184,7 @@ export function warnedSwitches(portal) {
  *
  * @param {Array<object>} records The `portalTrafficDaily` objects, any order.
  * @param {Array<string>} dates   The dates of the range, oldest first.
- * @return {{totals: object, series: object, days: number, visitors: object, breakdowns: object, pages: Array<object>, transitions: Array<object>, sources: Array<object>, searches: Array<object>, goals: Array<object>, conversionRate: number, funnels: Array<object>, forms: Array<object>, notFound: Array<object>, errors: Array<object>, customDimensions: object, hasData: boolean}} The summary.
+ * @return {{totals: object, series: object, days: number, visitors: object, breakdowns: object, pages: Array<object>, transitions: Array<object>, sources: Array<object>, searches: Array<object>, goals: Array<object>, conversionRate: number, funnels: Array<object>, forms: Array<object>, notFound: Array<object>, errors: Array<object>, customDimensions: object, experiments: Array<object>, heatmaps: Array<object>, hasData: boolean}} The summary.
  */
 export function summarise(records, dates) {
 	const byDate = {}
@@ -350,6 +350,9 @@ function newOutcomes() {
 		notFound: {},
 		errors: {},
 		dimensions: {},
+		experiments: {},
+		experimentOrder: [],
+		heatmaps: {},
 	}
 }
 
@@ -486,6 +489,73 @@ function foldOutcomes(outcomes, record, sessions) {
 		outcomes.errors[key] = row
 	})
 
+	// Page experiments (portal-traffic-experiments): variants merged by
+	// id across the days, the counts summed; the verdict is re-derived
+	// from the sums when the summary is finished, never averaged.
+	list(record.experiments).forEach((experiment) => {
+		const id = String(experiment.id || '')
+		if (id === '') {
+			return
+		}
+		if (!outcomes.experiments[id]) {
+			outcomes.experiments[id] = {
+				id,
+				name: '',
+				status: '',
+				variants: {},
+				order: [],
+			}
+			outcomes.experimentOrder.push(id)
+		}
+		const row = outcomes.experiments[id]
+		row.name = String(experiment.name || row.name || id)
+		row.status = String(experiment.status || row.status)
+		list(experiment.variants).forEach((variant) => {
+			const variantId = String(variant.id || '')
+			if (variantId === '') {
+				return
+			}
+			if (!row.variants[variantId]) {
+				row.variants[variantId] = {
+					id: variantId,
+					name: '',
+					sessions: 0,
+					conversions: 0,
+				}
+				row.order.push(variantId)
+			}
+			const summed = row.variants[variantId]
+			summed.name = String(variant.name || summed.name || variantId)
+			summed.sessions += num(variant.sessions)
+			summed.conversions += num(variant.conversions)
+		})
+	})
+
+	// Heatmaps: the click grid and the scroll deciles summed per page.
+	list(record.heatmaps).forEach((heatmap) => {
+		const path = String(heatmap.path || '')
+		if (path === '') {
+			return
+		}
+		const row = outcomes.heatmaps[path] || {
+			path,
+			samples: 0,
+			cells: {},
+			scroll: new Array(10).fill(0),
+		}
+		row.samples += num(heatmap.samples)
+		list(heatmap.clicks).forEach((cell) => {
+			const key = num(cell.x) + ':' + num(cell.y)
+			row.cells[key] = (row.cells[key] || 0) + num(cell.count)
+		})
+		list(heatmap.scroll).forEach((count, index) => {
+			if (index < 10) {
+				row.scroll[index] += num(count)
+			}
+		})
+		outcomes.heatmaps[path] = row
+	})
+
 	const dimensions = record.customDimensions
 	if (dimensions && typeof dimensions === 'object' && !Array.isArray(dimensions)) {
 		Object.keys(dimensions).forEach((id) => {
@@ -587,7 +657,134 @@ function finishOutcomes(outcomes) {
 		),
 		errors: rank(Object.values(outcomes.errors), 'hits'),
 		customDimensions,
+		experiments: outcomes.experimentOrder.map((id) => {
+			const row = outcomes.experiments[id]
+			const variants = row.order.map((variantId) => {
+				const variant = row.variants[variantId]
+				return {
+					...variant,
+					rate:
+						variant.sessions > 0
+							? Math.round(
+									(variant.conversions / variant.sessions) * 1000,
+								) / 1000
+							: 0,
+				}
+			})
+			return {
+				id,
+				name: row.name,
+				status: row.status,
+				variants,
+				...verdict(variants),
+			}
+		}),
+		heatmaps: Object.values(outcomes.heatmaps)
+			.map((row) => ({
+				path: row.path,
+				samples: row.samples,
+				clicks: Object.keys(row.cells).map((key) => {
+					const [x, y] = key.split(':').map(Number)
+					return { x, y, count: row.cells[key] }
+				}),
+				scroll: row.scroll,
+			}))
+			.sort((a, b) => b.samples - a.samples),
 	}
+}
+
+/**
+ * Sessions each variant needs before a winner may be named, and the
+ * confidence it needs; the same two numbers as the aggregation's.
+ */
+export const MIN_EXPERIMENT_SESSIONS = 30
+export const WINNING_CONFIDENCE = 0.95
+
+/**
+ * The winner and the confidence for summed variant rows, the way the
+ * aggregation decides it for one day: the two best rates compared by a
+ * two-proportion z-test, a winner only with enough sessions everywhere
+ * and the confidence at or above the threshold.
+ *
+ * @param {Array<{id: string, sessions: number, conversions: number}>} variants The rows.
+ * @return {{winner: string, confidence: number, enough: boolean}} The verdict.
+ */
+export function verdict(variants) {
+	const rows = Array.isArray(variants) ? variants : []
+	const enough =
+		rows.length >= 2
+		&& rows.every((v) => num(v.sessions) >= MIN_EXPERIMENT_SESSIONS)
+	if (rows.length < 2) {
+		return { winner: '', confidence: 0, enough: false }
+	}
+	const ranked = rows
+		.slice()
+		.sort(
+			(a, b) =>
+				num(b.conversions) / Math.max(1, num(b.sessions))
+					- num(a.conversions) / Math.max(1, num(a.sessions))
+				|| num(b.sessions) - num(a.sessions),
+		)
+	const confidence = zTest(
+		num(ranked[0].conversions),
+		num(ranked[0].sessions),
+		num(ranked[1].conversions),
+		num(ranked[1].sessions),
+	)
+	return {
+		winner:
+			enough && confidence >= WINNING_CONFIDENCE ? String(ranked[0].id) : '',
+		confidence,
+		enough,
+	}
+}
+
+/**
+ * The two-proportion z-test as a two-sided confidence, three decimals.
+ *
+ * @param {number} conversionsA Conversions of the first variant.
+ * @param {number} sessionsA    Sessions of the first variant.
+ * @param {number} conversionsB Conversions of the second variant.
+ * @param {number} sessionsB    Sessions of the second variant.
+ * @return {number} Between 0 and 1.
+ */
+export function zTest(conversionsA, sessionsA, conversionsB, sessionsB) {
+	if (!(sessionsA > 0) || !(sessionsB > 0)) {
+		return 0
+	}
+	const pooled = (conversionsA + conversionsB) / (sessionsA + sessionsB)
+	const error = Math.sqrt(pooled * (1 - pooled) * (1 / sessionsA + 1 / sessionsB))
+	if (!(error > 0)) {
+		return 0
+	}
+	const score =
+		Math.abs(conversionsA / sessionsA - conversionsB / sessionsB) / error
+	const pValue = 2 * (1 - normalCdf(score))
+	return Math.round(Math.max(0, Math.min(1, 1 - pValue)) * 1000) / 1000
+}
+
+/**
+ * The standard normal cumulative distribution (Abramowitz and Stegun
+ * 7.1.26), the same approximation the aggregation uses.
+ *
+ * @param {number} score The standard score.
+ * @return {number} The mass below it.
+ */
+function normalCdf(score) {
+	let arg = score / Math.SQRT2
+	let sign = 1
+	if (arg < 0) {
+		sign = -1
+		arg = -arg
+	}
+	const step = 1 / (1 + 0.3275911 * arg)
+	const poly =
+		(((1.061405429 * step - 1.453152027) * step + 1.421413741) * step
+			- 0.284496736)
+			* step
+		+ 0.254829592
+	const erf = 1 - poly * step * Math.exp(-arg * arg)
+	return 0.5 * (1 + sign * erf)
 }
 
 /**

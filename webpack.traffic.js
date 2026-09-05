@@ -6,9 +6,15 @@
 //
 // Standalone, like webpack.site.js, and smaller than any of them on purpose:
 // no Vue, no loaders, no polyfills. The source is ES2017 and ships as-is,
-// minified into one IIFE. A tracking script is the one asset a public
-// portal loads on EVERY page for EVERY visitor, so its size is a budget
-// (16 KB, `hints: 'error'`) rather than a suggestion.
+// minified into one IIFE per entry. A tracking script is the one asset a
+// public portal loads on EVERY page for EVERY visitor, so its size is a
+// budget rather than a suggestion: 20 KB for the client. The session
+// recorder (portal-traffic-experiments) is a SECOND entry with its own
+// budget of 30 KB, loaded by the client only for a portal whose operator
+// switched recording on; the code that could record a visit is never in
+// the file every visitor downloads. webpack's performance hint is one
+// ceiling for both; tests/traffic-client.spec.mjs holds each file to its
+// own.
 //
 // `output.clean` is FALSE here, and that is load-bearing while four bundles
 // share js/. webpack.config.js documents what happens otherwise: a rebuild of
@@ -25,6 +31,12 @@ module.exports = {
 	target: ['web', 'es2017'],
 	entry: {
 		'portaliq-traffic': path.join(__dirname, 'src', 'traffic', 'client.js'),
+		'portaliq-traffic-recorder': path.join(
+			__dirname,
+			'src',
+			'traffic',
+			'recorder.js',
+		),
 	},
 	output: {
 		path: path.join(__dirname, 'js'),
@@ -34,7 +46,7 @@ module.exports = {
 	},
 	performance: {
 		hints: isDev ? false : 'error',
-		maxAssetSize: 16 * 1024,
-		maxEntrypointSize: 16 * 1024,
+		maxAssetSize: 30 * 1024,
+		maxEntrypointSize: 30 * 1024,
 	},
 }

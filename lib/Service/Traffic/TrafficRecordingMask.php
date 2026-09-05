@@ -83,12 +83,15 @@ class TrafficRecordingMask {
 	];
 
 	/**
-	 * The event kinds a chunk may carry and the numeric fields of each.
+	 * The event kinds a chunk may carry and the numeric fields of each: a
+	 * snapshot, a stylesheet (sent once, referenced by hash), a pointer
+	 * move, a click, a scroll, a viewport size and a navigation.
 	 *
 	 * @var array<string, string[]>
 	 */
 	public const KINDS = [
 		's' => ['t', 'w', 'h'],
+		'y' => ['t'],
 		'm' => ['t', 'x', 'y'],
 		'c' => ['t', 'x', 'y'],
 		'r' => ['t', 'x', 'y'],
@@ -103,9 +106,11 @@ class TrafficRecordingMask {
 	private const MAX_ATTRIBUTE = 512;
 
 	/**
-	 * The longest inline stylesheet kept.
+	 * The longest stylesheet kept: a stylesheet travels ONCE per visit as
+	 * its own event (`y`, with the hash a snapshot's style element refers
+	 * to), so the bound is per sheet, not per snapshot.
 	 */
-	private const MAX_STYLE = 65536;
+	private const MAX_STYLE = 131072;
 
 	/**
 	 * The deepest element nesting walked.
@@ -168,6 +173,16 @@ class TrafficRecordingMask {
 			$out['n'] = $this->node(node: ($event['n'] ?? null), depth: 0);
 		}
 
+		if ($kind === 'y') {
+			$sheet = $event['s'] ?? '';
+			if (is_string($sheet) === false) {
+				$sheet = '';
+			}
+
+			$out['h'] = $this->hash(value: ($event['h'] ?? null));
+			$out['s'] = $this->css(value: $sheet);
+		}
+
 		if ($kind === 'n') {
 			$out['p'] = $this->path(value: ($event['p'] ?? null));
 		}
@@ -225,11 +240,29 @@ class TrafficRecordingMask {
 			$out['v'] = max(0, (int)$node['v']);
 		}
 
-		if ($tag === 'style' && is_string($node['s'] ?? null) === true) {
-			$out['s'] = $this->css(value: $node['s']);
+		if ($tag === 'style') {
+			$out['h'] = $this->hash(value: ($node['h'] ?? null));
+			if (is_string($node['s'] ?? null) === true) {
+				$out['s'] = $this->css(value: $node['s']);
+			}
 		}
 
 		return $out;
+	}
+
+	/**
+	 * A stylesheet hash: up to sixteen hex characters, else ''.
+	 *
+	 * @param mixed $value The posted hash.
+	 *
+	 * @return string The hash.
+	 */
+	private function hash(mixed $value): string {
+		if (is_string($value) === false || preg_match('/^[a-f0-9]{1,16}$/', $value) !== 1) {
+			return '';
+		}
+
+		return $value;
 	}
 
 	/**

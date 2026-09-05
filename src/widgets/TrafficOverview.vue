@@ -155,7 +155,7 @@ import {
 import Download from 'vue-material-design-icons/Download.vue'
 import TrafficEmptyState from './TrafficEmptyState.vue'
 import { rollupOf, warnedSwitches } from '../lib/trafficSummary.js'
-import { RANGE_PRESETS } from '../store/traffic.js'
+import { RANGE_PRESETS, RECORDINGS_LIMIT } from '../store/traffic.js'
 import trafficWidgetMixin from './trafficWidgetMixin.js'
 
 export default {
@@ -417,15 +417,45 @@ export default {
 
 				heatmaps: this.t(
 					'portaliq',
-					'Heatmaps are switched on. Clicks and scrolls are recorded per page.',
+					'Heatmaps are switched on. Where visitors click and how far they scroll is recorded per page, as positions only.',
 				),
 
-				sessionRecording: this.t(
-					'portaliq',
-					'Session recording is switched on. Whole visits are replayed, including what is typed.',
-				),
+				sessionRecording: this.recordingLabel(),
 			}
 			return labels[key] || key
+		},
+
+		/**
+		 * The session recording warning, with how many recordings exist
+		 * and how long they are kept (portal-traffic-experiments).
+		 *
+		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
+		 * @return {string} The label.
+		 */
+		recordingLabel() {
+			const count = this.report.recordings.length
+			const kept = this.n(
+				'portaliq',
+				'kept for %n day',
+				'kept for %n days',
+				this.report.retentionDays,
+			)
+			const many =
+				count >= RECORDINGS_LIMIT
+					? this.t('portaliq', '{limit} or more recordings exist', {
+							limit: RECORDINGS_LIMIT,
+						})
+					: this.n(
+							'portaliq',
+							'%n recording exists',
+							'%n recordings exist',
+							count,
+						)
+			return this.t(
+				'portaliq',
+				'Session recording is switched on. Visits are replayed with every text and typed value masked to its length; {many}, {kept}.',
+				{ many, kept },
+			)
 		},
 	},
 }

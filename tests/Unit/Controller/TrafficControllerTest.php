@@ -22,6 +22,7 @@ use OCA\Portaliq\Controller\TrafficController;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\Traffic\RawRequestBody;
+use OCA\Portaliq\Service\Traffic\TrafficRecordingService;
 use OCA\Portaliq\Service\Traffic\TrafficServerToken;
 use OCA\Portaliq\Service\TrafficIngestService;
 use OCP\App\IAppManager;
@@ -68,6 +69,14 @@ class TrafficControllerTest extends TestCase {
 	 */
 	private ?PortalSessionService $session = null;
 
+	/**
+	 * The recording chunks the recording double received, as [slug, body, context]
+	 * (portal-traffic-experiments).
+	 *
+	 * @var array<int, array{0: string, 1: array, 2: array}>
+	 */
+	private array $recorded = [];
+
 
 	/**
 	 * @return void
@@ -75,6 +84,7 @@ class TrafficControllerTest extends TestCase {
 	protected function setUp(): void {
 		parent::setUp();
 		$this->ingested = [];
+		$this->recorded = [];
 		$this->appDir = sys_get_temp_dir() . '/portaliq-traffic-' . bin2hex(random_bytes(4));
 		mkdir($this->appDir . '/js', 0777, true);
 	}//end setUp()
@@ -84,8 +94,10 @@ class TrafficControllerTest extends TestCase {
 	 * @return void
 	 */
 	protected function tearDown(): void {
-		if (is_file($this->appDir . '/js/portaliq-traffic.js') === true) {
-			unlink($this->appDir . '/js/portaliq-traffic.js');
+		foreach (['portaliq-traffic.js', 'portaliq-traffic-recorder.js'] as $file) {
+			if (is_file($this->appDir . '/js/' . $file) === true) {
+				unlink($this->appDir . '/js/' . $file);
+			}
 		}
 
 		if (is_dir($this->appDir . '/js') === true) {
@@ -145,6 +157,15 @@ class TrafficControllerTest extends TestCase {
 			static fn (array $portal, string $token): bool => $token === 'secret-token'
 		);
 
+		$recordings = $this->createMock(TrafficRecordingService::class);
+		$recordings->method('ingest')->willReturnCallback(
+			function (array $portal, array $body, array $context): array {
+				$this->recorded[] = [$portal['slug'], $body, $context];
+
+				return ['ok' => true, 'reason' => ''];
+			}
+		);
+
 		return new TrafficController(
 			'portaliq',
 			$request,
@@ -153,7 +174,8 @@ class TrafficControllerTest extends TestCase {
 			$raw,
 			$appManager,
 			$this->session ?? $this->createMock(PortalSessionService::class),
-			$tokens
+			$tokens,
+			$recordings
 		);
 	}//end controller()
 
@@ -360,7 +382,7 @@ class TrafficControllerTest extends TestCase {
 	 */
 	public function testEveryRoutedMethodCarriesTheFullPublicPosture(): void {
 		$reflection = new ReflectionClass(TrafficController::class);
-		foreach (['collect', 'pixel', 'client', 'server'] as $name) {
+		foreach (['collect', 'pixel', 'client', 'server', 'recording', 'recorder'] as $name) {
 			$method = $reflection->getMethod($name);
 			foreach ([PublicPage::class, NoCSRFRequired::class, AnonRateLimit::class, UserRateLimit::class] as $attribute) {
 				$this->assertNotEmpty($method->getAttributes($attribute), $name . '() must carry #[' . $attribute . ']');
@@ -374,6 +396,84 @@ class TrafficControllerTest extends TestCase {
 			$this->assertGreaterThanOrEqual($anon->getLimit(), $user->getLimit(), $name . '(): a signed-in caller must not be throttled below a visitor');
 		}
 	}//end testEveryRoutedMethodCarriesTheFullPublicPosture()
+	/**
+	 * A recording chunk (portal-traffic-experiments) is a 204 with no body
+	 * and no cookie, and the chunk reaches the recording service with the
+	 * resolved portal and the consent the client reported; a portal that
+	 * does not resolve gets the same 204 and nothing is handed on.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
+	 */
+	public function testARecordingChunkIsHandedToTheServiceAndAnswers204(): void {
+		$chunk = (string)json_encode([
+			'portal' => 'open-tilburg',
+			'consent' => true,
+			'recording' => 'abcdef0123456789abcdef0123456789',
+			'page' => '/',
+			'events' => [['k' => 'v', 't' => 0, 'w' => 800, 'h' => 600]],
+		]);
+
+		$response = $this->controller(body: $chunk)->recording();
+		$this->assertSame(Http::STATUS_NO_CONTENT, $response->getStatus());
+		$this->assertSame('', (string)$response->render());
+		$this->assertSame('private, no-store', $this->headers($response)['Cache-Control']);
+		$this->assertArrayNotHasKey('Set-Cookie', $this->headers($response));
+		$this->assertCount(1, $this->recorded);
+		$this->assertSame('open-tilburg', $this->recorded[0][0]);
+		$this->assertSame('abcdef0123456789abcdef0123456789', $this->recorded[0][1]['recording']);
+		$this->assertSame(['consent' => true], $this->recorded[0][2]);
+
+		$unresolved = $this->controller(body: $chunk, portal: null)->recording();
+		$this->assertSame(Http::STATUS_NO_CONTENT, $unresolved->getStatus());
+		$this->assertCount(1, $this->recorded, 'nothing handed on for a portal that does not resolve');
+	}//end testARecordingChunkIsHandedToTheServiceAndAnswers204()
+
+
+	/**
+	 * A chunk without events, malformed, or over the body cap is refused
+	 * whole with a 400 and nothing handed on.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
+	 */
+	public function testAMalformedRecordingChunkIsRefusedWhole(): void {
+		foreach (['{"events":[]}', 'not json', '{}'] as $body) {
+			$response = $this->controller(body: $body)->recording();
+			$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+			$this->assertSame(['error' => 'malformed-batch'], $response->getData());
+		}
+
+		$tooLarge = $this->controller(body: null)->recording();
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $tooLarge->getStatus());
+		$this->assertSame(['error' => 'batch-too-large'], $tooLarge->getData());
+		$this->assertSame([], $this->recorded);
+	}//end testAMalformedRecordingChunkIsRefusedWhole()
+
+
+	/**
+	 * The recorder is served like the client, from its own built file,
+	 * and is a 404 when it was never built.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
+	 */
+	public function testTheRecorderIsServedLikeTheClient(): void {
+		$missing = $this->controller(body: '')->recorder();
+		$this->assertSame(Http::STATUS_NOT_FOUND, $missing->getStatus());
+
+		file_put_contents($this->appDir . '/js/portaliq-traffic-recorder.js', '(function(){/*rec*/})();');
+		$response = $this->controller(body: '')->recorder();
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame('application/javascript; charset=utf-8', $this->headers($response)['Content-Type']);
+		$this->assertSame('public, max-age=3600', $this->headers($response)['Cache-Control']);
+		$this->assertSame('(function(){/*rec*/})();', (string)$response->render());
+	}//end testTheRecorderIsServedLikeTheClient()
+
+
 	/**
 	 * The server API (portal-traffic-reporting): a valid token stores the
 	 * batch under the address and agent the backend reported, per event

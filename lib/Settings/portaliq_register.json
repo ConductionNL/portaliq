@@ -4012,7 +4012,7 @@
                                 "events": {
                                     "title": "Events",
                                     "type": "array",
-                                    "description": "The masked events: snapshots (`s`), pointer moves (`m`), clicks (`c`), scrolls (`r`), viewport sizes (`v`) and navigations (`n`), each with a time offset.",
+                                    "description": "The masked events: snapshots (`s`), stylesheets sent once and referred to by hash (`y`), pointer moves (`m`), clicks (`c`), scrolls (`r`), viewport sizes (`v`) and navigations (`n`), each with a time offset.",
                                     "items": {
                                         "type": "object",
                                         "additionalProperties": true
