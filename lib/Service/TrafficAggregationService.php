@@ -60,6 +60,12 @@ use Psr\Log\LoggerInterface;
  * portal so it reads the numbers this same run wrote.
  *
  * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the job's service
+ * meets the portals, the configuration, the store, the sessioniser, the
+ * rollup, the segments and the roll-up sum, plus the platform's clock,
+ * config and logger; that is the aggregation's whole cast, and a facade
+ * would hide which step reads what.
  */
 class TrafficAggregationService {
 

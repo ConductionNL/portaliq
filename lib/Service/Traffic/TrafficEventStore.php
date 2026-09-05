@@ -46,6 +46,13 @@ use Throwable;
  * degrades to "nothing stored, nothing read" rather than a fatal.
  *
  * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-raw-events-must-be-retained-for-a-finite-configured-period
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- every read and
+ * write of the two traffic schemas lives here on purpose (the class
+ * comment says why); the segment reads and the delete that
+ * portal-traffic-reporting added put it one over the threshold, and a
+ * second store would be a second place for the raw-versus-ordinary
+ * write decision.
  */
 class TrafficEventStore {
 

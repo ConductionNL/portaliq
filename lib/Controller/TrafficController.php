@@ -223,20 +223,20 @@ class TrafficController extends Controller {
 	 * @return array<int, array{ip: string, userAgent: string, events: array<int, mixed>}> The groups.
 	 */
 	private function byVisitor(array $batch): array {
-		$defaultIp = (string)($batch['remoteAddress'] ?? '');
+		$defaultAddress = (string)($batch['remoteAddress'] ?? '');
 		$defaultAgent = (string)($batch['userAgent'] ?? '');
 		$groups = [];
 		foreach (array_values($batch['events']) as $event) {
-			$ip = $defaultIp;
+			$address = $defaultAddress;
 			$agent = $defaultAgent;
 			if (is_array($event) === true) {
-				$ip = (string)($event['remoteAddress'] ?? $defaultIp);
+				$address = (string)($event['remoteAddress'] ?? $defaultAddress);
 				$agent = (string)($event['userAgent'] ?? $defaultAgent);
 				unset($event['remoteAddress'], $event['userAgent']);
 			}
 
-			$key = $ip . "\0" . $agent;
-			$groups[$key] ??= ['ip' => $ip, 'userAgent' => $agent, 'events' => []];
+			$key = $address . "\0" . $agent;
+			$groups[$key] ??= ['ip' => $address, 'userAgent' => $agent, 'events' => []];
 			$groups[$key]['events'][] = $event;
 		}
 

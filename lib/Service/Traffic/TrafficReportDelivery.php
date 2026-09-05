@@ -114,7 +114,11 @@ class TrafficReportDelivery {
 				$done += (int)$this->notify(
 					userId: $userId,
 					subject: self::SUBJECT_REPORT,
-					parameters: ['name' => (string)$report['name'], 'portal' => (string)($portal['title'] ?? $portal['slug'] ?? ''), 'span' => $period['from'] . ' / ' . $period['to']],
+					parameters: [
+						'name' => (string)$report['name'],
+						'portal' => (string)($portal['title'] ?? $portal['slug'] ?? ''),
+						'span' => $period['from'] . ' / ' . $period['to'],
+					],
 					objectId: (string)($portal['slug'] ?? '') . ':' . (string)$report['id'] . ':' . (string)$period['key']
 				);
 			}
@@ -227,7 +231,11 @@ class TrafficReportDelivery {
 			return '';
 		}
 
-		return ($this->users->get($recipient) !== null) ? $recipient : '';
+		if ($this->users->get($recipient) === null) {
+			return '';
+		}
+
+		return $recipient;
 	}
 
 	/**
@@ -240,14 +248,17 @@ class TrafficReportDelivery {
 	 * @return string The address, or ''.
 	 */
 	private function address(string $recipient, string $userId): string {
-		if ($userId === '') {
-			return ($this->mailer->validateMailAddress($recipient) === true) ? $recipient : '';
+		$address = $recipient;
+		if ($userId !== '') {
+			$user = $this->users->get($userId);
+			$address = trim((string)($user?->getEMailAddress() ?? ''));
 		}
 
-		$user = $this->users->get($userId);
-		$address = trim((string)($user?->getEMailAddress() ?? ''));
+		if ($address === '' || $this->mailer->validateMailAddress($address) === false) {
+			return '';
+		}
 
-		return ($address !== '' && $this->mailer->validateMailAddress($address) === true) ? $address : '';
+		return $address;
 	}
 
 	/**
@@ -263,8 +274,11 @@ class TrafficReportDelivery {
 		}
 
 		$language = $this->l10n->getUserLanguage($this->users->get($userId));
+		if ($language === '') {
+			return null;
+		}
 
-		return ($language === '') ? null : $language;
+		return $language;
 	}
 
 	/**

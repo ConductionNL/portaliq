@@ -68,7 +68,8 @@ class TrafficLogImporter {
 	 * @param string   $format `combined` or `json`.
 	 * @param string   $host   The site's origin (`https://example.org`), for the page location.
 	 *
-	 * @return array{lines: int, views: int, skipped: int, duplicates: int, accepted: int, refused: array<string, int>}|null The outcome, or null for an unknown portal.
+	 * @return array{lines: int, views: int, skipped: int, duplicates: int, accepted: int,
+	 *               refused: array<string, int>}|null The outcome, or null for an unknown portal.
 	 *
 	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-an-access-log-must-import-as-page-views-without-assets-or-bots
 	 */
@@ -138,11 +139,11 @@ class TrafficLogImporter {
 	 * @return void
 	 */
 	private function flush(array $portal, string $visitor, array $events, array &$outcome): void {
-		[$ip, $agent] = explode("\0", $visitor, 2) + ['', ''];
+		[$address, $agent] = explode("\0", $visitor, 2) + ['', ''];
 		$result = $this->ingest->ingestForPortal(
 			portal: $portal,
 			events: $events,
-			context: ['ip' => $ip, 'userAgent' => $agent, 'consent' => false, 'serverSide' => false, 'allowOld' => true]
+			context: ['ip' => $address, 'userAgent' => $agent, 'consent' => false, 'serverSide' => false, 'allowOld' => true]
 		);
 		$outcome['accepted'] += (int)$result['accepted'];
 		foreach ($result['refused'] as $reason => $count) {

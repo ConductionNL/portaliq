@@ -40,6 +40,11 @@ namespace OCA\Portaliq\Service\Traffic;
  * everything alike.
  *
  * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- the class is the
+ * normaliser AND the evaluator of one small grammar (four operators,
+ * three kinds of dimension); splitting them would put the rule that
+ * refuses a condition in a different file from the rule that reads it.
  */
 class TrafficSegments {
 
@@ -111,7 +116,8 @@ class TrafficSegments {
 	 * @param mixed                            $value The configured list.
 	 * @param array<int, array<string, mixed>> $goals The portal's resolved goals, so a `goal:<id>` condition can be checked.
 	 *
-	 * @return array<int, array{id: string, name: string, conditions: array<int, array{dimension: string, operator: string, value: string}>}> The segments.
+	 * @return array<int, array{id: string, name: string,
+	 *                          conditions: array<int, array{dimension: string, operator: string, value: string}>}> The segments.
 	 *
 	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
 	 */
@@ -129,29 +135,42 @@ class TrafficSegments {
 
 		$out = [];
 		foreach (array_slice(array_values($value), 0, self::MAX_SEGMENTS) as $row) {
-			if (is_array($row) === false) {
+			$segment = $this->segment(row: $row, goalIds: $goalIds);
+			if ($segment === null || isset($out[$segment['id']]) === true) {
 				continue;
 			}
 
-			$id = (string)($row['id'] ?? '');
-			if (preg_match('/^[A-Za-z0-9_-]{1,64}$/', $id) !== 1 || isset($out[$id]) === true) {
-				continue;
-			}
-
-			$conditions = $this->conditions(value: ($row['conditions'] ?? null), goalIds: $goalIds);
-			if ($conditions === null) {
-				continue;
-			}
-
-			$name = trim((string)($row['name'] ?? ''));
-			$out[$id] = [
-				'id' => $id,
-				'name' => ($name === '') ? $id : mb_substr($name, 0, 128),
-				'conditions' => $conditions,
-			];
+			$out[$segment['id']] = $segment;
 		}
 
 		return array_values($out);
+	}
+
+	/**
+	 * One configured row as a segment, or null when it cannot be acted on.
+	 *
+	 * @param mixed               $row     The configured row.
+	 * @param array<string, true> $goalIds The portal's goal ids.
+	 *
+	 * @return array{id: string, name: string, conditions: array<int, array{dimension: string, operator: string, value: string}>}|null The segment.
+	 */
+	private function segment(mixed $row, array $goalIds): ?array {
+		if (is_array($row) === false) {
+			return null;
+		}
+
+		$id = (string)($row['id'] ?? '');
+		$conditions = $this->conditions(value: ($row['conditions'] ?? null), goalIds: $goalIds);
+		if (preg_match('/^[A-Za-z0-9_-]{1,64}$/', $id) !== 1 || $conditions === null) {
+			return null;
+		}
+
+		$name = mb_substr(trim((string)($row['name'] ?? '')), 0, 128);
+		if ($name === '') {
+			$name = $id;
+		}
+
+		return ['id' => $id, 'name' => $name, 'conditions' => $conditions];
 	}
 
 	/**
@@ -243,7 +262,7 @@ class TrafficSegments {
 			$operator = trim((string)($condition['operator'] ?? ''));
 			$expected = $condition['value'] ?? '';
 			if (is_bool($expected) === true) {
-				$expected = ($expected === true) ? 'true' : 'false';
+				$expected = $this->flag(value: $expected);
 			}
 
 			if (is_scalar($expected) === false || $this->knowsDimension(dimension: $dimension, goalIds: $goalIds) === false) {
@@ -402,6 +421,10 @@ class TrafficSegments {
 	 * @return string `true` or `false`.
 	 */
 	private function flag(bool $value): string {
-		return ($value === true) ? 'true' : 'false';
+		if ($value === true) {
+			return 'true';
+		}
+
+		return 'false';
 	}
 }

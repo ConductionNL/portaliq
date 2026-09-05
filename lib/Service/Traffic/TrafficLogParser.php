@@ -60,7 +60,8 @@ class TrafficLogParser {
 	/**
 	 * The combined log format.
 	 */
-	private const COMBINED = '/^(?<ip>\S+) \S+ \S+ \[(?<time>[^\]]+)\] "(?<request>[^"]*)" (?<status>\d{3}) (?<bytes>\S+)(?: "(?<referrer>[^"]*)" "(?<agent>[^"]*)")?/';
+	private const COMBINED = '/^(?<ip>\S+) \S+ \S+ \[(?<time>[^\]]+)\] "(?<request>[^"]*)" (?<status>\d{3}) (?<bytes>\S+)'
+		. '(?: "(?<referrer>[^"]*)" "(?<agent>[^"]*)")?/';
 
 	/**
 	 * Constructor.
@@ -85,32 +86,20 @@ class TrafficLogParser {
 	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-an-access-log-must-import-as-page-views-without-assets-or-bots
 	 */
 	public function parse(string $line, string $format): ?array {
-		$line = trim($line);
-		if ($line === '') {
-			return null;
-		}
-
-		$fields = ($format === 'json') ? $this->json(line: $line) : $this->combined(line: $line);
+		$fields = $this->fields(line: trim($line), format: $format);
 		if ($fields === null) {
 			return null;
 		}
 
-		if ($fields['method'] !== 'GET' || $fields['status'] < 200 || $fields['status'] >= 300) {
-			return null;
-		}
-
 		$path = $this->pathOf(target: $fields['target']);
-		if ($path === '' || $this->isAsset(path: $path) === true) {
-			return null;
-		}
-
-		if ($this->agents->classify(userAgent: $fields['agent'])['bot'] === true) {
-			return null;
-		}
-
 		$timestamp = $this->timestamp(value: $fields['time']);
-		if ($timestamp === null) {
+		if ($this->isPageView(fields: $fields, path: $path) === false || $timestamp === null) {
 			return null;
+		}
+
+		$referrer = $fields['referrer'];
+		if ($referrer === '-') {
+			$referrer = '';
 		}
 
 		return [
@@ -118,8 +107,50 @@ class TrafficLogParser {
 			'userAgent' => $fields['agent'],
 			'timestamp' => $timestamp,
 			'path' => $path,
-			'referrer' => ($fields['referrer'] === '-') ? '' : $fields['referrer'],
+			'referrer' => $referrer,
 		];
+	}
+
+	/**
+	 * The fields of a line in either format, or null for a line that is
+	 * empty or does not parse.
+	 *
+	 * @param string $line   The trimmed line.
+	 * @param string $format `combined` or `json`.
+	 *
+	 * @return array{ip: string, time: string, method: string, target: string, status: int, referrer: string, agent: string}|null The fields.
+	 */
+	private function fields(string $line, string $format): ?array {
+		if ($line === '') {
+			return null;
+		}
+
+		if ($format === 'json') {
+			return $this->json(line: $line);
+		}
+
+		return $this->combined(line: $line);
+	}
+
+	/**
+	 * Whether the fields describe a person viewing a page: a successful
+	 * GET of a path that is not an asset, by something that is not a bot.
+	 *
+	 * @param array<string, mixed> $fields The fields.
+	 * @param string               $path   The request path.
+	 *
+	 * @return bool True for a page view.
+	 */
+	private function isPageView(array $fields, string $path): bool {
+		if ($fields['method'] !== 'GET' || $fields['status'] < 200 || $fields['status'] >= 300) {
+			return false;
+		}
+
+		if ($path === '' || $this->isAsset(path: $path) === true) {
+			return false;
+		}
+
+		return $this->agents->classify(userAgent: (string)$fields['agent'])['bot'] === false;
 	}
 
 	/**
@@ -130,20 +161,20 @@ class TrafficLogParser {
 	 * @return array{ip: string, time: string, method: string, target: string, status: int, referrer: string, agent: string}|null The fields.
 	 */
 	private function combined(string $line): ?array {
-		if (preg_match(self::COMBINED, $line, $m) !== 1) {
+		if (preg_match(self::COMBINED, $line, $match) !== 1) {
 			return null;
 		}
 
-		$request = explode(' ', $m['request']);
+		$request = explode(' ', $match['request']);
 
 		return [
-			'ip' => $m['ip'],
-			'time' => $m['time'],
+			'ip' => $match['ip'],
+			'time' => $match['time'],
 			'method' => strtoupper($request[0] ?? ''),
 			'target' => $request[1] ?? '',
-			'status' => (int)$m['status'],
-			'referrer' => $m['referrer'] ?? '',
-			'agent' => $m['agent'] ?? '',
+			'status' => (int)$match['status'],
+			'referrer' => $match['referrer'] ?? '',
+			'agent' => $match['agent'] ?? '',
 		];
 	}
 
@@ -165,14 +196,23 @@ class TrafficLogParser {
 		$target = trim((string)$this->first(row: $row, keys: ['path', 'uri', 'request_uri', 'url']));
 		if ($request !== '') {
 			$parts = explode(' ', $request);
-			$method = ($method === '') ? strtoupper($parts[0] ?? '') : $method;
-			$target = ($target === '') ? ($parts[1] ?? '') : $target;
+			if ($method === '') {
+				$method = strtoupper($parts[0] ?? '');
+			}
+
+			if ($target === '') {
+				$target = $parts[1] ?? '';
+			}
+		}
+
+		if ($method === '') {
+			$method = 'GET';
 		}
 
 		return [
 			'ip' => trim((string)$this->first(row: $row, keys: ['remote_addr', 'remoteAddress', 'ip', 'client_ip', 'clientip'])),
 			'time' => trim((string)$this->first(row: $row, keys: ['time_local', 'time_iso8601', 'timestamp', 'time', '@timestamp'])),
-			'method' => ($method === '') ? 'GET' : $method,
+			'method' => $method,
 			'target' => $target,
 			'status' => (int)$this->first(row: $row, keys: ['status', 'status_code', 'response']),
 			'referrer' => trim((string)$this->first(row: $row, keys: ['http_referer', 'referer', 'referrer'])),
@@ -213,7 +253,10 @@ class TrafficLogParser {
 
 		if (str_starts_with($target, '/') === false) {
 			$path = parse_url($target, PHP_URL_PATH);
-			$target = is_string($path) ? $path : '';
+			$target = '';
+			if (is_string($path) === true) {
+				$target = $path;
+			}
 		}
 
 		$cut = strcspn($target, '?#');
@@ -251,7 +294,7 @@ class TrafficLogParser {
 			return null;
 		}
 
-		$parsed = DateTimeImmutable::createFromFormat('d/M/Y:H:i:s O', $value);
+		$parsed = date_create_immutable_from_format('d/M/Y:H:i:s O', $value);
 		if ($parsed === false) {
 			try {
 				$parsed = new DateTimeImmutable($value);

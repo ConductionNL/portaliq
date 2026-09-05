@@ -80,7 +80,7 @@ class TrafficExport {
 					continue;
 				}
 
-				$values[] = is_bool($value) ? (($value === true) ? '1' : '0') : (string)$value;
+				$values[] = $this->field(value: $value);
 			}
 
 			$lines[] = $this->line(values: $values);
@@ -131,6 +131,25 @@ class TrafficExport {
 	}
 
 	/**
+	 * A scalar as a CSV field: a boolean as 1 or 0, the rest as is.
+	 *
+	 * @param int|float|string|bool $value The value.
+	 *
+	 * @return string The field.
+	 */
+	private function field(int|float|string|bool $value): string {
+		if ($value === true) {
+			return '1';
+		}
+
+		if ($value === false) {
+			return '0';
+		}
+
+		return (string)$value;
+	}
+
+	/**
 	 * One CSV line, every field quoted as RFC 4180 wants.
 	 *
 	 * @param string[] $values The fields.
@@ -138,9 +157,15 @@ class TrafficExport {
 	 * @return string The line.
 	 */
 	private function line(array $values): string {
-		return implode(',', array_map(
-			static fn (string $value): string => (preg_match('/[",\r\n]/', $value) === 1) ? '"' . str_replace('"', '""', $value) . '"' : $value,
-			$values
-		));
+		$quoted = [];
+		foreach ($values as $value) {
+			if (preg_match('/[",\r\n]/', $value) === 1) {
+				$value = '"' . str_replace('"', '""', $value) . '"';
+			}
+
+			$quoted[] = $value;
+		}
+
+		return implode(',', $quoted);
 	}
 }

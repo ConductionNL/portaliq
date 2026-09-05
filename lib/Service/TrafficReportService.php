@@ -145,7 +145,10 @@ class TrafficReportService {
 		$current = $this->numbers->fold(records: $this->records(slug: $slug, from: $period['from'], to: $period['to']));
 		$previous = $this->numbers->fold(records: $this->records(slug: $slug, from: $period['previousFrom'], to: $period['previousTo']));
 		$delivered = $this->delivery->sendReport(portal: $portal, report: $report, period: $period, current: $current, previous: $previous);
-		$this->logger->info('Portaliq: traffic report sent', ['portal' => $slug, 'report' => $report['id'], 'period' => $period['key'], 'deliveries' => $delivered]);
+		$this->logger->info(
+			'Portaliq: traffic report sent',
+			['portal' => $slug, 'report' => $report['id'], 'period' => $period['key'], 'deliveries' => $delivered]
+		);
 
 		return true;
 	}
@@ -177,7 +180,10 @@ class TrafficReportService {
 			default => false,
 		};
 		if ((string)$alert['comparison'] === 'changeAbove') {
-			$before = $this->numbers->metric(metric: (string)$alert['metric'], records: $this->records(slug: $slug, from: $period['previousFrom'], to: $period['previousTo']));
+			$before = $this->numbers->metric(
+				metric: (string)$alert['metric'],
+				records: $this->records(slug: $slug, from: $period['previousFrom'], to: $period['previousTo'])
+			);
 			$change = $this->numbers->change(current: $value, previous: $before);
 			$fires = ($change !== null && $change > $threshold);
 		}
@@ -188,7 +194,10 @@ class TrafficReportService {
 
 		$this->appConfig->setValueString(Application::APP_ID, $key, $period['key']);
 		$delivered = $this->delivery->sendAlert(portal: $portal, alert: $alert, period: $period, value: $value, change: $change);
-		$this->logger->info('Portaliq: traffic alert fired', ['portal' => $slug, 'alert' => $alert['id'], 'period' => $period['key'], 'deliveries' => $delivered]);
+		$this->logger->info(
+			'Portaliq: traffic alert fired',
+			['portal' => $slug, 'alert' => $alert['id'], 'period' => $period['key'], 'deliveries' => $delivered]
+		);
 
 		return true;
 	}

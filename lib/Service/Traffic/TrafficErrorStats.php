@@ -62,30 +62,9 @@ class TrafficErrorStats {
 		$errors = [];
 		foreach ($sessions as $session) {
 			foreach (($session['events'] ?? []) as $event) {
-				if (is_array($event) === false || ($event['name'] ?? '') !== self::EVENT) {
-					continue;
+				if (is_array($event) === true && ($event['name'] ?? '') === self::EVENT) {
+					$errors = $this->add(errors: $errors, event: $event);
 				}
-
-				$params = $event['params'] ?? [];
-				if (is_array($params) === false) {
-					$params = [];
-				}
-
-				$message = trim((string)($params['message'] ?? ''));
-				if ($message === '') {
-					$message = 'Script error';
-				}
-
-				$source = trim((string)($params['source'] ?? ''));
-				$id = $message . "\0" . $source;
-				$row = $errors[$id] ?? ['message' => $message, 'source' => $source, 'hits' => 0, 'pages' => []];
-				$row['hits']++;
-				$page = trim((string)($event['pagePath'] ?? ''));
-				if ($page !== '' && in_array($page, $row['pages'], true) === false && count($row['pages']) < self::PAGES) {
-					$row['pages'][] = $page;
-				}
-
-				$errors[$id] = $row;
 			}
 		}
 
@@ -93,5 +72,38 @@ class TrafficErrorStats {
 		usort($out, static fn (array $a, array $b): int => [$b['hits'], $a['message']] <=> [$a['hits'], $b['message']]);
 
 		return array_slice($out, 0, self::TOP);
+	}
+
+	/**
+	 * Count one error event into the rows.
+	 *
+	 * @param array<string, array<string, mixed>> $errors The rows, keyed by message and source.
+	 * @param array<string, mixed>                $event  The event.
+	 *
+	 * @return array<string, array<string, mixed>> The rows.
+	 */
+	private function add(array $errors, array $event): array {
+		$params = $event['params'] ?? [];
+		if (is_array($params) === false) {
+			$params = [];
+		}
+
+		$message = trim((string)($params['message'] ?? ''));
+		if ($message === '') {
+			$message = 'Script error';
+		}
+
+		$source = trim((string)($params['source'] ?? ''));
+		$id = $message . "\0" . $source;
+		$row = $errors[$id] ?? ['message' => $message, 'source' => $source, 'hits' => 0, 'pages' => []];
+		$row['hits']++;
+		$page = trim((string)($event['pagePath'] ?? ''));
+		if ($page !== '' && in_array($page, $row['pages'], true) === false && count($row['pages']) < self::PAGES) {
+			$row['pages'][] = $page;
+		}
+
+		$errors[$id] = $row;
+
+		return $errors;
 	}
 }

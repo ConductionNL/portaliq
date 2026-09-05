@@ -139,11 +139,12 @@ class TrafficEventValidator {
 			return ['ok' => false, 'reason' => $reason];
 		}
 
-		$occurredAt = $this->occurredAt(
-			value: ($event['timestamp'] ?? null),
-			now: ($now ?? $this->now()),
-			allowOld: (($context['allowOld'] ?? false) === true)
-		);
+		$maxAge = self::MAX_AGE_SECONDS;
+		if (($context['allowOld'] ?? false) === true) {
+			$maxAge = PHP_INT_MAX;
+		}
+
+		$occurredAt = $this->occurredAt(value: ($event['timestamp'] ?? null), now: ($now ?? $this->now()), maxAge: $maxAge);
 		if ($occurredAt === null) {
 			return ['ok' => false, 'reason' => 'timestamp-out-of-range'];
 		}
@@ -296,17 +297,17 @@ class TrafficEventValidator {
 	 * server is clamped to now; one far ahead, or older than the retention of
 	 * the aggregates it would rewrite, is refused.
 	 *
-	 * A log import (portal-traffic-reporting) says `allowOld`: a line from
-	 * last month is the point of importing a log, and its day is recomputed
-	 * like any other because the aggregation reads receipt time.
+	 * A log import (portal-traffic-reporting) lifts the age bound: a line
+	 * from last month is the point of importing a log, and its day is
+	 * recomputed like any other because the aggregation reads receipt time.
 	 *
-	 * @param mixed             $value    The posted timestamp.
-	 * @param DateTimeImmutable $now      The server clock.
-	 * @param bool              $allowOld Whether a timestamp older than MAX_AGE_SECONDS is kept.
+	 * @param mixed             $value  The posted timestamp.
+	 * @param DateTimeImmutable $now    The server clock.
+	 * @param int               $maxAge The oldest age kept, in seconds.
 	 *
 	 * @return DateTimeImmutable|null The clamped moment, or null to refuse.
 	 */
-	private function occurredAt(mixed $value, DateTimeImmutable $now, bool $allowOld = false): ?DateTimeImmutable {
+	private function occurredAt(mixed $value, DateTimeImmutable $now, int $maxAge = self::MAX_AGE_SECONDS): ?DateTimeImmutable {
 		$now = $now->setTimezone(new DateTimeZone('UTC'));
 		if (is_string($value) === false || trim($value) === '') {
 			return $now;
@@ -319,7 +320,7 @@ class TrafficEventValidator {
 		}
 
 		$delta = $parsed->getTimestamp() - $now->getTimestamp();
-		if ($delta > self::MAX_FUTURE_SECONDS || ($allowOld === false && -$delta > self::MAX_AGE_SECONDS)) {
+		if ($delta > self::MAX_FUTURE_SECONDS || -$delta > $maxAge) {
 			return null;
 		}
 

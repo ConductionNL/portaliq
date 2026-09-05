@@ -74,8 +74,12 @@ class TrafficReportPeriods {
 	 */
 	public function alertPeriod(string $period, string $comparison, DateTimeImmutable $now): array {
 		$today = $this->day(now: $now);
+		if ($comparison !== 'above' && $period === 'week') {
+			return $this->lastWeek(today: $today);
+		}
+
 		if ($comparison !== 'above') {
-			return ($period === 'week') ? $this->lastWeek(today: $today) : $this->reportPeriod(cadence: 'daily', now: $now);
+			return $this->reportPeriod(cadence: 'daily', now: $now);
 		}
 
 		if ($period === 'week') {

@@ -109,7 +109,9 @@ class Notifier implements INotifier {
 		switch ($notification->getSubject()) {
 			case TrafficReportDelivery::SUBJECT_REPORT:
 				$notification->setParsedSubject($l->t('Traffic report: %1$s (%2$s)', [$name, $portal]));
-				$notification->setParsedMessage($l->t('The report for %s was sent. Open the Traffic page for the figures.', [(string)($parameters['span'] ?? '')]));
+				$notification->setParsedMessage(
+					$l->t('The report for %s was sent. Open the Traffic page for the figures.', [(string)($parameters['span'] ?? '')])
+				);
 				break;
 			case TrafficReportDelivery::SUBJECT_ALERT:
 				$notification->setParsedSubject($l->t('Traffic alert: %1$s (%2$s)', [$name, $portal]));

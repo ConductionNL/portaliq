@@ -67,8 +67,18 @@ class TrafficImportLog extends Command {
 		$this->setDescription(description: 'Import an Apache or Nginx access log as page views for a portal (assets and bots skipped)');
 		$this->addArgument(name: 'portal', mode: InputArgument::REQUIRED, description: 'The portal slug');
 		$this->addArgument(name: 'file', mode: InputArgument::REQUIRED, description: 'The log file, or - for standard input');
-		$this->addOption(name: 'format', mode: InputOption::VALUE_REQUIRED, description: 'combined (Apache/Nginx) or json (one object per line)', default: 'combined');
-		$this->addOption(name: 'host', mode: InputOption::VALUE_REQUIRED, description: 'The site origin the paths belong to, such as https://example.org', default: 'https://localhost');
+		$this->addOption(
+			name: 'format',
+			mode: InputOption::VALUE_REQUIRED,
+			description: 'combined (Apache/Nginx) or json (one object per line)',
+			default: 'combined'
+		);
+		$this->addOption(
+			name: 'host',
+			mode: InputOption::VALUE_REQUIRED,
+			description: 'The site origin the paths belong to, such as https://example.org',
+			default: 'https://localhost'
+		);
 	}//end configure()
 
 
@@ -91,7 +101,15 @@ class TrafficImportLog extends Command {
 		}
 
 		$file = (string)$input->getArgument('file');
-		$stream = ($file === '-') ? fopen('php://stdin', 'r') : @fopen($file, 'r');
+		$stream = false;
+		if ($file === '-') {
+			$stream = fopen('php://stdin', 'r');
+		}
+
+		if ($file !== '-' && is_readable($file) === true) {
+			$stream = fopen($file, 'r');
+		}
+
 		if (is_resource($stream) === false) {
 			$output->writeln('<error>Cannot read "' . $file . '".</error>');
 
@@ -116,7 +134,10 @@ class TrafficImportLog extends Command {
 		}
 
 		$output->writeln('Lines read: ' . $outcome['lines']);
-		$output->writeln('Page views found: ' . $outcome['views'] . ' (skipped ' . $outcome['skipped'] . ' non-page, asset, error or bot lines; ' . $outcome['duplicates'] . ' duplicates)');
+		$output->writeln(
+			'Page views found: ' . $outcome['views'] . ' (skipped ' . $outcome['skipped']
+			. ' non-page, asset, error or bot lines; ' . $outcome['duplicates'] . ' duplicates)'
+		);
 		$output->writeln('Accepted: ' . $outcome['accepted']);
 		foreach ($outcome['refused'] as $reason => $count) {
 			$output->writeln('Refused (' . $reason . '): ' . $count);

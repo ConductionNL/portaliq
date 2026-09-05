@@ -51,7 +51,11 @@ class TrafficReportNumbers {
 		$folded = $sum->sum(portal: '', date: '', members: [], records: $records, aggregatedAt: '');
 		$sources = [];
 		foreach ((array)$folded['referrers'] as $row) {
-			$channel = (string)(($row['channel'] ?? '') !== '' ? $row['channel'] : 'direct');
+			$channel = (string)($row['channel'] ?? '');
+			if ($channel === '') {
+				$channel = 'direct';
+			}
+
 			$sources[$channel] = ($sources[$channel] ?? 0) + (int)($row['count'] ?? 0);
 		}
 

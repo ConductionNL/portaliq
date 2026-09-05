@@ -94,12 +94,14 @@ class TrafficReportController extends Controller {
 		}
 
 		$records = $this->store->dailyBetween(portal: $portal, from: $from, to: $to, segment: $segment);
-		$body = ($format === 'json') ? $this->export->json(records: $records) : $this->export->csv(records: $records);
-		$response = new DataDisplayResponse(
-			$body,
-			Http::STATUS_OK,
-			['Content-Type' => (($format === 'json') ? 'application/json' : 'text/csv') . '; charset=utf-8']
-		);
+		$body = $this->export->csv(records: $records);
+		$contentType = 'text/csv; charset=utf-8';
+		if ($format === 'json') {
+			$body = $this->export->json(records: $records);
+			$contentType = 'application/json; charset=utf-8';
+		}
+
+		$response = new DataDisplayResponse($body, Http::STATUS_OK, ['Content-Type' => $contentType]);
 		$response->addHeader(
 			'Content-Disposition',
 			'attachment; filename="' . $this->export->fileName(portal: $portal, from: $from, to: $to, segment: $segment, format: $format) . '"'

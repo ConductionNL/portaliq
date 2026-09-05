@@ -88,7 +88,10 @@ class TrafficToken extends Command {
 
 		$output->writeln('Token for ' . $slug . ' (shown once, stored hashed; any previous token no longer works):');
 		$output->writeln($token);
-		$output->writeln('Send it as "Authorization: Bearer <token>" to POST /index.php/apps/portaliq/api/traffic/server with "portal": "' . $slug . '" in the body.');
+		$output->writeln(
+			'Send it as "Authorization: Bearer <token>" to POST /index.php/apps/portaliq/api/traffic/server'
+			. ' with "portal": "' . $slug . '" in the body.'
+		);
 
 		return 0;
 	}//end execute()

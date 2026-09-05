@@ -137,6 +137,8 @@ class TrafficServerToken {
 	 * @param string $token The token.
 	 *
 	 * @return string The sha256 hex.
+	 *
+	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
 	 */
 	public function hash(string $token): string {
 		return hash('sha256', $token);

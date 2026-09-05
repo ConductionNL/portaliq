@@ -130,30 +130,18 @@ class TrafficReportDefinitions {
 		$out = [];
 		foreach ($this->rows(value: $value) as $row) {
 			$id = $this->token(value: ($row['id'] ?? null));
-			$metric = (string)($row['metric'] ?? '');
-			$comparison = (string)($row['comparison'] ?? '');
-			$period = (string)($row['period'] ?? 'day');
-			$recipients = $this->recipients(value: ($row['recipients'] ?? null));
-			$threshold = $row['threshold'] ?? null;
-			if ($id === '' || isset($out[$id]) === true || $recipients === [] || is_numeric($threshold) === false) {
-				continue;
-			}
-
-			if ($this->knowsMetric(metric: $metric, goalIds: $goalIds) === false
-				|| in_array($comparison, self::COMPARISONS, true) === false
-				|| in_array($period, self::PERIODS, true) === false
-			) {
+			if ($id === '' || isset($out[$id]) === true || $this->usableAlert(row: $row, goalIds: $goalIds) === false) {
 				continue;
 			}
 
 			$out[$id] = [
 				'id' => $id,
 				'name' => $this->name(value: ($row['name'] ?? null), fallback: $id),
-				'metric' => $metric,
-				'comparison' => $comparison,
-				'threshold' => (float)$threshold,
-				'period' => $period,
-				'recipients' => $recipients,
+				'metric' => (string)$row['metric'],
+				'comparison' => (string)$row['comparison'],
+				'threshold' => (float)$row['threshold'],
+				'period' => (string)($row['period'] ?? 'day'),
+				'recipients' => $this->recipients(value: ($row['recipients'] ?? null)),
 			];
 		}
 
@@ -185,6 +173,28 @@ class TrafficReportDefinitions {
 		}
 
 		return array_keys($out);
+	}
+
+	/**
+	 * Whether an alert row has everything the job needs: a known metric,
+	 * comparison and period, a numeric threshold and someone to tell.
+	 *
+	 * @param array<string, mixed> $row     The configured alert.
+	 * @param array<string, true>  $goalIds The portal's goal ids.
+	 *
+	 * @return bool True when usable.
+	 */
+	private function usableAlert(array $row, array $goalIds): bool {
+		if (is_numeric($row['threshold'] ?? null) === false || $this->recipients(value: ($row['recipients'] ?? null)) === []) {
+			return false;
+		}
+
+		if ($this->knowsMetric(metric: (string)($row['metric'] ?? ''), goalIds: $goalIds) === false) {
+			return false;
+		}
+
+		return in_array((string)($row['comparison'] ?? ''), self::COMPARISONS, true) === true
+			&& in_array((string)($row['period'] ?? 'day'), self::PERIODS, true) === true;
 	}
 
 	/**

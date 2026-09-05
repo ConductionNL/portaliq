@@ -160,7 +160,7 @@ class TrafficReportMail {
 			$lines[] = $this->compared(l: $l, label: $label, current: (float)($current[$key] ?? 0), previous: (float)($previous[$key] ?? 0));
 		}
 
-		$lines[] = $l->t('Bounce rate: %s%%', [$this->percent((float)($current['bounceRate'] ?? 0))]);
+		$lines[] = $l->t('Bounce rate: %s%%', [$this->percent(share: (float)($current['bounceRate'] ?? 0))]);
 
 		return $lines;
 	}
@@ -177,14 +177,20 @@ class TrafficReportMail {
 	 */
 	private function compared(IL10N $l, string $label, float $current, float $previous): string {
 		$change = $this->numbers->change(current: $current, previous: $previous);
-		$value = $this->number($current);
+		$value = $this->number(value: $current);
 		if ($change === null) {
 			return $l->t('%1$s: %2$s (no figure for the previous period)', [$label, $value]);
 		}
 
-		$sign = ($change >= 0) ? '+' : '';
+		$sign = '';
+		if ($change >= 0) {
+			$sign = '+';
+		}
 
-		return $l->t('%1$s: %2$s (%3$s%% on the previous period, %4$s)', [$label, $value, $sign . $this->number($change), $this->number($previous)]);
+		return $l->t(
+			'%1$s: %2$s (%3$s%% on the previous period, %4$s)',
+			[$label, $value, $sign . $this->number(value: $change), $this->number(value: $previous)]
+		);
 	}
 
 	/**
@@ -205,7 +211,7 @@ class TrafficReportMail {
 
 		$lines = [];
 		foreach ($rows as $row) {
-			$lines[] = $l->t('%1$s: %2$s', [(string)($row[$label] ?? ''), $this->number((float)($row[$count] ?? 0))]);
+			$lines[] = $l->t('%1$s: %2$s', [(string)($row[$label] ?? ''), $this->number(value: (float)($row[$count] ?? 0))]);
 		}
 
 		return $lines;
@@ -228,7 +234,7 @@ class TrafficReportMail {
 		arsort($map);
 		$lines = [];
 		foreach (array_slice($map, 0, 10, true) as $value => $count) {
-			$lines[] = $l->t('%1$s: %2$s', [(string)$value, $this->number((float)$count)]);
+			$lines[] = $l->t('%1$s: %2$s', [(string)$value, $this->number(value: (float)$count)]);
 		}
 
 		return $lines;
@@ -258,7 +264,7 @@ class TrafficReportMail {
 			arsort($map);
 			$parts = [];
 			foreach (array_slice($map, 0, 5, true) as $value => $count) {
-				$parts[] = (string)$value . ' ' . $this->number((float)$count);
+				$parts[] = (string)$value . ' ' . $this->number(value: (float)$count);
 			}
 
 			$lines[] = $label . ': ' . implode(', ', $parts);
@@ -301,7 +307,7 @@ class TrafficReportMail {
 			);
 		}
 
-		$lines[] = $l->t('Conversion rate: %s%%', [$this->percent((float)($current['conversionRate'] ?? 0))]);
+		$lines[] = $l->t('Conversion rate: %s%%', [$this->percent(share: (float)($current['conversionRate'] ?? 0))]);
 
 		return $lines;
 	}
@@ -324,7 +330,7 @@ class TrafficReportMail {
 		foreach ($rows as $funnel) {
 			$steps = [];
 			foreach ((array)($funnel['steps'] ?? []) as $step) {
-				$steps[] = (string)($step['name'] ?? '') . ' ' . $this->number((float)($step['sessions'] ?? 0));
+				$steps[] = (string)($step['name'] ?? '') . ' ' . $this->number(value: (float)($step['sessions'] ?? 0));
 			}
 
 			$lines[] = (string)($funnel['name'] ?? $funnel['id'] ?? '') . ': ' . implode(' > ', $steps);
@@ -351,9 +357,9 @@ class TrafficReportMail {
 		foreach ($rows as $form) {
 			$lines[] = $l->t('%1$s: %2$s started, %3$s submitted, %4$s abandoned', [
 				(string)($form['formId'] ?? ''),
-				$this->number((float)($form['starts'] ?? 0)),
-				$this->number((float)($form['submits'] ?? 0)),
-				$this->number((float)($form['abandons'] ?? 0)),
+				$this->number(value: (float)($form['starts'] ?? 0)),
+				$this->number(value: (float)($form['submits'] ?? 0)),
+				$this->number(value: (float)($form['abandons'] ?? 0)),
 			]);
 		}
 
@@ -419,6 +425,6 @@ class TrafficReportMail {
 	 * @return string The percentage.
 	 */
 	private function percent(float $share): string {
-		return $this->number(round($share * 100, 1));
+		return $this->number(value: round($share * 100, 1));
 	}
 }

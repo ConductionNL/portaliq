@@ -39,6 +39,11 @@ namespace OCA\Portaliq\Service\Traffic;
  * portal is defined not to have.
  *
  * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-roll-up-portal-must-sum-its-members-and-never-count-its-own
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- one merge over
+ * every shape the daily record has (maps, ranked lists, pages, goals,
+ * funnels, forms, nested dimensions); each shape is its own small
+ * method, and the sum of them is what a roll-up is.
  */
 class TrafficRollupSum {
 
@@ -93,83 +98,118 @@ class TrafficRollupSum {
 	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-roll-up-portal-must-sum-its-members-and-never-count-its-own
 	 */
 	public function sum(string $portal, string $date, array $members, array $records, string $aggregatedAt): array {
-		$out = [
-			'portal' => $portal,
-			'date' => $date,
-			'segment' => '',
-			'rollupOf' => array_values($members),
-			'members' => count($records),
-		];
+		$acc = $this->empty();
+		foreach ($records as $record) {
+			$acc = $this->addRecord(acc: $acc, record: $record);
+		}
+
+		return $this->finish(acc: $acc, portal: $portal, date: $date, members: $members, count: count($records), aggregatedAt: $aggregatedAt);
+	}
+
+	/**
+	 * The empty accumulator.
+	 *
+	 * @return array<string, mixed> Every counter at zero, every list empty.
+	 */
+	private function empty(): array {
+		$acc = ['seconds' => 0.0, 'converted' => 0.0, 'last' => '', 'pages' => [], 'goals' => [], 'funnels' => [], 'forms' => [], 'dimensions' => []];
+		$acc['emails'] = ['opens' => 0, 'clicks' => 0];
+		$acc['lists'] = array_fill_keys(array_keys(self::LISTS), []);
 		foreach (self::COUNTERS as $key) {
-			$out[$key] = 0;
+			$acc[$key] = 0;
 		}
 
 		foreach (self::NULLABLE as $key) {
-			$out[$key] = null;
+			$acc[$key] = null;
 		}
 
 		foreach (self::MAPS as $key) {
-			$out[$key] = [];
+			$acc[$key] = [];
 		}
 
-		$engagementSeconds = 0.0;
-		$converted = 0.0;
-		$last = '';
-		$lists = array_fill_keys(array_keys(self::LISTS), []);
-		$pages = [];
-		$goals = [];
-		$funnels = [];
-		$forms = [];
-		$dimensions = [];
-		$emails = ['opens' => 0, 'clicks' => 0];
-		foreach ($records as $record) {
-			foreach (self::COUNTERS as $key) {
-				$out[$key] += $this->int($record[$key] ?? 0);
-			}
+		return $acc;
+	}
 
-			foreach (self::NULLABLE as $key) {
-				if (is_int($record[$key] ?? null) === true || is_float($record[$key] ?? null) === true) {
-					$out[$key] = ($out[$key] ?? 0) + $this->int($record[$key]);
-				}
-			}
-
-			foreach (self::MAPS as $key) {
-				$out[$key] = $this->addMap(into: $out[$key], from: ($record[$key] ?? []));
-			}
-
-			foreach (self::LISTS as $key => [$keys, $counts]) {
-				$lists[$key] = $this->addList(into: $lists[$key], rows: ($record[$key] ?? []), keys: $keys, counts: $counts);
-			}
-
-			$sessions = $this->int($record['sessions'] ?? 0);
-			$engagementSeconds += $this->float($record['avgEngagementSeconds'] ?? 0) * $sessions;
-			$converted += $this->float($record['conversionRate'] ?? 0) * $sessions;
-			$last = max($last, (string)($record['lastEventAt'] ?? ''));
-			$pages = $this->addPages(into: $pages, rows: ($record['pages'] ?? []));
-			$goals = $this->addGoals(into: $goals, rows: ($record['goals'] ?? []));
-			$funnels = $this->addFunnels(into: $funnels, rows: ($record['funnels'] ?? []));
-			$forms = $this->addForms(into: $forms, rows: ($record['forms'] ?? []));
-			$dimensions = $this->addDimensions(into: $dimensions, from: ($record['customDimensions'] ?? null));
-			$emails['opens'] += $this->int($record['emails']['opens'] ?? 0);
-			$emails['clicks'] += $this->int($record['emails']['clicks'] ?? 0);
+	/**
+	 * Add one member's record to the accumulator.
+	 *
+	 * @param array<string, mixed> $acc    The accumulator.
+	 * @param array<string, mixed> $record The member's record.
+	 *
+	 * @return array<string, mixed> The accumulator.
+	 */
+	private function addRecord(array $acc, array $record): array {
+		foreach (self::COUNTERS as $key) {
+			$acc[$key] += $this->int(value: ($record[$key] ?? 0));
 		}
 
-		$sessions = (int)$out['sessions'];
-		$out['avgEngagementSeconds'] = ($sessions > 0) ? round($engagementSeconds / $sessions, 1) : 0.0;
-		$out['bounceRate'] = ($sessions > 0) ? round(($sessions - (int)$out['engagedSessions']) / $sessions, 3) : 0.0;
-		$out['conversionRate'] = ($sessions > 0) ? round($converted / $sessions, 3) : 0.0;
-		$out['pages'] = $this->finishPages(pages: $pages);
+		foreach (self::NULLABLE as $key) {
+			if (is_numeric($record[$key] ?? null) === true) {
+				$acc[$key] = ($acc[$key] ?? 0) + $this->int(value: $record[$key]);
+			}
+		}
+
+		foreach (self::MAPS as $key) {
+			$acc[$key] = $this->addMap(into: $acc[$key], from: ($record[$key] ?? []));
+		}
+
+		foreach (self::LISTS as $key => [$keys, $counts]) {
+			$acc['lists'][$key] = $this->addList(into: $acc['lists'][$key], rows: ($record[$key] ?? []), keys: $keys, counts: $counts);
+		}
+
+		$sessions = $this->int(value: ($record['sessions'] ?? 0));
+		$acc['seconds'] += $this->float(value: ($record['avgEngagementSeconds'] ?? 0)) * $sessions;
+		$acc['converted'] += $this->float(value: ($record['conversionRate'] ?? 0)) * $sessions;
+		$acc['last'] = max($acc['last'], (string)($record['lastEventAt'] ?? ''));
+		$acc['pages'] = $this->addPages(into: $acc['pages'], rows: ($record['pages'] ?? []));
+		$acc['goals'] = $this->addGoals(into: $acc['goals'], rows: ($record['goals'] ?? []));
+		$acc['funnels'] = $this->addFunnels(into: $acc['funnels'], rows: ($record['funnels'] ?? []));
+		$acc['forms'] = $this->addForms(into: $acc['forms'], rows: ($record['forms'] ?? []));
+		$acc['dimensions'] = $this->addDimensions(into: $acc['dimensions'], from: ($record['customDimensions'] ?? null));
+		$acc['emails']['opens'] += $this->int(value: ($record['emails']['opens'] ?? 0));
+		$acc['emails']['clicks'] += $this->int(value: ($record['emails']['clicks'] ?? 0));
+
+		return $acc;
+	}
+
+	/**
+	 * The accumulator as the roll-up's record.
+	 *
+	 * @param array<string, mixed> $acc          The accumulator.
+	 * @param string               $portal       The roll-up portal's slug.
+	 * @param string               $date         The UTC day.
+	 * @param string[]             $members      The member slugs.
+	 * @param int                  $count        How many members had a record.
+	 * @param string               $aggregatedAt When this record was computed.
+	 *
+	 * @return array<string, mixed> The `portalTrafficDaily` fields.
+	 */
+	private function finish(array $acc, string $portal, string $date, array $members, int $count, string $aggregatedAt): array {
+		$sessions = (int)$acc['sessions'];
+		$out = ['portal' => $portal, 'date' => $date, 'segment' => '', 'rollupOf' => array_values($members), 'members' => $count];
+		foreach (array_merge(self::COUNTERS, self::NULLABLE, self::MAPS) as $key) {
+			$out[$key] = $acc[$key];
+		}
+
+		$out['avgEngagementSeconds'] = $this->rate(numerator: (float)$acc['seconds'], denominator: $sessions, decimals: 1);
+		$out['bounceRate'] = $this->rate(numerator: (float)($sessions - (int)$acc['engagedSessions']), denominator: $sessions, decimals: 3);
+		$out['conversionRate'] = $this->rate(numerator: (float)$acc['converted'], denominator: $sessions, decimals: 3);
+		$out['pages'] = $this->finishPages(pages: $acc['pages']);
 		foreach (self::LISTS as $key => [, $counts]) {
-			$out[$key] = $this->ranked(rows: $lists[$key], countKey: $counts[0]);
+			$out[$key] = $this->ranked(rows: $acc['lists'][$key], countKey: $counts[0]);
 		}
 
-		$out['goals'] = array_values($goals);
-		$out['funnels'] = $this->finishFunnels(funnels: $funnels);
-		$out['forms'] = $this->finishForms(forms: $forms);
-		$out['customDimensions'] = ($dimensions === []) ? null : $dimensions;
-		$out['emails'] = $emails;
+		$out['goals'] = array_values($acc['goals']);
+		$out['funnels'] = $this->finishFunnels(funnels: $acc['funnels']);
+		$out['forms'] = $this->finishForms(forms: $acc['forms']);
+		$out['customDimensions'] = $acc['dimensions'];
+		if ($acc['dimensions'] === []) {
+			$out['customDimensions'] = null;
+		}
+
+		$out['emails'] = $acc['emails'];
 		$out['aggregatedAt'] = $aggregatedAt;
-		$out['lastEventAt'] = $last;
+		$out['lastEventAt'] = $acc['last'];
 
 		return $out;
 	}
@@ -188,7 +228,7 @@ class TrafficRollupSum {
 		}
 
 		foreach ($from as $value => $count) {
-			$into[(string)$value] = ($into[(string)$value] ?? 0) + $this->int($count);
+			$into[(string)$value] = ($into[(string)$value] ?? 0) + $this->int(value: $count);
 		}
 
 		ksort($into);
@@ -217,36 +257,61 @@ class TrafficRollupSum {
 			}
 
 			$id = implode("\0", array_map(static fn (string $key): string => (string)($row[$key] ?? ''), $keys));
-			if ($id === str_repeat("\0", max(0, count($keys) - 1))) {
+			if (trim($id, "\0") === '') {
 				continue;
 			}
 
-			if (isset($into[$id]) === false) {
-				$into[$id] = [];
-				foreach ($keys as $key) {
-					$into[$id][$key] = (string)($row[$key] ?? '');
-				}
+			$into[$id] = $this->mergeRow(into: ($into[$id] ?? $this->newRow(row: $row, keys: $keys, counts: $counts)), row: $row, counts: $counts);
+		}
 
-				foreach ($counts as $count) {
-					$into[$id][$count] = 0;
-				}
+		return $into;
+	}
 
-				// A list may carry more than keys and counts (an error's
-				// pages); the first row's extra fields are kept as is.
-				foreach ($row as $field => $value) {
-					if (array_key_exists($field, $into[$id]) === false) {
-						$into[$id][$field] = $value;
-					}
-				}
+	/**
+	 * A fresh accumulator row: the key fields, the counts at zero, and any
+	 * other field (an error's pages) as the first row had it.
+	 *
+	 * @param array<string, mixed> $row    The first row with this key.
+	 * @param string[]             $keys   The fields that identify a row.
+	 * @param string[]             $counts The fields that add up.
+	 *
+	 * @return array<string, mixed> The row.
+	 */
+	private function newRow(array $row, array $keys, array $counts): array {
+		$out = [];
+		foreach ($keys as $key) {
+			$out[$key] = (string)($row[$key] ?? '');
+		}
+
+		foreach ($counts as $count) {
+			$out[$count] = 0;
+		}
+
+		foreach ($row as $field => $value) {
+			if (array_key_exists($field, $out) === false) {
+				$out[$field] = $value;
 			}
+		}
 
-			foreach ($counts as $count) {
-				$into[$id][$count] += $this->int($row[$count] ?? 0);
-			}
+		return $out;
+	}
 
-			if (is_array($row['pages'] ?? null) === true && is_array($into[$id]['pages'] ?? null) === true) {
-				$into[$id]['pages'] = array_values(array_unique(array_merge($into[$id]['pages'], $row['pages'])));
-			}
+	/**
+	 * Add a row's counts (and pages) into its accumulator row.
+	 *
+	 * @param array<string, mixed> $into   The accumulator row.
+	 * @param array<string, mixed> $row    The row.
+	 * @param string[]             $counts The fields that add up.
+	 *
+	 * @return array<string, mixed> The accumulator row.
+	 */
+	private function mergeRow(array $into, array $row, array $counts): array {
+		foreach ($counts as $count) {
+			$into[$count] += $this->int(value: ($row[$count] ?? 0));
+		}
+
+		if (is_array($row['pages'] ?? null) === true && is_array($into['pages'] ?? null) === true) {
+			$into['pages'] = array_values(array_unique(array_merge($into['pages'], $row['pages'])));
 		}
 
 		return $into;
@@ -287,11 +352,11 @@ class TrafficRollupSum {
 
 			$path = (string)$row['path'];
 			$page = $into[$path] ?? ['path' => $path, 'views' => 0, 'entrances' => 0, 'exits' => 0, 'seconds' => 0.0];
-			$views = $this->int($row['views'] ?? 0);
+			$views = $this->int(value: $row['views'] ?? 0);
 			$page['views'] += $views;
-			$page['entrances'] += $this->int($row['entrances'] ?? 0);
-			$page['exits'] += $this->int($row['exits'] ?? 0);
-			$page['seconds'] += $this->float($row['avgEngagementSeconds'] ?? 0) * $views;
+			$page['entrances'] += $this->int(value: $row['entrances'] ?? 0);
+			$page['exits'] += $this->int(value: $row['exits'] ?? 0);
+			$page['seconds'] += $this->float(value: $row['avgEngagementSeconds'] ?? 0) * $views;
 			$into[$path] = $page;
 		}
 
@@ -314,7 +379,7 @@ class TrafficRollupSum {
 				'views' => $views,
 				'entrances' => $page['entrances'],
 				'exits' => $page['exits'],
-				'avgEngagementSeconds' => ($views > 0) ? round((float)$page['seconds'] / $views, 1) : 0.0,
+				'avgEngagementSeconds' => $this->rate(numerator: (float)$page['seconds'], denominator: $views, decimals: 1),
 			];
 		}
 
@@ -343,9 +408,9 @@ class TrafficRollupSum {
 
 			$id = (string)$row['id'];
 			$goal = $into[$id] ?? ['id' => $id, 'name' => (string)($row['name'] ?? $id), 'conversions' => 0, 'completions' => 0, 'value' => 0.0];
-			$goal['conversions'] += $this->int($row['conversions'] ?? 0);
-			$goal['completions'] += $this->int($row['completions'] ?? 0);
-			$goal['value'] = round($goal['value'] + $this->float($row['value'] ?? 0), 2);
+			$goal['conversions'] += $this->int(value: $row['conversions'] ?? 0);
+			$goal['completions'] += $this->int(value: $row['completions'] ?? 0);
+			$goal['value'] = round($goal['value'] + $this->float(value: $row['value'] ?? 0), 2);
 			$into[$id] = $goal;
 		}
 
@@ -379,7 +444,7 @@ class TrafficRollupSum {
 
 				$funnel['steps'][$index] = [
 					'name' => (string)($step['name'] ?? ($funnel['steps'][$index]['name'] ?? '')),
-					'sessions' => (int)($funnel['steps'][$index]['sessions'] ?? 0) + $this->int($step['sessions'] ?? 0),
+					'sessions' => (int)($funnel['steps'][$index]['sessions'] ?? 0) + $this->int(value: $step['sessions'] ?? 0),
 				];
 			}
 
@@ -439,7 +504,7 @@ class TrafficRollupSum {
 			$id = (string)$row['formId'];
 			$form = $into[$id] ?? ['formId' => $id, 'starts' => 0, 'submits' => 0, 'abandons' => 0, 'fields' => []];
 			foreach (['starts', 'submits', 'abandons'] as $key) {
-				$form[$key] += $this->int($row[$key] ?? 0);
+				$form[$key] += $this->int(value: $row[$key] ?? 0);
 			}
 
 			foreach ((array)($row['fields'] ?? []) as $field) {
@@ -449,9 +514,9 @@ class TrafficRollupSum {
 
 				$fieldId = (string)$field['fieldId'];
 				$sum = $form['fields'][$fieldId] ?? ['fieldId' => $fieldId, 'ms' => 0, 'members' => 0, 'abandonedHere' => 0];
-				$sum['ms'] += $this->int($field['avgMs'] ?? 0);
+				$sum['ms'] += $this->int(value: $field['avgMs'] ?? 0);
 				$sum['members'] += 1;
-				$sum['abandonedHere'] += $this->int($field['abandonedHere'] ?? 0);
+				$sum['abandonedHere'] += $this->int(value: $field['abandonedHere'] ?? 0);
 				$form['fields'][$fieldId] = $sum;
 			}
 
@@ -475,7 +540,7 @@ class TrafficRollupSum {
 			foreach ($form['fields'] as $field) {
 				$fields[] = [
 					'fieldId' => $field['fieldId'],
-					'avgMs' => ($field['members'] > 0) ? (int)round($field['ms'] / $field['members']) : 0,
+					'avgMs' => (int)$this->rate(numerator: (float)$field['ms'], denominator: (int)$field['members'], decimals: 0),
 					'abandonedHere' => $field['abandonedHere'],
 				];
 			}
@@ -486,7 +551,7 @@ class TrafficRollupSum {
 				'starts' => $starts,
 				'submits' => $form['submits'],
 				'abandons' => $form['abandons'],
-				'completionRate' => ($starts > 0) ? round($form['submits'] / $starts, 3) : 0.0,
+				'completionRate' => $this->rate(numerator: (float)$form['submits'], denominator: $starts, decimals: 3),
 				'fields' => $fields,
 			];
 		}
@@ -516,6 +581,23 @@ class TrafficRollupSum {
 		}
 
 		return $into;
+	}
+
+	/**
+	 * A ratio rounded, or 0 when there is nothing to divide by.
+	 *
+	 * @param float $numerator   The top.
+	 * @param int   $denominator The bottom.
+	 * @param int   $decimals    The decimals kept.
+	 *
+	 * @return float The ratio.
+	 */
+	private function rate(float $numerator, int $denominator, int $decimals): float {
+		if ($denominator <= 0) {
+			return 0.0;
+		}
+
+		return round($numerator / $denominator, $decimals);
 	}
 
 	/**
