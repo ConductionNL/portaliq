@@ -136,6 +136,46 @@ export default {
 		}
 	},
 
+	computed: {
+		/**
+		 * Which empty state to show, if any.
+		 *
+		 * OVERRIDES THE MIXIN, and only for the 'no-data' branch. The shared
+		 * `emptyState` answers 'no-data' when the DAILY ROLLUP is empty, which
+		 * is right for every other widget on this page: the overview, the
+		 * experiments and the heatmap all read `summary`, and the heatmap's
+		 * pages ARE `summary.heatmaps`.
+		 *
+		 * Recordings do not come from there. `loadRecordings()` reads the
+		 * `portalTrafficRecording` collection directly, and a recording is
+		 * stored the moment a visit ends, while the rollups are written by an
+		 * aggregation job that this widget's own empty state describes as
+		 * arriving "within fifteen minutes of the first visit". So there is a
+		 * window — every fresh portal, and every CI run — in which recordings
+		 * exist and the operator is told no traffic was recorded.
+		 *
+		 * It also made two branches below unreachable exactly when they were
+		 * needed: `traffic-recordings-off` and `traffic-recordings-empty` both
+		 * render only when `emptyState === ''`, so a portal with no rollup
+		 * could not say "recording is off" or "no recordings yet" either.
+		 *
+		 * 'not-measured' is kept. A portal that is not measured records
+		 * nothing, so that answer is true whatever the rollups say.
+		 *
+		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
+		 * @return {string} The state.
+		 */
+		emptyState() {
+			if (this.loading) {
+				return ''
+			}
+			if (!this.portal || !this.measured) {
+				return 'not-measured'
+			}
+			return ''
+		},
+	},
+
 	methods: {
 		/**
 		 * A recording's start as a readable local moment.
