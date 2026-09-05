@@ -444,6 +444,7 @@ import MarkdownBlock from './components/MarkdownBlock.vue'
 import SiteMenu from './components/SiteMenu.vue'
 import WidgetGrid from './components/WidgetGrid.vue'
 import { authBaseFrom, fetchSession, signInRoutes } from './lib/authApi.js'
+import { captureLanding } from './lib/campaignTracking.js'
 import {
 	fetchContributions,
 	fetchGlossary,
@@ -763,6 +764,12 @@ export default {
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portal-renderer-must-not-depend-on-nextcloud-globals
 	 */
 	async mounted() {
+		// The landing's campaign parameters are captured HERE, on every page
+		// of the site, not only where a form block mounts: the form block
+		// loads on demand, so a visitor who lands on the campaign page and
+		// walks to the form later would otherwise have no first touch, and
+		// a page that was never given a form would record none at all.
+		captureLanding(this.portalSlug)
 		this.route = this.routeFromLocation()
 		window.addEventListener('popstate', this.onPopState)
 		await this.loadSite()

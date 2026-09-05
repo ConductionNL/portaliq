@@ -159,6 +159,35 @@ export function firstTouch(portal) {
 }
 
 /**
+ * A touch as the submission carries it: only the parameters that were
+ * captured, or null when none were.
+ *
+ * The object store validates nested values against the schema, and a
+ * `campaign: null` on a string property fails the whole write; a visitor
+ * who arrived without any campaign parameter could not submit the form
+ * at all. Null for the object as a whole is what the store reads as
+ * "nothing here".
+ *
+ * @param {object|null} touch A first or last touch, as `firstTouch()` returns it.
+ * @return {object|null} The non-empty parameters, or null.
+ *
+ * @spec openspec/specs/landing-page-provisioning/spec.md#requirement-utm-capture-is-first-party-portal-scoped-and-honest-about-being-advisory
+ */
+export function compactTouch(touch) {
+	if (!touch || typeof touch !== 'object') {
+		return null
+	}
+	const out = {}
+	Object.keys(touch).forEach((key) => {
+		const value = touch[key]
+		if (typeof value === 'string' && value !== '') {
+			out[key] = value
+		}
+	})
+	return Object.keys(out).length === 0 ? null : out
+}
+
+/**
  * @param {string} portal The serving portal's slug.
  * @return {object} `{campaign, source, medium, term, content}`, all null when nothing was ever captured.
  */
