@@ -122,14 +122,22 @@ class TrafficIngestService {
 	 *
 	 * @param array<string, mixed>             $portal  The portal record.
 	 * @param array<int, array<string, mixed>> $events  The events.
-	 * @param array<string, mixed>             $context ip, userAgent, acceptLanguage, consent, serverSide.
+	 * @param array<string, mixed>             $context ip, userAgent, acceptLanguage, consent, serverSide, allowOld.
 	 *
 	 * @return array{accepted: int, refused: array<string, int>} What happened.
 	 *
 	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-an-ip-address-must-not-be-stored
+	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-roll-up-portal-must-sum-its-members-and-never-count-its-own
 	 */
 	public function ingestForPortal(array $portal, array $events, array $context = []): array {
 		$config = $this->config->resolve(portal: $portal);
+		// A roll-up portal (portal-traffic-reporting) is the sum of others
+		// and has no visitors of its own; a batch aimed at it is refused
+		// whole, whatever it carries.
+		if ($config['rollupOf'] !== []) {
+			return $this->refuseAll(events: $events, reason: 'rollup-portal');
+		}
+
 		$serverSide = ($context['serverSide'] ?? false) === true;
 		$agent = $this->agents->classify(userAgent: (string)($context['userAgent'] ?? ''));
 
@@ -158,7 +166,7 @@ class TrafficIngestService {
 				config: $config,
 				hasConsent: $hasConsent,
 				resolver: $this->config,
-				context: ['serverSide' => $serverSide],
+				context: ['serverSide' => $serverSide, 'allowOld' => (($context['allowOld'] ?? false) === true)],
 				now: $now
 			);
 			if ($result['ok'] === false) {

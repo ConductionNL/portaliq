@@ -117,7 +117,7 @@ class TrafficEventValidator {
 	 * @param array<string, mixed>   $config     The portal's resolved configuration.
 	 * @param bool                   $hasConsent Whether the visitor has consented.
 	 * @param TrafficConfigResolver  $resolver   The configuration resolver.
-	 * @param array<string, mixed>   $context    `serverSide` => true for a PHP caller.
+	 * @param array<string, mixed>   $context    `serverSide` => true for a PHP caller; `allowOld` => true for a log import.
 	 * @param DateTimeImmutable|null $now        The server clock; null means now.
 	 *
 	 * @return array{ok: bool, reason?: string, event?: array<string, mixed>}
@@ -139,7 +139,11 @@ class TrafficEventValidator {
 			return ['ok' => false, 'reason' => $reason];
 		}
 
-		$occurredAt = $this->occurredAt(value: ($event['timestamp'] ?? null), now: ($now ?? $this->now()));
+		$occurredAt = $this->occurredAt(
+			value: ($event['timestamp'] ?? null),
+			now: ($now ?? $this->now()),
+			allowOld: (($context['allowOld'] ?? false) === true)
+		);
 		if ($occurredAt === null) {
 			return ['ok' => false, 'reason' => 'timestamp-out-of-range'];
 		}
@@ -292,12 +296,17 @@ class TrafficEventValidator {
 	 * server is clamped to now; one far ahead, or older than the retention of
 	 * the aggregates it would rewrite, is refused.
 	 *
-	 * @param mixed             $value The posted timestamp.
-	 * @param DateTimeImmutable $now   The server clock.
+	 * A log import (portal-traffic-reporting) says `allowOld`: a line from
+	 * last month is the point of importing a log, and its day is recomputed
+	 * like any other because the aggregation reads receipt time.
+	 *
+	 * @param mixed             $value    The posted timestamp.
+	 * @param DateTimeImmutable $now      The server clock.
+	 * @param bool              $allowOld Whether a timestamp older than MAX_AGE_SECONDS is kept.
 	 *
 	 * @return DateTimeImmutable|null The clamped moment, or null to refuse.
 	 */
-	private function occurredAt(mixed $value, DateTimeImmutable $now): ?DateTimeImmutable {
+	private function occurredAt(mixed $value, DateTimeImmutable $now, bool $allowOld = false): ?DateTimeImmutable {
 		$now = $now->setTimezone(new DateTimeZone('UTC'));
 		if (is_string($value) === false || trim($value) === '') {
 			return $now;
@@ -310,7 +319,7 @@ class TrafficEventValidator {
 		}
 
 		$delta = $parsed->getTimestamp() - $now->getTimestamp();
-		if ($delta > self::MAX_FUTURE_SECONDS || -$delta > self::MAX_AGE_SECONDS) {
+		if ($delta > self::MAX_FUTURE_SECONDS || ($allowOld === false && -$delta > self::MAX_AGE_SECONDS)) {
 			return null;
 		}
 
