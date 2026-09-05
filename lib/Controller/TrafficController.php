@@ -31,6 +31,7 @@ use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\Traffic\RawRequestBody;
+use OCA\Portaliq\Service\Traffic\TrafficServerToken;
 use OCA\Portaliq\Service\TrafficEventValidator;
 use OCA\Portaliq\Service\TrafficIngestService;
 use OCP\App\IAppManager;
@@ -66,9 +67,10 @@ use Throwable;
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the edge of the
  * collector meets the resolver, the ingest, the body reader, the app
- * manager, the session service and six response and attribute classes;
- * thirteen, one over the threshold, and the one over is the session
- * service account linking needs (portal-traffic-visitors-and-geo).
+ * manager, the session service, the token verifier and six response and
+ * attribute classes; the two over the threshold are what account linking
+ * (portal-traffic-visitors-and-geo) and the server API
+ * (portal-traffic-reporting) each need.
  */
 class TrafficController extends Controller {
 
@@ -92,6 +94,7 @@ class TrafficController extends Controller {
 	 * @param RawRequestBody       $body       Reads the text body.
 	 * @param IAppManager          $appManager Locates the built client on disk.
 	 * @param PortalSessionService $session    Resolves a portal session bearer to its subject, for account linking.
+	 * @param TrafficServerToken   $tokens     Verifies a backend's bearer token (portal-traffic-reporting).
 	 *
 	 * @return void
 	 */
@@ -103,6 +106,7 @@ class TrafficController extends Controller {
 		private readonly RawRequestBody $body,
 		private readonly IAppManager $appManager,
 		private readonly PortalSessionService $session,
+		private readonly TrafficServerToken $tokens,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -149,6 +153,146 @@ class TrafficController extends Controller {
 
 		return $this->noContent();
 	}//end collect()
+
+
+	/**
+	 * Accept a batch from a trusted backend, on a visitor's behalf.
+	 *
+	 * The same envelope as `collect()`, plus `remoteAddress` and
+	 * `userAgent` on the batch or on each event, so a server that saw the
+	 * visitor can say what its browser would have. The portal is named in
+	 * the body and the bearer token must be that portal's: a wrong or
+	 * missing token is a 401 with nothing stored and nothing learned
+	 * about which portals exist. The address and agent go the way a live
+	 * request's do: read for the hash, the device family and the region,
+	 * then dropped.
+	 *
+	 * @return Response 204, a 400 with a reason, or a 401.
+	 *
+	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 600, period: 60)]
+	#[UserRateLimit(limit: 600, period: 60)]
+	public function server(): Response {
+		$raw = $this->body->read(max: self::MAX_BODY_BYTES);
+		if ($raw === null) {
+			return $this->refusal(reason: 'batch-too-large');
+		}
+
+		$batch = json_decode($raw, true);
+		if (is_array($batch) === false || is_array($batch['events'] ?? null) === false || $batch['events'] === []) {
+			return $this->refusal(reason: 'malformed-batch');
+		}
+
+		if (count($batch['events']) > TrafficEventValidator::MAX_BATCH) {
+			return $this->refusal(reason: 'batch-too-large');
+		}
+
+		$portal = $this->portalBySlug(slug: $batch['portal'] ?? null);
+		if ($portal === null || $this->tokens->verify(portal: $portal, token: $this->bearer()) === false) {
+			return $this->unauthorised();
+		}
+
+		$consent = (($batch['consent'] ?? false) === true);
+		foreach ($this->byVisitor(batch: $batch) as $group) {
+			$this->ingest->ingestForPortal(
+				portal: $portal,
+				events: $group['events'],
+				context: [
+					'ip' => $group['ip'],
+					'userAgent' => $group['userAgent'],
+					'acceptLanguage' => (string)($batch['acceptLanguage'] ?? ''),
+					'consent' => $consent,
+					'serverSide' => false,
+				]
+			);
+		}
+
+		return $this->noContent();
+	}//end server()
+
+
+	/**
+	 * The batch's events grouped by the visitor they belong to, each
+	 * event's own `remoteAddress` and `userAgent` winning over the batch's.
+	 *
+	 * @param array<string, mixed> $batch The decoded batch.
+	 *
+	 * @return array<int, array{ip: string, userAgent: string, events: array<int, mixed>}> The groups.
+	 */
+	private function byVisitor(array $batch): array {
+		$defaultAddress = (string)($batch['remoteAddress'] ?? '');
+		$defaultAgent = (string)($batch['userAgent'] ?? '');
+		$groups = [];
+		foreach (array_values($batch['events']) as $event) {
+			$address = $defaultAddress;
+			$agent = $defaultAgent;
+			if (is_array($event) === true) {
+				$address = (string)($event['remoteAddress'] ?? $defaultAddress);
+				$agent = (string)($event['userAgent'] ?? $defaultAgent);
+				unset($event['remoteAddress'], $event['userAgent']);
+			}
+
+			$key = $address . "\0" . $agent;
+			$groups[$key] ??= ['ip' => $address, 'userAgent' => $agent, 'events' => []];
+			$groups[$key]['events'][] = $event;
+		}
+
+		return array_values($groups);
+	}//end byVisitor()
+
+
+	/**
+	 * The published portal named in the batch, or null.
+	 *
+	 * @param mixed $slug The `portal` field.
+	 *
+	 * @return array<string, mixed>|null The portal record.
+	 */
+	private function portalBySlug(mixed $slug): ?array {
+		if (is_string($slug) === false || $slug === '') {
+			return null;
+		}
+
+		foreach ($this->resolver->allPublishedPortals() as $portal) {
+			if (($portal['slug'] ?? null) === $slug) {
+				return $portal;
+			}
+		}
+
+		return null;
+	}//end portalBySlug()
+
+
+	/**
+	 * The bearer token on the request, or ''.
+	 *
+	 * @return string The token.
+	 */
+	private function bearer(): string {
+		$header = trim($this->request->getHeader('Authorization'));
+		if (stripos($header, 'Bearer ') !== 0) {
+			return '';
+		}
+
+		return trim(substr($header, 7));
+	}//end bearer()
+
+
+	/**
+	 * A 401 for a missing or wrong token.
+	 *
+	 * @return JSONResponse The refusal.
+	 */
+	private function unauthorised(): JSONResponse {
+		$this->stateless();
+		$response = new JSONResponse(['error' => 'invalid-token'], Http::STATUS_UNAUTHORIZED);
+		$response->addHeader('Cache-Control', 'private, no-store');
+
+		return $response;
+	}//end unauthorised()
 
 
 	/**

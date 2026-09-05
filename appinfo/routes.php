@@ -65,6 +65,11 @@ return [
         ['name' => 'traffic#collect', 'url' => '/api/traffic', 'verb' => 'POST'],
         ['name' => 'traffic#pixel', 'url' => '/api/traffic/pixel.gif', 'verb' => 'GET'],
         ['name' => 'traffic#client', 'url' => '/api/traffic-client.js', 'verb' => 'GET'],
+        // portal-traffic-reporting: a trusted backend reports on a
+        // visitor's behalf with the portal's bearer token (public route,
+        // token-guarded), and an admin downloads the daily records.
+        ['name' => 'traffic#server', 'url' => '/api/traffic/server', 'verb' => 'POST'],
+        ['name' => 'trafficReport#export', 'url' => '/api/traffic/export', 'verb' => 'GET'],
 
         // The editing-context probe (portal-page-designer). NOT part of the
         // headless content contract: it answers a question about the CALLER

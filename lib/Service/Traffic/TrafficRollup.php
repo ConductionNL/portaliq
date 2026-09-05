@@ -50,6 +50,7 @@ class TrafficRollup {
 	 * @param TrafficGoals           $goals      Evaluates the portal's goals.
 	 * @param TrafficFunnels         $funnels    Walks the portal's funnels.
 	 * @param TrafficFormStats       $forms      Counts what happened to each form.
+	 * @param TrafficErrorStats      $errors     Counts the script errors.
 	 *
 	 * @return void
 	 */
@@ -59,6 +60,7 @@ class TrafficRollup {
 		private readonly TrafficGoals $goals = new TrafficGoals(),
 		private readonly TrafficFunnels $funnels = new TrafficFunnels(),
 		private readonly TrafficFormStats $forms = new TrafficFormStats(),
+		private readonly TrafficErrorStats $errors = new TrafficErrorStats(),
 	) {
 	}
 
@@ -78,6 +80,7 @@ class TrafficRollup {
 	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
 	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-visitors-must-be-counted-honestly-in-each-mode
 	 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
+	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-script-errors-must-be-reported-without-the-stack-or-the-query-string
 	 */
 	public function build(string $portal, string $date, array $sessions, string $aggregatedAt, array $options = []): array {
 		$totals = $this->totals(sessions: $sessions);
@@ -103,6 +106,9 @@ class TrafficRollup {
 		return [
 			'portal' => $portal,
 			'date' => $date,
+			// All sessions. The aggregation overwrites this with the
+			// segment's id when it builds a segment's record.
+			'segment' => '',
 			'pageViews' => $totals['pageViews'],
 			'sessions' => count($sessions),
 			'visitors' => $totals['visitors'],
@@ -151,6 +157,7 @@ class TrafficRollup {
 				label: 'path',
 				countKey: 'hits'
 			),
+			'errors' => $this->errors->rows(sessions: $sessions),
 			// Null, not {}, when nothing was carried: the object store
 			// refuses an empty object for a typed property and clears it
 			// on null.

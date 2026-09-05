@@ -47,6 +47,7 @@ use OCA\Portaliq\Listener\LandingPageRequestedEventListener;
 use OCA\Portaliq\Listener\LandingPageSubmissionDispatchListener;
 use OCA\Portaliq\Middleware\PortalAuthMiddleware;
 use OCA\Portaliq\Middleware\PublicApiCorsMiddleware;
+use OCA\Portaliq\Notification\Notifier;
 use OCA\Portaliq\Service\Traffic\Geo\MmdbGeoResolver;
 use OCA\Portaliq\Service\Traffic\GeoResolverInterface;
 use OCP\AppFramework\App;
@@ -149,6 +150,10 @@ class Application extends App implements IBootstrap {
 		// for the tests and for an instance that wants no geography at all
 		// (the settings provider `none` makes this resolver answer null too).
 		$context->registerServiceAlias(GeoResolverInterface::class, MmdbGeoResolver::class);
+
+		// Traffic reports and alerts (portal-traffic-reporting) reach a
+		// user as an in-app notification beside the mail; this renders it.
+		$context->registerNotifierService(Notifier::class);
 	}//end register()
 
 	/**

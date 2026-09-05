@@ -28,6 +28,7 @@ export const KNOWN_EVENTS = [
 	'form_field',
 	'form_abandon',
 	'page_not_found',
+	'js_error',
 ]
 
 /**
@@ -403,4 +404,65 @@ function decodeSafe(value) {
 	} catch {
 		return value
 	}
+}
+
+/**
+ * The parameters of a `js_error` event (portal-traffic-reporting): the
+ * message, the script's host and path WITHOUT its query string, the line,
+ * the column, and a short hash of the stack. Never the stack itself,
+ * which can carry a URL with a token in it, and never a query string,
+ * which can carry anything.
+ *
+ * @param {object} error   The ErrorEvent-shaped object: message, filename, lineno, colno, error.
+ * @return {object|null} The params, or null when there is nothing to report.
+ */
+export function errorParams(error) {
+	if (!error) {
+		return null
+	}
+	const message = String(error.message || '').substring(0, 256)
+	const stack = error.error && error.error.stack ? String(error.error.stack) : ''
+	if (message === '' && stack === '') {
+		return null
+	}
+	const params = {
+		message: message || 'Script error',
+		source: sourceOf(String(error.filename || '')),
+		line: Number(error.lineno) || 0,
+		column: Number(error.colno) || 0,
+	}
+	if (stack !== '') {
+		params.stackHash = hashOf(stack)
+	}
+	return params
+}
+
+/**
+ * A script URL as host and path, query and fragment dropped.
+ *
+ * @param {string} url The script URL.
+ * @return {string} `host/path`, or '' when there is none.
+ */
+function sourceOf(url) {
+	if (url === '') {
+		return ''
+	}
+	const cut = url.search(/[?#]/)
+	const clean = cut === -1 ? url : url.substring(0, cut)
+	return clean.replace(/^[a-z]+:\/\//i, '').substring(0, 256)
+}
+
+/**
+ * A short, stable hash of a string (FNV-1a, 32 bits, hex).
+ *
+ * @param {string} value The string.
+ * @return {string} Eight hex characters.
+ */
+function hashOf(value) {
+	let hash = 0x811c9dc5
+	for (let i = 0; i < value.length; i++) {
+		hash ^= value.charCodeAt(i)
+		hash = Math.imul(hash, 0x01000193) >>> 0
+	}
+	return ('0000000' + hash.toString(16)).slice(-8)
 }

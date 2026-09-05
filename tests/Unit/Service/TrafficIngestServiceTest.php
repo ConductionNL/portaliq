@@ -256,6 +256,37 @@ class TrafficIngestServiceTest extends TestCase {
 
 
 	/**
+	 * A roll-up portal (portal-traffic-reporting) has no visitors of its
+	 * own: a batch aimed at it is refused whole and counted, and a log
+	 * import's `allowOld` lets an old timestamp through where a live
+	 * beacon's would be refused.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-roll-up-portal-must-sum-its-members-and-never-count-its-own
+	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-an-access-log-must-import-as-page-views-without-assets-or-bots
+	 */
+	public function testARollUpPortalRefusesEventsAndAnImportMayBeOld(): void {
+		$service = $this->service(portals: [
+			['slug' => 'rollup', 'status' => 'published', 'traffic' => ['enabled' => true, 'rollupOf' => ['open-tilburg']]],
+			$this->portal(),
+		]);
+		$event = ['name' => 'page_view', 'sequence' => 0, 'pageLocation' => 'https://x/', 'timestamp' => '2026-07-01T10:00:00Z'];
+
+		$refused = $service->ingest(portalSlug: 'rollup', events: [$event], context: $this->browser());
+		$this->assertSame(['accepted' => 0, 'refused' => ['rollup-portal' => 1]], $refused);
+		$this->assertSame(1, $this->config->values['portaliq/' . TrafficMetrics::REFUSED_PREFIX . 'rollup-portal']);
+
+		$tooOld = $service->ingest(portalSlug: 'open-tilburg', events: [$event], context: $this->browser());
+		$this->assertSame(['accepted' => 0, 'refused' => ['timestamp-out-of-range' => 1]], $tooOld);
+
+		$imported = $service->ingest(portalSlug: 'open-tilburg', events: [$event], context: $this->browser() + ['allowOld' => true]);
+		$this->assertSame(1, $imported['accepted']);
+		$this->assertSame('2026-07-01T10:00:00.000Z', $this->stored[0]['occurredAt']);
+	}//end testARollUpPortalRefusesEventsAndAnImportMayBeOld()
+
+
+	/**
 	 * A disabled portal refuses every event under its own reason, and an
 	 * unknown slug refuses under another. Both are counted.
 	 *

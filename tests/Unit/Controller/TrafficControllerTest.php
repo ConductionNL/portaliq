@@ -22,6 +22,7 @@ use OCA\Portaliq\Controller\TrafficController;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\Traffic\RawRequestBody;
+use OCA\Portaliq\Service\Traffic\TrafficServerToken;
 use OCA\Portaliq\Service\TrafficIngestService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Http;
@@ -115,6 +116,7 @@ class TrafficControllerTest extends TestCase {
 
 		$resolver = $this->createMock(PortalResolver::class);
 		$resolver->method('resolveForCollector')->willReturn($portal);
+		$resolver->method('allPublishedPortals')->willReturn(($portal === null) ? [] : [$portal]);
 
 		$ingest = $this->createMock(TrafficIngestService::class);
 		$ingest->method('ingestForPortal')->willReturnCallback(
@@ -138,7 +140,21 @@ class TrafficControllerTest extends TestCase {
 		$appManager = $this->createMock(IAppManager::class);
 		$appManager->method('getAppPath')->willReturn($this->appDir);
 
-		return new TrafficController('portaliq', $request, $resolver, $ingest, $raw, $appManager, $this->session ?? $this->createMock(PortalSessionService::class));
+		$tokens = $this->createMock(TrafficServerToken::class);
+		$tokens->method('verify')->willReturnCallback(
+			static fn (array $portal, string $token): bool => $token === 'secret-token'
+		);
+
+		return new TrafficController(
+			'portaliq',
+			$request,
+			$resolver,
+			$ingest,
+			$raw,
+			$appManager,
+			$this->session ?? $this->createMock(PortalSessionService::class),
+			$tokens
+		);
 	}//end controller()
 
 
@@ -344,7 +360,7 @@ class TrafficControllerTest extends TestCase {
 	 */
 	public function testEveryRoutedMethodCarriesTheFullPublicPosture(): void {
 		$reflection = new ReflectionClass(TrafficController::class);
-		foreach (['collect', 'pixel', 'client'] as $name) {
+		foreach (['collect', 'pixel', 'client', 'server'] as $name) {
 			$method = $reflection->getMethod($name);
 			foreach ([PublicPage::class, NoCSRFRequired::class, AnonRateLimit::class, UserRateLimit::class] as $attribute) {
 				$this->assertNotEmpty($method->getAttributes($attribute), $name . '() must carry #[' . $attribute . ']');
@@ -358,6 +374,45 @@ class TrafficControllerTest extends TestCase {
 			$this->assertGreaterThanOrEqual($anon->getLimit(), $user->getLimit(), $name . '(): a signed-in caller must not be throttled below a visitor');
 		}
 	}//end testEveryRoutedMethodCarriesTheFullPublicPosture()
+	/**
+	 * The server API (portal-traffic-reporting): a valid token stores the
+	 * batch under the address and agent the backend reported, per event
+	 * where given; a wrong or missing token is a 401 with nothing stored.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
+	 */
+	public function testTheServerApiAcceptsAValidTokenAndRefusesAWrongOne(): void {
+		$body = json_encode([
+			'portal' => 'open-tilburg',
+			'consent' => true,
+			'remoteAddress' => '198.51.100.7',
+			'userAgent' => 'Backend/1.0',
+			'events' => [
+				['name' => 'page_view', 'sequence' => 0, 'pageLocation' => 'https://x/'],
+				['name' => 'page_view', 'sequence' => 0, 'pageLocation' => 'https://x/b', 'remoteAddress' => '198.51.100.8', 'userAgent' => 'Other/2.0'],
+			],
+		]);
+
+		$accepted = $this->controller($body, headers: ['Authorization' => 'Bearer secret-token'])->server();
+		$this->assertSame(Http::STATUS_NO_CONTENT, $accepted->getStatus());
+		$this->assertCount(2, $this->ingested, 'one ingest call per visitor');
+		$this->assertSame('198.51.100.7', $this->ingested[0][2]['ip']);
+		$this->assertSame('Backend/1.0', $this->ingested[0][2]['userAgent']);
+		$this->assertSame('198.51.100.8', $this->ingested[1][2]['ip']);
+		$this->assertArrayNotHasKey('remoteAddress', $this->ingested[1][1][0], 'the address is context, not a stored field');
+		$this->assertFalse($this->ingested[0][2]['serverSide'], 'a backend may not claim the mail events');
+
+		$this->ingested = [];
+		$wrong = $this->controller($body, headers: ['Authorization' => 'Bearer nope'])->server();
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $wrong->getStatus());
+		$missing = $this->controller($body)->server();
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $missing->getStatus());
+		$this->assertSame([], $this->ingested, 'nothing is stored without the token');
+	}//end testTheServerApiAcceptsAValidTokenAndRefusesAWrongOne()
+
+
 	/**
 	 * A batch with a valid bearer hands the session's subjectRef to the
 	 * ingest service as `userRef`; without a bearer the field is ''. The

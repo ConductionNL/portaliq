@@ -46,6 +46,13 @@ use Throwable;
  * degrades to "nothing stored, nothing read" rather than a fatal.
  *
  * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-raw-events-must-be-retained-for-a-finite-configured-period
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- every read and
+ * write of the two traffic schemas lives here on purpose (the class
+ * comment says why); the segment reads and the delete that
+ * portal-traffic-reporting added put it one over the threshold, and a
+ * second store would be a second place for the raw-versus-ordinary
+ * write decision.
  */
 class TrafficEventStore {
 
@@ -246,7 +253,7 @@ class TrafficEventStore {
 	}
 
 	/**
-	 * The existing rollup for a portal-day, or null.
+	 * The existing "all sessions" rollup for a portal-day, or null.
 	 *
 	 * @param string $portal The portal slug.
 	 * @param string $date   The UTC day, YYYY-MM-DD.
@@ -256,9 +263,95 @@ class TrafficEventStore {
 	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
 	 */
 	public function findDaily(string $portal, string $date): ?array {
-		$rows = $this->findAll(schema: self::DAILY_SCHEMA, filters: ['portal' => $portal, 'date' => $date], limit: 1);
+		foreach ($this->findDailyRows(portal: $portal, date: $date) as $row) {
+			if (trim((string)($row['segment'] ?? '')) === '') {
+				return $row;
+			}
+		}
 
-		return $rows[0] ?? null;
+		return null;
+	}
+
+	/**
+	 * Every rollup of a portal-day: the "all sessions" one and one per
+	 * segment (portal-traffic-reporting).
+	 *
+	 * Read by portal and date only, and told apart by `segment` here: a
+	 * record written before segments existed has no such property, and a
+	 * filter on an absent property is not a filter the object API promises
+	 * to answer the same way on every version.
+	 *
+	 * @param string $portal The portal slug.
+	 * @param string $date   The UTC day, YYYY-MM-DD.
+	 *
+	 * @return array<int, array<string, mixed>> The rollups.
+	 *
+	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
+	 */
+	public function findDailyRows(string $portal, string $date): array {
+		return $this->findAll(schema: self::DAILY_SCHEMA, filters: ['portal' => $portal, 'date' => $date], limit: self::PAGE);
+	}
+
+	/**
+	 * A portal's rollups over a span of days, for one segment, oldest first.
+	 *
+	 * @param string $portal  The portal slug.
+	 * @param string $from    The first day, inclusive.
+	 * @param string $to      The last day, inclusive.
+	 * @param string $segment The segment id, '' for all sessions.
+	 *
+	 * @return array<int, array<string, mixed>> The rollups.
+	 *
+	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
+	 */
+	public function dailyBetween(string $portal, string $from, string $to, string $segment = ''): array {
+		$rows = $this->findAll(
+			schema: self::DAILY_SCHEMA,
+			filters: ['portal' => $portal, 'date' => ['gte' => $from, 'lte' => $to]],
+			limit: self::MAX_ROWS,
+			order: ['date' => 'ASC']
+		);
+
+		return array_values(array_filter(
+			$rows,
+			static fn (array $row): bool => trim((string)($row['segment'] ?? '')) === $segment
+		));
+	}
+
+	/**
+	 * Remove one rollup: a segment's record after the segment was deleted.
+	 *
+	 * @param string $uuid The rollup's uuid.
+	 *
+	 * @return bool True when removed.
+	 *
+	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
+	 */
+	public function deleteDaily(string $uuid): bool {
+		$objectService = $this->objectService();
+		if ($objectService === null || $uuid === '') {
+			return false;
+		}
+
+		try {
+			if ($this->context->apply(objectService: $objectService, schemaSlug: self::DAILY_SCHEMA) === false) {
+				return false;
+			}
+
+			$objectService->deleteObject(
+				uuid: $uuid,
+				register: self::REGISTER,
+				schema: self::DAILY_SCHEMA,
+				_rbac: false,
+				_multitenancy: false
+			);
+
+			return true;
+		} catch (Throwable $e) {
+			$this->logger->error('Portaliq: traffic rollup delete failed', ['uuid' => $uuid, 'reason' => $e->getMessage()]);
+
+			return false;
+		}
 	}
 
 	/**

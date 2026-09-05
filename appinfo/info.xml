@@ -83,6 +83,9 @@
         <!-- portal-traffic-visitors-and-geo: the visitor geography database,
              refreshed monthly from DB-IP Lite or MaxMind. -->
         <job>OCA\Portaliq\BackgroundJob\TrafficGeoRefreshJob</job>
+        <!-- portal-traffic-reporting: hourly, sends the reports whose period
+             ended and fires the alerts whose threshold was crossed. -->
+        <job>OCA\Portaliq\BackgroundJob\TrafficReportJob</job>
     </background-jobs>
 
     <!-- @spec openspec/architecture/adr-023-action-authorization.md -->
@@ -116,6 +119,10 @@
          rather than on the monthly schedule. -->
     <commands>
         <command>OCA\Portaliq\Command\TrafficGeoRefresh</command>
+        <!-- portal-traffic-reporting: the server-side token, shown once, and
+             the access-log import. -->
+        <command>OCA\Portaliq\Command\TrafficToken</command>
+        <command>OCA\Portaliq\Command\TrafficImportLog</command>
     </commands>
 
     <settings>

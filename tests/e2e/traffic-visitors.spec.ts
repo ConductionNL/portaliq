@@ -204,7 +204,12 @@ async function rollups(
 	expect(res.status()).toBe(200)
 	const body = await res.json()
 	const rows = Array.isArray(body) ? body : (body.results ?? [])
-	return rows.filter((r: Record<string, unknown>) => r.portal === ENABLED)
+	// All visits only: a segment's record (portal-traffic-reporting) is a
+	// second row for the same day, and this spec counts days.
+	return rows.filter(
+		(r: Record<string, unknown>) =>
+			r.portal === ENABLED && String(r.segment ?? '') === '',
+	)
 }
 
 /**

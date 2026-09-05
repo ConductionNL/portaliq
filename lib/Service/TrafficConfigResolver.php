@@ -21,6 +21,8 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Service\Traffic\TrafficOutcomeDefinitions;
+use OCA\Portaliq\Service\Traffic\TrafficReportDefinitions;
+use OCA\Portaliq\Service\Traffic\TrafficSegments;
 
 /**
  * Resolves one portal's traffic-measurement configuration, with the shipped
@@ -71,6 +73,7 @@ class TrafficConfigResolver {
 		'form_field',
 		'form_abandon',
 		'page_not_found',
+		'js_error',
 		'email_open',
 		'email_click',
 	];
@@ -239,11 +242,15 @@ class TrafficConfigResolver {
 	 * Constructor.
 	 *
 	 * @param TrafficOutcomeDefinitions $outcomes Normalises goals, funnels and custom dimensions.
+	 * @param TrafficSegments           $segments Normalises segments.
+	 * @param TrafficReportDefinitions  $reports  Normalises reports, alerts and roll-up members.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly TrafficOutcomeDefinitions $outcomes = new TrafficOutcomeDefinitions(),
+		private readonly TrafficSegments $segments = new TrafficSegments(),
+		private readonly TrafficReportDefinitions $reports = new TrafficReportDefinitions(),
 	) {
 	}
 
@@ -259,10 +266,13 @@ class TrafficConfigResolver {
 	 *               sensitive: array<string, bool>,
 	 *               goals: array<int, array<string, mixed>>,
 	 *               funnels: array<int, array<string, mixed>>,
-	 *               customDimensions: array<int, array<string, string>>} The effective configuration.
+	 *               customDimensions: array<int, array<string, string>>,
+	 *               segments: array<int, array<string, mixed>>, rollupOf: string[],
+	 *               reports: array<int, array<string, mixed>>, alerts: array<int, array<string, mixed>>} The effective configuration.
 	 *
 	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
 	 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
+	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
 	 */
 	public function resolve(array $portal): array {
 		$traffic = $portal['traffic'] ?? [];
@@ -297,6 +307,8 @@ class TrafficConfigResolver {
 		if (is_array($consent) === false) {
 			$consent = [];
 		}
+
+		$goals = $this->outcomes->goals(value: ($traffic['goals'] ?? null));
 
 		// Pre-consent events must themselves be enabled events. Otherwise a
 		// portal could admit before consent something it does not collect
@@ -334,10 +346,45 @@ class TrafficConfigResolver {
 			// evaluates and what the validator lets through. Normalised
 			// here for the same reason as everything above: the job, the
 			// collector and the client must agree on what a goal is.
-			'goals' => $this->outcomes->goals(value: ($traffic['goals'] ?? null)),
+			'goals' => $goals,
 			'funnels' => $this->outcomes->funnels(value: ($traffic['funnels'] ?? null)),
 			'customDimensions' => $this->outcomes->customDimensions(value: ($traffic['customDimensions'] ?? null)),
+			// The reporting layer (portal-traffic-reporting): segments the
+			// aggregation computes beside "all sessions", the portals a
+			// roll-up sums, and what the report job sends and watches. The
+			// server token's hash is NOT here: this block is served to the
+			// browser by the content API, and a hash is still a secret's
+			// shadow. `serverTokenHash()` reads it for the one caller.
+			'segments' => $this->segments->definitions(value: ($traffic['segments'] ?? null), goals: $goals),
+			'rollupOf' => $this->reports->rollupOf(value: ($traffic['rollupOf'] ?? null), self: (string)($portal['slug'] ?? '')),
+			'reports' => $this->reports->reports(value: ($traffic['reports'] ?? null)),
+			'alerts' => $this->reports->alerts(value: ($traffic['alerts'] ?? null), goals: $goals),
 		];
+	}
+
+	/**
+	 * The hash of the portal's server token (portal-traffic-reporting), or
+	 * '' when none was issued. Kept out of `resolve()` on purpose: that
+	 * block is public.
+	 *
+	 * @param array<string, mixed> $portal The portal record.
+	 *
+	 * @return string The sha256 hex of the token, or ''.
+	 *
+	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
+	 */
+	public function serverTokenHash(array $portal): string {
+		$traffic = $portal['traffic'] ?? [];
+		if (is_array($traffic) === false) {
+			return '';
+		}
+
+		$hash = $traffic['serverToken'] ?? '';
+		if (is_string($hash) === false || preg_match('/^[a-f0-9]{64}$/', $hash) !== 1) {
+			return '';
+		}
+
+		return $hash;
 	}
 
 	/**

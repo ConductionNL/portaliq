@@ -2,16 +2,19 @@
 <!-- SPDX-FileCopyrightText: 2026 Conduction B.V. -->
 
 <!--
-  TrafficOverview — the portal selector, the period selector and the four
-  headline numbers (portal-traffic-analytics, portal-traffic-visitors-and-geo).
+  TrafficOverview — the portal, period and segment selectors, the Export
+  button and the four headline numbers (portal-traffic-analytics,
+  portal-traffic-visitors-and-geo, portal-traffic-reporting).
 
-  Both selectors live here and drive every other Traffic widget through
+  The selectors live here and drive every other Traffic widget through
   the shared report store. The warning card lists which sensitive
   switches the selected portal has on, because a portal that persists a
   client id or links accounts is one whose report a privacy officer wants
-  flagged, not footnoted.
+  flagged, not footnoted. A roll-up portal says how many portals it sums,
+  so a reader knows the visitors are a sum, not a distinct count.
 
   @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-traffic-page-must-show-what-was-measured-and-say-when-it-was-not
+  @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
 -->
 <template>
 	<div class="traffic-overview" data-testid="traffic-overview">
@@ -33,6 +36,25 @@
 				label="label"
 				data-testid="traffic-range-select"
 				@update:modelValue="onRange" />
+			<NcSelect
+				v-if="segmentOptions.length > 1"
+				:modelValue="selectedSegment"
+				:inputLabel="t('portaliq', 'Segment')"
+				:options="segmentOptions"
+				:clearable="false"
+				label="label"
+				data-testid="traffic-segment-select"
+				@update:modelValue="onSegment" />
+			<NcButton
+				v-if="report.exportUrl !== '' && emptyState === ''"
+				:href="report.exportUrl"
+				download
+				data-testid="traffic-export">
+				<template #icon>
+					<Download :size="20" />
+				</template>
+				{{ t('portaliq', 'Export') }}
+			</NcButton>
 			<template v-if="report.rangePreset === 'custom'">
 				<NcDateTimePickerNative
 					id="traffic-range-from"
@@ -53,6 +75,21 @@
 
 		<NcNoteCard v-if="report.error" type="error" data-testid="traffic-error">
 			{{ report.error }}
+		</NcNoteCard>
+
+		<NcNoteCard
+			v-if="members.length > 0"
+			type="info"
+			data-testid="traffic-rollup-note">
+			{{
+				n(
+					'portaliq',
+					'Roll-up of %n portal: the figures are the sum of its daily records, so a visitor of two portals counts twice.',
+					'Roll-up of %n portals: the figures are the sum of their daily records, so a visitor of two portals counts twice.',
+					members.length,
+				)
+			}}
+			{{ members.join(', ') }}
 		</NcNoteCard>
 
 		<NcNoteCard
@@ -109,9 +146,15 @@
 
 <script>
 import { CnStatsBlock } from '@conduction/nextcloud-vue'
-import { NcDateTimePickerNative, NcNoteCard, NcSelect } from '@nextcloud/vue'
+import {
+	NcButton,
+	NcDateTimePickerNative,
+	NcNoteCard,
+	NcSelect,
+} from '@nextcloud/vue'
+import Download from 'vue-material-design-icons/Download.vue'
 import TrafficEmptyState from './TrafficEmptyState.vue'
-import { warnedSwitches } from '../lib/trafficSummary.js'
+import { rollupOf, warnedSwitches } from '../lib/trafficSummary.js'
 import { RANGE_PRESETS } from '../store/traffic.js'
 import trafficWidgetMixin from './trafficWidgetMixin.js'
 
@@ -120,6 +163,8 @@ export default {
 
 	components: {
 		CnStatsBlock,
+		Download,
+		NcButton,
 		NcDateTimePickerNative,
 		NcNoteCard,
 		NcSelect,
@@ -211,6 +256,41 @@ export default {
 		},
 
 		/**
+		 * "All visits" plus the portal's segments, as select options.
+		 *
+		 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
+		 * @return {Array<{id: string, label: string}>} The options.
+		 */
+		segmentOptions() {
+			return [{ id: '', label: this.t('portaliq', 'All visits') }].concat(
+				this.report.segments.map((s) => ({ id: s.id, label: s.name })),
+			)
+		},
+
+		/**
+		 * The selected segment option.
+		 *
+		 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
+		 * @return {object|null} The option.
+		 */
+		selectedSegment() {
+			return (
+				this.segmentOptions.find((o) => o.id === this.report.segment)
+				|| this.segmentOptions[0]
+			)
+		},
+
+		/**
+		 * The portals a roll-up portal sums, or [].
+		 *
+		 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-roll-up-portal-must-sum-its-members-and-never-count-its-own
+		 * @return {Array<string>} The member slugs.
+		 */
+		members() {
+			return rollupOf(this.portal)
+		},
+
+		/**
 		 * The sensitive switches the selected portal has on.
 		 *
 		 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-sensitive-measurement-must-be-off-by-default-and-warned-in-the-admin-ui
@@ -236,6 +316,19 @@ export default {
 		onSelect(option) {
 			if (option && option.id) {
 				this.report.select(option.id)
+			}
+		},
+
+		/**
+		 * Switch the page to a segment, or back to all visits.
+		 *
+		 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
+		 * @param {object|null} option The chosen option.
+		 * @return {void}
+		 */
+		onSegment(option) {
+			if (option) {
+				this.report.setSegment(option.id)
 			}
 		},
 

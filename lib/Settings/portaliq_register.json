@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.19.0"
+        "version": "0.20.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.19.0",
+                "version": "0.20.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -1383,7 +1383,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.4.0",
+                "version": "0.5.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -1573,7 +1573,7 @@
                             "events": {
                                 "title": "Events",
                                 "type": "array",
-                                "description": "The event names the collector accepts for this portal. Absent means page views and session starts only; an empty list means none. `form_start`, `form_field` and `form_abandon` switch on form analytics (ids and times only, never a value); `page_not_found` lists missing pages. `email_open` and `email_click` are only ever written by another app in this instance, never by a browser.",
+                                "description": "The event names the collector accepts for this portal. Absent means page views and session starts only; an empty list means none. `form_start`, `form_field` and `form_abandon` switch on form analytics (ids and times only, never a value); `page_not_found` lists missing pages; `js_error` counts script errors (message, file and line, never the stack or a query string). `email_open` and `email_click` are only ever written by another app in this instance, never by a browser.",
                                 "items": {
                                     "type": "string",
                                     "enum": [
@@ -1588,6 +1588,7 @@
                                         "form_field",
                                         "form_abandon",
                                         "page_not_found",
+                                        "js_error",
                                         "email_open",
                                         "email_click"
                                     ]
@@ -1690,6 +1691,7 @@
                                                 "form_field",
                                                 "form_abandon",
                                                 "page_not_found",
+                                                "js_error",
                                                 "email_open",
                                                 "email_click"
                                             ]
@@ -1965,6 +1967,220 @@
                                         "example": false
                                     }
                                 }
+                            },
+                            "segments": {
+                                "title": "Segments",
+                                "type": "array",
+                                "description": "Saved filters over visits. The aggregation writes one extra daily record per segment, so the Traffic page and the export can show desktop visitors, one campaign or one region on their own. All conditions of a segment must hold. A segment with a condition this app cannot evaluate is left out of the figures.",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "title": "Id",
+                                            "type": "string",
+                                            "description": "A short token that names the segment in the figures, such as `desktop`. Letters, digits, dash and underscore only.",
+                                            "example": "desktop"
+                                        },
+                                        "name": {
+                                            "title": "Name",
+                                            "type": "string",
+                                            "description": "What the segment is called on the Traffic page.",
+                                            "example": "Desktop visitors"
+                                        },
+                                        "conditions": {
+                                            "title": "Conditions",
+                                            "type": "array",
+                                            "description": "What a visit must satisfy. All of them must hold.",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "dimension": {
+                                                        "title": "Dimension",
+                                                        "type": "string",
+                                                        "description": "What is compared: a visit's channel, device type, browser, operating system, language, region, campaign, source, medium, referrer host or referrer; `visitorType` (new or returning, only known with a persisted client id); `userRef-present` (true or false); or `goal:<id>` (true when the visit met that goal).",
+                                                        "example": "deviceType"
+                                                    },
+                                                    "operator": {
+                                                        "title": "Operator",
+                                                        "type": "string",
+                                                        "description": "How it is compared, ignoring case.",
+                                                        "enum": [
+                                                            "is",
+                                                            "isNot",
+                                                            "contains",
+                                                            "startsWith"
+                                                        ],
+                                                        "example": "is"
+                                                    },
+                                                    "value": {
+                                                        "title": "Value",
+                                                        "type": "string",
+                                                        "description": "The value to compare with.",
+                                                        "example": "desktop"
+                                                    }
+                                                }
+                                            },
+                                            "example": [
+                                                {
+                                                    "dimension": "deviceType",
+                                                    "operator": "is",
+                                                    "value": "desktop"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                },
+                                "example": []
+                            },
+                            "rollupOf": {
+                                "title": "Roll-up of",
+                                "type": "array",
+                                "description": "The slugs of other portals whose daily figures this portal sums. A roll-up portal has no visitors of its own: the collector refuses its events and its daily record is the sum of its members' records, computed after theirs. Leave empty for an ordinary portal.",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "example": []
+                            },
+                            "reports": {
+                                "title": "Scheduled reports",
+                                "type": "array",
+                                "description": "Reports sent by mail once per period, with the period's figures set against the period before and a link to the Traffic page. A daily report covers yesterday, a weekly one the ISO week that ended on Sunday, a monthly one the previous month. A Nextcloud user also gets an in-app notification.",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "title": "Id",
+                                            "type": "string",
+                                            "description": "A short token that names the report. Letters, digits, dash and underscore only.",
+                                            "example": "weekly"
+                                        },
+                                        "name": {
+                                            "title": "Name",
+                                            "type": "string",
+                                            "description": "The report's name, used in the subject line.",
+                                            "example": "Weekly traffic"
+                                        },
+                                        "cadence": {
+                                            "title": "Cadence",
+                                            "type": "string",
+                                            "description": "How often it is sent.",
+                                            "enum": [
+                                                "daily",
+                                                "weekly",
+                                                "monthly"
+                                            ],
+                                            "example": "weekly"
+                                        },
+                                        "recipients": {
+                                            "title": "Recipients",
+                                            "type": "array",
+                                            "description": "Nextcloud user ids or e-mail addresses.",
+                                            "items": {
+                                                "type": "string"
+                                            },
+                                            "example": [
+                                                "communicatie@example.org"
+                                            ]
+                                        },
+                                        "sections": {
+                                            "title": "Sections",
+                                            "type": "array",
+                                            "description": "Which parts the mail carries. Empty means the overview only.",
+                                            "items": {
+                                                "type": "string",
+                                                "enum": [
+                                                    "overview",
+                                                    "pages",
+                                                    "sources",
+                                                    "visitors",
+                                                    "goals",
+                                                    "funnels",
+                                                    "forms"
+                                                ]
+                                            },
+                                            "example": [
+                                                "overview",
+                                                "pages",
+                                                "sources"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "example": []
+                            },
+                            "alerts": {
+                                "title": "Alerts",
+                                "type": "array",
+                                "description": "Conditions that send a mail and an in-app notification when they hold, once per day or week. `above` watches the current period and fires the hour the threshold is crossed; `below` and `changeAbove` (percent against the period before) are judged when the period has ended.",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "title": "Id",
+                                            "type": "string",
+                                            "description": "A short token that names the alert. Letters, digits, dash and underscore only.",
+                                            "example": "quiet-day"
+                                        },
+                                        "name": {
+                                            "title": "Name",
+                                            "type": "string",
+                                            "description": "The alert's name, used in the subject line.",
+                                            "example": "Quiet day"
+                                        },
+                                        "metric": {
+                                            "title": "Metric",
+                                            "type": "string",
+                                            "description": "What is watched: `pageViews`, `sessions`, `visitors`, `notFound` (missing page hits) or `goal:<id>` (conversions of that goal).",
+                                            "example": "pageViews"
+                                        },
+                                        "comparison": {
+                                            "title": "Comparison",
+                                            "type": "string",
+                                            "description": "`above` or `below` a threshold, or `changeAbove` a percentage against the previous period.",
+                                            "enum": [
+                                                "above",
+                                                "below",
+                                                "changeAbove"
+                                            ],
+                                            "example": "below"
+                                        },
+                                        "threshold": {
+                                            "title": "Threshold",
+                                            "type": "number",
+                                            "description": "The value, or the percentage for `changeAbove`.",
+                                            "example": 100
+                                        },
+                                        "period": {
+                                            "title": "Period",
+                                            "type": "string",
+                                            "description": "A day or an ISO week.",
+                                            "enum": [
+                                                "day",
+                                                "week"
+                                            ],
+                                            "default": "day",
+                                            "example": "day"
+                                        },
+                                        "recipients": {
+                                            "title": "Recipients",
+                                            "type": "array",
+                                            "description": "Nextcloud user ids or e-mail addresses.",
+                                            "items": {
+                                                "type": "string"
+                                            },
+                                            "example": [
+                                                "admin"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "example": []
+                            },
+                            "serverToken": {
+                                "title": "Server token (hashed)",
+                                "type": "string",
+                                "description": "The hash of the token a trusted backend presents to report traffic on a visitor's behalf. Minted by `occ portaliq:traffic:token <portal>`, which shows the token once; only this hash is kept and it cannot be turned back into the token.",
+                                "example": ""
                             }
                         }
                     }
@@ -2457,7 +2673,7 @@
                     ]
                 },
                 "icon": "CursorDefaultClickOutline",
-                "version": "0.2.0",
+                "version": "0.3.0",
                 "title": "Portal Traffic Event",
                 "description": "One accepted traffic event, written by the collector through OpenRegister's raw append path and deleted once it passes the portal's retention window. Carries no IP address and no raw user agent: the visitor is a salted daily hash, and device, browser and region are derived in the request and the source discarded. Readable by instance admins only; reports read the daily aggregates instead.",
                 "type": "object",
@@ -2494,6 +2710,7 @@
                             "form_field",
                             "form_abandon",
                             "page_not_found",
+                            "js_error",
                             "email_open",
                             "email_click"
                         ],
@@ -2720,9 +2937,9 @@
                     ]
                 },
                 "icon": "ChartLine",
-                "version": "0.3.0",
+                "version": "0.4.0",
                 "title": "Portal Traffic Daily",
-                "description": "One portal's traffic for one UTC day, recomputed from the raw events by the aggregation job every fifteen minutes. Contains counts only, never a visitor. The Traffic page and any export read these records through the ordinary object API.",
+                "description": "One portal's traffic for one UTC day, recomputed from the raw events by the aggregation job every fifteen minutes. Contains counts only, never a visitor. The Traffic page and any export read these records through the ordinary object API. One record per portal-day for all visits and one per configured segment; a roll-up portal's record sums its members.",
                 "type": "object",
                 "required": [
                     "portal",
@@ -2741,6 +2958,27 @@
                         "description": "The UTC day, as YYYY-MM-DD.",
                         "format": "date",
                         "example": "2026-09-04"
+                    },
+                    "segment": {
+                        "title": "Segment",
+                        "type": "string",
+                        "description": "The segment this record counts, or empty for all visits.",
+                        "example": ""
+                    },
+                    "rollupOf": {
+                        "title": "Roll-up of",
+                        "type": "array",
+                        "description": "For a roll-up portal, the member portals this record sums. Absent for an ordinary portal.",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": []
+                    },
+                    "members": {
+                        "title": "Members with data",
+                        "type": "integer",
+                        "description": "For a roll-up portal, how many members had a record for this day.",
+                        "example": 2
                     },
                     "pageViews": {
                         "title": "Page views",
@@ -3274,6 +3512,46 @@
                                     "type": "integer",
                                     "description": "How often it was requested.",
                                     "example": 1
+                                }
+                            }
+                        },
+                        "example": []
+                    },
+                    "errors": {
+                        "title": "Script errors",
+                        "type": "array",
+                        "description": "The script errors visitors' browsers reported that day: the message, the file, how often, and on which pages. Never a stack trace or a query string.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "title": "Message",
+                                    "type": "string",
+                                    "description": "The error message, as the browser gave it.",
+                                    "example": "Cannot read properties of undefined"
+                                },
+                                "source": {
+                                    "title": "Source",
+                                    "type": "string",
+                                    "description": "The script's host and path, without its query string.",
+                                    "example": "portaal.example/js/site.js"
+                                },
+                                "hits": {
+                                    "title": "Hits",
+                                    "type": "integer",
+                                    "description": "How often it happened.",
+                                    "example": 3
+                                },
+                                "pages": {
+                                    "title": "Pages",
+                                    "type": "array",
+                                    "description": "The page paths it happened on, at most ten.",
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "example": [
+                                        "/contact"
+                                    ]
                                 }
                             }
                         },

@@ -45,6 +45,7 @@ import FlowDetailSidebar from './views/flows/FlowDetailSidebar.vue'
 import PageLayoutDesigner from './views/PageLayoutDesigner.vue'
 import TrafficDaily from './widgets/TrafficDaily.vue'
 import TrafficDimensions from './widgets/TrafficDimensions.vue'
+import TrafficErrors from './widgets/TrafficErrors.vue'
 import TrafficForms from './widgets/TrafficForms.vue'
 import TrafficFunnels from './widgets/TrafficFunnels.vue'
 import TrafficGoals from './widgets/TrafficGoals.vue'
@@ -136,6 +137,12 @@ export default {
 		component: TrafficForms,
 		...TRAFFIC_WIDGET_META,
 		_note: 'Per form: starts, submits, abandons, completion rate and the field most people left on (portal-traffic-outcomes). Ids and times only; no value is collected, so none can be shown.',
+	},
+	TrafficErrors: {
+		kind: 'widget',
+		component: TrafficErrors,
+		...TRAFFIC_WIDGET_META,
+		_note: 'The script errors visitors\' browsers reported, by message and file, with the pages they happened on (portal-traffic-reporting). Custom because errors[] is nested per rollup and a portal that did not enable js_error must read "not measured" rather than "no errors".',
 	},
 	TrafficDimensions: {
 		kind: 'widget',
