@@ -261,9 +261,13 @@ class SetupController extends Controller {
 	private function loadDataset(string $actionId): JSONResponse {
 		$picked = $this->appConfig->getValueString(Application::APP_ID, self::DATASET_KEY, '');
 
-		// The legacy id carries no answer, so it means the shipped dataset. A
-		// caller that posts it has said which one by posting it.
-		if ($actionId === 'install-demo-data' && $picked === '') {
+		// The legacy id carries its own answer: it means the shipped dataset,
+		// whatever the choice step recorded. A caller that posts it has said
+		// which one by posting it, and an explicit request outranks an earlier
+		// "none": the seed of every e2e run records "skipped" to close the
+		// wizard, and the demo-data spec then installs deliberately. Only the
+		// choice step's own run action honours the choice.
+		if ($actionId === 'install-demo-data') {
 			$picked = DemoDataService::DEMO_DATASET;
 		}
 

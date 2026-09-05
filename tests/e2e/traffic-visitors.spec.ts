@@ -216,7 +216,7 @@ async function newestEvents(
 	request: APIRequestContext,
 ): Promise<Array<Record<string, unknown>>> {
 	const res = await request.get(
-		`${OR_OBJECTS}/portalTrafficEvent?portal=${ENABLED}&_limit=500`,
+		`${OR_OBJECTS}/portalTrafficEvent?portal=${ENABLED}&_limit=500&_order[receivedAt]=desc`,
 		{ headers: ADMIN_HEADERS },
 	)
 	expect(res.status()).toBe(200)
