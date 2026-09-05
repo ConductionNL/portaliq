@@ -32,6 +32,7 @@ use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\Traffic\RawRequestBody;
 use OCA\Portaliq\Service\Traffic\TrafficRecordingService;
+use OCA\Portaliq\Service\Traffic\TrafficServerBatch;
 use OCA\Portaliq\Service\Traffic\TrafficServerToken;
 use OCA\Portaliq\Service\TrafficEventValidator;
 use OCA\Portaliq\Service\TrafficIngestService;
@@ -140,7 +141,29 @@ class TrafficController extends Controller {
 	#[AnonRateLimit(limit: 600, period: 60)]
 	#[UserRateLimit(limit: 600, period: 60)]
 	public function collect(): Response {
-		$raw = $this->body->read(max: self::MAX_BODY_BYTES);
+		$batch = $this->decoded(max: self::MAX_BODY_BYTES, bounded: true);
+		if ($batch instanceof JSONResponse) {
+			return $batch;
+		}
+
+		$this->ingestFor(slug: $this->slugOf(batch: $batch), events: array_values($batch['events']), consent: (($batch['consent'] ?? false) === true));
+
+		return $this->noContent();
+	}//end collect()
+
+
+	/**
+	 * The request body as a decoded batch, or the 400 that refuses it
+	 * whole: over the cap, malformed, without events, or (when bounded)
+	 * over fifty events.
+	 *
+	 * @param int  $max     The most bytes accepted.
+	 * @param bool $bounded Whether the event count is capped at MAX_BATCH.
+	 *
+	 * @return array<string, mixed>|JSONResponse The batch, or the refusal.
+	 */
+	private function decoded(int $max, bool $bounded): array|JSONResponse {
+		$raw = $this->body->read(max: $max);
 		if ($raw === null) {
 			return $this->refusal(reason: 'batch-too-large');
 		}
@@ -150,19 +173,29 @@ class TrafficController extends Controller {
 			return $this->refusal(reason: 'malformed-batch');
 		}
 
-		if (count($batch['events']) > TrafficEventValidator::MAX_BATCH) {
+		if ($bounded === true && count($batch['events']) > TrafficEventValidator::MAX_BATCH) {
 			return $this->refusal(reason: 'batch-too-large');
 		}
 
+		return $batch;
+	}//end decoded()
+
+
+	/**
+	 * The portal slug a batch names, or null.
+	 *
+	 * @param array<string, mixed> $batch The decoded batch.
+	 *
+	 * @return string|null The slug.
+	 */
+	private function slugOf(array $batch): ?string {
 		$slug = $batch['portal'] ?? null;
 		if (is_string($slug) === false) {
-			$slug = null;
+			return null;
 		}
 
-		$this->ingestFor(slug: $slug, events: array_values($batch['events']), consent: (($batch['consent'] ?? false) === true));
-
-		return $this->noContent();
-	}//end collect()
+		return $slug;
+	}//end slugOf()
 
 
 	/**
@@ -186,18 +219,9 @@ class TrafficController extends Controller {
 	#[AnonRateLimit(limit: 600, period: 60)]
 	#[UserRateLimit(limit: 600, period: 60)]
 	public function server(): Response {
-		$raw = $this->body->read(max: self::MAX_BODY_BYTES);
-		if ($raw === null) {
-			return $this->refusal(reason: 'batch-too-large');
-		}
-
-		$batch = json_decode($raw, true);
-		if (is_array($batch) === false || is_array($batch['events'] ?? null) === false || $batch['events'] === []) {
-			return $this->refusal(reason: 'malformed-batch');
-		}
-
-		if (count($batch['events']) > TrafficEventValidator::MAX_BATCH) {
-			return $this->refusal(reason: 'batch-too-large');
+		$batch = $this->decoded(max: self::MAX_BODY_BYTES, bounded: true);
+		if ($batch instanceof JSONResponse) {
+			return $batch;
 		}
 
 		$portal = $this->portalBySlug(slug: $batch['portal'] ?? null);
@@ -206,7 +230,10 @@ class TrafficController extends Controller {
 		}
 
 		$consent = (($batch['consent'] ?? false) === true);
-		foreach ($this->byVisitor(batch: $batch) as $group) {
+		// Pure and stateless, so built here rather than injected: a tenth
+		// constructor argument for a regrouping is more ceremony than fact.
+		$batches = new TrafficServerBatch();
+		foreach ($batches->byVisitor(batch: $batch) as $group) {
 			$this->ingest->ingestForPortal(
 				portal: $portal,
 				events: $group['events'],
@@ -222,36 +249,6 @@ class TrafficController extends Controller {
 
 		return $this->noContent();
 	}//end server()
-
-
-	/**
-	 * The batch's events grouped by the visitor they belong to, each
-	 * event's own `remoteAddress` and `userAgent` winning over the batch's.
-	 *
-	 * @param array<string, mixed> $batch The decoded batch.
-	 *
-	 * @return array<int, array{ip: string, userAgent: string, events: array<int, mixed>}> The groups.
-	 */
-	private function byVisitor(array $batch): array {
-		$defaultAddress = (string)($batch['remoteAddress'] ?? '');
-		$defaultAgent = (string)($batch['userAgent'] ?? '');
-		$groups = [];
-		foreach (array_values($batch['events']) as $event) {
-			$address = $defaultAddress;
-			$agent = $defaultAgent;
-			if (is_array($event) === true) {
-				$address = (string)($event['remoteAddress'] ?? $defaultAddress);
-				$agent = (string)($event['userAgent'] ?? $defaultAgent);
-				unset($event['remoteAddress'], $event['userAgent']);
-			}
-
-			$key = $address . "\0" . $agent;
-			$groups[$key] ??= ['ip' => $address, 'userAgent' => $agent, 'events' => []];
-			$groups[$key]['events'][] = $event;
-		}
-
-		return array_values($groups);
-	}//end byVisitor()
 
 
 	/**
@@ -324,22 +321,12 @@ class TrafficController extends Controller {
 	#[AnonRateLimit(limit: 120, period: 60)]
 	#[UserRateLimit(limit: 120, period: 60)]
 	public function recording(): Response {
-		$raw = $this->body->read(max: self::MAX_RECORDING_BODY_BYTES);
-		if ($raw === null) {
-			return $this->refusal(reason: 'batch-too-large');
+		$chunk = $this->decoded(max: self::MAX_RECORDING_BODY_BYTES, bounded: false);
+		if ($chunk instanceof JSONResponse) {
+			return $chunk;
 		}
 
-		$chunk = json_decode($raw, true);
-		if (is_array($chunk) === false || is_array($chunk['events'] ?? null) === false || $chunk['events'] === []) {
-			return $this->refusal(reason: 'malformed-batch');
-		}
-
-		$slug = $chunk['portal'] ?? null;
-		if (is_string($slug) === false) {
-			$slug = null;
-		}
-
-		$portal = $this->resolver->resolveForCollector(request: $this->request, portalSlug: $slug);
+		$portal = $this->resolver->resolveForCollector(request: $this->request, portalSlug: $this->slugOf(batch: $chunk));
 		if ($portal !== null) {
 			$this->recordings->ingest(portal: $portal, body: $chunk, context: ['consent' => (($chunk['consent'] ?? false) === true)]);
 		}

@@ -69,37 +69,50 @@ class TrafficOutcomeParams {
 		$tagged = $this->tagged(params: $params, config: $config);
 		$out = [];
 		foreach ($params as $key => $value) {
-			if (str_starts_with($key, TrafficConfigResolver::CUSTOM_DIMENSION_PREFIX) === true) {
-				if (isset($declared[$key]) === true) {
-					$out[$key] = $value;
-				}
-
-				continue;
+			$kept = $this->kept(key: $key, value: $value, rules: ['declared' => $declared, 'tagged' => $tagged, 'form' => $formEvent, 'heat' => $heatEvent]);
+			if ($kept !== null) {
+				$out[$key] = $kept;
 			}
-
-			if (in_array($key, TrafficConfigResolver::EXPERIMENT_PARAMS, true) === true) {
-				if ($tagged === true) {
-					$out[$key] = $value;
-				}
-
-				continue;
-			}
-
-			if ($formEvent === true && in_array($key, TrafficConfigResolver::FORM_EVENT_PARAMS, true) === false) {
-				continue;
-			}
-
-			if ($heatEvent === true) {
-				$value = $this->heat(key: $key, value: $value);
-				if ($value === null) {
-					continue;
-				}
-			}
-
-			$out[$key] = $value;
 		}
 
 		return $out;
+	}
+
+	/**
+	 * One param as stored, or null to drop it.
+	 *
+	 * @param string                $key   The param key.
+	 * @param string|int|float|bool $value The bounded value.
+	 * @param array<string, mixed>  $rules `declared` (the custom dimension keys), `tagged`, `form` and `heat`.
+	 *
+	 * @return string|int|float|bool|null The value to store.
+	 */
+	private function kept(string $key, string|int|float|bool $value, array $rules): string|int|float|bool|null {
+		if (str_starts_with($key, TrafficConfigResolver::CUSTOM_DIMENSION_PREFIX) === true) {
+			if (isset($rules['declared'][$key]) === true) {
+				return $value;
+			}
+
+			return null;
+		}
+
+		if (in_array($key, TrafficConfigResolver::EXPERIMENT_PARAMS, true) === true) {
+			if ($rules['tagged'] === true) {
+				return $value;
+			}
+
+			return null;
+		}
+
+		if ($rules['form'] === true && in_array($key, TrafficConfigResolver::FORM_EVENT_PARAMS, true) === false) {
+			return null;
+		}
+
+		if ($rules['heat'] === true) {
+			return $this->heat(key: $key, value: $value);
+		}
+
+		return $value;
 	}
 
 	/**
@@ -139,11 +152,7 @@ class TrafficOutcomeParams {
 		}
 
 		if ($key === 'x' || $key === 'y' || $key === 'depth') {
-			if (is_numeric($value) === false || (float)$value < 0.0 || (float)$value > 1.0) {
-				return null;
-			}
-
-			return round((float)$value, 4);
+			return $this->fraction(value: $value);
 		}
 
 		if ($key === 'vw') {
@@ -159,6 +168,21 @@ class TrafficOutcomeParams {
 		}
 
 		return mb_substr(strtolower((string)$value), 0, 32);
+	}
+
+	/**
+	 * A fraction of the page, four decimals, or null when it is not one.
+	 *
+	 * @param string|int|float|bool $value The bounded value.
+	 *
+	 * @return float|null The fraction.
+	 */
+	private function fraction(string|int|float|bool $value): ?float {
+		if (is_numeric($value) === false || (float)$value < 0.0 || (float)$value > 1.0) {
+			return null;
+		}
+
+		return round((float)$value, 4);
 	}
 
 	/**
