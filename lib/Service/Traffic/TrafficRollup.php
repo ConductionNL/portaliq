@@ -47,12 +47,18 @@ class TrafficRollup {
 	 *
 	 * @param TrafficJourneyStats    $journeys   Counts pages and transitions.
 	 * @param TrafficDimensionCounts $dimensions Counts referrers, devices, searches and the like.
+	 * @param TrafficGoals           $goals      Evaluates the portal's goals.
+	 * @param TrafficFunnels         $funnels    Walks the portal's funnels.
+	 * @param TrafficFormStats       $forms      Counts what happened to each form.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly TrafficJourneyStats $journeys = new TrafficJourneyStats(),
 		private readonly TrafficDimensionCounts $dimensions = new TrafficDimensionCounts(),
+		private readonly TrafficGoals $goals = new TrafficGoals(),
+		private readonly TrafficFunnels $funnels = new TrafficFunnels(),
+		private readonly TrafficFormStats $forms = new TrafficFormStats(),
 	) {
 	}
 
@@ -63,12 +69,15 @@ class TrafficRollup {
 	 * @param string                                    $date         The UTC day, YYYY-MM-DD.
 	 * @param array<int, array<string, mixed>>          $sessions     The day's sessions, each `{visitor, explicit, events}`.
 	 * @param string                                    $aggregatedAt When this record was computed, ISO 8601.
-	 * @param array<string, bool>                       $options      `persistClientId` and `accountLinking`, the portal's switches.
+	 * @param array<string, mixed>                      $options      `persistClientId` and `accountLinking`, the portal's
+	 *                                                                switches; `goals`, `funnels` and `customDimensions`,
+	 *                                                                its resolved definitions.
 	 *
 	 * @return array<string, mixed> The `portalTrafficDaily` fields.
 	 *
 	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
 	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-visitors-must-be-counted-honestly-in-each-mode
+	 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
 	 */
 	public function build(string $portal, string $date, array $sessions, string $aggregatedAt, array $options = []): array {
 		$totals = $this->totals(sessions: $sessions);
@@ -88,6 +97,8 @@ class TrafficRollup {
 		if (($options['accountLinking'] ?? false) === true) {
 			$accounts = $totals['accounts'];
 		}
+
+		$goalDefinitions = $this->definitions(options: $options, key: 'goals');
 
 		return [
 			'portal' => $portal,
@@ -129,7 +140,21 @@ class TrafficRollup {
 				label: 'file'
 			),
 			'outbound' => $this->dimensions->perEvent(sessions: $sessions, name: 'outbound_click', keys: ['linkUrl', 'params.link_url'], label: 'url'),
-			'goals' => [],
+			'goals' => $this->goals->rows(goals: $goalDefinitions, sessions: $sessions),
+			'conversionRate' => $this->goals->conversionRate(goals: $goalDefinitions, sessions: $sessions),
+			'funnels' => $this->funnels->rows(funnels: $this->definitions(options: $options, key: 'funnels'), sessions: $sessions),
+			'forms' => $this->forms->rows(sessions: $sessions),
+			'notFound' => $this->dimensions->perEvent(
+				sessions: $sessions,
+				name: 'page_not_found',
+				keys: ['pagePath', 'pageLocation'],
+				label: 'path',
+				countKey: 'hits'
+			),
+			'customDimensions' => $this->dimensions->custom(
+				sessions: $sessions,
+				definitions: $this->definitions(options: $options, key: 'customDimensions')
+			),
 			'emails' => [
 				'opens' => (int)($totals['events']['email_open'] ?? 0),
 				'clicks' => (int)($totals['events']['email_click'] ?? 0),
@@ -137,6 +162,23 @@ class TrafficRollup {
 			'aggregatedAt' => $aggregatedAt,
 			'lastEventAt' => $totals['lastEventAt'],
 		];
+	}
+
+	/**
+	 * A list of definitions from the options, or [] when none were given.
+	 *
+	 * @param array<string, mixed> $options The options.
+	 * @param string               $key     `goals`, `funnels` or `customDimensions`.
+	 *
+	 * @return array<int, array<string, mixed>> The definitions.
+	 */
+	private function definitions(array $options, string $key): array {
+		$value = $options[$key] ?? [];
+		if (is_array($value) === false) {
+			return [];
+		}
+
+		return array_values(array_filter($value, static fn ($row): bool => is_array($row)));
 	}
 
 	/**

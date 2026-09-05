@@ -24,7 +24,23 @@ export const KNOWN_EVENTS = [
 	'file_download',
 	'search',
 	'form_submit',
+	'form_start',
+	'form_field',
+	'form_abandon',
+	'page_not_found',
 ]
+
+/**
+ * The attribute an external page puts on a form it wants observed, and
+ * the one the renderer (or an external page) puts on its not-found state.
+ */
+export const FORM_ATTRIBUTE = 'data-portaliq-form'
+export const STATUS_ATTRIBUTE = 'data-portaliq-status'
+
+/**
+ * The prefix a custom dimension travels under (CONTRACT, phase 3).
+ */
+export const DIMENSION_PREFIX = 'cd_'
 
 /**
  * The most events one batch may carry (CONTRACT section 1).
@@ -297,6 +313,81 @@ export function randomId(cryptoApi) {
 		fallback += Math.floor(Math.random() * 16).toString(16)
 	}
 	return fallback
+}
+
+/**
+ * The id a form is reported under: the `data-portaliq-form` attribute,
+ * else the form's id, name or action. Never a value from it.
+ *
+ * @param {object|null} form The form element: `{ getAttribute, id }`.
+ * @return {string} The id, bounded, or ''.
+ */
+export function formIdOf(form) {
+	if (!form || typeof form.getAttribute !== 'function') {
+		return ''
+	}
+	const id =
+		form.getAttribute(FORM_ATTRIBUTE)
+		|| form.id
+		|| form.getAttribute('name')
+		|| form.getAttribute('action')
+		|| ''
+	return String(id).substring(0, 256)
+}
+
+/**
+ * The id a field is reported under: its id, else its name. Never its
+ * value, which this function does not read.
+ *
+ * @param {object|null} field The field element: `{ id, name, tagName }`.
+ * @return {string} The id, bounded, or ''.
+ */
+export function fieldIdOf(field) {
+	if (!field || !field.tagName) {
+		return ''
+	}
+	const tag = String(field.tagName).toUpperCase()
+	if (tag !== 'INPUT' && tag !== 'SELECT' && tag !== 'TEXTAREA') {
+		return ''
+	}
+	if (
+		tag === 'INPUT'
+		&& (String(field.type).toLowerCase() === 'hidden'
+			|| String(field.type).toLowerCase() === 'submit'
+			|| String(field.type).toLowerCase() === 'button')
+	) {
+		return ''
+	}
+	return String(field.id || field.name || '').substring(0, 256)
+}
+
+/**
+ * The custom dimension params to attach: `cd_<id>` for every declared id
+ * that has a value. An id the portal did not declare is not sent, which
+ * mirrors the collector's rule so nothing is posted to be stripped.
+ *
+ * @param {object} traffic The resolved `traffic` block.
+ * @param {object} values  Id => value, as the page set them.
+ * @return {object} The params.
+ */
+export function dimensionParams(traffic, values) {
+	const declared = (traffic && traffic.customDimensions) || []
+	const out = {}
+	if (!Array.isArray(declared) || !values) {
+		return out
+	}
+	for (let i = 0; i < declared.length; i++) {
+		const id = declared[i] && declared[i].id
+		if (!id) {
+			continue
+		}
+		const value = values[id]
+		if (value === '' || value === null || value === undefined) {
+			continue
+		}
+		out[DIMENSION_PREFIX + id] = String(value).substring(0, 256)
+	}
+	return out
 }
 
 /**

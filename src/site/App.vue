@@ -204,7 +204,8 @@
 					v-else-if="error"
 					class="container"
 					role="alert"
-					data-testid="site-error">
+					data-testid="site-error"
+					:data-portaliq-status="error.status === 404 ? '404' : null">
 					<h2>
 						{{
 							error.status === 404

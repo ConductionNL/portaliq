@@ -106,13 +106,17 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// `accounts` arrive and `newVisitors` becomes nullable
 		// (portal-traffic-visitors-and-geo): null in cookieless mode, because
 		// a daily hash cannot say whether it was here yesterday and a zero
-		// would claim it can. Additive. Every new schema is listed in
+		// would claim it can. 0.19.0 (portalTrafficDaily 0.3.0, portal 0.4.0,
+		// portalTrafficEvent 0.2.0): goals, funnels, forms, missing pages and
+		// custom dimensions (portal-traffic-outcomes); the form and
+		// not-found events join the enum. Additive. Every new schema is listed in
 		// `components.registers.portaliq.schemas` (ImportHandler binds only
 		// what is listed there) and declares a non-empty `read` rule.
-		$this->assertSame('0.18.0', self::$register['info']['version']);
-		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalTrafficDaily']['version']);
+		$this->assertSame('0.19.0', self::$register['info']['version']);
+		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalTrafficDaily']['version']);
+		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalTrafficEvent']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['page']['version']);
-		$this->assertSame('0.3.0', self::$register['components']['schemas']['portal']['version']);
+		$this->assertSame('0.4.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('0.5.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalSession']['version']);

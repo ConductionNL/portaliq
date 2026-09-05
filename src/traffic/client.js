@@ -17,13 +17,17 @@ import {
 	allowedEvent,
 	chunk,
 	classifyLink,
+	dimensionParams,
 	envelope,
+	fieldIdOf,
+	formIdOf,
 	mayPersist,
 	optedOut,
 	randomId,
 	readConfig,
 	scrollPercent,
 	searchTermFrom,
+	STATUS_ATTRIBUTE,
 } from './helpers.js'
 
 /**
@@ -52,7 +56,7 @@ const FLUSH_AT = 20
  */
 export function boot(win) {
 	const doc = win.document
-	const api = { track() {}, consent() {}, disable() {} }
+	const api = { track() {}, consent() {}, disable() {}, dimension() {} }
 	win.portaliqTraffic = api
 
 	if (optedOut(win.navigator)) {
@@ -76,6 +80,13 @@ export function boot(win) {
 		sessionId: '',
 		scrolled: false,
 		location: '',
+		// Form analytics (portal-traffic-outcomes): the forms started on
+		// this page, by id, each with the field in focus and when it got
+		// it. Ids and times only; no field's value is ever read.
+		forms: {},
+		// Custom dimensions the page set, by id, attached to what is sent.
+		dimensions: {},
+		notFound: false,
 	}
 
 	const siteUrl =
@@ -124,11 +135,20 @@ export function boot(win) {
 			state.queue = []
 			forgetIdentity()
 		}
+		api.dimension = (id, value) => {
+			state.dimensions[String(id || '')] = value
+		}
 
 		doc.addEventListener('click', onClick, true)
 		doc.addEventListener('submit', onSubmit, true)
+		doc.addEventListener('focusin', onFocusIn, true)
+		doc.addEventListener('focusout', onFocusOut, true)
 		win.addEventListener('scroll', onScroll, { passive: true })
-		win.addEventListener('pagehide', flush)
+		win.addEventListener('pagehide', () => {
+			abandonForms()
+			flush()
+		})
+		watchNotFound()
 		doc.addEventListener('visibilitychange', () => {
 			if (doc.visibilityState === 'hidden') {
 				flush()
@@ -153,7 +173,10 @@ export function boot(win) {
 		}
 		state.location = location
 		state.scrolled = false
+		state.notFound = false
+		state.forms = {}
 		record('page_view', {})
+		notFoundCheck()
 		const term = searchTermFrom(location)
 		if (term !== '') {
 			record('search', { searchTerm: term })
@@ -233,20 +256,125 @@ export function boot(win) {
 
 	/**
 	 * A form submission, by the form's id or name only. Never a value.
+	 * A submitted form is no longer one that can be abandoned.
 	 *
 	 * @param {Event} event The submit.
 	 * @return {void}
 	 */
 	function onSubmit(event) {
-		const form = event.target
-		const id =
-			form
-			&& (form.id
-				|| form.getAttribute('name')
-				|| form.getAttribute('action')
-				|| '')
-		record('form_submit', { formId: String(id || '').substring(0, 256) })
+		const id = formIdOf(event.target)
+		leaveField(id, Date.now())
+		delete state.forms[id]
+		record('form_submit', { formId: id })
 		flush()
+	}
+
+	/**
+	 * A field got focus: the first one on a form starts it, and the time
+	 * is noted so the blur can say how long the field held focus.
+	 *
+	 * @param {Event} event The focusin.
+	 * @return {void}
+	 */
+	function onFocusIn(event) {
+		const field = event.target
+		const fieldId = fieldIdOf(field)
+		const formId = formIdOf(field && field.form)
+		if (fieldId === '' || formId === '') {
+			return
+		}
+		if (!state.forms[formId]) {
+			state.forms[formId] = { field: '', since: 0, last: '' }
+			record('form_start', { formId })
+		}
+		state.forms[formId].field = fieldId
+		state.forms[formId].since = Date.now()
+	}
+
+	/**
+	 * A field lost focus: report which one and for how long. What was
+	 * typed into it is not read.
+	 *
+	 * @param {Event} event The focusout.
+	 * @return {void}
+	 */
+	function onFocusOut(event) {
+		const field = event.target
+		leaveField(formIdOf(field && field.form), Date.now())
+	}
+
+	/**
+	 * Close the field in focus on a started form, if any, as one
+	 * `form_field` with the milliseconds it held focus.
+	 *
+	 * @param {string} formId The form.
+	 * @param {number} now    The clock.
+	 * @return {void}
+	 */
+	function leaveField(formId, now) {
+		const form = state.forms[formId]
+		if (!form || form.field === '') {
+			return
+		}
+		record('form_field', {
+			formId,
+			fieldId: form.field,
+			ms: Math.max(0, now - form.since),
+		})
+		form.last = form.field
+		form.field = ''
+	}
+
+	/**
+	 * The page is going away: every started, unsubmitted form is
+	 * abandoned, with the field the visitor was last on.
+	 *
+	 * @return {void}
+	 */
+	function abandonForms() {
+		const now = Date.now()
+		Object.keys(state.forms).forEach((formId) => {
+			leaveField(formId, now)
+			record('form_abandon', {
+				formId,
+				lastFieldId: state.forms[formId].last,
+			})
+		})
+		state.forms = {}
+	}
+
+	/**
+	 * Report the not-found state once per page view, when the document
+	 * carries the renderer's marker now.
+	 *
+	 * @return {void}
+	 */
+	function notFoundCheck() {
+		if (state.notFound || !doc.querySelector) {
+			return
+		}
+		if (doc.querySelector('[' + STATUS_ATTRIBUTE + '="404"]')) {
+			state.notFound = true
+			record('page_not_found', {})
+		}
+	}
+
+	/**
+	 * The renderer decides it has no page only after it asked the API, so
+	 * the marker appears after the page view; watch for it.
+	 *
+	 * @return {void}
+	 */
+	function watchNotFound() {
+		if (typeof win.MutationObserver !== 'function' || !doc.documentElement) {
+			return
+		}
+		new win.MutationObserver(notFoundCheck).observe(doc.documentElement, {
+			childList: true,
+			subtree: true,
+			attributes: true,
+			attributeFilter: [STATUS_ATTRIBUTE],
+		})
 	}
 
 	/**
@@ -273,13 +401,15 @@ export function boot(win) {
 			pageTitle: String(doc.title || '').substring(0, 256),
 			params: {},
 		}
+		const params = dimensionParams(state.traffic, state.dimensions)
 		Object.keys(fields).forEach((key) => {
 			if (key === 'searchTerm' || key === 'linkUrl' || key === 'fileName') {
 				event[key] = fields[key]
 				return
 			}
-			event.params[key] = fields[key]
+			params[key] = fields[key]
 		})
+		event.params = params
 		if (state.clientId) {
 			event.clientId = state.clientId
 			event.sessionId = state.sessionId

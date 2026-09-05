@@ -26,6 +26,7 @@ import { expect, test } from '@playwright/test'
 import { execFileSync } from 'node:child_process'
 import path from 'node:path'
 import { resolveBaseURL } from './base-url.ts'
+import { seededTraffic } from './lib/traffic.ts'
 
 const BASE = resolveBaseURL()
 const APP = `${BASE}/index.php/apps/portaliq`
@@ -255,33 +256,6 @@ async function tile(page: Page, testId: string): Promise<number> {
 		.locator('.cn-stats-block__count-value')
 		.innerText()
 	return Number(text.replace(/[^\d]/g, '') || '0')
-}
-
-/**
- * The seeded traffic block, plus what a test adds.
- *
- * @param extra Overrides.
- */
-function seededTraffic(
-	extra: Record<string, unknown> = {},
-): Record<string, unknown> {
-	return {
-		enabled: true,
-		events: ['page_view', 'session_start', 'scroll', 'outbound_click', 'search'],
-		dimensions: [
-			'pageReferrer',
-			'pageTitle',
-			'searchTerm',
-			'linkUrl',
-			'referrerHost',
-			'channel',
-			'deviceType',
-			'browser',
-			'os',
-			'language',
-		],
-		...extra,
-	}
 }
 
 test.describe('traffic visitors and geography', () => {

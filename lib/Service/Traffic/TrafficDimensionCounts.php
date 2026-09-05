@@ -136,12 +136,13 @@ class TrafficDimensionCounts {
 	 * @param string                           $name     The event name.
 	 * @param array<int, string>               $keys     Fields to try, in order.
 	 * @param string                           $label    The row key for the value.
+	 * @param string                           $countKey The row key for the count.
 	 *
-	 * @return array<int, array<string, mixed>> Rows of [label => value, count => n], ranked.
+	 * @return array<int, array<string, mixed>> Rows of [label => value, countKey => n], ranked.
 	 *
 	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
 	 */
-	public function perEvent(array $sessions, string $name, array $keys, string $label): array {
+	public function perEvent(array $sessions, string $name, array $keys, string $label, string $countKey = 'count'): array {
 		$counts = [];
 		foreach ($sessions as $session) {
 			foreach ($session['events'] as $event) {
@@ -160,12 +161,53 @@ class TrafficDimensionCounts {
 
 		$out = [];
 		foreach ($counts as $value => $count) {
-			$out[] = [$label => (string)$value, 'count' => $count];
+			$out[] = [$label => (string)$value, $countKey => $count];
 		}
 
-		usort($out, static fn (array $a, array $b): int => [$b['count'], $a[$label]] <=> [$a['count'], $b[$label]]);
+		usort($out, static fn (array $a, array $b): int => [$b[$countKey], $a[$label]] <=> [$a[$countKey], $b[$label]]);
 
 		return array_slice($out, 0, self::TOP);
+	}
+
+	/**
+	 * The custom dimensions (portal-traffic-outcomes): per declared id, a
+	 * map of value to count. A session-scoped dimension counts each
+	 * session once, by the first non-empty value it carried; an
+	 * event-scoped one counts every event that carried the value.
+	 *
+	 * @param array<int, array<string, mixed>>   $sessions    The sessions.
+	 * @param array<int, array<string, string>>  $definitions The declared dimensions, `{id, name, scope}`.
+	 *
+	 * @return array<string, array<string, int>> Id => (value => count), values sorted.
+	 *
+	 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-custom-dimensions-must-be-declared-before-they-are-stored
+	 */
+	public function custom(array $sessions, array $definitions): array {
+		$out = [];
+		foreach ($definitions as $definition) {
+			$id = (string)($definition['id'] ?? '');
+			$key = 'cd_' . $id;
+			$perSession = (($definition['scope'] ?? 'event') === 'session');
+			$map = [];
+			foreach ($sessions as $session) {
+				foreach (($session['events'] ?? []) as $event) {
+					$value = $this->firstOf(event: $event, keys: ['params.' . $key]);
+					if ($value === '') {
+						continue;
+					}
+
+					$map[$value] = ($map[$value] ?? 0) + 1;
+					if ($perSession === true) {
+						break;
+					}
+				}
+			}
+
+			ksort($map);
+			$out[$id] = array_slice($map, 0, self::TOP, true);
+		}
+
+		return $out;
 	}
 
 	/**

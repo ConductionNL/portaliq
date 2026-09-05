@@ -304,7 +304,58 @@ class TrafficRollupTest extends TestCase {
 		$this->assertSame(['GB' => 1], $record['regions']);
 	}//end testARegionSeenLaterInTheSessionStillCounts()
 
+	/**
+	 * The outcome fields (portal-traffic-outcomes) come from the
+	 * definitions in the options: a goal met by one of two sessions, a
+	 * funnel walked by one, a form started and abandoned, a missing page,
+	 * and a session-scoped dimension counted once per session.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
+	 */
+	public function testOutcomesAreRolledUpFromTheDefinitions(): void {
+		$options = [
+			'goals' => [['id' => 'contact', 'name' => 'Contact', 'type' => 'page_reached', 'match' => ['pathEquals' => '/contact'], 'value' => 10.0]],
+			'funnels' => [['id' => 'f', 'name' => 'F', 'steps' => [
+				['name' => 'Home', 'match' => ['pathEquals' => '/']],
+				['name' => 'Contact', 'match' => ['pathEquals' => '/contact']],
+			]]],
+			'customDimensions' => [['id' => 'audience', 'name' => 'Audience', 'scope' => 'session']],
+		];
+		$record = $this->rollup(events: [
+			$this->event(at: '2026-09-04T10:00:00.000Z', path: '/', visitor: 'h1', extra: ['params' => ['cd_audience' => 'inwoner']]),
+			$this->event(at: '2026-09-04T10:00:10.000Z', path: '/contact', visitor: 'h1', extra: ['params' => ['cd_audience' => 'inwoner']]),
+			$this->event(at: '2026-09-04T10:00:20.000Z', path: '/contact', visitor: 'h1', name: 'form_start', extra: ['params' => ['formId' => 'contact']]),
+			$this->event(at: '2026-09-04T10:00:30.000Z', path: '/contact', visitor: 'h1', name: 'form_abandon', extra: ['params' => ['formId' => 'contact', 'lastFieldId' => 'email']]),
+			$this->event(at: '2026-09-04T11:00:00.000Z', path: '/', visitor: 'h2', extra: ['params' => ['cd_audience' => 'ondernemer']]),
+			$this->event(at: '2026-09-04T11:00:05.000Z', path: '/oud', visitor: 'h2', name: 'page_not_found'),
+		], options: $options);
+
+		$this->assertSame([['id' => 'contact', 'name' => 'Contact', 'conversions' => 1, 'completions' => 1, 'value' => 10.0]], $record['goals']);
+		$this->assertSame(0.5, $record['conversionRate']);
+		$this->assertSame([2, 1], array_column($record['funnels'][0]['steps'], 'sessions'), 'both sessions saw the home page; one went on to contact');
+		$this->assertSame('contact', $record['forms'][0]['formId']);
+		$this->assertSame(1, $record['forms'][0]['abandons']);
+		$this->assertSame([['path' => '/oud', 'hits' => 1]], $record['notFound']);
+		$this->assertSame(['audience' => ['inwoner' => 1, 'ondernemer' => 1]], $record['customDimensions']);
+	}//end testOutcomesAreRolledUpFromTheDefinitions()
+
+
+	/**
+	 * Without definitions the outcome fields are empty, never absent.
+	 *
+	 * @return void
+	 */
 	public function testAnEmptyDayIsZeros(): void {
+		$empty = (new TrafficRollup())->build(portal: 'p', date: '2026-09-04', sessions: [], aggregatedAt: 'x');
+		$this->assertSame([], $empty['goals']);
+		$this->assertSame(0.0, $empty['conversionRate']);
+		$this->assertSame([], $empty['funnels']);
+		$this->assertSame([], $empty['forms']);
+		$this->assertSame([], $empty['notFound']);
+		$this->assertSame([], $empty['customDimensions']);
+
 		$record = (new TrafficRollup())->build(portal: 'p', date: '2026-09-04', sessions: [], aggregatedAt: 'x');
 
 		$this->assertSame(0, $record['pageViews']);

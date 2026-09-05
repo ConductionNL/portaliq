@@ -44,6 +44,10 @@ import CustomExample from './views/CustomExample.vue'
 import FlowDetailSidebar from './views/flows/FlowDetailSidebar.vue'
 import PageLayoutDesigner from './views/PageLayoutDesigner.vue'
 import TrafficDaily from './widgets/TrafficDaily.vue'
+import TrafficDimensions from './widgets/TrafficDimensions.vue'
+import TrafficForms from './widgets/TrafficForms.vue'
+import TrafficFunnels from './widgets/TrafficFunnels.vue'
+import TrafficGoals from './widgets/TrafficGoals.vue'
 import TrafficJourneys from './widgets/TrafficJourneys.vue'
 import TrafficOverview from './widgets/TrafficOverview.vue'
 import TrafficPages from './widgets/TrafficPages.vue'
@@ -114,6 +118,30 @@ export default {
 		component: TrafficVisitors,
 		...TRAFFIC_WIDGET_META,
 		_note: 'Visitors, new versus returning, signed-in accounts, and the device, browser, OS, language and region breakdowns merged across the daily rollups (portal-traffic-visitors-and-geo). Custom because a cookieless portal must read "not available" for new versus returning rather than a zero, and a dimension the portal never enabled must read "not measured" rather than an empty list.',
+	},
+	TrafficGoals: {
+		kind: 'widget',
+		component: TrafficGoals,
+		...TRAFFIC_WIDGET_META,
+		_note: 'The portal\'s goals with conversions, completions, rate and value merged across the daily rollups (portal-traffic-outcomes). Custom because a portal without goals must say so and link to where they are declared, not show an empty table that reads as "nothing converted".',
+	},
+	TrafficFunnels: {
+		kind: 'widget',
+		component: TrafficFunnels,
+		...TRAFFIC_WIDGET_META,
+		_note: 'One CSS bar per funnel step with sessions and drop-off, merged across the daily rollups (portal-traffic-outcomes). Custom because funnels[] is nested per rollup and the drop-off has to be re-derived from the summed sessions, not averaged.',
+	},
+	TrafficForms: {
+		kind: 'widget',
+		component: TrafficForms,
+		...TRAFFIC_WIDGET_META,
+		_note: 'Per form: starts, submits, abandons, completion rate and the field most people left on (portal-traffic-outcomes). Ids and times only; no value is collected, so none can be shown.',
+	},
+	TrafficDimensions: {
+		kind: 'widget',
+		component: TrafficDimensions,
+		...TRAFFIC_WIDGET_META,
+		_note: 'The portal\'s custom dimensions with their values ranked (portal-traffic-outcomes). Custom because a declared dimension with nothing recorded must still be listed, so "declared but never set" is visible.',
 	},
 
 	// -------------------------------------------------------------------------

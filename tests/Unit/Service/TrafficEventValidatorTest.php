@@ -414,6 +414,101 @@ class TrafficEventValidatorTest extends TestCase {
 
 
 	/**
+	 * A form event keeps only the whitelisted params: a value typed into a
+	 * field cannot reach storage even from a client that sends it
+	 * (portal-traffic-outcomes).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-form-analytics-must-never-carry-a-value
+	 */
+	public function testAFormEventKeepsOnlyIdsAndTimes(): void {
+		$config = $this->resolver->resolve(
+			portal: ['traffic' => ['enabled' => true, 'events' => ['form_start', 'form_field', 'form_abandon', 'form_submit']]]
+		);
+
+		$result = $this->validator->validate(
+			event: [
+				'name' => 'form_field',
+				'sequence' => 3,
+				'pageLocation' => 'https://x/campagne',
+				'params' => ['formId' => 'aanmelden', 'fieldId' => 'email', 'ms' => 1200, 'value' => 'jan@example.org', 'label' => 'E-mail'],
+			],
+			config: $config,
+			hasConsent: true,
+			resolver: $this->resolver
+		);
+
+		$this->assertTrue($result['ok']);
+		$this->assertSame(['formId' => 'aanmelden', 'fieldId' => 'email', 'ms' => 1200], $result['event']['params']);
+
+		$abandon = $this->validator->validate(
+			event: [
+				'name' => 'form_abandon',
+				'sequence' => 4,
+				'pageLocation' => 'https://x/campagne',
+				'params' => ['formId' => 'aanmelden', 'lastFieldId' => 'email', 'values' => 'x'],
+			],
+			config: $config,
+			hasConsent: true,
+			resolver: $this->resolver
+		);
+		$this->assertSame(['formId' => 'aanmelden', 'lastFieldId' => 'email'], $abandon['event']['params']);
+	}//end testAFormEventKeepsOnlyIdsAndTimes()
+
+
+	/**
+	 * A form event is refused, not stripped, when the portal did not enable
+	 * it: form analytics is a decision the operator makes.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-form-analytics-must-never-carry-a-value
+	 */
+	public function testAFormEventIsRefusedUnlessEnabled(): void {
+		$result = $this->validator->validate(
+			event: ['name' => 'form_field', 'sequence' => 0, 'pageLocation' => 'https://x/', 'params' => ['formId' => 'f', 'fieldId' => 'a', 'ms' => 1]],
+			config: $this->openConfig(),
+			hasConsent: true,
+			resolver: $this->resolver
+		);
+
+		$this->assertFalse($result['ok']);
+		$this->assertSame('event-not-enabled', $result['reason']);
+	}//end testAFormEventIsRefusedUnlessEnabled()
+
+
+	/**
+	 * A custom dimension survives only when the portal declared its id;
+	 * the rest of the params are untouched.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-custom-dimensions-must-be-declared-before-they-are-stored
+	 */
+	public function testAnUndeclaredCustomDimensionIsStripped(): void {
+		$config = $this->resolver->resolve(
+			portal: ['traffic' => ['enabled' => true, 'customDimensions' => [['id' => 'audience', 'name' => 'Audience', 'scope' => 'session']]]]
+		);
+
+		$result = $this->validator->validate(
+			event: [
+				'name' => 'page_view',
+				'sequence' => 0,
+				'pageLocation' => 'https://x/',
+				'params' => ['cd_audience' => 'inwoner', 'cd_secret' => 'bsn', 'percent' => 90],
+			],
+			config: $config,
+			hasConsent: true,
+			resolver: $this->resolver
+		);
+
+		$this->assertTrue($result['ok']);
+		$this->assertSame(['cd_audience' => 'inwoner', 'percent' => 90], $result['event']['params']);
+	}//end testAnUndeclaredCustomDimensionIsStripped()
+
+
+	/**
 	 * The client clock is clamped to the server's, and refused when it is
 	 * not a clock problem any more.
 	 *

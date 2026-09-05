@@ -22,6 +22,7 @@ namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use OCA\Portaliq\Service\Traffic\TrafficOutcomeParams;
 use Throwable;
 
 /**
@@ -98,6 +99,18 @@ class TrafficEventValidator {
 	public const MAX_AGE_SECONDS = 7 * 86400;
 
 	/**
+	 * Constructor.
+	 *
+	 * @param TrafficOutcomeParams $outcomeParams The form and custom-dimension param rules.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private readonly TrafficOutcomeParams $outcomeParams = new TrafficOutcomeParams(),
+	) {
+	}
+
+	/**
 	 * Validate and normalise one event against a portal's configuration.
 	 *
 	 * @param array<string, mixed>   $event      The posted event.
@@ -141,7 +154,11 @@ class TrafficEventValidator {
 			// is only kept when the PORTAL allowed it to exist.
 			'sessionId' => $this->string(value: ($event['sessionId'] ?? null), max: 64),
 			'clientId' => $this->clientId(event: $event, config: $config, hasConsent: $hasConsent),
-			'params' => $this->params(value: ($event['params'] ?? null)),
+			'params' => $this->outcomeParams->filter(
+				name: $this->string(value: $event['name'], max: 64),
+				params: $this->params(value: ($event['params'] ?? null)),
+				config: $config
+			),
 		];
 
 		// Dimensions the portal did not enable are STRIPPED, and the event is
