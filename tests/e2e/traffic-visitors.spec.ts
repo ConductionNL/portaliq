@@ -475,8 +475,9 @@ test.describe('traffic visitors and geography', () => {
 		await range.locator('input').first().click()
 		await range.locator('input').first().fill('Custom')
 		await page.keyboard.press('Enter')
-		await page.getByTestId('traffic-range-from').locator('input').fill(day)
-		await page.getByTestId('traffic-range-to').locator('input').fill(day)
+		// The native picker puts the id on the input itself.
+		await page.locator('input#traffic-range-from').fill(day)
+		await page.locator('input#traffic-range-to').fill(day)
 		await expect(page.getByTestId('traffic-tile-page-views')).toContainText(
 			'1 day',
 			{ timeout: 15_000 },
