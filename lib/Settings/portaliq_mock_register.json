@@ -3509,6 +3509,226 @@
         "searchTerm": "Voorbeeld Searchterm 3",
         "linkUrl": "Voorbeeld Linkurl 3",
         "fileName": "Voorbeeld Filename 3"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "form",
+          "slug": "form-contact"
+        },
+        "portal": "open-tilburg",
+        "pageId": "page-contact",
+        "pageRoute": "/contact",
+        "sourceApp": "pipelinq",
+        "externalReference": "pipelinq:lead-form:contact",
+        "campaign": {
+          "campaign": "najaarsactie",
+          "source": "nieuwsbrief",
+          "medium": "email"
+        },
+        "fields": [
+          {
+            "id": "name",
+            "label": "Naam",
+            "type": "text",
+            "required": true
+          },
+          {
+            "id": "email",
+            "label": "E-mailadres",
+            "type": "email",
+            "required": true
+          },
+          {
+            "id": "message",
+            "label": "Bericht",
+            "type": "textarea",
+            "required": false
+          }
+        ],
+        "submitLabel": "Neem contact op",
+        "consentText": "Wij gebruiken uw gegevens alleen om deze aanvraag af te handelen.",
+        "status": "active"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "form",
+          "slug": "form-offerte"
+        },
+        "portal": "open-tilburg",
+        "pageId": "page-offerte",
+        "pageRoute": "/offerte",
+        "sourceApp": "pipelinq",
+        "externalReference": "pipelinq:lead-form:offerte",
+        "campaign": {
+          "campaign": "linkedin-q3",
+          "source": "linkedin",
+          "medium": "social"
+        },
+        "fields": [
+          {
+            "id": "company",
+            "label": "Organisatie",
+            "type": "text",
+            "required": true
+          },
+          {
+            "id": "email",
+            "label": "E-mailadres",
+            "type": "email",
+            "required": true
+          },
+          {
+            "id": "size",
+            "label": "Aantal medewerkers",
+            "type": "select",
+            "required": false,
+            "options": [
+              "1-10",
+              "11-50",
+              "51-250",
+              "250+"
+            ]
+          }
+        ],
+        "submitLabel": "Vraag een offerte aan",
+        "consentText": "Wij gebruiken uw gegevens alleen om deze aanvraag af te handelen.",
+        "status": "active"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "form",
+          "slug": "form-nieuwsbrief"
+        },
+        "portal": "open-venray",
+        "pageId": "page-nieuwsbrief",
+        "pageRoute": "/nieuwsbrief",
+        "sourceApp": "pipelinq",
+        "externalReference": "pipelinq:lead-form:nieuwsbrief",
+        "campaign": {
+          "campaign": "",
+          "source": "",
+          "medium": ""
+        },
+        "fields": [
+          {
+            "id": "email",
+            "label": "E-mailadres",
+            "type": "email",
+            "required": true
+          }
+        ],
+        "submitLabel": "Inschrijven",
+        "consentText": "Wij gebruiken uw gegevens alleen om deze aanvraag af te handelen.",
+        "status": "draft"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "landingPageSubmission",
+          "slug": "landingpagesubmission-contact-1"
+        },
+        "formId": "form-contact",
+        "pageId": "page-contact",
+        "pageRoute": "/contact",
+        "portal": "open-tilburg",
+        "sourceApp": "pipelinq",
+        "externalReference": "pipelinq:lead-form:contact",
+        "campaign": {
+          "campaign": "najaarsactie",
+          "source": "nieuwsbrief",
+          "medium": "email"
+        },
+        "values": {
+          "name": "Voorbeeld naam",
+          "email": "demo@example.org",
+          "message": "Voorbeeld bericht"
+        },
+        "utmFirstTouch": {
+          "campaign": "najaarsactie",
+          "source": "nieuwsbrief",
+          "medium": "email"
+        },
+        "utmLastTouch": {
+          "campaign": "najaarsactie",
+          "source": "nieuwsbrief",
+          "medium": "email"
+        },
+        "referrer": "https://www.google.nl/",
+        "submittedAt": "2026-09-01T09:10:00+00:00",
+        "nonce": "demo-nonce-contact-001"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "landingPageSubmission",
+          "slug": "landingpagesubmission-offerte-1"
+        },
+        "formId": "form-offerte",
+        "pageId": "page-offerte",
+        "pageRoute": "/offerte",
+        "portal": "open-tilburg",
+        "sourceApp": "pipelinq",
+        "externalReference": "pipelinq:lead-form:offerte",
+        "campaign": {
+          "campaign": "linkedin-q3",
+          "source": "linkedin",
+          "medium": "social"
+        },
+        "values": {
+          "company": "Voorbeeld organisatie",
+          "email": "demo@example.org",
+          "size": "Voorbeeld aantal medewerkers"
+        },
+        "utmFirstTouch": {
+          "campaign": "linkedin-q3",
+          "source": "linkedin",
+          "medium": "social"
+        },
+        "utmLastTouch": {
+          "campaign": "linkedin-q3",
+          "source": "linkedin",
+          "medium": "social"
+        },
+        "referrer": "https://www.google.nl/",
+        "submittedAt": "2026-09-02T09:20:00+00:00",
+        "nonce": "demo-nonce-offerte-002"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "landingPageSubmission",
+          "slug": "landingpagesubmission-nieuwsbrief-1"
+        },
+        "formId": "form-nieuwsbrief",
+        "pageId": "page-nieuwsbrief",
+        "pageRoute": "/nieuwsbrief",
+        "portal": "open-venray",
+        "sourceApp": "pipelinq",
+        "externalReference": "pipelinq:lead-form:nieuwsbrief",
+        "campaign": {
+          "campaign": "",
+          "source": "",
+          "medium": ""
+        },
+        "values": {
+          "email": "demo@example.org"
+        },
+        "utmFirstTouch": {
+          "campaign": "",
+          "source": "",
+          "medium": ""
+        },
+        "utmLastTouch": {
+          "campaign": "",
+          "source": "",
+          "medium": ""
+        },
+        "referrer": "https://www.google.nl/",
+        "submittedAt": "2026-09-03T09:30:00+00:00",
+        "nonce": "demo-nonce-nieuwsbrief-003"
       }
     ]
   }
