@@ -38,7 +38,9 @@
  * @spec openspec/specs/supplier-portal/spec.md#dispatch-is-decoupled-from-the-request-path
  */
 
-import { test, expect, type Page, type APIRequestContext } from '@playwright/test'
+import type { APIRequestContext, Page } from '@playwright/test'
+
+import { expect, test } from '@playwright/test'
 
 // Pretty-URL app paths, matching the convention already used by
 // tests/e2e/portal-inbox.spec.ts (`/apps/portaliq/...`, no `index.php`).

@@ -32,6 +32,7 @@ use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\CmsReader;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\TrafficConfigResolver;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -39,6 +40,7 @@ use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IURLGenerator;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -60,6 +62,12 @@ use Psr\Log\LoggerInterface;
  * is deliberately THE single trust comparator (contract-v2 design decision);
  * every re-check calls it statically so the ordering can never fork. Same
  * reasoning, and the same suppression, as ContributionController.
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveParameterList)   -- ten parameters, of which
+ * `$appName` and `$request` are Nextcloud's own `Controller` contract and
+ * cannot be dropped or grouped. The class injects eight collaborators of its
+ * own, under the threshold; folding them into a parameter object would hide
+ * the dependencies from the container rather than remove them.
  */
 class ContentController extends Controller {
 
@@ -75,6 +83,8 @@ class ContentController extends Controller {
 	 * @param PortalContributionFilter   $contribFilter Scopes that aggregate to one portal.
 	 * @param LoggerInterface            $logger       Records a provider failure the visitor never sees.
 	 * @param PortalSessionService       $session      Resolves the caller's portal session for the content gate.
+	 * @param TrafficConfigResolver      $traffic      Resolves the portal's measurement configuration.
+	 * @param IURLGenerator              $urlGenerator Builds the absolute collector URL.
 	 *
 	 * @return void
 	 */
@@ -87,6 +97,8 @@ class ContentController extends Controller {
 		private readonly PortalContributionFilter $contribFilter,
 		private readonly LoggerInterface $logger,
 		private readonly PortalSessionService $session,
+		private readonly TrafficConfigResolver $traffic,
+		private readonly IURLGenerator $urlGenerator,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -222,6 +234,13 @@ class ContentController extends Controller {
 				// Provider secrets are not here and never will be; they live in
 				// the credential broker.
 				'authentication' => ['modes' => array_values((array)($auth['modes'] ?? ['public']))],
+				// The resolved measurement configuration, defaults filled in,
+				// so the client sends only what the portal asked for; and the
+				// absolute collector URL, so a statically built site on its
+				// own domain knows where to post. Nothing here is secret: it
+				// is exactly what the client is about to act on.
+				'traffic' => $this->traffic->resolve(portal: $portal),
+				'collector' => $this->urlGenerator->linkToRouteAbsolute('portaliq.traffic.collect'),
 			]
 		);
 	}//end site()

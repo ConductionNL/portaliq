@@ -27,6 +27,7 @@
  *   `openspec/changes/<name>/` — see ConductionNL/.github#228.)
  * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T10
  * @spec openspec/specs/supplier-portal/spec.md#repeated-failure-flags-an-alternative-contact-fallback
+ * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-collector-must-survive-being-a-public-endpoint
  */
 
 declare(strict_types=1);
@@ -36,6 +37,7 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\SettingsService;
+use OCA\Portaliq\Service\Traffic\TrafficMetrics;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\DataDisplayResponse;
@@ -50,6 +52,8 @@ use Throwable;
  * Returns `text/plain; version=0.0.4` with `{app}_` prefixed metrics.
  * MUST include `{app}_health_status` and `{app}_info` per ADR-006.
  * Admin-only (no `@NoAdminRequired`) — ADR-006 mandates admin auth.
+ *
+ * @spec openspec/specs/observability/spec.md#REQ-OBS-001
  */
 class MetricsController extends Controller {
 	/**
@@ -90,6 +94,8 @@ class MetricsController extends Controller {
 	 * @param LoggerInterface $logger The logger
 	 * @param AuditTrailService $auditor Count-only audit-entry totals by verb
 	 *                                   (portal-session-hardening-v2).
+	 * @param TrafficMetrics $traffic The collector's accepted and refused
+	 *                                counters (portal-traffic-analytics).
 	 *
 	 * @return void
 	 *
@@ -101,6 +107,7 @@ class MetricsController extends Controller {
 		private ContainerInterface $container,
 		private LoggerInterface $logger,
 		private AuditTrailService $auditor,
+		private TrafficMetrics $traffic,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -118,6 +125,7 @@ class MetricsController extends Controller {
 	 *
 	 * @spec openspec/specs/observability/spec.md#REQ-OBS-001
 	 * @spec openspec/specs/supplier-portal/spec.md#repeated-failure-flags-an-alternative-contact-fallback
+	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-collector-must-survive-being-a-public-endpoint
 	 */
 	public function index(): DataDisplayResponse {
 		try {
@@ -150,6 +158,21 @@ class MetricsController extends Controller {
 			$lines[] = '# TYPE ' . $prefix . '_audit_entries_total counter';
 			foreach ($this->auditor->countsByVerb() as $verb => $count) {
 				$lines[] = $prefix . '_audit_entries_total{verb="' . $verb . '"} ' . $count;
+			}
+
+			// The traffic collector (portal-traffic-analytics): how many
+			// events were stored, and how many were refused under which
+			// reason. The refused counter is what makes a misconfigured
+			// client VISIBLE: without it a client whose events are all
+			// refused and a working one produce the same 204s and the same
+			// quiet dashboard. Counts only, never a portal, a page or a hash.
+			$lines[] = '# HELP ' . $prefix . '_traffic_accepted_total Traffic events accepted by the collector.';
+			$lines[] = '# TYPE ' . $prefix . '_traffic_accepted_total counter';
+			$lines[] = $prefix . '_traffic_accepted_total ' . $this->traffic->acceptedTotal();
+			$lines[] = '# HELP ' . $prefix . '_traffic_refused_total Traffic events refused by the collector, by reason.';
+			$lines[] = '# TYPE ' . $prefix . '_traffic_refused_total counter';
+			foreach ($this->traffic->refusedByReason() as $reason => $count) {
+				$lines[] = $prefix . '_traffic_refused_total{reason="' . $reason . '"} ' . $count;
 			}
 
 			return new DataDisplayResponse(

@@ -74,6 +74,9 @@ class SettingsController extends Controller {
 			// `mayEditPages` stays: it says only what THIS caller may do, which
 			// is what the interface asking the question needs.
 			unset($settings[PageEditorService::CONFIG_KEY]);
+			// The geography provider and the MaxMind account id are instance
+			// configuration; a non-admin has no form for them either.
+			unset($settings[SettingsService::GEO_KEY]);
 		}
 
 		return new JSONResponse($settings);

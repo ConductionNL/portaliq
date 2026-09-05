@@ -203,6 +203,41 @@ class PortalPageControllerTest extends TestCase {
 	}//end testSiteFallsBackToNoStylesheetWhenResolutionThrows()
 
 	/**
+	 * The shell hands the renderer the slug it resolved, so first-party
+	 * campaign capture can key its storage at boot, synchronously.
+	 *
+	 * @spec openspec/specs/landing-page-provisioning/spec.md#requirement-utm-capture-is-first-party-portal-scoped-and-honest-about-being-advisory
+	 */
+	public function testSiteCarriesTheResolvedPortalSlug(): void {
+		$controller = $this->controller(
+			orgSlug: '',
+			portal: ['slug' => 'open-tilburg', 'theme' => 'vng'],
+			themeStylesheet: 'themes/vng',
+			nldsStylesheet: 'themes/vng-tokens'
+		);
+
+		$params = $controller->site()->getParams();
+
+		$this->assertSame(expected: 'open-tilburg', actual: $params['portalConfig']['resolvedPortal']);
+
+	}//end testSiteCarriesTheResolvedPortalSlug()
+
+
+	/**
+	 * No resolved portal, or a resolver that throws, gives '' and still
+	 * renders: the capture then keys by the explicit slug or not at all.
+	 */
+	public function testSiteCarriesNoResolvedSlugWhenResolutionFails(): void {
+		$throwing = $this->controller(orgSlug: '', portalResolverThrows: true);
+		$this->assertSame(expected: '', actual: $throwing->site()->getParams()['portalConfig']['resolvedPortal']);
+
+		$none = $this->controller(orgSlug: '');
+		$this->assertSame(expected: '', actual: $none->site()->getParams()['portalConfig']['resolvedPortal']);
+
+	}//end testSiteCarriesNoResolvedSlugWhenResolutionFails()
+
+
+	/**
 	 * The standalone shell renders the whole document, so it needs a `lang`.
 	 *
 	 * With no `Accept-Language` the answer is `nl`, not the empty string —

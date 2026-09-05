@@ -287,6 +287,8 @@ required = {
         'portalAccount', 'portalSession', 'exampleDocument', 'portalMessage',
         'portalSubmission', 'portalAuditEntry', 'portalNotification',
         'portalOidcState', 'portalPage',
+        # portal-traffic-analytics: the raw events and the daily rollups.
+        'portalTrafficEvent', 'portalTrafficDaily',
     ],
 }[kind]
 with open(path) as fh:
@@ -304,6 +306,24 @@ except json.JSONDecodeError:
     sys.exit(1)
 items = body if isinstance(body, list) else body.get('results', [])
 slugs = {str(i.get('slug')).lower() for i in items if isinstance(i, dict) and i.get('slug')}
+
+# A PAGE IS NOT THE POPULATION. `total` is what the instance holds; `items` is
+# what this request returned. On a shared instance carrying several apps those
+# differ wildly, and a slug that simply fell off the page reads exactly like a
+# slug the import never created — with an error message that blames the import.
+# Refuse to judge rather than report a false absence.
+total = None
+if isinstance(body, dict):
+    for _k in ('total', 'count'):
+        if isinstance(body.get(_k), int):
+            total = body[_k]
+            break
+if total is not None and total > len(items):
+    print(f'::error::{kind} listing is TRUNCATED: {len(items)} of {total} returned.')
+    print('::error::Raise the _limit on this request. A missing slug cannot be '
+          'distinguished from one that fell off the page, so this check is '
+          'refusing to report either.')
+    sys.exit(1)
 missing = [s for s in required if s.lower() not in slugs]
 print(f'[ci-seed] {kind} present: {sorted(slugs)}')
 if missing:
@@ -318,13 +338,13 @@ PY
 REG_BODY="$(mktemp)"
 REG_CODE="$(curl -sS -u "${USER_NAME}:${USER_PASS}" -H 'OCS-APIRequest: true' \
 	-o "$REG_BODY" -w '%{http_code}' \
-	"${BASE}/index.php/apps/openregister/api/registers?_limit=300" || echo 000)"
+	"${BASE}/index.php/apps/openregister/api/registers?_limit=2000" || echo 000)"
 verify "$REG_BODY" registers "$REG_CODE"
 
 SCH_BODY="$(mktemp)"
 SCH_CODE="$(curl -sS -u "${USER_NAME}:${USER_PASS}" -H 'OCS-APIRequest: true' \
 	-o "$SCH_BODY" -w '%{http_code}' \
-	"${BASE}/index.php/apps/openregister/api/schemas?_limit=1000" || echo 000)"
+	"${BASE}/index.php/apps/openregister/api/schemas?_limit=10000" || echo 000)"
 verify "$SCH_BODY" schemas "$SCH_CODE"
 
 # ── 4. Verify the seeded portalPage objects landed ───────────────────────────
@@ -416,7 +436,7 @@ fi
 for path in \
 	"/index.php/apps/portaliq/portal" \
 	"/index.php/apps/portaliq/portal/api/session" \
-	"/index.php/apps/openregister/api/registers?_limit=1"
+	"/index.php/apps/openregister/api/registers?_limit=2000"
 do
 	code="$(curl -sS -o /dev/null -w '%{http_code}' -u "${USER_NAME}:${USER_PASS}" \
 		-H 'OCS-APIRequest: true' "${BASE}${path}" || echo 000)"
@@ -532,7 +552,12 @@ fi
 #
 # Tolerant on purpose: an app whose wizard has no demo-data step answers 400
 # here, and that is not a seeding failure.
-DEMO_BASE="${BASE_URL:-${NEXTCLOUD_URL:-http://localhost:8080}}"
+# The SAME target the rest of this script resolved above. These two calls
+# used to re-derive it from BASE_URL alone, so a run driven by
+# PLAYWRIGHT_BASE_URL (every local throwaway) posted to :8080 and logged
+# HTTP 000: the setup wizard then stayed open over the app and every click
+# test failed on a modal that had nothing to do with it.
+DEMO_BASE="$BASE"
 DEMO_CODE="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 300 \
 	-u "${ADMIN_USER:-admin}:${ADMIN_PASSWORD:-admin}" -X POST \
 	-H 'Content-Type: application/json' -H 'OCS-APIRequest: true' --data '{}' \
@@ -557,7 +582,7 @@ echo "[ci-seed] POST setup/action/skip-demo-data -> HTTP ${DEMO_CODE}"
 #
 # Tolerant on purpose: an app with no walkthrough answers 400 here, and that is
 # not a seeding failure.
-WT_BASE="${BASE_URL:-${NEXTCLOUD_URL:-http://localhost:8080}}"
+WT_BASE="$BASE"
 WT_CODE="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 60 \
 	-u "${ADMIN_USER:-admin}:${ADMIN_PASSWORD:-admin}" -X PUT \
 	-H 'Content-Type: application/json' -H 'OCS-APIRequest: true' \

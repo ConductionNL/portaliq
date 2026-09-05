@@ -101,12 +101,36 @@ print(i)
 }
 
 echo "==> portals"
+# Open Tilburg MEASURES traffic (portal-traffic-analytics): the page,
+# scroll, click and search events on, search terms kept, cookieless.
+# Venray below has measurement OFF, so the suite can tell "refused because
+# disabled" from "accepted" against two real portals, and the Traffic
+# page's "not measured" state from its "no data yet" state.
+#
+# portal-traffic-outcomes adds the form and not-found events, one
+# page-reached goal, one two-step funnel and one session-scoped custom
+# dimension, so the outcomes spec can prove each against a real portal.
+# `form_submit` stays OFF: traffic-analytics.spec.ts proves the refusal
+# of a known but unenabled event with it.
+# tests/e2e/lib/traffic.ts carries the SAME block as `seededTraffic()`;
+# a spec that changes it restores this one.
 SITE=$(upsert portal slug open-tilburg '{
   "title":"Open Tilburg","slug":"open-tilburg","status":"published",
   "domains":[{"hostname":"localhost","verified":true}],
   "theme":"vng","locales":["nl","en"],
   "authentication":{"modes":["public"]},
-  "frameAncestors":[],"organisation":"dev-org"
+  "frameAncestors":[],"organisation":"dev-org",
+  "traffic":{
+    "enabled":true,
+    "events":["page_view","session_start","scroll","outbound_click","search","form_start","form_field","form_abandon","page_not_found"],
+    "dimensions":["pageReferrer","pageTitle","searchTerm","linkUrl","referrerHost","channel","deviceType","browser","os","language"],
+    "goals":[{"id":"contact","name":"Contact page opened","type":"page_reached","match":{"pathEquals":"/contact"},"value":10}],
+    "funnels":[{"id":"contact-journey","name":"Home to contact","steps":[
+      {"name":"Home","match":{"pathEquals":"/"}},
+      {"name":"Contact","match":{"pathEquals":"/contact"}}
+    ]}],
+    "customDimensions":[{"id":"audience","name":"Audience","scope":"session"}]
+  }
 }')
 echo "    open-tilburg = $SITE"
 
@@ -126,9 +150,40 @@ SITE2=$(upsert portal slug open-venray '{
   ],
   "theme":"venray","locales":["nl"],
   "authentication":{"modes":["public"]},
-  "frameAncestors":[],"organisation":"dev-org"
+  "frameAncestors":[],"organisation":"dev-org",
+  "traffic":{"enabled":false}
 }')
 echo "    open-venray  = $SITE2 (venray.localhost verified, unverified.localhost not)"
+
+# A ROLL-UP portal (portal-traffic-reporting): it has no domain, no content
+# and no visitors of its own; its daily record is the sum of the two portals
+# above, computed after theirs. Venray measures nothing, so the sum equals
+# Tilburg's figures and "a member without data" is proven for free.
+SITE3=$(upsert portal slug rollup-tilburg-venray '{
+  "title":"Tilburg en Venray samen","slug":"rollup-tilburg-venray","status":"published",
+  "kind":"external","domains":[],
+  "theme":"vng","locales":["nl"],
+  "authentication":{"modes":["public"]},
+  "frameAncestors":[],"organisation":"dev-org",
+  "traffic":{"enabled":true,"rollupOf":["open-tilburg","open-venray"]}
+}')
+echo "    rollup-tilburg-venray = $SITE3 (roll-up of open-tilburg and open-venray)"
+
+# An EXTERNAL portal (portal-traffic-experiments): a site this app does
+# not serve, measured through the tag on someone else's page. Session
+# recording is switched ON here on purpose, so the suite can prove that
+# an external portal never records even when the operator asked: the
+# client must not request the recorder for it and the collector must
+# refuse a chunk for it. No domain, so it is only ever reached by slug.
+SITE4=$(upsert portal slug open-extern '{
+  "title":"Extern Tilburg","slug":"open-extern","status":"published",
+  "kind":"external","domains":[],
+  "theme":"vng","locales":["nl"],
+  "authentication":{"modes":["public"]},
+  "frameAncestors":[],"organisation":"dev-org",
+  "traffic":{"enabled":true,"sensitive":{"sessionRecording":true}}
+}')
+echo "    open-extern = $SITE4 (external, recording switched on and never honoured)"
 
 echo "==> menu"
 upsert menu title Hoofdmenu '{
@@ -180,6 +235,42 @@ upsert page route /contact '{
   "body":{"type":"markdown","markdown":"## Contact\n\nBel 14 013 of mail info@tilburg.nl.\n"}
 }' >/dev/null
 echo "    /contact (markdown)"
+
+# landing-page-provisioning fixture: a form + a bound landing page, seeded
+# directly as OpenRegister objects (the shape LandingPageProvisioningService
+# would write) rather than through the PHP event — the seeder has no way to
+# dispatch a Nextcloud event, and seeding the RESULT is exactly what this
+# suite's OTHER fixtures already do (a page/menu/portal is always seeded as
+# the object a real write would have produced, never by exercising the write
+# path itself). `sourceApp: "e2eFixture"` is a deliberately fake app name:
+# no consumer event class will ever exist for it, so a submission exercises
+# — and must survive — the dispatch listener's fail-safe skip path.
+FORM_ID=$(upsert form pageRoute /campagne/e2e-form-test '{
+  "portal":"open-tilburg","pageRoute":"/campagne/e2e-form-test",
+  "sourceApp":"e2eFixture","externalReference":"e2e-fixture-1",
+  "campaign":{"campaign":"e2e","source":"playwright","medium":"test"},
+  "fields":[{"id":"name","label":"Naam","type":"text","required":true},
+            {"id":"email","label":"E-mail","type":"email","required":true}],
+  "submitLabel":"Aanmelden","consentText":"Ik ga akkoord met de verwerking van mijn gegevens.",
+  "status":"active"
+}')
+echo "    form (e2e-form-test) = $FORM_ID"
+
+upsert page route /campagne/e2e-form-test '{
+  "title":"E2E formulier","route":"/campagne/e2e-form-test","portal":"open-tilburg",
+  "status":"published","locale":"nl","summary":"Testpagina met een formulier-widget.",
+  "body":{"type":"grid","widgets":[
+    {"id":"article","widgetKey":"markdown","slot":"body","gridX":0,"gridY":0,"gridWidth":12,"gridHeight":3,
+     "props":{"markdown":"## Meld u aan"}},
+    {"id":"form","widgetKey":"form","slot":"body","gridX":0,"gridY":3,"gridWidth":12,"gridHeight":6,
+     "props":{"formId":"'"$FORM_ID"'",
+              "fields":[{"id":"name","label":"Naam","type":"text","required":true},
+                        {"id":"email","label":"E-mail","type":"email","required":true}],
+              "submitLabel":"Aanmelden",
+              "consentText":"Ik ga akkoord met de verwerking van mijn gegevens."}}
+  ]}
+}' >/dev/null
+echo "    /campagne/e2e-form-test (grid: markdown + form widget)"
 
 # A draft page proves the published filter does something. Without it, the
 # "unpublished pages are not served" scenario passes vacuously.

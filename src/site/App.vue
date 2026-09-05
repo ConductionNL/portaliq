@@ -204,7 +204,9 @@
 					v-else-if="error"
 					class="container"
 					role="alert"
-					data-testid="site-error">
+					data-testid="site-error"
+					:data-portaliq-status="error.status === 404 ? '404' : null"
+					:data-portaliq-path="error.status === 404 ? route : null">
 					<h2>
 						{{
 							error.status === 404
@@ -266,6 +268,7 @@
 						:glossary="glossary"
 						:contributions="contributions"
 						:routeParam="routeParam"
+						:portal="site.slug || ''"
 						@navigate="go"
 						@search="goSearch" />
 
@@ -441,6 +444,8 @@ import MarkdownBlock from './components/MarkdownBlock.vue'
 import SiteMenu from './components/SiteMenu.vue'
 import WidgetGrid from './components/WidgetGrid.vue'
 import { authBaseFrom, fetchSession, signInRoutes } from './lib/authApi.js'
+import { captureLanding } from './lib/campaignTracking.js'
+import { runtimeConfig } from './lib/contentApi.js'
 import {
 	fetchContributions,
 	fetchGlossary,
@@ -760,9 +765,20 @@ export default {
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portal-renderer-must-not-depend-on-nextcloud-globals
 	 */
 	async mounted() {
+		// The landing's campaign parameters are captured HERE, on every page
+		// of the site, not only where a form block mounts: the form block
+		// loads on demand, so a visitor who lands on the campaign page and
+		// walks to the form later would otherwise have no first touch, and
+		// a page that was never given a form would record none at all.
+		// Synchronously, before any fetch: the shell carries the resolved
+		// slug, so a visitor who moves on before the site loads still has
+		// the landing that brought them. The site fetch below repeats it
+		// under the slug the API answers with, which is the same one.
+		captureLanding(this.portalSlug || runtimeConfig().resolvedPortal || '')
 		this.route = this.routeFromLocation()
 		window.addEventListener('popstate', this.onPopState)
 		await this.loadSite()
+		captureLanding(this.site.slug || this.portalSlug)
 		await this.loadRoute(this.route)
 	},
 

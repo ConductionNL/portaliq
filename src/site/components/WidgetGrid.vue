@@ -70,7 +70,6 @@
 <script>
 import { siteBlockIsBand, siteBlockRegistry } from '@conduction/nextcloud-vue/public'
 import { defineAsyncComponent } from 'vue'
-import ContributionsBlock from './ContributionsBlock.vue'
 import MarkdownBlock from './MarkdownBlock.vue'
 
 /**
@@ -99,6 +98,22 @@ const PublicationDetailBlock = defineAsyncComponent(
  */
 const FederatedSearchBlock = defineAsyncComponent(
 	() => import('./FederatedSearchBlock.vue'),
+)
+
+/**
+ * Loaded on demand as well. A landing page's form is reachable only from the
+ * page that carries it, and the block brings its submission client along;
+ * the visitor who reads any other page paid for both, and the public
+ * first-load budget (S18, 400 KiB) is what noticed.
+ */
+const FormBlock = defineAsyncComponent(() => import('./FormBlock.vue'))
+
+/**
+ * On demand too: the contributions list is one block on one kind of page,
+ * and the same first-load budget applies.
+ */
+const ContributionsBlock = defineAsyncComponent(
+	() => import('./ContributionsBlock.vue'),
 )
 
 /**
@@ -136,6 +151,10 @@ const FederatedSearchBlock = defineAsyncComponent(
  * `contributions` stays owned here for the same class of reason: a
  * contribution is portaliq's own contract (ADR-046), described by this app's
  * provider protocol rather than by the design system.
+ *
+ * `form` stays owned here too (landing-page-provisioning): it submits
+ * through Portaliq's own anonymous contribution-create endpoint and is
+ * described by this app's `form` schema, not the design system.
  */
 const PUBLIC_WIDGETS = {
 	markdown: MarkdownBlock,
@@ -151,6 +170,12 @@ const PUBLIC_WIDGETS = {
 	// Owned here for the same reason: it reads OpenCatalogi's public endpoint
 	// and applies no visibility rule of its own.
 	publicationDetail: PublicationDetailBlock,
+	// landing-page-provisioning: submits through this app's OWN anonymous
+	// contribution-create endpoint; see propsFor() for the portal it is
+	// handed and buildBody() (LandingPageProvisioningService) for why its
+	// fields/submitLabel/consentText arrive as authored props rather than a
+	// second fetch.
+	form: FormBlock,
 	...siteBlockRegistry,
 }
 
@@ -188,6 +213,7 @@ export default {
 
 	components: {
 		ContributionsBlock,
+		FormBlock,
 		MarkdownBlock,
 	},
 
@@ -196,6 +222,16 @@ export default {
 		widgets: {
 			type: Array,
 			default: () => [],
+		},
+
+		/**
+		 * The serving portal's slug, for a page that places a `form` block —
+		 * scopes its UTM capture to this portal. Supplied by the host for the
+		 * same reason `routeParam` is; see `propsFor()`.
+		 */
+		portal: {
+			type: String,
+			default: '',
 		},
 
 		/**
@@ -356,6 +392,15 @@ export default {
 			// could pin the page to one publication regardless of its URL.
 			if (widget.widgetKey === 'publicationDetail') {
 				return { ...props, subjectId: this.routeParam }
+			}
+
+			// SAME RULE, FOURTH SUBJECT. Which portal a form's UTM capture is
+			// scoped to is a property of the SITE, not of the placement, so
+			// the host supplies it and the author supplies the rest
+			// (fields/submitLabel/consentText, embedded at creation time —
+			// see LandingPageProvisioningService::buildBody()).
+			if (widget.widgetKey === 'form') {
+				return { ...props, portal: this.portal }
 			}
 
 			return props

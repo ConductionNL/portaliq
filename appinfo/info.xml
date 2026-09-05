@@ -8,7 +8,7 @@
     <summary lang="nl">Eén gedeeld extern portaal voor klanten en leveranciers.</summary>
     <description lang="en"><![CDATA[Portaliq is the fleet's shared external portal. Clients (citizens) and suppliers (companies) get one integrated, white-label portal to see and act on their records across every app — reading data through OpenRegister and rendering each app's registered portal contribution. It owns the external auth edge (DigiD / eHerkenning / eIDAS), the white-label portal shell, the unified inbox, and the portal-contribution registry. Employees stay internal. See ADR-046.]]></description>
     <description lang="nl"><![CDATA[Portaliq is het gedeelde externe portaal voor de hele appsuite. Klanten (burgers) en leveranciers (bedrijven) krijgen één geïntegreerd, white-label portaal om hun gegevens over alle apps heen in te zien en er acties op te doen — gegevens komen via OpenRegister en elke app levert zijn eigen portaalbijdrage. Portaliq verzorgt de externe authenticatie (DigiD / eHerkenning / eIDAS), de white-label portaalschil, de gebundelde berichtenbox en het register van portaalbijdragen. Medewerkers blijven intern. Zie ADR-046.]]></description>
-    <version>0.1.19-unstable.20260831034936</version>
+    <version>0.1.22-unstable.20260831161259</version>
     <licence>EUPL-1.2</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Portaliq</namespace>
@@ -75,6 +75,19 @@
         <nextcloud min-version="32" max-version="34"/>
     </dependencies>
 
+    <!-- The resident task leg (portal-task-delivery): drains openregister's
+         portal delivery ledger into inbox messages and mails every 5 minutes. -->
+    <background-jobs>
+        <job>OCA\Portaliq\BackgroundJob\PortalTaskDeliveryJob</job>
+        <job>OCA\Portaliq\BackgroundJob\TrafficAggregationJob</job>
+        <!-- portal-traffic-visitors-and-geo: the visitor geography database,
+             refreshed monthly from DB-IP Lite or MaxMind. -->
+        <job>OCA\Portaliq\BackgroundJob\TrafficGeoRefreshJob</job>
+        <!-- portal-traffic-reporting: hourly, sends the reports whose period
+             ended and fires the alerts whose threshold was crossed. -->
+        <job>OCA\Portaliq\BackgroundJob\TrafficReportJob</job>
+    </background-jobs>
+
     <!-- @spec openspec/architecture/adr-023-action-authorization.md -->
     <repair-steps>
         <post-migration>
@@ -101,6 +114,16 @@
             <step>OCA\Portaliq\Repair\InitializeDemoPortal</step>
         </install>
     </repair-steps>
+
+    <!-- portal-traffic-visitors-and-geo: fetch the geography database now
+         rather than on the monthly schedule. -->
+    <commands>
+        <command>OCA\Portaliq\Command\TrafficGeoRefresh</command>
+        <!-- portal-traffic-reporting: the server-side token, shown once, and
+             the access-log import. -->
+        <command>OCA\Portaliq\Command\TrafficToken</command>
+        <command>OCA\Portaliq\Command\TrafficImportLog</command>
+    </commands>
 
     <settings>
         <admin>OCA\Portaliq\Settings\AdminSettings</admin>

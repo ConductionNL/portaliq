@@ -9,6 +9,7 @@ return [
         // First-time setup wizard (ADR-042) - the standard CnSetupWizard contract.
         ['name' => 'setup#status',    'url' => '/api/setup/status',            'verb' => 'GET'],
         ['name' => 'setup#runAction', 'url' => '/api/setup/action/{actionId}', 'verb' => 'POST', 'requirements' => ['actionId' => '[a-z0-9\\-]+']],
+        ['name' => 'setup#saveConfig', 'url' => '/api/setup/config',           'verb' => 'POST'],
         ['name' => 'dashboard#page', 'url' => '/', 'verb' => 'GET'],
         ['name' => 'settings#index', 'url' => '/api/settings', 'verb' => 'GET'],
         ['name' => 'settings#create', 'url' => '/api/settings', 'verb' => 'POST'],
@@ -54,6 +55,26 @@ return [
             'requirements' => ['route' => '.+'],
             'postfix' => 'byroute',
         ],
+
+        // Traffic analytics (portal-traffic-analytics). Public like the
+        // content API above, for the same reason: a visitor's browser on a
+        // portal's own domain, or on a statically built site elsewhere, has
+        // no Nextcloud session. The collector resolves the portal by HOST
+        // first and accepts a slug only when the host resolves nothing.
+        // Registered here, ahead of the SPA catch-all.
+        ['name' => 'traffic#collect', 'url' => '/api/traffic', 'verb' => 'POST'],
+        ['name' => 'traffic#pixel', 'url' => '/api/traffic/pixel.gif', 'verb' => 'GET'],
+        ['name' => 'traffic#client', 'url' => '/api/traffic-client.js', 'verb' => 'GET'],
+        // portal-traffic-reporting: a trusted backend reports on a
+        // visitor's behalf with the portal's bearer token (public route,
+        // token-guarded), and an admin downloads the daily records.
+        ['name' => 'traffic#server', 'url' => '/api/traffic/server', 'verb' => 'POST'],
+        ['name' => 'trafficReport#export', 'url' => '/api/traffic/export', 'verb' => 'GET'],
+        // portal-traffic-experiments: a session recording chunk, and the
+        // recorder the client loads only for a portal that switched
+        // recording on. Both public for the collector's reasons.
+        ['name' => 'traffic#recording', 'url' => '/api/traffic/recording', 'verb' => 'POST'],
+        ['name' => 'traffic#recorder', 'url' => '/api/traffic-recorder.js', 'verb' => 'GET'],
 
         // The editing-context probe (portal-page-designer). NOT part of the
         // headless content contract: it answers a question about the CALLER
@@ -139,6 +160,14 @@ return [
         // X-Portal-Subject assertion (contract-v2 T8, ADR-046 A6). Guarded by
         // PortalAuthMiddleware; registered before the /portal/{path} catch-all.
         ['name' => 'contribution#action', 'url' => '/portal/api/actions/{appId}/{actionId}', 'verb' => 'POST'],
+
+        // The resident task leg (portal-task-delivery): bearer-guarded proxy
+        // over openregister's portal task seam. Portaliq mints the
+        // X-Portal-Subject assertion server-side; the browser never calls
+        // openregister. Registered before the /portal/{path} SPA catch-all.
+        ['name' => 'portalTaskProxy#index', 'url' => '/portal/api/tasks', 'verb' => 'GET'],
+        ['name' => 'portalTaskProxy#show', 'url' => '/portal/api/tasks/{uuid}', 'verb' => 'GET', 'requirements' => ['uuid' => '[^/]+']],
+        ['name' => 'portalTaskProxy#complete', 'url' => '/portal/api/tasks/{uuid}/complete', 'verb' => 'POST', 'requirements' => ['uuid' => '[^/]+']],
 
         ['name' => 'portalPage#catchAll', 'url' => '/portal/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
 

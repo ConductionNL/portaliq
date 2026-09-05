@@ -41,8 +41,15 @@ namespace OCA\Portaliq\AppInfo;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectDeletedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
+use OCA\Portaliq\Event\LandingPageRequestedEvent;
 use OCA\Portaliq\Listener\CmsCacheInvalidationListener;
+use OCA\Portaliq\Listener\LandingPageRequestedEventListener;
+use OCA\Portaliq\Listener\LandingPageSubmissionDispatchListener;
 use OCA\Portaliq\Middleware\PortalAuthMiddleware;
+use OCA\Portaliq\Middleware\PublicApiCorsMiddleware;
+use OCA\Portaliq\Notification\Notifier;
+use OCA\Portaliq\Service\Traffic\Geo\MmdbGeoResolver;
+use OCA\Portaliq\Service\Traffic\GeoResolverInterface;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
@@ -50,6 +57,15 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**
  * Main application class for the Portaliq Nextcloud app.
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) A bootstrap names every
+ *  service and listener the app registers, so its coupling counts the app's
+ *  wiring rather than this class's own complexity. Two independent changes met
+ *  here and each added its own: the traffic analytics resolver alias, and the
+ *  landing-page event listener pair. Splitting the bootstrap to lower the
+ *  number would move the same names one file along.
+ *
+ * @spec openspec/specs/landing-page-provisioning/spec.md#requirement-a-contributing-app-requests-a-landing-page-via-a-typed-event
  */
 class Application extends App implements IBootstrap {
 	public const APP_ID = 'portaliq';
@@ -71,8 +87,20 @@ class Application extends App implements IBootstrap {
 	 * @return void
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	 *
+	 * @spec openspec/specs/landing-page-provisioning/spec.md#requirement-a-contributing-app-requests-a-landing-page-via-a-typed-event
 	 */
 	public function register(IRegistrationContext $context): void {
+		// The app's own composer dependencies (portal-traffic-visitors-and-geo
+		// added the first runtime one: maxmind-db/reader). Nextcloud loads
+		// an app's classes under OCA\ by convention and nothing else; the
+		// same include every fleet app with a vendored dependency carries.
+		// Measured before this line existed: the resolver logged
+		// 'Class "MaxMind\Db\Reader" not found' on the throwaway instance
+		// while the very same file opened fine under the test bootstrap,
+		// which loads the autoloader itself.
+		include_once __DIR__ . '/../../vendor/autoload.php';
+
 		// Initialize register and schemas on install/upgrade — registered via
 		// appinfo/info.xml <repair-steps> (pre- and post-migration). The
 		// programmatic IRegistrationContext::registerRepairStep() was removed in
@@ -90,6 +118,11 @@ class Application extends App implements IBootstrap {
 		// ContributionController). Public auth-edge routes are untouched.
 		$context->registerMiddleware(PortalAuthMiddleware::class);
 
+		// Reflect-Origin CORS on the public content and traffic responses, so
+		// a statically built site on its own domain can read content and post
+		// a traffic batch without a preflight (portal-traffic-analytics).
+		$context->registerMiddleware(PublicApiCorsMiddleware::class);
+
 		// Portal contributions are discovered by convention FQCN
 		// (OCA\{Namespace}\Portal\PortalContributionProvider) — see
 		// PortalContributionRegistry — so no per-provider registration is needed
@@ -102,6 +135,25 @@ class Application extends App implements IBootstrap {
 		foreach ([ObjectCreatedEvent::class, ObjectUpdatedEvent::class, ObjectDeletedEvent::class] as $event) {
 			$context->registerEventListener($event, CmsCacheInvalidationListener::class);
 		}
+
+		// Landing-page-provisioning (ADR-041, contribution-landing-page-action):
+		// a same-instance cross-app command letting a contributing app ask
+		// Portaliq to provision a draft landing page + form, and the fail-safe
+		// relay of a visitor's submission back to that app.
+		$context->registerEventListener(LandingPageRequestedEvent::class, LandingPageRequestedEventListener::class);
+		$context->registerEventListener(ObjectCreatedEvent::class, LandingPageSubmissionDispatchListener::class);
+
+		// Traffic analytics (portal-traffic-visitors-and-geo): where a
+		// visitor's address turns into a region. The offline MMDB lookup is
+		// bound here and the ingest path did not change from phase 0, which
+		// bound the resolver that answered nothing. NullGeoResolver stays
+		// for the tests and for an instance that wants no geography at all
+		// (the settings provider `none` makes this resolver answer null too).
+		$context->registerServiceAlias(GeoResolverInterface::class, MmdbGeoResolver::class);
+
+		// Traffic reports and alerts (portal-traffic-reporting) reach a
+		// user as an in-app notification beside the mail; this renders it.
+		$context->registerNotifierService(Notifier::class);
 	}//end register()
 
 	/**
@@ -112,6 +164,8 @@ class Application extends App implements IBootstrap {
 	 * @return void
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	 *
+	 * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
 	 */
 	public function boot(IBootContext $context): void {
 	}//end boot()
