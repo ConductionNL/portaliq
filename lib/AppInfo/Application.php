@@ -57,6 +57,13 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
 /**
  * Main application class for the Portaliq Nextcloud app.
  *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) A bootstrap names every
+ *  service and listener the app registers, so its coupling counts the app's
+ *  wiring rather than this class's own complexity. Two independent changes met
+ *  here and each added its own: the traffic analytics resolver alias, and the
+ *  landing-page event listener pair. Splitting the bootstrap to lower the
+ *  number would move the same names one file along.
+ *
  * @spec openspec/specs/landing-page-provisioning/spec.md#requirement-a-contributing-app-requests-a-landing-page-via-a-typed-event
  */
 class Application extends App implements IBootstrap {
