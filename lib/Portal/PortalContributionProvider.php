@@ -63,13 +63,18 @@ namespace OCA\Portaliq\Portal;
 
 use OCA\Portaliq\Contribution\IPortalContributionProvider;
 use OCA\Portaliq\Service\PortalObjectReader;
+use OCP\Security\ISecureRandom;
 use Psr\Log\LoggerInterface;
 
 /**
- * Config-driven contribution provider: reads active `portalPage` objects.
+ * Config-driven contribution provider: reads active `portalPage` objects,
+ * AND (landing-page-provisioning) folds active `form` objects into the
+ * dedicated `anonymous` pseudo-audience as synthesised anonymous `type:
+ * create` submission actions — see `synthesiseFormActions()`.
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T04
  * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-an-app-must-be-able-to-provision-a-portal-page-as-data
+ * @spec openspec/specs/landing-page-provisioning/spec.md#requirement-a-landing-pages-form-is-submittable-with-no-portal-session
  */
 class PortalContributionProvider implements IPortalContributionProvider {
 	/**
@@ -80,15 +85,34 @@ class PortalContributionProvider implements IPortalContributionProvider {
 	private const SCHEMA = 'portalPage';
 
 	/**
+	 * The schema active `form` objects live in (landing-page-provisioning).
+	 */
+	private const FORM_SCHEMA = 'form';
+
+	/**
+	 * The schema a synthesised form-submission action writes to.
+	 */
+	private const SUBMISSION_SCHEMA = 'landingPageSubmission';
+
+	/**
+	 * The dedicated pseudo-audience under which synthesised form-submission
+	 * actions are surfaced — landing-page forms have no `portalAccount`
+	 * audience of their own, unlike a `portalPage` contribution.
+	 */
+	private const ANONYMOUS_FORM_AUDIENCE = 'anonymous';
+
+	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $objectReader Reads `portalPage` objects
-	 *                                         (ADR-022 — no direct OR client
-	 *                                         call in this class).
+	 * @param PortalObjectReader $objectReader Reads `portalPage`/`form`
+	 *                                         objects (ADR-022 — no direct OR
+	 *                                         client call in this class).
+	 * @param ISecureRandom $random Mints each submission action's per-request nonce.
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
 		private readonly PortalObjectReader $objectReader,
+		private readonly ISecureRandom $random,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -131,6 +155,13 @@ class PortalContributionProvider implements IPortalContributionProvider {
 			}
 		}
 
+		// Landing-page-provisioning: at least one active `form` object makes
+		// the dedicated anonymous pseudo-audience consultable, so its
+		// synthesised submission action(s) reach `aggregateAnonymous()`.
+		if (in_array(self::ANONYMOUS_FORM_AUDIENCE, $audiences, true) === false && count($this->activeForms()) > 0) {
+			$audiences[] = self::ANONYMOUS_FORM_AUDIENCE;
+		}
+
 		return $audiences;
 	}//end getAudiences()
 
@@ -165,6 +196,8 @@ class PortalContributionProvider implements IPortalContributionProvider {
 			return null;
 		}
 
+		$contribution = null;
+
 		$matches = [];
 		foreach ($this->activePortalPages() as $row) {
 			if (($row['audience'] ?? null) === $audience) {
@@ -172,20 +205,35 @@ class PortalContributionProvider implements IPortalContributionProvider {
 			}
 		}
 
-		if ($matches === []) {
-			return null;
+		if ($matches !== []) {
+			usort($matches, fn (array $a, array $b): int => $this->rowId(row: $a) <=> $this->rowId(row: $b));
+
+			if (count($matches) > 1) {
+				$this->logger->warning(
+					'Portaliq: multiple active portalPage objects for one audience — picking the first, not merging',
+					['audience' => $audience, 'count' => count($matches)]
+				);
+			}
+
+			$contribution = $this->toContribution(row: $matches[0]);
 		}
 
-		usort($matches, fn (array $a, array $b): int => $this->rowId(row: $a) <=> $this->rowId(row: $b));
+		// Landing-page-provisioning: fold every active `form` object's
+		// synthesised anonymous submission action into the dedicated
+		// pseudo-audience — additive, never displaces a portalPage-declared
+		// contribution for the SAME audience.
+		if ($audience === self::ANONYMOUS_FORM_AUDIENCE) {
+			$formActions = $this->synthesiseFormActions();
+			if ($formActions !== []) {
+				if ($contribution === null) {
+					$contribution = ['label' => '', 'collections' => [], 'actions' => [], 'pages' => []];
+				}
 
-		if (count($matches) > 1) {
-			$this->logger->warning(
-				'Portaliq: multiple active portalPage objects for one audience — picking the first, not merging',
-				['audience' => $audience, 'count' => count($matches)]
-			);
+				$contribution['actions'] = array_merge($contribution['actions'], $formActions);
+			}
 		}
 
-		return $this->toContribution(row: $matches[0]);
+		return $contribution;
 	}//end getContribution()
 
 	/**
@@ -277,6 +325,102 @@ class PortalContributionProvider implements IPortalContributionProvider {
 			filter: ['status' => 'active']
 		);
 	}//end activePortalPages()
+
+	/**
+	 * Read every ACTIVE `form` object (landing-page-provisioning). Same
+	 * fail-closed/no-scope contract as `activePortalPages()` — `form`
+	 * objects are configuration created by
+	 * `LandingPageProvisioningService`, not subject data.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function activeForms(): array {
+		return $this->objectReader->readCollection(
+			register: self::REGISTER,
+			schema: self::FORM_SCHEMA,
+			scopeField: '',
+			subjectRef: '',
+			limit: 200,
+			filter: ['status' => 'active']
+		);
+	}//end activeForms()
+
+	/**
+	 * Convert every active `form` object into ONE synthesised `anonymous:
+	 * true`, `type: create` action targeting `landingPageSubmission`,
+	 * whitelisting the form's own declared field ids plus the fixed
+	 * tracking fields (`utmFirstTouch`/`utmLastTouch`/`referrer`), and
+	 * stamping `formId`/`pageId`/`pageRoute`/`portal`/`sourceApp`/
+	 * `externalReference`/`campaign`/`submittedAt`/`nonce` as server
+	 * `defaults` a client can never override.
+	 *
+	 * `submittedAt`/`nonce` are minted freshly HERE, on every call — this
+	 * method runs once per HTTP request that resolves the anonymous
+	 * aggregate (`ContributionController::createAnonymous()` re-derives its
+	 * authorised action on every submission, with no cross-request caching
+	 * on this path today), so each submission attempt gets its own
+	 * timestamp/nonce even though the `form` object itself is read-only
+	 * configuration.
+	 *
+	 * A `form` with no resolvable id, or with zero declared field ids, is
+	 * skipped (fail-closed — never a submittable action with an empty
+	 * whitelist).
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/specs/landing-page-provisioning/spec.md#requirement-a-landing-pages-form-is-submittable-with-no-portal-session
+	 */
+	private function synthesiseFormActions(): array {
+		$actions = [];
+
+		foreach ($this->activeForms() as $row) {
+			$formId = $this->rowId(row: $row);
+			if ($formId === '') {
+				continue;
+			}
+
+			$fieldIds = [];
+			foreach ((array)($row['fields'] ?? []) as $field) {
+				$fieldId = null;
+				if (is_array($field) === true) {
+					$fieldId = ($field['id'] ?? null);
+				}
+
+				if (is_string($fieldId) === true && $fieldId !== '') {
+					$fieldIds[] = $fieldId;
+				}
+			}
+
+			if ($fieldIds === []) {
+				continue;
+			}
+
+			$fieldIds = array_merge($fieldIds, ['utmFirstTouch', 'utmLastTouch', 'referrer']);
+
+			$actions[] = [
+				'id' => ('submit-' . $formId),
+				'type' => 'create',
+				'anonymous' => true,
+				'register' => self::REGISTER,
+				'schema' => self::SUBMISSION_SCHEMA,
+				'label' => (string)($row['submitLabel'] ?? 'Submit'),
+				'fields' => $fieldIds,
+				'defaults' => [
+					'formId' => $formId,
+					'pageId' => (string)($row['pageId'] ?? ''),
+					'pageRoute' => (string)($row['pageRoute'] ?? ''),
+					'portal' => (string)($row['portal'] ?? ''),
+					'sourceApp' => (string)($row['sourceApp'] ?? ''),
+					'externalReference' => (string)($row['externalReference'] ?? ''),
+					'campaign' => (array)($row['campaign'] ?? []),
+					'submittedAt' => date(DATE_ATOM),
+					'nonce' => $this->random->generate(32, (ISecureRandom::CHAR_LOWER . ISecureRandom::CHAR_DIGITS)),
+				],
+			];
+		}//end foreach
+
+		return $actions;
+	}//end synthesiseFormActions()
 
 	/**
 	 * Resolve a row's identifier (`id`/`uuid`, flat or in `@self`) for the

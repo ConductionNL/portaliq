@@ -9,7 +9,7 @@
  */
 
 import { expect, test } from '@playwright/test'
-import { resolveBaseURL } from './base-url'
+import { resolveBaseURL } from './base-url.ts'
 
 const BASE = resolveBaseURL()
 const SITE = `${BASE}/index.php/apps/portaliq/site`
@@ -182,7 +182,7 @@ test.describe('site renderer — content', () => {
 		await expect(page.getByTestId('site-title')).toBeVisible()
 
 		const total = Object.values(transferred).reduce((a, b) => a + b, 0)
-		// eslint-disable-next-line no-console
+
 		console.log(
 			'site bundle bytes:',
 			JSON.stringify(transferred),

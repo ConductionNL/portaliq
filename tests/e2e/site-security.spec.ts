@@ -11,7 +11,7 @@
  */
 
 import { expect, test } from '@playwright/test'
-import { resolveBaseURL } from './base-url'
+import { resolveBaseURL } from './base-url.ts'
 
 const BASE = resolveBaseURL()
 const SITE = `${BASE}/index.php/apps/portaliq/site`

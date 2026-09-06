@@ -102,8 +102,10 @@ class ContributionControllerTest extends TestCase {
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		// The aggregate is returned unchanged PLUS the unread count
-		// (portal-inbox-v2 T04) — the default inbox reader stub yields 0.
-		$this->assertSame(($aggregate + ['unreadCount' => 0]), $response->getData());
+		// (portal-inbox-v2 T04) — the default inbox reader stub yields 0 —
+		// and the tasks announcement (portal-task-delivery): with no gateway
+		// wired (this fixture's default), the surface reads disabled.
+		$this->assertSame(($aggregate + ['unreadCount' => 0, 'tasks' => ['enabled' => false]]), $response->getData());
 
 	}//end testIndexReturnsTheRegistrysAggregateForAnAuthenticatedSubject()
 

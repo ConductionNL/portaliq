@@ -121,6 +121,47 @@ class PortalResolver {
 
 
 	/**
+	 * Resolve the portal for the traffic collector: HOST first, slug second.
+	 *
+	 * The reverse of `resolve()`, deliberately. A collector that honoured a
+	 * named slug over the host would let any page attribute its events to
+	 * any portal it cared to name. The slug is only consulted when the host
+	 * resolves to nothing, which is the case for a `kind: external` portal
+	 * on its own domain posting to the platform host.
+	 *
+	 * @param IRequest    $request    The incoming request.
+	 * @param string|null $portalSlug The slug the caller named, if any.
+	 *
+	 * @return array|null The portal object, or null when nothing matched.
+	 *
+	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-collector-must-survive-being-a-public-endpoint
+	 */
+	public function resolveForCollector(IRequest $request, ?string $portalSlug = null): ?array {
+		$sites = $this->allPublishedPortals();
+		if ($sites === []) {
+			return null;
+		}
+
+		$byHost = $this->resolveByHost(host: $this->requestHost(request: $request), sites: $sites);
+		if ($byHost !== null) {
+			return $byHost;
+		}
+
+		if ($portalSlug === null || $portalSlug === '') {
+			return null;
+		}
+
+		foreach ($sites as $site) {
+			if (($site['slug'] ?? null) === $portalSlug) {
+				return $site;
+			}
+		}
+
+		return null;
+	}//end resolveForCollector()
+
+
+	/**
 	 * Match a host against the verified domains of the published portals.
 	 *
 	 * @param string $host  The request host, lower-cased, without port.

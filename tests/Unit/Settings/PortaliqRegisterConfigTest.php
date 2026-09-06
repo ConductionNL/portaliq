@@ -97,9 +97,40 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// is default-OPEN to every authenticated user in OpenRegister, so any
 		// account on the instance could rewrite a published portal page; the
 		// rules now name the configured editor groups (empty = admins only).
-		$this->assertSame('0.15.0', self::$register['info']['version']);
-		$this->assertSame('0.2.0', self::$register['components']['schemas']['page']['version']);
-		$this->assertSame('0.2.0', self::$register['components']['schemas']['portal']['version']);
+		// 0.17.0 (page 0.3.0, portal 0.3.0): two changes met there. Development
+		// declared `kind` (site or external) and the `traffic` block, and added
+		// the `portalTrafficEvent` and `portalTrafficDaily` schemas
+		// (portal-traffic-analytics); contribution-landing-page-action added
+		// the `form` and `landingPageSubmission` schemas and `heroImage` on
+		// `page`. 0.18.0 (portalTrafficDaily 0.2.0): `returningVisitors` and
+		// `accounts` arrive and `newVisitors` becomes nullable
+		// (portal-traffic-visitors-and-geo): null in cookieless mode, because
+		// a daily hash cannot say whether it was here yesterday and a zero
+		// would claim it can. 0.19.0 (portalTrafficDaily 0.3.0, portal 0.4.0,
+		// portalTrafficEvent 0.2.0): goals, funnels, forms, missing pages and
+		// custom dimensions (portal-traffic-outcomes); the form and
+		// not-found events join the enum. 0.20.0 (portalTrafficDaily 0.4.0,
+		// portal 0.5.0, portalTrafficEvent 0.3.0): segments, roll-ups,
+		// scheduled reports, alerts, the server token and script errors
+		// (portal-traffic-reporting); `js_error` joins the enum and the daily
+		// record gains `segment`, `rollupOf`, `members` and `errors`. 0.21.0
+		// (portalTrafficDaily 0.5.0, portal 0.6.0, portalTrafficEvent 0.4.0,
+		// portalTrafficRecording 0.1.0 new): page experiments, heatmaps and
+		// session recording (portal-traffic-experiments); `heat_click` and
+		// `heat_scroll` join the enum, the daily record gains `experiments`
+		// and `heatmaps`, and the recording schema arrives, admin-readable
+		// like the raw events. Additive.
+		// Every new schema is listed in
+		// `components.registers.portaliq.schemas` (ImportHandler binds only
+		// what is listed there) and declares a non-empty `read` rule.
+		$this->assertSame('0.21.0', self::$register['info']['version']);
+		$this->assertSame('0.5.0', self::$register['components']['schemas']['portalTrafficDaily']['version']);
+		$this->assertSame('0.4.0', self::$register['components']['schemas']['portalTrafficEvent']['version']);
+		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalTrafficRecording']['version']);
+		$this->assertSame(['admin'], self::$register['components']['schemas']['portalTrafficRecording']['authorization']['read']);
+		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
+		$this->assertSame('0.3.0', self::$register['components']['schemas']['page']['version']);
+		$this->assertSame('0.6.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('0.5.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalSession']['version']);

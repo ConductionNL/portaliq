@@ -26,8 +26,10 @@ use OCA\Portaliq\Controller\ContentController;
 use OCA\Portaliq\Service\CmsReader;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\TrafficConfigResolver;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
+use OCP\IURLGenerator;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -122,9 +124,23 @@ class ContentControllerTest extends TestCase {
 			// assertion here uses a portal whose modes include `public`, so the
 			// content gate never consults this — which is the point: adding the
 			// gate must not change what a public portal serves.
-			session: ($this->session ?? $this->createMock(PortalSessionService::class))
+			session: ($this->session ?? $this->createMock(PortalSessionService::class)),
+			traffic: new TrafficConfigResolver(),
+			urlGenerator: $this->urlGenerator()
 		);
 	}//end controller()
+
+
+	/**
+	 * A URL generator that answers one absolute collector URL.
+	 * @return IURLGenerator The double.
+	 */
+	private function urlGenerator(): IURLGenerator {
+		$generator = $this->createMock(IURLGenerator::class);
+		$generator->method('linkToRouteAbsolute')->willReturn('https://portaal.example/index.php/apps/portaliq/api/traffic');
+
+		return $generator;
+	}//end urlGenerator()
 
 
 	/**
@@ -628,4 +644,42 @@ class ContentControllerTest extends TestCase {
 	}//end testASessionMeetingTheTrustFloorIsServed()
 
 
+	/**
+	 * The site record carries the resolved measurement block and the
+	 * absolute collector URL (portal-traffic-analytics), so a client on
+	 * another origin sends only what the portal asked for and knows where
+	 * to post. Defaults are filled in: a portal with no traffic block at all
+	 * is served `enabled: false` rather than nothing.
+	 *
+	 * @return void
+	 */
+	public function testTheSiteRecordCarriesTheMeasurementConfigurationAndTheCollector(): void {
+		$portal = $this->portal();
+		$portal['traffic'] = ['enabled' => true, 'events' => ['page_view', 'scroll', 'not-a-thing']];
+		$this->resolver->method('resolve')->willReturn($portal);
+
+		$data = $this->controller()->site()->getData();
+
+		$this->assertTrue($data['traffic']['enabled']);
+		$this->assertSame(['page_view', 'scroll'], $data['traffic']['events'], 'an unknown event is dropped, not served');
+		$this->assertSame(30, $data['traffic']['sessionTimeoutMinutes']);
+		$this->assertFalse($data['traffic']['persistClientId'], 'cookieless by default');
+		$this->assertArrayHasKey('sensitive', $data['traffic']);
+		$this->assertSame('https://portaal.example/index.php/apps/portaliq/api/traffic', $data['collector']);
+	}//end testTheSiteRecordCarriesTheMeasurementConfigurationAndTheCollector()
+
+
+	/**
+	 * A portal that never configured measurement is served an explicit
+	 * `enabled: false`: the client must be told, not left to guess.
+	 *
+	 * @return void
+	 */
+	public function testAnUnconfiguredPortalIsServedAsNotMeasuring(): void {
+		$this->resolver->method('resolve')->willReturn($this->portal());
+
+		$data = $this->controller()->site()->getData();
+
+		$this->assertFalse($data['traffic']['enabled']);
+	}//end testAnUnconfiguredPortalIsServedAsNotMeasuring()
 }//end class

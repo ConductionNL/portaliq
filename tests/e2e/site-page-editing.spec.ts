@@ -19,11 +19,13 @@
  * See tests/e2e/scenarios/portal-phase-two.md.
  */
 
-import { expect, test, type APIRequestContext, type Page } from '@playwright/test'
+import type { APIRequestContext, Page } from '@playwright/test'
+
+import { expect, test } from '@playwright/test'
 import { request } from '@playwright/test'
 import { readFileSync } from 'fs'
 import * as path from 'path'
-import { resolveBaseURL } from './base-url'
+import { resolveBaseURL } from './base-url.ts'
 
 const BASE = resolveBaseURL()
 const SITE = `${BASE}/index.php/apps/portaliq/site`

@@ -176,7 +176,6 @@ class NotificationDispatchJobTest extends TestCase {
 
 	private function invokeRun(NotificationDispatchJob $job, mixed $argument): void {
 		$method = new ReflectionMethod($job, 'run');
-		$method->setAccessible(true);
 		$method->invoke($job, $argument);
 	}//end invokeRun()
 

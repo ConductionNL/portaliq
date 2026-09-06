@@ -59,6 +59,7 @@ use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\PortalTaskGateway;
 use OCA\Portaliq\Service\SubmissionReceiptService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -128,6 +129,13 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @param LoggerInterface $logger Records the CAUSE of a translated storage
 	 *                                failure. The cause is logged and never
 	 *                                returned — see writeScoped().
+	 * @param PortalTaskGateway|null $taskGateway Answers whether the portal task
+	 *                                            seam is reachable, so index() can
+	 *                                            announce the "Mijn taken" surface
+	 *                                            (portal-task-delivery). Optional so
+	 *                                            existing construction sites and
+	 *                                            tests keep working; absent reads
+	 *                                            as "no tasks surface".
 	 */
 	public function __construct(
 		IRequest $request,
@@ -145,6 +153,7 @@ class ContributionController extends Controller implements PortalProtected {
 		private readonly SubmissionReceiptService $receiptService,
 		private readonly NotificationDispatchService $notificationDispatch,
 		private readonly LoggerInterface $logger,
+		private readonly ?PortalTaskGateway $taskGateway = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -249,6 +258,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @spec openspec/changes/supplier-portal/tasks.md#T04
 	 * @spec openspec/changes/portal-inbox-v2/tasks.md#T04
 	 * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
+	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-mijn-taken-lists-details-and-completes-the-partys-open-tasks
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -267,6 +277,12 @@ class ContributionController extends Controller implements PortalProtected {
 
 		$aggregate = $this->registry->aggregateFor($subject);
 		$aggregate['unreadCount'] = $this->inboxReader->unreadCount(subject: $subject, aggregate: $aggregate);
+		// Announce the "Mijn taken" surface (portal-task-delivery) for
+		// AUTHENTICATED subjects only — the anonymous aggregate above never
+		// carries it. Enabled only when the seam is actually reachable
+		// (openregister installed + signing secret configured), so the SPA
+		// never shows a task entry that can only answer unavailable.
+		$aggregate['tasks'] = ['enabled' => ($this->taskGateway?->isAvailable() === true)];
 
 		return new JSONResponse($aggregate);
 	}//end index()
