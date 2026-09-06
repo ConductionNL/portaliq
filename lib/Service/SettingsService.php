@@ -25,6 +25,8 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Service\Traffic\Geo\GeoRefreshService;
+use OCA\Portaliq\Service\Traffic\Geo\GeoSettings;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
 use OCP\IGroupManager;
@@ -49,6 +51,11 @@ class SettingsService {
 	];
 
 	/**
+	 * The settings key the visitor geography block travels under.
+	 */
+	public const GEO_KEY = 'traffic_geo';
+
+	/**
 	 * Constructor for the SettingsService.
 	 *
 	 * @param IAppConfig $appConfig The app config interface
@@ -58,6 +65,8 @@ class SettingsService {
 	 * @param IUserSession $userSession The user session
 	 * @param LoggerInterface $logger The logger
 	 * @param PageEditorService $pageEditor Owns the editor groups and the schema rules they become
+	 * @param GeoSettings $geoSettings The visitor geography provider and credentials
+	 * @param GeoRefreshService $geoRefresh Reports whether a geography database is installed
 	 *
 	 * @return void
 	 */
@@ -69,6 +78,8 @@ class SettingsService {
 		private IUserSession $userSession,
 		private LoggerInterface $logger,
 		private PageEditorService $pageEditor,
+		private GeoSettings $geoSettings,
+		private GeoRefreshService $geoRefresh,
 	) {
 	}//end __construct()
 
@@ -116,6 +127,11 @@ class SettingsService {
 		// needed it is how that stops being true.
 		if ($isAdmin === true) {
 			$extra['availableGroups'] = $this->pageEditor->availableGroups();
+			// Visitor geography (portal-traffic-visitors-and-geo): the provider,
+			// the MaxMind account id, whether a licence key is stored (never
+			// the key), and whether a database is installed. Administrators
+			// only: the provider choice is instance configuration.
+			$extra[self::GEO_KEY] = $this->geoSettings->toArray() + ['status' => $this->geoRefresh->status()];
 		}
 
 		return array_merge($settings, $extra);
@@ -145,6 +161,12 @@ class SettingsService {
 			&& is_array($data[PageEditorService::CONFIG_KEY]) === true
 		) {
 			$this->pageEditor->setEditorGroups($data[PageEditorService::CONFIG_KEY]);
+		}
+
+		// Also not one of CONFIG_KEYS: the licence key is stored SENSITIVE
+		// and the block is validated by GeoSettings, which never echoes it.
+		if (isset($data[self::GEO_KEY]) === true && is_array($data[self::GEO_KEY]) === true) {
+			$this->geoSettings->update($data[self::GEO_KEY]);
 		}
 
 		return $this->getSettings();

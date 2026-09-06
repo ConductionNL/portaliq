@@ -31,7 +31,9 @@
  * @spec openspec/specs/supplier-portal/spec.md#session-refresh-rotates-the-token-within-an-absolute-cap
  */
 
-import { test, expect, type APIRequestContext } from '@playwright/test'
+import type { APIRequestContext } from '@playwright/test'
+
+import { expect, test } from '@playwright/test'
 
 const API_BASE = '/apps/portaliq/portal/api'
 

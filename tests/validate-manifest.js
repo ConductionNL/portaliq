@@ -193,7 +193,40 @@ function structuralLint(manifest) {
 // CnDashboardPage.vue — isTile / isChart / isStatsBlock). Anything else falls
 // through to the "unavailable" placeholder: the page renders, the widget does
 // not, and nothing fails.
-const RENDERABLE_WIDGET_TYPES = new Set(['tile', 'chart', 'stats-block'])
+// Built-in types first. A consumer widget registered in src/registry.js with
+// kind: "widget" is ALSO mountable: CnDashboardPage resolves `type` against
+// the app registry before its own catalog (REQ-MVR-005, custom over built-in).
+// The registry imports .vue files, so it cannot be required from this plain
+// node script; its widget keys are read off the source instead, by the exact
+// two-line shape every entry in this repo uses (`Key: {` then `kind: 'widget'`).
+// A key that is not written that way is simply not seen, and the widget is
+// reported as unmountable, which is the failure direction that makes noise.
+const RENDERABLE_WIDGET_TYPES = new Set([
+	'tile',
+	'chart',
+	'stats-block',
+	...registryWidgetKeys(),
+])
+
+/**
+ * The kind: "widget" keys declared in src/registry.js.
+ *
+ * @return {string[]} The registry keys.
+ */
+function registryWidgetKeys() {
+	const registry = path.join(__dirname, '..', 'src', 'registry.js')
+	if (!fs.existsSync(registry)) {
+		return []
+	}
+	const source = fs.readFileSync(registry, 'utf8')
+	const keys = []
+	const entry = /^\t([A-Za-z][A-Za-z0-9]*|'[a-z0-9-]+'): \{\n\t\tkind: 'widget'/gm
+	let match
+	while ((match = entry.exec(source)) !== null) {
+		keys.push(match[1].replace(/^'|'$/g, ''))
+	}
+	return keys
+}
 
 // The only link types CnTileWidget resolves (see its `tileUrl` computed).
 // There is no default branch: anything else is used verbatim as an href.

@@ -559,6 +559,9 @@ export default {
 			results: [],
 			facetBuckets: [],
 			total: 0,
+			// The last term reported to the traffic client, so paging the
+			// same search is not a second search.
+			reported: '',
 			pages: 1,
 			loading: false,
 			error: false,
@@ -811,6 +814,7 @@ export default {
 				this.total = body.total || 0
 				this.pages = Math.max(1, body.pages || 1)
 				this.facetBuckets = toBuckets(body.facets, this.facetField)
+				this.reportSearch(this.total)
 			} catch {
 				// The reason is deliberately not surfaced to the visitor: this
 				// runs at a public origin and a raw fetch/parse message would
@@ -834,6 +838,32 @@ export default {
 		},
 
 		/**
+		 * Tell the traffic client about the search, once per term, with the
+		 * result count (portal-traffic-outcomes). The client sends it only
+		 * when the portal enabled `search`, and the term reaches storage
+		 * only when the portal keeps search terms; this block does not
+		 * decide either. Paging or sorting the same term reports nothing
+		 * again.
+		 *
+		 * @param {number} total The result count.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-site-search-must-be-reported-by-the-built-in-search-box
+		 */
+		reportSearch(total) {
+			const term = String(this.query || '').trim()
+			const client = window.portaliqTraffic
+			if (term === '' || term === this.reported || !client) {
+				return
+			}
+			this.reported = term
+			client.track('search', {
+				searchTerm: term.substring(0, 256),
+				results: total,
+			})
+		},
+
+		/**
 		 * Run the term the search box handed over.
 		 *
 		 * @param {string} term The submitted term.
@@ -843,6 +873,7 @@ export default {
 		 */
 		onSearch(term) {
 			this.query = term || ''
+			this.reported = ''
 			// A new query invalidates the page number. Staying on page 7 of a
 			// previous search shows an empty list for a search that has
 			// results, which reads as "nothing found".

@@ -67,15 +67,10 @@
  * @spec openspec/specs/observability/spec.md#REQ-OBS-002
  */
 
-import {
-	test,
-	expect,
-	request as playwrightRequest,
-	type APIRequestContext,
-	type Page,
-} from '@playwright/test'
+import type { APIRequestContext, Page } from '@playwright/test'
 
-import { BASE_URL } from './base-url'
+import { expect, request as playwrightRequest, test } from '@playwright/test'
+import { BASE_URL } from './base-url.ts'
 
 /** Nextcloud admin, as exported by the shared quality.yml Playwright step. */
 const ADMIN_USER = process.env.ADMIN_USER ?? process.env.NC_ADMIN_USER ?? 'admin'
@@ -529,7 +524,7 @@ test.describe('admin SPA + admin settings + operator contracts', () => {
 			expect(readerBody.isAdmin).toBe(false)
 			expect(readerBody.openregisters).toBe(true)
 			expect(
-				Object.prototype.hasOwnProperty.call(readerBody, 'register'),
+				Object.hasOwn(readerBody, 'register'),
 				'the register binding must not be exposed to a non-admin',
 			).toBe(false)
 		} finally {
@@ -573,10 +568,7 @@ test.describe('admin SPA + admin settings + operator contracts', () => {
 				'a CONFIG_KEYS entry must be persisted',
 			).toBe(probe)
 			expect(
-				Object.prototype.hasOwnProperty.call(
-					body.config ?? {},
-					'thisKeyIsNotInConfigKeys',
-				),
+				Object.hasOwn(body.config ?? {}, 'thisKeyIsNotInConfigKeys'),
 				'an unknown key must be ignored, not stored and not surfaced as an error',
 			).toBe(false)
 

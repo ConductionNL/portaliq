@@ -12,11 +12,21 @@
       },
       {
         "id": "demo-data",
-        "type": "run-action",
-        "action": "install-demo-data",
-        "title": "Demo data (optional)",
+        "type": "choice",
+        "display": "cards",
+        "optionsSource": "datasets",
+        "configKey": "demo_dataset",
+        "title": "Load example data?",
         "required": false,
-        "body": "Load a small example dataset so the lists, detail pages and dashboards show a working product straight away. The data is obviously sample data, it is safe to run more than once, and it can be removed afterwards. Skip this on a production install."
+        "body": "Example data fills the lists, detail pages and dashboards so you can see the app working straight away. Pick \"None\" on a production install."
+      },
+      {
+        "id": "load-demo-data",
+        "type": "run-action",
+        "action": "load-demo-data",
+        "title": "Load the example data",
+        "required": false,
+        "body": "Loads what you picked. The data is obviously sample data, it is safe to run more than once, and you can delete it afterwards."
       },
       {
         "id": "done",
@@ -29,6 +39,14 @@
   "dependencies": [
     "openregister"
   ],
+  "store": {
+    "_note": "Configuration exchange, not rows. A configuration set carries the registers, schemas, objects, views, flows, sources and mappings that make one way of working hold together. There is deliberately NO `installable` allowlist: a set exists to introduce schemas the instance does not have YET, so listing schemas this app already owns would refuse exactly the sets worth installing. The trust boundary for a bundle is its publisher, enforced by the engine's source allowlist and trusted-key check. ⚠️ An EMPTY `installable` means install NOTHING, not install anything — omitting the key and declaring an empty list are different things.",
+    "types": [
+      "openregister.configset",
+      "openregister.flows"
+    ],
+    "localRegister": "portaliq"
+  },
   "menu": [
     {
       "id": "Dashboard",
@@ -59,19 +77,28 @@
       "order": 40
     },
     {
-      "id": "Traffic",
-      "label": "Traffic",
-      "icon": "ChartLine",
-      "route": "Traffic",
-      "order": 50
-    },
-    {
       "id": "Documentation",
       "label": "Documentation",
       "icon": "BookOpenVariantOutline",
       "href": "https://www.conduction.nl/academy",
       "section": "footer",
       "order": 90
+    },
+    {
+      "id": "StoreMenu",
+      "label": "Store",
+      "icon": "StoreOutline",
+      "route": "Store",
+      "section": "footer",
+      "order": 92
+    },
+    {
+      "id": "ReportsMenu",
+      "label": "Reports",
+      "icon": "ChartBoxOutline",
+      "route": "Reports",
+      "section": "footer",
+      "order": 95
     },
     {
       "id": "FeaturesRoadmapMenu",
@@ -91,6 +118,18 @@
     }
   ],
   "pages": [
+    {
+      "id": "Store",
+      "route": "/store",
+      "type": "store",
+      "title": "Store",
+      "config": {
+        "app": "portaliq",
+        "title": "Store",
+        "description": "Install portal configurations that other organisations have published: a theme, a set of pages, or the flows behind a form."
+      },
+      "_note": "ADR-114 Decision 4 / ADR-080. Declarative: openregister hosts the store plane, so this app writes NO store controller. With no registry configured the page renders the app's built-in items and makes NO network call."
+    },
     {
       "id": "Dashboard",
       "route": "/",
@@ -255,88 +294,219 @@
       }
     },
     {
+      "id": "Reports",
+      "route": "/reports",
+      "type": "reports",
+      "title": "Reports",
+      "config": {
+        "description": "Pick a report to open it.",
+        "cards": [
+          {
+            "id": "Traffic",
+            "label": "Traffic",
+            "description": "How much your portals are used, and by whom.",
+            "icon": "ChartLine",
+            "route": "Traffic"
+          }
+        ]
+      },
+      "_note": "ADR-112 / ADR-114 Decision 3. Portaliq already had one report and it was a main-nav entry at order 50. Nothing is invented here: the Traffic page is untouched and stays routable at /traffic, and only its menu entry moves, becoming a card. Themes is NOT carded — it is configuration for how a portal looks, not a reading of what happened, and ADR-097 keeps a domain of the work in the main nav."
+    },
+    {
       "id": "Traffic",
       "route": "/traffic",
       "type": "dashboard",
       "title": "Traffic",
       "config": {
+        "description": "What visitors looked at, who they were, where they came from and whether they did what the portal hoped. Pick a portal, a period and a segment at the top; the numbers come from the daily figures the aggregation job writes every fifteen minutes, and Export downloads exactly what the page shows.",
         "widgets": [
           {
-            "id": "traffic-sessions",
-            "title": "Sessions",
-            "type": "stats-block",
-            "iconClass": "icon-user",
-            "dataSource": {
-              "register": "portaliq",
-              "schema": "portalSession",
-              "aggregate": "count"
-            },
-            "props": {
-              "countLabel": "sessions",
-              "variant": "primary"
-            }
+            "id": "traffic-overview",
+            "type": "TrafficOverview",
+            "title": "Traffic"
           },
           {
-            "id": "traffic-revoked-sessions",
-            "title": "Revoked sessions",
-            "type": "stats-block",
-            "iconClass": "icon-category-security",
-            "dataSource": {
-              "register": "portaliq",
-              "schema": "portalSession",
-              "filter": {
-                "revoked": true
-              },
-              "aggregate": "count"
-            },
-            "props": {
-              "countLabel": "sessions",
-              "variant": "warning"
-            }
+            "id": "traffic-daily",
+            "type": "TrafficDaily",
+            "title": "Per day"
           },
           {
-            "id": "traffic-messages",
-            "title": "Messages",
-            "type": "stats-block",
-            "iconClass": "icon-mail",
-            "dataSource": {
-              "register": "portaliq",
-              "schema": "portalMessage",
-              "aggregate": "count"
-            },
-            "props": {
-              "countLabel": "messages",
-              "variant": "success"
-            }
+            "id": "traffic-pages",
+            "type": "TrafficPages",
+            "title": "Pages"
+          },
+          {
+            "id": "traffic-journeys",
+            "type": "TrafficJourneys",
+            "title": "Journeys"
+          },
+          {
+            "id": "traffic-sources",
+            "type": "TrafficSources",
+            "title": "Sources"
+          },
+          {
+            "id": "traffic-visitors",
+            "type": "TrafficVisitors",
+            "title": "Visitors"
+          },
+          {
+            "id": "traffic-goals",
+            "type": "TrafficGoals",
+            "title": "Goals"
+          },
+          {
+            "id": "traffic-funnels",
+            "type": "TrafficFunnels",
+            "title": "Funnels"
+          },
+          {
+            "id": "traffic-forms",
+            "type": "TrafficForms",
+            "title": "Forms"
+          },
+          {
+            "id": "traffic-dimensions",
+            "type": "TrafficDimensions",
+            "title": "Custom dimensions"
+          },
+          {
+            "id": "traffic-errors",
+            "type": "TrafficErrors",
+            "title": "Script errors"
+          },
+          {
+            "id": "traffic-experiments",
+            "type": "TrafficExperiments",
+            "title": "Experiments"
+          },
+          {
+            "id": "traffic-heatmap",
+            "type": "TrafficHeatmap",
+            "title": "Heatmap"
+          },
+          {
+            "id": "traffic-recordings",
+            "type": "TrafficRecordings",
+            "title": "Session recordings"
           }
         ],
         "layout": [
           {
             "id": 1,
-            "widgetId": "traffic-sessions",
+            "widgetId": "traffic-overview",
             "gridX": 0,
             "gridY": 0,
-            "gridWidth": 4,
-            "gridHeight": 1
+            "gridWidth": 12,
+            "gridHeight": 3
           },
           {
             "id": 2,
-            "widgetId": "traffic-revoked-sessions",
-            "gridX": 4,
-            "gridY": 0,
-            "gridWidth": 4,
-            "gridHeight": 1
+            "widgetId": "traffic-daily",
+            "gridX": 0,
+            "gridY": 3,
+            "gridWidth": 12,
+            "gridHeight": 3
           },
           {
             "id": 3,
-            "widgetId": "traffic-messages",
-            "gridX": 8,
-            "gridY": 0,
-            "gridWidth": 4,
-            "gridHeight": 1
+            "widgetId": "traffic-pages",
+            "gridX": 0,
+            "gridY": 6,
+            "gridWidth": 6,
+            "gridHeight": 4
+          },
+          {
+            "id": 4,
+            "widgetId": "traffic-journeys",
+            "gridX": 6,
+            "gridY": 6,
+            "gridWidth": 6,
+            "gridHeight": 4
+          },
+          {
+            "id": 5,
+            "widgetId": "traffic-sources",
+            "gridX": 0,
+            "gridY": 10,
+            "gridWidth": 12,
+            "gridHeight": 3
+          },
+          {
+            "id": 6,
+            "widgetId": "traffic-visitors",
+            "gridX": 0,
+            "gridY": 13,
+            "gridWidth": 12,
+            "gridHeight": 5
+          },
+          {
+            "id": 7,
+            "widgetId": "traffic-goals",
+            "gridX": 0,
+            "gridY": 18,
+            "gridWidth": 6,
+            "gridHeight": 4
+          },
+          {
+            "id": 8,
+            "widgetId": "traffic-funnels",
+            "gridX": 6,
+            "gridY": 18,
+            "gridWidth": 6,
+            "gridHeight": 4
+          },
+          {
+            "id": 9,
+            "widgetId": "traffic-forms",
+            "gridX": 0,
+            "gridY": 22,
+            "gridWidth": 6,
+            "gridHeight": 4
+          },
+          {
+            "id": 10,
+            "widgetId": "traffic-dimensions",
+            "gridX": 6,
+            "gridY": 22,
+            "gridWidth": 6,
+            "gridHeight": 4
+          },
+          {
+            "id": 11,
+            "widgetId": "traffic-errors",
+            "gridX": 0,
+            "gridY": 26,
+            "gridWidth": 12,
+            "gridHeight": 3
+          },
+          {
+            "id": 12,
+            "widgetId": "traffic-experiments",
+            "gridX": 0,
+            "gridY": 29,
+            "gridWidth": 12,
+            "gridHeight": 4
+          },
+          {
+            "id": 13,
+            "widgetId": "traffic-heatmap",
+            "gridX": 0,
+            "gridY": 33,
+            "gridWidth": 6,
+            "gridHeight": 5
+          },
+          {
+            "id": 14,
+            "widgetId": "traffic-recordings",
+            "gridX": 6,
+            "gridY": 33,
+            "gridWidth": 6,
+            "gridHeight": 5
           }
         ]
-      }
+      },
+      "_note": "portal-traffic-analytics. The three stats-blocks this page used to carry counted portalSession, revoked portalSession and portalMessage rows: authenticated-session bookkeeping that said nothing about visitors (task 0.1). The six widgets here read portalTrafficDaily through the object API and say 'not measured' for a portal with measurement off instead of drawing a zero. portal-traffic-visitors-and-geo added the period selector (on the overview, read by every widget through the report store) and the Visitors widget. portal-traffic-outcomes added Goals, Funnels, Forms and Custom dimensions, the missing pages under Pages and the searches under Sources. portal-traffic-reporting added the segment selector and the Export button on the overview, the roll-up note, and the Script errors widget. The Export is a button on the overview widget rather than a manifest headerAction: nc-vue's dashboard header actions cannot read the portal, period and segment the page has selected, and a download of the wrong selection is worse than none. portal-traffic-experiments added Experiments, Heatmap and Session recordings; the last two say \"off for this portal\" unless the operator accepted the switch's warning."
     },
     {
       "id": "PortalAccounts",

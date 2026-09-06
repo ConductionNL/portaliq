@@ -1,0 +1,650 @@
+<?php
+
+/**
+ * Portaliq Traffic Configuration Resolver.
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2026 Conduction B.V.
+ *
+ * @category  Service
+ * @package   OCA\Portaliq
+ * @author    Conduction <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ * @link      https://portaliq.conduction.nl
+ *
+ * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Portaliq\Service;
+
+use OCA\Portaliq\Service\Traffic\TrafficExperimentDefinitions;
+use OCA\Portaliq\Service\Traffic\TrafficOutcomeDefinitions;
+use OCA\Portaliq\Service\Traffic\TrafficReportDefinitions;
+use OCA\Portaliq\Service\Traffic\TrafficSegments;
+
+/**
+ * Resolves one portal's traffic-measurement configuration, with the shipped
+ * defaults filled in.
+ *
+ * WHY THIS IS A CLASS AND NOT A `??` CHAIN AT THE CALL SITE
+ *
+ * Three places need the same answer — the collector deciding what to accept,
+ * the public content contract telling the client what to send, and the admin UI
+ * showing what is on. A default resolved separately in three places is three
+ * defaults, and they drift in the direction of whichever one was edited last.
+ *
+ * MEASUREMENT IS OFF UNTIL A PORTAL TURNS IT ON. A portal that has never heard
+ * of this feature must not begin recording its visitors because the app was
+ * upgraded; consent and retention are decisions its operator makes, and an
+ * unconfigured portal has made neither.
+ *
+ * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
+ */
+class TrafficConfigResolver {
+
+	/**
+	 * The events a portal gets when it enables measurement without naming any.
+	 *
+	 * Deliberately just the page view. Anything more is a decision, and a
+	 * default that decides for the operator is the thing this feature exists to
+	 * avoid.
+	 *
+	 * @var string[]
+	 */
+	public const DEFAULT_EVENTS = ['page_view', 'session_start'];
+
+	/**
+	 * The event names this app knows how to store, using the GA4 spelling so a
+	 * figure here and a figure there mean the same thing.
+	 *
+	 * @var string[]
+	 */
+	public const KNOWN_EVENTS = [
+		'page_view',
+		'session_start',
+		'scroll',
+		'outbound_click',
+		'file_download',
+		'search',
+		'form_submit',
+		'form_start',
+		'form_field',
+		'form_abandon',
+		'page_not_found',
+		'js_error',
+		'heat_click',
+		'heat_scroll',
+		'email_open',
+		'email_click',
+	];
+
+	/**
+	 * The parameters a form event may carry, and the ONLY ones. A field's
+	 * id and how long it had focus say where a form loses people; what was
+	 * typed into it is the visitor's, and a client that sends it anyway
+	 * (portal-traffic-outcomes) has it stripped here rather than stored.
+	 *
+	 * @var string[]
+	 */
+	public const FORM_EVENT_PARAMS = ['formId', 'fieldId', 'lastFieldId', 'ms'];
+
+	/**
+	 * The events whose params are limited to FORM_EVENT_PARAMS.
+	 *
+	 * @var string[]
+	 */
+	public const FORM_EVENTS = ['form_start', 'form_field', 'form_abandon', 'form_submit'];
+
+	/**
+	 * The heatmap events (portal-traffic-experiments). They exist only
+	 * under the `heatmaps` switch: the switch enables them and its absence
+	 * refuses them as `sensitive-off`, whatever the events list says.
+	 *
+	 * @var string[]
+	 */
+	public const HEAT_EVENTS = ['heat_click', 'heat_scroll'];
+
+	/**
+	 * The parameters a heatmap event may carry, and the ONLY ones: two
+	 * fractions of the page, a viewport width bucket, the clicked element's
+	 * tag and a short selector, and the scroll depth. Never the text under
+	 * the pointer.
+	 *
+	 * @var string[]
+	 */
+	public const HEAT_EVENT_PARAMS = ['x', 'y', 'vw', 'tag', 'selector', 'depth'];
+
+	/**
+	 * The two params that tag an event with the experiment and the variant
+	 * a session was put on (portal-traffic-experiments).
+	 *
+	 * @var string[]
+	 */
+	public const EXPERIMENT_PARAMS = ['experiment', 'variant'];
+
+	/**
+	 * The prefix of a custom dimension parameter (`cd_<id>`); an id the
+	 * portal did not declare is stripped.
+	 */
+	public const CUSTOM_DIMENSION_PREFIX = 'cd_';
+
+	/**
+	 * Events only another app in this instance may write, through the PHP
+	 * ingest entry point. A browser never opens a mail, so a browser claiming
+	 * to have done so is refused whatever the portal enabled.
+	 *
+	 * @var string[]
+	 */
+	public const SERVER_SIDE_EVENTS = ['email_open', 'email_click'];
+
+	/**
+	 * Dimensions a portal may enable, beyond the envelope every event carries.
+	 *
+	 * @var string[]
+	 */
+	public const KNOWN_DIMENSIONS = [
+		'pageReferrer',
+		'pageTitle',
+		'searchTerm',
+		'linkUrl',
+		'fileName',
+		'region',
+		'deviceType',
+		'browser',
+		'os',
+		'language',
+		'screen',
+		'referrerHost',
+		'channel',
+		'campaign',
+		'source',
+		'medium',
+		'content',
+		'term',
+		'blastRef',
+		'contactRef',
+		'userRef',
+	];
+
+	/**
+	 * Dimensions a browser client may SUPPLY. Everything else in
+	 * KNOWN_DIMENSIONS is derived on the server from the request, or is only
+	 * ever written by another app in this instance.
+	 *
+	 * The split is the privacy boundary: a client that could post `region` or
+	 * `userRef` itself could attach to a visitor anything it liked, and the
+	 * portal's granularity setting would be decoration.
+	 *
+	 * @var string[]
+	 */
+	public const CLIENT_DIMENSIONS = [
+		'pageReferrer',
+		'pageTitle',
+		'searchTerm',
+		'linkUrl',
+		'fileName',
+		'screen',
+	];
+
+	/**
+	 * Dimensions the ingest service derives from the request and the page
+	 * location, with the source (address, user agent, query string) discarded
+	 * in the same request.
+	 *
+	 * @var string[]
+	 */
+	public const DERIVED_DIMENSIONS = [
+		'referrerHost',
+		'channel',
+		'deviceType',
+		'browser',
+		'os',
+		'language',
+		'region',
+		'campaign',
+		'source',
+		'medium',
+		'content',
+		'term',
+	];
+
+	/**
+	 * Dimensions carried only by a server-side caller's events: pipelinq's
+	 * pseudonymous mail identifiers, and the campaign fields it attributes.
+	 *
+	 * @var string[]
+	 */
+	public const SERVER_SIDE_DIMENSIONS = [
+		'campaign',
+		'source',
+		'medium',
+		'content',
+		'term',
+		'blastRef',
+		'contactRef',
+	];
+
+	/**
+	 * The four switches that change what a portal knows about a PERSON rather
+	 * than how much traffic it counts. Each is off until an operator turns it
+	 * on, and each carries its own warning in the schema.
+	 *
+	 * @var string[]
+	 */
+	public const SENSITIVE_SWITCHES = [
+		'persistClientId',
+		'accountLinking',
+		'heatmaps',
+		'sessionRecording',
+	];
+
+	/**
+	 * The dimensions enabled when a portal names none.
+	 *
+	 * `pageReferrer` is in, because "where did they come from" is the first
+	 * question anyone asks and it names a site, not a person. `searchTerm` is
+	 * OUT: a search box on a government portal receives names, case numbers and
+	 * medical words, and storing that by default is a decision nobody made.
+	 *
+	 * @var string[]
+	 */
+	public const DEFAULT_DIMENSIONS = ['pageReferrer', 'pageTitle'];
+
+	/**
+	 * GA4's inactivity window, and the number every stakeholder already has in
+	 * their head when they say "session".
+	 */
+	public const DEFAULT_SESSION_TIMEOUT_MINUTES = 30;
+
+	/**
+	 * How long raw events live before aggregation replaces them.
+	 *
+	 * Stated as a default rather than left unbounded: a traffic log that keeps
+	 * everything until someone notices is a personal-data liability nobody
+	 * chose.
+	 */
+	public const DEFAULT_RETENTION_DAYS = 90;
+
+	/**
+	 * Constructor.
+	 *
+	 * @param TrafficOutcomeDefinitions $outcomes    Normalises goals, funnels and custom dimensions.
+	 * @param TrafficSegments           $segments    Normalises segments.
+	 * @param TrafficReportDefinitions  $reports     Normalises reports, alerts and roll-up members.
+	 * @param TrafficExperimentDefinitions $experiments Normalises page experiments.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private readonly TrafficOutcomeDefinitions $outcomes = new TrafficOutcomeDefinitions(),
+		private readonly TrafficSegments $segments = new TrafficSegments(),
+		private readonly TrafficReportDefinitions $reports = new TrafficReportDefinitions(),
+		private readonly TrafficExperimentDefinitions $experiments = new TrafficExperimentDefinitions(),
+	) {
+	}
+
+	/**
+	 * Resolve a portal record's `traffic` block into a complete configuration.
+	 *
+	 * @param array<string, mixed> $portal The resolved portal record.
+	 *
+	 * @return array{enabled: bool, kind: string, events: string[], dimensions: string[],
+	 *               sessionTimeoutMinutes: int, retentionDays: int,
+	 *               consentRequired: bool, preConsentEvents: string[],
+	 *               regionGranularity: string, persistClientId: bool,
+	 *               sensitive: array<string, bool>,
+	 *               goals: array<int, array<string, mixed>>,
+	 *               funnels: array<int, array<string, mixed>>,
+	 *               customDimensions: array<int, array<string, string>>,
+	 *               segments: array<int, array<string, mixed>>, rollupOf: string[],
+	 *               reports: array<int, array<string, mixed>>, alerts: array<int, array<string, mixed>>,
+	 *               experiments: array<int, array<string, mixed>>} The effective configuration.
+	 *
+	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
+	 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
+	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
+	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
+	 */
+	public function resolve(array $portal): array {
+		$traffic = $portal['traffic'] ?? [];
+		if (is_array($traffic) === false) {
+			$traffic = [];
+		}
+
+		$enabled = ($traffic['enabled'] ?? false) === true;
+
+		// An unknown event name is DROPPED from the configuration rather than
+		// carried into the collector. A portal cannot enable a measurement this
+		// app has no storage for, and silently accepting the name would make
+		// the admin UI promise something no aggregate will ever show.
+		$events = $this->intersect(
+			requested: $traffic['events'] ?? null,
+			known: self::KNOWN_EVENTS,
+			fallback: self::DEFAULT_EVENTS
+		);
+
+		$sensitive = $this->sensitive(value: ($traffic['sensitive'] ?? null));
+		$events = $this->heatSwitched(events: $events, sensitive: $sensitive);
+		$regionGranularity = $this->regionGranularity(value: ($traffic['regionGranularity'] ?? null));
+
+		$dimensions = $this->intersect(
+			requested: $traffic['dimensions'] ?? null,
+			known: self::KNOWN_DIMENSIONS,
+			fallback: self::DEFAULT_DIMENSIONS
+		);
+
+		$dimensions = $this->switched(dimensions: $dimensions, sensitive: $sensitive, regionGranularity: $regionGranularity);
+
+		$consent = $traffic['consent'] ?? [];
+		if (is_array($consent) === false) {
+			$consent = [];
+		}
+
+		$goals = $this->outcomes->goals(value: ($traffic['goals'] ?? null));
+
+		// Pre-consent events must themselves be enabled events. Otherwise a
+		// portal could admit before consent something it does not collect
+		// after it, which is exactly backwards.
+		$preConsent = array_values(array_intersect(
+			$this->intersect(
+				requested: $consent['preConsentEvents'] ?? null,
+				known: self::KNOWN_EVENTS,
+				fallback: []
+			),
+			$events
+		));
+
+		return [
+			'enabled' => $enabled,
+			'kind' => $this->kind(value: ($portal['kind'] ?? null)),
+			'events' => $events,
+			'dimensions' => $dimensions,
+			'sessionTimeoutMinutes' => $this->positiveInt(
+				value: ($traffic['sessionTimeoutMinutes'] ?? null),
+				default: self::DEFAULT_SESSION_TIMEOUT_MINUTES
+			),
+			'retentionDays' => $this->positiveInt(
+				value: ($traffic['retentionDays'] ?? null),
+				default: self::DEFAULT_RETENTION_DAYS
+			),
+			'consentRequired' => ($consent['required'] ?? false) === true,
+			'preConsentEvents' => $preConsent,
+			'regionGranularity' => $regionGranularity,
+			// Mirrored to the top level because it is the one switch the CLIENT
+			// acts on: it decides whether anything is written to the browser.
+			'persistClientId' => $sensitive['persistClientId'],
+			'sensitive' => $sensitive,
+			// The outcomes (portal-traffic-outcomes): what the aggregation
+			// evaluates and what the validator lets through. Normalised
+			// here for the same reason as everything above: the job, the
+			// collector and the client must agree on what a goal is.
+			'goals' => $goals,
+			'funnels' => $this->outcomes->funnels(value: ($traffic['funnels'] ?? null)),
+			'customDimensions' => $this->outcomes->customDimensions(value: ($traffic['customDimensions'] ?? null)),
+			// The reporting layer (portal-traffic-reporting): segments the
+			// aggregation computes beside "all sessions", the portals a
+			// roll-up sums, and what the report job sends and watches. The
+			// server token's hash is NOT here: this block is served to the
+			// browser by the content API, and a hash is still a secret's
+			// shadow. `serverTokenHash()` reads it for the one caller.
+			'segments' => $this->segments->definitions(value: ($traffic['segments'] ?? null), goals: $goals),
+			'rollupOf' => $this->reports->rollupOf(value: ($traffic['rollupOf'] ?? null), self: (string)($portal['slug'] ?? '')),
+			'reports' => $this->reports->reports(value: ($traffic['reports'] ?? null)),
+			'alerts' => $this->reports->alerts(value: ($traffic['alerts'] ?? null), goals: $goals),
+			// Page experiments (portal-traffic-experiments): the running and
+			// stopped ones. A draft is nothing yet and is served to nobody.
+			'experiments' => $this->experiments->definitions(value: ($traffic['experiments'] ?? null)),
+		];
+	}
+
+	/**
+	 * The hash of the portal's server token (portal-traffic-reporting), or
+	 * '' when none was issued. Kept out of `resolve()` on purpose: that
+	 * block is public.
+	 *
+	 * @param array<string, mixed> $portal The portal record.
+	 *
+	 * @return string The sha256 hex of the token, or ''.
+	 *
+	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
+	 */
+	public function serverTokenHash(array $portal): string {
+		$traffic = $portal['traffic'] ?? [];
+		if (is_array($traffic) === false) {
+			return '';
+		}
+
+		$hash = $traffic['serverToken'] ?? '';
+		if (is_string($hash) === false || preg_match('/^[a-f0-9]{64}$/', $hash) !== 1) {
+			return '';
+		}
+
+		return $hash;
+	}
+
+	/**
+	 * The dimensions after the switches had their say.
+	 *
+	 * Two dimensions exist only under a switch that is elsewhere in the
+	 * configuration, and the switch wins. Listing `userRef` without
+	 * account linking, or `region` with the granularity set to none,
+	 * would otherwise store what the operator explicitly turned off. And
+	 * the switch is the decision in the other direction too: an operator
+	 * who turned account linking on, with its warning, has enabled the one
+	 * dimension it exists for. Making them also list `userRef` would be a
+	 * second switch for the same fact.
+	 *
+	 * @param string[]            $dimensions        The requested, known dimensions.
+	 * @param array<string, bool> $sensitive         The resolved switches.
+	 * @param string              $regionGranularity The resolved granularity.
+	 *
+	 * @return string[] The effective dimensions.
+	 */
+	private function switched(array $dimensions, array $sensitive, string $regionGranularity): array {
+		$dimensions = array_values(array_filter(
+			$dimensions,
+			static function (string $dimension) use ($sensitive, $regionGranularity): bool {
+				if ($dimension === 'userRef') {
+					return $sensitive['accountLinking'];
+				}
+
+				if ($dimension === 'region') {
+					return $regionGranularity !== 'none';
+				}
+
+				return true;
+			}
+		));
+
+		if ($sensitive['accountLinking'] === true && in_array('userRef', $dimensions, true) === false) {
+			$dimensions[] = 'userRef';
+		}
+
+		return $dimensions;
+	}
+
+	/**
+	 * The events after the heatmaps switch had its say, on the same
+	 * reasoning as `switched()`: the switch is the decision. With it off
+	 * the heat events are removed whatever the list says, with it on they
+	 * are added, because an operator who accepted that warning has enabled
+	 * the two events it exists for.
+	 *
+	 * @param string[]            $events    The requested, known events.
+	 * @param array<string, bool> $sensitive The resolved switches.
+	 *
+	 * @return string[] The effective events.
+	 */
+	private function heatSwitched(array $events, array $sensitive): array {
+		$events = array_values(array_filter(
+			$events,
+			static fn (string $event): bool => in_array($event, self::HEAT_EVENTS, true) === false
+		));
+
+		if ($sensitive['heatmaps'] === true) {
+			return array_merge($events, self::HEAT_EVENTS);
+		}
+
+		return $events;
+	}
+
+	/**
+	 * Whether a caller may send this event at all, before the portal's own
+	 * list is consulted.
+	 *
+	 * The mail events are written by another app in this instance about a
+	 * message it sent. A browser has no way of knowing that, so a browser
+	 * posting one is either a bug or an attempt to inflate a campaign, and
+	 * both are refused with the same reason.
+	 *
+	 * @param string $event      The event name.
+	 * @param bool   $serverSide Whether the caller is server-side PHP.
+	 *
+	 * @return bool True when the caller may send this event.
+	 *
+	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-mail-events-must-only-be-written-server-side
+	 */
+	public function allowsCaller(string $event, bool $serverSide): bool {
+		if (in_array($event, self::SERVER_SIDE_EVENTS, true) === false) {
+			return true;
+		}
+
+		return $serverSide;
+	}
+
+	/**
+	 * Whether one event name may be stored for this configuration.
+	 *
+	 * @param array<string, mixed> $config       A resolved configuration.
+	 * @param string               $event        The event name.
+	 * @param bool                 $hasConsent   Whether the visitor has consented.
+	 *
+	 * @return bool True when the event may be stored.
+	 *
+	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-measurement-must-honour-the-portals-consent-posture
+	 */
+	public function acceptsEvent(array $config, string $event, bool $hasConsent): bool {
+		if (($config['enabled'] ?? false) !== true) {
+			return false;
+		}
+
+		if (in_array($event, ($config['events'] ?? []), true) === false) {
+			return false;
+		}
+
+		if (($config['consentRequired'] ?? false) === true && $hasConsent === false) {
+			return in_array($event, ($config['preConsentEvents'] ?? []), true);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Narrow a requested list to what this app knows, falling back when the
+	 * portal named nothing.
+	 *
+	 * An EMPTY array is a real answer — "enable nothing" — and is preserved.
+	 * Only a missing or non-list value falls back, because "I did not say" and
+	 * "I said none" are different statements and conflating them would make
+	 * disabling an event impossible.
+	 *
+	 * @param mixed    $requested The portal's value.
+	 * @param string[] $known     Names this app supports.
+	 * @param string[] $fallback  Used when the portal named nothing at all.
+	 *
+	 * @return string[] The effective list.
+	 */
+	private function intersect(mixed $requested, array $known, array $fallback): array {
+		if (is_array($requested) === false) {
+			return $fallback;
+		}
+
+		$names = array_values(array_filter(
+			$requested,
+			static fn ($n): bool => is_string($n) === true && $n !== ''
+		));
+
+		return array_values(array_intersect($names, $known));
+	}
+
+	/**
+	 * A positive integer, or the default.
+	 *
+	 * @param mixed $value   The configured value.
+	 * @param int   $default The shipped default.
+	 *
+	 * @return int The effective value.
+	 */
+	private function positiveInt(mixed $value, int $default): int {
+		if (is_int($value) === true && $value > 0) {
+			return $value;
+		}
+
+		if (is_string($value) === true && ctype_digit($value) === true && (int)$value > 0) {
+			return (int)$value;
+		}
+
+		return $default;
+	}
+
+	/**
+	 * The four person-affecting switches, each resolved to a strict boolean.
+	 *
+	 * Anything that is not literally `true` is off. A string "true" from a
+	 * hand-edited record or a 1 from a form must not switch on tracking that
+	 * requires a consent banner.
+	 *
+	 * @param mixed $value The configured `sensitive` block.
+	 *
+	 * @return array<string, bool> Every switch, on or off.
+	 */
+	private function sensitive(mixed $value): array {
+		if (is_array($value) === false) {
+			$value = [];
+		}
+
+		$out = [];
+		foreach (self::SENSITIVE_SWITCHES as $switch) {
+			$out[$switch] = ($value[$switch] ?? false) === true;
+		}
+
+		return $out;
+	}
+
+	/**
+	 * What the portal record is: a site this app serves, or an external site
+	 * that only reports traffic here.
+	 *
+	 * @param mixed $value The configured kind.
+	 *
+	 * @return string One of `site`, `external`.
+	 */
+	private function kind(mixed $value): string {
+		if ($value === 'external') {
+			return 'external';
+		}
+
+		return 'site';
+	}
+
+	/**
+	 * The coarsest geography this portal permits.
+	 *
+	 * Defaults to `country`. A finer default would be a decision about personal
+	 * data taken on the operator's behalf.
+	 *
+	 * @param mixed $value The configured value.
+	 *
+	 * @return string One of `none`, `country`, `region`.
+	 */
+	private function regionGranularity(mixed $value): string {
+		if (in_array($value, ['none', 'country', 'region'], true) === true) {
+			return (string)$value;
+		}
+
+		return 'country';
+	}
+}

@@ -6,6 +6,7 @@ namespace OCA\Portaliq\Tests\Unit\Portal;
 
 use OCA\Portaliq\Portal\PortalContributionProvider;
 use OCA\Portaliq\Service\PortalObjectReader;
+use OCP\Security\ISecureRandom;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -15,7 +16,12 @@ use Psr\Log\LoggerInterface;
  * PortalObjectReader, converting them 1:1 into the manifest shape, the
  * distinct-audience discovery, the first-match-not-merge rule on a
  * same-audience collision, and the contribution-level `minTrust`
- * default-with-override semantics.
+ * default-with-override semantics. Also (landing-page-provisioning) folding
+ * active `form` objects into the dedicated `anonymous` pseudo-audience — see
+ * `PortalContributionProviderFormFoldingTest` for that behaviour in full;
+ * this file's own helpers now stub the `form` schema query to `[]` so the
+ * pre-existing `portalPage`-only assertions stay unaffected by the second
+ * `readCollection` call `getAudiences()`/`getContribution()` make today.
  *
  * @spec openspec/changes/portal-page-provisioning/tasks.md#3.1
  * @spec openspec/changes/portal-page-provisioning/tasks.md#3.2
@@ -96,15 +102,14 @@ class PortalContributionProviderTest extends TestCase {
 			$this->callback(static fn (array $ctx) => ($ctx['audience'] ?? null) === 'citizen' && ($ctx['count'] ?? null) === 2)
 		);
 
-		$reader = $this->createMock(PortalObjectReader::class);
-		$reader->method('readCollection')->willReturn(
+		$reader = $this->readerReturning(
 			[
 				['id' => 'z-second', 'audience' => 'citizen', 'status' => 'active', 'label' => 'Second', 'collections' => [], 'actions' => []],
 				['id' => 'a-first', 'audience' => 'citizen', 'status' => 'active', 'label' => 'First', 'collections' => [], 'actions' => []],
 			]
 		);
 
-		$provider = new PortalContributionProvider($reader, $logger);
+		$provider = new PortalContributionProvider($reader, $this->randomStub(), $logger);
 		$contribution = $provider->getContribution(['audience' => 'citizen']);
 
 		$this->assertSame('First', $contribution['label']);
@@ -156,9 +161,9 @@ class PortalContributionProviderTest extends TestCase {
 	 */
 	public function testActivePortalPagesQueriesOnlyActiveStatus(): void {
 		$reader = $this->createMock(PortalObjectReader::class);
-		$reader->expects($this->once())->method('readCollection')->with(
+		$reader->expects($this->exactly(2))->method('readCollection')->with(
 			'portaliq',
-			'portalPage',
+			$this->logicalOr($this->identicalTo('portalPage'), $this->identicalTo('form')),
 			'',
 			'',
 			'',
@@ -171,20 +176,53 @@ class PortalContributionProviderTest extends TestCase {
 			['status' => 'active']
 		)->willReturn([]);
 
-		$provider = new PortalContributionProvider($reader, $this->createMock(LoggerInterface::class));
+		$provider = new PortalContributionProvider($reader, $this->randomStub(), $this->createMock(LoggerInterface::class));
 		$provider->getAudiences();
 
 	}//end testActivePortalPagesQueriesOnlyActiveStatus()
 
 	/**
 	 * @param array<int, array<string, mixed>> $rows The rows the mocked
-	 *                                               reader returns.
+	 *                                               reader returns for the
+	 *                                               `portalPage` schema; the
+	 *                                               `form` schema always
+	 *                                               returns `[]` here, so
+	 *                                               these pre-existing
+	 *                                               assertions are unaffected
+	 *                                               by landing-page-provisioning's
+	 *                                               second query.
 	 */
 	private function provider(array $rows): PortalContributionProvider {
-		$reader = $this->createMock(PortalObjectReader::class);
-		$reader->method('readCollection')->willReturn($rows);
-
-		return new PortalContributionProvider($reader, $this->createMock(LoggerInterface::class));
+		return new PortalContributionProvider($this->readerReturning($rows), $this->randomStub(), $this->createMock(LoggerInterface::class));
 	}//end provider()
+
+	/**
+	 * A reader mock returning `$portalPageRows` for the `portalPage` schema
+	 * and `$formRows` (default `[]`) for the `form` schema — schema-aware,
+	 * because `getAudiences()`/`getContribution()` now query both.
+	 *
+	 * @param array<int, array<string, mixed>> $portalPageRows
+	 * @param array<int, array<string, mixed>> $formRows
+	 */
+	private function readerReturning(array $portalPageRows, array $formRows = []): PortalObjectReader {
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('readCollection')->willReturnCallback(
+			static function (string $register, string $schema) use ($portalPageRows, $formRows): array {
+				return ($schema === 'form') ? $formRows : $portalPageRows;
+			}
+		);
+
+		return $reader;
+	}//end readerReturning()
+
+	/**
+	 * A deterministic ISecureRandom stub for constructing the provider.
+	 */
+	private function randomStub(): ISecureRandom {
+		$random = $this->createMock(ISecureRandom::class);
+		$random->method('generate')->willReturn('deadbeefdeadbeefdeadbeefdeadbeef');
+
+		return $random;
+	}//end randomStub()
 
 }//end class

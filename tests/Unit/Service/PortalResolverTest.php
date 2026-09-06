@@ -367,4 +367,40 @@ class PortalResolverTest extends TestCase {
 	}//end testAnOpenRegisterFailureFailsClosed()
 
 
+	/**
+	 * The collector resolves by HOST FIRST, the reverse of the content API:
+	 * a page must not be able to attribute its events to a portal it merely
+	 * names. Here the host owns open-tilburg and the body names open-venray;
+	 * open-tilburg wins.
+	 *
+	 * @return void
+	 */
+	public function testTheCollectorPrefersTheHostOverANamedSlug(): void {
+		$resolver = $this->resolverReturning($this->sites);
+		$request = $this->createMock(IRequest::class);
+		$request->method('getServerHost')->willReturn('tilburg.example');
+
+		$site = $resolver->resolveForCollector($request, 'open-venray');
+
+		$this->assertSame('open-tilburg', $site['slug']);
+	}//end testTheCollectorPrefersTheHostOverANamedSlug()
+
+
+	/**
+	 * When the host resolves to nothing (an external portal posting to the
+	 * platform host), the named slug is honoured; with no slug either, the
+	 * batch resolves to nothing rather than to some default.
+	 *
+	 * @return void
+	 */
+	public function testTheCollectorFallsBackToTheSlugOnlyWhenTheHostResolvesNothing(): void {
+		$resolver = $this->resolverReturning($this->sites);
+		$request = $this->createMock(IRequest::class);
+		$request->method('getServerHost')->willReturn('platform.example');
+
+		$this->assertSame('open-venray', $resolver->resolveForCollector($request, 'open-venray')['slug']);
+		$this->assertNull($resolver->resolveForCollector($request, 'typo'));
+		$this->assertNull($resolver->resolveForCollector($request, null));
+		$this->assertNull($resolver->resolveForCollector($request, ''));
+	}//end testTheCollectorFallsBackToTheSlugOnlyWhenTheHostResolvesNothing()
 }//end class

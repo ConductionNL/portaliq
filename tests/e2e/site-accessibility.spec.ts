@@ -16,13 +16,14 @@
  * without knowing which axe.
  */
 
-import { readFileSync } from 'node:fs'
 import { expect, test } from '@playwright/test'
-import { resolveBaseURL } from './base-url'
+import { readFileSync } from 'node:fs'
+import { resolveBaseURL } from './base-url.ts'
 
 // CommonJS require, because this suite is compiled as CJS (no "type": "module"
 // in package.json) and `import.meta` is a syntax error there.
 const AXE_SOURCE = readFileSync(require.resolve('axe-core'), 'utf8')
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const AXE_VERSION = require('axe-core/package.json').version as string
 
 const BASE = resolveBaseURL()
@@ -82,7 +83,6 @@ test.describe('site renderer — accessibility', () => {
 	test('S13: a grid page has no serious or critical axe violations', async ({
 		page,
 	}) => {
-		// eslint-disable-next-line no-console
 		console.log(`axe-core ${AXE_VERSION}`)
 		await page.goto(SITE)
 		await expect(page.getByTestId('site-title')).toBeVisible()

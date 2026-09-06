@@ -7,6 +7,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Controller\MetricsController;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\SettingsService;
+use OCA\Portaliq\Service\Traffic\TrafficMetrics;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
@@ -61,7 +62,7 @@ class MetricsControllerTest extends TestCase {
 	 * Build a controller with a canned ObjectService (notification/fallback
 	 * counts) and a canned AuditTrailService (audit-entry counts).
 	 */
-	private function controller(?object $objectService = null, ?AuditTrailService $auditor = null): MetricsController {
+	private function controller(?object $objectService = null, ?AuditTrailService $auditor = null, ?TrafficMetrics $traffic = null): MetricsController {
 		$settingsService = $this->createMock(SettingsService::class);
 		$settingsService->method('isOpenRegisterAvailable')->willReturn(true);
 
@@ -73,7 +74,8 @@ class MetricsControllerTest extends TestCase {
 			$settingsService,
 			$container,
 			$this->createMock(LoggerInterface::class),
-			($auditor ?? $this->auditorReturning([]))
+			($auditor ?? $this->auditorReturning([])),
+			($traffic ?? $this->createMock(TrafficMetrics::class))
 		);
 	}//end controller()
 
@@ -128,7 +130,8 @@ class MetricsControllerTest extends TestCase {
 			$settings,
 			$container,
 			$this->createMock(LoggerInterface::class),
-			$this->auditorReturning([])
+			$this->auditorReturning([]),
+			$this->createMock(TrafficMetrics::class)
 		);
 
 		$body = $controller->index()->render();
@@ -168,7 +171,8 @@ class MetricsControllerTest extends TestCase {
 			$settingsService,
 			$container,
 			$this->createMock(LoggerInterface::class),
-			$this->auditorReturning([])
+			$this->auditorReturning([]),
+			$this->createMock(TrafficMetrics::class)
 		);
 
 		$response = $controller->index();
@@ -179,4 +183,24 @@ class MetricsControllerTest extends TestCase {
 		$this->assertStringContainsString('portaliq_accounts_needs_alt_contact 0', $body);
 
 	}//end testAnUnreachableObjectServiceDegradesCountsToZero()
+	/**
+	 * The traffic collector's counters are exposed: the accepted total and
+	 * one refused line PER REASON, so a flood, a misconfigured tag and a
+	 * healthy portal are distinguishable from the scrape alone
+	 * (portal-traffic-analytics).
+	 *
+	 * @return void
+	 */
+	public function testTrafficCountersAreExposedByReason(): void {
+		$traffic = $this->createMock(TrafficMetrics::class);
+		$traffic->method('acceptedTotal')->willReturn(42);
+		$traffic->method('refusedByReason')->willReturn(['bot' => 3, 'event-not-enabled' => 7]);
+
+		$body = $this->controller(traffic: $traffic)->index()->render();
+
+		$this->assertStringContainsString('# TYPE portaliq_traffic_accepted_total counter', $body);
+		$this->assertStringContainsString("portaliq_traffic_accepted_total 42\n", $body);
+		$this->assertStringContainsString('portaliq_traffic_refused_total{reason="bot"} 3', $body);
+		$this->assertStringContainsString('portaliq_traffic_refused_total{reason="event-not-enabled"} 7', $body);
+	}//end testTrafficCountersAreExposedByReason()
 }//end class

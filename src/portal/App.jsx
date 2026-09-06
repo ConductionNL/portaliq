@@ -13,12 +13,20 @@
 
 import InboxPage from '@portal/components/InboxPage.jsx'
 import PageView from '@portal/components/PageView.jsx'
+import TasksPage from '@portal/components/TasksPage.jsx'
 import { consumeOidcCallbackFragment, createPortalApi, getToken } from '@portal/lib/portalApi.js'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 // The fixed cross-app inbox nav entry's key (portal-inbox-v2 T05) — distinct
 // from any `${contribution.app}:${page.id}` key a real contribution could mint.
 const INBOX_KEY = '__inbox__'
+
+// The fixed "Mijn taken" nav entry's key (portal-task-delivery) — like the
+// inbox, a shell surface rather than any contribution's own page: portal
+// tasks live behind openregister's assertion-guarded seam, not in a
+// contribution collection. Shown only when the backend announces
+// `tasks: {enabled: true}` on the contributions aggregate.
+const TASKS_KEY = '__tasks__'
 
 // How often to proactively rotate the bearer while a session is active
 // (portal-session-hardening-v2, T04) — comfortably inside the 2h default TTL
@@ -35,8 +43,9 @@ const REFRESH_INTERVAL_MS = 25 * 60 * 1000
  *
  * @param contributions
  * @param t
+ * @param tasksEnabled
  */
-function buildNav(contributions, t) {
+function buildNav(contributions, t, tasksEnabled) {
 	const nav = []
 	for (const contribution of (contributions || [])) {
 		for (const page of (contribution.pages || [])) {
@@ -48,6 +57,13 @@ function buildNav(contributions, t) {
 				contribution,
 			})
 		}
+	}
+	// The fixed "Mijn taken" entry (portal-task-delivery): announced by the
+	// backend only when the task seam is actually reachable, and appended
+	// even when no contribution pages exist — a party can have an open task
+	// without any other portal content.
+	if (tasksEnabled) {
+		nav.push({ key: TASKS_KEY, label: t('My tasks'), icon: 'CheckboxMarkedOutline', special: 'tasks' })
 	}
 	// Surface the fixed cross-app inbox only once contributions have loaded.
 	// Appending it on the initial (pre-load) render would make it the sole nav
@@ -114,7 +130,14 @@ export default function App({ config, t: tProp }) {
 		return () => clearInterval(id)
 	}, [state.session, api])
 
-	const nav = useMemo(() => buildNav(state.contributions?.contributions, t), [state.contributions, t])
+	// The inbox deep link into "Mijn taken" (portal-task-delivery): the task
+	// uuid a "Bekijk taak" click hands over, opened once TasksPage mounts.
+	const [pendingTaskUuid, setPendingTaskUuid] = useState(null)
+
+	const nav = useMemo(
+		() => buildNav(state.contributions?.contributions, t, state.contributions?.tasks?.enabled === true),
+		[state.contributions, t],
+	)
 	const unreadCount = unreadOverride ?? (state.contributions?.unreadCount || 0)
 
 	// Default to the first CONTENT page once contributions load — never the
@@ -264,7 +287,12 @@ export default function App({ config, t: tProp }) {
 							key={n.key}
 							type="button"
 							className={n.key === activeKey ? 'portaliq-nav-item active' : 'portaliq-nav-item'}
-							onClick={() => setActiveKey(n.key)}
+							onClick={() => {
+								// A manual nav click always lands on the page's own
+								// start state — never a stale inbox deep link.
+								setPendingTaskUuid(null)
+								setActiveKey(n.key)
+							}}
 						>
 							{n.label}
 							{n.special === 'inbox' && unreadCount > 0 && (
@@ -320,10 +348,25 @@ export default function App({ config, t: tProp }) {
 									const current = prev ?? (state.contributions?.unreadCount || 0)
 									return Math.max(0, current - 1)
 								})}
+								onOpenTask={(taskUuid) => {
+									// The message's "Bekijk taak" deep link: hand the
+									// uuid to "Mijn taken" and switch to it.
+									setPendingTaskUuid(taskUuid)
+									setActiveKey(TASKS_KEY)
+								}}
 							/>
 						)}
 
-						{active && active.special !== 'inbox' && (
+						{active && active.special === 'tasks' && (
+							<TasksPage
+								api={api}
+								t={t}
+								locale={config.locale}
+								initialTaskUuid={pendingTaskUuid}
+							/>
+						)}
+
+						{active && !active.special && (
 							<PageView
 								page={active.page}
 								contribution={active.contribution}
