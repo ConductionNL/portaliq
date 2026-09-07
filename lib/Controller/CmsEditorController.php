@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
  */
 
 declare(strict_types=1);
@@ -53,7 +53,7 @@ use OCP\IURLGenerator;
  * from a route that never existed, and an editing probe that leaked the
  * difference would hand back what that refusal protects.
  *
- * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
  */
 class CmsEditorController extends Controller {
 
@@ -90,7 +90,7 @@ class CmsEditorController extends Controller {
 	 *
 	 * @return JSONResponse `{canEdit}` always; the page and its editor only for an editor.
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
 	 */
 	#[NoAdminRequired]
 	#[NoCSRFRequired]

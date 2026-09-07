@@ -35,8 +35,8 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T02
- * @spec openspec/changes/contract-v2/tasks.md#T1
- * @spec openspec/changes/contract-v2/tasks.md#T7
+ * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T1
+ * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T7
  * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.1
  * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.3
  * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#2.1
@@ -195,7 +195,7 @@ class PortalSessionService {
 	 *
 	 * @return string One of `low`, `substantial`, `high`.
 	 *
-	 * @spec openspec/changes/contract-v2/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T1
 	 */
 	public static function normaliseTrust(mixed $trust): string {
 		if (is_string($trust) === true && isset(self::TRUST_ORDER[$trust]) === true) {
@@ -219,7 +219,7 @@ class PortalSessionService {
 	 *
 	 * @return bool True when the subject meets the threshold.
 	 *
-	 * @spec openspec/changes/contract-v2/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T1
 	 */
 	public static function trustSatisfies(mixed $subjectTrust, mixed $minTrust): bool {
 		if ($minTrust === null || $minTrust === '') {
@@ -762,7 +762,7 @@ class PortalSessionService {
 	 *                          resolved subject implies `resolveFromBearer()`
 	 *                          already required `$jwt` to be non-null.
 	 *
-	 * @spec openspec/changes/contract-v2/tasks.md#T7
+	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T7
 	 */
 	public function issueAssertion(array $subject): string {
 		if ($this->jwt === null) {

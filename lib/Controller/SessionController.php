@@ -23,7 +23,7 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T02
- * @spec openspec/changes/contract-v2/tasks.md#T1
+ * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T1
  * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T03
  * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T05
  * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T06
@@ -193,7 +193,7 @@ class SessionController extends Controller {
 	 * 404 path).
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
-	 * @spec openspec/changes/contract-v2/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T1
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T05
 	 */
 	#[PublicPage]

@@ -206,7 +206,7 @@ class CmsReaderTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-a-page-must-carry-a-draft-body-that-is-never-served-publicly
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-a-page-must-carry-a-draft-body-that-is-never-served-publicly
 	 */
 	public function testADraftIsNeverServedPublicly(): void {
 		$this->cache->method('get')->willReturn(null);
@@ -273,7 +273,7 @@ class CmsReaderTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
 	 */
 	public function testIdentifyFindsAnUnpublishedPageToo(): void {
 		$this->withRows(
@@ -299,7 +299,7 @@ class CmsReaderTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
 	 */
 	public function testIdentifyReadsAFlatIdentifier(): void {
 		$this->withRows([['id' => 'bb22', 'route' => '/contact']]);
@@ -313,7 +313,7 @@ class CmsReaderTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
 	 */
 	public function testIdentifyReturnsNullForAnUnknownRoute(): void {
 		$this->withRows([['@self' => ['id' => 'cc33'], 'route' => '/ergens-anders']]);
@@ -331,7 +331,7 @@ class CmsReaderTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
 	 */
 	public function testIdentifyRefusesWithoutAPortalOrRoute(): void {
 		$this->assertNull($this->reader->identify('', '/contact'));

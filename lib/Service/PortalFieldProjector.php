@@ -26,7 +26,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/field-projection/tasks.md#T1
+ * @spec openspec/changes/archive/2026-09-07-field-projection/tasks.md#T1
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Projects verified rows down to a declared `fields` whitelist, fail-closed.
  *
- * @spec openspec/changes/field-projection/tasks.md#T1
+ * @spec openspec/changes/archive/2026-09-07-field-projection/tasks.md#T1
  */
 class PortalFieldProjector {
 	/**
@@ -63,7 +63,7 @@ class PortalFieldProjector {
 	 *
 	 * @return array<int, array<string, mixed>> The projected rows.
 	 *
-	 * @spec openspec/changes/field-projection/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-09-07-field-projection/tasks.md#T1
 	 */
 	public function projectRows(array $rows, mixed $fields): array {
 		if ($fields === null) {
@@ -103,7 +103,7 @@ class PortalFieldProjector {
 	 *
 	 * @return array<string, mixed> The projected row.
 	 *
-	 * @spec openspec/changes/field-projection/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-09-07-field-projection/tasks.md#T1
 	 */
 	public function projectRow(array $row, mixed $fields): array {
 		if ($fields === null) {
@@ -131,7 +131,7 @@ class PortalFieldProjector {
 	 *
 	 * @return array<string, mixed> The projection with identifiers preserved.
 	 *
-	 * @spec openspec/changes/field-projection/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-09-07-field-projection/tasks.md#T1
 	 */
 	private function preserveIdentifiers(array $row, array $projected): array {
 		foreach (['id', 'uuid'] as $idKey) {

@@ -27,9 +27,9 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T04
- * @spec openspec/changes/contract-v2/tasks.md#T3
- * @spec openspec/changes/contract-v2/tasks.md#T5
- * @spec openspec/changes/contract-v2/tasks.md#T8
+ * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T3
+ * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T5
+ * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T8
  * @spec openspec/changes/portal-inbox-v2/tasks.md#T02
  * @spec openspec/changes/portal-inbox-v2/tasks.md#T03
  * @spec openspec/changes/portal-inbox-v2/tasks.md#T04
@@ -432,9 +432,9 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @return JSONResponse The subject's rows, or 401 / 403.
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T05
-	 * @spec openspec/changes/contract-v2/tasks.md#T3
-	 * @spec openspec/changes/contract-v2/tasks.md#T5
-	 * @spec openspec/changes/field-projection/tasks.md#T2
+	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T3
+	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T5
+	 * @spec openspec/changes/archive/2026-09-07-field-projection/tasks.md#T2
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -548,7 +548,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse The subject's object, or 401 / 403 / 404.
 	 *
-	 * @spec openspec/changes/portal-scoped-crud/tasks.md#T3
+	 * @spec openspec/changes/archive/2026-09-07-portal-scoped-crud/tasks.md#T3
 	 * @spec openspec/specs/supplier-portal/spec.md#scoped-file-download-re-verifies-ownership-before-serving-a-byte
 	 */
 	#[PublicPage]
@@ -887,7 +887,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @return JSONResponse The created object, or 401 / 403 / 502.
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T06
-	 * @spec openspec/changes/contract-v2/tasks.md#T3
+	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T3
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
 	 * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
 	 * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
@@ -1096,7 +1096,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse The updated object, or 401 / 403 / 404.
 	 *
-	 * @spec openspec/changes/portal-scoped-crud/tasks.md#T3
+	 * @spec openspec/changes/archive/2026-09-07-portal-scoped-crud/tasks.md#T3
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
 	 * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
 	 */
@@ -1204,7 +1204,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *                                                               action and its contributing app (the
 	 *                                                               scopeClaim namespace), or null.
 	 *
-	 * @spec openspec/changes/portal-scoped-crud/tasks.md#T3
+	 * @spec openspec/changes/archive/2026-09-07-portal-scoped-crud/tasks.md#T3
 	 */
 	private function authorisedUpdateAction(array $subject, string $register, string $schema, string $actionId = ''): ?array {
 		$aggregate = $this->registry->aggregateFor($subject);
@@ -1243,7 +1243,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/contract-v2/tasks.md#T5
+	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T5
 	 */
 	private function whitelist(array $fields): array {
 		$data = [];
@@ -1314,7 +1314,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse The relayed response, or 401 / 403 / 502.
 	 *
-	 * @spec openspec/changes/contract-v2/tasks.md#T8
+	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T8
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
 	 * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
 	 * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email

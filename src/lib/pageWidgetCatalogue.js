@@ -217,7 +217,7 @@ function humanise(name) {
  *
  * @return {Array<object>} Entries of `{key, label, publicSafe, reason}`.
  *
- * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-palette-must-mark-widgets-that-cannot-render-on-a-public-page
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-palette-must-mark-widgets-that-cannot-render-on-a-public-page
  */
 export function widgetCatalogue() {
 	const entries = publicWidgetKeys().map((key) => ({
@@ -250,7 +250,7 @@ export function widgetCatalogue() {
  * @param {string} key The widget key.
  * @return {Array<object>} Entries of `{name, kind, label}`.
  *
- * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-a-pages-widget-grid-must-be-editable-by-direct-manipulation
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-a-pages-widget-grid-must-be-editable-by-direct-manipulation
  */
 export function fieldsFor(key) {
 	if (FIELD_OVERRIDES[key]) {
@@ -282,7 +282,7 @@ export function fieldsFor(key) {
  * @param {string} key The widget key.
  * @return {{gridWidth: number, gridHeight: number}} The size.
  *
- * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-a-pages-widget-grid-must-be-editable-by-direct-manipulation
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-a-pages-widget-grid-must-be-editable-by-direct-manipulation
  */
 export function defaultSizeFor(key) {
 	return DEFAULT_SIZES[key] || { gridWidth: 6, gridHeight: 4 }
@@ -294,7 +294,7 @@ export function defaultSizeFor(key) {
  * @param {string} key The widget key.
  * @return {boolean} True when the public renderer mounts it.
  *
- * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-palette-must-mark-widgets-that-cannot-render-on-a-public-page
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-palette-must-mark-widgets-that-cannot-render-on-a-public-page
  */
 export function isPublicWidget(key) {
 	return publicWidgetKeys().includes(key)
@@ -312,7 +312,7 @@ export function isPublicWidget(key) {
  * @param {string} key The widget key.
  * @return {object|null} The component, or null.
  *
- * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-palette-must-mark-widgets-that-cannot-render-on-a-public-page
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-palette-must-mark-widgets-that-cannot-render-on-a-public-page
  */
 export function previewComponentFor(key) {
 	return publicWidgetFor(key)
