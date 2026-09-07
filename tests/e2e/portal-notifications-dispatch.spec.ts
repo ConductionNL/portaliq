@@ -41,6 +41,7 @@
 import type { APIRequestContext, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { openPortaliqDemoPage } from './portal-nav.ts'
 
 // Pretty-URL app paths, matching the convention already used by
 // tests/e2e/portal-inbox.spec.ts (`/apps/portaliq/...`, no `index.php`).
@@ -103,6 +104,7 @@ test.describe('portal-notifications-dispatch', () => {
 
 		await page.goto(PORTAL_PATH)
 		await page.waitForLoadState('domcontentloaded')
+		await openPortaliqDemoPage(page)
 
 		// The demo contribution (PortalContributionProvider) now declares
 		// `message.created` (and `status.changed`) in its `notifications` list —
