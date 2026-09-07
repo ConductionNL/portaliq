@@ -40,10 +40,10 @@ use RuntimeException;
  * field-projection cases prove the declared `fields` whitelist reaches the
  * reader untouched (null = no projection) — for plain AND inbox collections.
  *
- * @spec openspec/changes/contract-v2/tasks.md#T3
- * @spec openspec/changes/contract-v2/tasks.md#T5
- * @spec openspec/changes/contract-v2/tasks.md#T8
- * @spec openspec/changes/field-projection/tasks.md#T2
+ * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T3
+ * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T5
+ * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T8
+ * @spec openspec/changes/archive/2026-09-07-field-projection/tasks.md#T2
  */
 class ContributionControllerTest extends TestCase {
 

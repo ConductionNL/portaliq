@@ -7,7 +7,7 @@
 ## Implementation Tasks
 
 ### Task 1: Reader reverse `match` mode + fail-closed validation
-- **spec_ref**: `openspec/changes/reverse-scope-join/specs/portal-contribution-contract/spec.md#requirement-one-hop-via-join-scoping`
+- **spec_ref**: `openspec/specs/portal-contribution-contract/spec.md#requirement-one-hop-via-join-scoping`
 - **files**: `lib/Service/PortalObjectReader.php`, `tests/Unit/Service/PortalObjectReaderTest.php`
 - **acceptance_criteria**:
   - GIVEN a `via` with `match: 'scopeField'` WHEN `readViaCollection()` applies the verified target set THEN outer rows are kept iff the value at the collection's own `scopeField` (dot-path) is in the set — scalar equality OR strict element-wise array-contains; the join pre-pass (`verifiedJoinTargets`), row cap, and per-row dot-path verification are UNCHANGED
@@ -19,7 +19,7 @@
 - [x] Test
 
 ### Task 2: Confirm the controller needs no change
-- **spec_ref**: `openspec/changes/reverse-scope-join/specs/portal-contribution-contract/spec.md#requirement-one-hop-via-join-scoping`
+- **spec_ref**: `openspec/specs/portal-contribution-contract/spec.md#requirement-one-hop-via-join-scoping`
 - **files**: `lib/Controller/ContributionController.php`
 - **acceptance_criteria**:
   - `collection()` already forwards the whole `via` array (so `match` rides along) AND the collection's own `scopeField`, so no controller change is required — verified by re-reading the handler; existing controller suite stays green
@@ -27,7 +27,7 @@
 - [x] Test
 
 ### Task 3: Demo provider declares one reverse-join collection
-- **spec_ref**: `openspec/changes/reverse-scope-join/specs/portal-contribution-contract/spec.md#requirement-one-hop-via-join-scoping`
+- **spec_ref**: `openspec/specs/portal-contribution-contract/spec.md#requirement-one-hop-via-join-scoping`
 - **files**: `lib/Portal/PortalContributionProvider.php`
 - **acceptance_criteria**:
   - One demo collection declares a reverse `via` with `match: 'scopeField'` using ONLY existing demo schemas (`portalAccount` → `exampleDocument`) and existing seeds — deliberately self-referential so the reverse code path is exercisable on a dev install; no register/seed edit (a realistic guardian→learner→grades seed belongs to scholiq's own change)
@@ -35,7 +35,7 @@
 - [x] Test
 
 ### Task 4: Vocabulary docs + capability spec maintenance
-- **spec_ref**: `openspec/changes/reverse-scope-join/specs/portal-contribution-contract/spec.md#requirement-one-hop-via-join-scoping`
+- **spec_ref**: `openspec/specs/portal-contribution-contract/spec.md#requirement-one-hop-via-join-scoping`
 - **files**: `README.md`, `openspec/specs/portal-contribution-contract/spec.md`
 - **acceptance_criteria**:
   - README's contract vocabulary documents `via.match` (`'id'` forward default vs `'scopeField'` reverse; scalar/array semantics; fail-closed edges)

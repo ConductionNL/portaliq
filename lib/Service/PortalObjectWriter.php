@@ -213,7 +213,7 @@ class PortalObjectWriter {
 	 *
 	 * @return array<string, mixed>|null The updated object, or null on ownership/OR failure.
 	 *
-	 * @spec openspec/changes/portal-scoped-crud/tasks.md#T2
+	 * @spec openspec/changes/archive/2026-09-07-portal-scoped-crud/tasks.md#T2
 	 */
 	public function updateObject(
 		string $register,
@@ -301,7 +301,7 @@ class PortalObjectWriter {
 	 *
 	 * @return array<string, mixed>|null The owned row, or null.
 	 *
-	 * @spec openspec/changes/portal-scoped-crud/tasks.md#T2
+	 * @spec openspec/changes/archive/2026-09-07-portal-scoped-crud/tasks.md#T2
 	 */
 	private function fetchOwnedObject(
 		object $objectService,

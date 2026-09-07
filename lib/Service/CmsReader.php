@@ -249,7 +249,7 @@ class CmsReader {
 	 *
 	 * @return string|null The object identifier, or null when no page is there.
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
 	 */
 	public function identify(string $portal, string $route): ?string {
 		if ($portal === '' || $route === '') {

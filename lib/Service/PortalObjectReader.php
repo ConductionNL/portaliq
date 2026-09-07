@@ -60,8 +60,8 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T05
- * @spec openspec/changes/contract-v2/tasks.md#T5
- * @spec openspec/changes/contract-v2/tasks.md#T6
+ * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T5
+ * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T6
  */
 
 declare(strict_types=1);
@@ -149,10 +149,10 @@ class PortalObjectReader {
 	 * @return array<int, array<string, mixed>> The subject's rows (possibly empty).
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T05
-	 * @spec openspec/changes/contract-v2/tasks.md#T5
-	 * @spec openspec/changes/contract-v2/tasks.md#T6
-	 * @spec openspec/changes/field-projection/tasks.md#T1
-	 * @spec openspec/changes/reverse-scope-join/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T5
+	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T6
+	 * @spec openspec/changes/archive/2026-09-07-field-projection/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-09-07-reverse-scope-join/tasks.md#T1
 	 *
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- the parameters map
 	 * 1:1 onto the declarative contract-v2 collection fields; folding them
@@ -314,7 +314,7 @@ class PortalObjectReader {
 	 *
 	 * @return array<string, mixed>|null The subject's object, or null (→ 404).
 	 *
-	 * @spec openspec/changes/portal-scoped-crud/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-09-07-portal-scoped-crud/tasks.md#T1
 	 *
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- the parameters map
 	 * 1:1 onto the declarative collection fields, identical to readCollection;
@@ -411,7 +411,7 @@ class PortalObjectReader {
 	 *
 	 * @return array<string, mixed>|null The normalised row, or null.
 	 *
-	 * @spec openspec/changes/portal-scoped-crud/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-09-07-portal-scoped-crud/tasks.md#T1
 	 */
 	private function fetchById(object $objectService, string $register, string $schema, string $id): ?array {
 		// OR only honours DATA-property filters, so findAll(filters:['id'=>…])
@@ -463,7 +463,7 @@ class PortalObjectReader {
 	 *
 	 * @return array<string, mixed>|null The verified row, or null.
 	 *
-	 * @spec openspec/changes/portal-scoped-crud/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-09-07-portal-scoped-crud/tasks.md#T1
 	 */
 	private function verifyViaObject(
 		object $objectService,
@@ -557,7 +557,7 @@ class PortalObjectReader {
 	 *
 	 * @return string|null The claim value, or null when absent/malformed.
 	 *
-	 * @spec openspec/changes/contract-v2/tasks.md#T5
+	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T5
 	 */
 	private function resolveClaim(
 		object $objectService,
@@ -702,8 +702,8 @@ class PortalObjectReader {
 	 *
 	 * @return array<int, array<string, mixed>> The verified target rows.
 	 *
-	 * @spec openspec/changes/contract-v2/tasks.md#T6
-	 * @spec openspec/changes/reverse-scope-join/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T6
+	 * @spec openspec/changes/archive/2026-09-07-reverse-scope-join/tasks.md#T1
 	 */
 	private function readViaCollection(
 		object $objectService,
@@ -851,8 +851,8 @@ class PortalObjectReader {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/contract-v2/tasks.md#T6
-	 * @spec openspec/changes/reverse-scope-join/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T6
+	 * @spec openspec/changes/archive/2026-09-07-reverse-scope-join/tasks.md#T1
 	 */
 	private function filterTargetRows(array $rows, array $targets, string $organisation, string $match = 'id', string $scopeField = ''): array {
 		$verified = [];
@@ -898,7 +898,7 @@ class PortalObjectReader {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/reverse-scope-join/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-09-07-reverse-scope-join/tasks.md#T1
 	 */
 	private function rowInTargetSet(array $row, array $targets, string $match, string $scopeField): bool {
 		if ($match === 'scopeField') {
@@ -935,7 +935,7 @@ class PortalObjectReader {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/reverse-scope-join/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-09-07-reverse-scope-join/tasks.md#T1
 	 */
 	private function isValidVia(mixed $via): bool {
 		if (is_array($via) === false) {

@@ -26,7 +26,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/contract-v2/tasks.md#T8
+ * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T8
  * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
  */
 
@@ -43,7 +43,7 @@ use Throwable;
 /**
  * Performs the authorised server-to-server endpoint-action forward.
  *
- * @spec openspec/changes/contract-v2/tasks.md#T8
+ * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T8
  */
 class PortalActionForwarder {
 	/**
@@ -84,7 +84,7 @@ class PortalActionForwarder {
 	 *
 	 * @return IResponse|null The domain app's response, or null on transport failure.
 	 *
-	 * @spec openspec/changes/contract-v2/tasks.md#T8
+	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T8
 	 */
 	public function forward(array $action, array $subject, ?array $whitelisted = null): ?IResponse {
 		$body = $this->requestBody();
@@ -133,7 +133,7 @@ class PortalActionForwarder {
 	 *
 	 * @return array<mixed>
 	 *
-	 * @spec openspec/changes/contract-v2/tasks.md#T8
+	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T8
 	 */
 	public function decodeBody(IResponse $response): array {
 		$body = $response->getBody();

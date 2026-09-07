@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
  */
 
 declare(strict_types=1);
@@ -50,7 +50,7 @@ use Throwable;
  * predicate, but it is not the guard: hiding a button is a courtesy, and the
  * refusal that matters happens in OpenRegister.
  *
- * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
  */
 class PageEditorService {
 	/**
@@ -116,7 +116,7 @@ class PageEditorService {
 	 *
 	 * @return array<string> The group ids, possibly empty.
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
 	 */
 	public function getEditorGroups(): array {
 		$raw = $this->appConfig->getValueString(Application::APP_ID, self::CONFIG_KEY, '');
@@ -147,7 +147,7 @@ class PageEditorService {
 	 *
 	 * @return array<string> The normalised, stored group ids.
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
 	 */
 	public function setEditorGroups(array $groups): array {
 		$normalised = $this->normalise(groups: $groups);
@@ -176,7 +176,7 @@ class PageEditorService {
 	 *
 	 * @return bool True when the user may edit.
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
 	 */
 	public function mayEdit(?IUser $user = null): bool {
 		$subject = ($user ?? $this->userSession->getUser());
@@ -203,7 +203,7 @@ class PageEditorService {
 	 *
 	 * @return array<array{id: string, label: string}> The groups, id-sorted.
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
 	 */
 	public function availableGroups(): array {
 		$groups = [];
@@ -238,7 +238,7 @@ class PageEditorService {
 	 *
 	 * @return bool True when the schema was updated.
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
 	 */
 	public function applyToSchema(array $groups): bool {
 		$mapper = $this->schemaMapper();

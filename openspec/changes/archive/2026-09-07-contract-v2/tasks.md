@@ -7,7 +7,7 @@
 ## Implementation Tasks
 
 ### Task 1: Trust vocabulary + normalisation at the session edge
-- **spec_ref**: `openspec/changes/contract-v2/specs/portal-contribution-contract/spec.md#requirement-trust-ordering-and-manifest-filtering`
+- **spec_ref**: `openspec/specs/portal-contribution-contract/spec.md#requirement-trust-ordering-and-manifest-filtering`
 - **files**: `lib/Service/PortalSessionService.php`, `lib/Controller/SessionController.php`
 - **acceptance_criteria**:
   - GIVEN a resolved subject WHEN its `trust` claim is missing or outside `low|substantial|high` (e.g. `dev`, `EH3`) THEN the subject is treated as `low`
@@ -17,7 +17,7 @@
 - [x] Test
 
 ### Task 2: Registry v2 — multi-audience discovery + minTrust manifest filtering
-- **spec_ref**: `openspec/changes/contract-v2/specs/portal-contribution-contract/spec.md#requirement-multi-audience-provider-discovery`
+- **spec_ref**: `openspec/specs/portal-contribution-contract/spec.md#requirement-multi-audience-provider-discovery`
 - **files**: `lib/Contribution/PortalContributionRegistry.php`, `lib/Contribution/IPortalContributionProvider.php`
 - **acceptance_criteria**:
   - GIVEN a provider with duck-typed `getAudiences(): array` WHEN aggregating THEN it is consulted iff the subject's audience is in the list; `getAudience()`-only providers behave exactly as v1
@@ -27,7 +27,7 @@
 - [x] Test
 
 ### Task 3: Fail-closed trust re-checks on read and create paths
-- **spec_ref**: `openspec/changes/contract-v2/specs/portal-contribution-contract/spec.md#requirement-server-side-trust-enforcement-on-read-create-and-action`
+- **spec_ref**: `openspec/specs/portal-contribution-contract/spec.md#requirement-server-side-trust-enforcement-on-read-create-and-action`
 - **files**: `lib/Controller/ContributionController.php`
 - **acceptance_criteria**:
   - GIVEN a collection or create action with `minTrust` above the subject's trust WHEN called directly THEN 403 is returned before any OpenRegister call (defense in depth on top of the filtered aggregate)
@@ -35,7 +35,7 @@
 - [x] Test
 
 ### Task 4: portalAccount `claims` property + register version bump (the whole config delta)
-- **spec_ref**: `openspec/changes/contract-v2/specs/portal-contribution-contract/spec.md#requirement-server-managed-claim-map-and-scopeclaim-scoping`
+- **spec_ref**: `openspec/specs/portal-contribution-contract/spec.md#requirement-server-managed-claim-map-and-scopeclaim-scoping`
 - **files**: `lib/Settings/portaliq_register.json`
 - **acceptance_criteria**:
   - `portalAccount.properties.claims` added as optional server-managed object (`{appId: {claimName: uuid}}`, nil-UUID example); `portalAccount.version` → `0.2.0`, `info.version` → `0.2.0`; `required` unchanged
@@ -44,7 +44,7 @@
 - [x] Test
 
 ### Task 5: scopeClaim resolution + claim-scoped reads
-- **spec_ref**: `openspec/changes/contract-v2/specs/portal-contribution-contract/spec.md#requirement-server-managed-claim-map-and-scopeclaim-scoping`
+- **spec_ref**: `openspec/specs/portal-contribution-contract/spec.md#requirement-server-managed-claim-map-and-scopeclaim-scoping`
 - **files**: `lib/Service/PortalObjectReader.php`, `lib/Controller/ContributionController.php`
 - **acceptance_criteria**:
   - GIVEN `scopeClaim: "claimName"` or `"appId.claimName"` WHEN reading THEN the scope value is resolved server-side from the subject's own portalAccount (`claims[appId][claimName]`; bare form = contributing app's namespace) and used against `scopeField` with per-row verification
@@ -54,7 +54,7 @@
 - [x] Test
 
 ### Task 6: `via` one-hop join scoping in the reader
-- **spec_ref**: `openspec/changes/contract-v2/specs/portal-contribution-contract/spec.md#requirement-one-hop-via-join-scoping`
+- **spec_ref**: `openspec/specs/portal-contribution-contract/spec.md#requirement-one-hop-via-join-scoping`
 - **files**: `lib/Service/PortalObjectReader.php`
 - **acceptance_criteria**:
   - GIVEN `via: {register, schema, scopeField, targetField}` WHEN reading THEN join rows are per-row verified (dot-path supported), targetField refs collected, and only target rows whose id/uuid is in the verified set are returned (same `_rbac:false`/`_multitenancy:false` + org-check discipline; join pre-pass row-capped)
@@ -63,7 +63,7 @@
 - [x] Test
 
 ### Task 7: Subject assertion mint + token-confusion guard
-- **spec_ref**: `openspec/changes/contract-v2/specs/portal-contribution-contract/spec.md#requirement-subject-assertions-are-not-portal-sessions`
+- **spec_ref**: `openspec/specs/portal-contribution-contract/spec.md#requirement-subject-assertions-are-not-portal-sessions`
 - **files**: `lib/Service/PortalJwtService.php`, `lib/Service/PortalSessionService.php`
 - **acceptance_criteria**:
   - GIVEN `createAssertion()` WHEN minting THEN HS256 with the existing secret sourcing, TTL 60s, claims sub/audience/organisation/trust/jti (session's jti) + `use: "assertion"`
@@ -72,7 +72,7 @@
 - [x] Test
 
 ### Task 8: Endpoint action forward — route + controller + relay
-- **spec_ref**: `openspec/changes/contract-v2/specs/portal-contribution-contract/spec.md#requirement-endpoint-bearer-forward-actions`
+- **spec_ref**: `openspec/specs/portal-contribution-contract/spec.md#requirement-endpoint-bearer-forward-actions`
 - **files**: `lib/Controller/ContributionController.php`, `appinfo/routes.php`
 - **acceptance_criteria**:
   - GIVEN `POST /portal/api/actions/{appId}/{actionId}` WHEN the action (id + non-empty local-path endpoint + allowed method + satisfied minTrust) exists in the subject's own aggregated manifest THEN portaliq forwards server-to-server with `X-Portal-Subject` and relays status + JSON body; otherwise 403 with no outbound call
@@ -82,7 +82,7 @@
 - [x] Test
 
 ### Task 9: Demo provider v2 vocabulary + seed claims data
-- **spec_ref**: `openspec/changes/contract-v2/specs/portal-contribution-contract/spec.md#requirement-multi-audience-provider-discovery`
+- **spec_ref**: `openspec/specs/portal-contribution-contract/spec.md#requirement-multi-audience-provider-discovery`
 - **files**: `lib/Portal/PortalContributionProvider.php`, `lib/Settings/portaliq_register.json`
 - **acceptance_criteria**:
   - Demo provider exercises v2: `getAudiences()`, one `minTrust: substantial` entry, one `scopeClaim: "exampleContactId"` collection, one endpoint action with placeholder path
