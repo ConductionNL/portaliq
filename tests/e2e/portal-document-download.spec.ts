@@ -30,6 +30,7 @@
 import type { APIRequestContext, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { openPortaliqDemoPage } from './portal-nav.ts'
 
 // Pretty-URL app paths, matching the convention already used by
 // tests/e2e/docs-screenshots.spec.ts (`/apps/portaliq/...`, no `index.php`).
@@ -88,6 +89,7 @@ test.describe('portal-document-download', () => {
 
 		await page.goto(PORTAL_PATH)
 		await page.waitForLoadState('domcontentloaded')
+		await openPortaliqDemoPage(page)
 
 		// Create a fresh example row via the demo "Nieuw voorbeeld" form so the
 		// test owns a row with no pre-existing state to collide with.
@@ -151,6 +153,7 @@ test.describe('portal-document-download', () => {
 
 		await page.goto(PORTAL_PATH)
 		await page.waitForLoadState('domcontentloaded')
+		await openPortaliqDemoPage(page)
 
 		const title = `E2E 404 ${Date.now()}`
 		await page.getByLabel('Onderwerp').fill(title)
