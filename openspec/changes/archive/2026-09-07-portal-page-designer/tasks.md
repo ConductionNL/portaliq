@@ -6,7 +6,7 @@
 ## Implementation Tasks
 
 ### Task 1: Draft body, editor groups and schema authorization
-- **spec_ref**: `openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-a-page-must-carry-a-draft-body-that-is-never-served-publicly`
+- **spec_ref**: `openspec/specs/portal-page-designer/spec.md#requirement-a-page-must-carry-a-draft-body-that-is-never-served-publicly`
 - **files**: `lib/Settings/portaliq_register.json`, `lib/Service/PageEditorService.php`, `lib/Service/SettingsService.php`, `lib/Service/CmsReader.php`, `tests/Unit/Service/PageEditorServiceTest.php`
 - **acceptance_criteria**:
   - The `page` schema carries `draftBody` with the same shape as `body`, and the schema version is bumped
@@ -17,7 +17,7 @@
 - [x] Test
 
 ### Task 2: The editing-context probe
-- **spec_ref**: `openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit`
+- **spec_ref**: `openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit`
 - **files**: `lib/Controller/CmsEditorController.php`, `appinfo/routes.php`, `tests/Unit/Controller/CmsEditorControllerTest.php`
 - **acceptance_criteria**:
   - A route resolves to `{canEdit, pageId, editUrl}` for a user who may edit that portal's pages
@@ -28,7 +28,7 @@
 - [x] Test
 
 ### Task 3: The floating editing control on the site
-- **spec_ref**: `openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit`
+- **spec_ref**: `openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit`
 - **files**: `src/site/components/SiteEditButton.vue`, `src/site/App.vue`, `src/site/lib/editorApi.js`
 - **acceptance_criteria**:
   - The control is absent from the document for a visitor who may not edit, not merely hidden
@@ -39,7 +39,7 @@
 - [x] Test
 
 ### Task 4: The page layout designer
-- **spec_ref**: `openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-a-pages-widget-grid-must-be-editable-by-direct-manipulation`
+- **spec_ref**: `openspec/specs/portal-page-designer/spec.md#requirement-a-pages-widget-grid-must-be-editable-by-direct-manipulation`
 - **files**: `src/views/PageLayoutDesigner.vue`, `src/registry.js`, `src/manifest.json`, `src/store/modules/object.js`
 - **acceptance_criteria**:
   - Widgets are added, moved, resized and removed on the shared 12-column grid, keyboard included, and persist in the canonical widget-entry shape
@@ -50,7 +50,7 @@
 - [x] Test
 
 ### Task 5: CMS reads immune to a foreign OpenRegister context
-- **spec_ref**: `openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-a-cms-read-must-not-inherit-another-apps-openregister-context`
+- **spec_ref**: `openspec/specs/portal-page-designer/spec.md#requirement-a-cms-read-must-not-inherit-another-apps-openregister-context`
 - **files**: `lib/Service/PortalRegisterContext.php`, `lib/Service/CmsReader.php`, `lib/Service/PortalResolver.php`, `tests/Unit/Service/PortalRegisterContextTest.php`
 - **acceptance_criteria**:
   - The portal resolver and the CMS reader apply their register/schema context through one helper that resolves the schema entity itself
@@ -61,7 +61,7 @@
 - [x] Test
 
 ### Task 6: End-to-end coverage of both surfaces
-- **spec_ref**: `openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-a-pages-widget-grid-must-be-editable-by-direct-manipulation`
+- **spec_ref**: `openspec/specs/portal-page-designer/spec.md#requirement-a-pages-widget-grid-must-be-editable-by-direct-manipulation`
 - **files**: `tests/e2e/site-page-editing.spec.ts`, `tests/e2e/ci-seed.sh`
 - **acceptance_criteria**:
   - An anonymous visit shows no editing control; an editor's visit shows it and reaches the designer for that route

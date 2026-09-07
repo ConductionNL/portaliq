@@ -78,7 +78,7 @@ class CmsEditorControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
 	 */
 	public function testARefusalNamesNoPage(): void {
 		$response = $this->controller(mayEdit: false)->editingContext('/geheim');
@@ -95,7 +95,7 @@ class CmsEditorControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
 	 */
 	public function testAnEditorGetsTheDesignerLink(): void {
 		$data = $this->controller(mayEdit: true)->editingContext('/over-ons')->getData();
@@ -119,7 +119,7 @@ class CmsEditorControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
 	 */
 	public function testARouteWithNoPageOffersNoDesigner(): void {
 		$data = $this->controller(mayEdit: true, pageId: null)->editingContext('/bestaat-niet')->getData();
@@ -136,7 +136,7 @@ class CmsEditorControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
 	 */
 	public function testNoResolvedPortalStillOffersTheListing(): void {
 		$data = $this->controller(mayEdit: true, portal: null)->editingContext('/')->getData();
@@ -155,7 +155,7 @@ class CmsEditorControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
 	 */
 	public function testTheAnswerIsNeverCacheable(): void {
 		foreach ([true, false] as $mayEdit) {

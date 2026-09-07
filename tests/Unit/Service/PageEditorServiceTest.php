@@ -237,7 +237,7 @@ class PageEditorServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
 	 */
 	public function testAnAnonymousVisitorMayNotEdit(): void {
 		$this->assertFalse($this->service(uid: null)->mayEdit());
@@ -249,7 +249,7 @@ class PageEditorServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
 	 */
 	public function testAnAdministratorMayEdit(): void {
 		$this->assertTrue($this->service(isAdmin: true)->mayEdit());
@@ -261,7 +261,7 @@ class PageEditorServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
 	 */
 	public function testAConfiguredEditorMayEdit(): void {
 		$this->stored = json_encode(['redacteuren']);
@@ -275,7 +275,7 @@ class PageEditorServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
 	 */
 	public function testAnAuthenticatedNonEditorMayNotEdit(): void {
 		$this->stored = json_encode(['redacteuren']);
@@ -293,7 +293,7 @@ class PageEditorServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
 	 */
 	public function testAnEmptySettingDoesNotMeanEveryone(): void {
 		$this->assertFalse($this->service(memberships: ['gebruikers'])->mayEdit());
@@ -305,7 +305,7 @@ class PageEditorServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
 	 */
 	public function testSavingWritesTheSchemaWriteRules(): void {
 		$service = $this->service(isAdmin: true);
@@ -328,7 +328,7 @@ class PageEditorServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
 	 */
 	public function testThePublicReadRuleSurvives(): void {
 		$this->service(isAdmin: true)->setEditorGroups(['redacteuren']);
@@ -353,7 +353,7 @@ class PageEditorServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
 	 */
 	public function testClearingTheSettingClosesTheSchema(): void {
 		$service = $this->service(isAdmin: true);
@@ -372,7 +372,7 @@ class PageEditorServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
 	 */
 	public function testAvailableGroupsAreListedForThePicker(): void {
 		$appConfig = $this->createMock(IAppConfig::class);
@@ -430,7 +430,7 @@ class PageEditorServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
 	 */
 	public function testABareStringValueIsReadAsOneGroup(): void {
 		$this->stored = 'redacteuren';
@@ -444,7 +444,7 @@ class PageEditorServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
 	 */
 	public function testTheSchemaWriteReportsFailureWhenOpenRegisterIsAbsent(): void {
 		$service = $this->service(isAdmin: true, withMapper: false);

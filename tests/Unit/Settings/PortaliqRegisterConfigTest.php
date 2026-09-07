@@ -13,8 +13,8 @@ use PHPUnit\Framework\TestCase;
  * re-import, `required` stays untouched (union-merge caution, migration.md),
  * and the dev seed accounts carry placeholders only.
  *
- * @spec openspec/changes/contract-v2/tasks.md#T4
- * @spec openspec/changes/contract-v2/tasks.md#T9
+ * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T4
+ * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T9
  */
 class PortaliqRegisterConfigTest extends TestCase {
 

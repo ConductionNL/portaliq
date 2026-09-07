@@ -7,7 +7,7 @@
 ## Implementation Tasks
 
 ### Task 1: Reader projection primitive + wiring on every read path
-- **spec_ref**: `openspec/changes/field-projection/specs/portal-contribution-contract/spec.md#requirement-read-side-field-projection`
+- **spec_ref**: `openspec/specs/portal-contribution-contract/spec.md#requirement-read-side-field-projection`
 - **files**: `lib/Service/PortalObjectReader.php`, `tests/Unit/Service/PortalObjectReaderTest.php`
 - **acceptance_criteria**:
   - GIVEN a collection declaring `fields` WHEN `readCollection()` returns (direct AND `via` paths) THEN each row contains only the declared top-level properties that exist on the row plus its identifier(s) — projection applied AFTER per-row verification, never influencing row selection
@@ -18,7 +18,7 @@
 - [x] Test
 
 ### Task 2: Controller passes the declared fields through (incl. inbox kind)
-- **spec_ref**: `openspec/changes/field-projection/specs/portal-contribution-contract/spec.md#requirement-read-side-field-projection`
+- **spec_ref**: `openspec/specs/portal-contribution-contract/spec.md#requirement-read-side-field-projection`
 - **files**: `lib/Controller/ContributionController.php`, `tests/Unit/Controller/ContributionControllerTest.php`
 - **acceptance_criteria**:
   - GIVEN `collection()` matches an authorised collection WHEN it calls the reader THEN it forwards `($collection['fields'] ?? null)` unmodified — `null` means no projection
@@ -27,7 +27,7 @@
 - [x] Test
 
 ### Task 3: Demo provider declares fields on one collection
-- **spec_ref**: `openspec/changes/field-projection/specs/portal-contribution-contract/spec.md#requirement-read-side-field-projection`
+- **spec_ref**: `openspec/specs/portal-contribution-contract/spec.md#requirement-read-side-field-projection`
 - **files**: `lib/Portal/PortalContributionProvider.php`
 - **acceptance_criteria**:
   - The demo `exampleCollection` declares `fields: ["title", "status"]` so a dev install demonstrates projection (rows created via the existing `createExample` action show `title`/`status` + identifier; `subjectRef`/`organisation` absent); other demo collections stay undeclared as the backward-compat reference
@@ -36,7 +36,7 @@
 - [x] Test
 
 ### Task 4: Assertion wire-format pin (independent hardening)
-- **spec_ref**: `openspec/changes/field-projection/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format`
+- **spec_ref**: `openspec/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format`
 - **files**: `tests/Unit/Service/PortalJwtServiceTest.php`
 - **acceptance_criteria**:
   - GIVEN a freshly minted assertion WHEN the test decodes it THEN it asserts the header is exactly `{"alg": "HS256", "typ": "JWT"}`, the claim keys are exactly `sub, audience, organisation, trust, jti, use, iat, exp, iss` (in that order), `use` is the literal `"assertion"`, `iss` the literal `"portaliq"`, every subject value round-trips, and `exp - iat` equals 60 — literals, not class constants
@@ -44,7 +44,7 @@
 - [x] Test
 
 ### Task 5: Vocabulary docs + capability spec maintenance
-- **spec_ref**: `openspec/changes/field-projection/specs/portal-contribution-contract/spec.md#requirement-read-side-field-projection`
+- **spec_ref**: `openspec/specs/portal-contribution-contract/spec.md#requirement-read-side-field-projection`
 - **files**: `README.md`, `openspec/specs/portal-contribution-contract/spec.md`
 - **acceptance_criteria**:
   - README's contract vocabulary section documents `fields` (whitelist semantics, identifier preservation, fail-closed edges, inbox applicability, backward-compat default)

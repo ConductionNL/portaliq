@@ -17,7 +17,7 @@ use RuntimeException;
  * rely on a frozen shape — any drift fails this suite loudly.
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T02
- * @spec openspec/changes/field-projection/tasks.md#T4
+ * @spec openspec/changes/archive/2026-09-07-field-projection/tasks.md#T4
  */
 class PortalJwtServiceTest extends TestCase {
 

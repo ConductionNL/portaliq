@@ -7,7 +7,7 @@
 ## Implementation Tasks
 
 ### Task 1: Reader scoped single-object read
-- **spec_ref**: `openspec/changes/portal-scoped-crud/specs/portal-contribution-contract/spec.md#requirement-scoped-single-object-read`
+- **spec_ref**: `openspec/specs/portal-contribution-contract/spec.md#requirement-scoped-single-object-read`
 - **files**: `lib/Service/PortalObjectReader.php`, `tests/Unit/Service/PortalObjectReaderTest.php`
 - **acceptance_criteria**:
   - GIVEN `readObject(...)` WHEN it resolves the scope value THEN it uses the SAME rule as `readCollection` (scopeClaim → `resolveClaim`, else subjectRef); an absent/malformed claim fails closed to null WITHOUT the object fetch
@@ -18,7 +18,7 @@
 - [x] Test
 
 ### Task 2: Writer scoped verified update (closes #16)
-- **spec_ref**: `openspec/changes/portal-scoped-crud/specs/portal-contribution-contract/spec.md#requirement-scoped-verified-update`
+- **spec_ref**: `openspec/specs/portal-contribution-contract/spec.md#requirement-scoped-verified-update`
 - **files**: `lib/Service/PortalObjectWriter.php`, `tests/Unit/Service/PortalObjectWriterTest.php`
 - **acceptance_criteria**:
   - GIVEN `updateObject(...)` THEN ownership is re-verified against OpenRegister FIRST — the row is re-read by id and MUST carry `row[scopeField] === subjectRef` + pass the tenant check — and if not the subject's, null is returned and `saveObject` is NEVER called (the write-IDOR pin)
@@ -29,7 +29,7 @@
 - [x] Test
 
 ### Task 3: Controller `object()` + `update()` endpoints
-- **spec_ref**: `openspec/changes/portal-scoped-crud/specs/portal-contribution-contract/spec.md#requirement-scoped-single-object-read`
+- **spec_ref**: `openspec/specs/portal-contribution-contract/spec.md#requirement-scoped-single-object-read`
 - **files**: `lib/Controller/ContributionController.php`, `tests/Unit/Controller/ContributionControllerTest.php`
 - **acceptance_criteria**:
   - `object()`: subject (401) → `authorisedCollection` (403, honouring `?collection=` + the minTrust re-check exactly like `collection()`) → `reader.readObject(...)` with the collection's scopeField/scopeClaim/via/fields → 404 if null (no oracle) → `{object}`
@@ -39,7 +39,7 @@
 - [x] Test
 
 ### Task 4: Routes + demo provider update action
-- **spec_ref**: `openspec/changes/portal-scoped-crud/specs/portal-contribution-contract/spec.md#requirement-scoped-verified-update`
+- **spec_ref**: `openspec/specs/portal-contribution-contract/spec.md#requirement-scoped-verified-update`
 - **files**: `appinfo/routes.php`, `lib/Portal/PortalContributionProvider.php`
 - **acceptance_criteria**:
   - GET + PATCH `/portal/api/collections/{register}/{schema}/{id}` routes registered BEFORE the `/portal/{path}` SPA catch-all, with correct `#[PublicPage]` `#[NoCSRFRequired]` under the PortalProtected / PortalAuthMiddleware pattern
@@ -48,7 +48,7 @@
 - [x] Test
 
 ### Task 5: Vocabulary docs + capability spec maintenance
-- **spec_ref**: `openspec/changes/portal-scoped-crud/specs/portal-contribution-contract/spec.md#requirement-scoped-verified-update`
+- **spec_ref**: `openspec/specs/portal-contribution-contract/spec.md#requirement-scoped-verified-update`
 - **files**: `README.md`, `openspec/specs/portal-contribution-contract/spec.md`
 - **acceptance_criteria**:
   - README's Portal API table documents the GET-single + PATCH endpoints; the contract vocabulary documents the `type: update` action (ownership re-verified before write, scope re-stamped, id never trusted, no-oracle 404)

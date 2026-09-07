@@ -25,7 +25,7 @@ use RuntimeException;
  * mock so registry-algorithm tests do not depend on OpenRegister at all.
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T04
- * @spec openspec/changes/contract-v2/tasks.md#T2
+ * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T2
  * @spec openspec/changes/portal-page-provisioning/tasks.md#2.1
  */
 class PortalContributionRegistryTest extends TestCase {

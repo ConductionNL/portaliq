@@ -73,7 +73,7 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T04
- * @spec openspec/changes/contract-v2/tasks.md#T2
+ * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T2
  * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
  */
 
