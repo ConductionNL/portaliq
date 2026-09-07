@@ -82,7 +82,7 @@ async function supplierToken(
 	expect(
 		res.ok(),
 		'dev-login must be enabled on the target instance (system config debug: true). '
-		+ 'A 503 here is usually the AnonRateLimit(10/60s) on this endpoint, not a disabled debug flag.',
+			+ 'A 503 here is usually the AnonRateLimit(10/60s) on this endpoint, not a disabled debug flag.',
 	).toBeTruthy()
 
 	const token = (await res.json()).token as string
@@ -91,23 +91,30 @@ async function supplierToken(
 }
 
 test.describe('portal-cross-app-contributions', () => {
-	test('a second installed app\'s contribution reaches an authenticated subject', async ({ request }) => {
+	test("a second installed app's contribution reaches an authenticated subject", async ({
+		request,
+	}) => {
 		const token = await supplierToken(request, 'e2e-cross-app')
 
 		const res = await request.get(`${API_BASE}/contributions`, {
 			headers: { Authorization: `Bearer ${token}` },
 		})
-		expect(res.ok(), `GET ${API_BASE}/contributions failed with ${res.status()}`).toBeTruthy()
+		expect(
+			res.ok(),
+			`GET ${API_BASE}/contributions failed with ${res.status()}`,
+		).toBeTruthy()
 
 		const body = await res.json()
-		const apps: string[] = (body.contributions ?? []).map((c: { app: string }) => c.app)
+		const apps: string[] = (body.contributions ?? []).map(
+			(c: { app: string }) => c.app,
+		)
 
 		// Portaliq's own contribution is the control. If this fails the
 		// aggregate is broken outright, and the cross-app assertion below
 		// would be measuring nothing.
 		expect(
 			apps,
-			'portaliq\'s own contribution is missing, so the aggregate itself is broken',
+			"portaliq's own contribution is missing, so the aggregate itself is broken",
 		).toContain('portaliq')
 
 		// The assertion this file exists for. A missing entry here means an
@@ -116,13 +123,15 @@ test.describe('portal-cross-app-contributions', () => {
 		expect(
 			apps,
 			`${CONTRIBUTING_APP} is installed and declares the supplier audience, but its `
-			+ `contribution did not reach the portal. Got: [${apps.join(', ')}]. A provider that `
-			+ 'is installed but absent from the aggregate is being dropped without an error, '
-			+ 'most likely in PortalProviderLocator.',
+				+ `contribution did not reach the portal. Got: [${apps.join(', ')}]. A provider that `
+				+ 'is installed but absent from the aggregate is being dropped without an error, '
+				+ 'most likely in PortalProviderLocator.',
 		).toContain(CONTRIBUTING_APP)
 	})
 
-	test('every contribution in the aggregate names an app and an audience-appropriate label', async ({ request }) => {
+	test('every contribution in the aggregate names an app and an audience-appropriate label', async ({
+		request,
+	}) => {
 		const token = await supplierToken(request, 'e2e-cross-app-shape')
 
 		const res = await request.get(`${API_BASE}/contributions`, {
@@ -131,12 +140,20 @@ test.describe('portal-cross-app-contributions', () => {
 		expect(res.ok()).toBeTruthy()
 
 		const body = await res.json()
-		expect(body.audience, 'the aggregate must echo the subject audience').toBe('supplier')
+		expect(body.audience, 'the aggregate must echo the subject audience').toBe(
+			'supplier',
+		)
 		expect(Array.isArray(body.contributions)).toBeTruthy()
-		expect(body.contributions.length, 'an authenticated supplier sees no contributions at all').toBeGreaterThan(0)
+		expect(
+			body.contributions.length,
+			'an authenticated supplier sees no contributions at all',
+		).toBeGreaterThan(0)
 
 		for (const contribution of body.contributions) {
-			expect(contribution.app, 'a contribution arrived without an app id').toBeTruthy()
+			expect(
+				contribution.app,
+				'a contribution arrived without an app id',
+			).toBeTruthy()
 			expect(
 				typeof contribution.label,
 				`contribution from ${contribution.app} has no label to render`,
