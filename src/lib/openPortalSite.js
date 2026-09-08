@@ -50,6 +50,8 @@ const SITE_PATH = '/apps/portaliq/site'
  * @param {string}   slug          The portal's slug, as stored on the object.
  * @param {(path: string) => string} generateUrlFn Nextcloud's URL generator.
  * @return {string} The site URL carrying the encoded `portal` parameter.
+ *
+ * @spec openspec/changes/portals-open-site-action/specs/portaliq-cms/spec.md#requirement-the-portals-overview-must-open-a-portals-public-site
  */
 export function portalSiteUrl(slug, generateUrlFn) {
 	// encodeURIComponent, not a template literal: a slug carrying `&`, `#`, a
@@ -67,6 +69,8 @@ export function portalSiteUrl(slug, generateUrlFn) {
  * @param {(text: string) => string} deps.translate Translates that message.
  * @param {(url: string, target: string, features: string) => void} [deps.open] Window opener; defaults to `window.open`.
  * @return {(payload?: {actionId?: string, item?: object}) => string|null} The row-action handler CnIndexPage calls.
+ *
+ * @spec openspec/changes/portals-open-site-action/specs/portaliq-cms/spec.md#requirement-the-portals-overview-must-open-a-portals-public-site
  */
 export function createOpenPortalSite({
 	generateUrl: generateUrlFn,
