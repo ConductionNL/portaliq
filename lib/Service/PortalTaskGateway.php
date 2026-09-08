@@ -47,9 +47,18 @@ use Throwable;
  */
 class PortalTaskGateway {
 	/**
-	 * The seam's base path on the co-installed openregister.
+	 * The seam's routes on the co-installed openregister, BY NAME. The URL is
+	 * built from the route table (`linkToRoute()` + `getAbsoluteURL()`), never
+	 * from a hard-coded path: a bare `/apps/openregister/api/...` string put
+	 * through `getAbsoluteURL()` loses `index.php` on every instance without
+	 * pretty URLs (`htaccess.RewriteBase` unset — nextcloud-docker-dev's
+	 * default), and the whole seam then answers the webserver's 404 (WOO-568).
 	 */
-	private const TASKS_PATH = '/apps/openregister/api/portal-tasks';
+	private const ROUTE_INDEX = 'openregister.portalTask.index';
+
+	private const ROUTE_SHOW = 'openregister.portalTask.show';
+
+	private const ROUTE_COMPLETE = 'openregister.portalTask.complete';
 
 	/**
 	 * Timeout (seconds) for a task forward. Completion carries uploads, so it
@@ -102,9 +111,12 @@ class PortalTaskGateway {
 	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
 	 */
 	public function listTasks(array $subject, int $limit = 25, int $offset = 0): ?array {
-		$query = '?limit=' . max(1, $limit) . '&offset=' . max(0, $offset);
-
-		return $this->forward(subject: $subject, method: 'GET', path: self::TASKS_PATH . $query);
+		return $this->forward(
+			subject: $subject,
+			method: 'GET',
+			route: self::ROUTE_INDEX,
+			parameters: ['limit' => max(1, $limit), 'offset' => max(0, $offset)]
+		);
 	}//end listTasks()
 
 	/**
@@ -119,7 +131,7 @@ class PortalTaskGateway {
 	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
 	 */
 	public function getTask(array $subject, string $uuid): ?array {
-		return $this->forward(subject: $subject, method: 'GET', path: self::TASKS_PATH . '/' . rawurlencode($uuid));
+		return $this->forward(subject: $subject, method: 'GET', route: self::ROUTE_SHOW, parameters: ['uuid' => $uuid]);
 	}//end getTask()
 
 	/**
@@ -169,7 +181,8 @@ class PortalTaskGateway {
 		return $this->forward(
 			subject: $subject,
 			method: 'POST',
-			path: self::TASKS_PATH . '/' . rawurlencode($uuid) . '/complete',
+			route: self::ROUTE_COMPLETE,
+			parameters: ['uuid' => $uuid],
 			multipart: $multipart
 		);
 	}//end completeTask()
@@ -211,14 +224,17 @@ class PortalTaskGateway {
 	 *
 	 * @param array<string, mixed> $subject The resolved bearer subject.
 	 * @param string $method GET or POST.
-	 * @param string $path The instance-local seam path (with query).
+	 * @param string $route The seam route NAME (one of the ROUTE_* constants).
+	 * @param array<string, int|string> $parameters Route parameters; anything the
+	 *                                             route does not consume becomes
+	 *                                             the query string.
 	 * @param array<int, array<string, mixed>>|null $multipart Multipart parts for a POST, when any.
 	 *
 	 * @return array{status: int, body: array<string, mixed>}|null
 	 *
 	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
 	 */
-	private function forward(array $subject, string $method, string $path, ?array $multipart = null): ?array {
+	private function forward(array $subject, string $method, string $route, array $parameters = [], ?array $multipart = null): ?array {
 		try {
 			$assertion = $this->session->issueAssertion($subject);
 		} catch (RuntimeException $unconfigured) {
@@ -226,6 +242,17 @@ class PortalTaskGateway {
 			// isAvailable() already keeps the surface hidden; log for the
 			// operator and let the caller answer unavailable.
 			$this->logger->warning('[PortalTaskGateway] Cannot mint the portal-subject assertion: ' . $unconfigured->getMessage());
+
+			return null;
+		}
+
+		try {
+			$url = $this->seamUrl(route: $route, parameters: $parameters);
+		} catch (Throwable $unroutable) {
+			// The route table does not know the seam (openregister absent or
+			// too old): same posture as a transport failure — the caller
+			// answers unavailable, nothing is thrown at the resident.
+			$this->logger->warning('[PortalTaskGateway] Cannot resolve the seam route ' . $route . ': ' . $unroutable->getMessage());
 
 			return null;
 		}
@@ -245,7 +272,7 @@ class PortalTaskGateway {
 		}
 
 		try {
-			$response = $this->send(method: $method, path: $path, options: $options);
+			$response = $this->send(method: $method, url: $url, options: $options);
 		} catch (Throwable $failure) {
 			$this->logger->warning('[PortalTaskGateway] Task forward failed in transport: ' . $failure->getMessage());
 
@@ -266,17 +293,39 @@ class PortalTaskGateway {
 	}//end forward()
 
 	/**
+	 * The absolute, instance-local URL of one seam route.
+	 *
+	 * `linkToRoute()` consults the route table, so the result carries
+	 * `index.php` exactly when this instance needs it (no `htaccess.RewriteBase`)
+	 * and omits it when pretty URLs are on — the one thing a hard-coded path can
+	 * never get right on both kinds of instance. Unknown route parameters
+	 * (`limit`, `offset`) become the query string, the same way the SPA's own
+	 * `generateUrl()` calls behave.
+	 *
+	 * @param string $route The route name.
+	 * @param array<string, int|string> $parameters Route + query parameters.
+	 *
+	 * @return string
+	 *
+	 * @throws \Symfony\Component\Routing\Exception\RouteNotFoundException When the route is unknown.
+	 *
+	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
+	 */
+	private function seamUrl(string $route, array $parameters): string {
+		return $this->urlGenerator->getAbsoluteURL($this->urlGenerator->linkToRoute($route, $parameters));
+	}//end seamUrl()
+
+	/**
 	 * Perform the HTTP call for one forward.
 	 *
 	 * @param string $method GET or POST.
-	 * @param string $path The instance-local seam path (with query).
+	 * @param string $url The absolute seam URL (route-resolved, see seamUrl()).
 	 * @param array<string, mixed> $options The prepared client options.
 	 *
 	 * @return IResponse
 	 */
-	private function send(string $method, string $path, array $options): IResponse {
+	private function send(string $method, string $url, array $options): IResponse {
 		$client = $this->clientService->newClient();
-		$url = $this->urlGenerator->getAbsoluteURL($path);
 		if ($method === 'POST') {
 			return $client->post($url, $options);
 		}
