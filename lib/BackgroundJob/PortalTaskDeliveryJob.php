@@ -44,13 +44,13 @@ namespace OCA\Portaliq\BackgroundJob;
 
 use DateTimeImmutable;
 use DateTimeInterface;
+use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJob;
 use OCP\BackgroundJob\TimedJob;
-use OCP\IURLGenerator;
 use OCP\L10N\IFactory;
 use OCP\Mail\IMailer;
 use Psr\Container\ContainerInterface;
@@ -146,7 +146,7 @@ class PortalTaskDeliveryJob extends TimedJob {
 	 * @param PortalOrganisationConfigService $orgConfig Resolves the tenant display name.
 	 * @param IMailer $mailer Sends the privacy-minimal mail.
 	 * @param IFactory $l10nFactory NL/EN translators independent of any session locale.
-	 * @param IURLGenerator $urlGenerator Builds the portal deep link.
+	 * @param PortalDeepLinkBuilder $deepLinks Builds the portal deep link from the route table (WOO-570).
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
@@ -157,7 +157,7 @@ class PortalTaskDeliveryJob extends TimedJob {
 		private readonly PortalOrganisationConfigService $orgConfig,
 		private readonly IMailer $mailer,
 		private readonly IFactory $l10nFactory,
-		private readonly IURLGenerator $urlGenerator,
+		private readonly PortalDeepLinkBuilder $deepLinks,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(time: $time);
@@ -437,17 +437,18 @@ class PortalTaskDeliveryJob extends TimedJob {
 	/**
 	 * The portal deep link the mail carries (content stays behind the auth edge).
 	 *
+	 * Resolved from the route table by PortalDeepLinkBuilder: the former
+	 * `getAbsoluteURL('/portal')` pointed at a path no deployment serves, so the
+	 * only call-to-action in the mail was a 404 (WOO-570).
+	 *
 	 * @param string $organisation The tenant slug ('' = the bare portal).
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-delivery-worker-settles-every-ledger-row-idempotently-and-in-isolation
 	 */
 	private function deepLink(string $organisation): string {
-		$base = $this->urlGenerator->getAbsoluteURL('/portal');
-		if ($organisation === '') {
-			return $base;
-		}
-
-		return $base . '?org=' . rawurlencode($organisation);
+		return $this->deepLinks->forOrganisation(organisation: $organisation);
 	}//end deepLink()
 
 	/**

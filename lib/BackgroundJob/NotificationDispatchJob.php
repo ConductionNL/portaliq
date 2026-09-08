@@ -46,13 +46,13 @@ declare(strict_types=1);
 namespace OCA\Portaliq\BackgroundJob;
 
 use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\QueuedJob;
 use OCP\IConfig;
-use OCP\IURLGenerator;
 use OCP\L10N\IFactory;
 use OCP\Mail\IMailer;
 use Psr\Log\LoggerInterface;
@@ -123,7 +123,7 @@ class NotificationDispatchJob extends QueuedJob {
 	 * @param IMailer $mailer Sends the privacy-minimal email.
 	 * @param IFactory $l10nFactory Resolves NL/EN translators, independent
 	 *                              of any session locale.
-	 * @param IURLGenerator $urlGenerator Builds the portal deep link.
+	 * @param PortalDeepLinkBuilder $deepLinks Builds the portal deep link from the route table (WOO-570).
 	 * @param IConfig $config Reads the configurable failure threshold.
 	 * @param LoggerInterface $logger The logger.
 	 */
@@ -134,7 +134,7 @@ class NotificationDispatchJob extends QueuedJob {
 		private readonly PortalOrganisationConfigService $orgConfig,
 		private readonly IMailer $mailer,
 		private readonly IFactory $l10nFactory,
-		private readonly IURLGenerator $urlGenerator,
+		private readonly PortalDeepLinkBuilder $deepLinks,
 		private readonly IConfig $config,
 		private readonly LoggerInterface $logger,
 	) {
@@ -306,21 +306,20 @@ class NotificationDispatchJob extends QueuedJob {
 	}//end bodyText()
 
 	/**
-	 * Build the deep link into the portal (`/portal?org=<slug>`, landing at the
-	 * authenticated inbox after login) — content is only ever shown behind the
-	 * portal auth edge (design.md).
+	 * Build the deep link into the portal (the `portalPage#index` route with
+	 * `?org=<slug>`, landing at the authenticated inbox after login) — content is
+	 * only ever shown behind the portal auth edge (design.md). Resolved from the
+	 * route table by PortalDeepLinkBuilder: the former `getAbsoluteURL('/portal')`
+	 * pointed at a path no deployment serves (WOO-570).
 	 *
 	 * @param string $organisation The tenant slug.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
 	 */
 	private function deepLink(string $organisation): string {
-		$base = $this->urlGenerator->getAbsoluteURL('/portal');
-		if ($organisation === '') {
-			return $base;
-		}
-
-		return $base . '?org=' . rawurlencode($organisation);
+		return $this->deepLinks->forOrganisation(organisation: $organisation);
 	}//end deepLink()
 
 	/**
