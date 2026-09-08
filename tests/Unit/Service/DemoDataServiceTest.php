@@ -202,6 +202,28 @@ class DemoDataServiceTest extends TestCase {
 		$this->assertTrue($importer->seen['force']);
 	}
 
+	public function testAnObjectTheImporterDroppedUncountedIsStillReportedAsSkipped(): void {
+		// OpenRegister drops an object whose register or schema it cannot find
+		// BEFORE its counted skip path, so its own `skipped` says 0 while the
+		// object never landed. The gap between declared and landed is the
+		// number the operator needs.
+		file_put_contents(
+			$this->descriptor(),
+			json_encode(['components' => ['objects' => [['a' => 1], ['b' => 2], ['c' => 3], ['d' => 4]]]])
+		);
+		$importer = new class {
+			public function importFromApp(string $appId, array $data, string $version, bool $force): array {
+				return ['objects' => [['id' => 'x']], 'skipped' => ['objects' => 0]];
+			}
+		};
+		$this->container->method('get')->willReturn($importer);
+
+		$result = $this->service()->install();
+
+		$this->assertSame(1, $result['objects']);
+		$this->assertSame(3, $result['skipped']);
+	}
+
 	public function testARerunThatLeavesEveryObjectAloneStillCountsAsLanded(): void {
 		// Newer OpenRegister reports an object it found already present and
 		// identical under `unchanged` rather than `objects`. That is landed data;

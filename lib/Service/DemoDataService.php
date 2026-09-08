@@ -263,7 +263,13 @@ class DemoDataService {
 		// of the demo import must not read as a failure.
 		$landed = count((array)($result['objects'] ?? []));
 		$landed += (int)($result['unchanged']['objects'] ?? 0);
-		$skipped = (int)($result['skipped']['objects'] ?? 0);
+
+		// Everything declared that did not land was skipped, whatever the
+		// importer's own counter says: an object whose register or schema it
+		// cannot find is dropped BEFORE the counted path (measured on the
+		// WOO-556 instance: 54 declared, 30 landed, "9 skipped" — the 15 with
+		// no installed schema were in neither number).
+		$skipped = max($declared - $landed, (int)($result['skipped']['objects'] ?? 0));
 
 		if ($declared > 0 && $landed === 0) {
 			throw new RuntimeException(

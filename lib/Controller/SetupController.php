@@ -310,7 +310,8 @@ class SetupController extends Controller {
 		$skipped  = (int)($imported['skipped'] ?? 0);
 		$message  = 'Imported ' . $imported['objects'] . ' of ' . $declared . ' demo object(s).';
 		if ($skipped > 0) {
-			$message .= ' ' . $skipped . ' skipped: their schema is not installed on this instance.';
+			$message .= ' ' . $skipped . ' skipped: their schema is not installed on this instance,'
+				. ' or OpenRegister rejected them (see the Nextcloud log).';
 		}
 
 		return new JSONResponse(
