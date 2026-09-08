@@ -956,7 +956,16 @@
         "sidebar": {
           "enabled": true,
           "showMetadata": true
-        }
+        },
+        "actions": [
+          {
+            "id": "open-site",
+            "label": "Open portal",
+            "icon": "OpenInNew",
+            "type": "handler",
+            "handler": "openPortalSite"
+          }
+        ]
       }
     },
     {

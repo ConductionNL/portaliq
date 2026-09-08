@@ -383,6 +383,8 @@ OC.L10N.register(
         "Portal Traffic Event": "Portaalverkeersgebeurtenis",
         "Portal auth edge": "Portaal-authenticatierand",
         "Portal details": "Portaalgegevens",
+        "Open portal": "Portaal openen",
+        "This portal has no slug yet, so it has no public address.": "Dit portaal heeft nog geen slug en dus geen publiek adres.",
         "Portals": "Portalen",
         "Portals and their themes": "Portalen en hun thema's",
         "Position": "Positie",

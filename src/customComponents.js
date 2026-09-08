@@ -24,7 +24,22 @@
 //
 // See hydra ADR-036 for the v2 registry design.
 
+import { showInfo } from '@nextcloud/dialogs'
+import { translate as t } from '@nextcloud/l10n'
+import { generateUrl } from '@nextcloud/router'
 import CustomExample from './views/CustomExample.vue'
+import { createOpenPortalSite } from './lib/openPortalSite.js'
+
+/**
+ * The `Open portal` row action, wired to Nextcloud's URL generator, toast and
+ * translator. The factory itself imports none of them so it stays loadable in
+ * `tests/open-portal-site.spec.mjs` — see src/lib/openPortalSite.js.
+ */
+const openPortalSite = createOpenPortalSite({
+	generateUrl,
+	notify: showInfo,
+	translate: (text) => t('portaliq', text),
+})
 // Features & Roadmap page — thin wrapper around the lib's
 // CnFeaturesAndRoadmapView (in-product roadmap surface powered by
 // OpenRegister's github-issue-proxy). Shipped wired-up so apps scaffolded
@@ -39,6 +54,14 @@ export default {
 	// cloners. Wire it up by adding a `type: "custom"` page entry to
 	// `src/manifest.json` with `"component": "CustomExample"`.
 	CustomExample,
+	/**
+	 * `Open portal` row action on the Portals index page. A manifest action
+	 * with `type: "handler"` resolves its `handler` string against this map
+	 * and calls it with `{ actionId, item: row }` — see src/lib/
+	 * openPortalSite.js for why the destination cannot be a static
+	 * `navigate` target.
+	 */
+	openPortalSite,
 	// Features & Roadmap page (lib's CnFeaturesAndRoadmapView) — wired up
 	// in src/manifest.json (the `FeaturesRoadmap` custom page + the
 	// `FeaturesRoadmapMenu` settings entry).
