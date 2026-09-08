@@ -307,12 +307,22 @@ class PortalTaskGateway {
 	 *
 	 * @return string
 	 *
-	 * @throws \Symfony\Component\Routing\Exception\RouteNotFoundException When the route is unknown.
+	 * @throws RuntimeException When the route table does not know the route.
+	 *   Nextcloud's router does NOT throw for an unknown route name: it logs
+	 *   and returns an empty path (verified on 35.0.0-dev, WOO-568), and
+	 *   `getAbsoluteURL('')` would then be the instance root — a URL that is
+	 *   never the seam. The empty path is turned into the exception so that
+	 *   `forward()` degrades to null instead of calling the wrong URL.
 	 *
 	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
 	 */
 	private function seamUrl(string $route, array $parameters): string {
-		return $this->urlGenerator->getAbsoluteURL($this->urlGenerator->linkToRoute($route, $parameters));
+		$path = $this->urlGenerator->linkToRoute($route, $parameters);
+		if ($path === '') {
+			throw new RuntimeException('The route table does not know ' . $route . ' (is openregister installed and current?)');
+		}
+
+		return $this->urlGenerator->getAbsoluteURL($path);
 	}//end seamUrl()
 
 	/**

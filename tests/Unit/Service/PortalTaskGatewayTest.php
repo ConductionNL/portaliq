@@ -264,7 +264,8 @@ class PortalTaskGatewayTest extends TestCase {
 
 	/**
 	 * A route table that does not know the seam (openregister absent, or older
-	 * than the portal-task routes) degrades to null with a warning — the same
+	 * than the portal-task routes) yields an EMPTY path from linkToRoute(), not
+	 * an exception; that degrades to null with a warning — the same
 	 * fail-soft posture as a transport failure, never an exception thrown into
 	 * the proxy, and never an unresolved URL put on the wire.
 	 */
@@ -337,7 +338,7 @@ class PortalTaskGatewayTest extends TestCase {
 						'openregister.portalTask.index' => '/apps/openregister/api/portal-tasks',
 						'openregister.portalTask.show' => '/apps/openregister/api/portal-tasks/' . $uuid,
 						'openregister.portalTask.complete' => '/apps/openregister/api/portal-tasks/' . $uuid . '/complete',
-						default => throw new RuntimeException('Unable to generate a URL for the named route "' . $route . '"'),
+						default => '',
 					};
 
 					if ($arguments === []) {
@@ -348,9 +349,11 @@ class PortalTaskGatewayTest extends TestCase {
 				}
 			);
 		} else {
-			$urlGenerator->method('linkToRoute')->willThrowException(
-				new RuntimeException('Unable to generate a URL for the named route "openregister.portalTask.index"')
-			);
+			// Nextcloud's router does not throw for an unknown route name — it
+			// logs and returns '' (OC\Route\Router::generate() swallows
+			// RouteNotFoundException; verified on 35.0.0-dev). The gateway must
+			// not turn that into a call to the instance root.
+			$urlGenerator->method('linkToRoute')->willReturn('');
 		}
 
 		$urlGenerator->method('getAbsoluteURL')->willReturnCallback(
