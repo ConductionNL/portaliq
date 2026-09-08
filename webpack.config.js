@@ -125,6 +125,19 @@ webpackConfig.resolve.alias = {
 		__dirname,
 		'node_modules/@nextcloud/vue/dist/index.mjs',
 	),
+	// Same ESM-only shape as @nextcloud/vue above: the exports map has
+	// '.' -> ./dist/index.mjs and there is no `main`/`module`, so the bare
+	// specifier cannot resolve through the DIRECTORY alias below — webpack
+	// stops honouring `exports` once an alias hands it an absolute path, and
+	// the build dies on "Can't resolve '@nextcloud/dialogs'". That went
+	// unnoticed while only the LIBRARY imported dialogs (its components are
+	// consumed pre-resolved); the first app-source import surfaced it.
+	// The exact-match entry wins for the bare specifier; the directory alias
+	// stays for subpath requests like '@nextcloud/dialogs/style.css'.
+	'@nextcloud/dialogs$': path.resolve(
+		__dirname,
+		'node_modules/@nextcloud/dialogs/dist/index.mjs',
+	),
 	'@nextcloud/dialogs': path.resolve(__dirname, 'node_modules/@nextcloud/dialogs'),
 	// Force the lib's transitive @nextcloud/axios import to resolve to
 	// the app's installed copy. Without the `$` exact-match suffix,
