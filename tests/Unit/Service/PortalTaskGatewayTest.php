@@ -56,7 +56,10 @@ class PortalTaskGatewayTest extends TestCase {
 
 		$this->assertSame(200, $answer['status']);
 		$this->assertSame([], $answer['body']['results']);
-		$this->assertSame('https://cloud.example/apps/openregister/api/portal-tasks?limit=25&offset=0', $captured['url']);
+		// Route-resolved, so `index.php` is present on an instance without
+		// pretty URLs (WOO-568) instead of the hard-coded bare path that the
+		// webserver answered with a 404.
+		$this->assertSame('https://cloud.example/index.php/apps/openregister/api/portal-tasks?limit=25&offset=0', $captured['url']);
 		$this->assertSame('minted-assertion', $captured['options']['headers']['X-Portal-Subject']);
 		$this->assertArrayNotHasKey('Authorization', $captured['options']['headers']);
 		// The seam's named refusals must reach the proxy's mapping: relayed,
@@ -128,7 +131,8 @@ class PortalTaskGatewayTest extends TestCase {
 		);
 
 		$this->assertSame(200, $answer['status']);
-		$this->assertSame('https://cloud.example/apps/openregister/api/portal-tasks/t-1/complete', $captured['url']);
+		// Route-resolved, so `index.php` survives here too (WOO-568).
+		$this->assertSame('https://cloud.example/index.php/apps/openregister/api/portal-tasks/t-1/complete', $captured['url']);
 		$this->assertSame('minted-assertion', $captured['options']['headers']['X-Portal-Subject']);
 		$parts = array_column($captured['options']['multipart'], 'contents', 'name');
 		$this->assertSame('{"field":"value"}', $parts['answers']);
@@ -218,6 +222,68 @@ class PortalTaskGatewayTest extends TestCase {
 	}//end testTheListPageClampsItsBounds()
 
 	/**
+	 * Every seam URL comes from the route table, so `index.php` rides along on
+	 * an instance without pretty URLs — index, show and complete alike. This is
+	 * the whole of WOO-568: the gateway used to put a hard-coded
+	 * `/apps/openregister/api/portal-tasks` through `getAbsoluteURL()`, which
+	 * never adds `index.php`, and the seam answered 404 while
+	 * `contributions.tasks.enabled` said true.
+	 */
+	public function testEverySeamUrlIsRouteResolvedSoIndexPhpSurvives(): void {
+		$urls = [];
+		$client = $this->createMock(IClient::class);
+		$client->method('get')->willReturnCallback(
+			function (string $url) use (&$urls) {
+				$urls[] = $url;
+
+				return $this->response(status: 200, body: '{}');
+			}
+		);
+		$client->method('post')->willReturnCallback(
+			function (string $url) use (&$urls) {
+				$urls[] = $url;
+
+				return $this->response(status: 200, body: '{}');
+			}
+		);
+
+		$gateway = $this->gateway(client: $client);
+		$gateway->listTasks(subject: self::SUBJECT, limit: 10, offset: 20);
+		$gateway->getTask(subject: self::SUBJECT, uuid: 't-1');
+		$gateway->completeTask(subject: self::SUBJECT, uuid: 't-1', answers: [], comment: null, outcome: 'submitted');
+
+		$this->assertSame(
+			[
+				'https://cloud.example/index.php/apps/openregister/api/portal-tasks?limit=10&offset=20',
+				'https://cloud.example/index.php/apps/openregister/api/portal-tasks/t-1',
+				'https://cloud.example/index.php/apps/openregister/api/portal-tasks/t-1/complete',
+			],
+			$urls
+		);
+	}//end testEverySeamUrlIsRouteResolvedSoIndexPhpSurvives()
+
+	/**
+	 * A route table that does not know the seam (openregister absent, or older
+	 * than the portal-task routes) degrades to null with a warning — the same
+	 * fail-soft posture as a transport failure, never an exception thrown into
+	 * the proxy, and never an unresolved URL put on the wire.
+	 */
+	public function testAnUnknownSeamRouteDegradesToNullWithoutCallingTheClient(): void {
+		$client = $this->createMock(IClient::class);
+		$client->expects($this->never())->method('get');
+		$client->expects($this->never())->method('post');
+
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())
+			->method('warning')
+			->with($this->stringContains('openregister.portalTask.index'));
+
+		$gateway = $this->gateway(client: $client, logger: $logger, routeTableKnowsTheSeam: false);
+
+		$this->assertNull($gateway->listTasks(subject: self::SUBJECT));
+	}//end testAnUnknownSeamRouteDegradesToNullWithoutCallingTheClient()
+
+	/**
 	 * Availability requires BOTH openregister and a configured signing secret.
 	 */
 	public function testAvailabilityNeedsOpenregisterAndTheSecret(): void {
@@ -235,11 +301,17 @@ class PortalTaskGatewayTest extends TestCase {
 	 * @param IClient|null $client The HTTP client mock.
 	 * @param PortalSessionService|null $session The session/minter mock.
 	 * @param bool $openregisterInstalled Whether openregister reads as installed.
+	 * @param LoggerInterface|null $logger The logger mock, when a test asserts on it.
+	 * @param bool $routeTableKnowsTheSeam Whether linkToRoute() resolves the seam
+	 *                                     routes (false = openregister absent or
+	 *                                     older than the seam).
 	 */
 	private function gateway(
 		?IClient $client = null,
 		?PortalSessionService $session = null,
 		bool $openregisterInstalled = true,
+		?LoggerInterface $logger = null,
+		bool $routeTableKnowsTheSeam = true,
 	): PortalTaskGateway {
 		$clientService = $this->createMock(IClientService::class);
 		$clientService->method('newClient')->willReturn($client ?? $this->createMock(IClient::class));
@@ -251,6 +323,36 @@ class PortalTaskGatewayTest extends TestCase {
 		}
 
 		$urlGenerator = $this->createMock(IURLGenerator::class);
+		// The route table as Nextcloud renders it on an instance WITHOUT pretty
+		// URLs — `/index.php` in front. That is the default of
+		// nextcloud-docker-dev and of many installations, and it is the case the
+		// old hard-coded path got wrong (WOO-568): `getAbsoluteURL()` on a bare
+		// path never adds `index.php`, so the seam call hit the webserver's 404.
+		if ($routeTableKnowsTheSeam === true) {
+			$urlGenerator->method('linkToRoute')->willReturnCallback(
+				static function (string $route, array $arguments = []): string {
+					$uuid = (string)($arguments['uuid'] ?? '');
+					unset($arguments['uuid']);
+					$path = match ($route) {
+						'openregister.portalTask.index' => '/apps/openregister/api/portal-tasks',
+						'openregister.portalTask.show' => '/apps/openregister/api/portal-tasks/' . $uuid,
+						'openregister.portalTask.complete' => '/apps/openregister/api/portal-tasks/' . $uuid . '/complete',
+						default => throw new RuntimeException('Unable to generate a URL for the named route "' . $route . '"'),
+					};
+
+					if ($arguments === []) {
+						return '/index.php' . $path;
+					}
+
+					return '/index.php' . $path . '?' . http_build_query($arguments);
+				}
+			);
+		} else {
+			$urlGenerator->method('linkToRoute')->willThrowException(
+				new RuntimeException('Unable to generate a URL for the named route "openregister.portalTask.index"')
+			);
+		}
+
 		$urlGenerator->method('getAbsoluteURL')->willReturnCallback(
 			static fn (string $path) => 'https://cloud.example' . $path
 		);
@@ -263,7 +365,7 @@ class PortalTaskGatewayTest extends TestCase {
 			$urlGenerator,
 			$session,
 			$appManager,
-			$this->createMock(LoggerInterface::class)
+			$logger ?? $this->createMock(LoggerInterface::class)
 		);
 	}//end gateway()
 
