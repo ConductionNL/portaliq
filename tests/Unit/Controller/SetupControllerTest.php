@@ -214,6 +214,21 @@ class SetupControllerTest extends TestCase {
 		$this->assertStringContainsString('30', $data['message']);
 	}
 
+	public function testAPartialImportNamesTheGapInsteadOfRepeatingTheRequest(): void {
+		// The wizard said "Imported 39 demo object(s)" over a run that seeded
+		// nothing visible (WOO-558). The message now carries what LANDED against
+		// what was declared, and says why the rest did not.
+		$this->appConfig->method('getValueString')->willReturn('');
+		$this->demoData->method('install')
+			->willReturn(['objects' => 39, 'declared' => 54, 'skipped' => 15, 'registers' => 1, 'schemas' => 0]);
+
+		$data = $this->controller->runAction('install-demo-data')->getData();
+
+		$this->assertTrue($data['success']);
+		$this->assertStringContainsString('39 of 54', $data['message']);
+		$this->assertStringContainsString('15 skipped', $data['message']);
+	}
+
 	public function testTheLegacyActionOutranksAnEarlierNone(): void {
 		// An explicit request for the shipped set is an answer of its own: the
 		// e2e seed records "skipped" to close the wizard, and the demo-data

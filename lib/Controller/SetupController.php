@@ -303,10 +303,20 @@ class SetupController extends Controller {
 
 		$this->appConfig->setValueString(Application::APP_ID, self::DEMO_DECIDED_KEY, 'installed');
 
+		// The number that LANDED, against the number the dataset declares: an
+		// operator who asked for demo data and got part of it must see the gap,
+		// not a count that merely repeats their request (WOO-558).
+		$declared = (int)($imported['declared'] ?? $imported['objects']);
+		$skipped  = (int)($imported['skipped'] ?? 0);
+		$message  = 'Imported ' . $imported['objects'] . ' of ' . $declared . ' demo object(s).';
+		if ($skipped > 0) {
+			$message .= ' ' . $skipped . ' skipped: their schema is not installed on this instance.';
+		}
+
 		return new JSONResponse(
 			data: [
 				'success' => true,
-				'message' => 'Imported ' . $imported['objects'] . ' demo object(s).',
+				'message' => $message,
 			]
 		);
 
