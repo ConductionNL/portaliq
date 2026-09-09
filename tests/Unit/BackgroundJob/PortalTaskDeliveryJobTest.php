@@ -140,6 +140,7 @@ class FakeLedger {
  * its reason and NEVER blocks the remaining rows or escapes to cron.
  *
  * @covers \OCA\Portaliq\BackgroundJob\PortalTaskDeliveryJob
+ * @uses \OCA\Portaliq\Service\PortalDeepLinkBuilder
  *
  * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-delivery-worker-settles-every-ledger-row-idempotently-and-in-isolation
  */
