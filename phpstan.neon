@@ -20,6 +20,13 @@ parameters:
     excludePaths:
         - lib/Resources/template
 
+    # OpenRegister's AppHost composition root, for the store-plane alias in
+    # lib/AppInfo/StorePlaneRegistrar.php (WOO-559). openregister is a sibling
+    # app, not a composer dependency; the stub carries the engine's public
+    # surface so the guarded call is checked against a signature.
+    scanFiles:
+        - vendor/conduction/hydra-gates/hydra-gates/stubs/openregister-apphost-bootstrap.stub.php
+
     # App-specific only. The base already sets level, paths, bootstrapFiles,
     # excludePaths, scanDirectories and every fleet-wide ignore.
     ignoreErrors:

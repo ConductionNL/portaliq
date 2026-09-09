@@ -24,6 +24,25 @@ return [
         ['name' => 'preferences#getPreference', 'url' => '/api/preferences/{key}', 'verb' => 'GET'],
         ['name' => 'preferences#setPreference', 'url' => '/api/preferences/{key}', 'verb' => 'PUT'],
 
+        // Store plane (ADR-080, ADR-114 Decision 4): the engine's two store
+        // routes, verbatim from OpenRegister's AppHost\Routes::standard()
+        // table, which Portaliq does not call (see settings#update above).
+        // The names resolve to Controller\StoreController, a class this app
+        // does NOT ship — AppInfo\StorePlaneRegistrar aliases that name at
+        // OpenRegister's GenericStoreController, and the auth posture lives
+        // there (search: signed-in; install: the manifest's installAuth,
+        // admin by default). Without these entries the manifest's
+        // `type: "store"` page called /api/store/items and the SPA catch-all
+        // below answered it with HTML 200 ("The store registry did not
+        // answer", WOO-559).
+        ['name' => 'store#search', 'url' => '/api/store/items', 'verb' => 'GET'],
+        [
+            'name' => 'store#install',
+            'url' => '/api/store/items/{slug}/install',
+            'verb' => 'POST',
+            'requirements' => ['slug' => '[a-z0-9][a-z0-9-]*[a-z0-9]'],
+        ],
+
         // Prometheus metrics endpoint.
         ['name' => 'metrics#index', 'url' => '/api/metrics', 'verb' => 'GET'],
         // Health check endpoint.
