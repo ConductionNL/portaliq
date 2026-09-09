@@ -85,17 +85,34 @@ class PortalTaskGateway {
 	}//end __construct()
 
 	/**
-	 * Whether the task seam can be reached at all: openregister is installed
-	 * and the dedicated signing secret the assertion needs is configured.
-	 * Drives the `tasks: {enabled}` announcement on the contributions
-	 * aggregate — the SPA never shows a "Mijn taken" entry that can only 503.
+	 * Whether the task seam can be reached at all: openregister is installed,
+	 * the dedicated signing secret the assertion needs is configured, AND the
+	 * route table knows the seam. Drives the `tasks: {enabled}` announcement
+	 * on the contributions aggregate — the SPA never shows a "Mijn taken"
+	 * entry that can only 502.
+	 *
+	 * 🔴 THE ROUTE PROBE IS PART OF THE GATE. An openregister that is installed
+	 * but pre-dates the portal-task routes makes every list/detail/complete
+	 * relay degrade to null (see forward()); without this probe the tile would
+	 * be announced and then fail on every click (review of WOO-568).
 	 *
 	 * @return bool
 	 *
 	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-mijn-taken-lists-details-and-completes-the-partys-open-tasks
 	 */
 	public function isAvailable(): bool {
-		return $this->appManager->isInstalled('openregister') === true && $this->session->isConfigured() === true;
+		if ($this->appManager->isInstalled('openregister') === false || $this->session->isConfigured() === false) {
+			return false;
+		}
+
+		try {
+			$this->seamUrl(route: self::ROUTE_INDEX, parameters: []);
+		} catch (RuntimeException $unroutable) {
+			$this->logger->warning('[PortalTaskGateway] Tasks announced unavailable: ' . $unroutable->getMessage());
+			return false;
+		}
+
+		return true;
 	}//end isAvailable()
 
 	/**

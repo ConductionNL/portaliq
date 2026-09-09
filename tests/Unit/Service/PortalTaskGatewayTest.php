@@ -297,6 +297,19 @@ class PortalTaskGatewayTest extends TestCase {
 	}//end testAvailabilityNeedsOpenregisterAndTheSecret()
 
 	/**
+	 * An openregister that is installed but whose route table does not know
+	 * the seam (older than the portal-task routes) must read as UNAVAILABLE:
+	 * every relay would degrade to null, so announcing the tile would put a
+	 * permanently failing "Mijn taken" in front of the resident.
+	 */
+	public function testAvailabilityAlsoNeedsARoutableSeam(): void {
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('warning')->with($this->stringContains('openregister.portalTask.index'));
+
+		$this->assertFalse($this->gateway(logger: $logger, routeTableKnowsTheSeam: false)->isAvailable());
+	}//end testAvailabilityAlsoNeedsARoutableSeam()
+
+	/**
 	 * Build the gateway around a mocked transport.
 	 *
 	 * @param IClient|null $client The HTTP client mock.
