@@ -3,6 +3,7 @@
 namespace Unit\Service;
 
 use OCA\Portaliq\Service\DemoDataService;
+use OCA\Portaliq\Service\PortalRegisterContext;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -48,11 +49,14 @@ class DemoDataServiceTest extends TestCase {
 		return $this->appPath . '/lib/Settings/portaliq_mock_register.json';
 	}
 
+	private ?PortalRegisterContext $registerContext = null;
+
 	private function service(): DemoDataService {
 		return new DemoDataService(
 			$this->appManager,
 			$this->container,
-			$this->createMock(LoggerInterface::class)
+			$this->createMock(LoggerInterface::class),
+			$this->registerContext ?? $this->createMock(PortalRegisterContext::class)
 		);
 	}
 
@@ -240,6 +244,43 @@ class DemoDataServiceTest extends TestCase {
 
 		$this->assertSame(2, $result['objects']);
 		$this->assertSame(0, $result['skipped']);
+	}
+
+	public function testARerunOnASeededInstanceIsNotAFailure(): void {
+		// 🔴 THE REAL RESULT SHAPE OF A NO-OP RUN. OpenRegister (before
+		// d1af968b7) skips an object that already exists at the same version
+		// with a bare `continue`: `objects` is empty, there is no `unchanged`
+		// key and `skipped.objects` is 0. Reproduced on the WOO-556 instance:
+		// the second click on "Run" answered a 500 over 88 present objects.
+		// The presence count is what tells "already there" from "nothing".
+		file_put_contents(
+			$this->descriptor(),
+			json_encode(['components' => ['objects' => [
+				['@self' => ['register' => 'portaliq', 'schema' => 'page']],
+				['@self' => ['register' => 'portaliq', 'schema' => 'page']],
+				['@self' => ['register' => 'portaliq', 'schema' => 'menu']],
+			]]])
+		);
+		$importer = new class {
+			public array $counted = [];
+
+			public function importFromApp(string $appId, array $data, string $version, bool $force): array {
+				return ['registers' => [1], 'schemas' => [], 'objects' => [], 'skipped' => ['objects' => 0]];
+			}
+
+			public function count(array $config = []): int {
+				return 44;
+			}
+		};
+		$this->container->method('get')->willReturn($importer);
+		$this->registerContext = $this->createMock(PortalRegisterContext::class);
+		$this->registerContext->expects($this->exactly(2))->method('apply')->willReturn(true);
+
+		$result = $this->service()->install();
+
+		$this->assertSame(0, $result['objects']);
+		$this->assertSame(3, $result['declared']);
+		$this->assertSame(88, $result['present']);
 	}
 
 	public function testInstallThrowsWhenADescriptorThatDeclaresObjectsSeedsNone(): void {

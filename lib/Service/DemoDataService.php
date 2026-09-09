@@ -31,6 +31,7 @@ use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use Throwable;
 
 /**
  * Imports the shipped demo dataset on request.
@@ -74,6 +75,7 @@ class DemoDataService {
 	 * @param IAppManager        $appManager Resolves this app's path and version.
 	 * @param ContainerInterface $container  Resolves OpenRegister's importer.
 	 * @param LoggerInterface    $logger     Records what was imported.
+	 * @param PortalRegisterContext $registerContext Points OpenRegister at this app's own schemas for the presence count.
 	 *
 	 * @return void
 	 */
@@ -81,6 +83,7 @@ class DemoDataService {
 		private readonly IAppManager $appManager,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
+		private readonly PortalRegisterContext $registerContext,
 	) {
 	}//end __construct()
 
@@ -215,9 +218,10 @@ class DemoDataService {
 	 * A descriptor that declares objects and seeds NONE of them is a failure,
 	 * the same rule OpenRegister's own RegisterDescriptorService applies.
 	 *
-	 * @return array{objects: integer, declared: integer, skipped: integer, registers: integer, schemas: integer}
+	 * @return array{objects: integer, declared: integer, skipped: integer, present: integer, registers: integer, schemas: integer}
 	 *   `objects` = what landed, `declared` = what the file holds, `skipped` =
-	 *   what the importer refused, plus the register and schema tallies.
+	 *   what the importer refused, `present` = what the demo schemas hold when
+	 *   nothing landed, plus the register and schema tallies.
 	 *
 	 * @throws RuntimeException When the descriptor is missing, unreadable, or
 	 *   OpenRegister is absent — or when it declares objects and none landed.
@@ -271,17 +275,30 @@ class DemoDataService {
 		// no installed schema were in neither number).
 		$skipped = max($declared - $landed, (int)($result['skipped']['objects'] ?? 0));
 
+		// A run that wrote nothing is a FAILURE only when the demo schemas are
+		// empty afterwards. OpenRegister (before d1af968b7) skips an object that
+		// already exists at the same version with a bare `continue` — counted
+		// nowhere — so a second click on "Run" on a seeded instance reports zero
+		// landed while every object is present (review of #499). The presence
+		// count tells those two apart: present → the operator gets "already
+		// there"; empty → the import really did nothing and says so loudly.
+		$present = 0;
 		if ($declared > 0 && $landed === 0) {
-			throw new RuntimeException(
-				'The demo dataset declares ' . $declared . ' object(s) but OpenRegister imported none of them'
-				. ' (' . $skipped . ' skipped — their schema could not be resolved; see the Nextcloud log).'
-			);
+			$present = $this->presentObjects(objects: $components['objects']);
+			if ($present === 0) {
+				throw new RuntimeException(
+					'The demo dataset declares ' . $declared . ' object(s) but OpenRegister imported none of them'
+					. ' and the demo schemas hold no objects (' . $skipped . ' skipped — their schema could not be'
+					. ' resolved or they were rejected; see the Nextcloud log).'
+				);
+			}
 		}
 
 		$imported = [
 			'objects'   => $landed,
 			'declared'  => $declared,
 			'skipped'   => $skipped,
+			'present'   => $present,
 			'registers' => count((array)($result['registers'] ?? [])),
 			'schemas'   => count((array)($result['schemas'] ?? [])),
 		];
@@ -289,7 +306,7 @@ class DemoDataService {
 		$this->logger->info(
 			'[DemoDataService] imported demo data: '
 			. $imported['objects'] . ' of ' . $imported['declared'] . ' object(s) landed ('
-			. $imported['skipped'] . ' skipped), '
+			. $imported['skipped'] . ' skipped, ' . $imported['present'] . ' present in the demo schemas), '
 			. $imported['registers'] . ' register(s), '
 			. $imported['schemas'] . ' schema(s).',
 			['app' => Application::APP_ID]
@@ -297,6 +314,59 @@ class DemoDataService {
 
 		return $imported;
 	}//end install()
+
+	/**
+	 * How many objects this app's register holds in the schemas the demo
+	 * descriptor targets — the "is the data there?" question OpenRegister's
+	 * import result cannot answer for objects it left alone.
+	 *
+	 * Counts per DISTINCT schema slug of the declared objects, through
+	 * PortalRegisterContext so the count is scoped to portaliq's own schemas
+	 * (a bare slug like `page` resolves to another app's schema on a shared
+	 * instance). Fails soft to 0: an unreachable OpenRegister must surface as
+	 * "nothing there", never as a second exception on top of the import.
+	 *
+	 * @param array<int, mixed> $objects The descriptor's `components.objects`.
+	 *
+	 * @return int The number of objects present, 0 when nothing (or nothing countable).
+	 *
+	 * @spec exclude Demo-data presence probe; ADR-111 rule 1 has no per-app behavioural spec.
+	 */
+	private function presentObjects(array $objects): int {
+		$slugs = [];
+		foreach ($objects as $object) {
+			$slug = (string)($object['@self']['schema'] ?? '');
+			if ($slug !== '') {
+				$slugs[$slug] = true;
+			}
+		}
+
+		if ($slugs === []) {
+			return 0;
+		}
+
+		try {
+			$objectService = $this->container->get('OCA\\OpenRegister\\Service\\ObjectService');
+		} catch (Throwable $unavailable) {
+			$this->logger->warning('[DemoDataService] cannot count present demo objects: ' . $unavailable->getMessage());
+			return 0;
+		}
+
+		$present = 0;
+		foreach (array_keys($slugs) as $slug) {
+			try {
+				if ($this->registerContext->apply(objectService: $objectService, schemaSlug: $slug) === false) {
+					continue;
+				}
+
+				$present += (int)$objectService->count(config: []);
+			} catch (Throwable $countFailed) {
+				$this->logger->warning('[DemoDataService] count failed for schema ' . $slug . ': ' . $countFailed->getMessage());
+			}
+		}
+
+		return $present;
+	}//end presentObjects()
 
 	/**
 	 * Absolute path to the shipped descriptor.

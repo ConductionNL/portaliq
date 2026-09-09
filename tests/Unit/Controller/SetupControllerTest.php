@@ -229,6 +229,19 @@ class SetupControllerTest extends TestCase {
 		$this->assertStringContainsString('15 skipped', $data['message']);
 	}
 
+	public function testARerunSaysTheDataWasAlreadyPresent(): void {
+		$this->appConfig->method('getValueString')->willReturn('');
+		$this->demoData->method('install')
+			->willReturn(['objects' => 0, 'declared' => 54, 'skipped' => 54, 'present' => 88, 'registers' => 1, 'schemas' => 0]);
+
+		$data = $this->controller->runAction('install-demo-data')->getData();
+
+		$this->assertTrue($data['success']);
+		$this->assertStringContainsString('already present', $data['message']);
+		$this->assertStringContainsString('88', $data['message']);
+		$this->assertStringNotContainsString('skipped', $data['message']);
+	}
+
 	public function testTheLegacyActionOutranksAnEarlierNone(): void {
 		// An explicit request for the shipped set is an answer of its own: the
 		// e2e seed records "skipped" to close the wizard, and the demo-data
