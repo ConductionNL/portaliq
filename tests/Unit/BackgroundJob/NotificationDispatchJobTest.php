@@ -46,13 +46,26 @@ class NotificationDispatchJobTest extends TestCase {
 		'ruleKey' => 'message.created',
 	];
 
+	/**
+	 * Every translation call the job makes: [locale, key, parameters]. The
+	 * privacy contract is asserted on THIS — what reaches the l10n layer is
+	 * the only thing that can reach the mail — not on the rendered text.
+	 *
+	 * @var array<int, array{0: string, 1: string, 2: array<int, mixed>}>
+	 */
+	private array $translated = [];
+
 	private function l10nFactory(): IFactory {
 		$factory = $this->createMock(IFactory::class);
 		$factory->method('get')->willReturnCallback(
 			function (string $app, $long = null, $locale = null) {
 				$l10n = $this->createMock(IL10N::class);
 				$l10n->method('t')->willReturnCallback(
-					static fn (string $text, $parameters = []) => '[' . $long . '] ' . vsprintf($text, $parameters)
+					function (string $text, $parameters = []) use ($long) {
+						$this->translated[] = [(string)$long, $text, (array)$parameters];
+
+						return '[' . $long . '] ' . vsprintf($text, $parameters);
+					}
 				);
 
 				return $l10n;
@@ -230,14 +243,22 @@ class NotificationDispatchJobTest extends TestCase {
 		$this->assertStringContainsString('Test Org', $captured['body']);
 		$this->assertStringContainsString('https://cloud.example/index.php/apps/portaliq/portal?org=org-1', $captured['body']);
 		$this->assertStringNotContainsString('message.created', $captured['subject'] . $captured['body']);
-		// The CONTRIBUTING app must not be named — that is what "content-free"
-		// protects (a resident should not learn which leaf app triggered this).
-		// It is asserted on the payload's appId, not on the literal 'portaliq':
-		// the deep link necessarily contains portaliq's own route
-		// (/apps/portaliq/portal), so a blanket ban on that word would forbid a
-		// working link (WOO-570) rather than a leak. ARGUMENT therefore carries
-		// a foreign appId, which is also the realistic case.
-		$this->assertStringNotContainsString(self::ARGUMENT['appId'], $captured['subject'] . $captured['body']);
+		// The CONTRIBUTING app, the rule key and the case content must not be
+		// named — that is what "content-free" protects. A ban on words in the
+		// rendered text cannot prove that (the deep link legitimately contains
+		// portaliq's own route, and the job never receives the appId as text
+		// anyway), so the contract is asserted STRUCTURALLY: the only values
+		// that ever reach the translation layer are the organisation name and
+		// the deep link (review of WOO-570 / #498).
+		$this->assertNotSame([], $this->translated);
+		foreach ($this->translated as [$locale, $key, $parameters]) {
+			$this->assertContains($locale, ['nl', 'en']);
+			$this->assertContains(
+				$parameters,
+				[['Test Org'], ['Test Org', 'https://cloud.example/index.php/apps/portaliq/portal?org=org-1']],
+				'translation "' . $key . '" received a parameter that is neither the organisation name nor the deep link'
+			);
+		}
 		// Bilingual (NL first, EN second), mirroring SubmissionReceiptService.
 		$this->assertStringContainsString('[nl] ', $captured['body']);
 		$this->assertStringContainsString('[en] ', $captured['body']);
