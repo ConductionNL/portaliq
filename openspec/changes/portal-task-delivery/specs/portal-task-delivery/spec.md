@@ -54,6 +54,17 @@ rules), and a completion form honouring the task's frozen upload constraints
 completion posts multipart through the proxy; success shows a confirmation and
 removes the task from the open list.
 
+A CONFIRMED completion is a submission in the WMEBV sense (art. 2:10). Once the
+seam answers 2xx the proxy MUST write a `portalAuditEntry` with verb `complete`
+naming the task (`openregister` / `portalTask` / uuid, with the session `jti`;
+a fact, never payload) and MUST produce the same ontvangstbevestiging a
+create-action gets: a receipt `portalMessage` with a reference id in the
+resident's inbox and a linked `portalSubmission` proof log (appId `portaliq`,
+actionId `task.complete`) whose data copy carries the submitted answers,
+comment, the recorded outcome, the task and the NAMES of the uploads — never
+file content. A refused (4xx), unavailable (seam 401 → 503) or unreachable
+(502) relay MUST record neither.
+
 #### Scenario: The resident journey — see the task, upload, complete
 
 - GIVEN a resident with a bearer session and one open portal task requiring an upload
@@ -69,6 +80,14 @@ removes the task from the open list.
 - THEN it carries no enabled tasks surface, and the SPA renders no "Mijn taken" entry
 
 - @e2e exclude pinned by `tests/Unit/Controller/PortalTaskProxyControllerTest.php` (contributions announcement) — the anonymous SPA path renders from the same flag with no separate wire
+
+#### Scenario: A completion is audited and acknowledged like a create-action
+
+- GIVEN a resident with a bearer session who completes an open task through the proxy with a comment and an accepted upload
+- WHEN the seam confirms the completion (2xx)
+- THEN a `portalAuditEntry` with verb `complete` names the task and carries the session jti, a receipt `portalMessage` with a reference id lands in the resident's inbox, and a linked `portalSubmission` proof log records the answers, comment, outcome and upload names — and a 400/404/409, a seam 401 (503) or a transport failure (502) records none of these
+
+- @e2e exclude pinned by `tests/Unit/Controller/PortalTaskProxyControllerTest.php` (`testASuccessfulCompletionIsAuditedAndReceipted`, `testTheSubmissionCopyFallsBackToTheRequestedOutcomeAndUuid`, `testARefusedOrFailedCompletionRecordsNothing`); the end-to-end run needs the seeded flow rig named above (verified by hand on the dev instance, WOO-569)
 
 #### Scenario: Upload constraints are enforced and named
 

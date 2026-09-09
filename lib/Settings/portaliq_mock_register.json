@@ -769,7 +769,8 @@
               "download",
               "login",
               "logout",
-              "refresh"
+              "refresh",
+              "complete"
             ],
             "example": "create"
           },
