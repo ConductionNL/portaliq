@@ -283,6 +283,74 @@ class DemoDataServiceTest extends TestCase {
 		$this->assertSame(88, $result['present']);
 	}
 
+	public function testAnUnreachableObjectServiceReadsAsNothingPresent(): void {
+		// Fail-soft in the "nothing there" direction: when OpenRegister's
+		// ObjectService cannot even be resolved, the presence probe must not
+		// add a second exception on top of the import — it reports 0 and the
+		// existing loud failure path decides.
+		file_put_contents(
+			$this->descriptor(),
+			json_encode(['components' => ['objects' => [['@self' => ['register' => 'portaliq', 'schema' => 'page']]]]])
+		);
+		$importer = new class {
+			public function importFromApp(string $appId, array $data, string $version, bool $force): array {
+				return ['registers' => [1], 'objects' => [], 'skipped' => ['objects' => 0]];
+			}
+		};
+		$calls = 0;
+		$this->container->method('get')->willReturnCallback(
+			static function (string $id) use ($importer, &$calls) {
+				$calls++;
+				if ($calls === 1) {
+					return $importer;
+				}
+
+				throw new RuntimeException('ObjectService is not registered');
+			}
+		);
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessageMatches('/imported none of them and the demo schemas hold no objects/');
+
+		$this->service()->install();
+	}
+
+	public function testACountThatFailsForOneSchemaDoesNotHideTheOthers(): void {
+		// One schema whose count throws is logged and skipped; the other
+		// schema's count still decides the outcome.
+		file_put_contents(
+			$this->descriptor(),
+			json_encode(['components' => ['objects' => [
+				['@self' => ['register' => 'portaliq', 'schema' => 'page']],
+				['@self' => ['register' => 'portaliq', 'schema' => 'menu']],
+			]]])
+		);
+		$importer = new class {
+			public int $counts = 0;
+
+			public function importFromApp(string $appId, array $data, string $version, bool $force): array {
+				return ['registers' => [1], 'objects' => [], 'skipped' => ['objects' => 0]];
+			}
+
+			public function count(array $config = []): int {
+				$this->counts++;
+				if ($this->counts === 1) {
+					throw new RuntimeException('table missing');
+				}
+
+				return 5;
+			}
+		};
+		$this->container->method('get')->willReturn($importer);
+		$this->registerContext = $this->createMock(PortalRegisterContext::class);
+		$this->registerContext->method('apply')->willReturn(true);
+
+		$result = $this->service()->install();
+
+		$this->assertSame(5, $result['present']);
+		$this->assertSame(0, $result['objects']);
+	}
+
 	public function testInstallThrowsWhenADescriptorThatDeclaresObjectsSeedsNone(): void {
 		// 🔴 "IMPORTED 39" OVER AN EMPTY RESULT IS THE BUG. When every object was
 		// skipped the operator asked for demo data and got none: that is a
