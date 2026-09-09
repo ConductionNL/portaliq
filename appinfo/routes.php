@@ -197,6 +197,11 @@ return [
 
         // SPA catch-all — same controller as the index route; must use a distinct route name
         // (duplicate names replace the earlier route in Symfony, which breaks GET /).
-        ['name' => 'dashboard#catchAll', 'url' => '/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
+        // `(?!api/)` mirrors OpenRegister's canonical table: the SPA never needs an
+        // `api/` path, and without the lookahead an UNDECLARED API route is answered
+        // with the app shell and HTTP 200 instead of a 404. That is exactly how the
+        // store page read "The store registry did not answer" while nothing errored
+        // (WOO-559). A missing `/api/…` route now fails loudly.
+        ['name' => 'dashboard#catchAll', 'url' => '/{path}', 'verb' => 'GET', 'requirements' => ['path' => '(?!api/).+'], 'defaults' => ['path' => '']],
     ],
 ];

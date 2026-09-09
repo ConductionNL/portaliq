@@ -258,4 +258,65 @@ final class StoreRouteWiringTest extends TestCase {
 
 	}//end testPortaliqShipsNoStoreControllerOfItsOwn()
 
+	/**
+	 * The SPA catch-all refuses `api/…` paths, so an UNDECLARED API route 404s.
+	 *
+	 * This is the property whose absence made the bug quiet: `.+` matched
+	 * `api/store/items`, the app shell went back with HTTP 200, and the JSON
+	 * caller reported a registry that did not answer. Evaluated against
+	 * representative paths rather than compared as a regex string, so an
+	 * equivalent spelling stays green and a weaker one does not. The SPA's own
+	 * deep links are the positive control: a lookahead that also refused them
+	 * would break the admin UI while making this assertion pass.
+	 *
+	 * @return void
+	 */
+	public function testSpaCatchAllDoesNotSwallowApiPaths(): void {
+		$routes = $this->declaredRoutes();
+		$position = $this->positionOf($routes, self::CATCH_ALL);
+		$this->assertNotNull($position, 'The SPA catch-all must be declared.');
+
+		$requirement = $routes[$position]['requirements']['path'] ?? null;
+		$this->assertIsString($requirement, 'The SPA catch-all must bound {path} with a requirement.');
+
+		// Symfony anchors a requirement around the whole placeholder.
+		$pattern = '#^(?:' . $requirement . ')$#';
+
+		$swallowed = [];
+		foreach (['api/store/items', 'api/store/items/some-item/install', 'api/undeclared'] as $apiPath) {
+			if (preg_match($pattern, $apiPath) === 1) {
+				$swallowed[] = $apiPath;
+			}
+		}
+
+		$this->assertSame(
+			[],
+			$swallowed,
+			sprintf(
+				'The SPA catch-all (%s) still matches these api/ paths; an undeclared API route is '
+				. "answered with the app shell and HTTP 200 instead of a 404.\n  - %s",
+				$requirement,
+				implode("\n  - ", $swallowed)
+			)
+		);
+
+		$lost = [];
+		foreach (['store', 'portals/42', 'api-keys', 'settings/general'] as $spaPath) {
+			if (preg_match($pattern, $spaPath) !== 1) {
+				$lost[] = $spaPath;
+			}
+		}
+
+		$this->assertSame(
+			[],
+			$lost,
+			sprintf(
+				"These SPA deep links no longer reach the catch-all (%s); the admin UI would 404 on reload.\n  - %s",
+				$requirement,
+				implode("\n  - ", $lost)
+			)
+		);
+
+	}//end testSpaCatchAllDoesNotSwallowApiPaths()
+
 }//end class
