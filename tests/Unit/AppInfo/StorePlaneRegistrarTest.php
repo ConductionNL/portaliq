@@ -133,6 +133,28 @@ final class StorePlaneRegistrarTest extends TestCase {
 	}//end testPreludeAsksForOpenRegisterAndSwallowsItsAbsence()
 
 	/**
+	 * A DISABLED OpenRegister is the one state the path-and-class guards cannot
+	 * see: the directory resolves, the classes autoload, and the store plane
+	 * would be served out of an app an administrator switched off. The
+	 * `isInstalled()` guard has to answer before anything is bound — this is
+	 * the deterministic half of the degraded path (review of #500).
+	 *
+	 * @return void
+	 */
+	public function testADisabledOpenRegisterBindsNothing(): void {
+		$appManager = $this->createMock(IAppManager::class);
+		$appManager->method('isInstalled')->with('openregister')->willReturn(false);
+		$appManager->expects($this->never())->method('getAppPath');
+
+		$recorded = [];
+		$context = $this->recordingContext($recorded);
+
+		$this->assertFalse((new StorePlaneRegistrar())->register($context, $appManager));
+		$this->assertSame([], $recorded, 'nothing may be bound for a disabled engine');
+
+	}//end testADisabledOpenRegisterBindsNothing()
+
+	/**
 	 * The alias namespace is the one the router derives from this app's namespace.
 	 *
 	 * Nextcloud resolves `store#search` to `<app namespace>\Controller\StoreController`.

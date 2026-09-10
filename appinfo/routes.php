@@ -31,7 +31,12 @@ return [
         // does NOT ship — AppInfo\StorePlaneRegistrar aliases that name at
         // OpenRegister's GenericStoreController, and the auth posture lives
         // there (search: signed-in; install: the manifest's installAuth,
-        // admin by default). Without these entries the manifest's
+        // admin by default). ACCEPTED, NOT CHOSEN: search is reachable by any
+        // signed-in user — one tier below the rest of this app's admin-only
+        // /api/ — because the catalogue is publisher-side public and the
+        // engine has no searchAuth key to narrow it (review of #500; raise it
+        // with OpenRegister's apphost-store-plane spec if Portaliq ever wants
+        // an admin-only catalogue). Without these entries the manifest's
         // `type: "store"` page called /api/store/items and the SPA catch-all
         // below answered it with HTML 200 ("The store registry did not
         // answer", WOO-559).

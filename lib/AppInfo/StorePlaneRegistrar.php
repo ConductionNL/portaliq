@@ -91,11 +91,17 @@ final class StorePlaneRegistrar {
 	/**
 	 * Alias `Controller\StoreController` at OpenRegister's GenericStoreController.
 	 *
-	 * Every failure of the prelude is swallowed on purpose: OpenRegister absent
-	 * or disabled is a supported degraded state, in which the `class_exists()`
-	 * guard answers FALSE truthfully, nothing is bound, and the store routes
-	 * report their missing controller at dispatch time instead of taking the
-	 * whole app registration down with them.
+	 * Every failure of the prelude is swallowed on purpose: OpenRegister absent,
+	 * disabled, or too old is a supported degraded state in which nothing is
+	 * bound and the store routes report their missing controller at dispatch
+	 * time instead of taking the whole app registration down with them. Three
+	 * guards cover the three states, because none of them implies the others:
+	 * `isInstalled()` (a disabled app still has a path and autoloadable
+	 * classes), `class_exists()` (the app is there but predates AppHost), and
+	 * `method_exists()` — `Bootstrap` shipped 2026-08-29, `aliasStoreController()`
+	 * only on 2026-09-04, so every OpenRegister release up to v2.0.12 has the
+	 * class WITHOUT the method and would otherwise raise an `Error` here that
+	 * Nextcloud logs at emergency level on every request (review of #500).
 	 *
 	 * @param IRegistrationContext $context    The app's registration context.
 	 * @param IAppManager|null     $appManager Injected for tests; resolved from the
@@ -114,13 +120,20 @@ final class StorePlaneRegistrar {
 	public function register(IRegistrationContext $context, ?IAppManager $appManager = null): bool {
 		try {
 			$manager = ($appManager ?? Server::get(IAppManager::class));
+			if ($manager->isInstalled('openregister') === false) {
+				// Present-but-disabled still resolves a path; only this answers "off".
+				return false;
+			}
+
 			$orPath = $manager->getAppPath('openregister');
 			\OC_App::registerAutoloading('openregister', $orPath);
 		} catch (Throwable) {
-			// OpenRegister absent/disabled — fall through to the degraded path.
+			// OpenRegister absent — fall through to the degraded path.
 		}
 
-		if (class_exists('OCA\\OpenRegister\\AppHost\\Bootstrap') === false) {
+		if (class_exists('OCA\\OpenRegister\\AppHost\\Bootstrap') === false
+			|| method_exists('OCA\\OpenRegister\\AppHost\\Bootstrap', 'aliasStoreController') === false
+		) {
 			return false;
 		}
 
