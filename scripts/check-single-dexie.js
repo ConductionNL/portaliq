@@ -62,16 +62,25 @@
 //   Every `*.js` in `js/`, so the bundle set is whatever the build emits and
 //   there is no per-entry list here to fall out of date. That matters in this
 //   repo more than in openregister: `npm run build` is a composite of FOUR
-//   webpack configs (admin, portal, site, traffic) emitting
-//   `portaliq-main.js`, `portaliq-portal.js`, `portaliq-site.js`,
-//   `portaliq-traffic.js` and `portaliq-traffic-recorder.js` plus their split
-//   chunks. Any pair of them can meet openregister's integration-global in
-//   one page, and the set has grown twice already — a per-entry list here
-//   would be a gate that goes quiet the next time an entry is added.
+//   webpack configs (admin, portal, site, traffic), and their entries plus
+//   split chunks are whatever those configs happen to declare — the count is
+//   deliberately not written down here, because a prose list is a gate that
+//   goes quiet the next time an entry is added (this paragraph named five
+//   bundles and was already one short: `adminSettings` emits
+//   `portaliq-settings.js` too). Any pair of them can meet openregister's
+//   integration-global in one page.
 //
 // WHEN IT RUNS
 //
-//   As `postbuild`, so it runs wherever `npm run build` runs: locally, in the
+//   As `postbuild` AND as `postbuild:<entry>` for each of the four configs,
+//   because every `build:*` script emits into the SAME `js/` and `js/` is the
+//   directory the local instance serves: rebuilding one entry while a sibling
+//   bundle still carries the old Dexie is exactly the 2026-09-07 failure, and
+//   npm fires no `postbuild` for a partial build. The trade-off is accepted:
+//   run mid-composite, the guard can abort `npm run build` at `build:admin`
+//   over a stale sibling the next step would have overwritten — a rebuild
+//   from a clean `js/` is the fix either way (review of the WOO-562 PRs).
+//   So it runs wherever any build runs: locally, in the
 //   shared quality workflow's Frontend Build job, and in the shared release
 //   workflow, which builds before it packages `js/` into the App Store
 //   tarball. Standalone via `npm run check:dexie`. When js/ does not exist
@@ -90,9 +99,14 @@ const jsDir = path.join(repoRoot, 'js')
 const SENTINEL = 'Two different versions of Dexie'
 const VERSION_PATTERNS = [
 	// Production: Dexie.semVer survives minification as a property literal.
-	/semVer\s*[:=]\s*["']([0-9][0-9A-Za-z.+-]*)["']/g,
-	// Development: the unminified source constant Dexie.semVer is assigned from.
-	/DEXIE_VERSION\s*=\s*["']([0-9][0-9A-Za-z.+-]*)["']/g,
+	// The left boundary matters: without it `mySemVer:"1.2.3"` in the same
+	// chunk reads as a second Dexie version and the guard fails a bundle set
+	// that is fine — the one failure mode a guard must not have.
+	/(?<![\w$])semVer\s*[:=]\s*["']([0-9][0-9A-Za-z.+-]*)["']/g,
+	// Development: the unminified source constant Dexie.semVer is assigned
+	// from. Same boundary, same reason: `EXPECTED_DEXIE_VERSION = '4.4.4'` or
+	// `MIN_DEXIE_VERSION = '4.0.8'` must not count as a Dexie version.
+	/(?<![\w$])DEXIE_VERSION\s*=\s*["']([0-9][0-9A-Za-z.+-]*)["']/g,
 ]
 
 if (!fs.existsSync(jsDir)) {
@@ -115,6 +129,17 @@ try {
 } catch (e) {
 	console.log(
 		`i dexie singleton: could not read package-lock.json (${e.message}); checking chunk agreement only`,
+	)
+}
+
+// A lock that parses fine but carries no dexie entry is the case that MATTERS:
+// the entry exists today only because dexie is a direct dependency, and
+// @conduction/nextcloud-vue declares it as a peer that it used to vendor
+// itself — the 2026-09-07 shape. Half the guard then disappears, so it says so
+// rather than passing quietly (review of the WOO-562 PRs).
+if (expected === null) {
+	console.log(
+		'i dexie singleton: package-lock.json has no node_modules/dexie entry; checking chunk agreement only',
 	)
 }
 
