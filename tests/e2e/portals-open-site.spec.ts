@@ -86,8 +86,16 @@ async function spaBase(page: Page): Promise<string> {
 
 test.describe('Portals overview — open a portal', () => {
 	// @e2e portaliq-cms::an-administrator-opens-a-published-portal-from-the-overview
-	// @e2e portaliq-cms::a-slug-that-needs-escaping-stays-intact
-	test('the row action opens the portal site in a new tab', async ({ page, context }) => {
+	//
+	// Only that one scenario. The seeded slug (`open-tilburg`) carries nothing
+	// that needs escaping, so tagging the encoding scenario here would certify
+	// a branch this test cannot fail on — an implementation with no
+	// `encodeURIComponent` at all would pass it. That scenario is asserted in
+	// tests/open-portal-site.spec.mjs and marked `@e2e exclude` in the spec.
+	test('the row action opens the portal site in a new tab', async ({
+		page,
+		context,
+	}) => {
 		await loginToNextcloud(page, ADMIN_USER, ADMIN_PASS)
 		const app = await spaBase(page)
 		await page.goto(`${app}/portals`)
@@ -123,8 +131,10 @@ test.describe('Portals overview — open a portal', () => {
 		await popup.close()
 	})
 
-	// @e2e portaliq-cms::a-portal-without-a-slug-reports-instead-of-linking
-	test('the pre-existing row actions still work alongside it', async ({ page }) => {
+	// @e2e portaliq-cms::the-built-in-row-actions-survive-the-addition
+	test('the pre-existing row actions still work alongside it', async ({
+		page,
+	}) => {
 		await loginToNextcloud(page, ADMIN_USER, ADMIN_PASS)
 		const app = await spaBase(page)
 		await page.goto(`${app}/portals`)
@@ -140,9 +150,10 @@ test.describe('Portals overview — open a portal', () => {
 		const menu = page.getByTestId('cn-row-actions')
 		await expect(page.getByTestId('cn-action-item-open-portal')).toBeVisible()
 		await expect(
-			menu.getByRole('button', { name: /view|bekijk/i }).or(
-				page.getByTestId('cn-action-item-view'),
-			).first(),
+			menu
+				.getByRole('button', { name: /view|bekijk/i })
+				.or(page.getByTestId('cn-action-item-view'))
+				.first(),
 		).toBeVisible()
 	})
 })

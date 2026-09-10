@@ -81,7 +81,7 @@ stylesheet into the module graph) before asserting anything. Same shape as
 `src/site/lib/authApi.js`, which `tests/site-auth.spec.mjs` already exercises
 as a plain Node script.
 
-### Decision 3: `generateUrl`, and encode the slug
+### Decision 3: `generateUrl`, encode the slug, and send it verbatim
 
 `generateUrl('/apps/portaliq/site')` yields `/index.php/apps/portaliq/site` on
 an instance without rewriting and `/apps/portaliq/site` with it — the exact
@@ -90,10 +90,33 @@ distinction that made the task-gateway URL (WOO-568) and the mail deeplink
 appended as `?portal=` + `encodeURIComponent(slug)`, so a slug containing `&`,
 `#`, a space or non-ASCII resolves as itself instead of splitting the query.
 
+The slug is sent EXACTLY as stored. `PortalResolver::resolve()` compares
+`$site['slug'] === $portalSlug`, so trimming the value on the way out would
+address a different portal than the row names for a record stored as `" demo"`
+— a miss that reads as a broken site rather than as a data defect. The trim in
+the handler decides emptiness only.
+
 `window.open(url, '_blank', 'noopener,noreferrer')` — a new tab, because the
 administrator is inspecting the public result of the record they are editing
 and should not lose the admin context; `noopener` because the opened document
-must not reach back into the admin window.
+must not reach back into the admin window. Its return value is read, because a
+blocked popup returns `null` and silence there would be the same failure the
+missing-slug branch exists to avoid.
+
+### Decision 5: alias `@nextcloud/dialogs` to a FILE, and drop the directory alias
+
+The app's webpack config carried `'@nextcloud/dialogs': <package dir>`. That
+alias resolves nothing: the package is ESM-only, its exports map is the only
+route to `./dist/index.mjs`, and webpack stops honouring `exports` the moment
+an alias hands it an absolute path. Measured with the project's own
+`enhanced-resolve` across four configurations: with the directory alias the
+bare specifier AND `@nextcloud/dialogs/style.css` both fail; with an
+exact-match file alias both resolve; with no alias at all both resolve.
+
+So the fix is one alias, to the file, and the deletion of the directory entry
+that broke the specifier in the first place. The block's stated purpose is
+deduplication to one absolute file, which a directory alias never achieved, and
+there is exactly one copy of the package in the tree anyway.
 
 ### Decision 4: Declarative-vs-imperative (ADR-031) — not applicable
 
@@ -102,6 +125,16 @@ relation or dashboard widget. It adds a UI affordance, declared in the manifest
 (the declarative surface for this class of behaviour) with a client-side
 handler for the one thing JSON cannot express. No `lib/Service/*Service.php` is
 introduced; no schema-register patch applies.
+
+### Decision 6: the label stays English, and that is the library's call
+
+`CnRowActions` renders `{{ action.label }}` verbatim and injects no
+translator, so a manifest row-action label is never translated — the library's
+own built-ins (view, edit, copy, delete) are hard-coded English for the same
+reason. Column labels ARE translated, which is what makes the opposite
+assumption easy to make. The Dutch strings ship anyway: they cost nothing and
+become live the day the library runs `action.label` through `cnTranslate`. The
+toast is unaffected — it goes through the app's own translator.
 
 ## Nextcloud Integration
 
@@ -155,11 +188,15 @@ tests/
   same row; the site answers honestly. Revisit when the manifest grammar gains
   a row-level predicate for index actions.
 - [Popup blocking] → `window.open` is called synchronously in the click
-  handler, keeping it a user-initiated open.
-- [The icon string must exist in the app's icon registry] → `CnIcon` falls back
-  to a help-circle for an unknown name rather than failing; the e2e spec
-  asserts the entry by its label, so a missing icon shows up as a visual
-  regression, not a broken action. `OpenInNew` is added in the same change.
+  handler, which keeps a block rare rather than impossible — extensions and
+  hardened enterprise policies still refuse. So the handler reads the return
+  value: `null` means no tab appeared, and the administrator is told, instead
+  of the action reporting a success nobody can see.
+- [The icon string must resolve] → It already did: the library ships
+  `OpenInNew` in its ADR-077 semantic set, and `CnIcon` falls through
+  registry → semantic → dashboard → fallback. The app registers it anyway,
+  which costs nothing (same module, no bundle duplication) and keeps the
+  manifest's icon vocabulary readable from the app's own registry.
 - [`slug` is assumed to be the resolver's key] → It is: `resolveByHost` matches
   domains, and the explicit branch compares `site['slug']` to the requested
   portal. The unit spec pins the parameter name.

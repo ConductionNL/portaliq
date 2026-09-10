@@ -35,18 +35,45 @@ administrator and open nothing.
 
 #### Scenario: A slug that needs escaping stays intact
 
+<!-- @e2e exclude asserted in tests/open-portal-site.spec.mjs; no seeded portal
+     carries an escaping-relevant slug, and tagging the browser test with this
+     scenario would certify a branch that test cannot fail on -->
+
 - **GIVEN** a portal row whose slug contains a character that is unsafe in a
   query string
 - **WHEN** the action builds the site URL
 - **THEN** the slug is percent-encoded in the `portal` parameter, so the site
   resolves the portal the row names and no other
+- **AND** the slug is sent exactly as stored, because portal resolution
+  compares it verbatim
 
 #### Scenario: A portal without a slug reports instead of linking
+
+<!-- @e2e exclude asserted in tests/open-portal-site.spec.mjs; the CMS seed
+     provisions no slugless portal, and a browser test that opens no tab and
+     reads a toast adds nothing the unit assertions do not already pin -->
 
 - **GIVEN** a portal row whose `slug` is empty or absent
 - **WHEN** the administrator chooses "Open portal"
 - **THEN** no tab is opened
 - **AND** the administrator is told the portal has no slug yet
+
+#### Scenario: A blocked tab is reported, not reported as success
+
+<!-- @e2e exclude asserted in tests/open-portal-site.spec.mjs; a popup blocker
+     cannot be turned on from inside the browser context under test -->
+
+- **GIVEN** a browser or policy that blocks the new tab
+- **WHEN** the administrator chooses "Open portal"
+- **THEN** the administrator is told the site could not be opened
+- **AND** the action does not report success
+
+#### Scenario: The built-in row actions survive the addition
+
+- **GIVEN** the Portals overview with the action installed
+- **WHEN** an administrator opens a row's action menu
+- **THEN** "Open portal" is offered alongside the built-in view, edit, copy and
+  delete entries rather than in place of them
 
 ## Non-Functional Requirements
 
@@ -56,7 +83,12 @@ administrator and open nothing.
   row menu, so it inherits the shared component's keyboard and screen-reader
   behaviour; it carries a text label, not an icon alone (WCAG 2.2 AA 4.1.2).
 - **Internationalization:** Dutch and English MUST be supported (ADR-005) for
-  both the action label and the no-slug message.
+  every message this action shows the administrator. The action LABEL is the
+  measured exception: the shared row-action component renders `action.label`
+  verbatim and injects no translator, and the library's own built-in entries
+  (view, edit, copy, delete) are English for the same reason, so a Dutch label
+  here would be inconsistent as well as inert. The Dutch strings are shipped so
+  the label becomes live the day the library translates them.
 
 ## Acceptance Criteria
 

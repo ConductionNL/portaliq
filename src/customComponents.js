@@ -15,7 +15,13 @@
 // loaded alongside a non-empty `customComponents` prop. That is expected
 // behaviour during the transition; it does not break anything.
 //
-// Every entry here has an equivalent `kind: "page"` entry in src/registry.js.
+// Every COMPONENT entry here has an equivalent `kind: "page"` entry in
+// src/registry.js. `openPortalSite` is the exception and the reason this file
+// cannot be retired: it is a handler FUNCTION, not a component. The v2
+// registry's five kinds are widget | modal | page | form-field | cell-renderer,
+// none of which is a handler, and the manifest action dispatcher resolves
+// `handler` strings against THIS map only (never `cnRegistry`). Retiring this
+// file needs a handler kind in the library first.
 //
 // Resolution order at runtime (v1 path):
 //   1. Built-in page types          (CnIndexPage, CnDetailPage, …)

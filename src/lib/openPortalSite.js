@@ -77,7 +77,7 @@ export function createOpenPortalSite({
 	notify,
 	translate,
 	open = (...args) => window.open(...args),
-}) {
+} = {}) {
 	/**
 	 * Open the row's portal site in a new tab.
 	 *
@@ -86,20 +86,43 @@ export function createOpenPortalSite({
 	 * @return {string|null} The opened URL, or null when the row has no slug.
 	 */
 	return function openPortalSite({ item } = {}) {
-		const slug = typeof item?.slug === 'string' ? item.slug.trim() : ''
-		if (slug === '') {
+		// The slug is addressed EXACTLY as stored. `PortalResolver::resolve()`
+		// compares `$site['slug'] === $portalSlug`, so trimming here would
+		// address a different portal than the row names for a record stored
+		// as " demo" — a miss that looks like the site is broken. The trim is
+		// for the emptiness TEST only.
+		const slug = typeof item?.slug === 'string' ? item.slug : ''
+		if (slug.trim() === '') {
 			// A portal with no slug cannot be addressed at all — the resolver
 			// compares the requested slug to `site.slug`, so an empty one
 			// matches nothing. Saying so beats opening the site's not-found
 			// page and letting the administrator guess why.
-			notify(translate('This portal has no slug yet, so it has no public address.'))
+			notify(
+				translate(
+					'This portal has no slug yet, so it has no public address.',
+				),
+			)
 			return null
 		}
 
 		const url = portalSiteUrl(slug, generateUrlFn)
 		// `noopener,noreferrer`: the public site document must not reach back
 		// into the admin window through `window.opener`.
-		open(url, '_blank', 'noopener,noreferrer')
+		const opened = open(url, '_blank', 'noopener,noreferrer')
+		if (!opened) {
+			// A popup blocker returns null. Saying nothing here would report
+			// success for a tab that never appeared — the same silent failure
+			// the missing-slug branch above exists to avoid. Calling
+			// `window.open` synchronously inside the click keeps this rare,
+			// not impossible: extensions and hardened policies still block.
+			notify(
+				translate(
+					'The portal site could not be opened. Allow pop-ups for this site and try again.',
+				),
+			)
+			return null
+		}
+
 		return url
 	}
 }

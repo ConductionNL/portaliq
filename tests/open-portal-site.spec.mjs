@@ -80,13 +80,26 @@ console.log('createOpenPortalSite')
 		translate: (text) => text,
 	})
 
-	const returned = handler({ actionId: 'open-site', item: { slug: 'testgemeente' } })
+	const returned = handler({
+		actionId: 'open-site',
+		item: { slug: 'testgemeente' },
+	})
 	assertEqual(
 		'opens the row slug in a new tab, shielded from the opener',
 		opened,
-		[['/index.php/apps/portaliq/site?portal=testgemeente', '_blank', 'noopener,noreferrer']],
+		[
+			[
+				'/index.php/apps/portaliq/site?portal=testgemeente',
+				'_blank',
+				'noopener,noreferrer',
+			],
+		],
 	)
-	assertEqual('returns the URL it opened', returned, '/index.php/apps/portaliq/site?portal=testgemeente')
+	assertEqual(
+		'returns the URL it opened',
+		returned,
+		'/index.php/apps/portaliq/site?portal=testgemeente',
+	)
 	assertEqual('says nothing when the row resolves', notified, [])
 }
 
@@ -109,6 +122,56 @@ console.log('createOpenPortalSite')
 		notified,
 		Array(4).fill('This portal has no slug yet, so it has no public address.'),
 	)
+}
+
+// A slug stored with surrounding whitespace is addressed EXACTLY as stored:
+// PortalResolver compares `$site['slug'] === $portalSlug`, so trimming the
+// value we send would resolve a different portal than the row names — or
+// none. The trim exists for the emptiness test alone, and this pins that.
+{
+	const opened = []
+	const handler = createOpenPortalSite({
+		generateUrl: withIndexPhp,
+		open: (...args) => opened.push(args),
+		notify: () => {},
+		translate: (text) => text,
+	})
+
+	handler({ item: { slug: ' demo ' } })
+	assertEqual(
+		'addresses a padded slug exactly as stored, encoded',
+		opened.map(([url]) => url),
+		['/index.php/apps/portaliq/site?portal=%20demo%20'],
+	)
+}
+
+// A popup blocker makes window.open return null. Returning the URL anyway
+// would report success for a tab that never appeared.
+{
+	const notified = []
+	const handler = createOpenPortalSite({
+		generateUrl: withIndexPhp,
+		open: () => null,
+		notify: (message) => notified.push(message),
+		translate: (text) => text,
+	})
+
+	const returned = handler({ item: { slug: 'demo' } })
+	assertEqual('returns null when the tab was blocked', returned, null)
+	assertEqual('tells the administrator the tab was blocked', notified, [
+		'The portal site could not be opened. Allow pop-ups for this site and try again.',
+	])
+}
+
+// The factory is defensively callable with no argument at all.
+{
+	let threw = null
+	try {
+		createOpenPortalSite()
+	} catch (error) {
+		threw = error.message
+	}
+	assertEqual('createOpenPortalSite() does not throw on a bare call', threw, null)
 }
 
 if (failures > 0) {
