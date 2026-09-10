@@ -7,10 +7,13 @@
 // Usage:
 //   node --test tests/page-layout-entry.spec.mjs
 //
-// WHY THIS TEST EXISTS. `PageLayout` shipped as a declared-but-unlinked page:
+// WHY THIS TEST EXISTS. `PageLayout` shipped unreachable from the ADMIN app:
 // the manifest carried the route and the component, and no button, tab or row
-// action anywhere in the app pointed at it, so the only way in was to type
-// `/pages/<id>/layout` into the address bar (WOO-565). Schema validation
+// action in the admin UI pointed at it, so an administrator working from the
+// Pages list or a page's detail page had to type `/pages/<id>/layout` into the
+// address bar (WOO-565). The one existing entry point was the PUBLIC site's
+// floating editing control (`CmsEditorController::designerUrl` →
+// `SiteEditButton`), which only helps a visitor already on the rendered site. Schema validation
 // cannot catch that — an orphan page is structurally valid — so the invariant
 // worth pinning is the JOIN: at least one action must target `PageLayout`,
 // from the page detail AND from the pages list.
@@ -140,9 +143,10 @@ describe('the actions that open it', () => {
 
 describe('pageSiteUrl', () => {
 	// The designer's way back to the site. `?route=` alone is not an address:
-	// the resolver matches the request HOST first and only consults an explicit
-	// slug, so on any rig without a delegated domain a portal-less link lands
-	// on the site's not-found page (WOO-565, finding B21).
+	// `PortalResolver::resolve()` consults an explicit slug FIRST and only
+	// host-matches when none is named, so on any rig without a delegated
+	// domain a portal-less link lands on the site's not-found page
+	// (WOO-565, finding B21).
 	const gen = (path) => `/index.php${path}`
 
 	it('carries the page route and the portal slug', () => {

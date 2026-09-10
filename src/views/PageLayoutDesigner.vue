@@ -324,7 +324,7 @@ export default {
 		 *
 		 * @return {string} The site URL for this page's route.
 		 *
-		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-designer-must-be-reachable-from-the-page-administration-surfaces
 		 */
 		siteUrl() {
 			return pageSiteUrl(this.page, generateUrl)
