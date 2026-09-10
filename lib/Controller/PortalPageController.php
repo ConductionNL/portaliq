@@ -211,6 +211,25 @@ class PortalPageController extends Controller {
 					// site fetch, where a visitor who moved on quickly lost the
 					// landing that brought them.
 					'resolvedPortal' => $this->siteResolvedSlug(),
+					// THE DOCUMENT TITLE, SERVER-RENDERED.
+					//
+					// `templates/site.php` has always had the slot
+					// (`$portalConfig['title'] ?? 'Portaal'`) and its own note
+					// about "its server-rendered title"; the key was never
+					// passed, so every portal's tab said the Dutch word for
+					// "portal" until the bundle had booted and fetched the
+					// site. A tab title is the bookmark name, the history
+					// entry and the window-switcher label, and none of those
+					// appear in a screenshot of the page — which is why it
+					// survived every visual check.
+					//
+					// Resolved here for the same reason the theme below is:
+					// it cannot wait for the API without the visitor seeing
+					// the wrong value first. No content is withheld from
+					// other consumers either — `title` is already on
+					// `/api/content/site` (ADR-086 §1), so this decides which
+					// string to emit, not who may read it.
+					'title' => $this->siteTitle(),
 				],
 				// THEME TOKENS ARE THE ONE THING THAT CANNOT WAIT FOR THE API.
 				// Everything else this renderer shows is fetched after boot,
@@ -332,6 +351,37 @@ class PortalPageController extends Controller {
 
 		return (string)($portal['slug'] ?? '');
 	}//end siteResolvedSlug()
+
+
+	/**
+	 * The serving portal's display title, or '' when the request resolves to
+	 * no portal.
+	 *
+	 * Fails to the empty string on every miss — unknown host, unknown slug, a
+	 * resolver that throws — and the template then renders its own neutral
+	 * fallback. Never another portal's name: a tab reading "Gemeente Tilburg"
+	 * on somebody else's site is a branding leak that looks entirely correct.
+	 *
+	 * @return string The portal title, or ''.
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-request-must-resolve-to-exactly-one-portal-or-to-none
+	 */
+	private function siteTitle(): string {
+		try {
+			$portal = $this->portalResolver->resolve(
+				request: $this->request,
+				portalSlug: (string)$this->request->getParam('portal', '')
+			);
+		} catch (\Throwable) {
+			return '';
+		}
+
+		if ($portal === null) {
+			return '';
+		}
+
+		return (string)($portal['title'] ?? '');
+	}//end siteTitle()
 
 
 	/**
