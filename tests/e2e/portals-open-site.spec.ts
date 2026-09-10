@@ -18,7 +18,7 @@
  * `open-tilburg` (published), which every other site spec also relies on, so
  * this file creates nothing and deletes nothing.
  *
- * @spec openspec/changes/portals-open-site-action/specs/portaliq-cms/spec.md#requirement-the-portals-overview-must-open-a-portals-public-site
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portals-overview-must-open-a-portals-public-site
  */
 
 import type { Page } from '@playwright/test'

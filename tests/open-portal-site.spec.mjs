@@ -17,7 +17,7 @@
 // tests/registry.spec.js — this app has no JS test runner, and adding one for
 // two functions would be a bigger change than the thing being tested.
 //
-// @spec openspec/changes/portals-open-site-action/specs/portaliq-cms/spec.md#requirement-the-portals-overview-must-open-a-portals-public-site
+// @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portals-overview-must-open-a-portals-public-site
 
 import { createOpenPortalSite, portalSiteUrl } from '../src/lib/openPortalSite.js'
 
