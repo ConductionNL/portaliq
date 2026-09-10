@@ -312,9 +312,34 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 		string $outcome,
 		array $files,
 	): array {
+		// 🔴 THE COPY DESCRIBES WHAT THE AUTHORITY RECORDED, NOT WHAT THE RESIDENT
+		// SENT. The seam's completed row is authoritative: `evidence` lists the
+		// files PortalTaskService::storeFiles() actually wrote to the case
+		// (PHP drops an oversized/partial upload with tmp_name '' and the
+		// gateway then forwards nothing for it, while the request still names
+		// it), `responses` is the answers map the seam stored. A receipt or
+		// proof log naming an upload the authority never received would be a
+		// false art. 2:10 statement (review of #501). The request is only the
+		// fallback for a seam row that predates those keys.
 		$names = [];
-		foreach ($files as $file) {
-			$names[] = (string)($file['name'] ?? 'upload');
+		if (array_key_exists('evidence', $task) === true) {
+			foreach ((array)$task['evidence'] as $stored) {
+				$name = 'upload';
+				if (is_array($stored) === true) {
+					$name = (string)($stored['name'] ?? 'upload');
+				}
+
+				$names[] = $name;
+			}
+		} else {
+			foreach ($files as $file) {
+				$names[] = (string)($file['name'] ?? 'upload');
+			}
+		}
+
+		$recordedAnswers = $answers;
+		if (is_array($task['responses'] ?? null) === true) {
+			$recordedAnswers = $task['responses'];
 		}
 
 		$recorded = (string)($task['outcome'] ?? '');
@@ -324,10 +349,12 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 
 		return [
 			'taskUuid' => $taskUuid,
-			'title' => (string)($task['title'] ?? ''),
+			// What the resident saw in "Mijn taken" (displayTitle), falling back
+			// to the raw title for a seam that does not compute one.
+			'title' => (string)($task['displayTitle'] ?? $task['title'] ?? ''),
 			'outcome' => $recorded,
 			'comment' => (string)($comment ?? ''),
-			'answers' => $answers,
+			'answers' => $recordedAnswers,
 			'files' => $names,
 		];
 	}//end submissionCopy()
