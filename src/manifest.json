@@ -1340,11 +1340,11 @@
           {
             "id": "go-flows",
             "placement": "right",
-            "body": "Flows automate the repetitive parts of this app. Have a look, though you do not have to build one now.",
-            "task": "Open Flows from the menu",
+            "body": "Flows automate the repetitive parts of this app. They live behind the Settings button at the bottom of the menu. Have a look, though you do not have to build one now.",
+            "task": "Open Settings at the bottom of the menu, then Flows",
             "target": {
-              "kind": "nav-item",
-              "ref": "Flows"
+              "kind": "element",
+              "ref": "cn-nav-settings"
             },
             "advanceOn": {
               "type": "route-match",
