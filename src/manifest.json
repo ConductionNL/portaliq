@@ -1343,8 +1343,8 @@
             "body": "Flows automate the repetitive parts of this app. They live behind the Settings button at the bottom of the menu. Have a look, though you do not have to build one now.",
             "task": "Open Settings at the bottom of the menu, then Flows",
             "target": {
-              "kind": "element",
-              "ref": "cn-nav-settings"
+              "kind": "nav-item",
+              "ref": "Flows"
             },
             "advanceOn": {
               "type": "route-match",
