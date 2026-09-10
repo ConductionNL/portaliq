@@ -29,6 +29,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { describe, it } from 'node:test'
 import { fileURLToPath } from 'node:url'
+import { pageSiteUrl } from '../src/lib/pageSiteUrl.js'
 
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const manifest = JSON.parse(
@@ -134,5 +135,51 @@ describe('the actions that open it', () => {
 				`icon "${icon}" is not registered in src/icons.js`,
 			)
 		}
+	})
+})
+
+describe('pageSiteUrl', () => {
+	// The designer's way back to the site. `?route=` alone is not an address:
+	// the resolver matches the request HOST first and only consults an explicit
+	// slug, so on any rig without a delegated domain a portal-less link lands
+	// on the site's not-found page (WOO-565, finding B21).
+	const gen = (path) => `/index.php${path}`
+
+	it('carries the page route and the portal slug', () => {
+		assert.equal(
+			pageSiteUrl({ route: '/over-ons', portal: 'open-tilburg' }, gen),
+			'/index.php/apps/portaliq/site?route=%2Fover-ons&portal=open-tilburg',
+		)
+	})
+
+	it('omits the portal when the page names none', () => {
+		assert.equal(
+			pageSiteUrl({ route: '/over-ons' }, gen),
+			'/index.php/apps/portaliq/site?route=%2Fover-ons',
+		)
+		assert.equal(
+			pageSiteUrl({ route: '/over-ons', portal: '   ' }, gen),
+			'/index.php/apps/portaliq/site?route=%2Fover-ons',
+		)
+	})
+
+	it('defaults a missing route to the portal front door', () => {
+		assert.equal(
+			pageSiteUrl({ portal: 'open-tilburg' }, gen),
+			'/index.php/apps/portaliq/site?route=%2F&portal=open-tilburg',
+		)
+		assert.equal(
+			pageSiteUrl(undefined, gen),
+			'/index.php/apps/portaliq/site?route=%2F',
+		)
+	})
+
+	it('encodes a slug or route that would otherwise split the query', () => {
+		// A slug carrying `&` would silently address a different portal than
+		// the page belongs to — or none at all.
+		assert.equal(
+			pageSiteUrl({ route: '/a b', portal: 'x&portal=other' }, gen),
+			'/index.php/apps/portaliq/site?route=%2Fa%20b&portal=x%26portal%3Dother',
+		)
 	})
 })
