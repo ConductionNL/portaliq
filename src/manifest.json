@@ -1154,6 +1154,7 @@
       "route": "/pages",
       "type": "index",
       "title": "Pages",
+      "_note": "The `open-layout` row action is the list-side entry to the layout designer (`PageLayout`). `type: \"open-page\"` is the declarative form: CnIndexPage's action dispatcher pushes `{ name: target, params: { id: row.id } }`, so the action needs no handler and no route string of its own. Its counterpart is the `edit-layout` header action on PageDetail, and both exist because the designer used to be reachable only by typing `/pages/<id>/layout` into the address bar.",
       "config": {
         "register": "portaliq",
         "schema": "page",
@@ -1174,6 +1175,15 @@
           },
           "locale"
         ],
+        "actions": [
+          {
+            "id": "open-layout",
+            "label": "Layout",
+            "icon": "ViewDashboardOutline",
+            "type": "open-page",
+            "target": "PageLayout"
+          }
+        ],
         "sidebar": {
           "enabled": true,
           "showMetadata": true
@@ -1185,9 +1195,19 @@
       "route": "/pages/:id",
       "type": "detail",
       "title": "Page",
+      "_note": "A page's BODY is a widget grid, and this detail page cannot edit one \u2014 it renders the object's scalars, so `body.widgets` shows up as an array of grid integers in a textarea. `PageLayout` is the surface that edits it, and until the `edit-layout` header action below existed nothing in the UI linked there: the designer was reachable only by typing `/pages/<id>/layout` into the address bar. The action carries NO `params`: vue-router fills a named target's missing REQUIRED params from the current route (`pickParams(currentLocation.params, \u2026)` in its matcher), and `:id` is the same param on both routes, so `PageLayout` resolves to `/pages/<this id>/layout` on its own. That is also why the library's `open-page` dispatch does not pass params.",
       "config": {
         "register": "portaliq",
         "schema": "page",
+        "headerActions": [
+          {
+            "id": "edit-layout",
+            "label": "Edit layout",
+            "icon": "ViewDashboardOutline",
+            "type": "open-page",
+            "target": "PageLayout"
+          }
+        ],
         "sidebar": {
           "enabled": true,
           "showMetadata": true
