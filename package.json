@@ -8,6 +8,7 @@
   },
   "scripts": {
     "build": "npm run build:admin && npm run build:portal && npm run build:site && npm run build:traffic",
+    "postbuild": "node scripts/check-single-dexie.js",
     "build:admin": "NODE_ENV=production webpack --config webpack.config.js --progress",
     "dev": "NODE_ENV=development webpack --config webpack.config.js --progress",
     "watch": "NODE_ENV=development webpack --config webpack.config.js --progress --watch",
@@ -22,6 +23,7 @@
     "format": "prettier --check \"**/*.{js,ts,vue,css,scss}\"",
     "format:fix": "prettier --write \"**/*.{js,ts,vue,css,scss}\"",
     "stylelint-fix": "stylelint src/**/*.vue src/**/*.scss src/**/*.css --fix",
+    "check:dexie": "node scripts/check-single-dexie.js",
     "check:schema-l10n": "node scripts/check-schema-l10n.js",
     "check:manifest": "node tests/validate-manifest.js",
     "l10n:build": "node scripts/build-l10n-js.js",
