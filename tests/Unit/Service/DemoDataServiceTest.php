@@ -315,6 +315,35 @@ class DemoDataServiceTest extends TestCase {
 		$this->service()->install();
 	}
 
+	public function testASchemaThisAppDoesNotOwnIsSkippedInThePresenceCount(): void {
+		// PortalRegisterContext::apply() answers false for a slug portaliq does
+		// not own; that schema is skipped (never counted against another app's
+		// rows) and the owned schema still decides.
+		file_put_contents(
+			$this->descriptor(),
+			json_encode(['components' => ['objects' => [
+				['@self' => ['register' => 'portaliq', 'schema' => 'foreign']],
+				['@self' => ['register' => 'portaliq', 'schema' => 'page']],
+			]]])
+		);
+		$importer = new class {
+			public function importFromApp(string $appId, array $data, string $version, bool $force): array {
+				return ['registers' => [1], 'objects' => [], 'skipped' => ['objects' => 0]];
+			}
+
+			public function count(array $config = []): int {
+				return 7;
+			}
+		};
+		$this->container->method('get')->willReturn($importer);
+		$this->registerContext = $this->createMock(PortalRegisterContext::class);
+		$this->registerContext->method('apply')->willReturnCallback(
+			static fn (object $objectService, string $schemaSlug): bool => $schemaSlug === 'page'
+		);
+
+		$this->assertSame(7, $this->service()->install()['present']);
+	}
+
 	public function testACountThatFailsForOneSchemaDoesNotHideTheOthers(): void {
 		// One schema whose count throws is logged and skipped; the other
 		// schema's count still decides the outcome.
