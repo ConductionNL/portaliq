@@ -147,28 +147,35 @@ function validateMockRegister(reg, label, errors) {
 	if (components.schemas && Object.keys(components.schemas).length > 0) {
 		errors.push(
 			`${label}: a mock descriptor must not carry components.schemas — OpenRegister resolves `
-			+ 'object schemas against the real descriptor; a copy becomes a parallel schema set (WOO-558)',
+				+ 'object schemas against the real descriptor; a copy becomes a parallel schema set (WOO-558)',
 		)
 	}
 	const registers = components.registers || {}
 	const registerSlugs = new Set(
-		Object.entries(registers).map(([key, r]) => (r && typeof r.slug === 'string' ? r.slug : key)),
+		Object.entries(registers).map(([key, r]) =>
+			r && typeof r.slug === 'string' ? r.slug : key,
+		),
 	)
-	if (registerSlugs.size === 0) errors.push(`${label}: components.registers is empty`)
+	if (registerSlugs.size === 0)
+		errors.push(`${label}: components.registers is empty`)
 	const objects = components.objects
 	if (!Array.isArray(objects) || objects.length === 0) {
-		errors.push(`${label}: components.objects is empty — a mock with nothing to seed is a broken generator run`)
+		errors.push(
+			`${label}: components.objects is empty — a mock with nothing to seed is a broken generator run`,
+		)
 		return
 	}
 	const real = realSchemaSlugSet()
 	objects.forEach((o, i) => {
 		const self = (o && o['@self']) || {}
 		if (!registerSlugs.has(self.register))
-			errors.push(`${label} › objects[${i}]: @self.register "${self.register}" is not a register this mock declares`)
+			errors.push(
+				`${label} › objects[${i}]: @self.register "${self.register}" is not a register this mock declares`,
+			)
 		if (!real.has(self.schema))
 			errors.push(
 				`${label} › objects[${i}]: @self.schema "${self.schema}" is not defined by any real descriptor — `
-				+ 'OpenRegister would skip this object',
+					+ 'OpenRegister would skip this object',
 			)
 	})
 }
