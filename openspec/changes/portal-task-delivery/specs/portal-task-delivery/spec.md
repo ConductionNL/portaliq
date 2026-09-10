@@ -87,7 +87,7 @@ file content. A refused (4xx), unavailable (seam 401 → 503) or unreachable
 - WHEN the seam confirms the completion (2xx)
 - THEN a `portalAuditEntry` with verb `complete` names the task and carries the session jti, a receipt `portalMessage` with a reference id lands in the resident's inbox, and a linked `portalSubmission` proof log records the answers, comment, outcome and upload names — and a 400/404/409, a seam 401 (503) or a transport failure (502) records none of these
 
-- @e2e exclude pinned by `tests/Unit/Controller/PortalTaskProxyControllerTest.php` (`testASuccessfulCompletionIsAuditedAndReceipted`, `testTheSubmissionCopyFallsBackToTheRequestedOutcomeAndUuid`, `testARefusedOrFailedCompletionRecordsNothing`); the end-to-end run needs the seeded flow rig named above (verified by hand on the dev instance, WOO-569)
+- @e2e exclude pinned by `tests/Unit/Controller/PortalTaskProxyControllerTest.php` (`testASuccessfulCompletionIsAuditedAndReceipted`, `testTheCopyNamesOnlyTheEvidenceTheSeamStored`, `testTheSubmissionCopyFallsBackToTheRequestedOutcomeAndUuid`, `testAnEmptySeamUuidFallsBackToTheAddressedUuid`, `testARefusedOrFailedCompletionRecordsNothing`) and, for the receipt + proof log themselves, `tests/Unit/Service/SubmissionReceiptServiceTest.php` (`testATaskCompletionYieldsAReceiptAndALinkedProofLog`, real service over a stubbed writer); the end-to-end run needs the seeded flow rig named above (verified by hand on the dev instance, WOO-569)
 
 #### Scenario: Upload constraints are enforced and named
 

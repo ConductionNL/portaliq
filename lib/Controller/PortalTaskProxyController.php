@@ -287,11 +287,12 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 
 	/**
 	 * The WMEBV "copy of the submitted data" for a completion — the role the
-	 * whitelisted field map plays for a create. It carries what the resident
-	 * submitted (answers, comment), the outcome the seam RECORDED (falling
-	 * back to the requested one), the task it answered and the NAMES of the
-	 * uploads. Never file content, never a temp path: this copy lands in the
-	 * resident's receipt (`dataCopy`) and in the proof log (`payloadCopy`).
+	 * whitelisted field map plays for a create. It carries what the AUTHORITY
+	 * RECORDED — the seam row's `responses`, `evidence` (file NAMES as stored)
+	 * and outcome, plus the resident's comment — falling back to the request
+	 * only where the seam row carries no such key. Never file content, never a
+	 * temp path: this copy lands in the resident's receipt (`dataCopy`) and in
+	 * the proof log (`payloadCopy`).
 	 *
 	 * @param string $taskUuid The completed task's uuid.
 	 * @param array<string, mixed> $task The seam's completed task row.
