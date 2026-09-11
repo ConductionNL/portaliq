@@ -238,6 +238,50 @@ class PortalPageControllerTest extends TestCase {
 
 
 	/**
+	 * The shell titles the document with the PORTAL's name, before boot.
+	 *
+	 * The template has carried the slot since it took over the document; the
+	 * controller never filled it, so a themed municipal portal served a tab
+	 * reading "Portaal" until the bundle had fetched the site.
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-request-must-resolve-to-exactly-one-portal-or-to-none
+	 */
+	public function testSiteCarriesTheResolvedPortalTitle(): void {
+		$controller = $this->controller(
+			orgSlug: '',
+			portal: ['slug' => 'open-tilburg', 'title' => 'Gemeente Tilburg', 'theme' => 'vng'],
+			themeStylesheet: 'themes/vng',
+			nldsStylesheet: 'themes/vng-tokens'
+		);
+
+		$params = $controller->site()->getParams();
+
+		$this->assertSame(expected: 'Gemeente Tilburg', actual: $params['portalConfig']['title']);
+
+	}//end testSiteCarriesTheResolvedPortalTitle()
+
+
+	/**
+	 * Every unresolved shape answers '' — never a title borrowed from
+	 * whichever portal happened to be first. The template turns '' into its
+	 * own neutral fallback, so the page still renders.
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-request-must-resolve-to-exactly-one-portal-or-to-none
+	 */
+	public function testSiteCarriesNoTitleWhenResolutionFails(): void {
+		$throwing = $this->controller(orgSlug: '', portalResolverThrows: true);
+		$this->assertSame(expected: '', actual: $throwing->site()->getParams()['portalConfig']['title']);
+
+		$none = $this->controller(orgSlug: '');
+		$this->assertSame(expected: '', actual: $none->site()->getParams()['portalConfig']['title']);
+
+		$untitled = $this->controller(orgSlug: '', portal: ['slug' => 'open-tilburg']);
+		$this->assertSame(expected: '', actual: $untitled->site()->getParams()['portalConfig']['title']);
+
+	}//end testSiteCarriesNoTitleWhenResolutionFails()
+
+
+	/**
 	 * The standalone shell renders the whole document, so it needs a `lang`.
 	 *
 	 * With no `Accept-Language` the answer is `nl`, not the empty string —

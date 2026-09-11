@@ -231,7 +231,15 @@ if ($favicon === '') {
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><?php p($portalConfig['title'] ?? 'Portaal'); ?></title>
+    <?php
+    // The serving portal's own name, resolved server-side by
+    // PortalPageController::site(). `?? ` alone was not enough: the controller
+    // always passes the key and answers '' for every unresolved request, so a
+    // null-coalesce would have rendered an EMPTY title rather than the
+    // fallback. Checked for emptiness instead, which covers both "no portal
+    // resolved" and "a portal with a blank title".
+    ?>
+    <title><?php p(($portalConfig['title'] ?? '') !== '' ? $portalConfig['title'] : 'Portaal'); ?></title>
     <?php
     // FAVICON. Without one the browser requests /favicon.ico against the
     // ORIGIN, which on a Nextcloud host is not this app's to answer — measured,
