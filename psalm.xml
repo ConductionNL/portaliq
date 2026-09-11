@@ -20,6 +20,11 @@
     </projectFiles>
     <stubs>
         <file name="vendor/nextcloud/ocp/OCP/Capabilities/ICapability.php" preloadClasses="true" />
+        <!-- OpenRegister's AppHost composition root, for the store-plane alias in
+             lib/AppInfo/StorePlaneRegistrar.php (WOO-559). openregister is a sibling
+             app, not a composer dependency; the stub carries the engine's public
+             surface so the guarded call is type-checked instead of read as dead code. -->
+        <file name="vendor/conduction/hydra-gates/hydra-gates/stubs/openregister-apphost-bootstrap.stub.php" />
     </stubs>
     <issueHandlers>
         <UndefinedDocblockClass errorLevel="suppress"/>
@@ -91,6 +96,7 @@
                 <referencedClass name="OCP\Migration\IRepairStep"/>
                 <!-- Nextcloud server internals -->
                 <referencedClass name="OC"/>
+                <referencedClass name="OC_App"/>
                 <!-- GuzzleHttp (loaded via composer at runtime) -->
                 <referencedClass name="GuzzleHttp\Client"/>
                 <referencedClass name="GuzzleHttp\Exception\GuzzleException"/>

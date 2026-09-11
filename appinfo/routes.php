@@ -24,6 +24,30 @@ return [
         ['name' => 'preferences#getPreference', 'url' => '/api/preferences/{key}', 'verb' => 'GET'],
         ['name' => 'preferences#setPreference', 'url' => '/api/preferences/{key}', 'verb' => 'PUT'],
 
+        // Store plane (ADR-080, ADR-114 Decision 4): the engine's two store
+        // routes, verbatim from OpenRegister's AppHost\Routes::standard()
+        // table, which Portaliq does not call (see settings#update above).
+        // The names resolve to Controller\StoreController, a class this app
+        // does NOT ship — AppInfo\StorePlaneRegistrar aliases that name at
+        // OpenRegister's GenericStoreController, and the auth posture lives
+        // there (search: signed-in; install: the manifest's installAuth,
+        // admin by default). ACCEPTED, NOT CHOSEN: search is reachable by any
+        // signed-in user — one tier below the rest of this app's admin-only
+        // /api/ — because the catalogue is publisher-side public and the
+        // engine has no searchAuth key to narrow it (review of #500; raise it
+        // with OpenRegister's apphost-store-plane spec if Portaliq ever wants
+        // an admin-only catalogue). Without these entries the manifest's
+        // `type: "store"` page called /api/store/items and the SPA catch-all
+        // below answered it with HTML 200 ("The store registry did not
+        // answer", WOO-559).
+        ['name' => 'store#search', 'url' => '/api/store/items', 'verb' => 'GET'],
+        [
+            'name' => 'store#install',
+            'url' => '/api/store/items/{slug}/install',
+            'verb' => 'POST',
+            'requirements' => ['slug' => '[a-z0-9][a-z0-9-]*[a-z0-9]'],
+        ],
+
         // Prometheus metrics endpoint.
         ['name' => 'metrics#index', 'url' => '/api/metrics', 'verb' => 'GET'],
         // Health check endpoint.
@@ -178,6 +202,11 @@ return [
 
         // SPA catch-all — same controller as the index route; must use a distinct route name
         // (duplicate names replace the earlier route in Symfony, which breaks GET /).
-        ['name' => 'dashboard#catchAll', 'url' => '/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
+        // `(?!api/)` mirrors OpenRegister's canonical table: the SPA never needs an
+        // `api/` path, and without the lookahead an UNDECLARED API route is answered
+        // with the app shell and HTTP 200 instead of a 404. That is exactly how the
+        // store page read "The store registry did not answer" while nothing errored
+        // (WOO-559). A missing `/api/…` route now fails loudly.
+        ['name' => 'dashboard#catchAll', 'url' => '/{path}', 'verb' => 'GET', 'requirements' => ['path' => '(?!api/).+'], 'defaults' => ['path' => '']],
     ],
 ];
