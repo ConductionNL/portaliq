@@ -1,4 +1,7 @@
 version = 1
+SPDX-PackageName = "portaliq"
+SPDX-PackageSupplier = "Conduction B.V. <info@conduction.nl>"
+SPDX-PackageDownloadLocation = "https://github.com/ConductionNL/portaliq"
 
 # REUSE compliance for Portaliq.
 #
@@ -7,21 +10,41 @@ version = 1
 # tags) per ADR-014. This REUSE.toml provides the same metadata for non-PHP
 # source files that have no docblock to carry it, plus a fallback for any
 # PHP file that has not yet had its SPDX header added.
+#
+# WHY EVERY ENTRY CARRIES `precedence` (added 2026-09-11). Without it, a
+# REUSE.toml entry silently overrules a header the file itself carries, so a
+# third-party file that states its own licence would be re-labelled as ours.
+# `precedence = "closest"` means the file's own header wins and the entry only
+# fills files that have none; `precedence = "override"` is the deliberate
+# opposite, used below only where we assert provenance the file cannot state
+# itself (binary fonts, a binary test fixture). Same model as
+# @conduction/nextcloud-vue's REUSE.toml.
 
+# ---------------------------------------------------------------------------
+# First-party source.
+# ---------------------------------------------------------------------------
 [[annotations]]
 path = "**/*.php"
+precedence = "closest"
 SPDX-FileCopyrightText = "2026 Conduction B.V. <info@conduction.nl>"
 SPDX-License-Identifier = "EUPL-1.2"
 
+# `.jsx` and `.mjs` were missing here, which is why the nine React-portal
+# sources under src/portal/ and docs/scripts/validate-ai-baseline.mjs counted
+# as unlicensed: this file lists extensions rather than using a blanket, so an
+# extension that is not listed falls through entirely.
 [[annotations]]
 path = [
     "**/*.vue",
     "**/*.js",
+    "**/*.jsx",
+    "**/*.mjs",
     "**/*.ts",
     "**/*.css",
     "**/*.scss",
     "**/*.sh",
 ]
+precedence = "closest"
 SPDX-FileCopyrightText = "2026 Conduction B.V. <info@conduction.nl>"
 SPDX-License-Identifier = "EUPL-1.2"
 
@@ -40,5 +63,77 @@ path = [
     "composer.lock",
     "package-lock.json",
 ]
+precedence = "closest"
 SPDX-FileCopyrightText = "2026 Conduction B.V. <info@conduction.nl>"
 SPDX-License-Identifier = "CC0-1.0"
+
+# Repository plumbing that carries no comment syntax of its own: dotfiles,
+# tool baselines, the Makefile, CODEOWNERS, the docs site's CNAME. Same CC0
+# treatment as the config block above — none of this is creative work.
+[[annotations]]
+path = [
+    ".editorconfig",
+    ".gitattributes",
+    ".gitignore",
+    ".git-blame-ignore-revs",
+    ".npmrc",
+    ".nvmrc",
+    ".prettierignore",
+    ".coverage-baseline",
+    ".github/CODEOWNERS",
+    ".githooks/**",
+    "Makefile",
+    "**/*.neon",
+    "**/.gitkeep",
+    "docs/static/CNAME",
+    "docs/static/llms.txt",
+]
+precedence = "closest"
+SPDX-FileCopyrightText = "2026 Conduction B.V. <info@conduction.nl>"
+SPDX-License-Identifier = "CC0-1.0"
+
+# Screenshots and logo on the docs site: our own product, our own images.
+[[annotations]]
+path = [
+    "docs/static/img/**",
+    "docs/static/screenshots/**",
+]
+precedence = "closest"
+SPDX-FileCopyrightText = "2026 Conduction B.V. <info@conduction.nl>"
+SPDX-License-Identifier = "CC0-1.0"
+
+# ---------------------------------------------------------------------------
+# Third party. NOT ours — these say what upstream says, and they use
+# `override` because a .woff2 or an .mmdb cannot carry a text header.
+# ---------------------------------------------------------------------------
+
+# Roboto, bundled for the site renderer. Apache-2.0 per the licence text that
+# ships next to it in css/fonts/LICENSE-roboto.txt.
+[[annotations]]
+path = "css/fonts/roboto-*.woff2"
+precedence = "override"
+SPDX-FileCopyrightText = "Google LLC"
+SPDX-License-Identifier = "Apache-2.0"
+
+# MaxMind's GeoIP2 test database, used as a fixture. Its own licence text
+# ships beside it as tests/fixtures/GeoIP2-City-Test.LICENSE.md.
+[[annotations]]
+path = "tests/fixtures/GeoIP2-City-Test.mmdb"
+precedence = "override"
+SPDX-FileCopyrightText = "MaxMind, Inc."
+SPDX-License-Identifier = "CC-BY-SA-4.0"
+
+# NOTE — woo/ IS DELIBERATELY NOT ANNOTATED HERE.
+#
+# woo/ is 650 committed files: the build output of a React SPA whose source
+# does not live in this repository (asset-manifest.json serves it from
+# /apps/portaliq/woo/). 310 of those files are `*.LICENSE.txt` notices that
+# webpack extracted from third-party dependencies, plus fonts, a VNG favicon
+# and placeholder images.
+#
+# A blanket entry covering woo/ would assert Conduction copyright and EUPL-1.2
+# over other people's licence notices, which is a worse outcome than the REUSE
+# finding it would silence. Annotating it correctly needs two answers we do not
+# have: who owns this build, and whether generated output belongs in git at all
+# — if it does not, deleting it removes ~96% of the remaining findings.
+# Tracked in plans/issues/WOO-556/sub-tasks/WOO-571/ step 10.
