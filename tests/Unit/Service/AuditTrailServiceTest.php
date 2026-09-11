@@ -128,7 +128,7 @@ class AuditTrailServiceTest extends TestCase {
 		$this->assertSame(5, $counts['create']);
 		$this->assertSame(0, $counts['logout']);
 		// Every declared verb is present, count-only — no subject/target/payload keys.
-		$this->assertSame(['create', 'update', 'forward', 'download', 'login', 'logout', 'refresh'], array_keys($counts));
+		$this->assertSame(['create', 'update', 'forward', 'download', 'login', 'logout', 'refresh', 'complete'], array_keys($counts));
 
 	}//end testCountsByVerbReturnsACountPerVerb()
 

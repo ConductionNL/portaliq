@@ -41,14 +41,22 @@ use Psr\Log\LoggerInterface;
  * announcement: `tasks.enabled` for authenticated subjects only, and never on
  * the anonymous aggregate.
  *
+ * And the completion follow-ons (WOO-569): a seam-confirmed completion (2xx)
+ * is audited (verb `complete`, target the task) and acknowledged with the
+ * WMEBV receipt + proof log carrying a copy of the submitted data — never
+ * file content; a refused, unavailable or unreachable relay records neither.
+ *
  * @covers \OCA\Portaliq\Controller\PortalTaskProxyController
  * @covers \OCA\Portaliq\Controller\ContributionController
  *
  * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
  * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-mijn-taken-lists-details-and-completes-the-partys-open-tasks
+ * @spec openspec/specs/supplier-portal/spec.md#append-only-portal-audit-trail-on-every-mutation-download-and-session-event
+ * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
+ * @spec openspec/specs/supplier-portal/spec.md#proof-of-receipt-log-satisfying-the-wmebv-burden-of-proof
  */
 class PortalTaskProxyControllerTest extends TestCase {
-	private const SUBJECT = ['subjectRef' => 's1', 'audience' => 'client', 'organisation' => 'org-1', 'trust' => 'substantial'];
+	private const SUBJECT = ['subjectRef' => 's1', 'audience' => 'client', 'organisation' => 'org-1', 'trust' => 'substantial', 'jti' => 'jti-1'];
 
 	/**
 	 * No bearer: 401, and the gateway is NEVER consulted — an
@@ -60,7 +68,12 @@ class PortalTaskProxyControllerTest extends TestCase {
 		$gateway->expects($this->never())->method('getTask');
 		$gateway->expects($this->never())->method('completeTask');
 
-		$controller = $this->controller(subject: null, gateway: $gateway);
+		$auditor = $this->createMock(AuditTrailService::class);
+		$auditor->expects($this->never())->method('record');
+		$receiptService = $this->createMock(SubmissionReceiptService::class);
+		$receiptService->expects($this->never())->method('record');
+
+		$controller = $this->controller(subject: null, gateway: $gateway, auditor: $auditor, receiptService: $receiptService);
 
 		$this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->index()->getStatus());
 		$this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->show('t-1')->getStatus());
@@ -214,6 +227,213 @@ class PortalTaskProxyControllerTest extends TestCase {
 	}//end testArrayAnswersAndMalformedJsonAreHandled()
 
 	/**
+	 * WOO-569: a seam-CONFIRMED completion is audited and acknowledged like a
+	 * create-action — one `complete` audit fact naming the task (openregister
+	 * / portalTask / uuid, with the session jti; no payload), and one WMEBV
+	 * receipt + proof log under portaliq / `task.complete` whose data copy
+	 * carries the task, the outcome the seam recorded (not the empty
+	 * requested one), the comment, the answers and the upload NAMES only.
+	 */
+	public function testASuccessfulCompletionIsAuditedAndReceipted(): void {
+		$request = $this->createMock(IRequest::class);
+		$request->method('getHeader')->willReturn('Bearer token');
+		$request->method('getParam')->willReturnCallback(
+			static fn (string $key, $default = null) => ($key === 'answers' ? '{"veld": "waarde"}' : $default)
+		);
+		$request->method('getUploadedFile')->willReturnMap([
+			['file', ['name' => 'bewijs.pdf', 'type' => 'application/pdf', 'tmp_name' => '/tmp/php-upload-a', 'size' => 1]],
+			['files', []],
+		]);
+
+		$gateway = $this->createMock(PortalTaskGateway::class);
+		$gateway->method('completeTask')->willReturn(
+			['status' => 200, 'body' => ['uuid' => 't-1', 'title' => 'Stuur uw bewijsstuk', 'state' => 'completed', 'outcome' => 'submitted']]
+		);
+
+		$audited = [];
+		$auditor = $this->createMock(AuditTrailService::class);
+		$auditor->expects($this->once())->method('record')->willReturnCallback(
+			function (string $verb, string $subjectRef, string $organisation, string $register, string $schema, string $id, string $jti = '', string $appId = 'portaliq') use (&$audited) {
+				$audited = compact('verb', 'subjectRef', 'organisation', 'register', 'schema', 'id', 'jti', 'appId');
+			}
+		);
+
+		$received = [];
+		$receiptService = $this->createMock(SubmissionReceiptService::class);
+		$receiptService->expects($this->once())->method('record')->willReturnCallback(
+			function (string $subjectRef, string $organisation, string $appId, string $actionId, array $whitelistedData, string $audience = '') use (&$received) {
+				$received = compact('subjectRef', 'organisation', 'appId', 'actionId', 'whitelistedData', 'audience');
+			}
+		);
+
+		$response = $this->controllerWithRequest(request: $request, subject: self::SUBJECT, gateway: $gateway, auditor: $auditor, receiptService: $receiptService)
+			->complete('t-1', '', 'klaar');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame('completed', $response->getData()['state']);
+
+		$this->assertSame(
+			['verb' => 'complete', 'subjectRef' => 's1', 'organisation' => 'org-1', 'register' => 'openregister', 'schema' => 'portalTask', 'id' => 't-1', 'jti' => 'jti-1', 'appId' => 'portaliq'],
+			$audited
+		);
+
+		$this->assertSame('s1', $received['subjectRef']);
+		$this->assertSame('org-1', $received['organisation']);
+		$this->assertSame('portaliq', $received['appId']);
+		$this->assertSame('task.complete', $received['actionId']);
+		$this->assertSame('client', $received['audience']);
+		$this->assertSame(
+			[
+				'taskUuid' => 't-1',
+				'title' => 'Stuur uw bewijsstuk',
+				'outcome' => 'submitted',
+				'comment' => 'klaar',
+				'answers' => ['veld' => 'waarde'],
+				'files' => ['bewijs.pdf'],
+			],
+			$received['whitelistedData']
+		);
+		// Privacy: the copy names the upload, never its temp path or content.
+		$this->assertStringNotContainsString('/tmp/', (string)json_encode($received['whitelistedData']));
+	}//end testASuccessfulCompletionIsAuditedAndReceipted()
+
+	/**
+	 * A seam row without an outcome (or uuid) falls back to what the resident
+	 * requested and addressed, and no upload means an empty file list — the
+	 * copy is always well-formed.
+	 */
+	public function testTheSubmissionCopyFallsBackToTheRequestedOutcomeAndUuid(): void {
+		$gateway = $this->createMock(PortalTaskGateway::class);
+		$gateway->method('completeTask')->willReturn(['status' => 200, 'body' => []]);
+
+		$received = [];
+		$receiptService = $this->createMock(SubmissionReceiptService::class);
+		$receiptService->expects($this->once())->method('record')->willReturnCallback(
+			function (string $subjectRef, string $organisation, string $appId, string $actionId, array $whitelistedData) use (&$received) {
+				$received = $whitelistedData;
+			}
+		);
+
+		$auditor = $this->createMock(AuditTrailService::class);
+		$auditor->expects($this->once())->method('record')->with('complete', 's1', 'org-1', 'openregister', 'portalTask', 't-9', 'jti-1');
+
+		$this->controller(subject: self::SUBJECT, gateway: $gateway, auditor: $auditor, receiptService: $receiptService)
+			->complete('t-9', 'rejected');
+
+		$this->assertSame('t-9', $received['taskUuid']);
+		$this->assertSame('rejected', $received['outcome']);
+		$this->assertSame('', $received['comment']);
+		$this->assertSame([], $received['answers']);
+		$this->assertSame([], $received['files']);
+	}//end testTheSubmissionCopyFallsBackToTheRequestedOutcomeAndUuid()
+
+	/**
+	 * A seam row whose uuid is a literal EMPTY STRING (not merely absent) must
+	 * still yield the addressed uuid — otherwise the audit fact would name no
+	 * task at all (`targetId = ''`).
+	 */
+	public function testAnEmptySeamUuidFallsBackToTheAddressedUuid(): void {
+		$gateway = $this->createMock(PortalTaskGateway::class);
+		$gateway->method('completeTask')->willReturn(['status' => 200, 'body' => ['uuid' => '', 'outcome' => 'submitted']]);
+
+		$received = [];
+		$receiptService = $this->createMock(SubmissionReceiptService::class);
+		$receiptService->expects($this->once())->method('record')->willReturnCallback(
+			function (string $subjectRef, string $organisation, string $appId, string $actionId, array $whitelistedData) use (&$received) {
+				$received = $whitelistedData;
+			}
+		);
+
+		$auditor = $this->createMock(AuditTrailService::class);
+		$auditor->expects($this->once())->method('record')->with('complete', 's1', 'org-1', 'openregister', 'portalTask', 't-9', 'jti-1');
+
+		$this->controller(subject: self::SUBJECT, gateway: $gateway, auditor: $auditor, receiptService: $receiptService)
+			->complete('t-9', '');
+
+		$this->assertSame('t-9', $received['taskUuid']);
+	}//end testAnEmptySeamUuidFallsBackToTheAddressedUuid()
+
+	/**
+	 * 🔴 THE RECEIPT NAMES WHAT THE AUTHORITY STORED. An upload PHP dropped
+	 * (tmp_name '' on UPLOAD_ERR_INI_SIZE/PARTIAL) never reaches the seam, yet
+	 * the request still carries its name. The copy takes `files` from the
+	 * seam's `evidence` and `answers` from its `responses`, so a WMEBV receipt
+	 * can never certify a document the authority never received (review of
+	 * #501).
+	 */
+	public function testTheCopyNamesOnlyTheEvidenceTheSeamStored(): void {
+		$request = $this->createMock(IRequest::class);
+		$request->method('getHeader')->willReturn('Bearer token');
+		$request->method('getParam')->willReturnCallback(
+			static fn (string $key, $default = null) => ($key === 'answers' ? '{"veld": "wat de client stuurde"}' : $default)
+		);
+		$request->method('getUploadedFile')->willReturnMap([
+			['file', ['name' => 'te-groot.pdf', 'type' => 'application/pdf', 'tmp_name' => '', 'size' => 0, 'error' => UPLOAD_ERR_INI_SIZE]],
+			['files', [['name' => 'bewijs.pdf', 'type' => 'application/pdf', 'tmp_name' => '/tmp/php-upload-b', 'size' => 1]]],
+		]);
+
+		$gateway = $this->createMock(PortalTaskGateway::class);
+		$gateway->method('completeTask')->willReturn([
+			'status' => 200,
+			'body' => [
+				'uuid' => 't-1',
+				'title' => 'Stuur uw bewijsstuk',
+				'displayTitle' => 'Bewijsstuk voor zaak 2026-001',
+				'outcome' => 'submitted',
+				'responses' => ['veld' => 'wat de seam opsloeg'],
+				'evidence' => [['fileId' => 7, 'name' => 'bewijs.pdf', 'size' => 1]],
+			],
+		]);
+
+		$received = [];
+		$receiptService = $this->createMock(SubmissionReceiptService::class);
+		$receiptService->expects($this->once())->method('record')->willReturnCallback(
+			function (string $subjectRef, string $organisation, string $appId, string $actionId, array $whitelistedData) use (&$received) {
+				$received = $whitelistedData;
+			}
+		);
+
+		$this->controllerWithRequest(request: $request, subject: self::SUBJECT, gateway: $gateway, auditor: $this->createMock(AuditTrailService::class), receiptService: $receiptService)
+			->complete('t-1', '', null);
+
+		$this->assertSame(['bewijs.pdf'], $received['files'], 'the dropped upload must not appear in the receipt');
+		$this->assertSame(['veld' => 'wat de seam opsloeg'], $received['answers']);
+		$this->assertSame('Bewijsstuk voor zaak 2026-001', $received['title']);
+	}//end testTheCopyNamesOnlyTheEvidenceTheSeamStored()
+
+	/**
+	 * WOO-569, the negative path: a refused completion (400 upload-constraint,
+	 * 404 no-such-task, 409 task-closed), a seam 5xx, a refused assertion
+	 * (seam 401 → 503) and a transport failure (null → 502) each record
+	 * NEITHER an audit fact NOR a receipt — nothing was submitted, so there
+	 * is nothing to acknowledge — and the D-3 mapping is unchanged.
+	 */
+	public function testARefusedOrFailedCompletionRecordsNothing(): void {
+		$cases = [
+			[['status' => 400, 'body' => ['error' => 'x', 'code' => 'upload-constraint']], Http::STATUS_BAD_REQUEST],
+			[['status' => 404, 'body' => ['error' => 'x', 'code' => 'no-such-task']], Http::STATUS_NOT_FOUND],
+			[['status' => 409, 'body' => ['error' => 'x', 'code' => 'task-closed']], Http::STATUS_CONFLICT],
+			[['status' => 500, 'body' => ['error' => 'boom']], Http::STATUS_INTERNAL_SERVER_ERROR],
+			[['status' => 401, 'body' => ['error' => 'No acting portal subject']], Http::STATUS_SERVICE_UNAVAILABLE],
+			[null, Http::STATUS_BAD_GATEWAY],
+		];
+		foreach ($cases as [$answer, $expectedStatus]) {
+			$gateway = $this->createMock(PortalTaskGateway::class);
+			$gateway->method('completeTask')->willReturn($answer);
+
+			$auditor = $this->createMock(AuditTrailService::class);
+			$auditor->expects($this->never())->method('record');
+			$receiptService = $this->createMock(SubmissionReceiptService::class);
+			$receiptService->expects($this->never())->method('record');
+
+			$response = $this->controller(subject: self::SUBJECT, gateway: $gateway, auditor: $auditor, receiptService: $receiptService)
+				->complete('t-1', '', 'klaar');
+
+			$this->assertSame($expectedStatus, $response->getStatus());
+		}
+	}//end testARefusedOrFailedCompletionRecordsNothing()
+
+	/**
 	 * A task detail is relayed untouched on success.
 	 */
 	public function testADetailIsRelayed(): void {
@@ -270,17 +490,21 @@ class PortalTaskProxyControllerTest extends TestCase {
 	 *
 	 * @param array<string, mixed>|null $subject The resolved subject, or null (no bearer).
 	 * @param PortalTaskGateway $gateway The gateway mock.
+	 * @param AuditTrailService|null $auditor The audit mock (an inert one when null).
+	 * @param SubmissionReceiptService|null $receiptService The receipt mock (an inert one when null).
 	 */
-	private function controller(?array $subject, PortalTaskGateway $gateway): PortalTaskProxyController {
+	private function controller(
+		?array $subject,
+		PortalTaskGateway $gateway,
+		?AuditTrailService $auditor = null,
+		?SubmissionReceiptService $receiptService = null,
+	): PortalTaskProxyController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('');
 		$request->method('getParam')->willReturn(null);
 		$request->method('getUploadedFile')->willReturn([]);
 
-		$session = $this->createMock(PortalSessionService::class);
-		$session->method('resolveFromBearer')->willReturn($subject);
-
-		return new PortalTaskProxyController($request, $session, $gateway);
+		return $this->controllerWithRequest(request: $request, subject: $subject, gateway: $gateway, auditor: $auditor, receiptService: $receiptService);
 	}//end controller()
 
 	/**
@@ -289,12 +513,26 @@ class PortalTaskProxyControllerTest extends TestCase {
 	 * @param IRequest $request The prepared request.
 	 * @param array<string, mixed>|null $subject The resolved subject, or null.
 	 * @param PortalTaskGateway $gateway The gateway mock.
+	 * @param AuditTrailService|null $auditor The audit mock (an inert one when null).
+	 * @param SubmissionReceiptService|null $receiptService The receipt mock (an inert one when null).
 	 */
-	private function controllerWithRequest(IRequest $request, ?array $subject, PortalTaskGateway $gateway): PortalTaskProxyController {
+	private function controllerWithRequest(
+		IRequest $request,
+		?array $subject,
+		PortalTaskGateway $gateway,
+		?AuditTrailService $auditor = null,
+		?SubmissionReceiptService $receiptService = null,
+	): PortalTaskProxyController {
 		$session = $this->createMock(PortalSessionService::class);
 		$session->method('resolveFromBearer')->willReturn($subject);
 
-		return new PortalTaskProxyController($request, $session, $gateway);
+		return new PortalTaskProxyController(
+			$request,
+			$session,
+			$gateway,
+			($auditor ?? $this->createMock(AuditTrailService::class)),
+			($receiptService ?? $this->createMock(SubmissionReceiptService::class))
+		);
 	}//end controllerWithRequest()
 
 	/**

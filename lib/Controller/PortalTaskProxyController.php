@@ -16,6 +16,12 @@
  * resident's session) and becomes 503 `task-service-unavailable`; a transport
  * failure becomes 502 `task-service-unreachable`.
  *
+ * A CONFIRMED completion is a submission in the WMEBV sense (art. 2:10): once
+ * the seam answers 2xx the proxy records the same append-only audit fact
+ * (verb `complete`) and the same ontvangstbevestiging + proof log a
+ * create-action gets — the ContributionController::create() pattern. A
+ * refused or failed relay records nothing, because nothing was submitted.
+ *
  * @category Controller
  * @package  OCA\Portaliq\Controller
  *
@@ -29,6 +35,7 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
+ * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-mijn-taken-lists-details-and-completes-the-partys-open-tasks
  */
 
 declare(strict_types=1);
@@ -37,8 +44,10 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
+use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\PortalTaskGateway;
+use OCA\Portaliq\Service\SubmissionReceiptService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -55,16 +64,45 @@ use OCP\IRequest;
 class PortalTaskProxyController extends Controller implements PortalProtected {
 
 	/**
+	 * The audit verb recorded for a confirmed task completion.
+	 */
+	public const VERB_COMPLETE = 'complete';
+
+	/**
+	 * The proof-log `actionId` a task completion is logged under (WMEBV). A
+	 * task has no declared manifest action to name, so a fixed id names the
+	 * deed — in the `noun.verb` dialect of the notification rule keys.
+	 */
+	public const ACTION_COMPLETE = 'task.complete';
+
+	/**
+	 * The audit target's stand-in register. A portal task is openregister's
+	 * own row, not an object in a register, so the owning app names the
+	 * namespace — the same convention a forwarded action uses (its appId
+	 * rides in the register slot).
+	 */
+	private const TASK_REGISTER = 'openregister';
+
+	/**
+	 * The audit target's stand-in schema for a portal task.
+	 */
+	private const TASK_SCHEMA = 'portalTask';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
 	 * @param PortalSessionService $session Resolves the bearer subject (fail-closed).
 	 * @param PortalTaskGateway $gateway The assertion-signed seam client.
+	 * @param AuditTrailService $auditor Records the `complete` audit fact (fail-safe, never throws).
+	 * @param SubmissionReceiptService $receiptService WMEBV ontvangstbevestiging + proof log (fail-safe, never throws).
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PortalSessionService $session,
 		private readonly PortalTaskGateway $gateway,
+		private readonly AuditTrailService $auditor,
+		private readonly SubmissionReceiptService $receiptService,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -116,6 +154,14 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 	 * Complete a portal task: relay comment, outcome, answers and the
 	 * uploaded files multipart through the assertion-signed forward.
 	 *
+	 * When the seam CONFIRMS the completion (2xx) the completion is audited
+	 * (verb `complete`, target the task) and acknowledged with the WMEBV
+	 * receipt + proof log, exactly like a create-action (WOO-569). Both
+	 * follow-ons are fail-safe by contract — they log and never throw — so
+	 * neither can turn a completed task into a failed response. A refusal
+	 * (4xx), a refused assertion (seam 401 → 503) or a transport failure
+	 * (502) records nothing: there was no submission to acknowledge.
+	 *
 	 * @param string $uuid The task uuid.
 	 * @param string $outcome The outcome ('' keeps the seam's default).
 	 * @param string|null $comment The resident's comment.
@@ -123,6 +169,9 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 	 * @return JSONResponse The completed task row, or a refusal.
 	 *
 	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-mijn-taken-lists-details-and-completes-the-partys-open-tasks
+	 * @spec openspec/specs/supplier-portal/spec.md#append-only-portal-audit-trail-on-every-mutation-download-and-session-event
+	 * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
+	 * @spec openspec/specs/supplier-portal/spec.md#proof-of-receipt-log-satisfying-the-wmebv-burden-of-proof
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -133,16 +182,31 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
 		}
 
-		return $this->relay(
-			answer: $this->gateway->completeTask(
+		$answers = $this->answers();
+		$files = $this->uploads();
+
+		$answer = $this->gateway->completeTask(
+			subject: $subject,
+			uuid: $uuid,
+			answers: $answers,
+			comment: $comment,
+			outcome: $outcome,
+			files: $files
+		);
+
+		if ($answer !== null && $answer['status'] >= Http::STATUS_OK && $answer['status'] < Http::STATUS_MULTIPLE_CHOICES) {
+			$this->recordCompletion(
 				subject: $subject,
 				uuid: $uuid,
-				answers: $this->answers(),
+				task: $answer['body'],
+				answers: $answers,
 				comment: $comment,
 				outcome: $outcome,
-				files: $this->uploads()
-			)
-		);
+				files: $files
+			);
+		}
+
+		return $this->relay(answer: $answer);
 	}//end complete()
 
 	/**
@@ -155,6 +219,146 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 	private function subject(): ?array {
 		return $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
 	}//end subject()
+
+	/**
+	 * Audit and acknowledge a CONFIRMED completion — the
+	 * ContributionController::create() pattern: one append-only
+	 * `portalAuditEntry` (verb `complete`, target the task; a fact, never
+	 * payload) and the WMEBV ontvangstbevestiging + proof log through
+	 * SubmissionReceiptService. Fired only after the seam answered 2xx, so
+	 * the audited/acknowledged deed has already happened.
+	 *
+	 * @param array<string, mixed> $subject The resolved bearer subject.
+	 * @param string $uuid The task uuid the resident addressed.
+	 * @param array<string, mixed> $task The seam's completed task row.
+	 * @param array<string, mixed> $answers The submitted answers.
+	 * @param string|null $comment The resident's comment.
+	 * @param string $outcome The requested outcome ('' = the seam's default).
+	 * @param array<int, array<string, mixed>> $files The relayed uploads.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/supplier-portal/spec.md#append-only-portal-audit-trail-on-every-mutation-download-and-session-event
+	 * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
+	 * @spec openspec/specs/supplier-portal/spec.md#proof-of-receipt-log-satisfying-the-wmebv-burden-of-proof
+	 */
+	private function recordCompletion(
+		array $subject,
+		string $uuid,
+		array $task,
+		array $answers,
+		?string $comment,
+		string $outcome,
+		array $files,
+	): void {
+		$subjectRef = (string)($subject['subjectRef'] ?? '');
+		$organisation = (string)($subject['organisation'] ?? '');
+		$taskUuid = (string)($task['uuid'] ?? $uuid);
+		if ($taskUuid === '') {
+			$taskUuid = $uuid;
+		}
+
+		$this->auditor->record(
+			verb: self::VERB_COMPLETE,
+			subjectRef: $subjectRef,
+			organisation: $organisation,
+			register: self::TASK_REGISTER,
+			schema: self::TASK_SCHEMA,
+			id: $taskUuid,
+			jti: (string)($subject['jti'] ?? '')
+		);
+
+		$this->receiptService->record(
+			subjectRef: $subjectRef,
+			organisation: $organisation,
+			appId: Application::APP_ID,
+			actionId: self::ACTION_COMPLETE,
+			whitelistedData: $this->submissionCopy(
+				taskUuid: $taskUuid,
+				task: $task,
+				answers: $answers,
+				comment: $comment,
+				outcome: $outcome,
+				files: $files
+			),
+			audience: (string)($subject['audience'] ?? '')
+		);
+	}//end recordCompletion()
+
+	/**
+	 * The WMEBV "copy of the submitted data" for a completion — the role the
+	 * whitelisted field map plays for a create. It carries what the AUTHORITY
+	 * RECORDED — the seam row's `responses`, `evidence` (file NAMES as stored)
+	 * and outcome, plus the resident's comment — falling back to the request
+	 * only where the seam row carries no such key. Never file content, never a
+	 * temp path: this copy lands in the resident's receipt (`dataCopy`) and in
+	 * the proof log (`payloadCopy`).
+	 *
+	 * @param string $taskUuid The completed task's uuid.
+	 * @param array<string, mixed> $task The seam's completed task row.
+	 * @param array<string, mixed> $answers The submitted answers.
+	 * @param string|null $comment The resident's comment.
+	 * @param string $outcome The requested outcome.
+	 * @param array<int, array<string, mixed>> $files The relayed uploads.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/supplier-portal/spec.md#proof-of-receipt-log-satisfying-the-wmebv-burden-of-proof
+	 */
+	private function submissionCopy(
+		string $taskUuid,
+		array $task,
+		array $answers,
+		?string $comment,
+		string $outcome,
+		array $files,
+	): array {
+		// 🔴 THE COPY DESCRIBES WHAT THE AUTHORITY RECORDED, NOT WHAT THE RESIDENT
+		// SENT. The seam's completed row is authoritative: `evidence` lists the
+		// files PortalTaskService::storeFiles() actually wrote to the case
+		// (PHP drops an oversized/partial upload with tmp_name '' and the
+		// gateway then forwards nothing for it, while the request still names
+		// it), `responses` is the answers map the seam stored. A receipt or
+		// proof log naming an upload the authority never received would be a
+		// false art. 2:10 statement (review of #501). The request is only the
+		// fallback for a seam row that predates those keys.
+		$names = [];
+		if (array_key_exists('evidence', $task) === true) {
+			foreach ((array)$task['evidence'] as $stored) {
+				$name = 'upload';
+				if (is_array($stored) === true) {
+					$name = (string)($stored['name'] ?? 'upload');
+				}
+
+				$names[] = $name;
+			}
+		} else {
+			foreach ($files as $file) {
+				$names[] = (string)($file['name'] ?? 'upload');
+			}
+		}
+
+		$recordedAnswers = $answers;
+		if (is_array($task['responses'] ?? null) === true) {
+			$recordedAnswers = $task['responses'];
+		}
+
+		$recorded = (string)($task['outcome'] ?? '');
+		if ($recorded === '') {
+			$recorded = $outcome;
+		}
+
+		return [
+			'taskUuid' => $taskUuid,
+			// What the resident saw in "Mijn taken" (displayTitle), falling back
+			// to the raw title for a seam that does not compute one.
+			'title' => (string)($task['displayTitle'] ?? $task['title'] ?? ''),
+			'outcome' => $recorded,
+			'comment' => (string)($comment ?? ''),
+			'answers' => $recordedAnswers,
+			'files' => $names,
+		];
+	}//end submissionCopy()
 
 	/**
 	 * Translate the gateway's answer for the resident (design D-3).
