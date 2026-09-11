@@ -35,7 +35,8 @@ portals covering all five scenarios.
 - **files**: `tests/open-portal-site.spec.mjs`, `tests/e2e/portals-open-site.spec.ts`, `package.json`
 - **acceptance_criteria**:
   - GIVEN the Node spec WHEN `npm run check:specs` runs THEN the URL, encoding and no-slug cases are asserted
-  - GIVEN an administrator in the browser WHEN the Playwright spec picks "Open portal" on the seeded portal THEN the popup URL carries `?portal=<slug>` and the site renders that portal's title
+  - GIVEN an administrator in the browser WHEN the Playwright spec picks "Open portal" on the seeded portal THEN the popup URL carries `?portal=<slug>`, the site renders that portal's title, and no toast appears in the admin window
+  - GIVEN an injected opener answering `null`, as a real `noopener` open does WHEN the Node spec runs THEN the handler still reports the address it opened and shows no failure message (review round 2)
   - GIVEN hydra gate-19 WHEN it inspects the changed spec THEN each scenario is referenced from a Playwright spec file
 - [x] Implement
 - [x] Test

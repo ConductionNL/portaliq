@@ -99,9 +99,8 @@ the handler decides emptiness only.
 `window.open(url, '_blank', 'noopener,noreferrer')` — a new tab, because the
 administrator is inspecting the public result of the record they are editing
 and should not lose the admin context; `noopener` because the opened document
-must not reach back into the admin window. Its return value is read, because a
-blocked popup returns `null` and silence there would be the same failure the
-missing-slug branch exists to avoid.
+must not reach back into the admin window. Its return value is NOT read — see
+Decision 7, which corrects an earlier cut of this paragraph.
 
 ### Decision 5: alias `@nextcloud/dialogs` to a FILE, and drop the directory alias
 
@@ -147,6 +146,39 @@ toast is unaffected — it goes through the app's own translator.
   (`showInfo`), the shared `CnIndexPage` action dispatcher, and the app's
   `customComponents` + `icons` registries.
 
+### Decision 7: do not read `window.open`'s return value (review round 2)
+
+An earlier cut of Decision 4 read the return value to detect a blocked popup.
+That cannot work for this call. `noopener` severs the WindowProxy, so the HTML
+standard has `window.open` return null for the tab it DID open ("If noopener is
+true, then return null", window open steps) — the check fired on every
+successful open and told the administrator the site could not be opened.
+
+Measured in Chromium on 2026-09-11, clicking inside a real gesture:
+
+| Features passed | Returns | Tab actually opened |
+| --- | --- | --- |
+| none | WindowProxy | yes |
+| `noopener,noreferrer` | `null` | yes |
+| `noreferrer` | `null` | yes |
+| `noopener` | `null` | yes |
+
+Two ways out: drop the detection, or drop `noopener` and disown the popup
+afterwards (`w.opener = null`) so the return value stays readable. This change
+drops the detection. The opened document renders portal-authored CMS content,
+which is exactly what `noopener` defends the admin session against, and a
+detection that has to weaken that defence buys a message for a case the
+synchronous in-gesture call already makes rare — and one the browser reports
+itself, in the URL bar, better than a toast can.
+
+The regression is pinned in both test layers. `tests/open-portal-site.spec.mjs`
+now has every injected opener answer `null` the way the browser does (the old
+mock returned a truthy array index, which is what let the defect through
+review round 1), and `tests/e2e/portals-open-site.spec.ts` asserts no toast in
+the admin window after the tab opens — an assertion only a real browser can
+fail. Run against the pre-fix module, the unit spec fails four assertions,
+two of them on the happy path.
+
 ## Security Considerations
 
 - No new endpoint, no new permission surface. The action is a link to an
@@ -155,7 +187,9 @@ toast is unaffected — it goes through the app's own translator.
 - The slug is percent-encoded before it enters the query string, so a crafted
   slug cannot inject additional parameters or alter the target path.
 - `noopener,noreferrer` on the opened tab prevents the public site document
-  from touching `window.opener` in the admin session.
+  from touching `window.opener` in the admin session. This is kept in
+  preference to blocked-popup detection, which would require handing the
+  opener back — see Decision 7.
 - No secret, token or personal datum is put into a URL.
 
 ## NL Design System

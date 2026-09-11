@@ -67,7 +67,7 @@ export function portalSiteUrl(slug, generateUrlFn) {
  * @param {(path: string) => string} deps.generateUrl Nextcloud's URL generator.
  * @param {(message: string) => void} deps.notify Shows the message when a row has no slug.
  * @param {(text: string) => string} deps.translate Translates that message.
- * @param {(url: string, target: string, features: string) => void} [deps.open] Window opener; defaults to `window.open`.
+ * @param {(url: string, target: string, features: string) => void} [deps.open] Window opener; defaults to `window.open`. Its return value is deliberately ignored — see the call site.
  * @return {(payload?: {actionId?: string, item?: object}) => string|null} The row-action handler CnIndexPage calls.
  *
  * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portals-overview-must-open-a-portals-public-site
@@ -106,22 +106,26 @@ export function createOpenPortalSite({
 		}
 
 		const url = portalSiteUrl(slug, generateUrlFn)
-		// `noopener,noreferrer`: the public site document must not reach back
-		// into the admin window through `window.opener`.
-		const opened = open(url, '_blank', 'noopener,noreferrer')
-		if (!opened) {
-			// A popup blocker returns null. Saying nothing here would report
-			// success for a tab that never appeared — the same silent failure
-			// the missing-slug branch above exists to avoid. Calling
-			// `window.open` synchronously inside the click keeps this rare,
-			// not impossible: extensions and hardened policies still block.
-			notify(
-				translate(
-					'The portal site could not be opened. Allow pop-ups for this site and try again.',
-				),
-			)
-			return null
-		}
+		// `noopener,noreferrer`: the opened document renders portal-authored
+		// content and must not reach back into the admin window through
+		// `window.opener`.
+		//
+		// ITS RETURN VALUE IS NOT A SUCCESS SIGNAL. `noopener` severs the
+		// WindowProxy, so the HTML standard has `window.open` return null for
+		// a SUCCESSFUL open ("If noopener is true, then return null", window
+		// open steps). Measured in Chromium on 2026-09-11: called with
+		// `noopener,noreferrer` inside a click, the tab opens and the call
+		// still returns null; the identical call without those features
+		// returns a WindowProxy. An earlier cut of this file read that value
+		// and told the administrator the site could not be opened on every
+		// open that worked (#513, review round 2).
+		//
+		// A refused tab therefore cannot be told apart from an opened one
+		// here, and is left to the browser's own blocked-popup indicator.
+		// Severing the opener is the property worth keeping, and this call
+		// runs synchronously inside the click gesture, which is what keeps
+		// blockers out of the way to begin with.
+		open(url, '_blank', 'noopener,noreferrer')
 
 		return url
 	}

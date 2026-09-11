@@ -58,15 +58,15 @@ administrator and open nothing.
 - **THEN** no tab is opened
 - **AND** the administrator is told the portal has no slug yet
 
-#### Scenario: A blocked tab is reported, not reported as success
+#### Scenario: A successful open is never reported as a failure
 
-<!-- @e2e exclude asserted in tests/open-portal-site.spec.mjs; a popup blocker
-     cannot be turned on from inside the browser context under test -->
+<!-- @e2e portals-open-site.spec.ts — "the row action opens the portal site in
+     a new tab" -->
 
-- **GIVEN** a browser or policy that blocks the new tab
-- **WHEN** the administrator chooses "Open portal"
-- **THEN** the administrator is told the site could not be opened
-- **AND** the action does not report success
+- **GIVEN** a browser that severs the opener reference, so `window.open` returns null for the tab it did open
+- **WHEN** the administrator chooses "Open portal" on a row with a usable slug
+- **THEN** the tab opens with `noopener,noreferrer` and the action reports the address it opened
+- **AND** no failure message is shown
 
 #### Scenario: The built-in row actions survive the addition
 

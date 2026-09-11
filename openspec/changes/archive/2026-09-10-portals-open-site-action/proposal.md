@@ -110,7 +110,10 @@ follow-up (a row-level `visibleWhen`) is a decision, not an oversight.
 
 **Severity:** Low — **Mitigation:** `window.open` runs synchronously inside the
 click handler, which is what keeps it a user-initiated open in every major
-browser.
+browser. The block is deliberately NOT detected in code: a tab opened with
+`noopener` returns null whether it opened or not, so the only reliable
+reporter of a refused tab is the browser's own indicator (design.md,
+Decision 7).
 
 ## Rollback Strategy
 

@@ -86,12 +86,20 @@ async function spaBase(page: Page): Promise<string> {
 
 test.describe('Portals overview — open a portal', () => {
 	// @e2e portaliq-cms::an-administrator-opens-a-published-portal-from-the-overview
+	// @e2e portaliq-cms::a-successful-open-is-never-reported-as-a-failure
 	//
-	// Only that one scenario. The seeded slug (`open-tilburg`) carries nothing
-	// that needs escaping, so tagging the encoding scenario here would certify
-	// a branch this test cannot fail on — an implementation with no
-	// `encodeURIComponent` at all would pass it. That scenario is asserted in
-	// tests/open-portal-site.spec.mjs and marked `@e2e exclude` in the spec.
+	// Those two scenarios and no more. The seeded slug (`open-tilburg`)
+	// carries nothing that needs escaping, so tagging the encoding scenario
+	// here would certify a branch this test cannot fail on — an implementation
+	// with no `encodeURIComponent` at all would pass it. That scenario is
+	// asserted in tests/open-portal-site.spec.mjs and marked `@e2e exclude` in
+	// the spec.
+	//
+	// The second tag is carried by the toast assertion at the end: a real
+	// browser returns null from a `noopener` open, so a handler that reads
+	// that value reports failure on every open that worked. Only a real
+	// browser can fail that one — an injected opener answers whatever the test
+	// tells it to.
 	test('the row action opens the portal site in a new tab', async ({
 		page,
 		context,
@@ -129,6 +137,29 @@ test.describe('Portals overview — open a portal', () => {
 			timeout: 30_000,
 		})
 		await popup.close()
+
+		// The admin window shows NO toast for the tab that just opened.
+		// `window.open(url, '_blank', 'noopener,noreferrer')` returns null for
+		// a SUCCESSFUL open — `noopener` severs the WindowProxy — so a handler
+		// that treats the return value as a success signal tells the
+		// administrator the site could not be opened every single time it
+		// could. That was this file's implementation in #513 review round 2,
+		// and only a real browser can fail this assertion: the unit spec's
+		// opener answers whatever the test hands it.
+		//
+		// THE SELECTOR IS A UNION ON PURPOSE, AND IT WAS MEASURED. The
+		// installed `@nextcloud/dialogs` renders its toast with CSS-module
+		// class names hashed per build (`_toast_v43ag_11
+		// _toast_info_v43ag_33`, inside `_toastContainer_1biev_1`), so the
+		// documented `.toast-info` / `.toastify` classes match NOTHING on this
+		// instance and an assertion using them alone would pass vacuously.
+		// Verified on the rig on 2026-09-11: against the pre-fix bundle this
+		// locator finds the toast (the assertion fails), against the fixed
+		// bundle it finds none.
+		const toast = page.locator(
+			'[class*="_toast_"], [class*="toastContainer"], .toastify, .toast-info, .toast-error',
+		)
+		await expect(toast).toHaveCount(0)
 	})
 
 	// @e2e portaliq-cms::the-built-in-row-actions-survive-the-addition

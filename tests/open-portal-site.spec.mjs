@@ -42,6 +42,25 @@ function assertEqual(what, actual, expected) {
 	failures += 1
 }
 
+/**
+ * Record an `open()` call and answer the way the browser answers it.
+ *
+ * A real `window.open(url, '_blank', 'noopener,noreferrer')` returns NULL for
+ * the tab it successfully opened — `noopener` severs the WindowProxy, so the
+ * HTML standard returns null (window open steps, "If noopener is true, then
+ * return null"). Every mock here returns null for that reason: a mock that
+ * answered truthily would certify a handler that reads the return value as
+ * success, which is exactly the bug #513 review round 2 found.
+ *
+ * @param {Array<Array>} log  Where to record the call.
+ * @param {...*}         args The arguments the handler passed.
+ * @return {null} What the browser returns.
+ */
+function recordOpen(log, ...args) {
+	log.push(args)
+	return null
+}
+
 /** An instance WITHOUT url rewriting: generateUrl keeps the index.php prefix. */
 const withIndexPhp = (path) => `/index.php${path}`
 /** An instance WITH url rewriting. */
@@ -75,7 +94,7 @@ console.log('createOpenPortalSite')
 	const notified = []
 	const handler = createOpenPortalSite({
 		generateUrl: withIndexPhp,
-		open: (...args) => opened.push(args),
+		open: (...args) => recordOpen(opened, ...args),
 		notify: (message) => notified.push(message),
 		translate: (text) => text,
 	})
@@ -108,7 +127,7 @@ console.log('createOpenPortalSite')
 	const notified = []
 	const handler = createOpenPortalSite({
 		generateUrl: withIndexPhp,
-		open: (...args) => opened.push(args),
+		open: (...args) => recordOpen(opened, ...args),
 		notify: (message) => notified.push(message),
 		translate: (text) => text,
 	})
@@ -132,7 +151,7 @@ console.log('createOpenPortalSite')
 	const opened = []
 	const handler = createOpenPortalSite({
 		generateUrl: withIndexPhp,
-		open: (...args) => opened.push(args),
+		open: (...args) => recordOpen(opened, ...args),
 		notify: () => {},
 		translate: (text) => text,
 	})
@@ -145,8 +164,14 @@ console.log('createOpenPortalSite')
 	)
 }
 
-// A popup blocker makes window.open return null. Returning the URL anyway
-// would report success for a tab that never appeared.
+// A SUCCESSFUL open returns null, so the return value must not be read as a
+// failure signal. Measured in Chromium on 2026-09-11: called inside a click
+// with `noopener,noreferrer`, the tab opens (the context reports one new page)
+// and the call still returns null; the same call without those features
+// returns a WindowProxy. An earlier cut read it anyway and showed "the portal
+// site could not be opened" on every open that worked — #513 review round 2.
+// These two assertions are that regression, with the opener answering null the
+// way the browser does.
 {
 	const notified = []
 	const handler = createOpenPortalSite({
@@ -157,10 +182,12 @@ console.log('createOpenPortalSite')
 	})
 
 	const returned = handler({ item: { slug: 'demo' } })
-	assertEqual('returns null when the tab was blocked', returned, null)
-	assertEqual('tells the administrator the tab was blocked', notified, [
-		'The portal site could not be opened. Allow pop-ups for this site and try again.',
-	])
+	assertEqual(
+		'reports the address it opened even though open() answered null',
+		returned,
+		'/index.php/apps/portaliq/site?portal=demo',
+	)
+	assertEqual('shows no failure message for a tab that did open', notified, [])
 }
 
 // The factory is defensively callable with no argument at all.

@@ -350,7 +350,6 @@ OC.L10N.register(
         "Portal auth edge": "Portal auth edge",
         "Portal details": "Portal details",
         "Open portal": "Open portal",
-        "The portal site could not be opened. Allow pop-ups for this site and try again.": "The portal site could not be opened. Allow pop-ups for this site and try again.",
         "This portal has no slug yet, so it has no public address.": "This portal has no slug yet, so it has no public address.",
         "Portals": "Portals",
         "Portals and their themes": "Portals and their themes",

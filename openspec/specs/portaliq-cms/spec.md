@@ -389,9 +389,16 @@ SHALL address the site by the row's `slug` through the app's own site route
 (`portalPage#site`) resolved with Nextcloud's URL generator, so the link holds
 on instances with and without URL rewriting, and the slug SHALL be
 percent-encoded and sent exactly as stored, because portal resolution compares
-it verbatim. When the row carries no usable slug, or the browser refuses the
-new tab, the action SHALL inform the administrator rather than report a
-success nobody can see.
+it verbatim. When the row carries no usable slug, the action SHALL inform the
+administrator rather than report a success nobody can see.
+
+The action SHALL NOT read `window.open`'s return value as a success signal.
+The tab is opened with `noopener`, which severs the WindowProxy, so the HTML
+standard returns null for the tab it DID open ("If noopener is true, then
+return null"). A refused tab is therefore indistinguishable from an opened one
+at this call site and is left to the browser's own blocked-popup indicator;
+severing the opener is the property worth keeping, since the opened document
+renders portal-authored content.
 
 The action's LABEL is deliberately English on both locales: the shared
 row-action component renders `action.label` verbatim and injects no
@@ -424,13 +431,13 @@ itself shows does go through the app's translator.
 - AND the administrator is told the portal has no slug yet
 - @e2e exclude asserted in tests/open-portal-site.spec.mjs; the CMS seed provisions no slugless portal, and a browser test that opens no tab and reads a toast adds nothing the unit assertions do not already pin
 
-#### Scenario: A blocked tab is reported, not reported as success
+#### Scenario: A successful open is never reported as a failure
 
-- GIVEN a browser or policy that blocks the new tab
-- WHEN the administrator chooses "Open portal"
-- THEN the administrator is told the site could not be opened
-- AND the action does not report success
-- @e2e exclude asserted in tests/open-portal-site.spec.mjs; a popup blocker cannot be turned on from inside the browser context under test
+- GIVEN a browser that severs the opener reference, so `window.open` returns null for the tab it did open
+- WHEN the administrator chooses "Open portal" on a row with a usable slug
+- THEN the tab opens with `noopener,noreferrer` and the action reports the address it opened
+- AND no failure message is shown
+- @e2e portals-open-site.spec.ts — "the row action opens the portal site in a new tab"
 
 #### Scenario: The built-in row actions survive the addition
 
