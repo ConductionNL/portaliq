@@ -31,6 +31,8 @@ still being designed live in the change deltas listed above until they ship.
 
 Verified live on a disposable rig 2026-08-15 (`portaliq-p2-rig`, :8321), with
 24 e2e tests and 21 unit tests. Every requirement below carries its evidence.
+Rows added after that sweep name their own verification in the row itself —
+the date, rig and test counts above are not retroactively theirs.
 
 | Requirement | State |
 | --- | --- |
@@ -45,7 +47,7 @@ Verified live on a disposable rig 2026-08-15 (`portaliq-p2-rig`, :8321), with
 | The renderer does not depend on Nextcloud globals | implemented |
 | The content API is sufficient without the built-in renderer | implemented — proven by a Docusaurus build |
 | Editors have an admin surface for CMS content | implemented — declarative manifest pages; the publish-time validation rules are not |
-| The Portals overview opens a portal's public site | implemented |
+| The Portals overview opens a portal's public site | implemented — verified 2026-09-10 on an isolated NC 34 rig with four seeded portals, plus 14 unit assertions and 2 e2e tests ([archived change](../../changes/archive/2026-09-10-portals-open-site-action/)) |
 
 **Not implemented, and specified elsewhere rather than left implied:**
 

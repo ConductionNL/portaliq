@@ -163,8 +163,10 @@ Measured in Chromium on 2026-09-11, clicking inside a real gesture:
 | `noreferrer` | `null` | yes |
 | `noopener` | `null` | yes |
 
-Two ways out: drop the detection, or drop `noopener` and disown the popup
-afterwards (`w.opener = null`) so the return value stays readable. This change
+Two ways out: drop the detection, or drop BOTH features and disown the popup
+afterwards (`w.opener = null`) so the return value stays readable. Both, not
+just `noopener` — the table above measured `noreferrer` alone returning null
+too, because it sets noopener per the HTML standard. This change
 drops the detection. The opened document renders portal-authored CMS content,
 which is exactly what `noopener` defends the admin session against, and a
 detection that has to weaken that defence buys a message for a case the
