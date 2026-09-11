@@ -349,6 +349,8 @@ OC.L10N.register(
         "Portal Traffic Event": "Portal Traffic Event",
         "Portal auth edge": "Portal auth edge",
         "Portal details": "Portal details",
+        "Open portal": "Open portal",
+        "This portal has no slug yet, so it has no public address.": "This portal has no slug yet, so it has no public address.",
         "Portals": "Portals",
         "Portals and their themes": "Portals and their themes",
         "Position": "Position",
