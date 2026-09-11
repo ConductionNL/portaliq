@@ -173,10 +173,11 @@ console.log('createOpenPortalSite')
 // These two assertions are that regression, with the opener answering null the
 // way the browser does.
 {
+	const opened = []
 	const notified = []
 	const handler = createOpenPortalSite({
 		generateUrl: withIndexPhp,
-		open: () => null,
+		open: (...args) => recordOpen(opened, ...args),
 		notify: (message) => notified.push(message),
 		translate: (text) => text,
 	})
@@ -188,6 +189,14 @@ console.log('createOpenPortalSite')
 		'/index.php/apps/portaliq/site?portal=demo',
 	)
 	assertEqual('shows no failure message for a tab that did open', notified, [])
+	// The features are asserted HERE too, not only in the happy-path block:
+	// this is the block that exercises the null return, so it is the one that
+	// must show the shielding is still in place when the browser answers null.
+	assertEqual(
+		'still shields the tab it could not hand back',
+		opened.map(([, target, features]) => [target, features]),
+		[['_blank', 'noopener,noreferrer']],
+	)
 }
 
 // The factory is defensively callable with no argument at all.

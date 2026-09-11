@@ -67,7 +67,9 @@ export function portalSiteUrl(slug, generateUrlFn) {
  * @param {(path: string) => string} deps.generateUrl Nextcloud's URL generator.
  * @param {(message: string) => void} deps.notify Shows the message when a row has no slug.
  * @param {(text: string) => string} deps.translate Translates that message.
- * @param {(url: string, target: string, features: string) => void} [deps.open] Window opener; defaults to `window.open`. Its return value is deliberately ignored — see the call site.
+ * @param {(url: string, target: string, features: string) => (Window|null)} [deps.open] Window opener; defaults to `window.open`, whose
+ *   return value this module deliberately DISCARDS rather than reads — see the
+ *   call site for why it cannot be a success signal.
  * @return {(payload?: {actionId?: string, item?: object}) => string|null} The row-action handler CnIndexPage calls.
  *
  * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portals-overview-must-open-a-portals-public-site

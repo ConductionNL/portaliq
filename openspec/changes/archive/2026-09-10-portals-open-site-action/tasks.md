@@ -10,7 +10,7 @@ portals covering all five scenarios.
 ## Implementation Tasks
 
 ### Task 1: The site-URL handler
-- **spec_ref**: `openspec/changes/portals-open-site-action/specs/portaliq-cms/spec.md#requirement-the-portals-overview-must-open-a-portals-public-site`
+- **spec_ref**: `openspec/specs/portaliq-cms/spec.md#requirement-the-portals-overview-must-open-a-portals-public-site`
 - **files**: `src/lib/openPortalSite.js`, `src/customComponents.js`, `src/icons.js`
 - **acceptance_criteria**:
   - GIVEN a row with slug `demo` WHEN the handler runs THEN it opens the app's site route with `?portal=demo` in a new tab with `noopener,noreferrer`
@@ -21,17 +21,17 @@ portals covering all five scenarios.
 - [x] Test
 
 ### Task 2: The manifest action and its strings
-- **spec_ref**: `openspec/changes/portals-open-site-action/specs/portaliq-cms/spec.md#requirement-the-portals-overview-must-open-a-portals-public-site`
+- **spec_ref**: `openspec/specs/portaliq-cms/spec.md#requirement-the-portals-overview-must-open-a-portals-public-site`
 - **files**: `src/manifest.json`, `l10n/en.json`, `l10n/nl.json`
 - **acceptance_criteria**:
   - GIVEN the Portals index page WHEN it renders THEN every row's action menu offers "Open portal" alongside the existing View / Edit / Delete entries
   - GIVEN the manifest WHEN `npm run check:specs` runs THEN it validates against the v2 manifest schema
-  - GIVEN a Dutch browser session WHEN the menu renders THEN the label and the no-slug message are Dutch, with the `.js` catalogues regenerated from the `.json` ones
+  - GIVEN a Dutch browser session WHEN the menu renders THEN the no-slug message is Dutch, with the `.js` catalogues regenerated from the `.json` ones; the LABEL stays English by design — the shared row-action component renders `action.label` verbatim and injects no translator, so the Dutch string ships for the day the library translates it (the requirement's third paragraph records this, and review round 1 measured it)
 - [x] Implement
 - [x] Test
 
 ### Task 3: End-to-end coverage
-- **spec_ref**: `openspec/changes/portals-open-site-action/specs/portaliq-cms/spec.md#requirement-the-portals-overview-must-open-a-portals-public-site`
+- **spec_ref**: `openspec/specs/portaliq-cms/spec.md#requirement-the-portals-overview-must-open-a-portals-public-site`
 - **files**: `tests/open-portal-site.spec.mjs`, `tests/e2e/portals-open-site.spec.ts`, `package.json`
 - **acceptance_criteria**:
   - GIVEN the Node spec WHEN `npm run check:specs` runs THEN the URL, encoding and no-slug cases are asserted

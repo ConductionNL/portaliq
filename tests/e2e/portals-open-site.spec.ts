@@ -84,6 +84,38 @@ async function spaBase(page: Page): Promise<string> {
 	return settled.replace(/\/+$/, '')
 }
 
+/**
+ * Failure toasts in the ADMIN window.
+ *
+ * `@nextcloud/dialogs` 7.5.0 renders each toast with CSS-module class names
+ * hashed per build — `_toast_v43ag_11 _toast_info_v43ag_33` — so the
+ * documented `.toast-info` / `.toastify` classes match nothing on this
+ * instance and an assertion using them alone passes vacuously. The union
+ * covers both spellings.
+ *
+ * It deliberately does NOT match the `_toastContainer_…` host. That element is
+ * created lazily on the first toast and then never removed (the library caches
+ * it on `window.__nc_toast_container__`; dismissing a toast only calls
+ * `wrapper.remove()`), so a container clause would turn this into "no toast
+ * has ever appeared on this page" — wider than any one scenario, and it would
+ * blame this handler for an unrelated toast from earlier in the test.
+ *
+ * Because the toast itself auto-dismisses after 7s, an assertion built on this
+ * locator only means something while the toast would still be up: assert it
+ * right after the tab opens, never after a long `toContainText` wait.
+ *
+ * Measured on the rig on 2026-09-11, at exactly the position this locator is
+ * asserted from: the pre-fix bundle yields 1 (the assertion fails, with the
+ * pop-up message as its text) and the fixed bundle yields 0. So the narrow
+ * form bites on its own — no container clause needed to keep it honest.
+ *
+ * @param page the admin page to inspect
+ * @return the locator for any toast in that window
+ */
+function adminToasts(page: Page) {
+	return page.locator('[class*="_toast_"], .toastify, .toast-info, .toast-error')
+}
+
 test.describe('Portals overview — open a portal', () => {
 	// @e2e portaliq-cms::an-administrator-opens-a-published-portal-from-the-overview
 	// @e2e portaliq-cms::a-successful-open-is-never-reported-as-a-failure
@@ -95,11 +127,14 @@ test.describe('Portals overview — open a portal', () => {
 	// asserted in tests/open-portal-site.spec.mjs and marked `@e2e exclude` in
 	// the spec.
 	//
-	// The second tag is carried by the toast assertion at the end: a real
-	// browser returns null from a `noopener` open, so a handler that reads
-	// that value reports failure on every open that worked. Only a real
-	// browser can fail that one — an injected opener answers whatever the test
-	// tells it to.
+	// The second tag is carried by the toast assertion and the two opener
+	// reads below: a real browser returns null from a `noopener` open, so a
+	// handler that reads that value reports failure on every open that worked.
+	// Only a real browser can fail those — an injected opener answers whatever
+	// the test tells it to, and it cannot show that the browser honoured the
+	// features it was handed. That scenario's remaining clause, the handler
+	// RETURNING the address, is unobservable from here and is asserted in
+	// tests/open-portal-site.spec.mjs instead.
 	test('the row action opens the portal site in a new tab', async ({
 		page,
 		context,
@@ -126,6 +161,23 @@ test.describe('Portals overview — open a portal', () => {
 		const popup = await popupPromise
 		await popup.waitForLoadState('domcontentloaded')
 
+		// NO failure toast in the admin window — asserted FIRST, while the
+		// toast would still be on screen. `window.open(url, '_blank',
+		// 'noopener,noreferrer')` returns null for a SUCCESSFUL open, because
+		// `noopener` severs the WindowProxy, so a handler that reads that value
+		// as success tells the administrator the site could not be opened every
+		// single time it could. That was this file's implementation in #513
+		// review round 2. Only a real browser can fail this: the unit spec's
+		// opener answers whatever the test hands it.
+		await expect(adminToasts(page)).toHaveCount(0)
+
+		// The tab really is shielded. This is the other half of the scenario
+		// this test is tagged with, and it is only observable here — the unit
+		// spec can assert that the features were PASSED, not that the browser
+		// honoured them. Same origin, so both reads are allowed.
+		expect(await popup.evaluate(() => window.opener === null)).toBe(true)
+		expect(await popup.evaluate(() => document.referrer)).toBe('')
+
 		// The address is the contract: the app's own site route, carrying this
 		// row's slug as the `portal` parameter.
 		const opened = new URL(popup.url())
@@ -137,29 +189,6 @@ test.describe('Portals overview — open a portal', () => {
 			timeout: 30_000,
 		})
 		await popup.close()
-
-		// The admin window shows NO toast for the tab that just opened.
-		// `window.open(url, '_blank', 'noopener,noreferrer')` returns null for
-		// a SUCCESSFUL open — `noopener` severs the WindowProxy — so a handler
-		// that treats the return value as a success signal tells the
-		// administrator the site could not be opened every single time it
-		// could. That was this file's implementation in #513 review round 2,
-		// and only a real browser can fail this assertion: the unit spec's
-		// opener answers whatever the test hands it.
-		//
-		// THE SELECTOR IS A UNION ON PURPOSE, AND IT WAS MEASURED. The
-		// installed `@nextcloud/dialogs` renders its toast with CSS-module
-		// class names hashed per build (`_toast_v43ag_11
-		// _toast_info_v43ag_33`, inside `_toastContainer_1biev_1`), so the
-		// documented `.toast-info` / `.toastify` classes match NOTHING on this
-		// instance and an assertion using them alone would pass vacuously.
-		// Verified on the rig on 2026-09-11: against the pre-fix bundle this
-		// locator finds the toast (the assertion fails), against the fixed
-		// bundle it finds none.
-		const toast = page.locator(
-			'[class*="_toast_"], [class*="toastContainer"], .toastify, .toast-info, .toast-error',
-		)
-		await expect(toast).toHaveCount(0)
 	})
 
 	// @e2e portaliq-cms::the-built-in-row-actions-survive-the-addition
