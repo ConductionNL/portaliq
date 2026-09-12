@@ -303,10 +303,27 @@ class SetupController extends Controller {
 
 		$this->appConfig->setValueString(Application::APP_ID, self::DEMO_DECIDED_KEY, 'installed');
 
+		// The number that LANDED, against the number the dataset declares: an
+		// operator who asked for demo data and got part of it must see the gap,
+		// not a count that merely repeats their request (WOO-558).
+		$declared = (int)($imported['declared'] ?? $imported['objects']);
+		$skipped  = (int)($imported['skipped'] ?? 0);
+		$present  = (int)($imported['present'] ?? 0);
+		$message  = 'Imported ' . $imported['objects'] . ' of ' . $declared . ' demo object(s).';
+		if ((int)$imported['objects'] === 0 && $present > 0) {
+			// A re-run: OpenRegister left every object alone because it was
+			// already there. Not a failure, and not "skipped" either.
+			$message = 'The demo data was already present: nothing new was imported'
+				. ' (' . $present . ' object(s) in the demo schemas).';
+		} elseif ($skipped > 0) {
+			$message .= ' ' . $skipped . ' skipped: their schema is not installed on this instance,'
+				. ' or OpenRegister rejected them (see the Nextcloud log).';
+		}
+
 		return new JSONResponse(
 			data: [
 				'success' => true,
-				'message' => 'Imported ' . $imported['objects'] . ' demo object(s).',
+				'message' => $message,
 			]
 		);
 
