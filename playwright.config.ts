@@ -20,28 +20,24 @@
  */
 
 import { defineConfig, devices } from '@playwright/test'
+import { resolveBaseURL } from './tests/e2e/base-url.ts'
 
 /**
- * The ONE place the target instance is decided.
+ * The target instance, decided in one place for the whole repo.
  *
- * There is deliberately NO `?? 'http://localhost:8080'` fallback. That default
- * is how two apps in this fleet were found running their suites — including
- * their WRITE paths — against the SHARED dev container: the suite looked
- * green, created fixtures in other people's environment, and one session's
- * numbers had to be retracted. An unset variable must stop the run, not
- * silently retarget it.
+ * This used to be its own `process.env.PLAYWRIGHT_BASE_URL ||
+ * process.env.NEXTCLOUD_URL` read, which made it a SECOND entrance next to
+ * `tests/e2e/base-url.ts` and the one a plain `npx playwright test` from the
+ * repo root actually uses. It kept the no-default rule, but it could not know
+ * about anything the resolver learned afterwards, and a guard wired into the
+ * resolver would have covered nothing here.
  *
- * `PLAYWRIGHT_BASE_URL` wins over the older `NEXTCLOUD_URL` so a caller who
- * sets the standard Playwright variable is never ignored.
+ * `resolveBaseURL()` keeps the rule that an unset target stops the run outside
+ * CI, adds the `BASE_URL` / `NC_BASE_URL` names the shared quality workflow
+ * exports, and refuses the shared development instance unless the run names it
+ * in `PORTALIQ_E2E_ALLOW_SHARED_INSTANCE`. See `tests/e2e/shared-instance.ts`.
  */
-const baseURL = process.env.PLAYWRIGHT_BASE_URL || process.env.NEXTCLOUD_URL
-if (!baseURL) {
-	throw new Error(
-		'Refusing to run: set PLAYWRIGHT_BASE_URL (or NEXTCLOUD_URL) to the target Nextcloud.\n'
-			+ 'Never point it at the shared dev instance on :8080 — spin up a disposable one:\n'
-			+ '  APP_SRC=<worktree> spin-up-e2e-instance.sh portaliq <free-port> openregister',
-	)
-}
+const baseURL = resolveBaseURL()
 
 export default defineConfig({
 	testDir: './tests/e2e',

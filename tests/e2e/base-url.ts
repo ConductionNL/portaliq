@@ -26,13 +26,22 @@
  *     data is at risk. Off CI a missing target is a hard error naming the fix.
  */
 
+import { assertInstancePermitted } from './shared-instance.ts'
+
 const CI_DEFAULT_BASE_URL = 'http://localhost:8080'
 
 /**
  * Resolve the Nextcloud base URL for this run.
  *
+ * The resolved target passes through `assertInstancePermitted`, so a run that
+ * lands on the shared development instance without naming it in
+ * `PORTALIQ_E2E_ALLOW_SHARED_INSTANCE` (or the fleet-wide
+ * `E2E_ALLOW_SHARED_INSTANCE`) stops here with an explanation. See
+ * `tests/e2e/shared-instance.ts`.
+ *
  * @return the base URL, without a trailing slash
- * @throws when no target is configured outside CI
+ * @throws when no target is configured outside CI, or when the target is the
+ * shared development instance and no flag names it
  */
 export function resolveBaseURL(): string {
 	const explicit =
@@ -43,7 +52,7 @@ export function resolveBaseURL(): string {
 		?? process.env.BASE_URL
 
 	if (explicit) {
-		return explicit.replace(/\/+$/, '')
+		return assertInstancePermitted(explicit.replace(/\/+$/, ''))
 	}
 
 	if (process.env.CI || process.env.GITHUB_ACTIONS) {
