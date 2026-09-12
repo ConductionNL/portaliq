@@ -35,14 +35,23 @@ const NONE = {}
 
 describe(`${APP_ID} shared-instance guard`, () => {
 	it('folds every loopback spelling onto localhost', () => {
-		assert.equal(normaliseOrigin('http://127.0.0.1:8080'), 'http://localhost:8080')
+		assert.equal(
+			normaliseOrigin('http://127.0.0.1:8080'),
+			'http://localhost:8080',
+		)
 		assert.equal(normaliseOrigin('http://[::1]:8080'), 'http://localhost:8080')
-		assert.equal(normaliseOrigin('http://localhost:8080/'), 'http://localhost:8080')
+		assert.equal(
+			normaliseOrigin('http://localhost:8080/'),
+			'http://localhost:8080',
+		)
 	})
 
 	it('makes the implicit port explicit', () => {
 		assert.equal(normaliseOrigin('http://127.0.0.1'), 'http://localhost:80')
-		assert.equal(normaliseOrigin('https://example.org'), 'https://example.org:443')
+		assert.equal(
+			normaliseOrigin('https://example.org'),
+			'https://example.org:443',
+		)
 	})
 
 	it('calls loopback 80 and 8080 shared, and nothing else', () => {
