@@ -27,7 +27,7 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T02
- * @spec openspec/changes/contract-v2/tasks.md#T7
+ * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T7
  */
 
 declare(strict_types=1);
@@ -166,7 +166,7 @@ class PortalJwtService {
 	 *
 	 * @return string Compact JWT string.
 	 *
-	 * @spec openspec/changes/contract-v2/tasks.md#T7
+	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T7
 	 */
 	public function createAssertion(
 		string $subjectRef,

@@ -54,7 +54,7 @@
 - [x] 4.3 Gates: `eslint src/portal/` clean, `npm run build:portal` succeeds
       (theme.css + Utrecht components bundled). Hydra gates (spdx-headers,
       forbidden-patterns) not run standalone — flag for the PR review stage;
-      every new file carries the `SPDX-License-Identifier: EUPL-1.2` header.
+      every new file carries the `SPDX-License-Identifier` with value `EUPL-1.2` header.
 
 ## Notes on scope taken
 

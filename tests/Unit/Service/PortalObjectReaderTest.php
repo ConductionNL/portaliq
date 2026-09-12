@@ -30,10 +30,10 @@ use RuntimeException;
  * unchanged, and projection applied to reverse-joined rows.
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T05
- * @spec openspec/changes/contract-v2/tasks.md#T5
- * @spec openspec/changes/contract-v2/tasks.md#T6
- * @spec openspec/changes/field-projection/tasks.md#T1
- * @spec openspec/changes/reverse-scope-join/tasks.md#T1
+ * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T5
+ * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T6
+ * @spec openspec/changes/archive/2026-09-07-field-projection/tasks.md#T1
+ * @spec openspec/changes/archive/2026-09-07-reverse-scope-join/tasks.md#T1
  */
 class PortalObjectReaderTest extends TestCase {
 

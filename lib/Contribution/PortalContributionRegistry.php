@@ -28,7 +28,7 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T04
- * @spec openspec/changes/contract-v2/tasks.md#T2
+ * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T2
  * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
  */
 
@@ -54,28 +54,38 @@ use Throwable;
  */
 class PortalContributionRegistry {
 	/**
-	 * FQCN template each contributing app implements its provider at. `%s` is
-	 * the app's namespace (ucfirst of the app id). Discovering by concrete class
-	 * — rather than an alias — is what makes cross-app discovery work: the DI
-	 * container constructs any autoloadable class by reflection, whereas a
-	 * registerServiceAlias only resolves inside the registering app's container.
+	 * Locates each app's provider class. Built here from the injected
+	 * dependencies when not supplied, so the constructor signature every
+	 * existing caller and test uses keeps working unchanged.
+	 *
+	 * @var PortalProviderLocator
 	 */
-	private const PROVIDER_CLASS = 'OCA\\%s\\Portal\\PortalContributionProvider';
+	private readonly PortalProviderLocator $locator;
 
 	/**
 	 * Constructor.
+	 *
+	 * `$container` is deliberately NOT promoted to a property: since the provider
+	 * lookup moved to PortalProviderLocator, the registry itself never touches the
+	 * container again, and a promoted-but-unread dependency is dead weight. It
+	 * stays in the signature — unpromoted, forwarded to the locator — because
+	 * every caller and test constructs this class positionally, and dropping the
+	 * argument would silently shift `$logger` into the container's slot.
 	 *
 	 * @param IAppManager $appManager For enumerating installed apps.
 	 * @param ContainerInterface $container For constructing each app's provider.
 	 * @param LoggerInterface $logger The logger.
 	 * @param PortalManifestNormaliser $normaliser The fail-closed v3 UI-config sanitiser.
+	 * @param PortalProviderLocator|null $locator Provider lookup; built from the above when null.
 	 */
 	public function __construct(
 		private readonly IAppManager $appManager,
-		private readonly ContainerInterface $container,
+		ContainerInterface $container,
 		private readonly LoggerInterface $logger,
 		private readonly PortalManifestNormaliser $normaliser = new PortalManifestNormaliser(),
+		?PortalProviderLocator $locator = null,
 	) {
+		$this->locator = ($locator ?? new PortalProviderLocator($appManager, $container, $logger));
 	}//end __construct()
 
 	/**
@@ -338,7 +348,7 @@ class PortalContributionRegistry {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/contract-v2/tasks.md#T2
+	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T2
 	 */
 	private function servesAudience(object $provider, string $audience): bool {
 		if (method_exists($provider, 'getAudiences') === true) {
@@ -371,7 +381,7 @@ class PortalContributionRegistry {
 	 *
 	 * @return array<string, mixed> The trust-filtered contribution.
 	 *
-	 * @spec openspec/changes/contract-v2/tasks.md#T2
+	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T2
 	 */
 	private function filterByTrust(array $contribution, string $trust): array {
 		foreach (['collections', 'actions'] as $section) {
@@ -399,35 +409,16 @@ class PortalContributionRegistry {
 	}//end filterByTrust()
 
 	/**
-	 * Resolve one app's contribution provider by convention FQCN, or null.
+	 * Resolve one app's contribution provider, or null when it ships none.
 	 *
-	 * An app contributes by shipping `OCA\{Namespace}\Portal\PortalContributionProvider`
-	 * with `getAudience()` + `getContribution()` — no need to implement (and thus
-	 * depend on) Portaliq's interface. The namespace is ucfirst(appId); camel-cased
-	 * app ids (e.g. `openregister` → `OpenRegister`) would need the info.xml
-	 * `<namespace>`, a follow-up as OpenRegister's MCP discovery does.
+	 * Delegates to PortalProviderLocator, which owns the FQCN derivation and
+	 * documents why guessing the namespace from the app id was wrong.
 	 *
 	 * @param string $appId The app id.
 	 *
 	 * @return object|null
 	 */
 	private function resolveProvider(string $appId): ?object {
-		$candidate = sprintf(self::PROVIDER_CLASS, ucfirst($appId));
-		if (class_exists($candidate) === false) {
-			return null;
-		}
-
-		try {
-			$instance = $this->container->get($candidate);
-		} catch (Throwable $e) {
-			$this->logger->debug('Portaliq: contribution provider not resolvable', ['app' => $appId, 'reason' => $e->getMessage()]);
-			return null;
-		}
-
-		if (is_object($instance) === true) {
-			return $instance;
-		}
-
-		return null;
+		return $this->locator->locate(appId: $appId);
 	}//end resolveProvider()
 }//end class

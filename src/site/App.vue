@@ -983,7 +983,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when the context is settled.
 		 *
-		 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
 		 */
 		async refreshEditingContext() {
 			if (this.editingDenied === true) {

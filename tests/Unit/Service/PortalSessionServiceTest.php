@@ -34,8 +34,8 @@ use Psr\Log\LoggerInterface;
  * bearer, or with no dedicated secret configured fails closed to null. Login/
  * logout/refresh each record an audit event via the injected AuditTrailService.
  *
- * @spec openspec/changes/contract-v2/tasks.md#T1
- * @spec openspec/changes/contract-v2/tasks.md#T7
+ * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T1
+ * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T7
  * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.1
  * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.3
  * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#2.1

@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-a-cms-read-must-not-inherit-another-apps-openregister-context
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-a-cms-read-must-not-inherit-another-apps-openregister-context
  */
 
 declare(strict_types=1);
@@ -60,7 +60,7 @@ use Throwable;
  * Passing slugs in either order re-enters the resolution that carries the
  * hazard, which is why this class resolves the schema itself.
  *
- * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-a-cms-read-must-not-inherit-another-apps-openregister-context
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-a-cms-read-must-not-inherit-another-apps-openregister-context
  */
 class PortalRegisterContext {
 	/**
@@ -108,7 +108,7 @@ class PortalRegisterContext {
 	 *
 	 * @return bool True when the context was applied.
 	 *
-	 * @spec openspec/changes/portal-page-designer/specs/portal-page-designer/spec.md#requirement-a-cms-read-must-not-inherit-another-apps-openregister-context
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-a-cms-read-must-not-inherit-another-apps-openregister-context
 	 */
 	public function apply(object $objectService, string $schemaSlug): bool {
 		$schema = $this->schema(slug: $schemaSlug);

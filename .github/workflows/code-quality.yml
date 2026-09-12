@@ -220,7 +220,20 @@ jobs:
       # enable broke. Re-check this against the pinned ref, not against another
       # app's ref: buildiq pins the same fleet's docudesk to `main`, where that
       # id has NOT moved yet.
-      additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"development"},{"repo":"ConductionNL/thematiq","app":"thematiq","ref":"development"}]'
+      #
+      # `dossiq` is here for ONE reason: it is the second contributing app that
+      # tests/e2e/portal-cross-app-contributions.spec.ts asserts against. Neither
+      # openregister nor thematiq ships a `lib/Portal/PortalContributionProvider.php`,
+      # so without a third app that spec would assert cross-app rendering against a
+      # fleet of one and pass no matter how badly discovery is broken. That is not
+      # hypothetical: an app really did go dark, and every test on both sides stayed
+      # green. Do not drop it to save runner minutes without deleting that spec too.
+      #
+      # Verified against the pinned ref rather than a local checkout, per the note
+      # above: on `ConductionNL/dossiq@development` the id is `dossiq`, the namespace
+      # is `Dossiq`, and `getAudiences()` returns supplier/citizen/inspector. Its
+      # `getContribution()` is pure config with no I/O, so it needs no seeded data.
+      additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"development"},{"repo":"ConductionNL/thematiq","app":"thematiq","ref":"development"},{"repo":"ConductionNL/dossiq","app":"dossiq","ref":"development"}]'
       enable-sbom: true
       # Run the Hydra mechanical quality gates against this PR's diff.
       #
@@ -340,3 +353,14 @@ jobs:
       # measured coverage (2674 of 3373 statements) read from clover.xml in the
       # `coverage-report` artifact of run 30917641977.
       enable-coverage-guard: true
+      # ── Cost controls (see ConductionNL/.github#596, #599) ───────────────
+      # Run PHPUnit and Playwright only when the diff could change their
+      # verdict. Fails safe TOWARDS running: an unreadable diff, a force-push,
+      # a branch creation or a dispatch all run everything, and a filtered
+      # skip is a declared state in the Quality Report, not a missing one.
+      enable-path-filtering: true
+      # PR-time PHPUnit runs the primary PHP against the newest declared
+      # Nextcloud; the full matrix still runs on every push to a default
+      # branch and on the release PR into beta. Breadth moves from
+      # per-commit to per-merge, it is not dropped.
+      reduce-pr-matrix: true

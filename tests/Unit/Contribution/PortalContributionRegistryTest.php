@@ -25,7 +25,7 @@ use RuntimeException;
  * mock so registry-algorithm tests do not depend on OpenRegister at all.
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T04
- * @spec openspec/changes/contract-v2/tasks.md#T2
+ * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T2
  * @spec openspec/changes/portal-page-provisioning/tasks.md#2.1
  */
 class PortalContributionRegistryTest extends TestCase {
@@ -350,9 +350,82 @@ class PortalContributionRegistryTest extends TestCase {
 
 	}//end testAggregateAnonymousConsultsEveryAudienceAProviderServes()
 
-	private function appManager(array $installed): IAppManager {
+	/**
+	 * An app id whose namespace is not `ucfirst($appId)` must still be found.
+	 *
+	 * `zaakafhandelapp` declares `<namespace>ZaakAfhandelApp</namespace>`, so the
+	 * old `ucfirst()` derivation asked for `OCA\Zaakafhandelapp\Portal\...` — a
+	 * class the autoloader cannot produce. `class_exists()` answered false rather
+	 * than raising, so the app was skipped in silence and its whole `citizen`
+	 * contribution never reached the portal. Here the declared namespace resolves
+	 * to a provider class that really exists, so a registry reading `<namespace>`
+	 * returns one contribution and a registry guessing `ucfirst()` returns none.
+	 *
+	 * @spec openspec/changes/supplier-portal/tasks.md#T04
+	 */
+	public function testProviderIsFoundWhenTheNamespaceIsNotUcfirstOfTheAppId(): void {
+		$provider = $this->createMock(PortalContributionProvider::class);
+		$provider->method('getAudiences')->willReturn(['citizen']);
+		$provider->method('getContribution')->willReturn(['label' => 'Zaken', 'collections' => [], 'actions' => []]);
+
+		$registry = new PortalContributionRegistry(
+			$this->appManager(['zaakafhandelapp'], ['zaakafhandelapp' => 'Portaliq']),
+			$this->container($provider),
+			$this->createMock(LoggerInterface::class)
+		);
+
+		$result = $registry->aggregateFor(['audience' => 'citizen', 'organisation' => 'org-1']);
+
+		$this->assertCount(1, $result['contributions']);
+		$this->assertSame('zaakafhandelapp', $result['contributions'][0]['app']);
+		$this->assertSame('Zaken', $result['contributions'][0]['label']);
+
+	}//end testProviderIsFoundWhenTheNamespaceIsNotUcfirstOfTheAppId()
+
+	/**
+	 * An app declaring no `<namespace>` still resolves through `ucfirst()`.
+	 *
+	 * The fallback is what keeps every already-working app working, so it needs
+	 * its own control: without it a passing test above would not distinguish
+	 * "reads the declared namespace" from "stopped resolving anything else".
+	 *
+	 * @spec openspec/changes/supplier-portal/tasks.md#T04
+	 */
+	public function testProviderStillResolvesWhenTheAppDeclaresNoNamespace(): void {
+		$provider = $this->createMock(PortalContributionProvider::class);
+		$provider->method('getAudiences')->willReturn(['supplier']);
+		$provider->method('getContribution')->willReturn(['label' => 'Voorbeeld', 'collections' => [], 'actions' => []]);
+
+		$registry = new PortalContributionRegistry(
+			$this->appManager(['portaliq']),
+			$this->container($provider),
+			$this->createMock(LoggerInterface::class)
+		);
+
+		$result = $registry->aggregateFor(['audience' => 'supplier', 'organisation' => 'org-1']);
+
+		$this->assertCount(1, $result['contributions']);
+		$this->assertSame('portaliq', $result['contributions'][0]['app']);
+
+	}//end testProviderStillResolvesWhenTheAppDeclaresNoNamespace()
+
+	/**
+	 * @param array<int, string>    $installed  App ids `getInstalledApps()` reports.
+	 * @param array<string, string> $namespaces App id => `info.xml` `<namespace>`.
+	 */
+	private function appManager(array $installed, array $namespaces = []): IAppManager {
 		$mock = $this->createMock(IAppManager::class);
 		$mock->method('getInstalledApps')->willReturn($installed);
+		$mock->method('getAppInfo')->willReturnCallback(
+			static function (string $appId) use ($namespaces): ?array {
+				if (array_key_exists($appId, $namespaces) === false) {
+					// Mirrors an app that declares no <namespace> at all.
+					return ['id' => $appId];
+				}
+
+				return ['id' => $appId, 'namespace' => $namespaces[$appId]];
+			}
+		);
 		return $mock;
 	}//end appManager()
 

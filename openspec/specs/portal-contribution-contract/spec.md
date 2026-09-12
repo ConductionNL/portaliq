@@ -601,15 +601,15 @@ OpenRegister's own (`properties` etc.) so the SPA store consumes it unchanged.
 - Receiving-app assertion verification (A6 consumer side) is out of scope
   here by design — tracked per app in the ADR-046 rollout waves.
 - This spec was created by the `contract-v2` change (delta:
-  `openspec/changes/contract-v2/specs/portal-contribution-contract/spec.md`);
+  `openspec/specs/portal-contribution-contract/spec.md`);
   keep both in sync until the change archives.
 - The "Read-side field projection" and "Frozen assertion wire format"
   requirements were added by the `field-projection` change (delta:
-  `openspec/changes/field-projection/specs/portal-contribution-contract/spec.md`);
+  `openspec/specs/portal-contribution-contract/spec.md`);
   same sync discipline until that change archives.
 - The reverse `via.match` direction was added to "One-hop via join scoping" by
   the `reverse-scope-join` change (delta:
-  `openspec/changes/reverse-scope-join/specs/portal-contribution-contract/spec.md`,
+  `openspec/specs/portal-contribution-contract/spec.md`,
   tracking Conduction/portaliq#14); same sync discipline until it archives.
 - The "Manifest UI configuration is presentation-only", "Scoped option
   providers", "Page composition with resolvable, same-contribution blocks", and
@@ -620,6 +620,6 @@ OpenRegister's own (`properties` etc.) so the SPA store consumes it unchanged.
   discipline until it archives.
 - The "Scoped single-object read" and "Scoped verified update" requirements
   were added by the `portal-scoped-crud` change (delta:
-  `openspec/changes/portal-scoped-crud/specs/portal-contribution-contract/spec.md`,
+  `openspec/specs/portal-contribution-contract/spec.md`,
   ADR-062 Phase 1, closing Conduction/portaliq#16); same sync discipline until
   it archives.
