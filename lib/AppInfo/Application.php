@@ -154,6 +154,16 @@ class Application extends App implements IBootstrap {
 		// Traffic reports and alerts (portal-traffic-reporting) reach a
 		// user as an in-app notification beside the mail; this renders it.
 		$context->registerNotifierService(Notifier::class);
+
+		// The store plane (ADR-080, ADR-114 Decision 4). The manifest's
+		// `type: "store"` page calls /api/store/items; appinfo/routes.php declares
+		// the engine's two store routes, and they resolve to
+		// Controller\StoreController — a class this app does NOT ship.
+		// StorePlaneRegistrar binds that name to OpenRegister's
+		// GenericStoreController: the one AppHost binding this app takes, since
+		// it wires everything else by hand (WOO-559). Without it the SPA
+		// catch-all answered the store page's JSON call with HTML 200.
+		(new StorePlaneRegistrar())->register($context);
 	}//end register()
 
 	/**
