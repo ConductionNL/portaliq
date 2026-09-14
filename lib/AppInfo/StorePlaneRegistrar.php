@@ -132,6 +132,10 @@ final class StorePlaneRegistrar {
 		}
 
 		if (class_exists('OCA\\OpenRegister\\AppHost\\Bootstrap') === false
+			// The hydra-gates stub scanned by phpstan declares aliasStoreController(), so
+			// static analysis sees this check as always-true. At runtime it is not:
+			// OpenRegister <= 2.0.12 ships Bootstrap without the method (see docblock).
+			// @phpstan-ignore function.alreadyNarrowedType
 			|| method_exists('OCA\\OpenRegister\\AppHost\\Bootstrap', 'aliasStoreController') === false
 		) {
 			return false;
