@@ -115,13 +115,30 @@ precedence = "override"
 SPDX-FileCopyrightText = "Google LLC"
 SPDX-License-Identifier = "Apache-2.0"
 
-# MaxMind's GeoIP2 test database, used as a fixture. Its own licence text
-# ships beside it as tests/fixtures/GeoIP2-City-Test.LICENSE.md.
+# MaxMind's GeoIP2 test database and the licence text that ships beside it.
+# Apache-2.0 OR MIT, per https://github.com/maxmind/MaxMind-DB, which ships
+# LICENSE-APACHE and LICENSE-MIT and states "at your option". Our fixture is
+# byte-identical to that repository's test-data/GeoIP2-City-Test.mmdb
+# (git blob e20846ac1757a3745ae41411757ed3817536e3be).
+#
+# This previously said CC-BY-SA-4.0. That is the licence of MaxMind's GeoLite2
+# PRODUCTION databases, a different product under a different agreement; the
+# two were conflated. The licence text sitting next to the fixture said so all
+# along. An `override` discards whatever the file itself states, so a wrong one
+# is unrecoverable by design -- check upstream before writing one.
+#
+# The .LICENSE.md is covered here too. Without it, it falls through to the
+# **/*.md rule below and MaxMind's own licence text gets labelled as
+# Conduction's CC0 work -- exactly the misrepresentation this file refuses to
+# make for woo/'s third-party notices.
 [[annotations]]
-path = "tests/fixtures/GeoIP2-City-Test.mmdb"
+path = [
+    "tests/fixtures/GeoIP2-City-Test.mmdb",
+    "tests/fixtures/GeoIP2-City-Test.LICENSE.md",
+]
 precedence = "override"
-SPDX-FileCopyrightText = "MaxMind, Inc."
-SPDX-License-Identifier = "CC-BY-SA-4.0"
+SPDX-FileCopyrightText = "2013-2026 MaxMind, Inc."
+SPDX-License-Identifier = "Apache-2.0 OR MIT"
 
 # ---------------------------------------------------------------------------
 # woo/ — the bundled tilburg-woo-ui SPA.
