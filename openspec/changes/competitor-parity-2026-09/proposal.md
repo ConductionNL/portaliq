@@ -112,3 +112,61 @@ cluster 51 names `forms-per-case-type` as dossiq's. It is buildiq's
 3. `what-the-citizen-may-write-on-their-own-case`. It extends
    `partner-tasks-in-the-portal` with the client audience, and renders
    amendments from the form the sibling change binds.
+
+## Wave 3, the pending proposals dossiq published without corpus provenance
+
+Added 2026-09-14. A third source joins the two above:
+`procest/_round4/compare/proposed-rows-dossiq-2026-09-10.md` in the same
+repo, the batch file that enters dossiq's own 104 rows into the queue
+under decision D1. Three of the 98 that entered are portaliq's.
+
+All three are new changes. Each was checked against the changes already
+in this repo first, by reading their specs rather than their names, and
+none of the three is carried by one.
+
+| change | rows | size | dossiq consumer |
+|---|---|---|---|
+| `withdrawing-your-own-case-from-the-portal` | 2.47 | M | declare whether a citizen may withdraw, until when, and onto which status; run the transition on the event |
+| `a-report-without-an-account-and-a-custodian-who-may-reveal-it` | 13.33 | L | declare the report case type, the custodian role, the statutory terms and what the reporter is shown |
+| `portal-visibility-follows-the-party-tree` | 13.38 | M | declare whether a case type may be reached through a parent; keep scoping by the requester claim |
+
+None of the three dossiq halves exists on dossiq `development`. All three
+are to be specified in dossiq.
+
+**What the competitor evidence is, for all three.** Nothing. These are D1
+rows, and the batch file says in as many words that every competitor
+column is `unread`, because `no` is a reading of a product somebody
+opened. Each proposal quotes that paragraph. The one reading anywhere
+near them is `D-request-tracker-26`, and the discovery sweep itself says
+it is flat group membership and not the party tree row.
+
+**Why none of them was folded into an existing change.**
+
+- **2.47** is not a field write. `what-the-citizen-may-write-on-their-own-case`
+  gives the citizen three acts inside a running case; withdrawal ends it.
+  `portal-status-transitions` has the mechanism and names no citizen.
+- **13.33** needs a door that asks for no address.
+  `portal-identity-and-the-organisations-cases` has `account` and
+  `reference`, and `reference` wants a verified e-mail, which is exactly
+  the identifier a reporter declines to give.
+- **13.38** is the hierarchy that `portal-identity-and-the-organisations-cases`
+  deliberately left out. Its design says so: "The organisation view is a
+  scope, not a second tree", and its default for an organisation with no
+  mandate recorded is nothing. Eleven subsidiaries are eleven mandates
+  today, which is the ledger note word for word.
+
+**Decision D17 is why 13.33 is not scoped to municipalities.** The Wet
+bescherming klokkenluiders obliges every employer with fifty people or
+more to run the same channel. The change is declared per portal and
+assumes no gemeente.
+
+### Build order for wave 3
+
+1. `withdrawing-your-own-case-from-the-portal`. It extends
+   `what-the-citizen-may-write-on-their-own-case`, which is on
+   `development`, and `portal-status-transitions`, open here.
+2. `portal-visibility-follows-the-party-tree`. It extends
+   `portal-identity-and-the-organisations-cases`, open here, so it waits
+   on it.
+3. `a-report-without-an-account-and-a-custodian-who-may-reveal-it`. The
+   largest of the three, and it reads on both open changes above.
