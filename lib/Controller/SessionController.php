@@ -561,7 +561,10 @@ class SessionController extends Controller {
 
 		// Same hand-off as the OIDC callback: the bearer travels in the URL
 		// FRAGMENT, which is never sent to a server and never reaches a log.
-		$target = ($returnTo !== '' ? $returnTo : '/apps/portaliq/site?portal=' . rawurlencode((string)($site['slug'] ?? '')));
+		$target = $returnTo;
+		if ($target === '') {
+			$target = '/apps/portaliq/site?portal=' . rawurlencode((string)($site['slug'] ?? ''));
+		}
 
 		return new RedirectResponse(
 			$this->urlGenerator->getAbsoluteURL($target) . '#token=' . rawurlencode($issued['token']),
@@ -579,7 +582,11 @@ class SessionController extends Controller {
 	private function currentNextcloudUid(): string {
 		$user = $this->userSession->getUser();
 
-		return ($user === null) ? '' : $user->getUID();
+		if ($user === null) {
+			return '';
+		}
+
+		return $user->getUID();
 	}//end currentNextcloudUid()
 
 	/**
