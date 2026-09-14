@@ -317,11 +317,15 @@ class CitizenWritableSetResolver {
 		$label = ($entry['label'] ?? '');
 		$description = ($entry['description'] ?? '');
 
-		return [
-			'value' => $status,
-			'label' => is_string($label) === true ? $label : '',
-			'description' => is_string($description) === true ? $description : '',
-		];
+		if (is_string($label) === false) {
+			$label = '';
+		}
+
+		if (is_string($description) === false) {
+			$description = '';
+		}
+
+		return ['value' => $status, 'label' => $label, 'description' => $description];
 	}//end status()
 
 	/**

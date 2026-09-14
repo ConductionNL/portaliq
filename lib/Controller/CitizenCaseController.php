@@ -524,7 +524,10 @@ class CitizenCaseController extends Controller implements PortalProtected {
 
 		$extension = pathinfo($fileName, PATHINFO_EXTENSION);
 		$stem = pathinfo($fileName, PATHINFO_FILENAME);
-		$suffix = ($extension === '') ? '' : ('.' . $extension);
+		$suffix = '';
+		if ($extension !== '') {
+			$suffix = '.' . $extension;
+		}
 		$counter = 2;
 		while (in_array($stem . '-' . $counter . $suffix, $taken, true) === true) {
 			$counter++;

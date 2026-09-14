@@ -94,7 +94,10 @@ class CitizenWriteConfigNormaliser {
 
 		foreach (self::DEFAULTS as $key => $fallback) {
 			$value = ($declared[$key] ?? null);
-			$config[$key] = (is_string($value) === true && $value !== '') ? $value : $fallback;
+			$config[$key] = $fallback;
+			if (is_string($value) === true && $value !== '') {
+				$config[$key] = $value;
+			}
 		}
 
 		$action[self::KEY] = $config;

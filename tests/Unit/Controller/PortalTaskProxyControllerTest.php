@@ -13,6 +13,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\ContributionController;
+use OCA\Portaliq\Service\CitizenWriteRecorder;
 use OCA\Portaliq\Controller\PortalTaskProxyController;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\NotificationDispatchService;
@@ -28,6 +29,7 @@ use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\PortalTaskGateway;
 use OCA\Portaliq\Service\SubmissionReceiptService;
 use OCP\AppFramework\Http;
+use OCP\IL10N;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -153,6 +155,9 @@ class PortalTaskProxyControllerTest extends TestCase {
 
 		$captured = [];
 		$gateway = $this->createMock(PortalTaskGateway::class);
+		// The answered-once guard reads the task before completing it
+		// (what-the-citizen-may-write-on-their-own-case): an OPEN task here.
+		$gateway->method('getTask')->willReturn(['status' => 200, 'body' => ['uuid' => 't-1']]);
 		$gateway->expects($this->once())->method('completeTask')->willReturnCallback(
 			function (array $subject, string $uuid, array $answers, ?string $comment, string $outcome, array $files) use (&$captured) {
 				$captured = ['answers' => $answers, 'files' => $files, 'outcome' => $outcome, 'comment' => $comment];
@@ -189,6 +194,7 @@ class PortalTaskProxyControllerTest extends TestCase {
 
 		$captured = [];
 		$gateway = $this->createMock(PortalTaskGateway::class);
+		$gateway->method('getTask')->willReturn(['status' => 200, 'body' => ['uuid' => 't-1']]);
 		$gateway->method('completeTask')->willReturnCallback(
 			function (array $subject, string $uuid, array $answers, ?string $comment, string $outcome, array $files) use (&$captured) {
 				$captured = ['answers' => $answers, 'files' => $files];
@@ -271,6 +277,25 @@ class PortalTaskProxyControllerTest extends TestCase {
 	 * @param array<string, mixed>|null $subject The resolved subject, or null (no bearer).
 	 * @param PortalTaskGateway $gateway The gateway mock.
 	 */
+	/**
+	 * A recorder that records nothing: these tests are about the relay, and
+	 * the announcement has its own test.
+	 */
+	private function recorder(): CitizenWriteRecorder {
+		return $this->createMock(CitizenWriteRecorder::class);
+	}//end recorder()
+
+	/**
+	 * An IL10N that answers with the key, so a refusal's sentence is readable
+	 * in an assertion.
+	 */
+	private function l10n(): IL10N {
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnCallback(static fn (string $text) => $text);
+
+		return $l10n;
+	}//end l10n()
+
 	private function controller(?array $subject, PortalTaskGateway $gateway): PortalTaskProxyController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('');
@@ -280,7 +305,7 @@ class PortalTaskProxyControllerTest extends TestCase {
 		$session = $this->createMock(PortalSessionService::class);
 		$session->method('resolveFromBearer')->willReturn($subject);
 
-		return new PortalTaskProxyController($request, $session, $gateway);
+		return new PortalTaskProxyController($request, $session, $gateway, $this->recorder(), $this->l10n());
 	}//end controller()
 
 	/**
@@ -294,7 +319,7 @@ class PortalTaskProxyControllerTest extends TestCase {
 		$session = $this->createMock(PortalSessionService::class);
 		$session->method('resolveFromBearer')->willReturn($subject);
 
-		return new PortalTaskProxyController($request, $session, $gateway);
+		return new PortalTaskProxyController($request, $session, $gateway, $this->recorder(), $this->l10n());
 	}//end controllerWithRequest()
 
 	/**
