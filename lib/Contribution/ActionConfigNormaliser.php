@@ -67,6 +67,7 @@ class ActionConfigNormaliser {
 		private readonly ManifestValueNormaliser $values,
 		private readonly ActionOptionsNormaliser $options,
 		private readonly ?PortalSchemaReader $schemaReader = null,
+		private readonly ?CitizenWriteConfigNormaliser $citizenWrite = null,
 	) {
 	}//end __construct()
 
@@ -97,6 +98,10 @@ class ActionConfigNormaliser {
 			$action = $this->normaliseSet(action: $action, whitelist: $whitelist);
 			$action = $this->normaliseTextKeys(action: $action);
 			$action = $this->values->normaliseAnonymousFlag(entry: $action);
+			// The citizen write declaration (what-the-citizen-may-write-on-their-
+			// own-case). An absent normaliser drops the key, which closes the
+			// surface rather than opening it.
+			$action = ($this->citizenWrite ?? new CitizenWriteConfigNormaliser())->normaliseAction(action: $action);
 
 			$out[] = $action;
 		}//end foreach
