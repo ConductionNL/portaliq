@@ -578,9 +578,9 @@ class SessionControllerTest extends TestCase {
 			($claimMapper ?? $this->createMock(OidcClaimMapperService::class)),
 			($stateStore ?? $this->createMock(OidcStateStoreService::class)),
 			($accounts ?? $this->createMock(PortalAccountService::class)),
-			($urlGenerator ?? $this->createMock(IURLGenerator::class)),
-			($userSession ?? $this->createMock(IUserSession::class)),
-			($portals ?? $this->createMock(PortalResolver::class))
+			($urlGenerator ?? $this->createMock(originalClassName: IURLGenerator::class)),
+			($userSession ?? $this->createMock(originalClassName: IUserSession::class)),
+			($portals ?? $this->createMock(originalClassName: PortalResolver::class))
 		);
 
 	}//end controller()
