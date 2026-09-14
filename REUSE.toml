@@ -1,4 +1,7 @@
 version = 1
+SPDX-PackageName = "portaliq"
+SPDX-PackageSupplier = "Conduction B.V. <info@conduction.nl>"
+SPDX-PackageDownloadLocation = "https://github.com/ConductionNL/portaliq"
 
 # REUSE compliance for Portaliq.
 #
@@ -7,21 +10,41 @@ version = 1
 # tags) per ADR-014. This REUSE.toml provides the same metadata for non-PHP
 # source files that have no docblock to carry it, plus a fallback for any
 # PHP file that has not yet had its SPDX header added.
+#
+# WHY EVERY ENTRY CARRIES `precedence` (added 2026-09-11). Without it, a
+# REUSE.toml entry silently overrules a header the file itself carries, so a
+# third-party file that states its own licence would be re-labelled as ours.
+# `precedence = "closest"` means the file's own header wins and the entry only
+# fills files that have none; `precedence = "override"` is the deliberate
+# opposite, used below only where we assert provenance the file cannot state
+# itself (binary fonts, a binary test fixture). Same model as
+# @conduction/nextcloud-vue's REUSE.toml.
 
+# ---------------------------------------------------------------------------
+# First-party source.
+# ---------------------------------------------------------------------------
 [[annotations]]
 path = "**/*.php"
+precedence = "closest"
 SPDX-FileCopyrightText = "2026 Conduction B.V. <info@conduction.nl>"
 SPDX-License-Identifier = "EUPL-1.2"
 
+# `.jsx` and `.mjs` were missing here, which is why the nine React-portal
+# sources under src/portal/ and docs/scripts/validate-ai-baseline.mjs counted
+# as unlicensed: this file lists extensions rather than using a blanket, so an
+# extension that is not listed falls through entirely.
 [[annotations]]
 path = [
     "**/*.vue",
     "**/*.js",
+    "**/*.jsx",
+    "**/*.mjs",
     "**/*.ts",
     "**/*.css",
     "**/*.scss",
     "**/*.sh",
 ]
+precedence = "closest"
 SPDX-FileCopyrightText = "2026 Conduction B.V. <info@conduction.nl>"
 SPDX-License-Identifier = "EUPL-1.2"
 
@@ -40,5 +63,123 @@ path = [
     "composer.lock",
     "package-lock.json",
 ]
+precedence = "closest"
 SPDX-FileCopyrightText = "2026 Conduction B.V. <info@conduction.nl>"
 SPDX-License-Identifier = "CC0-1.0"
+
+# Repository plumbing that carries no comment syntax of its own: dotfiles,
+# tool baselines, the Makefile, CODEOWNERS, the docs site's CNAME. Same CC0
+# treatment as the config block above — none of this is creative work.
+[[annotations]]
+path = [
+    ".editorconfig",
+    ".gitattributes",
+    ".gitignore",
+    ".git-blame-ignore-revs",
+    ".npmrc",
+    ".nvmrc",
+    ".prettierignore",
+    ".coverage-baseline",
+    ".github/CODEOWNERS",
+    ".githooks/**",
+    "Makefile",
+    "**/*.neon",
+    "**/.gitkeep",
+    "docs/static/CNAME",
+    "docs/static/llms.txt",
+]
+precedence = "closest"
+SPDX-FileCopyrightText = "2026 Conduction B.V. <info@conduction.nl>"
+SPDX-License-Identifier = "CC0-1.0"
+
+# Screenshots and logo on the docs site: our own product, our own images.
+[[annotations]]
+path = [
+    "docs/static/img/**",
+    "docs/static/screenshots/**",
+]
+precedence = "closest"
+SPDX-FileCopyrightText = "2026 Conduction B.V. <info@conduction.nl>"
+SPDX-License-Identifier = "CC0-1.0"
+
+# ---------------------------------------------------------------------------
+# Third party. NOT ours — these say what upstream says, and they use
+# `override` because a .woff2 or an .mmdb cannot carry a text header.
+# ---------------------------------------------------------------------------
+
+# Roboto, bundled for the site renderer. Apache-2.0 per the licence text that
+# ships next to it in css/fonts/LICENSE-roboto.txt.
+[[annotations]]
+path = "css/fonts/roboto-*.woff2"
+precedence = "override"
+SPDX-FileCopyrightText = "Google LLC"
+SPDX-License-Identifier = "Apache-2.0"
+
+# MaxMind's GeoIP2 test database, used as a fixture. Its own licence text
+# ships beside it as tests/fixtures/GeoIP2-City-Test.LICENSE.md.
+[[annotations]]
+path = "tests/fixtures/GeoIP2-City-Test.mmdb"
+precedence = "override"
+SPDX-FileCopyrightText = "MaxMind, Inc."
+SPDX-License-Identifier = "CC-BY-SA-4.0"
+
+# ---------------------------------------------------------------------------
+# woo/ — the bundled tilburg-woo-ui SPA.
+#
+# WHAT IT IS, established 2026-09-11 (Remko Huisman asked for the analysis).
+# woo/ is 28 MB / 650 committed files: the production build of
+# ConductionNL/tilburg-woo-ui, the Open Tilburg citizen WOO front end, which
+# lib/Controller/WooController.php serves from `__DIR__/../../woo` on the
+# public routes `woo#serve` and `woo#servePath`. It is load-bearing, not dead
+# weight. It arrived in a single commit — 3b109c8, 2026-07-10, "wip: preserve
+# uncommitted work" — and has never been touched since; no script in this
+# repository can rebuild it.
+#
+# That settles the provenance question for the code: tilburg-woo-ui is a public
+# ConductionNL repository licensed EUPL-1.2, so its build output is ours under
+# the same licence as this app. The bundles, styles, markup and images below
+# are annotated accordingly.
+[[annotations]]
+path = [
+    "woo/*.html",
+    "woo/*.js",
+    "woo/*.json",
+    "woo/*.png",
+    "woo/*.svg",
+    "woo/*.ico",
+    "woo/robots.txt",
+    "woo/static/js/**",
+    "woo/static/css/**",
+]
+precedence = "closest"
+SPDX-FileCopyrightText = "2026 Conduction B.V. <info@conduction.nl>"
+SPDX-License-Identifier = "EUPL-1.2"
+
+# The 309 `*.LICENSE.txt` files are NOT ours and are not one licence either:
+# webpack wrote them by concatenating the licence banners of the third-party
+# packages inside each bundle. Claiming them as Conduction/EUPL-1.2 would
+# misrepresent every notice in them, so they carry a LicenseRef whose text
+# says what they are and leaves the rights with the upstream authors.
+[[annotations]]
+path = [
+    "woo/**/*.LICENSE.txt",
+    "woo/service-worker.js.LICENSE.txt",
+]
+precedence = "override"
+SPDX-FileCopyrightText = "the respective authors of the bundled third-party packages"
+SPDX-License-Identifier = "LicenseRef-third-party-notices"
+
+# NOTE — THE 12 FONT FILES IN woo/ ARE DELIBERATELY LEFT UNANNOTATED.
+#
+# woo/*.woff2, woo/*.otf and woo/static/fonts/* are the only files in this
+# repository still without licensing information, and that is on purpose. The
+# built CSS declares `font-family: Avenir`, and the source repository ships
+# `static/fonts/avenir-lt-w01-55-roman.woff2`. Avenir LT is a commercial
+# Linotype/Monotype typeface, so these may be licensed webfonts redistributed
+# from a public repository — a question about the font licence itself, not
+# about metadata. Annotating them EUPL-1.2 would state something we have no
+# basis for and would bury exactly the finding worth raising.
+#
+# Raised with Wilco and Remko on 2026-09-11; tracked in
+# plans/issues/WOO-556/sub-tasks/WOO-571/ step 10. Resolve the font question
+# first, then annotate these to match the answer.
