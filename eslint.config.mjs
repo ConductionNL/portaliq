@@ -84,7 +84,10 @@ export default [
 		// therefore names a plugin that is not registered there, and eslint
 		// refuses to run at all. Measured: with `lint: "eslint src tests"` this
 		// took out ALL 12 files under tests/ while src/ was fine.
-		files: ['**/*.js', '**/*.mjs', '**/*.ts', '**/*.tsx', '**/*.vue'],
+		// `.jsx` belongs here too: the React portal under `src/portal` is written
+		// in `.jsx`, so without it every `@spec` tag gate-16 asks for on a portal
+		// component reports as an invalid tag name and eslint fails the build.
+		files: ['**/*.js', '**/*.jsx', '**/*.mjs', '**/*.ts', '**/*.tsx', '**/*.vue'],
 		ignores: [
 			'**/*.test.*',
 			'**/*.spec.*',
