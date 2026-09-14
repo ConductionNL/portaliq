@@ -322,20 +322,19 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 		// proof log naming an upload the authority never received would be a
 		// false art. 2:10 statement (review of #501). The request is only the
 		// fallback for a seam row that predates those keys.
-		$names = [];
+		$recordedFiles = $files;
 		if (array_key_exists('evidence', $task) === true) {
-			foreach ((array)$task['evidence'] as $stored) {
-				$name = 'upload';
-				if (is_array($stored) === true) {
-					$name = (string)($stored['name'] ?? 'upload');
-				}
+			$recordedFiles = (array)$task['evidence'];
+		}
 
-				$names[] = $name;
+		$names = [];
+		foreach ($recordedFiles as $stored) {
+			$name = 'upload';
+			if (is_array($stored) === true) {
+				$name = (string)($stored['name'] ?? 'upload');
 			}
-		} else {
-			foreach ($files as $file) {
-				$names[] = (string)($file['name'] ?? 'upload');
-			}
+
+			$names[] = $name;
 		}
 
 		$recordedAnswers = $answers;
