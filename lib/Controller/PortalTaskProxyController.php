@@ -374,7 +374,7 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 			organisation: $organisation,
 			appId: Application::APP_ID,
 			actionId: self::ACTION_COMPLETE,
-			whitelistedData: $this->submissionCopy(
+			whitelistedData: $this->receiptService->taskCompletionCopy(
 				taskUuid: $taskUuid,
 				task: $task,
 				answers: $answers,
@@ -386,79 +386,6 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 		);
 	}//end recordCompletion()
 
-	/**
-	 * The WMEBV "copy of the submitted data" for a completion — the role the
-	 * whitelisted field map plays for a create. It carries what the AUTHORITY
-	 * RECORDED — the seam row's `responses`, `evidence` (file NAMES as stored)
-	 * and outcome, plus the resident's comment — falling back to the request
-	 * only where the seam row carries no such key. Never file content, never a
-	 * temp path: this copy lands in the resident's receipt (`dataCopy`) and in
-	 * the proof log (`payloadCopy`).
-	 *
-	 * @param string $taskUuid The completed task's uuid.
-	 * @param array<string, mixed> $task The seam's completed task row.
-	 * @param array<string, mixed> $answers The submitted answers.
-	 * @param string|null $comment The resident's comment.
-	 * @param string $outcome The requested outcome.
-	 * @param array<int, array<string, mixed>> $files The relayed uploads.
-	 *
-	 * @return array<string, mixed>
-	 *
-	 * @spec openspec/specs/supplier-portal/spec.md#proof-of-receipt-log-satisfying-the-wmebv-burden-of-proof
-	 */
-	private function submissionCopy(
-		string $taskUuid,
-		array $task,
-		array $answers,
-		?string $comment,
-		string $outcome,
-		array $files,
-	): array {
-		// 🔴 THE COPY DESCRIBES WHAT THE AUTHORITY RECORDED, NOT WHAT THE RESIDENT
-		// SENT. The seam's completed row is authoritative: `evidence` lists the
-		// files PortalTaskService::storeFiles() actually wrote to the case
-		// (PHP drops an oversized/partial upload with tmp_name '' and the
-		// gateway then forwards nothing for it, while the request still names
-		// it), `responses` is the answers map the seam stored. A receipt or
-		// proof log naming an upload the authority never received would be a
-		// false art. 2:10 statement (review of #501). The request is only the
-		// fallback for a seam row that predates those keys.
-		$recordedFiles = $files;
-		if (array_key_exists('evidence', $task) === true) {
-			$recordedFiles = (array)$task['evidence'];
-		}
-
-		$names = [];
-		foreach ($recordedFiles as $stored) {
-			$name = 'upload';
-			if (is_array($stored) === true) {
-				$name = (string)($stored['name'] ?? 'upload');
-			}
-
-			$names[] = $name;
-		}
-
-		$recordedAnswers = $answers;
-		if (is_array($task['responses'] ?? null) === true) {
-			$recordedAnswers = $task['responses'];
-		}
-
-		$recorded = (string)($task['outcome'] ?? '');
-		if ($recorded === '') {
-			$recorded = $outcome;
-		}
-
-		return [
-			'taskUuid' => $taskUuid,
-			// What the resident saw in "Mijn taken" (displayTitle), falling back
-			// to the raw title for a seam that does not compute one.
-			'title' => (string)($task['displayTitle'] ?? $task['title'] ?? ''),
-			'outcome' => $recorded,
-			'comment' => (string)($comment ?? ''),
-			'answers' => $recordedAnswers,
-			'files' => $names,
-		];
-	}//end submissionCopy()
 
 	/**
 	 * Translate the gateway's answer for the resident (design D-3).

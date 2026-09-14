@@ -72,7 +72,7 @@ class PortalTaskProxyControllerTest extends TestCase {
 
 		$auditor = $this->createMock(AuditTrailService::class);
 		$auditor->expects($this->never())->method('record');
-		$receiptService = $this->createMock(SubmissionReceiptService::class);
+		$receiptService = $this->receiptMock();
 		$receiptService->expects($this->never())->method('record');
 
 		$controller = $this->controller(subject: null, gateway: $gateway, auditor: $auditor, receiptService: $receiptService);
@@ -268,7 +268,7 @@ class PortalTaskProxyControllerTest extends TestCase {
 		);
 
 		$received = [];
-		$receiptService = $this->createMock(SubmissionReceiptService::class);
+		$receiptService = $this->receiptMock();
 		$receiptService->expects($this->once())->method('record')->willReturnCallback(
 			function (string $subjectRef, string $organisation, string $appId, string $actionId, array $whitelistedData, string $audience = '') use (&$received) {
 				$received = compact('subjectRef', 'organisation', 'appId', 'actionId', 'whitelistedData', 'audience');
@@ -317,7 +317,7 @@ class PortalTaskProxyControllerTest extends TestCase {
 		$gateway->method('completeTask')->willReturn(['status' => 200, 'body' => []]);
 
 		$received = [];
-		$receiptService = $this->createMock(SubmissionReceiptService::class);
+		$receiptService = $this->receiptMock();
 		$receiptService->expects($this->once())->method('record')->willReturnCallback(
 			function (string $subjectRef, string $organisation, string $appId, string $actionId, array $whitelistedData) use (&$received) {
 				$received = $whitelistedData;
@@ -348,7 +348,7 @@ class PortalTaskProxyControllerTest extends TestCase {
 		$gateway->method('completeTask')->willReturn(['status' => 200, 'body' => ['uuid' => '', 'outcome' => 'submitted']]);
 
 		$received = [];
-		$receiptService = $this->createMock(SubmissionReceiptService::class);
+		$receiptService = $this->receiptMock();
 		$receiptService->expects($this->once())->method('record')->willReturnCallback(
 			function (string $subjectRef, string $organisation, string $appId, string $actionId, array $whitelistedData) use (&$received) {
 				$received = $whitelistedData;
@@ -398,7 +398,7 @@ class PortalTaskProxyControllerTest extends TestCase {
 		]);
 
 		$received = [];
-		$receiptService = $this->createMock(SubmissionReceiptService::class);
+		$receiptService = $this->receiptMock();
 		$receiptService->expects($this->once())->method('record')->willReturnCallback(
 			function (string $subjectRef, string $organisation, string $appId, string $actionId, array $whitelistedData) use (&$received) {
 				$received = $whitelistedData;
@@ -436,7 +436,7 @@ class PortalTaskProxyControllerTest extends TestCase {
 
 			$auditor = $this->createMock(AuditTrailService::class);
 			$auditor->expects($this->never())->method('record');
-			$receiptService = $this->createMock(SubmissionReceiptService::class);
+			$receiptService = $this->receiptMock();
 			$receiptService->expects($this->never())->method('record');
 
 			$response = $this->controller(subject: self::SUBJECT, gateway: $gateway, auditor: $auditor, receiptService: $receiptService)
@@ -569,6 +569,20 @@ class PortalTaskProxyControllerTest extends TestCase {
 	}//end controllerWithRecorder()
 
 	/**
+	 * A receipt service whose `record()` is mocked but whose
+	 * `taskCompletionCopy()` is the REAL mapping — these tests are about the
+	 * copy the controller hands over, so mocking the mapper would assert
+	 * nothing. The constructor is disabled: the mapper reads no service state.
+	 */
+	private function receiptMock(): SubmissionReceiptService {
+		return $this->getMockBuilder(SubmissionReceiptService::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['record'])
+			->getMock();
+	}//end receiptMock()
+
+
+	/**
 	 * A recorder that records nothing: these tests are about the relay, and
 	 * the announcement has its own test.
 	 */
@@ -635,7 +649,7 @@ class PortalTaskProxyControllerTest extends TestCase {
 			$session,
 			$gateway,
 			($auditor ?? $this->createMock(AuditTrailService::class)),
-			($receiptService ?? $this->createMock(SubmissionReceiptService::class)),
+			($receiptService ?? $this->receiptMock()),
 			($recorder ?? $this->recorder()),
 			$this->l10n()
 		);
@@ -675,7 +689,7 @@ class PortalTaskProxyControllerTest extends TestCase {
 			$this->createMock(PortalAuditHook::class),
 			$this->createMock(PortalActionForwarder::class),
 			$this->createMock(AuditTrailService::class),
-			$this->createMock(SubmissionReceiptService::class),
+			$this->receiptMock(),
 			$this->createMock(NotificationDispatchService::class),
 			$this->createMock(LoggerInterface::class),
 			$gateway
