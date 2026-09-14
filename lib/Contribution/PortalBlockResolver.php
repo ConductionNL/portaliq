@@ -40,7 +40,7 @@ class PortalBlockResolver {
 	/**
 	 * The block-type registry. A block of any other type is dropped.
 	 */
-	private const BLOCK_TYPES = ['collection', 'action', 'detail', 'richText', 'cta'];
+	private const BLOCK_TYPES = ['collection', 'action', 'detail', 'richText', 'cta', 'citizenCase'];
 
 	/**
 	 * Filter a page's blocks to the registry with resolvable references.
@@ -89,7 +89,10 @@ class PortalBlockResolver {
 			return null;
 		}
 
-		if ($type === 'collection' || $type === 'detail') {
+		// The citizen case block (what-the-citizen-may-write-on-their-own-case)
+		// references a collection like `detail` does; what it may write is
+		// resolved per request from the case type, never from the block.
+		if ($type === 'collection' || $type === 'detail' || $type === 'citizenCase') {
 			return $this->referenceBlock(
 				type: $type,
 				key: 'collection',

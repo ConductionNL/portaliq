@@ -169,6 +169,16 @@ return [
         ['name' => 'portalTaskProxy#show', 'url' => '/portal/api/tasks/{uuid}', 'verb' => 'GET', 'requirements' => ['uuid' => '[^/]+']],
         ['name' => 'portalTaskProxy#complete', 'url' => '/portal/api/tasks/{uuid}/complete', 'verb' => 'POST', 'requirements' => ['uuid' => '[^/]+']],
 
+        // What a citizen may write on their own case
+        // (what-the-citizen-may-write-on-their-own-case). Three acts, three
+        // routes, because an amendment, a document and a task answer are not
+        // one write to a citizen or to the law (D2). The task answer is the
+        // fourth act and stays on the task proxy above. Registered before the
+        // /portal/{path} SPA catch-all.
+        ['name' => 'citizenCase#show', 'url' => '/portal/api/citizen/cases/{register}/{schema}/{id}', 'verb' => 'GET'],
+        ['name' => 'citizenCase#amend', 'url' => '/portal/api/citizen/cases/{register}/{schema}/{id}', 'verb' => 'PATCH'],
+        ['name' => 'citizenCase#addDocument', 'url' => '/portal/api/citizen/cases/{register}/{schema}/{id}/documents', 'verb' => 'POST'],
+
         ['name' => 'portalPage#catchAll', 'url' => '/portal/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
 
         // Hosted tilburg-woo-ui (Open Tilburg WOO SPA) — public. Registered
