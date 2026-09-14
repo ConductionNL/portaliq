@@ -119,10 +119,17 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// session recording (portal-traffic-experiments); `heat_click` and
 		// `heat_scroll` join the enum, the daily record gains `experiments`
 		// and `heatmaps`, and the recording schema arrives, admin-readable
-		// like the raw events. Additive. 0.22.0 (portalAuditEntry 0.2.0):
-		// `complete` joins the audit verb enum — a seam-confirmed portal-task
-		// completion is audited like a create (WOO-569); hardValidation
-		// would otherwise refuse the write silently. Additive.
+		// like the raw events. Additive. 0.22.0 (portalAuditEntry 0.2.0,
+		// portalCaseType 0.1.0 new, portalCase 0.1.0 new): `complete` joins
+		// the audit verb enum — a seam-confirmed portal-task completion is
+		// audited like a create (WOO-569); hardValidation would otherwise
+		// refuse the write silently. And the demo case and its type arrive,
+		// so what a citizen may write on their own case is demonstrable
+		// without a case app installed
+		// (what-the-citizen-may-write-on-their-own-case). Both are
+		// authenticated-read only, like every other portal-facing schema:
+		// what may be WRITTEN is decided by the case type, through portaliq,
+		// never by a grant on the schema. Additive.
 		// Every new schema is listed in
 		// `components.registers.portaliq.schemas` (ImportHandler binds only
 		// what is listed there) and declares a non-empty `read` rule.
@@ -130,6 +137,9 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame('0.22.0', self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalAuditEntry']['version']);
 		$this->assertContains('complete', self::$register['components']['schemas']['portalAuditEntry']['properties']['verb']['enum']);
+		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalCaseType']['version']);
+		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalCase']['version']);
+		$this->assertSame(['authenticated'], self::$register['components']['schemas']['portalCase']['authorization']['read']);
 		$this->assertSame('0.5.0', self::$register['components']['schemas']['portalTrafficDaily']['version']);
 		$this->assertSame('0.4.0', self::$register['components']['schemas']['portalTrafficEvent']['version']);
 		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalTrafficRecording']['version']);

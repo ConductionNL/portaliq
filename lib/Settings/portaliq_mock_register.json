@@ -16,7 +16,7 @@
       "portaliq": {
         "slug": "portaliq",
         "title": "Portaliq Register (demo)",
-        "version": "0.21.0",
+        "version": "0.22.0",
         "description": "Demo data for Portaliq Register. Generated from the register's own schemas — see hydra-gates/scripts/lib/generate_mock_register.py."
       }
     },
@@ -806,6 +806,156 @@
         "register": "Voorbeeld Register 3",
         "schema": "Voorbeeld Schema 3",
         "targetId": "Voorbeeld Targetid 3"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalCase",
+          "slug": "portalcase-portalcase-1-1"
+        },
+        "subjectRef": "Voorbeeld Subjectref 1",
+        "organisation": "Voorbeeld Organisation 1",
+        "caseType": "Voorbeeld Casetype 1",
+        "reference": "Voorbeeld Reference 1",
+        "status": "Voorbeeld Status 1",
+        "omschrijving": "Voorbeeld Omschrijving 1",
+        "toelichting": "Voorbeeld Toelichting 1",
+        "portalWrites": [
+          {}
+        ]
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalCase",
+          "slug": "portalcase-portalcase-2-2"
+        },
+        "subjectRef": "Voorbeeld Subjectref 2",
+        "organisation": "Voorbeeld Organisation 2",
+        "caseType": "Voorbeeld Casetype 2",
+        "reference": "Voorbeeld Reference 2",
+        "status": "Voorbeeld Status 2",
+        "omschrijving": "Voorbeeld Omschrijving 2",
+        "toelichting": "Voorbeeld Toelichting 2",
+        "portalWrites": [
+          {}
+        ]
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalCase",
+          "slug": "portalcase-portalcase-3-3"
+        },
+        "subjectRef": "Voorbeeld Subjectref 3",
+        "organisation": "Voorbeeld Organisation 3",
+        "caseType": "Voorbeeld Casetype 3",
+        "reference": "Voorbeeld Reference 3",
+        "status": "Voorbeeld Status 3",
+        "omschrijving": "Voorbeeld Omschrijving 3",
+        "toelichting": "Voorbeeld Toelichting 3",
+        "portalWrites": [
+          {}
+        ]
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalCaseType",
+          "slug": "portalcasetype-voorbeeld-title-1-1"
+        },
+        "title": "Voorbeeld Title 1",
+        "portalWritable": [
+          {
+            "field": "Voorbeeld Field 1",
+            "audiences": [
+              "Voorbeeld Audiences 1"
+            ],
+            "openStatuses": [
+              "Voorbeeld Openstatuses 1"
+            ],
+            "closedReason": "Voorbeeld Closedreason 1"
+          }
+        ],
+        "portalAmendmentWindow": {
+          "openStatuses": [
+            "Voorbeeld Openstatuses 1"
+          ],
+          "closedReason": "Voorbeeld Closedreason 1"
+        },
+        "portalDocumentWindow": {
+          "openStatuses": [
+            "Voorbeeld Openstatuses 1"
+          ],
+          "closedReason": "Voorbeeld Closedreason 1"
+        },
+        "portalStatusLabels": {}
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalCaseType",
+          "slug": "portalcasetype-voorbeeld-title-2-2"
+        },
+        "title": "Voorbeeld Title 2",
+        "portalWritable": [
+          {
+            "field": "Voorbeeld Field 2",
+            "audiences": [
+              "Voorbeeld Audiences 2"
+            ],
+            "openStatuses": [
+              "Voorbeeld Openstatuses 2"
+            ],
+            "closedReason": "Voorbeeld Closedreason 2"
+          }
+        ],
+        "portalAmendmentWindow": {
+          "openStatuses": [
+            "Voorbeeld Openstatuses 2"
+          ],
+          "closedReason": "Voorbeeld Closedreason 2"
+        },
+        "portalDocumentWindow": {
+          "openStatuses": [
+            "Voorbeeld Openstatuses 2"
+          ],
+          "closedReason": "Voorbeeld Closedreason 2"
+        },
+        "portalStatusLabels": {}
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalCaseType",
+          "slug": "portalcasetype-voorbeeld-title-3-3"
+        },
+        "title": "Voorbeeld Title 3",
+        "portalWritable": [
+          {
+            "field": "Voorbeeld Field 3",
+            "audiences": [
+              "Voorbeeld Audiences 3"
+            ],
+            "openStatuses": [
+              "Voorbeeld Openstatuses 3"
+            ],
+            "closedReason": "Voorbeeld Closedreason 3"
+          }
+        ],
+        "portalAmendmentWindow": {
+          "openStatuses": [
+            "Voorbeeld Openstatuses 3"
+          ],
+          "closedReason": "Voorbeeld Closedreason 3"
+        },
+        "portalDocumentWindow": {
+          "openStatuses": [
+            "Voorbeeld Openstatuses 3"
+          ],
+          "closedReason": "Voorbeeld Closedreason 3"
+        },
+        "portalStatusLabels": {}
       },
       {
         "@self": {
