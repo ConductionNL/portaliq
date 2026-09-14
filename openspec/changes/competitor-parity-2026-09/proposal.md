@@ -68,3 +68,47 @@ right.
   `portaalBericht` to the citizen audience, and its `move-portals-to-portaliq`
   was archived on 2026-09-09 with one task open. The row is a re-rate, not
   work.
+
+## Wave 2, from the round 4 discovery sweep
+
+Added 2026-09-14. The source above is the gap register of 2026-09-13. A
+second sweep followed it: `procest/_round4/discovery/` in the same repo,
+with `build-plan.md` (631 candidates in 70 clusters), `candidates.json`
+and `decisions.md` (22 decisions, answered by Ruben). The ownership rule
+is unchanged, and it puts **23 candidates in three clusters** on
+portaliq. Each cluster is one change, and all three are opened here.
+
+| change | cluster | candidates | size | decision | dossiq consumer |
+|---|---|---|---|---|---|
+| `portal-intake-form-as-an-object` | 51, the intake form as its own object | 6 | M | D16 | nothing beyond the intake it already declares |
+| `portal-identity-and-the-organisations-cases` | 7, portal identity, registration and the organisation's cases | 12 | L | D8 | declare the identity kind on the case type, read the claim |
+| `what-the-citizen-may-write-on-their-own-case` | 48, what the citizen may write on their own case | 5 | M | D16 | declare the writable set, raise the citizen task, listen for the portal write |
+
+The plan calls this wave 2, "what a municipality sees", and names portaliq
+as the app that builds the intake form as an object and portal identity.
+
+**Two decisions unblock the wave.** D8 is answered: both identity kinds,
+chosen per case type, with the case number plus e-mail first. D16 is
+answered: the portal flag lives on the field, and the form owns order and
+channel. `portal-identity-space` was blocked on the first of those, and
+is not any more.
+
+**One half sits in another repo.** `C-intake-15`, the public request
+catalogue, belongs to opencatalogi's cluster 31. opencatalogi publishes
+the catalogue; portaliq renders it as the citizen's entry point and
+starts the form behind an entry.
+
+**One correction to the record.** The build plan's mechanism line for
+cluster 51 names `forms-per-case-type` as dossiq's. It is buildiq's
+(buildiq#765, on `development`).
+
+### Build order for wave 2
+
+1. `portal-identity-and-the-organisations-cases`. It extends
+   `portal-identity-space` and carries the loudest row in the cluster,
+   number 5 of the sweep's twenty-five loudest.
+2. `portal-intake-form-as-an-object`. It extends `embedded-intake-form`
+   and reads the identity for the applicant block.
+3. `what-the-citizen-may-write-on-their-own-case`. It extends
+   `partner-tasks-in-the-portal` with the client audience, and renders
+   amendments from the form the sibling change binds.
