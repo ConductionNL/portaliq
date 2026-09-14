@@ -132,3 +132,19 @@ if (class_exists(\OCA\OpenRegister\Mcp\AbstractToolHandler::class) === false) {
 if (interface_exists(\OCA\OpenRegister\Mcp\IMcpToolProvider::class) === false) {
 	require_once __DIR__ . '/Stubs/Mcp/IMcpToolProvider.php';
 }
+
+// Integriq's connection-registry events (adopt-connection-registry).
+// ConnectionReporter sends them by string class name behind class_exists
+// (ADR-041), so portaliq stays installable without integriq. The stubs mirror
+// hydra connection-registry design D6 and integriq's own classes on
+// `development`, and load only when the real classes are absent. Without OCP on
+// the autoload path their parent class is missing, so they are skipped then.
+foreach (['ConnectionStatusReportedEvent', 'ConnectionRefreshRequestedEvent'] as $integriqStubEvent) {
+	if (class_exists('\\OCP\\EventDispatcher\\Event') === true
+		&& class_exists('\\OCA\\Integriq\\Event\\' . $integriqStubEvent) === false
+	) {
+		require_once __DIR__ . '/Stubs/Integriq/Event/' . $integriqStubEvent . '.php';
+	}
+}
+
+unset($integriqStubEvent);

@@ -22,6 +22,7 @@ namespace OCA\Portaliq\Service\Traffic\Geo;
 
 use MaxMind\Db\Reader;
 use OCA\Portaliq\BackgroundJob\TrafficGeoFirstDownloadJob;
+use OCA\Portaliq\Service\Connection\ConnectionReporter;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJobList;
 use OCP\ITempManager;
@@ -58,8 +59,11 @@ class GeoRefreshService {
 	 * @param IJobList          $jobs     Queues the first download.
 	 * @param ITimeFactory      $time     The clock.
 	 * @param LoggerInterface   $logger   The logger.
+	 * @param ConnectionReporter|null $connectionReporter Tells integriq what a refresh met.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/adopt-connection-registry/specs/app-connections/spec.md#requirement-req-portaliq-conn-002-a-geography-save-refreshes-and-a-refresh-or-a-failed-open-reports
 	 */
 	public function __construct(
 		private readonly GeoSettings $settings,
@@ -70,6 +74,7 @@ class GeoRefreshService {
 		private readonly IJobList $jobs,
 		private readonly ITimeFactory $time,
 		private readonly LoggerInterface $logger,
+		private readonly ?ConnectionReporter $connectionReporter = null,
 	) {
 	}
 
@@ -89,13 +94,31 @@ class GeoRefreshService {
 	}
 
 	/**
+	 * Download, verify, install, and tell integriq what the refresh met.
+	 *
+	 * The report reaches integriq's connection registry from all three
+	 * callers alike (adopt-connection-registry). It never changes the result.
+	 *
+	 * @return array{status: string, provider: string, message: string} `disabled`, `refreshed` or `failed`, and why.
+	 *
+	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
+	 * @spec openspec/changes/adopt-connection-registry/specs/app-connections/spec.md#requirement-req-portaliq-conn-002-a-geography-save-refreshes-and-a-refresh-or-a-failed-open-reports
+	 */
+	public function refresh(): array {
+		$result = $this->refreshDatabase();
+		$this->connectionReporter?->geoRefreshed(result: $result);
+
+		return $result;
+	}
+
+	/**
 	 * Download, verify, install.
 	 *
 	 * @return array{status: string, provider: string, message: string} `disabled`, `refreshed` or `failed`, and why.
 	 *
 	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
 	 */
-	public function refresh(): array {
+	private function refreshDatabase(): array {
 		$provider = $this->provider();
 		if ($provider === null) {
 			return [

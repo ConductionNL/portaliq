@@ -2,18 +2,18 @@
 
 ## 1. Declare
 
-- [ ] 1.1 Write `lib/Settings/connections.json` with `geo-db` and `oidc`.
-- [ ] 1.2 Give the Visitor geography and Portal auth edge sections the ids the file links to.
-- [ ] 1.3 Guard the file in `tests/Unit/Settings/ConnectionsDeclarationTest.php`, against a vendored copy of integriq's schema.
+- [x] 1.1 Write `lib/Settings/connections.json` with `geo-db` and `oidc`.
+- [x] 1.2 Give the Visitor geography and Portal auth edge sections the ids the file links to.
+- [x] 1.3 Guard the file in `tests/Unit/Settings/ConnectionsDeclarationTest.php`, against a vendored copy of integriq's schema.
 
 ## 2. Reports and refresh
 
-- [ ] 2.1 Add `lib/Service/Connection/ConnectionObservations.php` and `lib/Service/Connection/ConnectionReporter.php`.
-- [ ] 2.2 Refresh and report from the geography save in `SettingsService`.
-- [ ] 2.3 Report the outcome of `GeoRefreshService::refresh()` and a failed open in `MmdbGeoResolver`.
-- [ ] 2.4 Report broker discovery and code exchange outcomes from `OidcClientService`, throttled.
-- [ ] 2.5 Add the integriq event stubs for PHPUnit and psalm.
-- [ ] 2.6 Cover it in `ConnectionReporterTest`, `ConnectionObservationsTest` and one caller test per hook.
+- [x] 2.1 Add `lib/Service/Connection/ConnectionObservations.php` and `lib/Service/Connection/ConnectionReporter.php`.
+- [x] 2.2 Refresh and report from the geography save in `SettingsService`.
+- [x] 2.3 Report the outcome of `GeoRefreshService::refresh()` and a failed open in `MmdbGeoResolver`.
+- [x] 2.4 Report broker discovery and code exchange outcomes from `OidcClientService`, throttled.
+- [x] 2.5 Add the integriq event stubs for PHPUnit and psalm.
+- [x] 2.6 Cover it in `ConnectionReporterTest`, `ConnectionObservationsTest` and `ConnectionReportCallersTest`, which drives each of the four callers.
 
 ## 3. Page
 

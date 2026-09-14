@@ -37,7 +37,7 @@ Portaliq SHALL declare `geo-db` and `oidc` in `lib/Settings/connections.json` in
 When a settings save writes `traffic_geo`, portaliq SHALL send `ConnectionRefreshRequestedEvent` with app `portaliq` and key `geo-db`, and SHALL send it before the report for that key (hydra REQ-CONN-004, hydra#674). The report SHALL say `unconfigured` for provider `none`, for MaxMind without an account id or licence key, and for a missing database; `limited` when the installed database came from the other provider; and `configured` otherwise. A refresh SHALL report `refreshed` as `configured`, `failed` as `error` and `disabled` as `unconfigured`. A database file that cannot be opened SHALL report `error` without its path, at most once per throttle window. Both events SHALL be named by string and sent only when the class exists, and neither SHALL change the response of the request, job or command that sent it.
 
 #### Scenario: Saving geography settings refreshes, then reports
-@e2e exclude The event is not observable from a browser; tests/Unit/Service/Connection/ConnectionReporterTest.php and tests/Unit/Service/SettingsServiceConnectionRefreshTest.php assert the order and the unchanged response.
+@e2e exclude The event is not observable from a browser; tests/Unit/Service/Connection/ConnectionReporterTest.php and tests/Unit/Service/Connection/ConnectionReportCallersTest.php assert the order and the unchanged response.
 
 - **GIVEN** integriq is installed
 - **WHEN** an admin saves the geography settings with provider `none`
@@ -45,7 +45,7 @@ When a settings save writes `traffic_geo`, portaliq SHALL send `ConnectionRefres
 - **AND** then a report `unconfigured` saying geography is switched off
 
 #### Scenario: A failed refresh reads error
-@e2e exclude A refresh downloads from DB-IP or MaxMind, which the CI instance does not reach; tests/Unit/Service/Connection/ConnectionReporterTest.php and tests/Unit/Service/Traffic/Geo/GeoRefreshConnectionReportTest.php drive the outcomes.
+@e2e exclude A refresh downloads from DB-IP or MaxMind, which the CI instance does not reach; tests/Unit/Service/Connection/ConnectionReporterTest.php and tests/Unit/Service/Connection/ConnectionReportCallersTest.php drive the outcomes.
 
 - **GIVEN** provider `dbip`
 - **WHEN** the refresh job cannot download the database
@@ -64,7 +64,7 @@ When a settings save writes `traffic_geo`, portaliq SHALL send `ConnectionRefres
 A discovery request that fails, and a code exchange, SHALL report the `oidc` row from what the broker answered. A token response SHALL read `configured`. No answer, a 5xx, a refused client and a response without the needed endpoints or token SHALL read `error`, naming the broker by host only. Any other 4xx SHALL report nothing. A report from these calls SHALL go out only when the last report for the key is an hour old with the same status, or five minutes old with a different one. No visitor request SHALL send more than one report per window.
 
 #### Scenario: A broker that stops answering reads error
-@e2e exclude A real broker login needs a DigiD, eHerkenning or OIDC test broker, which the CI instance does not have; tests/Unit/Service/OidcClientConnectionReportTest.php and tests/Unit/Service/Connection/ConnectionReporterTest.php cover it.
+@e2e exclude A real broker login needs a DigiD, eHerkenning or OIDC test broker, which the CI instance does not have; tests/Unit/Service/Connection/ConnectionReportCallersTest.php and tests/Unit/Service/Connection/ConnectionReporterTest.php cover it.
 
 - **GIVEN** an organisation with a configured broker
 - **WHEN** the broker's discovery request times out
