@@ -11,14 +11,24 @@ SPDX-PackageDownloadLocation = "https://github.com/ConductionNL/portaliq"
 # source files that have no docblock to carry it, plus a fallback for any
 # PHP file that has not yet had its SPDX header added.
 #
-# WHY EVERY ENTRY CARRIES `precedence` (added 2026-09-11). Without it, a
-# REUSE.toml entry silently overrules a header the file itself carries, so a
-# third-party file that states its own licence would be re-labelled as ours.
-# `precedence = "closest"` means the file's own header wins and the entry only
-# fills files that have none; `precedence = "override"` is the deliberate
-# opposite, used below only where we assert provenance the file cannot state
-# itself (binary fonts, a binary test fixture). Same model as
-# @conduction/nextcloud-vue's REUSE.toml.
+# WHY EVERY ENTRY CARRIES `precedence` (added 2026-09-11, corrected 2026-09-14).
+#
+# This comment used to say that without `precedence` a REUSE.toml entry
+# silently overrules a header the file itself carries. That is not true, and it
+# is worth stating plainly because the next person will reason from these lines.
+# `closest` is the DEFAULT in REUSE 3.3 -- a file's own header (or its .license
+# companion) already wins over any table here. The seven `closest` keys below
+# are therefore no-ops that state the intent explicitly; removing all seven
+# leaves `reuse lint --json` byte-identical, which is how this was checked.
+#
+# `override` is the real switch: it discards whatever the file itself says. So
+# every override in this file is a provenance claim that has to be verified
+# against upstream before it is written -- and one of them was wrong on the
+# first attempt (see the MaxMind block). Treat them as the load-bearing lines
+# they are, not as bookkeeping.
+#
+# Same model as @conduction/nextcloud-vue's REUSE.toml, which documents this
+# correctly, and as keepiq's, which uses the `path = "**"` blanket shape.
 
 # ---------------------------------------------------------------------------
 # First-party source.
@@ -70,9 +80,12 @@ SPDX-License-Identifier = "CC0-1.0"
 # Repository plumbing that carries no comment syntax of its own: dotfiles,
 # tool baselines, the Makefile, CODEOWNERS, the docs site's CNAME. Same CC0
 # treatment as the config block above — none of this is creative work.
+#
+# `.editorconfig` is deliberately NOT in this list: it carries a Nextcloud
+# AGPL-3.0-or-later header of its own and resolves correctly without us. An
+# entry here would be a dead line that still reads as a claim.
 [[annotations]]
 path = [
-    ".editorconfig",
     ".gitattributes",
     ".gitignore",
     ".git-blame-ignore-revs",
@@ -172,16 +185,15 @@ precedence = "closest"
 SPDX-FileCopyrightText = "2026 Conduction B.V. <info@conduction.nl>"
 SPDX-License-Identifier = "EUPL-1.2"
 
-# The 309 `*.LICENSE.txt` files are NOT ours and are not one licence either:
+# The 308 `*.LICENSE.txt` files are NOT ours and are not one licence either:
 # webpack wrote them by concatenating the licence banners of the third-party
 # packages inside each bundle. Claiming them as Conduction/EUPL-1.2 would
 # misrepresent every notice in them, so they carry a LicenseRef whose text
 # says what they are and leaves the rights with the upstream authors.
 [[annotations]]
-path = [
-    "woo/**/*.LICENSE.txt",
-    "woo/service-worker.js.LICENSE.txt",
-]
+# (`woo/**/*.LICENSE.txt` already covers woo/service-worker.js.LICENSE.txt at
+# depth 1 -- reuse translates `**/` so it can match zero path segments.)
+path = "woo/**/*.LICENSE.txt"
 precedence = "override"
 SPDX-FileCopyrightText = "the respective authors of the bundled third-party packages"
 SPDX-License-Identifier = "LicenseRef-third-party-notices"
