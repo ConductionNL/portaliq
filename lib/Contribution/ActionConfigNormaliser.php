@@ -60,6 +60,16 @@ class ActionConfigNormaliser {
 	 *                                              null reader means the guard
 	 *                                              always fails closed (drops
 	 *                                              `required`).
+	 * @param CitizenWriteConfigNormaliser|null $citizenWrite Sanitises the
+	 *                                                        per-action citizen
+	 *                                                        write declaration
+	 *                                                        (what-the-citizen-may-
+	 *                                                        write-on-their-own-case).
+	 *                                                        Optional so existing
+	 *                                                        construction sites keep
+	 *                                                        working; absent means the
+	 *                                                        key is dropped, which
+	 *                                                        closes the surface.
 	 *
 	 * @spec openspec/specs/supplier-portal/spec.md#form-data-minimisation-no-non-mandatory-field-may-be-required
 	 */
