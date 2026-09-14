@@ -107,7 +107,7 @@ class ConnectionReportCallersTest extends TestCase {
 	 * @return ConnectionReporter&MockObject
 	 */
 	private function reporter(string $method): ConnectionReporter&MockObject {
-		return $this->getMockBuilder(ConnectionReporter::class)
+		return $this->getMockBuilder(className: ConnectionReporter::class)
 			->disableOriginalConstructor()
 			->onlyMethods([$method])
 			->getMock();
@@ -122,7 +122,7 @@ class ConnectionReportCallersTest extends TestCase {
 	 */
 	private function settingsService(ConnectionReporter $reporter): SettingsService {
 		$stored    = [];
-		$appConfig = $this->createMock(IAppConfig::class);
+		$appConfig = $this->createMock(originalClassName: IAppConfig::class);
 		$appConfig->method('getValueString')->willReturnCallback(
 			static function (string $app, string $key, string $default = '') use (&$stored): string {
 				return ($stored[$key] ?? $default);
@@ -135,30 +135,30 @@ class ConnectionReportCallersTest extends TestCase {
 			}
 		);
 
-		$user = $this->createMock(IUser::class);
+		$user = $this->createMock(originalClassName: IUser::class);
 		$user->method('getUID')->willReturn('admin');
-		$session = $this->createMock(IUserSession::class);
+		$session = $this->createMock(originalClassName: IUserSession::class);
 		$session->method('getUser')->willReturn($user);
-		$groupManager = $this->createMock(IGroupManager::class);
+		$groupManager = $this->createMock(originalClassName: IGroupManager::class);
 		$groupManager->method('isAdmin')->willReturn(true);
 
-		$geoRefresh = $this->createMock(GeoRefreshService::class);
+		$geoRefresh = $this->createMock(originalClassName: GeoRefreshService::class);
 		$geoRefresh->method('status')->willReturn(['provider' => 'none', 'present' => false, 'path' => null, 'metadata' => []]);
 
-		$appManager = $this->createMock(IAppManager::class);
+		$appManager = $this->createMock(originalClassName: IAppManager::class);
 		$appManager->method('isInstalled')->willReturn(true);
 
 		return new SettingsService(
-			$appConfig,
-			$appManager,
-			$this->createMock(ContainerInterface::class),
-			$groupManager,
-			$session,
-			$this->createMock(LoggerInterface::class),
-			$this->createMock(PageEditorService::class),
-			new GeoSettings($appConfig),
-			$geoRefresh,
-			$reporter
+			appConfig: $appConfig,
+			appManager: $appManager,
+			container: $this->createMock(originalClassName: ContainerInterface::class),
+			groupManager: $groupManager,
+			userSession: $session,
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			pageEditor: $this->createMock(originalClassName: PageEditorService::class),
+			geoSettings: new GeoSettings(config: $appConfig),
+			geoRefresh: $geoRefresh,
+			connectionReporter: $reporter
 		);
 	}//end settingsService()
 
@@ -171,8 +171,11 @@ class ConnectionReportCallersTest extends TestCase {
 		$reporter = $this->reporter(method: 'geoSettingsSaved');
 		$reporter->expects($this->once())->method('geoSettingsSaved')
 			->with(
-				$this->callback(static fn (array $settings): bool => $settings['provider'] === 'none' && array_key_exists('maxmindLicenseKey', $settings) === false),
-				$this->callback(static fn (array $status): bool => $status['present'] === false)
+				$this->callback(
+					callback: static fn (array $settings): bool => $settings['provider'] === 'none'
+						&& array_key_exists('maxmindLicenseKey', $settings) === false
+				),
+				$this->callback(callback: static fn (array $status): bool => $status['present'] === false)
 			)
 			->willReturn(true);
 
@@ -199,7 +202,7 @@ class ConnectionReportCallersTest extends TestCase {
 	 * @return void
 	 */
 	public function testARefreshHandsItsResultToTheReporter(): void {
-		$settings = $this->createMock(GeoSettings::class);
+		$settings = $this->createMock(originalClassName: GeoSettings::class);
 		$settings->method('provider')->willReturn('none');
 
 		$reported = [];
@@ -212,15 +215,15 @@ class ConnectionReportCallersTest extends TestCase {
 		);
 
 		$service = new GeoRefreshService(
-			$settings,
-			$this->createMock(GeoDatabaseStore::class),
-			$this->createMock(DbIpLiteProvider::class),
-			$this->createMock(MaxMindProvider::class),
-			$this->createMock(ITempManager::class),
-			$this->createMock(IJobList::class),
-			$this->createMock(ITimeFactory::class),
-			$this->createMock(LoggerInterface::class),
-			$reporter
+			settings: $settings,
+			store: $this->createMock(originalClassName: GeoDatabaseStore::class),
+			dbip: $this->createMock(originalClassName: DbIpLiteProvider::class),
+			maxmind: $this->createMock(originalClassName: MaxMindProvider::class),
+			temp: $this->createMock(originalClassName: ITempManager::class),
+			jobs: $this->createMock(originalClassName: IJobList::class),
+			time: $this->createMock(originalClassName: ITimeFactory::class),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			connectionReporter: $reporter
 		);
 
 		$result = $service->refresh();
@@ -239,20 +242,20 @@ class ConnectionReportCallersTest extends TestCase {
 		$this->files[] = $path;
 		file_put_contents($path, 'this is not a MaxMind database');
 
-		$settings = $this->createMock(GeoSettings::class);
+		$settings = $this->createMock(originalClassName: GeoSettings::class);
 		$settings->method('provider')->willReturn('dbip');
-		$store = $this->createMock(GeoDatabaseStore::class);
+		$store = $this->createMock(originalClassName: GeoDatabaseStore::class);
 		$store->method('databasePath')->willReturn($path);
 
 		$reporter = $this->reporter(method: 'geoDatabaseUnreadable');
 		$reporter->expects($this->once())->method('geoDatabaseUnreadable')->willReturn(true);
 
 		$resolver = new MmdbGeoResolver(
-			$settings,
-			$store,
-			$this->createMock(GeoRefreshService::class),
-			$this->createMock(LoggerInterface::class),
-			$reporter
+			settings: $settings,
+			store: $store,
+			refresh: $this->createMock(originalClassName: GeoRefreshService::class),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			connectionReporter: $reporter
 		);
 
 		$this->assertNull(actual: $resolver->resolve(address: '81.2.69.142', granularity: 'country'));
@@ -270,7 +273,7 @@ class ConnectionReportCallersTest extends TestCase {
 	 * @return OidcClientService
 	 */
 	private function oidc(ConnectionReporter $reporter, ?callable $get = null, ?callable $post = null, ?array $cached = null): OidcClientService {
-		$client = $this->createMock(IClient::class);
+		$client = $this->createMock(originalClassName: IClient::class);
 		if ($get !== null) {
 			$client->method('get')->willReturnCallback($get);
 		}
@@ -279,15 +282,20 @@ class ConnectionReportCallersTest extends TestCase {
 			$client->method('post')->willReturnCallback($post);
 		}
 
-		$clientService = $this->createMock(IClientService::class);
+		$clientService = $this->createMock(originalClassName: IClientService::class);
 		$clientService->method('newClient')->willReturn($client);
 
-		$cache = $this->createMock(ICache::class);
+		$cache = $this->createMock(originalClassName: ICache::class);
 		$cache->method('get')->willReturn($cached);
-		$cacheFactory = $this->createMock(ICacheFactory::class);
+		$cacheFactory = $this->createMock(originalClassName: ICacheFactory::class);
 		$cacheFactory->method('createDistributed')->willReturn($cache);
 
-		return new OidcClientService($clientService, $cacheFactory, $this->createMock(LoggerInterface::class), $reporter);
+		return new OidcClientService(
+			clientService: $clientService,
+			cacheFactory: $cacheFactory,
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			connectionReporter: $reporter
+		);
 	}//end oidc()
 
 	/**
@@ -299,7 +307,7 @@ class ConnectionReportCallersTest extends TestCase {
 	 * @return IResponse
 	 */
 	private function response(int $status, string $body): IResponse {
-		$response = $this->createMock(IResponse::class);
+		$response = $this->createMock(originalClassName: IResponse::class);
 		$response->method('getStatusCode')->willReturn($status);
 		$response->method('getBody')->willReturn($body);
 
@@ -314,7 +322,7 @@ class ConnectionReportCallersTest extends TestCase {
 	public function testAFailedDiscoveryIsReported(): void {
 		$calls    = [];
 		$reporter = $this->reporter(method: 'oidcDiscoveryFailed');
-		$reporter->expects($this->exactly(2))->method('oidcDiscoveryFailed')->willReturnCallback(
+		$reporter->expects($this->exactly(count: 2))->method('oidcDiscoveryFailed')->willReturnCallback(
 			static function (string $issuer, bool $answered) use (&$calls): bool {
 				$calls[] = [$issuer, $answered];
 				return true;
@@ -324,7 +332,10 @@ class ConnectionReportCallersTest extends TestCase {
 		$down = $this->oidc(reporter: $reporter, get: static fn () => throw new RuntimeException('timed out'));
 		$this->assertNull(actual: $down->discover(issuer: self::ISSUER));
 
-		$partial = $this->oidc(reporter: $reporter, get: fn () => $this->response(status: 200, body: '{"authorization_endpoint": "https://idp.example/auth"}'));
+		$partial = $this->oidc(
+			reporter: $reporter,
+			get: fn () => $this->response(status: 200, body: '{"authorization_endpoint": "https://idp.example/auth"}')
+		);
 		$this->assertNull(actual: $partial->discover(issuer: self::ISSUER));
 
 		$this->assertSame(expected: [[self::ISSUER, false], [self::ISSUER, true]], actual: $calls);
@@ -351,7 +362,7 @@ class ConnectionReportCallersTest extends TestCase {
 	public function testTheCodeExchangeHandsTheAnswerToTheReporter(): void {
 		$calls    = [];
 		$reporter = $this->reporter(method: 'oidcExchangeAnswered');
-		$reporter->expects($this->exactly(3))->method('oidcExchangeAnswered')->willReturnCallback(
+		$reporter->expects($this->exactly(count: 3))->method('oidcExchangeAnswered')->willReturnCallback(
 			static function (string $tokenEndpoint, ?int $httpStatus, string $oauthError, bool $hasToken) use (&$calls): bool {
 				$calls[] = [$tokenEndpoint, $httpStatus, $oauthError, $hasToken];
 				return true;

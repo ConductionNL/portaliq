@@ -256,7 +256,9 @@ class ConnectionReporterTest extends TestCase {
 	 */
 	public function testARefreshReportsWithoutARefreshEvent(): void {
 		$this->assertTrue(
-			condition: $this->reporter()->geoRefreshed(result: ['status' => 'failed', 'provider' => 'dbip', 'message' => 'Refresh from dbip failed: no route.'])
+			condition: $this->reporter()->geoRefreshed(
+				result: ['status' => 'failed', 'provider' => 'dbip', 'message' => 'Refresh from dbip failed: no route.']
+			)
 		);
 
 		$this->assertSame(expected: ['report:geo-db:error'], actual: $this->sentSummary());

@@ -70,7 +70,11 @@ class ConnectionObservationsTest extends TestCase {
 	public function testMaxMindWithoutCredentialsIsNotConfigured(): void {
 		$observations = new ConnectionObservations();
 
-		foreach ([['maxmindAccountId' => '', 'maxmindLicenseKeySet' => true], ['maxmindAccountId' => '42', 'maxmindLicenseKeySet' => false]] as $credentials) {
+		$incomplete = [
+			['maxmindAccountId' => '', 'maxmindLicenseKeySet' => true],
+			['maxmindAccountId' => '42', 'maxmindLicenseKeySet' => false],
+		];
+		foreach ($incomplete as $credentials) {
 			[$status, $message] = $observations->geoSettings(
 				settings: ['provider' => 'maxmind'] + $credentials,
 				status: $this->installed(provider: 'maxmind')
@@ -195,7 +199,10 @@ class ConnectionObservationsTest extends TestCase {
 			expected: ['configured', 'The broker at idp.example answered the last code exchange.'],
 			actual: $observations->oidcExchange(tokenEndpoint: $endpoint, httpStatus: 200, oauthError: '', hasToken: true)
 		);
-		$this->assertSame(expected: 'error', actual: $observations->oidcExchange(tokenEndpoint: $endpoint, httpStatus: 200, oauthError: '', hasToken: false)[0]);
+		$this->assertSame(
+			expected: ['error', 'The broker at idp.example answered the last code exchange without an ID token.'],
+			actual: $observations->oidcExchange(tokenEndpoint: $endpoint, httpStatus: 200, oauthError: '', hasToken: false)
+		);
 		$this->assertSame(
 			expected: ['error', 'The broker at idp.example did not answer the last code exchange.'],
 			actual: $observations->oidcExchange(tokenEndpoint: $endpoint, httpStatus: null, oauthError: '', hasToken: false)
@@ -206,7 +213,12 @@ class ConnectionObservationsTest extends TestCase {
 		);
 
 		foreach ([[401, ''], [403, ''], [400, 'invalid_client'], [400, 'unauthorized_client']] as [$httpStatus, $oauthError]) {
-			[$status, $message] = $observations->oidcExchange(tokenEndpoint: $endpoint, httpStatus: $httpStatus, oauthError: $oauthError, hasToken: false);
+			[$status, $message] = $observations->oidcExchange(
+				tokenEndpoint: $endpoint,
+				httpStatus: $httpStatus,
+				oauthError: $oauthError,
+				hasToken: false
+			);
 			$this->assertSame(expected: 'error', actual: $status, message: $httpStatus . ' ' . $oauthError);
 			$this->assertStringContainsString(needle: 'client credentials', haystack: $message);
 		}
