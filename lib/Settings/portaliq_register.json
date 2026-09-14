@@ -4381,10 +4381,14 @@
                             "type": "object",
                             "properties": {
                                 "field": {
+                                    "title": "Field",
+                                    "description": "The field this flag belongs to, as the case schema names it.",
                                     "type": "string",
                                     "example": "omschrijving"
                                 },
                                 "audiences": {
+                                    "title": "Audiences",
+                                    "description": "The portal audiences the field is open to, such as `client`.",
                                     "type": "array",
                                     "items": {
                                         "type": "string"
@@ -4394,12 +4398,16 @@
                                     ]
                                 },
                                 "openStatuses": {
+                                    "title": "Open statuses",
+                                    "description": "The statuses the field stays open in. Absent means the amendment window decides.",
                                     "type": "array",
                                     "items": {
                                         "type": "string"
                                     }
                                 },
                                 "closedReason": {
+                                    "title": "Closed reason",
+                                    "description": "The sentence the citizen reads once this field is closed.",
                                     "type": "string",
                                     "example": "De aanvraag is in behandeling genomen."
                                 }
@@ -4412,6 +4420,8 @@
                         "description": "The statuses in which a citizen may still correct their answers, and the sentence shown once the window has closed. Absent means closed.",
                         "properties": {
                             "openStatuses": {
+                                "title": "Open statuses",
+                                "description": "The statuses in which a citizen may still correct their answers.",
                                 "type": "array",
                                 "items": {
                                     "type": "string"
@@ -4422,6 +4432,8 @@
                                 ]
                             },
                             "closedReason": {
+                                "title": "Closed reason",
+                                "description": "The sentence the citizen reads once the window has closed.",
                                 "type": "string",
                                 "example": "De aanvraag is in behandeling genomen."
                             }
@@ -4433,6 +4445,8 @@
                         "description": "The statuses in which a citizen may still add a document, and the sentence shown once that has closed. Absent means closed.",
                         "properties": {
                             "openStatuses": {
+                                "title": "Open statuses",
+                                "description": "The statuses in which a citizen may still add a document.",
                                 "type": "array",
                                 "items": {
                                     "type": "string"
@@ -4443,6 +4457,8 @@
                                 ]
                             },
                             "closedReason": {
+                                "title": "Closed reason",
+                                "description": "The sentence the citizen reads once the window has closed.",
                                 "type": "string",
                                 "example": "De zaak neemt geen stukken meer aan."
                             }
