@@ -278,6 +278,79 @@ class PortalTaskProxyControllerTest extends TestCase {
 	 * @param PortalTaskGateway $gateway The gateway mock.
 	 */
 	/**
+	 * A task is answered once. A second answer is refused with a sentence and
+	 * the answer already given, and the seam is never asked to complete it.
+	 *
+	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 */
+	public function testASecondAnswerIsRefusedWithASentence(): void {
+		$gateway = $this->createMock(PortalTaskGateway::class);
+		$gateway->method('getTask')->willReturn([
+			'status' => 200,
+			'body' => ['uuid' => 't-1', 'status' => 'completed', 'comment' => 'al gestuurd'],
+		]);
+		$gateway->expects($this->never())->method('completeTask');
+
+		$response = $this->controller(subject: self::SUBJECT, gateway: $gateway)->complete('t-1');
+
+		$this->assertSame(Http::STATUS_CONFLICT, $response->getStatus());
+		$this->assertSame('task-already-answered', $response->getData()['error']);
+		$this->assertNotSame('', $response->getData()['message']);
+		// The answer already given is handed back, so the citizen sees what
+		// they sent rather than only being told no.
+		$this->assertSame('al gestuurd', $response->getData()['task']['comment']);
+	}//end testASecondAnswerIsRefusedWithASentence()
+
+	/**
+	 * A CLIENT answering a task is a citizen write, so it raises the event a
+	 * rule can fire on. A partner answering its own task does not: that
+	 * audience is `partner-tasks-in-the-portal`, not this change.
+	 *
+	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 */
+	public function testAClientAnswerRaisesTheCitizenWriteEvent(): void {
+		foreach ([['client', 1], ['partner', 0]] as [$audience, $expected]) {
+			$gateway = $this->createMock(PortalTaskGateway::class);
+			$gateway->method('getTask')->willReturn(['status' => 200, 'body' => ['uuid' => 't-1']]);
+			$gateway->method('completeTask')->willReturn([
+				'status' => 200,
+				'body' => ['uuid' => 't-1', 'objectRegister' => 'zaken', 'objectSchema' => 'zaak', 'objectId' => 'zaak-1'],
+			]);
+
+			$recorder = $this->createMock(CitizenWriteRecorder::class);
+			$recorder->expects($this->exactly($expected))->method('announce');
+
+			$subject = self::SUBJECT;
+			$subject['audience'] = $audience;
+			$this->controllerWithRecorder(subject: $subject, gateway: $gateway, recorder: $recorder)->complete('t-1');
+		}
+	}//end testAClientAnswerRaisesTheCitizenWriteEvent()
+
+	/**
+	 * Build the proxy around a given recorder, so the announcement can be
+	 * counted.
+	 *
+	 * @param array<string, mixed>|null $subject The resolved subject.
+	 * @param PortalTaskGateway $gateway The gateway mock.
+	 * @param CitizenWriteRecorder $recorder The recorder mock.
+	 */
+	private function controllerWithRecorder(
+		?array $subject,
+		PortalTaskGateway $gateway,
+		CitizenWriteRecorder $recorder,
+	): PortalTaskProxyController {
+		$request = $this->createMock(IRequest::class);
+		$request->method('getHeader')->willReturn('Bearer token');
+		$request->method('getParam')->willReturn(null);
+		$request->method('getUploadedFile')->willReturn([]);
+
+		$session = $this->createMock(PortalSessionService::class);
+		$session->method('resolveFromBearer')->willReturn($subject);
+
+		return new PortalTaskProxyController($request, $session, $gateway, $recorder, $this->l10n());
+	}//end controllerWithRecorder()
+
+	/**
 	 * A recorder that records nothing: these tests are about the relay, and
 	 * the announcement has its own test.
 	 */

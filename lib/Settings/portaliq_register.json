@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.21.0"
+        "version": "0.22.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.21.0",
+                "version": "0.22.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -39,7 +39,9 @@
                     "portalTrafficEvent",
                     "portalTrafficRecording",
                     "form",
-                    "landingPageSubmission"
+                    "landingPageSubmission",
+                    "portalCaseType",
+                    "portalCase"
                 ]
             }
         },
@@ -4346,6 +4348,178 @@
                         "title": "Nonce",
                         "type": "string",
                         "description": "Server-generated (ISecureRandom), replay-resistance only — never client-supplied."
+                    }
+                }
+            },
+            "portalCaseType": {
+                "slug": "portalCaseType",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "icon": "FileTreeOutline",
+                "version": "0.1.0",
+                "title": "Portal Case Type",
+                "description": "What a citizen may change on a case of this type, and until when. The flag lives on the field, so `portalWritable` carries one entry per field; the two windows say in which statuses an amendment and a document are still accepted; `portalStatusLabels` carries the words the citizen reads. A case app owns all four and the portal renders them without adding a vocabulary of its own.",
+                "type": "object",
+                "required": [
+                    "title"
+                ],
+                "properties": {
+                    "title": {
+                        "title": "Title",
+                        "type": "string",
+                        "description": "The case type's name.",
+                        "example": "Aanvraag omgevingsvergunning"
+                    },
+                    "portalWritable": {
+                        "title": "Portal writable fields",
+                        "type": "array",
+                        "description": "One entry per field a portal audience may change. `field` names the field, `audiences` the audiences it is open to, `openStatuses` the statuses it stays open in (absent means the amendment window decides), and `closedReason` the sentence the citizen reads when it is closed.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "field": {
+                                    "type": "string",
+                                    "example": "omschrijving"
+                                },
+                                "audiences": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "example": [
+                                        "client"
+                                    ]
+                                },
+                                "openStatuses": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "closedReason": {
+                                    "type": "string",
+                                    "example": "De aanvraag is in behandeling genomen."
+                                }
+                            }
+                        }
+                    },
+                    "portalAmendmentWindow": {
+                        "title": "Amendment window",
+                        "type": "object",
+                        "description": "The statuses in which a citizen may still correct their answers, and the sentence shown once the window has closed. Absent means closed.",
+                        "properties": {
+                            "openStatuses": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "example": [
+                                    "ontvangen",
+                                    "aanvullen"
+                                ]
+                            },
+                            "closedReason": {
+                                "type": "string",
+                                "example": "De aanvraag is in behandeling genomen."
+                            }
+                        }
+                    },
+                    "portalDocumentWindow": {
+                        "title": "Document window",
+                        "type": "object",
+                        "description": "The statuses in which a citizen may still add a document, and the sentence shown once that has closed. Absent means closed.",
+                        "properties": {
+                            "openStatuses": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "example": [
+                                    "ontvangen",
+                                    "aanvullen"
+                                ]
+                            },
+                            "closedReason": {
+                                "type": "string",
+                                "example": "De zaak neemt geen stukken meer aan."
+                            }
+                        }
+                    },
+                    "portalStatusLabels": {
+                        "title": "Public status labels",
+                        "type": "object",
+                        "description": "The public label and description per status, keyed by the status value. The portal renders these unchanged and invents nothing when a status carries none."
+                    }
+                }
+            },
+            "portalCase": {
+                "slug": "portalCase",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "icon": "FolderOutline",
+                "version": "0.1.0",
+                "title": "Portal Case",
+                "description": "A citizen's own case as the portal sees it: scoped by subjectRef, pointing at its case type, carrying its status and the answers the citizen gave. `portalWrites` is the append-only record of what the citizen changed, naming the identity and the mandate each change acted under.",
+                "type": "object",
+                "required": [
+                    "subjectRef"
+                ],
+                "properties": {
+                    "subjectRef": {
+                        "title": "Subject reference",
+                        "type": "string",
+                        "description": "The citizen the case belongs to; the field the case is scoped on.",
+                        "example": "dev-client"
+                    },
+                    "organisation": {
+                        "title": "Organisation",
+                        "type": "string",
+                        "description": "The tenant this case belongs to.",
+                        "example": "dev-org"
+                    },
+                    "caseType": {
+                        "title": "Case type",
+                        "type": "string",
+                        "description": "The portalCaseType this case is of.",
+                        "example": "aanvraag-omgevingsvergunning"
+                    },
+                    "reference": {
+                        "title": "Reference",
+                        "type": "string",
+                        "description": "The case number the citizen quotes.",
+                        "example": "Z-2026-0001"
+                    },
+                    "status": {
+                        "title": "Status",
+                        "type": "string",
+                        "description": "The case's current status; the case type says what a citizen may change in it.",
+                        "example": "ontvangen"
+                    },
+                    "omschrijving": {
+                        "title": "Omschrijving",
+                        "type": "string",
+                        "description": "What the citizen asked for.",
+                        "example": "Een dakkapel aan de achterzijde"
+                    },
+                    "toelichting": {
+                        "title": "Toelichting",
+                        "type": "string",
+                        "description": "The citizen's explanation.",
+                        "example": "De dakkapel komt op de eerste verdieping."
+                    },
+                    "portalWrites": {
+                        "title": "Portal writes",
+                        "type": "array",
+                        "description": "Append-only record of every change the citizen made through the portal: the act, the identity, the mandate, both answers and the time.",
+                        "items": {
+                            "type": "object"
+                        }
                     }
                 }
             }
