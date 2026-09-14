@@ -12,12 +12,13 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\BackgroundJob;
 
 use OCA\Portaliq\BackgroundJob\PortalTaskDeliveryJob;
+use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCP\AppFramework\Utility\ITimeFactory;
-use OCP\IURLGenerator;
 use OCP\IL10N;
+use OCP\IURLGenerator;
 use OCP\L10N\IFactory;
 use OCP\Mail\IMailer;
 use OCP\Mail\IMessage;
@@ -139,6 +140,7 @@ class FakeLedger {
  * its reason and NEVER blocks the remaining rows or escapes to cron.
  *
  * @covers \OCA\Portaliq\BackgroundJob\PortalTaskDeliveryJob
+ * @uses \OCA\Portaliq\Service\PortalDeepLinkBuilder
  *
  * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-delivery-worker-settles-every-ledger-row-idempotently-and-in-isolation
  */
@@ -338,7 +340,7 @@ class PortalTaskDeliveryJobTest extends TestCase {
 
 		$this->assertSame(['d-1'], $ledger->delivered);
 		$this->assertSame(['resident@example.org'], $bodies['to']);
-		$this->assertStringContainsString('https://cloud.example/portal?org=org-1', $bodies['body']);
+		$this->assertStringContainsString('https://cloud.example/index.php/apps/portaliq/portal?org=org-1', $bodies['body']);
 		// Privacy-minimal by construction: no task or case content in the mail.
 		$this->assertStringNotContainsString('Stuur uw bewijsstuk', $bodies['subject'] . $bodies['body']);
 		$this->assertStringNotContainsString('document van u nodig', $bodies['body']);
@@ -485,7 +487,7 @@ class PortalTaskDeliveryJobTest extends TestCase {
 			$this->createMock(PortalOrganisationConfigService::class),
 			$this->createMock(IMailer::class),
 			$this->createMock(IFactory::class),
-			$this->createMock(IURLGenerator::class),
+			$this->deepLinks(),
 			$this->createMock(LoggerInterface::class)
 		);
 		$run = new ReflectionMethod($job, 'run');
@@ -497,6 +499,31 @@ class PortalTaskDeliveryJobTest extends TestCase {
 	/**
 	 * A shared ITimeFactory mock.
 	 */
+	/**
+	 * The REAL deep-link builder over a route table rendered the way Nextcloud
+	 * renders it without pretty URLs (`/index.php` in front) — the case the old
+	 * `getAbsoluteURL('/portal')` got wrong, leaving the mail's only link a 404
+	 * on every deployment (WOO-570).
+	 */
+	private function deepLinks(): PortalDeepLinkBuilder {
+		$urlGenerator = $this->createMock(IURLGenerator::class);
+		$urlGenerator->method('linkToRoute')->willReturnCallback(
+			static function (string $route, array $arguments = []): string {
+				$path = '/index.php/apps/portaliq/portal';
+				if ($route !== 'portaliq.portalPage.index' || $arguments === []) {
+					return $path;
+				}
+
+				return $path . '?' . http_build_query($arguments);
+			}
+		);
+		$urlGenerator->method('getAbsoluteURL')->willReturnCallback(
+			static fn (string $path) => 'https://cloud.example' . $path
+		);
+
+		return new PortalDeepLinkBuilder($urlGenerator);
+	}//end deepLinks()
+
 	private function timeFactory(): ITimeFactory {
 		$time = $this->createMock(ITimeFactory::class);
 		$time->method('getDateTime')->willReturn(new \DateTime('2026-09-01T10:00:00+00:00'));
@@ -541,11 +568,6 @@ class PortalTaskDeliveryJobTest extends TestCase {
 		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
 		$orgConfig->method('resolve')->willReturn(['organisationName' => 'Gemeente Test']);
 
-		$urlGenerator = $this->createMock(IURLGenerator::class);
-		$urlGenerator->method('getAbsoluteURL')->willReturnCallback(
-			static fn (string $path) => 'https://cloud.example' . $path
-		);
-
 		$job = new PortalTaskDeliveryJob(
 			$time,
 			$container,
@@ -554,7 +576,7 @@ class PortalTaskDeliveryJobTest extends TestCase {
 			$orgConfig,
 			$mailer ?? $this->createMock(IMailer::class),
 			$l10nFactory,
-			$urlGenerator,
+			$this->deepLinks(),
 			$this->createMock(LoggerInterface::class)
 		);
 

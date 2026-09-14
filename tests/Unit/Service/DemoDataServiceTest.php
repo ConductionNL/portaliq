@@ -3,6 +3,7 @@
 namespace Unit\Service;
 
 use OCA\Portaliq\Service\DemoDataService;
+use OCA\Portaliq\Service\PortalRegisterContext;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -48,11 +49,14 @@ class DemoDataServiceTest extends TestCase {
 		return $this->appPath . '/lib/Settings/portaliq_mock_register.json';
 	}
 
+	private ?PortalRegisterContext $registerContext = null;
+
 	private function service(): DemoDataService {
 		return new DemoDataService(
 			$this->appManager,
 			$this->container,
-			$this->createMock(LoggerInterface::class)
+			$this->createMock(LoggerInterface::class),
+			$this->registerContext ?? $this->createMock(PortalRegisterContext::class)
 		);
 	}
 
@@ -158,7 +162,7 @@ class DemoDataServiceTest extends TestCase {
 		$this->service()->install();
 	}
 
-	public function testInstallCountsTheObjectsInTheFileNotTheImportersReply(): void {
+	public function testInstallReportsWhatLandedNotWhatWasAskedFor(): void {
 		file_put_contents(
 			$this->descriptor(),
 			json_encode(['components' => ['objects' => [['a' => 1], ['b' => 2], ['c' => 3]]]])
@@ -174,16 +178,25 @@ class DemoDataServiceTest extends TestCase {
 				$this->seen = ['appId' => $appId, 'version' => $version, 'force' => $force];
 
 				// Deliberately reports FEWER than the file holds: an object whose
-				// schema does not resolve is skipped, and the operator is told
-				// what was ASKED FOR so the discrepancy stays visible.
-				return ['registers' => [1], 'schemas' => [1, 1]];
+				// schema does not resolve is SKIPPED, not errored. The operator
+				// must be told what landed and what did not — the file's count
+				// alone read "Imported 39" over a run that seeded nothing
+				// visible (WOO-558).
+				return [
+					'registers' => [1],
+					'schemas'   => [1, 1],
+					'objects'   => [['id' => 'x'], ['id' => 'y']],
+					'skipped'   => ['objects' => 1],
+				];
 			}
 		};
 		$this->container->method('get')->willReturn($importer);
 
 		$result = $this->service()->install();
 
-		$this->assertSame(3, $result['objects']);
+		$this->assertSame(2, $result['objects']);
+		$this->assertSame(3, $result['declared']);
+		$this->assertSame(1, $result['skipped']);
 		$this->assertSame(1, $result['registers']);
 		$this->assertSame(2, $result['schemas']);
 
@@ -191,5 +204,243 @@ class DemoDataServiceTest extends TestCase {
 		// masked by — a pending real configuration update.
 		$this->assertSame('portaliq.demo', $importer->seen['appId']);
 		$this->assertTrue($importer->seen['force']);
+	}
+
+	public function testAnObjectTheImporterDroppedUncountedIsStillReportedAsSkipped(): void {
+		// OpenRegister drops an object whose register or schema it cannot find
+		// BEFORE its counted skip path, so its own `skipped` says 0 while the
+		// object never landed. The gap between declared and landed is the
+		// number the operator needs.
+		file_put_contents(
+			$this->descriptor(),
+			json_encode(['components' => ['objects' => [['a' => 1], ['b' => 2], ['c' => 3], ['d' => 4]]]])
+		);
+		$importer = new class {
+			public function importFromApp(string $appId, array $data, string $version, bool $force): array {
+				return ['objects' => [['id' => 'x']], 'skipped' => ['objects' => 0]];
+			}
+		};
+		$this->container->method('get')->willReturn($importer);
+
+		$result = $this->service()->install();
+
+		$this->assertSame(1, $result['objects']);
+		$this->assertSame(3, $result['skipped']);
+	}
+
+	public function testARerunThatLeavesEveryObjectAloneStillCountsAsLanded(): void {
+		// Newer OpenRegister reports an object it found already present and
+		// identical under `unchanged` rather than `objects`. That is landed data;
+		// a second click on "Run" must not turn into a failure.
+		file_put_contents($this->descriptor(), json_encode(['components' => ['objects' => [['a' => 1], ['b' => 2]]]]));
+		$importer = new class {
+			public function importFromApp(string $appId, array $data, string $version, bool $force): array {
+				return ['objects' => [], 'unchanged' => ['objects' => 2], 'skipped' => ['objects' => 0]];
+			}
+		};
+		$this->container->method('get')->willReturn($importer);
+
+		$result = $this->service()->install();
+
+		$this->assertSame(2, $result['objects']);
+		$this->assertSame(0, $result['skipped']);
+	}
+
+	public function testARerunOnASeededInstanceIsNotAFailure(): void {
+		// 🔴 THE REAL RESULT SHAPE OF A NO-OP RUN. OpenRegister (before
+		// d1af968b7) skips an object that already exists at the same version
+		// with a bare `continue`: `objects` is empty, there is no `unchanged`
+		// key and `skipped.objects` is 0. Reproduced on the WOO-556 instance:
+		// the second click on "Run" answered a 500 over 88 present objects.
+		// The presence count is what tells "already there" from "nothing".
+		file_put_contents(
+			$this->descriptor(),
+			json_encode(['components' => ['objects' => [
+				['@self' => ['register' => 'portaliq', 'schema' => 'page']],
+				['@self' => ['register' => 'portaliq', 'schema' => 'page']],
+				['@self' => ['register' => 'portaliq', 'schema' => 'menu']],
+			]]])
+		);
+		$importer = new class {
+			public array $counted = [];
+
+			public function importFromApp(string $appId, array $data, string $version, bool $force): array {
+				return ['registers' => [1], 'schemas' => [], 'objects' => [], 'skipped' => ['objects' => 0]];
+			}
+
+			public function count(array $config = []): int {
+				return 44;
+			}
+		};
+		$this->container->method('get')->willReturn($importer);
+		$this->registerContext = $this->createMock(PortalRegisterContext::class);
+		$this->registerContext->expects($this->exactly(2))->method('apply')->willReturn(true);
+
+		$result = $this->service()->install();
+
+		$this->assertSame(0, $result['objects']);
+		$this->assertSame(3, $result['declared']);
+		$this->assertSame(88, $result['present']);
+	}
+
+	public function testAnUnreachableObjectServiceReadsAsNothingPresent(): void {
+		// Fail-soft in the "nothing there" direction: when OpenRegister's
+		// ObjectService cannot even be resolved, the presence probe must not
+		// add a second exception on top of the import — it reports 0 and the
+		// existing loud failure path decides.
+		file_put_contents(
+			$this->descriptor(),
+			json_encode(['components' => ['objects' => [['@self' => ['register' => 'portaliq', 'schema' => 'page']]]]])
+		);
+		$importer = new class {
+			public function importFromApp(string $appId, array $data, string $version, bool $force): array {
+				return ['registers' => [1], 'objects' => [], 'skipped' => ['objects' => 0]];
+			}
+		};
+		$calls = 0;
+		$this->container->method('get')->willReturnCallback(
+			static function (string $id) use ($importer, &$calls) {
+				$calls++;
+				if ($calls === 1) {
+					return $importer;
+				}
+
+				throw new RuntimeException('ObjectService is not registered');
+			}
+		);
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessageMatches('/imported none of them and the demo schemas hold no objects/');
+
+		$this->service()->install();
+	}
+
+	public function testASchemaThisAppDoesNotOwnIsSkippedInThePresenceCount(): void {
+		// PortalRegisterContext::apply() answers false for a slug portaliq does
+		// not own; that schema is skipped (never counted against another app's
+		// rows) and the owned schema still decides.
+		file_put_contents(
+			$this->descriptor(),
+			json_encode(['components' => ['objects' => [
+				['@self' => ['register' => 'portaliq', 'schema' => 'foreign']],
+				['@self' => ['register' => 'portaliq', 'schema' => 'page']],
+			]]])
+		);
+		$importer = new class {
+			public function importFromApp(string $appId, array $data, string $version, bool $force): array {
+				return ['registers' => [1], 'objects' => [], 'skipped' => ['objects' => 0]];
+			}
+
+			public function count(array $config = []): int {
+				return 7;
+			}
+		};
+		$this->container->method('get')->willReturn($importer);
+		$this->registerContext = $this->createMock(PortalRegisterContext::class);
+		$this->registerContext->method('apply')->willReturnCallback(
+			static fn (object $objectService, string $schemaSlug): bool => $schemaSlug === 'page'
+		);
+
+		$this->assertSame(7, $this->service()->install()['present']);
+	}
+
+	public function testACountThatFailsForOneSchemaDoesNotHideTheOthers(): void {
+		// One schema whose count throws is logged and skipped; the other
+		// schema's count still decides the outcome.
+		file_put_contents(
+			$this->descriptor(),
+			json_encode(['components' => ['objects' => [
+				['@self' => ['register' => 'portaliq', 'schema' => 'page']],
+				['@self' => ['register' => 'portaliq', 'schema' => 'menu']],
+			]]])
+		);
+		$importer = new class {
+			public int $counts = 0;
+
+			public function importFromApp(string $appId, array $data, string $version, bool $force): array {
+				return ['registers' => [1], 'objects' => [], 'skipped' => ['objects' => 0]];
+			}
+
+			public function count(array $config = []): int {
+				$this->counts++;
+				if ($this->counts === 1) {
+					throw new RuntimeException('table missing');
+				}
+
+				return 5;
+			}
+		};
+		$this->container->method('get')->willReturn($importer);
+		$this->registerContext = $this->createMock(PortalRegisterContext::class);
+		$this->registerContext->method('apply')->willReturn(true);
+
+		$result = $this->service()->install();
+
+		$this->assertSame(5, $result['present']);
+		$this->assertSame(0, $result['objects']);
+	}
+
+	public function testInstallThrowsWhenADescriptorThatDeclaresObjectsSeedsNone(): void {
+		// 🔴 "IMPORTED 39" OVER AN EMPTY RESULT IS THE BUG. When every object was
+		// skipped the operator asked for demo data and got none: that is a
+		// failure to report, not a success with a footnote. Same rule as
+		// OpenRegister's own RegisterDescriptorService::reimport().
+		file_put_contents(
+			$this->descriptor(),
+			json_encode(['components' => ['objects' => [['a' => 1], ['b' => 2], ['c' => 3]]]])
+		);
+		$importer = new class {
+			public function importFromApp(string $appId, array $data, string $version, bool $force): array {
+				return ['registers' => [1], 'schemas' => [], 'objects' => [], 'skipped' => ['objects' => 3]];
+			}
+		};
+		$this->container->method('get')->willReturn($importer);
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessageMatches('/declares 3 object\(s\) but OpenRegister imported none/');
+
+		$this->service()->install();
+	}
+
+	public function testADescriptorWithoutObjectsMayLandNothingWithoutFailing(): void {
+		// Zero declared, zero landed is a no-op, not a broken import.
+		file_put_contents($this->descriptor(), json_encode(['components' => ['objects' => []]]));
+		$importer = new class {
+			public function importFromApp(string $appId, array $data, string $version, bool $force): array {
+				return ['registers' => [1], 'objects' => []];
+			}
+		};
+		$this->container->method('get')->willReturn($importer);
+
+		$this->assertSame(0, $this->service()->install()['objects']);
+	}
+
+	public function testTheShippedDescriptorDeclaresTheRealRegisterAndNoSchemaBlock(): void {
+		// 🔴 THE MOCK MUST NOT CARRY ITS OWN SCHEMA DEFINITIONS. Imported under
+		// this service's own configuration identity, OpenRegister resolves such
+		// copies per APPLICATION and creates a second schema set next to the
+		// real one; the objects then land where no register links them
+		// (WOO-556 B3 / WOO-558: schemas 80-92 beside 67-79, 30 objects
+		// invisible). The generator (hydra-gates generate_mock_register.py)
+		// emits registers + objects only; this pins that shape in the repo.
+		$settings = dirname(__DIR__, 3) . '/lib/Settings';
+		$mock     = json_decode((string)file_get_contents($settings . '/portaliq_mock_register.json'), true);
+		$real     = json_decode((string)file_get_contents($settings . '/portaliq_register.json'), true);
+
+		$this->assertSame('mock', $mock['x-openregister']['type']);
+		$this->assertArrayNotHasKey('schemas', $mock['components']);
+		$this->assertArrayHasKey('objects', $mock['components']);
+		$this->assertNotSame([], $mock['components']['objects']);
+
+		// Every object targets the REAL register (same slug) and a schema the
+		// real descriptor defines, so resolution by slug lands on the installed
+		// set instead of skipping the object.
+		$realSlug    = array_key_first($real['components']['registers']);
+		$realSchemas = array_keys($real['components']['schemas']);
+		$this->assertSame([$realSlug], array_keys($mock['components']['registers']));
+		foreach ($mock['components']['objects'] as $object) {
+			$this->assertSame($realSlug, $object['@self']['register']);
+			$this->assertContains($object['@self']['schema'], $realSchemas);
+		}
 	}
 }
