@@ -134,6 +134,50 @@ class PortalAccountService {
 	}//end findOrCreate()
 
 	/**
+	 * The account a `subjectRef` belongs to, or null.
+	 *
+	 * Used by the `nextcloud` sign-in mode, where the Nextcloud user id IS the
+	 * subjectRef. It looks up rather than creates on purpose: minting an
+	 * account here would make every user on the instance a citizen of every
+	 * portal that enables the mode.
+	 *
+	 * @param string $subjectRef The subject reference to look up.
+	 *
+	 * @return array<string, mixed>|null The account, or null when there is none.
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portal-must-offer-only-the-sign-in-routes-it-declares
+	 */
+	public function findBySubjectRef(string $subjectRef): ?array {
+		if ($subjectRef === '') {
+			return null;
+		}
+
+		$rows = $this->reader->readCollection(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: 'subjectRef',
+			subjectRef: $subjectRef,
+			// No organisation filter: a subjectRef is unique across the
+			// instance, and requiring the caller to know the tenant first
+			// would mean guessing it at the one moment nothing is known yet.
+			organisation: '',
+			limit: 5
+		);
+
+		foreach ($rows as $row) {
+			// The scope filter is trusted for the query, not for the answer: a
+			// reader that ignored `scopeField` would otherwise hand back the
+			// first account on the instance and this method would sign the
+			// visitor in as somebody else.
+			if (($row['subjectRef'] ?? '') === $subjectRef) {
+				return $row;
+			}
+		}
+
+		return null;
+	}//end findBySubjectRef()
+
+	/**
 	 * Find the existing `portalAccount` for `(identityType, identityRef,
 	 * organisation)`, re-verified in-memory against ALL three fields — the
 	 * OR query only narrows on `identityRef` (+ `identityType` filter);
