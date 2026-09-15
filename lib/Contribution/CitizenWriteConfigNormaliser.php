@@ -87,7 +87,12 @@ class CitizenWriteConfigNormaliser {
 			return $action;
 		}
 
-		$action[self::KEY] = ($config + $this->defaultedKeys(declared: $declared));
+		// array_merge, NOT `+`. The two are identical while REQUIRED and DEFAULTS
+		// stay disjoint, which they are today -- but they differ in precedence,
+		// and the old single-loop form let a DEFAULTS key overwrite a REQUIRED
+		// one. `+` keeps the left side and would silently reverse that the day
+		// somebody gives one of the required keys a fallback.
+		$action[self::KEY] = array_merge($config, $this->defaultedKeys(declared: $declared));
 		return $action;
 	}//end normaliseAction()
 

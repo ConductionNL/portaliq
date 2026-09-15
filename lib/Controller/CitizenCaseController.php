@@ -65,9 +65,16 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
  *
- * @SuppressWarnings(PHPMD.StaticAccess)             -- PortalSessionService::trustSatisfies
+ * @SuppressWarnings(PHPMD.StaticAccess)             -- two reasons, both named
+ * so this suppression cannot quietly widen. PortalSessionService::trustSatisfies
  * is the single trust comparator across every portal handler; calling it
- * statically is what keeps the ordering from forking.
+ * statically is what keeps the ordering from forking. CitizenDocumentUpload::read
+ * and ::uniqueName are static because they are pure functions of their
+ * arguments once the uploaded-file array and the existing file list are passed
+ * in; they live outside this class to keep it under the phpmd class-complexity
+ * threshold, and injecting them would have added a thirteenth constructor
+ * dependency for no gain. Weigh the next static call against those two reasons
+ * rather than against the suppression's mere presence.
  * @SuppressWarnings(PHPMD.ExcessiveParameterList)   -- one dependency per
  * distinct scoped capability (read/write/file/resolve/record/throttle),
  * ADR-022; a facade would hide which boundary each act crosses.
