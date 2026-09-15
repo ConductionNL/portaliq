@@ -87,11 +87,13 @@ class CitizenWriteConfigNormaliser {
 			return $action;
 		}
 
-		// array_merge, NOT `+`. The two are identical while REQUIRED and DEFAULTS
-		// stay disjoint, which they are today -- but they differ in precedence,
-		// and the old single-loop form let a DEFAULTS key overwrite a REQUIRED
-		// one. `+` keeps the left side and would silently reverse that the day
-		// somebody gives one of the required keys a fallback.
+		// Deliberately array_merge and not `+`. They agree while REQUIRED and
+		// DEFAULTS stay disjoint, which they are today, but they disagree on
+		// precedence: the original single-loop form let a DEFAULTS key
+		// overwrite a REQUIRED one, and `+` keeps the left side instead. That
+		// difference is invisible here and would only surface the day somebody
+		// gives one of the required keys a fallback, at which point the
+		// default would silently never apply.
 		$action[self::KEY] = array_merge($config, $this->defaultedKeys(declared: $declared));
 		return $action;
 	}//end normaliseAction()
