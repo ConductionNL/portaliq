@@ -46,7 +46,8 @@ const ADMIN_PASS = process.env.ADMIN_PASSWORD ?? process.env.NC_ADMIN_PASS ?? 'a
 const APP = '/index.php/apps/portaliq'
 
 /** Integriq's objects endpoint for portaliq's connection rows. */
-const CONNECTIONS_API = '/index.php/apps/openregister/api/objects/integriq/app_connection?app=portaliq&_limit=50'
+const CONNECTIONS_API =
+	'/index.php/apps/openregister/api/objects/integriq/app_connection?app=portaliq&_limit=50'
 
 /** Portaliq's settings endpoint, admin only, which carries the geography block. */
 const SETTINGS_API = `${APP}/api/settings`
@@ -84,7 +85,9 @@ async function adminApi(): Promise<APIRequestContext> {
  * @param api An admin request context.
  * @return The rows by key.
  */
-async function rowsByKey(api: APIRequestContext): Promise<Record<string, Record<string, unknown>>> {
+async function rowsByKey(
+	api: APIRequestContext,
+): Promise<Record<string, Record<string, unknown>>> {
 	const res = await api.get(CONNECTIONS_API)
 	expect(res.ok(), `list integriq/app_connection -> ${res.status()}`).toBeTruthy()
 	const body = await res.json()
@@ -109,7 +112,9 @@ async function rowsByKey(api: APIRequestContext): Promise<Record<string, Record<
 async function geoRow(api: APIRequestContext): Promise<string> {
 	const list = await api.get(CONNECTIONS_API)
 	const rows = list.ok() ? ((await list.json()).results ?? []) : []
-	const row = rows.find((r: Record<string, unknown>) => r.key === 'geo-db' && r.app === 'portaliq')
+	const row = rows.find(
+		(r: Record<string, unknown>) => r.key === 'geo-db' && r.app === 'portaliq',
+	)
 	return `${String(row?.status ?? '')} ${String(row?.statusMessage ?? '')}`
 }
 
@@ -137,13 +142,21 @@ async function openIntegrations(page: Page): Promise<void> {
 }
 
 test.describe('Integrations over the connection registry', () => {
-	test('lists the two declared connections, all of them portaliq\'s', async ({ page }) => {
+	test("lists the two declared connections, all of them portaliq's", async ({
+		page,
+	}) => {
 		const api = await adminApi()
 		try {
 			const byKey = await rowsByKey(api)
-			expect(Object.keys(byKey).sort()).toEqual(DECLARED.map((d) => d.key).sort())
-			expect(String(byKey['geo-db']?.settingsUrl ?? '')).toBe('/settings/admin/portaliq#section-visitor-geography')
-			expect(String(byKey.oidc?.settingsUrl ?? '')).toBe('/settings/admin/portaliq#section-portal-auth-edge')
+			expect(Object.keys(byKey).sort()).toEqual(
+				DECLARED.map((d) => d.key).sort(),
+			)
+			expect(String(byKey['geo-db']?.settingsUrl ?? '')).toBe(
+				'/settings/admin/portaliq#section-visitor-geography',
+			)
+			expect(String(byKey.oidc?.settingsUrl ?? '')).toBe(
+				'/settings/admin/portaliq#section-portal-auth-edge',
+			)
 		} finally {
 			await api.dispose()
 		}
@@ -151,7 +164,9 @@ test.describe('Integrations over the connection registry', () => {
 		await loginAsAdmin(page)
 		await openIntegrations(page)
 		for (const { title } of DECLARED) {
-			await expect(page.getByRole('row', { name: new RegExp(title, 'i') })).toHaveCount(1)
+			await expect(
+				page.getByRole('row', { name: new RegExp(title, 'i') }),
+			).toHaveCount(1)
 		}
 	})
 
@@ -160,30 +175,45 @@ test.describe('Integrations over the connection registry', () => {
 		try {
 			const before = await api.get(SETTINGS_API)
 			expect(before.ok(), `settings read -> ${before.status()}`).toBeTruthy()
-			const previous = String((await before.json())?.traffic_geo?.provider ?? 'dbip')
-			test.skip(previous === 'none', 'This instance already runs without geography, so there is no change to observe.')
+			const previous = String(
+				(await before.json())?.traffic_geo?.provider ?? 'dbip',
+			)
+			test.skip(
+				previous === 'none',
+				'This instance already runs without geography, so there is no change to observe.',
+			)
 
 			try {
 				// The save sends ConnectionRefreshRequestedEvent, then a report
 				// that geography is switched off.
-				const saved = await api.put(SETTINGS_API, { data: { traffic_geo: { provider: 'none' } } })
+				const saved = await api.put(SETTINGS_API, {
+					data: { traffic_geo: { provider: 'none' } },
+				})
 				expect(saved.ok(), `settings save -> ${saved.status()}`).toBeTruthy()
 
 				await expect
 					.poll(() => geoRow(api), { timeout: 15_000 })
-					.toBe('unconfigured Geography is switched off. No database is fetched and no region is stored.')
+					.toBe(
+						'unconfigured Geography is switched off. No database is fetched and no region is stored.',
+					)
 			} finally {
 				// Put the VALUE back. The restore is a save too, so it refreshes the row again.
-				await api.put(SETTINGS_API, { data: { traffic_geo: { provider: previous } } })
+				await api.put(SETTINGS_API, {
+					data: { traffic_geo: { provider: previous } },
+				})
 			}
 
-			await expect.poll(() => geoRow(api), { timeout: 15_000 }).not.toMatch(/switched off/)
+			await expect
+				.poll(() => geoRow(api), { timeout: 15_000 })
+				.not.toMatch(/switched off/)
 		} finally {
 			await api.dispose()
 		}
 	})
 
-	test('sends Add integration to integriq instead of offering a form', async ({ page }) => {
+	test('sends Add integration to integriq instead of offering a form', async ({
+		page,
+	}) => {
 		await loginAsAdmin(page)
 		await openIntegrations(page)
 
@@ -194,8 +224,14 @@ test.describe('Integrations over the connection registry', () => {
 		// catalogues this change ships, and nothing forces the E2E locale.
 		await page.locator('[data-testid="cn-actions"] button').first().click()
 		await Promise.all([
-			page.waitForURL(/\/apps\/integriq\/connections\?app=portaliq&link=1$/, { timeout: 30_000 }),
-			page.getByRole('menuitem', { name: /Add integration|Integratie toevoegen/i }).click(),
+			page.waitForURL(/\/apps\/integriq\/connections\?app=portaliq&link=1$/, {
+				timeout: 30_000,
+			}),
+			page
+				.getByRole('menuitem', {
+					name: /Add integration|Integratie toevoegen/i,
+				})
+				.click(),
 		])
 	})
 })

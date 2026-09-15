@@ -41,6 +41,7 @@ use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\CitizenWriteConfigNormaliser;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Event\PortalClientWriteEvent;
+use OCA\Portaliq\Service\CitizenDocumentUpload;
 use OCA\Portaliq\Service\CitizenWritableSetResolver;
 use OCA\Portaliq\Service\CitizenWriteRecorder;
 use OCA\Portaliq\Service\CitizenWriteThrottle;
@@ -64,9 +65,16 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
  *
- * @SuppressWarnings(PHPMD.StaticAccess)             -- PortalSessionService::trustSatisfies
+ * @SuppressWarnings(PHPMD.StaticAccess)             -- two reasons, both named
+ * so this suppression cannot quietly widen. PortalSessionService::trustSatisfies
  * is the single trust comparator across every portal handler; calling it
- * statically is what keeps the ordering from forking.
+ * statically is what keeps the ordering from forking. CitizenDocumentUpload::read
+ * and ::uniqueName are static because they are pure functions of their
+ * arguments once the uploaded-file array and the existing file list are passed
+ * in; they live outside this class to keep it under the phpmd class-complexity
+ * threshold, and injecting them would have added a thirteenth constructor
+ * dependency for no gain. Weigh the next static call against those two reasons
+ * rather than against the suppression's mere presence.
  * @SuppressWarnings(PHPMD.ExcessiveParameterList)   -- one dependency per
  * distinct scoped capability (read/write/file/resolve/record/throttle),
  * ADR-022; a facade would hide which boundary each act crosses.
@@ -220,7 +228,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			);
 		}
 
-		$upload = $this->readUploadedFile();
+		$upload = CitizenDocumentUpload::read(uploaded: $this->request->getUploadedFile('file'));
 		if ($upload === null) {
 			return $this->refuse(
 				message: $this->l10n->t('There is no file to add.'),
@@ -233,7 +241,10 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			register: $register,
 			schema: $schema,
 			id: $id,
-			fileName: $this->uniqueFileName(register: $register, schema: $schema, id: $id, fileName: $upload['name']),
+			fileName: CitizenDocumentUpload::uniqueName(
+				fileName: $upload['name'],
+				existing: $this->fileReader->listFiles(register: $register, schema: $schema, id: $id)
+			),
 			content: $upload['content']
 		);
 		if ($attached === null) {
@@ -497,70 +508,6 @@ class CitizenCaseController extends Controller implements PortalProtected {
 
 		return null;
 	}//end citizenWriteAction()
-
-	/**
-	 * A name no document on the case already uses, so an upload adds rather
-	 * than replaces.
-	 *
-	 * @param string $register The register the case lives in.
-	 * @param string $schema The schema the case lives in.
-	 * @param string $id The case id.
-	 * @param string $fileName The sanitised upload name.
-	 *
-	 * @return string
-	 */
-	private function uniqueFileName(string $register, string $schema, string $id, string $fileName): string {
-		$taken = [];
-		foreach ($this->fileReader->listFiles(register: $register, schema: $schema, id: $id) as $file) {
-			$name = ($file['name'] ?? null);
-			if (is_string($name) === true && $name !== '') {
-				$taken[] = $name;
-			}
-		}
-
-		if (in_array($fileName, $taken, true) === false) {
-			return $fileName;
-		}
-
-		$extension = pathinfo($fileName, PATHINFO_EXTENSION);
-		$stem = pathinfo($fileName, PATHINFO_FILENAME);
-		$suffix = '';
-		if ($extension !== '') {
-			$suffix = '.' . $extension;
-		}
-		$counter = 2;
-		while (in_array($stem . '-' . $counter . $suffix, $taken, true) === true) {
-			$counter++;
-		}
-
-		return $stem . '-' . $counter . $suffix;
-	}//end uniqueFileName()
-
-	/**
-	 * Read the multipart upload into a {name, content} pair, or null when
-	 * there is nothing usable. The client's path is never trusted.
-	 *
-	 * @return array{name: string, content: string}|null
-	 */
-	private function readUploadedFile(): ?array {
-		$uploaded = $this->request->getUploadedFile('file');
-		$tmpName = (string)($uploaded['tmp_name'] ?? '');
-		if ((int)($uploaded['error'] ?? 1) !== 0 || $tmpName === '' || is_readable($tmpName) === false) {
-			return null;
-		}
-
-		$content = file_get_contents($tmpName);
-		if ($content === false) {
-			return null;
-		}
-
-		$fileName = basename((string)($uploaded['name'] ?? 'upload'));
-		if ($fileName === '' || $fileName === '.' || $fileName === '..') {
-			$fileName = 'upload';
-		}
-
-		return ['name' => $fileName, 'content' => $content];
-	}//end readUploadedFile()
 
 	/**
 	 * A refusal the citizen can read: one sentence, plus a slug the portal
