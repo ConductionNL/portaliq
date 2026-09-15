@@ -28,6 +28,11 @@
 - [x] 4.1 Write `tests/e2e/integrations-page.spec.ts`.
 - [x] 4.2 Install integriq in the CI `additional-apps`.
 
-## 5. After integriq ships
+## 5. Switch and built-in formatters (hydra#677)
 
-- [ ] 5.1 Run the e2e spec against an instance with both apps, then archive this change.
+- [x] 5.1 Declare `switch` on `geo-db` with `offValues: ["none"]`, and stop reporting `unconfigured` for a switched-off geography.
+- [x] 5.2 Move `@conduction/nextcloud-vue` to the release with the built-in connection formatters and delete the local copy.
+
+## 6. After integriq ships
+
+- [ ] 6.1 Run the e2e spec against an instance with both apps, then archive this change.

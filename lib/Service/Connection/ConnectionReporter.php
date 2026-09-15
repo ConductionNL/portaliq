@@ -144,8 +144,9 @@ class ConnectionReporter {
 	/**
 	 * After a geography settings save: refresh, then report what the saved settings say.
 	 *
-	 * Clears the report memory first, so the save reports at once. Never
-	 * throws, and does nothing without integriq.
+	 * Clears the report memory first, so the save reports at once. With
+	 * provider `none` only the refresh goes out: the row's switch says off.
+	 * Never throws, and does nothing without integriq.
 	 *
 	 * @param array<string, mixed> $settings The result of GeoSettings::toArray() after the save.
 	 * @param array<string, mixed> $status   The result of GeoRefreshService::status().
@@ -163,7 +164,7 @@ class ConnectionReporter {
 
 		return $this->reportNow(
 			key: self::KEY_GEO,
-			observe: fn (): array => $this->observations->geoSettings(settings: $settings, status: $status)
+			observe: fn (): ?array => $this->observations->geoSettings(settings: $settings, status: $status)
 		);
 	}//end geoSettingsSaved()
 

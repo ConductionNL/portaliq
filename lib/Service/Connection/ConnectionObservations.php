@@ -74,26 +74,23 @@ class ConnectionObservations {
 	public const REFUSED_OAUTH_ERRORS = ['invalid_client', 'unauthorized_client'];
 
 	/**
-	 * The message for a switched-off geography.
-	 *
-	 * @var string
-	 */
-	public const GEO_OFF = 'Geography is switched off. No database is fetched and no region is stored.';
-
-	/**
 	 * What the saved geography settings and the installed database say.
+	 *
+	 * Provider `none` reports nothing. The `geo-db` row's switch in
+	 * lib/Settings/connections.json already reads it as off, so integriq
+	 * shows `disabled` (hydra connection-registry D4 rule 2b).
 	 *
 	 * @param array<string, mixed> $settings The result of GeoSettings::toArray().
 	 * @param array<string, mixed> $status   The result of GeoRefreshService::status().
 	 *
-	 * @return array{0: string, 1: string} The status and the message.
+	 * @return array{0: string, 1: string}|null The status and the message, or null when geography is switched off.
 	 *
 	 * @spec openspec/changes/adopt-connection-registry/specs/app-connections/spec.md#requirement-req-portaliq-conn-002-a-geography-save-refreshes-and-a-refresh-or-a-failed-open-reports
 	 */
-	public function geoSettings(array $settings, array $status): array {
+	public function geoSettings(array $settings, array $status): ?array {
 		$provider = (string) ($settings['provider'] ?? '');
 		if (array_key_exists($provider, self::PROVIDER_LABELS) === false) {
-			return ['unconfigured', self::GEO_OFF];
+			return null;
 		}
 
 		if ($provider === 'maxmind'
@@ -127,9 +124,12 @@ class ConnectionObservations {
 	/**
 	 * What a geography refresh says about the connection.
 	 *
+	 * A `disabled` refresh reports nothing, for the same reason as provider
+	 * `none` in geoSettings(): the switch already says it.
+	 *
 	 * @param array<string, mixed> $result The result of GeoRefreshService::refresh().
 	 *
-	 * @return array{0: string, 1: string}|null The status and message, or null for an unknown outcome.
+	 * @return array{0: string, 1: string}|null The status and message, or null for a switched-off or unknown outcome.
 	 *
 	 * @spec openspec/changes/adopt-connection-registry/specs/app-connections/spec.md#requirement-req-portaliq-conn-002-a-geography-save-refreshes-and-a-refresh-or-a-failed-open-reports
 	 */
@@ -146,7 +146,6 @@ class ConnectionObservations {
 		return match ((string) ($result['status'] ?? '')) {
 			'refreshed' => ['configured', 'The last refresh installed a new ' . $label . ' database.'],
 			'failed' => ['error', $reason],
-			'disabled' => ['unconfigured', self::GEO_OFF],
 			default => null,
 		};
 	}//end geoRefresh()

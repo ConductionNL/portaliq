@@ -13,7 +13,7 @@ Admins see portaliq's outside connections on one page, with a status portaliq ca
 
 ### Requirement: REQ-PORTALIQ-CONN-001 Portaliq declares its connections in one static file
 
-Portaliq SHALL declare `geo-db` and `oidc` in `lib/Settings/connections.json` in the shape of hydra connection-registry design D2 (hydra REQ-CONN-001). The file SHALL validate against integriq's `connections.schema.json`. Both entries SHALL be `reportedOnly` and SHALL carry no `adapter` and no `requiredConfig`, because `none` switches geography off rather than faking it and the brokers are configured per organisation. Every `settingsUrl` SHALL point at an element id that exists in the admin settings panel.
+Portaliq SHALL declare `geo-db` and `oidc` in `lib/Settings/connections.json` in the shape of hydra connection-registry design D2 (hydra REQ-CONN-001). The file SHALL validate against integriq's `connections.schema.json`. Both entries SHALL be `reportedOnly` and SHALL carry no `adapter` and no `requiredConfig`, because `none` switches geography off rather than faking it and the brokers are configured per organisation. Every `settingsUrl` SHALL point at an element id that exists in the admin settings panel. The `geo-db` entry SHALL carry `switch` on `traffic.geo.provider` with `none` as its only off value, so an unset provider, which is the DB-IP default, SHALL NOT read as off (hydra connection-registry D12 item 9).
 
 #### Scenario: The declaration names this app and passes integriq's schema
 @e2e exclude A static file with no browser surface; tests/Unit/Settings/ConnectionsDeclarationTest.php validates it against the vendored schema, and checks the app id, unique keys and anchors.
@@ -25,6 +25,14 @@ Portaliq SHALL declare `geo-db` and `oidc` in `lib/Settings/connections.json` in
 - **AND** every key SHALL be unique
 - **AND** every `#section-…` anchor SHALL be an id in `src/views/AdminRoot.vue`
 
+#### Scenario: Provider none reads switched off, and an unset provider does not
+@e2e exclude The rule lives in integriq's resolver; tests/Unit/Settings/ConnectionsDeclarationTest.php asserts the switch key, its only off value and that no working provider is listed as off.
+
+- **GIVEN** integriq has synced portaliq's declaration
+- **WHEN** `traffic.geo.provider` holds `none`
+- **THEN** integriq's rule 2b SHALL resolve the `geo-db` row as `disabled`
+- **AND** when the key is unset, rule 2b SHALL NOT apply
+
 #### Scenario: Neither row is read as simulated
 @e2e exclude The rule lives in integriq's resolver; tests/Unit/Settings/ConnectionsDeclarationTest.php asserts that neither entry declares an adapter.
 
@@ -34,15 +42,23 @@ Portaliq SHALL declare `geo-db` and `oidc` in `lib/Settings/connections.json` in
 
 ### Requirement: REQ-PORTALIQ-CONN-002 A geography save refreshes, and a refresh or a failed open reports
 
-When a settings save writes `traffic_geo`, portaliq SHALL send `ConnectionRefreshRequestedEvent` with app `portaliq` and key `geo-db`, and SHALL send it before the report for that key (hydra REQ-CONN-004, hydra#674). The report SHALL say `unconfigured` for provider `none`, for MaxMind without an account id or licence key, and for a missing database; `limited` when the installed database came from the other provider; and `configured` otherwise. A refresh SHALL report `refreshed` as `configured`, `failed` as `error` and `disabled` as `unconfigured`. A database file that cannot be opened SHALL report `error` without its path, at most once per throttle window. Both events SHALL be named by string and sent only when the class exists, and neither SHALL change the response of the request, job or command that sent it.
+When a settings save writes `traffic_geo`, portaliq SHALL send `ConnectionRefreshRequestedEvent` with app `portaliq` and key `geo-db`, and SHALL send it before the report for that key (hydra REQ-CONN-004, hydra#674). The report SHALL say `unconfigured` for MaxMind without an account id or licence key and for a missing database; `limited` when the installed database came from the other provider; and `configured` otherwise. Provider `none` SHALL send the refresh and no report, because the row's switch already reads it as off. A refresh SHALL report `refreshed` as `configured` and `failed` as `error`, and SHALL report nothing for `disabled`. A database file that cannot be opened SHALL report `error` without its path, at most once per throttle window. Both events SHALL be named by string and sent only when the class exists, and neither SHALL change the response of the request, job or command that sent it.
 
 #### Scenario: Saving geography settings refreshes, then reports
 @e2e exclude The event is not observable from a browser; tests/Unit/Service/Connection/ConnectionReporterTest.php and tests/Unit/Service/Connection/ConnectionReportCallersTest.php assert the order and the unchanged response.
 
 - **GIVEN** integriq is installed
+- **WHEN** an admin saves the geography settings with provider `dbip` and no database is installed yet
+- **THEN** portaliq SHALL send a refresh for `geo-db`
+- **AND** then a report `unconfigured` naming the command that fetches one
+
+#### Scenario: Switching geography off sends only the refresh
+@e2e exclude The event is not observable from a browser; tests/Unit/Service/Connection/ConnectionReporterTest.php asserts that only the refresh is sent.
+
+- **GIVEN** integriq is installed
 - **WHEN** an admin saves the geography settings with provider `none`
 - **THEN** portaliq SHALL send a refresh for `geo-db`
-- **AND** then a report `unconfigured` saying geography is switched off
+- **AND** SHALL NOT send a report
 
 #### Scenario: A failed refresh reads error
 @e2e exclude A refresh downloads from DB-IP or MaxMind, which the CI instance does not reach; tests/Unit/Service/Connection/ConnectionReporterTest.php and tests/Unit/Service/Connection/ConnectionReportCallersTest.php drive the outcomes.
@@ -87,7 +103,7 @@ A discovery request that fails, and a code exchange, SHALL report the `oidc` row
 
 ### Requirement: REQ-PORTALIQ-CONN-004 An admin reads the connections on an Integrations page
 
-Portaliq SHALL render an `index` page at `/settings/integrations` over `integriq/app_connection`, reached from the settings gear and preset to `app` equal to `portaliq` through its menu entry's `query` (hydra REQ-CONN-006). The page and its menu entry SHALL be admin only. The page SHALL require Integriq, and the menu entry SHALL only render when integriq is installed. The status column SHALL name all six statuses, `limited` included. The page SHALL NOT offer a generic Add button. Its Add integration action SHALL open `/apps/integriq/connections?app=portaliq&link=1`.
+Portaliq SHALL render an `index` page at `/settings/integrations` over `integriq/app_connection`, reached from the settings gear and preset to `app` equal to `portaliq` through its menu entry's `query` (hydra REQ-CONN-006). The page and its menu entry SHALL be admin only. The page SHALL require Integriq, and the menu entry SHALL only render when integriq is installed. The status column SHALL name all seven statuses, `limited` and `disabled` included, through the `connectionStatus` formatter `@conduction/nextcloud-vue` ships. The page SHALL NOT offer a generic Add button. Its Add integration action SHALL open `/apps/integriq/connections?app=portaliq&link=1`.
 
 #### Scenario: The page lists only the rows of portaliq
 @e2e tests/e2e/integrations-page.spec.ts
@@ -109,10 +125,10 @@ Portaliq SHALL render an `index` page at `/settings/integrations` over `integriq
 
 - **GIVEN** the geography provider is not `none`
 - **WHEN** the admin saves the provider `none`
-- **THEN** the Visitor geography database row SHALL read `unconfigured` with the switched-off message
+- **THEN** the Visitor geography database row SHALL read `disabled` with the switched-off message
 
 #### Scenario: A connection that works in part reads Limited
-@e2e exclude Only a provider switch before the next download produces limited; tests/connection-registry.spec.mjs asserts the label in English and Dutch.
+@e2e exclude Only a provider switch before the next download produces limited; tests/connection-registry.spec.mjs asserts the status column uses the library's built-in connectionStatus, whose labels nextcloud-vue's tests/utils/builtInFormatters.spec.js (formatConnectionStatus) asserts, with Beperkt in the library's l10n/nl.json.
 
 - **GIVEN** a row whose status is `limited`
 - **WHEN** the page renders it

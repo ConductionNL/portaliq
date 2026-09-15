@@ -8,6 +8,11 @@
             "order": 10,
             "settingsUrl": "/settings/admin/portaliq#section-visitor-geography",
             "reportedOnly": true,
+            "switch": {
+                "configKey": "traffic.geo.provider",
+                "offValues": ["none"]
+            },
+            "disabledMessage": "Geography is switched off. No database is fetched and no region is stored.",
             "unconfiguredMessage": "Not checked yet. Save the Visitor geography section, or run occ portaliq:traffic:geo-refresh."
         },
         {
