@@ -211,6 +211,9 @@ class PortalPageController extends Controller {
 					// site fetch, where a visitor who moved on quickly lost the
 					// landing that brought them.
 					'resolvedPortal' => $this->siteResolvedSlug(),
+					// The document title, server-rendered for the same reason the theme
+					// below is; the why lives on siteTitle().
+					'title' => $this->siteTitle(),
 				],
 				// THEME TOKENS ARE THE ONE THING THAT CANNOT WAIT FOR THE API.
 				// Everything else this renderer shows is fetched after boot,
@@ -332,6 +335,37 @@ class PortalPageController extends Controller {
 
 		return (string)($portal['slug'] ?? '');
 	}//end siteResolvedSlug()
+
+
+	/**
+	 * The serving portal's display title, or '' when the request resolves to
+	 * no portal.
+	 *
+	 * Fails to the empty string on every miss — unknown host, unknown slug, a
+	 * resolver that throws — and the template then renders its own neutral
+	 * fallback. Never another portal's name: a tab reading "Gemeente Tilburg"
+	 * on somebody else's site is a branding leak that looks entirely correct.
+	 *
+	 * @return string The portal title, or ''.
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-request-must-resolve-to-exactly-one-portal-or-to-none
+	 */
+	private function siteTitle(): string {
+		try {
+			$portal = $this->portalResolver->resolve(
+				request: $this->request,
+				portalSlug: (string)$this->request->getParam('portal', '')
+			);
+		} catch (\Throwable) {
+			return '';
+		}
+
+		if ($portal === null) {
+			return '';
+		}
+
+		return (string)($portal['title'] ?? '');
+	}//end siteTitle()
 
 
 	/**
