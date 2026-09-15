@@ -51,16 +51,19 @@ class ConnectionObservationsTest extends TestCase {
 	}//end installed()
 
 	/**
-	 * Provider none is switched off, not simulated, whatever is installed.
+	 * Provider none reports nothing, whatever is installed.
+	 *
+	 * The `geo-db` switch in lib/Settings/connections.json reads `none` as off,
+	 * so integriq shows `disabled` itself. A report of `unconfigured` here would
+	 * name a choice the admin made as a task left undone.
 	 *
 	 * @return void
 	 */
-	public function testProviderNoneReadsSwitchedOff(): void {
-		$this->assertSame(
-			expected: ['unconfigured', ConnectionObservations::GEO_OFF],
+	public function testProviderNoneReportsNothing(): void {
+		$this->assertNull(
 			actual: (new ConnectionObservations())->geoSettings(settings: ['provider' => 'none'], status: $this->installed(provider: 'dbip'))
 		);
-	}//end testProviderNoneReadsSwitchedOff()
+	}//end testProviderNoneReportsNothing()
 
 	/**
 	 * MaxMind without both credentials cannot fetch, so it is not configured.
@@ -144,7 +147,7 @@ class ConnectionObservationsTest extends TestCase {
 	}//end testEveryProviderIsKnown()
 
 	/**
-	 * Each refresh outcome maps to the status the design names; an unknown one reports nothing.
+	 * Each refresh outcome maps to the status the design names; a disabled or unknown one reports nothing.
 	 *
 	 * @return void
 	 */
@@ -156,9 +159,9 @@ class ConnectionObservationsTest extends TestCase {
 			expected: ['configured', 'The last refresh installed a new DB-IP Lite database.'],
 			actual: $observations->geoRefresh(result: ['status' => 'refreshed', 'provider' => 'dbip'])
 		);
-		$this->assertSame(
-			expected: ['unconfigured', ConnectionObservations::GEO_OFF],
-			actual: $observations->geoRefresh(result: ['status' => 'disabled', 'provider' => 'none'])
+		$this->assertNull(
+			actual: $observations->geoRefresh(result: ['status' => 'disabled', 'provider' => 'none']),
+			message: 'the switch reads a disabled refresh as off, so nothing is reported'
 		);
 
 		[$status, $message] = $observations->geoRefresh(result: ['status' => 'failed', 'provider' => 'dbip', 'message' => $long]);

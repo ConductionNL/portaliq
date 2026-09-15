@@ -29,13 +29,13 @@ Each candidate was checked against the code on `development` on 2026-09-14.
 
 | Portaliq sees | Status | Message |
 |---|---|---|
-| Provider `none` | `unconfigured` | "Geography is switched off. No database is fetched and no region is stored." |
+| Provider `none` | nothing: the refresh goes out, and the switch makes integriq read `disabled` with the declared `disabledMessage` | |
 | MaxMind without an account id or licence key | `unconfigured` | names both settings |
 | No database installed | `unconfigured` | names `occ portaliq:traffic:geo-refresh` |
 | The installed database came from the other provider | `limited` | names the provider regions still come from |
 | A database from the chosen provider | `configured` | names the provider and when it was fetched |
 
-**Geography, after a refresh** (the monthly job, the first-download job, or `occ portaliq:traffic:geo-refresh`). `refreshed` reads `configured`, `failed` reads `error` with the reason cut at 160 characters, and `disabled` reads `unconfigured`.
+**Geography, after a refresh** (the monthly job, the first-download job, or `occ portaliq:traffic:geo-refresh`). `refreshed` reads `configured`, `failed` reads `error` with the reason cut at 160 characters, and `disabled` reports nothing, because the switch already says it.
 
 **Geography, when the file will not open.** `MmdbGeoResolver` opens the database once per process. When that throws, the reporter sends `error`. The message leaves out the file path.
 
@@ -71,7 +71,7 @@ Each candidate was checked against the code on `development` on 2026-09-14.
 
 ## D4. Contract misfits
 
-- **A provider choice where the default is real.** `adapter.simulatedValues` can name `none`, but `none` is off, not a mock, and an unset key is the DB-IP default. The contract has no status for "switched off by choice" apart from `unconfigured`, which reads as a task for the admin.
+- **A provider choice where the default is real.** `adapter.simulatedValues` can name `none`, but `none` is off, not a mock, and an unset key is the DB-IP default. Resolved by hydra#677: the row declares `switch` with `offValues: ["none"]`, and integriq reads it as `disabled`.
 - **What decides "configured" is a file, not a setting.** Rule 5 reads app config only. The geography row needs the installed database, which only portaliq can see.
 - **A family of brokers.** The contract names per-portal OIDC as out (D12). One row carries the last outcome of any organisation, so a broken broker for one organisation can be overwritten by a working one for another after five minutes.
 - **No settings section for the brokers.** `settingsUrl` points at the nearest section that exists, and the declared message says where the settings live.

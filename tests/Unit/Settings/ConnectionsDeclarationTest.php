@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Settings;
 
+use OCA\Portaliq\Service\Traffic\Geo\GeoSettings;
 use Opis\JsonSchema\Errors\ErrorFormatter;
 use Opis\JsonSchema\Validator;
 use PHPUnit\Framework\TestCase;
@@ -41,10 +42,11 @@ class ConnectionsDeclarationTest extends TestCase {
 
 	/**
 	 * Integriq's schema, fetched with `gh api` from integriq `development` on
-	 * 2026-09-14, where the file was last changed in
-	 * a93665880f7f552d8280b84a1f5ce402507c4466. It carries the hydra#673 and
-	 * hydra#676 amendments (`reportedOnly`, `adapter.jsonPath`,
-	 * `adapter.simulatedValues`, `{configKey, jsonPath}` in `requiredConfig`).
+	 * 2026-09-15, where the file was last changed in
+	 * 64b437fc2df24827985ce6e919fe5e47c5205617 (integriq#2024). It carries the
+	 * hydra#673 and hydra#676 amendments (`reportedOnly`, `adapter.jsonPath`,
+	 * `adapter.simulatedValues`, `{configKey, jsonPath}` in `requiredConfig`)
+	 * and the hydra#677 one (`switch`, `disabledMessage`).
 	 *
 	 * @var string
 	 */
@@ -247,7 +249,8 @@ class ConnectionsDeclarationTest extends TestCase {
 	 *
 	 * `none` switches geography off rather than faking it, and an unset
 	 * provider key is the DB-IP default, so an adapter row would read a real
-	 * provider as simulated. The brokers are configured per organisation, so
+	 * provider as simulated. The switch says off; only portaliq can say the
+	 * database is installed. The brokers are configured per organisation, so
 	 * no key list can say they are filled.
 	 *
 	 * @return void
@@ -260,6 +263,38 @@ class ConnectionsDeclarationTest extends TestCase {
 			$this->assertStringStartsWith(prefix: 'Not checked yet.', string: (string) ($connection['unconfiguredMessage'] ?? ''), message: $key);
 		}
 	}//end testBothRowsAreReportedOnly()
+
+	/**
+	 * Provider `none` switches the geography row off, and an unset provider does not.
+	 *
+	 * An unset `traffic.geo.provider` is the DB-IP default, so the switch lists
+	 * `none` as its only off value (hydra connection-registry D2, D12 item 9).
+	 * Without `offValues`, integriq would read the unset key as off and hide a
+	 * working database behind Switched off. The brokers have no switch.
+	 *
+	 * @return void
+	 */
+	public function testOnlyProviderNoneSwitchesGeographyOff(): void {
+		$connections = $this->connectionsByKey();
+		$switch      = $connections['geo-db']['switch'] ?? null;
+
+		$this->assertSame(
+			expected: ['configKey' => GeoSettings::KEY_PROVIDER, 'offValues' => ['none']],
+			actual: $switch
+		);
+		$this->assertSame(expected: 'traffic.geo.provider', actual: GeoSettings::KEY_PROVIDER);
+
+		$offValues = array_map(static fn (string $value): string => mb_strtolower(trim($value)), $switch['offValues']);
+		foreach (['', GeoSettings::DEFAULT_PROVIDER, ...array_diff(GeoSettings::PROVIDERS, ['none'])] as $working) {
+			$this->assertNotContains(needle: $working, haystack: $offValues, message: "'" . $working . "' must not read as off");
+		}
+
+		$this->assertSame(
+			expected: 'Geography is switched off. No database is fetched and no region is stored.',
+			actual: $connections['geo-db']['disabledMessage'] ?? null
+		);
+		$this->assertArrayNotHasKey(key: 'switch', array: $connections['oidc']);
+	}//end testOnlyProviderNoneSwitchesGeographyOff()
 
 	/**
 	 * The geography facts the declaration relies on still hold in the code.
