@@ -233,7 +233,16 @@ jobs:
       # above: on `ConductionNL/dossiq@development` the id is `dossiq`, the namespace
       # is `Dossiq`, and `getAudiences()` returns supplier/citizen/inspector. Its
       # `getContribution()` is pure config with no I/O, so it needs no seeded data.
-      additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"development"},{"repo":"ConductionNL/thematiq","app":"thematiq","ref":"development"},{"repo":"ConductionNL/dossiq","app":"dossiq","ref":"development"}]'
+      #
+      # `integriq` is here for tests/e2e/integrations-page.spec.ts
+      # (adopt-connection-registry). The Integrations page lists integriq's
+      # `app_connection` rows, which integriq syncs from lib/Settings/connections.json
+      # on install and on app enable. Without integriq the page has no register to
+      # read and the spec asserts against nothing. Verified against the pinned ref:
+      # on `ConductionNL/integriq@development` the id is `integriq`. The PHPUnit
+      # event stubs in tests/bootstrap.php load only when integriq's real event
+      # classes are absent, so its presence here does not redeclare them.
+      additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"development"},{"repo":"ConductionNL/thematiq","app":"thematiq","ref":"development"},{"repo":"ConductionNL/dossiq","app":"dossiq","ref":"development"},{"repo":"ConductionNL/integriq","app":"integriq","ref":"development"}]'
       enable-sbom: true
       # Run the Hydra mechanical quality gates against this PR's diff.
       #
