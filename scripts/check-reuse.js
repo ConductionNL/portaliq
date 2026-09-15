@@ -161,8 +161,37 @@ function main() {
 		process.exit(1)
 	}
 
-	const nonCompliant = report.non_compliant || {}
-	const summary = report.summary || {}
+	// REFUSE TO PASS ON A REPORT THIS SCRIPT CANNOT READ.
+	//
+	// Defaulting a missing block to `{}` would make every assertion below
+	// vacuous and exit 0 — the same failure this guard exists to prevent, one
+	// layer down. It is reachable without a bug in `reuse`: the PATH binary is
+	// resolved by the runner, not pinned like the image, so a different major
+	// with a different --json shape is exactly the drift the pin defends
+	// against on the other path.
+	if (
+		typeof report.summary !== 'object'
+		|| report.summary === null
+		|| typeof report.summary.files_total !== 'number'
+		|| typeof report.non_compliant !== 'object'
+		|| report.non_compliant === null
+	) {
+		console.error(`Unexpected report shape from ${how}.`)
+		console.error('')
+		console.error('Expected `summary.files_total` (number) and `non_compliant`')
+		console.error(
+			`(object); got tool version ${report.reuse_tool_version || 'unknown'}.`,
+		)
+		console.error('')
+		console.error(
+			'Failing rather than passing: a report that cannot be read says',
+		)
+		console.error('nothing about the tree, and green would claim otherwise.')
+		process.exit(1)
+	}
+
+	const nonCompliant = report.non_compliant
+	const summary = report.summary
 	const missingLicensing = nonCompliant.missing_licensing_info || []
 	const missingCopyright = nonCompliant.missing_copyright_info || []
 	const errors = errorLines(stderr)
@@ -180,13 +209,72 @@ function main() {
 		return
 	}
 
+	// The absolute assertions run BEFORE the --update branch. Writing a
+	// baseline over a tree with unparseable headers or an orphaned licence
+	// would exit 0 and defer those failures to the next CI run, which is the
+	// wrong moment to learn about them.
+	let failed = false
+
+	// 1. stderr, absolute.
+	if (errors.length > 0) {
+		console.error('')
+		console.error(
+			`${errors.length} ERROR line(s) on stderr — a file's own licence header`,
+		)
+		console.error('could not be parsed, and `reuse lint` does not fail on that:')
+		console.error('')
+		for (const line of errors.slice(0, 10)) console.error(`  ${line}`)
+		console.error('')
+		console.error('A markdown document that writes the tag and its value inside')
+		console.error('ONE code span is the known cause. Give it a `.license`')
+		console.error('companion rather than rewriting the prose around the tag.')
+		failed = true
+	}
+
+	// 2. licence hygiene, absolute. An unused licence is itself a REUSE failure.
+	for (const key of [
+		'unused_licenses',
+		'bad_licenses',
+		'deprecated_licenses',
+		'missing_licenses',
+		'read_errors',
+	]) {
+		const value = nonCompliant[key]
+		const entries = Array.isArray(value) ? value : Object.keys(value || {})
+		if (entries.length > 0) {
+			console.error('')
+			console.error(`${key}: ${entries.join(', ')}`)
+			if (key === 'unused_licenses') {
+				console.error(
+					'A licence text in LICENSES/ that nothing references is itself a',
+				)
+				console.error(
+					'REUSE failure. Changing an override orphans the licence it used',
+				)
+				console.error('to name — remove that file in the same commit.')
+			}
+			if (key === 'read_errors') {
+				console.error(
+					'An unreadable file is EXCLUDED from files_total, so the coverage',
+				)
+				console.error('sets below cannot see it. Hence the absolute check.')
+			}
+			failed = true
+		}
+	}
+
 	if (update) {
+		if (failed) {
+			console.error('')
+			console.error('Baseline NOT written — fix the failures above first.')
+			process.exit(1)
+		}
 		fs.writeFileSync(
 			BASELINE,
 			JSON.stringify(
 				{
-					missing_licensing_info: missingLicensing.length,
-					missing_copyright_info: missingCopyright.length,
+					missing_licensing_info: [...missingLicensing].sort(),
+					missing_copyright_info: [...missingCopyright].sort(),
 				},
 				null,
 				2,
@@ -210,94 +298,56 @@ function main() {
 	console.log(
 		`${summary.files_total} file(s) checked via ${how}; `
 			+ `${missingLicensing.length} without licensing info `
-			+ `(baseline ${baseline.missing_licensing_info}), `
+			+ `(baseline ${(baseline.missing_licensing_info || []).length}), `
 			+ `${errors.length} stderr ERROR line(s)`,
 	)
 
-	let failed = false
-
-	// 1. stderr, absolute.
-	if (errors.length > 0) {
-		console.error('')
-		console.error(
-			`${errors.length} ERROR line(s) on stderr — a file's own licence header`,
-		)
-		console.error('could not be parsed, and `reuse lint` does not fail on that:')
-		console.error('')
-		for (const line of errors.slice(0, 10)) console.error(`  ${line}`)
-		console.error('')
-		console.error('A markdown document that writes the tag and its value inside')
-		console.error('ONE code span is the known cause. Give it a `.license`')
-		console.error('companion rather than rewriting the prose around the tag.')
-		failed = true
-	}
-
-	// 2. coverage, ratcheted.
+	// 3. coverage, ratcheted BY PATH rather than by count.
+	//
+	// A count lets a net-zero swap through: delete one of the twelve known
+	// fonts, add one source file with an extension REUSE.toml does not list,
+	// and the total is unchanged while a genuinely new uncovered file has
+	// entered the tree -- the exact hole this guard is here to close.
+	// check:schema-l10n can only count because its baseline is 30k opaque
+	// strings; here the baseline is a short list of stable paths, so it names
+	// them. Shrinking the list is always fine.
 	for (const [key, found] of [
 		['missing_licensing_info', missingLicensing],
 		['missing_copyright_info', missingCopyright],
 	]) {
 		const allowed = baseline[key]
-		if (typeof allowed !== 'number') {
-			console.error(`Baseline is missing the \`${key}\` key.`)
+		if (!Array.isArray(allowed)) {
+			console.error('')
+			console.error(`Baseline key \`${key}\` is not a list of paths.`)
+			console.error('Regenerate it with `npm run check:reuse -- --update`.')
 			failed = true
 			continue
 		}
-		if (found.length > allowed) {
-			const added = found.length - allowed
+		const known = new Set(allowed)
+		const added = found.filter((file) => !known.has(file)).sort()
+		if (added.length > 0) {
+			const what = key.replace('missing_', '').replace(/_/g, ' ')
+			console.error('')
+			console.error(`${added.length} new file(s) with no ${what}:`)
+			for (const file of added) console.error(`  ${file}`)
 			console.error('')
 			console.error(
-				`${added} more file(s) with no ${key.replace('missing_', '').replace(/_/g, ' ')}`,
+				'The likely cause is an extension REUSE.toml does not list —',
 			)
-			console.error(
-				'than the baseline allows. The likely cause is an extension',
-			)
-			console.error(
-				'REUSE.toml does not list — it lists extensions rather than',
-			)
-			console.error(
-				'using a blanket, so an unlisted one falls through silently.',
-			)
+			console.error('it lists extensions rather than using a blanket, so an')
+			console.error('unlisted one falls through silently.')
 			console.error('')
-			console.error(
-				'Add it to the appropriate block in REUSE.toml. See what is',
-			)
-			console.error('uncovered with:')
-			console.error('  node scripts/check-reuse.js --list')
-			failed = true
-		}
-	}
-
-	// 3. licence hygiene, absolute. An unused licence is itself a REUSE failure.
-	for (const key of [
-		'unused_licenses',
-		'bad_licenses',
-		'deprecated_licenses',
-		'missing_licenses',
-	]) {
-		const value = nonCompliant[key]
-		const entries = Array.isArray(value) ? value : Object.keys(value || {})
-		if (entries.length > 0) {
-			console.error('')
-			console.error(`${key}: ${entries.join(', ')}`)
-			if (key === 'unused_licenses') {
-				console.error(
-					'A licence text in LICENSES/ that nothing references is itself a',
-				)
-				console.error(
-					'REUSE failure. Changing an override orphans the licence it used',
-				)
-				console.error('to name — remove that file in the same commit.')
-			}
+			console.error('Add it to the appropriate block in REUSE.toml.')
 			failed = true
 		}
 	}
 
 	if (failed) process.exit(1)
 
-	if (missingLicensing.length < baseline.missing_licensing_info) {
+	const baselineCount = (baseline.missing_licensing_info || []).length
+	if (missingLicensing.length < baselineCount) {
 		console.log(
-			`${baseline.missing_licensing_info - missingLicensing.length} fewer than the baseline — lower it with:`,
+			`${baselineCount - missingLicensing.length} fewer than the baseline — lower it with:`,
 		)
 		console.log('  npm run check:reuse -- --update')
 	}

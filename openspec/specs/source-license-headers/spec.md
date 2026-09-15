@@ -26,7 +26,7 @@ A second correction, to the record rather than to the requirement. #521's
 commit message states that five openspec documents were "SKIPPED ENTIRELY"
 because they wrote the SPDX tag and its value inside one code span. Measured on
 #553 by reverting the prose and re-running the linter, that overstates it: all
-1,349 files resolved byte-identically with the prose restored, because REUSE
+1,381 files resolved byte-identically with the prose restored, because REUSE
 skips only a file's *own* extracted information and the `**/*.md` table then
 supplies it. The real delta was ten stderr ERROR lines. The documents were
 never unlicensed; their headers were unreadable, which is a smaller and

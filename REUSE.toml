@@ -43,7 +43,7 @@ SPDX-PackageDownloadLocation = "https://github.com/ConductionNL/portaliq"
 # and override blocks below keep winning because the last matching table wins
 # (REUSE 3.3 §3.3). It is not in this commit for one reason, measured rather
 # than assumed: the blanket changes the resolution of exactly TWELVE files and
-# leaves the other 1,349 byte-identical, and those twelve are precisely the
+# leaves the other 1,371 byte-identical, and those twelve are precisely the
 # unannotated fonts under woo/ — six of them commercial or all-rights-reserved
 # faces we hold no redistribution licence for. Prepending it stamps them
 # EUPL-1.2 / Conduction and flips `compliant` to true, which does not fix a
