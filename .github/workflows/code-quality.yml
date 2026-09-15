@@ -235,6 +235,32 @@ jobs:
       # `getContribution()` is pure config with no I/O, so it needs no seeded data.
       additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"development"},{"repo":"ConductionNL/thematiq","app":"thematiq","ref":"development"},{"repo":"ConductionNL/dossiq","app":"dossiq","ref":"development"}]'
       enable-sbom: true
+
+      # ── REUSE ────────────────────────────────────────────────────────────
+      # `reuse-blocking` is deliberately NOT set here, which means this app
+      # takes the shared default of `false`: `quality / REUSE compliance`
+      # reports success whatever `reuse lint` concludes, and the finding shows
+      # up only as the `REUSE` row in the Quality Report comment. That is the
+      # ❌ Remko Huisman reported on 2026-09-11, and it is still ❌ today.
+      #
+      # It is off for ONE reason, and naming it here rather than leaving it
+      # implicit is the point of this block:
+      #
+      #   BLOCKER   twelve files under woo/ carry no licensing information.
+      #             Six of them are commercial or all-rights-reserved faces
+      #             (3× Gill Sans, Avenir LT, Tisa Sans Pro — Monotype /
+      #             Linotype — plus Eau Sans Book), served publicly through
+      #             `woo#serve`. Turning this flag on now fails every
+      #             subsequent PR on those twelve; annotating them to get past
+      #             it would claim a licence we do not hold.
+      #   OWNER     WOO-575 (https://conduction.atlassian.net/browse/WOO-575),
+      #             assignee Wilco Louwerse, status Actief.
+      #   OPEN      since 2026-09-11, split out of WOO-571 on 2026-09-14.
+      #
+      # The flip is one line — `reuse-blocking: true` — and it belongs in the
+      # same commit that settles those twelve files, not before it. Until then
+      # `check:reuse` in frontend-checks below holds the line, because an
+      # unenforced gate and a passing one are the same colour.
       # Run the Hydra mechanical quality gates against this PR's diff.
       #
       # This tier has never executed in this repository. `enable-hydra-gates`
@@ -342,7 +368,19 @@ jobs:
       # renders the English source inside an otherwise translated form, silently.
       # The fleet had 30,459 such strings, so this records the current count and
       # fails only when it GROWS — burning it down stays an ordinary PR.
-      frontend-checks: '["check:specs", "check:manifest", "format", "check:l10n-js", "check:schema-l10n"]'
+      # `check:reuse` is the REUSE guard, and it is here rather than inside the
+      # shared `reuse` job because that job cannot express it: it runs
+      # `fsfe/reuse-action@v5` under `continue-on-error: ${{ !reuse-blocking }}`,
+      # so with the flag off (see the block further down) it passes on every
+      # outcome. What it cannot see at all, in either setting, is stderr —
+      # `reuse lint` writes parse failures there and still decides its exit code
+      # on compliance alone, so a document whose own header cannot be read is
+      # invisible to the action twice over. scripts/check-reuse.js asserts that
+      # count at zero and ratchets the number of files with no licensing
+      # information, so a new extension cannot fall through REUSE.toml's
+      # extension list unnoticed. Both failure modes were reproduced against
+      # this tree before wiring it up, and both fail the leg.
+      frontend-checks: '["check:specs", "check:manifest", "format", "check:l10n-js", "check:schema-l10n", "check:reuse"]'
 
       # ── Coverage ratchet ─────────────────────────────────────────────────
       # `enable-coverage-guard` defaults to FALSE, which is why both

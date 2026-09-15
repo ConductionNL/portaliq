@@ -29,6 +29,31 @@ SPDX-PackageDownloadLocation = "https://github.com/ConductionNL/portaliq"
 #
 # Same model as @conduction/nextcloud-vue's REUSE.toml, which documents this
 # correctly, and as keepiq's, which uses the `path = "**"` blanket shape.
+#
+# WHY THIS IS STILL AN EXTENSION LIST AND NOT THAT BLANKET (2026-09-15).
+#
+# Remko Huisman has now raised this twice, on #521 and on #553, and he is
+# right about the defect: an extension nobody listed falls through and counts
+# as unlicensed, silently. It happened here already — `.jsx` and `.mjs` were
+# missing, which is what made nine React-portal sources under src/portal/ and
+# one .mjs under docs/scripts/ unlicensed until #521. Verified again on
+# 2026-09-15: nothing falls through today, across all tracked files.
+#
+# The blanket is the right shape and it is a PREPEND, not a rewrite — the CC0
+# and override blocks below keep winning because the last matching table wins
+# (REUSE 3.3 §3.3). It is not in this commit for one reason, measured rather
+# than assumed: the blanket changes the resolution of exactly TWELVE files and
+# leaves the other 1,349 byte-identical, and those twelve are precisely the
+# unannotated fonts under woo/ — six of them commercial or all-rights-reserved
+# faces we hold no redistribution licence for. Prepending it stamps them
+# EUPL-1.2 / Conduction and flips `compliant` to true, which does not fix a
+# licensing problem, it deletes the only signal that we have one.
+#
+# So it lands in the commit that settles those twelve files, and not before.
+# That is WOO-575. Meanwhile the hole the blanket would close is held shut
+# from the other side by scripts/check-reuse.js, a ratchet on the number of
+# files with no licensing information: a new unlisted extension raises the
+# count and fails CI, without anyone having to claim a licence to get green.
 
 # ---------------------------------------------------------------------------
 # First-party source.
@@ -144,6 +169,14 @@ SPDX-License-Identifier = "Apache-2.0"
 # **/*.md rule below and MaxMind's own licence text gets labelled as
 # Conduction's CC0 work -- exactly the misrepresentation this file refuses to
 # make for woo/'s third-party notices.
+#
+# LICENSES/MIT.txt IS SUPPOSED TO READ AS A TEMPLATE. It carries the SPDX
+# placeholder line, `Copyright (c) <year> <copyright holders>`, because that is
+# what `reuse download MIT` emits and what the standard licence text is. Do not
+# "finish" it by inserting Conduction's name: the only MIT grant in this
+# repository is MaxMind's, and the copyright holder for it is stated above, in
+# the annotation -- which is exactly where REUSE expects to find it. Noted
+# because it looks like an oversight and is not. Raised by Remko Huisman.
 [[annotations]]
 path = [
     "tests/fixtures/GeoIP2-City-Test.mmdb",
@@ -169,6 +202,29 @@ SPDX-License-Identifier = "Apache-2.0 OR MIT"
 # ConductionNL repository licensed EUPL-1.2, so its build output is ours under
 # the same licence as this app. The bundles, styles, markup and images below
 # are annotated accordingly.
+#
+# AND THAT ANNOTATION IS A DELIBERATE PRAGMATIC CALL, not an oversight -- said
+# here because the inconsistency is real and a future reader will otherwise
+# re-litigate it. `woo/static/js/**` is annotated pure EUPL-1.2 / Conduction
+# while the 308 `*.LICENSE.txt` files sitting beside it exist precisely because
+# those same bundles contain third-party code. Both statements are in this
+# file, and they pull in opposite directions.
+#
+# The call: a webpack bundle is a single artefact with no per-byte provenance,
+# and no SPDX expression describes "our EUPL-1.2 application code, plus parts
+# of forty npm packages under a dozen licences, concatenated". The honest
+# alternatives are to annotate it with a compound expression nobody can verify,
+# or to leave it unlicensed -- and unlicensed build output of OUR repository is
+# the less true of the two. So the bundle takes the licence of the source it
+# was built from, and the notices next to it are left to say what is inside;
+# the extracted notices are the machine-readable record, which is the job they
+# were extracted to do. The same reasoning covers `css/nlds/*.css`, four of
+# which are webpack output over third-party npm packages (@amsterdam,
+# @uiw, @nl-design-system-unstable) that kept no banner of their own.
+#
+# This is the pragmatic answer, not the correct one. The correct one is to stop
+# committing build output -- see openspec/changes/retire-the-vendored-woo-bundle.
+# Raised by Remko Huisman on #553.
 [[annotations]]
 path = [
     "woo/*.html",

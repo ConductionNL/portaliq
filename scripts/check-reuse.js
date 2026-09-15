@@ -1,0 +1,306 @@
+#!/usr/bin/env node
+// SPDX-License-Identifier: EUPL-1.2
+// Copyright (C) 2026 Conduction B.V.
+//
+// check-reuse.js — the REUSE guard: an absolute assertion on the linter's
+// stderr, and a RATCHET on files that carry no licensing information.
+//
+// WHY THIS EXISTS
+//
+//   The shared quality workflow runs `fsfe/reuse-action@v5` with
+//   `continue-on-error: ${{ !inputs.reuse-blocking }}`, and this app does not
+//   set `reuse-blocking`, so it takes the fleet default of `false`. The job
+//   therefore passes whether or not `reuse lint` is compliant; the finding
+//   surfaces only as the `REUSE` row in the Quality Report comment, which
+//   nothing reads on a green PR. That flag cannot be flipped yet — see
+//   .github/workflows/code-quality.yml for the single blocker and its owner —
+//   so between now and then there is no mechanism that notices a regression.
+//
+//   This is that mechanism, and it holds two separate lines.
+//
+//   1. STDERR ERRORS, asserted at zero. `reuse lint` writes parse failures to
+//      stderr and still exits on the compliance verdict alone, so a document
+//      whose own header cannot be read is invisible in the exit code. Five
+//      openspec documents were in exactly that state: each wrote the tag and
+//      its value inside one code span, the extractor captured a value with a
+//      trailing backtick and could not parse it, and ten ERROR lines said so
+//      where nobody was looking. They are fixed (`.license` companions), and
+//      the next document written the same way must not be able to reintroduce
+//      them quietly. Asked for by Remko Huisman in review on #553, in the
+//      spirit of hydra#657's pin guard.
+//
+//   2. FILES WITHOUT LICENSING INFO, ratcheted. REUSE.toml lists extensions
+//      rather than using a `path = "**"` blanket, so a file whose extension is
+//      not listed falls through and counts as unlicensed. That already
+//      happened once — `.jsx` and `.mjs` were missing, which is why nine
+//      React-portal sources under src/portal/ and one .mjs under docs/scripts/
+//      were unlicensed until #521. The blanket is the structural fix and it is
+//      queued behind the same blocker as `reuse-blocking`, because it would
+//      also stamp the twelve unannotated fonts EUPL-1.2 and flip `compliant`
+//      to true — converting a licensing finding into a green check. Until then
+//      this ratchet closes the hole the blanket would close: a new extension
+//      that falls through raises the count, and the count may not grow.
+//
+//   The three licence-hygiene lists are absolute rather than ratcheted, and
+//   that is deliberate: an UNUSED licence in LICENSES/ is itself a REUSE
+//   failure, so swapping an override without removing the licence text it
+//   orphaned turns one finding into two. That trap is live here — #553 removed
+//   LICENSES/CC-BY-SA-4.0.txt for exactly this reason when the MaxMind
+//   override was corrected.
+//
+// HOW IT RUNS THE LINTER
+//
+//   `reuse` on PATH if present, otherwise the pinned container image, which is
+//   what CI and every measurement on #521 and #553 used:
+//
+//     docker run --rm -v "$PWD":/data fsfe/reuse:5 lint --json
+//
+//   Docker runs as root, so this script only ever READS through it — a
+//   `reuse download` through the same image leaves root-owned files in
+//   LICENSES/.
+//
+// Usage:
+//   node scripts/check-reuse.js            (npm run check:reuse)
+//   node scripts/check-reuse.js --update   rewrite the baseline
+//   node scripts/check-reuse.js --list     print what is uncovered
+//
+// Exit codes:
+//   0 — stderr is clean, counts are at or below the baseline
+//   1 — an ERROR line appeared, a count grew, a licence list is dirty,
+//       the baseline file is missing, or the linter could not be run
+
+'use strict'
+
+const fs = require('fs')
+const path = require('path')
+const { spawnSync } = require('child_process')
+
+const REPO_ROOT = path.resolve(__dirname, '..')
+const BASELINE = path.join(REPO_ROOT, '.reuse-baseline.json')
+
+// Pinned to the same major the workflow's action resolves and every
+// measurement in #521/#553 used. A floating tag would let an upstream
+// extractor change move this repo's numbers with no commit here.
+const IMAGE = 'fsfe/reuse:5'
+
+/**
+ * Run `reuse lint --json`, preferring a local install over the container.
+ *
+ * @return {{stdout: string, stderr: string, how: string}} captured output
+ */
+function runLint() {
+	const attempts = [
+		{ how: 'reuse (PATH)', cmd: 'reuse', args: ['lint', '--json'] },
+		{
+			how: `docker ${IMAGE}`,
+			cmd: 'docker',
+			args: [
+				'run',
+				'--rm',
+				'-v',
+				`${REPO_ROOT}:/data`,
+				IMAGE,
+				'lint',
+				'--json',
+			],
+		},
+	]
+
+	for (const attempt of attempts) {
+		const result = spawnSync(attempt.cmd, attempt.args, {
+			cwd: REPO_ROOT,
+			encoding: 'utf8',
+			maxBuffer: 64 * 1024 * 1024,
+		})
+		// ENOENT means this runner has no such binary; fall through to the next.
+		// Any other failure is the linter itself talking, and `reuse lint` exits
+		// non-zero on a non-compliant tree, which is the expected state here.
+		if (result.error && result.error.code === 'ENOENT') continue
+		if (result.error) {
+			console.error(`Could not run ${attempt.how}: ${result.error.message}`)
+			process.exit(1)
+		}
+		return { stdout: result.stdout, stderr: result.stderr, how: attempt.how }
+	}
+
+	console.error('Neither `reuse` nor `docker` is available, so REUSE was not')
+	console.error('checked. This guard fails rather than passes silently — a')
+	console.error('skipped licence check reads exactly like a clean one.')
+	console.error('')
+	console.error('Install one of:')
+	console.error('  pipx install reuse')
+	console.error(`  docker pull ${IMAGE}`)
+	process.exit(1)
+}
+
+/**
+ * ERROR lines the linter wrote to stderr.
+ *
+ * @param {string} stderr - captured stderr
+ * @return {string[]} the matching lines
+ */
+function errorLines(stderr) {
+	return stderr
+		.split('\n')
+		.filter((line) => line.includes('ERROR'))
+		.map((line) => line.trim())
+}
+
+function main() {
+	const update = process.argv.includes('--update')
+	const list = process.argv.includes('--list')
+
+	const { stdout, stderr, how } = runLint()
+
+	let report
+	try {
+		report = JSON.parse(stdout)
+	} catch (e) {
+		console.error(`Could not parse the JSON report from ${how}: ${e.message}`)
+		console.error(stdout.slice(0, 400))
+		process.exit(1)
+	}
+
+	const nonCompliant = report.non_compliant || {}
+	const summary = report.summary || {}
+	const missingLicensing = nonCompliant.missing_licensing_info || []
+	const missingCopyright = nonCompliant.missing_copyright_info || []
+	const errors = errorLines(stderr)
+
+	if (list) {
+		console.log(
+			`Files with no licensing information (${missingLicensing.length}):`,
+		)
+		for (const file of [...missingLicensing].sort()) console.log(`  ${file}`)
+		if (errors.length) {
+			console.log('')
+			console.log(`stderr ERROR lines (${errors.length}):`)
+			for (const line of errors) console.log(`  ${line}`)
+		}
+		return
+	}
+
+	if (update) {
+		fs.writeFileSync(
+			BASELINE,
+			JSON.stringify(
+				{
+					missing_licensing_info: missingLicensing.length,
+					missing_copyright_info: missingCopyright.length,
+				},
+				null,
+				2,
+			) + '\n',
+		)
+		console.log(
+			`baseline written: ${missingLicensing.length} file(s) without licensing info, `
+				+ `${missingCopyright.length} without copyright info`,
+		)
+		return
+	}
+
+	if (!fs.existsSync(BASELINE)) {
+		console.error(
+			'No baseline. Run `npm run check:reuse -- --update` and commit it.',
+		)
+		process.exit(1)
+	}
+	const baseline = JSON.parse(fs.readFileSync(BASELINE, 'utf8'))
+
+	console.log(
+		`${summary.files_total} file(s) checked via ${how}; `
+			+ `${missingLicensing.length} without licensing info `
+			+ `(baseline ${baseline.missing_licensing_info}), `
+			+ `${errors.length} stderr ERROR line(s)`,
+	)
+
+	let failed = false
+
+	// 1. stderr, absolute.
+	if (errors.length > 0) {
+		console.error('')
+		console.error(
+			`${errors.length} ERROR line(s) on stderr — a file's own licence header`,
+		)
+		console.error('could not be parsed, and `reuse lint` does not fail on that:')
+		console.error('')
+		for (const line of errors.slice(0, 10)) console.error(`  ${line}`)
+		console.error('')
+		console.error('A markdown document that writes the tag and its value inside')
+		console.error('ONE code span is the known cause. Give it a `.license`')
+		console.error('companion rather than rewriting the prose around the tag.')
+		failed = true
+	}
+
+	// 2. coverage, ratcheted.
+	for (const [key, found] of [
+		['missing_licensing_info', missingLicensing],
+		['missing_copyright_info', missingCopyright],
+	]) {
+		const allowed = baseline[key]
+		if (typeof allowed !== 'number') {
+			console.error(`Baseline is missing the \`${key}\` key.`)
+			failed = true
+			continue
+		}
+		if (found.length > allowed) {
+			const added = found.length - allowed
+			console.error('')
+			console.error(
+				`${added} more file(s) with no ${key.replace('missing_', '').replace(/_/g, ' ')}`,
+			)
+			console.error(
+				'than the baseline allows. The likely cause is an extension',
+			)
+			console.error(
+				'REUSE.toml does not list — it lists extensions rather than',
+			)
+			console.error(
+				'using a blanket, so an unlisted one falls through silently.',
+			)
+			console.error('')
+			console.error(
+				'Add it to the appropriate block in REUSE.toml. See what is',
+			)
+			console.error('uncovered with:')
+			console.error('  node scripts/check-reuse.js --list')
+			failed = true
+		}
+	}
+
+	// 3. licence hygiene, absolute. An unused licence is itself a REUSE failure.
+	for (const key of [
+		'unused_licenses',
+		'bad_licenses',
+		'deprecated_licenses',
+		'missing_licenses',
+	]) {
+		const value = nonCompliant[key]
+		const entries = Array.isArray(value) ? value : Object.keys(value || {})
+		if (entries.length > 0) {
+			console.error('')
+			console.error(`${key}: ${entries.join(', ')}`)
+			if (key === 'unused_licenses') {
+				console.error(
+					'A licence text in LICENSES/ that nothing references is itself a',
+				)
+				console.error(
+					'REUSE failure. Changing an override orphans the licence it used',
+				)
+				console.error('to name — remove that file in the same commit.')
+			}
+			failed = true
+		}
+	}
+
+	if (failed) process.exit(1)
+
+	if (missingLicensing.length < baseline.missing_licensing_info) {
+		console.log(
+			`${baseline.missing_licensing_info - missingLicensing.length} fewer than the baseline — lower it with:`,
+		)
+		console.log('  npm run check:reuse -- --update')
+	}
+}
+
+main()
