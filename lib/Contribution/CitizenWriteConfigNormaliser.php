@@ -81,17 +81,58 @@ class CitizenWriteConfigNormaliser {
 			return $action;
 		}
 
+		$config = $this->requiredKeys(declared: $declared);
+		if ($config === null) {
+			unset($action[self::KEY]);
+			return $action;
+		}
+
+		$action[self::KEY] = ($config + $this->defaultedKeys(declared: $declared));
+		return $action;
+	}//end normaliseAction()
+
+	/**
+	 * Collect the three keys the case app MUST supply, or fail the lot.
+	 *
+	 * Split out of normaliseAction() so that method stays under the
+	 * complexity threshold; the fail-closed rule is unchanged, and it is
+	 * expressed here as a null return rather than by unsetting the key from
+	 * a copy of the action this method does not own.
+	 *
+	 * @param array<string, mixed> $declared The declaration as authored.
+	 *
+	 * @return array<string, string>|null The three keys, or null if any is
+	 *                                    absent, not a string, or empty.
+	 *
+	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 */
+	private function requiredKeys(array $declared): ?array {
 		$config = [];
 		foreach (self::REQUIRED as $key) {
 			$value = ($declared[$key] ?? null);
 			if (is_string($value) === false || $value === '') {
-				unset($action[self::KEY]);
-				return $action;
+				return null;
 			}
 
 			$config[$key] = $value;
 		}
 
+		return $config;
+	}//end requiredKeys()
+
+	/**
+	 * Resolve the keys that carry a default, so a case app declares only
+	 * what it moves.
+	 *
+	 * @param array<string, mixed> $declared The declaration as authored.
+	 *
+	 * @return array<string, string> Every defaulted key, authored value or
+	 *                               fallback.
+	 *
+	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 */
+	private function defaultedKeys(array $declared): array {
+		$config = [];
 		foreach (self::DEFAULTS as $key => $fallback) {
 			$value = ($declared[$key] ?? null);
 			$config[$key] = $fallback;
@@ -100,7 +141,6 @@ class CitizenWriteConfigNormaliser {
 			}
 		}
 
-		$action[self::KEY] = $config;
-		return $action;
-	}//end normaliseAction()
+		return $config;
+	}//end defaultedKeys()
 }//end class

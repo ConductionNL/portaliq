@@ -168,7 +168,9 @@ export default {
 			 * 2.40.0 ships neither as a built-in. Before this change the app
 			 * passed no formatters at all.
 			 */
-			formatters: createConnectionFormatters((source) => ncT('portaliq', source)),
+			formatters: createConnectionFormatters((source) =>
+				ncT('portaliq', source),
+			),
 
 			objectSidebarState: reactive({
 				active: false,

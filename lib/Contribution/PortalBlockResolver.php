@@ -43,6 +43,18 @@ class PortalBlockResolver {
 	private const BLOCK_TYPES = ['collection', 'action', 'detail', 'richText', 'cta', 'citizenCase'];
 
 	/**
+	 * The block types that are nothing but a reference to a collection.
+	 *
+	 * `citizenCase` references a collection exactly like `detail` does
+	 * (what-the-citizen-may-write-on-their-own-case); what it may write is
+	 * resolved per request from the case type, never from the block. Named as
+	 * a set rather than spelled out as a chain of comparisons in
+	 * normaliseBlock(), so adding the next one of these is a list entry and
+	 * not another branch in a method already at the complexity threshold.
+	 */
+	private const COLLECTION_REFERENCE_TYPES = ['collection', 'detail', 'citizenCase'];
+
+	/**
 	 * Filter a page's blocks to the registry with resolvable references.
 	 *
 	 * @param mixed $blocks The declared blocks.
@@ -89,10 +101,7 @@ class PortalBlockResolver {
 			return null;
 		}
 
-		// The citizen case block (what-the-citizen-may-write-on-their-own-case)
-		// references a collection like `detail` does; what it may write is
-		// resolved per request from the case type, never from the block.
-		if ($type === 'collection' || $type === 'detail' || $type === 'citizenCase') {
+		if (in_array($type, self::COLLECTION_REFERENCE_TYPES, true) === true) {
 			return $this->referenceBlock(
 				type: $type,
 				key: 'collection',

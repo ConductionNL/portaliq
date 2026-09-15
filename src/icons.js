@@ -29,6 +29,7 @@ import FileCheckOutline from 'vue-material-design-icons/FileCheckOutline.vue'
 import FileDocument from 'vue-material-design-icons/FileDocument.vue'
 import FileDocumentMultipleOutline from 'vue-material-design-icons/FileDocumentMultipleOutline.vue'
 import FileDocumentOutline from 'vue-material-design-icons/FileDocumentOutline.vue'
+import FileTreeOutline from 'vue-material-design-icons/FileTreeOutline.vue'
 import FolderOutline from 'vue-material-design-icons/FolderOutline.vue'
 import FormSelect from 'vue-material-design-icons/FormSelect.vue'
 import History from 'vue-material-design-icons/History.vue'
@@ -67,6 +68,7 @@ export default {
 	FileDocument,
 	FileDocumentMultipleOutline,
 	FileDocumentOutline,
+	FileTreeOutline,
 	FolderOutline,
 	FormSelect,
 	History,

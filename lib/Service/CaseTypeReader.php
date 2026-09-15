@@ -97,6 +97,26 @@ class CaseTypeReader {
 			return null;
 		}
 
+		return $this->asArray(entity: $entity);
+	}//end readCaseType()
+
+	/**
+	 * Coerce whatever OpenRegister handed back into a plain array, or null.
+	 *
+	 * OpenRegister's find() returns an array on some paths and an entity
+	 * object on others, so the caller cannot assume either. Split out of
+	 * readCaseType() to keep that method under the complexity threshold; the
+	 * accepted shapes are unchanged.
+	 *
+	 * @param mixed $entity Whatever find() returned.
+	 *
+	 * @return array<string, mixed>|null The case type as an array, or null
+	 *                                   when it is neither an array nor a
+	 *                                   JSON-serialisable object.
+	 *
+	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 */
+	private function asArray(mixed $entity): ?array {
 		if (is_array($entity) === true) {
 			return $entity;
 		}
@@ -109,7 +129,7 @@ class CaseTypeReader {
 		}
 
 		return null;
-	}//end readCaseType()
+	}//end asArray()
 
 	/**
 	 * Resolve OpenRegister's ObjectService, or null when unavailable.

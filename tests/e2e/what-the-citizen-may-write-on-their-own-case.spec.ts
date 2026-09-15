@@ -196,7 +196,10 @@ async function loginAsCitizen(
 async function openTheCase(page: Page, reference: string): Promise<void> {
 	await page.goto(PORTAL_PATH)
 	await page.waitForLoadState('domcontentloaded')
-	await page.getByRole('button', { name: /Mijn zaken/ }).first().click()
+	await page
+		.getByRole('button', { name: /Mijn zaken/ })
+		.first()
+		.click()
 	await page.getByText(reference).first().click()
 	await expect(page.getByTestId('citizen-case')).toBeVisible()
 }
@@ -249,14 +252,19 @@ test.describe('what a citizen may write on their own case', () => {
 		await expect(page.getByTestId('case-reason-reference')).not.toHaveText('')
 
 		// The correction lands.
-		await page.getByTestId('case-input-omschrijving').fill('Een dakkapel aan de achterzijde')
+		await page
+			.getByTestId('case-input-omschrijving')
+			.fill('Een dakkapel aan de achterzijde')
 		await page.getByTestId('case-save').click()
 		await expect(page.getByTestId('case-notice')).toContainText('opgeslagen')
 
 		// It is on the case after a reload, so this is the stored answer and
 		// not a screen that only looks saved.
 		await page.reload()
-		await page.getByRole('button', { name: /Mijn zaken/ }).first().click()
+		await page
+			.getByRole('button', { name: /Mijn zaken/ })
+			.first()
+			.click()
 		await page.getByText(reference).first().click()
 		await expect(page.getByTestId('case-input-omschrijving')).toHaveValue(
 			'Een dakkapel aan de achterzijde',
@@ -279,7 +287,9 @@ test.describe('what a citizen may write on their own case', () => {
 			buffer: Buffer.from('%PDF-1.4 tweede aanvulling'),
 		})
 		await expect(page.getByTestId('case-document')).toHaveCount(2)
-		await expect(page.getByTestId('case-document').first()).toHaveText('aanvulling.pdf')
+		await expect(page.getByTestId('case-document').first()).toHaveText(
+			'aanvulling.pdf',
+		)
 	})
 
 	// @e2e citizen-writes-on-their-own-case::the-window-closes
@@ -306,9 +316,13 @@ test.describe('what a citizen may write on their own case', () => {
 
 		// The answers are read-only, the reason is shown, and there is no save
 		// button to press at all.
-		await expect(page.getByTestId('case-window-closed')).toHaveText(CLOSED_REASON)
+		await expect(page.getByTestId('case-window-closed')).toHaveText(
+			CLOSED_REASON,
+		)
 		await expect(page.getByTestId('case-input-omschrijving')).toHaveCount(0)
-		await expect(page.getByTestId('case-value-omschrijving')).toHaveText('Een uitbouw')
+		await expect(page.getByTestId('case-value-omschrijving')).toHaveText(
+			'Een uitbouw',
+		)
 		await expect(page.getByTestId('case-save')).toHaveCount(0)
 		await expect(page.getByTestId('case-documents-closed')).toHaveText(
 			DOCUMENTS_CLOSED_REASON,
