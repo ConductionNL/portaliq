@@ -45,6 +45,10 @@ use Throwable;
  * is no file yet.
  *
  * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the thirteenth class is
+ * the optional ConnectionReporter (adopt-connection-registry). Reporting here
+ * covers all three callers at once, where three caller-side reports could drift.
  */
 class GeoRefreshService {
 

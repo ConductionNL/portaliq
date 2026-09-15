@@ -39,6 +39,10 @@ use Psr\Log\LoggerInterface;
  * Service for managing Portaliq application configuration and settings.
  *
  * @spec openspec/specs/settings-management/spec.md#REQ-CFG-001
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- the tenth dependency is
+ * the optional ConnectionReporter (adopt-connection-registry). A geography save
+ * is the moment integriq must be told, and that save lives here.
  */
 class SettingsService {
 
