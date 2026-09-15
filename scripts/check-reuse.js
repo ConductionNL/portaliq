@@ -71,9 +71,9 @@
 
 'use strict'
 
+const { spawnSync } = require('child_process')
 const fs = require('fs')
 const path = require('path')
-const { spawnSync } = require('child_process')
 
 const REPO_ROOT = path.resolve(__dirname, '..')
 const BASELINE = path.join(REPO_ROOT, '.reuse-baseline.json')
@@ -86,7 +86,9 @@ const IMAGE = 'fsfe/reuse:5'
 /**
  * Run `reuse lint --json`, preferring a local install over the container.
  *
- * @return {{stdout: string, stderr: string, how: string}} captured output
+ * @return {?{stdout: string, stderr: string, how: string}} captured output, or
+ *   null when neither runner is installed — the caller decides what that means,
+ *   so this helper does not own half the process lifecycle.
  */
 function runLint() {
 	const attempts = [
@@ -123,14 +125,7 @@ function runLint() {
 		return { stdout: result.stdout, stderr: result.stderr, how: attempt.how }
 	}
 
-	console.error('Neither `reuse` nor `docker` is available, so REUSE was not')
-	console.error('checked. This guard fails rather than passes silently — a')
-	console.error('skipped licence check reads exactly like a clean one.')
-	console.error('')
-	console.error('Install one of:')
-	console.error('  pipx install reuse')
-	console.error(`  docker pull ${IMAGE}`)
-	process.exit(1)
+	return null
 }
 
 /**
@@ -146,11 +141,25 @@ function errorLines(stderr) {
 		.map((line) => line.trim())
 }
 
+/**
+ *
+ */
 function main() {
 	const update = process.argv.includes('--update')
 	const list = process.argv.includes('--list')
 
-	const { stdout, stderr, how } = runLint()
+	const runner = runLint()
+	if (runner === null) {
+		console.error('Neither `reuse` nor `docker` is available, so REUSE was not')
+		console.error('checked. This guard fails rather than passes silently — a')
+		console.error('skipped licence check reads exactly like a clean one.')
+		console.error('')
+		console.error('Install one of:')
+		console.error('  pipx install reuse')
+		console.error(`  docker pull ${IMAGE}`)
+		process.exit(1)
+	}
+	const { stdout, stderr, how } = runner
 
 	let report
 	try {
