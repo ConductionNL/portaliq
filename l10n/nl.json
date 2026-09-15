@@ -964,7 +964,20 @@
         "{path} ({samples} samples)": "{path} ({samples} metingen)",
         "The masked events: snapshots (`s`), stylesheets sent once and referred to by hash (`y`), pointer moves (`m`), clicks (`c`), scrolls (`r`), viewport sizes (`v`) and navigations (`n`), each with a time offset.": "De gemaskeerde gebeurtenissen: momentopnamen (`s`), stijlbladen die eenmaal worden gestuurd en per hash worden aangehaald (`y`), muisbewegingen (`m`), klikken (`c`), scrolls (`r`), schermformaten (`v`) en navigaties (`n`), elk met een tijdverschil.",
         "Heatmap": "Heatmap",
-        "Session recordings": "Sessieopnames"
+        "Session recordings": "Sessieopnames",
+        "Integrations": "Koppelingen",
+        "Connection": "Verbinding",
+        "Status message": "Statusbericht",
+        "Last checked": "Laatst gecontroleerd",
+        "All connections": "Alle verbindingen",
+        "Add integration": "Integratie toevoegen",
+        "Open settings": "Instellingen openen",
+        "Configured": "Ingericht",
+        "Limited": "Beperkt",
+        "Not configured": "Niet ingericht",
+        "Simulated": "Gesimuleerd",
+        "Not available": "Niet beschikbaar",
+        "Error": "Fout"
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

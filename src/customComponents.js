@@ -34,6 +34,7 @@ import { showInfo } from '@nextcloud/dialogs'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import CustomExample from './views/CustomExample.vue'
+import { createConnectionHandlers } from './lib/connectionRegistry.js'
 import { createOpenPortalSite } from './lib/openPortalSite.js'
 
 /**
@@ -54,6 +55,16 @@ const openPortalSite = createOpenPortalSite({
 // ConductionNL/hydra#251.
 
 export default {
+	// Header-action handler: the Integrations page's Add integration
+	// (adopt-connection-registry). A FUNCTION, because it leaves the app for
+	// integriq's Connections overview and a header action's `navigate` only
+	// pushes a route inside this app. The action dispatcher resolves a handler
+	// name against this map only.
+	...createConnectionHandlers({
+		generateUrl,
+		assign: (url) => window.location.assign(url),
+	}),
+
 	// Example custom component. Keep or delete when scaffolding a new
 	// app. The manifest does NOT reference this by default; it is
 	// included so the registry's role is visible to first-time
