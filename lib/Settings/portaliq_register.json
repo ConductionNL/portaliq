@@ -742,9 +742,9 @@
                     ]
                 },
                 "icon": "ShieldCheckOutline",
-                "version": "0.1.0",
+                "version": "0.2.0",
                 "title": "Portal Audit Entry",
-                "description": "Append-only, portal-owned audit-trail fact record (portal-session-hardening-v2): written on every portal mutation (create/update/forward), every download, and every session event (login/logout/refresh). Never carries payload content — records THAT a verb happened against a target, not the data. Exposed count-only via MetricsController; never publicly readable. Retention is OpenRegister's records-management concern (Archiefwet) — see openspec/changes/portal-session-hardening-v2/design.md.",
+                "description": "Append-only, portal-owned audit-trail fact record (portal-session-hardening-v2): written on every portal mutation (create/update/forward), every confirmed portal-task completion (complete, WOO-569), every download, and every session event (login/logout/refresh). Never carries payload content — records THAT a verb happened against a target, not the data. Exposed count-only via MetricsController; never publicly readable. Retention is OpenRegister's records-management concern (Archiefwet) — see openspec/changes/portal-session-hardening-v2/design.md.",
                 "type": "object",
                 "required": [
                     "subjectRef",
@@ -789,7 +789,8 @@
                             "download",
                             "login",
                             "logout",
-                            "refresh"
+                            "refresh",
+                            "complete"
                         ],
                         "example": "create"
                     },

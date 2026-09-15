@@ -113,6 +113,41 @@ class SubmissionReceiptServiceTest extends TestCase {
 	 * rule key, the contributing appId, and a subject carrying subjectRef +
 	 * organisation + the passed-through audience.
 	 */
+	/**
+	 * WOO-569: a task completion is acknowledged through the SAME receipt
+	 * path as a create action. Run the real service for `task.complete` and
+	 * pin what lands: a receipt message with a reference id and the copy, and
+	 * a proof log linked to that reference — the two records the controller
+	 * tests only see as mocked calls.
+	 */
+	public function testATaskCompletionYieldsAReceiptAndALinkedProofLog(): void {
+		$writes = [];
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('createObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, array $data) use (&$writes) {
+				$writes[] = compact('schema', 'subjectRef', 'data');
+				return (['@self' => ['id' => $schema . '-id']] + $data);
+			}
+		);
+		$copy = ['taskUuid' => 't-1', 'title' => 'Stuur uw bewijsstuk', 'outcome' => 'submitted', 'comment' => 'klaar', 'answers' => ['veld' => 'waarde'], 'files' => ['bewijs.pdf']];
+
+		$service = new SubmissionReceiptService($writer, $this->l10nFactory(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
+		$service->record('s1', 'org-1', 'portaliq', 'task.complete', $copy, 'client');
+
+		$this->assertCount(2, $writes);
+		[$message, $submission] = $writes;
+		$this->assertSame('portalMessage', $message['schema']);
+		$this->assertSame('s1', $message['subjectRef']);
+		$this->assertSame($copy, $message['data']['dataCopy']);
+		$this->assertMatchesRegularExpression('/^WMEBV-/', (string)$message['data']['referenceId']);
+		$this->assertStringContainsString($message['data']['referenceId'], $message['data']['body']);
+		$this->assertSame('portalSubmission', $submission['schema']);
+		$this->assertSame('task.complete', $submission['data']['actionId']);
+		$this->assertSame($copy, $submission['data']['payloadCopy']);
+		$this->assertSame('delivered', $submission['data']['deliveryStatus']);
+		$this->assertSame($message['data']['referenceId'], $submission['data']['receiptMessageRef']);
+	}//end testATaskCompletionYieldsAReceiptAndALinkedProofLog()
+
 	public function testSuccessfulMessageWriteFiresTheMessageCreatedDispatchTrigger(): void {
 		$writer = $this->createMock(PortalObjectWriter::class);
 		$writer->method('createObject')->willReturnCallback(
