@@ -37,7 +37,10 @@
 			</p>
 		</NcSettingsSection>
 
+		<!-- `section-portal-auth-edge` is the anchor lib/Settings/connections.json
+			links the Login brokers row to (adopt-connection-registry). Keep it stable. -->
 		<NcSettingsSection
+			id="section-portal-auth-edge"
 			:name="t('portaliq', 'Portal auth edge')"
 			:description="
 				t(
@@ -145,9 +148,12 @@
 			Visitor geography (portal-traffic-visitors-and-geo, Ruben's
 			decision 7): DB-IP Lite by default, MaxMind with an account. The
 			licence key is write-only here: the server says whether one is
-			stored and never hands it back.
+			stored and never hands it back. `section-visitor-geography` is the
+			anchor lib/Settings/connections.json links the Visitor geography
+			database row to (adopt-connection-registry). Keep it stable.
 		-->
 		<NcSettingsSection
+			id="section-visitor-geography"
 			:name="t('portaliq', 'Visitor geography')"
 			:description="
 				t(

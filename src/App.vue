@@ -29,6 +29,7 @@
 		:customComponents="customComponents"
 		:pageTypes="pageTypes"
 		:registry="registry"
+		:formatters="formatters"
 		appId="portaliq"
 		:translate="translateForApp"
 		:permissions="permissions"
@@ -77,6 +78,7 @@ import { CnAppRoot, CnObjectSidebar } from '@conduction/nextcloud-vue'
 import { translate as ncT } from '@nextcloud/l10n'
 import { NcAppSettingsSection } from '@nextcloud/vue'
 import { reactive } from 'vue'
+import { createConnectionFormatters } from './lib/connectionRegistry.js'
 
 export default {
 	name: 'App',
@@ -151,8 +153,23 @@ export default {
 		},
 	},
 
+	/**
+	 * Component state: the object sidebar channel and the cell formatters.
+	 *
+	 * @return {object} The state.
+	 * @spec openspec/changes/adopt-connection-registry/specs/app-connections/spec.md#requirement-req-portaliq-conn-004-an-admin-reads-the-connections-on-an-integrations-page
+	 */
 	data() {
 		return {
+			/**
+			 * Named cell formatters merged over CnAppRoot's built-ins.
+			 * `connectionStatus` and `connectionSettingsLabel` render the
+			 * Integrations page (adopt-connection-registry); nextcloud-vue
+			 * 2.40.0 ships neither as a built-in. Before this change the app
+			 * passed no formatters at all.
+			 */
+			formatters: createConnectionFormatters((source) => ncT('portaliq', source)),
+
 			objectSidebarState: reactive({
 				active: false,
 				open: true,

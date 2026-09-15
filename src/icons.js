@@ -38,6 +38,7 @@ import MessageTextOutline from 'vue-material-design-icons/MessageTextOutline.vue
 import MotionPlayOutline from 'vue-material-design-icons/MotionPlayOutline.vue'
 import OpenInNew from 'vue-material-design-icons/OpenInNew.vue'
 import Palette from 'vue-material-design-icons/Palette.vue'
+import PowerPlugOutline from 'vue-material-design-icons/PowerPlugOutline.vue'
 import ShieldCheckOutline from 'vue-material-design-icons/ShieldCheckOutline.vue'
 import ShieldKeyOutline from 'vue-material-design-icons/ShieldKeyOutline.vue'
 import ShieldLock from 'vue-material-design-icons/ShieldLock.vue'
@@ -75,6 +76,7 @@ export default {
 	MessageTextOutline,
 	OpenInNew,
 	Palette,
+	PowerPlugOutline,
 	ShieldCheckOutline,
 	ShieldKeyOutline,
 	ShieldLock,
