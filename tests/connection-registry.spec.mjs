@@ -13,6 +13,8 @@
 // one icon by NAME. A misspelled name renders a raw enum, no glyph, or an Add
 // integration that does nothing, and none of them logs a thing. So this spec
 // reads the real manifest and checks every name against what has to answer it.
+// The two formatters are @conduction/nextcloud-vue built-ins since 3.2.0, so
+// their names are checked against the installed library, not a local copy.
 //
 // @spec openspec/changes/adopt-connection-registry/specs/app-connections/spec.md#requirement-req-portaliq-conn-004-an-admin-reads-the-connections-on-an-integrations-page
 
@@ -22,8 +24,6 @@ import { dirname, join } from 'node:path'
 import { describe, it } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import {
-	CONNECTION_STATUS_LABELS,
-	createConnectionFormatters,
 	createConnectionHandlers,
 	INTEGRIQ_CONNECTIONS_PATH,
 } from '../src/lib/connectionRegistry.js'
@@ -35,58 +35,23 @@ const page = manifest.pages.find((p) => p.id === 'Integrations')
 const menu = manifest.menu.find((m) => m.id === 'IntegrationsMenu')
 
 /**
- * A translator that marks what it translated, so a missing call shows.
+ * The formatter names the installed @conduction/nextcloud-vue registers as
+ * built-ins, read from its BUILT_IN_FORMATTERS map.
  *
- * @param {string} source The English source string.
- * @return {string} The marked string.
+ * @return {Set<string>} The registry keys.
  */
-const translate = (source) => `t:${source}`
+function libraryBuiltInFormatters() {
+	const source = read('node_modules', '@conduction', 'nextcloud-vue', 'src', 'utils', 'builtInFormatters.js')
+	const block = source.slice(source.indexOf('export const BUILT_IN_FORMATTERS'))
+	const body = block.slice(block.indexOf('{') + 1, block.indexOf('}'))
+	return new Set([...body.matchAll(/^\t'?([\w-]+)'?:/gm)].map((match) => match[1]))
+}
 
-describe('connection formatters', () => {
-	const formatters = createConnectionFormatters(translate)
-
-	it('labels all six statuses, limited included', () => {
-		assert.deepEqual(
-			Object.keys(CONNECTION_STATUS_LABELS).sort(),
-			['configured', 'error', 'limited', 'simulated', 'unavailable', 'unconfigured'],
-		)
-		assert.equal(formatters.connectionStatus('configured'), 't:Configured')
-		assert.equal(formatters.connectionStatus('limited'), 't:Limited')
-		assert.equal(formatters.connectionStatus('unconfigured'), 't:Not configured')
-		assert.equal(formatters.connectionStatus('simulated'), 't:Simulated')
-		assert.equal(formatters.connectionStatus('unavailable'), 't:Not available')
-		assert.equal(formatters.connectionStatus('error'), 't:Error')
-	})
-
-	// A connection that works in part is neither working nor broken, so it must
-	// not borrow either label.
-	it('keeps limited apart from configured, not available and error', () => {
-		const limited = formatters.connectionStatus('limited')
-		assert.notEqual(limited, formatters.connectionStatus('configured'))
-		assert.notEqual(limited, formatters.connectionStatus('unavailable'))
-		assert.notEqual(limited, formatters.connectionStatus('error'))
-	})
-
-	it('renders an unknown status as itself and a missing one as empty', () => {
-		assert.equal(formatters.connectionStatus('degraded'), 'degraded')
-		assert.equal(formatters.connectionStatus('toString'), 'toString')
-		assert.equal(formatters.connectionStatus(null), '')
-		assert.equal(formatters.connectionStatus(undefined), '')
-	})
-
-	it('offers Open settings only when the row has a settings link', () => {
-		assert.equal(formatters.connectionSettingsLabel('/settings/admin/portaliq'), 't:Open settings')
-		assert.equal(formatters.connectionSettingsLabel(''), '')
-		assert.equal(formatters.connectionSettingsLabel(undefined), '')
-		assert.equal(formatters.connectionSettingsLabel(null), '')
-	})
-
-	it('ships an English and a Dutch catalogue entry for every label the page shows', () => {
+describe('connection strings', () => {
+	it('ships an English and a Dutch catalogue entry for every label the page declares', () => {
 		const en = JSON.parse(read('l10n', 'en.json')).translations
 		const nl = JSON.parse(read('l10n', 'nl.json')).translations
 		const labels = [
-			...Object.values(CONNECTION_STATUS_LABELS),
-			'Open settings',
 			page.title,
 			menu.label,
 			page.config.folderSidebar.allLabel,
@@ -97,9 +62,6 @@ describe('connection formatters', () => {
 			assert.equal(en[label], label, `en: ${label}`)
 			assert.ok(nl[label], `nl: ${label}`)
 		}
-		assert.equal(nl.Limited, 'Beperkt')
-		// The browser reads the .js catalogue, never the .json one.
-		assert.match(read('l10n', 'nl.js'), /"Limited": "Beperkt"/)
 	})
 })
 
@@ -144,21 +106,29 @@ describe('the Integrations page declaration', () => {
 		assert.deepEqual(menu.visibleIf, { appInstalled: 'integriq' })
 	})
 
-	it('names only formatters and handlers that exist, and wires both into the app', () => {
-		const formatters = createConnectionFormatters(translate)
+	it('names only formatters the library ships and handlers that exist, and wires the handler into the app', () => {
+		const builtIns = libraryBuiltInFormatters()
 		const handlers = createConnectionHandlers({ generateUrl: (p) => p, assign: () => {} })
 
-		for (const column of page.config.columns.filter((c) => c.formatter)) {
-			assert.equal(typeof formatters[column.formatter], 'function', column.formatter)
+		assert.ok(builtIns.has('date'), 'the built-in formatter map was read')
+		const named = page.config.columns.filter((c) => c.formatter).map((c) => c.formatter)
+		assert.deepEqual(named.sort(), ['connectionSettingsLabel', 'connectionStatus'])
+		for (const formatter of named) {
+			assert.ok(builtIns.has(formatter), `@conduction/nextcloud-vue ships ${formatter}`)
 		}
 		for (const action of page.config.headerActions) {
 			assert.equal(typeof handlers[action.handler], 'function', action.handler)
 		}
 
-		const app = read('src', 'App.vue')
-		assert.ok(app.includes(':formatters="formatters"'), 'App.vue passes formatters to CnAppRoot')
-		assert.ok(app.includes('formatters: createConnectionFormatters('), 'App.vue builds the formatters')
 		assert.match(read('src', 'customComponents.js'), /^\t\.\.\.createConnectionHandlers\(\{$/m)
+	})
+
+	// The library labels all seven statuses. A copy of the formatter passed to
+	// CnAppRoot would win over the built-in and could predate `disabled`.
+	it('lets the library label the statuses, disabled included', () => {
+		const builtIn = read('node_modules', '@conduction', 'nextcloud-vue', 'src', 'utils', 'builtInFormatters.js')
+		assert.match(builtIn, /^\tdisabled: 'Switched off',$/m)
+		assert.ok(!read('src', 'App.vue').includes(':formatters='), 'App.vue passes no formatters that would shadow the built-ins')
 	})
 
 	it('names an icon src/icons.js registers', () => {

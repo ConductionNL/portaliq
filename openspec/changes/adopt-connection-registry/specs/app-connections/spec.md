@@ -103,7 +103,7 @@ A discovery request that fails, and a code exchange, SHALL report the `oidc` row
 
 ### Requirement: REQ-PORTALIQ-CONN-004 An admin reads the connections on an Integrations page
 
-Portaliq SHALL render an `index` page at `/settings/integrations` over `integriq/app_connection`, reached from the settings gear and preset to `app` equal to `portaliq` through its menu entry's `query` (hydra REQ-CONN-006). The page and its menu entry SHALL be admin only. The page SHALL require Integriq, and the menu entry SHALL only render when integriq is installed. The status column SHALL name all six statuses, `limited` included. The page SHALL NOT offer a generic Add button. Its Add integration action SHALL open `/apps/integriq/connections?app=portaliq&link=1`.
+Portaliq SHALL render an `index` page at `/settings/integrations` over `integriq/app_connection`, reached from the settings gear and preset to `app` equal to `portaliq` through its menu entry's `query` (hydra REQ-CONN-006). The page and its menu entry SHALL be admin only. The page SHALL require Integriq, and the menu entry SHALL only render when integriq is installed. The status column SHALL name all seven statuses, `limited` and `disabled` included, through the `connectionStatus` formatter `@conduction/nextcloud-vue` ships. The page SHALL NOT offer a generic Add button. Its Add integration action SHALL open `/apps/integriq/connections?app=portaliq&link=1`.
 
 #### Scenario: The page lists only the rows of portaliq
 @e2e tests/e2e/integrations-page.spec.ts
@@ -128,7 +128,7 @@ Portaliq SHALL render an `index` page at `/settings/integrations` over `integriq
 - **THEN** the Visitor geography database row SHALL read `disabled` with the switched-off message
 
 #### Scenario: A connection that works in part reads Limited
-@e2e exclude Only a provider switch before the next download produces limited; tests/connection-registry.spec.mjs asserts the label in English and Dutch.
+@e2e exclude Only a provider switch before the next download produces limited; tests/connection-registry.spec.mjs asserts the status column uses the library's built-in connectionStatus, whose labels nextcloud-vue's tests/utils/builtInFormatters.spec.js (formatConnectionStatus) asserts, with Beperkt in the library's l10n/nl.json.
 
 - **GIVEN** a row whose status is `limited`
 - **WHEN** the page renders it

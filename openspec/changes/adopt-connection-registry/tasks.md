@@ -31,7 +31,7 @@
 ## 5. Switch and built-in formatters (hydra#677)
 
 - [x] 5.1 Declare `switch` on `geo-db` with `offValues: ["none"]`, and stop reporting `unconfigured` for a switched-off geography.
-- [ ] 5.2 Move `@conduction/nextcloud-vue` to the release with the built-in connection formatters and delete the local copy.
+- [x] 5.2 Move `@conduction/nextcloud-vue` to the release with the built-in connection formatters and delete the local copy.
 
 ## 6. After integriq ships
 

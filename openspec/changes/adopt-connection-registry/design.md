@@ -64,10 +64,10 @@ Each candidate was checked against the code on `development` on 2026-09-14.
 
 - `src/manifest.json` gains an `index` page `Integrations` at `/settings/integrations`, `requiresApp` integriq, `permission: admin`, `showAdd: false`, and the columns connection, status, status message, last checked and settings.
 - Its menu entry `IntegrationsMenu` sits in the settings gear with `query: {app: portaliq}`, `permission: admin` and `visibleIf.appInstalled: integriq`.
-- `src/lib/connectionRegistry.js` holds the two formatters and `openIntegriqConnections`. It imports nothing, so `tests/connection-registry.spec.mjs` runs it under plain node, the way `openPortalSite.js` is tested.
-- `App.vue` passes the formatters through CnAppRoot's `formatters` prop. It passed none before this change. `src/customComponents.js` carries the handler, because the manifest action dispatcher resolves a handler name against that map only.
+- `src/lib/connectionRegistry.js` holds `openIntegriqConnections`. It imports nothing, so `tests/connection-registry.spec.mjs` runs it under plain node, the way `openPortalSite.js` is tested.
+- `App.vue` passes no `formatters`: CnAppRoot supplies the two built-ins. `src/customComponents.js` carries the handler, because the manifest action dispatcher resolves a handler name against that map only.
 
-**Formatters.** The installed `@conduction/nextcloud-vue` 2.40.0 ships no `connectionStatus` built-in, so portaliq carries a local copy with all six labels, `limited` included.
+**Formatters.** `@conduction/nextcloud-vue` 3.2.0 ships `connectionStatus` and `connectionSettingsLabel` as built-ins, `disabled` included (nextcloud-vue#1173). Portaliq carried a local copy while it pinned 2.40.0, and dropped it on moving to 3.2.0.
 
 ## D4. Contract misfits
 
