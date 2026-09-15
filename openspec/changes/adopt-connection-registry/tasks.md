@@ -17,15 +17,15 @@
 
 ## 3. Page
 
-- [ ] 3.1 Add the `Integrations` page and its settings-gear menu entry to `src/manifest.json`.
-- [ ] 3.2 Add `src/lib/connectionRegistry.js` with the two formatters and the Add integration handler.
-- [ ] 3.3 Wire the formatters in `src/App.vue` and the handler in `src/customComponents.js`; register `PowerPlugOutline` in `src/icons.js`.
-- [ ] 3.4 Add the strings to `l10n/en` and `l10n/nl`.
-- [ ] 3.5 Cover it in `tests/connection-registry.spec.mjs`.
+- [x] 3.1 Add the `Integrations` page and its settings-gear menu entry to `src/manifest.json`.
+- [x] 3.2 Add `src/lib/connectionRegistry.js` with the two formatters and the Add integration handler.
+- [x] 3.3 Wire the formatters in `src/App.vue` and the handler in `src/customComponents.js`; register `PowerPlugOutline` in `src/icons.js`.
+- [x] 3.4 Add the strings to `l10n/en` and `l10n/nl`.
+- [x] 3.5 Cover it in `tests/connection-registry.spec.mjs`.
 
 ## 4. End to end
 
-- [ ] 4.1 Write `tests/e2e/integrations-page.spec.ts`.
+- [x] 4.1 Write `tests/e2e/integrations-page.spec.ts`.
 - [ ] 4.2 Install integriq in the CI `additional-apps`.
 
 ## 5. After integriq ships

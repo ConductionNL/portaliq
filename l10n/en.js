@@ -913,7 +913,20 @@ OC.L10N.register(
         "{path} ({samples} samples)": "{path} ({samples} samples)",
         "The masked events: snapshots (`s`), stylesheets sent once and referred to by hash (`y`), pointer moves (`m`), clicks (`c`), scrolls (`r`), viewport sizes (`v`) and navigations (`n`), each with a time offset.": "The masked events: snapshots (`s`), stylesheets sent once and referred to by hash (`y`), pointer moves (`m`), clicks (`c`), scrolls (`r`), viewport sizes (`v`) and navigations (`n`), each with a time offset.",
         "Heatmap": "Heatmap",
-        "Session recordings": "Session recordings"
+        "Session recordings": "Session recordings",
+        "Integrations": "Integrations",
+        "Connection": "Connection",
+        "Status message": "Status message",
+        "Last checked": "Last checked",
+        "All connections": "All connections",
+        "Add integration": "Add integration",
+        "Open settings": "Open settings",
+        "Configured": "Configured",
+        "Limited": "Limited",
+        "Not configured": "Not configured",
+        "Simulated": "Simulated",
+        "Not available": "Not available",
+        "Error": "Error"
     },
     "nplurals=2; plural=(n != 1);"
 )
