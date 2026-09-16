@@ -45,6 +45,12 @@ use Psr\Log\LoggerInterface;
  * under test is the contract the portal reads it through.
  *
  * @covers \OCA\Portaliq\Controller\CitizenCaseController
+ * @uses   \OCA\Portaliq\Contribution\CitizenDocumentUpload
+ * @uses   \OCA\Portaliq\Event\PortalClientWriteEvent
+ * @uses   \OCA\Portaliq\Service\CitizenWritableSetResolver
+ * @uses   \OCA\Portaliq\Service\CitizenWriteRecorder
+ * @uses   \OCA\Portaliq\Service\CitizenWriteThrottle
+ * @uses   \OCA\Portaliq\Service\PortalSessionService
  *
  * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
  */
