@@ -38,6 +38,7 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
+use OCA\Portaliq\Contribution\CitizenDocumentUpload;
 use OCA\Portaliq\Contribution\CitizenWriteConfigNormaliser;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Event\PortalClientWriteEvent;
@@ -86,6 +87,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 * @param CitizenWritableSetResolver $writableSet Reads the case type's flags.
 	 * @param CitizenWriteRecorder $recorder Records and announces the write.
 	 * @param CitizenWriteThrottle $throttle Counts writes per identity and per case.
+	 * @param CitizenDocumentUpload $upload Reads and names the citizen's document.
 	 * @param IL10N $l10n The sentences a refusal is given with.
 	 * @param LoggerInterface $logger Records the cause of a translated failure.
 	 */
@@ -100,6 +102,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 		private readonly CitizenWritableSetResolver $writableSet,
 		private readonly CitizenWriteRecorder $recorder,
 		private readonly CitizenWriteThrottle $throttle,
+		private readonly CitizenDocumentUpload $upload,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 	) {
@@ -220,7 +223,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			);
 		}
 
-		$upload = $this->readUploadedFile();
+		$upload = $this->upload->read($this->request->getUploadedFile('file'));
 		if ($upload === null) {
 			return $this->refuse(
 				message: $this->l10n->t('There is no file to add.'),
@@ -233,7 +236,10 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			register: $register,
 			schema: $schema,
 			id: $id,
-			fileName: $this->uniqueFileName(register: $register, schema: $schema, id: $id, fileName: $upload['name']),
+			fileName: $this->upload->uniqueName(
+				existing: $this->fileReader->listFiles(register: $register, schema: $schema, id: $id),
+				fileName: $upload['name']
+			),
 			content: $upload['content']
 		);
 		if ($attached === null) {
@@ -497,70 +503,6 @@ class CitizenCaseController extends Controller implements PortalProtected {
 
 		return null;
 	}//end citizenWriteAction()
-
-	/**
-	 * A name no document on the case already uses, so an upload adds rather
-	 * than replaces.
-	 *
-	 * @param string $register The register the case lives in.
-	 * @param string $schema The schema the case lives in.
-	 * @param string $id The case id.
-	 * @param string $fileName The sanitised upload name.
-	 *
-	 * @return string
-	 */
-	private function uniqueFileName(string $register, string $schema, string $id, string $fileName): string {
-		$taken = [];
-		foreach ($this->fileReader->listFiles(register: $register, schema: $schema, id: $id) as $file) {
-			$name = ($file['name'] ?? null);
-			if (is_string($name) === true && $name !== '') {
-				$taken[] = $name;
-			}
-		}
-
-		if (in_array($fileName, $taken, true) === false) {
-			return $fileName;
-		}
-
-		$extension = pathinfo($fileName, PATHINFO_EXTENSION);
-		$stem = pathinfo($fileName, PATHINFO_FILENAME);
-		$suffix = '';
-		if ($extension !== '') {
-			$suffix = '.' . $extension;
-		}
-		$counter = 2;
-		while (in_array($stem . '-' . $counter . $suffix, $taken, true) === true) {
-			$counter++;
-		}
-
-		return $stem . '-' . $counter . $suffix;
-	}//end uniqueFileName()
-
-	/**
-	 * Read the multipart upload into a {name, content} pair, or null when
-	 * there is nothing usable. The client's path is never trusted.
-	 *
-	 * @return array{name: string, content: string}|null
-	 */
-	private function readUploadedFile(): ?array {
-		$uploaded = $this->request->getUploadedFile('file');
-		$tmpName = (string)($uploaded['tmp_name'] ?? '');
-		if ((int)($uploaded['error'] ?? 1) !== 0 || $tmpName === '' || is_readable($tmpName) === false) {
-			return null;
-		}
-
-		$content = file_get_contents($tmpName);
-		if ($content === false) {
-			return null;
-		}
-
-		$fileName = basename((string)($uploaded['name'] ?? 'upload'));
-		if ($fileName === '' || $fileName === '.' || $fileName === '..') {
-			$fileName = 'upload';
-		}
-
-		return ['name' => $fileName, 'content' => $content];
-	}//end readUploadedFile()
 
 	/**
 	 * A refusal the citizen can read: one sentence, plus a slug the portal

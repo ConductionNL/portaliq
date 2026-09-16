@@ -81,12 +81,35 @@ class CitizenWriteConfigNormaliser {
 			return $action;
 		}
 
+		$config = $this->normaliseConfig(declared: $declared);
+		if ($config === null) {
+			unset($action[self::KEY]);
+			return $action;
+		}
+
+		$action[self::KEY] = $config;
+		return $action;
+	}//end normaliseAction()
+
+	/**
+	 * The declaration's own fields, or null when a required one is absent.
+	 *
+	 * Split out of normaliseAction() so neither method carries the whole
+	 * decision tree: this one answers "is the declaration itself sound", and
+	 * the caller answers "what happens to the action when it is not".
+	 *
+	 * @param array<string, mixed> $declared The declaration as authored.
+	 *
+	 * @return array<string, string>|null The sanitised config, or null.
+	 *
+	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 */
+	private function normaliseConfig(array $declared): ?array {
 		$config = [];
 		foreach (self::REQUIRED as $key) {
 			$value = ($declared[$key] ?? null);
 			if (is_string($value) === false || $value === '') {
-				unset($action[self::KEY]);
-				return $action;
+				return null;
 			}
 
 			$config[$key] = $value;
@@ -100,7 +123,6 @@ class CitizenWriteConfigNormaliser {
 			}
 		}
 
-		$action[self::KEY] = $config;
-		return $action;
-	}//end normaliseAction()
+		return $config;
+	}//end normaliseConfig()
 }//end class
