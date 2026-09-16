@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
+use OCA\Portaliq\Contribution\CitizenDocumentUpload;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\CitizenCaseController;
 use OCA\Portaliq\Event\PortalClientWriteEvent;
@@ -511,6 +512,7 @@ class CitizenCaseControllerTest extends TestCase {
 			new CitizenWritableSetResolver($caseTypeReader, $l10n),
 			new CitizenWriteRecorder($this->createMock(AuditTrailService::class), $dispatcher),
 			$this->throttle(open: $throttleOpen),
+			new CitizenDocumentUpload(),
 			$l10n,
 			$this->createMock(LoggerInterface::class)
 		);
