@@ -118,7 +118,7 @@ async function seedContribution(
 	return seed(request, 'portalPage', {
 		label: 'Mijn zaken',
 		audience: 'client',
-		active: true,
+		status: 'active',
 		collections: [
 			{
 				id: 'cases',
