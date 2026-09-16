@@ -1012,7 +1012,8 @@
         "The statuses the field stays open in. Absent means the amendment window decides.": "De statussen waarin het veld openblijft. Ontbreekt dit, dan beslist de correctietermijn.",
         "The tenant this case belongs to.": "De tenant waar deze zaak bij hoort.",
         "Toelichting": "Toelichting",
-        "What the citizen asked for.": "Waar de burger om heeft gevraagd."
+        "What the citizen asked for.": "Waar de burger om heeft gevraagd.",
+        "Ordered UI blocks composing the page. type ∈ collection|action|detail|richText|cta|citizenCase (PortalBlockResolver::BLOCK_TYPES) — an unrecognised type or an unresolvable collection/action reference is dropped by the normaliser, never rendered as broken.": "Geordende UI-blokken waaruit de pagina bestaat. type ∈ collection|action|detail|richText|cta|citizenCase (PortalBlockResolver::BLOCK_TYPES). Een onbekend type of een onoplosbare verwijzing naar een collectie of actie wordt door de normaliseerder weggelaten, nooit kapot getoond."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

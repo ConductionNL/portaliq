@@ -961,7 +961,8 @@ OC.L10N.register(
         "The statuses the field stays open in. Absent means the amendment window decides.": "The statuses the field stays open in. Absent means the amendment window decides.",
         "The tenant this case belongs to.": "The tenant this case belongs to.",
         "Toelichting": "Toelichting",
-        "What the citizen asked for.": "What the citizen asked for."
+        "What the citizen asked for.": "What the citizen asked for.",
+        "Ordered UI blocks composing the page. type ∈ collection|action|detail|richText|cta|citizenCase (PortalBlockResolver::BLOCK_TYPES) — an unrecognised type or an unresolvable collection/action reference is dropped by the normaliser, never rendered as broken.": "Ordered UI blocks composing the page. type ∈ collection|action|detail|richText|cta|citizenCase (PortalBlockResolver::BLOCK_TYPES) — an unrecognised type or an unresolvable collection/action reference is dropped by the normaliser, never rendered as broken."
     },
     "nplurals=2; plural=(n != 1);"
 )
