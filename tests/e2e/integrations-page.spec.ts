@@ -164,14 +164,14 @@ test.describe('Integrations over the connection registry', () => {
 			test.skip(previous === 'none', 'This instance already runs without geography, so there is no change to observe.')
 
 			try {
-				// The save sends ConnectionRefreshRequestedEvent, then a report
-				// that geography is switched off.
+				// The save sends ConnectionRefreshRequestedEvent and no report. The
+				// row's switch reads `none` as off, so integriq resolves disabled.
 				const saved = await api.put(SETTINGS_API, { data: { traffic_geo: { provider: 'none' } } })
 				expect(saved.ok(), `settings save -> ${saved.status()}`).toBeTruthy()
 
 				await expect
 					.poll(() => geoRow(api), { timeout: 15_000 })
-					.toBe('unconfigured Geography is switched off. No database is fetched and no region is stored.')
+					.toBe('disabled Geography is switched off. No database is fetched and no region is stored.')
 			} finally {
 				// Put the VALUE back. The restore is a save too, so it refreshes the row again.
 				await api.put(SETTINGS_API, { data: { traffic_geo: { provider: previous } } })

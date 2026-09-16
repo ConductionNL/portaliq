@@ -215,14 +215,34 @@ class ConnectionReporterTest extends TestCase {
 	 * @return void
 	 */
 	public function testAGeographySaveRefreshesBeforeItReports(): void {
-		$sent = $this->reporter()->geoSettingsSaved(settings: ['provider' => 'none'], status: ['present' => false]);
+		$sent = $this->reporter()->geoSettingsSaved(settings: ['provider' => 'dbip'], status: ['present' => false]);
 
 		$this->assertTrue(condition: $sent);
 		$this->assertSame(expected: ['refresh:geo-db', 'report:geo-db:unconfigured'], actual: $this->sentSummary());
 		$this->assertSame(expected: 'portaliq', actual: $this->sent[0]->app);
 		$this->assertSame(expected: 'portaliq', actual: $this->sent[1]->app);
-		$this->assertStringStartsWith(prefix: 'Geography is switched off.', string: $this->sent[1]->message);
+		$this->assertStringStartsWith(prefix: 'No database is installed yet.', string: $this->sent[1]->message);
 	}//end testAGeographySaveRefreshesBeforeItReports()
+
+	/**
+	 * Saving provider none refreshes and reports nothing, and a disabled refresh reports nothing.
+	 *
+	 * The `geo-db` switch reads `none` as off, so integriq resolves `disabled`
+	 * itself. The refresh still goes out: it retires the reports of the
+	 * provider that was on, which would otherwise outlive the switch in the
+	 * row's history.
+	 *
+	 * @return void
+	 */
+	public function testSwitchingGeographyOffOnlyRefreshes(): void {
+		$reporter = $this->reporter();
+
+		$this->assertFalse(condition: $reporter->geoSettingsSaved(settings: ['provider' => 'none'], status: ['present' => true]));
+		$this->assertFalse(condition: $reporter->geoRefreshed(result: ['status' => 'disabled', 'provider' => 'none']));
+
+		$this->assertSame(expected: ['refresh:geo-db'], actual: $this->sentSummary());
+		$this->assertArrayNotHasKey(key: ConnectionReporter::MEMORY_KEY_PREFIX . 'geo-db', array: $this->stored);
+	}//end testSwitchingGeographyOffOnlyRefreshes()
 
 	/**
 	 * A save reports at once, even right after a throttled report with another status.
@@ -362,7 +382,7 @@ class ConnectionReporterTest extends TestCase {
 
 		$reporter = new ConnectionReporter(eventDispatcher: $dispatcher, appConfig: $this->appConfig, timeFactory: $this->clock, logger: $this->logger);
 
-		$this->assertFalse(condition: $reporter->geoRefreshed(result: ['status' => 'disabled']));
+		$this->assertFalse(condition: $reporter->geoRefreshed(result: ['status' => 'failed', 'provider' => 'dbip']));
 		$this->assertFalse(condition: $reporter->oidcDiscoveryFailed(issuer: 'https://broker.example', answered: true));
 		$this->assertSame(expected: [], actual: $this->stored, message: 'a report that was not sent must not start a window');
 	}//end testAThrowingListenerNeverEscapes()
