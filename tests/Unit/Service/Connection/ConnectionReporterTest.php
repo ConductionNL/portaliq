@@ -47,6 +47,7 @@ use RuntimeException;
  * Unit tests for ConnectionReporter.
  *
  * @covers \OCA\Portaliq\Service\Connection\ConnectionReporter
+ * @uses   \OCA\Portaliq\Service\Connection\ConnectionObservations
  */
 class ConnectionReporterTest extends TestCase {
 

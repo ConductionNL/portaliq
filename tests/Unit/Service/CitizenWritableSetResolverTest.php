@@ -22,6 +22,7 @@ use PHPUnit\Framework\TestCase;
  * type, narrowed by the action's own whitelist, and everything fails closed.
  *
  * @covers \OCA\Portaliq\Service\CitizenWritableSetResolver
+ * @uses   \OCA\Portaliq\Contribution\CitizenWriteConfigNormaliser
  *
  * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
  */
