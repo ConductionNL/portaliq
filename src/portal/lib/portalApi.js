@@ -310,7 +310,9 @@ export function createPortalApi(config) {
 		 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
 		 */
 		async fetchCitizenCase(collection, id) {
-			return get(`${citizenCase(collection.register, collection.schema)}/${encodeURIComponent(id)}`)
+			return get(
+				`${citizenCase(collection.register, collection.schema)}/${encodeURIComponent(id)}`,
+			)
 		},
 
 		/**
@@ -329,13 +331,22 @@ export function createPortalApi(config) {
 				`${base}${citizenCase(collection.register, collection.schema)}/${encodeURIComponent(id)}`,
 				{
 					method: 'PATCH',
-					headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...authHeaders() },
+					headers: {
+						'Content-Type': 'application/json',
+						Accept: 'application/json',
+						...authHeaders(),
+					},
 					body: JSON.stringify({ fields }),
 				},
 			)
 			const json = await res.json().catch(() => ({}))
 			if (!res.ok) {
-				return { ok: false, status: res.status, message: json.message || '', error: json.error || '' }
+				return {
+					ok: false,
+					status: res.status,
+					message: json.message || '',
+					error: json.error || '',
+				}
 			}
 			return { ok: true, status: res.status, case: json.case || null }
 		},
@@ -355,11 +366,20 @@ export function createPortalApi(config) {
 			form.append('file', file)
 			const res = await fetch(
 				`${base}${citizenCase(collection.register, collection.schema)}/${encodeURIComponent(id)}/documents`,
-				{ method: 'POST', headers: { Accept: 'application/json', ...authHeaders() }, body: form },
+				{
+					method: 'POST',
+					headers: { Accept: 'application/json', ...authHeaders() },
+					body: form,
+				},
 			)
 			const json = await res.json().catch(() => ({}))
 			if (!res.ok) {
-				return { ok: false, status: res.status, message: json.message || '', error: json.error || '' }
+				return {
+					ok: false,
+					status: res.status,
+					message: json.message || '',
+					error: json.error || '',
+				}
 			}
 			return { ok: true, document: json.document || null }
 		},
