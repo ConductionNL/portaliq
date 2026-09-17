@@ -3,7 +3,18 @@
         "Journeys": "Journeys",
         "Per day": "Per day",
         "Sources": "Sources",
-        "What visitors looked at over the last 30 days, and where they came from. Pick a portal at the top; the numbers come from the daily figures the aggregation job writes every fifteen minutes.": "What visitors looked at over the last 30 days, and where they came from. Pick a portal at the top; the numbers come from the daily figures the aggregation job writes every fifteen minutes."
+        "The change could not be saved. Please try again.": "The change could not be saved. Please try again.",
+        "The document could not be added. Please try again.": "The document could not be added. Please try again.",
+        "There is no file to add.": "There is no file to add.",
+        "There is nothing to change.": "There is nothing to change.",
+        "This answer can no longer be changed.": "This answer can no longer be changed.",
+        "This answer cannot be changed from the portal.": "This answer cannot be changed from the portal.",
+        "This case cannot be changed from the portal.": "This case cannot be changed from the portal.",
+        "This case is not open for changes from the portal.": "This case is not open for changes from the portal.",
+        "This case is not yours.": "This case is not yours.",
+        "What visitors looked at over the last 30 days, and where they came from. Pick a portal at the top; the numbers come from the daily figures the aggregation job writes every fifteen minutes.": "What visitors looked at over the last 30 days, and where they came from. Pick a portal at the top; the numbers come from the daily figures the aggregation job writes every fifteen minutes.",
+        "You have already answered this task.": "You have already answered this task.",
+        "You have made a lot of changes in a short time. Please try again later.": "You have made a lot of changes in a short time. Please try again later."
     },
     "pluralForm": "nplurals=2; plural=(n != 1);"
 }

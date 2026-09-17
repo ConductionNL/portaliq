@@ -48,6 +48,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Service\Connection\ConnectionReporter;
 use OCP\Http\Client\IClientService;
 use OCP\ICacheFactory;
 use Psr\Log\LoggerInterface;
@@ -107,11 +108,18 @@ class OidcClientService {
 	 *                                    correctness issue).
 	 * @param LoggerInterface $logger The logger — debug-level only, never
 	 *                                leaks WHICH validation check failed.
+	 * @param ConnectionReporter|null $connectionReporter Tells integriq, throttled,
+	 *                                                    what a broker answered. The
+	 *                                                    report reaches admins only,
+	 *                                                    never the login response.
+	 *
+	 * @spec openspec/changes/adopt-connection-registry/specs/app-connections/spec.md#requirement-req-portaliq-conn-003-a-broker-call-reports-what-the-broker-answered-throttled
 	 */
 	public function __construct(
 		private readonly IClientService $clientService,
 		private readonly ICacheFactory $cacheFactory,
 		private readonly LoggerInterface $logger,
+		private readonly ?ConnectionReporter $connectionReporter = null,
 	) {
 	}//end __construct()
 
@@ -145,11 +153,16 @@ class OidcClientService {
 	 * configuration`), cached. Fails closed to null on any HTTP/JSON error,
 	 * or when the required endpoints are absent from the document.
 	 *
+	 * A failed request is reported to integriq's connection registry,
+	 * throttled (adopt-connection-registry). A cache hit makes no call, so
+	 * it reports nothing.
+	 *
 	 * @param string $issuer The configured issuer base URL.
 	 *
 	 * @return array{authorization_endpoint: string, token_endpoint: string, jwks_uri: string}|null
 	 *
 	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T03
+	 * @spec openspec/changes/adopt-connection-registry/specs/app-connections/spec.md#requirement-req-portaliq-conn-003-a-broker-call-reports-what-the-broker-answered-throttled
 	 */
 	public function discover(string $issuer): ?array {
 		if ($issuer === '') {
@@ -169,11 +182,13 @@ class OidcClientService {
 			$response = $client->get($url, ['timeout' => self::HTTP_TIMEOUT]);
 		} catch (Throwable $e) {
 			$this->logger->debug('Portaliq: OIDC discovery failed', ['reason' => $e->getMessage()]);
+			$this->connectionReporter?->oidcDiscoveryFailed(issuer: $issuer, answered: false);
 			return null;
 		}
 
 		$decoded = $this->decodeJsonBody(response: $response);
 		if ($decoded === null) {
+			$this->connectionReporter?->oidcDiscoveryFailed(issuer: $issuer, answered: true);
 			return null;
 		}
 
@@ -184,6 +199,7 @@ class OidcClientService {
 		];
 
 		if ($endpoints['authorization_endpoint'] === '' || $endpoints['token_endpoint'] === '' || $endpoints['jwks_uri'] === '') {
+			$this->connectionReporter?->oidcDiscoveryFailed(issuer: $issuer, answered: true);
 			return null;
 		}
 
@@ -242,6 +258,10 @@ class OidcClientService {
 	 * Fails closed to null on any transport/HTTP/JSON error or a non-2xx
 	 * response — never surfaces the broker's own error detail to the caller.
 	 *
+	 * What the broker answered is reported to integriq's connection registry,
+	 * throttled, where only admins read it (adopt-connection-registry). An
+	 * answer about one login, such as `invalid_grant`, is not reported.
+	 *
 	 * @param string $tokenEndpoint The broker's token endpoint.
 	 * @param string $code The authorization code from the callback.
 	 * @param string $codeVerifier The PKCE code verifier matching the original challenge.
@@ -252,6 +272,7 @@ class OidcClientService {
 	 * @return array<string, mixed>|null The decoded token response, or null.
 	 *
 	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T03
+	 * @spec openspec/changes/adopt-connection-registry/specs/app-connections/spec.md#requirement-req-portaliq-conn-003-a-broker-call-reports-what-the-broker-answered-throttled
 	 */
 	public function exchangeCode(
 		string $tokenEndpoint,
@@ -280,15 +301,49 @@ class OidcClientService {
 			);
 		} catch (Throwable $e) {
 			$this->logger->debug('Portaliq: OIDC code exchange failed', ['reason' => $e->getMessage()]);
+			$this->connectionReporter?->oidcExchangeAnswered(tokenEndpoint: $tokenEndpoint, httpStatus: null, oauthError: '', hasToken: false);
 			return null;
 		}//end try
 
-		if ($response->getStatusCode() < 200 || $response->getStatusCode() >= 300) {
+		$decoded = $this->decodeJsonBody(response: $response);
+		$status  = $response->getStatusCode();
+		$this->reportExchange(tokenEndpoint: $tokenEndpoint, httpStatus: $status, decoded: $decoded);
+
+		if ($status < 200 || $status >= 300) {
 			return null;
 		}
 
-		return $this->decodeJsonBody(response: $response);
+		return $decoded;
 	}//end exchangeCode()
+
+	/**
+	 * Tell integriq, throttled, what the broker answered to a code exchange.
+	 *
+	 * @param string                    $tokenEndpoint The token endpoint called.
+	 * @param int                       $httpStatus    The answer's HTTP status.
+	 * @param array<string, mixed>|null $decoded       The decoded answer, or null when it was not JSON.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/adopt-connection-registry/specs/app-connections/spec.md#requirement-req-portaliq-conn-003-a-broker-call-reports-what-the-broker-answered-throttled
+	 */
+	private function reportExchange(string $tokenEndpoint, int $httpStatus, ?array $decoded): void {
+		if ($this->connectionReporter === null) {
+			return;
+		}
+
+		$oauthError = '';
+		if (is_string($decoded['error'] ?? null) === true) {
+			$oauthError = $decoded['error'];
+		}
+
+		$this->connectionReporter->oidcExchangeAnswered(
+			tokenEndpoint: $tokenEndpoint,
+			httpStatus: $httpStatus,
+			oauthError: $oauthError,
+			hasToken: (is_string($decoded['id_token'] ?? null) === true && $decoded['id_token'] !== '')
+		);
+	}//end reportExchange()
 
 	/**
 	 * Full network-integrated ID-token verification: fetches (cached) JWKS

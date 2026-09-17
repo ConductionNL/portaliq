@@ -29,6 +29,7 @@ import FileCheckOutline from 'vue-material-design-icons/FileCheckOutline.vue'
 import FileDocument from 'vue-material-design-icons/FileDocument.vue'
 import FileDocumentMultipleOutline from 'vue-material-design-icons/FileDocumentMultipleOutline.vue'
 import FileDocumentOutline from 'vue-material-design-icons/FileDocumentOutline.vue'
+import FileTreeOutline from 'vue-material-design-icons/FileTreeOutline.vue'
 import FolderOutline from 'vue-material-design-icons/FolderOutline.vue'
 import FormSelect from 'vue-material-design-icons/FormSelect.vue'
 import History from 'vue-material-design-icons/History.vue'
@@ -38,6 +39,7 @@ import MessageTextOutline from 'vue-material-design-icons/MessageTextOutline.vue
 import MotionPlayOutline from 'vue-material-design-icons/MotionPlayOutline.vue'
 import OpenInNew from 'vue-material-design-icons/OpenInNew.vue'
 import Palette from 'vue-material-design-icons/Palette.vue'
+import PowerPlugOutline from 'vue-material-design-icons/PowerPlugOutline.vue'
 import ShieldCheckOutline from 'vue-material-design-icons/ShieldCheckOutline.vue'
 import ShieldKeyOutline from 'vue-material-design-icons/ShieldKeyOutline.vue'
 import ShieldLock from 'vue-material-design-icons/ShieldLock.vue'
@@ -66,6 +68,10 @@ export default {
 	FileDocument,
 	FileDocumentMultipleOutline,
 	FileDocumentOutline,
+	// The `portalCaseType` schema in lib/Settings/portaliq_register.json. The
+	// register named it without registering it here, so the schema's index and
+	// detail headers drew no icon at all, not a fallback (rule 3 above).
+	FileTreeOutline,
 	FolderOutline,
 	FormSelect,
 	History,
@@ -75,6 +81,7 @@ export default {
 	MessageTextOutline,
 	OpenInNew,
 	Palette,
+	PowerPlugOutline,
 	ShieldCheckOutline,
 	ShieldKeyOutline,
 	ShieldLock,

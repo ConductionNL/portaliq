@@ -101,6 +101,12 @@ return [
         // client session. Registered before the /portal/{path} SPA catch-all.
         ['name' => 'session#index', 'url' => '/portal/api/session', 'verb' => 'GET'],
         ['name' => 'session#devLogin', 'url' => '/portal/api/session/dev-login', 'verb' => 'POST'],
+        // Sign in with a Nextcloud account — the `nextcloud` authentication
+        // mode. The SPA has always rendered a button pointing here; until now
+        // no route answered it, so the button 404'd. Not public: the caller's
+        // Nextcloud session IS the credential, and an anonymous visitor is
+        // handed to Nextcloud's own login form.
+        ['name' => 'session#nextcloud', 'url' => '/portal/api/session/nextcloud', 'verb' => 'GET'],
         ['name' => 'session#logout', 'url' => '/portal/api/session', 'verb' => 'DELETE'],
         // Sliding-window session refresh, capped by an absolute maximum
         // session lifetime (portal-session-hardening-v2 T03). Registered
@@ -168,6 +174,16 @@ return [
         ['name' => 'portalTaskProxy#index', 'url' => '/portal/api/tasks', 'verb' => 'GET'],
         ['name' => 'portalTaskProxy#show', 'url' => '/portal/api/tasks/{uuid}', 'verb' => 'GET', 'requirements' => ['uuid' => '[^/]+']],
         ['name' => 'portalTaskProxy#complete', 'url' => '/portal/api/tasks/{uuid}/complete', 'verb' => 'POST', 'requirements' => ['uuid' => '[^/]+']],
+
+        // What a citizen may write on their own case
+        // (what-the-citizen-may-write-on-their-own-case). Three acts, three
+        // routes, because an amendment, a document and a task answer are not
+        // one write to a citizen or to the law (D2). The task answer is the
+        // fourth act and stays on the task proxy above. Registered before the
+        // /portal/{path} SPA catch-all.
+        ['name' => 'citizenCase#show', 'url' => '/portal/api/citizen/cases/{register}/{schema}/{id}', 'verb' => 'GET'],
+        ['name' => 'citizenCase#amend', 'url' => '/portal/api/citizen/cases/{register}/{schema}/{id}', 'verb' => 'PATCH'],
+        ['name' => 'citizenCase#addDocument', 'url' => '/portal/api/citizen/cases/{register}/{schema}/{id}/documents', 'verb' => 'POST'],
 
         ['name' => 'portalPage#catchAll', 'url' => '/portal/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
 

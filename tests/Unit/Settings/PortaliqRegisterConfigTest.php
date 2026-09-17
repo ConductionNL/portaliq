@@ -119,11 +119,23 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// session recording (portal-traffic-experiments); `heat_click` and
 		// `heat_scroll` join the enum, the daily record gains `experiments`
 		// and `heatmaps`, and the recording schema arrives, admin-readable
-		// like the raw events. Additive.
+		// like the raw events. Additive. 0.22.0 (portalCaseType 0.1.0 new,
+		// portalCase 0.1.0 new): the demo case and its type, so what a citizen
+		// may write on their own case is demonstrable without a case app
+		// installed (what-the-citizen-may-write-on-their-own-case). Both are
+		// authenticated-read only, like every other portal-facing schema:
+		// what may be WRITTEN is decided by the case type, through portaliq,
+		// never by a grant on the schema. 0.23.0 (portalPage 0.3.0): the
+		// `citizenCase` block type joins the page block enum, which the
+		// resolver already accepted, so a contribution carrying the citizen
+		// case block can be saved at all. Additive.
 		// Every new schema is listed in
 		// `components.registers.portaliq.schemas` (ImportHandler binds only
 		// what is listed there) and declares a non-empty `read` rule.
-		$this->assertSame('0.21.0', self::$register['info']['version']);
+		$this->assertSame('0.23.0', self::$register['info']['version']);
+		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalCaseType']['version']);
+		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalCase']['version']);
+		$this->assertSame(['authenticated'], self::$register['components']['schemas']['portalCase']['authorization']['read']);
 		$this->assertSame('0.5.0', self::$register['components']['schemas']['portalTrafficDaily']['version']);
 		$this->assertSame('0.4.0', self::$register['components']['schemas']['portalTrafficEvent']['version']);
 		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalTrafficRecording']['version']);
@@ -132,7 +144,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['page']['version']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('0.5.0', self::$register['components']['schemas']['portalAccount']['version']);
-		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalPage']['version']);
+		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalSession']['version']);
 
 	}//end testRegisterJsonParsesAndVersionsAreBumped()

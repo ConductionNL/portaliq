@@ -9,9 +9,37 @@
  */
 
 import { expect, test } from '@playwright/test'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { resolveBaseURL } from './base-url.ts'
 
 const BASE = resolveBaseURL()
+
+/**
+ * The public first-load budget, in bytes, read from the build that enforces it.
+ *
+ * webpack.site.js holds the number (`performance.maxEntrypointSize`) and fails
+ * the build above it; the specs describe the budget as the one that file
+ * enforces. S18 used to carry its own copy, 400 KiB, and kept it when #568
+ * raised the build to 410 KiB for marked 18, so the build passed at 404 KiB
+ * while this test failed at the same 413770 bytes. Reading the file keeps the
+ * two from drifting apart again. `__dirname`, because this suite compiles as
+ * CommonJS (see site-accessibility.spec.ts).
+ */
+function siteBudgetBytes(): number {
+	const config = readFileSync(
+		join(__dirname, '..', '..', 'webpack.site.js'),
+		'utf8',
+	)
+	const match = config.match(/maxEntrypointSize:\s*(\d+)\s*\*\s*1024\b/)
+	if (match === null) {
+		throw new Error(
+			'webpack.site.js no longer declares maxEntrypointSize as `<n> * 1024`; '
+				+ 'S18 cannot read the budget it is meant to hold the site to.',
+		)
+	}
+	return Number(match[1]) * 1024
+}
 const SITE = `${BASE}/index.php/apps/portaliq/site`
 const API = `${BASE}/index.php/apps/portaliq/api/content`
 
@@ -198,7 +226,15 @@ test.describe('site renderer — content', () => {
 
 		// A public, first-visit, mobile-visited surface. This is a failure and
 		// not a warning: a budget nobody fails is a budget nobody keeps.
-		expect(total).toBeLessThan(400 * 1024)
+		const budget = siteBudgetBytes()
+		// POSITIVE CONTROL: a budget parsed as a tiny or absurd number would make
+		// the comparison meaningless in either direction.
+		expect(budget).toBeGreaterThanOrEqual(100 * 1024)
+		expect(budget).toBeLessThanOrEqual(1024 * 1024)
+		expect(
+			total,
+			`site bundle ${total} B against a ${budget} B budget`,
+		).toBeLessThan(budget)
 	})
 
 	// @e2e portaliq-cms::the-subject-scoped-aggregate-is-never-served-publicly
