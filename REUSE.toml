@@ -30,34 +30,33 @@ SPDX-PackageDownloadLocation = "https://github.com/ConductionNL/portaliq"
 # Same model as @conduction/nextcloud-vue's REUSE.toml, which documents this
 # correctly, and as keepiq's, which uses the `path = "**"` blanket shape.
 #
-# WHY THIS IS STILL AN EXTENSION LIST AND NOT THAT BLANKET (2026-09-15).
+# THE BLANKET, AND WHY IT COULD ONLY LAND NOW (2026-09-17).
 #
-# Remko Huisman has now raised this twice, on #521 and on #553, and he is
-# right about the defect: an extension nobody listed falls through and counts
-# as unlicensed, silently. It happened here already — `.jsx` and `.mjs` were
-# missing, which is what made nine React-portal sources under src/portal/ and
-# one .mjs under docs/scripts/ unlicensed until #521. Verified again on
-# 2026-09-15: nothing falls through today, across all tracked files.
+# `path = "**"` below is the shape keepiq and nextcloud-vue use, and Remko
+# Huisman asked for it twice, on #521 and #553. It is a PREPEND: every table
+# after it still wins for the paths it names, because the last matching table
+# wins (REUSE 3.3 §3.3). What it adds is a floor -- a file whose extension
+# nobody listed no longer falls through as unlicensed.
 #
-# The blanket is the right shape and it is a PREPEND, not a rewrite — the CC0
-# and override blocks below keep winning because the last matching table wins
-# (REUSE 3.3 §3.3). It is not in this commit for one reason, measured rather
-# than assumed: the blanket changes the resolution of exactly TWELVE files and
-# leaves the other 1,371 byte-identical, and those twelve are precisely the
-# unannotated fonts under woo/ — six of them commercial or all-rights-reserved
-# faces we hold no redistribution licence for. Prepending it stamps them
-# EUPL-1.2 / Conduction and flips `compliant` to true, which does not fix a
-# licensing problem, it deletes the only signal that we have one.
-#
-# So it lands in the commit that settles those twelve files, and not before.
-# That is WOO-575. Meanwhile the hole the blanket would close is held shut
-# from the other side by scripts/check-reuse.js, a ratchet on the number of
-# files with no licensing information: a new unlisted extension raises the
-# count and fails CI, without anyone having to claim a licence to get green.
+# It was deliberately held back while twelve fonts under woo/ carried no
+# licensing information, because it would have stamped them EUPL-1.2 and
+# flipped `compliant` to true without anyone having decided anything. Six of
+# those were commercial or all-rights-reserved faces we hold no licence to
+# redistribute (3x Gill Sans, Avenir LT, Tisa Sans Pro, Eau Sans Book). On
+# 2026-09-17 Ruben van der Linde decided they come out, and they did -- from
+# woo/, from the service-worker precache, from asset-manifest.json and from
+# the @font-face rules -- so there is nothing left for a blanket to cover
+# dishonestly. The six that remain are annotated by name under "Third party".
 
 # ---------------------------------------------------------------------------
 # First-party source.
 # ---------------------------------------------------------------------------
+[[annotations]]
+path = "**"
+precedence = "closest"
+SPDX-FileCopyrightText = "2026 Conduction B.V. <info@conduction.nl>"
+SPDX-License-Identifier = "EUPL-1.2"
+
 [[annotations]]
 path = "**/*.php"
 precedence = "closest"
@@ -152,6 +151,47 @@ path = "css/fonts/roboto-*.woff2"
 precedence = "override"
 SPDX-FileCopyrightText = "Google LLC"
 SPDX-License-Identifier = "Apache-2.0"
+
+# ---------------------------------------------------------------------------
+# The six fonts left under woo/ after 2026-09-17, each verified from its own
+# `name` table (fontTools, 2026-09-14) and annotated as what it is. The six
+# commercial faces that sat beside them were removed, not annotated -- see the
+# blanket note at the top. Hashed filenames are what tilburg-woo-ui's bundler
+# emitted; the mapping is in woo/asset-manifest.json.
+# ---------------------------------------------------------------------------
+
+# Roboto 400 / 500 / 700 (static/fonts/roboto-v30-latin-*). Apache-2.0, same
+# face and licence as the css/fonts copies above.
+[[annotations]]
+path = [
+"woo/static/fonts/b009a76ad6afe.woff2",
+"woo/static/fonts/f25d774ecfe09.woff2",
+"woo/static/fonts/227c93190fe7f.woff2",
+]
+precedence = "override"
+SPDX-FileCopyrightText = "Google LLC"
+SPDX-License-Identifier = "Apache-2.0"
+
+# Aldrich (asset-manifest spells it "Aldritch"). SIL Open Font License 1.1,
+# Matthew Desmond, per the font's own name table.
+[[annotations]]
+path = "woo/cb2dd4a29f236588895b.woff2"
+precedence = "override"
+SPDX-FileCopyrightText = "Matthew Desmond"
+SPDX-License-Identifier = "OFL-1.1"
+
+# ac-icons (.woff and .woff2): the icon font tilburg-woo-ui builds from its own
+# SVGs. No copyright string in the name table; it is build output of an
+# EUPL-1.2 ConductionNL repository, so it takes that repository's licence, the
+# same reasoning as the bundles above.
+[[annotations]]
+path = [
+"woo/static/fonts/35d973432fe54.woff",
+"woo/static/fonts/3e220b8f699ca.woff2",
+]
+precedence = "override"
+SPDX-FileCopyrightText = "2026 Conduction B.V. <info@conduction.nl>"
+SPDX-License-Identifier = "EUPL-1.2"
 
 # MaxMind's GeoIP2 test database and the licence text that ships beside it.
 # Apache-2.0 OR MIT, per https://github.com/maxmind/MaxMind-DB, which ships
