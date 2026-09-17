@@ -11,14 +11,49 @@ SPDX-PackageDownloadLocation = "https://github.com/ConductionNL/portaliq"
 # source files that have no docblock to carry it, plus a fallback for any
 # PHP file that has not yet had its SPDX header added.
 #
-# WHY EVERY ENTRY CARRIES `precedence` (added 2026-09-11). Without it, a
-# REUSE.toml entry silently overrules a header the file itself carries, so a
-# third-party file that states its own licence would be re-labelled as ours.
-# `precedence = "closest"` means the file's own header wins and the entry only
-# fills files that have none; `precedence = "override"` is the deliberate
-# opposite, used below only where we assert provenance the file cannot state
-# itself (binary fonts, a binary test fixture). Same model as
-# @conduction/nextcloud-vue's REUSE.toml.
+# WHY EVERY ENTRY CARRIES `precedence` (added 2026-09-11, corrected 2026-09-14).
+#
+# This comment used to say that without `precedence` a REUSE.toml entry
+# silently overrules a header the file itself carries. That is not true, and it
+# is worth stating plainly because the next person will reason from these lines.
+# `closest` is the DEFAULT in REUSE 3.3 -- a file's own header (or its .license
+# companion) already wins over any table here. The seven `closest` keys below
+# are therefore no-ops that state the intent explicitly; removing all seven
+# leaves `reuse lint --json` byte-identical, which is how this was checked.
+#
+# `override` is the real switch: it discards whatever the file itself says. So
+# every override in this file is a provenance claim that has to be verified
+# against upstream before it is written -- and one of them was wrong on the
+# first attempt (see the MaxMind block). Treat them as the load-bearing lines
+# they are, not as bookkeeping.
+#
+# Same model as @conduction/nextcloud-vue's REUSE.toml, which documents this
+# correctly, and as keepiq's, which uses the `path = "**"` blanket shape.
+#
+# WHY THIS IS STILL AN EXTENSION LIST AND NOT THAT BLANKET (2026-09-15).
+#
+# Remko Huisman has now raised this twice, on #521 and on #553, and he is
+# right about the defect: an extension nobody listed falls through and counts
+# as unlicensed, silently. It happened here already — `.jsx` and `.mjs` were
+# missing, which is what made nine React-portal sources under src/portal/ and
+# one .mjs under docs/scripts/ unlicensed until #521. Verified again on
+# 2026-09-15: nothing falls through today, across all tracked files.
+#
+# The blanket is the right shape and it is a PREPEND, not a rewrite — the CC0
+# and override blocks below keep winning because the last matching table wins
+# (REUSE 3.3 §3.3). It is not in this commit for one reason, measured rather
+# than assumed: the blanket changes the resolution of exactly TWELVE files and
+# leaves the other 1,371 byte-identical, and those twelve are precisely the
+# unannotated fonts under woo/ — six of them commercial or all-rights-reserved
+# faces we hold no redistribution licence for. Prepending it stamps them
+# EUPL-1.2 / Conduction and flips `compliant` to true, which does not fix a
+# licensing problem, it deletes the only signal that we have one.
+#
+# So it lands in the commit that settles those twelve files, and not before.
+# That is WOO-575. Meanwhile the hole the blanket would close is held shut
+# from the other side by scripts/check-reuse.js, a ratchet on the number of
+# files with no licensing information: a new unlisted extension raises the
+# count and fails CI, without anyone having to claim a licence to get green.
 
 # ---------------------------------------------------------------------------
 # First-party source.
@@ -70,9 +105,12 @@ SPDX-License-Identifier = "CC0-1.0"
 # Repository plumbing that carries no comment syntax of its own: dotfiles,
 # tool baselines, the Makefile, CODEOWNERS, the docs site's CNAME. Same CC0
 # treatment as the config block above — none of this is creative work.
+#
+# `.editorconfig` is deliberately NOT in this list: it carries a Nextcloud
+# AGPL-3.0-or-later header of its own and resolves correctly without us. An
+# entry here would be a dead line that still reads as a claim.
 [[annotations]]
 path = [
-    ".editorconfig",
     ".gitattributes",
     ".gitignore",
     ".git-blame-ignore-revs",
@@ -115,13 +153,38 @@ precedence = "override"
 SPDX-FileCopyrightText = "Google LLC"
 SPDX-License-Identifier = "Apache-2.0"
 
-# MaxMind's GeoIP2 test database, used as a fixture. Its own licence text
-# ships beside it as tests/fixtures/GeoIP2-City-Test.LICENSE.md.
+# MaxMind's GeoIP2 test database and the licence text that ships beside it.
+# Apache-2.0 OR MIT, per https://github.com/maxmind/MaxMind-DB, which ships
+# LICENSE-APACHE and LICENSE-MIT and states "at your option". Our fixture is
+# byte-identical to that repository's test-data/GeoIP2-City-Test.mmdb
+# (git blob e20846ac1757a3745ae41411757ed3817536e3be).
+#
+# This previously said CC-BY-SA-4.0. That is the licence of MaxMind's GeoLite2
+# PRODUCTION databases, a different product under a different agreement; the
+# two were conflated. The licence text sitting next to the fixture said so all
+# along. An `override` discards whatever the file itself states, so a wrong one
+# is unrecoverable by design -- check upstream before writing one.
+#
+# The .LICENSE.md is covered here too. Without it, it falls through to the
+# **/*.md rule below and MaxMind's own licence text gets labelled as
+# Conduction's CC0 work -- exactly the misrepresentation this file refuses to
+# make for woo/'s third-party notices.
+#
+# LICENSES/MIT.txt IS SUPPOSED TO READ AS A TEMPLATE. It carries the SPDX
+# placeholder line, `Copyright (c) <year> <copyright holders>`, because that is
+# what `reuse download MIT` emits and what the standard licence text is. Do not
+# "finish" it by inserting Conduction's name: the only MIT grant in this
+# repository is MaxMind's, and the copyright holder for it is stated above, in
+# the annotation -- which is exactly where REUSE expects to find it. Noted
+# because it looks like an oversight and is not. Raised by Remko Huisman.
 [[annotations]]
-path = "tests/fixtures/GeoIP2-City-Test.mmdb"
+path = [
+    "tests/fixtures/GeoIP2-City-Test.mmdb",
+    "tests/fixtures/GeoIP2-City-Test.LICENSE.md",
+]
 precedence = "override"
-SPDX-FileCopyrightText = "MaxMind, Inc."
-SPDX-License-Identifier = "CC-BY-SA-4.0"
+SPDX-FileCopyrightText = "2013-2026 MaxMind, Inc."
+SPDX-License-Identifier = "Apache-2.0 OR MIT"
 
 # ---------------------------------------------------------------------------
 # woo/ — the bundled tilburg-woo-ui SPA.
@@ -139,6 +202,29 @@ SPDX-License-Identifier = "CC-BY-SA-4.0"
 # ConductionNL repository licensed EUPL-1.2, so its build output is ours under
 # the same licence as this app. The bundles, styles, markup and images below
 # are annotated accordingly.
+#
+# AND THAT ANNOTATION IS A DELIBERATE PRAGMATIC CALL, not an oversight -- said
+# here because the inconsistency is real and a future reader will otherwise
+# re-litigate it. `woo/static/js/**` is annotated pure EUPL-1.2 / Conduction
+# while the 308 `*.LICENSE.txt` files sitting beside it exist precisely because
+# those same bundles contain third-party code. Both statements are in this
+# file, and they pull in opposite directions.
+#
+# The call: a webpack bundle is a single artefact with no per-byte provenance,
+# and no SPDX expression describes "our EUPL-1.2 application code, plus parts
+# of forty npm packages under a dozen licences, concatenated". The honest
+# alternatives are to annotate it with a compound expression nobody can verify,
+# or to leave it unlicensed -- and unlicensed build output of OUR repository is
+# the less true of the two. So the bundle takes the licence of the source it
+# was built from, and the notices next to it are left to say what is inside;
+# the extracted notices are the machine-readable record, which is the job they
+# were extracted to do. The same reasoning covers `css/nlds/*.css`, four of
+# which are webpack output over third-party npm packages (@amsterdam,
+# @uiw, @nl-design-system-unstable) that kept no banner of their own.
+#
+# This is the pragmatic answer, not the correct one. The correct one is to stop
+# committing build output -- see openspec/changes/retire-the-vendored-woo-bundle.
+# Raised by Remko Huisman on #553.
 [[annotations]]
 path = [
     "woo/*.html",
@@ -155,16 +241,15 @@ precedence = "closest"
 SPDX-FileCopyrightText = "2026 Conduction B.V. <info@conduction.nl>"
 SPDX-License-Identifier = "EUPL-1.2"
 
-# The 309 `*.LICENSE.txt` files are NOT ours and are not one licence either:
+# The 308 `*.LICENSE.txt` files are NOT ours and are not one licence either:
 # webpack wrote them by concatenating the licence banners of the third-party
 # packages inside each bundle. Claiming them as Conduction/EUPL-1.2 would
 # misrepresent every notice in them, so they carry a LicenseRef whose text
 # says what they are and leaves the rights with the upstream authors.
 [[annotations]]
-path = [
-    "woo/**/*.LICENSE.txt",
-    "woo/service-worker.js.LICENSE.txt",
-]
+# (`woo/**/*.LICENSE.txt` already covers woo/service-worker.js.LICENSE.txt at
+# depth 1 -- reuse translates `**/` so it can match zero path segments.)
+path = "woo/**/*.LICENSE.txt"
 precedence = "override"
 SPDX-FileCopyrightText = "the respective authors of the bundled third-party packages"
 SPDX-License-Identifier = "LicenseRef-third-party-notices"
