@@ -46,6 +46,15 @@ import type { APIRequestContext, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
 
+// The notice this suite asserts on -- "opgeslagen", "geen stukken meer aan" --
+// is a TRANSLATED string, not seeded data like the case type's public label.
+// The portal picks its language from the first `Accept-Language` tag
+// (PortalPageController::resolveLocale), and Playwright's default context
+// sends en-US, so without this the citizen sees "Your change has been saved."
+// and the assertion fails on a page that is otherwise entirely correct. A
+// Dutch citizen's browser sends nl-NL; so does this suite.
+test.use({ locale: 'nl-NL' })
+
 const PORTAL_PATH = '/apps/portaliq/portal'
 const API_BASE = '/apps/portaliq/portal/api'
 const OR_OBJECTS_BASE = '/apps/openregister/api/objects'
