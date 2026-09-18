@@ -61,6 +61,14 @@ class PortalTaskGateway {
 	private const ROUTE_COMPLETE = 'openregister.portalTask.complete';
 
 	/**
+	 * The seam route that raises a task. Used server to server, as the handler
+	 * who asked, never from a browser.
+	 *
+	 * @spec openspec/changes/partner-tasks-in-the-portal/specs/partner-tasks-in-the-portal/spec.md
+	 */
+	private const ROUTE_CREATE = 'openregister.portalTask.create';
+
+	/**
 	 * Timeout (seconds) for a task forward. Completion carries uploads, so it
 	 * gets more room than the 10s action forward.
 	 */
@@ -179,6 +187,11 @@ class PortalTaskGateway {
 	): ?array {
 		$multipart = [
 			['name' => 'answers', 'contents' => (string)json_encode($answers)],
+			// Which account answered, said explicitly as well as carried by
+			// the assertion: a partner task's answer has to name the party
+			// that gave it, and a header nobody stores is not a record
+			// (partner-tasks-in-the-portal REQ-PTP-003).
+			['name' => 'completedBy', 'contents' => (string)($subject['subjectRef'] ?? '')],
 		];
 		if ($comment !== null && $comment !== '') {
 			$multipart[] = ['name' => 'comment', 'contents' => $comment];
@@ -203,6 +216,44 @@ class PortalTaskGateway {
 			multipart: $multipart
 		);
 	}//end completeTask()
+
+	/**
+	 * Raise a portal task, server to server, as the handler who asked for it.
+	 *
+	 * The subject on the wire is the HANDLER, not the partner: the task is
+	 * created by the person who asked and addressed to the account that must
+	 * answer it. The due date and the upload rules travel with it and are the
+	 * task's own from then on, so editing the case type later does not change
+	 * what a partner was already asked for.
+	 *
+	 * @param array<string, mixed> $handler The handler's subject shape.
+	 * @param string $subjectRef The account the task is addressed to.
+	 * @param array<string, mixed> $task Title, description, dueAt, uploadRules
+	 *                                   and the case the task hangs on.
+	 *
+	 * @return array{status: int, body: array<string, mixed>}|null The relayed
+	 *         answer, or null on transport failure.
+	 *
+	 * @spec openspec/changes/partner-tasks-in-the-portal/specs/partner-tasks-in-the-portal/spec.md
+	 */
+	public function createTask(array $handler, string $subjectRef, array $task): ?array {
+		if ($subjectRef === '') {
+			return null;
+		}
+
+		$multipart = [
+			['name' => 'subjectRef', 'contents' => $subjectRef],
+			['name' => 'task', 'contents' => (string)json_encode($task)],
+		];
+
+		return $this->forward(
+			subject: $handler,
+			method: 'POST',
+			route: self::ROUTE_CREATE,
+			parameters: [],
+			multipart: $multipart
+		);
+	}//end createTask()
 
 	/**
 	 * One multipart file part from an IRequest::getUploadedFile() entry, or

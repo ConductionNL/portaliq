@@ -216,6 +216,10 @@ return [
         // over openregister's portal task seam. Portaliq mints the
         // X-Portal-Subject assertion server-side; the browser never calls
         // openregister. Registered before the /portal/{path} SPA catch-all.
+        // A handler asks an outside partner for something from the case
+        // (partner-tasks-in-the-portal). Staff-facing and gated by the ADR-023
+        // action `portal.ask-partner` plus a read of the case with RBAC on.
+        ['name' => 'partnerTask#ask', 'url' => '/api/partner-tasks/ask', 'verb' => 'POST'],
         ['name' => 'portalTaskProxy#index', 'url' => '/portal/api/tasks', 'verb' => 'GET'],
         ['name' => 'portalTaskProxy#show', 'url' => '/portal/api/tasks/{uuid}', 'verb' => 'GET', 'requirements' => ['uuid' => '[^/]+']],
         ['name' => 'portalTaskProxy#complete', 'url' => '/portal/api/tasks/{uuid}/complete', 'verb' => 'POST', 'requirements' => ['uuid' => '[^/]+']],
