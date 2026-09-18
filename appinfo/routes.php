@@ -148,6 +148,15 @@ return [
         // T03). The {register}/{schema}/{id} segments distinguish it from the
         // plain GET above.
         ['name' => 'contribution#markRead', 'url' => '/portal/api/inbox/{register}/{schema}/{id}/read', 'verb' => 'PATCH'],
+        // The intake form as an object (portal-intake-form-as-an-object): the
+        // entry point over opencatalogi's published catalogue, the form a
+        // binding resolves to at render time, the submission, and the
+        // reference page that reads the submission's real state.
+        ['name' => 'portalIntake#catalogue', 'url' => '/portal/api/intake/catalogue', 'verb' => 'GET'],
+        ['name' => 'portalIntake#form', 'url' => '/portal/api/intake/form', 'verb' => 'GET'],
+        ['name' => 'portalIntake#submit', 'url' => '/portal/api/intake/submit', 'verb' => 'POST'],
+        ['name' => 'portalIntake#status', 'url' => '/portal/api/intake/status', 'verb' => 'GET'],
+
         // The citizen's own identity (portal-identity-and-the-organisations-cases):
         // the challenge this portal runs itself, the one-time reference link
         // for a case type that admits it, registration under the portal's

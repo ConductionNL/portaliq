@@ -4999,6 +4999,250 @@
                         "example": "2026-09-18T09:00:00+00:00"
                     }
                 }
+            },
+            "portalFormBinding": {
+                "slug": "portalFormBinding",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "icon": "FormSelect",
+                "version": "0.1.0",
+                "title": "Portal Form Binding",
+                "description": "What a portal form page is bound to (portal-intake-form-as-an-object REQ-PIFO-001): a case type tuple, an audience, an optional form name, and the intake settings. The page keeps no field list of its own; the fields, their order and their presets come from the published form at render time, so a form edited in buildiq reaches the portal with no portal change.",
+                "type": "object",
+                "required": [
+                    "portal",
+                    "route",
+                    "typeRegister",
+                    "typeSchema",
+                    "audience"
+                ],
+                "properties": {
+                    "portal": {
+                        "title": "Portal",
+                        "type": "string",
+                        "description": "The portal slug this binding belongs to.",
+                        "example": "gemeente-x"
+                    },
+                    "route": {
+                        "title": "Route",
+                        "type": "string",
+                        "description": "The in-portal route of the form page.",
+                        "example": "aanvragen/verhuizing"
+                    },
+                    "typeRegister": {
+                        "title": "Type register",
+                        "type": "string",
+                        "description": "The register the case type lives in.",
+                        "example": "dossiq"
+                    },
+                    "typeSchema": {
+                        "title": "Type schema",
+                        "type": "string",
+                        "description": "The schema the case type lives in.",
+                        "example": "zaaktype"
+                    },
+                    "typeId": {
+                        "title": "Type id",
+                        "type": "string",
+                        "description": "The case type the form belongs to.",
+                        "example": "verhuizing"
+                    },
+                    "audience": {
+                        "title": "Audience",
+                        "type": "string",
+                        "description": "Which audience's form of that type this page renders. One case type can carry a client form and a supplier form; this picks one.",
+                        "example": "client"
+                    },
+                    "formName": {
+                        "title": "Form name",
+                        "type": "string",
+                        "description": "An optional name, when the type and audience carry more than one published form.",
+                        "example": "verhuizing-kort"
+                    },
+                    "formRegister": {
+                        "title": "Form register",
+                        "type": "string",
+                        "description": "The register the published form leaf lives in.",
+                        "example": "buildiq"
+                    },
+                    "formSchema": {
+                        "title": "Form schema",
+                        "type": "string",
+                        "description": "The schema the published form leaf lives in.",
+                        "example": "registrationForm"
+                    },
+                    "caseRegister": {
+                        "title": "Case register",
+                        "type": "string",
+                        "description": "The register the case created from this form lives in.",
+                        "example": "dossiq"
+                    },
+                    "caseSchema": {
+                        "title": "Case schema",
+                        "type": "string",
+                        "description": "The schema the case created from this form lives in. The background job creates the case here, through the ordinary anonymous contribution create.",
+                        "example": "zaak"
+                    },
+                    "intakeKind": {
+                        "title": "Intake kind",
+                        "type": "string",
+                        "enum": [
+                            "hosted",
+                            "external"
+                        ],
+                        "description": "`hosted` renders the published form here. `external` names a start form on another host: the portal shows a card naming the destination and never proxies or embeds it (REQ-PIFO-002).",
+                        "example": "hosted"
+                    },
+                    "externalUrl": {
+                        "title": "External URL",
+                        "type": "string",
+                        "description": "The start form's address, when the intake is external.",
+                        "example": "https://formulieren.gemeente-x.nl/verhuizing"
+                    },
+                    "addressLookup": {
+                        "title": "Address lookup",
+                        "type": "boolean",
+                        "description": "Whether the form offers postcode lookup.",
+                        "example": true
+                    },
+                    "prefillFromEarlierCases": {
+                        "title": "Prefill from earlier cases",
+                        "type": "boolean",
+                        "description": "Whether answers a signed-in citizen already gave are offered again.",
+                        "example": false
+                    },
+                    "challenge": {
+                        "title": "Challenge",
+                        "type": "boolean",
+                        "description": "Whether the portal's own challenge runs in front of this form.",
+                        "example": true
+                    },
+                    "confirmationText": {
+                        "title": "Confirmation text",
+                        "type": "string",
+                        "description": "What the citizen is told after submitting. The form's words, not the portal's.",
+                        "example": "Bedankt. U hoort binnen vijf werkdagen van ons."
+                    },
+                    "allowedOrigins": {
+                        "title": "Allowed origins",
+                        "type": "array",
+                        "description": "The origins that may frame this form as an embed (embedded-intake-form REQ-EIF-001). Empty serves no origin at all.",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "https://www.gemeente-x.nl"
+                        ]
+                    },
+                    "status": {
+                        "title": "Status",
+                        "type": "string",
+                        "enum": [
+                            "draft",
+                            "published"
+                        ],
+                        "description": "Only a published binding renders.",
+                        "example": "published"
+                    }
+                }
+            },
+            "portalIntakeSubmission": {
+                "slug": "portalIntakeSubmission",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "icon": "FormSelect",
+                "version": "0.1.0",
+                "title": "Portal Intake Submission",
+                "description": "A submitted intake form, acknowledged with a reference before the case exists (REQ-PIFO-005). The state on this row is the truth the reference page reads: `queued`, `registered` or `failed`. The page never says a case exists before one does.",
+                "type": "object",
+                "required": [
+                    "reference",
+                    "portal",
+                    "state"
+                ],
+                "properties": {
+                    "reference": {
+                        "title": "Reference",
+                        "type": "string",
+                        "description": "What the citizen was given to come back with.",
+                        "example": "AANVRAAG-7F3K9Q"
+                    },
+                    "portal": {
+                        "title": "Portal",
+                        "type": "string",
+                        "description": "The portal it was submitted on.",
+                        "example": "gemeente-x"
+                    },
+                    "route": {
+                        "title": "Route",
+                        "type": "string",
+                        "description": "The form page it came from.",
+                        "example": "aanvragen/verhuizing"
+                    },
+                    "subjectRef": {
+                        "title": "Subject reference",
+                        "type": "string",
+                        "description": "The portal identity that submitted, when there was one. Empty for an anonymous submission.",
+                        "example": ""
+                    },
+                    "origin": {
+                        "title": "Origin",
+                        "type": "string",
+                        "description": "The origin an embedded submission was framed on (embedded-intake-form REQ-EIF-003). Empty when submitted on the portal itself.",
+                        "example": "https://www.gemeente-x.nl"
+                    },
+                    "answers": {
+                        "title": "Answers",
+                        "type": "object",
+                        "description": "What was submitted, as validated against the form's schema.",
+                        "example": {
+                            "postcode": "1234 AB"
+                        }
+                    },
+                    "state": {
+                        "title": "State",
+                        "type": "string",
+                        "enum": [
+                            "queued",
+                            "registered",
+                            "failed"
+                        ],
+                        "description": "Where the submission has got to. `failed` is shown to the citizen with what to do, never hidden.",
+                        "example": "queued"
+                    },
+                    "failureReason": {
+                        "title": "Failure reason",
+                        "type": "string",
+                        "description": "Why the create failed, for the administrator's list.",
+                        "example": "The case app refused the create."
+                    },
+                    "caseId": {
+                        "title": "Case id",
+                        "type": "string",
+                        "description": "The case created from this submission, once one exists.",
+                        "example": ""
+                    },
+                    "submittedAt": {
+                        "title": "Submitted at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When it was submitted.",
+                        "example": "2026-09-18T09:00:00+00:00"
+                    },
+                    "registeredAt": {
+                        "title": "Registered at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the case was created.",
+                        "example": ""
+                    }
+                }
             }
         }
     }
