@@ -336,7 +336,7 @@
                     ]
                 },
                 "icon": "AccountKey",
-                "version": "0.5.0",
+                "version": "0.6.0",
                 "title": "Portal Account",
                 "description": "Links an external identity (eHerkenning / DigiD / eIDAS) to the subject reference used for RBAC scoping. Owned by Portaliq's auth edge; never publicly readable. See ADR-046 and openspec/changes/supplier-portal.",
                 "type": "object",
@@ -398,10 +398,12 @@
                     "status": {
                         "title": "Status",
                         "type": "string",
-                        "description": "Account lifecycle status.",
+                        "description": "Account lifecycle status. `pending` is an account provisioned before any login (portal-identity-space): it has no session and is unreachable from the portal until a matching first login activates it. `void` is a pending account a clerk withdrew; it never matches a login again.",
                         "enum": [
+                            "pending",
                             "active",
-                            "suspended"
+                            "suspended",
+                            "void"
                         ],
                         "example": "active"
                     },
@@ -426,6 +428,31 @@
                                 "linkedContactId": "00000000-0000-0000-0000-000000000000"
                             }
                         }
+                    },
+                    "verifiedEmail": {
+                        "title": "Verified email",
+                        "type": "boolean",
+                        "description": "True when `email` was verified out of band, which is what lets a first login without an identity reference match this pending account (portal-identity-space REQ-PIS-002).",
+                        "example": false
+                    },
+                    "provisionedBy": {
+                        "title": "Provisioned by",
+                        "type": "string",
+                        "description": "The Nextcloud user id of the staff member who provisioned this account before any login, or the app id when an app provisioned it through the typed event (portal-identity-space REQ-PIS-001).",
+                        "example": "clerk-anna"
+                    },
+                    "provisionedAt": {
+                        "title": "Provisioned at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the account was provisioned, ISO 8601.",
+                        "example": "2026-09-18T09:00:00+00:00"
+                    },
+                    "voidReason": {
+                        "title": "Void reason",
+                        "type": "string",
+                        "description": "Why a pending account was withdrawn. Required when status is `void` (portal-identity-space D6).",
+                        "example": "Provisioned on a mistyped BSN"
                     }
                 }
             },
