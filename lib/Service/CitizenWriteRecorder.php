@@ -89,11 +89,23 @@ class CitizenWriteRecorder {
 	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	public function mandate(array $action, array $subject): array {
-		return [
+		$mandate = [
 			'action' => (string)($action['id'] ?? ''),
 			'audience' => (string)($subject['audience'] ?? ''),
 			'minTrust' => (string)($action['minTrust'] ?? ''),
 		];
+
+		// When the write was made for another entity under a mandate, the
+		// record names both (portal-visibility-follows-the-party-tree
+		// REQ-PTV-006). The controller resolves them; nothing a request sends
+		// reaches these two keys unverified.
+		$entity = (string)($subject['actingForEntity'] ?? '');
+		if ($entity !== '') {
+			$mandate['actingFor'] = $entity;
+			$mandate['mandate'] = (string)($subject['actingUnderMandate'] ?? '');
+		}
+
+		return $mandate;
 	}//end mandate()
 
 	/**

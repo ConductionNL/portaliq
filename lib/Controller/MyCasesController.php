@@ -31,6 +31,7 @@ use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\Identity\PortalMandateService;
+use OCA\Portaliq\Service\Identity\PortalPartyTreeResolver;
 use OCA\Portaliq\Service\PortalCaseListReader;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
@@ -56,6 +57,7 @@ class MyCasesController extends Controller implements PortalProtected {
 	 * @param PortalSessionService $session Resolves the subject from the bearer.
 	 * @param PortalCaseListReader $cases Merges every case collection.
 	 * @param PortalMandateService $mandates The mandates the identity holds.
+	 * @param PortalPartyTreeResolver $tree Resolves how far a mandate reaches.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -63,6 +65,7 @@ class MyCasesController extends Controller implements PortalProtected {
 		private readonly PortalSessionService $session,
 		private readonly PortalCaseListReader $cases,
 		private readonly PortalMandateService $mandates,
+		private readonly PortalPartyTreeResolver $tree,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -96,16 +99,35 @@ class MyCasesController extends Controller implements PortalProtected {
 		$requested = (string)$this->request->getParam('mandate', '');
 		$active = $this->mandates->activeMandate(mandates: $held, mandateId: $requested);
 
+		$describedActive = null;
 		if ($active !== null) {
+			// How far this mandate reaches, resolved from the party tree at
+			// request time. Past the bound the whole listing is refused: a
+			// partial list would read as "the group has no more cases".
+			$scope = $this->tree->entitiesFor(
+				root: $this->partyOf(mandate: $active),
+				reachesDown: ($this->mandates->reachOf(mandate: $active) === PortalMandateService::REACH_TREE)
+			);
+			if ($scope['refused'] === true) {
+				return new JSONResponse(
+					[
+						'error' => 'group_too_large',
+						'bound' => $scope['bound'],
+					],
+					Http::STATUS_CONFLICT
+				);
+			}
+
+			$active['_entities'] = $scope['entities'];
 			$rows = $this->merge(
 				rows: $rows,
 				extra: $this->cases->listMandatedCases(subject: $subject, aggregate: $aggregate, mandates: [$active])
 			);
-		}
 
-		$describedActive = null;
-		if ($active !== null) {
 			$describedActive = $this->mandates->describe(mandate: $active);
+			// The switcher offers every entity the mandate reaches, which for
+			// a flat mandate is the one it names (REQ-PTV-006).
+			$describedActive['entities'] = $scope['entities'];
 		}
 
 		return new JSONResponse([
@@ -114,6 +136,22 @@ class MyCasesController extends Controller implements PortalProtected {
 			'activeMandate' => $describedActive,
 		]);
 	}//end index()
+
+	/**
+	 * The party a mandate is held for: the entity it names, or its tenant.
+	 *
+	 * @param array<string, mixed> $mandate The mandate.
+	 *
+	 * @return string
+	 */
+	private function partyOf(array $mandate): string {
+		$described = $this->mandates->describe(mandate: $mandate);
+		if ($described['onBehalfOf'] !== '') {
+			return $described['onBehalfOf'];
+		}
+
+		return $described['organisation'];
+	}//end partyOf()
 
 	/**
 	 * Merge the mandated rows into the subject's own, without listing a case

@@ -4676,7 +4676,7 @@
                     ]
                 },
                 "icon": "AccountKey",
-                "version": "0.1.0",
+                "version": "0.2.0",
                 "title": "Portal Mandate",
                 "description": "What a portal identity may act for on behalf of an organisation (portal-identity-and-the-organisations-cases REQ-PIOC-002). No mandate recorded means no organisation case is visible: the empty default is the closed one. Owned by portaliq's auth edge; never publicly readable.",
                 "type": "object",
@@ -4719,6 +4719,16 @@
                         "example": [
                             "vergunning"
                         ]
+                    },
+                    "reach": {
+                        "title": "Reach",
+                        "type": "string",
+                        "enum": [
+                            "organisation",
+                            "tree"
+                        ],
+                        "description": "How far down the party tree the mandate reaches (portal-visibility-follows-the-party-tree REQ-PTV-001). `organisation` covers only the entity it names, and is the default. `tree` also covers the entities recorded below that one at the moment of the request; portaliq keeps no hierarchy of its own, so a subsidiary sold today is gone from the list today.",
+                        "example": "organisation"
                     },
                     "status": {
                         "title": "Status",

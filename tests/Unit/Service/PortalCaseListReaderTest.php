@@ -174,6 +174,52 @@ class PortalCaseListReaderTest extends TestCase {
 
 	}//end testTheMandateReadsByThePartyFieldNotBySubject()
 
+	public function testACaseTypeThatDeclaresNothingIsNotReachableThroughAParent(): void {
+		$reader = $this->readerReturning([['reference' => 'SUB-1', 'caseType' => 'vergunning']]);
+		$cases = new PortalCaseListReader($reader, $this->mandateService());
+		$mandate = $this->mandate();
+		$mandate['_entities'] = ['kvk-12345678', 'kvk-subsidiary'];
+
+		$rows = $cases->listMandatedCases(subject: $this->subject(), aggregate: $this->aggregate(collection: $this->mandatedCollection()), mandates: [$mandate]);
+
+		// Only the entity the mandate NAMES answers; the subsidiary's rows are
+		// excluded because the collection declares no parent-reachable type.
+		foreach ($rows as $row) {
+			$this->assertSame('kvk-12345678', $row['_entity']);
+		}
+
+	}//end testACaseTypeThatDeclaresNothingIsNotReachableThroughAParent()
+
+	public function testADeclaredTypeIsReachableThroughAParentAndNamesItsEntity(): void {
+		$reader = $this->readerReturning([['reference' => 'SUB-1', 'caseType' => 'vergunning']]);
+		$collection = $this->mandatedCollection();
+		$collection['parentReachableTypes'] = ['vergunning'];
+		$cases = new PortalCaseListReader($reader, $this->mandateService());
+		$mandate = $this->mandate();
+		$mandate['_entities'] = ['kvk-12345678', 'kvk-subsidiary'];
+
+		$rows = $cases->listMandatedCases(subject: $this->subject(), aggregate: $this->aggregate(collection: $collection), mandates: [$mandate]);
+
+		$entities = array_column($rows, '_entity');
+		$this->assertContains('kvk-subsidiary', $entities);
+		$this->assertSame('Voorbeeld B.V.', $rows[0]['_mandate']['label']);
+
+	}//end testADeclaredTypeIsReachableThroughAParentAndNamesItsEntity()
+
+	public function testAnUndeclaredTypeStaysWithItsOwnEntityEvenWhenOthersAreDeclared(): void {
+		$reader = $this->readerReturning([['reference' => 'SUB-M', 'caseType' => 'melding']]);
+		$collection = $this->mandatedCollection();
+		$collection['parentReachableTypes'] = ['vergunning'];
+		$cases = new PortalCaseListReader($reader, $this->mandateService());
+		$mandate = $this->mandate();
+		$mandate['_entities'] = ['kvk-12345678', 'kvk-subsidiary'];
+
+		$rows = $cases->listMandatedCases(subject: $this->subject(), aggregate: $this->aggregate(collection: $collection), mandates: [$mandate]);
+
+		$this->assertNotContains('kvk-subsidiary', array_column($rows, '_entity'));
+
+	}//end testAnUndeclaredTypeStaysWithItsOwnEntityEvenWhenOthersAreDeclared()
+
 	/**
 	 * A real mandate service over a reader that is never used: only `describe`
 	 * and `covers` are called on this path, and both are pure.

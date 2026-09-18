@@ -180,31 +180,76 @@ class PortalCaseListReader {
 						continue;
 					}
 
-					foreach ($this->readParty(collection: $collection, contributingApp: $appId, mandateField: $mandateField, party: $party, organisation: $described['organisation'], audience: (string)($subject['audience'] ?? '')) as $row) {
-						$caseType = (string)($row[(string)($collection['caseTypeField'] ?? 'caseType')] ?? '');
-						if ($this->mandates->covers(mandate: $mandate, caseType: $caseType) === false) {
-							// A mandate narrower than the organisation lists
-							// only what it names.
+					// The entities this mandate reaches, resolved by the caller
+					// from the party tree at request time (REQ-PTV-003). A flat
+					// mandate reaches the entity it names and no other.
+					$entities = array_values((array)($mandate['_entities'] ?? []));
+					if ($entities === []) {
+						$entities = [$party];
+					}
+
+					foreach ($entities as $entity) {
+						$entity = (string)$entity;
+						if ($entity === '') {
 							continue;
 						}
 
-						$row['_source'] = [
-							'appId' => $appId,
-							'label' => $label,
-							'register' => (string)($collection['register'] ?? ''),
-							'schema' => (string)($collection['schema'] ?? ''),
-							'collection' => (string)($collection['id'] ?? ''),
-						];
-						$row['_mandate'] = $described;
+						foreach ($this->readParty(collection: $collection, contributingApp: $appId, mandateField: $mandateField, party: $entity, organisation: $described['organisation'], audience: (string)($subject['audience'] ?? '')) as $row) {
+							$caseType = (string)($row[(string)($collection['caseTypeField'] ?? 'caseType')] ?? '');
+							if ($this->mandates->covers(mandate: $mandate, caseType: $caseType) === false) {
+								// A mandate narrower than the organisation lists
+								// only what it names.
+								continue;
+							}
 
-						$rows[] = $row;
-					}
+							if ($entity !== $party && $this->reachableThroughAParent(collection: $collection, caseType: $caseType) === false) {
+								// REQ-PTV-002: a case type that says nothing
+								// about parent access is not reachable that
+								// way, whatever the mandate says.
+								continue;
+							}
+
+							$row['_source'] = [
+								'appId' => $appId,
+								'label' => $label,
+								'register' => (string)($collection['register'] ?? ''),
+								'schema' => (string)($collection['schema'] ?? ''),
+								'collection' => (string)($collection['id'] ?? ''),
+							];
+							$row['_mandate'] = $described;
+							// The case is the subsidiary's, and says so: it is
+							// never presented as the parent's own (REQ-PTV-005).
+							$row['_entity'] = $entity;
+
+							$rows[] = $row;
+						}
+					}//end foreach
 				}//end foreach
 			}//end foreach
 		}//end foreach
 
 		return $rows;
 	}//end listMandatedCases()
+
+	/**
+	 * Whether the contribution declares this case type reachable through a
+	 * parent mandate. Silence is a refusal (REQ-PTV-002).
+	 *
+	 * @param array<string, mixed> $collection The declared case collection.
+	 * @param string $caseType The case's type.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/portal-visibility-follows-the-party-tree/specs/portal-visibility-and-the-party-tree/spec.md
+	 */
+	private function reachableThroughAParent(array $collection, string $caseType): bool {
+		$declared = ($collection['parentReachableTypes'] ?? []);
+		if (is_array($declared) === false || $declared === []) {
+			return false;
+		}
+
+		return in_array($caseType, $declared, true);
+	}//end reachableThroughAParent()
 
 	/**
 	 * Read one case collection by the party a mandate names.

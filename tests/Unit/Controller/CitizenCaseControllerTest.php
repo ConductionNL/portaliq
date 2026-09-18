@@ -519,6 +519,8 @@ class CitizenCaseControllerTest extends TestCase {
 			new CitizenWriteRecorder($this->createMock(AuditTrailService::class), $dispatcher),
 			$this->throttle(open: $throttleOpen),
 			new CitizenDocumentUpload(),
+			$this->mandateService(),
+			$this->treeResolver(),
 			$l10n,
 			$this->createMock(LoggerInterface::class)
 		);
@@ -579,4 +581,36 @@ class CitizenCaseControllerTest extends TestCase {
 
 		return new CitizenWriteThrottle($factory);
 	}//end throttle()
+
+	/**
+	 * A mandate service that answers no mandate: these tests are about a
+	 * citizen writing on their OWN case, so nothing here acts under one.
+	 *
+	 * @return \OCA\Portaliq\Service\Identity\PortalMandateService
+	 */
+	private function mandateService(): \OCA\Portaliq\Service\Identity\PortalMandateService {
+		$mandates = $this->getMockBuilder(\OCA\Portaliq\Service\Identity\PortalMandateService::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['mandatesFor', 'activeMandate'])
+			->getMock();
+		$mandates->method('mandatesFor')->willReturn([]);
+		$mandates->method('activeMandate')->willReturn(null);
+
+		return $mandates;
+	}//end mandateService()
+
+	/**
+	 * A party tree resolver that is never asked to walk anything here.
+	 *
+	 * @return \OCA\Portaliq\Service\Identity\PortalPartyTreeResolver
+	 */
+	private function treeResolver(): \OCA\Portaliq\Service\Identity\PortalPartyTreeResolver {
+		$tree = $this->getMockBuilder(\OCA\Portaliq\Service\Identity\PortalPartyTreeResolver::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['entitiesFor'])
+			->getMock();
+		$tree->method('entitiesFor')->willReturn(['entities' => [], 'refused' => false, 'bound' => []]);
+
+		return $tree;
+	}//end treeResolver()
 }//end class

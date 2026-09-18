@@ -45,6 +45,8 @@ use OCA\Portaliq\Event\PortalClientWriteEvent;
 use OCA\Portaliq\Service\CitizenWritableSetResolver;
 use OCA\Portaliq\Service\CitizenWriteRecorder;
 use OCA\Portaliq\Service\CitizenWriteThrottle;
+use OCA\Portaliq\Service\Identity\PortalMandateService;
+use OCA\Portaliq\Service\Identity\PortalPartyTreeResolver;
 use OCA\Portaliq\Service\PortalFileReader;
 use OCA\Portaliq\Service\PortalFileWriter;
 use OCA\Portaliq\Service\PortalObjectReader;
@@ -88,6 +90,8 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 * @param CitizenWriteRecorder $recorder Records and announces the write.
 	 * @param CitizenWriteThrottle $throttle Counts writes per identity and per case.
 	 * @param CitizenDocumentUpload $upload Reads and names the citizen's document.
+	 * @param PortalMandateService $mandates The mandates the identity holds.
+	 * @param PortalPartyTreeResolver $tree How far a mandate reaches.
 	 * @param IL10N $l10n The sentences a refusal is given with.
 	 * @param LoggerInterface $logger Records the cause of a translated failure.
 	 */
@@ -103,6 +107,8 @@ class CitizenCaseController extends Controller implements PortalProtected {
 		private readonly CitizenWriteRecorder $recorder,
 		private readonly CitizenWriteThrottle $throttle,
 		private readonly CitizenDocumentUpload $upload,
+		private readonly PortalMandateService $mandates,
+		private readonly PortalPartyTreeResolver $tree,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 	) {
@@ -279,6 +285,12 @@ class CitizenCaseController extends Controller implements PortalProtected {
 		if ($subject === null) {
 			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
 		}
+
+		// Who this write is made for, when the citizen is acting under a
+		// mandate rather than for themselves. Resolved here, from the mandate
+		// record and the party tree, so the request can name an entity but
+		// never grant itself one (REQ-PTV-006).
+		$subject = $this->actingAs(subject: $subject);
 
 		$match = $this->citizenWriteAction(subject: $subject, register: $register, schema: $schema);
 		if ($match === null) {
@@ -517,4 +529,53 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	private function refuse(string $message, string $slug, int $status): JSONResponse {
 		return new JSONResponse(['message' => $message, 'error' => $slug], $status);
 	}//end refuse()
+
+	/**
+	 * Stamp the entity and mandate this write is made under onto the subject.
+	 *
+	 * A request may NAME an entity; it can never grant itself one. The named
+	 * mandate must be one the identity holds, and the named entity must be one
+	 * that mandate reaches at this moment. Anything else leaves the subject
+	 * exactly as it was, so the write is recorded as their own.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/portal-visibility-follows-the-party-tree/specs/portal-visibility-and-the-party-tree/spec.md
+	 */
+	private function actingAs(array $subject): array {
+		$entity = (string)$this->request->getParam('actingFor', '');
+		if ($entity === '') {
+			return $subject;
+		}
+
+		$held = $this->mandates->mandatesFor(
+			subjectRef: (string)($subject['subjectRef'] ?? ''),
+			organisation: (string)($subject['organisation'] ?? '')
+		);
+		$active = $this->mandates->activeMandate(mandates: $held, mandateId: (string)$this->request->getParam('mandate', ''));
+		if ($active === null) {
+			return $subject;
+		}
+
+		$described = $this->mandates->describe(mandate: $active);
+		$party = $described['onBehalfOf'];
+		if ($party === '') {
+			$party = $described['organisation'];
+		}
+
+		$scope = $this->tree->entitiesFor(
+			root: $party,
+			reachesDown: ($this->mandates->reachOf(mandate: $active) === PortalMandateService::REACH_TREE)
+		);
+		if ($scope['refused'] === true || in_array($entity, $scope['entities'], true) === false) {
+			return $subject;
+		}
+
+		$subject['actingForEntity'] = $entity;
+		$subject['actingUnderMandate'] = $described['id'];
+
+		return $subject;
+	}//end actingAs()
 }//end class
