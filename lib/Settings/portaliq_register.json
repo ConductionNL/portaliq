@@ -4597,6 +4597,49 @@
                             "account",
                             "reference"
                         ]
+                    },
+                    "portalWithdrawal": {
+                        "title": "Portal withdrawal",
+                        "type": "object",
+                        "description": "Whether an applicant may end their own request from the portal, until when, and onto which status (withdrawing-your-own-case-from-the-portal REQ-WOC-001, REQ-WOC-004). Absent means no withdrawal is offered at all: the portal keeps no list of withdrawable case types, so a type that says nothing offers nothing.",
+                        "properties": {
+                            "openStatuses": {
+                                "title": "Open statuses",
+                                "type": "array",
+                                "description": "The statuses in which withdrawal is still possible.",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "example": [
+                                    "ontvangen",
+                                    "in-behandeling"
+                                ]
+                            },
+                            "closedReason": {
+                                "title": "Closed reason",
+                                "type": "string",
+                                "description": "What the applicant is told once the window has closed. Shown instead of an action that would fail.",
+                                "example": "Uw aanvraag is al beoordeeld en kan niet meer worden ingetrokken."
+                            },
+                            "targetStatus": {
+                                "title": "Target status",
+                                "type": "string",
+                                "description": "The status a withdrawal lands on. Applied server-side; a status in the request body is ignored.",
+                                "example": "ingetrokken"
+                            },
+                            "confirmText": {
+                                "title": "Confirmation text",
+                                "type": "string",
+                                "description": "What withdrawal means, in the case app's own words, shown on the confirmation step.",
+                                "example": "Als u uw aanvraag intrekt, stopt de behandeling en ontvangt u geen besluit."
+                            }
+                        },
+                        "example": {
+                            "openStatuses": [
+                                "ontvangen"
+                            ],
+                            "targetStatus": "ingetrokken"
+                        }
                     }
                 }
             },
@@ -4665,6 +4708,19 @@
                         "items": {
                             "type": "object"
                         }
+                    },
+                    "withdrawnAt": {
+                        "title": "Withdrawn at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the applicant withdrew the request. The request itself stays readable (REQ-WOC-005).",
+                        "example": ""
+                    },
+                    "withdrawalReason": {
+                        "title": "Withdrawal reason",
+                        "type": "string",
+                        "description": "What the applicant said when withdrawing, when they said anything.",
+                        "example": "Ik ben toch niet verhuisd."
                     }
                 }
             },

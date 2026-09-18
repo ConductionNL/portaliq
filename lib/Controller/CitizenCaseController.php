@@ -138,6 +138,10 @@ class CitizenCaseController extends Controller implements PortalProtected {
 		return new JSONResponse([
 			'case' => $context['case'],
 			'writableSet' => $context['set'],
+			// What the portal may offer about ending this request, resolved
+			// from the case type rather than from any list the portal keeps
+			// (withdrawing-your-own-case REQ-WOC-001).
+			'withdrawal' => $this->writableSet->withdrawal(action: $context['action'], case: $context['case']),
 			'documents' => $this->fileReader->listFiles(register: $register, schema: $schema, id: $id),
 		]);
 	}//end show()
@@ -269,6 +273,149 @@ class CitizenCaseController extends Controller implements PortalProtected {
 
 		return new JSONResponse(['document' => $attached]);
 	}//end addDocument()
+
+	/**
+	 * Withdraw the citizen's own request, where the case type allows it.
+	 *
+	 * Nothing about the outcome comes from the request: the status is the one
+	 * the case type declares, the confirmation is the client's own step, and a
+	 * request already on the declared status is refused rather than withdrawn
+	 * twice. A reason travels along when the applicant gave one.
+	 *
+	 * @param string $register The register the case lives in.
+	 * @param string $schema The schema the case lives in.
+	 * @param string $id The case id.
+	 *
+	 * @return JSONResponse The withdrawn case, or a refusal with a sentence.
+	 *
+	 * @spec openspec/changes/withdrawing-your-own-case-from-the-portal/specs/withdrawing-your-own-case/spec.md
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 10, period: 60)]
+	public function withdraw(string $register, string $schema, string $id): JSONResponse {
+		$context = $this->context(register: $register, schema: $schema, id: $id);
+		if ($context instanceof JSONResponse) {
+			return $context;
+		}
+
+		$refusal = $this->guardWrite(context: $context, id: $id);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		$withdrawal = $this->writableSet->withdrawal(action: $context['action'], case: $context['case']);
+		if (($withdrawal['open'] ?? false) !== true) {
+			return $this->refuse(
+				message: (string)($withdrawal['reason'] ?? ''),
+				slug: 'withdrawal-not-open',
+				status: Http::STATUS_CONFLICT
+			);
+		}
+
+		return $this->applyWithdrawal(
+			context: $context,
+			withdrawal: $withdrawal,
+			register: $register,
+			schema: $schema,
+			id: $id
+		);
+	}//end withdraw()
+
+	/**
+	 * Write the withdrawal, record it beside the answers and announce it.
+	 *
+	 * @param array<string, mixed> $context The resolved context.
+	 * @param array<string, mixed> $withdrawal The resolved withdrawal state.
+	 * @param string $register The register the case lives in.
+	 * @param string $schema The schema the case lives in.
+	 * @param string $id The case id.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/withdrawing-your-own-case-from-the-portal/specs/withdrawing-your-own-case/spec.md
+	 */
+	private function applyWithdrawal(
+		array $context,
+		array $withdrawal,
+		string $register,
+		string $schema,
+		string $id,
+	): JSONResponse {
+		$action = $context['action'];
+		$config = (array)($action[CitizenWriteConfigNormaliser::KEY] ?? []);
+		$statusField = (string)($config['statusField'] ?? 'status');
+		$recordField = (string)($config['recordField'] ?? 'portalWrites');
+		$occurredAt = $this->recorder->now();
+		$reason = trim((string)$this->request->getParam('reason', ''));
+		$target = (string)$withdrawal['targetStatus'];
+
+		// The status is the case app's, whatever the body says: the request's
+		// own `status` is never read here, so there is nothing to tamper with.
+		$data = [
+			$statusField => $target,
+			'withdrawnAt' => $occurredAt,
+			'withdrawalReason' => $reason,
+		];
+		$data[$recordField] = $this->recorder->append(
+			existing: ($context['case'][$recordField] ?? null),
+			record: $this->recorder->buildRecord(
+				act: 'withdrawal',
+				subject: $context['subject'],
+				action: $action,
+				changes: [
+					$statusField => ['from' => ($context['case'][$statusField] ?? null), 'to' => $target],
+					'reason' => ['from' => null, 'to' => $reason],
+				],
+				occurredAt: $occurredAt
+			)
+		);
+
+		try {
+			$updated = $this->writer->updateObject(
+				register: $register,
+				schema: $schema,
+				scopeField: (string)($action['scopeField'] ?? 'subjectRef'),
+				subjectRef: (string)($context['subject']['subjectRef'] ?? ''),
+				organisation: (string)($context['subject']['organisation'] ?? ''),
+				id: $id,
+				data: $data
+			);
+		} catch (\Throwable $e) {
+			$this->logger->error('Citizen withdrawal failed: ' . $e->getMessage(), ['exception' => $e]);
+			return $this->refuse(
+				message: $this->l10n->t('The request could not be withdrawn. Please try again.'),
+				slug: 'withdrawal-not-saved',
+				status: Http::STATUS_INTERNAL_SERVER_ERROR
+			);
+		}
+
+		if ($updated === null) {
+			return $this->refuse(
+				message: $this->l10n->t('This case is not yours.'),
+				slug: 'case-not-yours',
+				status: Http::STATUS_FORBIDDEN
+			);
+		}
+
+		$this->recorder->announceWithdrawal(
+			register: $register,
+			schema: $schema,
+			caseId: $id,
+			status: $target,
+			reason: $reason,
+			subject: $context['subject'],
+			action: $action,
+			occurredAt: $occurredAt
+		);
+
+		// Nothing is deleted and no undo is offered: the answers stay
+		// readable, with the withdrawal beside them.
+		return new JSONResponse([
+			'case' => $updated,
+			'withdrawal' => $this->writableSet->withdrawal(action: $action, case: $updated),
+		]);
+	}//end applyWithdrawal()
 
 	/**
 	 * Resolve the subject, the citizen write action, the case and its writable
