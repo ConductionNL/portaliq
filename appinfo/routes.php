@@ -24,6 +24,11 @@ return [
         ['name' => 'preferences#getPreference', 'url' => '/api/preferences/{key}', 'verb' => 'GET'],
         ['name' => 'preferences#setPreference', 'url' => '/api/preferences/{key}', 'verb' => 'PUT'],
 
+        // Invitations into the portal (portal-identity-and-the-organisations-cases).
+        // Staff acts behind the same `portal.provision` action.
+        ['name' => 'portalAccountAdmin#invite', 'url' => '/api/invitations', 'verb' => 'POST'],
+        ['name' => 'portalAccountAdmin#invitations', 'url' => '/api/invitations', 'verb' => 'GET'],
+
         // The identity space (portal-identity-space). Staff acts, gated by
         // the ADR-023 action `portal.provision`; a citizen never reaches them.
         ['name' => 'portalAccountAdmin#provision', 'url' => '/api/accounts/provision', 'verb' => 'POST'],
@@ -143,6 +148,21 @@ return [
         // T03). The {register}/{schema}/{id} segments distinguish it from the
         // plain GET above.
         ['name' => 'contribution#markRead', 'url' => '/portal/api/inbox/{register}/{schema}/{id}/read', 'verb' => 'PATCH'],
+        // The citizen's own identity (portal-identity-and-the-organisations-cases):
+        // the challenge this portal runs itself, the one-time reference link
+        // for a case type that admits it, registration under the portal's
+        // policy, and the account's own details.
+        ['name' => 'portalIdentity#challenge', 'url' => '/portal/api/identity/challenge', 'verb' => 'GET'],
+        ['name' => 'portalIdentity#requestReferenceLink', 'url' => '/portal/api/identity/reference-link', 'verb' => 'POST'],
+        ['name' => 'portalIdentity#redeemReferenceLink', 'url' => '/portal/api/identity/reference-link/redeem', 'verb' => 'POST'],
+        ['name' => 'portalIdentity#register', 'url' => '/portal/api/identity/register', 'verb' => 'POST'],
+        ['name' => 'portalIdentity#acceptInvitation', 'url' => '/portal/api/identity/invitation/accept', 'verb' => 'POST'],
+        ['name' => 'portalIdentity#updateDetails', 'url' => '/portal/api/identity/details', 'verb' => 'PATCH'],
+        ['name' => 'portalIdentity#confirmEmail', 'url' => '/portal/api/identity/email/confirm', 'verb' => 'POST'],
+        ['name' => 'portalIdentity#removeAccount', 'url' => '/portal/api/identity/remove', 'verb' => 'POST'],
+        ['name' => 'portalIdentity#requestAccess', 'url' => '/portal/api/identity/access-requests', 'verb' => 'POST'],
+        ['name' => 'portalIdentity#myAccessRequests', 'url' => '/portal/api/identity/access-requests', 'verb' => 'GET'],
+
         // Mijn zaken (portal-identity-space): every `kind: cases` collection
         // the subject's contributions declare, merged into one list, so a case
         // attached to the account before the first login is there on it.

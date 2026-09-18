@@ -30,6 +30,7 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Service\Identity\PortalMandateService;
 use OCA\Portaliq\Service\PortalCaseListReader;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
@@ -54,12 +55,14 @@ class MyCasesController extends Controller implements PortalProtected {
 	 * @param PortalContributionRegistry $registry The contribution aggregator.
 	 * @param PortalSessionService $session Resolves the subject from the bearer.
 	 * @param PortalCaseListReader $cases Merges every case collection.
+	 * @param PortalMandateService $mandates The mandates the identity holds.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PortalContributionRegistry $registry,
 		private readonly PortalSessionService $session,
 		private readonly PortalCaseListReader $cases,
+		private readonly PortalMandateService $mandates,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -83,7 +86,79 @@ class MyCasesController extends Controller implements PortalProtected {
 		}
 
 		$aggregate = $this->registry->aggregateFor($subject);
+		$rows = $this->cases->listCases(subject: $subject, aggregate: $aggregate);
 
-		return new JSONResponse(['cases' => $this->cases->listCases(subject: $subject, aggregate: $aggregate)]);
+		// The organisation half (REQ-PIOC-002, REQ-PIOC-008): the mandates the
+		// identity holds, the one it is acting under, and that one's cases.
+		// Naming a mandate that is not theirs selects nothing, rather than
+		// falling back to one that is.
+		$held = $this->mandates->mandatesFor(subjectRef: (string)($subject['subjectRef'] ?? ''), organisation: (string)($subject['organisation'] ?? ''));
+		$requested = (string)$this->request->getParam('mandate', '');
+		$active = $this->mandates->activeMandate(mandates: $held, mandateId: $requested);
+
+		if ($active !== null) {
+			$rows = $this->merge(
+				rows: $rows,
+				extra: $this->cases->listMandatedCases(subject: $subject, aggregate: $aggregate, mandates: [$active])
+			);
+		}
+
+		$describedActive = null;
+		if ($active !== null) {
+			$describedActive = $this->mandates->describe(mandate: $active);
+		}
+
+		return new JSONResponse([
+			'cases' => $rows,
+			'mandates' => array_map(fn (array $mandate): array => $this->mandates->describe(mandate: $mandate), $held),
+			'activeMandate' => $describedActive,
+		]);
 	}//end index()
+
+	/**
+	 * Merge the mandated rows into the subject's own, without listing a case
+	 * twice when it is both theirs and their organisation's.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The subject's own cases.
+	 * @param array<int, array<string, mixed>> $extra The mandated cases.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function merge(array $rows, array $extra): array {
+		$seen = [];
+		foreach ($rows as $row) {
+			$seen[$this->rowKey(row: $row)] = true;
+		}
+
+		foreach ($extra as $row) {
+			$key = $this->rowKey(row: $row);
+			if (isset($seen[$key]) === true) {
+				continue;
+			}
+
+			$seen[$key] = true;
+			$rows[] = $row;
+		}
+
+		return $rows;
+	}//end merge()
+
+	/**
+	 * A row's identity for de-duplication: its schema and its own id.
+	 *
+	 * @param array<string, mixed> $row The case row.
+	 *
+	 * @return string
+	 */
+	private function rowKey(array $row): string {
+		$self = ($row['@self'] ?? null);
+		$id = ($row['id'] ?? $row['uuid'] ?? null);
+		if ($id === null && is_array($self) === true) {
+			$id = ($self['id'] ?? $self['uuid'] ?? null);
+		}
+
+		$source = (array)($row['_source'] ?? []);
+
+		return (string)($source['schema'] ?? '') . ':' . (string)$id;
+	}//end rowKey()
 }//end class

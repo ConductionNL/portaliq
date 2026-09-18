@@ -29,6 +29,7 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\ActionAuthService;
+use OCA\Portaliq\Service\Identity\PortalInvitationService;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -56,12 +57,14 @@ class PortalAccountAdminController extends Controller {
 	 * @param PortalAccountService $accounts Provisions and withdraws accounts.
 	 * @param ActionAuthService $actionAuth Decides whether this clerk may.
 	 * @param IUserSession $userSession The staff user making the request.
+	 * @param PortalInvitationService $invitations Invitations into the portal.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PortalAccountService $accounts,
 		private readonly ActionAuthService $actionAuth,
 		private readonly IUserSession $userSession,
+		private readonly PortalInvitationService $invitations,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -156,4 +159,68 @@ class PortalAccountAdminController extends Controller {
 
 		return new JSONResponse(['status' => PortalAccountService::STATUS_VOID]);
 	}//end void()
+
+	/**
+	 * Invite an address into the portal.
+	 *
+	 * @param string $email The address invited.
+	 * @param string $organisation The tenant inviting.
+	 * @param string $audience The audience the account will carry.
+	 *
+	 * @return JSONResponse The invitation's secret, for the mail, or a refusal.
+	 *
+	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 */
+	#[NoAdminRequired]
+	public function invite(string $email, string $organisation, string $audience = 'client'): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		try {
+			$this->actionAuth->requireAction(user: $user, action: self::ACTION_PROVISION);
+		} catch (OCSForbiddenException $exception) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		$invited = $this->invitations->invite(
+			email: $email,
+			organisation: $organisation,
+			audience: $audience,
+			invitedBy: $user->getUID()
+		);
+		if ($invited === null) {
+			return new JSONResponse(['error' => 'refused'], Http::STATUS_BAD_REQUEST);
+		}
+
+		return new JSONResponse($invited);
+	}//end invite()
+
+	/**
+	 * The invitations this staff user sent, and what became of them.
+	 *
+	 * @param string $organisation The tenant.
+	 *
+	 * @return JSONResponse The sender's own invitations.
+	 *
+	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 */
+	#[NoAdminRequired]
+	public function invitations(string $organisation = ''): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		try {
+			$this->actionAuth->requireAction(user: $user, action: self::ACTION_PROVISION);
+		} catch (OCSForbiddenException $exception) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		// The sender sees their own invitations, never another clerk's: the
+		// list is scoped on the session's uid, not on a parameter.
+		return new JSONResponse(['invitations' => $this->invitations->sentBy(invitedBy: $user->getUID(), organisation: $organisation)]);
+	}//end invitations()
 }//end class
