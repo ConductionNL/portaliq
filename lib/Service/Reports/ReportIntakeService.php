@@ -115,6 +115,19 @@ class ReportIntakeService {
 		// came from is kept: no address, no user agent, no session.
 		unset($answers['ip'], $answers['address'], $answers['userAgent']);
 
+		// A form that asks for a name or an address puts it in the answers,
+		// and answers live on the report. So a contact field found there is
+		// MOVED into the separate record rather than left where a read of the
+		// report would return it. Anything the caller passed as contact wins,
+		// because that is the field the form meant as contact.
+		$given = $contact;
+		foreach (self::CONTACT_FIELDS as $field) {
+			if (isset($answers[$field]) === true) {
+				$given[$field] = ($given[$field] ?? $answers[$field]);
+				unset($answers[$field]);
+			}
+		}
+
 		$created = $this->writer->createObject(
 			register: self::REGISTER,
 			schema: self::SCHEMA,
@@ -143,7 +156,7 @@ class ReportIntakeService {
 		}
 
 		$reportId = $this->idOf(row: $created);
-		$contactId = $this->storeContact(reportId: $reportId, contact: $contact);
+		$contactId = $this->storeContact(reportId: $reportId, contact: $given);
 		if ($contactId !== '') {
 			$this->writer->updateObject(
 				register: self::REGISTER,
