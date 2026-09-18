@@ -18,6 +18,24 @@
 ## Quality
 
 - [x] **T07**: PHPUnit: a mandate without reach sees only its own organisation, a refusing case type is excluded, a sold subsidiary disappears, the bound refuses rather than truncates
+  - 🔴 THE FIRST OF THOSE WAS NOT ACTUALLY ASSERTED, MEASURED 2026-09-18.
+    `PortalMandateService::reachOf()` had ZERO references in any test, and it is
+    the method that decides how far a mandate sees: its two callers,
+    `MyCasesController` and `CitizenCaseController`, use it to decide whether a
+    citizen's case list walks down the party tree into subsidiaries.
+  - `MyCasesControllerTest` MOCKS it, with
+    `onlyMethods([... 'reachOf'])` and a forced answer. That is right for a
+    controller test, and it means the real method was never executed by
+    anything. Had a refactor inverted the condition or accepted any truthy
+    value, every mandate would have reached the whole group and every test in
+    this repo would still have passed.
+  - Now covered directly: the declared wider reach, the fail-closed default for
+    a mandate that says nothing, six unrecognised spellings including `tree `
+    and `TREE`, a non-string reach, and that `describe()` reports the same reach
+    `reachOf()` decides. Both mutations redden their assertions.
+  - The gap was found by measuring PER METHOD rather than per file. Every other
+    method on the class, and every method on `PortalAccountService`, is covered
+    somewhere in the tree.
 - [x] **T08**: Playwright `tests/e2e/portal-visibility-follows-the-party-tree.spec.ts`: a parent with one mandate sees two subsidiaries' cases, each naming its entity
 - [x] **T09**: Dutch and English strings; docs; `openspec validate portal-visibility-follows-the-party-tree --type change --strict`
 
