@@ -44,7 +44,10 @@ export function heightToReport(measured) {
 		return EMBED_MINIMUM_HEIGHT
 	}
 
-	return Math.max(EMBED_MINIMUM_HEIGHT, Math.min(EMBED_MAXIMUM_HEIGHT, Math.round(measured)))
+	return Math.max(
+		EMBED_MINIMUM_HEIGHT,
+		Math.min(EMBED_MAXIMUM_HEIGHT, Math.round(measured)),
+	)
 }
 
 /**
@@ -81,7 +84,10 @@ export function measureDocument(doc) {
  * @param {Function} [options.onReport] Called with each reported height (test seam).
  * @return {Function} Stops reporting.
  */
-export function startHeightReporting({ win = typeof window === 'undefined' ? null : window, onReport = null } = {}) {
+export function startHeightReporting({
+	win = typeof window === 'undefined' ? null : window,
+	onReport = null,
+} = {}) {
 	if (win === null || win.parent === win) {
 		return () => {}
 	}

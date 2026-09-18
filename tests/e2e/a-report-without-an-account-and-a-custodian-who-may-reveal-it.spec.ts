@@ -52,7 +52,11 @@ const APP_API_BASE = '/apps/portaliq/api'
 const OR_OBJECTS_BASE = '/apps/openregister/api/objects'
 
 const ADMIN = Buffer.from('admin:admin').toString('base64')
-const STAFF_HEADERS = { Authorization: `Basic ${ADMIN}`, 'OCS-APIRequest': 'true', requesttoken: 'x' }
+const STAFF_HEADERS = {
+	Authorization: `Basic ${ADMIN}`,
+	'OCS-APIRequest': 'true',
+	requesttoken: 'x',
+}
 
 /** Create one object through OpenRegister's own object API, as the dev admin. */
 async function seed(
@@ -64,7 +68,10 @@ async function seed(
 		headers: { Authorization: `Basic ${ADMIN}`, 'OCS-APIRequest': 'true' },
 		data,
 	})
-	expect(res.ok(), `OpenRegister objects#create must be reachable for ${schema}`).toBeTruthy()
+	expect(
+		res.ok(),
+		`OpenRegister objects#create must be reachable for ${schema}`,
+	).toBeTruthy()
 	const body = await res.json()
 	const id = (body.id ?? body['@self']?.id) as string
 	expect(id).toBeTruthy()
@@ -89,7 +96,9 @@ async function seedCaseType(request: APIRequestContext): Promise<string> {
 }
 
 test.describe('a report without an account, and a custodian who may reveal it', () => {
-	test('a stranger files a report, keeps the code, and reads the answer with it', async ({ request }) => {
+	test('a stranger files a report, keeps the code, and reads the answer with it', async ({
+		request,
+	}) => {
 		const caseType = await seedCaseType(request)
 
 		// No Authorization header anywhere in this block: this is somebody
@@ -99,7 +108,10 @@ test.describe('a report without an account, and a custodian who may reveal it', 
 				caseType,
 				register: 'portaliq',
 				schema: 'portalCaseType',
-				report: { subject: 'Onveilige situatie', body: 'Er wordt gewerkt zonder keuring.' },
+				report: {
+					subject: 'Onveilige situatie',
+					body: 'Er wordt gewerkt zonder keuring.',
+				},
 			},
 		})
 		expect(filed.ok(), 'a report is accepted without a session').toBeTruthy()
@@ -107,11 +119,19 @@ test.describe('a report without an account, and a custodian who may reveal it', 
 		const accepted = await filed.json()
 		const code = accepted.code as string
 		expect(code, 'the reporter leaves with a code').toBeTruthy()
-		expect(accepted.recoverable, 'nothing offers to recover a lost code').toBe(false)
+		expect(accepted.recoverable, 'nothing offers to recover a lost code').toBe(
+			false,
+		)
 		// The answer carries the code and nothing that identifies the reporter.
-		expect(Object.keys(accepted).sort()).toEqual(['code', 'codeShownOnce', 'recoverable'])
+		expect(Object.keys(accepted).sort()).toEqual([
+			'code',
+			'codeShownOnce',
+			'recoverable',
+		])
 
-		const opened = await request.post(`${API_BASE}/reports/thread`, { data: { code } })
+		const opened = await request.post(`${API_BASE}/reports/thread`, {
+			data: { code },
+		})
 		expect(opened.ok()).toBeTruthy()
 		const thread = await opened.json()
 		expect(thread.report.subject).toBe('Onveilige situatie')
@@ -129,19 +149,35 @@ test.describe('a report without an account, and a custodian who may reveal it', 
 		const reportId = thread.report.id as string
 
 		// The handler writes one internal note and one reply.
-		const internal = await request.post(`${APP_API_BASE}/reports/${encodeURIComponent(reportId)}/messages`, {
-			headers: STAFF_HEADERS,
-			data: { body: 'Intern: doorgezet naar de vertrouwenspersoon.', visibleToReporter: false },
-		})
+		const internal = await request.post(
+			`${APP_API_BASE}/reports/${encodeURIComponent(reportId)}/messages`,
+			{
+				headers: STAFF_HEADERS,
+				data: {
+					body: 'Intern: doorgezet naar de vertrouwenspersoon.',
+					visibleToReporter: false,
+				},
+			},
+		)
 		expect(internal.ok()).toBeTruthy()
-		const reply = await request.post(`${APP_API_BASE}/reports/${encodeURIComponent(reportId)}/messages`, {
-			headers: STAFF_HEADERS,
-			data: { body: 'Wij hebben uw melding ontvangen.', visibleToReporter: true },
-		})
+		const reply = await request.post(
+			`${APP_API_BASE}/reports/${encodeURIComponent(reportId)}/messages`,
+			{
+				headers: STAFF_HEADERS,
+				data: {
+					body: 'Wij hebben uw melding ontvangen.',
+					visibleToReporter: true,
+				},
+			},
+		)
 		expect(reply.ok()).toBeTruthy()
 
-		const reread = await (await request.post(`${API_BASE}/reports/thread`, { data: { code } })).json()
-		const bodies = (reread.messages as Array<Record<string, string>>).map((m) => m.body)
+		const reread = await (
+			await request.post(`${API_BASE}/reports/thread`, { data: { code } })
+		).json()
+		const bodies = (reread.messages as Array<Record<string, string>>).map(
+			(m) => m.body,
+		)
 		expect(bodies).toContain('Wij hebben uw melding ontvangen.')
 		expect(bodies, 'an internal note never reaches the reporter').not.toContain(
 			'Intern: doorgezet naar de vertrouwenspersoon.',
@@ -151,13 +187,19 @@ test.describe('a report without an account, and a custodian who may reveal it', 
 			data: { code, body: 'De keuring ontbreekt sinds mei.' },
 		})
 		expect(answered.ok(), 'the reporter answers on the same thread').toBeTruthy()
-		const afterAnswer = await (await request.post(`${API_BASE}/reports/thread`, { data: { code } })).json()
-		expect((afterAnswer.messages as Array<Record<string, string>>).map((m) => m.body)).toContain(
-			'De keuring ontbreekt sinds mei.',
-		)
+		const afterAnswer = await (
+			await request.post(`${API_BASE}/reports/thread`, { data: { code } })
+		).json()
+		expect(
+			(afterAnswer.messages as Array<Record<string, string>>).map(
+				(m) => m.body,
+			),
+		).toContain('De keuring ontbreekt sinds mei.')
 	})
 
-	test('what the reporter gave is not in the handler\'s read, and a non-custodian reveals nothing', async ({ request }) => {
+	test("what the reporter gave is not in the handler's read, and a non-custodian reveals nothing", async ({
+		request,
+	}) => {
 		const caseType = await seedCaseType(request)
 
 		const filed = await request.post(`${API_BASE}/reports`, {
@@ -171,14 +213,19 @@ test.describe('a report without an account, and a custodian who may reveal it', 
 		})
 		expect(filed.ok()).toBeTruthy()
 		const code = (await filed.json()).code as string
-		const thread = await (await request.post(`${API_BASE}/reports/thread`, { data: { code } })).json()
+		const thread = await (
+			await request.post(`${API_BASE}/reports/thread`, { data: { code } })
+		).json()
 		const reportId = thread.report.id as string
 
 		// The handler's own read. This is the assertion the whole change is
 		// for: reading the report does not read the reporter.
-		const asHandler = await request.get(`${APP_API_BASE}/reports/${encodeURIComponent(reportId)}`, {
-			headers: STAFF_HEADERS,
-		})
+		const asHandler = await request.get(
+			`${APP_API_BASE}/reports/${encodeURIComponent(reportId)}`,
+			{
+				headers: STAFF_HEADERS,
+			},
+		)
 		expect(asHandler.ok()).toBeTruthy()
 		const seen = JSON.stringify(await asHandler.json())
 		expect(seen).not.toContain('sanne@example.org')
@@ -188,38 +235,75 @@ test.describe('a report without an account, and a custodian who may reveal it', 
 		// Asking is allowed, and is recorded. Answering is not: the dev admin
 		// is not in the declared custodian group, and being an administrator
 		// is not being the person the organisation named.
-		const asked = await request.post(`${APP_API_BASE}/reports/${encodeURIComponent(reportId)}/reveal-requests`, {
-			headers: STAFF_HEADERS,
-			data: { motivation: 'Er is een tweede melding over dezelfde afdeling.' },
-		})
+		const asked = await request.post(
+			`${APP_API_BASE}/reports/${encodeURIComponent(reportId)}/reveal-requests`,
+			{
+				headers: STAFF_HEADERS,
+				data: {
+					motivation: 'Er is een tweede melding over dezelfde afdeling.',
+				},
+			},
+		)
 		expect(asked.status(), 'a motivated request is recorded').toBe(201)
 
-		const requests = await request.get(`${OR_OBJECTS_BASE}/portaliq/portalRevealRequest`, {
-			headers: { Authorization: `Basic ${ADMIN}`, 'OCS-APIRequest': 'true' },
-		})
-		const rows = ((await requests.json()).results ?? []) as Array<Record<string, string>>
+		const requests = await request.get(
+			`${OR_OBJECTS_BASE}/portaliq/portalRevealRequest`,
+			{
+				headers: {
+					Authorization: `Basic ${ADMIN}`,
+					'OCS-APIRequest': 'true',
+				},
+			},
+		)
+		const rows = ((await requests.json()).results ?? []) as Array<
+			Record<string, string>
+		>
 		const pending = rows.find((row) => row.reportRef === reportId)
-		expect(pending, 'the request is on the record before anybody answers it').toBeTruthy()
+		expect(
+			pending,
+			'the request is on the record before anybody answers it',
+		).toBeTruthy()
 
 		const decided = await request.post(
 			`${APP_API_BASE}/reveal-requests/${encodeURIComponent((pending?.id ?? pending?.uuid) as string)}/decide`,
 			{ headers: STAFF_HEADERS, data: { allow: true, reason: 'Toegestaan.' } },
 		)
-		expect(decided.status(), 'an administrator who is not the custodian is refused').toBe(403)
-		expect(JSON.stringify(await decided.json())).not.toContain('sanne@example.org')
+		expect(
+			decided.status(),
+			'an administrator who is not the custodian is refused',
+		).toBe(403)
+		expect(JSON.stringify(await decided.json())).not.toContain(
+			'sanne@example.org',
+		)
 	})
 
-	test('a caller with no code reads nothing, and an unauthenticated caller reveals nothing', async ({ request }) => {
-		const guessed = await request.post(`${API_BASE}/reports/thread`, { data: { code: 'NIETDEJUISTECODE' } })
-		expect(guessed.status(), 'a wrong code and an unknown code answer the same').toBe(401)
+	test('a caller with no code reads nothing, and an unauthenticated caller reveals nothing', async ({
+		request,
+	}) => {
+		const guessed = await request.post(`${API_BASE}/reports/thread`, {
+			data: { code: 'NIETDEJUISTECODE' },
+		})
+		expect(
+			guessed.status(),
+			'a wrong code and an unknown code answer the same',
+		).toBe(401)
 
 		// The least privileged principal that should be refused: nobody at all.
-		const revealed = await request.post(`${APP_API_BASE}/reveal-requests/request-1/decide`, {
-			data: { allow: true },
-		})
-		expect([401, 403, 412].includes(revealed.status()), 'deciding needs a staff session').toBeTruthy()
+		const revealed = await request.post(
+			`${APP_API_BASE}/reveal-requests/request-1/decide`,
+			{
+				data: { allow: true },
+			},
+		)
+		expect(
+			[401, 403, 412].includes(revealed.status()),
+			'deciding needs a staff session',
+		).toBeTruthy()
 
 		const read = await request.get(`${APP_API_BASE}/reports/report-1`)
-		expect([401, 403, 404, 412].includes(read.status()), 'reading a report needs a staff session').toBeTruthy()
+		expect(
+			[401, 403, 404, 412].includes(read.status()),
+			'reading a report needs a staff session',
+		).toBeTruthy()
 	})
 })

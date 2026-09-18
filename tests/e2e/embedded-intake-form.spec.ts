@@ -55,7 +55,10 @@ async function seed(
 		headers: { Authorization: `Basic ${ADMIN}`, 'OCS-APIRequest': 'true' },
 		data,
 	})
-	expect(res.ok(), `OpenRegister objects#create must be reachable for ${schema}`).toBeTruthy()
+	expect(
+		res.ok(),
+		`OpenRegister objects#create must be reachable for ${schema}`,
+	).toBeTruthy()
 	const body = await res.json()
 	const id = (body.id ?? body['@self']?.id) as string
 	expect(id).toBeTruthy()
@@ -95,12 +98,16 @@ async function seedEmbeddableForm(
 }
 
 test.describe('embedded-intake-form', () => {
-	test('the allowed origin gets the form, and any other origin gets a message', async ({ request }) => {
+	test('the allowed origin gets the form, and any other origin gets a message', async ({
+		request,
+	}) => {
 		const route = `aanvragen/embed-${Date.now()}`
 		await seedEmbeddableForm(request, route, [ALLOWED_ORIGIN])
 		const url = `${EMBED_PATH}?route=${encodeURIComponent(route)}`
 
-		const allowed = await request.get(url, { headers: { Origin: ALLOWED_ORIGIN } })
+		const allowed = await request.get(url, {
+			headers: { Origin: ALLOWED_ORIGIN },
+		})
 		expect(allowed.ok()).toBeTruthy()
 		// The frame names its one ancestor, and never a wildcard.
 		const csp = allowed.headers()['content-security-policy'] ?? ''
@@ -122,7 +129,10 @@ test.describe('embedded-intake-form', () => {
 	//
 	// Everything below needs a real page, because the defect was invisible to
 	// anything that did not run the bundle.
-	test('the frame actually renders the form, not just a div for it', async ({ page, request }) => {
+	test('the frame actually renders the form, not just a div for it', async ({
+		page,
+		request,
+	}) => {
 		const route = `aanvragen/embed-render-${Date.now()}`
 		await seedEmbeddableForm(request, route, [ALLOWED_ORIGIN])
 
@@ -138,7 +148,10 @@ test.describe('embedded-intake-form', () => {
 		await expect(page.locator('#portaliq-embed')).not.toBeEmpty()
 	})
 
-	test('a refused frame renders words, not a blank rectangle', async ({ page, request }) => {
+	test('a refused frame renders words, not a blank rectangle', async ({
+		page,
+		request,
+	}) => {
 		const route = `aanvragen/embed-closed-render-${Date.now()}`
 		await seedEmbeddableForm(request, route, [])
 
@@ -154,9 +167,12 @@ test.describe('embedded-intake-form', () => {
 		const route = `aanvragen/embed-closed-${Date.now()}`
 		await seedEmbeddableForm(request, route, [])
 
-		const res = await request.get(`${EMBED_PATH}?route=${encodeURIComponent(route)}`, {
-			headers: { Origin: ALLOWED_ORIGIN },
-		})
+		const res = await request.get(
+			`${EMBED_PATH}?route=${encodeURIComponent(route)}`,
+			{
+				headers: { Origin: ALLOWED_ORIGIN },
+			},
+		)
 		const body = await res.text()
 
 		expect(body).not.toContain('"postcode"')
@@ -164,7 +180,9 @@ test.describe('embedded-intake-form', () => {
 		expect(csp).not.toContain(ALLOWED_ORIGIN)
 	})
 
-	test('a visitor submits without an account and gets a reference and a follow link', async ({ request }) => {
+	test('a visitor submits without an account and gets a reference and a follow link', async ({
+		request,
+	}) => {
 		const route = `aanvragen/embed-submit-${Date.now()}`
 		await seedEmbeddableForm(request, route, [ALLOWED_ORIGIN])
 
@@ -194,20 +212,38 @@ test.describe('embedded-intake-form', () => {
 		expect(fromElsewhere.status()).toBe(403)
 	})
 
-	test('a visitor signed in to the portal elsewhere is anonymous inside the frame', async ({ request }) => {
+	test('a visitor signed in to the portal elsewhere is anonymous inside the frame', async ({
+		request,
+	}) => {
 		const route = `aanvragen/embed-anon-${Date.now()}`
 		await seedEmbeddableForm(request, route, [ALLOWED_ORIGIN])
 
-		const login = await request.post('/apps/portaliq/portal/api/session/dev-login', {
-			data: { subjectRef: `subject-${Date.now()}`, audience: 'client', organisation: 'dev-org' },
-		})
-		expect(login.ok(), 'dev-login must be enabled (see tests/e2e/ci-seed.sh)').toBeTruthy()
+		const login = await request.post(
+			'/apps/portaliq/portal/api/session/dev-login',
+			{
+				data: {
+					subjectRef: `subject-${Date.now()}`,
+					audience: 'client',
+					organisation: 'dev-org',
+				},
+			},
+		)
+		expect(
+			login.ok(),
+			'dev-login must be enabled (see tests/e2e/ci-seed.sh)',
+		).toBeTruthy()
 		const { token } = await login.json()
 
 		// The bearer is offered and must change nothing: the frame reads none.
-		const res = await request.get(`${EMBED_PATH}?route=${encodeURIComponent(route)}`, {
-			headers: { Origin: ALLOWED_ORIGIN, Authorization: `Bearer ${token}` },
-		})
+		const res = await request.get(
+			`${EMBED_PATH}?route=${encodeURIComponent(route)}`,
+			{
+				headers: {
+					Origin: ALLOWED_ORIGIN,
+					Authorization: `Bearer ${token}`,
+				},
+			},
+		)
 		const body = await res.text()
 
 		expect(res.ok()).toBeTruthy()

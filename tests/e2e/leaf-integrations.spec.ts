@@ -63,7 +63,10 @@ async function seed(
 		headers: { Authorization: `Basic ${ADMIN}`, 'OCS-APIRequest': 'true' },
 		data,
 	})
-	expect(res.ok(), `OpenRegister objects#create must be reachable for ${schema}`).toBeTruthy()
+	expect(
+		res.ok(),
+		`OpenRegister objects#create must be reachable for ${schema}`,
+	).toBeTruthy()
 	const body = await res.json()
 	const id = (body.id ?? body['@self']?.id) as string
 	expect(id).toBeTruthy()
@@ -86,7 +89,7 @@ test.describe('leaf-integrations', () => {
 		const registered = await page.evaluate(() => {
 			const registry = (window as never as Record<string, never>).OCA
 				?.OpenRegister?.integrations as never as
-				{ list?: () => Array<{ id: string, widget?: unknown }> } | undefined
+				{ list?: () => Array<{ id: string; widget?: unknown }> } | undefined
 			if (registry?.list === undefined) {
 				return null
 			}
@@ -96,21 +99,24 @@ test.describe('leaf-integrations', () => {
 		expect(
 			registered,
 			'window.OCA.OpenRegister.integrations is absent, so src/main.js did not '
-			+ 'install the registry. Every integration widget in the manifest then '
-			+ 'resolves to null and renders nothing, silently.',
+				+ 'install the registry. Every integration widget in the manifest then '
+				+ 'resolves to null and renders nothing, silently.',
 		).not.toBeNull()
 
 		for (const leaf of ADOPTED) {
 			expect(
 				registered,
 				`the "${leaf.id}" leaf is declared on ${leaf.page} but is not in the `
-				+ 'registry on this page, so that widget is dark',
+					+ 'registry on this page, so that widget is dark',
 			).toContain(leaf.id)
 		}
 	})
 
 	// REQ: the submissions surface exists, and shows facts rather than payloads.
-	test('a submission is visible to staff, without its payload in the list', async ({ page, request }) => {
+	test('a submission is visible to staff, without its payload in the list', async ({
+		page,
+		request,
+	}) => {
 		const stamp = Date.now()
 		const subjectRef = `subject-${stamp}`
 		await seed(request, 'portalSubmission', {
@@ -124,7 +130,9 @@ test.describe('leaf-integrations', () => {
 		})
 
 		await page.goto('/apps/portaliq/submissions')
-		await expect(page.getByText(`melding-${stamp}`)).toBeVisible({ timeout: 20000 })
+		await expect(page.getByText(`melding-${stamp}`)).toBeVisible({
+			timeout: 20000,
+		})
 
 		// payloadCopy is whatever a citizen typed, and a list renders many rows
 		// at once. It belongs on the detail page, where reading one record is
@@ -134,7 +142,9 @@ test.describe('leaf-integrations', () => {
 
 	// REQ: integration leaves render on the internal staff side only, probed by
 	// the least privileged principal there is.
-	test('an anonymous visitor is served no leaf and no leaf artifact', async ({ request }) => {
+	test('an anonymous visitor is served no leaf and no leaf artifact', async ({
+		request,
+	}) => {
 		for (const kind of ['site', 'pages', 'contributions']) {
 			const res = await request.get(`${API_BASE}/${kind}`)
 			if (res.status() === 404) {
@@ -148,17 +158,23 @@ test.describe('leaf-integrations', () => {
 			expect(
 				body,
 				`${kind} served an integrationId to an anonymous visitor. A leaf is a `
-				+ 'Nextcloud component for a Nextcloud user (ADR-046).',
+					+ 'Nextcloud component for a Nextcloud user (ADR-046).',
 			).not.toContain('integrationId')
 			expect(body, `${kind} served a Talk join URL`).not.toContain('/call/')
-			expect(body, `${kind} served a Forms share URL`).not.toContain('/apps/forms/')
-			expect(body, `${kind} served a Calendar app URL`).not.toContain('/apps/calendar/')
+			expect(body, `${kind} served a Forms share URL`).not.toContain(
+				'/apps/forms/',
+			)
+			expect(body, `${kind} served a Calendar app URL`).not.toContain(
+				'/apps/calendar/',
+			)
 		}
 	})
 
 	// REQ: the visitor's reply path stays the portal edge. A portal bearer
 	// session is a portal session, never an entry into the Nextcloud shell.
-	test('a portal session is not a way into a Nextcloud app', async ({ request }) => {
+	test('a portal session is not a way into a Nextcloud app', async ({
+		request,
+	}) => {
 		const stamp = Date.now()
 		const subjectRef = `subject-${stamp}`
 		await seed(request, 'portalMessage', {
@@ -173,23 +189,33 @@ test.describe('leaf-integrations', () => {
 		const login = await request.post(`${API_BASE}/session/dev-login`, {
 			data: { subjectRef, audience: 'client', organisation: ORGANISATION },
 		})
-		expect(login.ok(), 'dev-login must be enabled (see tests/e2e/ci-seed.sh)').toBeTruthy()
+		expect(
+			login.ok(),
+			'dev-login must be enabled (see tests/e2e/ci-seed.sh)',
+		).toBeTruthy()
 		const { token } = await login.json()
 
 		const inbox = await request.get(`${API_BASE}/inbox`, {
 			headers: { Authorization: `Bearer ${token}` },
 		})
-		expect(inbox.ok(), 'the portal inbox must answer a portal session').toBeTruthy()
+		expect(
+			inbox.ok(),
+			'the portal inbox must answer a portal session',
+		).toBeTruthy()
 
 		const body = JSON.stringify(await inbox.json())
-		expect(body, 'the message the visitor reads must be there at all').toContain(`Bericht ${stamp}`)
+		expect(body, 'the message the visitor reads must be there at all').toContain(
+			`Bericht ${stamp}`,
+		)
 		expect(
 			body,
 			'the portal inbox carried an integrationId. The staff conversation about '
-			+ 'a message is a Talk room between employees; the citizen gets a '
-			+ 'portalMessage, not an invitation.',
+				+ 'a message is a Talk room between employees; the citizen gets a '
+				+ 'portalMessage, not an invitation.',
 		).not.toContain('integrationId')
-		expect(body, 'the portal inbox carried a Talk join URL').not.toContain('/call/')
+		expect(body, 'the portal inbox carried a Talk join URL').not.toContain(
+			'/call/',
+		)
 
 		// The staff surface itself must refuse this principal outright: a portal
 		// bearer is not a Nextcloud session.
