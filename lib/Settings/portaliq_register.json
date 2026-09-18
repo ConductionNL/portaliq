@@ -4644,7 +4644,7 @@
                     "portalReportDeclaration": {
                         "title": "Portal report declaration",
                         "type": "object",
-                        "description": "What governs a report of this type (a-report-without-an-account REQ-RWA-005, REQ-RWA-006, REQ-RWA-007): the custodian group that may reveal a reporter, the statutory terms in days, and whether the reporting surface is kept out of visitor analytics. Portaliq holds no term of its own and computes none from a constant.",
+                        "description": "What governs a report of this type: the group that may reveal who filed it, the acknowledgement and feedback terms in days, and whether the reporting surface stays out of visitor analytics. The portal holds no term of its own.",
                         "properties": {
                             "custodianGroup": {
                                 "title": "Custodian group",
@@ -5527,7 +5527,7 @@
                     "contactRef": {
                         "title": "Contact reference",
                         "type": "string",
-                        "description": "The separate `portalReporterContact` record, when the reporter gave anything. Empty when they gave nothing.",
+                        "description": "The separate record holding what the reporter gave about themselves. Empty when they gave nothing.",
                         "example": ""
                     },
                     "state": {
