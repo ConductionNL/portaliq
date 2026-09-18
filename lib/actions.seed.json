@@ -3,6 +3,9 @@
   "actions": {
     "portal.provision": [
       "admin"
+    ],
+    "portal.ask-partner": [
+      "admin"
     ]
   }
 }
