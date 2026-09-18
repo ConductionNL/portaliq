@@ -52,6 +52,7 @@ use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\NotificationDispatchService;
 use OCA\Portaliq\Service\PortalActionForwarder;
 use OCA\Portaliq\Service\PortalAuditHook;
+use OCA\Portaliq\Service\PortalCrossRefGuard;
 use OCA\Portaliq\Service\PortalFileReader;
 use OCA\Portaliq\Service\PortalFileWriter;
 use OCA\Portaliq\Service\PortalInboxReader;
@@ -154,9 +155,26 @@ class ContributionController extends Controller implements PortalProtected {
 		private readonly NotificationDispatchService $notificationDispatch,
 		private readonly LoggerInterface $logger,
 		private readonly ?PortalTaskGateway $taskGateway = null,
+		private readonly ?PortalCrossRefGuard $crossRefs = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
+
+	/**
+	 * The cross-reference guard, built here when it was not injected.
+	 *
+	 * It is never skipped when absent, unlike the other optional collaborators
+	 * on this controller. This one IS a guard: an instance that did not inject
+	 * it would otherwise write unchecked references, which is the defect the
+	 * guard exists to close. Its two dependencies are already held here.
+	 *
+	 * @return PortalCrossRefGuard The guard.
+	 *
+	 * @spec openspec/changes/portal-create-cross-refs/specs/portal-contribution-contract/spec.md
+	 */
+	private function crossRefGuard(): PortalCrossRefGuard {
+		return ($this->crossRefs ?? new PortalCrossRefGuard(reader: $this->reader, logger: $this->logger));
+	}//end crossRefGuard()
 
 	/**
 	 * Perform an ownership-scoped write and translate every way it can fail.
@@ -927,6 +945,24 @@ class ContributionController extends Controller implements PortalProtected {
 			}
 		}
 
+		// The cross-reference guard (portal-create-cross-refs). Every field the
+		// action declares as a reference has to resolve inside the subject's
+		// own scope BEFORE anything is written: a uuid in a create body is
+		// otherwise accepted as typed, which is how a citizen could file an
+		// objection against somebody else's case.
+		$refused = $this->crossRefGuard()->refusedField(
+			action: $action,
+			data: $data,
+			subject: $subject,
+			app: $match['app']
+		);
+		if ($refused !== '') {
+			return new JSONResponse(
+				['error' => 'cross_ref_refused', 'field' => $refused],
+				Http::STATUS_FORBIDDEN
+			);
+		}
+
 		$created = $this->writer->createObject(
 			register: $register,
 			schema: $schema,
@@ -1150,6 +1186,21 @@ class ContributionController extends Controller implements PortalProtected {
 			if (in_array($field, $whitelist, true) === true) {
 				$data[$field] = $value;
 			}
+		}
+
+		// The same guard as on create, for the same reason: an update body can
+		// name another party's object just as a create body can.
+		$refused = $this->crossRefGuard()->refusedField(
+			action: $action,
+			data: $data,
+			subject: $subject,
+			app: $match['app']
+		);
+		if ($refused !== '') {
+			return new JSONResponse(
+				['error' => 'cross_ref_refused', 'field' => $refused],
+				Http::STATUS_FORBIDDEN
+			);
 		}
 
 		$updated = $this->writeScoped(
