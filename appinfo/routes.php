@@ -24,6 +24,11 @@ return [
         ['name' => 'preferences#getPreference', 'url' => '/api/preferences/{key}', 'verb' => 'GET'],
         ['name' => 'preferences#setPreference', 'url' => '/api/preferences/{key}', 'verb' => 'PUT'],
 
+        // The identity space (portal-identity-space). Staff acts, gated by
+        // the ADR-023 action `portal.provision`; a citizen never reaches them.
+        ['name' => 'portalAccountAdmin#provision', 'url' => '/api/accounts/provision', 'verb' => 'POST'],
+        ['name' => 'portalAccountAdmin#void', 'url' => '/api/accounts/void', 'verb' => 'POST'],
+
         // Prometheus metrics endpoint.
         ['name' => 'metrics#index', 'url' => '/api/metrics', 'verb' => 'GET'],
         // Health check endpoint.
@@ -138,6 +143,10 @@ return [
         // T03). The {register}/{schema}/{id} segments distinguish it from the
         // plain GET above.
         ['name' => 'contribution#markRead', 'url' => '/portal/api/inbox/{register}/{schema}/{id}/read', 'verb' => 'PATCH'],
+        // Mijn zaken (portal-identity-space): every `kind: cases` collection
+        // the subject's contributions declare, merged into one list, so a case
+        // attached to the account before the first login is there on it.
+        ['name' => 'myCases#index', 'url' => '/portal/api/my-cases', 'verb' => 'GET'],
         // Objects in one contribution collection, subject-scoped (T05).
         ['name' => 'contribution#collection', 'url' => '/portal/api/collections/{register}/{schema}', 'verb' => 'GET'],
         // Create an object in a collection, owned by the subject (T06).
