@@ -53,6 +53,13 @@ class PortalCaseAccessGuard {
 	public const ACTION = 'portal.ask-partner';
 
 	/**
+	 * The ADR-023 action reviewing a change proposal is gated by.
+	 *
+	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 */
+	public const ACTION_REVIEW_PROPOSAL = 'portal.review-proposal';
+
+	/**
 	 * OpenRegister's object service, resolved lazily so portaliq still boots
 	 * on an instance without it.
 	 */
@@ -83,12 +90,29 @@ class PortalCaseAccessGuard {
 	 * @spec openspec/changes/partner-tasks-in-the-portal/specs/partner-tasks-in-the-portal/spec.md
 	 */
 	public function mayAsk(IUser $user, string $register, string $schema, string $id): bool {
+		return $this->mayAct(user: $user, register: $register, schema: $schema, id: $id, action: self::ACTION);
+	}//end mayAsk()
+
+	/**
+	 * Whether this user may perform one gated act on one record.
+	 *
+	 * @param IUser $user The staff user.
+	 * @param string $register The register the record lives in.
+	 * @param string $schema The schema the record lives in.
+	 * @param string $id The record.
+	 * @param string $action The ADR-023 action being gated.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 */
+	public function mayAct(IUser $user, string $register, string $schema, string $id, string $action): bool {
 		if ($register === '' || $schema === '' || $id === '') {
 			return false;
 		}
 
 		try {
-			$this->actionAuth->requireAction(user: $user, action: self::ACTION);
+			$this->actionAuth->requireAction(user: $user, action: $action);
 		} catch (OCSForbiddenException $forbidden) {
 			return false;
 		}
@@ -111,7 +135,7 @@ class PortalCaseAccessGuard {
 		}
 
 		return is_array($rows) === true && $rows !== [];
-	}//end mayAsk()
+	}//end mayAct()
 
 	/**
 	 * OpenRegister's object service, or null when it is not installed.

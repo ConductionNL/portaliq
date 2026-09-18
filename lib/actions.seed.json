@@ -6,6 +6,9 @@
     ],
     "portal.ask-partner": [
       "admin"
+    ],
+    "portal.review-proposal": [
+      "admin"
     ]
   }
 }

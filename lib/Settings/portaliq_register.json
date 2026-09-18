@@ -5299,6 +5299,127 @@
                         "example": ""
                     }
                 }
+            },
+            "changeProposal": {
+                "slug": "changeProposal",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "icon": "FileDocumentEdit",
+                "version": "0.1.0",
+                "title": "Change Proposal",
+                "description": "A proposed field change on somebody else's record, queued until a reviewer with write rights accepts or rejects it (change-proposal-queue REQ-CPQ-001). `currentValue` on each change is the snapshot taken when the proposal was made, so a reviewer can see whether the record moved underneath it.",
+                "type": "object",
+                "required": [
+                    "subjectRegister",
+                    "subjectSchema",
+                    "subjectId",
+                    "state"
+                ],
+                "properties": {
+                    "subjectRegister": {
+                        "title": "Subject register",
+                        "type": "string",
+                        "description": "The register the record lives in.",
+                        "example": "dossiq"
+                    },
+                    "subjectSchema": {
+                        "title": "Subject schema",
+                        "type": "string",
+                        "description": "The schema the record lives in.",
+                        "example": "zaak"
+                    },
+                    "subjectId": {
+                        "title": "Subject id",
+                        "type": "string",
+                        "description": "The record the proposal is about.",
+                        "example": "zaak-1"
+                    },
+                    "proposedBy": {
+                        "title": "Proposed by",
+                        "type": "string",
+                        "description": "Who proposed it: a portal subjectRef, or a Nextcloud user id for a colleague. Derived from the session, never from the request.",
+                        "example": "b3d9c2a1"
+                    },
+                    "channel": {
+                        "title": "Channel",
+                        "type": "string",
+                        "enum": [
+                            "portal",
+                            "staff"
+                        ],
+                        "description": "Where the proposal came from.",
+                        "example": "portal"
+                    },
+                    "changes": {
+                        "title": "Changes",
+                        "type": "array",
+                        "description": "One entry per property: the property, the value it had when the proposal was made, and the value proposed.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "property": {
+                                    "type": "string"
+                                },
+                                "currentValue": {},
+                                "proposedValue": {}
+                            }
+                        },
+                        "example": [
+                            {
+                                "property": "applicantPhone",
+                                "currentValue": "0612345678",
+                                "proposedValue": "0687654321"
+                            }
+                        ]
+                    },
+                    "note": {
+                        "title": "Note",
+                        "type": "string",
+                        "description": "What the proposer said about the change.",
+                        "example": "Mijn nummer is gewijzigd."
+                    },
+                    "state": {
+                        "title": "State",
+                        "type": "string",
+                        "enum": [
+                            "queued",
+                            "accepted",
+                            "rejected",
+                            "withdrawn"
+                        ],
+                        "description": "Where the proposal has got to.",
+                        "example": "queued"
+                    },
+                    "proposedAt": {
+                        "title": "Proposed at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When it was proposed.",
+                        "example": "2026-09-18T09:00:00+00:00"
+                    },
+                    "decidedBy": {
+                        "title": "Decided by",
+                        "type": "string",
+                        "description": "The reviewer who accepted or rejected it.",
+                        "example": "handler-anna"
+                    },
+                    "decidedAt": {
+                        "title": "Decided at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When they decided.",
+                        "example": ""
+                    },
+                    "decisionReason": {
+                        "title": "Decision reason",
+                        "type": "string",
+                        "description": "Why it was rejected. Required on a rejection: a refusal nobody explained is one the proposer cannot answer.",
+                        "example": "Wij hebben het nummer al op een andere manier gewijzigd."
+                    }
+                }
             }
         }
     }
