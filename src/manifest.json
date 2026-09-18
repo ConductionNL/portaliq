@@ -70,6 +70,13 @@
       "order": 30
     },
     {
+      "id": "PortalSubmissionsMenu",
+      "label": "Submissions",
+      "icon": "FileCheckOutline",
+      "route": "PortalSubmissions",
+      "order": 35
+    },
+    {
       "id": "Themes",
       "label": "Themes",
       "icon": "Palette",
@@ -564,7 +571,7 @@
         "register": "portaliq",
         "schema": "portalAccount",
         "documentationUrl": "https://portaliq.conduction.nl",
-        "_note": "Identity/access-holder archetype: a portalAccount links one external IdP identity (eHerkenning/DigiD/eIDAS) to the subjectRef domain apps scope data by, so its detail page answers 'who is this and what sessions have they used to access the portal'. ADR-062 rev3 update: the summaryAggregates header chips are retired in favour of an in-grid stats-block card (account-stats) placed top-right of the lead account-data widget, both sized h5 so the row closes together; account-sessions moves below as its own full-width row. account-sessions gets allowCreate:false — sessions are IdP-minted at login time, never hand-created — plus a viewAllRoute to the fleet-wide PortalSessions index (the only session-listing page; no per-account filtered page exists) with a token-resolved viewAllQuery so the link at least carries the account's id. CORRECTION (measured): every filter on this page addressed `accountRef`, a property NO portalSession carries — the objects link to their account by `subjectRef`. A filter naming a property the rows do not have matches nothing and reports it as an honest zero, so the two session stats read 0 and the session list read 'No sessions issued yet' for every account, always, while looking perfectly configured. Now filtered on `subjectRef: @object.subjectRef`. Verified against the API before and after: `?accountRef=<id>` returned 0 of 100 sessions, `?subjectRef=e2e-smoke` returned 3 — the positive control that proves the mechanism works and the property was the fault. The same correction admits the messages list this note previously ruled out: subjectRef is not an object id, so `@objectId` indeed cannot filter it, but `@object.<field>` can and does (2 messages for dev-supplier). No Related panel: portalAccount declares no object-reference properties of its own (organisation is a plain tenant string, not an OR ref). No files/calendar/contacts/talk leaves: this is an auth-edge identity record, not a document- or comms-bearing object. status is a genuine two-state lifecycle (active/suspended) so lifecycleActions is wired to it. Audit history stays a sidebar tab.",
+        "_note": "Identity/access-holder archetype: a portalAccount links one external IdP identity (eHerkenning/DigiD/eIDAS) to the subjectRef domain apps scope data by, so its detail page answers 'who is this and what sessions have they used to access the portal'. ADR-062 rev3 update: the summaryAggregates header chips are retired in favour of an in-grid stats-block card (account-stats) placed top-right of the lead account-data widget, both sized h5 so the row closes together; account-sessions moves below as its own full-width row. account-sessions gets allowCreate:false — sessions are IdP-minted at login time, never hand-created — plus a viewAllRoute to the fleet-wide PortalSessions index (the only session-listing page; no per-account filtered page exists) with a token-resolved viewAllQuery so the link at least carries the account's id. CORRECTION (measured): every filter on this page addressed `accountRef`, a property NO portalSession carries — the objects link to their account by `subjectRef`. A filter naming a property the rows do not have matches nothing and reports it as an honest zero, so the two session stats read 0 and the session list read 'No sessions issued yet' for every account, always, while looking perfectly configured. Now filtered on `subjectRef: @object.subjectRef`. Verified against the API before and after: `?accountRef=<id>` returned 0 of 100 sessions, `?subjectRef=e2e-smoke` returned 3 — the positive control that proves the mechanism works and the property was the fault. The same correction admits the messages list this note previously ruled out: subjectRef is not an object id, so `@objectId` indeed cannot filter it, but `@object.<field>` can and does (2 messages for dev-supplier). No Related panel: portalAccount declares no object-reference properties of its own (organisation is a plain tenant string, not an OR ref). CORRECTION (leaf-integrations): the calendar leaf is now adopted. The earlier note ruled out every leaf on the grounds that an auth-edge identity record bears no documents, which holds for files and contacts and still does, but an appointment is not a document: staff had sessions and messages for this subject and nowhere to see or plan a meeting with them. The Meetings leaf renders in the Nextcloud shell only (ADR-046); any visitor-facing appointment view must be portal-rendered from OpenRegister objects and never embed or link the Calendar app. Still no files/contacts leaves. status is a genuine two-state lifecycle (active/suspended) so lifecycleActions is wired to it. Audit history stays a sidebar tab.",
         "widgets": [
           {
             "id": "account-data",
@@ -695,6 +702,13 @@
               "emptyText": "No messages for this account",
               "allowCreate": false
             }
+          },
+          {
+            "id": "account-calendar",
+            "type": "integration",
+            "integrationId": "calendar",
+            "title": "Meetings",
+            "icon": "Calendar"
           }
         ],
         "layout": [
@@ -737,6 +751,14 @@
             "gridY": 9,
             "gridWidth": 12,
             "gridHeight": 4
+          },
+          {
+            "id": "account-calendar",
+            "widgetId": "account-calendar",
+            "gridX": 0,
+            "gridY": 13,
+            "gridWidth": 12,
+            "gridHeight": 3
           }
         ],
         "lifecycleActions": {
@@ -894,7 +916,7 @@
         "register": "portaliq",
         "schema": "portalMessage",
         "documentationUrl": "https://portaliq.conduction.nl",
-        "_note": "Inbox-item archetype: a portalMessage is a single notification delivered to a subject's portal inbox, so the whole record is small enough to read at a glance — the body is one full-width data card with all fields (subject, body, read, receivedAt, subjectRef, organisation). No Related panel: subjectRef is the plain pseudonymous identity string the IdP/domain app returned, NOT an OR object reference (portalMessage has no accountRef FK), so there is nothing to resolve. No child object-list: nothing in this register points at a portalMessage. No files/calendar/contacts/talk leaves: a message is text-only, not content- or comms-bearing beyond itself. No lifecycleActions: read is a one-way flag toggled by the portal UI, not a modeled lifecycle. Audit history stays a sidebar tab.",
+        "_note": "Inbox-item archetype: a portalMessage is a single notification delivered to a subject's portal inbox, so the whole record is small enough to read at a glance — the body is one full-width data card with all fields (subject, body, read, receivedAt, subjectRef, organisation). No Related panel: subjectRef is the plain pseudonymous identity string the IdP/domain app returned, NOT an OR object reference (portalMessage has no accountRef FK), so there is nothing to resolve. No child object-list: nothing in this register points at a portalMessage. CORRECTION (leaf-integrations): the talk leaf is now adopted. The earlier note reasoned about the message as a document and concluded it carried nothing to chat about, but the thing staff need a conversation for is not the text, it is the answer: two employees deciding how to reply to a citizen did that in an unlinked room or in email, off the record. The talk leaf attaches that conversation to the message object, on the internal side only (ADR-046): the citizen's half of the exchange stays a portalMessage served through the portal edge, and no join link is ever written into an edge-served field. Still no files/contacts leaves, for the original reason. No lifecycleActions: read is a one-way flag toggled by the portal UI, not a modeled lifecycle. Audit history stays a sidebar tab.",
         "widgets": [
           {
             "id": "message-data",
@@ -904,6 +926,13 @@
             "content": {
               "columns": 2
             }
+          },
+          {
+            "id": "message-talk",
+            "type": "integration",
+            "integrationId": "talk",
+            "title": "Staff conversation",
+            "icon": "ChatOutline"
           }
         ],
         "layout": [
@@ -912,6 +941,109 @@
             "widgetId": "message-data",
             "gridX": 0,
             "gridY": 0,
+            "gridWidth": 12,
+            "gridHeight": 4
+          },
+          {
+            "id": "message-talk",
+            "widgetId": "message-talk",
+            "gridX": 0,
+            "gridY": 4,
+            "gridWidth": 12,
+            "gridHeight": 4
+          }
+        ],
+        "sidebar": {
+          "enabled": true,
+          "showMetadata": true,
+          "tabs": [
+            {
+              "id": "audit",
+              "label": "History",
+              "icon": "History",
+              "widgets": [
+                {
+                  "type": "audit"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "PortalSubmissions",
+      "route": "/submissions",
+      "type": "index",
+      "title": "Portal Submissions",
+      "config": {
+        "register": "portaliq",
+        "schema": "portalSubmission",
+        "columns": [
+          "appId",
+          "actionId",
+          "submittedAt",
+          {
+            "key": "deliveryStatus",
+            "label": "Receipt",
+            "widget": "badge",
+            "widgetProps": {
+              "colorMap": {
+                "delivered": "success",
+                "pending": "warning",
+                "failed": "error"
+              }
+            }
+          }
+        ],
+        "sidebar": {
+          "enabled": true,
+          "showMetadata": true
+        }
+      }
+    },
+    {
+      "id": "PortalSubmissionDetail",
+      "route": "/submissions/:id",
+      "type": "detail",
+      "title": "Portal Submission",
+      "config": {
+        "register": "portaliq",
+        "schema": "portalSubmission",
+        "documentationUrl": "https://portaliq.conduction.nl",
+        "_note": "Proof-of-receipt archetype, following the PortalMessages / PortalMessageDetail pair. The schema has carried the WMEBV burden of proof since the receipts change and had no page at all: staff triaging a failed delivery read the database or nothing. The index projects the facts a triage list needs (appId, actionId, submittedAt, deliveryStatus as a badge) and deliberately leaves payloadCopy off, because payloadCopy is whatever a citizen typed and a list renders many rows at once; it belongs on the detail page, where reading one record is the intent. Adding these pages changes who RENDERS the record, not who may read it: access stays OpenRegister RBAC exactly as for account-messages. The forms leaf sits beside the data card so a handler can link the Nextcloud Form behind a submission or a follow-up form to it. That leaf is internal-only (ADR-046): the visitor's form experience is the portal edge's own submission flow and its receipt message, and a portal visitor is never shown or invited into the Forms app. No lifecycleActions: deliveryStatus is a retriability signal the receipt service writes, not a lifecycle a person drives. Audit history stays a sidebar tab.",
+        "widgets": [
+          {
+            "id": "submission-data",
+            "type": "data",
+            "title": "Submission",
+            "icon": "FileCheckOutline",
+            "content": {
+              "columns": 2
+            }
+          },
+          {
+            "id": "submission-forms",
+            "type": "integration",
+            "integrationId": "forms",
+            "title": "Forms",
+            "icon": "ClipboardText"
+          }
+        ],
+        "layout": [
+          {
+            "id": "1",
+            "widgetId": "submission-data",
+            "gridX": 0,
+            "gridY": 0,
+            "gridWidth": 12,
+            "gridHeight": 5
+          },
+          {
+            "id": "submission-forms",
+            "widgetId": "submission-forms",
+            "gridX": 0,
+            "gridY": 5,
             "gridWidth": 12,
             "gridHeight": 4
           }

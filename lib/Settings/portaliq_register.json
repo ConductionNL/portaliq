@@ -336,7 +336,12 @@
                     ]
                 },
                 "icon": "AccountKey",
-                "version": "0.7.0",
+                "version": "0.8.0",
+                "configuration": {
+                    "linkedTypes": [
+                        "calendar"
+                    ]
+                },
                 "title": "Portal Account",
                 "description": "Links an external identity (eHerkenning / DigiD / eIDAS) to the subject reference used for RBAC scoping. Owned by Portaliq's auth edge; never publicly readable. See ADR-046 and openspec/changes/supplier-portal.",
                 "type": "object",
@@ -618,7 +623,12 @@
                     ]
                 },
                 "icon": "EmailOutline",
-                "version": "0.3.0",
+                "version": "0.4.0",
+                "configuration": {
+                    "linkedTypes": [
+                        "talk"
+                    ]
+                },
                 "title": "Portal Message",
                 "description": "A message in a subject's portal inbox (the in-portal realisation of the notification/inbox surface). Subject-scoped by subjectRef, so it is read through the same path as any contribution collection. OpenRegister's notification engine (email channel + `field` recipient kind) can additionally email the subject out-of-band when a message arrives.",
                 "type": "object",
@@ -718,7 +728,12 @@
                     ]
                 },
                 "icon": "FileCheckOutline",
-                "version": "0.1.0",
+                "version": "0.2.0",
+                "configuration": {
+                    "linkedTypes": [
+                        "forms"
+                    ]
+                },
                 "title": "Portal Submission",
                 "description": "Append-only proof-of-receipt log record satisfying the WMEBV burden-of-proof duty (~Awb 2:25): one row per successful portal create-action, linking to the ontvangstbevestiging `portalMessage` it generated. Subject- and tenant-scoped like any other portal object; backs the subject's right to a copy of their own submission-log entries. See openspec/specs/supplier-portal/spec.md (wmebv-submission-receipts).",
                 "type": "object",
