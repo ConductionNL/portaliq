@@ -37,6 +37,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
+use OCA\Portaliq\Event\PortalClientWithdrawalEvent;
 use OCA\Portaliq\Event\PortalClientWriteEvent;
 use OCP\EventDispatcher\IEventDispatcher;
 
@@ -217,6 +218,64 @@ class CitizenWriteRecorder {
 			)
 		);
 	}//end announce()
+
+	/**
+	 * Record and announce a withdrawal.
+	 *
+	 * It is raised as its own event, never as a write: a rule bound to a
+	 * citizen's withdrawal must not fire when a handler sets the same status
+	 * internally, and this is the path that tells the two apart.
+	 *
+	 * @param string $register The register the case lives in.
+	 * @param string $schema The schema the case lives in.
+	 * @param string $caseId The case that was withdrawn.
+	 * @param string $status The status it landed on.
+	 * @param string $reason What the applicant said, or ''.
+	 * @param array<string, mixed> $subject The resolved portal session.
+	 * @param array<string, mixed> $action The matched update action.
+	 * @param string $occurredAt The moment of the withdrawal, ISO 8601.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/withdrawing-your-own-case-from-the-portal/specs/withdrawing-your-own-case/spec.md
+	 *
+	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- the parameters are the
+	 * fact being recorded; folding them into an array would lose the types on
+	 * an audited boundary.
+	 */
+	public function announceWithdrawal(
+		string $register,
+		string $schema,
+		string $caseId,
+		string $status,
+		string $reason,
+		array $subject,
+		array $action,
+		string $occurredAt,
+	): void {
+		$this->auditor->record(
+			verb: 'update',
+			subjectRef: (string)($subject['subjectRef'] ?? ''),
+			organisation: (string)($subject['organisation'] ?? ''),
+			register: $register,
+			schema: $schema,
+			id: $caseId,
+			jti: (string)($subject['jti'] ?? '')
+		);
+
+		$this->dispatcher->dispatchTyped(
+			new PortalClientWithdrawalEvent(
+				register: $register,
+				schema: $schema,
+				caseId: $caseId,
+				status: $status,
+				reason: $reason,
+				identity: $this->identity(subject: $subject),
+				mandate: $this->mandate(action: $action, subject: $subject),
+				occurredAt: $occurredAt
+			)
+		);
+	}//end announceWithdrawal()
 
 	/**
 	 * The moment a write happened, ISO 8601.
