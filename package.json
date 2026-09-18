@@ -74,7 +74,7 @@
     "babel-loader": "^10.1.1",
     "dexie": "^4.4.6",
     "dompurify": "^3.4.15",
-    "gridstack": "^12.6.0",
+    "gridstack": "^13.3.0",
     "marked": "^18.0.12",
     "node-polyfill-webpack-plugin": "4.0.0",
     "pinia": "^2.1.7",
