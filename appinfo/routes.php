@@ -216,6 +216,16 @@ return [
         // over openregister's portal task seam. Portaliq mints the
         // X-Portal-Subject assertion server-side; the browser never calls
         // openregister. Registered before the /portal/{path} SPA catch-all.
+        // The change-proposal queue (change-proposal-queue). A proposal never
+        // writes the record: only a reviewer accepting one does, with their
+        // own rights. The staff routes are gated by `portal.review-proposal`.
+        ['name' => 'proposal#index', 'url' => '/api/proposals', 'verb' => 'GET'],
+        ['name' => 'proposal#proposeAsColleague', 'url' => '/api/proposals', 'verb' => 'POST'],
+        ['name' => 'proposal#accept', 'url' => '/api/proposals/{id}/accept', 'verb' => 'POST'],
+        ['name' => 'proposal#reject', 'url' => '/api/proposals/{id}/reject', 'verb' => 'POST'],
+        ['name' => 'proposal#proposeFromPortal', 'url' => '/portal/api/proposals', 'verb' => 'POST'],
+        ['name' => 'proposal#withdraw', 'url' => '/portal/api/proposals/{id}/withdraw', 'verb' => 'POST'],
+
         // A handler asks an outside partner for something from the case
         // (partner-tasks-in-the-portal). Staff-facing and gated by the ADR-023
         // action `portal.ask-partner` plus a read of the case with RBAC on.
