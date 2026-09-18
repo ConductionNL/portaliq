@@ -86,6 +86,9 @@
         <!-- portal-traffic-reporting: hourly, sends the reports whose period
              ended and fires the alerts whose threshold was crossed. -->
         <job>OCA\Portaliq\BackgroundJob\TrafficReportJob</job>
+        <!-- portal-intake-form-as-an-object: turns queued intake submissions
+             into cases after the citizen already has their reference. -->
+        <job>OCA\Portaliq\BackgroundJob\PortalIntakeDeliveryJob</job>
     </background-jobs>
 
     <!-- @spec openspec/architecture/adr-023-action-authorization.md -->
