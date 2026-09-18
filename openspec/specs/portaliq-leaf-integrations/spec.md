@@ -1,20 +1,23 @@
 # portaliq-leaf-integrations Specification
 
-**Status**: planned
+**Status**: implemented
 **Scope**: portaliq
 **OpenSpec changes**:
-- `leaf-integrations` — adopts the forms, talk and calendar builtin leaves on the internal staff surfaces and makes the ADR-046 side-of-the-boundary rule normative per leaf (kind: code)
+
+- [leaf-integrations](../../changes/leaf-integrations/)
 
 ## Purpose
 
-Defines which OpenRegister/nextcloud-vue builtin integration leaves portaliq consumes, where each
-renders, and — because portaliq is the fleet's external auth edge (ADR-046) — on **which side of
-the portal boundary** each one lives. Current state, verified in `src/manifest.json`: exactly one
-leaf (`files`, widget `document-files` on `DocumentDetail`) and zero `linkedTypes` declarations.
-This capability adds `forms`, `talk` and `calendar` for the internal staff view and forbids any
-leaf, present or future, from surfacing at the portal edge.
+Portaliq consumes integration leaves from `@conduction/nextcloud-vue` on its internal
+staff pages: `forms` on a submission, `talk` on a portal message, `calendar` on a
+portal account. This capability owns which leaves are adopted, how an adoption is
+declared, and the one rule that governs all of them: a leaf is a Nextcloud surface for
+a Nextcloud user, and a portal visitor is neither (ADR-046).
 
-## ADDED Requirements
+Portaliq provides no leaf of its own to other apps, so nothing here needs a `leaves`
+webpack entry or a `RegisterLeafProvidersEvent` listener. It is a consumer.
+
+## Requirements
 
 ### Requirement: Integration leaves render on the internal staff side only
 
