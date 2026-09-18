@@ -148,6 +148,13 @@ return [
         // T03). The {register}/{schema}/{id} segments distinguish it from the
         // plain GET above.
         ['name' => 'contribution#markRead', 'url' => '/portal/api/inbox/{register}/{schema}/{id}/read', 'verb' => 'PATCH'],
+        // The embedded intake form (embedded-intake-form). The frame is served
+        // from the portal's own origin with `frame-ancestors` built from that
+        // form's own list, and its submit route is the ordinary anonymous
+        // intake path with the origin recorded on the submission.
+        ['name' => 'portalEmbed#frame', 'url' => '/portal/embed', 'verb' => 'GET'],
+        ['name' => 'portalEmbed#submit', 'url' => '/portal/api/embed/submit', 'verb' => 'POST'],
+
         // The intake form as an object (portal-intake-form-as-an-object): the
         // entry point over opencatalogi's published catalogue, the form a
         // binding resolves to at render time, the submission, and the
