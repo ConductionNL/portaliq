@@ -20,8 +20,16 @@ import BellOutline from 'vue-material-design-icons/BellOutline.vue'
 import BookAlphabet from 'vue-material-design-icons/BookAlphabet.vue'
 import BookOpenVariant from 'vue-material-design-icons/BookOpenVariant.vue'
 import BookOpenVariantOutline from 'vue-material-design-icons/BookOpenVariantOutline.vue'
+// The three integration-leaf widget icons the manifest names (leaf-integrations):
+// Calendar on PortalAccountDetail, ChatOutline on PortalMessageDetail,
+// ClipboardText on PortalSubmissionDetail. A leaf widget whose icon is not
+// registered draws no glyph at all, which reads as a half-rendered card rather
+// than as a missing registration.
+import Calendar from 'vue-material-design-icons/Calendar.vue'
 import ChartBoxOutline from 'vue-material-design-icons/ChartBoxOutline.vue'
 import ChartLine from 'vue-material-design-icons/ChartLine.vue'
+import ChatOutline from 'vue-material-design-icons/ChatOutline.vue'
+import ClipboardText from 'vue-material-design-icons/ClipboardText.vue'
 import CursorDefaultClickOutline from 'vue-material-design-icons/CursorDefaultClickOutline.vue'
 import Email from 'vue-material-design-icons/Email.vue'
 import EmailOutline from 'vue-material-design-icons/EmailOutline.vue'
@@ -59,8 +67,11 @@ export default {
 	BookAlphabet,
 	BookOpenVariant,
 	BookOpenVariantOutline,
+	Calendar,
 	ChartBoxOutline,
 	ChartLine,
+	ChatOutline,
+	ClipboardText,
 	CursorDefaultClickOutline,
 	Email,
 	EmailOutline,
