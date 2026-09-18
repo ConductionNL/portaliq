@@ -80,8 +80,23 @@ SHALL handle `PortalAccountProvisionRequestedEvent` by calling
 Portaliq SHALL render a "My cases" page for the `client` audience over the
 collections the contributions mark `kind: cases`, each scoped by its
 `scopeClaim`, so a case attached before the first login is listed on the
-first login. The token page SHALL keep working and SHALL offer login when
-the case's subject has an account.
+first login. The link page SHALL keep working and SHALL offer login
+UNCONDITIONALLY, to every reader, whether or not the subject holds an
+account.
+
+The conditional version of this sentence, "offer login when the case's
+subject has an account", is REFUSED and must not be restored. The page is
+`#[PublicPage]` and its reader is whoever holds the link, which can be
+forwarded. Varying the offer on whether a named person holds an account
+tells that holder something about that person, and comparing two links
+tells them which subjects have accounts. That is account enumeration, and
+it is the same failure as a login form that says whether an email is
+registered.
+
+The unconditional offer costs nothing: a reader who has no account follows
+it and is told how to get one, which is the same page they need anyway. The
+scenario below is unchanged, because it only ever asked that a login link be
+offered.
 
 #### Scenario: The case filed at the desk is there on first login
 - **GIVEN** a case attached to a `pending` account by claim, and that person's first login
