@@ -4640,6 +4640,43 @@
                             ],
                             "targetStatus": "ingetrokken"
                         }
+                    },
+                    "portalReportDeclaration": {
+                        "title": "Portal report declaration",
+                        "type": "object",
+                        "description": "What governs a report of this type: the group that may reveal who filed it, the acknowledgement and feedback terms in days, and whether the reporting surface stays out of visitor analytics. The portal holds no term of its own.",
+                        "properties": {
+                            "custodianGroup": {
+                                "title": "Custodian group",
+                                "type": "string",
+                                "description": "The Nextcloud group whose members may allow a reveal. An instance administrator who is not in it may not.",
+                                "example": "vertrouwenspersonen"
+                            },
+                            "acknowledgementDays": {
+                                "title": "Acknowledgement term",
+                                "type": "integer",
+                                "description": "Days within which the report must be acknowledged.",
+                                "example": 7
+                            },
+                            "feedbackDays": {
+                                "title": "Feedback term",
+                                "type": "integer",
+                                "description": "Days within which the reporter must be given feedback.",
+                                "example": 90
+                            },
+                            "excludeFromAnalytics": {
+                                "title": "Exclude from analytics",
+                                "type": "boolean",
+                                "description": "Whether the reporting surface is kept out of visitor analytics entirely.",
+                                "example": true
+                            }
+                        },
+                        "example": {
+                            "custodianGroup": "vertrouwenspersonen",
+                            "acknowledgementDays": 7,
+                            "feedbackDays": 90,
+                            "excludeFromAnalytics": true
+                        }
                     }
                 }
             },
@@ -5418,6 +5455,302 @@
                         "type": "string",
                         "description": "Why it was rejected. Required on a rejection: a refusal nobody explained is one the proposer cannot answer.",
                         "example": "Wij hebben het nummer al op een andere manier gewijzigd."
+                    }
+                }
+            },
+            "portalReport": {
+                "slug": "portalReport",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "icon": "ShieldAccount",
+                "version": "0.1.0",
+                "title": "Portal Report",
+                "description": "A report of wrongdoing, accepted without an account and without any verification of the reporter (a-report-without-an-account REQ-RWA-001). It carries NO contact detail and NO client address: what the reporter gave, if anything, lives in `portalReporterContact` and is joined by reference so a read of the report cannot return it.",
+                "type": "object",
+                "required": [
+                    "portal",
+                    "codeHash",
+                    "state"
+                ],
+                "properties": {
+                    "portal": {
+                        "title": "Portal",
+                        "type": "string",
+                        "description": "The portal it was filed on.",
+                        "example": "gemeente-x"
+                    },
+                    "caseType": {
+                        "title": "Case type",
+                        "type": "string",
+                        "description": "The case type whose declaration governs the terms and what the reporter may see.",
+                        "example": "misstandmelding"
+                    },
+                    "caseTypeRegister": {
+                        "title": "Case type register",
+                        "type": "string",
+                        "description": "The register the case type lives in, so the declaration can be read again when the thread is opened.",
+                        "example": "dossiq"
+                    },
+                    "caseTypeSchema": {
+                        "title": "Case type schema",
+                        "type": "string",
+                        "description": "The schema the case type lives in.",
+                        "example": "caseType"
+                    },
+                    "subject": {
+                        "title": "Subject",
+                        "type": "string",
+                        "description": "What the report is about, in the reporter's words.",
+                        "example": "Onveilige situatie op de werkvloer"
+                    },
+                    "body": {
+                        "title": "Body",
+                        "type": "string",
+                        "description": "The report itself.",
+                        "example": ""
+                    },
+                    "answers": {
+                        "title": "Answers",
+                        "type": "object",
+                        "description": "The rest of the form's answers, as validated against it.",
+                        "example": {}
+                    },
+                    "codeHash": {
+                        "title": "Code hash",
+                        "type": "string",
+                        "description": "SHA-256 of the receipt code. The code itself is shown once and stored nowhere.",
+                        "example": "9f86d0…"
+                    },
+                    "contactRef": {
+                        "title": "Contact reference",
+                        "type": "string",
+                        "description": "The separate record holding what the reporter gave about themselves. Empty when they gave nothing.",
+                        "example": ""
+                    },
+                    "state": {
+                        "title": "State",
+                        "type": "string",
+                        "enum": [
+                            "open",
+                            "acknowledged",
+                            "closed"
+                        ],
+                        "description": "Where the report stands.",
+                        "example": "open"
+                    },
+                    "acknowledgedAt": {
+                        "title": "Acknowledged at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the organisation acknowledged it, for the statutory term.",
+                        "example": ""
+                    },
+                    "feedbackAt": {
+                        "title": "Feedback at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the organisation gave feedback, for the statutory term.",
+                        "example": ""
+                    },
+                    "receivedAt": {
+                        "title": "Received at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the report was received. The terms run from here.",
+                        "example": "2026-09-18T09:00:00+00:00"
+                    }
+                }
+            },
+            "portalReporterContact": {
+                "slug": "portalReporterContact",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "icon": "AccountLock",
+                "version": "0.1.0",
+                "title": "Portal Reporter Contact",
+                "description": "What a reporter gave about themselves, held apart from the report (REQ-RWA-004). Nothing here is returned by a read, a list, a search, an export or a notification of the report: it is reachable only through a reveal the named custodian allowed.",
+                "type": "object",
+                "required": [
+                    "reportRef"
+                ],
+                "properties": {
+                    "reportRef": {
+                        "title": "Report reference",
+                        "type": "string",
+                        "description": "The report this belongs to.",
+                        "example": ""
+                    },
+                    "name": {
+                        "title": "Name",
+                        "type": "string",
+                        "description": "The name the reporter gave, if any.",
+                        "example": ""
+                    },
+                    "email": {
+                        "title": "Email",
+                        "type": "string",
+                        "description": "The address the reporter gave, if any.",
+                        "example": ""
+                    },
+                    "phone": {
+                        "title": "Phone",
+                        "type": "string",
+                        "description": "The number the reporter gave, if any.",
+                        "example": ""
+                    }
+                }
+            },
+            "portalReportMessage": {
+                "slug": "portalReportMessage",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "icon": "MessageText",
+                "version": "0.1.0",
+                "title": "Portal Report Message",
+                "description": "One message on a report's thread (REQ-RWA-003). `visibleToReporter` is what decides whether the reporter sees it: an internal note is a message with that flag false, and the reporter's own view is filtered on it server-side.",
+                "type": "object",
+                "required": [
+                    "reportRef",
+                    "author",
+                    "body"
+                ],
+                "properties": {
+                    "reportRef": {
+                        "title": "Report reference",
+                        "type": "string",
+                        "description": "The report this message belongs to.",
+                        "example": ""
+                    },
+                    "author": {
+                        "title": "Author",
+                        "type": "string",
+                        "enum": [
+                            "reporter",
+                            "handler"
+                        ],
+                        "description": "Who wrote it.",
+                        "example": "handler"
+                    },
+                    "authorName": {
+                        "title": "Author name",
+                        "type": "string",
+                        "description": "The handler's name, when a handler wrote it. Never the reporter's.",
+                        "example": ""
+                    },
+                    "body": {
+                        "title": "Body",
+                        "type": "string",
+                        "description": "The message.",
+                        "example": ""
+                    },
+                    "visibleToReporter": {
+                        "title": "Visible to reporter",
+                        "type": "boolean",
+                        "description": "Whether the reporter may read it. Absent means no.",
+                        "example": true
+                    },
+                    "writtenAt": {
+                        "title": "Written at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When it was written.",
+                        "example": ""
+                    }
+                }
+            },
+            "portalRevealRequest": {
+                "slug": "portalRevealRequest",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "icon": "EyeLock",
+                "version": "0.1.0",
+                "title": "Portal Reveal Request",
+                "description": "A motivated request to learn who filed a report, and what the custodian answered (REQ-RWA-005). Every request is on the record whether it was allowed or refused, because a refusal nobody recorded is indistinguishable from a request nobody made.",
+                "type": "object",
+                "required": [
+                    "reportRef",
+                    "requestedBy",
+                    "motivation",
+                    "state"
+                ],
+                "properties": {
+                    "reportRef": {
+                        "title": "Report reference",
+                        "type": "string",
+                        "description": "The report whose reporter is asked about.",
+                        "example": ""
+                    },
+                    "requestedBy": {
+                        "title": "Requested by",
+                        "type": "string",
+                        "description": "Who asked.",
+                        "example": "handler-anna"
+                    },
+                    "motivation": {
+                        "title": "Motivation",
+                        "type": "string",
+                        "description": "Why they need to know. Required: a request without one is refused before anybody sees it.",
+                        "example": ""
+                    },
+                    "state": {
+                        "title": "State",
+                        "type": "string",
+                        "enum": [
+                            "pending",
+                            "allowed",
+                            "refused"
+                        ],
+                        "description": "What the custodian answered.",
+                        "example": "pending"
+                    },
+                    "decidedBy": {
+                        "title": "Decided by",
+                        "type": "string",
+                        "description": "The custodian who answered.",
+                        "example": ""
+                    },
+                    "decidedAt": {
+                        "title": "Decided at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When they answered.",
+                        "example": ""
+                    },
+                    "decisionReason": {
+                        "title": "Decision reason",
+                        "type": "string",
+                        "description": "What the custodian said about their answer.",
+                        "example": ""
+                    },
+                    "revealedFields": {
+                        "title": "Revealed fields",
+                        "type": "array",
+                        "description": "Which contact fields were shown, when it was allowed. The values are not copied here.",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "email"
+                        ]
+                    },
+                    "requestedAt": {
+                        "title": "Requested at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When it was asked.",
+                        "example": ""
                     }
                 }
             }
