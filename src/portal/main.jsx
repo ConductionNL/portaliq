@@ -9,6 +9,7 @@ import { loadState } from '@nextcloud/initial-state'
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.jsx'
+import { startHeightReporting } from './embedHeight.js'
 import { createTranslator } from './i18n/index.js'
 
 // Shell-level NL Design System theme tokens (portal-spa-nl-design-system-styling).
@@ -49,4 +50,21 @@ const t = createTranslator(RUNTIME_CONFIG.locale || 'nl')
 const mount = document.getElementById('portaliq-portal')
 if (mount) {
 	createRoot(mount).render(<App config={RUNTIME_CONFIG} t={t} />)
+}
+
+// embedded-intake-form T05: the frame's half of the height negotiation.
+//
+// Attached whenever this bundle is serving the frame route, which
+// templates/embed.php marks with #portaliq-embed. Started here rather than
+// inside a component, because the height has to be reported even when the
+// frame renders a refusal message instead of a form: a refusal that collapses
+// to nothing on the host page tells the visitor even less than the refusal
+// does.
+//
+// 🔴 THIS IS NOT WHAT MAKES THE FORM VISIBLE. The declared min-height in the
+// pasted snippet is. If this never runs the frame still renders at the floor,
+// which is the whole reason the floor is in the markup rather than negotiated.
+const embedMount = document.getElementById('portaliq-embed')
+if (embedMount) {
+	startHeightReporting()
 }
