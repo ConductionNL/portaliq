@@ -52,9 +52,16 @@ class PortalCaseListReader {
 	 * Constructor.
 	 *
 	 * @param PortalObjectReader $reader The subject-scoped OpenRegister reader.
+	 * @param Identity\PortalMandateService|null $mandates Resolves what a
+	 *                                                     mandate covers.
+	 *                                                     Optional so the
+	 *                                                     subject's own cases
+	 *                                                     never depend on the
+	 *                                                     mandate record.
 	 */
 	public function __construct(
 		private readonly PortalObjectReader $reader,
+		private readonly ?Identity\PortalMandateService $mandates = null,
 	) {
 	}//end __construct()
 
@@ -113,6 +120,121 @@ class PortalCaseListReader {
 
 		return $rows;
 	}//end listCases()
+
+	/**
+	 * The cases a mandate opens, on top of the subject's own.
+	 *
+	 * A mandate reads a collection by the party field the collection declares
+	 * (`mandateField`), never by the subject field: the whole point is that
+	 * these are somebody else's cases, read because a mandate says so. A
+	 * collection that declares no party field is skipped, so an app that never
+	 * thought about mandates cannot leak its rows through one. Every row names
+	 * the mandate that granted it.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param array<string, mixed> $aggregate The subject's aggregated manifest.
+	 * @param array<int, array<string, mixed>> $mandates The live mandates.
+	 *
+	 * @return array<int, array<string, mixed>> The mandated case rows.
+	 *
+	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 */
+	public function listMandatedCases(array $subject, array $aggregate, array $mandates): array {
+		if ($this->mandates === null || $mandates === []) {
+			// No mandate recorded is the closed default: none of the
+			// organisation's cases, not all of them.
+			return [];
+		}
+
+		$rows = [];
+		foreach (($aggregate['contributions'] ?? []) as $contribution) {
+			if (is_array($contribution) === false) {
+				continue;
+			}
+
+			$appId = (string)($contribution['app'] ?? '');
+			$label = (string)($contribution['label'] ?? $appId);
+
+			foreach (($contribution['collections'] ?? []) as $collection) {
+				if (is_array($collection) === false || ($collection['kind'] ?? '') !== self::KIND) {
+					continue;
+				}
+
+				if (PortalSessionService::trustSatisfies((string)($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
+					continue;
+				}
+
+				$mandateField = (string)($collection['mandateField'] ?? '');
+				if ($mandateField === '') {
+					continue;
+				}
+
+				foreach ($mandates as $mandate) {
+					$described = $this->mandates->describe(mandate: $mandate);
+					$party = $described['onBehalfOf'];
+					if ($party === '') {
+						$party = $described['organisation'];
+					}
+
+					if ($party === '') {
+						continue;
+					}
+
+					foreach ($this->readParty(collection: $collection, contributingApp: $appId, mandateField: $mandateField, party: $party, organisation: $described['organisation'], audience: (string)($subject['audience'] ?? '')) as $row) {
+						$caseType = (string)($row[(string)($collection['caseTypeField'] ?? 'caseType')] ?? '');
+						if ($this->mandates->covers(mandate: $mandate, caseType: $caseType) === false) {
+							// A mandate narrower than the organisation lists
+							// only what it names.
+							continue;
+						}
+
+						$row['_source'] = [
+							'appId' => $appId,
+							'label' => $label,
+							'register' => (string)($collection['register'] ?? ''),
+							'schema' => (string)($collection['schema'] ?? ''),
+							'collection' => (string)($collection['id'] ?? ''),
+						];
+						$row['_mandate'] = $described;
+
+						$rows[] = $row;
+					}
+				}//end foreach
+			}//end foreach
+		}//end foreach
+
+		return $rows;
+	}//end listMandatedCases()
+
+	/**
+	 * Read one case collection by the party a mandate names.
+	 *
+	 * @param array<string, mixed> $collection The declared case collection.
+	 * @param string $contributingApp The owning app.
+	 * @param string $mandateField The field holding the party.
+	 * @param string $party The party the mandate is held for.
+	 * @param string $organisation The tenant of the mandate.
+	 * @param string $audience The subject's audience.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- the parameters are
+	 * the scoping boundary itself; folding them away would hide it.
+	 */
+	private function readParty(array $collection, string $contributingApp, string $mandateField, string $party, string $organisation, string $audience): array {
+		return $this->reader->readCollection(
+			register: (string)($collection['register'] ?? ''),
+			schema: (string)($collection['schema'] ?? ''),
+			scopeField: $mandateField,
+			subjectRef: $party,
+			organisation: $organisation,
+			limit: self::ROW_LIMIT,
+			contributingApp: $contributingApp,
+			audience: $audience,
+			fields: ($collection['fields'] ?? null),
+			filter: (array)($collection['filter'] ?? [])
+		);
+	}//end readParty()
 
 	/**
 	 * Read one case collection, subject-scoped, or nothing when it cannot be

@@ -6,6 +6,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\PortalAccountAdminController;
 use OCA\Portaliq\Service\ActionAuthService;
+use OCA\Portaliq\Service\Identity\PortalInvitationService;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\OCS\OCSForbiddenException;
@@ -126,8 +127,33 @@ class PortalAccountAdminControllerTest extends TestCase {
 		$session = $this->createMock(IUserSession::class);
 		$session->method('getUser')->willReturn($user);
 
-		return new PortalAccountAdminController($this->createMock(IRequest::class), $accounts, $actionAuth, $session);
+		$invitations = $this->getMockBuilder(PortalInvitationService::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['invite', 'sentBy'])
+			->getMock();
+		$invitations->method('invite')->willReturn(['token' => 'secret-1', 'expiresAt' => '2026-09-25T09:00:00+00:00']);
+		$invitations->method('sentBy')->willReturn([['email' => 'ans@example.org', 'state' => 'sent', 'sentAt' => '', 'expiresAt' => '']]);
+
+		return new PortalAccountAdminController($this->createMock(IRequest::class), $accounts, $actionAuth, $session, $invitations);
 	}//end controller()
+
+	public function testAnInvitationIsOnlySentByAClerkWithTheAction(): void {
+		$refused = $this->controller(accounts: $this->accounts(), allowed: false, user: $this->user('ordinary-user'));
+		$allowed = $this->controller(accounts: $this->accounts(), allowed: true, user: $this->user('clerk-anna'));
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $refused->invite(email: 'ans@example.org', organisation: 'gemeente-x')->getStatus());
+		$this->assertSame('secret-1', $allowed->invite(email: 'ans@example.org', organisation: 'gemeente-x')->getData()['token']);
+
+	}//end testAnInvitationIsOnlySentByAClerkWithTheAction()
+
+	public function testTheSenderSeesTheStateOfTheirOwnInvitations(): void {
+		$controller = $this->controller(accounts: $this->accounts(), allowed: true, user: $this->user('clerk-anna'));
+
+		$response = $controller->invitations(organisation: 'gemeente-x');
+
+		$this->assertSame('sent', $response->getData()['invitations'][0]['state']);
+
+	}//end testTheSenderSeesTheStateOfTheirOwnInvitations()
 
 	/**
 	 * A user double with a uid.

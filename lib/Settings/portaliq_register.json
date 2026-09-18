@@ -336,7 +336,7 @@
                     ]
                 },
                 "icon": "AccountKey",
-                "version": "0.6.0",
+                "version": "0.7.0",
                 "title": "Portal Account",
                 "description": "Links an external identity (eHerkenning / DigiD / eIDAS) to the subject reference used for RBAC scoping. Owned by Portaliq's auth edge; never publicly readable. See ADR-046 and openspec/changes/supplier-portal.",
                 "type": "object",
@@ -398,12 +398,13 @@
                     "status": {
                         "title": "Status",
                         "type": "string",
-                        "description": "Account lifecycle status. `pending` is an account provisioned before any login (portal-identity-space): it has no session and is unreachable from the portal until a matching first login activates it. `void` is a pending account a clerk withdrew; it never matches a login again.",
+                        "description": "Account lifecycle status. `pending` is an account provisioned before any login (portal-identity-space): it has no session and is unreachable from the portal until a matching first login activates it. `void` is a pending account a clerk withdrew; it never matches a login again. `removed` is an account whose owner asked for it to be removed: its identity, its address and its claims are gone and the cases it was linked to stay with the municipality (REQ-PIOC-006).",
                         "enum": [
                             "pending",
                             "active",
                             "suspended",
-                            "void"
+                            "void",
+                            "removed"
                         ],
                         "example": "active"
                     },
@@ -453,6 +454,32 @@
                         "type": "string",
                         "description": "Why a pending account was withdrawn. Required when status is `void` (portal-identity-space D6).",
                         "example": "Provisioned on a mistyped BSN"
+                    },
+                    "pendingEmail": {
+                        "title": "Pending email",
+                        "type": "string",
+                        "description": "An address the owner asked to change to. It is used for nothing until it is confirmed through the link (REQ-PIOC-006), so the old address stays in use meanwhile.",
+                        "example": "nieuw@example.org"
+                    },
+                    "pendingEmailTokenHash": {
+                        "title": "Pending email token hash",
+                        "type": "string",
+                        "description": "SHA-256 of the one-time secret in the confirmation mail.",
+                        "example": "9f86d0…"
+                    },
+                    "pendingEmailExpiresAt": {
+                        "title": "Pending email expiry",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the confirmation link stops working.",
+                        "example": "2026-09-19T09:00:00+00:00"
+                    },
+                    "removedAt": {
+                        "title": "Removed at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the owner's removal request was carried out.",
+                        "example": "2026-09-18T12:00:00+00:00"
                     }
                 }
             },
@@ -1571,6 +1598,64 @@
                                 "type": "object",
                                 "description": "Provider configuration when `oidc` is enabled: issuer, client id and the scopes requested. The client secret is held in the credential broker, never here.",
                                 "additionalProperties": true
+                            },
+                            "registration": {
+                                "title": "Registration policy",
+                                "type": "object",
+                                "description": "Whether a stranger may make an account on this portal, and from which addresses (REQ-PIOC-004). Absent means `off`, the closed answer.",
+                                "properties": {
+                                    "policy": {
+                                        "title": "Policy",
+                                        "type": "string",
+                                        "enum": [
+                                            "off",
+                                            "approval",
+                                            "activation"
+                                        ],
+                                        "description": "`off`: no account is created by a stranger. `approval`: the account waits for a decision. `activation`: it waits for a mail the registrant confirms.",
+                                        "example": "off"
+                                    },
+                                    "allowedDomains": {
+                                        "title": "Allowed domains",
+                                        "type": "array",
+                                        "description": "When not empty, an address outside these domains is refused.",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "example": [
+                                            "gemeente-x.nl"
+                                        ]
+                                    }
+                                }
+                            },
+                            "challenge": {
+                                "title": "Challenge",
+                                "type": "object",
+                                "description": "The challenge this portal runs in front of its public form and its registration page (REQ-PIOC-005). It runs here: a proof of work the browser computes and a honeypot field, never a request to a third-party challenge service.",
+                                "properties": {
+                                    "proofOfWork": {
+                                        "title": "Proof of work",
+                                        "type": "object",
+                                        "description": "Per-surface work factor. `difficulty` is the number of leading zero bits the solution hash must carry.",
+                                        "properties": {
+                                            "enabled": {
+                                                "type": "boolean"
+                                            },
+                                            "difficulty": {
+                                                "type": "integer"
+                                            },
+                                            "surfaces": {
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "honeypotField": {
+                                        "title": "Honeypot field",
+                                        "type": "string",
+                                        "description": "The field name a human never fills. A submission that fills it is refused.",
+                                        "example": "faxnummer"
+                                    }
+                                }
                             }
                         }
                     },
@@ -4496,6 +4581,22 @@
                         "title": "Public status labels",
                         "type": "object",
                         "description": "The public label and description per status, keyed by the status value. The portal renders these unchanged and invents nothing when a status carries none."
+                    },
+                    "portalIdentityKind": {
+                        "title": "Portal identity kind",
+                        "type": "array",
+                        "description": "Which identities may reach a case of this type from the portal (portal-identity-and-the-organisations-cases REQ-PIOC-001). `account` requires a portal session. `reference` admits a citizen on a case number and a verified address through a one-time link, with no account. Both may be declared. An empty or absent list means `account` only, which is the closed answer.",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "account",
+                                "reference"
+                            ]
+                        },
+                        "example": [
+                            "account",
+                            "reference"
+                        ]
                     }
                 }
             },
@@ -4564,6 +4665,328 @@
                         "items": {
                             "type": "object"
                         }
+                    }
+                }
+            },
+            "portalMandate": {
+                "slug": "portalMandate",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "icon": "AccountKey",
+                "version": "0.1.0",
+                "title": "Portal Mandate",
+                "description": "What a portal identity may act for on behalf of an organisation (portal-identity-and-the-organisations-cases REQ-PIOC-002). No mandate recorded means no organisation case is visible: the empty default is the closed one. Owned by portaliq's auth edge; never publicly readable.",
+                "type": "object",
+                "required": [
+                    "subjectRef",
+                    "organisation"
+                ],
+                "properties": {
+                    "subjectRef": {
+                        "title": "Subject reference",
+                        "type": "string",
+                        "description": "The portal identity the mandate is held by.",
+                        "example": "b3d9c2a1"
+                    },
+                    "organisation": {
+                        "title": "Organisation",
+                        "type": "string",
+                        "description": "The tenant the mandate is held for.",
+                        "example": "gemeente-x"
+                    },
+                    "onBehalfOf": {
+                        "title": "On behalf of",
+                        "type": "string",
+                        "description": "The party whose cases the mandate opens, e.g. a KvK number. Empty means the organisation itself.",
+                        "example": "kvk-12345678"
+                    },
+                    "label": {
+                        "title": "Label",
+                        "type": "string",
+                        "description": "The words shown beside a case this mandate grants, so the citizen can see why they may read it.",
+                        "example": "Gemachtigd voor Voorbeeld B.V."
+                    },
+                    "caseTypes": {
+                        "title": "Case types",
+                        "type": "array",
+                        "description": "When not empty, the mandate covers only cases of these types. Empty means every case of the party.",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "vergunning"
+                        ]
+                    },
+                    "status": {
+                        "title": "Status",
+                        "type": "string",
+                        "enum": [
+                            "active",
+                            "revoked"
+                        ],
+                        "description": "A revoked mandate grants nothing.",
+                        "example": "active"
+                    },
+                    "grantedBy": {
+                        "title": "Granted by",
+                        "type": "string",
+                        "description": "Who recorded the mandate.",
+                        "example": "clerk-anna"
+                    },
+                    "grantedAt": {
+                        "title": "Granted at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When it was recorded.",
+                        "example": "2026-09-18T09:00:00+00:00"
+                    },
+                    "expiresAt": {
+                        "title": "Expires at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When it stops granting anything. Empty means it does not expire.",
+                        "example": "2027-09-18T09:00:00+00:00"
+                    }
+                }
+            },
+            "portalInvitation": {
+                "slug": "portalInvitation",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "icon": "AccountKey",
+                "version": "0.1.0",
+                "title": "Portal Invitation",
+                "description": "An address invited into the portal (REQ-PIOC-003). The link's secret is stored hashed, never in the clear, and the state the sender sees is on this row.",
+                "type": "object",
+                "required": [
+                    "email",
+                    "organisation",
+                    "tokenHash"
+                ],
+                "properties": {
+                    "email": {
+                        "title": "Email",
+                        "type": "string",
+                        "description": "The address invited.",
+                        "example": "ans@example.org"
+                    },
+                    "organisation": {
+                        "title": "Organisation",
+                        "type": "string",
+                        "description": "The tenant that invited.",
+                        "example": "gemeente-x"
+                    },
+                    "audience": {
+                        "title": "Audience",
+                        "type": "string",
+                        "description": "The audience the account will carry.",
+                        "example": "client"
+                    },
+                    "tokenHash": {
+                        "title": "Token hash",
+                        "type": "string",
+                        "description": "SHA-256 of the one-time secret. The secret itself is in the mail and nowhere else.",
+                        "example": "9f86d0…"
+                    },
+                    "state": {
+                        "title": "State",
+                        "type": "string",
+                        "enum": [
+                            "sent",
+                            "opened",
+                            "accepted",
+                            "expired",
+                            "revoked"
+                        ],
+                        "description": "What happened to the invitation, as its sender sees it.",
+                        "example": "sent"
+                    },
+                    "invitedBy": {
+                        "title": "Invited by",
+                        "type": "string",
+                        "description": "The staff user who sent it.",
+                        "example": "clerk-anna"
+                    },
+                    "sentAt": {
+                        "title": "Sent at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When it was sent.",
+                        "example": "2026-09-18T09:00:00+00:00"
+                    },
+                    "expiresAt": {
+                        "title": "Expires at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When it stops admitting anybody.",
+                        "example": "2026-09-25T09:00:00+00:00"
+                    },
+                    "subjectRef": {
+                        "title": "Subject reference",
+                        "type": "string",
+                        "description": "The account created when the invitation was accepted.",
+                        "example": "b3d9c2a1"
+                    }
+                }
+            },
+            "portalReferenceLink": {
+                "slug": "portalReferenceLink",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "icon": "AccountKey",
+                "version": "0.1.0",
+                "title": "Portal Reference Link",
+                "description": "A one-time link admitting a citizen to one case on a case number and a verified address, with no account (REQ-PIOC-001). Offered only for a case type that declares the `reference` kind, and refused the second time it is followed.",
+                "type": "object",
+                "required": [
+                    "caseReference",
+                    "tokenHash"
+                ],
+                "properties": {
+                    "caseReference": {
+                        "title": "Case reference",
+                        "type": "string",
+                        "description": "The case number the link admits to.",
+                        "example": "ZAAK-2026-0001"
+                    },
+                    "email": {
+                        "title": "Email",
+                        "type": "string",
+                        "description": "The address the link was sent to.",
+                        "example": "ans@example.org"
+                    },
+                    "organisation": {
+                        "title": "Organisation",
+                        "type": "string",
+                        "description": "The tenant the case belongs to.",
+                        "example": "gemeente-x"
+                    },
+                    "tokenHash": {
+                        "title": "Token hash",
+                        "type": "string",
+                        "description": "SHA-256 of the one-time secret.",
+                        "example": "9f86d0…"
+                    },
+                    "state": {
+                        "title": "State",
+                        "type": "string",
+                        "enum": [
+                            "sent",
+                            "used",
+                            "expired"
+                        ],
+                        "description": "A link that has been used admits nobody again.",
+                        "example": "sent"
+                    },
+                    "issuedAt": {
+                        "title": "Issued at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When it was issued.",
+                        "example": "2026-09-18T09:00:00+00:00"
+                    },
+                    "expiresAt": {
+                        "title": "Expires at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When it stops admitting anybody.",
+                        "example": "2026-09-19T09:00:00+00:00"
+                    },
+                    "usedAt": {
+                        "title": "Used at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When it was followed.",
+                        "example": "2026-09-18T10:00:00+00:00"
+                    }
+                }
+            },
+            "portalAccessRequest": {
+                "slug": "portalAccessRequest",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "icon": "AccountKey",
+                "version": "0.1.0",
+                "title": "Portal Access Request",
+                "description": "Somebody asking, in the product, for access they do not have (REQ-PIOC-007). It carries who asked and what for, and the answer the owner gave, which the asker sees.",
+                "type": "object",
+                "required": [
+                    "subjectRef",
+                    "organisation"
+                ],
+                "properties": {
+                    "subjectRef": {
+                        "title": "Subject reference",
+                        "type": "string",
+                        "description": "Who asked.",
+                        "example": "b3d9c2a1"
+                    },
+                    "displayName": {
+                        "title": "Display name",
+                        "type": "string",
+                        "description": "The name the owner sees beside the request.",
+                        "example": "Ans de Vries"
+                    },
+                    "organisation": {
+                        "title": "Organisation",
+                        "type": "string",
+                        "description": "The tenant whose cases are asked for.",
+                        "example": "gemeente-x"
+                    },
+                    "onBehalfOf": {
+                        "title": "On behalf of",
+                        "type": "string",
+                        "description": "The party whose cases are asked for.",
+                        "example": "kvk-12345678"
+                    },
+                    "reason": {
+                        "title": "Reason",
+                        "type": "string",
+                        "description": "What the asker says they need it for.",
+                        "example": "Ik ben de nieuwe administrateur."
+                    },
+                    "state": {
+                        "title": "State",
+                        "type": "string",
+                        "enum": [
+                            "pending",
+                            "granted",
+                            "refused"
+                        ],
+                        "description": "The owner's answer, which the asker sees.",
+                        "example": "pending"
+                    },
+                    "decidedBy": {
+                        "title": "Decided by",
+                        "type": "string",
+                        "description": "Who answered.",
+                        "example": "clerk-anna"
+                    },
+                    "decidedAt": {
+                        "title": "Decided at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When they answered.",
+                        "example": "2026-09-18T11:00:00+00:00"
+                    },
+                    "requestedAt": {
+                        "title": "Requested at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When it was asked.",
+                        "example": "2026-09-18T09:00:00+00:00"
                     }
                 }
             }

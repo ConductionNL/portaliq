@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\Portaliq\Service\Identity\PortalMandateService;
 use OCA\Portaliq\Service\PortalCaseListReader;
 use OCA\Portaliq\Service\PortalObjectReader;
 use PHPUnit\Framework\TestCase;
@@ -98,6 +99,127 @@ class PortalCaseListReaderTest extends TestCase {
 		$this->assertSame(['NEW', 'OLD'], array_column($rows, 'reference'));
 
 	}//end testTheNewestCaseComesFirst()
+
+	public function testWithNoMandateNoOrganisationCaseIsRead(): void {
+		$reader = $this->readerReturning([['reference' => 'COLLEGA-1']]);
+		$cases = new PortalCaseListReader($reader, $this->mandateService());
+
+		$rows = $cases->listMandatedCases(subject: $this->subject(), aggregate: $this->aggregate(collection: $this->mandatedCollection()), mandates: []);
+
+		$this->assertSame([], $rows);
+
+	}//end testWithNoMandateNoOrganisationCaseIsRead()
+
+	public function testACollectionDeclaringNoPartyFieldIsNeverReadByAMandate(): void {
+		$reader = $this->readerReturning([['reference' => 'EVERY-CASE-EVER']]);
+		$collection = $this->mandatedCollection();
+		unset($collection['mandateField']);
+		$cases = new PortalCaseListReader($reader, $this->mandateService());
+
+		$rows = $cases->listMandatedCases(subject: $this->subject(), aggregate: $this->aggregate(collection: $collection), mandates: [$this->mandate()]);
+
+		$this->assertSame([], $rows);
+
+	}//end testACollectionDeclaringNoPartyFieldIsNeverReadByAMandate()
+
+	public function testTheMandatedCaseNamesTheMandateThatGrantsIt(): void {
+		$reader = $this->readerReturning([['reference' => 'COLLEGA-1', 'caseType' => 'vergunning']]);
+		$cases = new PortalCaseListReader($reader, $this->mandateService());
+
+		$rows = $cases->listMandatedCases(subject: $this->subject(), aggregate: $this->aggregate(collection: $this->mandatedCollection()), mandates: [$this->mandate()]);
+
+		$this->assertCount(1, $rows);
+		$this->assertSame('Voorbeeld B.V.', $rows[0]['_mandate']['label']);
+
+	}//end testTheMandatedCaseNamesTheMandateThatGrantsIt()
+
+	public function testAMandateNarrowerThanTheOrganisationListsOnlyItsOwnTypes(): void {
+		$reader = $this->readerReturning([
+			['reference' => 'VERGUNNING-1', 'caseType' => 'vergunning'],
+			['reference' => 'MELDING-1', 'caseType' => 'melding'],
+		]);
+		$cases = new PortalCaseListReader($reader, $this->mandateService());
+
+		$rows = $cases->listMandatedCases(
+			subject: $this->subject(),
+			aggregate: $this->aggregate(collection: $this->mandatedCollection()),
+			mandates: [$this->mandate(caseTypes: ['vergunning'])]
+		);
+
+		$this->assertSame(['VERGUNNING-1'], array_column($rows, 'reference'));
+
+	}//end testAMandateNarrowerThanTheOrganisationListsOnlyItsOwnTypes()
+
+	public function testTheMandateReadsByThePartyFieldNotBySubject(): void {
+		$seen = [];
+		$reader = $this->getMockBuilder(PortalObjectReader::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['readCollection'])
+			->getMock();
+		$reader->method('readCollection')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation = '', int $limit = 200, string $scopeClaim = '', string $contributingApp = '', mixed $via = null, string $audience = '', mixed $fields = null, array $filter = []) use (&$seen): array {
+				$seen = ['scopeField' => $scopeField, 'subjectRef' => $subjectRef];
+				return [];
+			}
+		);
+
+		(new PortalCaseListReader($reader, $this->mandateService()))->listMandatedCases(
+			subject: $this->subject(),
+			aggregate: $this->aggregate(collection: $this->mandatedCollection()),
+			mandates: [$this->mandate()]
+		);
+
+		$this->assertSame('requesterOrganisation', $seen['scopeField']);
+		$this->assertSame('kvk-12345678', $seen['subjectRef']);
+
+	}//end testTheMandateReadsByThePartyFieldNotBySubject()
+
+	/**
+	 * A real mandate service over a reader that is never used: only `describe`
+	 * and `covers` are called on this path, and both are pure.
+	 *
+	 * @return PortalMandateService
+	 */
+	private function mandateService(): PortalMandateService {
+		$reader = $this->getMockBuilder(PortalObjectReader::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['readCollection'])
+			->getMock();
+		$reader->method('readCollection')->willReturn([]);
+
+		return new PortalMandateService($reader);
+	}//end mandateService()
+
+	/**
+	 * A mandate for the company.
+	 *
+	 * @param array<int, string> $caseTypes The types it covers, or none.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function mandate(array $caseTypes = []): array {
+		return [
+			'uuid' => 'mandate-1',
+			'subjectRef' => 'subject-1',
+			'organisation' => 'gemeente-x',
+			'onBehalfOf' => 'kvk-12345678',
+			'label' => 'Voorbeeld B.V.',
+			'caseTypes' => $caseTypes,
+			'status' => 'active',
+		];
+	}//end mandate()
+
+	/**
+	 * A case collection that also declares the party field a mandate reads by.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function mandatedCollection(): array {
+		$collection = $this->casesCollection();
+		$collection['mandateField'] = 'requesterOrganisation';
+
+		return $collection;
+	}//end mandatedCollection()
 
 	/**
 	 * A reader double answering the same rows for any collection.
