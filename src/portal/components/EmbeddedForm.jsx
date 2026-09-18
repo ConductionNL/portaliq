@@ -18,7 +18,7 @@
 // form is broken, still loading, or simply not for them. Every refusal the
 // controller can return has a sentence here.
 
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { labelFor, refusalSentence } from '../embedCopy.js'
 
 /**

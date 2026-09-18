@@ -41,7 +41,11 @@
                     "form",
                     "landingPageSubmission",
                     "portalCaseType",
-                    "portalCase"
+                    "portalCase",
+                    "portalReport",
+                    "portalReportMessage",
+                    "portalReporterContact",
+                    "portalRevealRequest"
                 ]
             }
         },

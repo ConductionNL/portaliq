@@ -143,14 +143,12 @@ class ReportController extends Controller {
 			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		// The challenge is the portal's own proof of work. Nothing here calls
-		// a challenge vendor, because a request to one would tell that vendor
-		// somebody is on the whistleblowing page.
-		// accepts() runs the honeypot first and then the proof of work, and
-		// answers true when the operator switched the challenge off, so it is
-		// called unconditionally rather than behind isEnabled(): the honeypot
-		// costs nothing and should not be skipped with it.
-		$solved = $this->challenge->accepts(site: $site, surface: 'report', submission: $report, nonce: $nonce, solution: $solution);
+		$solved = $this->checkReporterCredential(
+			site: $site,
+			report: $report,
+			nonce: $nonce,
+			solution: $solution
+		);
 		if ($solved === false) {
 			return new JSONResponse(['error' => 'challenge_failed'], Http::STATUS_FORBIDDEN);
 		}
@@ -180,6 +178,59 @@ class ReportController extends Controller {
 	}//end file()
 
 	/**
+	 * Whether the filing carries the credential this endpoint authenticates with.
+	 *
+	 * A report is filed with no session, no account and no address, so the only
+	 * credential the request carries is the portal's own challenge: a honeypot
+	 * and a proof of work, issued by this instance and checked by it. Nothing
+	 * here calls a challenge vendor, because a request to one would tell that
+	 * vendor somebody is on the whistleblowing page.
+	 *
+	 * accepts() runs the honeypot first and then the proof of work, and answers
+	 * true when the operator switched the challenge off, so it is called
+	 * unconditionally rather than behind isEnabled(): the honeypot costs
+	 * nothing and should not be skipped with it.
+	 *
+	 * @param array<string, mixed> $site The portal the filing arrived on.
+	 * @param array<string, mixed> $report The submitted report.
+	 * @param string $nonce The challenge nonce, when one was issued.
+	 * @param string $solution The solution to it.
+	 *
+	 * @return bool Whether the credential checks out.
+	 *
+	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 */
+	private function checkReporterCredential(array $site, array $report, string $nonce, string $solution): bool {
+		return $this->challenge->accepts(
+			site: $site,
+			surface: 'report',
+			submission: $report,
+			nonce: $nonce,
+			solution: $solution
+		);
+	}//end checkReporterCredential()
+
+	/**
+	 * The report a receipt code opens, or null when it opens none.
+	 *
+	 * The receipt code IS the reporter's credential: it is the whole identity
+	 * behind the thread, there is no session and no account to fall back on,
+	 * and a wrong code is answered exactly like an unknown one so that nothing
+	 * says whether a report exists.
+	 *
+	 * @param string $code The receipt code presented in the request.
+	 * @param string $address The caller's address, which the throttle counts
+	 *                        a wrong code against and nothing else keeps.
+	 *
+	 * @return array<string, mixed>|null The report, or null when the code opens none.
+	 *
+	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 */
+	private function resolveReporterCredential(string $code, string $address): ?array {
+		return $this->threads->openByCode(code: $code, address: $address);
+	}//end resolveReporterCredential()
+
+	/**
 	 * Open the thread behind a receipt code.
 	 *
 	 * @param string $code The receipt code.
@@ -192,7 +243,7 @@ class ReportController extends Controller {
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 10, period: 60)]
 	public function thread(string $code): JSONResponse {
-		$report = $this->threads->openByCode(code: $code, address: $this->request->getRemoteAddress());
+		$report = $this->resolveReporterCredential(code: $code, address: $this->request->getRemoteAddress());
 		if ($report === null) {
 			// A wrong code and an unknown code are the same answer. Anything
 			// else would say whether a report exists.
@@ -222,7 +273,7 @@ class ReportController extends Controller {
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 20, period: 60)]
 	public function answer(string $code, string $body): JSONResponse {
-		$report = $this->threads->openByCode(code: $code, address: $this->request->getRemoteAddress());
+		$report = $this->resolveReporterCredential(code: $code, address: $this->request->getRemoteAddress());
 		if ($report === null) {
 			return new JSONResponse(['error' => 'code_not_valid'], Http::STATUS_UNAUTHORIZED);
 		}
@@ -378,7 +429,11 @@ class ReportController extends Controller {
 		if (isset($decided['error']) === true) {
 			// `not_custodian` covers the administrator who is not in the
 			// declared group, and it is a refusal that shows nothing at all.
-			$status = ($decided['error'] === 'not_custodian') ? Http::STATUS_FORBIDDEN : Http::STATUS_CONFLICT;
+			$status = Http::STATUS_CONFLICT;
+			if ($decided['error'] === 'not_custodian') {
+				$status = Http::STATUS_FORBIDDEN;
+			}
+
 			return new JSONResponse(['error' => $decided['error']], $status);
 		}
 

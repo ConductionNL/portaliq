@@ -74,9 +74,7 @@ class ReportProjection {
 		// Belt and braces: CARRIED is an allow-list already, so nothing
 		// withheld can be in $out. The assertion is kept because the cost of
 		// being wrong here is a reporter's name in a list.
-		foreach (self::WITHHELD as $key) {
-			unset($out[$key]);
-		}
+		$out = array_diff_key($out, array_flip(self::WITHHELD));
 
 		// `answers` is whatever the form sent. A form that asked for a name
 		// would put it here, so the sweep runs over it too.

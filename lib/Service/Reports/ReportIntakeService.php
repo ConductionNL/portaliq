@@ -99,7 +99,14 @@ class ReportIntakeService {
 	 *
 	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
 	 */
-	public function accept(string $portal, string $caseType, array $report, array $contact = [], string $caseTypeRegister = '', string $caseTypeSchema = ''): ?array {
+	public function accept(
+		string $portal,
+		string $caseType,
+		array $report,
+		array $contact = [],
+		string $caseTypeRegister = '',
+		string $caseTypeSchema = '',
+	): ?array {
 		if ($portal === '') {
 			return null;
 		}

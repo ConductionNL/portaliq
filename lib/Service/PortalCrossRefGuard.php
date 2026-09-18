@@ -162,7 +162,14 @@ class PortalCrossRefGuard {
 
 		$ids = [];
 		foreach ($value as $entry) {
-			$ids[] = (is_string($entry) === true ? $entry : '');
+			if (is_string($entry) === true) {
+				$ids[] = $entry;
+				continue;
+			}
+
+			// Not a string, so it is an id nothing can resolve, and the empty
+			// one refuses rather than passing the entry through unchecked.
+			$ids[] = '';
 		}
 
 		return $ids;

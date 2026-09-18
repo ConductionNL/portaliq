@@ -20,8 +20,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
-	EMBED_REFUSALS,
 	EMBED_REFUSAL_FALLBACK,
+	EMBED_REFUSALS,
 	labelFor,
 	refusalSentence,
 } from '../src/portal/embedCopy.js'

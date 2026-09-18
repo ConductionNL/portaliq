@@ -64,6 +64,8 @@ class PortalEmbedSnippetDescription {
 	 * @param string               $frameUrl The frame's absolute url.
 	 *
 	 * @return array<string, mixed> The description.
+	 *
+	 * @spec openspec/changes/embedded-intake-form/specs/embedded-intake-form/spec.md
 	 */
 	public function describe(array $binding, string $frameUrl): array {
 		$origins = $this->guard->allowedOrigins(binding: $binding);

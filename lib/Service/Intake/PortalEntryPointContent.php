@@ -67,6 +67,8 @@ class PortalEntryPointContent {
 	 * @param string $portal The portal slug.
 	 *
 	 * @return array<int, array<string, mixed>> The pages.
+	 *
+	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
 	 */
 	public function pagesFor(string $portal): array {
 		return [
@@ -90,6 +92,8 @@ class PortalEntryPointContent {
 	 * know which directorate owns street lighting, and should not have to.
 	 *
 	 * @return array<int, array<string, mixed>> The topics.
+	 *
+	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
 	 */
 	public function topics(): array {
 		return [
@@ -108,6 +112,8 @@ class PortalEntryPointContent {
 	 * @param array<int, string> $existingRoutes The routes the portal already has.
 	 *
 	 * @return array<string, mixed> The plan: what is created, what is left alone and why.
+	 *
+	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
 	 */
 	public function plan(string $portal, array $existingRoutes): array {
 		$create = [];

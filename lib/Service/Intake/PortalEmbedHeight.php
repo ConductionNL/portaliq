@@ -83,6 +83,8 @@ class PortalEmbedHeight {
 	 * @param mixed $reported What the frame said, if anything.
 	 *
 	 * @return int The height to use, never below the declared minimum.
+	 *
+	 * @spec openspec/changes/embedded-intake-form/specs/embedded-intake-form/spec.md
 	 */
 	public function heightFor(mixed $reported): int {
 		if (is_int($reported) === false && is_float($reported) === false) {
@@ -107,6 +109,8 @@ class PortalEmbedHeight {
 	 * @param string               $frameOrigin  The origin the frame was loaded from.
 	 *
 	 * @return bool True when it may be honoured.
+	 *
+	 * @spec openspec/changes/embedded-intake-form/specs/embedded-intake-form/spec.md
 	 */
 	public function accepts(array $message, string $origin, string $frameOrigin): bool {
 		if ($frameOrigin === '' || $origin !== $frameOrigin) {
@@ -127,6 +131,8 @@ class PortalEmbedHeight {
 	 * @param string $title    The accessible name of the frame.
 	 *
 	 * @return array{iframe: string, listener: string, minimumHeight: int}
+	 *
+	 * @spec openspec/changes/embedded-intake-form/specs/embedded-intake-form/spec.md
 	 */
 	public function snippet(string $frameUrl, string $title): array {
 		$url = htmlspecialchars($frameUrl, ENT_QUOTES);

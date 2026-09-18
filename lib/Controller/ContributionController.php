@@ -137,6 +137,14 @@ class ContributionController extends Controller implements PortalProtected {
 	 *                                            existing construction sites and
 	 *                                            tests keep working; absent reads
 	 *                                            as "no tasks surface".
+	 * @param PortalCrossRefGuard|null $crossRefs Checks that a declared cross
+	 *                                            reference resolves inside the
+	 *                                            subject's own scope
+	 *                                            (portal-create-cross-refs).
+	 *                                            Optional at the construction
+	 *                                            site only: absent is built in
+	 *                                            crossRefGuard(), never skipped,
+	 *                                            because it is a guard.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -1109,6 +1117,33 @@ class ContributionController extends Controller implements PortalProtected {
 	}//end authorisedAnonymousCreateAction()
 
 	/**
+	 * The write body with the action's server-enforced transition target applied.
+	 *
+	 * Server-enforced transition target (contribution-manifest-v3): an update
+	 * action MAY declare `set` — fixed field values the SERVER applies OVER the
+	 * client input, so an approve/reject/close transition can never be tampered
+	 * with by the client. Only whitelisted fields are honoured (defence in
+	 * depth; the normaliser already dropped non-whitelisted keys).
+	 *
+	 * @param array $action The matched update action.
+	 * @param array $data   The whitelisted client body.
+	 *
+	 * @return array The body to write.
+	 *
+	 * @spec openspec/changes/archive/2026-09-07-portal-scoped-crud/tasks.md#T3
+	 */
+	private function withTransitionSet(array $action, array $data): array {
+		$whitelist = (array)($action['fields'] ?? []);
+		foreach ((array)($action['set'] ?? []) as $field => $value) {
+			if (in_array($field, $whitelist, true) === true) {
+				$data[$field] = $value;
+			}
+		}
+
+		return $data;
+	}//end withTransitionSet()
+
+	/**
 	 * Update an object in a collection, owned by the subject (portal-scoped-crud,
 	 * ADR-062 Phase 1 — closes the write-IDOR concern, Conduction/portaliq#16).
 	 *
@@ -1176,17 +1211,7 @@ class ContributionController extends Controller implements PortalProtected {
 
 		$data = $this->whitelist(fields: (array)($action['fields'] ?? []));
 
-		// Server-enforced transition target (contribution-manifest-v3): an update
-		// action MAY declare `set` — fixed field values the SERVER applies OVER
-		// the client input, so an approve/reject/close transition can never be
-		// tampered with by the client. Only whitelisted fields are honoured
-		// (defence in depth; the normaliser already dropped non-whitelisted keys).
-		$whitelist = (array)($action['fields'] ?? []);
-		foreach ((array)($action['set'] ?? []) as $field => $value) {
-			if (in_array($field, $whitelist, true) === true) {
-				$data[$field] = $value;
-			}
-		}
+		$data = $this->withTransitionSet(action: $action, data: $data);
 
 		// The same guard as on create, for the same reason: an update body can
 		// name another party's object just as a create body can.

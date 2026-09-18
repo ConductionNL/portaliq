@@ -84,6 +84,8 @@ class PortalBindingPreview {
 	 * @param array<string, mixed> $binding The binding as configured.
 	 *
 	 * @return array<string, mixed> The preview.
+	 *
+	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
 	 */
 	public function describe(array $binding): array {
 		$render = $this->resolver->render(binding: $binding);
@@ -160,6 +162,8 @@ class PortalBindingPreview {
 	 * @param array<string, mixed> $binding The binding.
 	 *
 	 * @return bool True when it resolves to nothing.
+	 *
+	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
 	 */
 	public function needsAttention(array $binding): bool {
 		return ((string)$this->describe(binding: $binding)['state'] === self::RESOLVES_TO_NONE);
