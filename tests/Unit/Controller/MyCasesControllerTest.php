@@ -7,6 +7,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\MyCasesController;
 use OCA\Portaliq\Service\Identity\PortalMandateService;
+use OCA\Portaliq\Service\Identity\PortalPartyTreeResolver;
 use OCA\Portaliq\Service\PortalCaseListReader;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Http;
@@ -95,6 +96,44 @@ class MyCasesControllerTest extends TestCase {
 
 	}//end testACaseThatIsBothTheirsAndTheirCompanysIsListedOnce()
 
+	public function testAGroupPastTheBoundIsRefusedRatherThanTruncated(): void {
+		$cases = $this->cases();
+		$cases->expects($this->never())->method('listMandatedCases');
+		$controller = $this->controller(
+			subject: ['subjectRef' => 'employee-1', 'organisation' => 'gemeente-x', 'audience' => 'client', 'trust' => 'substantial'],
+			cases: $cases,
+			rows: [['id' => '1', 'reference' => 'MIJN-1', '_source' => ['schema' => 'zaak']]],
+			mandates: [['label' => 'Holding B.V.', 'reach' => 'tree']],
+			mandatedRows: [],
+			scope: ['entities' => [], 'refused' => true, 'bound' => ['maxDepth' => 4, 'pageSize' => 100]]
+		);
+
+		$response = $controller->index();
+
+		$this->assertSame(Http::STATUS_CONFLICT, $response->getStatus());
+		$this->assertSame('group_too_large', $response->getData()['error']);
+		// The bound is named, and no partial list is served beside it.
+		$this->assertSame(4, $response->getData()['bound']['maxDepth']);
+		$this->assertArrayNotHasKey('cases', $response->getData());
+
+	}//end testAGroupPastTheBoundIsRefusedRatherThanTruncated()
+
+	public function testTheSwitcherOffersEveryEntityTheMandateReaches(): void {
+		$controller = $this->controller(
+			subject: ['subjectRef' => 'employee-1', 'organisation' => 'gemeente-x', 'audience' => 'client', 'trust' => 'substantial'],
+			cases: $this->cases(),
+			rows: [],
+			mandates: [['label' => 'Holding B.V.', 'reach' => 'tree']],
+			mandatedRows: [],
+			scope: ['entities' => ['kvk-parent', 'kvk-sub-1', 'kvk-sub-2'], 'refused' => false, 'bound' => ['maxDepth' => 4, 'pageSize' => 100]]
+		);
+
+		$data = $controller->index()->getData();
+
+		$this->assertSame(['kvk-parent', 'kvk-sub-1', 'kvk-sub-2'], $data['activeMandate']['entities']);
+
+	}//end testTheSwitcherOffersEveryEntityTheMandateReaches()
+
 	/**
 	 * The controller over doubles.
 	 *
@@ -103,10 +142,11 @@ class MyCasesControllerTest extends TestCase {
 	 * @param array<int, array<string, mixed>> $rows The rows it answers.
 	 * @param array<int, array<string, mixed>> $mandates The mandates held.
 	 * @param array<int, array<string, mixed>> $mandatedRows The mandated cases.
+	 * @param array<string, mixed>|null $scope What the party tree answers.
 	 *
 	 * @return MyCasesController
 	 */
-	private function controller(?array $subject, PortalCaseListReader $cases, array $rows, array $mandates = [], array $mandatedRows = []): MyCasesController {
+	private function controller(?array $subject, PortalCaseListReader $cases, array $rows, array $mandates = [], array $mandatedRows = [], ?array $scope = null): MyCasesController {
 		$session = $this->getMockBuilder(PortalSessionService::class)
 			->disableOriginalConstructor()
 			->onlyMethods(['resolveFromBearer'])
@@ -126,7 +166,7 @@ class MyCasesControllerTest extends TestCase {
 
 		$mandateService = $this->getMockBuilder(PortalMandateService::class)
 			->disableOriginalConstructor()
-			->onlyMethods(['mandatesFor', 'activeMandate', 'describe'])
+			->onlyMethods(['mandatesFor', 'activeMandate', 'describe', 'reachOf'])
 			->getMock();
 		$mandateService->method('mandatesFor')->willReturn($mandates);
 		$mandateService->method('activeMandate')->willReturnCallback(
@@ -138,13 +178,20 @@ class MyCasesControllerTest extends TestCase {
 				return $held[0];
 			}
 		);
+		$mandateService->method('reachOf')->willReturn('organisation');
 		$mandateService->method('describe')->willReturnCallback(
 			static function (array $mandate): array {
 				return ['id' => 'mandate-1', 'label' => (string)($mandate['label'] ?? ''), 'organisation' => 'gemeente-x', 'onBehalfOf' => 'kvk-1', 'caseTypes' => []];
 			}
 		);
 
-		return new MyCasesController($this->createMock(IRequest::class), $registry, $session, $cases, $mandateService);
+		$tree = $this->getMockBuilder(PortalPartyTreeResolver::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['entitiesFor'])
+			->getMock();
+		$tree->method('entitiesFor')->willReturn(($scope ?? ['entities' => ['kvk-1'], 'refused' => false, 'bound' => ['maxDepth' => 4, 'pageSize' => 100]]));
+
+		return new MyCasesController($this->createMock(IRequest::class), $registry, $session, $cases, $mandateService, $tree);
 	}//end controller()
 
 	/**

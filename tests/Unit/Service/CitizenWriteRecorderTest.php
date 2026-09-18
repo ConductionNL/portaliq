@@ -179,4 +179,39 @@ class CitizenWriteRecorderTest extends TestCase {
 			($dispatcher ?? $this->createMock(IEventDispatcher::class))
 		);
 	}//end recorder()
+
+	/**
+	 * portal-visibility-follows-the-party-tree REQ-PTV-006: a write made for an
+	 * entity below the mandated one records both the entity and the mandate,
+	 * and an ordinary write records neither, so the two are told apart in the
+	 * record rather than guessed at later.
+	 *
+	 * @spec openspec/changes/portal-visibility-follows-the-party-tree/specs/portal-visibility-and-the-party-tree/spec.md
+	 */
+	public function testAWriteForAnEntityBelowTheMandateRecordsBoth(): void {
+		$recorder = new CitizenWriteRecorder(
+			$this->createMock(\OCA\Portaliq\Service\AuditTrailService::class),
+			$this->createMock(\OCP\EventDispatcher\IEventDispatcher::class)
+		);
+		$subject = array_merge(self::SUBJECT, ['actingForEntity' => 'kvk-subsidiary', 'actingUnderMandate' => 'mandate-1']);
+
+		$mandate = $recorder->mandate(action: self::ACTION, subject: $subject);
+
+		$this->assertSame('kvk-subsidiary', $mandate['actingFor']);
+		$this->assertSame('mandate-1', $mandate['mandate']);
+
+	}//end testAWriteForAnEntityBelowTheMandateRecordsBoth()
+
+	public function testAnOrdinaryWriteNamesNoEntityAndNoMandate(): void {
+		$recorder = new CitizenWriteRecorder(
+			$this->createMock(\OCA\Portaliq\Service\AuditTrailService::class),
+			$this->createMock(\OCP\EventDispatcher\IEventDispatcher::class)
+		);
+
+		$mandate = $recorder->mandate(action: self::ACTION, subject: self::SUBJECT);
+
+		$this->assertArrayNotHasKey('actingFor', $mandate);
+		$this->assertArrayNotHasKey('mandate', $mandate);
+
+	}//end testAnOrdinaryWriteNamesNoEntityAndNoMandate()
 }//end class

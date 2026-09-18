@@ -51,6 +51,16 @@ class PortalMandateService {
 	private const SCHEMA = 'portalMandate';
 
 	/**
+	 * A mandate covering only the entity it names. The default.
+	 */
+	public const REACH_ORGANISATION = 'organisation';
+
+	/**
+	 * A mandate covering the entity it names and those below it.
+	 */
+	public const REACH_TREE = 'tree';
+
+	/**
 	 * Row cap per identity. A person with more mandates than this has an
 	 * administration problem, not a portal problem.
 	 */
@@ -171,11 +181,33 @@ class PortalMandateService {
 		return [
 			'id' => $this->mandateId(mandate: $mandate),
 			'label' => $label,
+			'reach' => $this->reachOf(mandate: $mandate),
 			'organisation' => (string)($mandate['organisation'] ?? ''),
 			'onBehalfOf' => (string)($mandate['onBehalfOf'] ?? ''),
 			'caseTypes' => array_values((array)($mandate['caseTypes'] ?? [])),
 		];
 	}//end describe()
+
+	/**
+	 * How far down the party tree this mandate reaches.
+	 *
+	 * Anything other than the declared wider reach is the narrow one: a
+	 * mandate that says nothing, or says something nobody recognises, covers
+	 * the entity it names and no other (REQ-PTV-001).
+	 *
+	 * @param array<string, mixed> $mandate The mandate.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/portal-visibility-follows-the-party-tree/specs/portal-visibility-and-the-party-tree/spec.md
+	 */
+	public function reachOf(array $mandate): string {
+		if ((string)($mandate['reach'] ?? '') === self::REACH_TREE) {
+			return self::REACH_TREE;
+		}
+
+		return self::REACH_ORGANISATION;
+	}//end reachOf()
 
 	/**
 	 * Whether this mandate covers a case of the named type.
