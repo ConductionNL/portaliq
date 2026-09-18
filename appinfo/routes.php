@@ -226,6 +226,20 @@ return [
         ['name' => 'proposal#proposeFromPortal', 'url' => '/portal/api/proposals', 'verb' => 'POST'],
         ['name' => 'proposal#withdraw', 'url' => '/portal/api/proposals/{id}/withdraw', 'verb' => 'POST'],
 
+        // A report of wrongdoing filed without an account
+        // (a-report-without-an-account-and-a-custodian-who-may-reveal-it).
+        // The three portal routes take no session and no address: the receipt
+        // code is the whole identity, and a wrong one is throttled. The staff
+        // routes never return a contact detail; only the reveal a custodian
+        // allowed does, and that is its own recorded act.
+        ['name' => 'report#file', 'url' => '/portal/api/reports', 'verb' => 'POST'],
+        ['name' => 'report#thread', 'url' => '/portal/api/reports/thread', 'verb' => 'POST'],
+        ['name' => 'report#answer', 'url' => '/portal/api/reports/thread/answer', 'verb' => 'POST'],
+        ['name' => 'report#show', 'url' => '/api/reports/{id}', 'verb' => 'GET'],
+        ['name' => 'report#reply', 'url' => '/api/reports/{id}/messages', 'verb' => 'POST'],
+        ['name' => 'report#requestReveal', 'url' => '/api/reports/{id}/reveal-requests', 'verb' => 'POST'],
+        ['name' => 'report#decideReveal', 'url' => '/api/reveal-requests/{id}/decide', 'verb' => 'POST'],
+
         // A handler asks an outside partner for something from the case
         // (partner-tasks-in-the-portal). Staff-facing and gated by the ADR-023
         // action `portal.ask-partner` plus a read of the case with RBAC on.
