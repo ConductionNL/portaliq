@@ -246,30 +246,29 @@ jobs:
       enable-sbom: true
 
       # ── REUSE ────────────────────────────────────────────────────────────
-      # `reuse-blocking` is deliberately NOT set here, which means this app
-      # takes the shared default of `false`: `quality / REUSE compliance`
-      # reports success whatever `reuse lint` concludes, and the finding shows
-      # up only as the `REUSE` row in the Quality Report comment. That is the
-      # ❌ Remko Huisman reported on 2026-09-11, and it is still ❌ today.
+      # BLOCKING since 2026-09-17. `reuse lint` is compliant: 1447 of 1447 files
+      # carry licensing information, no unused licence text, no stderr ERROR
+      # lines. Remko Huisman asked for this flip on 2026-09-11 ("ja als hij
+      # groen is moet hij aan zodat we de Reuse niet opnieuw breken"); it waited
+      # on one thing, which is now settled.
       #
-      # It is off for ONE reason, and naming it here rather than leaving it
-      # implicit is the point of this block:
+      # THE THING IT WAITED ON. Twelve fonts under woo/ carried no licensing
+      # information, six of them commercial or all-rights-reserved faces served
+      # publicly through `woo#serve` -- 3x Gill Sans, Avenir LT, Tisa Sans Pro
+      # (Monotype/Linotype) and Eau Sans Book. Turning this on earlier would
+      # have failed every PR on those twelve; annotating them to get past it
+      # would have claimed a licence we do not hold. On 2026-09-17 Ruben van
+      # der Linde decided they come out ("die zouden er dus eigenlijk uit
+      # moeten"), and WOO-575 removed them from woo/, the service-worker
+      # precache, asset-manifest.json and the @font-face rules. The six free
+      # fonts that remain (Roboto, Aldrich, ac-icons) are annotated by name in
+      # REUSE.toml, which also gained the `path = "**"` blanket at the same
+      # moment and not before -- see the note there for why the order mattered.
       #
-      #   BLOCKER   twelve files under woo/ carry no licensing information.
-      #             Six of them are commercial or all-rights-reserved faces
-      #             (3× Gill Sans, Avenir LT, Tisa Sans Pro — Monotype /
-      #             Linotype — plus Eau Sans Book), served publicly through
-      #             `woo#serve`. Turning this flag on now fails every
-      #             subsequent PR on those twelve; annotating them to get past
-      #             it would claim a licence we do not hold.
-      #   OWNER     WOO-575 (https://conduction.atlassian.net/browse/WOO-575),
-      #             assignee Wilco Louwerse, status Actief.
-      #   OPEN      since 2026-09-11, split out of WOO-571 on 2026-09-14.
-      #
-      # The flip is one line — `reuse-blocking: true` — and it belongs in the
-      # same commit that settles those twelve files, not before it. Until then
-      # `check:reuse` in frontend-checks below holds the line, because an
-      # unenforced gate and a passing one are the same colour.
+      # `check:reuse` in frontend-checks below stays on. It guards what this
+      # flag cannot see: stderr parse errors, and the licence-hygiene lists.
+      reuse-blocking: true
+
       # Run the Hydra mechanical quality gates against this PR's diff.
       #
       # This tier has never executed in this repository. `enable-hydra-gates`
