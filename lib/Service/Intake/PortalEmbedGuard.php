@@ -128,9 +128,11 @@ class PortalEmbedGuard {
 	 * @param array<string, mixed> $binding The form binding.
 	 * @param string $frameUrl The absolute URL of this form's frame route.
 	 *
-	 * @return array{embeddable: bool, origins: array<int, string>, snippet: string}
+	 * @return array{embeddable: bool, origins: array<int, string>, snippet: string, listener?: string, minimumHeight?: int}
 	 *         `snippet` is empty when the form is not embeddable yet, so the
 	 *         admin cannot copy something that would only render a message.
+	 *         `listener` is the optional resize half: pasting the iframe alone
+	 *         still shows the form, at the declared minimum height.
 	 *
 	 * @spec openspec/changes/embedded-intake-form/specs/embedded-intake-form/spec.md
 	 */
@@ -140,14 +142,21 @@ class PortalEmbedGuard {
 			return ['embeddable' => false, 'origins' => [], 'snippet' => ''];
 		}
 
-		$snippet = sprintf(
-			'<iframe src="%s" style="width:100%%;border:0;min-height:%dpx" title="%s" loading="lazy"></iframe>',
-			htmlspecialchars($frameUrl, ENT_QUOTES),
-			self::MINIMUM_HEIGHT,
-			htmlspecialchars((string)($binding['route'] ?? 'formulier'), ENT_QUOTES)
+		// The iframe and the listener come from PortalEmbedHeight, so the floor
+		// in the pasted markup and the floor the frame reports are one number
+		// rather than two that can drift apart.
+		$parts = (new PortalEmbedHeight())->snippet(
+			frameUrl: $frameUrl,
+			title: (string)($binding['route'] ?? 'formulier')
 		);
 
-		return ['embeddable' => true, 'origins' => $origins, 'snippet' => $snippet];
+		return [
+			'embeddable' => true,
+			'origins' => $origins,
+			'snippet' => $parts['iframe'],
+			'listener' => $parts['listener'],
+			'minimumHeight' => $parts['minimumHeight'],
+		];
 	}//end snippetFor()
 
 	/**
