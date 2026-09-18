@@ -12,11 +12,9 @@
 //   set `reuse-blocking`, so it takes the fleet default of `false`. The job
 //   therefore passes whether or not `reuse lint` is compliant; the finding
 //   surfaces only as the `REUSE` row in the Quality Report comment, which
-//   nothing reads on a green PR. That flag cannot be flipped yet — see
-//   .github/workflows/code-quality.yml for the single blocker and its owner —
-//   so between now and then there is no mechanism that notices a regression.
-//
-//   This is that mechanism, and it holds two separate lines.
+//   nothing reads on a green PR. That flag is ON since 2026-09-17 (WOO-575),
+//   so a non-compliant tree now fails the REUSE job itself. This guard holds
+//   the two lines that job still cannot see.
 //
 //   1. STDERR ERRORS, asserted at zero. `reuse lint` writes parse failures to
 //      stderr and still exits on the compliance verdict alone, so a document
@@ -29,17 +27,12 @@
 //      them quietly. Asked for by Remko Huisman in review on #553, in the
 //      spirit of hydra#657's pin guard.
 //
-//   2. FILES WITHOUT LICENSING INFO, ratcheted. REUSE.toml lists extensions
-//      rather than using a `path = "**"` blanket, so a file whose extension is
-//      not listed falls through and counts as unlicensed. That already
-//      happened once — `.jsx` and `.mjs` were missing, which is why nine
-//      React-portal sources under src/portal/ and one .mjs under docs/scripts/
-//      were unlicensed until #521. The blanket is the structural fix and it is
-//      queued behind the same blocker as `reuse-blocking`, because it would
-//      also stamp the twelve unannotated fonts EUPL-1.2 and flip `compliant`
-//      to true — converting a licensing finding into a green check. Until then
-//      this ratchet closes the hole the blanket would close: a new extension
-//      that falls through raises the count, and the count may not grow.
+//   2. FILES WITHOUT LICENSING INFO, ratcheted by path. REUSE.toml carries a
+//      `path = "**"` blanket since 2026-09-17, so nothing should fall through
+//      any more — this set is expected to stay EMPTY, and the ratchet exists
+//      so that a regression to the pre-blanket state (a removed table, a
+//      `precedence = "override"` gone wrong) is named file by file rather
+//      than read off a `compliant: false` that says nothing about which.
 //
 //   The three licence-hygiene lists are absolute rather than ratcheted, and
 //   that is deliberate: an UNUSED licence in LICENSES/ is itself a REUSE
