@@ -152,10 +152,15 @@ class PartnerAskService {
 			return null;
 		}
 
+		$identityType = '';
+		if ($kvk !== '') {
+			$identityType = self::IDENTITY_TYPE;
+		}
+
 		$provisioned = $this->accounts->provision(
 			audience: self::AUDIENCE,
 			organisation: (string)($handler['organisation'] ?? ''),
-			identityType: ($kvk === '' ? '' : self::IDENTITY_TYPE),
+			identityType: $identityType,
 			identityRef: $kvk,
 			email: $email,
 			// The address was typed by a handler, not proven by the partner:
