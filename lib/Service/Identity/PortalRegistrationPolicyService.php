@@ -133,12 +133,12 @@ class PortalRegistrationPolicyService {
 			return true;
 		}
 
-		$at = strrpos($email, '@');
-		if ($at === false) {
+		$atSign = strrpos($email, '@');
+		if ($atSign === false) {
 			return false;
 		}
 
-		$domain = strtolower(substr($email, ($at + 1)));
+		$domain = strtolower(substr($email, ($atSign + 1)));
 		foreach ($allowed as $entry) {
 			if (is_string($entry) === true && strtolower(trim($entry)) === $domain) {
 				return true;

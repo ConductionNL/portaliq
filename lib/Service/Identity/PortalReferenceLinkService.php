@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
+use DateInterval;
 use DateTimeImmutable;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
@@ -127,7 +128,7 @@ class PortalReferenceLinkService {
 		}
 
 		$now = new DateTimeImmutable();
-		$expiry = $now->add(new \DateInterval(self::TTL));
+		$expiry = $now->add(new DateInterval(self::TTL));
 
 		$created = $this->writer->createObject(
 			register: self::REGISTER,
@@ -168,42 +169,13 @@ class PortalReferenceLinkService {
 			return null;
 		}
 
-		$hash = hash('sha256', $token);
-		$rows = $this->reader->readCollection(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: 'tokenHash',
-			subjectRef: $hash,
-			organisation: '',
-			limit: 5
-		);
-
-		$row = null;
-		foreach ($rows as $candidate) {
-			if (is_array($candidate) === true && hash_equals((string)($candidate['tokenHash'] ?? ''), $hash) === true) {
-				$row = $candidate;
-				break;
-			}
-		}
-
-		if ($row === null || (string)($row['state'] ?? '') !== 'sent') {
-			// A used link and an unknown link are refused identically: the
-			// difference is not the visitor's business.
-			return null;
-		}
-
 		$moment = ($now ?? new DateTimeImmutable());
-		$expiry = date_create_immutable((string)($row['expiresAt'] ?? ''));
-		if ($expiry === false || $expiry <= $moment) {
+		$row = $this->liveRowFor(hash: hash('sha256', $token), moment: $moment);
+		if ($row === null) {
 			return null;
 		}
 
-		$id = (string)($row['uuid'] ?? $row['id'] ?? '');
-		if ($id === '') {
-			$self = (array)($row['@self'] ?? []);
-			$id = (string)($self['uuid'] ?? $self['id'] ?? '');
-		}
-
+		$id = $this->identifierOf(row: $row);
 		if ($id === '') {
 			return null;
 		}
@@ -228,4 +200,66 @@ class PortalReferenceLinkService {
 			'organisation' => (string)($row['organisation'] ?? ''),
 		];
 	}//end redeem()
+
+	/**
+	 * The unspent, unexpired link behind a token hash, or null.
+	 *
+	 * Used, expired and unknown all answer null. Which of the three it was is
+	 * not the visitor's business, and telling them would make the endpoint an
+	 * oracle for links other people hold.
+	 *
+	 * @param string $hash The token's hash.
+	 * @param DateTimeImmutable $moment The moment to judge expiry against.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 */
+	private function liveRowFor(string $hash, DateTimeImmutable $moment): ?array {
+		$rows = $this->reader->readCollection(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: 'tokenHash',
+			subjectRef: $hash,
+			organisation: '',
+			limit: 5
+		);
+
+		$row = null;
+		foreach ($rows as $candidate) {
+			if (is_array($candidate) === true && hash_equals((string)($candidate['tokenHash'] ?? ''), $hash) === true) {
+				$row = $candidate;
+				break;
+			}
+		}
+
+		if ($row === null || (string)($row['state'] ?? '') !== 'sent') {
+			return null;
+		}
+
+		$expiry = date_create_immutable((string)($row['expiresAt'] ?? ''));
+		if ($expiry === false || $expiry <= $moment) {
+			return null;
+		}
+
+		return $row;
+	}//end liveRowFor()
+
+	/**
+	 * The stored identifier of a row, wherever OpenRegister put it.
+	 *
+	 * @param array<string, mixed> $row The link row.
+	 *
+	 * @return string The identifier, or '' when the row carries none.
+	 */
+	private function identifierOf(array $row): string {
+		$id = (string)($row['uuid'] ?? $row['id'] ?? '');
+		if ($id !== '') {
+			return $id;
+		}
+
+		$self = (array)($row['@self'] ?? []);
+
+		return (string)($self['uuid'] ?? $self['id'] ?? '');
+	}//end identifierOf()
 }//end class

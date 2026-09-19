@@ -130,7 +130,9 @@ class ProposalServiceTest extends TestCase {
 		$this->assertSame([], $this->written);
 		$this->assertSame('queued', $this->storedRows('changeProposal')[0]['state']);
 
-		$confirmed = $service->accept(proposal: $proposal, subjectRow: $moved, reviewer: 'handler-anna', confirmDrift: true);
+		// Confirming drift is its own act, on its own method, so it cannot be
+		// taken by leaving a flag set.
+		$confirmed = $service->acceptConfirmingDrift(proposal: $proposal, reviewer: 'handler-anna');
 
 		$this->assertTrue($confirmed['accepted']);
 

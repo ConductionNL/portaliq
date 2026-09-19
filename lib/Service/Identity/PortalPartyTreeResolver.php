@@ -101,30 +101,52 @@ class PortalPartyTreeResolver {
 			return ['entities' => [$root], 'refused' => false, 'bound' => $bound];
 		}
 
+		$walked = $this->walkDown(root: $root, maxDepth: $maxDepth, pageSize: $pageSize);
+		if ($walked === null) {
+			return ['entities' => [], 'refused' => true, 'bound' => $bound];
+		}
+
+		return ['entities' => $walked, 'refused' => false, 'bound' => $bound];
+	}//end entitiesFor()
+
+	/**
+	 * Every entity below a root, or null when the walk hit a bound.
+	 *
+	 * Hitting a bound is a refusal, never a short answer: a listing that
+	 * quietly stopped at the levels that fitted would read as "this is all of
+	 * them", and the caller cannot tell the difference.
+	 *
+	 * @param string $root The entity to walk from.
+	 * @param int $maxDepth How deep the walk may go.
+	 * @param int $pageSize How many children one level may hold.
+	 *
+	 * @return array<int, string>|null The entities, or null when refused.
+	 *
+	 * @spec openspec/changes/portal-visibility-follows-the-party-tree/specs/portal-visibility-and-the-party-tree/spec.md
+	 */
+	private function walkDown(string $root, int $maxDepth, int $pageSize): ?array {
 		$entities = [$root => true];
 		$frontier = [$root];
 		$depth = 0;
 		while ($frontier !== []) {
 			$depth++;
 			if ($depth > $maxDepth) {
-				// Deeper than the bound. Refuse the whole listing rather than
-				// answer with the levels that fitted.
-				return ['entities' => [], 'refused' => true, 'bound' => $bound];
+				return null;
 			}
 
 			$next = [];
 			foreach ($frontier as $parent) {
 				$children = $this->childrenOf(parent: $parent, pageSize: $pageSize);
 				if (count($children) >= $pageSize) {
-					// More children than one page: the level is not fully read,
-					// so the answer would be partial. Same refusal.
-					return ['entities' => [], 'refused' => true, 'bound' => $bound];
+					// More children than one page: the level is not fully
+					// read, so the answer would be partial.
+					return null;
 				}
 
 				foreach ($children as $child) {
 					if ($child === '' || isset($entities[$child]) === true) {
 						// A cycle in the recorded relations would otherwise
-						// walk forever; a seen entity is simply not walked again.
+						// walk forever; a seen entity is not walked again.
 						continue;
 					}
 
@@ -136,8 +158,8 @@ class PortalPartyTreeResolver {
 			$frontier = $next;
 		}//end while
 
-		return ['entities' => array_keys($entities), 'refused' => false, 'bound' => $bound];
-	}//end entitiesFor()
+		return array_keys($entities);
+	}//end walkDown()
 
 	/**
 	 * The entities recorded directly below one entity.

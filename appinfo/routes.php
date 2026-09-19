@@ -173,11 +173,11 @@ return [
         ['name' => 'portalIdentity#redeemReferenceLink', 'url' => '/portal/api/identity/reference-link/redeem', 'verb' => 'POST'],
         ['name' => 'portalIdentity#register', 'url' => '/portal/api/identity/register', 'verb' => 'POST'],
         ['name' => 'portalIdentity#acceptInvitation', 'url' => '/portal/api/identity/invitation/accept', 'verb' => 'POST'],
-        ['name' => 'portalIdentity#updateDetails', 'url' => '/portal/api/identity/details', 'verb' => 'PATCH'],
-        ['name' => 'portalIdentity#confirmEmail', 'url' => '/portal/api/identity/email/confirm', 'verb' => 'POST'],
-        ['name' => 'portalIdentity#removeAccount', 'url' => '/portal/api/identity/remove', 'verb' => 'POST'],
-        ['name' => 'portalIdentity#requestAccess', 'url' => '/portal/api/identity/access-requests', 'verb' => 'POST'],
-        ['name' => 'portalIdentity#myAccessRequests', 'url' => '/portal/api/identity/access-requests', 'verb' => 'GET'],
+        ['name' => 'portalAccountSelf#updateDetails', 'url' => '/portal/api/identity/details', 'verb' => 'PATCH'],
+        ['name' => 'portalAccountSelf#confirmEmail', 'url' => '/portal/api/identity/email/confirm', 'verb' => 'POST'],
+        ['name' => 'portalAccountSelf#removeAccount', 'url' => '/portal/api/identity/remove', 'verb' => 'POST'],
+        ['name' => 'portalAccountSelf#requestAccess', 'url' => '/portal/api/identity/access-requests', 'verb' => 'POST'],
+        ['name' => 'portalAccountSelf#myAccessRequests', 'url' => '/portal/api/identity/access-requests', 'verb' => 'GET'],
 
         // Mijn zaken (portal-identity-space): every `kind: cases` collection
         // the subject's contributions declare, merged into one list, so a case
@@ -222,6 +222,7 @@ return [
         ['name' => 'proposal#index', 'url' => '/api/proposals', 'verb' => 'GET'],
         ['name' => 'proposal#proposeAsColleague', 'url' => '/api/proposals', 'verb' => 'POST'],
         ['name' => 'proposal#accept', 'url' => '/api/proposals/{id}/accept', 'verb' => 'POST'],
+        ['name' => 'proposal#acceptConfirmingDrift', 'url' => '/api/proposals/{id}/accept-confirming-drift', 'verb' => 'POST'],
         ['name' => 'proposal#reject', 'url' => '/api/proposals/{id}/reject', 'verb' => 'POST'],
         ['name' => 'proposal#proposeFromPortal', 'url' => '/portal/api/proposals', 'verb' => 'POST'],
         ['name' => 'proposal#withdraw', 'url' => '/portal/api/proposals/{id}/withdraw', 'verb' => 'POST'],

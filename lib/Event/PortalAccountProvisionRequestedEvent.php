@@ -70,6 +70,11 @@ class PortalAccountProvisionRequestedEvent extends Event {
 	 *
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- one parameter per
 	 * declared field of the account being asked for.
+	 *
+	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) -- `verifiedEmail` is one
+	 * of those declared fields. It becomes a readonly property the listener
+	 * reads back; this constructor branches on nothing, so there is no second
+	 * responsibility to split off.
 	 */
 	public function __construct(
 		private readonly string $appId,

@@ -72,16 +72,7 @@ class PortalFormValidator {
 			}
 
 			$value = ($answers[$name] ?? null);
-			$given = false;
-			if (is_array($value) === true) {
-				$given = ($value !== []);
-			}
-
-			if ($value !== null && is_array($value) === false) {
-				$given = (trim((string)$value) !== '');
-			}
-
-			if ($given === false) {
+			if ($this->wasAnswered(value: $value) === false) {
 				if (($field['required'] ?? false) === true) {
 					$errors[$name] = $this->l10n->t('This answer is required.');
 				}
@@ -102,7 +93,32 @@ class PortalFormValidator {
 	}//end validate()
 
 	/**
+	 * Whether the visitor answered this field at all.
+	 *
+	 * An empty array, an empty string and whitespace are all "not answered",
+	 * so a required field cannot be satisfied with a space.
+	 *
+	 * @param mixed $value The submitted value.
+	 *
+	 * @return bool
+	 */
+	private function wasAnswered(mixed $value): bool {
+		if (is_array($value) === true) {
+			return ($value !== []);
+		}
+
+		if ($value === null) {
+			return false;
+		}
+
+		return (trim((string)$value) !== '');
+	}//end wasAnswered()
+
+	/**
 	 * The error one value carries, or null when it is fine.
+	 *
+	 * One rule per helper, asked in declaration order, so the visitor reads
+	 * the first thing wrong with their answer rather than the last.
 	 *
 	 * @param array<string, mixed> $field The field's declaration.
 	 * @param mixed $value The submitted value.
@@ -110,7 +126,33 @@ class PortalFormValidator {
 	 * @return string|null
 	 */
 	private function checkValue(array $field, mixed $value): ?string {
-		$type = (string)($field['type'] ?? 'string');
+		$error = $this->typeError(type: (string)($field['type'] ?? 'string'), value: $value);
+		if ($error !== null) {
+			return $error;
+		}
+
+		$error = $this->patternError(field: $field, value: $value);
+		if ($error !== null) {
+			return $error;
+		}
+
+		$error = $this->optionsError(field: $field, value: $value);
+		if ($error !== null) {
+			return $error;
+		}
+
+		return $this->lengthError(field: $field, value: $value);
+	}//end checkValue()
+
+	/**
+	 * Whether the value is of the type the field declares.
+	 *
+	 * @param string $type The declared type.
+	 * @param mixed $value The submitted value.
+	 *
+	 * @return string|null
+	 */
+	private function typeError(string $type, mixed $value): ?string {
 		if ($type === 'number' && is_numeric($value) === false) {
 			return $this->l10n->t('This answer must be a number.');
 		}
@@ -119,21 +161,69 @@ class PortalFormValidator {
 			return $this->l10n->t('This does not look like an email address.');
 		}
 
+		return null;
+	}//end typeError()
+
+	/**
+	 * Whether the value matches the pattern the field declares.
+	 *
+	 * @param array<string, mixed> $field The field's declaration.
+	 * @param mixed $value The submitted value.
+	 *
+	 * @return string|null
+	 */
+	private function patternError(array $field, mixed $value): ?string {
 		$pattern = (string)($field['pattern'] ?? '');
-		if ($pattern !== '' && is_string($value) === true && preg_match('/' . str_replace('/', '\\/', $pattern) . '/', $value) !== 1) {
+		if ($pattern === '' || is_string($value) === false) {
+			return null;
+		}
+
+		if (preg_match('/' . str_replace('/', '\\/', $pattern) . '/', $value) !== 1) {
 			return $this->l10n->t('This answer is not in the expected format.');
 		}
 
+		return null;
+	}//end patternError()
+
+	/**
+	 * Whether the value is one of the options the field offers.
+	 *
+	 * @param array<string, mixed> $field The field's declaration.
+	 * @param mixed $value The submitted value.
+	 *
+	 * @return string|null
+	 */
+	private function optionsError(array $field, mixed $value): ?string {
 		$options = ($field['options'] ?? null);
-		if (is_array($options) === true && $options !== [] && in_array($value, $options, true) === false) {
+		if (is_array($options) === false || $options === []) {
+			return null;
+		}
+
+		if (in_array($value, $options, true) === false) {
 			return $this->l10n->t('Choose one of the options offered.');
 		}
 
+		return null;
+	}//end optionsError()
+
+	/**
+	 * Whether the value fits the length the field allows.
+	 *
+	 * @param array<string, mixed> $field The field's declaration.
+	 * @param mixed $value The submitted value.
+	 *
+	 * @return string|null
+	 */
+	private function lengthError(array $field, mixed $value): ?string {
 		$maxLength = (int)($field['maxLength'] ?? 0);
-		if ($maxLength > 0 && is_string($value) === true && mb_strlen($value) > $maxLength) {
+		if ($maxLength <= 0 || is_string($value) === false) {
+			return null;
+		}
+
+		if (mb_strlen($value) > $maxLength) {
 			return $this->l10n->t('This answer is too long.');
 		}
 
 		return null;
-	}//end checkValue()
+	}//end lengthError()
 }//end class

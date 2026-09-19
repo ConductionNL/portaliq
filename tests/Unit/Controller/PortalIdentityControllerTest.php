@@ -6,16 +6,13 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\PortalIdentityController;
 use OCA\Portaliq\Service\CaseTypeReader;
-use OCA\Portaliq\Service\Identity\PortalAccessRequestService;
 use OCA\Portaliq\Service\Identity\PortalChallengeService;
 use OCA\Portaliq\Service\Identity\PortalInvitationService;
 use OCA\Portaliq\Service\Identity\PortalReferenceLinkService;
 use OCA\Portaliq\Service\Identity\PortalRegistrationPolicyService;
-use OCA\Portaliq\Service\Identity\PortalSelfServiceService;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
@@ -24,7 +21,8 @@ use PHPUnit\Framework\TestCase;
  * portal-identity-and-the-organisations-cases, the refusals: a portal with
  * registration off offers none, a submission that did not solve the challenge
  * creates nothing, a case type that declares `account` only never offers the
- * reference route, and every account surface refuses a caller with no session.
+ * reference route. The bearer's own account surfaces moved to
+ * PortalAccountSelfControllerTest with the controller they belong to.
  *
  * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
  */
@@ -195,29 +193,6 @@ class PortalIdentityControllerTest extends TestCase {
 
 	}//end testTheIssuedSecretNeverTravelsInTheAnswer()
 
-	public function testEveryAccountSurfaceRefusesACallerWithNoSession(): void {
-		$controller = $this->controller(site: ['organisation' => 'gemeente-x'], subject: null);
-		$this->doubles['selfService']->expects($this->never())->method('updateDetails');
-		$this->doubles['selfService']->expects($this->never())->method('removeAccount');
-		$this->doubles['accessRequests']->expects($this->never())->method('request');
-
-		$this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->updateDetails(displayName: 'Iemand anders')->getStatus());
-		$this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->removeAccount()->getStatus());
-		$this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->requestAccess(reason: 'omdat')->getStatus());
-		$this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->myAccessRequests()->getStatus());
-
-	}//end testEveryAccountSurfaceRefusesACallerWithNoSession()
-
-	public function testTheConfirmationSecretIsNotReadableFromTheOldSession(): void {
-		$controller = $this->controller(site: ['organisation' => 'gemeente-x'], subject: ['subjectRef' => 'subject-1', 'organisation' => 'gemeente-x']);
-		$this->doubles['selfService']->method('updateDetails')->willReturn(['updated' => true, 'confirmationToken' => 'secret-1']);
-
-		$data = $controller->updateDetails(email: 'nieuw@example.org')->getData();
-
-		$this->assertTrue($data['confirmationPending']);
-		$this->assertArrayNotHasKey('confirmationToken', $data);
-
-	}//end testTheConfirmationSecretIsNotReadableFromTheOldSession()
 
 	/**
 	 * gate-25, on the route `GET /portal/api/identity/challenge`. The
@@ -347,30 +322,24 @@ class PortalIdentityControllerTest extends TestCase {
 	 * real classes have.
 	 *
 	 * @param array<string, mixed>|null $site The portal being visited.
-	 * @param array<string, mixed>|null $subject The resolved subject.
 	 * @param bool $inScope Whether the portal declares the case type asked for.
 	 *                     True by default, so a test that is not about the
 	 *                     portal's scope still reaches what it is about.
 	 *
 	 * @return PortalIdentityController
 	 */
-	private function controller(?array $site, ?array $subject = null, bool $inScope = true): PortalIdentityController {
+	private function controller(?array $site, bool $inScope = true): PortalIdentityController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getParams')->willReturn([]);
 
 		$portals = $this->double(PortalResolver::class, ['resolve']);
 		$portals->method('resolve')->willReturn($site);
 
-		$session = $this->double(PortalSessionService::class, ['resolveFromBearer']);
-		$session->method('resolveFromBearer')->willReturn($subject);
-
 		$this->doubles = [
 			'challenge' => $this->double(PortalChallengeService::class, ['issue', 'accepts']),
 			'references' => $this->double(PortalReferenceLinkService::class, ['admitsReference', 'issue', 'redeem']),
 			'policy' => $this->double(PortalRegistrationPolicyService::class, ['isOffered', 'decide']),
 			'invitations' => $this->double(PortalInvitationService::class, ['accept']),
-			'selfService' => $this->double(PortalSelfServiceService::class, ['updateDetails', 'confirmEmail', 'removeAccount']),
-			'accessRequests' => $this->double(PortalAccessRequestService::class, ['request', 'madeBy']),
 			'accounts' => $this->double(PortalAccountService::class, ['provision']),
 			'caseTypes' => $this->double(CaseTypeReader::class, ['readCaseType']),
 			'bindings' => $this->double(PortalFormBindingResolver::class, ['caseTypeIsInPortalScope']),
@@ -381,13 +350,10 @@ class PortalIdentityControllerTest extends TestCase {
 		return new PortalIdentityController(
 			$request,
 			$portals,
-			$session,
 			$this->doubles['challenge'],
 			$this->doubles['references'],
 			$this->doubles['policy'],
 			$this->doubles['invitations'],
-			$this->doubles['selfService'],
-			$this->doubles['accessRequests'],
 			$this->doubles['accounts'],
 			$this->doubles['caseTypes'],
 			$this->doubles['bindings']

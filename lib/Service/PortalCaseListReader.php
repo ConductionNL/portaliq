@@ -36,6 +36,12 @@ namespace OCA\Portaliq\Service;
  * Merges every `kind: cases` collection into the subject's own case list.
  *
  * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+ *
+ * @SuppressWarnings(PHPMD.StaticAccess)             -- PortalSessionService::trustSatisfies
+ * is deliberately THE single trust comparator (contract-v2 design decision);
+ * every re-check calls it statically so the ordering can never fork. Same
+ * reasoning, and the same suppression, as ContentController and
+ * ContributionController.
  */
 class PortalCaseListReader {
 	/**
@@ -152,92 +158,186 @@ class PortalCaseListReader {
 				continue;
 			}
 
-			$appId = (string)($contribution['app'] ?? '');
-			$label = (string)($contribution['label'] ?? $appId);
-
-			foreach (($contribution['collections'] ?? []) as $collection) {
-				if (is_array($collection) === false || ($collection['kind'] ?? '') !== self::KIND) {
-					continue;
-				}
-
-				if (PortalSessionService::trustSatisfies((string)($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
-					continue;
-				}
-
-				$mandateField = (string)($collection['mandateField'] ?? '');
-				if ($mandateField === '') {
-					continue;
-				}
-
-				foreach ($mandates as $mandate) {
-					$described = $this->mandates->describe(mandate: $mandate);
-					$party = $described['onBehalfOf'];
-					if ($party === '') {
-						$party = $described['organisation'];
-					}
-
-					if ($party === '') {
-						continue;
-					}
-
-					// The entities this mandate reaches, resolved by the caller
-					// from the party tree at request time (REQ-PTV-003). A flat
-					// mandate reaches the entity it names and no other.
-					$entities = array_values((array)($mandate['_entities'] ?? []));
-					if ($entities === []) {
-						$entities = [$party];
-					}
-
-					foreach ($entities as $entity) {
-						$entity = (string)$entity;
-						if ($entity === '') {
-							continue;
-						}
-
-						$partyRows = $this->readParty(
-							collection: $collection,
-							contributingApp: $appId,
-							mandateField: $mandateField,
-							party: $entity,
-							organisation: $described['organisation'],
-							audience: (string)($subject['audience'] ?? '')
-						);
-						foreach ($partyRows as $row) {
-							$caseType = (string)($row[(string)($collection['caseTypeField'] ?? 'caseType')] ?? '');
-							if ($this->mandates->covers(mandate: $mandate, caseType: $caseType) === false) {
-								// A mandate narrower than the organisation lists
-								// only what it names.
-								continue;
-							}
-
-							if ($entity !== $party && $this->reachableThroughAParent(collection: $collection, caseType: $caseType) === false) {
-								// REQ-PTV-002: a case type that says nothing
-								// about parent access is not reachable that
-								// way, whatever the mandate says.
-								continue;
-							}
-
-							$row['_source'] = [
-								'appId' => $appId,
-								'label' => $label,
-								'register' => (string)($collection['register'] ?? ''),
-								'schema' => (string)($collection['schema'] ?? ''),
-								'collection' => (string)($collection['id'] ?? ''),
-							];
-							$row['_mandate'] = $described;
-							// The case is the subsidiary's, and says so: it is
-							// never presented as the parent's own (REQ-PTV-005).
-							$row['_entity'] = $entity;
-
-							$rows[] = $row;
-						}
-					}//end foreach
-				}//end foreach
-			}//end foreach
-		}//end foreach
+			$rows = array_merge($rows, $this->mandatedRowsOfContribution(
+				subject: $subject,
+				contribution: $contribution,
+				mandates: $mandates
+			));
+		}
 
 		return $rows;
 	}//end listMandatedCases()
+
+	/**
+	 * The mandated rows one contributing app's case collections yield.
+	 *
+	 * A collection that declares no party field (`mandateField`) is skipped,
+	 * so an app that never thought about mandates cannot leak its rows
+	 * through one.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param array<string, mixed> $contribution One app's contribution.
+	 * @param array<int, array<string, mixed>> $mandates The live mandates.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 */
+	private function mandatedRowsOfContribution(array $subject, array $contribution, array $mandates): array {
+		$appId = (string)($contribution['app'] ?? '');
+		$label = (string)($contribution['label'] ?? $appId);
+
+		$rows = [];
+		foreach (($contribution['collections'] ?? []) as $collection) {
+			if (is_array($collection) === false || ($collection['kind'] ?? '') !== self::KIND) {
+				continue;
+			}
+
+			if (PortalSessionService::trustSatisfies((string)($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
+				continue;
+			}
+
+			if ((string)($collection['mandateField'] ?? '') === '') {
+				continue;
+			}
+
+			foreach ($mandates as $mandate) {
+				$rows = array_merge($rows, $this->mandatedRowsOfMandate(
+					subject: $subject,
+					collection: $collection,
+					appId: $appId,
+					label: $label,
+					mandate: $mandate
+				));
+			}
+		}
+
+		return $rows;
+	}//end mandatedRowsOfContribution()
+
+	/**
+	 * The rows one mandate opens on one collection.
+	 *
+	 * The entities a mandate reaches are resolved by the caller from the party
+	 * tree at request time (REQ-PTV-003). A flat mandate reaches the entity it
+	 * names and no other.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param array<string, mixed> $collection The declared case collection.
+	 * @param string $appId The contributing app.
+	 * @param string $label The contributing app's label.
+	 * @param array<string, mixed> $mandate The mandate being spent.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/portal-visibility-follows-the-party-tree/specs/portal-visibility-and-the-party-tree/spec.md
+	 */
+	private function mandatedRowsOfMandate(array $subject, array $collection, string $appId, string $label, array $mandate): array {
+		$described = $this->mandates?->describe(mandate: $mandate);
+		if ($described === null) {
+			return [];
+		}
+
+		$party = $described['onBehalfOf'];
+		if ($party === '') {
+			$party = $described['organisation'];
+		}
+
+		if ($party === '') {
+			return [];
+		}
+
+		$entities = array_values((array)($mandate['_entities'] ?? []));
+		if ($entities === []) {
+			$entities = [$party];
+		}
+
+		$rows = [];
+		foreach ($entities as $entity) {
+			if ((string)$entity === '') {
+				continue;
+			}
+
+			$partyRows = $this->readParty(
+				collection: $collection,
+				contributingApp: $appId,
+				mandateField: (string)($collection['mandateField'] ?? ''),
+				party: (string)$entity,
+				organisation: $described['organisation'],
+				audience: (string)($subject['audience'] ?? '')
+			);
+
+			$rows = array_merge($rows, $this->stampMandatedRows(
+				partyRows: $partyRows,
+				collection: $collection,
+				source: ['appId' => $appId, 'label' => $label],
+				mandate: $mandate,
+				described: $described,
+				entity: (string)$entity,
+				party: $party
+			));
+		}
+
+		return $rows;
+	}//end mandatedRowsOfMandate()
+
+	/**
+	 * The rows of one party that this mandate really covers, each stamped
+	 * with where it came from and what granted it.
+	 *
+	 * @param array<int, array<string, mixed>> $partyRows The rows read for the party.
+	 * @param array<string, mixed> $collection The declared case collection.
+	 * @param array{appId: string, label: string} $source The contributing app.
+	 * @param array<string, mixed> $mandate The mandate being spent.
+	 * @param array<string, mixed> $described The mandate, described.
+	 * @param string $entity The entity the rows belong to.
+	 * @param string $party The party the mandate names itself.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/portal-visibility-follows-the-party-tree/specs/portal-visibility-and-the-party-tree/spec.md
+	 */
+	private function stampMandatedRows(
+		array $partyRows,
+		array $collection,
+		array $source,
+		array $mandate,
+		array $described,
+		string $entity,
+		string $party,
+	): array {
+		$rows = [];
+		foreach ($partyRows as $row) {
+			$caseType = (string)($row[(string)($collection['caseTypeField'] ?? 'caseType')] ?? '');
+			if ($this->mandates?->covers(mandate: $mandate, caseType: $caseType) !== true) {
+				// A mandate narrower than the organisation lists only what it
+				// names.
+				continue;
+			}
+
+			if ($entity !== $party && $this->reachableThroughAParent(collection: $collection, caseType: $caseType) === false) {
+				// REQ-PTV-002: a case type that says nothing about parent
+				// access is not reachable that way, whatever the mandate says.
+				continue;
+			}
+
+			$row['_source'] = [
+				'appId' => $source['appId'],
+				'label' => $source['label'],
+				'register' => (string)($collection['register'] ?? ''),
+				'schema' => (string)($collection['schema'] ?? ''),
+				'collection' => (string)($collection['id'] ?? ''),
+			];
+			$row['_mandate'] = $described;
+			// The case is the subsidiary's, and says so: it is never presented
+			// as the parent's own (REQ-PTV-005).
+			$row['_entity'] = $entity;
+
+			$rows[] = $row;
+		}
+
+		return $rows;
+	}//end stampMandatedRows()
 
 	/**
 	 * Whether the contribution declares this case type reachable through a
