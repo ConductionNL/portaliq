@@ -86,6 +86,10 @@ class PortalAccountAdminController extends Controller {
 	 *
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- one parameter per
 	 * declared field of the account being provisioned.
+	 *
+	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) -- `verifiedEmail` is a
+	 * field of the row, and this method only carries it to the service.
+	 * Nothing here branches on it, so there are not two acts to separate.
 	 */
 	#[NoAdminRequired]
 	public function provision(

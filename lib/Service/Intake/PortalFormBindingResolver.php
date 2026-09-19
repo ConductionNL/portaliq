@@ -293,32 +293,44 @@ class PortalFormBindingResolver {
 			filter: ['audience' => $audience]
 		);
 
-		$name = (string)($binding['formName'] ?? '');
 		foreach ($rows as $row) {
-			if (is_array($row) === false) {
-				continue;
+			if (is_array($row) === true && $this->formAnswersTheBinding(row: $row, binding: $binding, typeId: $typeId, audience: $audience) === true) {
+				return $row;
 			}
-
-			// The reader's filter narrows; the answer is re-checked here,
-			// because rendering the WRONG audience's form would hand a citizen
-			// a supplier's questions.
-			if (($row['caseType'] ?? '') !== $typeId || ($row['audience'] ?? '') !== $audience) {
-				continue;
-			}
-
-			if ((string)($row['status'] ?? 'published') !== 'published') {
-				continue;
-			}
-
-			if ($name !== '' && (string)($row['name'] ?? '') !== $name) {
-				continue;
-			}
-
-			return $row;
 		}
 
 		return null;
 	}//end publishedForm()
+
+	/**
+	 * Whether one form row is the published form this binding asked for.
+	 *
+	 * The reader's filter narrows; this re-checks the answer, because
+	 * rendering the WRONG audience's form would hand a citizen a supplier's
+	 * questions.
+	 *
+	 * @param array<string, mixed> $row One row the reader returned.
+	 * @param array<string, mixed> $binding The binding being resolved.
+	 * @param string $typeId The case type the binding names.
+	 * @param string $audience The audience the binding names.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 */
+	private function formAnswersTheBinding(array $row, array $binding, string $typeId, string $audience): bool {
+		if (($row['caseType'] ?? '') !== $typeId || ($row['audience'] ?? '') !== $audience) {
+			return false;
+		}
+
+		if ((string)($row['status'] ?? 'published') !== 'published') {
+			return false;
+		}
+
+		$name = (string)($binding['formName'] ?? '');
+
+		return ($name === '' || (string)($row['name'] ?? '') === $name);
+	}//end formAnswersTheBinding()
 
 	/**
 	 * The form's fields, in the order the form declares, with its presets.

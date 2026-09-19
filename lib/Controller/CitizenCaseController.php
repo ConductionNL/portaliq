@@ -39,6 +39,7 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\CitizenDocumentUpload;
+use OCA\Portaliq\Contribution\CitizenWriteActionFinder;
 use OCA\Portaliq\Contribution\CitizenWriteConfigNormaliser;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Event\PortalClientWriteEvent;
@@ -76,6 +77,13 @@ use Psr\Log\LoggerInterface;
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)   -- see ExcessiveParameterList.
  */
 class CitizenCaseController extends Controller implements PortalProtected {
+	/**
+	 * The lazily built action lookup, see writeActions().
+	 *
+	 * @var CitizenWriteActionFinder|null
+	 */
+	private ?CitizenWriteActionFinder $writeActions = null;
+
 	/**
 	 * Constructor.
 	 *
@@ -439,7 +447,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 		// never grant itself one (REQ-PTV-006).
 		$subject = $this->actingAs(subject: $subject);
 
-		$match = $this->citizenWriteAction(subject: $subject, register: $register, schema: $schema);
+		$match = $this->writeActions()->forSubject(subject: $subject, register: $register, schema: $schema);
 		if ($match === null) {
 			return $this->refuse(
 				message: $this->l10n->t('This case cannot be changed from the portal.'),
@@ -632,36 +640,6 @@ class CitizenCaseController extends Controller implements PortalProtected {
 		return new JSONResponse(['case' => $updated]);
 	}//end applyAmendment()
 
-	/**
-	 * Find the `type: update` action for this register and schema that carries
-	 * a citizen write declaration, inside the subject's OWN aggregate. An
-	 * action without the declaration is not a citizen write surface, whatever
-	 * else it permits.
-	 *
-	 * @param array<string, mixed> $subject The resolved subject.
-	 * @param string $register The requested register.
-	 * @param string $schema The requested schema.
-	 *
-	 * @return array{action: array<string, mixed>, app: string}|null
-	 */
-	private function citizenWriteAction(array $subject, string $register, string $schema): ?array {
-		$aggregate = $this->registry->aggregateFor($subject);
-		foreach (($aggregate['contributions'] ?? []) as $contribution) {
-			foreach (($contribution['actions'] ?? []) as $action) {
-				if (($action['type'] ?? '') !== 'update'
-					|| ($action['register'] ?? '') !== $register
-					|| ($action['schema'] ?? '') !== $schema
-					|| is_array(($action[CitizenWriteConfigNormaliser::KEY] ?? null)) === false
-				) {
-					continue;
-				}
-
-				return ['action' => $action, 'app' => (string)($contribution['app'] ?? '')];
-			}
-		}
-
-		return null;
-	}//end citizenWriteAction()
 
 	/**
 	 * A refusal the citizen can read: one sentence, plus a slug the portal
@@ -725,4 +703,22 @@ class CitizenCaseController extends Controller implements PortalProtected {
 
 		return $subject;
 	}//end actingAs()
+	/**
+	 * Which contributed action admits a citizen write here.
+	 *
+	 * Built from this controller's own registry rather than injected, so the
+	 * constructor is unchanged and no caller or test had to move when the
+	 * lookup was split out.
+	 *
+	 * @return CitizenWriteActionFinder
+	 *
+	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 */
+	private function writeActions(): CitizenWriteActionFinder {
+		if ($this->writeActions === null) {
+			$this->writeActions = new CitizenWriteActionFinder(registry: $this->registry);
+		}
+
+		return $this->writeActions;
+	}//end writeActions()
 }//end class

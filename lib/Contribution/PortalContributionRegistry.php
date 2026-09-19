@@ -152,6 +152,7 @@ class PortalContributionRegistry {
 		];
 	}//end aggregateFor()
 
+
 	/**
 	 * Aggregate the ANONYMOUS-reachable surface across every installed
 	 * provider — the no-subject sibling of `aggregateFor()`

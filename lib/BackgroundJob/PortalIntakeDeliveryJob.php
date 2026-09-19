@@ -80,6 +80,9 @@ class PortalIntakeDeliveryJob extends TimedJob {
 	 * @return void
 	 *
 	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 *
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) -- the base class dictates
+	 * the signature; dropping the parameter breaks the override.
 	 */
 	protected function run($argument): void {
 		foreach ($this->queue->queued(limit: self::BATCH) as $submission) {

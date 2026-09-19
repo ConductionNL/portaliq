@@ -3,15 +3,13 @@
 /**
  * Portaliq Portal Identity Controller
  *
- * The citizen's side of the identity space: the challenge in front of a public
+ * The way in to the identity space: the challenge in front of a public
  * surface, the one-time reference link for a case type that admits it,
- * self-registration under the portal's policy, accepting an invitation, and
- * the account's own details.
+ * self-registration under the portal's policy, and accepting an invitation.
  *
- * Everything here is either anonymous by design or scoped to the bearer's own
- * account. Nothing takes an account identifier from the request: the subject
- * always comes from the session, so naming somebody else's account changes
- * nothing.
+ * Everything here is anonymous by design. What the bearer may then do to
+ * their OWN account lives next door in PortalAccountSelfController, because
+ * getting in and running an account you already have are two jobs.
  *
  * @category Controller
  * @package  OCA\Portaliq\Controller
@@ -35,16 +33,13 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Service\CaseTypeReader;
-use OCA\Portaliq\Service\Identity\PortalAccessRequestService;
 use OCA\Portaliq\Service\Identity\PortalChallengeService;
 use OCA\Portaliq\Service\Identity\PortalInvitationService;
 use OCA\Portaliq\Service\Identity\PortalReferenceLinkService;
 use OCA\Portaliq\Service\Identity\PortalRegistrationPolicyService;
-use OCA\Portaliq\Service\Identity\PortalSelfServiceService;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -69,13 +64,10 @@ class PortalIdentityController extends Controller implements PortalProtected {
 	 *
 	 * @param IRequest $request The request.
 	 * @param PortalResolver $portals Resolves the portal being visited.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
 	 * @param PortalChallengeService $challenge The portal's own challenge.
 	 * @param PortalReferenceLinkService $references The one-time reference link.
 	 * @param PortalRegistrationPolicyService $policy The registration policy.
 	 * @param PortalInvitationService $invitations Invitations into the portal.
-	 * @param PortalSelfServiceService $selfService The account's own details.
-	 * @param PortalAccessRequestService $accessRequests Asking for access.
 	 * @param PortalAccountService $accounts Provisions a registration.
 	 * @param CaseTypeReader $caseTypes Reads the case type's identity kinds.
 	 * @param PortalFormBindingResolver $bindings The case types this portal declares.
@@ -83,13 +75,10 @@ class PortalIdentityController extends Controller implements PortalProtected {
 	public function __construct(
 		IRequest $request,
 		private readonly PortalResolver $portals,
-		private readonly PortalSessionService $session,
 		private readonly PortalChallengeService $challenge,
 		private readonly PortalReferenceLinkService $references,
 		private readonly PortalRegistrationPolicyService $policy,
 		private readonly PortalInvitationService $invitations,
-		private readonly PortalSelfServiceService $selfService,
-		private readonly PortalAccessRequestService $accessRequests,
 		private readonly PortalAccountService $accounts,
 		private readonly CaseTypeReader $caseTypes,
 		private readonly PortalFormBindingResolver $bindings,
@@ -297,144 +286,7 @@ class PortalIdentityController extends Controller implements PortalProtected {
 		return new JSONResponse(['accepted' => true]);
 	}//end acceptInvitation()
 
-	/**
-	 * Change the details of the bearer's own account.
-	 *
-	 * @param string $displayName A new name, or ''.
-	 * @param string $email A new address, or ''.
-	 *
-	 * @return JSONResponse Whether the change landed, and whether a
-	 *                      confirmation is now waiting.
-	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
-	 */
-	#[PublicPage]
-	#[NoCSRFRequired]
-	#[AnonRateLimit(limit: 20, period: 60)]
-	public function updateDetails(string $displayName = '', string $email = ''): JSONResponse {
-		$subject = $this->subject();
-		if ($subject === null) {
-			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
-		}
 
-		$updated = $this->selfService->updateDetails(
-			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			displayName: $displayName,
-			email: $email
-		);
-		if ($updated === null) {
-			return new JSONResponse(['error' => 'refused'], Http::STATUS_BAD_REQUEST);
-		}
-
-		// The confirmation secret goes to the NEW address by mail; the answer
-		// only says one is waiting, so the old session cannot read it.
-		return new JSONResponse(['updated' => true, 'confirmationPending' => ($updated['confirmationToken'] !== '')]);
-	}//end updateDetails()
-
-	/**
-	 * Confirm a new address through its link.
-	 *
-	 * @param string $token The secret from the confirmation mail.
-	 *
-	 * @return JSONResponse Whether the address is now in use.
-	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
-	 */
-	#[PublicPage]
-	#[NoCSRFRequired]
-	#[AnonRateLimit(limit: 20, period: 60)]
-	public function confirmEmail(string $token): JSONResponse {
-		$confirmed = $this->selfService->confirmEmail(token: $token);
-		if ($confirmed === null) {
-			return new JSONResponse(['error' => 'link_not_valid'], Http::STATUS_FORBIDDEN);
-		}
-
-		return new JSONResponse(['confirmed' => true]);
-	}//end confirmEmail()
-
-	/**
-	 * Ask for the bearer's own account to be removed.
-	 *
-	 * @return JSONResponse Whether the account is gone.
-	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
-	 */
-	#[PublicPage]
-	#[NoCSRFRequired]
-	#[AnonRateLimit(limit: 5, period: 60)]
-	public function removeAccount(): JSONResponse {
-		$subject = $this->subject();
-		if ($subject === null) {
-			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
-		}
-
-		$removed = $this->selfService->removeAccount(subjectRef: (string)($subject['subjectRef'] ?? ''));
-		if ($removed === false) {
-			return new JSONResponse(['error' => 'refused'], Http::STATUS_BAD_REQUEST);
-		}
-
-		return new JSONResponse(['removed' => true]);
-	}//end removeAccount()
-
-	/**
-	 * Ask for access the bearer does not have.
-	 *
-	 * @param string $onBehalfOf The party whose cases are asked for.
-	 * @param string $reason What the asker needs it for.
-	 *
-	 * @return JSONResponse The recorded request, or a refusal.
-	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
-	 */
-	#[PublicPage]
-	#[NoCSRFRequired]
-	#[AnonRateLimit(limit: 10, period: 60)]
-	public function requestAccess(string $onBehalfOf = '', string $reason = ''): JSONResponse {
-		$subject = $this->subject();
-		if ($subject === null) {
-			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
-		}
-
-		$recorded = $this->accessRequests->request(
-			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			organisation: (string)($subject['organisation'] ?? ''),
-			onBehalfOf: $onBehalfOf,
-			reason: $reason
-		);
-		if ($recorded === null) {
-			return new JSONResponse(['error' => 'reason_required'], Http::STATUS_BAD_REQUEST);
-		}
-
-		return new JSONResponse(['state' => 'pending']);
-	}//end requestAccess()
-
-	/**
-	 * The requests the bearer has made, with the answers they were given.
-	 *
-	 * @return JSONResponse The asker's own requests.
-	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
-	 */
-	#[PublicPage]
-	#[NoCSRFRequired]
-	#[AnonRateLimit(limit: 60, period: 60)]
-	public function myAccessRequests(): JSONResponse {
-		$subject = $this->subject();
-		if ($subject === null) {
-			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
-		}
-
-		return new JSONResponse(['requests' => $this->accessRequests->madeBy(subjectRef: (string)($subject['subjectRef'] ?? ''))]);
-	}//end myAccessRequests()
-
-	/**
-	 * The subject behind the bearer, or null.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function subject(): ?array {
-		return $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
-	}//end subject()
 
 	/**
 	 * The portal being visited, or null.

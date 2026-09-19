@@ -31,6 +31,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
+use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 use OCP\Security\ISecureRandom;
 
 /**
@@ -65,6 +66,13 @@ class PortalAccountService {
 	 * A pending account a clerk withdrew. It never matches a login again.
 	 */
 	public const STATUS_VOID = 'void';
+
+	/**
+	 * The lazily built read half, see lookup().
+	 *
+	 * @var PortalAccountLookup|null
+	 */
+	private ?PortalAccountLookup $lookup = null;
 
 	/**
 	 * Constructor.
@@ -120,7 +128,7 @@ class PortalAccountService {
 			return null;
 		}
 
-		$existing = $this->findExisting(identityType: $identityType, identityRef: $identityRef, organisation: $organisation);
+		$existing = $this->lookup()->byIdentity(identityType: $identityType, identityRef: $identityRef, organisation: $organisation);
 		if ($existing === null && $verifiedEmail !== '') {
 			// REQ-PIS-002 second pass, and only a second pass: an account
 			// provisioned on an identity reference is matched on that
@@ -128,7 +136,7 @@ class PortalAccountService {
 			// else's address can never reach it. Only an email-only pending
 			// account, whose address was verified out of band, is claimable
 			// this way.
-			$existing = $this->findPendingByVerifiedEmail(email: $verifiedEmail, organisation: $organisation);
+			$existing = $this->lookup()->pendingByVerifiedEmail(email: $verifiedEmail, organisation: $organisation);
 		}
 
 		if ($existing !== null) {
@@ -179,76 +187,9 @@ class PortalAccountService {
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portal-must-offer-only-the-sign-in-routes-it-declares
 	 */
 	public function findBySubjectRef(string $subjectRef): ?array {
-		if ($subjectRef === '') {
-			return null;
-		}
-
-		$rows = $this->reader->readCollection(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: 'subjectRef',
-			subjectRef: $subjectRef,
-			// No organisation filter: a subjectRef is unique across the
-			// instance, and requiring the caller to know the tenant first
-			// would mean guessing it at the one moment nothing is known yet.
-			organisation: '',
-			limit: 5
-		);
-
-		foreach ($rows as $row) {
-			// The scope filter is trusted for the query, not for the answer: a
-			// reader that ignored `scopeField` would otherwise hand back the
-			// first account on the instance and this method would sign the
-			// visitor in as somebody else.
-			if (($row['subjectRef'] ?? '') === $subjectRef) {
-				return $row;
-			}
-		}
-
-		return null;
+		return $this->lookup()->bySubjectRef(subjectRef: $subjectRef);
 	}//end findBySubjectRef()
 
-	/**
-	 * Find the existing `portalAccount` for `(identityType, identityRef,
-	 * organisation)`, re-verified in-memory against ALL three fields — the
-	 * OR query only narrows on `identityRef` (+ `identityType` filter);
-	 * `identityType` and `organisation` are re-checked here as defence in
-	 * depth, exactly like the reader's own `verifyScope()`.
-	 *
-	 * @param string $identityType One of the register's identityType enum.
-	 * @param string $identityRef The IdP's pseudonymous identity reference.
-	 * @param string $organisation The tenant slug.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function findExisting(string $identityType, string $identityRef, string $organisation): ?array {
-		$rows = $this->reader->readCollection(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: 'identityRef',
-			subjectRef: $identityRef,
-			organisation: $organisation,
-			limit: 5,
-			filter: ['identityType' => $identityType]
-		);
-
-		foreach ($rows as $row) {
-			if (($row['status'] ?? self::STATUS_ACTIVE) === self::STATUS_VOID) {
-				// A withdrawn account is not an account. Matching it would
-				// hand a login the subjectRef a clerk deliberately retired.
-				continue;
-			}
-
-			if (($row['identityType'] ?? '') === $identityType
-				&& ($row['identityRef'] ?? '') === $identityRef
-				&& ($row['organisation'] ?? '') === $organisation
-			) {
-				return $row;
-			}
-		}
-
-		return null;
-	}//end findExisting()
 
 	/**
 	 * Provision an account before any login (REQ-PIS-001).
@@ -275,6 +216,11 @@ class PortalAccountService {
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- one parameter per
 	 * declared field of the provisioned row; an options array would lose the
 	 * type safety on the identity boundary.
+	 *
+	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) -- `verifiedEmail` is a
+	 * field OF the account, not a mode this method runs in. It is carried to
+	 * the stored row and nothing ever branches on it: one write, no condition.
+	 * Splitting the method in two would give two methods differing in a literal.
 	 */
 	public function provision(
 		string $audience,
@@ -295,15 +241,12 @@ class PortalAccountService {
 			return null;
 		}
 
-		$existing = null;
-		if ($hasIdentity === true) {
-			$existing = $this->findExisting(identityType: $identityType, identityRef: $identityRef, organisation: $organisation);
-		}
-
-		if ($existing === null && $hasIdentity === false) {
-			$existing = $this->findPendingByVerifiedEmail(email: $email, organisation: $organisation);
-		}
-
+		$existing = $this->accountAlreadyProvisioned(
+			identityType: $identityType,
+			identityRef: $identityRef,
+			email: $email,
+			organisation: $organisation
+		);
 		if ($existing !== null) {
 			return [
 				'subjectRef' => (string)($existing['subjectRef'] ?? ''),
@@ -369,7 +312,7 @@ class PortalAccountService {
 			return false;
 		}
 
-		$uuid = $this->rowId(row: $account);
+		$uuid = $this->lookup()->identifierOf(row: $account);
 		if ($uuid === null) {
 			return false;
 		}
@@ -416,7 +359,7 @@ class PortalAccountService {
 			return false;
 		}
 
-		$uuid = $this->rowId(row: $account);
+		$uuid = $this->lookup()->identifierOf(row: $account);
 		if ($uuid === null) {
 			return false;
 		}
@@ -438,50 +381,6 @@ class PortalAccountService {
 		return $written !== null;
 	}//end voidPending()
 
-	/**
-	 * A `pending` account whose verified email matches, or null.
-	 *
-	 * An account that carries an identity reference is never matched here:
-	 * it is claimable on that reference alone. An unverified address is never
-	 * matched either, so an address nobody proved cannot claim a case.
-	 *
-	 * @param string $email The verified email from the envelope.
-	 * @param string $organisation The tenant slug.
-	 *
-	 * @return array<string, mixed>|null
-	 *
-	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
-	 */
-	private function findPendingByVerifiedEmail(string $email, string $organisation): ?array {
-		if ($email === '' || $organisation === '') {
-			return null;
-		}
-
-		$rows = $this->reader->readCollection(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: 'email',
-			subjectRef: $email,
-			organisation: $organisation,
-			limit: 5,
-			filter: ['status' => self::STATUS_PENDING]
-		);
-
-		foreach ($rows as $row) {
-			if (($row['email'] ?? '') !== $email
-				|| ($row['organisation'] ?? '') !== $organisation
-				|| ($row['status'] ?? '') !== self::STATUS_PENDING
-				|| ($row['verifiedEmail'] ?? false) !== true
-				|| ($row['identityRef'] ?? '') !== ''
-			) {
-				continue;
-			}
-
-			return $row;
-		}
-
-		return null;
-	}//end findPendingByVerifiedEmail()
 
 	/**
 	 * Activate the matched account and stamp the login (REQ-PIS-002).
@@ -503,7 +402,7 @@ class PortalAccountService {
 			return;
 		}
 
-		$uuid = $this->rowId(row: $existing);
+		$uuid = $this->lookup()->identifierOf(row: $existing);
 		if ($uuid === null) {
 			return;
 		}
@@ -534,7 +433,7 @@ class PortalAccountService {
 	 * @return void
 	 */
 	private function touchLastLogin(array $existing): void {
-		$uuid = $this->rowId(row: $existing);
+		$uuid = $this->lookup()->identifierOf(row: $existing);
 		if ($uuid === null) {
 			return;
 		}
@@ -564,28 +463,45 @@ class PortalAccountService {
 	}//end mintSubjectRef()
 
 	/**
-	 * Extract a row's identifier (`id`/`uuid`, flat or in `@self`), or null.
+	 * The account this provision call would duplicate, or null.
 	 *
-	 * @param array<string, mixed> $row The normalised row.
+	 * An identity reference is matched on that reference. A call with no
+	 * identity reference falls back to a pending, email-only account, which
+	 * is the only kind an address alone may claim.
 	 *
-	 * @return string|null
+	 * @param string $identityType The identity type, or ''.
+	 * @param string $identityRef The identity reference, or ''.
+	 * @param string $email The contact address, or ''.
+	 * @param string $organisation The tenant slug.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
 	 */
-	private function rowId(array $row): ?string {
-		$self = ($row['@self'] ?? null);
-		$selfUuid = null;
-		$selfId = null;
-		if (is_array($self) === true) {
-			$selfUuid = ($self['uuid'] ?? null);
-			$selfId = ($self['id'] ?? null);
+	private function accountAlreadyProvisioned(string $identityType, string $identityRef, string $email, string $organisation): ?array {
+		if ($identityType !== '' && $identityRef !== '') {
+			return $this->lookup()->byIdentity(identityType: $identityType, identityRef: $identityRef, organisation: $organisation);
 		}
 
-		$candidates = [($row['uuid'] ?? null), ($row['id'] ?? null), $selfUuid, $selfId];
-		foreach ($candidates as $candidate) {
-			if ((is_string($candidate) === true || is_int($candidate) === true) && (string)$candidate !== '') {
-				return (string)$candidate;
-			}
+		return $this->lookup()->pendingByVerifiedEmail(email: $email, organisation: $organisation);
+	}//end accountAlreadyProvisioned()
+
+	/**
+	 * The read half of the account space.
+	 *
+	 * Built from this service's own reader rather than injected, so the
+	 * constructor is unchanged and no caller or test had to move when the
+	 * finders were split out.
+	 *
+	 * @return PortalAccountLookup
+	 *
+	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+	 */
+	private function lookup(): PortalAccountLookup {
+		if ($this->lookup === null) {
+			$this->lookup = new PortalAccountLookup(reader: $this->reader);
 		}
 
-		return null;
-	}//end rowId()
+		return $this->lookup;
+	}//end lookup()
 }//end class

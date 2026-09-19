@@ -228,37 +228,76 @@ class ProposalController extends Controller {
 	/**
 	 * Accept a proposal, writing the record as the reviewer.
 	 *
+	 * Refuses with 409 when the record moved since the proposal was made. The
+	 * reviewer then sees both values and decides again, on the other route.
+	 *
 	 * @param string $id The proposal id.
-	 * @param bool $confirmDrift Whether the reviewer confirmed a drifted snapshot.
 	 *
 	 * @return JSONResponse
 	 *
 	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
 	 */
 	#[NoAdminRequired]
-	public function accept(string $id, bool $confirmDrift = false): JSONResponse {
+	public function accept(string $id): JSONResponse {
 		$decision = $this->decidable(id: $id);
 		if ($decision instanceof JSONResponse) {
 			return $decision;
 		}
 
-		$result = $this->proposals->accept(
+		return $this->acceptAnswer(result: $this->proposals->accept(
 			proposal: $decision['proposal'],
 			subjectRow: $decision['subjectRow'],
-			reviewer: $decision['reviewer'],
-			confirmDrift: $confirmDrift
-		);
-		if (isset($result['error']) === true) {
-			$status = Http::STATUS_BAD_REQUEST;
-			if ($result['error'] === 'drifted') {
-				$status = Http::STATUS_CONFLICT;
-			}
+			reviewer: $decision['reviewer']
+		));
+	}//end accept()
 
-			return new JSONResponse($result, $status);
+	/**
+	 * Accept a proposal the reviewer has been shown drift on and confirmed.
+	 *
+	 * Its own route, not a flag on the one above. Overwriting a change nobody
+	 * reviewed is a decision somebody takes, and it should read like one at
+	 * every layer.
+	 *
+	 * @param string $id The proposal id.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 */
+	#[NoAdminRequired]
+	public function acceptConfirmingDrift(string $id): JSONResponse {
+		$decision = $this->decidable(id: $id);
+		if ($decision instanceof JSONResponse) {
+			return $decision;
 		}
 
-		return new JSONResponse($result);
-	}//end accept()
+		return $this->acceptAnswer(result: $this->proposals->acceptConfirmingDrift(
+			proposal: $decision['proposal'],
+			reviewer: $decision['reviewer']
+		));
+	}//end acceptConfirmingDrift()
+
+	/**
+	 * One accept result as a response, so both routes answer alike.
+	 *
+	 * @param array<string, mixed> $result What the service decided.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 */
+	private function acceptAnswer(array $result): JSONResponse {
+		if (isset($result['error']) === false) {
+			return new JSONResponse($result);
+		}
+
+		$status = Http::STATUS_BAD_REQUEST;
+		if ($result['error'] === 'drifted') {
+			$status = Http::STATUS_CONFLICT;
+		}
+
+		return new JSONResponse($result, $status);
+	}//end acceptAnswer()
 
 	/**
 	 * Reject a proposal, with a reason.

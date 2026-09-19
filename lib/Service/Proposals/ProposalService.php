@@ -227,13 +227,65 @@ class ProposalService {
 	 * @param array<string, mixed> $proposal The queued proposal.
 	 * @param array<string, mixed> $subjectRow The record as it stands now.
 	 * @param string $reviewer The reviewer's user id.
-	 * @param bool $confirmDrift Whether the reviewer confirmed a drifted snapshot.
 	 *
 	 * @return array{accepted: true}|array{error: string, drift?: array<int, array<string, mixed>>}
 	 *
 	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
 	 */
-	public function accept(array $proposal, array $subjectRow, string $reviewer, bool $confirmDrift = false): array {
+	public function accept(array $proposal, array $subjectRow, string $reviewer): array {
+		$refusal = $this->refusalBeforeApplying(proposal: $proposal, reviewer: $reviewer);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		$drift = $this->drift(proposal: $proposal, subjectRow: $subjectRow);
+		if ($drift !== []) {
+			// The record moved since the proposal was made. The reviewer is
+			// shown both values and asked again, rather than silently
+			// overwriting a change they never saw.
+			return ['error' => 'drifted', 'drift' => $drift];
+		}
+
+		return $this->applyProposal(proposal: $proposal, reviewer: $reviewer);
+	}//end accept()
+
+	/**
+	 * Accept a proposal the reviewer has been shown drift on and confirmed.
+	 *
+	 * The separate method is the point. Accepting a proposal and accepting one
+	 * over a record that moved underneath it are two decisions, and the second
+	 * is the one somebody has to take deliberately. A flag on the first would
+	 * let it be taken by leaving a checkbox ticked.
+	 *
+	 * @param array<string, mixed> $proposal The queued proposal.
+	 * @param string $reviewer The reviewer's user id.
+	 *
+	 * @return array{accepted: true}|array{error: string}
+	 *
+	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 */
+	public function acceptConfirmingDrift(array $proposal, string $reviewer): array {
+		$refusal = $this->refusalBeforeApplying(proposal: $proposal, reviewer: $reviewer);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		return $this->applyProposal(proposal: $proposal, reviewer: $reviewer);
+	}//end acceptConfirmingDrift()
+
+	/**
+	 * Why this proposal cannot be applied at all, or null when it can.
+	 *
+	 * Asked by both accept paths, so neither can forget it.
+	 *
+	 * @param array<string, mixed> $proposal The proposal.
+	 * @param string $reviewer The reviewer's user id.
+	 *
+	 * @return array{error: string}|null
+	 *
+	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 */
+	private function refusalBeforeApplying(array $proposal, string $reviewer): ?array {
 		if ((string)($proposal['state'] ?? '') !== self::STATE_QUEUED) {
 			return ['error' => 'not_queued'];
 		}
@@ -242,14 +294,20 @@ class ProposalService {
 			return ['error' => 'forbidden'];
 		}
 
-		$drift = $this->drift(proposal: $proposal, subjectRow: $subjectRow);
-		if ($drift !== [] && $confirmDrift === false) {
-			// The record moved since the proposal was made. The reviewer is
-			// shown both values and asked again, rather than silently
-			// overwriting a change they never saw.
-			return ['error' => 'drifted', 'drift' => $drift];
-		}
+		return null;
+	}//end refusalBeforeApplying()
 
+	/**
+	 * Write the proposal's values onto the record and close the proposal.
+	 *
+	 * @param array<string, mixed> $proposal The proposal.
+	 * @param string $reviewer The reviewer's user id.
+	 *
+	 * @return array{accepted: true}|array{error: string}
+	 *
+	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 */
+	private function applyProposal(array $proposal, string $reviewer): array {
 		$values = [];
 		foreach ((array)($proposal['changes'] ?? []) as $change) {
 			if (is_array($change) === false) {
@@ -282,7 +340,7 @@ class ProposalService {
 		}
 
 		return ['accepted' => true];
-	}//end accept()
+	}//end applyProposal()
 
 	/**
 	 * Reject a proposal, with a reason, touching only the proposal.

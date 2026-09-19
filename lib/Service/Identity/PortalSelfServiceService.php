@@ -34,6 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
+use DateInterval;
 use DateTimeImmutable;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalObjectReader;
@@ -117,7 +118,7 @@ class PortalSelfServiceService {
 			$token = $this->random->generate(48, (ISecureRandom::CHAR_LOWER . ISecureRandom::CHAR_DIGITS));
 			$data['pendingEmail'] = $email;
 			$data['pendingEmailTokenHash'] = hash('sha256', $token);
-			$data['pendingEmailExpiresAt'] = (new DateTimeImmutable())->add(new \DateInterval(self::TTL))->format(DATE_ATOM);
+			$data['pendingEmailExpiresAt'] = (new DateTimeImmutable())->add(new DateInterval(self::TTL))->format(DATE_ATOM);
 		}
 
 		$written = $this->write(account: $account, data: $data);
@@ -144,7 +145,47 @@ class PortalSelfServiceService {
 			return null;
 		}
 
-		$hash = hash('sha256', $token);
+		$account = $this->accountAwaitingConfirmation(
+			hash: hash('sha256', $token),
+			moment: ($now ?? new DateTimeImmutable())
+		);
+		if ($account === null) {
+			return null;
+		}
+
+		$email = (string)($account['pendingEmail'] ?? '');
+		$written = $this->write(
+			account: $account,
+			data: [
+				'email' => $email,
+				'verifiedEmail' => true,
+				'pendingEmail' => '',
+				'pendingEmailTokenHash' => '',
+				'pendingEmailExpiresAt' => '',
+			]
+		);
+		if ($written === false) {
+			return null;
+		}
+
+		return ['email' => $email];
+	}//end confirmEmail()
+
+	/**
+	 * The account whose pending address this token confirms, or null.
+	 *
+	 * Unknown, already spent, addressless and expired all answer null: the
+	 * caller holds a secret or they do not, and nothing else is theirs to
+	 * learn.
+	 *
+	 * @param string $hash The token's hash.
+	 * @param DateTimeImmutable $moment The moment to judge expiry against.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 */
+	private function accountAwaitingConfirmation(string $hash, DateTimeImmutable $moment): ?array {
 		$rows = $this->reader->readCollection(
 			register: self::REGISTER,
 			schema: self::SCHEMA,
@@ -162,36 +203,17 @@ class PortalSelfServiceService {
 			}
 		}
 
-		if ($account === null) {
-			return null;
-		}
-
-		$email = (string)($account['pendingEmail'] ?? '');
-		if ($email === '') {
+		if ($account === null || (string)($account['pendingEmail'] ?? '') === '') {
 			return null;
 		}
 
 		$expiry = date_create_immutable((string)($account['pendingEmailExpiresAt'] ?? ''));
-		if ($expiry === false || $expiry <= ($now ?? new DateTimeImmutable())) {
+		if ($expiry === false || $expiry <= $moment) {
 			return null;
 		}
 
-		$written = $this->write(
-			account: $account,
-			data: [
-				'email' => $email,
-				'verifiedEmail' => true,
-				'pendingEmail' => '',
-				'pendingEmailTokenHash' => '',
-				'pendingEmailExpiresAt' => '',
-			]
-		);
-		if ($written === false) {
-			return null;
-		}
-
-		return ['email' => $email];
-	}//end confirmEmail()
+		return $account;
+	}//end accountAwaitingConfirmation()
 
 	/**
 	 * Carry out the citizen's request to have the account removed.
