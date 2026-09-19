@@ -52,6 +52,7 @@ use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\NotificationDispatchService;
 use OCA\Portaliq\Service\PortalActionForwarder;
 use OCA\Portaliq\Service\PortalAuditHook;
+use OCA\Portaliq\Service\PortalCrossRefGuard;
 use OCA\Portaliq\Service\PortalFileReader;
 use OCA\Portaliq\Service\PortalFileWriter;
 use OCA\Portaliq\Service\PortalInboxReader;
@@ -136,6 +137,14 @@ class ContributionController extends Controller implements PortalProtected {
 	 *                                            existing construction sites and
 	 *                                            tests keep working; absent reads
 	 *                                            as "no tasks surface".
+	 * @param PortalCrossRefGuard|null $crossRefs Checks that a declared cross
+	 *                                            reference resolves inside the
+	 *                                            subject's own scope
+	 *                                            (portal-create-cross-refs).
+	 *                                            Optional at the construction
+	 *                                            site only: absent is built in
+	 *                                            crossRefGuard(), never skipped,
+	 *                                            because it is a guard.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -154,9 +163,26 @@ class ContributionController extends Controller implements PortalProtected {
 		private readonly NotificationDispatchService $notificationDispatch,
 		private readonly LoggerInterface $logger,
 		private readonly ?PortalTaskGateway $taskGateway = null,
+		private readonly ?PortalCrossRefGuard $crossRefs = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
+
+	/**
+	 * The cross-reference guard, built here when it was not injected.
+	 *
+	 * It is never skipped when absent, unlike the other optional collaborators
+	 * on this controller. This one IS a guard: an instance that did not inject
+	 * it would otherwise write unchecked references, which is the defect the
+	 * guard exists to close. Its two dependencies are already held here.
+	 *
+	 * @return PortalCrossRefGuard The guard.
+	 *
+	 * @spec openspec/changes/portal-create-cross-refs/specs/portal-contribution-contract/spec.md
+	 */
+	private function crossRefGuard(): PortalCrossRefGuard {
+		return ($this->crossRefs ?? new PortalCrossRefGuard(reader: $this->reader, logger: $this->logger));
+	}//end crossRefGuard()
 
 	/**
 	 * Perform an ownership-scoped write and translate every way it can fail.
@@ -927,6 +953,24 @@ class ContributionController extends Controller implements PortalProtected {
 			}
 		}
 
+		// The cross-reference guard (portal-create-cross-refs). Every field the
+		// action declares as a reference has to resolve inside the subject's
+		// own scope BEFORE anything is written: a uuid in a create body is
+		// otherwise accepted as typed, which is how a citizen could file an
+		// objection against somebody else's case.
+		$refused = $this->crossRefGuard()->refusedField(
+			action: $action,
+			data: $data,
+			subject: $subject,
+			app: $match['app']
+		);
+		if ($refused !== '') {
+			return new JSONResponse(
+				['error' => 'cross_ref_refused', 'field' => $refused],
+				Http::STATUS_FORBIDDEN
+			);
+		}
+
 		$created = $this->writer->createObject(
 			register: $register,
 			schema: $schema,
@@ -1073,6 +1117,33 @@ class ContributionController extends Controller implements PortalProtected {
 	}//end authorisedAnonymousCreateAction()
 
 	/**
+	 * The write body with the action's server-enforced transition target applied.
+	 *
+	 * Server-enforced transition target (contribution-manifest-v3): an update
+	 * action MAY declare `set` — fixed field values the SERVER applies OVER the
+	 * client input, so an approve/reject/close transition can never be tampered
+	 * with by the client. Only whitelisted fields are honoured (defence in
+	 * depth; the normaliser already dropped non-whitelisted keys).
+	 *
+	 * @param array $action The matched update action.
+	 * @param array $data   The whitelisted client body.
+	 *
+	 * @return array The body to write.
+	 *
+	 * @spec openspec/changes/archive/2026-09-07-portal-scoped-crud/tasks.md#T3
+	 */
+	private function withTransitionSet(array $action, array $data): array {
+		$whitelist = (array)($action['fields'] ?? []);
+		foreach ((array)($action['set'] ?? []) as $field => $value) {
+			if (in_array($field, $whitelist, true) === true) {
+				$data[$field] = $value;
+			}
+		}
+
+		return $data;
+	}//end withTransitionSet()
+
+	/**
 	 * Update an object in a collection, owned by the subject (portal-scoped-crud,
 	 * ADR-062 Phase 1 — closes the write-IDOR concern, Conduction/portaliq#16).
 	 *
@@ -1140,16 +1211,21 @@ class ContributionController extends Controller implements PortalProtected {
 
 		$data = $this->whitelist(fields: (array)($action['fields'] ?? []));
 
-		// Server-enforced transition target (contribution-manifest-v3): an update
-		// action MAY declare `set` — fixed field values the SERVER applies OVER
-		// the client input, so an approve/reject/close transition can never be
-		// tampered with by the client. Only whitelisted fields are honoured
-		// (defence in depth; the normaliser already dropped non-whitelisted keys).
-		$whitelist = (array)($action['fields'] ?? []);
-		foreach ((array)($action['set'] ?? []) as $field => $value) {
-			if (in_array($field, $whitelist, true) === true) {
-				$data[$field] = $value;
-			}
+		$data = $this->withTransitionSet(action: $action, data: $data);
+
+		// The same guard as on create, for the same reason: an update body can
+		// name another party's object just as a create body can.
+		$refused = $this->crossRefGuard()->refusedField(
+			action: $action,
+			data: $data,
+			subject: $subject,
+			app: $match['app']
+		);
+		if ($refused !== '') {
+			return new JSONResponse(
+				['error' => 'cross_ref_refused', 'field' => $refused],
+				Http::STATUS_FORBIDDEN
+			);
 		}
 
 		$updated = $this->writeScoped(

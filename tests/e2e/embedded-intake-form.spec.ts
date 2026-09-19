@@ -16,6 +16,7 @@
  *   - a visitor submits without an account and gets a reference and a follow
  *     link, and is never asked to sign in (REQ-EIF-004)
  *   - a signed-in visitor is anonymous inside the frame (REQ-EIF-005)
+ *   - the frame RENDERS the form, in a real browser (embed-frame-renders-the-form)
  *
  * NOT anchored here, covered by PHPUnit and named so anyone can check:
  *   - that the refusal reads no schema:
@@ -54,7 +55,10 @@ async function seed(
 		headers: { Authorization: `Basic ${ADMIN}`, 'OCS-APIRequest': 'true' },
 		data,
 	})
-	expect(res.ok(), `OpenRegister objects#create must be reachable for ${schema}`).toBeTruthy()
+	expect(
+		res.ok(),
+		`OpenRegister objects#create must be reachable for ${schema}`,
+	).toBeTruthy()
 	const body = await res.json()
 	const id = (body.id ?? body['@self']?.id) as string
 	expect(id).toBeTruthy()
@@ -94,15 +98,17 @@ async function seedEmbeddableForm(
 }
 
 test.describe('embedded-intake-form', () => {
-	test('the allowed origin gets the form, and any other origin gets a message', async ({ request }) => {
+	test('the allowed origin gets the form, and any other origin gets a message', async ({
+		request,
+	}) => {
 		const route = `aanvragen/embed-${Date.now()}`
 		await seedEmbeddableForm(request, route, [ALLOWED_ORIGIN])
 		const url = `${EMBED_PATH}?route=${encodeURIComponent(route)}`
 
-		const allowed = await request.get(url, { headers: { Origin: ALLOWED_ORIGIN } })
+		const allowed = await request.get(url, {
+			headers: { Origin: ALLOWED_ORIGIN },
+		})
 		expect(allowed.ok()).toBeTruthy()
-		const allowedBody = await allowed.text()
-		expect(allowedBody).toContain('portaliq-embed')
 		// The frame names its one ancestor, and never a wildcard.
 		const csp = allowed.headers()['content-security-policy'] ?? ''
 		expect(csp).toContain(ALLOWED_ORIGIN)
@@ -113,13 +119,60 @@ test.describe('embedded-intake-form', () => {
 		expect(refusedBody).not.toContain('"postcode"')
 	})
 
+	// 🔴 THIS TEST REPLACES ONE THAT COULD NOT FAIL FOR THE THING IT CHECKED.
+	// It used to fetch the page with `request.get` and assert the HTML
+	// contained the string 'portaliq-embed'. That is a raw HTTP call: no
+	// browser, no JavaScript. It proved the route served a div and nothing
+	// whatsoever about a form appearing, which is why the frame shipped
+	// rendering an empty div with its route, its policy and its refusals all
+	// correct and all green.
+	//
+	// Everything below needs a real page, because the defect was invisible to
+	// anything that did not run the bundle.
+	test('the frame actually renders the form, not just a div for it', async ({
+		page,
+		request,
+	}) => {
+		const route = `aanvragen/embed-render-${Date.now()}`
+		await seedEmbeddableForm(request, route, [ALLOWED_ORIGIN])
+
+		await page.goto(`${EMBED_PATH}?route=${encodeURIComponent(route)}`)
+
+		// A control a visitor can actually type into, and a submit they can
+		// press. An empty div satisfies neither.
+		await expect(page.getByTestId('embed-form')).toBeVisible()
+		await expect(page.getByTestId('embed-field-postcode')).toBeVisible()
+		await expect(page.getByTestId('embed-submit')).toBeVisible()
+
+		// The mount really ran: the div is no longer empty.
+		await expect(page.locator('#portaliq-embed')).not.toBeEmpty()
+	})
+
+	test('a refused frame renders words, not a blank rectangle', async ({
+		page,
+		request,
+	}) => {
+		const route = `aanvragen/embed-closed-render-${Date.now()}`
+		await seedEmbeddableForm(request, route, [])
+
+		await page.goto(`${EMBED_PATH}?route=${encodeURIComponent(route)}`)
+
+		// A visitor meeting a blank rectangle cannot tell whether the form is
+		// broken, still loading, or simply not for them.
+		await expect(page.getByTestId('embed-refusal')).toBeVisible()
+		await expect(page.getByTestId('embed-form')).toHaveCount(0)
+	})
+
 	test('a form with no allowed origins serves nobody', async ({ request }) => {
 		const route = `aanvragen/embed-closed-${Date.now()}`
 		await seedEmbeddableForm(request, route, [])
 
-		const res = await request.get(`${EMBED_PATH}?route=${encodeURIComponent(route)}`, {
-			headers: { Origin: ALLOWED_ORIGIN },
-		})
+		const res = await request.get(
+			`${EMBED_PATH}?route=${encodeURIComponent(route)}`,
+			{
+				headers: { Origin: ALLOWED_ORIGIN },
+			},
+		)
 		const body = await res.text()
 
 		expect(body).not.toContain('"postcode"')
@@ -127,7 +180,9 @@ test.describe('embedded-intake-form', () => {
 		expect(csp).not.toContain(ALLOWED_ORIGIN)
 	})
 
-	test('a visitor submits without an account and gets a reference and a follow link', async ({ request }) => {
+	test('a visitor submits without an account and gets a reference and a follow link', async ({
+		request,
+	}) => {
 		const route = `aanvragen/embed-submit-${Date.now()}`
 		await seedEmbeddableForm(request, route, [ALLOWED_ORIGIN])
 
@@ -157,20 +212,38 @@ test.describe('embedded-intake-form', () => {
 		expect(fromElsewhere.status()).toBe(403)
 	})
 
-	test('a visitor signed in to the portal elsewhere is anonymous inside the frame', async ({ request }) => {
+	test('a visitor signed in to the portal elsewhere is anonymous inside the frame', async ({
+		request,
+	}) => {
 		const route = `aanvragen/embed-anon-${Date.now()}`
 		await seedEmbeddableForm(request, route, [ALLOWED_ORIGIN])
 
-		const login = await request.post('/apps/portaliq/portal/api/session/dev-login', {
-			data: { subjectRef: `subject-${Date.now()}`, audience: 'client', organisation: 'dev-org' },
-		})
-		expect(login.ok(), 'dev-login must be enabled (see tests/e2e/ci-seed.sh)').toBeTruthy()
+		const login = await request.post(
+			'/apps/portaliq/portal/api/session/dev-login',
+			{
+				data: {
+					subjectRef: `subject-${Date.now()}`,
+					audience: 'client',
+					organisation: 'dev-org',
+				},
+			},
+		)
+		expect(
+			login.ok(),
+			'dev-login must be enabled (see tests/e2e/ci-seed.sh)',
+		).toBeTruthy()
 		const { token } = await login.json()
 
 		// The bearer is offered and must change nothing: the frame reads none.
-		const res = await request.get(`${EMBED_PATH}?route=${encodeURIComponent(route)}`, {
-			headers: { Origin: ALLOWED_ORIGIN, Authorization: `Bearer ${token}` },
-		})
+		const res = await request.get(
+			`${EMBED_PATH}?route=${encodeURIComponent(route)}`,
+			{
+				headers: {
+					Origin: ALLOWED_ORIGIN,
+					Authorization: `Bearer ${token}`,
+				},
+			},
+		)
 		const body = await res.text()
 
 		expect(res.ok()).toBeTruthy()

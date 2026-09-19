@@ -13,8 +13,32 @@
 ## Surfaces
 
 - [x] **T05**: Add the "My cases" portal page over `kind: cases` collections and the `kind` hint in the contribution manifest (REQ-PIS-004)
-- [ ] **T06**: Offer login on the token page when the subject has an account; add the staff "void pending account" action with a reason (REQ-PIS-004, D6)
-  - The void action shipped: `PortalAccountService::voidPending()` plus `POST /api/accounts/void`, refused without a reason and refused on an account that is not pending. The login offer on the token page is left open: case sharing mints an openregister access link now, and the offer belongs on that reader's page rather than on a token page portaliq no longer owns.
+- [x] **T06**: Offer login on the link page UNCONDITIONALLY; add the staff "void pending account" action with a reason (REQ-PIS-004, D6)
+  - The void action shipped: `PortalAccountService::voidPending()` plus
+    `POST /api/accounts/void`, refused without a reason and refused on an
+    account that is not pending.
+  - 🔴 THE CONDITIONAL LOGIN OFFER IS REFUSED, NOT DEFERRED, AND THE REQUIREMENT
+    HAS BEEN AMENDED SO NOBODY REBUILDS IT FROM THIS LINE. T06 used to read
+    "offer login WHEN THE SUBJECT HAS AN ACCOUNT". The page is `#[PublicPage]`
+    and its reader is whoever holds the link, which can be forwarded. Varying
+    the offer on whether a named person holds an account tells that holder
+    something about that person, and comparing two links tells them which
+    subjects have accounts. That is account enumeration, the same failure as a
+    login form that says whether an email is registered.
+  - THE SCENARIO NEVER ASKED FOR IT. It says only that "a login link is
+    offered", which an unconditional offer satisfies while disclosing nothing.
+    The scenario is deliberately unchanged.
+  - WHOSE SURFACE IT IS, measured 2026-09-18: not portaliq's. The access-link
+    reader is entirely openregister (`AccessLinkReader`,
+    `AccessLinkController::open`, `GET /api/public/links/{anchor}`), and
+    portaliq references it NOWHERE:
+    `grep -rln 'accessLink|access-link|AccessLink' lib/ src/` returns nothing.
+    Case sharing mints an openregister access link now, so the offer belongs on
+    that reader's page. Openregister owes a generic, unconditional "already have
+    an account? sign in" affordance there; portaliq owes nothing further.
+  - Ticked because portaliq's half is complete and the remainder is named, owned
+    and specified. Left open it reads as work outstanding here, and the next
+    reader builds the version this change refuses.
 
 ## Quality
 

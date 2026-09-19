@@ -133,4 +133,111 @@ class PortalMandateServiceTest extends TestCase {
 		], $extra));
 	}//end seedMandate()
 
+
+	/**
+	 * 🔴 THE REACH DECIDES HOW FAR A MANDATE SEES, AND NOTHING EXECUTED IT.
+	 *
+	 * `reachOf()` has two real callers, `MyCasesController` and
+	 * `CitizenCaseController`, and both use it to decide `reachesDown`: whether
+	 * a citizen's case list walks down the party tree into subsidiaries. So it
+	 * is the method that decides whether one mandate sees one organisation or a
+	 * whole group.
+	 *
+	 * 🔑 THE CONTROLLER TEST MOCKS IT. `MyCasesControllerTest` builds the
+	 * service with `onlyMethods([... 'reachOf'])` and forces the answer, which
+	 * is right for a controller test and means the REAL method was never run by
+	 * anything. Had a refactor inverted this condition, or accepted any truthy
+	 * value, every mandate would have reached the whole subtree and every test
+	 * in this repo would still have passed.
+	 *
+	 * @return void
+	 */
+	public function testAMandateDeclaringTheWiderReachGetsIt(): void {
+		$service = new PortalMandateService($this->fakeReader());
+
+		$this->assertSame(
+			PortalMandateService::REACH_TREE,
+			$service->reachOf(mandate: ['reach' => PortalMandateService::REACH_TREE])
+		);
+	}//end testAMandateDeclaringTheWiderReachGetsIt()
+
+	/**
+	 * 🔴 A MANDATE THAT SAYS NOTHING REACHES ONE ORGANISATION, NOT THE TREE.
+	 *
+	 * This is the fail-closed default and the assertion that matters. Every
+	 * mandate written before the reach existed says nothing, so the default is
+	 * what those mandates get, and the wrong default would silently widen all
+	 * of them to the whole group.
+	 *
+	 * @return void
+	 */
+	public function testAMandateThatSaysNothingReachesOnlyItsOwnOrganisation(): void {
+		$service = new PortalMandateService($this->fakeReader());
+
+		$this->assertSame(
+			PortalMandateService::REACH_ORGANISATION,
+			$service->reachOf(mandate: []),
+			'A mandate that declares no reach must not be widened to the party tree.'
+		);
+	}//end testAMandateThatSaysNothingReachesOnlyItsOwnOrganisation()
+
+	/**
+	 * A reach nobody recognises is the narrow one, not a guess.
+	 *
+	 * `tree ` with a trailing space, `TREE`, `subsidiaries`, `true`: each is
+	 * somebody trying to say the wider thing and failing, and each must land on
+	 * the narrow answer rather than the one they were reaching for. Anything
+	 * else means a typo widens visibility.
+	 *
+	 * @return void
+	 */
+	public function testAReachNobodyRecognisesIsTheNarrowOne(): void {
+		$service = new PortalMandateService($this->fakeReader());
+
+		foreach (['tree ', 'TREE', 'subsidiaries', 'all', '1', 'organisation'] as $declared) {
+			$this->assertSame(
+				PortalMandateService::REACH_ORGANISATION,
+				$service->reachOf(mandate: ['reach' => $declared]),
+				sprintf('\'%s\' must not be read as the wider reach.', $declared)
+			);
+		}
+	}//end testAReachNobodyRecognisesIsTheNarrowOne()
+
+	/**
+	 * A non-string reach is the narrow one too.
+	 *
+	 * A JSON edit can easily produce `true` or a list here, and reading either
+	 * as the wider reach would widen a mandate nobody widened.
+	 *
+	 * @return void
+	 */
+	public function testANonStringReachIsTheNarrowOne(): void {
+		$service = new PortalMandateService($this->fakeReader());
+
+		$this->assertSame(
+			PortalMandateService::REACH_ORGANISATION,
+			$service->reachOf(mandate: ['reach' => true])
+		);
+	}//end testANonStringReachIsTheNarrowOne()
+
+	/**
+	 * `describe()` reports the same reach `reachOf()` decides.
+	 *
+	 * The description is what a surface renders beside a case, so a description
+	 * that disagreed with the decision would show somebody a scope they do not
+	 * have, or hide one they do.
+	 *
+	 * @return void
+	 */
+	public function testTheDescriptionReportsTheReachThatWasDecided(): void {
+		$service = new PortalMandateService($this->fakeReader());
+
+		foreach ([['reach' => PortalMandateService::REACH_TREE], ['reach' => 'nonsense'], []] as $mandate) {
+			$this->assertSame(
+				$service->reachOf(mandate: $mandate),
+				($service->describe(mandate: $mandate)['reach'] ?? null),
+				'describe() and reachOf() must not disagree about how far a mandate reaches.'
+			);
+		}
+	}//end testTheDescriptionReportsTheReachThatWasDecided()
 }//end class

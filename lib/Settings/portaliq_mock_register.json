@@ -16,7 +16,7 @@
       "portaliq": {
         "slug": "portaliq",
         "title": "Portaliq Register (demo)",
-        "version": "0.22.0",
+        "version": "0.23.0",
         "description": "Demo data for Portaliq Register. Generated from the register's own schemas — see hydra-gates/scripts/lib/generate_mock_register.py."
       }
     },
@@ -1262,6 +1262,192 @@
             "icon": "MapMarkerPath"
           }
         ]
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalReport",
+          "slug": "portalreport-portalreport-1-1"
+        },
+        "portal": "Voorbeeld Portal 1",
+        "codeHash": "Voorbeeld Codehash 1",
+        "state": "open",
+        "caseType": "Voorbeeld Casetype 1",
+        "caseTypeRegister": "Voorbeeld Casetyperegister 1",
+        "caseTypeSchema": "Voorbeeld Casetypeschema 1",
+        "subject": "Voorbeeld Subject 1",
+        "body": "Voorbeeld Body 1",
+        "answers": {},
+        "contactRef": "Voorbeeld Contactref 1",
+        "acknowledgedAt": "2026-03-01T09:00:00+00:00",
+        "feedbackAt": "2026-03-01T09:00:00+00:00",
+        "receivedAt": "2026-03-01T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalReport",
+          "slug": "portalreport-portalreport-2-2"
+        },
+        "portal": "Voorbeeld Portal 2",
+        "codeHash": "Voorbeeld Codehash 2",
+        "state": "acknowledged",
+        "caseType": "Voorbeeld Casetype 2",
+        "caseTypeRegister": "Voorbeeld Casetyperegister 2",
+        "caseTypeSchema": "Voorbeeld Casetypeschema 2",
+        "subject": "Voorbeeld Subject 2",
+        "body": "Voorbeeld Body 2",
+        "answers": {},
+        "contactRef": "Voorbeeld Contactref 2",
+        "acknowledgedAt": "2026-03-02T09:00:00+00:00",
+        "feedbackAt": "2026-03-02T09:00:00+00:00",
+        "receivedAt": "2026-03-02T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalReport",
+          "slug": "portalreport-portalreport-3-3"
+        },
+        "portal": "Voorbeeld Portal 3",
+        "codeHash": "Voorbeeld Codehash 3",
+        "state": "closed",
+        "caseType": "Voorbeeld Casetype 3",
+        "caseTypeRegister": "Voorbeeld Casetyperegister 3",
+        "caseTypeSchema": "Voorbeeld Casetypeschema 3",
+        "subject": "Voorbeeld Subject 3",
+        "body": "Voorbeeld Body 3",
+        "answers": {},
+        "contactRef": "Voorbeeld Contactref 3",
+        "acknowledgedAt": "2026-03-03T09:00:00+00:00",
+        "feedbackAt": "2026-03-03T09:00:00+00:00",
+        "receivedAt": "2026-03-03T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalReportMessage",
+          "slug": "portalreportmessage-portalreportmessage-1-1"
+        },
+        "reportRef": "Voorbeeld Reportref 1",
+        "author": "reporter",
+        "body": "Voorbeeld Body 1",
+        "authorName": "Voorbeeld Authorname 1",
+        "visibleToReporter": true,
+        "writtenAt": "2026-03-01T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalReportMessage",
+          "slug": "portalreportmessage-portalreportmessage-2-2"
+        },
+        "reportRef": "Voorbeeld Reportref 2",
+        "author": "handler",
+        "body": "Voorbeeld Body 2",
+        "authorName": "Voorbeeld Authorname 2",
+        "visibleToReporter": false,
+        "writtenAt": "2026-03-02T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalReportMessage",
+          "slug": "portalreportmessage-portalreportmessage-3-3"
+        },
+        "reportRef": "Voorbeeld Reportref 3",
+        "author": "reporter",
+        "body": "Voorbeeld Body 3",
+        "authorName": "Voorbeeld Authorname 3",
+        "visibleToReporter": true,
+        "writtenAt": "2026-03-03T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalReporterContact",
+          "slug": "portalreportercontact-voorbeeld-name-1-1"
+        },
+        "reportRef": "Voorbeeld Reportref 1",
+        "name": "Voorbeeld Name 1",
+        "email": "Voorbeeld Email 1",
+        "phone": "Voorbeeld Phone 1"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalReporterContact",
+          "slug": "portalreportercontact-voorbeeld-name-2-2"
+        },
+        "reportRef": "Voorbeeld Reportref 2",
+        "name": "Voorbeeld Name 2",
+        "email": "Voorbeeld Email 2",
+        "phone": "Voorbeeld Phone 2"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalReporterContact",
+          "slug": "portalreportercontact-voorbeeld-name-3-3"
+        },
+        "reportRef": "Voorbeeld Reportref 3",
+        "name": "Voorbeeld Name 3",
+        "email": "Voorbeeld Email 3",
+        "phone": "Voorbeeld Phone 3"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalRevealRequest",
+          "slug": "portalrevealrequest-portalrevealrequest-1-1"
+        },
+        "reportRef": "Voorbeeld Reportref 1",
+        "requestedBy": "Voorbeeld Requestedby 1",
+        "motivation": "Voorbeeld Motivation 1",
+        "state": "pending",
+        "decidedBy": "Voorbeeld Decidedby 1",
+        "decidedAt": "2026-03-01T09:00:00+00:00",
+        "decisionReason": "Voorbeeld Decisionreason 1",
+        "revealedFields": [
+          "Voorbeeld Revealedfields 1"
+        ],
+        "requestedAt": "2026-03-01T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalRevealRequest",
+          "slug": "portalrevealrequest-portalrevealrequest-2-2"
+        },
+        "reportRef": "Voorbeeld Reportref 2",
+        "requestedBy": "Voorbeeld Requestedby 2",
+        "motivation": "Voorbeeld Motivation 2",
+        "state": "allowed",
+        "decidedBy": "Voorbeeld Decidedby 2",
+        "decidedAt": "2026-03-02T09:00:00+00:00",
+        "decisionReason": "Voorbeeld Decisionreason 2",
+        "revealedFields": [
+          "Voorbeeld Revealedfields 2"
+        ],
+        "requestedAt": "2026-03-02T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalRevealRequest",
+          "slug": "portalrevealrequest-portalrevealrequest-3-3"
+        },
+        "reportRef": "Voorbeeld Reportref 3",
+        "requestedBy": "Voorbeeld Requestedby 3",
+        "motivation": "Voorbeeld Motivation 3",
+        "state": "refused",
+        "decidedBy": "Voorbeeld Decidedby 3",
+        "decidedAt": "2026-03-03T09:00:00+00:00",
+        "decisionReason": "Voorbeeld Decisionreason 3",
+        "revealedFields": [
+          "Voorbeeld Revealedfields 3"
+        ],
+        "requestedAt": "2026-03-03T09:00:00+00:00"
       },
       {
         "@self": {

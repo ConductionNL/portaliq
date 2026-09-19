@@ -20,6 +20,22 @@
 ## Quality
 
 - [x] **T09**: PHPUnit: a closed window refuses, a foreign identity refuses, a client-supplied status is overwritten, a second withdrawal is refused
+  - 🔴 `CitizenWriteRecorder::announceWithdrawal()` HAD ZERO TEST REFERENCES,
+    measured 2026-09-18. Its whole reason for existing is in its own docblock:
+    a withdrawal is raised as its OWN event, never as a write, so a rule bound
+    to a citizen withdrawing their case does not also fire when a handler sets
+    the same status internally. That method is the path that tells the two
+    apart, and nothing executed it.
+  - Had it dispatched the ordinary write event instead, every rule bound to a
+    write would have fired on a withdrawal and every rule bound to a withdrawal
+    would have stopped, while the case still withdrew, so nothing on screen
+    would look wrong.
+  - Now covered: the event's identity, that the reason and the landing status
+    travel with it, and that the withdrawal is audited against the citizen with
+    their `jti`. Both mutations redden their assertions.
+  - Found by measuring PER METHOD across the whole tests tree. Every other
+    public method on the classes this change and `partner-tasks-in-the-portal`
+    name is covered somewhere.
 - [x] **T10**: Playwright `tests/e2e/withdrawing-your-own-case-from-the-portal.spec.ts`: withdraw an open request, then reopen the page and find it withdrawn and read-only
 - [x] **T11**: Dutch and English strings; docs; `openspec validate withdrawing-your-own-case-from-the-portal --type change --strict`
 
