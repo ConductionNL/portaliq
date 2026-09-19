@@ -58,7 +58,12 @@ class PortalEmbedGuard {
 
 		$origins = [];
 		foreach ($declared as $origin) {
-			$normalised = $this->normalise(origin: (string)(is_string($origin) === true ? $origin : ''));
+			$candidate = '';
+			if (is_string($origin) === true) {
+				$candidate = $origin;
+			}
+
+			$normalised = $this->normalise(origin: $candidate);
 			if ($normalised !== '' && in_array($normalised, $origins, true) === false) {
 				$origins[] = $normalised;
 			}

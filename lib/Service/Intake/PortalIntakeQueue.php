@@ -144,13 +144,23 @@ class PortalIntakeQueue {
 
 		$state = (string)($row['state'] ?? self::STATE_QUEUED);
 
+		$caseId = '';
+		if ($state === self::STATE_REGISTERED) {
+			$caseId = (string)($row['caseId'] ?? '');
+		}
+
+		$failureReason = '';
+		if ($state === self::STATE_FAILED) {
+			$failureReason = (string)($row['failureReason'] ?? '');
+		}
+
 		return [
 			'reference' => (string)($row['reference'] ?? ''),
 			'state' => $state,
 			// A case id is answered only when there IS a case. The page cannot
 			// print one it was never given.
-			'caseId' => ($state === self::STATE_REGISTERED ? (string)($row['caseId'] ?? '') : ''),
-			'failureReason' => ($state === self::STATE_FAILED ? (string)($row['failureReason'] ?? '') : ''),
+			'caseId' => $caseId,
+			'failureReason' => $failureReason,
 			'submittedAt' => (string)($row['submittedAt'] ?? ''),
 		];
 	}//end status()

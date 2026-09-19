@@ -194,7 +194,15 @@ class PortalCaseListReader {
 							continue;
 						}
 
-						foreach ($this->readParty(collection: $collection, contributingApp: $appId, mandateField: $mandateField, party: $entity, organisation: $described['organisation'], audience: (string)($subject['audience'] ?? '')) as $row) {
+						$partyRows = $this->readParty(
+							collection: $collection,
+							contributingApp: $appId,
+							mandateField: $mandateField,
+							party: $entity,
+							organisation: $described['organisation'],
+							audience: (string)($subject['audience'] ?? '')
+						);
+						foreach ($partyRows as $row) {
 							$caseType = (string)($row[(string)($collection['caseTypeField'] ?? 'caseType')] ?? '');
 							if ($this->mandates->covers(mandate: $mandate, caseType: $caseType) === false) {
 								// A mandate narrower than the organisation lists
@@ -266,7 +274,14 @@ class PortalCaseListReader {
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- the parameters are
 	 * the scoping boundary itself; folding them away would hide it.
 	 */
-	private function readParty(array $collection, string $contributingApp, string $mandateField, string $party, string $organisation, string $audience): array {
+	private function readParty(
+		array $collection,
+		string $contributingApp,
+		string $mandateField,
+		string $party,
+		string $organisation,
+		string $audience,
+	): array {
 		return $this->reader->readCollection(
 			register: (string)($collection['register'] ?? ''),
 			schema: (string)($collection['schema'] ?? ''),

@@ -416,10 +416,11 @@ class SessionController extends Controller {
 			return $this->oidcGenericError();
 		}
 
-		// portal-identity-space REQ-PIS-002: an account provisioned before this
-		// login is matched on its identity reference first, and only then on
-		// an address the broker itself says it verified. An unverified address
-		// is not passed on at all, so it can never claim a waiting account.
+		// REQ-PIS-002 of portal-identity-space: an account provisioned before
+		// this login is matched on its identity reference first, and only
+		// then on an address the broker itself says it verified. An
+		// unverified address is not passed on at all, so it can never claim
+		// a waiting account.
 		$verifiedEmail = '';
 		$emailIsVerified = (($claims['email_verified'] ?? false) === true || ($claims['email_verified'] ?? '') === 'true');
 		if ($emailIsVerified === true && is_string(($claims['email'] ?? null)) === true) {

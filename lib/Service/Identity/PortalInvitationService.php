@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
+use DateInterval;
 use DateTimeImmutable;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalObjectReader;
@@ -97,7 +98,18 @@ class PortalInvitationService {
 		}
 
 		$now = new DateTimeImmutable();
-		$expiry = $now->add(new \DateInterval(($ttl === '' ? self::DEFAULT_TTL : $ttl)));
+
+		$window = self::DEFAULT_TTL;
+		if ($ttl !== '') {
+			$window = $ttl;
+		}
+
+		$expiry = $now->add(new DateInterval($window));
+
+		$forAudience = 'client';
+		if ($audience !== '') {
+			$forAudience = $audience;
+		}
 
 		$created = $this->writer->createObject(
 			register: self::REGISTER,
@@ -108,7 +120,7 @@ class PortalInvitationService {
 			data: [
 				'email' => $email,
 				'organisation' => $organisation,
-				'audience' => ($audience === '' ? 'client' : $audience),
+				'audience' => $forAudience,
 				'tokenHash' => hash('sha256', $token),
 				'state' => 'sent',
 				'invitedBy' => $invitedBy,
