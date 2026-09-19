@@ -53,7 +53,10 @@ async function seed(
 		headers: { Authorization: `Basic ${ADMIN}`, 'OCS-APIRequest': 'true' },
 		data,
 	})
-	expect(res.ok(), `OpenRegister objects#create must be reachable for ${schema}`).toBeTruthy()
+	expect(
+		res.ok(),
+		`OpenRegister objects#create must be reachable for ${schema}`,
+	).toBeTruthy()
 	const body = await res.json()
 	const id = (body.id ?? body['@self']?.id) as string
 	expect(id).toBeTruthy()
@@ -87,12 +90,20 @@ async function seedContribution(request: APIRequestContext): Promise<string> {
 				proposable: ['toelichting'],
 			},
 		],
-		pages: [{ id: 'mijn-zaken', label: 'Mijn zaken', blocks: [{ type: 'collection', collection: 'cases' }] }],
+		pages: [
+			{
+				id: 'mijn-zaken',
+				label: 'Mijn zaken',
+				blocks: [{ type: 'collection', collection: 'cases' }],
+			},
+		],
 	})
 }
 
 test.describe('change-proposal-queue', () => {
-	test('a citizen proposes a change, it queues, and a reviewer accepts it onto the record', async ({ request }) => {
+	test('a citizen proposes a change, it queues, and a reviewer accepts it onto the record', async ({
+		request,
+	}) => {
 		await seedContribution(request)
 		const stamp = Date.now()
 		const subjectRef = `subject-${stamp}`
@@ -107,7 +118,10 @@ test.describe('change-proposal-queue', () => {
 		const login = await request.post(`${API_BASE}/session/dev-login`, {
 			data: { subjectRef, audience: 'client', organisation: ORGANISATION },
 		})
-		expect(login.ok(), 'dev-login must be enabled (see tests/e2e/ci-seed.sh)').toBeTruthy()
+		expect(
+			login.ok(),
+			'dev-login must be enabled (see tests/e2e/ci-seed.sh)',
+		).toBeTruthy()
 		const { token } = await login.json()
 
 		const proposed = await request.post(`${API_BASE}/proposals`, {
@@ -116,7 +130,9 @@ test.describe('change-proposal-queue', () => {
 				register: 'portaliq',
 				schema: 'portalCase',
 				id: caseId,
-				changes: [{ property: 'toelichting', proposedValue: 'Nieuwe toelichting' }],
+				changes: [
+					{ property: 'toelichting', proposedValue: 'Nieuwe toelichting' },
+				],
 				note: 'Mijn situatie is gewijzigd.',
 			},
 		})
@@ -138,10 +154,18 @@ test.describe('change-proposal-queue', () => {
 		// The queue on the record, as a reviewer sees it.
 		const queue = await request.get(
 			`${APP_API_BASE}/proposals?register=portaliq&schema=portalCase&id=${encodeURIComponent(caseId)}`,
-			{ headers: { Authorization: `Basic ${ADMIN}`, 'OCS-APIRequest': 'true', requesttoken: 'x' } },
+			{
+				headers: {
+					Authorization: `Basic ${ADMIN}`,
+					'OCS-APIRequest': 'true',
+					requesttoken: 'x',
+				},
+			},
 		)
 		expect(queue.ok()).toBeTruthy()
-		const proposals = ((await queue.json()).proposals ?? []) as Array<Record<string, never>>
+		const proposals = ((await queue.json()).proposals ?? []) as Array<
+			Record<string, never>
+		>
 		expect(proposals.length).toBeGreaterThan(0)
 
 		const queued = proposals[0]
@@ -151,17 +175,32 @@ test.describe('change-proposal-queue', () => {
 
 		const accepted = await request.post(
 			`${APP_API_BASE}/proposals/${encodeURIComponent((queued.id ?? queued.uuid) as unknown as string)}/accept`,
-			{ headers: { Authorization: `Basic ${ADMIN}`, 'OCS-APIRequest': 'true', requesttoken: 'x' }, data: {} },
+			{
+				headers: {
+					Authorization: `Basic ${ADMIN}`,
+					'OCS-APIRequest': 'true',
+					requesttoken: 'x',
+				},
+				data: {},
+			},
 		)
 		expect(accepted.ok(), 'a reviewer with write rights may accept').toBeTruthy()
 
-		const after = await request.get(`${OR_OBJECTS_BASE}/portaliq/portalCase/${caseId}`, {
-			headers: { Authorization: `Basic ${ADMIN}`, 'OCS-APIRequest': 'true' },
-		})
+		const after = await request.get(
+			`${OR_OBJECTS_BASE}/portaliq/portalCase/${caseId}`,
+			{
+				headers: {
+					Authorization: `Basic ${ADMIN}`,
+					'OCS-APIRequest': 'true',
+				},
+			},
+		)
 		expect((await after.json()).toelichting).toBe('Nieuwe toelichting')
 	})
 
-	test('a caller with no session proposes nothing and decides nothing', async ({ request }) => {
+	test('a caller with no session proposes nothing and decides nothing', async ({
+		request,
+	}) => {
 		const proposed = await request.post(`${API_BASE}/proposals`, {
 			data: {
 				register: 'portaliq',
@@ -172,7 +211,13 @@ test.describe('change-proposal-queue', () => {
 		})
 		expect(proposed.status()).toBe(401)
 
-		const decided = await request.post(`${APP_API_BASE}/proposals/proposal-1/accept`, { data: {} })
-		expect([401, 403, 412].includes(decided.status()), 'deciding needs a staff session').toBeTruthy()
+		const decided = await request.post(
+			`${APP_API_BASE}/proposals/proposal-1/accept`,
+			{ data: {} },
+		)
+		expect(
+			[401, 403, 412].includes(decided.status()),
+			'deciding needs a staff session',
+		).toBeTruthy()
 	})
 })

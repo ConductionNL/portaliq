@@ -55,7 +55,10 @@ async function seed(
 		headers: { Authorization: `Basic ${ADMIN}`, 'OCS-APIRequest': 'true' },
 		data,
 	})
-	expect(res.ok(), `OpenRegister objects#create must be reachable for ${schema}`).toBeTruthy()
+	expect(
+		res.ok(),
+		`OpenRegister objects#create must be reachable for ${schema}`,
+	).toBeTruthy()
 	const body = await res.json()
 	const id = (body.id ?? body['@self']?.id) as string
 	expect(id).toBeTruthy()
@@ -70,8 +73,14 @@ async function seedCaseType(
 	const data: Record<string, unknown> = {
 		title: `E2E zaaktype ${Date.now()}`,
 		portalWritable: [{ field: 'omschrijving', audiences: ['client'] }],
-		portalAmendmentWindow: { openStatuses: ['ontvangen'], closedReason: 'In behandeling.' },
-		portalDocumentWindow: { openStatuses: ['ontvangen'], closedReason: 'Geen stukken meer.' },
+		portalAmendmentWindow: {
+			openStatuses: ['ontvangen'],
+			closedReason: 'In behandeling.',
+		},
+		portalDocumentWindow: {
+			openStatuses: ['ontvangen'],
+			closedReason: 'Geen stukken meer.',
+		},
 	}
 	if (withdrawal !== null) {
 		data.portalWithdrawal = withdrawal
@@ -114,7 +123,13 @@ async function seedContribution(request: APIRequestContext): Promise<string> {
 				},
 			},
 		],
-		pages: [{ id: 'mijn-zaken', label: 'Mijn zaken', blocks: [{ type: 'collection', collection: 'cases' }] }],
+		pages: [
+			{
+				id: 'mijn-zaken',
+				label: 'Mijn zaken',
+				blocks: [{ type: 'collection', collection: 'cases' }],
+			},
+		],
 	})
 }
 
@@ -123,7 +138,7 @@ async function seedCase(
 	request: APIRequestContext,
 	caseType: string,
 	status: string,
-): Promise<{ token: string, caseId: string }> {
+): Promise<{ token: string; caseId: string }> {
 	const subjectRef = `subject-${Date.now()}-${Math.floor(Math.random() * 10000)}`
 	const caseId = await seed(request, 'portalCase', {
 		subjectRef,
@@ -137,14 +152,19 @@ async function seedCase(
 	const login = await request.post(`${API_BASE}/session/dev-login`, {
 		data: { subjectRef, audience: 'client', organisation: ORGANISATION },
 	})
-	expect(login.ok(), 'dev-login must be enabled (see tests/e2e/ci-seed.sh)').toBeTruthy()
+	expect(
+		login.ok(),
+		'dev-login must be enabled (see tests/e2e/ci-seed.sh)',
+	).toBeTruthy()
 	const { token } = await login.json()
 
 	return { token: token as string, caseId }
 }
 
 test.describe('withdrawing-your-own-case-from-the-portal', () => {
-	test('a request whose type allows it can be withdrawn, with a reason, and stays readable', async ({ request }) => {
+	test('a request whose type allows it can be withdrawn, with a reason, and stays readable', async ({
+		request,
+	}) => {
 		await seedContribution(request)
 		const caseType = await seedCaseType(request, {
 			openStatuses: ['ontvangen'],
@@ -160,7 +180,9 @@ test.describe('withdrawing-your-own-case-from-the-portal', () => {
 		expect(before.ok()).toBeTruthy()
 		const offered = await before.json()
 		expect(offered.withdrawal.open).toBe(true)
-		expect(offered.withdrawal.confirmText).toBe('Als u intrekt, stopt de behandeling.')
+		expect(offered.withdrawal.confirmText).toBe(
+			'Als u intrekt, stopt de behandeling.',
+		)
 
 		const withdrawn = await request.post(`${casePath}/withdraw`, {
 			headers,
@@ -178,11 +200,18 @@ test.describe('withdrawing-your-own-case-from-the-portal', () => {
 		expect(reopened.withdrawal.open).toBe(false)
 		expect(reopened.case.withdrawnAt).toBeTruthy()
 
-		const again = await request.post(`${casePath}/withdraw`, { headers, data: {} })
-		expect(again.status(), 'a withdrawn request is not withdrawn twice').toBe(409)
+		const again = await request.post(`${casePath}/withdraw`, {
+			headers,
+			data: {},
+		})
+		expect(again.status(), 'a withdrawn request is not withdrawn twice').toBe(
+			409,
+		)
 	})
 
-	test('a case type that declares no withdrawal offers none and accepts none', async ({ request }) => {
+	test('a case type that declares no withdrawal offers none and accepts none', async ({
+		request,
+	}) => {
 		await seedContribution(request)
 		const caseType = await seedCaseType(request, null)
 		const { token, caseId } = await seedCase(request, caseType, 'ontvangen')
@@ -192,11 +221,16 @@ test.describe('withdrawing-your-own-case-from-the-portal', () => {
 		const page = await request.get(casePath, { headers })
 		expect((await page.json()).withdrawal.declared).toBe(false)
 
-		const refused = await request.post(`${casePath}/withdraw`, { headers, data: {} })
+		const refused = await request.post(`${casePath}/withdraw`, {
+			headers,
+			data: {},
+		})
 		expect(refused.status()).toBe(409)
 	})
 
-	test('a closed window says why, and the request is untouched', async ({ request }) => {
+	test('a closed window says why, and the request is untouched', async ({
+		request,
+	}) => {
 		await seedContribution(request)
 		const caseType = await seedCaseType(request, {
 			openStatuses: ['concept'],
@@ -212,7 +246,10 @@ test.describe('withdrawing-your-own-case-from-the-portal', () => {
 		expect(state.withdrawal.open).toBe(false)
 		expect(state.withdrawal.reason).toBe('Uw aanvraag is al beoordeeld.')
 
-		const refused = await request.post(`${casePath}/withdraw`, { headers, data: {} })
+		const refused = await request.post(`${casePath}/withdraw`, {
+			headers,
+			data: {},
+		})
 		expect(refused.status()).toBe(409)
 
 		const after = await request.get(casePath, { headers })

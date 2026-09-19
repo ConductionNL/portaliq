@@ -200,6 +200,23 @@ class ProposalController extends Controller {
 			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
+		// The queue is a reviewer's view of somebody's record, so it is
+		// gated on the same action and the same per-object read as
+		// accepting one. Being logged in settles nothing here: the
+		// register, schema and id all come from the caller, so without
+		// this any account on the instance could read the proposals,
+		// their notes and their proposed values on any record.
+		$mayReview = $this->guard->mayAct(
+			user: $user,
+			register: $register,
+			schema: $schema,
+			id: $id,
+			action: PortalCaseAccessGuard::ACTION_REVIEW_PROPOSAL
+		);
+		if ($mayReview === false) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
 		$proposals = $this->proposals->forSubject(
 			subject: ['register' => $register, 'schema' => $schema, 'id' => $id],
 			state: $state
