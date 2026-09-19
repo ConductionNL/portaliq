@@ -13,6 +13,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\ContributionController;
+use OCA\Portaliq\Service\CitizenWriteRecorder;
 use OCA\Portaliq\Controller\PortalTaskProxyController;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\NotificationDispatchService;
@@ -28,6 +29,7 @@ use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\PortalTaskGateway;
 use OCA\Portaliq\Service\SubmissionReceiptService;
 use OCP\AppFramework\Http;
+use OCP\IL10N;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -153,6 +155,9 @@ class PortalTaskProxyControllerTest extends TestCase {
 
 		$captured = [];
 		$gateway = $this->createMock(PortalTaskGateway::class);
+		// The answered-once guard reads the task before completing it
+		// (what-the-citizen-may-write-on-their-own-case): an OPEN task here.
+		$gateway->method('getTask')->willReturn(['status' => 200, 'body' => ['uuid' => 't-1']]);
 		$gateway->expects($this->once())->method('completeTask')->willReturnCallback(
 			function (array $subject, string $uuid, array $answers, ?string $comment, string $outcome, array $files) use (&$captured) {
 				$captured = ['answers' => $answers, 'files' => $files, 'outcome' => $outcome, 'comment' => $comment];
@@ -189,6 +194,7 @@ class PortalTaskProxyControllerTest extends TestCase {
 
 		$captured = [];
 		$gateway = $this->createMock(PortalTaskGateway::class);
+		$gateway->method('getTask')->willReturn(['status' => 200, 'body' => ['uuid' => 't-1']]);
 		$gateway->method('completeTask')->willReturnCallback(
 			function (array $subject, string $uuid, array $answers, ?string $comment, string $outcome, array $files) use (&$captured) {
 				$captured = ['answers' => $answers, 'files' => $files];
@@ -271,6 +277,98 @@ class PortalTaskProxyControllerTest extends TestCase {
 	 * @param array<string, mixed>|null $subject The resolved subject, or null (no bearer).
 	 * @param PortalTaskGateway $gateway The gateway mock.
 	 */
+	/**
+	 * A task is answered once. A second answer is refused with a sentence and
+	 * the answer already given, and the seam is never asked to complete it.
+	 *
+	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 */
+	public function testASecondAnswerIsRefusedWithASentence(): void {
+		$gateway = $this->createMock(PortalTaskGateway::class);
+		$gateway->method('getTask')->willReturn([
+			'status' => 200,
+			'body' => ['uuid' => 't-1', 'status' => 'completed', 'comment' => 'al gestuurd'],
+		]);
+		$gateway->expects($this->never())->method('completeTask');
+
+		$response = $this->controller(subject: self::SUBJECT, gateway: $gateway)->complete('t-1');
+
+		$this->assertSame(Http::STATUS_CONFLICT, $response->getStatus());
+		$this->assertSame('task-already-answered', $response->getData()['error']);
+		$this->assertNotSame('', $response->getData()['message']);
+		// The answer already given is handed back, so the citizen sees what
+		// they sent rather than only being told no.
+		$this->assertSame('al gestuurd', $response->getData()['task']['comment']);
+	}//end testASecondAnswerIsRefusedWithASentence()
+
+	/**
+	 * A CLIENT answering a task is a citizen write, so it raises the event a
+	 * rule can fire on. A partner answering its own task does not: that
+	 * audience is `partner-tasks-in-the-portal`, not this change.
+	 *
+	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 */
+	public function testAClientAnswerRaisesTheCitizenWriteEvent(): void {
+		foreach ([['client', 1], ['partner', 0]] as [$audience, $expected]) {
+			$gateway = $this->createMock(PortalTaskGateway::class);
+			$gateway->method('getTask')->willReturn(['status' => 200, 'body' => ['uuid' => 't-1']]);
+			$gateway->method('completeTask')->willReturn([
+				'status' => 200,
+				'body' => ['uuid' => 't-1', 'objectRegister' => 'zaken', 'objectSchema' => 'zaak', 'objectId' => 'zaak-1'],
+			]);
+
+			$recorder = $this->createMock(CitizenWriteRecorder::class);
+			$recorder->expects($this->exactly($expected))->method('announce');
+
+			$subject = self::SUBJECT;
+			$subject['audience'] = $audience;
+			$this->controllerWithRecorder(subject: $subject, gateway: $gateway, recorder: $recorder)->complete('t-1');
+		}
+	}//end testAClientAnswerRaisesTheCitizenWriteEvent()
+
+	/**
+	 * Build the proxy around a given recorder, so the announcement can be
+	 * counted.
+	 *
+	 * @param array<string, mixed>|null $subject The resolved subject.
+	 * @param PortalTaskGateway $gateway The gateway mock.
+	 * @param CitizenWriteRecorder $recorder The recorder mock.
+	 */
+	private function controllerWithRecorder(
+		?array $subject,
+		PortalTaskGateway $gateway,
+		CitizenWriteRecorder $recorder,
+	): PortalTaskProxyController {
+		$request = $this->createMock(IRequest::class);
+		$request->method('getHeader')->willReturn('Bearer token');
+		$request->method('getParam')->willReturn(null);
+		$request->method('getUploadedFile')->willReturn([]);
+
+		$session = $this->createMock(PortalSessionService::class);
+		$session->method('resolveFromBearer')->willReturn($subject);
+
+		return new PortalTaskProxyController($request, $session, $gateway, $recorder, $this->l10n());
+	}//end controllerWithRecorder()
+
+	/**
+	 * A recorder that records nothing: these tests are about the relay, and
+	 * the announcement has its own test.
+	 */
+	private function recorder(): CitizenWriteRecorder {
+		return $this->createMock(CitizenWriteRecorder::class);
+	}//end recorder()
+
+	/**
+	 * An IL10N that answers with the key, so a refusal's sentence is readable
+	 * in an assertion.
+	 */
+	private function l10n(): IL10N {
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnCallback(static fn (string $text) => $text);
+
+		return $l10n;
+	}//end l10n()
+
 	private function controller(?array $subject, PortalTaskGateway $gateway): PortalTaskProxyController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('');
@@ -280,7 +378,7 @@ class PortalTaskProxyControllerTest extends TestCase {
 		$session = $this->createMock(PortalSessionService::class);
 		$session->method('resolveFromBearer')->willReturn($subject);
 
-		return new PortalTaskProxyController($request, $session, $gateway);
+		return new PortalTaskProxyController($request, $session, $gateway, $this->recorder(), $this->l10n());
 	}//end controller()
 
 	/**
@@ -294,7 +392,7 @@ class PortalTaskProxyControllerTest extends TestCase {
 		$session = $this->createMock(PortalSessionService::class);
 		$session->method('resolveFromBearer')->willReturn($subject);
 
-		return new PortalTaskProxyController($request, $session, $gateway);
+		return new PortalTaskProxyController($request, $session, $gateway, $this->recorder(), $this->l10n());
 	}//end controllerWithRequest()
 
 	/**
@@ -337,4 +435,31 @@ class PortalTaskProxyControllerTest extends TestCase {
 			$gateway
 		);
 	}//end contributionController()
+
+	/**
+	 * partner-tasks-in-the-portal REQ-PTP-001: the surface serves every
+	 * audience, and lists only the tasks of the session that asked. A partner
+	 * session reaches it exactly as a client session does, and the subject the
+	 * gateway is given is the partner's own.
+	 *
+	 * @spec openspec/changes/partner-tasks-in-the-portal/specs/partner-tasks-in-the-portal/spec.md
+	 */
+	public function testAPartnerSessionReachesTheTaskSurfaceWithItsOwnSubject(): void {
+		$seen = [];
+		$gateway = $this->createMock(PortalTaskGateway::class);
+		$gateway->method('listTasks')->willReturnCallback(
+			function (array $subject) use (&$seen): array {
+				$seen = $subject;
+				return ['status' => 200, 'body' => ['tasks' => [['uuid' => 'task-1']]]];
+			}
+		);
+
+		$partner = ['subjectRef' => 'partner-subject', 'audience' => 'partner', 'organisation' => 'gemeente-x', 'trust' => 'substantial'];
+		$response = $this->controller(subject: $partner, gateway: $gateway)->index();
+
+		$this->assertSame(200, $response->getStatus());
+		$this->assertSame('partner-subject', $seen['subjectRef']);
+		$this->assertSame('partner', $seen['audience']);
+
+	}//end testAPartnerSessionReachesTheTaskSurfaceWithItsOwnSubject()
 }//end class

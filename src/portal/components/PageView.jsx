@@ -10,6 +10,7 @@
 // blocks, so a ref that does not resolve here is a defensive skip, not expected.
 
 import React, { useCallback, useEffect, useRef, useState } from 'react'
+import CitizenCase from './CitizenCase.jsx'
 import CollectionTable from './CollectionTable.jsx'
 import RichText from './RichText.jsx'
 import SchemaForm from './SchemaForm.jsx'
@@ -196,8 +197,12 @@ function DetailCard({ collection, row, api }) {
  * @param root0.onAction
  * @param root0.onRowAction
  * @param root0.busyRow
+ * @param root0.t
  */
-export default function PageView({ page, contribution, api, dataByCollection, onCreated, onAction, onRowAction, busyRow }) {
+export default function PageView({ page, contribution, api, dataByCollection, onCreated, onAction, onRowAction, busyRow, t }) {
+	// `t` is optional so a caller that does not supply a translator still
+	// renders English rather than an undefined string.
+	const translate = t || ((key) => key)
 	// The row selected in a table on this page, keyed by collection id — feeds
 	// any `detail` block for the same collection.
 	const [selected, setSelected] = useState({})
@@ -210,6 +215,7 @@ export default function PageView({ page, contribution, api, dataByCollection, on
 					return <RichText key={i} markdown={block.markdown} />
 
 				case 'collection':
+				case 'citizenCase':
 				case 'detail': {
 					const collection = findCollection(contribution, block.collection)
 					if (!collection) {
@@ -218,6 +224,17 @@ export default function PageView({ page, contribution, api, dataByCollection, on
 					const loaded = dataByCollection[collection.id]
 					if (block.type === 'detail') {
 						return <DetailCard key={i} collection={collection} row={selected[collection.id]} api={api} />
+					}
+					if (block.type === 'citizenCase') {
+						return (
+							<CitizenCase
+								key={i}
+								collection={collection}
+								row={selected[collection.id]}
+								api={api}
+								t={translate}
+							/>
+						)
 					}
 					const rowActions = (collection.rowActions || [])
 						.map((id) => findAction(contribution, id))

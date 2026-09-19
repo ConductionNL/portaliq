@@ -515,6 +515,48 @@ portaliq/
 └── img/                        # App icons and screenshots
 ```
 
+## Integration leaves, and the side of the boundary each one lives on
+
+An integration leaf is a small surface from another Nextcloud app, rendered next to
+an object. Portaliq adopts three of them, all on internal staff pages.
+
+| Leaf | Page | Needs the app | What a handler does with it |
+|---|---|---|---|
+| `forms` | `PortalSubmissionDetail` | `forms` | Link the form behind a submission, or a follow-up form. |
+| `talk` | `PortalMessageDetail` | `spreed` | Discuss with a colleague how to answer a citizen. |
+| `calendar` | `PortalAccountDetail` | `calendar` | See and plan meetings with a portal subject. |
+
+Each leaf is declared twice: as a widget in `src/manifest.json`, and as
+`configuration.linkedTypes` on the schema in `lib/Settings/portaliq_register.json`.
+The nesting matters. A `linkedTypes` written at the top level of a schema is dropped
+on save, without an error.
+
+### Every leaf is internal only
+
+A leaf is a Nextcloud component, running in the Nextcloud shell, for a Nextcloud
+user. A portal visitor is none of those things. They hold a portal bearer session,
+and they reach data only through the portal edge (ADR-046).
+
+So no visitor ever sees a leaf, and no Talk join link, form share link or calendar
+link reaches a portal response. Anything a visitor needs to see is built from
+OpenRegister objects and served by the portal edge. `CmsReader::shapePage()` is where
+that holds: it copies a whitelist of widget keys, so a leaf-shaped widget authored
+into a portal page comes out stripped. `tests/Unit/Service/CmsReaderTest.php` pins it.
+
+### If you adopt a fourth leaf
+
+Declare the widget, declare the `linkedTypes`, and bump that schema's `version`. The
+importer compares properties, required, authorization and the `x-openregister`
+annotations, and nothing else, so a `configuration` edit at an unchanged version is
+skipped in silence and never reaches the running instance.
+
+Then run `npm run check:leaf-integrations`. It asks the question the parity checks do
+not: is the widget placed in the layout, is its icon registered, does the schema
+agree, and does `src/main.js` still install the registry. Without
+`installIntegrationRegistry()` and the two register calls in `src/main.js`, every
+integration widget resolves to null and renders nothing at all, with no error in the
+console, because an unregistered id and an uninstalled app look the same.
+
 ## Requirements
 
 | Dependency | Version |

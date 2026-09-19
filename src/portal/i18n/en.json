@@ -46,5 +46,15 @@
 	"This task does not exist or is not yours.": "This task does not exist or is not yours.",
 	"This task is already closed.": "This task is already closed.",
 	"The upload was refused. Check the file rules above.": "The upload was refused. Check the file rules above.",
-	"The tasks are not available right now. Please try again later.": "The tasks are not available right now. Please try again later."
+	"The tasks are not available right now. Please try again later.": "The tasks are not available right now. Please try again later.",
+	"Select a case.": "Select a case.",
+	"This case is not yours.": "This case is not yours.",
+	"This answer cannot be changed from the portal.": "This answer cannot be changed from the portal.",
+	"Save my change": "Save my change",
+	"Your change has been saved.": "Your change has been saved.",
+	"The change could not be saved. Please try again.": "The change could not be saved. Please try again.",
+	"Documents": "Documents",
+	"Add a document": "Add a document",
+	"{name} has been added to your case.": "{name} has been added to your case.",
+	"The document could not be added. Please try again.": "The document could not be added. Please try again."
 }
