@@ -25,6 +25,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Portaliq\Service\CitizenWriteRecorder
  * @covers \OCA\Portaliq\Event\PortalClientWriteEvent
+ * @covers \OCA\Portaliq\Event\PortalClientWithdrawalEvent
  *
  * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
  */
