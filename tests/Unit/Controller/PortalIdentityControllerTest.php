@@ -141,6 +141,129 @@ class PortalIdentityControllerTest extends TestCase {
 	}//end testTheConfirmationSecretIsNotReadableFromTheOldSession()
 
 	/**
+	 * gate-25, on the route `GET /portal/api/identity/challenge`. The
+	 * endpoint answers 404 for a host no portal claims, before it issues
+	 * anything, so an unknown host cannot mint a nonce.
+	 *
+	 * @return void
+	 */
+	public function testTheChallengeIsNotIssuedForAHostNoPortalClaims(): void {
+		$controller = $this->controller(site: null);
+		$this->doubles['challenge']->expects($this->never())->method('issue');
+
+		$response = $controller->challenge(surface: 'form');
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+		$this->assertSame(['error' => 'portal_not_found'], $response->getData());
+
+	}//end testTheChallengeIsNotIssuedForAHostNoPortalClaims()
+
+	/**
+	 * gate-25, the other side of the same route: a known portal gets the
+	 * challenge its own service issued, for the surface that was asked for.
+	 *
+	 * @return void
+	 */
+	public function testTheChallengeIsIssuedForTheSurfaceThatWasAsked(): void {
+		$controller = $this->controller(site: ['organisation' => 'gemeente-x']);
+		$this->doubles['challenge']->expects($this->once())
+			->method('issue')
+			->with(
+				$this->equalTo(['organisation' => 'gemeente-x']),
+				$this->equalTo('registration')
+			)
+			->willReturn(['nonce' => 'nonce-1', 'difficulty' => 12]);
+
+		$response = $controller->challenge(surface: 'registration');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['nonce' => 'nonce-1', 'difficulty' => 12], $response->getData());
+
+	}//end testTheChallengeIsIssuedForTheSurfaceThatWasAsked()
+
+	/**
+	 * gate-25, on `POST /portal/api/identity/reference-link/redeem`. Used,
+	 * expired and unknown are deliberately one answer, so the refusal says
+	 * only `link_not_valid` and never which of the three it was.
+	 *
+	 * @return void
+	 */
+	public function testARedeemedLinkIsRefusedWithoutSayingWhy(): void {
+		$controller = $this->controller(site: ['organisation' => 'gemeente-x']);
+		$this->doubles['references']->method('redeem')->willReturn(null);
+
+		$response = $controller->redeemReferenceLink(token: 'secret-1');
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		$this->assertSame(['error' => 'link_not_valid'], $response->getData());
+
+	}//end testARedeemedLinkIsRefusedWithoutSayingWhy()
+
+	/**
+	 * gate-25, the admitting side: a live link answers with the case the
+	 * service resolved, and the token is never echoed back.
+	 *
+	 * @return void
+	 */
+	public function testALiveLinkAnswersWithTheCaseAndNeverTheToken(): void {
+		$controller = $this->controller(site: ['organisation' => 'gemeente-x']);
+		$this->doubles['references']->expects($this->once())
+			->method('redeem')
+			->with($this->equalTo('secret-1'))
+			->willReturn(['caseReference' => 'ZAAK-1', 'register' => 'dossiq', 'schema' => 'zaak']);
+
+		$data = $controller->redeemReferenceLink(token: 'secret-1')->getData();
+
+		$this->assertSame('ZAAK-1', $data['caseReference']);
+		$this->assertArrayNotHasKey('token', $data);
+		$this->assertArrayNotHasKey('tokenHash', $data);
+
+	}//end testALiveLinkAnswersWithTheCaseAndNeverTheToken()
+
+	/**
+	 * gate-25, on `POST /portal/api/identity/invitation/accept`. An
+	 * invitation that is spent, expired or unknown is one refusal, and no
+	 * account is created.
+	 *
+	 * @return void
+	 */
+	public function testAnInvitationThatIsNotValidCreatesNoAccount(): void {
+		$controller = $this->controller(site: ['organisation' => 'gemeente-x']);
+		$this->doubles['invitations']->method('accept')->willReturn(null);
+		$this->doubles['accounts']->expects($this->never())->method('provision');
+
+		$response = $controller->acceptInvitation(token: 'secret-1');
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		$this->assertSame(['error' => 'invitation_not_valid'], $response->getData());
+
+	}//end testAnInvitationThatIsNotValidCreatesNoAccount()
+
+	/**
+	 * gate-25, the accepting side. The answer says only that it landed: the
+	 * account the service created is not handed to the browser, because the
+	 * caller still has no session at this point.
+	 *
+	 * @return void
+	 */
+	public function testAnAcceptedInvitationSaysOnlyThatItLanded(): void {
+		$controller = $this->controller(site: ['organisation' => 'gemeente-x']);
+		$this->doubles['invitations']->expects($this->once())
+			->method('accept')
+			->with($this->equalTo('secret-1'))
+			->willReturn(['account' => ['subjectRef' => 'subject-1'], 'tokenHash' => 'hash-1']);
+
+		$response = $controller->acceptInvitation(token: 'secret-1');
+		$data = $response->getData();
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['accepted' => true], $data);
+		$this->assertArrayNotHasKey('subjectRef', $data);
+
+	}//end testAnAcceptedInvitationSaysOnlyThatItLanded()
+
+
+	/**
 	 * The controller over doubles, all of which can only answer methods the
 	 * real classes have.
 	 *
