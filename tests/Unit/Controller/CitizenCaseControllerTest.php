@@ -47,6 +47,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Portaliq\Controller\CitizenCaseController
  * @uses   \OCA\Portaliq\Contribution\CitizenDocumentUpload
  * @uses   \OCA\Portaliq\Event\PortalClientWriteEvent
+ * @uses   \OCA\Portaliq\Event\PortalClientWithdrawalEvent
  * @uses   \OCA\Portaliq\Service\CitizenWritableSetResolver
  * @uses   \OCA\Portaliq\Service\CitizenWriteRecorder
  * @uses   \OCA\Portaliq\Service\CitizenWriteThrottle
