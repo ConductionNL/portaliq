@@ -59,7 +59,10 @@ async function seed(
 		headers: { Authorization: `Basic ${ADMIN}`, 'OCS-APIRequest': 'true' },
 		data,
 	})
-	expect(res.ok(), `OpenRegister objects#create must be reachable for ${schema}`).toBeTruthy()
+	expect(
+		res.ok(),
+		`OpenRegister objects#create must be reachable for ${schema}`,
+	).toBeTruthy()
 	const body = await res.json()
 	const id = (body.id ?? body['@self']?.id) as string
 	expect(id).toBeTruthy()
@@ -128,7 +131,11 @@ async function seedMandatedIdentity(
 	reach: 'organisation' | 'tree',
 ): Promise<string> {
 	const res = await request.post(`${APP_API_BASE}/accounts/provision`, {
-		headers: { Authorization: `Basic ${ADMIN}`, 'OCS-APIRequest': 'true', requesttoken: 'x' },
+		headers: {
+			Authorization: `Basic ${ADMIN}`,
+			'OCS-APIRequest': 'true',
+			requesttoken: 'x',
+		},
 		data: {
 			audience: 'client',
 			organisation: ORGANISATION,
@@ -152,13 +159,19 @@ async function seedMandatedIdentity(
 	const login = await request.post(`${API_BASE}/session/dev-login`, {
 		data: { subjectRef, audience: 'client', organisation: ORGANISATION },
 	})
-	expect(login.ok(), 'dev-login must be enabled (see tests/e2e/ci-seed.sh)').toBeTruthy()
+	expect(
+		login.ok(),
+		'dev-login must be enabled (see tests/e2e/ci-seed.sh)',
+	).toBeTruthy()
 	const { token } = await login.json()
 	return token as string
 }
 
 /** What one identity's case list answers. */
-async function myCases(request: APIRequestContext, token: string): Promise<Record<string, never>> {
+async function myCases(
+	request: APIRequestContext,
+	token: string,
+): Promise<Record<string, never>> {
 	const res = await request.get(`${API_BASE}/my-cases`, {
 		headers: { Authorization: `Bearer ${token}` },
 	})
@@ -167,7 +180,9 @@ async function myCases(request: APIRequestContext, token: string): Promise<Recor
 }
 
 test.describe('portal-visibility-follows-the-party-tree', () => {
-	test('one mandate covers the group, and each case names the entity it belongs to', async ({ request }) => {
+	test('one mandate covers the group, and each case names the entity it belongs to', async ({
+		request,
+	}) => {
 		await seedContribution(request)
 		const stamp = Date.now()
 		const parent = `holding-${stamp}`
@@ -182,7 +197,10 @@ test.describe('portal-visibility-follows-the-party-tree', () => {
 		await seedCase(request, subOne, `ZAAK-A-${stamp}`, 'vergunning')
 		await seedCase(request, subTwo, `ZAAK-B-${stamp}`, 'vergunning')
 
-		const body = await myCases(request, await seedMandatedIdentity(request, parent, 'tree'))
+		const body = await myCases(
+			request,
+			await seedMandatedIdentity(request, parent, 'tree'),
+		)
 		const rows = (body.cases ?? []) as Array<Record<string, never>>
 		const references = rows.map((row) => row.reference as unknown as string)
 
@@ -191,17 +209,25 @@ test.describe('portal-visibility-follows-the-party-tree', () => {
 		expect(references).toContain(`ZAAK-B-${stamp}`)
 
 		// The subsidiary's case is never presented as the parent's own.
-		const borrowed = rows.find((row) => (row.reference as unknown as string) === `ZAAK-A-${stamp}`)
+		const borrowed = rows.find(
+			(row) => (row.reference as unknown as string) === `ZAAK-A-${stamp}`,
+		)
 		expect(borrowed?._entity as unknown as string).toBe(subOne)
-		expect((borrowed?._mandate as unknown as Record<string, string>)?.label).toBe('Gemachtigd voor de groep')
+		expect(
+			(borrowed?._mandate as unknown as Record<string, string>)?.label,
+		).toBe('Gemachtigd voor de groep')
 
 		// And the switcher offers what the mandate reaches.
-		const entities = (body.activeMandate as unknown as Record<string, string[]>)?.entities ?? []
+		const entities =
+			(body.activeMandate as unknown as Record<string, string[]>)?.entities
+			?? []
 		expect(entities).toContain(subOne)
 		expect(entities).toContain(subTwo)
 	})
 
-	test('a flat mandate stays flat, and a case type that refuses the tree stays with its entity', async ({ request }) => {
+	test('a flat mandate stays flat, and a case type that refuses the tree stays with its entity', async ({
+		request,
+	}) => {
 		await seedContribution(request)
 		const stamp = Date.now()
 		const parent = `holding-flat-${stamp}`
@@ -214,18 +240,30 @@ test.describe('portal-visibility-follows-the-party-tree', () => {
 		// A melding is not declared parent-reachable by the contribution.
 		await seedCase(request, sub, `MELDING-${stamp}`, 'melding')
 
-		const flat = await myCases(request, await seedMandatedIdentity(request, parent, 'organisation'))
-		const flatRefs = ((flat.cases ?? []) as Array<Record<string, never>>).map((row) => row.reference as unknown as string)
+		const flat = await myCases(
+			request,
+			await seedMandatedIdentity(request, parent, 'organisation'),
+		)
+		const flatRefs = ((flat.cases ?? []) as Array<Record<string, never>>).map(
+			(row) => row.reference as unknown as string,
+		)
 		expect(flatRefs).toContain(`ZAAK-P-${stamp}`)
 		expect(flatRefs).not.toContain(`ZAAK-S-${stamp}`)
 
-		const wide = await myCases(request, await seedMandatedIdentity(request, parent, 'tree'))
-		const wideRefs = ((wide.cases ?? []) as Array<Record<string, never>>).map((row) => row.reference as unknown as string)
+		const wide = await myCases(
+			request,
+			await seedMandatedIdentity(request, parent, 'tree'),
+		)
+		const wideRefs = ((wide.cases ?? []) as Array<Record<string, never>>).map(
+			(row) => row.reference as unknown as string,
+		)
 		expect(wideRefs).toContain(`ZAAK-S-${stamp}`)
 		expect(wideRefs).not.toContain(`MELDING-${stamp}`)
 	})
 
-	test('a subsidiary sold today is gone today, and one acquired today is there', async ({ request }) => {
+	test('a subsidiary sold today is gone today, and one acquired today is there', async ({
+		request,
+	}) => {
 		await seedContribution(request)
 		const stamp = Date.now()
 		const parent = `holding-moves-${stamp}`
@@ -237,18 +275,30 @@ test.describe('portal-visibility-follows-the-party-tree', () => {
 
 		const token = await seedMandatedIdentity(request, parent, 'tree')
 		const before = await myCases(request, token)
-		expect(((before.cases ?? []) as Array<Record<string, never>>).map((row) => row.reference as unknown as string))
-			.toContain(`ZAAK-SOLD-${stamp}`)
+		expect(
+			((before.cases ?? []) as Array<Record<string, never>>).map(
+				(row) => row.reference as unknown as string,
+			),
+		).toContain(`ZAAK-SOLD-${stamp}`)
 
 		// The group changes by being recorded as changed. No grant is revoked.
-		const update = await request.put(`${OR_OBJECTS_BASE}/portaliq/organisation/${soldId}`, {
-			headers: { Authorization: `Basic ${ADMIN}`, 'OCS-APIRequest': 'true' },
-			data: { slug: sold, title: sold, parent: '' },
-		})
+		const update = await request.put(
+			`${OR_OBJECTS_BASE}/portaliq/organisation/${soldId}`,
+			{
+				headers: {
+					Authorization: `Basic ${ADMIN}`,
+					'OCS-APIRequest': 'true',
+				},
+				data: { slug: sold, title: sold, parent: '' },
+			},
+		)
 		expect(update.ok()).toBeTruthy()
 
 		const after = await myCases(request, token)
-		expect(((after.cases ?? []) as Array<Record<string, never>>).map((row) => row.reference as unknown as string))
-			.not.toContain(`ZAAK-SOLD-${stamp}`)
+		expect(
+			((after.cases ?? []) as Array<Record<string, never>>).map(
+				(row) => row.reference as unknown as string,
+			),
+		).not.toContain(`ZAAK-SOLD-${stamp}`)
 	})
 })

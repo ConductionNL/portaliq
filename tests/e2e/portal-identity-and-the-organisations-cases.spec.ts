@@ -59,7 +59,10 @@ async function seed(
 		headers: { Authorization: `Basic ${ADMIN}`, 'OCS-APIRequest': 'true' },
 		data,
 	})
-	expect(res.ok(), `OpenRegister objects#create must be reachable for ${schema}`).toBeTruthy()
+	expect(
+		res.ok(),
+		`OpenRegister objects#create must be reachable for ${schema}`,
+	).toBeTruthy()
 	const body = await res.json()
 	const id = (body.id ?? body['@self']?.id) as string
 	expect(id).toBeTruthy()
@@ -102,7 +105,11 @@ async function seedEmployee(
 	caseType: string,
 ): Promise<string> {
 	const res = await request.post(`${APP_API_BASE}/accounts/provision`, {
-		headers: { Authorization: `Basic ${ADMIN}`, 'OCS-APIRequest': 'true', requesttoken: 'x' },
+		headers: {
+			Authorization: `Basic ${ADMIN}`,
+			'OCS-APIRequest': 'true',
+			requesttoken: 'x',
+		},
 		data: {
 			audience: 'client',
 			organisation: ORGANISATION,
@@ -141,11 +148,17 @@ async function seedMandate(
 }
 
 /** Sign in as a portal identity and return its bearer. */
-async function bearerFor(request: APIRequestContext, subjectRef: string): Promise<string> {
+async function bearerFor(
+	request: APIRequestContext,
+	subjectRef: string,
+): Promise<string> {
 	const res = await request.post(`${API_BASE}/session/dev-login`, {
 		data: { subjectRef, audience: 'client', organisation: ORGANISATION },
 	})
-	expect(res.ok(), 'dev-login must be enabled (see tests/e2e/ci-seed.sh)').toBeTruthy()
+	expect(
+		res.ok(),
+		'dev-login must be enabled (see tests/e2e/ci-seed.sh)',
+	).toBeTruthy()
 	const { token } = await res.json()
 	return token as string
 }
@@ -154,7 +167,7 @@ async function bearerFor(request: APIRequestContext, subjectRef: string): Promis
 async function casesFor(
 	request: APIRequestContext,
 	token: string,
-): Promise<Array<{ reference: string, mandate: string | null }>> {
+): Promise<Array<{ reference: string; mandate: string | null }>> {
 	const res = await request.get(`${API_BASE}/my-cases`, {
 		headers: { Authorization: `Bearer ${token}` },
 	})
@@ -167,20 +180,29 @@ async function casesFor(
 }
 
 test.describe('portal-identity-and-the-organisations-cases', () => {
-	test('two employees of one company both see both cases, and a colleague with no mandate sees neither', async ({ request }) => {
+	test('two employees of one company both see both cases, and a colleague with no mandate sees neither', async ({
+		request,
+	}) => {
 		await seedContribution(request)
 		const first = `ZAAK-A-${Date.now()}`
 		const second = `ZAAK-B-${Date.now()}`
 
 		const employeeOne = await seedEmployee(request, first, 'vergunning')
 		const employeeTwo = await seedEmployee(request, second, 'vergunning')
-		const colleague = await seedEmployee(request, `ZAAK-C-${Date.now()}`, 'vergunning')
+		const colleague = await seedEmployee(
+			request,
+			`ZAAK-C-${Date.now()}`,
+			'vergunning',
+		)
 
 		await seedMandate(request, employeeOne, [])
 		await seedMandate(request, employeeTwo, [])
 		// The colleague deliberately gets none.
 
-		const seenByOne = await casesFor(request, await bearerFor(request, employeeOne))
+		const seenByOne = await casesFor(
+			request,
+			await bearerFor(request, employeeOne),
+		)
 		const references = seenByOne.map((row) => row.reference)
 		expect(references).toContain(first)
 		expect(references).toContain(second)
@@ -189,23 +211,34 @@ test.describe('portal-identity-and-the-organisations-cases', () => {
 		const borrowed = seenByOne.find((row) => row.reference === second)
 		expect(borrowed?.mandate).toBe('Gemachtigd voor Voorbeeld B.V.')
 
-		const seenByColleague = await casesFor(request, await bearerFor(request, colleague))
+		const seenByColleague = await casesFor(
+			request,
+			await bearerFor(request, colleague),
+		)
 		const colleagueRefs = seenByColleague.map((row) => row.reference)
 		expect(colleagueRefs).not.toContain(first)
 		expect(colleagueRefs).not.toContain(second)
 	})
 
-	test('a mandate narrower than the organisation lists only its own case type', async ({ request }) => {
+	test('a mandate narrower than the organisation lists only its own case type', async ({
+		request,
+	}) => {
 		await seedContribution(request)
 		const vergunning = `ZAAK-V-${Date.now()}`
 		const melding = `ZAAK-M-${Date.now()}`
 
 		await seedEmployee(request, vergunning, 'vergunning')
 		await seedEmployee(request, melding, 'melding')
-		const narrow = await seedEmployee(request, `ZAAK-N-${Date.now()}`, 'vergunning')
+		const narrow = await seedEmployee(
+			request,
+			`ZAAK-N-${Date.now()}`,
+			'vergunning',
+		)
 		await seedMandate(request, narrow, ['vergunning'])
 
-		const seen = (await casesFor(request, await bearerFor(request, narrow))).map((row) => row.reference)
+		const seen = (await casesFor(request, await bearerFor(request, narrow))).map(
+			(row) => row.reference,
+		)
 
 		expect(seen).toContain(vergunning)
 		expect(seen).not.toContain(melding)
@@ -224,12 +257,18 @@ test.describe('portal-identity-and-the-organisations-cases', () => {
 				email: 'ans@example.org',
 			},
 		})
-		expect([403, 404].includes(link.status()), 'the reference route is not offered').toBeTruthy()
+		expect(
+			[403, 404].includes(link.status()),
+			'the reference route is not offered',
+		).toBeTruthy()
 
 		const registration = await anonymous.post(`${API_BASE}/identity/register`, {
 			data: { email: 'ans@example.org' },
 		})
-		expect([403, 404].includes(registration.status()), 'registration is off by default').toBeTruthy()
+		expect(
+			[403, 404].includes(registration.status()),
+			'registration is off by default',
+		).toBeTruthy()
 
 		const mine = await anonymous.get(`${API_BASE}/identity/access-requests`)
 		expect(mine.status(), 'asking for access needs a session').toBe(401)
