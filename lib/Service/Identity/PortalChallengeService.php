@@ -14,6 +14,12 @@
  * work factor is per surface, so a form that is being hammered can be made
  * expensive without making every form expensive.
  *
+ * The nonce is signed by this instance and carries the surface it was issued
+ * for and the moment it stops counting. Without that it was not a credential
+ * at all: nothing was stored, so a caller could invent their own nonce, solve
+ * it once, and send the same pair for as long as they liked. Signing it is
+ * what makes solving the work again the only way through.
+ *
  * @category Service
  * @package  OCA\Portaliq\Service\Identity
  *
@@ -33,6 +39,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
+use DateTimeImmutable;
+use OCP\Security\ICrypto;
 use OCP\Security\ISecureRandom;
 
 /**
@@ -53,12 +61,21 @@ class PortalChallengeService {
 	public const MAX_DIFFICULTY = 24;
 
 	/**
+	 * How long a signed nonce stays usable. Long enough for somebody to fill
+	 * a form in on a slow phone, short enough that one solved nonce is not a
+	 * season ticket.
+	 */
+	public const TTL_SECONDS = 900;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param ISecureRandom $random Mints the nonce.
+	 * @param ICrypto $crypto Signs the nonce with the instance secret.
 	 */
 	public function __construct(
 		private readonly ISecureRandom $random,
+		private readonly ICrypto $crypto,
 	) {
 	}//end __construct()
 
@@ -80,20 +97,74 @@ class PortalChallengeService {
 	/**
 	 * Issue a challenge for a surface.
 	 *
+	 * The visitor gets the nonce, the moment it stops counting, and this
+	 * instance's signature over both plus the surface. All three come back on
+	 * the submission, and all three are checked there.
+	 *
 	 * @param array<string, mixed> $site The portal's own configuration row.
 	 * @param string $surface The surface asking, e.g. `form` or `registration`.
+	 * @param DateTimeImmutable|null $now The moment to date the nonce from.
 	 *
-	 * @return array{nonce: string, difficulty: int, algorithm: string}
+	 * @return array{nonce: string, expiresAt: int, signature: string, difficulty: int, algorithm: string}
 	 *
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
-	public function issue(array $site, string $surface): array {
+	public function issue(array $site, string $surface, ?DateTimeImmutable $now = null): array {
+		$nonce = $this->random->generate(32, (ISecureRandom::CHAR_LOWER . ISecureRandom::CHAR_DIGITS));
+		$expiresAt = (($now ?? new DateTimeImmutable())->getTimestamp() + self::TTL_SECONDS);
+
 		return [
-			'nonce' => $this->random->generate(32, (ISecureRandom::CHAR_LOWER . ISecureRandom::CHAR_DIGITS)),
+			'nonce' => $nonce,
+			'expiresAt' => $expiresAt,
+			'signature' => $this->signatureFor(nonce: $nonce, surface: $surface, expiresAt: $expiresAt),
 			'difficulty' => $this->difficultyFor(site: $site, surface: $surface),
 			'algorithm' => 'sha256-leading-zero-bits',
 		];
 	}//end issue()
+
+	/**
+	 * This instance's signature over a nonce, its surface and its expiry.
+	 *
+	 * The instance secret is the key, so a nonce cannot be minted anywhere
+	 * else, and the surface is inside the message, so a nonce issued for a
+	 * cheap surface cannot be spent on an expensive one.
+	 *
+	 * @param string $nonce The nonce being signed.
+	 * @param string $surface The surface it was issued for.
+	 * @param int $expiresAt The unix second it stops counting.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 */
+	public function signatureFor(string $nonce, string $surface, int $expiresAt): string {
+		return $this->crypto->calculateHMAC($nonce . ':' . $surface . ':' . $expiresAt);
+	}//end signatureFor()
+
+	/**
+	 * Whether a nonce really came from here, for this surface, and still counts.
+	 *
+	 * @param string $nonce The nonce the visitor sent back.
+	 * @param string $surface The surface they are submitting to.
+	 * @param int $expiresAt The expiry they sent back.
+	 * @param string $signature The signature they sent back.
+	 * @param DateTimeImmutable|null $now The moment to judge expiry against.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 */
+	public function nonceIsOurs(string $nonce, string $surface, int $expiresAt, string $signature, ?DateTimeImmutable $now = null): bool {
+		if ($nonce === '' || $signature === '') {
+			return false;
+		}
+
+		if ($expiresAt <= ($now ?? new DateTimeImmutable())->getTimestamp()) {
+			return false;
+		}
+
+		return hash_equals($this->signatureFor(nonce: $nonce, surface: $surface, expiresAt: $expiresAt), $signature);
+	}//end nonceIsOurs()
 
 	/**
 	 * The work factor for a surface, clamped to something a phone can do.
@@ -137,18 +208,37 @@ class PortalChallengeService {
 	 *                                         included.
 	 * @param string $nonce The nonce this visitor was issued.
 	 * @param string $solution The visitor's solution.
+	 * @param int $expiresAt The expiry issued with the nonce.
+	 * @param string $signature This instance's signature over the nonce.
+	 * @param DateTimeImmutable|null $now The moment to judge expiry against.
 	 *
 	 * @return bool True when the submission may proceed.
 	 *
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
-	public function accepts(array $site, string $surface, array $submission, string $nonce, string $solution): bool {
+	public function accepts(
+		array $site,
+		string $surface,
+		array $submission,
+		string $nonce,
+		string $solution,
+		int $expiresAt = 0,
+		string $signature = '',
+		?DateTimeImmutable $now = null,
+	): bool {
 		if ($this->honeypotIsClean(site: $site, submission: $submission) === false) {
 			return false;
 		}
 
 		if ($this->isEnabled(site: $site) === false) {
 			return true;
+		}
+
+		// The signature comes first. A nonce this instance never issued costs
+		// the caller nothing to invent, so checking the work on it would only
+		// be checking work the caller chose to do.
+		if ($this->nonceIsOurs(nonce: $nonce, surface: $surface, expiresAt: $expiresAt, signature: $signature, now: $now) === false) {
+			return false;
 		}
 
 		return $this->solves(nonce: $nonce, solution: $solution, difficulty: $this->difficultyFor(site: $site, surface: $surface));

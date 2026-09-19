@@ -121,6 +121,8 @@ class ReportController extends Controller {
 	 * @param array<string, mixed> $contact What the reporter chose to give.
 	 * @param string $nonce The challenge nonce, when one was issued.
 	 * @param string $solution The solution to it.
+	 * @param int $expiresAt The expiry issued with the nonce.
+	 * @param string $signature This instance's signature over the nonce.
 	 *
 	 * @return JSONResponse The receipt code, once.
 	 *
@@ -137,6 +139,8 @@ class ReportController extends Controller {
 		array $contact = [],
 		string $nonce = '',
 		string $solution = '',
+		int $expiresAt = 0,
+		string $signature = '',
 	): JSONResponse {
 		$site = $this->portals->resolve(request: $this->request);
 		if ($site === null) {
@@ -147,7 +151,9 @@ class ReportController extends Controller {
 			site: $site,
 			report: $report,
 			nonce: $nonce,
-			solution: $solution
+			solution: $solution,
+			expiresAt: $expiresAt,
+			signature: $signature
 		);
 		if ($solved === false) {
 			return new JSONResponse(['error' => 'challenge_failed'], Http::STATUS_FORBIDDEN);
@@ -195,18 +201,22 @@ class ReportController extends Controller {
 	 * @param array<string, mixed> $report The submitted report.
 	 * @param string $nonce The challenge nonce, when one was issued.
 	 * @param string $solution The solution to it.
+	 * @param int $expiresAt The expiry issued with the nonce.
+	 * @param string $signature This instance's signature over the nonce.
 	 *
 	 * @return bool Whether the credential checks out.
 	 *
 	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
 	 */
-	private function checkReporterCredential(array $site, array $report, string $nonce, string $solution): bool {
+	private function checkReporterCredential(array $site, array $report, string $nonce, string $solution, int $expiresAt, string $signature): bool {
 		return $this->challenge->accepts(
 			site: $site,
 			surface: 'report',
 			submission: $report,
 			nonce: $nonce,
-			solution: $solution
+			solution: $solution,
+			expiresAt: $expiresAt,
+			signature: $signature
 		);
 	}//end checkReporterCredential()
 

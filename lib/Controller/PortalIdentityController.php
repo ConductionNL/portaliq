@@ -208,6 +208,8 @@ class PortalIdentityController extends Controller implements PortalProtected {
 	 * @param string $displayName The name to greet them by.
 	 * @param string $nonce The challenge nonce they were issued.
 	 * @param string $solution Their solution to it.
+	 * @param int $expiresAt The expiry issued with the nonce.
+	 * @param string $signature This instance's signature over the nonce.
 	 *
 	 * @return JSONResponse What became of the registration.
 	 *
@@ -216,7 +218,14 @@ class PortalIdentityController extends Controller implements PortalProtected {
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 10, period: 60)]
-	public function register(string $email, string $displayName = '', string $nonce = '', string $solution = ''): JSONResponse {
+	public function register(
+		string $email,
+		string $displayName = '',
+		string $nonce = '',
+		string $solution = '',
+		int $expiresAt = 0,
+		string $signature = '',
+	): JSONResponse {
 		$site = $this->site();
 		if ($site === null) {
 			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
@@ -226,12 +235,18 @@ class PortalIdentityController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'registration_off'], Http::STATUS_FORBIDDEN);
 		}
 
+		// The credential this endpoint authenticates on: a nonce this instance
+		// signed, for this surface, still inside its window, with the proof of
+		// work done over it. $signature is what makes the nonce ours; without
+		// it the caller could mint their own and reuse it for ever.
 		$accepted = $this->challenge->accepts(
 			site: $site,
 			surface: 'registration',
 			submission: (array)$this->request->getParams(),
 			nonce: $nonce,
-			solution: $solution
+			solution: $solution,
+			expiresAt: $expiresAt,
+			signature: $signature
 		);
 		if ($accepted === false) {
 			return new JSONResponse(['error' => 'challenge_failed'], Http::STATUS_FORBIDDEN);
