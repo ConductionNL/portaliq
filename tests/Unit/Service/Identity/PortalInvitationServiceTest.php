@@ -37,6 +37,29 @@ class PortalInvitationServiceTest extends TestCase {
 
 	}//end testAnInvitationStoresOnlyTheHashOfItsSecret()
 
+	/**
+	 * The caller may set the window, and a window that is set is the one
+	 * stored: the default week applies only when none was given.
+	 *
+	 * @return void
+	 */
+	public function testACallerSuppliedWindowIsTheOneStored(): void {
+		$service = $this->service();
+
+		$short = $service->invite(email: 'ans@example.org', organisation: 'gemeente-x', audience: 'client', invitedBy: 'clerk-anna', ttl: 'P1D');
+		$default = $service->invite(email: 'bram@example.org', organisation: 'gemeente-x', audience: 'client', invitedBy: 'clerk-anna');
+
+		$this->assertNotNull($short);
+		$this->assertNotNull($default);
+		$this->assertLessThan(
+			strtotime($default['expiresAt']),
+			strtotime($short['expiresAt']),
+			'a one-day window must expire before the default week'
+		);
+
+	}//end testACallerSuppliedWindowIsTheOneStored()
+
+
 	public function testTheSenderSeesTheStateOfWhatTheySent(): void {
 		$service = $this->service();
 		$invited = $service->invite(email: 'ans@example.org', organisation: 'gemeente-x', audience: 'client', invitedBy: 'clerk-anna');
