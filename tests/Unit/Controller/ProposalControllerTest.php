@@ -164,6 +164,63 @@ class ProposalControllerTest extends TestCase {
 	}//end testAColleagueProposesAsThemselvesOnTheStaffChannel()
 
 	/**
+	 * REQ-CPQ-003, on the read side. The staff routes are gated by
+	 * `portal.review-proposal`, and this one was not: it asked only whether
+	 * anybody was logged in, then listed the proposals on whatever register,
+	 * schema and id the caller named. Notes and proposed values on any
+	 * record on the instance were readable by any account.
+	 *
+	 * @return void
+	 */
+	public function testTheQueueIsRefusedToAUserWhoMayNotReviewTheRecord(): void {
+		$controller = $this->controller(subject: null, user: $this->user('clerk-1'), mayReview: false);
+		$this->doubles['proposals']->expects($this->never())->method('forSubject');
+
+		$response = $controller->index(register: 'dossiq', schema: 'zaak', id: 'zaak-1');
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+
+	}//end testTheQueueIsRefusedToAUserWhoMayNotReviewTheRecord()
+
+	/**
+	 * The same guard, the other way: a reviewer the guard admits gets the
+	 * queue, so the refusal above is the guard and not a broken endpoint.
+	 *
+	 * @return void
+	 */
+	public function testTheQueueIsServedToAUserWhoMayReviewTheRecord(): void {
+		$controller = $this->controller(subject: null, user: $this->user('reviewer-1'), mayReview: true);
+		$this->doubles['proposals']->expects($this->once())
+			->method('forSubject')
+			->with(
+				$this->equalTo(['register' => 'dossiq', 'schema' => 'zaak', 'id' => 'zaak-1']),
+				$this->equalTo('queued')
+			)
+			->willReturn([]);
+
+		$response = $controller->index(register: 'dossiq', schema: 'zaak', id: 'zaak-1');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+
+	}//end testTheQueueIsServedToAUserWhoMayReviewTheRecord()
+
+	/**
+	 * A caller with no session at all is refused before the guard is asked.
+	 *
+	 * @return void
+	 */
+	public function testTheQueueIsRefusedToACallerWithNoSession(): void {
+		$controller = $this->controller(subject: null, user: null);
+		$this->doubles['proposals']->expects($this->never())->method('forSubject');
+
+		$response = $controller->index(register: 'dossiq', schema: 'zaak', id: 'zaak-1');
+
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+
+	}//end testTheQueueIsRefusedToACallerWithNoSession()
+
+
+	/**
 	 * The controller over doubles.
 	 *
 	 * @param array<string, mixed>|null $subject The portal subject, or null.
