@@ -33,6 +33,7 @@ OC.L10N.register(
         "An event name, such as `scroll` or `outbound_click`.": "De naam van een gebeurtenis, zoals `scroll` of `outbound_click`.",
         "Anonymous": "Anoniem",
         "App id": "App-id",
+        "Ask for proof of work": "Rekenproef vragen",
         "Assurance level of the authentication (e.g. eHerkenning EH3, DigiD Midden/Substantieel).": "Betrouwbaarheidsniveau van de authenticatie (bijvoorbeeld eHerkenning EH3, DigiD Midden/Substantieel).",
         "Attachments": "Bijlagen",
         "Attempts": "Pogingen",
@@ -204,6 +205,7 @@ OC.L10N.register(
         "Hostnames this portal answers on. A request is routed by its Host header; an unknown host resolves to NO portal and returns 404 — there is deliberately no default or first-match fallback, because that is exactly how a multi-tenant host serves one tenant's content under another tenant's domain.": "Hostnamen waarop dit portaal antwoordt. Een verzoek wordt gerouteerd op zijn Host-header; een onbekende host levert GEEN portaal op en geeft 404. Er is bewust geen standaard of eerste-treffer-terugval, want zo serveert een multi-tenant host precies de inhoud van de ene tenant onder het domein van de andere.",
         "How far sessions walked each of the portal's funnels that day.": "Hoe ver sessies die dag door elke funnel van het portaal kwamen.",
         "How long raw events are kept before they are deleted. Daily aggregates outlive them. There is no unbounded option.": "Hoe lang ruwe gebeurtenissen worden bewaard voordat ze worden verwijderd. Dagcijfers blijven langer bestaan. Er is geen onbegrensde optie.",
+        "How many leading zero bits the solution hash must carry. Every extra bit doubles the work a visitor does.": "Hoeveel nulbits de hash van de oplossing vooraan moet hebben. Elke extra bit verdubbelt het werk dat een bezoeker doet.",
         "How much your portals are used, and by whom.": "Hoeveel je portalen gebruikt worden, en door wie.",
         "How often it was downloaded.": "Hoe vaak het is gedownload.",
         "How often it was followed.": "Hoe vaak het is gevolgd.",
@@ -408,6 +410,7 @@ OC.L10N.register(
         "Presentation-only default ordering (contribution-manifest-v3): `{ \"field\": <property>, \"direction\": \"asc\"|\"desc\" }`. Dropped by the normaliser unless `field` is a non-empty string.": "Standaardsortering, alleen voor de presentatie (contribution-manifest-v3): `{ \"field\": <eigenschap>, \"direction\": \"asc\"|\"desc\" }`. De normaliseerder laat het weg tenzij `field` een niet-lege tekst is.",
         "Presentation-only detail-view layout (contribution-manifest-v3).": "Indeling van de detailweergave, alleen voor de presentatie (contribution-manifest-v3).",
         "Presentation-only per-column render hints (contribution-manifest-v3).": "Weergavehints per kolom, alleen voor de presentatie (contribution-manifest-v3).",
+        "Property": "Eigenschap",
         "Props": "Eigenschappen",
         "Provider": "Aanbieder",
         "Provider configuration when `oidc` is enabled: issuer, client id and the scopes requested. The client secret is held in the credential broker, never here.": "Aanbiederconfiguratie als `oidc` is ingeschakeld: issuer, client-id en de gevraagde scopes. Het client secret staat in de credential broker, nooit hier.",
@@ -527,6 +530,7 @@ OC.L10N.register(
         "Submitted at": "Ingediend op",
         "Success message": "Succesmelding",
         "Summary": "Samenvatting",
+        "Surfaces": "Onderdelen",
         "Synonyms": "Synoniemen",
         "Tagline": "Slogan",
         "Target id": "Doel-id",
@@ -1007,6 +1011,7 @@ OC.L10N.register(
         "The citizen the case belongs to; the field the case is scoped on.": "De burger bij wie de zaak hoort; het veld waarop de zaak is afgebakend.",
         "The citizen's explanation.": "De toelichting van de burger.",
         "The field this flag belongs to, as the case schema names it.": "Het veld waar deze vlag bij hoort, zoals het zaakschema het noemt.",
+        "The name of the property this entry proposes to change.": "De naam van de eigenschap die deze regel wil wijzigen.",
         "The portal audiences the field is open to, such as `client`.": "De portaaldoelgroepen waarvoor het veld openstaat, zoals `client`.",
         "The portalCaseType this case is of.": "Het `portalCaseType` waarvan deze zaak is.",
         "The public label and description per status, keyed by the status value. The portal renders these unchanged and invents nothing when a status carries none.": "Het publieke label en de omschrijving per status, op statuswaarde gesleuteld. Het portaal toont deze ongewijzigd en verzint niets als een status er geen heeft.",
@@ -1060,6 +1065,7 @@ OC.L10N.register(
         "Portal Report Message": "Bericht bij een melding",
         "The report this message belongs to.": "De melding waar dit bericht bij hoort.",
         "Author": "Auteur",
+        "The work factor per surface, keyed by surface name. A surface that is not named here uses the setting above.": "De rekenlast per onderdeel, met de naam van het onderdeel als sleutel. Een onderdeel dat hier niet staat, gebruikt de instelling hierboven.",
         "Who wrote it.": "Wie het schreef.",
         "Author name": "Naam van de auteur",
         "The handler's name, when a handler wrote it. Never the reporter's.": "De naam van de behandelaar, als een behandelaar het schreef. Nooit die van de melder.",
@@ -1077,7 +1083,9 @@ OC.L10N.register(
         "The custodian who answered.": "De vertrouwenspersoon die antwoordde.",
         "What the custodian said about their answer.": "Wat de vertrouwenspersoon over dat antwoord zei.",
         "Revealed fields": "Onthulde velden",
-        "Which contact fields were shown, when it was allowed. The values are not copied here.": "Welke contactvelden zijn getoond, als het werd toegestaan. De waarden worden hier niet gekopieerd."
+        "Whether a visitor has to solve the puzzle before the form is accepted.": "Of een bezoeker de rekenproef moet oplossen voordat het formulier wordt aangenomen.",
+        "Which contact fields were shown, when it was allowed. The values are not copied here.": "Welke contactvelden zijn getoond, als het werd toegestaan. De waarden worden hier niet gekopieerd.",
+        "Work factor": "Rekenlast"
     },
     "nplurals=2; plural=(n != 1);"
 )
