@@ -46,6 +46,31 @@
 - [ ] Implement
 - [ ] Test
 
+> **A consumer is already waiting on this task, and it is not obvious from
+> here.** Shillinq built `LegesIntakeStepService` for a journey step of kind
+> `payment` (its `leges-at-intake` change, REQ-SOPR-007): after a journey
+> writes the object, the service resolves the published fee, raises one leges
+> request on the object, and blocks completion until the payment is
+> authorized. It has a green unit suite and no caller, because every link it
+> needs is still missing:
+>
+> - `CnJourney`, which ADR-085 puts in `@conduction/nextcloud-vue`, is not in
+>   the library. Zero hits in its source and zero in the built 3.2.0 bundle
+>   this app consumes.
+> - A `journey` and a `journeyRun` are OpenRegister objects (ADR-085). Neither
+>   is among the 31 schemas in `lib/Settings/portaliq_register.json`.
+> - ADR-085 names exactly three step kinds: `form`, `review`, `confirmation`.
+>   A `payment` kind needs an ADR-085 amendment before any app validates it,
+>   and shillinq is the driver for that amendment.
+> - This portal still boots React (`src/portal/main.jsx`), so task 1 above has
+>   not landed either.
+>
+> The intake path this app does have cannot stand in for the step. `submit()`
+> answers with a reference and `state: queued` and the citizen leaves, and the
+> case object is written later by a case app, so at submit time there is no
+> object to raise a request against and no step to hold anyone at. Wiring the
+> service there would give the `required` gate nothing to gate.
+
 ### Task 5: Budget and measured parity
 - **spec_ref**: `openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-parity-with-the-react-portal-must-be-measured-not-asserted`
 - **files**: `.github/workflows/portal-budget.yml`, `docs/portal-parity.md`
