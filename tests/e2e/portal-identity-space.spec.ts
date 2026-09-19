@@ -99,9 +99,13 @@ async function seedCasesContribution(request: APIRequestContext): Promise<string
 async function provisionAtTheDesk(
 	request: APIRequestContext,
 	identityRef: string,
-): Promise<{ subjectRef: string, status: string }> {
+): Promise<{ subjectRef: string; status: string }> {
 	const res = await request.post(`${APP_API_BASE}/accounts/provision`, {
-		headers: { Authorization: `Basic ${ADMIN}`, 'OCS-APIRequest': 'true', requesttoken: 'x' },
+		headers: {
+			Authorization: `Basic ${ADMIN}`,
+			'OCS-APIRequest': 'true',
+			requesttoken: 'x',
+		},
 		data: {
 			audience: 'client',
 			organisation: 'dev-org',
@@ -110,20 +114,27 @@ async function provisionAtTheDesk(
 			displayName: 'Ans de Vries',
 		},
 	})
-	expect(res.ok(), 'a clerk with the portal.provision action may provision').toBeTruthy()
+	expect(
+		res.ok(),
+		'a clerk with the portal.provision action may provision',
+	).toBeTruthy()
 	const body = await res.json()
 	expect(body.subjectRef).toBeTruthy()
-	return body as { subjectRef: string, status: string }
+	return body as { subjectRef: string; status: string }
 }
 
 test.describe('portal-identity-space', () => {
-	test('a clerk provisions a citizen at the desk, and the account waits pending', async ({ request }) => {
+	test('a clerk provisions a citizen at the desk, and the account waits pending', async ({
+		request,
+	}) => {
 		const provisioned = await provisionAtTheDesk(request, `bsn-${Date.now()}`)
 
 		expect(provisioned.status).toBe('pending')
 	})
 
-	test('the case filed at the desk is there on first login', async ({ request }) => {
+	test('the case filed at the desk is there on first login', async ({
+		request,
+	}) => {
 		await seedCasesContribution(request)
 		const provisioned = await provisionAtTheDesk(request, `bsn-${Date.now()}`)
 		const reference = `ZAAK-${Date.now()}`
@@ -140,9 +151,16 @@ test.describe('portal-identity-space', () => {
 		// The first login. dev-login stands in for the broker round trip, which
 		// the spec excludes from e2e on purpose.
 		const login = await request.post(`${API_BASE}/session/dev-login`, {
-			data: { subjectRef: provisioned.subjectRef, audience: 'client', organisation: 'dev-org' },
+			data: {
+				subjectRef: provisioned.subjectRef,
+				audience: 'client',
+				organisation: 'dev-org',
+			},
 		})
-		expect(login.ok(), 'dev-login must be enabled (see tests/e2e/ci-seed.sh)').toBeTruthy()
+		expect(
+			login.ok(),
+			'dev-login must be enabled (see tests/e2e/ci-seed.sh)',
+		).toBeTruthy()
 		const { token } = await login.json()
 
 		const mine = await request.get(`${API_BASE}/my-cases`, {
@@ -150,7 +168,9 @@ test.describe('portal-identity-space', () => {
 		})
 		expect(mine.ok()).toBeTruthy()
 		const body = await mine.json()
-		const references = (body.cases ?? []).map((row: Record<string, unknown>) => row.reference)
+		const references = (body.cases ?? []).map(
+			(row: Record<string, unknown>) => row.reference,
+		)
 		expect(references).toContain(reference)
 	})
 
@@ -163,9 +183,17 @@ test.describe('portal-identity-space', () => {
 		const mine = await anonymous.get(`${API_BASE}/my-cases`)
 		expect(mine.status(), 'Mijn zaken without a session is 401').toBe(401)
 
-		const provision = await anonymous.post(`${APP_API_BASE}/accounts/provision`, {
-			data: { audience: 'client', organisation: 'dev-org', identityType: 'digid', identityRef: 'bsn-probe' },
-		})
+		const provision = await anonymous.post(
+			`${APP_API_BASE}/accounts/provision`,
+			{
+				data: {
+					audience: 'client',
+					organisation: 'dev-org',
+					identityType: 'digid',
+					identityRef: 'bsn-probe',
+				},
+			},
+		)
 		expect(
 			[401, 403, 412].includes(provision.status()),
 			'provisioning is never reachable without a staff session',

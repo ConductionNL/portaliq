@@ -52,7 +52,10 @@ async function seed(
 		headers: { Authorization: `Basic ${ADMIN}`, 'OCS-APIRequest': 'true' },
 		data,
 	})
-	expect(res.ok(), `OpenRegister objects#create must be reachable for ${schema}`).toBeTruthy()
+	expect(
+		res.ok(),
+		`OpenRegister objects#create must be reachable for ${schema}`,
+	).toBeTruthy()
 	const body = await res.json()
 	const id = (body.id ?? body['@self']?.id) as string
 	expect(id).toBeTruthy()
@@ -60,17 +63,26 @@ async function seed(
 }
 
 /** A portal session for one subject. */
-async function bearerFor(request: APIRequestContext, subjectRef: string, audience: string): Promise<string> {
+async function bearerFor(
+	request: APIRequestContext,
+	subjectRef: string,
+	audience: string,
+): Promise<string> {
 	const res = await request.post(`${API_BASE}/session/dev-login`, {
 		data: { subjectRef, audience, organisation: ORGANISATION },
 	})
-	expect(res.ok(), 'dev-login must be enabled (see tests/e2e/ci-seed.sh)').toBeTruthy()
+	expect(
+		res.ok(),
+		'dev-login must be enabled (see tests/e2e/ci-seed.sh)',
+	).toBeTruthy()
 	const { token } = await res.json()
 	return token as string
 }
 
 test.describe('partner-tasks-in-the-portal', () => {
-	test('a handler raises an ask, the partner sees it and nothing else', async ({ request }) => {
+	test('a handler raises an ask, the partner sees it and nothing else', async ({
+		request,
+	}) => {
 		const stamp = Date.now()
 		const caseId = await seed(request, 'portalCase', {
 			subjectRef: `resident-${stamp}`,
@@ -80,7 +92,11 @@ test.describe('partner-tasks-in-the-portal', () => {
 		})
 
 		const raised = await request.post(`${APP_API_BASE}/partner-tasks/ask`, {
-			headers: { Authorization: `Basic ${ADMIN}`, 'OCS-APIRequest': 'true', requesttoken: 'x' },
+			headers: {
+				Authorization: `Basic ${ADMIN}`,
+				'OCS-APIRequest': 'true',
+				requesttoken: 'x',
+			},
 			data: {
 				register: 'portaliq',
 				schema: 'portalCase',
@@ -89,35 +105,55 @@ test.describe('partner-tasks-in-the-portal', () => {
 				description: 'Graag uw oordeel over de gevelwijziging.',
 				dueAt: new Date(Date.now() + 14 * 86400000).toISOString(),
 				organisation: ORGANISATION,
-				partner: { kvk: `1234${stamp}`.slice(0, 8), email: 'welstand@example.org', name: 'Welstandscommissie' },
+				partner: {
+					kvk: `1234${stamp}`.slice(0, 8),
+					email: 'welstand@example.org',
+					name: 'Welstandscommissie',
+				},
 				uploadRules: [{ mimeType: 'application/pdf', required: true }],
 			},
 		})
 
 		if (raised.status() === 404 || raised.status() === 503) {
-			test.skip(true, 'the openregister portal task seam is not provisioned on this instance')
+			test.skip(
+				true,
+				'the openregister portal task seam is not provisioned on this instance',
+			)
 			return
 		}
 
-		expect(raised.ok(), 'a handler with the action may ask a partner').toBeTruthy()
+		expect(
+			raised.ok(),
+			'a handler with the action may ask a partner',
+		).toBeTruthy()
 		const body = await raised.json()
 		expect(body.subjectRef).toBeTruthy()
 
 		// The partner's own surface: their task, and not the resident's.
-		const partnerToken = await bearerFor(request, body.subjectRef as string, 'partner')
+		const partnerToken = await bearerFor(
+			request,
+			body.subjectRef as string,
+			'partner',
+		)
 		const mine = await request.get(`${API_BASE}/tasks`, {
 			headers: { Authorization: `Bearer ${partnerToken}` },
 		})
 		expect(mine.ok()).toBeTruthy()
-		const tasks = ((await mine.json()).tasks ?? []) as Array<Record<string, never>>
+		const tasks = ((await mine.json()).tasks ?? []) as Array<
+			Record<string, never>
+		>
 		for (const task of tasks) {
 			expect(task.subjectRef as unknown as string).toBe(body.subjectRef)
 		}
 
 		const resident = await request.get(`${API_BASE}/tasks`, {
-			headers: { Authorization: `Bearer ${await bearerFor(request, `resident-${stamp}`, 'client')}` },
+			headers: {
+				Authorization: `Bearer ${await bearerFor(request, `resident-${stamp}`, 'client')}`,
+			},
 		})
-		const residentTasks = ((await resident.json()).tasks ?? []) as Array<Record<string, never>>
+		const residentTasks = ((await resident.json()).tasks ?? []) as Array<
+			Record<string, never>
+		>
 		for (const task of residentTasks) {
 			expect(task.subjectRef as unknown as string).not.toBe(body.subjectRef)
 		}
@@ -134,6 +170,9 @@ test.describe('partner-tasks-in-the-portal', () => {
 			},
 		})
 
-		expect([401, 403, 412].includes(refused.status()), 'asking a partner needs a staff session').toBeTruthy()
+		expect(
+			[401, 403, 412].includes(refused.status()),
+			'asking a partner needs a staff session',
+		).toBeTruthy()
 	})
 })
