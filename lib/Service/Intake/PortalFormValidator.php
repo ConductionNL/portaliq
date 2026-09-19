@@ -72,9 +72,13 @@ class PortalFormValidator {
 			}
 
 			$value = ($answers[$name] ?? null);
-			$given = ($value !== null && trim((string)(is_array($value) === true ? '' : $value)) !== '');
+			$given = false;
 			if (is_array($value) === true) {
 				$given = ($value !== []);
+			}
+
+			if ($value !== null && is_array($value) === false) {
+				$given = (trim((string)$value) !== '');
 			}
 
 			if ($given === false) {

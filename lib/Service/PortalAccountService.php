@@ -96,6 +96,9 @@ class PortalAccountService {
 	 * @param string $audience The external audience ("supplier"|"client"|...).
 	 * @param string|null $subjectRefOverride A validated-claim subjectRef for a
 	 *                                        NEW account (null = mint one server-side).
+	 * @param string $verifiedEmail An address the broker itself says it
+	 *                              verified, used only to claim a pending
+	 *                              account (empty = no second pass).
 	 *
 	 * @return array{subjectRef: string, isNew: bool}|null Null when OpenRegister
 	 *                                                     is unavailable or the
@@ -125,7 +128,7 @@ class PortalAccountService {
 			// else's address can never reach it. Only an email-only pending
 			// account, whose address was verified out of band, is claimable
 			// this way.
-			$existing = $this->findPendingByVerifiedEmail(email: $verifiedEmail, organisation: $organisation, identityType: $identityType, identityRef: $identityRef);
+			$existing = $this->findPendingByVerifiedEmail(email: $verifiedEmail, organisation: $organisation);
 		}
 
 		if ($existing !== null) {
@@ -298,7 +301,7 @@ class PortalAccountService {
 		}
 
 		if ($existing === null && $hasIdentity === false) {
-			$existing = $this->findPendingByVerifiedEmail(email: $email, organisation: $organisation, identityType: '', identityRef: '');
+			$existing = $this->findPendingByVerifiedEmail(email: $email, organisation: $organisation);
 		}
 
 		if ($existing !== null) {
@@ -444,14 +447,12 @@ class PortalAccountService {
 	 *
 	 * @param string $email The verified email from the envelope.
 	 * @param string $organisation The tenant slug.
-	 * @param string $identityType The type the login carries, for the stamp.
-	 * @param string $identityRef The reference the login carries, for the stamp.
 	 *
 	 * @return array<string, mixed>|null
 	 *
 	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
 	 */
-	private function findPendingByVerifiedEmail(string $email, string $organisation, string $identityType, string $identityRef): ?array {
+	private function findPendingByVerifiedEmail(string $email, string $organisation): ?array {
 		if ($email === '' || $organisation === '') {
 			return null;
 		}
