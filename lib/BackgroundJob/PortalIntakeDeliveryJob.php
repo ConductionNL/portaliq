@@ -68,8 +68,8 @@ class PortalIntakeDeliveryJob extends TimedJob {
 		private readonly PortalObjectWriter $writer,
 		private readonly LoggerInterface $logger,
 	) {
-		parent::__construct($time);
-		$this->setInterval(self::INTERVAL);
+		parent::__construct(time: $time);
+		$this->setInterval(seconds: self::INTERVAL);
 	}//end __construct()
 
 	/**

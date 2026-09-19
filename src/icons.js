@@ -15,6 +15,7 @@
 import Account from 'vue-material-design-icons/Account.vue'
 import AccountBoxOutline from 'vue-material-design-icons/AccountBoxOutline.vue'
 import AccountKey from 'vue-material-design-icons/AccountKey.vue'
+import AccountLock from 'vue-material-design-icons/AccountLock.vue'
 import AlertCircleOutline from 'vue-material-design-icons/AlertCircleOutline.vue'
 import BellOutline from 'vue-material-design-icons/BellOutline.vue'
 import BookAlphabet from 'vue-material-design-icons/BookAlphabet.vue'
@@ -33,8 +34,10 @@ import ClipboardText from 'vue-material-design-icons/ClipboardText.vue'
 import CursorDefaultClickOutline from 'vue-material-design-icons/CursorDefaultClickOutline.vue'
 import Email from 'vue-material-design-icons/Email.vue'
 import EmailOutline from 'vue-material-design-icons/EmailOutline.vue'
+import EyeLock from 'vue-material-design-icons/EyeLock.vue'
 import FileCheckOutline from 'vue-material-design-icons/FileCheckOutline.vue'
 import FileDocument from 'vue-material-design-icons/FileDocument.vue'
+import FileDocumentEdit from 'vue-material-design-icons/FileDocumentEdit.vue'
 import FileDocumentMultipleOutline from 'vue-material-design-icons/FileDocumentMultipleOutline.vue'
 import FileDocumentOutline from 'vue-material-design-icons/FileDocumentOutline.vue'
 import FileTreeOutline from 'vue-material-design-icons/FileTreeOutline.vue'
@@ -43,11 +46,13 @@ import FormSelect from 'vue-material-design-icons/FormSelect.vue'
 import History from 'vue-material-design-icons/History.vue'
 import MapMarkerPath from 'vue-material-design-icons/MapMarkerPath.vue'
 import Menu from 'vue-material-design-icons/Menu.vue'
+import MessageText from 'vue-material-design-icons/MessageText.vue'
 import MessageTextOutline from 'vue-material-design-icons/MessageTextOutline.vue'
 import MotionPlayOutline from 'vue-material-design-icons/MotionPlayOutline.vue'
 import OpenInNew from 'vue-material-design-icons/OpenInNew.vue'
 import Palette from 'vue-material-design-icons/Palette.vue'
 import PowerPlugOutline from 'vue-material-design-icons/PowerPlugOutline.vue'
+import ShieldAccount from 'vue-material-design-icons/ShieldAccount.vue'
 import ShieldCheckOutline from 'vue-material-design-icons/ShieldCheckOutline.vue'
 import ShieldKeyOutline from 'vue-material-design-icons/ShieldKeyOutline.vue'
 import ShieldLock from 'vue-material-design-icons/ShieldLock.vue'
@@ -62,6 +67,7 @@ export default {
 	Account,
 	AccountBoxOutline,
 	AccountKey,
+	AccountLock,
 	AlertCircleOutline,
 	BellOutline,
 	BookAlphabet,
@@ -75,8 +81,10 @@ export default {
 	CursorDefaultClickOutline,
 	Email,
 	EmailOutline,
+	EyeLock,
 	FileCheckOutline,
 	FileDocument,
+	FileDocumentEdit,
 	FileDocumentMultipleOutline,
 	FileDocumentOutline,
 	// The `portalCaseType` schema in lib/Settings/portaliq_register.json. The
@@ -89,10 +97,12 @@ export default {
 	MapMarkerPath,
 	Menu,
 	MotionPlayOutline,
+	MessageText,
 	MessageTextOutline,
 	OpenInNew,
 	Palette,
 	PowerPlugOutline,
+	ShieldAccount,
 	ShieldCheckOutline,
 	ShieldKeyOutline,
 	ShieldLock,

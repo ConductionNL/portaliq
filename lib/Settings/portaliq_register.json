@@ -1665,13 +1665,19 @@
                                         "description": "Per-surface work factor. `difficulty` is the number of leading zero bits the solution hash must carry.",
                                         "properties": {
                                             "enabled": {
-                                                "type": "boolean"
+                                                "title": "Ask for proof of work",
+                                                "type": "boolean",
+                                                "description": "Whether a visitor has to solve the puzzle before the form is accepted."
                                             },
                                             "difficulty": {
-                                                "type": "integer"
+                                                "title": "Work factor",
+                                                "type": "integer",
+                                                "description": "How many leading zero bits the solution hash must carry. Every extra bit doubles the work a visitor does."
                                             },
                                             "surfaces": {
-                                                "type": "object"
+                                                "title": "Surfaces",
+                                                "type": "object",
+                                                "description": "The work factor per surface, keyed by surface name. A surface that is not named here uses the setting above."
                                             }
                                         }
                                     },
@@ -5424,7 +5430,9 @@
                             "type": "object",
                             "properties": {
                                 "property": {
-                                    "type": "string"
+                                    "title": "Property",
+                                    "type": "string",
+                                    "description": "The name of the property this entry proposes to change."
                                 },
                                 "currentValue": {},
                                 "proposedValue": {}

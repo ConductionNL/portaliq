@@ -41,6 +41,46 @@ class PortalFormValidatorTest extends TestCase {
 
 	}//end testAnOptionalAnswerMayBeLeftOut()
 
+	/**
+	 * A required field answered with an empty array is not answered. The
+	 * array case is judged on emptiness rather than on trimmed text, because
+	 * casting an array to a string is not a question worth asking.
+	 *
+	 * @return void
+	 */
+	public function testARequiredMultiAnswerIsMissingWhenTheArrayIsEmpty(): void {
+		$validator = $this->validator();
+
+		$result = $validator->validate(
+			fields: [['name' => 'bijlagen', 'required' => true, 'type' => 'array']],
+			answers: ['bijlagen' => []]
+		);
+
+		$this->assertFalse($result['valid']);
+		$this->assertArrayHasKey('bijlagen', $result['errors']);
+
+	}//end testARequiredMultiAnswerIsMissingWhenTheArrayIsEmpty()
+
+	/**
+	 * The same field with one entry is answered, so the emptiness test is
+	 * what decides it and not the presence of the key.
+	 *
+	 * @return void
+	 */
+	public function testAMultiAnswerWithOneEntryIsAnswered(): void {
+		$validator = $this->validator();
+
+		$result = $validator->validate(
+			fields: [['name' => 'bijlagen', 'required' => true, 'type' => 'array']],
+			answers: ['bijlagen' => ['bewijs.pdf']]
+		);
+
+		$this->assertTrue($result['valid']);
+		$this->assertArrayNotHasKey('bijlagen', $result['errors']);
+
+	}//end testAMultiAnswerWithOneEntryIsAnswered()
+
+
 	public function testAFieldTheFormDoesNotDeclareNeverReachesTheAnswers(): void {
 		$validator = $this->validator();
 

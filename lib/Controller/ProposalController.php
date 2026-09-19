@@ -125,7 +125,7 @@ class ProposalController extends Controller {
 		}
 
 		return $this->answer(
-			$this->proposals->propose(
+			result: $this->proposals->propose(
 				subject: ['register' => $register, 'schema' => $schema, 'id' => $id],
 				changes: $changes,
 				proposable: $match['proposable'],
@@ -166,7 +166,7 @@ class ProposalController extends Controller {
 		}
 
 		return $this->answer(
-			$this->proposals->propose(
+			result: $this->proposals->propose(
 				subject: ['register' => $register, 'schema' => $schema, 'id' => $id],
 				changes: $changes,
 				proposable: $proposable,
@@ -217,7 +217,12 @@ class ProposalController extends Controller {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		return new JSONResponse(['proposals' => $this->proposals->forSubject(subject: ['register' => $register, 'schema' => $schema, 'id' => $id], state: $state)]);
+		$proposals = $this->proposals->forSubject(
+			subject: ['register' => $register, 'schema' => $schema, 'id' => $id],
+			state: $state
+		);
+
+		return new JSONResponse(['proposals' => $proposals]);
 	}//end index()
 
 	/**
@@ -337,7 +342,14 @@ class ProposalController extends Controller {
 		// Deciding is a write on somebody's record, so it is gated before
 		// anything is read or written: a reviewer without write rights gets
 		// the same refusal whether the proposal exists or not.
-		if ($this->guard->mayAct(user: $user, register: $register, schema: $schema, id: $subjectId, action: PortalCaseAccessGuard::ACTION_REVIEW_PROPOSAL) === false) {
+		$mayReview = $this->guard->mayAct(
+			user: $user,
+			register: $register,
+			schema: $schema,
+			id: $subjectId,
+			action: PortalCaseAccessGuard::ACTION_REVIEW_PROPOSAL
+		);
+		if ($mayReview === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
