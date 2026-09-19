@@ -41,6 +41,7 @@ use OCA\Portaliq\Service\Identity\PortalInvitationService;
 use OCA\Portaliq\Service\Identity\PortalReferenceLinkService;
 use OCA\Portaliq\Service\Identity\PortalRegistrationPolicyService;
 use OCA\Portaliq\Service\Identity\PortalSelfServiceService;
+use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
@@ -77,6 +78,7 @@ class PortalIdentityController extends Controller implements PortalProtected {
 	 * @param PortalAccessRequestService $accessRequests Asking for access.
 	 * @param PortalAccountService $accounts Provisions a registration.
 	 * @param CaseTypeReader $caseTypes Reads the case type's identity kinds.
+	 * @param PortalFormBindingResolver $bindings The case types this portal declares.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -90,6 +92,7 @@ class PortalIdentityController extends Controller implements PortalProtected {
 		private readonly PortalAccessRequestService $accessRequests,
 		private readonly PortalAccountService $accounts,
 		private readonly CaseTypeReader $caseTypes,
+		private readonly PortalFormBindingResolver $bindings,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -137,11 +140,27 @@ class PortalIdentityController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
 		}
 
+		// The register, schema and case type arrive from an anonymous request,
+		// and the read behind them runs with RBAC and multitenancy off. So the
+		// triple is checked against the portal's own published form bindings
+		// BEFORE anything is read: outside that scope nothing is looked up.
+		if ($this->bindings->caseTypeIsInPortalScope(
+			portal: (string)($site['slug'] ?? ''),
+			register: $register,
+			schema: $schema,
+			typeId: $caseType
+		) === false
+		) {
+			return new JSONResponse(['error' => 'route_not_offered'], Http::STATUS_NOT_FOUND);
+		}
+
 		$type = $this->caseTypes->readCaseType(register: $register, schema: $schema, id: $caseType);
 		if ($type === null || $this->references->admitsReference(caseType: $type) === false) {
-			// A case type that declares `account` only never offers this
-			// route, and says so the same way an unknown type does.
-			return new JSONResponse(['error' => 'route_not_offered'], Http::STATUS_FORBIDDEN);
+			// Outside the portal's scope, unknown, and `account` only are one
+			// answer on purpose. A 403 here would tell an anonymous caller
+			// which of the three it was, and that is an existence oracle for
+			// case types on registers that are none of their business.
+			return new JSONResponse(['error' => 'route_not_offered'], Http::STATUS_NOT_FOUND);
 		}
 
 		$issued = $this->references->issue(

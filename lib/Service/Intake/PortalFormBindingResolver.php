@@ -124,6 +124,88 @@ class PortalFormBindingResolver {
 	}//end bindingFor()
 
 	/**
+	 * The case types a portal has published a binding for.
+	 *
+	 * A binding is where a portal writes down which case type it serves, so
+	 * the published bindings are the portal's own declaration of the case
+	 * types it speaks for. Nothing else in the app records that, which is why
+	 * this reads bindings rather than a list of its own.
+	 *
+	 * @param string $portal The portal slug.
+	 *
+	 * @return array<int, array{0: string, 1: string, 2: string}> One
+	 *         `[register, schema, typeId]` triple per published binding.
+	 *
+	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 */
+	public function declaredCaseTypes(string $portal): array {
+		if ($portal === '') {
+			return [];
+		}
+
+		$rows = $this->reader->readCollection(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: 'portal',
+			subjectRef: $portal,
+			organisation: '',
+			limit: 200,
+			filter: ['portal' => $portal]
+		);
+
+		$declared = [];
+		foreach ($rows as $row) {
+			if (is_array($row) === false || ($row['portal'] ?? '') !== $portal) {
+				continue;
+			}
+
+			if ((string)($row['status'] ?? 'draft') !== 'published') {
+				// A draft binding declares nothing yet.
+				continue;
+			}
+
+			$triple = [
+				(string)($row['typeRegister'] ?? ''),
+				(string)($row['typeSchema'] ?? ''),
+				(string)($row['typeId'] ?? ''),
+			];
+			if (in_array('', $triple, true) === true) {
+				continue;
+			}
+
+			$declared[] = $triple;
+		}
+
+		return $declared;
+	}//end declaredCaseTypes()
+
+	/**
+	 * Whether a case type is inside the scope a portal declared.
+	 *
+	 * The reference-link route takes its register, schema and case type from
+	 * an anonymous request. Without this, naming any three values would reach
+	 * any object on the instance, because the read behind it runs with RBAC
+	 * and multitenancy off. The answer is false unless a published binding of
+	 * THIS portal names exactly that triple.
+	 *
+	 * @param string $portal The portal slug.
+	 * @param string $register The register named in the request.
+	 * @param string $schema The schema named in the request.
+	 * @param string $typeId The case type named in the request.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 */
+	public function caseTypeIsInPortalScope(string $portal, string $register, string $schema, string $typeId): bool {
+		if ($register === '' || $schema === '' || $typeId === '') {
+			return false;
+		}
+
+		return in_array([$register, $schema, $typeId], $this->declaredCaseTypes(portal: $portal), true);
+	}//end caseTypeIsInPortalScope()
+
+	/**
 	 * What the page should render for a binding.
 	 *
 	 * @param array<string, mixed> $binding The binding.

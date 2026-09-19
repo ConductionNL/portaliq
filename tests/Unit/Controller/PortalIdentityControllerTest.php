@@ -12,6 +12,7 @@ use OCA\Portaliq\Service\Identity\PortalInvitationService;
 use OCA\Portaliq\Service\Identity\PortalReferenceLinkService;
 use OCA\Portaliq\Service\Identity\PortalRegistrationPolicyService;
 use OCA\Portaliq\Service\Identity\PortalSelfServiceService;
+use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
@@ -98,10 +99,52 @@ class PortalIdentityControllerTest extends TestCase {
 
 		$response = $controller->requestReferenceLink(register: 'portaliq', schema: 'portalCaseType', caseType: 'vergunning', caseReference: 'ZAAK-1', email: 'ans@example.org');
 
-		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
 		$this->assertSame(['error' => 'route_not_offered'], $response->getData());
 
 	}//end testACaseTypeThatDeclaresAccountOnlyOffersNoReferenceLink()
+
+	/**
+	 * gate-7. The register, schema and case type are caller-supplied on an
+	 * anonymous route, and the read behind them runs with RBAC and
+	 * multitenancy off. A triple the portal has published no binding for is
+	 * refused before anything is read, so naming another tenant's register
+	 * reaches nothing.
+	 *
+	 * @return void
+	 */
+	public function testACaseTypeThePortalNeverDeclaredIsNeverRead(): void {
+		$controller = $this->controller(site: ['organisation' => 'gemeente-x', 'slug' => 'gemeente-x'], inScope: false);
+		$this->doubles['caseTypes']->expects($this->never())->method('readCaseType');
+		$this->doubles['references']->expects($this->never())->method('issue');
+
+		$response = $controller->requestReferenceLink(register: 'andere-gemeente', schema: 'zaak', caseType: 'vergunning', caseReference: 'ZAAK-1', email: 'ans@example.org');
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+		$this->assertSame(['error' => 'route_not_offered'], $response->getData());
+
+	}//end testACaseTypeThePortalNeverDeclaredIsNeverRead()
+
+	/**
+	 * The three refusals are deliberately one answer. Out of the portal's
+	 * scope and `account` only must be indistinguishable, or the status code
+	 * tells an anonymous caller which registers hold which case types.
+	 *
+	 * @return void
+	 */
+	public function testOutOfScopeAndAccountOnlyAnswerTheSame(): void {
+		$outside = $this->controller(site: ['organisation' => 'gemeente-x', 'slug' => 'gemeente-x'], inScope: false)
+			->requestReferenceLink(register: 'andere-gemeente', schema: 'zaak', caseType: 'vergunning', caseReference: 'ZAAK-1', email: 'ans@example.org');
+
+		$declared = $this->controller(site: ['organisation' => 'gemeente-x', 'slug' => 'gemeente-x']);
+		$this->doubles['caseTypes']->method('readCaseType')->willReturn(['portalIdentityKind' => ['account']]);
+		$this->doubles['references']->method('admitsReference')->willReturn(false);
+		$accountOnly = $declared->requestReferenceLink(register: 'portaliq', schema: 'portalCaseType', caseType: 'vergunning', caseReference: 'ZAAK-1', email: 'ans@example.org');
+
+		$this->assertSame($accountOnly->getStatus(), $outside->getStatus());
+		$this->assertSame($accountOnly->getData(), $outside->getData());
+
+	}//end testOutOfScopeAndAccountOnlyAnswerTheSame()
 
 	public function testTheIssuedSecretNeverTravelsInTheAnswer(): void {
 		$controller = $this->controller(site: ['organisation' => 'gemeente-x']);
@@ -269,10 +312,13 @@ class PortalIdentityControllerTest extends TestCase {
 	 *
 	 * @param array<string, mixed>|null $site The portal being visited.
 	 * @param array<string, mixed>|null $subject The resolved subject.
+	 * @param bool $inScope Whether the portal declares the case type asked for.
+	 *                     True by default, so a test that is not about the
+	 *                     portal's scope still reaches what it is about.
 	 *
 	 * @return PortalIdentityController
 	 */
-	private function controller(?array $site, ?array $subject = null): PortalIdentityController {
+	private function controller(?array $site, ?array $subject = null, bool $inScope = true): PortalIdentityController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getParams')->willReturn([]);
 
@@ -291,7 +337,10 @@ class PortalIdentityControllerTest extends TestCase {
 			'accessRequests' => $this->double(PortalAccessRequestService::class, ['request', 'madeBy']),
 			'accounts' => $this->double(PortalAccountService::class, ['provision']),
 			'caseTypes' => $this->double(CaseTypeReader::class, ['readCaseType']),
+			'bindings' => $this->double(PortalFormBindingResolver::class, ['caseTypeIsInPortalScope']),
 		];
+
+		$this->doubles['bindings']->method('caseTypeIsInPortalScope')->willReturn($inScope);
 
 		return new PortalIdentityController(
 			$request,
@@ -304,7 +353,8 @@ class PortalIdentityControllerTest extends TestCase {
 			$this->doubles['selfService'],
 			$this->doubles['accessRequests'],
 			$this->doubles['accounts'],
-			$this->doubles['caseTypes']
+			$this->doubles['caseTypes'],
+			$this->doubles['bindings']
 		);
 	}//end controller()
 
