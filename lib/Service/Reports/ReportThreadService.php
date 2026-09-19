@@ -203,6 +203,10 @@ class ReportThreadService {
 	 * @return bool True when the message landed.
 	 *
 	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 *
+	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) -- stored field, not a mode
+	 * switch: it becomes the message's own visibility, and the one branch on it
+	 * forces true for a reporter, whose messages are never internal.
 	 */
 	public function write(string $reportId, string $author, string $body, bool $visibleToReporter = false, string $authorName = ''): bool {
 		if ($reportId === '' || trim($body) === '' || in_array($author, ['reporter', 'handler'], true) === false) {

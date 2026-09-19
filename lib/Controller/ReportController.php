@@ -323,6 +323,10 @@ class ReportController extends Controller {
 	 * @return JSONResponse
 	 *
 	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 *
+	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) -- request-bound field, not
+	 * a mode switch: it is stored on the message as its visibility and is not
+	 * branched on here. Splitting the method would fork the route.
 	 */
 	#[NoAdminRequired]
 	public function reply(string $id, string $body, bool $visibleToReporter = false): JSONResponse {
@@ -394,6 +398,10 @@ class ReportController extends Controller {
 	 *                      refusal otherwise.
 	 *
 	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 *
+	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) -- request-bound field: the
+	 * custodian's answer is the payload of this endpoint, and it is recorded on
+	 * the request alongside $reason. Two routes would record one decision.
 	 */
 	#[NoAdminRequired]
 	public function decideReveal(string $id, bool $allow = false, string $reason = ''): JSONResponse {
