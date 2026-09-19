@@ -37,6 +37,12 @@ SHALL offer only the kinds the case type declares.
 - **THEN** the route is not offered and no link is sent
 - e2e: `tests/e2e/portal-identity-and-the-organisations-cases.spec.ts`
 
+#### Scenario: A portal only answers for the case types it declares
+- **GIVEN** a request naming a register, schema and case type the portal has published no form binding for
+- **WHEN** a citizen asks for a reference link
+- **THEN** the case type is never read and the answer is the same refusal an `account` only case type gets
+- @e2e exclude the refusal is a server-side scope decision with no portal page behind it; asserted in `tests/Unit/Controller/PortalIdentityControllerTest.php::testACaseTypeThePortalNeverDeclaredIsNeverRead` and `tests/Unit/Service/Intake/PortalFormBindingResolverTest.php::testOnlyTheExactDeclaredTripleIsInScope`
+
 #### Scenario: A reference link works once
 - **GIVEN** a reference link already used
 - **WHEN** it is followed again

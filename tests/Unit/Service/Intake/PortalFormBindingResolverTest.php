@@ -148,6 +148,62 @@ class PortalFormBindingResolverTest extends TestCase {
 	}//end testABindingIsFoundByItsOwnPortalAndRoute()
 
 	/**
+	 * gate-7, the scope the reference-link route is confined to. The portal
+	 * declares its case types by publishing bindings for them, and nothing
+	 * else in the app records that set.
+	 *
+	 * @return void
+	 */
+	public function testAPortalDeclaresOnlyTheCaseTypesItPublishedABindingFor(): void {
+		$this->seedRow('portalFormBinding', $this->binding());
+		$this->seedRow('portalFormBinding', $this->binding([
+			'portal' => 'gemeente-y',
+			'route' => 'aanvragen/kap',
+			'typeRegister' => 'andere-gemeente',
+			'typeId' => 'kapvergunning',
+		]));
+		$this->seedRow('portalFormBinding', $this->binding([
+			'route' => 'aanvragen/concept',
+			'typeId' => 'concept',
+			'status' => 'draft',
+		]));
+		$resolver = $this->resolver();
+
+		$this->assertSame([['dossiq', 'zaaktype', 'verhuizing']], $resolver->declaredCaseTypes(portal: 'gemeente-x'));
+
+	}//end testAPortalDeclaresOnlyTheCaseTypesItPublishedABindingFor()
+
+	/**
+	 * gate-7. The predicate the anonymous route refuses on: another portal's
+	 * case type, a draft one, and a partly-right triple are all outside.
+	 *
+	 * @return void
+	 */
+	public function testOnlyTheExactDeclaredTripleIsInScope(): void {
+		$this->seedRow('portalFormBinding', $this->binding());
+		$this->seedRow('portalFormBinding', $this->binding([
+			'portal' => 'gemeente-y',
+			'route' => 'aanvragen/kap',
+			'typeRegister' => 'andere-gemeente',
+			'typeId' => 'kapvergunning',
+		]));
+		$resolver = $this->resolver();
+
+		$this->assertTrue($resolver->caseTypeIsInPortalScope(portal: 'gemeente-x', register: 'dossiq', schema: 'zaaktype', typeId: 'verhuizing'));
+		// Another portal's declaration is not this portal's scope.
+		$this->assertFalse($resolver->caseTypeIsInPortalScope(portal: 'gemeente-x', register: 'andere-gemeente', schema: 'zaaktype', typeId: 'kapvergunning'));
+		// The register is part of the triple, not decoration.
+		$this->assertFalse($resolver->caseTypeIsInPortalScope(portal: 'gemeente-x', register: 'andere-gemeente', schema: 'zaaktype', typeId: 'verhuizing'));
+		// So is the schema.
+		$this->assertFalse($resolver->caseTypeIsInPortalScope(portal: 'gemeente-x', register: 'dossiq', schema: 'portalCaseType', typeId: 'verhuizing'));
+		// An empty value names nothing and is never in scope.
+		$this->assertFalse($resolver->caseTypeIsInPortalScope(portal: 'gemeente-x', register: '', schema: 'zaaktype', typeId: 'verhuizing'));
+		// A portal that resolved to nothing declares nothing.
+		$this->assertFalse($resolver->caseTypeIsInPortalScope(portal: '', register: 'dossiq', schema: 'zaaktype', typeId: 'verhuizing'));
+
+	}//end testOnlyTheExactDeclaredTripleIsInScope()
+
+	/**
 	 * A binding for the client form of one case type.
 	 *
 	 * @param array<string, mixed> $extra Anything to override.
