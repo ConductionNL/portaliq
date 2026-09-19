@@ -62,7 +62,10 @@ async function seed(
 		headers: { Authorization: `Basic ${ADMIN}`, 'OCS-APIRequest': 'true' },
 		data,
 	})
-	expect(res.ok(), `OpenRegister objects#create must be reachable for ${schema}`).toBeTruthy()
+	expect(
+		res.ok(),
+		`OpenRegister objects#create must be reachable for ${schema}`,
+	).toBeTruthy()
 	const body = await res.json()
 	const id = (body.id ?? body['@self']?.id) as string
 	expect(id).toBeTruthy()
@@ -123,48 +126,76 @@ async function renderOf(
 		headers.Authorization = `Bearer ${token}`
 	}
 
-	const res = await request.get(`${API_BASE}/intake/form?route=${encodeURIComponent(route)}`, { headers })
+	const res = await request.get(
+		`${API_BASE}/intake/form?route=${encodeURIComponent(route)}`,
+		{ headers },
+	)
 	expect(res.ok(), `the form page ${route} must render`).toBeTruthy()
 	return res.json()
 }
 
 test.describe('portal-intake-form-as-an-object', () => {
-	test('a case type with two forms renders only the bound audience, and an edit reaches the portal', async ({ request }) => {
+	test('a case type with two forms renders only the bound audience, and an edit reaches the portal', async ({
+		request,
+	}) => {
 		const stamp = Date.now()
 		const caseType = `verhuizing-${stamp}`
-		const clientForm = await seedForm(request, caseType, 'client', [{ name: 'postcode', order: 1, required: true }])
+		const clientForm = await seedForm(request, caseType, 'client', [
+			{ name: 'postcode', order: 1, required: true },
+		])
 		await seedForm(request, caseType, 'supplier', [{ name: 'kvk', order: 1 }])
 		const route = `aanvragen/verhuizing-${stamp}`
 		await seedBinding(request, route, caseType, 'client')
 
 		const first = await renderOf(request, route)
-		expect((first.fields as unknown as Array<Record<string, string>>).map((field) => field.name)).toEqual(['postcode'])
+		expect(
+			(first.fields as unknown as Array<Record<string, string>>).map(
+				(field) => field.name,
+			),
+		).toEqual(['postcode'])
 
 		// The form is edited where it lives; the portal page is not touched.
-		const edit = await request.put(`${OR_OBJECTS_BASE}/portaliq/registrationForm/${clientForm}`, {
-			headers: { Authorization: `Basic ${ADMIN}`, 'OCS-APIRequest': 'true' },
-			data: {
-				caseType,
-				audience: 'client',
-				name: `${caseType}-client`,
-				status: 'published',
-				fields: [
-					{ name: 'postcode', order: 1, required: true },
-					{ name: 'huisnummer', order: 2 },
-				],
+		const edit = await request.put(
+			`${OR_OBJECTS_BASE}/portaliq/registrationForm/${clientForm}`,
+			{
+				headers: {
+					Authorization: `Basic ${ADMIN}`,
+					'OCS-APIRequest': 'true',
+				},
+				data: {
+					caseType,
+					audience: 'client',
+					name: `${caseType}-client`,
+					status: 'published',
+					fields: [
+						{ name: 'postcode', order: 1, required: true },
+						{ name: 'huisnummer', order: 2 },
+					],
+				},
 			},
-		})
+		)
 		expect(edit.ok()).toBeTruthy()
 
 		const second = await renderOf(request, route)
-		expect((second.fields as unknown as Array<Record<string, string>>).map((field) => field.name))
-			.toEqual(['postcode', 'huisnummer'])
+		expect(
+			(second.fields as unknown as Array<Record<string, string>>).map(
+				(field) => field.name,
+			),
+		).toEqual(['postcode', 'huisnummer'])
 	})
 
-	test('a missing answer is a field error, and a valid one comes back with a reference at once', async ({ request }) => {
+	test('a missing answer is a field error, and a valid one comes back with a reference at once', async ({
+		request,
+	}) => {
 		const stamp = Date.now()
 		const caseType = `melding-${stamp}`
-		await seedForm(request, caseType, 'client', [{ name: 'postcode', order: 1, required: true }], 'Bedankt, u hoort binnen vijf werkdagen van ons.')
+		await seedForm(
+			request,
+			caseType,
+			'client',
+			[{ name: 'postcode', order: 1, required: true }],
+			'Bedankt, u hoort binnen vijf werkdagen van ons.',
+		)
 		const route = `aanvragen/melding-${stamp}`
 		await seedBinding(request, route, caseType, 'client')
 
@@ -181,11 +212,15 @@ test.describe('portal-intake-form-as-an-object', () => {
 		const body = await accepted.json()
 		expect(body.reference).toBeTruthy()
 		expect(body.state).toBe('queued')
-		expect(body.confirmationText).toBe('Bedankt, u hoort binnen vijf werkdagen van ons.')
+		expect(body.confirmationText).toBe(
+			'Bedankt, u hoort binnen vijf werkdagen van ons.',
+		)
 
 		// The reference page reads the submission's real state, and says
 		// nothing about a case that does not exist yet.
-		const status = await request.get(`${API_BASE}/intake/status?reference=${encodeURIComponent(body.reference)}`)
+		const status = await request.get(
+			`${API_BASE}/intake/status?reference=${encodeURIComponent(body.reference)}`,
+		)
 		expect(status.ok()).toBeTruthy()
 		const state = await status.json()
 		expect(['queued', 'registered', 'failed']).toContain(state.state)
@@ -194,7 +229,9 @@ test.describe('portal-intake-form-as-an-object', () => {
 		}
 	})
 
-	test('an external binding names its destination and offers no fields', async ({ request }) => {
+	test('an external binding names its destination and offers no fields', async ({
+		request,
+	}) => {
 		const stamp = Date.now()
 		const route = `aanvragen/extern-${stamp}`
 		await seedBinding(request, route, `extern-${stamp}`, 'client', {
@@ -209,7 +246,9 @@ test.describe('portal-intake-form-as-an-object', () => {
 		expect(render.fields).toBeUndefined()
 	})
 
-	test('an anonymous visitor gets an empty applicant block, and a signed-in citizen does not retype their name', async ({ request }) => {
+	test('an anonymous visitor gets an empty applicant block, and a signed-in citizen does not retype their name', async ({
+		request,
+	}) => {
 		const stamp = Date.now()
 		const caseType = `aanvraag-${stamp}`
 		await seedForm(request, caseType, 'client', [
@@ -222,30 +261,44 @@ test.describe('portal-intake-form-as-an-object', () => {
 		const anonymous = await renderOf(request, route)
 		expect(anonymous.prefill).toEqual({})
 
-		const provisioned = await request.post('/apps/portaliq/api/accounts/provision', {
-			headers: { Authorization: `Basic ${ADMIN}`, 'OCS-APIRequest': 'true', requesttoken: 'x' },
-			data: {
-				audience: 'client',
-				organisation: 'dev-org',
-				identityType: 'digid',
-				identityRef: `bsn-${stamp}`,
-				displayName: 'Ans de Vries',
+		const provisioned = await request.post(
+			'/apps/portaliq/api/accounts/provision',
+			{
+				headers: {
+					Authorization: `Basic ${ADMIN}`,
+					'OCS-APIRequest': 'true',
+					requesttoken: 'x',
+				},
+				data: {
+					audience: 'client',
+					organisation: 'dev-org',
+					identityType: 'digid',
+					identityRef: `bsn-${stamp}`,
+					displayName: 'Ans de Vries',
+				},
 			},
-		})
+		)
 		expect(provisioned.ok()).toBeTruthy()
 		const { subjectRef } = await provisioned.json()
 
 		const login = await request.post(`${API_BASE}/session/dev-login`, {
 			data: { subjectRef, audience: 'client', organisation: 'dev-org' },
 		})
-		expect(login.ok(), 'dev-login must be enabled (see tests/e2e/ci-seed.sh)').toBeTruthy()
+		expect(
+			login.ok(),
+			'dev-login must be enabled (see tests/e2e/ci-seed.sh)',
+		).toBeTruthy()
 		const { token } = await login.json()
 
 		const signedIn = await renderOf(request, route, token)
-		expect((signedIn.prefill as unknown as Record<string, string>).applicantName).toBe('Ans de Vries')
+		expect(
+			(signedIn.prefill as unknown as Record<string, string>).applicantName,
+		).toBe('Ans de Vries')
 	})
 
-	test('the entry point lists the published catalogue, and an entry names the route that starts its form', async ({ request }) => {
+	test('the entry point lists the published catalogue, and an entry names the route that starts its form', async ({
+		request,
+	}) => {
 		const stamp = Date.now()
 		const route = `aanvragen/catalogus-${stamp}`
 		await seed(request, 'portaliq', 'publication', {
@@ -259,9 +312,13 @@ test.describe('portal-intake-form-as-an-object', () => {
 		const res = await request.get(`${API_BASE}/intake/catalogue`)
 		expect(res.ok()).toBeTruthy()
 		const topics = (await res.json()).topics as Array<Record<string, never>>
-		const mine = topics.find((topic) => (topic.topic as unknown as string) === `Wonen ${stamp}`)
+		const mine = topics.find(
+			(topic) => (topic.topic as unknown as string) === `Wonen ${stamp}`,
+		)
 
 		expect(mine, 'the seeded topic is listed').toBeTruthy()
-		expect((mine?.entries as unknown as Array<Record<string, string>>)[0].route).toBe(route)
+		expect(
+			(mine?.entries as unknown as Array<Record<string, string>>)[0].route,
+		).toBe(route)
 	})
 })
