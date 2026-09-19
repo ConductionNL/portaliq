@@ -29,6 +29,7 @@ OC.L10N.register(
         "An event name, such as `scroll` or `outbound_click`.": "An event name, such as `scroll` or `outbound_click`.",
         "Anonymous": "Anonymous",
         "App id": "App id",
+        "Ask for proof of work": "Ask for proof of work",
         "Assurance level of the authentication (e.g. eHerkenning EH3, DigiD Midden/Substantieel).": "Assurance level of the authentication (e.g. eHerkenning EH3, DigiD Midden/Substantieel).",
         "Attachments": "Attachments",
         "Attempts": "Attempts",
@@ -186,6 +187,7 @@ OC.L10N.register(
         "Hostnames this portal answers on. A request is routed by its Host header; an unknown host resolves to NO portal and returns 404 — there is deliberately no default or first-match fallback, because that is exactly how a multi-tenant host serves one tenant's content under another tenant's domain.": "Hostnames this portal answers on. A request is routed by its Host header; an unknown host resolves to NO portal and returns 404 — there is deliberately no default or first-match fallback, because that is exactly how a multi-tenant host serves one tenant's content under another tenant's domain.",
         "How far sessions walked each of the portal's funnels that day.": "How far sessions walked each of the portal's funnels that day.",
         "How long raw events are kept before they are deleted. Daily aggregates outlive them. There is no unbounded option.": "How long raw events are kept before they are deleted. Daily aggregates outlive them. There is no unbounded option.",
+        "How many leading zero bits the solution hash must carry. Every extra bit doubles the work a visitor does.": "How many leading zero bits the solution hash must carry. Every extra bit doubles the work a visitor does.",
         "How much your portals are used, and by whom.": "How much your portals are used, and by whom.",
         "How often it was downloaded.": "How often it was downloaded.",
         "How often it was followed.": "How often it was followed.",
@@ -350,6 +352,7 @@ OC.L10N.register(
         "Portal auth edge": "Portal auth edge",
         "Portal details": "Portal details",
         "Open portal": "Open portal",
+        "Property": "Property",
         "The change could not be saved. Please try again.": "The change could not be saved. Please try again.",
         "The document could not be added. Please try again.": "The document could not be added. Please try again.",
         "There is no file to add.": "There is no file to add.",
@@ -482,6 +485,7 @@ OC.L10N.register(
         "Submitted at": "Submitted at",
         "Success message": "Success message",
         "Summary": "Summary",
+        "Surfaces": "Surfaces",
         "Synonyms": "Synonyms",
         "Tagline": "Tagline",
         "Target id": "Target id",
@@ -949,6 +953,7 @@ OC.L10N.register(
         "The citizen the case belongs to; the field the case is scoped on.": "The citizen the case belongs to; the field the case is scoped on.",
         "The citizen's explanation.": "The citizen's explanation.",
         "The field this flag belongs to, as the case schema names it.": "The field this flag belongs to, as the case schema names it.",
+        "The name of the property this entry proposes to change.": "The name of the property this entry proposes to change.",
         "The portal audiences the field is open to, such as `client`.": "The portal audiences the field is open to, such as `client`.",
         "The portalCaseType this case is of.": "The portalCaseType this case is of.",
         "The public label and description per status, keyed by the status value. The portal renders these unchanged and invents nothing when a status carries none.": "The public label and description per status, keyed by the status value. The portal renders these unchanged and invents nothing when a status carries none.",
@@ -986,6 +991,7 @@ OC.L10N.register(
         "Code hash": "Code hash",
         "SHA-256 of the receipt code. The code itself is shown once and stored nowhere.": "SHA-256 of the receipt code. The code itself is shown once and stored nowhere.",
         "The separate record holding what the reporter gave about themselves. Empty when they gave nothing.": "The separate record holding what the reporter gave about themselves. Empty when they gave nothing.",
+        "The work factor per surface, keyed by surface name. A surface that is not named here uses the setting above.": "The work factor per surface, keyed by surface name. A surface that is not named here uses the setting above.",
         "Where the report stands.": "Where the report stands.",
         "Acknowledged at": "Acknowledged at",
         "When the organisation acknowledged it, for the statutory term.": "When the organisation acknowledged it, for the statutory term.",
@@ -1019,7 +1025,9 @@ OC.L10N.register(
         "The custodian who answered.": "The custodian who answered.",
         "What the custodian said about their answer.": "What the custodian said about their answer.",
         "Revealed fields": "Revealed fields",
-        "Which contact fields were shown, when it was allowed. The values are not copied here.": "Which contact fields were shown, when it was allowed. The values are not copied here."
+        "Whether a visitor has to solve the puzzle before the form is accepted.": "Whether a visitor has to solve the puzzle before the form is accepted.",
+        "Which contact fields were shown, when it was allowed. The values are not copied here.": "Which contact fields were shown, when it was allowed. The values are not copied here.",
+        "Work factor": "Work factor"
     },
     "nplurals=2; plural=(n != 1);"
 )
