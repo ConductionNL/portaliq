@@ -62,6 +62,42 @@ class PortalIdentityControllerTest extends TestCase {
 
 	}//end testAnUnsolvedChallengeCreatesNoAccount()
 
+	/**
+	 * gate-9, the wiring half. The signature is the credential this endpoint
+	 * authenticates on, so it has to reach the service that checks it. A
+	 * controller that read it off the request and dropped it would pass every
+	 * test above, and refuse nobody.
+	 *
+	 * @return void
+	 */
+	public function testTheSignatureTheCallerSentReachesTheChallenge(): void {
+		$controller = $this->controller(site: ['organisation' => 'gemeente-x']);
+		$this->doubles['policy']->method('isOffered')->willReturn(true);
+		$this->doubles['challenge']->expects($this->once())
+			->method('accepts')
+			->with(
+				$this->equalTo(['organisation' => 'gemeente-x']),
+				$this->equalTo('registration'),
+				$this->anything(),
+				$this->equalTo('nonce-1'),
+				$this->equalTo('2016'),
+				$this->equalTo(1758300000),
+				$this->equalTo('signature-1')
+			)
+			->willReturn(false);
+
+		$response = $controller->register(
+			email: 'ans@example.org',
+			nonce: 'nonce-1',
+			solution: '2016',
+			expiresAt: 1758300000,
+			signature: 'signature-1'
+		);
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+
+	}//end testTheSignatureTheCallerSentReachesTheChallenge()
+
 	public function testAnAddressOutsideTheAllowedDomainsCreatesNoAccount(): void {
 		$controller = $this->controller(site: ['organisation' => 'gemeente-x']);
 		$this->doubles['policy']->method('isOffered')->willReturn(true);

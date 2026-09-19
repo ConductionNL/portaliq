@@ -148,6 +148,8 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @param array<string, mixed> $answers What the citizen answered.
 	 * @param string $nonce The challenge nonce, when one was issued.
 	 * @param string $solution The solution to it.
+	 * @param int $expiresAt The expiry issued with the nonce.
+	 * @param string $signature This instance's signature over the nonce.
 	 *
 	 * @return JSONResponse The reference, the per-field errors, or a refusal.
 	 *
@@ -156,7 +158,14 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 20, period: 60)]
-	public function submit(string $route, array $answers = [], string $nonce = '', string $solution = ''): JSONResponse {
+	public function submit(
+		string $route,
+		array $answers = [],
+		string $nonce = '',
+		string $solution = '',
+		int $expiresAt = 0,
+		string $signature = '',
+	): JSONResponse {
 		$site = $this->site();
 		if ($site === null) {
 			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
@@ -175,7 +184,15 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		}
 
 		if (($render['settings']['challenge'] ?? false) === true) {
-			$accepted = $this->challenge->accepts(site: $site, surface: 'form', submission: $answers, nonce: $nonce, solution: $solution);
+			$accepted = $this->challenge->accepts(
+				site: $site,
+				surface: 'form',
+				submission: $answers,
+				nonce: $nonce,
+				solution: $solution,
+				expiresAt: $expiresAt,
+				signature: $signature
+			);
 			if ($accepted === false) {
 				return new JSONResponse(['error' => 'challenge_failed'], Http::STATUS_FORBIDDEN);
 			}
