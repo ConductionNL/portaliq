@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.21.0"
+        "version": "0.24.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.21.0",
+                "version": "0.24.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -39,7 +39,20 @@
                     "portalTrafficEvent",
                     "portalTrafficRecording",
                     "form",
-                    "landingPageSubmission"
+                    "landingPageSubmission",
+                    "portalCaseType",
+                    "portalCase",
+                    "portalReport",
+                    "portalReportMessage",
+                    "portalReporterContact",
+                    "portalRevealRequest",
+                    "portalMandate",
+                    "portalInvitation",
+                    "portalReferenceLink",
+                    "portalAccessRequest",
+                    "portalFormBinding",
+                    "portalIntakeSubmission",
+                    "changeProposal"
                 ]
             }
         },
@@ -334,7 +347,12 @@
                     ]
                 },
                 "icon": "AccountKey",
-                "version": "0.5.0",
+                "version": "0.8.0",
+                "configuration": {
+                    "linkedTypes": [
+                        "calendar"
+                    ]
+                },
                 "title": "Portal Account",
                 "description": "Links an external identity (eHerkenning / DigiD / eIDAS) to the subject reference used for RBAC scoping. Owned by Portaliq's auth edge; never publicly readable. See ADR-046 and openspec/changes/supplier-portal.",
                 "type": "object",
@@ -396,10 +414,13 @@
                     "status": {
                         "title": "Status",
                         "type": "string",
-                        "description": "Account lifecycle status.",
+                        "description": "Account lifecycle status. `pending` is an account provisioned before any login (portal-identity-space): it has no session and is unreachable from the portal until a matching first login activates it. `void` is a pending account a clerk withdrew; it never matches a login again. `removed` is an account whose owner asked for it to be removed: its identity, its address and its claims are gone and the cases it was linked to stay with the municipality (REQ-PIOC-006).",
                         "enum": [
+                            "pending",
                             "active",
-                            "suspended"
+                            "suspended",
+                            "void",
+                            "removed"
                         ],
                         "example": "active"
                     },
@@ -424,6 +445,57 @@
                                 "linkedContactId": "00000000-0000-0000-0000-000000000000"
                             }
                         }
+                    },
+                    "verifiedEmail": {
+                        "title": "Verified email",
+                        "type": "boolean",
+                        "description": "True when `email` was verified out of band, which is what lets a first login without an identity reference match this pending account (portal-identity-space REQ-PIS-002).",
+                        "example": false
+                    },
+                    "provisionedBy": {
+                        "title": "Provisioned by",
+                        "type": "string",
+                        "description": "The Nextcloud user id of the staff member who provisioned this account before any login, or the app id when an app provisioned it through the typed event (portal-identity-space REQ-PIS-001).",
+                        "example": "clerk-anna"
+                    },
+                    "provisionedAt": {
+                        "title": "Provisioned at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the account was provisioned, ISO 8601.",
+                        "example": "2026-09-18T09:00:00+00:00"
+                    },
+                    "voidReason": {
+                        "title": "Void reason",
+                        "type": "string",
+                        "description": "Why a pending account was withdrawn. Required when status is `void` (portal-identity-space D6).",
+                        "example": "Provisioned on a mistyped BSN"
+                    },
+                    "pendingEmail": {
+                        "title": "Pending email",
+                        "type": "string",
+                        "description": "An address the owner asked to change to. It is used for nothing until it is confirmed through the link (REQ-PIOC-006), so the old address stays in use meanwhile.",
+                        "example": "nieuw@example.org"
+                    },
+                    "pendingEmailTokenHash": {
+                        "title": "Pending email token hash",
+                        "type": "string",
+                        "description": "SHA-256 of the one-time secret in the confirmation mail.",
+                        "example": "9f86d0…"
+                    },
+                    "pendingEmailExpiresAt": {
+                        "title": "Pending email expiry",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the confirmation link stops working.",
+                        "example": "2026-09-19T09:00:00+00:00"
+                    },
+                    "removedAt": {
+                        "title": "Removed at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the owner's removal request was carried out.",
+                        "example": "2026-09-18T12:00:00+00:00"
                     }
                 }
             },
@@ -562,7 +634,12 @@
                     ]
                 },
                 "icon": "EmailOutline",
-                "version": "0.3.0",
+                "version": "0.4.0",
+                "configuration": {
+                    "linkedTypes": [
+                        "talk"
+                    ]
+                },
                 "title": "Portal Message",
                 "description": "A message in a subject's portal inbox (the in-portal realisation of the notification/inbox surface). Subject-scoped by subjectRef, so it is read through the same path as any contribution collection. OpenRegister's notification engine (email channel + `field` recipient kind) can additionally email the subject out-of-band when a message arrives.",
                 "type": "object",
@@ -662,7 +739,12 @@
                     ]
                 },
                 "icon": "FileCheckOutline",
-                "version": "0.1.0",
+                "version": "0.2.0",
+                "configuration": {
+                    "linkedTypes": [
+                        "forms"
+                    ]
+                },
                 "title": "Portal Submission",
                 "description": "Append-only proof-of-receipt log record satisfying the WMEBV burden-of-proof duty (~Awb 2:25): one row per successful portal create-action, linking to the ontvangstbevestiging `portalMessage` it generated. Subject- and tenant-scoped like any other portal object; backs the subject's right to a copy of their own submission-log entries. See openspec/specs/supplier-portal/spec.md (wmebv-submission-receipts).",
                 "type": "object",
@@ -980,7 +1062,7 @@
                     ]
                 },
                 "icon": "WebBox",
-                "version": "0.2.0",
+                "version": "0.3.0",
                 "title": "Portal Page",
                 "description": "A data-provisioned portal contribution (ADR-046, portal-page-provisioning). Mirrors the IPortalContributionProvider manifest shape 1:1 so Portaliq's built-in provider can read this object and hand it to the same PortalManifestNormaliser every PHP provider's output passes through. Owned by the app that provisions the page; never publicly readable — the built-in provider is the only reader, server-side.",
                 "type": "object",
@@ -1339,7 +1421,7 @@
                                 "blocks": {
                                     "title": "Blocks",
                                     "type": "array",
-                                    "description": "Ordered UI blocks composing the page. type ∈ collection|action|detail|richText|cta (PortalManifestNormaliser::BLOCK_TYPES) — an unrecognised type or an unresolvable collection/action reference is dropped by the normaliser, never rendered as broken.",
+                                    "description": "Ordered UI blocks composing the page. type ∈ collection|action|detail|richText|cta|citizenCase (PortalBlockResolver::BLOCK_TYPES) — an unrecognised type or an unresolvable collection/action reference is dropped by the normaliser, never rendered as broken.",
                                     "items": {
                                         "type": "object",
                                         "required": [
@@ -1355,7 +1437,8 @@
                                                     "action",
                                                     "detail",
                                                     "richText",
-                                                    "cta"
+                                                    "cta",
+                                                    "citizenCase"
                                                 ]
                                             },
                                             "collection": {
@@ -1541,6 +1624,70 @@
                                 "type": "object",
                                 "description": "Provider configuration when `oidc` is enabled: issuer, client id and the scopes requested. The client secret is held in the credential broker, never here.",
                                 "additionalProperties": true
+                            },
+                            "registration": {
+                                "title": "Registration policy",
+                                "type": "object",
+                                "description": "Whether a stranger may make an account on this portal, and from which addresses (REQ-PIOC-004). Absent means `off`, the closed answer.",
+                                "properties": {
+                                    "policy": {
+                                        "title": "Policy",
+                                        "type": "string",
+                                        "enum": [
+                                            "off",
+                                            "approval",
+                                            "activation"
+                                        ],
+                                        "description": "`off`: no account is created by a stranger. `approval`: the account waits for a decision. `activation`: it waits for a mail the registrant confirms.",
+                                        "example": "off"
+                                    },
+                                    "allowedDomains": {
+                                        "title": "Allowed domains",
+                                        "type": "array",
+                                        "description": "When not empty, an address outside these domains is refused.",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "example": [
+                                            "gemeente-x.nl"
+                                        ]
+                                    }
+                                }
+                            },
+                            "challenge": {
+                                "title": "Challenge",
+                                "type": "object",
+                                "description": "The challenge this portal runs in front of its public form and its registration page (REQ-PIOC-005). It runs here: a proof of work the browser computes and a honeypot field, never a request to a third-party challenge service.",
+                                "properties": {
+                                    "proofOfWork": {
+                                        "title": "Proof of work",
+                                        "type": "object",
+                                        "description": "Per-surface work factor. `difficulty` is the number of leading zero bits the solution hash must carry.",
+                                        "properties": {
+                                            "enabled": {
+                                                "title": "Ask for proof of work",
+                                                "type": "boolean",
+                                                "description": "Whether a visitor has to solve the puzzle before the form is accepted."
+                                            },
+                                            "difficulty": {
+                                                "title": "Work factor",
+                                                "type": "integer",
+                                                "description": "How many leading zero bits the solution hash must carry. Every extra bit doubles the work a visitor does."
+                                            },
+                                            "surfaces": {
+                                                "title": "Surfaces",
+                                                "type": "object",
+                                                "description": "The work factor per surface, keyed by surface name. A surface that is not named here uses the setting above."
+                                            }
+                                        }
+                                    },
+                                    "honeypotField": {
+                                        "title": "Honeypot field",
+                                        "type": "string",
+                                        "description": "The field name a human never fills. A submission that fills it is refused.",
+                                        "example": "faxnummer"
+                                    }
+                                }
                             }
                         }
                     },
@@ -1562,6 +1709,7 @@
                     "traffic": {
                         "title": "Traffic measurement",
                         "type": "object",
+                        "widget": "json",
                         "description": "What this portal measures about its visitors, and under which conditions. OFF until an operator switches it on: an upgrade must not start recording a municipality's visitors. Measurement is cookieless by default; the switches under `sensitive` each carry their own warning.",
                         "properties": {
                             "enabled": {
@@ -4346,6 +4494,1298 @@
                         "title": "Nonce",
                         "type": "string",
                         "description": "Server-generated (ISecureRandom), replay-resistance only — never client-supplied."
+                    }
+                }
+            },
+            "portalCaseType": {
+                "slug": "portalCaseType",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "icon": "FileTreeOutline",
+                "version": "0.1.0",
+                "title": "Portal Case Type",
+                "description": "What a citizen may change on a case of this type, and until when. The flag lives on the field, so `portalWritable` carries one entry per field; the two windows say in which statuses an amendment and a document are still accepted; `portalStatusLabels` carries the words the citizen reads. A case app owns all four and the portal renders them without adding a vocabulary of its own.",
+                "type": "object",
+                "required": [
+                    "title"
+                ],
+                "properties": {
+                    "title": {
+                        "title": "Title",
+                        "type": "string",
+                        "description": "The case type's name.",
+                        "example": "Aanvraag omgevingsvergunning"
+                    },
+                    "portalWritable": {
+                        "title": "Portal writable fields",
+                        "type": "array",
+                        "description": "One entry per field a portal audience may change. `field` names the field, `audiences` the audiences it is open to, `openStatuses` the statuses it stays open in (absent means the amendment window decides), and `closedReason` the sentence the citizen reads when it is closed.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "field": {
+                                    "title": "Field",
+                                    "description": "The field this flag belongs to, as the case schema names it.",
+                                    "type": "string",
+                                    "example": "omschrijving"
+                                },
+                                "audiences": {
+                                    "title": "Audiences",
+                                    "description": "The portal audiences the field is open to, such as `client`.",
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "example": [
+                                        "client"
+                                    ]
+                                },
+                                "openStatuses": {
+                                    "title": "Open statuses",
+                                    "description": "The statuses the field stays open in. Absent means the amendment window decides.",
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "closedReason": {
+                                    "title": "Closed reason",
+                                    "description": "The sentence the citizen reads once this field is closed.",
+                                    "type": "string",
+                                    "example": "De aanvraag is in behandeling genomen."
+                                }
+                            }
+                        }
+                    },
+                    "portalAmendmentWindow": {
+                        "title": "Amendment window",
+                        "type": "object",
+                        "description": "The statuses in which a citizen may still correct their answers, and the sentence shown once the window has closed. Absent means closed.",
+                        "properties": {
+                            "openStatuses": {
+                                "title": "Open statuses",
+                                "description": "The statuses in which a citizen may still correct their answers.",
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "example": [
+                                    "ontvangen",
+                                    "aanvullen"
+                                ]
+                            },
+                            "closedReason": {
+                                "title": "Closed reason",
+                                "description": "The sentence the citizen reads once the window has closed.",
+                                "type": "string",
+                                "example": "De aanvraag is in behandeling genomen."
+                            }
+                        }
+                    },
+                    "portalDocumentWindow": {
+                        "title": "Document window",
+                        "type": "object",
+                        "description": "The statuses in which a citizen may still add a document, and the sentence shown once that has closed. Absent means closed.",
+                        "properties": {
+                            "openStatuses": {
+                                "title": "Open statuses",
+                                "description": "The statuses in which a citizen may still add a document.",
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "example": [
+                                    "ontvangen",
+                                    "aanvullen"
+                                ]
+                            },
+                            "closedReason": {
+                                "title": "Closed reason",
+                                "description": "The sentence the citizen reads once the window has closed.",
+                                "type": "string",
+                                "example": "De zaak neemt geen stukken meer aan."
+                            }
+                        }
+                    },
+                    "portalStatusLabels": {
+                        "title": "Public status labels",
+                        "type": "object",
+                        "description": "The public label and description per status, keyed by the status value. The portal renders these unchanged and invents nothing when a status carries none."
+                    },
+                    "portalIdentityKind": {
+                        "title": "Portal identity kind",
+                        "type": "array",
+                        "description": "Which identities may reach a case of this type from the portal (portal-identity-and-the-organisations-cases REQ-PIOC-001). `account` requires a portal session. `reference` admits a citizen on a case number and a verified address through a one-time link, with no account. Both may be declared. An empty or absent list means `account` only, which is the closed answer.",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "account",
+                                "reference"
+                            ]
+                        },
+                        "example": [
+                            "account",
+                            "reference"
+                        ]
+                    },
+                    "portalWithdrawal": {
+                        "title": "Portal withdrawal",
+                        "type": "object",
+                        "description": "Whether an applicant may end their own request from the portal, until when, and onto which status (withdrawing-your-own-case-from-the-portal REQ-WOC-001, REQ-WOC-004). Absent means no withdrawal is offered at all: the portal keeps no list of withdrawable case types, so a type that says nothing offers nothing.",
+                        "properties": {
+                            "openStatuses": {
+                                "title": "Open statuses",
+                                "type": "array",
+                                "description": "The statuses in which withdrawal is still possible.",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "example": [
+                                    "ontvangen",
+                                    "in-behandeling"
+                                ]
+                            },
+                            "closedReason": {
+                                "title": "Closed reason",
+                                "type": "string",
+                                "description": "What the applicant is told once the window has closed. Shown instead of an action that would fail.",
+                                "example": "Uw aanvraag is al beoordeeld en kan niet meer worden ingetrokken."
+                            },
+                            "targetStatus": {
+                                "title": "Target status",
+                                "type": "string",
+                                "description": "The status a withdrawal lands on. Applied server-side; a status in the request body is ignored.",
+                                "example": "ingetrokken"
+                            },
+                            "confirmText": {
+                                "title": "Confirmation text",
+                                "type": "string",
+                                "description": "What withdrawal means, in the case app's own words, shown on the confirmation step.",
+                                "example": "Als u uw aanvraag intrekt, stopt de behandeling en ontvangt u geen besluit."
+                            }
+                        },
+                        "example": {
+                            "openStatuses": [
+                                "ontvangen"
+                            ],
+                            "targetStatus": "ingetrokken"
+                        }
+                    },
+                    "portalReportDeclaration": {
+                        "title": "Portal report declaration",
+                        "type": "object",
+                        "description": "What governs a report of this type: the group that may reveal who filed it, the acknowledgement and feedback terms in days, and whether the reporting surface stays out of visitor analytics. The portal holds no term of its own.",
+                        "properties": {
+                            "custodianGroup": {
+                                "title": "Custodian group",
+                                "type": "string",
+                                "description": "The Nextcloud group whose members may allow a reveal. An instance administrator who is not in it may not.",
+                                "example": "vertrouwenspersonen"
+                            },
+                            "acknowledgementDays": {
+                                "title": "Acknowledgement term",
+                                "type": "integer",
+                                "description": "Days within which the report must be acknowledged.",
+                                "example": 7
+                            },
+                            "feedbackDays": {
+                                "title": "Feedback term",
+                                "type": "integer",
+                                "description": "Days within which the reporter must be given feedback.",
+                                "example": 90
+                            },
+                            "excludeFromAnalytics": {
+                                "title": "Exclude from analytics",
+                                "type": "boolean",
+                                "description": "Whether the reporting surface is kept out of visitor analytics entirely.",
+                                "example": true
+                            }
+                        },
+                        "example": {
+                            "custodianGroup": "vertrouwenspersonen",
+                            "acknowledgementDays": 7,
+                            "feedbackDays": 90,
+                            "excludeFromAnalytics": true
+                        }
+                    }
+                }
+            },
+            "portalCase": {
+                "slug": "portalCase",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "icon": "FolderOutline",
+                "version": "0.1.0",
+                "title": "Portal Case",
+                "description": "A citizen's own case as the portal sees it: scoped by subjectRef, pointing at its case type, carrying its status and the answers the citizen gave. `portalWrites` is the append-only record of what the citizen changed, naming the identity and the mandate each change acted under.",
+                "type": "object",
+                "required": [
+                    "subjectRef"
+                ],
+                "properties": {
+                    "subjectRef": {
+                        "title": "Subject reference",
+                        "type": "string",
+                        "description": "The citizen the case belongs to; the field the case is scoped on.",
+                        "example": "dev-client"
+                    },
+                    "organisation": {
+                        "title": "Organisation",
+                        "type": "string",
+                        "description": "The tenant this case belongs to.",
+                        "example": "dev-org"
+                    },
+                    "caseType": {
+                        "title": "Case type",
+                        "type": "string",
+                        "description": "The portalCaseType this case is of.",
+                        "example": "aanvraag-omgevingsvergunning"
+                    },
+                    "reference": {
+                        "title": "Reference",
+                        "type": "string",
+                        "description": "The case number the citizen quotes.",
+                        "example": "Z-2026-0001"
+                    },
+                    "status": {
+                        "title": "Status",
+                        "type": "string",
+                        "description": "The case's current status; the case type says what a citizen may change in it.",
+                        "example": "ontvangen"
+                    },
+                    "omschrijving": {
+                        "title": "Omschrijving",
+                        "type": "string",
+                        "description": "What the citizen asked for.",
+                        "example": "Een dakkapel aan de achterzijde"
+                    },
+                    "toelichting": {
+                        "title": "Toelichting",
+                        "type": "string",
+                        "description": "The citizen's explanation.",
+                        "example": "De dakkapel komt op de eerste verdieping."
+                    },
+                    "portalWrites": {
+                        "title": "Portal writes",
+                        "type": "array",
+                        "description": "Append-only record of every change the citizen made through the portal: the act, the identity, the mandate, both answers and the time.",
+                        "items": {
+                            "type": "object"
+                        }
+                    },
+                    "withdrawnAt": {
+                        "title": "Withdrawn at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the applicant withdrew the request. The request itself stays readable (REQ-WOC-005).",
+                        "example": ""
+                    },
+                    "withdrawalReason": {
+                        "title": "Withdrawal reason",
+                        "type": "string",
+                        "description": "What the applicant said when withdrawing, when they said anything.",
+                        "example": "Ik ben toch niet verhuisd."
+                    }
+                }
+            },
+            "portalMandate": {
+                "slug": "portalMandate",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "icon": "AccountKey",
+                "version": "0.2.0",
+                "title": "Portal Mandate",
+                "description": "What a portal identity may act for on behalf of an organisation (portal-identity-and-the-organisations-cases REQ-PIOC-002). No mandate recorded means no organisation case is visible: the empty default is the closed one. Owned by portaliq's auth edge; never publicly readable.",
+                "type": "object",
+                "required": [
+                    "subjectRef",
+                    "organisation"
+                ],
+                "properties": {
+                    "subjectRef": {
+                        "title": "Subject reference",
+                        "type": "string",
+                        "description": "The portal identity the mandate is held by.",
+                        "example": "b3d9c2a1"
+                    },
+                    "organisation": {
+                        "title": "Organisation",
+                        "type": "string",
+                        "description": "The tenant the mandate is held for.",
+                        "example": "gemeente-x"
+                    },
+                    "onBehalfOf": {
+                        "title": "On behalf of",
+                        "type": "string",
+                        "description": "The party whose cases the mandate opens, e.g. a KvK number. Empty means the organisation itself.",
+                        "example": "kvk-12345678"
+                    },
+                    "label": {
+                        "title": "Label",
+                        "type": "string",
+                        "description": "The words shown beside a case this mandate grants, so the citizen can see why they may read it.",
+                        "example": "Gemachtigd voor Voorbeeld B.V."
+                    },
+                    "caseTypes": {
+                        "title": "Case types",
+                        "type": "array",
+                        "description": "When not empty, the mandate covers only cases of these types. Empty means every case of the party.",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "vergunning"
+                        ]
+                    },
+                    "reach": {
+                        "title": "Reach",
+                        "type": "string",
+                        "enum": [
+                            "organisation",
+                            "tree"
+                        ],
+                        "description": "How far down the party tree the mandate reaches (portal-visibility-follows-the-party-tree REQ-PTV-001). `organisation` covers only the entity it names, and is the default. `tree` also covers the entities recorded below that one at the moment of the request; portaliq keeps no hierarchy of its own, so a subsidiary sold today is gone from the list today.",
+                        "example": "organisation"
+                    },
+                    "status": {
+                        "title": "Status",
+                        "type": "string",
+                        "enum": [
+                            "active",
+                            "revoked"
+                        ],
+                        "description": "A revoked mandate grants nothing.",
+                        "example": "active"
+                    },
+                    "grantedBy": {
+                        "title": "Granted by",
+                        "type": "string",
+                        "description": "Who recorded the mandate.",
+                        "example": "clerk-anna"
+                    },
+                    "grantedAt": {
+                        "title": "Granted at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When it was recorded.",
+                        "example": "2026-09-18T09:00:00+00:00"
+                    },
+                    "expiresAt": {
+                        "title": "Expires at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When it stops granting anything. Empty means it does not expire.",
+                        "example": "2027-09-18T09:00:00+00:00"
+                    }
+                }
+            },
+            "portalInvitation": {
+                "slug": "portalInvitation",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "icon": "AccountKey",
+                "version": "0.1.0",
+                "title": "Portal Invitation",
+                "description": "An address invited into the portal (REQ-PIOC-003). The link's secret is stored hashed, never in the clear, and the state the sender sees is on this row.",
+                "type": "object",
+                "required": [
+                    "email",
+                    "organisation",
+                    "tokenHash"
+                ],
+                "properties": {
+                    "email": {
+                        "title": "Email",
+                        "type": "string",
+                        "description": "The address invited.",
+                        "example": "ans@example.org"
+                    },
+                    "organisation": {
+                        "title": "Organisation",
+                        "type": "string",
+                        "description": "The tenant that invited.",
+                        "example": "gemeente-x"
+                    },
+                    "audience": {
+                        "title": "Audience",
+                        "type": "string",
+                        "description": "The audience the account will carry.",
+                        "example": "client"
+                    },
+                    "tokenHash": {
+                        "title": "Token hash",
+                        "type": "string",
+                        "description": "SHA-256 of the one-time secret. The secret itself is in the mail and nowhere else.",
+                        "example": "9f86d0…"
+                    },
+                    "state": {
+                        "title": "State",
+                        "type": "string",
+                        "enum": [
+                            "sent",
+                            "opened",
+                            "accepted",
+                            "expired",
+                            "revoked"
+                        ],
+                        "description": "What happened to the invitation, as its sender sees it.",
+                        "example": "sent"
+                    },
+                    "invitedBy": {
+                        "title": "Invited by",
+                        "type": "string",
+                        "description": "The staff user who sent it.",
+                        "example": "clerk-anna"
+                    },
+                    "sentAt": {
+                        "title": "Sent at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When it was sent.",
+                        "example": "2026-09-18T09:00:00+00:00"
+                    },
+                    "expiresAt": {
+                        "title": "Expires at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When it stops admitting anybody.",
+                        "example": "2026-09-25T09:00:00+00:00"
+                    },
+                    "subjectRef": {
+                        "title": "Subject reference",
+                        "type": "string",
+                        "description": "The account created when the invitation was accepted.",
+                        "example": "b3d9c2a1"
+                    }
+                }
+            },
+            "portalReferenceLink": {
+                "slug": "portalReferenceLink",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "icon": "AccountKey",
+                "version": "0.1.0",
+                "title": "Portal Reference Link",
+                "description": "A one-time link admitting a citizen to one case on a case number and a verified address, with no account (REQ-PIOC-001). Offered only for a case type that declares the `reference` kind, and refused the second time it is followed.",
+                "type": "object",
+                "required": [
+                    "caseReference",
+                    "tokenHash"
+                ],
+                "properties": {
+                    "caseReference": {
+                        "title": "Case reference",
+                        "type": "string",
+                        "description": "The case number the link admits to.",
+                        "example": "ZAAK-2026-0001"
+                    },
+                    "email": {
+                        "title": "Email",
+                        "type": "string",
+                        "description": "The address the link was sent to.",
+                        "example": "ans@example.org"
+                    },
+                    "organisation": {
+                        "title": "Organisation",
+                        "type": "string",
+                        "description": "The tenant the case belongs to.",
+                        "example": "gemeente-x"
+                    },
+                    "tokenHash": {
+                        "title": "Token hash",
+                        "type": "string",
+                        "description": "SHA-256 of the one-time secret.",
+                        "example": "9f86d0…"
+                    },
+                    "state": {
+                        "title": "State",
+                        "type": "string",
+                        "enum": [
+                            "sent",
+                            "used",
+                            "expired"
+                        ],
+                        "description": "A link that has been used admits nobody again.",
+                        "example": "sent"
+                    },
+                    "issuedAt": {
+                        "title": "Issued at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When it was issued.",
+                        "example": "2026-09-18T09:00:00+00:00"
+                    },
+                    "expiresAt": {
+                        "title": "Expires at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When it stops admitting anybody.",
+                        "example": "2026-09-19T09:00:00+00:00"
+                    },
+                    "usedAt": {
+                        "title": "Used at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When it was followed.",
+                        "example": "2026-09-18T10:00:00+00:00"
+                    }
+                }
+            },
+            "portalAccessRequest": {
+                "slug": "portalAccessRequest",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "icon": "AccountKey",
+                "version": "0.1.0",
+                "title": "Portal Access Request",
+                "description": "Somebody asking, in the product, for access they do not have (REQ-PIOC-007). It carries who asked and what for, and the answer the owner gave, which the asker sees.",
+                "type": "object",
+                "required": [
+                    "subjectRef",
+                    "organisation"
+                ],
+                "properties": {
+                    "subjectRef": {
+                        "title": "Subject reference",
+                        "type": "string",
+                        "description": "Who asked.",
+                        "example": "b3d9c2a1"
+                    },
+                    "displayName": {
+                        "title": "Display name",
+                        "type": "string",
+                        "description": "The name the owner sees beside the request.",
+                        "example": "Ans de Vries"
+                    },
+                    "organisation": {
+                        "title": "Organisation",
+                        "type": "string",
+                        "description": "The tenant whose cases are asked for.",
+                        "example": "gemeente-x"
+                    },
+                    "onBehalfOf": {
+                        "title": "On behalf of",
+                        "type": "string",
+                        "description": "The party whose cases are asked for.",
+                        "example": "kvk-12345678"
+                    },
+                    "reason": {
+                        "title": "Reason",
+                        "type": "string",
+                        "description": "What the asker says they need it for.",
+                        "example": "Ik ben de nieuwe administrateur."
+                    },
+                    "state": {
+                        "title": "State",
+                        "type": "string",
+                        "enum": [
+                            "pending",
+                            "granted",
+                            "refused"
+                        ],
+                        "description": "The owner's answer, which the asker sees.",
+                        "example": "pending"
+                    },
+                    "decidedBy": {
+                        "title": "Decided by",
+                        "type": "string",
+                        "description": "Who answered.",
+                        "example": "clerk-anna"
+                    },
+                    "decidedAt": {
+                        "title": "Decided at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When they answered.",
+                        "example": "2026-09-18T11:00:00+00:00"
+                    },
+                    "requestedAt": {
+                        "title": "Requested at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When it was asked.",
+                        "example": "2026-09-18T09:00:00+00:00"
+                    }
+                }
+            },
+            "portalFormBinding": {
+                "slug": "portalFormBinding",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "icon": "FormSelect",
+                "version": "0.1.0",
+                "title": "Portal Form Binding",
+                "description": "What a portal form page is bound to (portal-intake-form-as-an-object REQ-PIFO-001): a case type tuple, an audience, an optional form name, and the intake settings. The page keeps no field list of its own; the fields, their order and their presets come from the published form at render time, so a form edited in buildiq reaches the portal with no portal change.",
+                "type": "object",
+                "required": [
+                    "portal",
+                    "route",
+                    "typeRegister",
+                    "typeSchema",
+                    "audience"
+                ],
+                "properties": {
+                    "portal": {
+                        "title": "Portal",
+                        "type": "string",
+                        "description": "The portal slug this binding belongs to.",
+                        "example": "gemeente-x"
+                    },
+                    "route": {
+                        "title": "Route",
+                        "type": "string",
+                        "description": "The in-portal route of the form page.",
+                        "example": "aanvragen/verhuizing"
+                    },
+                    "typeRegister": {
+                        "title": "Type register",
+                        "type": "string",
+                        "description": "The register the case type lives in.",
+                        "example": "dossiq"
+                    },
+                    "typeSchema": {
+                        "title": "Type schema",
+                        "type": "string",
+                        "description": "The schema the case type lives in.",
+                        "example": "zaaktype"
+                    },
+                    "typeId": {
+                        "title": "Type id",
+                        "type": "string",
+                        "description": "The case type the form belongs to.",
+                        "example": "verhuizing"
+                    },
+                    "audience": {
+                        "title": "Audience",
+                        "type": "string",
+                        "description": "Which audience's form of that type this page renders. One case type can carry a client form and a supplier form; this picks one.",
+                        "example": "client"
+                    },
+                    "formName": {
+                        "title": "Form name",
+                        "type": "string",
+                        "description": "An optional name, when the type and audience carry more than one published form.",
+                        "example": "verhuizing-kort"
+                    },
+                    "formRegister": {
+                        "title": "Form register",
+                        "type": "string",
+                        "description": "The register the published form leaf lives in.",
+                        "example": "buildiq"
+                    },
+                    "formSchema": {
+                        "title": "Form schema",
+                        "type": "string",
+                        "description": "The schema the published form leaf lives in.",
+                        "example": "registrationForm"
+                    },
+                    "caseRegister": {
+                        "title": "Case register",
+                        "type": "string",
+                        "description": "The register the case created from this form lives in.",
+                        "example": "dossiq"
+                    },
+                    "caseSchema": {
+                        "title": "Case schema",
+                        "type": "string",
+                        "description": "The schema the case created from this form lives in. The background job creates the case here, through the ordinary anonymous contribution create.",
+                        "example": "zaak"
+                    },
+                    "intakeKind": {
+                        "title": "Intake kind",
+                        "type": "string",
+                        "enum": [
+                            "hosted",
+                            "external"
+                        ],
+                        "description": "`hosted` renders the published form here. `external` names a start form on another host: the portal shows a card naming the destination and never proxies or embeds it (REQ-PIFO-002).",
+                        "example": "hosted"
+                    },
+                    "externalUrl": {
+                        "title": "External URL",
+                        "type": "string",
+                        "description": "The start form's address, when the intake is external.",
+                        "example": "https://formulieren.gemeente-x.nl/verhuizing"
+                    },
+                    "addressLookup": {
+                        "title": "Address lookup",
+                        "type": "boolean",
+                        "description": "Whether the form offers postcode lookup.",
+                        "example": true
+                    },
+                    "prefillFromEarlierCases": {
+                        "title": "Prefill from earlier cases",
+                        "type": "boolean",
+                        "description": "Whether answers a signed-in citizen already gave are offered again.",
+                        "example": false
+                    },
+                    "challenge": {
+                        "title": "Challenge",
+                        "type": "boolean",
+                        "description": "Whether the portal's own challenge runs in front of this form.",
+                        "example": true
+                    },
+                    "confirmationText": {
+                        "title": "Confirmation text",
+                        "type": "string",
+                        "description": "What the citizen is told after submitting. The form's words, not the portal's.",
+                        "example": "Bedankt. U hoort binnen vijf werkdagen van ons."
+                    },
+                    "allowedOrigins": {
+                        "title": "Allowed origins",
+                        "type": "array",
+                        "description": "The origins that may frame this form as an embed (embedded-intake-form REQ-EIF-001). Empty serves no origin at all.",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "https://www.gemeente-x.nl"
+                        ]
+                    },
+                    "status": {
+                        "title": "Status",
+                        "type": "string",
+                        "enum": [
+                            "draft",
+                            "published"
+                        ],
+                        "description": "Only a published binding renders.",
+                        "example": "published"
+                    }
+                }
+            },
+            "portalIntakeSubmission": {
+                "slug": "portalIntakeSubmission",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "icon": "FormSelect",
+                "version": "0.1.0",
+                "title": "Portal Intake Submission",
+                "description": "A submitted intake form, acknowledged with a reference before the case exists (REQ-PIFO-005). The state on this row is the truth the reference page reads: `queued`, `registered` or `failed`. The page never says a case exists before one does.",
+                "type": "object",
+                "required": [
+                    "reference",
+                    "portal",
+                    "state"
+                ],
+                "properties": {
+                    "reference": {
+                        "title": "Reference",
+                        "type": "string",
+                        "description": "What the citizen was given to come back with.",
+                        "example": "AANVRAAG-7F3K9Q"
+                    },
+                    "portal": {
+                        "title": "Portal",
+                        "type": "string",
+                        "description": "The portal it was submitted on.",
+                        "example": "gemeente-x"
+                    },
+                    "route": {
+                        "title": "Route",
+                        "type": "string",
+                        "description": "The form page it came from.",
+                        "example": "aanvragen/verhuizing"
+                    },
+                    "subjectRef": {
+                        "title": "Subject reference",
+                        "type": "string",
+                        "description": "The portal identity that submitted, when there was one. Empty for an anonymous submission.",
+                        "example": ""
+                    },
+                    "origin": {
+                        "title": "Origin",
+                        "type": "string",
+                        "description": "The origin an embedded submission was framed on (embedded-intake-form REQ-EIF-003). Empty when submitted on the portal itself.",
+                        "example": "https://www.gemeente-x.nl"
+                    },
+                    "answers": {
+                        "title": "Answers",
+                        "type": "object",
+                        "description": "What was submitted, as validated against the form's schema.",
+                        "example": {
+                            "postcode": "1234 AB"
+                        }
+                    },
+                    "state": {
+                        "title": "State",
+                        "type": "string",
+                        "enum": [
+                            "queued",
+                            "registered",
+                            "failed"
+                        ],
+                        "description": "Where the submission has got to. `failed` is shown to the citizen with what to do, never hidden.",
+                        "example": "queued"
+                    },
+                    "failureReason": {
+                        "title": "Failure reason",
+                        "type": "string",
+                        "description": "Why the create failed, for the administrator's list.",
+                        "example": "The case app refused the create."
+                    },
+                    "caseId": {
+                        "title": "Case id",
+                        "type": "string",
+                        "description": "The case created from this submission, once one exists.",
+                        "example": ""
+                    },
+                    "submittedAt": {
+                        "title": "Submitted at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When it was submitted.",
+                        "example": "2026-09-18T09:00:00+00:00"
+                    },
+                    "registeredAt": {
+                        "title": "Registered at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the case was created.",
+                        "example": ""
+                    }
+                }
+            },
+            "changeProposal": {
+                "slug": "changeProposal",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "icon": "FileDocumentEdit",
+                "version": "0.1.0",
+                "title": "Change Proposal",
+                "description": "A proposed field change on somebody else's record, queued until a reviewer with write rights accepts or rejects it (change-proposal-queue REQ-CPQ-001). `currentValue` on each change is the snapshot taken when the proposal was made, so a reviewer can see whether the record moved underneath it.",
+                "type": "object",
+                "required": [
+                    "subjectRegister",
+                    "subjectSchema",
+                    "subjectId",
+                    "state"
+                ],
+                "properties": {
+                    "subjectRegister": {
+                        "title": "Subject register",
+                        "type": "string",
+                        "description": "The register the record lives in.",
+                        "example": "dossiq"
+                    },
+                    "subjectSchema": {
+                        "title": "Subject schema",
+                        "type": "string",
+                        "description": "The schema the record lives in.",
+                        "example": "zaak"
+                    },
+                    "subjectId": {
+                        "title": "Subject id",
+                        "type": "string",
+                        "description": "The record the proposal is about.",
+                        "example": "zaak-1"
+                    },
+                    "proposedBy": {
+                        "title": "Proposed by",
+                        "type": "string",
+                        "description": "Who proposed it: a portal subjectRef, or a Nextcloud user id for a colleague. Derived from the session, never from the request.",
+                        "example": "b3d9c2a1"
+                    },
+                    "channel": {
+                        "title": "Channel",
+                        "type": "string",
+                        "enum": [
+                            "portal",
+                            "staff"
+                        ],
+                        "description": "Where the proposal came from.",
+                        "example": "portal"
+                    },
+                    "changes": {
+                        "title": "Changes",
+                        "type": "array",
+                        "description": "One entry per property: the property, the value it had when the proposal was made, and the value proposed.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "property": {
+                                    "title": "Property",
+                                    "type": "string",
+                                    "description": "The name of the property this entry proposes to change."
+                                },
+                                "currentValue": {},
+                                "proposedValue": {}
+                            }
+                        },
+                        "example": [
+                            {
+                                "property": "applicantPhone",
+                                "currentValue": "0612345678",
+                                "proposedValue": "0687654321"
+                            }
+                        ]
+                    },
+                    "note": {
+                        "title": "Note",
+                        "type": "string",
+                        "description": "What the proposer said about the change.",
+                        "example": "Mijn nummer is gewijzigd."
+                    },
+                    "state": {
+                        "title": "State",
+                        "type": "string",
+                        "enum": [
+                            "queued",
+                            "accepted",
+                            "rejected",
+                            "withdrawn"
+                        ],
+                        "description": "Where the proposal has got to.",
+                        "example": "queued"
+                    },
+                    "proposedAt": {
+                        "title": "Proposed at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When it was proposed.",
+                        "example": "2026-09-18T09:00:00+00:00"
+                    },
+                    "decidedBy": {
+                        "title": "Decided by",
+                        "type": "string",
+                        "description": "The reviewer who accepted or rejected it.",
+                        "example": "handler-anna"
+                    },
+                    "decidedAt": {
+                        "title": "Decided at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When they decided.",
+                        "example": ""
+                    },
+                    "decisionReason": {
+                        "title": "Decision reason",
+                        "type": "string",
+                        "description": "Why it was rejected. Required on a rejection: a refusal nobody explained is one the proposer cannot answer.",
+                        "example": "Wij hebben het nummer al op een andere manier gewijzigd."
+                    }
+                }
+            },
+            "portalReport": {
+                "slug": "portalReport",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "icon": "ShieldAccount",
+                "version": "0.1.0",
+                "title": "Portal Report",
+                "description": "A report of wrongdoing, accepted without an account and without any verification of the reporter (a-report-without-an-account REQ-RWA-001). It carries NO contact detail and NO client address: what the reporter gave, if anything, lives in `portalReporterContact` and is joined by reference so a read of the report cannot return it.",
+                "type": "object",
+                "required": [
+                    "portal",
+                    "codeHash",
+                    "state"
+                ],
+                "properties": {
+                    "portal": {
+                        "title": "Portal",
+                        "type": "string",
+                        "description": "The portal it was filed on.",
+                        "example": "gemeente-x"
+                    },
+                    "caseType": {
+                        "title": "Case type",
+                        "type": "string",
+                        "description": "The case type whose declaration governs the terms and what the reporter may see.",
+                        "example": "misstandmelding"
+                    },
+                    "caseTypeRegister": {
+                        "title": "Case type register",
+                        "type": "string",
+                        "description": "The register the case type lives in, so the declaration can be read again when the thread is opened.",
+                        "example": "dossiq"
+                    },
+                    "caseTypeSchema": {
+                        "title": "Case type schema",
+                        "type": "string",
+                        "description": "The schema the case type lives in.",
+                        "example": "caseType"
+                    },
+                    "subject": {
+                        "title": "Subject",
+                        "type": "string",
+                        "description": "What the report is about, in the reporter's words.",
+                        "example": "Onveilige situatie op de werkvloer"
+                    },
+                    "body": {
+                        "title": "Body",
+                        "type": "string",
+                        "description": "The report itself.",
+                        "example": ""
+                    },
+                    "answers": {
+                        "title": "Answers",
+                        "type": "object",
+                        "description": "The rest of the form's answers, as validated against it.",
+                        "example": {}
+                    },
+                    "codeHash": {
+                        "title": "Code hash",
+                        "type": "string",
+                        "description": "SHA-256 of the receipt code. The code itself is shown once and stored nowhere.",
+                        "example": "9f86d0…"
+                    },
+                    "contactRef": {
+                        "title": "Contact reference",
+                        "type": "string",
+                        "description": "The separate record holding what the reporter gave about themselves. Empty when they gave nothing.",
+                        "example": ""
+                    },
+                    "state": {
+                        "title": "State",
+                        "type": "string",
+                        "enum": [
+                            "open",
+                            "acknowledged",
+                            "closed"
+                        ],
+                        "description": "Where the report stands.",
+                        "example": "open"
+                    },
+                    "acknowledgedAt": {
+                        "title": "Acknowledged at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the organisation acknowledged it, for the statutory term.",
+                        "example": ""
+                    },
+                    "feedbackAt": {
+                        "title": "Feedback at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the organisation gave feedback, for the statutory term.",
+                        "example": ""
+                    },
+                    "receivedAt": {
+                        "title": "Received at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the report was received. The terms run from here.",
+                        "example": "2026-09-18T09:00:00+00:00"
+                    }
+                }
+            },
+            "portalReporterContact": {
+                "slug": "portalReporterContact",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "icon": "AccountLock",
+                "version": "0.1.0",
+                "title": "Portal Reporter Contact",
+                "description": "What a reporter gave about themselves, held apart from the report (REQ-RWA-004). Nothing here is returned by a read, a list, a search, an export or a notification of the report: it is reachable only through a reveal the named custodian allowed.",
+                "type": "object",
+                "required": [
+                    "reportRef"
+                ],
+                "properties": {
+                    "reportRef": {
+                        "title": "Report reference",
+                        "type": "string",
+                        "description": "The report this belongs to.",
+                        "example": ""
+                    },
+                    "name": {
+                        "title": "Name",
+                        "type": "string",
+                        "description": "The name the reporter gave, if any.",
+                        "example": ""
+                    },
+                    "email": {
+                        "title": "Email",
+                        "type": "string",
+                        "description": "The address the reporter gave, if any.",
+                        "example": ""
+                    },
+                    "phone": {
+                        "title": "Phone",
+                        "type": "string",
+                        "description": "The number the reporter gave, if any.",
+                        "example": ""
+                    }
+                }
+            },
+            "portalReportMessage": {
+                "slug": "portalReportMessage",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "icon": "MessageText",
+                "version": "0.1.0",
+                "title": "Portal Report Message",
+                "description": "One message on a report's thread (REQ-RWA-003). `visibleToReporter` is what decides whether the reporter sees it: an internal note is a message with that flag false, and the reporter's own view is filtered on it server-side.",
+                "type": "object",
+                "required": [
+                    "reportRef",
+                    "author",
+                    "body"
+                ],
+                "properties": {
+                    "reportRef": {
+                        "title": "Report reference",
+                        "type": "string",
+                        "description": "The report this message belongs to.",
+                        "example": ""
+                    },
+                    "author": {
+                        "title": "Author",
+                        "type": "string",
+                        "enum": [
+                            "reporter",
+                            "handler"
+                        ],
+                        "description": "Who wrote it.",
+                        "example": "handler"
+                    },
+                    "authorName": {
+                        "title": "Author name",
+                        "type": "string",
+                        "description": "The handler's name, when a handler wrote it. Never the reporter's.",
+                        "example": ""
+                    },
+                    "body": {
+                        "title": "Body",
+                        "type": "string",
+                        "description": "The message.",
+                        "example": ""
+                    },
+                    "visibleToReporter": {
+                        "title": "Visible to reporter",
+                        "type": "boolean",
+                        "description": "Whether the reporter may read it. Absent means no.",
+                        "example": true
+                    },
+                    "writtenAt": {
+                        "title": "Written at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When it was written.",
+                        "example": ""
+                    }
+                }
+            },
+            "portalRevealRequest": {
+                "slug": "portalRevealRequest",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "icon": "EyeLock",
+                "version": "0.1.0",
+                "title": "Portal Reveal Request",
+                "description": "A motivated request to learn who filed a report, and what the custodian answered (REQ-RWA-005). Every request is on the record whether it was allowed or refused, because a refusal nobody recorded is indistinguishable from a request nobody made.",
+                "type": "object",
+                "required": [
+                    "reportRef",
+                    "requestedBy",
+                    "motivation",
+                    "state"
+                ],
+                "properties": {
+                    "reportRef": {
+                        "title": "Report reference",
+                        "type": "string",
+                        "description": "The report whose reporter is asked about.",
+                        "example": ""
+                    },
+                    "requestedBy": {
+                        "title": "Requested by",
+                        "type": "string",
+                        "description": "Who asked.",
+                        "example": "handler-anna"
+                    },
+                    "motivation": {
+                        "title": "Motivation",
+                        "type": "string",
+                        "description": "Why they need to know. Required: a request without one is refused before anybody sees it.",
+                        "example": ""
+                    },
+                    "state": {
+                        "title": "State",
+                        "type": "string",
+                        "enum": [
+                            "pending",
+                            "allowed",
+                            "refused"
+                        ],
+                        "description": "What the custodian answered.",
+                        "example": "pending"
+                    },
+                    "decidedBy": {
+                        "title": "Decided by",
+                        "type": "string",
+                        "description": "The custodian who answered.",
+                        "example": ""
+                    },
+                    "decidedAt": {
+                        "title": "Decided at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When they answered.",
+                        "example": ""
+                    },
+                    "decisionReason": {
+                        "title": "Decision reason",
+                        "type": "string",
+                        "description": "What the custodian said about their answer.",
+                        "example": ""
+                    },
+                    "revealedFields": {
+                        "title": "Revealed fields",
+                        "type": "array",
+                        "description": "Which contact fields were shown, when it was allowed. The values are not copied here.",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "email"
+                        ]
+                    },
+                    "requestedAt": {
+                        "title": "Requested at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When it was asked.",
+                        "example": ""
                     }
                 }
             }

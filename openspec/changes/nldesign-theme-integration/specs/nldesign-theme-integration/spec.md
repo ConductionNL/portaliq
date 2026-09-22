@@ -72,6 +72,8 @@ search form invisible.
 
 ### Requirement: A shared token set MUST be validated before it can style a portal
 
+A token set shared through OpenRegister MUST pass `CustomTokenSetValidator` before a portal may adopt it.
+
 #### Scenario: A shared set carries a hostile declaration
 
 - **WHEN** a token set shared through OpenRegister is adopted by a portal
@@ -80,6 +82,8 @@ search form invisible.
 
 ### Requirement: Portaliq MUST NOT ship design tokens or a theming mechanism
 
+Portaliq MUST NOT define `--utrecht-*` or `--tilburg-*` tokens of its own; they come from `nldesign`.
+
 #### Scenario: The app is inspected for tokens
 
 - **WHEN** the repository is searched for `--utrecht-*` or `--tilburg-*` definitions
@@ -87,3 +91,65 @@ search form invisible.
 
 `nldesign` is the single source. Two derivations of one token set drifted apart
 once already, with ZERO tokens in common between the halves.
+
+<!-- Sibling requirements added 2026-09-14 by portal-theme-blocks-and-contributed-pages.
+     They record decisions built and measured on branch feat/portal-nextcloud-signin,
+     which never merged. The requirements above are unchanged in substance. -->
+
+### Requirement: A shared theme MUST be copied into the portal, not linked
+
+Adopting a shared token set MUST copy its accepted declarations into the
+portal's own record. A portal MUST keep rendering what it adopted when the
+source instance changes or withdraws the set.
+
+#### Scenario: The source withdraws the set
+
+- **GIVEN** a portal that adopted a set shared from another instance
+- **WHEN** that instance withdraws the set
+- **THEN** the portal renders exactly as before
+- **AND** an administrator can see that the source is gone
+
+A link would let another instance change or remove what a live government
+portal looks like, at a moment nobody at that portal chose. Decided and built
+on the branch in 19fbcd6 (`PortalSharedTheme::adopt()`).
+
+#### Scenario: The validator is unavailable
+
+- **GIVEN** a shared set and no reachable `CustomTokenSetValidator`
+- **WHEN** a portal tries to adopt the set
+- **THEN** nothing is adopted and the refusal says why
+
+### Requirement: A contrast verdict MUST say when nothing was measured
+
+A theme's contrast verdict MUST carry the number of pairs it measured. A set
+with zero measured pairs MUST report "not checked", never a pass.
+
+#### Scenario: A set declares none of the surface tokens
+
+- **GIVEN** a token set that declares no token for any surface the portal paints
+- **WHEN** its verdict is computed
+- **THEN** the verdict shows "not checked" with a measured count of zero
+
+The branch's first verdict reported 46 of 46 sets passing while 43 had zero
+pairs compared (09e6ffe). A pass and an absent measurement looked identical.
+
+### Requirement: The theme catalogue MUST be a choice, and never public
+
+The admin settings MUST list the adoptable token sets with their ids and
+verdicts, so `portal.theme` is picked rather than typed. The catalogue endpoint
+MUST require a signed-in user and MUST NOT be a public page.
+
+#### Scenario: An administrator picks a theme
+
+- **GIVEN** an administrator on the portaliq admin settings
+- **WHEN** they open the theme choice for a portal
+- **THEN** every adoptable set is listed by id with its verdict
+
+#### Scenario: An anonymous caller asks for the catalogue
+
+- **GIVEN** no session
+- **WHEN** `GET /api/themes` is called
+- **THEN** the response is refused
+
+The catalogue includes admin-uploaded custom sets. thematiq's own
+`CatalogController` is deliberately not public for that reason (09e6ffe).

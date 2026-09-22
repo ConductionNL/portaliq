@@ -37,6 +37,8 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
+use OCA\Portaliq\Event\PortalClientWriteEvent;
+use OCA\Portaliq\Service\CitizenWriteRecorder;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\PortalTaskGateway;
 use OCP\AppFramework\Controller;
@@ -45,6 +47,7 @@ use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\IL10N;
 use OCP\IRequest;
 
 /**
@@ -60,11 +63,16 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 	 * @param IRequest $request The request.
 	 * @param PortalSessionService $session Resolves the bearer subject (fail-closed).
 	 * @param PortalTaskGateway $gateway The assertion-signed seam client.
+	 * @param CitizenWriteRecorder $recorder Announces a citizen's task answer
+	 *                                       as a portal write.
+	 * @param IL10N $l10n The sentence a second answer is refused with.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PortalSessionService $session,
 		private readonly PortalTaskGateway $gateway,
+		private readonly CitizenWriteRecorder $recorder,
+		private readonly IL10N $l10n,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -133,17 +141,110 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
 		}
 
-		return $this->relay(
-			answer: $this->gateway->completeTask(
-				subject: $subject,
-				uuid: $uuid,
-				answers: $this->answers(),
-				comment: $comment,
-				outcome: $outcome,
-				files: $this->uploads()
-			)
+		// A task is answered once. The seam is asked for the task first, so a
+		// second answer is refused with a sentence instead of quietly
+		// overwriting the first one the citizen already sent.
+		$existing = $this->gateway->getTask(subject: $subject, uuid: $uuid);
+		if ($existing === null) {
+			return $this->relay(answer: null);
+		}
+
+		if ($existing['status'] >= Http::STATUS_BAD_REQUEST) {
+			return $this->relay(answer: $existing);
+		}
+
+		if ($this->isAnswered(task: $existing['body']) === true) {
+			return new JSONResponse(
+				[
+					'message' => $this->l10n->t('You have already answered this task.'),
+					'error' => 'task-already-answered',
+					'task' => $existing['body'],
+				],
+				Http::STATUS_CONFLICT
+			);
+		}
+
+		$answers = $this->answers();
+		$answer = $this->gateway->completeTask(
+			subject: $subject,
+			uuid: $uuid,
+			answers: $answers,
+			comment: $comment,
+			outcome: $outcome,
+			files: $this->uploads()
 		);
+
+		$this->announceClientAnswer(subject: $subject, answer: $answer, uuid: $uuid, answers: $answers);
+
+		return $this->relay(answer: $answer);
 	}//end complete()
+
+	/**
+	 * Raise the citizen write event for a task the CLIENT audience answered.
+	 * A partner or supplier answering a task of their own is not a citizen
+	 * write, so it raises nothing here; `partner-tasks-in-the-portal` owns that
+	 * audience's path.
+	 *
+	 * @param array<string, mixed> $subject The resolved bearer subject.
+	 * @param array{status: int, body: array<string, mixed>}|null $answer The seam's answer.
+	 * @param string $uuid The task uuid.
+	 * @param array<string, mixed> $answers The submitted answer fields.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 */
+	private function announceClientAnswer(array $subject, ?array $answer, string $uuid, array $answers): void {
+		if ($answer === null
+			|| $answer['status'] >= Http::STATUS_BAD_REQUEST
+			|| (string)($subject['audience'] ?? '') !== 'client'
+		) {
+			return;
+		}
+
+		$task = $answer['body'];
+		$this->recorder->announce(
+			register: (string)($task['objectRegister'] ?? ''),
+			schema: (string)($task['objectSchema'] ?? ''),
+			caseId: (string)($task['objectId'] ?? $uuid),
+			act: PortalClientWriteEvent::ACT_TASK_ANSWER,
+			fields: array_map(strval(...), array_keys($answers)),
+			subject: $subject,
+			action: ['id' => 'portal-task', 'minTrust' => ''],
+			occurredAt: $this->recorder->now()
+		);
+	}//end announceClientAnswer()
+
+	/**
+	 * Whether the seam's task row already reads answered. The seam names the
+	 * terminal state in one of a few ways depending on its age, so every one
+	 * it has used is checked rather than assuming the newest.
+	 *
+	 * @param array<string, mixed> $task The seam's task row.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 */
+	private function isAnswered(array $task): bool {
+		foreach (['completedAt', 'completedOn', 'answeredAt'] as $stamp) {
+			$value = ($task[$stamp] ?? null);
+			if (is_string($value) === true && $value !== '') {
+				return true;
+			}
+		}
+
+		foreach (['status', 'state', 'taskStatus'] as $key) {
+			$value = ($task[$key] ?? null);
+			if (is_string($value) === true
+				&& in_array(strtolower($value), ['completed', 'done', 'answered', 'afgerond'], true) === true
+			) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end isAnswered()
 
 	/**
 	 * Resolve the subject from the bearer (fail-closed). PortalAuthMiddleware

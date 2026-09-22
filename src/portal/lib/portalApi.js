@@ -103,6 +103,11 @@ export function createPortalApi(config) {
 	const col = (register, schema) =>
 		`/collections/${encodeURIComponent(register)}/${encodeURIComponent(schema)}`
 
+	// The citizen write surface has its own prefix, because the three acts are
+	// governed by the case type rather than by the collection's own opt-ins.
+	const citizenCase = (register, schema) =>
+		`/citizen/cases/${encodeURIComponent(register)}/${encodeURIComponent(schema)}`
+
 	return {
 		/**
 		 * Resolve the current session (fail-closed). Returns the session object
@@ -291,6 +296,92 @@ export function createPortalApi(config) {
 				`${col(action.register, action.schema)}/${encodeURIComponent(id)}?action=${encodeURIComponent(action.id)}`,
 				data,
 			)
+		},
+
+		/**
+		 * The citizen's own case, with the writable set that governs it: which
+		 * fields are open, which are closed and why, whether documents may
+		 * still be added, and the public status label the case app supplied.
+		 * The portal renders this and decides nothing itself.
+		 *
+		 * @param {object} collection Manifest collection: `{ register, schema }`.
+		 * @param {string} id The case id.
+		 * @return {Promise<object|null>} `{ case, writableSet, documents }` or null.
+		 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+		 */
+		async fetchCitizenCase(collection, id) {
+			return get(
+				`${citizenCase(collection.register, collection.schema)}/${encodeURIComponent(id)}`,
+			)
+		},
+
+		/**
+		 * Correct answers the citizen already gave. The server judges every
+		 * field against the case type again, so a refusal here is the same
+		 * refusal the read path described.
+		 *
+		 * @param {object} collection Manifest collection: `{ register, schema }`.
+		 * @param {string} id The case id.
+		 * @param {object} fields The answers to change, by field name.
+		 * @return {Promise<object>} `{ ok, status, case }` or `{ ok: false, status, message, error }`.
+		 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+		 */
+		async amendCitizenCase(collection, id, fields) {
+			const res = await fetch(
+				`${base}${citizenCase(collection.register, collection.schema)}/${encodeURIComponent(id)}`,
+				{
+					method: 'PATCH',
+					headers: {
+						'Content-Type': 'application/json',
+						Accept: 'application/json',
+						...authHeaders(),
+					},
+					body: JSON.stringify({ fields }),
+				},
+			)
+			const json = await res.json().catch(() => ({}))
+			if (!res.ok) {
+				return {
+					ok: false,
+					status: res.status,
+					message: json.message || '',
+					error: json.error || '',
+				}
+			}
+			return { ok: true, status: res.status, case: json.case || null }
+		},
+
+		/**
+		 * Add a document to the running case. Nothing already on the case is
+		 * replaced: the server gives a colliding name a suffix.
+		 *
+		 * @param {object} collection Manifest collection: `{ register, schema }`.
+		 * @param {string} id The case id.
+		 * @param {File} file The document to add.
+		 * @return {Promise<object>} `{ ok, document }` or `{ ok: false, status, message, error }`.
+		 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+		 */
+		async addCitizenDocument(collection, id, file) {
+			const form = new FormData()
+			form.append('file', file)
+			const res = await fetch(
+				`${base}${citizenCase(collection.register, collection.schema)}/${encodeURIComponent(id)}/documents`,
+				{
+					method: 'POST',
+					headers: { Accept: 'application/json', ...authHeaders() },
+					body: form,
+				},
+			)
+			const json = await res.json().catch(() => ({}))
+			if (!res.ok) {
+				return {
+					ok: false,
+					status: res.status,
+					message: json.message || '',
+					error: json.error || '',
+				}
+			}
+			return { ok: true, document: json.document || null }
 		},
 
 		/**

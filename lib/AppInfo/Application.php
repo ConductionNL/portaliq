@@ -42,9 +42,13 @@ use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectDeletedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\Portaliq\Event\LandingPageRequestedEvent;
+use OCA\Portaliq\Event\PortalAccountClaimRequestedEvent;
+use OCA\Portaliq\Event\PortalAccountProvisionRequestedEvent;
 use OCA\Portaliq\Listener\CmsCacheInvalidationListener;
 use OCA\Portaliq\Listener\LandingPageRequestedEventListener;
 use OCA\Portaliq\Listener\LandingPageSubmissionDispatchListener;
+use OCA\Portaliq\Listener\PortalAccountClaimListener;
+use OCA\Portaliq\Listener\PortalAccountProvisionListener;
 use OCA\Portaliq\Middleware\PortalAuthMiddleware;
 use OCA\Portaliq\Middleware\PublicApiCorsMiddleware;
 use OCA\Portaliq\Notification\Notifier;
@@ -142,6 +146,13 @@ class Application extends App implements IBootstrap {
 		// relay of a visitor's submission back to that app.
 		$context->registerEventListener(LandingPageRequestedEvent::class, LandingPageRequestedEventListener::class);
 		$context->registerEventListener(ObjectCreatedEvent::class, LandingPageSubmissionDispatchListener::class);
+
+		// The identity space (portal-identity-space, ADR-041): an app asks for
+		// a portal account before its owner has ever logged in, and links its
+		// own record to that account. Both answer in the event's result slot,
+		// because another app never calls into portaliq's controllers.
+		$context->registerEventListener(PortalAccountProvisionRequestedEvent::class, PortalAccountProvisionListener::class);
+		$context->registerEventListener(PortalAccountClaimRequestedEvent::class, PortalAccountClaimListener::class);
 
 		// Traffic analytics (portal-traffic-visitors-and-geo): where a
 		// visitor's address turns into a region. The offline MMDB lookup is

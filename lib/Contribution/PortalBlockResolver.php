@@ -40,7 +40,16 @@ class PortalBlockResolver {
 	/**
 	 * The block-type registry. A block of any other type is dropped.
 	 */
-	private const BLOCK_TYPES = ['collection', 'action', 'detail', 'richText', 'cta'];
+	private const BLOCK_TYPES = ['collection', 'action', 'detail', 'richText', 'cta', 'citizenCase'];
+
+	/**
+	 * The block types whose whole body is a reference to a collection.
+	 *
+	 * The citizen case block (what-the-citizen-may-write-on-their-own-case)
+	 * references a collection like `detail` does; what it may write is
+	 * resolved per request from the case type, never from the block.
+	 */
+	private const COLLECTION_BLOCK_TYPES = ['collection', 'detail', 'citizenCase'];
 
 	/**
 	 * Filter a page's blocks to the registry with resolvable references.
@@ -89,7 +98,7 @@ class PortalBlockResolver {
 			return null;
 		}
 
-		if ($type === 'collection' || $type === 'detail') {
+		if (in_array($type, self::COLLECTION_BLOCK_TYPES, true) === true) {
 			return $this->referenceBlock(
 				type: $type,
 				key: 'collection',
@@ -111,14 +120,27 @@ class PortalBlockResolver {
 			return $this->normaliseCtaBlock(block: $block, actionIds: $actionIds);
 		}
 
-		// RichText block: requires non-empty string markdown.
+		return $this->richTextBlock(block: $block);
+	}//end normaliseBlock()
+
+	/**
+	 * The richText block, or null when it carries no markdown to render.
+	 *
+	 * Split out of normaliseBlock() so the type switch above stays a switch
+	 * and does not also carry the last type's own validation.
+	 *
+	 * @param array<string, mixed> $block The declared block.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function richTextBlock(array $block): ?array {
 		$markdown = ($block['markdown'] ?? null);
 		if (is_string($markdown) === true && $markdown !== '') {
 			return ['type' => 'richText', 'markdown' => $markdown];
 		}
 
 		return null;
-	}//end normaliseBlock()
+	}//end richTextBlock()
 
 	/**
 	 * A block that is nothing but a resolvable reference, or null when the
