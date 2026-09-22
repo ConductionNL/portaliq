@@ -1709,6 +1709,7 @@
                     "traffic": {
                         "title": "Traffic measurement",
                         "type": "object",
+                        "widget": "json",
                         "description": "What this portal measures about its visitors, and under which conditions. OFF until an operator switches it on: an upgrade must not start recording a municipality's visitors. Measurement is cookieless by default; the switches under `sensitive` each carry their own warning.",
                         "properties": {
                             "enabled": {
