@@ -141,10 +141,17 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// have re-imported the fix either. This test could not say so: every
 		// PHPUnit cell aborted before it ran, on `occ app:enable dossiq`.
 		// Additive.
+		// 0.25.0 (portal 0.7.0): `traffic` declares `widget: "json"`, so the
+		// block renders in the portal form at all. `fieldsFromSchema` drops
+		// an object property carrying neither a widget nor a $ref, which is
+		// why measurement could not be switched on from the interface. Its
+		// own version because 0.24.0 was already taken by the schema-binding
+		// fix: a change that shares a version with one already imported never
+		// re-imports, and the field would have stayed missing.
 		// Every new schema is listed in
 		// `components.registers.portaliq.schemas` (ImportHandler binds only
 		// what is listed there) and declares a non-empty `read` rule.
-		$this->assertSame('0.24.0', self::$register['info']['version']);
+		$this->assertSame('0.25.0', self::$register['info']['version']);
 		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalCaseType']['version']);
 		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalCase']['version']);
 		$this->assertSame(['authenticated'], self::$register['components']['schemas']['portalCase']['authorization']['read']);
