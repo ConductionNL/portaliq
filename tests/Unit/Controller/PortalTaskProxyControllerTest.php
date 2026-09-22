@@ -51,6 +51,18 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Portaliq\Controller\PortalTaskProxyController
  * @covers \OCA\Portaliq\Controller\ContributionController
  *
+ * `submissionCopy()` moved out of the controller and into
+ * SubmissionReceiptService::taskCompletionCopy() in 42d4014, to keep the
+ * controller under phpmd's ExcessiveClassComplexity threshold. These tests
+ * exercise it through the controller, so with
+ * `beStrictAboutCoverageMetadata` it is executed-but-unlisted code and the
+ * four completion tests are RISKY -- which fails the suite under
+ * `failOnRisky`. It is a collaborator here, not the subject, so it is
+ * declared with @uses rather than @covers. Invisible locally: the strict
+ * check needs a coverage driver, and without one PHPUnit reports OK.
+ *
+ * @uses   \OCA\Portaliq\Service\SubmissionReceiptService
+ *
  * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
  * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-mijn-taken-lists-details-and-completes-the-partys-open-tasks
  * @spec openspec/specs/supplier-portal/spec.md#append-only-portal-audit-trail-on-every-mutation-download-and-session-event
