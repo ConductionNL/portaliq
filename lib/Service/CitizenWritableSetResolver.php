@@ -70,6 +70,14 @@ class CitizenWritableSetResolver {
 	public const STATUS_LABELS_PROPERTY = 'portalStatusLabels';
 
 	/**
+	 * The property on the case type declaring whether an applicant may end
+	 * their own request, until when, and onto which status.
+	 *
+	 * @spec openspec/changes/withdrawing-your-own-case-from-the-portal/specs/withdrawing-your-own-case/spec.md
+	 */
+	public const WITHDRAWAL_PROPERTY = 'portalWithdrawal';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param CaseTypeReader $caseTypes Reads the case type the case points at.
@@ -137,6 +145,80 @@ class CitizenWritableSetResolver {
 			'status' => $this->status(caseType: $caseType, status: $status),
 		];
 	}//end resolve()
+
+	/**
+	 * Whether this case may be withdrawn right now, and onto what.
+	 *
+	 * The portal keeps no list of withdrawable case types: a type that says
+	 * nothing offers nothing, and a window that has closed yields the reason
+	 * rather than an action that would fail.
+	 *
+	 * @param array<string, mixed> $action The matched `type: update` action.
+	 * @param array<string, mixed> $case The citizen's own case row.
+	 *
+	 * @return array<string, mixed> `declared`, `open`, `reason`,
+	 *         `targetStatus` and `confirmText`.
+	 *
+	 * @spec openspec/changes/withdrawing-your-own-case-from-the-portal/specs/withdrawing-your-own-case/spec.md
+	 */
+	public function withdrawal(array $action, array $case): array {
+		$closed = [
+			'declared' => false,
+			'open' => false,
+			'reason' => $this->l10n->t('This request cannot be withdrawn from the portal.'),
+			'targetStatus' => '',
+			'confirmText' => '',
+		];
+
+		$config = ($action[CitizenWriteConfigNormaliser::KEY] ?? null);
+		if (is_array($config) === false) {
+			return $closed;
+		}
+
+		$caseType = $this->caseTypes->readCaseType(
+			register: (string)$config['typeRegister'],
+			schema: (string)$config['typeSchema'],
+			id: (string)($case[$config['typeField']] ?? '')
+		);
+		if ($caseType === null) {
+			return $closed;
+		}
+
+		$declared = ($caseType[self::WITHDRAWAL_PROPERTY] ?? null);
+		if (is_array($declared) === false) {
+			return $closed;
+		}
+
+		$targetStatus = (string)($declared['targetStatus'] ?? '');
+		if ($targetStatus === '') {
+			// A declaration with nowhere to land is not a declaration: the
+			// portal will not invent the status a withdrawal lands on.
+			return $closed;
+		}
+
+		$status = (string)($case[$config['statusField']] ?? '');
+		$window = $this->window(caseType: $caseType, property: self::WITHDRAWAL_PROPERTY, status: $status);
+		$confirmText = (string)($declared['confirmText'] ?? '');
+
+		if ($status === $targetStatus) {
+			// Already withdrawn. Not an error yet, but never open again.
+			return [
+				'declared' => true,
+				'open' => false,
+				'reason' => $this->l10n->t('This request has already been withdrawn.'),
+				'targetStatus' => $targetStatus,
+				'confirmText' => $confirmText,
+			];
+		}
+
+		return [
+			'declared' => true,
+			'open' => ($window['open'] === true),
+			'reason' => (string)$window['reason'],
+			'targetStatus' => $targetStatus,
+			'confirmText' => $confirmText,
+		];
+	}//end withdrawal()
 
 	/**
 	 * Whether one field may be written right now, without rebuilding the whole

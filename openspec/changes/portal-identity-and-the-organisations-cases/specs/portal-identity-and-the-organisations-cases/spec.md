@@ -37,6 +37,12 @@ SHALL offer only the kinds the case type declares.
 - **THEN** the route is not offered and no link is sent
 - e2e: `tests/e2e/portal-identity-and-the-organisations-cases.spec.ts`
 
+#### Scenario: A portal only answers for the case types it declares
+- **GIVEN** a request naming a register, schema and case type the portal has published no form binding for
+- **WHEN** a citizen asks for a reference link
+- **THEN** the case type is never read and the answer is the same refusal an `account` only case type gets
+- @e2e exclude the refusal is a server-side scope decision with no portal page behind it; asserted in `tests/Unit/Controller/PortalIdentityControllerTest.php::testACaseTypeThePortalNeverDeclaredIsNeverRead` and `tests/Unit/Service/Intake/PortalFormBindingResolverTest.php::testOnlyTheExactDeclaredTripleIsInScope`
+
 #### Scenario: A reference link works once
 - **GIVEN** a reference link already used
 - **WHEN** it is followed again
@@ -131,6 +137,25 @@ A public form and the self-registration page SHALL be protected by a
 challenge the portal runs itself: proof of work, or a honeypot. No
 request SHALL be made to a third-party challenge service, and the work
 factor SHALL be configurable per surface.
+
+The nonce SHALL be signed by the instance, over the nonce, the surface it
+was issued for, and the moment it stops counting. A submission SHALL be
+refused unless that signature verifies, the surface matches, and the
+expiry has not passed. Without this the challenge binds nothing: nothing
+is stored, so a caller may invent a nonce, do the work over it once, and
+send the same pair indefinitely.
+
+#### Scenario: A nonce the instance never issued is refused
+- **GIVEN** proof of work enabled on a public form
+- **WHEN** a submission arrives with a nonce the caller made up, correctly solved
+- **THEN** it is refused, because the work was done over a nonce nothing signed
+- @e2e exclude a forged credential has no portal page behind it; asserted in `tests/Unit/Service/Identity/PortalChallengeServiceTest.php::testANonceThisInstanceNeverIssuedIsRefusedHoweverWellItIsSolved`
+
+#### Scenario: A solved nonce stops counting at its expiry
+- **GIVEN** a nonce this instance issued and the visitor solved
+- **WHEN** it is sent again after its expiry
+- **THEN** it is refused and the work has to be done again on a fresh nonce
+- @e2e exclude a clock-dependent refusal with no page behind it; asserted in `tests/Unit/Service/Identity/PortalChallengeServiceTest.php::testASolvedNonceStopsCountingAtItsExpiry`
 
 #### Scenario: A submission without a solved challenge is refused
 - **GIVEN** proof of work enabled on a public form

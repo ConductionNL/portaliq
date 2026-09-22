@@ -38,12 +38,16 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
+use OCA\Portaliq\Contribution\CitizenDocumentUpload;
+use OCA\Portaliq\Contribution\CitizenWriteActionFinder;
 use OCA\Portaliq\Contribution\CitizenWriteConfigNormaliser;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Event\PortalClientWriteEvent;
 use OCA\Portaliq\Service\CitizenWritableSetResolver;
 use OCA\Portaliq\Service\CitizenWriteRecorder;
 use OCA\Portaliq\Service\CitizenWriteThrottle;
+use OCA\Portaliq\Service\Identity\PortalMandateService;
+use OCA\Portaliq\Service\Identity\PortalPartyTreeResolver;
 use OCA\Portaliq\Service\PortalFileReader;
 use OCA\Portaliq\Service\PortalFileWriter;
 use OCA\Portaliq\Service\PortalObjectReader;
@@ -74,6 +78,13 @@ use Psr\Log\LoggerInterface;
  */
 class CitizenCaseController extends Controller implements PortalProtected {
 	/**
+	 * The lazily built action lookup, see writeActions().
+	 *
+	 * @var CitizenWriteActionFinder|null
+	 */
+	private ?CitizenWriteActionFinder $writeActions = null;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
@@ -86,6 +97,9 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 * @param CitizenWritableSetResolver $writableSet Reads the case type's flags.
 	 * @param CitizenWriteRecorder $recorder Records and announces the write.
 	 * @param CitizenWriteThrottle $throttle Counts writes per identity and per case.
+	 * @param CitizenDocumentUpload $upload Reads and names the citizen's document.
+	 * @param PortalMandateService $mandates The mandates the identity holds.
+	 * @param PortalPartyTreeResolver $tree How far a mandate reaches.
 	 * @param IL10N $l10n The sentences a refusal is given with.
 	 * @param LoggerInterface $logger Records the cause of a translated failure.
 	 */
@@ -100,6 +114,9 @@ class CitizenCaseController extends Controller implements PortalProtected {
 		private readonly CitizenWritableSetResolver $writableSet,
 		private readonly CitizenWriteRecorder $recorder,
 		private readonly CitizenWriteThrottle $throttle,
+		private readonly CitizenDocumentUpload $upload,
+		private readonly PortalMandateService $mandates,
+		private readonly PortalPartyTreeResolver $tree,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 	) {
@@ -129,6 +146,10 @@ class CitizenCaseController extends Controller implements PortalProtected {
 		return new JSONResponse([
 			'case' => $context['case'],
 			'writableSet' => $context['set'],
+			// What the portal may offer about ending this request, resolved
+			// from the case type rather than from any list the portal keeps
+			// (withdrawing-your-own-case REQ-WOC-001).
+			'withdrawal' => $this->writableSet->withdrawal(action: $context['action'], case: $context['case']),
 			'documents' => $this->fileReader->listFiles(register: $register, schema: $schema, id: $id),
 		]);
 	}//end show()
@@ -220,7 +241,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			);
 		}
 
-		$upload = $this->readUploadedFile();
+		$upload = $this->upload->read($this->request->getUploadedFile('file'));
 		if ($upload === null) {
 			return $this->refuse(
 				message: $this->l10n->t('There is no file to add.'),
@@ -233,7 +254,10 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			register: $register,
 			schema: $schema,
 			id: $id,
-			fileName: $this->uniqueFileName(register: $register, schema: $schema, id: $id, fileName: $upload['name']),
+			fileName: $this->upload->uniqueName(
+				existing: $this->fileReader->listFiles(register: $register, schema: $schema, id: $id),
+				fileName: $upload['name']
+			),
 			content: $upload['content']
 		);
 		if ($attached === null) {
@@ -259,6 +283,149 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	}//end addDocument()
 
 	/**
+	 * Withdraw the citizen's own request, where the case type allows it.
+	 *
+	 * Nothing about the outcome comes from the request: the status is the one
+	 * the case type declares, the confirmation is the client's own step, and a
+	 * request already on the declared status is refused rather than withdrawn
+	 * twice. A reason travels along when the applicant gave one.
+	 *
+	 * @param string $register The register the case lives in.
+	 * @param string $schema The schema the case lives in.
+	 * @param string $id The case id.
+	 *
+	 * @return JSONResponse The withdrawn case, or a refusal with a sentence.
+	 *
+	 * @spec openspec/changes/withdrawing-your-own-case-from-the-portal/specs/withdrawing-your-own-case/spec.md
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 10, period: 60)]
+	public function withdraw(string $register, string $schema, string $id): JSONResponse {
+		$context = $this->context(register: $register, schema: $schema, id: $id);
+		if ($context instanceof JSONResponse) {
+			return $context;
+		}
+
+		$refusal = $this->guardWrite(context: $context, id: $id);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		$withdrawal = $this->writableSet->withdrawal(action: $context['action'], case: $context['case']);
+		if (($withdrawal['open'] ?? false) !== true) {
+			return $this->refuse(
+				message: (string)($withdrawal['reason'] ?? ''),
+				slug: 'withdrawal-not-open',
+				status: Http::STATUS_CONFLICT
+			);
+		}
+
+		return $this->applyWithdrawal(
+			context: $context,
+			withdrawal: $withdrawal,
+			register: $register,
+			schema: $schema,
+			id: $id
+		);
+	}//end withdraw()
+
+	/**
+	 * Write the withdrawal, record it beside the answers and announce it.
+	 *
+	 * @param array<string, mixed> $context The resolved context.
+	 * @param array<string, mixed> $withdrawal The resolved withdrawal state.
+	 * @param string $register The register the case lives in.
+	 * @param string $schema The schema the case lives in.
+	 * @param string $id The case id.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/withdrawing-your-own-case-from-the-portal/specs/withdrawing-your-own-case/spec.md
+	 */
+	private function applyWithdrawal(
+		array $context,
+		array $withdrawal,
+		string $register,
+		string $schema,
+		string $id,
+	): JSONResponse {
+		$action = $context['action'];
+		$config = (array)($action[CitizenWriteConfigNormaliser::KEY] ?? []);
+		$statusField = (string)($config['statusField'] ?? 'status');
+		$recordField = (string)($config['recordField'] ?? 'portalWrites');
+		$occurredAt = $this->recorder->now();
+		$reason = trim((string)$this->request->getParam('reason', ''));
+		$target = (string)$withdrawal['targetStatus'];
+
+		// The status is the case app's, whatever the body says: the request's
+		// own `status` is never read here, so there is nothing to tamper with.
+		$data = [
+			$statusField => $target,
+			'withdrawnAt' => $occurredAt,
+			'withdrawalReason' => $reason,
+		];
+		$data[$recordField] = $this->recorder->append(
+			existing: ($context['case'][$recordField] ?? null),
+			record: $this->recorder->buildRecord(
+				act: 'withdrawal',
+				subject: $context['subject'],
+				action: $action,
+				changes: [
+					$statusField => ['from' => ($context['case'][$statusField] ?? null), 'to' => $target],
+					'reason' => ['from' => null, 'to' => $reason],
+				],
+				occurredAt: $occurredAt
+			)
+		);
+
+		try {
+			$updated = $this->writer->updateObject(
+				register: $register,
+				schema: $schema,
+				scopeField: (string)($action['scopeField'] ?? 'subjectRef'),
+				subjectRef: (string)($context['subject']['subjectRef'] ?? ''),
+				organisation: (string)($context['subject']['organisation'] ?? ''),
+				id: $id,
+				data: $data
+			);
+		} catch (\Throwable $e) {
+			$this->logger->error('Citizen withdrawal failed: ' . $e->getMessage(), ['exception' => $e]);
+			return $this->refuse(
+				message: $this->l10n->t('The request could not be withdrawn. Please try again.'),
+				slug: 'withdrawal-not-saved',
+				status: Http::STATUS_INTERNAL_SERVER_ERROR
+			);
+		}
+
+		if ($updated === null) {
+			return $this->refuse(
+				message: $this->l10n->t('This case is not yours.'),
+				slug: 'case-not-yours',
+				status: Http::STATUS_FORBIDDEN
+			);
+		}
+
+		$this->recorder->announceWithdrawal(
+			register: $register,
+			schema: $schema,
+			caseId: $id,
+			status: $target,
+			reason: $reason,
+			subject: $context['subject'],
+			action: $action,
+			occurredAt: $occurredAt
+		);
+
+		// Nothing is deleted and no undo is offered: the answers stay
+		// readable, with the withdrawal beside them.
+		return new JSONResponse([
+			'case' => $updated,
+			'withdrawal' => $this->writableSet->withdrawal(action: $action, case: $updated),
+		]);
+	}//end applyWithdrawal()
+
+	/**
 	 * Resolve the subject, the citizen write action, the case and its writable
 	 * set, or the refusal that stops all three acts at the same gate.
 	 *
@@ -274,7 +441,13 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$match = $this->citizenWriteAction(subject: $subject, register: $register, schema: $schema);
+		// Who this write is made for, when the citizen is acting under a
+		// mandate rather than for themselves. Resolved here, from the mandate
+		// record and the party tree, so the request can name an entity but
+		// never grant itself one (REQ-PTV-006).
+		$subject = $this->actingAs(subject: $subject);
+
+		$match = $this->writeActions()->forSubject(subject: $subject, register: $register, schema: $schema);
 		if ($match === null) {
 			return $this->refuse(
 				message: $this->l10n->t('This case cannot be changed from the portal.'),
@@ -467,100 +640,6 @@ class CitizenCaseController extends Controller implements PortalProtected {
 		return new JSONResponse(['case' => $updated]);
 	}//end applyAmendment()
 
-	/**
-	 * Find the `type: update` action for this register and schema that carries
-	 * a citizen write declaration, inside the subject's OWN aggregate. An
-	 * action without the declaration is not a citizen write surface, whatever
-	 * else it permits.
-	 *
-	 * @param array<string, mixed> $subject The resolved subject.
-	 * @param string $register The requested register.
-	 * @param string $schema The requested schema.
-	 *
-	 * @return array{action: array<string, mixed>, app: string}|null
-	 */
-	private function citizenWriteAction(array $subject, string $register, string $schema): ?array {
-		$aggregate = $this->registry->aggregateFor($subject);
-		foreach (($aggregate['contributions'] ?? []) as $contribution) {
-			foreach (($contribution['actions'] ?? []) as $action) {
-				if (($action['type'] ?? '') !== 'update'
-					|| ($action['register'] ?? '') !== $register
-					|| ($action['schema'] ?? '') !== $schema
-					|| is_array(($action[CitizenWriteConfigNormaliser::KEY] ?? null)) === false
-				) {
-					continue;
-				}
-
-				return ['action' => $action, 'app' => (string)($contribution['app'] ?? '')];
-			}
-		}
-
-		return null;
-	}//end citizenWriteAction()
-
-	/**
-	 * A name no document on the case already uses, so an upload adds rather
-	 * than replaces.
-	 *
-	 * @param string $register The register the case lives in.
-	 * @param string $schema The schema the case lives in.
-	 * @param string $id The case id.
-	 * @param string $fileName The sanitised upload name.
-	 *
-	 * @return string
-	 */
-	private function uniqueFileName(string $register, string $schema, string $id, string $fileName): string {
-		$taken = [];
-		foreach ($this->fileReader->listFiles(register: $register, schema: $schema, id: $id) as $file) {
-			$name = ($file['name'] ?? null);
-			if (is_string($name) === true && $name !== '') {
-				$taken[] = $name;
-			}
-		}
-
-		if (in_array($fileName, $taken, true) === false) {
-			return $fileName;
-		}
-
-		$extension = pathinfo($fileName, PATHINFO_EXTENSION);
-		$stem = pathinfo($fileName, PATHINFO_FILENAME);
-		$suffix = '';
-		if ($extension !== '') {
-			$suffix = '.' . $extension;
-		}
-		$counter = 2;
-		while (in_array($stem . '-' . $counter . $suffix, $taken, true) === true) {
-			$counter++;
-		}
-
-		return $stem . '-' . $counter . $suffix;
-	}//end uniqueFileName()
-
-	/**
-	 * Read the multipart upload into a {name, content} pair, or null when
-	 * there is nothing usable. The client's path is never trusted.
-	 *
-	 * @return array{name: string, content: string}|null
-	 */
-	private function readUploadedFile(): ?array {
-		$uploaded = $this->request->getUploadedFile('file');
-		$tmpName = (string)($uploaded['tmp_name'] ?? '');
-		if ((int)($uploaded['error'] ?? 1) !== 0 || $tmpName === '' || is_readable($tmpName) === false) {
-			return null;
-		}
-
-		$content = file_get_contents($tmpName);
-		if ($content === false) {
-			return null;
-		}
-
-		$fileName = basename((string)($uploaded['name'] ?? 'upload'));
-		if ($fileName === '' || $fileName === '.' || $fileName === '..') {
-			$fileName = 'upload';
-		}
-
-		return ['name' => $fileName, 'content' => $content];
-	}//end readUploadedFile()
 
 	/**
 	 * A refusal the citizen can read: one sentence, plus a slug the portal
@@ -575,4 +654,71 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	private function refuse(string $message, string $slug, int $status): JSONResponse {
 		return new JSONResponse(['message' => $message, 'error' => $slug], $status);
 	}//end refuse()
+
+	/**
+	 * Stamp the entity and mandate this write is made under onto the subject.
+	 *
+	 * A request may NAME an entity; it can never grant itself one. The named
+	 * mandate must be one the identity holds, and the named entity must be one
+	 * that mandate reaches at this moment. Anything else leaves the subject
+	 * exactly as it was, so the write is recorded as their own.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/portal-visibility-follows-the-party-tree/specs/portal-visibility-and-the-party-tree/spec.md
+	 */
+	private function actingAs(array $subject): array {
+		$entity = (string)$this->request->getParam('actingFor', '');
+		if ($entity === '') {
+			return $subject;
+		}
+
+		$held = $this->mandates->mandatesFor(
+			subjectRef: (string)($subject['subjectRef'] ?? ''),
+			organisation: (string)($subject['organisation'] ?? '')
+		);
+		$active = $this->mandates->activeMandate(mandates: $held, mandateId: (string)$this->request->getParam('mandate', ''));
+		if ($active === null) {
+			return $subject;
+		}
+
+		$described = $this->mandates->describe(mandate: $active);
+		$party = $described['onBehalfOf'];
+		if ($party === '') {
+			$party = $described['organisation'];
+		}
+
+		$scope = $this->tree->entitiesFor(
+			root: $party,
+			reachesDown: ($this->mandates->reachOf(mandate: $active) === PortalMandateService::REACH_TREE)
+		);
+		if ($scope['refused'] === true || in_array($entity, $scope['entities'], true) === false) {
+			return $subject;
+		}
+
+		$subject['actingForEntity'] = $entity;
+		$subject['actingUnderMandate'] = $described['id'];
+
+		return $subject;
+	}//end actingAs()
+	/**
+	 * Which contributed action admits a citizen write here.
+	 *
+	 * Built from this controller's own registry rather than injected, so the
+	 * constructor is unchanged and no caller or test had to move when the
+	 * lookup was split out.
+	 *
+	 * @return CitizenWriteActionFinder
+	 *
+	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 */
+	private function writeActions(): CitizenWriteActionFinder {
+		if ($this->writeActions === null) {
+			$this->writeActions = new CitizenWriteActionFinder(registry: $this->registry);
+		}
+
+		return $this->writeActions;
+	}//end writeActions()
 }//end class

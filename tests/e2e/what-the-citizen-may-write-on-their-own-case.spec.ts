@@ -46,6 +46,15 @@ import type { APIRequestContext, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
 
+// The notice this suite asserts on -- "opgeslagen", "geen stukken meer aan" --
+// is a TRANSLATED string, not seeded data like the case type's public label.
+// The portal picks its language from the first `Accept-Language` tag
+// (PortalPageController::resolveLocale), and Playwright's default context
+// sends en-US, so without this the citizen sees "Your change has been saved."
+// and the assertion fails on a page that is otherwise entirely correct. A
+// Dutch citizen's browser sends nl-NL; so does this suite.
+test.use({ locale: 'nl-NL' })
+
 const PORTAL_PATH = '/apps/portaliq/portal'
 const API_BASE = '/apps/portaliq/portal/api'
 const OR_OBJECTS_BASE = '/apps/openregister/api/objects'
@@ -118,7 +127,7 @@ async function seedContribution(
 	return seed(request, 'portalPage', {
 		label: 'Mijn zaken',
 		audience: 'client',
-		active: true,
+		status: 'active',
 		collections: [
 			{
 				id: 'cases',
@@ -196,7 +205,10 @@ async function loginAsCitizen(
 async function openTheCase(page: Page, reference: string): Promise<void> {
 	await page.goto(PORTAL_PATH)
 	await page.waitForLoadState('domcontentloaded')
-	await page.getByRole('button', { name: /Mijn zaken/ }).first().click()
+	await page
+		.getByRole('button', { name: /Mijn zaken/ })
+		.first()
+		.click()
 	await page.getByText(reference).first().click()
 	await expect(page.getByTestId('citizen-case')).toBeVisible()
 }
@@ -249,14 +261,19 @@ test.describe('what a citizen may write on their own case', () => {
 		await expect(page.getByTestId('case-reason-reference')).not.toHaveText('')
 
 		// The correction lands.
-		await page.getByTestId('case-input-omschrijving').fill('Een dakkapel aan de achterzijde')
+		await page
+			.getByTestId('case-input-omschrijving')
+			.fill('Een dakkapel aan de achterzijde')
 		await page.getByTestId('case-save').click()
 		await expect(page.getByTestId('case-notice')).toContainText('opgeslagen')
 
 		// It is on the case after a reload, so this is the stored answer and
 		// not a screen that only looks saved.
 		await page.reload()
-		await page.getByRole('button', { name: /Mijn zaken/ }).first().click()
+		await page
+			.getByRole('button', { name: /Mijn zaken/ })
+			.first()
+			.click()
 		await page.getByText(reference).first().click()
 		await expect(page.getByTestId('case-input-omschrijving')).toHaveValue(
 			'Een dakkapel aan de achterzijde',
@@ -279,7 +296,9 @@ test.describe('what a citizen may write on their own case', () => {
 			buffer: Buffer.from('%PDF-1.4 tweede aanvulling'),
 		})
 		await expect(page.getByTestId('case-document')).toHaveCount(2)
-		await expect(page.getByTestId('case-document').first()).toHaveText('aanvulling.pdf')
+		await expect(page.getByTestId('case-document').first()).toHaveText(
+			'aanvulling.pdf',
+		)
 	})
 
 	// @e2e citizen-writes-on-their-own-case::the-window-closes
@@ -306,9 +325,13 @@ test.describe('what a citizen may write on their own case', () => {
 
 		// The answers are read-only, the reason is shown, and there is no save
 		// button to press at all.
-		await expect(page.getByTestId('case-window-closed')).toHaveText(CLOSED_REASON)
+		await expect(page.getByTestId('case-window-closed')).toHaveText(
+			CLOSED_REASON,
+		)
 		await expect(page.getByTestId('case-input-omschrijving')).toHaveCount(0)
-		await expect(page.getByTestId('case-value-omschrijving')).toHaveText('Een uitbouw')
+		await expect(page.getByTestId('case-value-omschrijving')).toHaveText(
+			'Een uitbouw',
+		)
 		await expect(page.getByTestId('case-save')).toHaveCount(0)
 		await expect(page.getByTestId('case-documents-closed')).toHaveText(
 			DOCUMENTS_CLOSED_REASON,

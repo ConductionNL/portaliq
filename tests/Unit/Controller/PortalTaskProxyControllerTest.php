@@ -695,4 +695,31 @@ class PortalTaskProxyControllerTest extends TestCase {
 			$gateway
 		);
 	}//end contributionController()
+
+	/**
+	 * partner-tasks-in-the-portal REQ-PTP-001: the surface serves every
+	 * audience, and lists only the tasks of the session that asked. A partner
+	 * session reaches it exactly as a client session does, and the subject the
+	 * gateway is given is the partner's own.
+	 *
+	 * @spec openspec/changes/partner-tasks-in-the-portal/specs/partner-tasks-in-the-portal/spec.md
+	 */
+	public function testAPartnerSessionReachesTheTaskSurfaceWithItsOwnSubject(): void {
+		$seen = [];
+		$gateway = $this->createMock(PortalTaskGateway::class);
+		$gateway->method('listTasks')->willReturnCallback(
+			function (array $subject) use (&$seen): array {
+				$seen = $subject;
+				return ['status' => 200, 'body' => ['tasks' => [['uuid' => 'task-1']]]];
+			}
+		);
+
+		$partner = ['subjectRef' => 'partner-subject', 'audience' => 'partner', 'organisation' => 'gemeente-x', 'trust' => 'substantial'];
+		$response = $this->controller(subject: $partner, gateway: $gateway)->index();
+
+		$this->assertSame(200, $response->getStatus());
+		$this->assertSame('partner-subject', $seen['subjectRef']);
+		$this->assertSame('partner', $seen['audience']);
+
+	}//end testAPartnerSessionReachesTheTaskSurfaceWithItsOwnSubject()
 }//end class

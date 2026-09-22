@@ -2,20 +2,45 @@
 
 ## Schema and service
 
-- [ ] **T01**: Add `pending` to `portalAccount.status` as a declared lifecycle, plus `provisionedBy`, `provisionedAt`, `verifiedEmail`; make `identityRef` optional and route BSN through `BsnFormat` (REQ-PIS-001)
-- [ ] **T02**: Add `PortalAccountService::provision()` and the `portal.provision` action in the ADR-023 matrix (REQ-PIS-001)
-- [ ] **T03**: Insert the pending match into the callback's find-or-create, identity first, verified email second (REQ-PIS-002)
+- [x] **T01**: Add `pending` to `portalAccount.status` as a declared lifecycle, plus `provisionedBy`, `provisionedAt`, `verifiedEmail`; make `identityRef` optional and route BSN through `BsnFormat` (REQ-PIS-001)
+- [x] **T02**: Add `PortalAccountService::provision()` and the `portal.provision` action in the ADR-023 matrix (REQ-PIS-001)
+- [x] **T03**: Insert the pending match into the callback's find-or-create, identity first, verified email second (REQ-PIS-002)
 
 ## Events
 
-- [ ] **T04**: Add `PortalAccountProvisionRequestedEvent` and `PortalAccountClaimRequestedEvent` with result slots and their listeners; `appId` from the dispatching context (REQ-PIS-003)
+- [x] **T04**: Add `PortalAccountProvisionRequestedEvent` and `PortalAccountClaimRequestedEvent` with result slots and their listeners; `appId` from the dispatching context (REQ-PIS-003)
 
 ## Surfaces
 
-- [ ] **T05**: Add the "My cases" portal page over `kind: cases` collections and the `kind` hint in the contribution manifest (REQ-PIS-004)
-- [ ] **T06**: Offer login on the token page when the subject has an account; add the staff "void pending account" action with a reason (REQ-PIS-004, D6)
+- [x] **T05**: Add the "My cases" portal page over `kind: cases` collections and the `kind` hint in the contribution manifest (REQ-PIS-004)
+- [x] **T06**: Offer login on the link page UNCONDITIONALLY; add the staff "void pending account" action with a reason (REQ-PIS-004, D6)
+  - The void action shipped: `PortalAccountService::voidPending()` plus
+    `POST /api/accounts/void`, refused without a reason and refused on an
+    account that is not pending.
+  - 🔴 THE CONDITIONAL LOGIN OFFER IS REFUSED, NOT DEFERRED, AND THE REQUIREMENT
+    HAS BEEN AMENDED SO NOBODY REBUILDS IT FROM THIS LINE. T06 used to read
+    "offer login WHEN THE SUBJECT HAS AN ACCOUNT". The page is `#[PublicPage]`
+    and its reader is whoever holds the link, which can be forwarded. Varying
+    the offer on whether a named person holds an account tells that holder
+    something about that person, and comparing two links tells them which
+    subjects have accounts. That is account enumeration, the same failure as a
+    login form that says whether an email is registered.
+  - THE SCENARIO NEVER ASKED FOR IT. It says only that "a login link is
+    offered", which an unconditional offer satisfies while disclosing nothing.
+    The scenario is deliberately unchanged.
+  - WHOSE SURFACE IT IS, measured 2026-09-18: not portaliq's. The access-link
+    reader is entirely openregister (`AccessLinkReader`,
+    `AccessLinkController::open`, `GET /api/public/links/{anchor}`), and
+    portaliq references it NOWHERE:
+    `grep -rln 'accessLink|access-link|AccessLink' lib/ src/` returns nothing.
+    Case sharing mints an openregister access link now, so the offer belongs on
+    that reader's page. Openregister owes a generic, unconditional "already have
+    an account? sign in" affordance there; portaliq owes nothing further.
+  - Ticked because portaliq's half is complete and the remainder is named, owned
+    and specified. Left open it reads as work outstanding here, and the next
+    reader builds the version this change refuses.
 
 ## Quality
 
-- [ ] **T07**: PHPUnit: provision refusals, pending unreachable, identity and email matching, claim event, wrong-person isolation
-- [ ] **T08**: Playwright `tests/e2e/portal-identity-space.spec.ts`; Dutch and English strings; docs with screenshots; tell dossiq the two event names and the `linkedRequesterId` claim
+- [x] **T07**: PHPUnit: provision refusals, pending unreachable, identity and email matching, claim event, wrong-person isolation
+- [x] **T08**: Playwright `tests/e2e/portal-identity-space.spec.ts`; Dutch and English strings; docs with screenshots; tell dossiq the two event names and the `linkedRequesterId` claim

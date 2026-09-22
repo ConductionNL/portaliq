@@ -129,12 +129,35 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// (what-the-citizen-may-write-on-their-own-case). Both are
 		// authenticated-read only, like every other portal-facing schema:
 		// what may be WRITTEN is decided by the case type, through portaliq,
-		// never by a grant on the schema. Additive.
+		// never by a grant on the schema. 0.23.0 (portalPage 0.3.0): the
+		// `citizenCase` block type joins the page block enum, which the
+		// resolver already accepted, so a contribution carrying the citizen
+		// case block can be saved at all. Additive. 0.24.0 (portalAccount
+		// 0.8.0): the repair of a drift, not a feature. Seven schemas landed
+		// between #596 and #616 (portalMandate, portalInvitation,
+		// portalReferenceLink, portalAccessRequest, portalFormBinding,
+		// portalIntakeSubmission, changeProposal) and portalAccount went
+		// 0.5.0 -> 0.8.0 with them, while `info.version` stayed at 0.23.0 and
+		// `components.registers.portaliq.schemas` was never extended. The
+		// seven therefore provisioned as schemas and bound to no register,
+		// which is the silent partial outage the sibling test below exists to
+		// make loud, and the unchanged info.version meant no upgrade would
+		// have re-imported the fix either. This test could not say so: every
+		// PHPUnit cell aborted before it ran, on `occ app:enable dossiq`.
+		// Additive.
+		// 0.25.0 (portalAuditEntry 0.2.0): `complete` joins the audit verb
+		// enum. Described under 0.22.0 above, where this branch first wrote
+		// it; development reached 0.24.0 first, so it is re-parented here.
+		// The bump is the point, not bookkeeping: OpenRegister re-imports a
+		// register only when `info.version` moves, so leaving this at 0.24.0
+		// would ship the enum to a clean install and to nobody else --
+		// exactly the silent non-upgrade the 0.24.0 note above describes.
+		// Additive.
 		// Every new schema is listed in
 		// `components.registers.portaliq.schemas` (ImportHandler binds only
 		// what is listed there) and declares a non-empty `read` rule.
-		$this->assertSame('0.22.0', self::$register['info']['version']);
-		$this->assertSame('0.22.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.25.0', self::$register['info']['version']);
+		$this->assertSame('0.25.0', self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalAuditEntry']['version']);
 		$this->assertContains('complete', self::$register['components']['schemas']['portalAuditEntry']['properties']['verb']['enum']);
 		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalCaseType']['version']);
@@ -147,8 +170,8 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['page']['version']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['portal']['version']);
-		$this->assertSame('0.5.0', self::$register['components']['schemas']['portalAccount']['version']);
-		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalPage']['version']);
+		$this->assertSame('0.8.0', self::$register['components']['schemas']['portalAccount']['version']);
+		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalSession']['version']);
 
 	}//end testRegisterJsonParsesAndVersionsAreBumped()

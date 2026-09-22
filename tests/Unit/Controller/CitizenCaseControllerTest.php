@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
+use OCA\Portaliq\Contribution\CitizenDocumentUpload;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\CitizenCaseController;
 use OCA\Portaliq\Event\PortalClientWriteEvent;
@@ -44,6 +45,14 @@ use Psr\Log\LoggerInterface;
  * under test is the contract the portal reads it through.
  *
  * @covers \OCA\Portaliq\Controller\CitizenCaseController
+ * @uses   \OCA\Portaliq\Contribution\CitizenDocumentUpload
+ * @uses   \OCA\Portaliq\Contribution\CitizenWriteActionFinder
+ * @uses   \OCA\Portaliq\Event\PortalClientWriteEvent
+ * @uses   \OCA\Portaliq\Event\PortalClientWithdrawalEvent
+ * @uses   \OCA\Portaliq\Service\CitizenWritableSetResolver
+ * @uses   \OCA\Portaliq\Service\CitizenWriteRecorder
+ * @uses   \OCA\Portaliq\Service\CitizenWriteThrottle
+ * @uses   \OCA\Portaliq\Service\PortalSessionService
  *
  * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
  */
@@ -326,8 +335,8 @@ class CitizenCaseControllerTest extends TestCase {
 	 *
 	 * @return array<string, mixed>
 	 */
-	private function caseType(?array $amendmentStatuses = null, ?array $documentStatuses = null): array {
-		return [
+	private function caseType(?array $amendmentStatuses = null, ?array $documentStatuses = null, ?array $withdrawal = null): array {
+		$caseType = [
 			'id' => 'type-1',
 			CitizenWritableSetResolver::WRITABLE_PROPERTY => [
 				['field' => 'omschrijving', 'audiences' => ['client']],
@@ -348,6 +357,12 @@ class CitizenCaseControllerTest extends TestCase {
 				],
 			],
 		];
+
+		if ($withdrawal !== null) {
+			$caseType[CitizenWritableSetResolver::WITHDRAWAL_PROPERTY] = $withdrawal;
+		}
+
+		return $caseType;
 	}//end caseType()
 
 	/**
@@ -420,6 +435,7 @@ class CitizenCaseControllerTest extends TestCase {
 		?array $upload = null,
 		array $existingFiles = [],
 		bool $throttleOpen = true,
+		array $params = [],
 	): CitizenCaseController {
 		$action = ($action ?? $this->action());
 		$cases = $this->cases();
@@ -427,9 +443,13 @@ class CitizenCaseControllerTest extends TestCase {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('Bearer token');
 		$request->method('getParam')->willReturnCallback(
-			static function (string $key, $default = null) use ($fields) {
+			static function (string $key, $default = null) use ($fields, $params) {
 				if ($key === 'fields') {
 					return ($fields === [] ? null : $fields);
+				}
+
+				if (array_key_exists($key, $params) === true) {
+					return $params[$key];
 				}
 
 				return $default;
@@ -511,6 +531,9 @@ class CitizenCaseControllerTest extends TestCase {
 			new CitizenWritableSetResolver($caseTypeReader, $l10n),
 			new CitizenWriteRecorder($this->createMock(AuditTrailService::class), $dispatcher),
 			$this->throttle(open: $throttleOpen),
+			new CitizenDocumentUpload(),
+			$this->mandateService(),
+			$this->treeResolver(),
 			$l10n,
 			$this->createMock(LoggerInterface::class)
 		);
@@ -571,4 +594,169 @@ class CitizenCaseControllerTest extends TestCase {
 
 		return new CitizenWriteThrottle($factory);
 	}//end throttle()
+
+	/**
+	 * A mandate service that answers no mandate: these tests are about a
+	 * citizen writing on their OWN case, so nothing here acts under one.
+	 *
+	 * @return \OCA\Portaliq\Service\Identity\PortalMandateService
+	 */
+	private function mandateService(): \OCA\Portaliq\Service\Identity\PortalMandateService {
+		$mandates = $this->getMockBuilder(\OCA\Portaliq\Service\Identity\PortalMandateService::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['mandatesFor', 'activeMandate'])
+			->getMock();
+		$mandates->method('mandatesFor')->willReturn([]);
+		$mandates->method('activeMandate')->willReturn(null);
+
+		return $mandates;
+	}//end mandateService()
+
+	/**
+	 * A party tree resolver that is never asked to walk anything here.
+	 *
+	 * @return \OCA\Portaliq\Service\Identity\PortalPartyTreeResolver
+	 */
+	private function treeResolver(): \OCA\Portaliq\Service\Identity\PortalPartyTreeResolver {
+		$tree = $this->getMockBuilder(\OCA\Portaliq\Service\Identity\PortalPartyTreeResolver::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['entitiesFor'])
+			->getMock();
+		$tree->method('entitiesFor')->willReturn(['entities' => [], 'refused' => false, 'bound' => []]);
+
+		return $tree;
+	}//end treeResolver()
+
+	/**
+	 * withdrawing-your-own-case-from-the-portal: the applicant ends their own
+	 * request. The status is the case app's, the reason travels with it, a
+	 * second withdrawal is refused, and a refusal writes nothing.
+	 *
+	 * @spec openspec/changes/withdrawing-your-own-case-from-the-portal/specs/withdrawing-your-own-case/spec.md
+	 */
+	public function testAWithdrawalLandsOnTheStatusTheCaseTypeDeclares(): void {
+		$controller = $this->controller(
+			caseType: $this->caseType(withdrawal: $this->withdrawalDeclaration()),
+			params: ['reason' => 'Ik ben toch niet verhuisd.', 'status' => 'afgehandeld']
+		);
+
+		$response = $controller->withdraw('zaken', 'zaak', self::CASE_ID);
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertCount(1, $this->writes);
+		// The body named `afgehandeld`; the case app said `ingetrokken`.
+		$this->assertSame('ingetrokken', $this->writes[0]['data']['status']);
+		$this->assertSame('Ik ben toch niet verhuisd.', $this->writes[0]['data']['withdrawalReason']);
+
+	}//end testAWithdrawalLandsOnTheStatusTheCaseTypeDeclares()
+
+	public function testAWithdrawalRaisesItsOwnEventOnceWithTheReason(): void {
+		$controller = $this->controller(
+			caseType: $this->caseType(withdrawal: $this->withdrawalDeclaration()),
+			params: ['reason' => 'Ik ben toch niet verhuisd.']
+		);
+
+		$controller->withdraw('zaken', 'zaak', self::CASE_ID);
+
+		$withdrawals = array_values(array_filter(
+			$this->events,
+			static fn (Event $event): bool => $event instanceof \OCA\Portaliq\Event\PortalClientWithdrawalEvent
+		));
+
+		$this->assertCount(1, $withdrawals);
+		$this->assertSame('Ik ben toch niet verhuisd.', $withdrawals[0]->getReason());
+		$this->assertSame('ingetrokken', $withdrawals[0]->getStatus());
+		$this->assertSame(self::CASE_ID, $withdrawals[0]->getCaseId());
+		// It is not a write event: a rule bound to a citizen write must not
+		// fire on a withdrawal, and the other way round.
+		$this->assertSame([], array_values(array_filter(
+			$this->events,
+			static fn (Event $event): bool => $event instanceof PortalClientWriteEvent
+		)));
+
+	}//end testAWithdrawalRaisesItsOwnEventOnceWithTheReason()
+
+	public function testACaseTypeThatDeclaresNoWithdrawalAcceptsNone(): void {
+		$controller = $this->controller(caseType: $this->caseType());
+
+		$response = $controller->withdraw('zaken', 'zaak', self::CASE_ID);
+
+		$this->assertSame(Http::STATUS_CONFLICT, $response->getStatus());
+		$this->assertSame([], $this->writes);
+		$this->assertSame([], $this->events);
+
+	}//end testACaseTypeThatDeclaresNoWithdrawalAcceptsNone()
+
+	public function testAClosedWindowRefusesAndWritesNothing(): void {
+		$controller = $this->controller(
+			caseType: $this->caseType(withdrawal: ['openStatuses' => ['concept'], 'closedReason' => 'Uw aanvraag is al beoordeeld.', 'targetStatus' => 'ingetrokken'])
+		);
+
+		$response = $controller->withdraw('zaken', 'zaak', self::CASE_ID);
+
+		$this->assertSame(Http::STATUS_CONFLICT, $response->getStatus());
+		$this->assertSame('Uw aanvraag is al beoordeeld.', $response->getData()['message']);
+		$this->assertSame([], $this->writes);
+
+	}//end testAClosedWindowRefusesAndWritesNothing()
+
+	public function testSomebodyElsesCaseCannotBeWithdrawn(): void {
+		$controller = $this->controller(caseType: $this->caseType(withdrawal: $this->withdrawalDeclaration()));
+
+		$response = $controller->withdraw('zaken', 'zaak', self::OTHER_CASE_ID);
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		$this->assertSame([], $this->writes);
+		$this->assertSame([], $this->events);
+
+	}//end testSomebodyElsesCaseCannotBeWithdrawn()
+
+	public function testWithoutASessionNoWithdrawalIsAccepted(): void {
+		$controller = $this->controller(subject: null, caseType: $this->caseType(withdrawal: $this->withdrawalDeclaration()));
+
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->withdraw('zaken', 'zaak', self::CASE_ID)->getStatus());
+		$this->assertSame([], $this->writes);
+
+	}//end testWithoutASessionNoWithdrawalIsAccepted()
+
+	public function testAThrottledIdentityCannotWithdraw(): void {
+		$controller = $this->controller(
+			caseType: $this->caseType(withdrawal: $this->withdrawalDeclaration()),
+			throttleOpen: false
+		);
+
+		$this->assertSame(Http::STATUS_TOO_MANY_REQUESTS, $controller->withdraw('zaken', 'zaak', self::CASE_ID)->getStatus());
+		$this->assertSame([], $this->writes);
+
+	}//end testAThrottledIdentityCannotWithdraw()
+
+	public function testTheCaseStaysReadableAndTheWithdrawalIsBesideIt(): void {
+		$controller = $this->controller(
+			caseType: $this->caseType(withdrawal: $this->withdrawalDeclaration()),
+			params: ['reason' => 'Niet meer nodig.']
+		);
+
+		$data = $controller->withdraw('zaken', 'zaak', self::CASE_ID)->getData();
+
+		// Nothing is deleted: the answers come back with the case, with the
+		// withdrawal's own record appended beside them.
+		$this->assertSame('ingetrokken', $data['case']['status']);
+		$this->assertNotSame('', (string)$data['case']['withdrawnAt']);
+		$this->assertNotSame([], (array)$data['case']['portalWrites']);
+
+	}//end testTheCaseStaysReadableAndTheWithdrawalIsBesideIt()
+
+	/**
+	 * The withdrawal declaration a case type would carry.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withdrawalDeclaration(): array {
+		return [
+			'openStatuses' => ['ontvangen', 'aanvullen'],
+			'closedReason' => 'Uw aanvraag is al beoordeeld.',
+			'targetStatus' => 'ingetrokken',
+			'confirmText' => 'Als u intrekt, stopt de behandeling.',
+		];
+	}//end withdrawalDeclaration()
 }//end class

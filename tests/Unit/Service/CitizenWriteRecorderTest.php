@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\Portaliq\Event\PortalClientWithdrawalEvent;
 use OCA\Portaliq\Event\PortalClientWriteEvent;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\CitizenWriteRecorder;
@@ -24,6 +25,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Portaliq\Service\CitizenWriteRecorder
  * @covers \OCA\Portaliq\Event\PortalClientWriteEvent
+ * @covers \OCA\Portaliq\Event\PortalClientWithdrawalEvent
  *
  * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
  */
@@ -168,6 +170,121 @@ class CitizenWriteRecorderTest extends TestCase {
 	}//end testTheActIsRecordedInTheAuditTrail()
 
 	/**
+	 * 🔴 A WITHDRAWAL IS ANNOUNCED AS ITS OWN EVENT, AND NOTHING EXECUTED THAT.
+	 *
+	 * `announceWithdrawal()` had zero references in any test. Its whole reason
+	 * for existing is in its own docblock: the withdrawal is raised as its own
+	 * event, never as a write, so that a rule bound to a CITIZEN withdrawing
+	 * their case does not also fire when a handler sets the same status
+	 * internally. This is the path that tells the two apart.
+	 *
+	 * If it stopped dispatching, every automation bound to a citizen withdrawal
+	 * would quietly stop firing, and the case would still withdraw, so nothing
+	 * on screen would look wrong.
+	 *
+	 * @return void
+	 */
+	public function testAWithdrawalIsAnnouncedAsItsOwnEvent(): void {
+		$dispatcher = $this->createMock(IEventDispatcher::class);
+		$dispatched = null;
+		$dispatcher->expects($this->once())
+			->method('dispatchTyped')
+			->willReturnCallback(
+				static function (Event $event) use (&$dispatched): void {
+					$dispatched = $event;
+				}
+			);
+
+		$this->recorder(dispatcher: $dispatcher)->announceWithdrawal(
+			register: 'reg-1',
+			schema: 'zaak',
+			caseId: 'case-1',
+			status: 'ingetrokken',
+			reason: 'niet meer nodig',
+			subject: ['subjectRef' => 'burger-1', 'organisation' => 'gemeente-x', 'jti' => 'jti-1'],
+			action: [],
+			occurredAt: '2026-09-18T10:00:00+00:00'
+		);
+
+		$this->assertInstanceOf(PortalClientWithdrawalEvent::class, $dispatched);
+		$this->assertNotInstanceOf(
+			PortalClientWriteEvent::class,
+			$dispatched,
+			'A withdrawal announced as an ordinary write would fire every rule bound to a write.'
+		);
+	}//end testAWithdrawalIsAnnouncedAsItsOwnEvent()
+
+	/**
+	 * What the applicant said travels with the event.
+	 *
+	 * The reason is the whole point of asking for one: a withdrawal whose
+	 * reason did not reach the listeners would be recorded and then acted on
+	 * without it.
+	 *
+	 * @return void
+	 */
+	public function testTheWithdrawalCarriesWhatWasSaidAndWhereItLanded(): void {
+		$dispatcher = $this->createMock(IEventDispatcher::class);
+		$dispatched = null;
+		$dispatcher->method('dispatchTyped')->willReturnCallback(
+			static function (Event $event) use (&$dispatched): void {
+				$dispatched = $event;
+			}
+		);
+
+		$this->recorder(dispatcher: $dispatcher)->announceWithdrawal(
+			register: 'reg-1',
+			schema: 'zaak',
+			caseId: 'case-1',
+			status: 'ingetrokken',
+			reason: 'niet meer nodig',
+			subject: ['subjectRef' => 'burger-1', 'organisation' => 'gemeente-x', 'jti' => 'jti-1'],
+			action: [],
+			occurredAt: '2026-09-18T10:00:00+00:00'
+		);
+
+		$this->assertSame('niet meer nodig', $dispatched->getReason());
+		$this->assertSame('ingetrokken', $dispatched->getStatus());
+		$this->assertSame('case-1', $dispatched->getCaseId());
+		$this->assertSame('2026-09-18T10:00:00+00:00', $dispatched->getOccurredAt());
+	}//end testTheWithdrawalCarriesWhatWasSaidAndWhereItLanded()
+
+	/**
+	 * 🔑 THE WITHDRAWAL IS AUDITED, AND THE AUDIT NAMES THE CITIZEN.
+	 *
+	 * The event tells automation; the audit trail tells a person afterwards who
+	 * withdrew the case. Dispatching without recording would leave a case that
+	 * changed state with nobody's name against it.
+	 *
+	 * @return void
+	 */
+	public function testTheWithdrawalIsAuditedAgainstTheCitizen(): void {
+		$auditor = $this->createMock(AuditTrailService::class);
+		$auditor->expects($this->once())
+			->method('record')
+			->with(
+				$this->equalTo('update'),
+				$this->equalTo('burger-1'),
+				$this->equalTo('gemeente-x'),
+				$this->equalTo('reg-1'),
+				$this->equalTo('zaak'),
+				$this->equalTo('case-1'),
+				$this->equalTo('jti-1')
+			);
+
+		$this->recorder(auditor: $auditor)->announceWithdrawal(
+			register: 'reg-1',
+			schema: 'zaak',
+			caseId: 'case-1',
+			status: 'ingetrokken',
+			reason: '',
+			subject: ['subjectRef' => 'burger-1', 'organisation' => 'gemeente-x', 'jti' => 'jti-1'],
+			action: [],
+			occurredAt: '2026-09-18T10:00:00+00:00'
+		);
+	}//end testTheWithdrawalIsAuditedAgainstTheCitizen()
+
+	/**
 	 * Build a recorder over doubles.
 	 *
 	 * @param AuditTrailService|null $auditor The audit trail double.
@@ -179,4 +296,39 @@ class CitizenWriteRecorderTest extends TestCase {
 			($dispatcher ?? $this->createMock(IEventDispatcher::class))
 		);
 	}//end recorder()
+
+	/**
+	 * portal-visibility-follows-the-party-tree REQ-PTV-006: a write made for an
+	 * entity below the mandated one records both the entity and the mandate,
+	 * and an ordinary write records neither, so the two are told apart in the
+	 * record rather than guessed at later.
+	 *
+	 * @spec openspec/changes/portal-visibility-follows-the-party-tree/specs/portal-visibility-and-the-party-tree/spec.md
+	 */
+	public function testAWriteForAnEntityBelowTheMandateRecordsBoth(): void {
+		$recorder = new CitizenWriteRecorder(
+			$this->createMock(\OCA\Portaliq\Service\AuditTrailService::class),
+			$this->createMock(\OCP\EventDispatcher\IEventDispatcher::class)
+		);
+		$subject = array_merge(self::SUBJECT, ['actingForEntity' => 'kvk-subsidiary', 'actingUnderMandate' => 'mandate-1']);
+
+		$mandate = $recorder->mandate(action: self::ACTION, subject: $subject);
+
+		$this->assertSame('kvk-subsidiary', $mandate['actingFor']);
+		$this->assertSame('mandate-1', $mandate['mandate']);
+
+	}//end testAWriteForAnEntityBelowTheMandateRecordsBoth()
+
+	public function testAnOrdinaryWriteNamesNoEntityAndNoMandate(): void {
+		$recorder = new CitizenWriteRecorder(
+			$this->createMock(\OCA\Portaliq\Service\AuditTrailService::class),
+			$this->createMock(\OCP\EventDispatcher\IEventDispatcher::class)
+		);
+
+		$mandate = $recorder->mandate(action: self::ACTION, subject: self::SUBJECT);
+
+		$this->assertArrayNotHasKey('actingFor', $mandate);
+		$this->assertArrayNotHasKey('mandate', $mandate);
+
+	}//end testAnOrdinaryWriteNamesNoEntityAndNoMandate()
 }//end class

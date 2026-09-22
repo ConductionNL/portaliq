@@ -97,6 +97,22 @@ class CaseTypeReader {
 			return null;
 		}
 
+		return $this->asArray(entity: $entity);
+	}//end readCaseType()
+
+	/**
+	 * The entity as a plain array, or null when it cannot be one.
+	 *
+	 * OpenRegister answers with an array on some paths and an object with
+	 * jsonSerialize() on others, so the shape has to be narrowed before a
+	 * caller can read a field off it. Split out of readCaseType() so the read
+	 * itself is about reading and this is about the shape that comes back.
+	 *
+	 * @param mixed $entity Whatever OpenRegister returned.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function asArray(mixed $entity): ?array {
 		if (is_array($entity) === true) {
 			return $entity;
 		}
@@ -109,7 +125,7 @@ class CaseTypeReader {
 		}
 
 		return null;
-	}//end readCaseType()
+	}//end asArray()
 
 	/**
 	 * Resolve OpenRegister's ObjectService, or null when unavailable.
