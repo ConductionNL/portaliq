@@ -46,5 +46,15 @@
 	"This task does not exist or is not yours.": "Deze taak bestaat niet of is niet van u.",
 	"This task is already closed.": "Deze taak is al afgerond.",
 	"The upload was refused. Check the file rules above.": "De upload is geweigerd. Controleer de bestandsregels hierboven.",
-	"The tasks are not available right now. Please try again later.": "De taken zijn nu niet beschikbaar. Probeer het later opnieuw."
+	"The tasks are not available right now. Please try again later.": "De taken zijn nu niet beschikbaar. Probeer het later opnieuw.",
+	"Select a case.": "Kies een zaak.",
+	"This case is not yours.": "Deze zaak is niet van u.",
+	"This answer cannot be changed from the portal.": "Dit antwoord kunt u niet vanuit het portaal wijzigen.",
+	"Save my change": "Mijn wijziging opslaan",
+	"Your change has been saved.": "Uw wijziging is opgeslagen.",
+	"The change could not be saved. Please try again.": "De wijziging kon niet worden opgeslagen. Probeer het opnieuw.",
+	"Documents": "Documenten",
+	"Add a document": "Document toevoegen",
+	"{name} has been added to your case.": "{name} is aan uw zaak toegevoegd.",
+	"The document could not be added. Please try again.": "Het document kon niet worden toegevoegd. Probeer het opnieuw."
 }

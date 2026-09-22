@@ -28,3 +28,13 @@ change is archived.
 - [ ] 12 Ask the discovery plan to record `forms-per-case-type` as buildiq's,
   not dossiq's.
 
+
+## Wave 3, the pending proposals from the D1 batch
+
+- [ ] 13 `withdrawing-your-own-case-from-the-portal` (row 2.47)
+- [ ] 14 After `portal-identity-and-the-organisations-cases`:
+  `portal-visibility-follows-the-party-tree` (row 13.38)
+- [ ] 15 After the two above:
+  `a-report-without-an-account-and-a-custodian-who-may-reveal-it` (row 13.33)
+- [ ] 16 Hand the three dossiq halves of wave 3 to the dossiq lane, with the
+  row ids. None of them exists on dossiq `development` today.

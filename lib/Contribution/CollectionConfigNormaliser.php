@@ -83,6 +83,7 @@ class CollectionConfigNormaliser {
 			$collection = $this->normaliseDetail(collection: $collection);
 			$collection = $this->normaliseDefaults(collection: $collection);
 			$collection = $this->normaliseFileFlags(collection: $collection);
+			$collection = $this->normaliseKind(collection: $collection);
 			$collection = $this->values->normaliseAnonymousFlag(entry: $collection);
 
 			$out[] = $collection;
@@ -165,6 +166,34 @@ class CollectionConfigNormaliser {
 		$collection['rowActions'] = $resolved;
 		return $collection;
 	}//end resolveEntryRowActions()
+
+	/**
+	 * Keep `kind` only when it is a non-empty string.
+	 *
+	 * `kind` is the hint the portal's own surfaces select on: `inbox` feeds
+	 * the unified inbox, `cases` feeds "Mijn zaken" (portal-identity-space).
+	 * A malformed value is dropped rather than carried, so a surface that
+	 * selects on it can never match a collection whose author meant nothing
+	 * by the field.
+	 *
+	 * @param array<string, mixed> $collection The collection.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+	 */
+	private function normaliseKind(array $collection): array {
+		if (array_key_exists('kind', $collection) === false) {
+			return $collection;
+		}
+
+		if (is_string($collection['kind']) === false || $collection['kind'] === '') {
+			unset($collection['kind']);
+			return $collection;
+		}
+
+		return $collection;
+	}//end normaliseKind()
 
 	/**
 	 * Coerce the opt-in file flags to strict booleans.

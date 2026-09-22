@@ -16,7 +16,7 @@
       "portaliq": {
         "slug": "portaliq",
         "title": "Portaliq Register (demo)",
-        "version": "0.21.0",
+        "version": "0.24.0",
         "description": "Demo data for Portaliq Register. Generated from the register's own schemas — see hydra-gates/scripts/lib/generate_mock_register.py."
       }
     },
@@ -810,6 +810,156 @@
       {
         "@self": {
           "register": "portaliq",
+          "schema": "portalCase",
+          "slug": "portalcase-portalcase-1-1"
+        },
+        "subjectRef": "Voorbeeld Subjectref 1",
+        "organisation": "Voorbeeld Organisation 1",
+        "caseType": "Voorbeeld Casetype 1",
+        "reference": "Voorbeeld Reference 1",
+        "status": "Voorbeeld Status 1",
+        "omschrijving": "Voorbeeld Omschrijving 1",
+        "toelichting": "Voorbeeld Toelichting 1",
+        "portalWrites": [
+          {}
+        ]
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalCase",
+          "slug": "portalcase-portalcase-2-2"
+        },
+        "subjectRef": "Voorbeeld Subjectref 2",
+        "organisation": "Voorbeeld Organisation 2",
+        "caseType": "Voorbeeld Casetype 2",
+        "reference": "Voorbeeld Reference 2",
+        "status": "Voorbeeld Status 2",
+        "omschrijving": "Voorbeeld Omschrijving 2",
+        "toelichting": "Voorbeeld Toelichting 2",
+        "portalWrites": [
+          {}
+        ]
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalCase",
+          "slug": "portalcase-portalcase-3-3"
+        },
+        "subjectRef": "Voorbeeld Subjectref 3",
+        "organisation": "Voorbeeld Organisation 3",
+        "caseType": "Voorbeeld Casetype 3",
+        "reference": "Voorbeeld Reference 3",
+        "status": "Voorbeeld Status 3",
+        "omschrijving": "Voorbeeld Omschrijving 3",
+        "toelichting": "Voorbeeld Toelichting 3",
+        "portalWrites": [
+          {}
+        ]
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalCaseType",
+          "slug": "portalcasetype-voorbeeld-title-1-1"
+        },
+        "title": "Voorbeeld Title 1",
+        "portalWritable": [
+          {
+            "field": "Voorbeeld Field 1",
+            "audiences": [
+              "Voorbeeld Audiences 1"
+            ],
+            "openStatuses": [
+              "Voorbeeld Openstatuses 1"
+            ],
+            "closedReason": "Voorbeeld Closedreason 1"
+          }
+        ],
+        "portalAmendmentWindow": {
+          "openStatuses": [
+            "Voorbeeld Openstatuses 1"
+          ],
+          "closedReason": "Voorbeeld Closedreason 1"
+        },
+        "portalDocumentWindow": {
+          "openStatuses": [
+            "Voorbeeld Openstatuses 1"
+          ],
+          "closedReason": "Voorbeeld Closedreason 1"
+        },
+        "portalStatusLabels": {}
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalCaseType",
+          "slug": "portalcasetype-voorbeeld-title-2-2"
+        },
+        "title": "Voorbeeld Title 2",
+        "portalWritable": [
+          {
+            "field": "Voorbeeld Field 2",
+            "audiences": [
+              "Voorbeeld Audiences 2"
+            ],
+            "openStatuses": [
+              "Voorbeeld Openstatuses 2"
+            ],
+            "closedReason": "Voorbeeld Closedreason 2"
+          }
+        ],
+        "portalAmendmentWindow": {
+          "openStatuses": [
+            "Voorbeeld Openstatuses 2"
+          ],
+          "closedReason": "Voorbeeld Closedreason 2"
+        },
+        "portalDocumentWindow": {
+          "openStatuses": [
+            "Voorbeeld Openstatuses 2"
+          ],
+          "closedReason": "Voorbeeld Closedreason 2"
+        },
+        "portalStatusLabels": {}
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalCaseType",
+          "slug": "portalcasetype-voorbeeld-title-3-3"
+        },
+        "title": "Voorbeeld Title 3",
+        "portalWritable": [
+          {
+            "field": "Voorbeeld Field 3",
+            "audiences": [
+              "Voorbeeld Audiences 3"
+            ],
+            "openStatuses": [
+              "Voorbeeld Openstatuses 3"
+            ],
+            "closedReason": "Voorbeeld Closedreason 3"
+          }
+        ],
+        "portalAmendmentWindow": {
+          "openStatuses": [
+            "Voorbeeld Openstatuses 3"
+          ],
+          "closedReason": "Voorbeeld Closedreason 3"
+        },
+        "portalDocumentWindow": {
+          "openStatuses": [
+            "Voorbeeld Openstatuses 3"
+          ],
+          "closedReason": "Voorbeeld Closedreason 3"
+        },
+        "portalStatusLabels": {}
+      },
+      {
+        "@self": {
+          "register": "portaliq",
           "schema": "portalMessage",
           "slug": "portalmessage-portalmessage-1-1"
         },
@@ -1112,6 +1262,192 @@
             "icon": "MapMarkerPath"
           }
         ]
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalReport",
+          "slug": "portalreport-portalreport-1-1"
+        },
+        "portal": "Voorbeeld Portal 1",
+        "codeHash": "Voorbeeld Codehash 1",
+        "state": "open",
+        "caseType": "Voorbeeld Casetype 1",
+        "caseTypeRegister": "Voorbeeld Casetyperegister 1",
+        "caseTypeSchema": "Voorbeeld Casetypeschema 1",
+        "subject": "Voorbeeld Subject 1",
+        "body": "Voorbeeld Body 1",
+        "answers": {},
+        "contactRef": "Voorbeeld Contactref 1",
+        "acknowledgedAt": "2026-03-01T09:00:00+00:00",
+        "feedbackAt": "2026-03-01T09:00:00+00:00",
+        "receivedAt": "2026-03-01T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalReport",
+          "slug": "portalreport-portalreport-2-2"
+        },
+        "portal": "Voorbeeld Portal 2",
+        "codeHash": "Voorbeeld Codehash 2",
+        "state": "acknowledged",
+        "caseType": "Voorbeeld Casetype 2",
+        "caseTypeRegister": "Voorbeeld Casetyperegister 2",
+        "caseTypeSchema": "Voorbeeld Casetypeschema 2",
+        "subject": "Voorbeeld Subject 2",
+        "body": "Voorbeeld Body 2",
+        "answers": {},
+        "contactRef": "Voorbeeld Contactref 2",
+        "acknowledgedAt": "2026-03-02T09:00:00+00:00",
+        "feedbackAt": "2026-03-02T09:00:00+00:00",
+        "receivedAt": "2026-03-02T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalReport",
+          "slug": "portalreport-portalreport-3-3"
+        },
+        "portal": "Voorbeeld Portal 3",
+        "codeHash": "Voorbeeld Codehash 3",
+        "state": "closed",
+        "caseType": "Voorbeeld Casetype 3",
+        "caseTypeRegister": "Voorbeeld Casetyperegister 3",
+        "caseTypeSchema": "Voorbeeld Casetypeschema 3",
+        "subject": "Voorbeeld Subject 3",
+        "body": "Voorbeeld Body 3",
+        "answers": {},
+        "contactRef": "Voorbeeld Contactref 3",
+        "acknowledgedAt": "2026-03-03T09:00:00+00:00",
+        "feedbackAt": "2026-03-03T09:00:00+00:00",
+        "receivedAt": "2026-03-03T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalReportMessage",
+          "slug": "portalreportmessage-portalreportmessage-1-1"
+        },
+        "reportRef": "Voorbeeld Reportref 1",
+        "author": "reporter",
+        "body": "Voorbeeld Body 1",
+        "authorName": "Voorbeeld Authorname 1",
+        "visibleToReporter": true,
+        "writtenAt": "2026-03-01T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalReportMessage",
+          "slug": "portalreportmessage-portalreportmessage-2-2"
+        },
+        "reportRef": "Voorbeeld Reportref 2",
+        "author": "handler",
+        "body": "Voorbeeld Body 2",
+        "authorName": "Voorbeeld Authorname 2",
+        "visibleToReporter": false,
+        "writtenAt": "2026-03-02T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalReportMessage",
+          "slug": "portalreportmessage-portalreportmessage-3-3"
+        },
+        "reportRef": "Voorbeeld Reportref 3",
+        "author": "reporter",
+        "body": "Voorbeeld Body 3",
+        "authorName": "Voorbeeld Authorname 3",
+        "visibleToReporter": true,
+        "writtenAt": "2026-03-03T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalReporterContact",
+          "slug": "portalreportercontact-voorbeeld-name-1-1"
+        },
+        "reportRef": "Voorbeeld Reportref 1",
+        "name": "Voorbeeld Name 1",
+        "email": "Voorbeeld Email 1",
+        "phone": "Voorbeeld Phone 1"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalReporterContact",
+          "slug": "portalreportercontact-voorbeeld-name-2-2"
+        },
+        "reportRef": "Voorbeeld Reportref 2",
+        "name": "Voorbeeld Name 2",
+        "email": "Voorbeeld Email 2",
+        "phone": "Voorbeeld Phone 2"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalReporterContact",
+          "slug": "portalreportercontact-voorbeeld-name-3-3"
+        },
+        "reportRef": "Voorbeeld Reportref 3",
+        "name": "Voorbeeld Name 3",
+        "email": "Voorbeeld Email 3",
+        "phone": "Voorbeeld Phone 3"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalRevealRequest",
+          "slug": "portalrevealrequest-portalrevealrequest-1-1"
+        },
+        "reportRef": "Voorbeeld Reportref 1",
+        "requestedBy": "Voorbeeld Requestedby 1",
+        "motivation": "Voorbeeld Motivation 1",
+        "state": "pending",
+        "decidedBy": "Voorbeeld Decidedby 1",
+        "decidedAt": "2026-03-01T09:00:00+00:00",
+        "decisionReason": "Voorbeeld Decisionreason 1",
+        "revealedFields": [
+          "Voorbeeld Revealedfields 1"
+        ],
+        "requestedAt": "2026-03-01T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalRevealRequest",
+          "slug": "portalrevealrequest-portalrevealrequest-2-2"
+        },
+        "reportRef": "Voorbeeld Reportref 2",
+        "requestedBy": "Voorbeeld Requestedby 2",
+        "motivation": "Voorbeeld Motivation 2",
+        "state": "allowed",
+        "decidedBy": "Voorbeeld Decidedby 2",
+        "decidedAt": "2026-03-02T09:00:00+00:00",
+        "decisionReason": "Voorbeeld Decisionreason 2",
+        "revealedFields": [
+          "Voorbeeld Revealedfields 2"
+        ],
+        "requestedAt": "2026-03-02T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalRevealRequest",
+          "slug": "portalrevealrequest-portalrevealrequest-3-3"
+        },
+        "reportRef": "Voorbeeld Reportref 3",
+        "requestedBy": "Voorbeeld Requestedby 3",
+        "motivation": "Voorbeeld Motivation 3",
+        "state": "refused",
+        "decidedBy": "Voorbeeld Decidedby 3",
+        "decidedAt": "2026-03-03T09:00:00+00:00",
+        "decisionReason": "Voorbeeld Decisionreason 3",
+        "revealedFields": [
+          "Voorbeeld Revealedfields 3"
+        ],
+        "requestedAt": "2026-03-03T09:00:00+00:00"
       },
       {
         "@self": {
@@ -1562,6 +1898,396 @@
             ]
           }
         ]
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalMandate",
+          "slug": "portalmandate-korenaar-vergunningen"
+        },
+        "subjectRef": "persoon-1001",
+        "organisation": "Bakkerij de Korenaar",
+        "label": "Vergunningen namens de bakkerij",
+        "caseTypes": [
+          "omgevingsvergunning",
+          "evenementenmelding"
+        ],
+        "reach": "organisation",
+        "status": "active",
+        "grantedBy": "persoon-1000",
+        "grantedAt": "2026-01-12T09:15:00+00:00",
+        "expiresAt": "2027-01-12T09:15:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalMandate",
+          "slug": "portalmandate-veldhuis-holding-tree"
+        },
+        "subjectRef": "persoon-1002",
+        "organisation": "Installatiebedrijf Veldhuis Holding",
+        "onBehalfOf": "Installatiebedrijf Veldhuis Noord",
+        "label": "Alle zaken van de holding en haar dochters",
+        "caseTypes": [
+          "omgevingsvergunning"
+        ],
+        "reach": "tree",
+        "status": "active",
+        "grantedBy": "persoon-1003",
+        "grantedAt": "2026-02-02T13:40:00+00:00",
+        "expiresAt": "2026-12-31T22:59:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalMandate",
+          "slug": "portalmandate-nieuwe-maas-ingetrokken"
+        },
+        "subjectRef": "persoon-1004",
+        "organisation": "Zorggroep Nieuwe Maas",
+        "label": "Ingetrokken na uitdiensttreding",
+        "caseTypes": [
+          "subsidieaanvraag"
+        ],
+        "reach": "organisation",
+        "status": "revoked",
+        "grantedBy": "persoon-1005",
+        "grantedAt": "2025-09-01T08:00:00+00:00",
+        "expiresAt": "2026-09-01T08:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalInvitation",
+          "slug": "portalinvitation-korenaar-verstuurd"
+        },
+        "email": "administratie@korenaar.example",
+        "organisation": "Bakkerij de Korenaar",
+        "audience": "supplier",
+        "tokenHash": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
+        "state": "sent",
+        "invitedBy": "persoon-1000",
+        "sentAt": "2026-03-02T10:05:00+00:00",
+        "expiresAt": "2026-03-16T10:05:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalInvitation",
+          "slug": "portalinvitation-veldhuis-geaccepteerd"
+        },
+        "email": "planning@veldhuis.example",
+        "organisation": "Installatiebedrijf Veldhuis Holding",
+        "audience": "supplier",
+        "tokenHash": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+        "state": "accepted",
+        "invitedBy": "persoon-1003",
+        "sentAt": "2026-02-10T11:20:00+00:00",
+        "expiresAt": "2026-02-24T11:20:00+00:00",
+        "subjectRef": "persoon-1002"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalInvitation",
+          "slug": "portalinvitation-nieuwe-maas-verlopen"
+        },
+        "email": "bestuur@nieuwemaas.example",
+        "organisation": "Zorggroep Nieuwe Maas",
+        "audience": "supplier",
+        "tokenHash": "d4735e3a265e16eee03f59718b9b5d03019c07d8b6c51f90da3a666eec13ab35",
+        "state": "expired",
+        "invitedBy": "persoon-1005",
+        "sentAt": "2025-11-04T09:00:00+00:00",
+        "expiresAt": "2025-11-18T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalReferenceLink",
+          "slug": "portalreferencelink-zaak-2026-0148-verstuurd"
+        },
+        "caseReference": "ZAAK-2026-0148",
+        "email": "j.dewit@voorbeeld.example",
+        "organisation": "Bakkerij de Korenaar",
+        "tokenHash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce",
+        "state": "sent",
+        "issuedAt": "2026-03-04T08:30:00+00:00",
+        "expiresAt": "2026-03-11T08:30:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalReferenceLink",
+          "slug": "portalreferencelink-zaak-2026-0151-gebruikt"
+        },
+        "caseReference": "ZAAK-2026-0151",
+        "email": "planning@veldhuis.example",
+        "organisation": "Installatiebedrijf Veldhuis Holding",
+        "tokenHash": "4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a",
+        "state": "used",
+        "issuedAt": "2026-03-05T14:00:00+00:00",
+        "expiresAt": "2026-03-12T14:00:00+00:00",
+        "usedAt": "2026-03-05T15:12:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalReferenceLink",
+          "slug": "portalreferencelink-zaak-2026-0092-verlopen"
+        },
+        "caseReference": "ZAAK-2026-0092",
+        "email": "bestuur@nieuwemaas.example",
+        "organisation": "Zorggroep Nieuwe Maas",
+        "tokenHash": "ef2d127de37b942baad06145e54b0c619a1f22327b2ebbcfbec78f5564afe39d",
+        "state": "expired",
+        "issuedAt": "2026-01-20T07:45:00+00:00",
+        "expiresAt": "2026-01-27T07:45:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalAccessRequest",
+          "slug": "portalaccessrequest-korenaar-open"
+        },
+        "subjectRef": "persoon-1006",
+        "displayName": "Sanne de Wit",
+        "organisation": "Bakkerij de Korenaar",
+        "reason": "Neemt de vergunningaanvragen over van de eigenaar.",
+        "state": "pending",
+        "requestedAt": "2026-03-06T09:05:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalAccessRequest",
+          "slug": "portalaccessrequest-veldhuis-toegekend"
+        },
+        "subjectRef": "persoon-1007",
+        "displayName": "Youssef Amrani",
+        "organisation": "Installatiebedrijf Veldhuis Holding",
+        "onBehalfOf": "Installatiebedrijf Veldhuis Noord",
+        "reason": "Werkvoorbereider, volgt de lopende meldingen.",
+        "state": "granted",
+        "decidedBy": "persoon-1003",
+        "decidedAt": "2026-03-07T11:30:00+00:00",
+        "requestedAt": "2026-03-06T16:20:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalAccessRequest",
+          "slug": "portalaccessrequest-nieuwe-maas-geweigerd"
+        },
+        "subjectRef": "persoon-1008",
+        "displayName": "Ria Bosma",
+        "organisation": "Zorggroep Nieuwe Maas",
+        "reason": "Vraagt toegang tot dossiers van een andere vestiging.",
+        "state": "refused",
+        "decidedBy": "persoon-1005",
+        "decidedAt": "2026-02-18T10:00:00+00:00",
+        "requestedAt": "2026-02-17T13:45:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalFormBinding",
+          "slug": "portalformbinding-omgevingsvergunning-gepubliceerd"
+        },
+        "portal": "hoofdportaal",
+        "route": "omgevingsvergunning",
+        "typeRegister": "portaliq",
+        "typeSchema": "portalCaseType",
+        "typeId": "omgevingsvergunning",
+        "audience": "citizen",
+        "formName": "Aanvraag omgevingsvergunning",
+        "formRegister": "portaliq",
+        "formSchema": "form",
+        "caseRegister": "dossiq",
+        "caseSchema": "zaak",
+        "intakeKind": "hosted",
+        "addressLookup": true,
+        "prefillFromEarlierCases": true,
+        "challenge": true,
+        "confirmationText": "Uw aanvraag is ontvangen. U krijgt binnen vijf werkdagen bericht.",
+        "status": "published"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalFormBinding",
+          "slug": "portalformbinding-evenementenmelding-concept"
+        },
+        "portal": "hoofdportaal",
+        "route": "evenementenmelding",
+        "typeRegister": "portaliq",
+        "typeSchema": "portalCaseType",
+        "typeId": "evenementenmelding",
+        "audience": "citizen",
+        "formName": "Melding klein evenement",
+        "formRegister": "portaliq",
+        "formSchema": "form",
+        "caseRegister": "dossiq",
+        "caseSchema": "zaak",
+        "intakeKind": "hosted",
+        "addressLookup": true,
+        "prefillFromEarlierCases": false,
+        "challenge": true,
+        "confirmationText": "Uw melding staat klaar en wordt na controle geregistreerd.",
+        "status": "draft"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalFormBinding",
+          "slug": "portalformbinding-subsidie-extern"
+        },
+        "portal": "ondernemersportaal",
+        "route": "subsidieaanvraag",
+        "typeRegister": "portaliq",
+        "typeSchema": "portalCaseType",
+        "typeId": "subsidieaanvraag",
+        "audience": "supplier",
+        "intakeKind": "external",
+        "externalUrl": "https://subsidies.voorbeeld.example/aanvraag",
+        "addressLookup": false,
+        "prefillFromEarlierCases": false,
+        "challenge": false,
+        "allowedOrigins": [
+          "https://subsidies.voorbeeld.example"
+        ],
+        "status": "published"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalIntakeSubmission",
+          "slug": "portalintakesubmission-in-de-wachtrij"
+        },
+        "reference": "INT-2026-0311",
+        "portal": "hoofdportaal",
+        "route": "omgevingsvergunning",
+        "subjectRef": "persoon-1001",
+        "origin": "https://portaal.voorbeeld.example",
+        "answers": {
+          "postcode": "1234 AB",
+          "huisnummer": "12",
+          "werkzaamheden": "Dakkapel aan de achterzijde"
+        },
+        "state": "queued",
+        "submittedAt": "2026-03-11T08:12:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalIntakeSubmission",
+          "slug": "portalintakesubmission-geregistreerd"
+        },
+        "reference": "INT-2026-0312",
+        "portal": "hoofdportaal",
+        "route": "evenementenmelding",
+        "subjectRef": "persoon-1002",
+        "origin": "https://portaal.voorbeeld.example",
+        "answers": {
+          "postcode": "5678 CD",
+          "datum": "2026-06-14",
+          "bezoekers": "150"
+        },
+        "state": "registered",
+        "caseId": "ZAAK-2026-0151",
+        "submittedAt": "2026-03-11T09:40:00+00:00",
+        "registeredAt": "2026-03-11T09:41:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalIntakeSubmission",
+          "slug": "portalintakesubmission-mislukt"
+        },
+        "reference": "INT-2026-0313",
+        "portal": "ondernemersportaal",
+        "route": "subsidieaanvraag",
+        "subjectRef": "persoon-1004",
+        "origin": "https://ondernemers.voorbeeld.example",
+        "answers": {
+          "kvk": "12345678",
+          "bedrag": "7500"
+        },
+        "state": "failed",
+        "failureReason": "Het zaaksysteem was niet bereikbaar. De inzending wordt opnieuw aangeboden.",
+        "submittedAt": "2026-03-11T10:05:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "changeProposal",
+          "slug": "changeproposal-telefoonnummer-in-de-wachtrij"
+        },
+        "subjectRegister": "dossiq",
+        "subjectSchema": "zaak",
+        "subjectId": "ZAAK-2026-0148",
+        "proposedBy": "persoon-1001",
+        "channel": "portal",
+        "changes": [
+          {
+            "property": "applicantPhone",
+            "currentValue": "0612345678",
+            "proposedValue": "0687654321"
+          }
+        ],
+        "note": "Nieuw nummer, het oude staat niet meer op naam van de zaak.",
+        "state": "queued",
+        "proposedAt": "2026-03-09T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "changeProposal",
+          "slug": "changeproposal-adres-overgenomen"
+        },
+        "subjectRegister": "dossiq",
+        "subjectSchema": "zaak",
+        "subjectId": "ZAAK-2026-0151",
+        "proposedBy": "persoon-1002",
+        "channel": "portal",
+        "changes": [
+          {
+            "property": "correspondenceAddress",
+            "currentValue": "Kanaalweg 2",
+            "proposedValue": "Kanaalweg 4"
+          }
+        ],
+        "note": "Het bedrijf is twee panden verderop gaan zitten.",
+        "state": "accepted",
+        "proposedAt": "2026-03-02T11:15:00+00:00",
+        "decidedBy": "behandelaar-2001",
+        "decidedAt": "2026-03-03T08:20:00+00:00",
+        "decisionReason": "Adres gecontroleerd in de BAG."
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "changeProposal",
+          "slug": "changeproposal-aanvrager-afgewezen"
+        },
+        "subjectRegister": "dossiq",
+        "subjectSchema": "zaak",
+        "subjectId": "ZAAK-2026-0092",
+        "proposedBy": "persoon-1004",
+        "channel": "staff",
+        "changes": [
+          {
+            "property": "applicantName",
+            "currentValue": "Zorggroep Nieuwe Maas",
+            "proposedValue": "Stichting Nieuwe Maas"
+          }
+        ],
+        "note": "Naamswijziging na fusie.",
+        "state": "rejected",
+        "proposedAt": "2026-02-11T14:00:00+00:00",
+        "decidedBy": "behandelaar-2002",
+        "decidedAt": "2026-02-13T09:30:00+00:00",
+        "decisionReason": "De fusie is nog niet ingeschreven bij de Kamer van Koophandel."
       }
     ]
   }

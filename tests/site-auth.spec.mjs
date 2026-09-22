@@ -18,7 +18,12 @@
 // tests/manifest-v2.spec.js — this app has no JS test runner, and adding one
 // for three functions would be a bigger change than the thing being tested.
 
-import { authBaseFrom, signInRoutes } from '../src/site/lib/authApi.js'
+import {
+	adoptSessionToken,
+	authBaseFrom,
+	clearSessionToken,
+	signInRoutes,
+} from '../src/site/lib/authApi.js'
 
 let failures = 0
 
@@ -110,6 +115,47 @@ assertEqual(
 	).map((r) => r.mode),
 	['digid', 'eherkenning'],
 )
+
+assertEqual(
+	'the portal slug travels with the sign-in link, so a shared host cannot resolve the wrong portal',
+	signInRoutes({ slug: 'la-franken', authentication: { modes: ['nextcloud', 'digid'] } }, '/x').map((r) => r.href),
+	['/x/session/nextcloud?portal=la-franken', '/x/session/oidc/start?provider=digid&portal=la-franken'],
+)
+
+console.log('adoptSessionToken')
+
+/**
+ * Install a minimal browser window whose URL carries the given fragment.
+ *
+ * @param {string} hash The location hash, including the leading '#'.
+ * @return {{store: Map, replaced: Array}} What the window recorded.
+ */
+function fakeWindow(hash) {
+	const store = new Map()
+	const replaced = []
+	globalThis.window = {
+		location: { hash, pathname: '/apps/portaliq/site', search: '?portal=demo' },
+		sessionStorage: {
+			getItem: (k) => (store.has(k) ? store.get(k) : null),
+			setItem: (k, v) => store.set(k, v),
+			removeItem: (k) => store.delete(k),
+		},
+		history: { replaceState: (_s, _t, url) => replaced.push(url) },
+	}
+	return { store, replaced }
+}
+
+const signedIn = fakeWindow('#token=abc%20123')
+assertEqual('a bearer in the fragment is adopted', adoptSessionToken(), 'abc 123')
+assertEqual('and the fragment is stripped from the address bar', signedIn.replaced, ['/apps/portaliq/site?portal=demo'])
+window.location.hash = ''
+assertEqual('a later read returns the stored bearer', adoptSessionToken(), 'abc 123')
+clearSessionToken()
+assertEqual('signing out forgets it', adoptSessionToken(), '')
+
+fakeWindow('#section-2')
+assertEqual('a fragment without a token adopts nothing', adoptSessionToken(), '')
+delete globalThis.window
 
 if (failures > 0) {
 	console.error(`\n${failures} assertion(s) failed`)

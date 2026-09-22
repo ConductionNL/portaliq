@@ -653,4 +653,145 @@ class CmsReaderTest extends TestCase {
 	}//end testACachedReadSkipsTheQuery()
 
 
+	/**
+	 * A page widget shaped like an integration leaf is not served to a visitor.
+	 *
+	 * THE ADR-046 BOUNDARY, PINNED WHERE IT IS ACTUALLY ENFORCED. Portaliq now
+	 * consumes three integration leaves — forms, talk and calendar — on its
+	 * internal staff pages. Those live in `src/manifest.json`, which the portal
+	 * edge never reads, so the boundary holds structurally. This test covers
+	 * the one path that could still cross it: a `portalPage` is authored data,
+	 * an editor (or an import, or a future page designer) can put any key they
+	 * like on a widget, and `shapePage()` is the whitelist that decides which
+	 * of those keys a visitor sees.
+	 *
+	 * The fixture is deliberately hostile: the widget carries `type:
+	 * integration`, an `integrationId`, and a Talk join URL and Forms share URL
+	 * in the leaf-link positions a linked artifact would occupy. None of it is
+	 * in the whitelist, so none of it may come out.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portaliq-leaf-integrations/spec.md#requirement-integration-leaves-render-on-the-internal-staff-side-only
+	 */
+	public function testALeafShapedWidgetIsStrippedFromAVisitorResponse(): void {
+		$this->withRows(
+			[
+				[
+					'title' => 'Home',
+					'route' => '/',
+					'body' => [
+						'type' => 'grid',
+						'widgets' => [
+							[
+								'id' => 'smuggled',
+								'widgetKey' => 'markdown',
+								'type' => 'integration',
+								'integrationId' => 'talk',
+								'joinUrl' => 'https://cloud.example.org/call/abc123',
+								'shareUrl' => 'https://cloud.example.org/apps/forms/s/xyz789',
+								'gridX' => 0,
+								'gridY' => 0,
+								'gridWidth' => 12,
+								'gridHeight' => 2,
+							],
+						],
+					],
+				],
+			]
+		);
+
+		$page = $this->reader->page(
+			portal: 'open-tilburg',
+			route: '/',
+			locale: 'nl',
+			audience: 'anonymous'
+		);
+
+		$widget = $page['body']['widgets'][0];
+
+		$this->assertArrayNotHasKey(
+			'integrationId',
+			$widget,
+			'A portal-edge payload MUST NOT carry an integrationId. An integration '
+			. 'leaf is a Nextcloud component rendered for a Nextcloud user; a portal '
+			. 'visitor holds a portal bearer session and is not one (ADR-046).'
+		);
+		$this->assertArrayNotHasKey(
+			'type',
+			$widget,
+			'A widget `type` of "integration" MUST NOT survive into an edge payload.'
+		);
+
+		// JSON_UNESCAPED_SLASHES is load-bearing, not tidiness. The default
+		// encoder writes `https:\/\/host\/call\/abc123`, so a needle spelled
+		// with plain slashes never matches and both assertions below pass on a
+		// payload that is leaking the URL. Found by mutation: copying `joinUrl`
+		// into the projection left this test green.
+		$serialised = json_encode($page, JSON_UNESCAPED_SLASHES);
+		$this->assertStringNotContainsString(
+			'/call/abc123',
+			$serialised,
+			'A Talk join URL reached a portal visitor. That is an invitation into '
+			. 'the Nextcloud shell, handed to somebody who has no account there.'
+		);
+		$this->assertStringNotContainsString(
+			'/apps/forms/s/xyz789',
+			$serialised,
+			'A Forms share URL reached a portal visitor. The visitor form flow is '
+			. 'the portal edge\'s own, never the Nextcloud Forms app.'
+		);
+	}//end testALeafShapedWidgetIsStrippedFromAVisitorResponse()
+
+
+	/**
+	 * The control for the test above.
+	 *
+	 * A whitelist that dropped EVERYTHING would pass the assertions above
+	 * while serving an empty page, and the two failures look identical from
+	 * the assertion's side. This proves the projection is still doing its job:
+	 * the same hostile fixture keeps the keys it is supposed to keep.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portaliq-leaf-integrations/spec.md#requirement-integration-leaves-render-on-the-internal-staff-side-only
+	 */
+	public function testTheProjectionStillServesTheWidgetItStripped(): void {
+		$this->withRows(
+			[
+				[
+					'title' => 'Home',
+					'route' => '/',
+					'body' => [
+						'type' => 'grid',
+						'widgets' => [
+							[
+								'id' => 'smuggled',
+								'widgetKey' => 'markdown',
+								'type' => 'integration',
+								'integrationId' => 'talk',
+								'gridX' => 0,
+								'gridY' => 3,
+								'gridWidth' => 12,
+								'gridHeight' => 2,
+							],
+						],
+					],
+				],
+			]
+		);
+
+		$widget = $this->reader->page(
+			portal: 'open-tilburg',
+			route: '/',
+			locale: 'nl',
+			audience: 'anonymous'
+		)['body']['widgets'][0];
+
+		$this->assertSame('smuggled', $widget['id']);
+		$this->assertSame('markdown', $widget['widgetKey']);
+		$this->assertSame(3, $widget['gridY']);
+	}//end testTheProjectionStillServesTheWidgetItStripped()
+
+
 }//end class

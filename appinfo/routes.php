@@ -24,6 +24,16 @@ return [
         ['name' => 'preferences#getPreference', 'url' => '/api/preferences/{key}', 'verb' => 'GET'],
         ['name' => 'preferences#setPreference', 'url' => '/api/preferences/{key}', 'verb' => 'PUT'],
 
+        // Invitations into the portal (portal-identity-and-the-organisations-cases).
+        // Staff acts behind the same `portal.provision` action.
+        ['name' => 'portalAccountAdmin#invite', 'url' => '/api/invitations', 'verb' => 'POST'],
+        ['name' => 'portalAccountAdmin#invitations', 'url' => '/api/invitations', 'verb' => 'GET'],
+
+        // The identity space (portal-identity-space). Staff acts, gated by
+        // the ADR-023 action `portal.provision`; a citizen never reaches them.
+        ['name' => 'portalAccountAdmin#provision', 'url' => '/api/accounts/provision', 'verb' => 'POST'],
+        ['name' => 'portalAccountAdmin#void', 'url' => '/api/accounts/void', 'verb' => 'POST'],
+
         // Prometheus metrics endpoint.
         ['name' => 'metrics#index', 'url' => '/api/metrics', 'verb' => 'GET'],
         // Health check endpoint.
@@ -101,6 +111,12 @@ return [
         // client session. Registered before the /portal/{path} SPA catch-all.
         ['name' => 'session#index', 'url' => '/portal/api/session', 'verb' => 'GET'],
         ['name' => 'session#devLogin', 'url' => '/portal/api/session/dev-login', 'verb' => 'POST'],
+        // Sign in with a Nextcloud account — the `nextcloud` authentication
+        // mode. The SPA has always rendered a button pointing here; until now
+        // no route answered it, so the button 404'd. Not public: the caller's
+        // Nextcloud session IS the credential, and an anonymous visitor is
+        // handed to Nextcloud's own login form.
+        ['name' => 'session#nextcloud', 'url' => '/portal/api/session/nextcloud', 'verb' => 'GET'],
         ['name' => 'session#logout', 'url' => '/portal/api/session', 'verb' => 'DELETE'],
         // Sliding-window session refresh, capped by an absolute maximum
         // session lifetime (portal-session-hardening-v2 T03). Registered
@@ -132,6 +148,41 @@ return [
         // T03). The {register}/{schema}/{id} segments distinguish it from the
         // plain GET above.
         ['name' => 'contribution#markRead', 'url' => '/portal/api/inbox/{register}/{schema}/{id}/read', 'verb' => 'PATCH'],
+        // The embedded intake form (embedded-intake-form). The frame is served
+        // from the portal's own origin with `frame-ancestors` built from that
+        // form's own list, and its submit route is the ordinary anonymous
+        // intake path with the origin recorded on the submission.
+        ['name' => 'portalEmbed#frame', 'url' => '/portal/embed', 'verb' => 'GET'],
+        ['name' => 'portalEmbed#submit', 'url' => '/portal/api/embed/submit', 'verb' => 'POST'],
+
+        // The intake form as an object (portal-intake-form-as-an-object): the
+        // entry point over opencatalogi's published catalogue, the form a
+        // binding resolves to at render time, the submission, and the
+        // reference page that reads the submission's real state.
+        ['name' => 'portalIntake#catalogue', 'url' => '/portal/api/intake/catalogue', 'verb' => 'GET'],
+        ['name' => 'portalIntake#form', 'url' => '/portal/api/intake/form', 'verb' => 'GET'],
+        ['name' => 'portalIntake#submit', 'url' => '/portal/api/intake/submit', 'verb' => 'POST'],
+        ['name' => 'portalIntake#status', 'url' => '/portal/api/intake/status', 'verb' => 'GET'],
+
+        // The citizen's own identity (portal-identity-and-the-organisations-cases):
+        // the challenge this portal runs itself, the one-time reference link
+        // for a case type that admits it, registration under the portal's
+        // policy, and the account's own details.
+        ['name' => 'portalIdentity#challenge', 'url' => '/portal/api/identity/challenge', 'verb' => 'GET'],
+        ['name' => 'portalIdentity#requestReferenceLink', 'url' => '/portal/api/identity/reference-link', 'verb' => 'POST'],
+        ['name' => 'portalIdentity#redeemReferenceLink', 'url' => '/portal/api/identity/reference-link/redeem', 'verb' => 'POST'],
+        ['name' => 'portalIdentity#register', 'url' => '/portal/api/identity/register', 'verb' => 'POST'],
+        ['name' => 'portalIdentity#acceptInvitation', 'url' => '/portal/api/identity/invitation/accept', 'verb' => 'POST'],
+        ['name' => 'portalAccountSelf#updateDetails', 'url' => '/portal/api/identity/details', 'verb' => 'PATCH'],
+        ['name' => 'portalAccountSelf#confirmEmail', 'url' => '/portal/api/identity/email/confirm', 'verb' => 'POST'],
+        ['name' => 'portalAccountSelf#removeAccount', 'url' => '/portal/api/identity/remove', 'verb' => 'POST'],
+        ['name' => 'portalAccountSelf#requestAccess', 'url' => '/portal/api/identity/access-requests', 'verb' => 'POST'],
+        ['name' => 'portalAccountSelf#myAccessRequests', 'url' => '/portal/api/identity/access-requests', 'verb' => 'GET'],
+
+        // Mijn zaken (portal-identity-space): every `kind: cases` collection
+        // the subject's contributions declare, merged into one list, so a case
+        // attached to the account before the first login is there on it.
+        ['name' => 'myCases#index', 'url' => '/portal/api/my-cases', 'verb' => 'GET'],
         // Objects in one contribution collection, subject-scoped (T05).
         ['name' => 'contribution#collection', 'url' => '/portal/api/collections/{register}/{schema}', 'verb' => 'GET'],
         // Create an object in a collection, owned by the subject (T06).
@@ -165,9 +216,52 @@ return [
         // over openregister's portal task seam. Portaliq mints the
         // X-Portal-Subject assertion server-side; the browser never calls
         // openregister. Registered before the /portal/{path} SPA catch-all.
+        // The change-proposal queue (change-proposal-queue). A proposal never
+        // writes the record: only a reviewer accepting one does, with their
+        // own rights. The staff routes are gated by `portal.review-proposal`.
+        ['name' => 'proposal#index', 'url' => '/api/proposals', 'verb' => 'GET'],
+        ['name' => 'proposal#proposeAsColleague', 'url' => '/api/proposals', 'verb' => 'POST'],
+        ['name' => 'proposal#accept', 'url' => '/api/proposals/{id}/accept', 'verb' => 'POST'],
+        ['name' => 'proposal#acceptConfirmingDrift', 'url' => '/api/proposals/{id}/accept-confirming-drift', 'verb' => 'POST'],
+        ['name' => 'proposal#reject', 'url' => '/api/proposals/{id}/reject', 'verb' => 'POST'],
+        ['name' => 'proposal#proposeFromPortal', 'url' => '/portal/api/proposals', 'verb' => 'POST'],
+        ['name' => 'proposal#withdraw', 'url' => '/portal/api/proposals/{id}/withdraw', 'verb' => 'POST'],
+
+        // A report of wrongdoing filed without an account
+        // (a-report-without-an-account-and-a-custodian-who-may-reveal-it).
+        // The three portal routes take no session and no address: the receipt
+        // code is the whole identity, and a wrong one is throttled. The staff
+        // routes never return a contact detail; only the reveal a custodian
+        // allowed does, and that is its own recorded act.
+        ['name' => 'report#file', 'url' => '/portal/api/reports', 'verb' => 'POST'],
+        ['name' => 'report#thread', 'url' => '/portal/api/reports/thread', 'verb' => 'POST'],
+        ['name' => 'report#answer', 'url' => '/portal/api/reports/thread/answer', 'verb' => 'POST'],
+        ['name' => 'report#show', 'url' => '/api/reports/{id}', 'verb' => 'GET'],
+        ['name' => 'report#reply', 'url' => '/api/reports/{id}/messages', 'verb' => 'POST'],
+        ['name' => 'report#requestReveal', 'url' => '/api/reports/{id}/reveal-requests', 'verb' => 'POST'],
+        ['name' => 'report#decideReveal', 'url' => '/api/reveal-requests/{id}/decide', 'verb' => 'POST'],
+
+        // A handler asks an outside partner for something from the case
+        // (partner-tasks-in-the-portal). Staff-facing and gated by the ADR-023
+        // action `portal.ask-partner` plus a read of the case with RBAC on.
+        ['name' => 'partnerTask#ask', 'url' => '/api/partner-tasks/ask', 'verb' => 'POST'],
         ['name' => 'portalTaskProxy#index', 'url' => '/portal/api/tasks', 'verb' => 'GET'],
         ['name' => 'portalTaskProxy#show', 'url' => '/portal/api/tasks/{uuid}', 'verb' => 'GET', 'requirements' => ['uuid' => '[^/]+']],
         ['name' => 'portalTaskProxy#complete', 'url' => '/portal/api/tasks/{uuid}/complete', 'verb' => 'POST', 'requirements' => ['uuid' => '[^/]+']],
+
+        // What a citizen may write on their own case
+        // (what-the-citizen-may-write-on-their-own-case). Three acts, three
+        // routes, because an amendment, a document and a task answer are not
+        // one write to a citizen or to the law (D2). The task answer is the
+        // fourth act and stays on the task proxy above. Registered before the
+        // /portal/{path} SPA catch-all.
+        ['name' => 'citizenCase#show', 'url' => '/portal/api/citizen/cases/{register}/{schema}/{id}', 'verb' => 'GET'],
+        ['name' => 'citizenCase#amend', 'url' => '/portal/api/citizen/cases/{register}/{schema}/{id}', 'verb' => 'PATCH'],
+        ['name' => 'citizenCase#addDocument', 'url' => '/portal/api/citizen/cases/{register}/{schema}/{id}/documents', 'verb' => 'POST'],
+        // Ending your own request (withdrawing-your-own-case-from-the-portal).
+        // Its own act, its own event: a withdrawal is not an amendment that
+        // happens to change the status.
+        ['name' => 'citizenCase#withdraw', 'url' => '/portal/api/citizen/cases/{register}/{schema}/{id}/withdraw', 'verb' => 'POST'],
 
         ['name' => 'portalPage#catchAll', 'url' => '/portal/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
 

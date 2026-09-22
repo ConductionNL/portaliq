@@ -195,6 +195,43 @@ class TrafficIngestServiceTest extends TestCase {
 
 
 	/**
+	 * A surface the portal declared off-limits leaves no row at all, while an
+	 * ordinary page in the same batch still does.
+	 *
+	 * The reporting surface is what this exists for
+	 * (a-report-without-an-account REQ-RWA-007): a visitor row on it records
+	 * that somebody opened the whistleblowing form, and that fact must not
+	 * exist. The control in the same batch is what separates "excluded" from
+	 * "ingest stopped working".
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 */
+	public function testAnEventOnAnExcludedSurfaceLeavesNoRow(): void {
+		$service = $this->service(portals: [$this->portal([
+			'enabled' => true,
+			'excludedPaths' => ['/melding'],
+		])]);
+
+		$result = $service->ingest(
+			portalSlug: 'open-tilburg',
+			events: [
+				['name' => 'page_view', 'sequence' => 0, 'pageLocation' => 'https://open-tilburg.nl/melding'],
+				['name' => 'page_view', 'sequence' => 1, 'pageLocation' => 'https://open-tilburg.nl/melding/bevestiging'],
+				['name' => 'page_view', 'sequence' => 2, 'pageLocation' => 'https://open-tilburg.nl/woo'],
+			],
+			context: $this->browser()
+		);
+
+		$this->assertSame(1, $result['accepted'], 'the ordinary page is still measured');
+		$this->assertSame(2, $result['refused']['excluded-path']);
+		$this->assertSame(['/woo'], array_column($this->stored, 'pagePath'));
+		$this->assertStringNotContainsString('melding', json_encode($this->stored, JSON_THROW_ON_ERROR));
+	}//end testAnEventOnAnExcludedSurfaceLeavesNoRow()
+
+
+	/**
 	 * A derived family the portal did not enable is not stored, even though
 	 * it was derived.
 	 *

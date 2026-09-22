@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Service\Connection\ConnectionReporter;
 use OCA\Portaliq\Service\Traffic\Geo\GeoRefreshService;
 use OCA\Portaliq\Service\Traffic\Geo\GeoSettings;
 use OCP\App\IAppManager;
@@ -38,6 +39,10 @@ use Psr\Log\LoggerInterface;
  * Service for managing Portaliq application configuration and settings.
  *
  * @spec openspec/specs/settings-management/spec.md#REQ-CFG-001
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- the tenth dependency is
+ * the optional ConnectionReporter (adopt-connection-registry). A geography save
+ * is the moment integriq must be told, and that save lives here.
  */
 class SettingsService {
 
@@ -67,8 +72,11 @@ class SettingsService {
 	 * @param PageEditorService $pageEditor Owns the editor groups and the schema rules they become
 	 * @param GeoSettings $geoSettings The visitor geography provider and credentials
 	 * @param GeoRefreshService $geoRefresh Reports whether a geography database is installed
+	 * @param ConnectionReporter|null $connectionReporter Asks integriq to look again after a geography save.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/adopt-connection-registry/specs/app-connections/spec.md#requirement-req-portaliq-conn-002-a-geography-save-refreshes-and-a-refresh-or-a-failed-open-reports
 	 */
 	public function __construct(
 		private IAppConfig $appConfig,
@@ -80,6 +88,7 @@ class SettingsService {
 		private PageEditorService $pageEditor,
 		private GeoSettings $geoSettings,
 		private GeoRefreshService $geoRefresh,
+		private ?ConnectionReporter $connectionReporter = null,
 	) {
 	}//end __construct()
 
@@ -142,9 +151,15 @@ class SettingsService {
 	 *
 	 * @param array<string,mixed> $data The data to update
 	 *
+	 * A geography save also asks integriq to resolve the geography database
+	 * connection again, then reports what the saved settings say
+	 * (adopt-connection-registry). That never throws, does nothing without
+	 * integriq, and never changes the result.
+	 *
 	 * @return array<string,mixed> The updated settings
 	 *
 	 * @spec openspec/specs/settings-management/spec.md#REQ-CFG-002
+	 * @spec openspec/changes/adopt-connection-registry/specs/app-connections/spec.md#requirement-req-portaliq-conn-002-a-geography-save-refreshes-and-a-refresh-or-a-failed-open-reports
 	 */
 	public function updateSettings(array $data): array {
 		foreach (self::CONFIG_KEYS as $key) {
@@ -167,6 +182,10 @@ class SettingsService {
 		// and the block is validated by GeoSettings, which never echoes it.
 		if (isset($data[self::GEO_KEY]) === true && is_array($data[self::GEO_KEY]) === true) {
 			$this->geoSettings->update($data[self::GEO_KEY]);
+			$this->connectionReporter?->geoSettingsSaved(
+				settings: $this->geoSettings->toArray(),
+				status: $this->geoRefresh->status()
+			);
 		}
 
 		return $this->getSettings();
