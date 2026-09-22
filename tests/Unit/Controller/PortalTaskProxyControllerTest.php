@@ -58,8 +58,14 @@ use Psr\Log\LoggerInterface;
  * `beStrictAboutCoverageMetadata` it is executed-but-unlisted code and the
  * four completion tests are RISKY -- which fails the suite under
  * `failOnRisky`. It is a collaborator here, not the subject, so it is
- * declared with @uses rather than @covers. Invisible locally: the strict
- * check needs a coverage driver, and without one PHPUnit reports OK.
+ * listed as used rather than as covered -- it is a collaborator here, not
+ * the subject under test. Invisible locally: the strict check needs a
+ * coverage driver, and without one PHPUnit reports OK.
+ *
+ * Do NOT spell the two annotations out in this prose. PHPUnit reads any
+ * at-prefixed word in a docblock as metadata, so naming them produced 19
+ * "invalid annotation" warnings and failed the suite under
+ * `failOnPhpunitWarning` -- one red run traded for another.
  *
  * @uses   \OCA\Portaliq\Service\SubmissionReceiptService
  *
