@@ -298,4 +298,232 @@ class SubmissionReceiptServiceTest extends TestCase {
 		$this->addToAssertionCount(1);
 
 	}//end testAFallbackWriteThatAlsoThrowsIsSwallowed()
+
+	/**
+	 * A service with every collaborator stubbed.
+	 *
+	 * `taskCompletionCopy()` is a pure mapping -- it reads no service state --
+	 * so nothing here has to behave, it only has to exist.
+	 */
+	private function mappingService(): SubmissionReceiptService {
+		return new SubmissionReceiptService(
+			$this->createMock(PortalObjectWriter::class),
+			$this->l10nFactory(),
+			$this->timeFactory(),
+			$this->createMock(LoggerInterface::class),
+			$this->createMock(NotificationDispatchService::class)
+		);
+	}//end mappingService()
+
+
+	/**
+	 * THE RECEIPT DESCRIBES WHAT THE AUTHORITY RECORDED, NOT WHAT WAS SENT.
+	 *
+	 * The security-relevant half of the completion copy. PHP drops an
+	 * oversized or partial upload with an empty `tmp_name`, the gateway then
+	 * forwards nothing for it, and the request still names it. The seam's
+	 * `evidence` list is what PortalTaskService::storeFiles() actually wrote
+	 * to the case, so it wins. A receipt naming a file the authority never
+	 * received is a false art. 2:10 statement.
+	 *
+	 * @return void
+	 */
+	public function testTheCopyNamesTheFilesTheSeamRecordedNotTheOnesTheRequestClaimed(): void {
+		$copy = $this->mappingService()->taskCompletionCopy(
+			'task-1',
+			['evidence' => [['name' => 'arrived.pdf']]],
+			[],
+			null,
+			'completed',
+			[['name' => 'claimed-but-dropped.pdf'], ['name' => 'also-dropped.pdf']]
+		);
+
+		$this->assertSame(['arrived.pdf'], $copy['files']);
+	}//end testTheCopyNamesTheFilesTheSeamRecordedNotTheOnesTheRequestClaimed()
+
+
+	/**
+	 * An empty `evidence` list means the authority recorded NOTHING.
+	 *
+	 * The single most dangerous case, and the one an `empty()` or `?:` test
+	 * would get wrong: the key is present and empty, so the fallback must NOT
+	 * fire. Every upload was dropped, and the receipt has to say so.
+	 *
+	 * @return void
+	 */
+	public function testAnEmptyEvidenceListIsAnAnswerAndNotAFallbackTrigger(): void {
+		$copy = $this->mappingService()->taskCompletionCopy(
+			'task-1',
+			['evidence' => []],
+			[],
+			null,
+			'completed',
+			[['name' => 'claimed-but-dropped.pdf']]
+		);
+
+		$this->assertSame([], $copy['files']);
+	}//end testAnEmptyEvidenceListIsAnAnswerAndNotAFallbackTrigger()
+
+
+	/**
+	 * A seam row predating `evidence` falls back to the relayed uploads.
+	 *
+	 * The compatibility half, and the anti-widening partner of the two above:
+	 * without it, "the seam wins" could be implemented as "the files are
+	 * always empty" and both assertions above would still pass.
+	 *
+	 * @return void
+	 */
+	public function testASeamRowWithoutEvidenceFallsBackToTheRelayedUploads(): void {
+		$copy = $this->mappingService()->taskCompletionCopy(
+			'task-1',
+			['responses' => []],
+			[],
+			null,
+			'completed',
+			[['name' => 'relayed.pdf']]
+		);
+
+		$this->assertSame(['relayed.pdf'], $copy['files']);
+	}//end testASeamRowWithoutEvidenceFallsBackToTheRelayedUploads()
+
+
+	/**
+	 * A nameless or non-array upload entry still yields a usable label.
+	 *
+	 * @return void
+	 */
+	public function testAnUnnamedUploadIsLabelledRatherThanDropped(): void {
+		$copy = $this->mappingService()->taskCompletionCopy(
+			'task-1',
+			['evidence' => [['size' => 12], 'not-an-array', ['name' => 'named.pdf']]],
+			[],
+			null,
+			'completed',
+			[]
+		);
+
+		$this->assertSame(['upload', 'upload', 'named.pdf'], $copy['files']);
+	}//end testAnUnnamedUploadIsLabelledRatherThanDropped()
+
+
+	/**
+	 * The stored answers and outcome win over the submitted ones.
+	 *
+	 * @return void
+	 */
+	public function testTheCopyPrefersTheAnswersAndOutcomeTheSeamStored(): void {
+		$copy = $this->mappingService()->taskCompletionCopy(
+			'task-1',
+			[
+				'responses'    => ['q1' => 'as-stored'],
+				'outcome'      => 'rejected',
+				'displayTitle' => 'Wat de bewoner zag',
+				'title'        => 'raw title',
+			],
+			['q1' => 'as-submitted'],
+			'een opmerking',
+			'completed',
+			[]
+		);
+
+		$this->assertSame(['q1' => 'as-stored'], $copy['answers']);
+		$this->assertSame('rejected', $copy['outcome']);
+		$this->assertSame('Wat de bewoner zag', $copy['title']);
+		$this->assertSame('een opmerking', $copy['comment']);
+		$this->assertSame('task-1', $copy['taskUuid']);
+	}//end testTheCopyPrefersTheAnswersAndOutcomeTheSeamStored()
+
+
+	/**
+	 * Every fallback fires when the seam row carries none of those keys.
+	 *
+	 * Covers the other side of all four branches at once: `responses` absent,
+	 * `outcome` present but EMPTY (not merely missing -- the code tests for
+	 * the empty string), `displayTitle` absent so the raw title is used, and
+	 * a null comment becoming ''.
+	 *
+	 * @return void
+	 */
+	public function testTheSubmittedValuesAreUsedWhenTheSeamRecordedNone(): void {
+		$copy = $this->mappingService()->taskCompletionCopy(
+			'task-1',
+			['outcome' => '', 'title' => 'raw title'],
+			['q1' => 'as-submitted'],
+			null,
+			'completed',
+			[]
+		);
+
+		$this->assertSame(['q1' => 'as-submitted'], $copy['answers']);
+		$this->assertSame('completed', $copy['outcome']);
+		$this->assertSame('raw title', $copy['title']);
+		$this->assertSame('', $copy['comment']);
+	}//end testTheSubmittedValuesAreUsedWhenTheSeamRecordedNone()
+
+
+	/**
+	 * A `responses` value that is not an array is not a stored answer map.
+	 *
+	 * @return void
+	 */
+	public function testANonArrayResponsesValueFallsBackToTheSubmittedAnswers(): void {
+		$copy = $this->mappingService()->taskCompletionCopy(
+			'task-1',
+			['responses' => 'nonsense'],
+			['q1' => 'as-submitted'],
+			null,
+			'completed',
+			[]
+		);
+
+		$this->assertSame(['q1' => 'as-submitted'], $copy['answers']);
+	}//end testANonArrayResponsesValueFallsBackToTheSubmittedAnswers()
+
+
+	/**
+	 * A seam row with no title at all yields an empty title, never a notice.
+	 *
+	 * @return void
+	 */
+	public function testATitlelessSeamRowYieldsAnEmptyTitle(): void {
+		$copy = $this->mappingService()->taskCompletionCopy('task-1', [], [], null, 'completed', []);
+
+		$this->assertSame('', $copy['title']);
+		$this->assertSame([], $copy['files']);
+		$this->assertSame([], $copy['answers']);
+	}//end testATitlelessSeamRowYieldsAnEmptyTitle()
+
+
+	/**
+	 * The copy is a WHITELIST: exactly these seven keys, never more.
+	 *
+	 * The receipt and the proof log are shown to the subject and kept as
+	 * evidence, so an extra key leaking from the seam row -- an internal
+	 * reference, another party's data -- would be a disclosure. Asserting the
+	 * exact key set is what makes that a test failure rather than a surprise.
+	 *
+	 * @return void
+	 */
+	public function testTheCopyIsAWhitelistAndLeaksNothingElseFromTheSeamRow(): void {
+		$copy = $this->mappingService()->taskCompletionCopy(
+			'task-1',
+			[
+				'evidence'        => [],
+				'internalCaseRef' => 'ZAAK-2026-0001',
+				'assignee'        => 'ambtenaar@example.gov',
+				'notes'           => 'internal only',
+			],
+			[],
+			null,
+			'completed',
+			[]
+		);
+
+		$this->assertSame(
+			['taskUuid', 'title', 'outcome', 'comment', 'answers', 'files'],
+			array_keys($copy)
+		);
+	}//end testTheCopyIsAWhitelistAndLeaksNothingElseFromTheSeamRow()
+
 }//end class
