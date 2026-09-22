@@ -109,6 +109,28 @@ class TrafficReportControllerTest extends TestCase {
 
 
 	/**
+	 * A portal whose slug carries capitals is a portal like any other.
+	 *
+	 * Nothing in the schema constrains a slug to lower case, so an operator
+	 * can create `ConductionNl` and the collector will happily record against
+	 * it — the content API and the collector both match the slug exactly.
+	 * Reporting used to refuse it as `missing-portal`, which is both a refusal
+	 * of a portal that exists and a misleading reason for it: the measurement
+	 * was collected and simply could not be read back.
+	 *
+	 * @return void
+	 */
+	public function testAPortalSlugWithCapitalsIsNotRefused(): void {
+		$response = $this->controller()->export(portal: 'ConductionNl', from: '2026-09-01', to: '2026-09-04', format: 'json');
+		$this->assertNotSame(
+			['error' => 'missing-portal'],
+			$response->getData(),
+			'a slug with capitals was refused as a missing portal'
+		);
+	}//end testAPortalSlugWithCapitalsIsNotRefused()
+
+
+	/**
 	 * Admin-only by omission: no public or no-admin attribute, and the
 	 * CSRF exemption a navigated download needs.
 	 *
