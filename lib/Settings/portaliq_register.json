@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.23.0"
+        "version": "0.24.0"
     },
     "x-openregister": {
         "type": "application",
@@ -1696,6 +1696,7 @@
                     "traffic": {
                         "title": "Traffic measurement",
                         "type": "object",
+                        "widget": "json",
                         "description": "What this portal measures about its visitors, and under which conditions. OFF until an operator switches it on: an upgrade must not start recording a municipality's visitors. Measurement is cookieless by default; the switches under `sensitive` each carry their own warning.",
                         "properties": {
                             "enabled": {
