@@ -574,4 +574,115 @@ class PortalResolverTest extends TestCase {
 	}//end resolverOver()
 
 
+
+	/**
+	 * Exactly one published portal carries the value, so `?org=` resolves.
+	 *
+	 * The POSITIVE half. Without it every assertion below would also pass for
+	 * a method that returns null unconditionally — which would be completely
+	 * broken and completely untestable from the negative cases alone.
+	 *
+	 * @return void
+	 */
+	public function testAnOrganisationWithExactlyOnePortalResolves(): void {
+		$resolver = $this->resolverReturning([
+			['slug' => 'testgemeente', 'organisation' => 'dev-org'],
+			['slug' => 'demo', 'organisation' => null],
+		]);
+
+		$this->assertSame('testgemeente', $resolver->resolveByOrganisation('dev-org')['slug']);
+	}//end testAnOrganisationWithExactlyOnePortalResolves()
+
+
+	/**
+	 * TWO portals for one organisation resolve to NOTHING.
+	 *
+	 * THIS IS THE ASSERTION THE WHOLE ALIAS RULE EXISTS FOR, and it encodes a
+	 * product decision taken on 2026-09-22: an organisation may run several
+	 * portals that look different from each other. From that moment "which
+	 * branding belongs to this organisation" has no answer, and the obvious
+	 * shortcuts — first match, newest match — are both a way of serving one
+	 * tenant's brand under another tenant's name.
+	 *
+	 * Note what is NOT asserted: which of the two wins. Neither does. A test
+	 * pinning the first match would have locked in exactly the bug.
+	 *
+	 * @return void
+	 */
+	public function testAnOrganisationWithTwoPortalsResolvesToNothing(): void {
+		$resolver = $this->resolverReturning([
+			['slug' => 'inwoners', 'organisation' => 'gemeente-x'],
+			['slug' => 'leveranciers', 'organisation' => 'gemeente-x'],
+		]);
+
+		$this->assertNull($resolver->resolveByOrganisation('gemeente-x'));
+	}//end testAnOrganisationWithTwoPortalsResolvesToNothing()
+
+
+	/**
+	 * An organisation no portal claims resolves to nothing.
+	 *
+	 * @return void
+	 */
+	public function testAnUnknownOrganisationResolvesToNothing(): void {
+		$resolver = $this->resolverReturning([
+			['slug' => 'demo', 'organisation' => 'gemeente-x'],
+		]);
+
+		$this->assertNull($resolver->resolveByOrganisation('gemeente-y'));
+	}//end testAnUnknownOrganisationResolvesToNothing()
+
+
+	/**
+	 * An empty `?org=` never resolves — a portal with no organisation set is
+	 * not "the portal for no organisation".
+	 *
+	 * The demo portal on the reference rig has `organisation: null`, so
+	 * without this guard a bare `?org=` would have matched it and handed every
+	 * parameterless visitor one specific tenant's brand.
+	 *
+	 * @return void
+	 */
+	public function testAnEmptyOrganisationResolvesToNothing(): void {
+		$resolver = $this->resolverReturning([
+			['slug' => 'demo', 'organisation' => null],
+			['slug' => 'other', 'organisation' => ''],
+		]);
+
+		$this->assertNull($resolver->resolveByOrganisation(''));
+		$this->assertNull($resolver->resolveByOrganisation('   '));
+	}//end testAnEmptyOrganisationResolvesToNothing()
+
+
+	/**
+	 * A non-string `organisation` on a portal object is skipped, not coerced.
+	 *
+	 * The field comes from an OpenRegister object an editor controls, so its
+	 * type is not guaranteed. Coercing would let `organisation: 0` match the
+	 * string `'0'`.
+	 *
+	 * @return void
+	 */
+	public function testAMalformedOrganisationFieldIsSkipped(): void {
+		$resolver = $this->resolverReturning([
+			['slug' => 'broken', 'organisation' => ['nested' => 'value']],
+			['slug' => 'numeric', 'organisation' => 0],
+			['slug' => 'good', 'organisation' => 'gemeente-x'],
+		]);
+
+		$this->assertSame('good', $resolver->resolveByOrganisation('gemeente-x')['slug']);
+		$this->assertNull($resolver->resolveByOrganisation('0'));
+	}//end testAMalformedOrganisationFieldIsSkipped()
+
+
+	/**
+	 * An OpenRegister failure fails closed here too.
+	 *
+	 * @return void
+	 */
+	public function testAnOrganisationLookupFailsClosed(): void {
+		$this->assertNull($this->resolverReturning(null)->resolveByOrganisation('dev-org'));
+	}//end testAnOrganisationLookupFailsClosed()
+
+
 }//end class

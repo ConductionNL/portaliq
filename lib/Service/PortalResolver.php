@@ -178,6 +178,75 @@ class PortalResolver {
 		return null;
 	}//end resolveForCollector()
 
+	/**
+	 * Resolve the portal an `?org=` value names — an ALIAS, never a key.
+	 *
+	 * `portal.organisation` is not unique and is not meant to be. The product
+	 * decision of 2026-09-22 (WOO-566) is explicit: one organisation may run
+	 * several portals that look different from each other. So the only answer
+	 * this method can give honestly is the unambiguous one — EXACTLY ONE
+	 * published portal carries the value.
+	 *
+	 * At zero matches the organisation is unknown here. At two or more the
+	 * question "which branding belongs to this organisation" genuinely has no
+	 * answer, and the tempting shortcut — take the first, or the newest —
+	 * would serve one tenant's brand under another tenant's name. That failure
+	 * is invisible from inside the request: the page renders, the colours are
+	 * a real municipality's, and nothing looks wrong to anyone who is not
+	 * already the wronged tenant.
+	 *
+	 * Both misses therefore return null and the caller falls back to the
+	 * neutral default, which is the same posture `resolve()` takes for an
+	 * unknown slug.
+	 *
+	 * @param string $organisation The `?org=` value.
+	 *
+	 * @return array|null The single matching portal, or null.
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-request-must-resolve-to-exactly-one-portal-or-to-none
+	 */
+	public function resolveByOrganisation(string $organisation): ?array {
+		$organisation = trim($organisation);
+		if ($organisation === '') {
+			return null;
+		}
+
+		$matches = [];
+		foreach ($this->allPublishedPortals() as $site) {
+			$value = ($site['organisation'] ?? null);
+			if (is_string($value) === false || trim($value) !== $organisation) {
+				continue;
+			}
+
+			$matches[] = $site;
+		}
+
+		if (count($matches) === 1) {
+			return $matches[0];
+		}
+
+		if ($matches !== []) {
+			// Worth a log line rather than silence: an ambiguous `?org=` is a
+			// deployment that has outgrown the alias, and the neutral default
+			// the visitor gets looks like a bug from the outside.
+			$this->logger->info(
+				'Portaliq: ?org= matched several published portals; refusing to guess a brand',
+				[
+					'organisation' => $organisation,
+					'portals' => array_map(
+						static function (array $site): string {
+							return (string)($site['slug'] ?? '');
+						},
+						$matches
+					),
+				]
+			);
+		}
+
+		return null;
+	}//end resolveByOrganisation()
+
+
 
 	/**
 	 * Match a host against the verified domains of the published portals.

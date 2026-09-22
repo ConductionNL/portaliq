@@ -9,15 +9,25 @@
  * the `portaliq-portal` bundle, which authenticates against the portal's own
  * auth edge (see the supplier-portal change) rather than a Nextcloud session.
  *
- * White-label resolution (portal-white-label-runtime-config): the visitor is
- * unauthenticated at this point (no bearer, no session claim to resolve a
- * tenant from), so the tenant is identified by a `?org={slug}` query
- * parameter (design.md — path-segment routing is a documented follow-up) and
- * resolved via {@see PortalOrganisationConfigService}. A missing/unknown
- * `org` renders the safe neutral default shell, never a 500 and never another
- * tenant's branding. The CSP `frame-ancestors` is built from the resolved
- * Organisation's configured allowed embed origins — `'none'` when empty,
- * NEVER the previous hard-coded `'*'`.
+ * White-label resolution: the visitor is unauthenticated at this point (no
+ * bearer, no session claim to resolve a tenant from), so the tenant is named
+ * by the request itself — `?portal={slug}` primarily, `?org={value}` as a
+ * strict alias, or the verified request host — and resolved to a `portal`
+ * object via {@see PortalRuntimeConfigResolver}. A missing or unknown tenant
+ * renders the safe neutral default shell, never a 500 and never another
+ * tenant's branding.
+ *
+ * THE TENANT SOURCE MOVED (WOO-566, 2026-09-22). It used to be an
+ * OpenRegister Organisation plus an `org_presentation_<uuid>` blob that
+ * nothing in the fleet ever wrote, so this route served the neutral default
+ * to every tenant on every request while `/site` — the same public page,
+ * rendered differently — read the portal object and got it right. It is now
+ * the portal object here too, because an organisation may run several portals
+ * that look different and an org-keyed blob cannot express that. The OIDC
+ * broker stays on the Organisation: see PortalOrganisationConfigService.
+ *
+ * The CSP `frame-ancestors` is built from the resolved portal's declared
+ * `frameAncestors` — `'none'` when empty, NEVER the previous hard-coded `'*'`.
  *
  * @category Controller
  * @package  OCA\Portaliq\Controller
@@ -42,8 +52,8 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PortalRuntimeConfigResolver;
 use OCA\Portaliq\Service\PortalThemeResolver;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -65,8 +75,9 @@ class PortalPageController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request
-	 * @param PortalOrganisationConfigService $orgResolver Resolves the tenant's
-	 *                                                     white-label presentation.
+	 * @param PortalRuntimeConfigResolver $configResolver Resolves the serving
+	 *                                                    portal and the runtime
+	 *                                                    config built from it.
 	 * @param IURLGenerator $urlGenerator Builds the content API base handed to
 	 *                                    the site renderer.
 	 * @param PortalResolver $portalResolver Resolves the serving portal, so the
@@ -77,7 +88,7 @@ class PortalPageController extends Controller {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalOrganisationConfigService $orgResolver,
+		private readonly PortalRuntimeConfigResolver $configResolver,
 		private readonly IURLGenerator $urlGenerator,
 		private readonly PortalResolver $portalResolver,
 		private readonly PortalThemeResolver $themeResolver,
@@ -113,14 +124,36 @@ class PortalPageController extends Controller {
 	#[NoAdminRequired]
 	#[AnonRateLimit(limit: 120, period: 60)]
 	public function index(): TemplateResponse {
-		$orgSlug = (string)$this->request->getParam('org', '');
+		$orgValue = (string)$this->request->getParam('org', '');
 		$locale = $this->resolveLocale();
-		$runtimeConfig = $this->orgResolver->resolve(orgSlug: $orgSlug, locale: $locale);
+
+		// Resolved ONCE and passed down. The runtime config and the stylesheet
+		// tag have to describe the same portal — resolving twice is how a page
+		// ends up announcing one tenant in its initial state and linking
+		// another one's tokens.
+		$portal = $this->configResolver->resolvePortal(
+			request: $this->request,
+			portalSlug: (string)$this->request->getParam('portal', ''),
+			orgValue: $orgValue
+		);
+
+		$runtimeConfig = $this->configResolver->runtimeConfigFor(
+			portal: $portal,
+			orgValue: $orgValue,
+			locale: $locale
+		);
 
 		$response = new TemplateResponse(
 			Application::APP_ID,
 			'portal',
-			['runtimeConfig' => $runtimeConfig],
+			[
+				'runtimeConfig' => $runtimeConfig,
+				// The token set to link, resolved server-side for the same
+				// reason `/site` does it: resolving colours client-side means
+				// the first paint is unthemed and the page visibly repaints
+				// into its brand a moment later.
+				'themeStylesheet' => $this->configResolver->themeStylesheetFor(portal: $portal),
+			],
 			// BASE, NOT PUBLIC — same leak, same reasoning as site() below.
 			// This route's own docblock calls it "the one genuinely public HTML
 			// page in the fleet" and it is governed by
@@ -132,10 +165,10 @@ class PortalPageController extends Controller {
 			TemplateResponse::RENDER_AS_BASE
 		);
 
-		// Per-tenant frame-ancestors (portal-white-label-runtime-config): the
-		// portal carries a bearer token and renders authenticated actions, so
-		// an unrestricted '*' is a clickjacking exposure. Default-deny; an
-		// explicit tenant opts into embedding via its configured origins.
+		// Per-tenant frame-ancestors: the portal carries a bearer token and
+		// renders authenticated actions, so an unrestricted '*' is a
+		// clickjacking exposure. Default-deny; an explicit tenant opts into
+		// embedding via the `frameAncestors` on its own portal object.
 		// ContentSecurityPolicy() defaults `frame-ancestors` to 'self' — that
 		// default must be cleared first, or an empty-origins tenant would
 		// still (wrongly) allow same-origin framing instead of 'none'.
