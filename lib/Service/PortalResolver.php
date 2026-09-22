@@ -153,12 +153,52 @@ class PortalResolver {
 
 		foreach ($sites as $site) {
 			if (($site['slug'] ?? null) === $portalSlug) {
+				// The fallback is what lets a caller attribute events to a
+				// portal it does not serve, so a portal that knows its own
+				// domains can refuse it. Measured 2026-09-22 on the
+				// ConductionNl portal: of 162 stored events, 29 came from
+				// `localhost:4173` and were counted as real visits, because
+				// naming the slug was enough.
+				if ($this->slugFallbackAllowed(site: $site) === false) {
+					return null;
+				}
+
 				return $site;
 			}
 		}
 
 		return null;
 	}//end resolveForCollector()
+
+
+	/**
+	 * Whether this portal still accepts events that only name its slug.
+	 *
+	 * Defaults to TRUE, and deliberately: the fallback is the only route for
+	 * a `kind: external` portal on its own domain posting to the platform
+	 * host, and switching it off for everyone would silence those portals
+	 * without anyone asking for it.
+	 *
+	 * ⚠️ Switching it off needs `domains` FIRST. With no verified domain the
+	 * host can never match, so every event is refused rather than just the
+	 * unwanted ones, and the portal reports zero traffic that looks exactly
+	 * like a portal nobody visits.
+	 *
+	 * @param array $site The portal object.
+	 *
+	 * @return bool True when the slug alone may resolve this portal.
+	 */
+	private function slugFallbackAllowed(array $site): bool {
+		$traffic = ($site['traffic'] ?? null);
+		if (is_array($traffic) === false) {
+			return true;
+		}
+
+		// Only an explicit boolean false switches it off. A missing key, a
+		// null, or a string left behind by a hand-edited configuration all
+		// keep the documented default rather than silently refusing traffic.
+		return (($traffic['allowSlugFallback'] ?? true) !== false);
+	}//end slugFallbackAllowed()
 
 
 	/**

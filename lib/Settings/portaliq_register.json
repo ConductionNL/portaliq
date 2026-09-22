@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.25.0"
+        "version": "0.26.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.25.0",
+                "version": "0.26.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -1467,7 +1467,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.6.0",
+                "version": "0.7.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -1718,6 +1718,12 @@
                                 "description": "Whether this portal measures traffic at all. Off means the collector refuses every event for it and the served client sends nothing.",
                                 "default": false,
                                 "example": false
+                            },
+                            "allowSlugFallback": {
+                                "type": "boolean",
+                                "default": true,
+                                "title": "Accept traffic from unlisted domains",
+                                "description": "Any site that names this portal can send traffic. That includes domains you have not listed. Turn this off to count only your listed domains. Leave it on when a site you host elsewhere reports traffic."
                             },
                             "events": {
                                 "title": "Events",
