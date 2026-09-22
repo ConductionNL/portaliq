@@ -376,6 +376,7 @@ export default function App({ config, t: tProp }) {
 								onAction={onAction}
 								onRowAction={onRowAction}
 								busyRow={busyRow}
+								t={t}
 							/>
 						)}
 					</section>

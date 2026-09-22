@@ -25,6 +25,12 @@
              app, not a composer dependency; the stub carries the engine's public
              surface so the guarded call is type-checked instead of read as dead code. -->
         <file name="vendor/conduction/hydra-gates/hydra-gates/stubs/openregister-apphost-bootstrap.stub.php" />
+        <!-- Integriq's connection-registry events (adopt-connection-registry).
+             ConnectionReporter names them by string behind class_exists
+             (ADR-041). The stubs mirror integriq/lib/Event/ on development, so
+             psalm sees the constructor the reporter builds. -->
+        <file name="tests/Stubs/Integriq/Event/ConnectionStatusReportedEvent.php" />
+        <file name="tests/Stubs/Integriq/Event/ConnectionRefreshRequestedEvent.php" />
     </stubs>
     <issueHandlers>
         <UndefinedDocblockClass errorLevel="suppress"/>

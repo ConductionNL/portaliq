@@ -9,6 +9,7 @@
 - [portal-headless-content-api](../../changes/portal-headless-content-api/)
 - [portal-shared-runtime](../../changes/portal-shared-runtime/)
 - [contribution-landing-page-action](../../changes/contribution-landing-page-action/)
+- [portals-open-site-action](../../changes/archive/2026-09-10-portals-open-site-action/)
 
 ## Purpose
 
@@ -30,6 +31,8 @@ still being designed live in the change deltas listed above until they ship.
 
 Verified live on a disposable rig 2026-08-15 (`portaliq-p2-rig`, :8321), with
 24 e2e tests and 21 unit tests. Every requirement below carries its evidence.
+Rows added after that sweep name their own verification in the row itself —
+the date, rig and test counts above are not retroactively theirs.
 
 | Requirement | State |
 | --- | --- |
@@ -44,6 +47,7 @@ Verified live on a disposable rig 2026-08-15 (`portaliq-p2-rig`, :8321), with
 | The renderer does not depend on Nextcloud globals | implemented |
 | The content API is sufficient without the built-in renderer | implemented — proven by a Docusaurus build |
 | Editors have an admin surface for CMS content | implemented — declarative manifest pages; the publish-time validation rules are not |
+| The Portals overview opens a portal's public site | implemented — verified 2026-09-10 on an isolated NC 34 rig with four seeded portals, plus 14 unit assertions and 2 e2e tests ([archived change](../../changes/archive/2026-09-10-portals-open-site-action/)) |
 
 **Not implemented, and specified elsewhere rather than left implied:**
 
@@ -378,6 +382,71 @@ fallback.
 - THEN the form's declared fields, `submitLabel`, and `consentText` render
 - AND submitting the form with valid values succeeds without a portal session
 - @e2e site-form-submission.spec.ts — "a visitor submits the landing page form and it is recorded"
+
+### Requirement: The Portals overview MUST open a portal's public site
+
+The Portals index page in the Portaliq admin SHALL offer, per portal row, an
+action that opens that portal's public site in a new browser tab. The action
+SHALL address the site by the row's `slug` through the app's own site route
+(`portalPage#site`) resolved with Nextcloud's URL generator, so the link holds
+on instances with and without URL rewriting, and the slug SHALL be
+percent-encoded and sent exactly as stored, because portal resolution compares
+it verbatim. When the row carries no usable slug, the action SHALL inform the
+administrator rather than report a success nobody can see.
+
+The action SHALL NOT read `window.open`'s return value as a success signal.
+The tab is opened with `noopener`, which severs the WindowProxy, so the HTML
+standard returns null for the tab it DID open ("If noopener is true, then
+return null"). A refused tab is therefore indistinguishable from an opened one
+at this call site and is left to the browser's own blocked-popup indicator;
+severing the opener is the property worth keeping, since the opened document
+renders portal-authored content.
+
+The action's LABEL is deliberately English on both locales: the shared
+row-action component renders `action.label` verbatim and injects no
+translator, and the library's own built-in entries (view, edit, copy, delete)
+are English for the same reason. The Dutch strings ship anyway, so the label
+becomes live the day the library translates them; every message the action
+itself shows does go through the app's translator.
+
+#### Scenario: An administrator opens a published portal from the overview
+
+- GIVEN an administrator on the Portals overview with a published portal whose slug is known
+- WHEN they choose "Open portal" in that row's action menu
+- THEN a new tab opens on the app's site route carrying that row's slug as the `portal` parameter
+- AND the site renders that portal's own title
+- @e2e portals-open-site.spec.ts — "the row action opens the portal site in a new tab"
+
+#### Scenario: A slug that needs escaping stays intact
+
+- GIVEN a portal row whose slug contains a character that is unsafe in a query string
+- WHEN the action builds the site URL
+- THEN the slug is percent-encoded in the `portal` parameter, so the site resolves the portal the row names and no other
+- AND the slug is sent exactly as stored, without trimming
+- @e2e exclude asserted in tests/open-portal-site.spec.mjs; no seeded portal carries an escaping-relevant slug, and tagging a browser test with this scenario would certify a branch that test cannot fail on
+
+#### Scenario: A portal without a slug reports instead of linking
+
+- GIVEN a portal row whose `slug` is empty, absent, or only whitespace
+- WHEN the administrator chooses "Open portal"
+- THEN no tab is opened
+- AND the administrator is told the portal has no slug yet
+- @e2e exclude asserted in tests/open-portal-site.spec.mjs; the CMS seed provisions no slugless portal, and a browser test that opens no tab and reads a toast adds nothing the unit assertions do not already pin
+
+#### Scenario: A successful open is never reported as a failure
+
+- GIVEN a browser that severs the opener reference, so `window.open` returns null for the tab it did open
+- WHEN the administrator chooses "Open portal" on a row with a usable slug
+- THEN the tab opens with `noopener,noreferrer` and the action reports the address it opened
+- AND no failure message is shown
+- @e2e portals-open-site.spec.ts — "the row action opens the portal site in a new tab"
+
+#### Scenario: The built-in row actions survive the addition
+
+- GIVEN the Portals overview with the action installed
+- WHEN an administrator opens a row's action menu
+- THEN "Open portal" is offered alongside the built-in view, edit, copy and delete entries rather than in place of them
+- @e2e portals-open-site.spec.ts — "the pre-existing row actions still work alongside it"
 
 ## Notes
 

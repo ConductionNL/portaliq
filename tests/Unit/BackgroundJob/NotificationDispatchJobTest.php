@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\BackgroundJob;
 
 use OCA\Portaliq\BackgroundJob\NotificationDispatchJob;
+use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
@@ -37,9 +38,22 @@ class NotificationDispatchJobTest extends TestCase {
 		'subjectRef' => 's1',
 		'organisation' => 'org-1',
 		'audience' => 'supplier',
-		'appId' => 'portaliq',
+		// A FOREIGN contributing app: the dispatch job is fleet-generic, and
+		// naming portaliq here would make the "never leak the app id" assertion
+		// indistinguishable from the portal's own route in the deep link
+		// (WOO-570).
+		'appId' => 'procest',
 		'ruleKey' => 'message.created',
 	];
+
+	/**
+	 * Every translation call the job makes: [locale, key, parameters]. The
+	 * privacy contract is asserted on THIS — what reaches the l10n layer is
+	 * the only thing that can reach the mail — not on the rendered text.
+	 *
+	 * @var array<int, array{0: string, 1: string, 2: array<int, mixed>}>
+	 */
+	private array $translated = [];
 
 	private function l10nFactory(): IFactory {
 		$factory = $this->createMock(IFactory::class);
@@ -47,7 +61,11 @@ class NotificationDispatchJobTest extends TestCase {
 			function (string $app, $long = null, $locale = null) {
 				$l10n = $this->createMock(IL10N::class);
 				$l10n->method('t')->willReturnCallback(
-					static fn (string $text, $parameters = []) => '[' . $long . '] ' . vsprintf($text, $parameters)
+					function (string $text, $parameters = []) use ($long) {
+						$this->translated[] = [(string)$long, $text, (array)$parameters];
+
+						return '[' . $long . '] ' . vsprintf($text, $parameters);
+					}
 				);
 
 				return $l10n;
@@ -71,14 +89,32 @@ class NotificationDispatchJobTest extends TestCase {
 		return $orgConfig;
 	}//end orgConfig()
 
-	private function urlGenerator(): IURLGenerator {
+	/**
+	 * The REAL deep-link builder over a route table rendered the way Nextcloud
+	 * renders it without pretty URLs (`/index.php` in front) — the default of
+	 * many installations and the case the old `getAbsoluteURL('/portal')` got
+	 * wrong: it produced a path no deployment serves, so the only link in the
+	 * mail was a 404 (WOO-570). Using the real builder here keeps this test
+	 * honest about what the resident receives.
+	 */
+	private function deepLinks(): PortalDeepLinkBuilder {
 		$urlGenerator = $this->createMock(IURLGenerator::class);
+		$urlGenerator->method('linkToRoute')->willReturnCallback(
+			static function (string $route, array $arguments = []): string {
+				$path = '/index.php/apps/portaliq/portal';
+				if ($route !== 'portaliq.portalPage.index' || $arguments === []) {
+					return $path;
+				}
+
+				return $path . '?' . http_build_query($arguments);
+			}
+		);
 		$urlGenerator->method('getAbsoluteURL')->willReturnCallback(
 			static fn (string $path) => 'https://cloud.example' . $path
 		);
 
-		return $urlGenerator;
-	}//end urlGenerator()
+		return new PortalDeepLinkBuilder($urlGenerator);
+	}//end deepLinks()
 
 	private function config(int $threshold = 3): IConfig {
 		$config = $this->createMock(IConfig::class);
@@ -193,7 +229,7 @@ class NotificationDispatchJobTest extends TestCase {
 			$this->orgConfig(),
 			$this->mailer(captured: $captured, outcome: true),
 			$this->l10nFactory(),
-			$this->urlGenerator(),
+			$this->deepLinks(),
 			$this->config(),
 			$this->createMock(LoggerInterface::class)
 		);
@@ -205,9 +241,24 @@ class NotificationDispatchJobTest extends TestCase {
 		$this->assertSame(['supplier@example.org'], $captured['to']);
 		$this->assertStringContainsString('Test Org', $captured['subject']);
 		$this->assertStringContainsString('Test Org', $captured['body']);
-		$this->assertStringContainsString('https://cloud.example/portal?org=org-1', $captured['body']);
+		$this->assertStringContainsString('https://cloud.example/index.php/apps/portaliq/portal?org=org-1', $captured['body']);
 		$this->assertStringNotContainsString('message.created', $captured['subject'] . $captured['body']);
-		$this->assertStringNotContainsString('portaliq', $captured['subject'] . $captured['body']);
+		// The CONTRIBUTING app, the rule key and the case content must not be
+		// named — that is what "content-free" protects. A ban on words in the
+		// rendered text cannot prove that (the deep link legitimately contains
+		// portaliq's own route, and the job never receives the appId as text
+		// anyway), so the contract is asserted STRUCTURALLY: the only values
+		// that ever reach the translation layer are the organisation name and
+		// the deep link (review of WOO-570 / #498).
+		$this->assertNotSame([], $this->translated);
+		foreach ($this->translated as [$locale, $key, $parameters]) {
+			$this->assertContains($locale, ['nl', 'en']);
+			$this->assertContains(
+				$parameters,
+				[['Test Org'], ['Test Org', 'https://cloud.example/index.php/apps/portaliq/portal?org=org-1']],
+				'translation "' . $key . '" received a parameter that is neither the organisation name nor the deep link'
+			);
+		}
 		// Bilingual (NL first, EN second), mirroring SubmissionReceiptService.
 		$this->assertStringContainsString('[nl] ', $captured['body']);
 		$this->assertStringContainsString('[en] ', $captured['body']);
@@ -238,7 +289,7 @@ class NotificationDispatchJobTest extends TestCase {
 			$this->orgConfig(),
 			$this->mailer(captured: $captured, outcome: true),
 			$this->l10nFactory(),
-			$this->urlGenerator(),
+			$this->deepLinks(),
 			$this->config(),
 			$this->createMock(LoggerInterface::class)
 		);
@@ -264,7 +315,7 @@ class NotificationDispatchJobTest extends TestCase {
 			$this->orgConfig(),
 			$this->mailer(captured: $captured, outcome: true),
 			$this->l10nFactory(),
-			$this->urlGenerator(),
+			$this->deepLinks(),
 			$this->config(),
 			$this->createMock(LoggerInterface::class)
 		);
@@ -295,7 +346,7 @@ class NotificationDispatchJobTest extends TestCase {
 			$this->orgConfig(),
 			$this->mailer(captured: $captured, outcome: false),
 			$this->l10nFactory(),
-			$this->urlGenerator(),
+			$this->deepLinks(),
 			$this->config(threshold: 5),
 			$this->createMock(LoggerInterface::class)
 		);
@@ -326,7 +377,7 @@ class NotificationDispatchJobTest extends TestCase {
 			$this->orgConfig(),
 			$this->mailer(captured: $captured, outcome: false),
 			$this->l10nFactory(),
-			$this->urlGenerator(),
+			$this->deepLinks(),
 			$this->config(threshold: 3),
 			$this->createMock(LoggerInterface::class)
 		);
@@ -357,7 +408,7 @@ class NotificationDispatchJobTest extends TestCase {
 			$this->orgConfig(),
 			$this->mailer(captured: $captured, outcome: true),
 			$this->l10nFactory(),
-			$this->urlGenerator(),
+			$this->deepLinks(),
 			$this->config(),
 			$this->createMock(LoggerInterface::class)
 		);
@@ -382,7 +433,7 @@ class NotificationDispatchJobTest extends TestCase {
 			$this->orgConfig(),
 			$this->mailer(captured: $captured, outcome: true),
 			$this->l10nFactory(),
-			$this->urlGenerator(),
+			$this->deepLinks(),
 			$this->config(),
 			$this->createMock(LoggerInterface::class)
 		);
@@ -411,7 +462,7 @@ class NotificationDispatchJobTest extends TestCase {
 			$this->orgConfig(),
 			$this->mailer(captured: $captured, outcome: true),
 			$this->l10nFactory(),
-			$this->urlGenerator(),
+			$this->deepLinks(),
 			$this->config(),
 			$this->createMock(LoggerInterface::class)
 		);

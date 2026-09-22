@@ -221,7 +221,9 @@ jobs:
       # app's ref: buildiq pins the same fleet's docudesk to `main`, where that
       # id has NOT moved yet.
       #
-      # `dossiq` is here for ONE reason: it is the second contributing app that
+      # `dossiq` is NOT in this list. It sits in `e2e-additional-apps` below,
+      # because the only reason it is installed at all is one E2E spec: it is
+      # the second contributing app that
       # tests/e2e/portal-cross-app-contributions.spec.ts asserts against. Neither
       # openregister nor thematiq ships a `lib/Portal/PortalContributionProvider.php`,
       # so without a third app that spec would assert cross-app rendering against a
@@ -233,8 +235,64 @@ jobs:
       # above: on `ConductionNL/dossiq@development` the id is `dossiq`, the namespace
       # is `Dossiq`, and `getAudiences()` returns supplier/citizen/inspector. Its
       # `getContribution()` is pure config with no I/O, so it needs no seeded data.
-      additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"development"},{"repo":"ConductionNL/thematiq","app":"thematiq","ref":"development"},{"repo":"ConductionNL/dossiq","app":"dossiq","ref":"development"}]'
+      #
+      # WHY IT MOVED, 2026-09-19. `additional-apps` is installed into EVERY
+      # PHPUnit cell, and there `occ app:enable dossiq` aborts with "Maximum
+      # call stack size of 16728064 bytes reached. Infinite recursion?". It is
+      # a constructor cycle in dossiq, which Nextcloud's container walks
+      # eagerly while `OC_App::executeRepairSteps` resolves dossiq's
+      # post-migration steps: MigrateWorkflowDefinitions needs
+      # WorkflowDefinitionService needs WorkflowLifecycleGuard needs
+      # TaskDeclarationValidator needs TaskDeclarationReader needs
+      # WorkflowDefinitionService. All six cells died there, before one
+      # portaliq test ran, so the suite was dark. ConductionNL/dossiq#2902
+      # carries the fix in dossiq; this move does not wait on it.
+      #
+      # It is not a workaround either. portaliq's PHPUnit suite never needed
+      # dossiq installed: the tree holds no `OCA\Dossiq\` reference and no
+      # class_exists or isInstalled lookup for it, only the literal "dossiq"
+      # as a register slug inside mocks. The browser jobs, which are the ones
+      # that actually render a cross-app contribution, still get it, and they
+      # already enable it without incident (the Newman job of run 35429790618
+      # enabled dossiq 0.4.26 in 2.6 s on the same commit that aborted six
+      # PHPUnit cells).
+      #
+      # `integriq` is here for tests/e2e/integrations-page.spec.ts
+      # (adopt-connection-registry). The Integrations page lists integriq's
+      # `app_connection` rows, which integriq syncs from lib/Settings/connections.json
+      # on install and on app enable. Without integriq the page has no register to
+      # read and the spec asserts against nothing. Verified against the pinned ref:
+      # on `ConductionNL/integriq@development` the id is `integriq`. The PHPUnit
+      # event stubs in tests/bootstrap.php load only when integriq's real event
+      # classes are absent, so its presence here does not redeclare them.
+      additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"development"},{"repo":"ConductionNL/thematiq","app":"thematiq","ref":"development"},{"repo":"ConductionNL/integriq","app":"integriq","ref":"development"}]'
+      e2e-additional-apps: '[{"repo":"ConductionNL/dossiq","app":"dossiq","ref":"development"}]'
       enable-sbom: true
+
+      # ── REUSE ────────────────────────────────────────────────────────────
+      # BLOCKING since 2026-09-17. `reuse lint` is compliant: 1447 of 1447 files
+      # carry licensing information, no unused licence text, no stderr ERROR
+      # lines. Remko Huisman asked for this flip on 2026-09-11 ("ja als hij
+      # groen is moet hij aan zodat we de Reuse niet opnieuw breken"); it waited
+      # on one thing, which is now settled.
+      #
+      # THE THING IT WAITED ON. Twelve fonts under woo/ carried no licensing
+      # information, six of them commercial or all-rights-reserved faces served
+      # publicly through `woo#serve` -- 3x Gill Sans, Avenir LT, Tisa Sans Pro
+      # (Monotype/Linotype) and Eau Sans Book. Turning this on earlier would
+      # have failed every PR on those twelve; annotating them to get past it
+      # would have claimed a licence we do not hold. On 2026-09-17 Ruben van
+      # der Linde decided they come out ("die zouden er dus eigenlijk uit
+      # moeten"), and WOO-575 removed them from woo/, the service-worker
+      # precache, asset-manifest.json and the @font-face rules. The six free
+      # fonts that remain (Roboto, Aldrich, ac-icons) are annotated by name in
+      # REUSE.toml, which also gained the `path = "**"` blanket at the same
+      # moment and not before -- see the note there for why the order mattered.
+      #
+      # `check:reuse` in frontend-checks below stays on. It guards what this
+      # flag cannot see: stderr parse errors, and the licence-hygiene lists.
+      reuse-blocking: true
+
       # Run the Hydra mechanical quality gates against this PR's diff.
       #
       # This tier has never executed in this repository. `enable-hydra-gates`
@@ -342,7 +400,19 @@ jobs:
       # renders the English source inside an otherwise translated form, silently.
       # The fleet had 30,459 such strings, so this records the current count and
       # fails only when it GROWS — burning it down stays an ordinary PR.
-      frontend-checks: '["check:specs", "check:manifest", "format", "check:l10n-js", "check:schema-l10n"]'
+      # `check:reuse` is the REUSE guard, and it is here rather than inside the
+      # shared `reuse` job because that job cannot express it: it runs
+      # `fsfe/reuse-action@v5` under `continue-on-error: ${{ !reuse-blocking }}`,
+      # so with the flag off (see the block further down) it passes on every
+      # outcome. What it cannot see at all, in either setting, is stderr —
+      # `reuse lint` writes parse failures there and still decides its exit code
+      # on compliance alone, so a document whose own header cannot be read is
+      # invisible to the action twice over. scripts/check-reuse.js asserts that
+      # count at zero and ratchets the number of files with no licensing
+      # information, so a new extension cannot fall through REUSE.toml's
+      # extension list unnoticed. Both failure modes were reproduced against
+      # this tree before wiring it up, and both fail the leg.
+      frontend-checks: '["check:specs", "check:manifest", "format", "check:l10n-js", "check:schema-l10n", "check:reuse"]'
 
       # ── Coverage ratchet ─────────────────────────────────────────────────
       # `enable-coverage-guard` defaults to FALSE, which is why both
@@ -353,3 +423,14 @@ jobs:
       # measured coverage (2674 of 3373 statements) read from clover.xml in the
       # `coverage-report` artifact of run 30917641977.
       enable-coverage-guard: true
+      # ── Cost controls (see ConductionNL/.github#596, #599) ───────────────
+      # Run PHPUnit and Playwright only when the diff could change their
+      # verdict. Fails safe TOWARDS running: an unreadable diff, a force-push,
+      # a branch creation or a dispatch all run everything, and a filtered
+      # skip is a declared state in the Quality Report, not a missing one.
+      enable-path-filtering: true
+      # PR-time PHPUnit runs the primary PHP against the newest declared
+      # Nextcloud; the full matrix still runs on every push to a default
+      # branch and on the release PR into beta. Breadth moves from
+      # per-commit to per-merge, it is not dropped.
+      reduce-pr-matrix: true

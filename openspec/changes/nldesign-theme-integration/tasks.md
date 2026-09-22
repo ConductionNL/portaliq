@@ -35,3 +35,19 @@
 
 - [ ] 5.1 Record in `nldesign` that portals are a consumer of the catalogue, the dark variants and the shareable config type — the docs currently describe the Nextcloud UI only.
 - [ ] 5.2 Update ADR-086 §6 ("Portaliq ships NO theming mechanism of its own") to state what it now consumes instead.
+
+## Reference implementation, not merged
+
+Branch `feat/portal-nextcloud-signin` built most of the open tasks above. It
+never merged and conflicts with `development` in 22 files, so rebuild from
+`development` and read these commits for the decisions. Recorded 2026-09-14 by
+`portal-theme-blocks-and-contributed-pages`, which owns the site's token layer.
+
+- 1.4 theme choice with verdicts: 09e6ffe (`ThemeController`, `AdminRoot.vue`)
+- 2.2 and 2.4 dark variant: linked and withdrawn again in ae48b96. Measured on `conduction-klant`: 0 of 8 surfaces changed and 19 of 38 text nodes fell below AA, worst 1.03:1. The generated dark files redefined base colours on `body` while aliases resolved at `:root`. thematiq#353 has since merged; regenerate the sets and measure again before linking.
+- 2.3 uploaded fonts: 19fbcd6 links thematiq's public font stylesheet and keeps `nlds-fonts.css`, which serves a different set of faces.
+- 2.6 token-driven surfaces: 03fdd5f. Built into `portal-theme-blocks-and-contributed-pages` task 2.
+- 3.1 to 3.4 contrast: 09e6ffe (`PortalThemeContrast`), and the rendered-page check in `tests/site-surfaces.spec.mjs` (a485fad, 9901229).
+- 4.1 to 4.4 shared sets: 19fbcd6 (`PortalSharedTheme`).
+- 5.1 docs in the theme app: thematiq#357, merged.
+- 5.2: ADR-086 has no file anywhere, so the statement belongs in `openspec/specs/portaliq-cms/spec.md` when this change is archived (19fbcd6).

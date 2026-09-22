@@ -151,6 +151,12 @@ export default {
 		},
 	},
 
+	/**
+	 * Component state: the object sidebar channel.
+	 *
+	 * @return {object} The state.
+	 * @spec openspec/changes/adopt-connection-registry/specs/app-connections/spec.md#requirement-req-portaliq-conn-004-an-admin-reads-the-connections-on-an-integrations-page
+	 */
 	data() {
 		return {
 			objectSidebarState: reactive({
