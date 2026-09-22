@@ -60,6 +60,24 @@ class ActionConfigNormaliser {
 	 *                                              null reader means the guard
 	 *                                              always fails closed (drops
 	 *                                              `required`).
+	 * @param CitizenWriteConfigNormaliser|null $citizenWrite Sanitises the
+	 *                                                        per-action citizen
+	 *                                                        write declaration
+	 *                                                        (what-the-citizen-may-
+	 *                                                        write-on-their-own-case).
+	 *                                                        Optional so existing
+	 *                                                        construction sites keep
+	 *                                                        working; absent means the
+	 *                                                        key is dropped, which
+	 *                                                        closes the surface.
+	 * @param CrossRefConfigNormaliser|null $crossRefs Sanitises the per-action
+	 *                                                 cross-reference guard. Optional
+	 *                                                 for the same reason, and absent
+	 *                                                 it is CONSTRUCTED rather than
+	 *                                                 skipped: this one key is the
+	 *                                                 guard itself, so an instance
+	 *                                                 that did not inject it must not
+	 *                                                 thereby run without it.
 	 *
 	 * @spec openspec/specs/supplier-portal/spec.md#form-data-minimisation-no-non-mandatory-field-may-be-required
 	 */
@@ -67,6 +85,8 @@ class ActionConfigNormaliser {
 		private readonly ManifestValueNormaliser $values,
 		private readonly ActionOptionsNormaliser $options,
 		private readonly ?PortalSchemaReader $schemaReader = null,
+		private readonly ?CitizenWriteConfigNormaliser $citizenWrite = null,
+		private readonly ?CrossRefConfigNormaliser $crossRefs = null,
 	) {
 	}//end __construct()
 
@@ -97,8 +117,21 @@ class ActionConfigNormaliser {
 			$action = $this->normaliseSet(action: $action, whitelist: $whitelist);
 			$action = $this->normaliseTextKeys(action: $action);
 			$action = $this->values->normaliseAnonymousFlag(entry: $action);
+			// The citizen write declaration (what-the-citizen-may-write-on-their-
+			// own-case). An absent normaliser drops the key, which closes the
+			// surface rather than opening it.
+			$action = ($this->citizenWrite ?? new CitizenWriteConfigNormaliser())->normaliseAction(action: $action);
 
-			$out[] = $action;
+			// The cross-reference guard, and the one normaliser that can
+			// remove an action rather than a key: a create whose guard could
+			// not be read must not be offered without it.
+			$guarded = ($this->crossRefs ?? new CrossRefConfigNormaliser())
+				->normaliseAction(action: $action, whitelist: $whitelist);
+			if ($guarded === null) {
+				continue;
+			}
+
+			$out[] = $guarded;
 		}//end foreach
 
 		return $out;

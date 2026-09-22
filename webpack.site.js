@@ -68,8 +68,16 @@ module.exports = {
 		// unlike an in-Nextcloud SPA behind a login. `hints: 'error'` makes
 		// this a budget rather than a suggestion — a warning in a build log is
 		// something nobody reads twice.
+		//
+		// 410 KiB, up from 400, since @conduction/nextcloud-vue 3.2.0. The
+		// library's `cnRenderMarkdown` (MarkdownBlock) now uses the app's own
+		// marked 18 instead of a nested marked 12, and marked 18 minifies to
+		// 43.7 KB against 35.0 KB. Measured on the same build: development
+		// 396 KiB, the bump 404 KiB, with no other module in the entry growing.
+		// The markdown renderer draws the body of every markdown page, so
+		// loading it on demand would delay the content itself.
 		hints: isDev ? false : 'error',
-		maxAssetSize: 400 * 1024,
-		maxEntrypointSize: 400 * 1024,
+		maxAssetSize: 410 * 1024,
+		maxEntrypointSize: 410 * 1024,
 	},
 }

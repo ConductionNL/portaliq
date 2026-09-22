@@ -34,7 +34,10 @@ __webpack_public_path__ = generateFilePath('portaliq', '', 'js/')
 import {
 	CnPageRenderer,
 	defaultPageTypes,
+	installIntegrationRegistry,
+	registerBuiltinIntegrations,
 	registerIcons,
+	registerLeafIntegrations,
 	registerTranslations,
 } from '@conduction/nextcloud-vue'
 import {
@@ -67,6 +70,33 @@ import '@conduction/nextcloud-vue/css/index.css'
 import 'gridstack/dist/gridstack.css'
 // Global (unscoped) app styles
 import './assets/app.css'
+
+// THE HALF THAT MAKES A DECLARED LEAF VISIBLE.
+//
+// A manifest widget `{"type": "integration", "integrationId": "talk"}` is
+// resolved at render time by `useIntegrationRegistry()`, which looks the id up
+// in the shared registry and returns null when nobody registered it. Nothing
+// registers it on this app's behalf: OpenRegister's own bootstrap runs on
+// OpenRegister's pages, and its `LeafScriptListener` enqueues the bundles of
+// apps that PROVIDE a leaf to somebody else, which portaliq does not. So an
+// integration widget declared in the manifest of an app that never calls these
+// three functions renders nothing — no card, no absent state, no console error,
+// because "unknown id" and "app not installed" look identical from the outside.
+//
+// This is the same failure shape ADR-115 is about, and the reason it must be
+// stated here rather than assumed: the declaration and the rendering are two
+// halves, a parity check compares them to each other, and neither half asks
+// whether either one reached a page.
+//
+// `installIntegrationRegistry()` puts the registry on the global (draining any
+// queued pre-mount registration), `registerBuiltinIntegrations()` adds the core
+// five plus the bespoke leaf pairs, and `registerLeafIntegrations()` adds the
+// generic leaf factory entries as the no-bespoke fallback. Portaliq consumes
+// three of them — forms, talk and calendar — on internal staff pages only, per
+// ADR-046; the portal edge renders no Nextcloud app to a visitor.
+installIntegrationRegistry()
+registerBuiltinIntegrations()
+registerLeafIntegrations()
 
 // Register library-side icon set + lib translations once at bootstrap.
 registerIcons(appIcons)

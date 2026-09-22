@@ -127,6 +127,33 @@ absent/empty state rather than silently disappearing.
 - THEN the talk widget shows its absent state naming the missing app
 - AND it does not vanish without trace
 
+### Requirement: The bundle that renders a leaf installs the integration registry
+
+`src/main.js` SHALL call `installIntegrationRegistry()`, then
+`registerBuiltinIntegrations()`, then `registerLeafIntegrations()`, before the app
+mounts. Portaliq consumes the builtin leaves from `@conduction/nextcloud-vue`, which
+live in its own bundle; nothing registers them on its behalf, because OpenRegister's
+bootstrap runs on OpenRegister's pages and its `LeafScriptListener` enqueues only the
+bundles of apps that PROVIDE a leaf to somebody else. Portaliq provides none, so it
+needs no `leaves` webpack entry and no `RegisterLeafProvidersEvent` listener.
+
+A manifest widget SHALL additionally be placed in its page's `config.layout`, and any
+icon it names SHALL be registered in `src/icons.js`.
+
+#### Scenario: A declared leaf is on the page, not merely declared
+
+- GIVEN a staff page carrying an integration widget
+- WHEN it renders in the Nextcloud shell
+- THEN the widget's `integrationId` is present in the page's integration registry
+- AND the check MUST read the registry rather than the DOM, because an absent card and an uninstalled Nextcloud app look identical
+
+#### Scenario: A schema carrying a new leaf is imported rather than skipped
+
+- GIVEN a schema whose only change is `configuration.linkedTypes`
+- WHEN the register is imported
+- THEN the schema's `version` MUST be higher than the stored one, because the importer compares only `properties`, `required`, `authorization` and the `x-openregister` annotations
+- AND without the bump the declaration is skipped in silence and never reaches the instance
+
 ## Non-Functional Requirements
 
 - **Performance:** Leaf adoption adds no portaliq backend call; leaves fetch from their own apps.

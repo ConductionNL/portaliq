@@ -119,9 +119,45 @@ if (!defined('OC_CONSOLE') && $portaliqNcRoot !== null) {
 	}
 }
 
+// OCP outside the container. `nextcloud/ocp` ships the public API as plain
+// PSR-4 files but declares no `autoload` block of its own, so Composer never
+// maps `OCP\` and every test that doubles an OCP interface dies with "Class or
+// interface OCP\… does not exist" rather than failing on its subject. Inside
+// the container lib/base.php has already defined them and this does nothing.
+if (interface_exists(\OCP\IUser::class) === false && is_dir(__DIR__ . '/../vendor/nextcloud/ocp/OCP') === true) {
+	spl_autoload_register(
+		static function (string $class): void {
+			if (str_starts_with($class, 'OCP\\') === false && str_starts_with($class, 'NCU\\') === false) {
+				return;
+			}
+
+			$file = __DIR__ . '/../vendor/nextcloud/ocp/' . str_replace('\\', '/', $class) . '.php';
+			if (is_file($file) === true) {
+				require_once $file;
+			}
+		}
+	);
+}
+
 // Load the IMcpToolProvider stub when the openregister runtime (PR #1466,
 // ai-chat-companion-orchestrator) is absent. Also registered via autoload-dev
 // PSR-4 in composer.json (OCA\OpenRegister\ -> tests/Stubs/).
 if (interface_exists(\OCA\OpenRegister\Mcp\IMcpToolProvider::class) === false) {
 	require_once __DIR__ . '/Stubs/Mcp/IMcpToolProvider.php';
 }
+
+// Integriq's connection-registry events (adopt-connection-registry).
+// ConnectionReporter sends them by string class name behind class_exists
+// (ADR-041), so portaliq stays installable without integriq. The stubs mirror
+// hydra connection-registry design D6 and integriq's own classes on
+// `development`, and load only when the real classes are absent. Without OCP on
+// the autoload path their parent class is missing, so they are skipped then.
+foreach (['ConnectionStatusReportedEvent', 'ConnectionRefreshRequestedEvent'] as $integriqStubEvent) {
+	if (class_exists('\\OCP\\EventDispatcher\\Event') === true
+		&& class_exists('\\OCA\\Integriq\\Event\\' . $integriqStubEvent) === false
+	) {
+		require_once __DIR__ . '/Stubs/Integriq/Event/' . $integriqStubEvent . '.php';
+	}
+}
+
+unset($integriqStubEvent);

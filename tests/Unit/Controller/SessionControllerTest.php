@@ -10,11 +10,15 @@ use OCA\Portaliq\Service\OidcClientService;
 use OCA\Portaliq\Service\OidcStateStoreService;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
+use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\RedirectResponse;
 use OCP\IConfig;
 use OCP\IRequest;
 use OCP\IURLGenerator;
+use OCP\IUser;
+use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -556,6 +560,8 @@ class SessionControllerTest extends TestCase {
 		?PortalAccountService $accounts = null,
 		?IURLGenerator $urlGenerator = null,
 		string $authorization = 'Bearer some-token',
+		?IUserSession $userSession = null,
+		?PortalResolver $portals = null,
 	): SessionController {
 		$request = $this->createMock(IRequest::class);
 		// Defaults to a bearer being PRESENT, which is what every pre-existing
@@ -572,9 +578,177 @@ class SessionControllerTest extends TestCase {
 			($claimMapper ?? $this->createMock(OidcClaimMapperService::class)),
 			($stateStore ?? $this->createMock(OidcStateStoreService::class)),
 			($accounts ?? $this->createMock(PortalAccountService::class)),
-			($urlGenerator ?? $this->createMock(IURLGenerator::class))
+			($urlGenerator ?? $this->createMock(originalClassName: IURLGenerator::class)),
+			($userSession ?? $this->createMock(originalClassName: IUserSession::class)),
+			($portals ?? $this->createMock(originalClassName: PortalResolver::class))
 		);
 
 	}//end controller()
+
+	/**
+	 * A visitor with no Nextcloud session is handed to Nextcloud's own login
+	 * form, and no portal session is minted.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portal-must-offer-only-the-sign-in-routes-it-declares
+	 */
+	public function testNextcloudSignInSendsAnAnonymousVisitorToTheLoginForm(): void {
+		$session = $this->createMock(originalClassName: PortalSessionService::class);
+		$session->expects($this->never())->method('issueSession');
+		$urlGenerator = $this->createMock(originalClassName: IURLGenerator::class);
+		$urlGenerator->method('linkToRoute')->willReturn('/login?redirect_url=x');
+
+		$response = $this->controller(session: $session, urlGenerator: $urlGenerator)->nextcloud(portal: 'demo');
+
+		$this->assertInstanceOf(expected: RedirectResponse::class, actual: $response);
+		$this->assertSame(expected: '/login?redirect_url=x', actual: $response->getRedirectURL());
+
+	}//end testNextcloudSignInSendsAnAnonymousVisitorToTheLoginForm()
+
+	/**
+	 * A portal that does not declare the `nextcloud` mode cannot be entered
+	 * through it, even by a signed-in Nextcloud user.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portal-must-offer-only-the-sign-in-routes-it-declares
+	 */
+	public function testNextcloudSignInRefusesAPortalThatDoesNotOfferTheMode(): void {
+		$session = $this->createMock(originalClassName: PortalSessionService::class);
+		$session->expects($this->never())->method('issueSession');
+		$portals = $this->createMock(originalClassName: PortalResolver::class);
+		$portals->method('resolve')->willReturn(['slug' => 'demo', 'authentication' => ['modes' => ['public', 'digid']]]);
+
+		$response = $this->controller(
+			session: $session,
+			userSession: $this->signedIn(uid: 'alice'),
+			portals: $portals
+		)->nextcloud(portal: 'demo');
+
+		$this->assertSame(expected: Http::STATUS_NOT_FOUND, actual: $response->getStatus());
+		$this->assertSame(expected: ['error' => 'mode_not_offered'], actual: $response->getData());
+
+	}//end testNextcloudSignInRefusesAPortalThatDoesNotOfferTheMode()
+
+	/**
+	 * A Nextcloud user without an active portalAccount is refused rather than
+	 * given an account on the spot.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portal-must-offer-only-the-sign-in-routes-it-declares
+	 */
+	public function testNextcloudSignInRefusesAUserWithoutAPortalAccount(): void {
+		$session = $this->createMock(originalClassName: PortalSessionService::class);
+		$session->expects($this->never())->method('issueSession');
+		$accounts = $this->createMock(originalClassName: PortalAccountService::class);
+		$accounts->method('findBySubjectRef')->willReturn(null);
+		$accounts->expects($this->never())->method('findOrCreate');
+
+		$response = $this->controller(
+			session: $session,
+			accounts: $accounts,
+			userSession: $this->signedIn(uid: 'alice'),
+			portals: $this->portalOffering(mode: 'nextcloud')
+		)->nextcloud(portal: 'demo');
+
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $response->getStatus());
+
+	}//end testNextcloudSignInRefusesAUserWithoutAPortalAccount()
+
+	/**
+	 * A signed-in user with an active account gets a low-trust portal session,
+	 * handed back in the URL fragment.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portal-must-offer-only-the-sign-in-routes-it-declares
+	 */
+	public function testNextcloudSignInHandsTheTokenBackInTheFragment(): void {
+		$session = $this->createMock(originalClassName: PortalSessionService::class);
+		$session->expects($this->once())
+			->method('issueSession')
+			->with('alice', 'client', 'org-1', 'low', ['client:read'])
+			->willReturn(['token' => 'tok en']);
+		$accounts = $this->createMock(originalClassName: PortalAccountService::class);
+		$accounts->method('findBySubjectRef')->willReturn(
+			['subjectRef' => 'alice', 'audience' => 'client', 'organisation' => 'org-1', 'status' => 'active']
+		);
+		$urlGenerator = $this->createMock(originalClassName: IURLGenerator::class);
+		$urlGenerator->method('getAbsoluteURL')->willReturnCallback(static fn (string $url): string => 'https://nc.example' . $url);
+
+		$response = $this->controller(
+			session: $session,
+			accounts: $accounts,
+			urlGenerator: $urlGenerator,
+			userSession: $this->signedIn(uid: 'alice'),
+			portals: $this->portalOffering(mode: 'nextcloud')
+		)->nextcloud(portal: 'demo', returnTo: '/apps/portaliq/site?portal=demo');
+
+		$this->assertInstanceOf(expected: RedirectResponse::class, actual: $response);
+		$this->assertSame(
+			expected: 'https://nc.example/apps/portaliq/site?portal=demo#token=tok%20en',
+			actual: $response->getRedirectURL()
+		);
+
+	}//end testNextcloudSignInHandsTheTokenBackInTheFragment()
+
+	/**
+	 * The Nextcloud sign-in route requires a Nextcloud session, not anonymity.
+	 *
+	 * The caller's Nextcloud session is the credential being exchanged for a
+	 * portal one. A public route would mint a portal session for a caller who
+	 * proved nothing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portal-must-offer-only-the-sign-in-routes-it-declares
+	 */
+	public function testTheNextcloudSignInRouteExchangesASessionRatherThanCreatingOne(): void {
+		$method = new \ReflectionMethod(objectOrMethod: SessionController::class, method: 'nextcloud');
+
+		$this->assertEmpty(
+			actual: $method->getAttributes(name: \OCP\AppFramework\Http\Attribute\PublicPage::class),
+			message: 'a public sign-in route would mint a portal session for a caller who proved nothing'
+		);
+		$this->assertNotEmpty(
+			actual: $method->getAttributes(name: \OCP\AppFramework\Http\Attribute\NoAdminRequired::class),
+			message: 'signing in must not require being an instance administrator'
+		);
+
+	}//end testTheNextcloudSignInRouteExchangesASessionRatherThanCreatingOne()
+
+	/**
+	 * A user session signed in as the given uid.
+	 *
+	 * @param string $uid The Nextcloud user id.
+	 *
+	 * @return IUserSession
+	 */
+	private function signedIn(string $uid): IUserSession {
+		$user = $this->createMock(originalClassName: IUser::class);
+		$user->method('getUID')->willReturn($uid);
+		$userSession = $this->createMock(originalClassName: IUserSession::class);
+		$userSession->method('getUser')->willReturn($user);
+
+		return $userSession;
+
+	}//end signedIn()
+
+	/**
+	 * A resolver answering a portal that offers exactly one sign-in mode.
+	 *
+	 * @param string $mode The mode the portal declares.
+	 *
+	 * @return PortalResolver
+	 */
+	private function portalOffering(string $mode): PortalResolver {
+		$portals = $this->createMock(originalClassName: PortalResolver::class);
+		$portals->method('resolve')->willReturn(['slug' => 'demo', 'authentication' => ['modes' => [$mode]]]);
+
+		return $portals;
+
+	}//end portalOffering()
 
 }//end class
