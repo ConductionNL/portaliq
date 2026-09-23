@@ -134,6 +134,8 @@ class TrafficReportController extends Controller {
 	 *
 	 * @return JSONResponse The totals, or a 400 with a reason.
 	 *
+	 * @auth admin-only audience measurement is an operator's surface, the same posture as the export
+	 *
 	 * @spec openspec/changes/portal-traffic-kpi-cards/specs/portal-traffic-kpi-cards/spec.md#requirement-the-summary-endpoint-must-return-a-portals-four-totals-for-a-period
 	 */
 	public function summary(string $portal = '', string $days = ''): JSONResponse {

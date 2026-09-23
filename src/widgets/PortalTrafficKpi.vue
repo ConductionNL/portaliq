@@ -114,8 +114,14 @@ export default {
 		},
 	},
 
+	/**
+	 * Follow the card's period picker: its choice lives in the card's
+	 * own setup state, which the endpoint params cannot read.
+	 *
+	 * @spec openspec/changes/portal-traffic-kpi-cards/specs/portal-traffic-kpi-cards/spec.md#requirement-the-portal-page-must-open-with-four-traffic-kpi-cards
+	 * @return {void}
+	 */
 	mounted() {
-		// The picker's choice lives in the card's own setup state.
 		this.$watch(
 			() => (this.$refs.card && this.$refs.card.tileRange) || null,
 			(range) => {

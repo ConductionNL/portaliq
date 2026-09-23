@@ -105,12 +105,14 @@ export default {
 		...TRAFFIC_WIDGET_META,
 		_note: 'Portal, period and segment selectors, the Export button, and the notes: roll-up, sensitive switches, and "Not measured for this portal" versus "No traffic recorded yet". Custom because a stats-block dataSource shows a zero for both. Its four headline numbers moved to TrafficKpi cards (portal-traffic-kpi-cards).',
 	},
+	// @custom-widget-ratchet exclude no built-in widget can read the Traffic page's report store, so a built-in card cannot follow the overview's portal, period and segment
 	TrafficKpi: {
 		kind: 'widget',
 		component: TrafficKpi,
 		...TRAFFIC_KPI_META,
 		_note: 'One headline number of the Traffic page (content.metric: pageViews, sessions, visitors or engagedSessions) as a CnStatsBlock KPI card, read from the report store so it follows the overview\'s portal, period and segment (portal-traffic-kpi-cards). Custom for the same reason as TrafficOverview: an unmeasured portal must read "Not measured", not zero.',
 	},
+	// @custom-widget-ratchet exclude a built-in stat card cannot resolve @object tokens in its link nor pass its own picked period to its endpoint in nc-vue 2.56.0
 	PortalTrafficKpi: {
 		kind: 'widget',
 		component: PortalTrafficKpi,

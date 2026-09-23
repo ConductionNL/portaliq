@@ -272,6 +272,12 @@ export default {
 		},
 	},
 
+	/**
+	 * Take the portal from the URL, then load the report.
+	 *
+	 * @spec openspec/changes/portal-traffic-kpi-cards/specs/portal-traffic-kpi-cards/spec.md#requirement-the-traffic-page-must-show-its-four-headline-numbers-as-kpi-cards
+	 * @return {void}
+	 */
 	mounted() {
 		this.selectFromQuery()
 		this.report.load()
