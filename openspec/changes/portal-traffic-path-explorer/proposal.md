@@ -43,6 +43,10 @@ daily figures, and counts each visit's own path.
   scrolls, forms) are read, because they keep a visit alive under the
   inactivity timeout and a segment may match on them, but they never
   become a step.
+- **A step is a route.** The built-in site keeps its page in `?route=`,
+  and the stored path of every one of its pages is the renderer's. A step
+  is keyed by `TrafficPagePath`, the rule the daily figures and a page's
+  detail cards use, so a page reads the same everywhere.
 - **A reload is not a step.** Two page views of the same path in a row
   count once. Otherwise a reload reads as "went from /news to /news".
 - **Order.** The sessioniser's order: the client's sequence for a visit

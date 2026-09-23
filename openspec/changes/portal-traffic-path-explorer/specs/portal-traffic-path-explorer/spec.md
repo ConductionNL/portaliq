@@ -4,7 +4,7 @@
 
 ### Requirement: The paths endpoint MUST count each visit's own path from the raw events
 
-`GET /api/traffic/paths` SHALL read a portal's raw events for a period, group them into visits with the same sessioniser, inactivity timeout and UTC day cut as the daily figures, and count each visit's own sequence of page views. It SHALL NOT chain the stored page-to-page pairs. Only `page_view` events SHALL become steps; two page views of the same path in a row SHALL count as one step. The endpoint SHALL stay admin-only, SHALL answer 400 with a reason for malformed input and 404 for an unknown portal, and SHALL send `Cache-Control: private, no-store`.
+`GET /api/traffic/paths` SHALL read a portal's raw events for a period, group them into visits with the same sessioniser, inactivity timeout and UTC day cut as the daily figures, and count each visit's own sequence of page views. It SHALL NOT chain the stored page-to-page pairs. Only `page_view` events SHALL become steps. A step SHALL be the page's in-site route by the same rule as the daily figures (portal-page-traffic): the location's `route` parameter when it has one, else the stored path, with no trailing slash. Two page views of the same route in a row SHALL count as one step. The endpoint SHALL stay admin-only, SHALL answer 400 with a reason for malformed input and 404 for an unknown portal, and SHALL send `Cache-Control: private, no-store`.
 
 #### Scenario: A path is what one visit did, not a chain of pairs
 

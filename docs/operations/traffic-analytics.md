@@ -617,6 +617,9 @@ Four rules decide what a path is:
 
 - Only page views are steps. Other events keep a visit alive, but they
   are never drawn.
+- A step is the page's route, the same name the Pages list and a page's
+  own detail page use. On the built-in site that is the page, not the
+  site's address.
 - A page viewed twice in a row counts once, so a reload is not a step.
 - Visits are ordered and cut the same way as the daily figures: the
   client's own order, the portal's inactivity timeout, and midnight UTC.
