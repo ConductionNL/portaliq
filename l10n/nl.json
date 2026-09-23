@@ -1299,7 +1299,26 @@
         "_+%n more page_::_+%n more pages_": [
             "+%n andere pagina",
             "+%n andere pagina's"
-        ]
+        ],
+        "Not available for this period": "Niet beschikbaar voor deze periode",
+        "Counted on {counted} of {recorded} days": "Geteld op {counted} van {recorded} dagen",
+        "Incoming traffic": "Inkomend verkeer",
+        "Outgoing traffic": "Uitgaand verkeer",
+        "Page details": "Paginagegevens",
+        "Times": "Aantal keer",
+        "Previous page": "Vorige pagina",
+        "Next page": "Volgende pagina",
+        "Sessions that entered the portal here": "Sessies die het portaal hier binnenkwamen",
+        "Sessions that left the portal here": "Sessies die het portaal hier verlieten",
+        "Referring sites": "Verwijzende sites",
+        "Referring site": "Verwijzende site",
+        "No referring site": "Geen verwijzende site",
+        "No referring site recorded yet.": "Nog geen verwijzende site vastgelegd.",
+        "Outbound link": "Uitgaande link",
+        "No outbound link clicked yet.": "Nog geen uitgaande link aangeklikt.",
+        "No visitor came here from another page yet.": "Nog geen bezoeker kwam hier vanaf een andere pagina.",
+        "No visitor went on to another page yet.": "Nog geen bezoeker ging hiervandaan naar een andere pagina.",
+        "Could not load the traffic of this page.": "Het verkeer van deze pagina kon niet worden geladen."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

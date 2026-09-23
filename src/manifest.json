@@ -1572,10 +1572,222 @@
       "config": {
         "register": "portaliq",
         "schema": "page",
+        "_note": "portal-page-traffic: four traffic KPI cards head the page (page views, sessions, visitors, engaged sessions) for this one page, then the page details, then Incoming and Outgoing traffic side by side. The cards are the portal page's PortalTrafficKpi with scope 'page': they read GET /api/traffic/page with the page's `portal` slug and `route`, each with its own period picker, and open the Traffic page with the portal selected. A page is matched to its traffic by its route within its portal; see openspec/changes/portal-page-traffic/proposal.md. Adding widgets replaces the default detail body, so the page details are a `data` widget here, as on PortalDetail.",
+        "layout": [
+          {
+            "id": "kpi-page-views",
+            "widgetId": "page-kpi-page-views",
+            "gridX": 0,
+            "gridY": 0,
+            "gridWidth": 3,
+            "gridHeight": 2
+          },
+          {
+            "id": "kpi-sessions",
+            "widgetId": "page-kpi-sessions",
+            "gridX": 3,
+            "gridY": 0,
+            "gridWidth": 3,
+            "gridHeight": 2
+          },
+          {
+            "id": "kpi-visitors",
+            "widgetId": "page-kpi-visitors",
+            "gridX": 6,
+            "gridY": 0,
+            "gridWidth": 3,
+            "gridHeight": 2
+          },
+          {
+            "id": "kpi-engaged",
+            "widgetId": "page-kpi-engaged",
+            "gridX": 9,
+            "gridY": 0,
+            "gridWidth": 3,
+            "gridHeight": 2
+          },
+          {
+            "id": "1",
+            "widgetId": "page-data",
+            "gridX": 0,
+            "gridY": 2,
+            "gridWidth": 12,
+            "gridHeight": 5
+          },
+          {
+            "id": "2",
+            "widgetId": "page-traffic-incoming",
+            "gridX": 0,
+            "gridY": 7,
+            "gridWidth": 6,
+            "gridHeight": 6
+          },
+          {
+            "id": "3",
+            "widgetId": "page-traffic-outgoing",
+            "gridX": 6,
+            "gridY": 7,
+            "gridWidth": 6,
+            "gridHeight": 6
+          }
+        ],
         "sidebar": {
           "enabled": true,
           "showMetadata": true
-        }
+        },
+        "widgets": [
+          {
+            "id": "page-kpi-page-views",
+            "type": "PortalTrafficKpi",
+            "content": {
+              "scope": "page",
+              "metric": "pageViews",
+              "label": "Page views",
+              "testId": "page-kpi-page-views",
+              "dateRange": {
+                "presets": [
+                  {
+                    "id": "7",
+                    "label": "Last 7 days"
+                  },
+                  {
+                    "id": "",
+                    "label": "Last 30 days"
+                  },
+                  {
+                    "id": "90",
+                    "label": "Last 90 days"
+                  },
+                  {
+                    "id": "365",
+                    "label": "Last 365 days"
+                  }
+                ]
+              },
+              "variant": "primary"
+            }
+          },
+          {
+            "id": "page-kpi-sessions",
+            "type": "PortalTrafficKpi",
+            "content": {
+              "scope": "page",
+              "metric": "sessions",
+              "label": "Sessions",
+              "testId": "page-kpi-sessions",
+              "dateRange": {
+                "presets": [
+                  {
+                    "id": "7",
+                    "label": "Last 7 days"
+                  },
+                  {
+                    "id": "",
+                    "label": "Last 30 days"
+                  },
+                  {
+                    "id": "90",
+                    "label": "Last 90 days"
+                  },
+                  {
+                    "id": "365",
+                    "label": "Last 365 days"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "page-kpi-visitors",
+            "type": "PortalTrafficKpi",
+            "content": {
+              "scope": "page",
+              "metric": "visitors",
+              "label": "Visitors",
+              "testId": "page-kpi-visitors",
+              "dateRange": {
+                "presets": [
+                  {
+                    "id": "7",
+                    "label": "Last 7 days"
+                  },
+                  {
+                    "id": "",
+                    "label": "Last 30 days"
+                  },
+                  {
+                    "id": "90",
+                    "label": "Last 90 days"
+                  },
+                  {
+                    "id": "365",
+                    "label": "Last 365 days"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "page-kpi-engaged",
+            "type": "PortalTrafficKpi",
+            "content": {
+              "scope": "page",
+              "metric": "engagedSessions",
+              "label": "Engaged sessions",
+              "testId": "page-kpi-engaged",
+              "dateRange": {
+                "presets": [
+                  {
+                    "id": "7",
+                    "label": "Last 7 days"
+                  },
+                  {
+                    "id": "",
+                    "label": "Last 30 days"
+                  },
+                  {
+                    "id": "90",
+                    "label": "Last 90 days"
+                  },
+                  {
+                    "id": "365",
+                    "label": "Last 365 days"
+                  }
+                ]
+              },
+              "variant": "success"
+            }
+          },
+          {
+            "id": "page-data",
+            "type": "data",
+            "title": "Page details",
+            "icon": "FileDocument",
+            "content": {
+              "columns": 2
+            }
+          },
+          {
+            "id": "page-traffic-incoming",
+            "type": "PageTrafficFlow",
+            "title": "Incoming traffic",
+            "icon": "MapMarkerPath",
+            "content": {
+              "direction": "incoming",
+              "testId": "page-traffic-incoming"
+            }
+          },
+          {
+            "id": "page-traffic-outgoing",
+            "type": "PageTrafficFlow",
+            "title": "Outgoing traffic",
+            "icon": "OpenInNew",
+            "content": {
+              "direction": "outgoing",
+              "testId": "page-traffic-outgoing"
+            }
+          }
+        ]
       }
     },
     {

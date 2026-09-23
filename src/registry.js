@@ -43,6 +43,7 @@ import ExampleModal from './modals/ExampleModal.vue'
 import CustomExample from './views/CustomExample.vue'
 import FlowDetailSidebar from './views/flows/FlowDetailSidebar.vue'
 import PageLayoutDesigner from './views/PageLayoutDesigner.vue'
+import PageTrafficFlow from './widgets/PageTrafficFlow.vue'
 import PortalTrafficKpi from './widgets/PortalTrafficKpi.vue'
 import TrafficDaily from './widgets/TrafficDaily.vue'
 import TrafficDimensions from './widgets/TrafficDimensions.vue'
@@ -117,7 +118,14 @@ export default {
 		kind: 'widget',
 		component: PortalTrafficKpi,
 		...TRAFFIC_KPI_META,
-		_note: 'One traffic KPI card on a portal\'s detail page (portal-traffic-kpi-cards): nc-vue\'s CnStatWidget over /api/traffic/summary with its own period picker. The wrapper exists for three things a manifest stat widget cannot do: say "Not measured" without asking, link to the Traffic page with the portal selected (route tokens cannot read @object), and pass the picked period, because nc-vue 2.56.0 never resolves the @range tokens it documents.',
+		_note: 'One traffic KPI card on a portal\'s detail page (portal-traffic-kpi-cards): nc-vue\'s CnStatWidget over /api/traffic/summary with its own period picker. The wrapper exists for three things a manifest stat widget cannot do: say "Not measured" without asking, link to the Traffic page with the portal selected (route tokens cannot read @object), and pass the picked period, because nc-vue 2.56.0 never resolves the @range tokens it documents. With content.scope \'page\' (portal-page-traffic) the same card shows one portal page from /api/traffic/page, and reads "Not measured" or "Not available for this period" from that answer.',
+	},
+	// @custom-widget-ratchet exclude no built-in widget renders ranked lists from an app endpoint and says "Not measured" or "Not available for this period" instead of an empty table
+	PageTrafficFlow: {
+		kind: 'widget',
+		component: PageTrafficFlow,
+		...TRAFFIC_WIDGET_META,
+		_note: "Incoming or outgoing traffic of one portal page (portal-page-traffic), content.direction 'incoming' or 'outgoing': the previous or next pages, the entrances or exits, and the referrers or outbound links, from /api/traffic/page with its own period. One component for both directions so the registry grows by one entry, not two.",
 	},
 	TrafficDaily: {
 		kind: 'widget',

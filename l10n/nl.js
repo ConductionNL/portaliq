@@ -1288,7 +1288,26 @@ OC.L10N.register(
         "_%n step_::_%n steps_": ["%n stap","%n stappen"],
         "_Paths of %n visit. Each page is a button; choose one to follow its visits._::_Paths of %n visits. Each page is a button; choose one to follow its visits._": ["Paden van %n bezoek. Elke pagina is een knop; kies er een om de bezoeken ervan te volgen.","Paden van %n bezoeken. Elke pagina is een knop; kies er een om de bezoeken ervan te volgen."],
         "_Paths are built from visits of the last %n day, and this period is older. Pick a more recent period._::_Paths are built from visits of the last %n days, and this period is older. Pick a more recent period._": ["Paden komen uit bezoeken van de laatste %n dag, en deze periode is ouder. Kies een recentere periode.","Paden komen uit bezoeken van de laatste %n dagen, en deze periode is ouder. Kies een recentere periode."],
-        "_+%n more page_::_+%n more pages_": ["+%n andere pagina","+%n andere pagina's"]
+        "_+%n more page_::_+%n more pages_": ["+%n andere pagina","+%n andere pagina's"],
+        "Not available for this period": "Niet beschikbaar voor deze periode",
+        "Counted on {counted} of {recorded} days": "Geteld op {counted} van {recorded} dagen",
+        "Incoming traffic": "Inkomend verkeer",
+        "Outgoing traffic": "Uitgaand verkeer",
+        "Page details": "Paginagegevens",
+        "Times": "Aantal keer",
+        "Previous page": "Vorige pagina",
+        "Next page": "Volgende pagina",
+        "Sessions that entered the portal here": "Sessies die het portaal hier binnenkwamen",
+        "Sessions that left the portal here": "Sessies die het portaal hier verlieten",
+        "Referring sites": "Verwijzende sites",
+        "Referring site": "Verwijzende site",
+        "No referring site": "Geen verwijzende site",
+        "No referring site recorded yet.": "Nog geen verwijzende site vastgelegd.",
+        "Outbound link": "Uitgaande link",
+        "No outbound link clicked yet.": "Nog geen uitgaande link aangeklikt.",
+        "No visitor came here from another page yet.": "Nog geen bezoeker kwam hier vanaf een andere pagina.",
+        "No visitor went on to another page yet.": "Nog geen bezoeker ging hiervandaan naar een andere pagina.",
+        "Could not load the traffic of this page.": "Het verkeer van deze pagina kon niet worden geladen."
     },
     "nplurals=2; plural=(n != 1);"
 )

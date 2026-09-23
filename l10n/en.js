@@ -1230,7 +1230,26 @@ OC.L10N.register(
         "_%n step_::_%n steps_": ["%n step","%n steps"],
         "_Paths of %n visit. Each page is a button; choose one to follow its visits._::_Paths of %n visits. Each page is a button; choose one to follow its visits._": ["Paths of %n visit. Each page is a button; choose one to follow its visits.","Paths of %n visits. Each page is a button; choose one to follow its visits."],
         "_Paths are built from visits of the last %n day, and this period is older. Pick a more recent period._::_Paths are built from visits of the last %n days, and this period is older. Pick a more recent period._": ["Paths are built from visits of the last %n day, and this period is older. Pick a more recent period.","Paths are built from visits of the last %n days, and this period is older. Pick a more recent period."],
-        "_+%n more page_::_+%n more pages_": ["+%n more page","+%n more pages"]
+        "_+%n more page_::_+%n more pages_": ["+%n more page","+%n more pages"],
+        "Not available for this period": "Not available for this period",
+        "Counted on {counted} of {recorded} days": "Counted on {counted} of {recorded} days",
+        "Incoming traffic": "Incoming traffic",
+        "Outgoing traffic": "Outgoing traffic",
+        "Page details": "Page details",
+        "Times": "Times",
+        "Previous page": "Previous page",
+        "Next page": "Next page",
+        "Sessions that entered the portal here": "Sessions that entered the portal here",
+        "Sessions that left the portal here": "Sessions that left the portal here",
+        "Referring sites": "Referring sites",
+        "Referring site": "Referring site",
+        "No referring site": "No referring site",
+        "No referring site recorded yet.": "No referring site recorded yet.",
+        "Outbound link": "Outbound link",
+        "No outbound link clicked yet.": "No outbound link clicked yet.",
+        "No visitor came here from another page yet.": "No visitor came here from another page yet.",
+        "No visitor went on to another page yet.": "No visitor went on to another page yet.",
+        "Could not load the traffic of this page.": "Could not load the traffic of this page."
     },
     "nplurals=2; plural=(n != 1);"
 )
