@@ -149,15 +149,21 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// already taken by the schema-binding fix: a change that shares a
 		// version with one already imported never re-imports, and the field
 		// would have stayed missing.
-		// The `portal` SCHEMA version deliberately stays at 0.6.0. An earlier
-		// draft of this comment said 0.7.0 and the assertion below said 0.6.0;
-		// the assertion was right. ImportHandler treats a schema's version as
-		// "an OPTIMISATION, not the source of truth" and re-imports whenever
-		// `schemaContentDiffers()` sees different `properties`, which adding a
-		// `widget` key does. Bumping it here would not help either: this
-		// configuration version is already published, and a version-only edit
-		// under the SAME configuration version is exactly the no-op the
-		// paragraph above describes.
+		// The `portal` SCHEMA stayed at 0.6.0 for that change, and correctly:
+		// ImportHandler treats a schema's version as "an OPTIMISATION, not
+		// the source of truth" and re-imports whenever `schemaContentDiffers()`
+		// sees different `properties`, which adding a `widget` key does.
+		// 0.26.0 (portal 0.7.0): `traffic.allowSlugFallback`, so a portal can
+		// refuse events that merely NAME it. The collector resolves host
+		// first and falls back to the slug, and that fallback asked for no
+		// other credential. Measured on the ConductionNl portal: of 162 stored
+		// events, 29 came from `localhost:4173` and were counted as visits.
+		// Defaults to true, because the fallback is the only route for an
+		// external portal on its own domain, and switching it off for
+		// everyone would silence those portals without anyone asking.
+		// The schema version moves this time because a new PROPERTY needs a
+		// column, where a widget hint only changed how an existing one
+		// renders.
 		// That the pattern reaches the form is not assumed: integriq's
 		// `consumer` schema already stores three `type: object` properties
 		// carrying `widget: "json"` (authorizationConfiguration, rateLimit,
@@ -166,7 +172,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// Every new schema is listed in
 		// `components.registers.portaliq.schemas` (ImportHandler binds only
 		// what is listed there) and declares a non-empty `read` rule.
-		$this->assertSame('0.25.0', self::$register['info']['version']);
+		$this->assertSame('0.26.0', self::$register['info']['version']);
 		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalCaseType']['version']);
 		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalCase']['version']);
 		$this->assertSame(['authenticated'], self::$register['components']['schemas']['portalCase']['authorization']['read']);
@@ -176,7 +182,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalTrafficRecording']['authorization']['read']);
 		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['page']['version']);
-		$this->assertSame('0.6.0', self::$register['components']['schemas']['portal']['version']);
+		$this->assertSame('0.7.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('0.8.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalSession']['version']);
