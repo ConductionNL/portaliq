@@ -25,6 +25,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
+use DateTimeImmutable;
+use DateTimeZone;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\Traffic\TrafficEventStore;
 use OCA\Portaliq\Service\Traffic\TrafficPagePath;
@@ -117,7 +119,7 @@ class TrafficPageController extends Controller {
 			$span = (int)$days;
 		}
 
-		$today = new \DateTimeImmutable('today', new \DateTimeZone('UTC'));
+		$today = new DateTimeImmutable('today', new DateTimeZone('UTC'));
 		$from = $today->modify('-'.($span - 1).' days')->format('Y-m-d');
 		$to = $today->format('Y-m-d');
 		$normalised = $this->paths->route(value: $route);

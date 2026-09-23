@@ -91,8 +91,6 @@ class TrafficRollup {
 	 */
 	public function build(string $portal, string $date, array $sessions, string $aggregatedAt, array $options = []): array {
 		$totals = $this->totals(sessions: $sessions);
-		// Each page row counts the engaged sessions that viewed it
-		// (portal-page-traffic), by the same definition as the day's total.
 		$pages = $this->journeys->pages(sessions: $sessions, engaged: $totals['engagedBy']);
 		// NULL, NOT ZERO, in cookieless mode (Ruben, decision 2). A hash
 		// that does not survive the day cannot say whether it was here

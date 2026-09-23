@@ -27,6 +27,7 @@ use OCA\Portaliq\Service\Traffic\TrafficRollupSum;
 use OCA\Portaliq\Service\Traffic\TrafficSegments;
 use OCA\Portaliq\Service\Traffic\TrafficSessioniser;
 use OCA\Portaliq\Service\TrafficAggregationService;
+use OCA\Portaliq\Service\TrafficBackfillService;
 use OCA\Portaliq\Service\TrafficConfigResolver;
 use OCA\Portaliq\Tests\Unit\Service\Traffic\FakeAppConfig;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -87,6 +88,14 @@ class TrafficAggregationServiceTest extends TestCase {
 	 * @var array<int, array<string, mixed>>|null
 	 */
 	private ?array $portals = null;
+
+	/**
+	 * The resolver, store and clock doubles of the last service(), so the
+	 * back-fill service can share them.
+	 *
+	 * @var array<string, mixed>
+	 */
+	private array $doubles = [];
 
 	/**
 	 * The frozen clock: 2026-09-04 23:30:00 UTC.
@@ -192,6 +201,8 @@ class TrafficAggregationServiceTest extends TestCase {
 			}
 		);
 
+		$this->doubles = ['portals' => $portals, 'store' => $store, 'clock' => $clock];
+
 		return new TrafficAggregationService(
 			$portals,
 			new TrafficConfigResolver(),
@@ -206,6 +217,26 @@ class TrafficAggregationServiceTest extends TestCase {
 			$recordings
 		);
 	}//end service()
+
+
+	/**
+	 * The back-fill service (portal-page-traffic) over the same doubles
+	 * and a fresh aggregation service.
+	 *
+	 * @return TrafficBackfillService The service.
+	 */
+	private function backfillService(): TrafficBackfillService {
+		$aggregation = $this->service();
+
+		return new TrafficBackfillService(
+			$this->doubles['portals'],
+			new TrafficConfigResolver(),
+			$this->doubles['store'],
+			$aggregation,
+			$this->config->mock($this),
+			$this->doubles['clock']
+		);
+	}//end backfillService()
 
 
 	/**
@@ -272,10 +303,8 @@ class TrafficAggregationServiceTest extends TestCase {
 		$afterFirst = $this->daily;
 		$second = $service->run();
 
-		// The first run also back-fills the retained days once
-		// (portal-page-traffic); the second finds the marker and does not.
-		$this->assertSame(['portals' => 2, 'days' => 3, 'backfilled' => 3, 'purged' => 3, 'recordingsPurged' => 2], $first);
-		$this->assertSame(['portals' => 2, 'days' => 3, 'backfilled' => 0, 'purged' => 3, 'recordingsPurged' => 2], $second);
+		$this->assertSame(['portals' => 2, 'days' => 3, 'purged' => 3, 'recordingsPurged' => 2], $first);
+		$this->assertSame(['portals' => 2, 'days' => 3, 'purged' => 3, 'recordingsPurged' => 2], $second);
 		$this->assertCount(3, $this->daily, 'one object per portal-day, not one per run');
 		$this->assertSame($afterFirst, $this->daily, 'the second run replaced, it did not add');
 
@@ -432,13 +461,13 @@ class TrafficAggregationServiceTest extends TestCase {
 			$this->event('open-tilburg', '2026-08-20T10:00:00.000Z', '/', receivedAt: '2026-08-20T10:00:01.000Z'),
 			$this->event('open-tilburg', '2026-08-20T11:00:00.000Z', '/', receivedAt: '2026-08-20T11:00:01.000Z', visitor: 'h2'),
 		];
-		$service = $this->service();
+		$backfill = $this->backfillService();
 
-		$first = $service->run();
-		$second = $service->run();
+		$first = $backfill->runOnce();
+		$second = $backfill->runOnce();
 
-		$this->assertSame(1, $first['backfilled']);
-		$this->assertSame(0, $second['backfilled']);
+		$this->assertSame(1, $first);
+		$this->assertSame(0, $second);
 		$this->assertSame('page-traffic-1', $this->config->values['portaliq/traffic_backfilled']);
 		$page = $this->daily['old']['pages'][0];
 		$this->assertSame('/', $page['path']);
@@ -470,11 +499,11 @@ class TrafficAggregationServiceTest extends TestCase {
 			$this->events[] = $this->event('open-tilburg', sprintf('2026-06-07T10:%02d:00.000Z', $i), '/', receivedAt: '2026-06-07T12:00:00.000Z', visitor: 'h' . $i);
 		}
 
-		$result = $this->service()->backfill();
+		$result = $this->backfillService()->backfill();
 
 		$this->assertSame($stored, $this->daily['edge']);
 		$this->assertSame(0, $result['days']);
 		$this->assertSame(2, $result['portals'], 'both ordinary portals are walked');
-		$this->assertSame(0, $this->service()->backfill(only: 'open-venray')['days'], 'one portal on request, and the other is left alone');
+		$this->assertSame(1, $this->backfillService()->backfill(only: 'open-venray')['portals'], 'one portal on request');
 	}//end testAPartlyPurgedDayKeepsItsOldRecord()
 }//end class

@@ -26,7 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Command;
 
-use OCA\Portaliq\Service\TrafficAggregationService;
+use OCA\Portaliq\Service\TrafficBackfillService;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -48,12 +48,12 @@ class TrafficReaggregate extends Command {
 	/**
 	 * Constructor.
 	 *
-	 * @param TrafficAggregationService $aggregation Does the work.
+	 * @param TrafficBackfillService $backfill Does the work.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly TrafficAggregationService $aggregation,
+		private readonly TrafficBackfillService $backfill,
 	) {
 		parent::__construct();
 	}//end __construct()
@@ -93,7 +93,7 @@ class TrafficReaggregate extends Command {
 			$only = null;
 		}
 
-		$result = $this->aggregation->backfill(only: $only);
+		$result = $this->backfill->backfill(only: $only);
 		$output->writeln('Portals: ' . $result['portals']);
 		$output->writeln('Days rebuilt: ' . $result['days']);
 		$output->writeln('Days kept as they were (no raw events left, or fewer than the record counts): ' . $result['kept']);

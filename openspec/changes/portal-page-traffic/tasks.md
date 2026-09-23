@@ -10,8 +10,8 @@
 
 ## 2. Back-fill
 
-- [x] 2.1 `TrafficAggregationService::backfill()`: every retained day of every ordinary portal, then the roll-ups, never over a more complete stored day.
-- [x] 2.2 `run()` back-fills once, keyed on an app config marker.
+- [x] 2.1 `TrafficBackfillService::backfill()`: every retained day of every ordinary portal, then the roll-ups, never over a more complete stored day (`TrafficDayGuard`). Built from the job's own day rebuild, `TrafficAggregationService::dayRecords()` and `writeDay()`.
+- [x] 2.2 `TrafficAggregationJob` runs `TrafficBackfillService::runOnce()` after the aggregation, keyed on an app config marker, in its own try.
 - [x] 2.3 `occ portaliq:traffic:reaggregate` runs the back-fill on demand.
 
 ## 3. Endpoint

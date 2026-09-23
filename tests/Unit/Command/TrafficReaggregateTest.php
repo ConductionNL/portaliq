@@ -19,7 +19,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Command;
 
 use OCA\Portaliq\Command\TrafficReaggregate;
-use OCA\Portaliq\Service\TrafficAggregationService;
+use OCA\Portaliq\Service\TrafficBackfillService;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
@@ -37,7 +37,7 @@ class TrafficReaggregateTest extends TestCase {
 	 */
 	public function testItBackfillsEveryPortalOrTheOneAskedFor(): void {
 		$asked = [];
-		$service = $this->createMock(TrafficAggregationService::class);
+		$service = $this->createMock(TrafficBackfillService::class);
 		$service->method('backfill')->willReturnCallback(
 			static function (?string $only = null) use (&$asked): array {
 				$asked[] = $only;
