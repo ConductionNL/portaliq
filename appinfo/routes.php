@@ -83,6 +83,9 @@ return [
         // portal-traffic-kpi-cards: the four totals behind the KPI cards
         // on a portal's detail page. Admin only, like the export.
         ['name' => 'trafficReport#summary', 'url' => '/api/traffic/summary', 'verb' => 'GET'],
+        // portal-traffic-path-explorer: the steps visitors took, counted
+        // from the raw events. Admin only, like the summary.
+        ['name' => 'trafficPath#paths', 'url' => '/api/traffic/paths', 'verb' => 'GET'],
         // portal-traffic-experiments: a session recording chunk, and the
         // recorder the client loads only for a portal that switched
         // recording on. Both public for the collector's reasons.
