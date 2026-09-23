@@ -400,9 +400,9 @@
             "title": "Pages"
           },
           {
-            "id": "traffic-journeys",
-            "type": "TrafficJourneys",
-            "title": "Journeys"
+            "id": "traffic-paths",
+            "type": "TrafficPathExplorer",
+            "title": "Paths"
           },
           {
             "id": "traffic-sources",
@@ -513,22 +513,22 @@
             "widgetId": "traffic-pages",
             "gridX": 0,
             "gridY": 7,
-            "gridWidth": 6,
+            "gridWidth": 12,
             "gridHeight": 4
           },
           {
             "id": 4,
-            "widgetId": "traffic-journeys",
-            "gridX": 6,
-            "gridY": 7,
-            "gridWidth": 6,
-            "gridHeight": 4
+            "widgetId": "traffic-paths",
+            "gridX": 0,
+            "gridY": 11,
+            "gridWidth": 12,
+            "gridHeight": 8
           },
           {
             "id": 5,
             "widgetId": "traffic-sources",
             "gridX": 0,
-            "gridY": 11,
+            "gridY": 19,
             "gridWidth": 12,
             "gridHeight": 3
           },
@@ -536,7 +536,7 @@
             "id": 6,
             "widgetId": "traffic-visitors",
             "gridX": 0,
-            "gridY": 14,
+            "gridY": 22,
             "gridWidth": 12,
             "gridHeight": 5
           },
@@ -544,7 +544,7 @@
             "id": 7,
             "widgetId": "traffic-goals",
             "gridX": 0,
-            "gridY": 19,
+            "gridY": 27,
             "gridWidth": 6,
             "gridHeight": 4
           },
@@ -552,7 +552,7 @@
             "id": 8,
             "widgetId": "traffic-funnels",
             "gridX": 6,
-            "gridY": 19,
+            "gridY": 27,
             "gridWidth": 6,
             "gridHeight": 4
           },
@@ -560,7 +560,7 @@
             "id": 9,
             "widgetId": "traffic-forms",
             "gridX": 0,
-            "gridY": 23,
+            "gridY": 31,
             "gridWidth": 6,
             "gridHeight": 4
           },
@@ -568,7 +568,7 @@
             "id": 10,
             "widgetId": "traffic-dimensions",
             "gridX": 6,
-            "gridY": 23,
+            "gridY": 31,
             "gridWidth": 6,
             "gridHeight": 4
           },
@@ -576,7 +576,7 @@
             "id": 11,
             "widgetId": "traffic-errors",
             "gridX": 0,
-            "gridY": 27,
+            "gridY": 35,
             "gridWidth": 12,
             "gridHeight": 3
           },
@@ -584,7 +584,7 @@
             "id": 12,
             "widgetId": "traffic-experiments",
             "gridX": 0,
-            "gridY": 30,
+            "gridY": 38,
             "gridWidth": 12,
             "gridHeight": 4
           },
@@ -592,7 +592,7 @@
             "id": 13,
             "widgetId": "traffic-heatmap",
             "gridX": 0,
-            "gridY": 34,
+            "gridY": 42,
             "gridWidth": 6,
             "gridHeight": 5
           },
@@ -600,7 +600,7 @@
             "id": 14,
             "widgetId": "traffic-recordings",
             "gridX": 6,
-            "gridY": 34,
+            "gridY": 42,
             "gridWidth": 6,
             "gridHeight": 5
           }

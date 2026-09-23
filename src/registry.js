@@ -52,10 +52,10 @@ import TrafficForms from './widgets/TrafficForms.vue'
 import TrafficFunnels from './widgets/TrafficFunnels.vue'
 import TrafficGoals from './widgets/TrafficGoals.vue'
 import TrafficHeatmap from './widgets/TrafficHeatmap.vue'
-import TrafficJourneys from './widgets/TrafficJourneys.vue'
 import TrafficKpi from './widgets/TrafficKpi.vue'
 import TrafficOverview from './widgets/TrafficOverview.vue'
 import TrafficPages from './widgets/TrafficPages.vue'
+import TrafficPathExplorer from './widgets/TrafficPathExplorer.vue'
 import TrafficRecordings from './widgets/TrafficRecordings.vue'
 import TrafficSources from './widgets/TrafficSources.vue'
 import TrafficVisitors from './widgets/TrafficVisitors.vue'
@@ -131,11 +131,11 @@ export default {
 		...TRAFFIC_WIDGET_META,
 		_note: 'Top pages with entrances and exits, merged across the daily rollups of the selected portal. Custom because the rows live inside each rollup object (pages[]), which object-table cannot unfold or sum across objects.',
 	},
-	TrafficJourneys: {
+	TrafficPathExplorer: {
 		kind: 'widget',
-		component: TrafficJourneys,
+		component: TrafficPathExplorer,
 		...TRAFFIC_WIDGET_META,
-		_note: 'Top page-to-page transitions, merged across the daily rollups. Custom for the same reason as TrafficPages: transitions[] is nested per rollup.',
+		_note: 'The steps visitors took from a starting point or to an ending point, with the top pages per step, "+N more", drop-offs and flow bands, drawn in SVG (portal-traffic-path-explorer). Replaces TrafficJourneys. Custom because no built-in widget draws a flow diagram or reads /api/traffic/paths, and because its nodes are buttons that re-ask the endpoint with the chosen trail.',
 	},
 	TrafficSources: {
 		kind: 'widget',
