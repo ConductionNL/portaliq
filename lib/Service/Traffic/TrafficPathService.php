@@ -45,7 +45,9 @@ use OCP\ICacheFactory;
  *   days that were.
  * - The event cap. One read scans at most MAX_EVENTS events. Measured on
  *   2026-09-23 against OpenRegister on the dev stack: 20,000 events read in
- *   3.2 s, so the cap is about eight seconds of reading. When it is hit the
+ *   3.2 to 5.4 s, so the cap is roughly 8 to 14 seconds of reading; a lean
+ *   row holds about 720 bytes, so the day in hand stays in tens of
+ *   megabytes. Grouping and counting 20,000 events took 0.13 s. When it is hit the
  *   day in hand is used as far as it was read, the older days are not
  *   read at all, and the answer says `truncated` and which day was partial.
  *
