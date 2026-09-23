@@ -157,7 +157,8 @@ class TrafficEventStoreTest extends TestCase {
 	/**
 	 * The bounded read says when its limit stopped it, asks for one row
 	 * more than the limit to know, and hands back lean rows: no `@self`,
-	 * no empty fields (portal-traffic-path-explorer).
+	 * no empty fields, and the location kept, because the route of a
+	 * built-in site page lives in its query (portal-traffic-path-explorer).
 	 *
 	 * @return void
 	 */
@@ -169,7 +170,15 @@ class TrafficEventStoreTest extends TestCase {
 				$this->configs[] = $config;
 				$rows = [];
 				for ($i = 0; $i < 5; $i++) {
-					$rows[] = ['@self' => ['id' => 'u' . $i], 'name' => 'page_view', 'pagePath' => '/p' . $i, 'sequence' => 0, 'clientId' => null, 'region' => ''];
+					$rows[] = [
+						'@self' => ['id' => 'u' . $i],
+						'name' => 'page_view',
+						'pagePath' => '/p' . $i,
+						'pageLocation' => 'https://x.test/site?route=/r' . $i,
+						'sequence' => 0,
+						'clientId' => null,
+						'region' => '',
+					];
 				}
 
 				return array_slice($rows, $config['offset'], $config['limit']);
@@ -181,9 +190,9 @@ class TrafficEventStoreTest extends TestCase {
 		$this->assertTrue($capped['truncated']);
 		$this->assertSame(
 			[
-				['name' => 'page_view', 'pagePath' => '/p0', 'sequence' => 0],
-				['name' => 'page_view', 'pagePath' => '/p1', 'sequence' => 0],
-				['name' => 'page_view', 'pagePath' => '/p2', 'sequence' => 0],
+				['name' => 'page_view', 'pagePath' => '/p0', 'pageLocation' => 'https://x.test/site?route=/r0', 'sequence' => 0],
+				['name' => 'page_view', 'pagePath' => '/p1', 'pageLocation' => 'https://x.test/site?route=/r1', 'sequence' => 0],
+				['name' => 'page_view', 'pagePath' => '/p2', 'pageLocation' => 'https://x.test/site?route=/r2', 'sequence' => 0],
 			],
 			$capped['events']
 		);

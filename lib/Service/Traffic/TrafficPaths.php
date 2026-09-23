@@ -34,7 +34,11 @@ namespace OCA\Portaliq\Service\Traffic;
  * A PATH, and the three rules that make one:
  * - only `page_view` events are steps (other events are read by the
  *   caller, because they keep a visit alive, but never drawn);
- * - two views of the same path in a row are one step, so a reload does
+ * - a step is the page's in-site ROUTE (`TrafficPagePath`, the same key
+ *   the daily figures and a page's detail cards use), not the stored
+ *   path: the built-in site keeps its route in `?route=` and the stored
+ *   path of every one of its pages is the renderer's;
+ * - two views of the same route in a row are one step, so a reload does
  *   not read as "went from /news to /news";
  * - the order is the sessioniser's, which this class receives already
  *   applied.
@@ -77,6 +81,18 @@ class TrafficPaths {
 	 * it is the one character a stored path cannot carry.
 	 */
 	private const JOIN = "\0";
+
+	/**
+	 * Constructor.
+	 *
+	 * @param TrafficPagePath $pagePath Keys a page view by its in-site route.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private readonly TrafficPagePath $pagePath = new TrafficPagePath(),
+	) {
+	}
 
 	/**
 	 * A visit's page views, in order, with reloads collapsed.
@@ -369,24 +385,15 @@ class TrafficPaths {
 	}
 
 	/**
-	 * The path of an event's page: the stored path, else the path of its
-	 * location, else "/". The same rule as the daily figures' page list.
+	 * The in-site route of an event's page, by the same rule as the daily
+	 * figures (portal-page-traffic), so a page reads the same here, in the
+	 * Pages widget and on its own detail page.
 	 *
 	 * @param array<string, mixed> $event The event.
 	 *
-	 * @return string The path.
+	 * @return string The route.
 	 */
 	private function path(array $event): string {
-		$path = trim((string)($event['pagePath'] ?? ''));
-		if ($path !== '') {
-			return $path;
-		}
-
-		$fromLocation = parse_url((string)($event['pageLocation'] ?? ''), PHP_URL_PATH);
-		if (is_string($fromLocation) === true && $fromLocation !== '') {
-			return $fromLocation;
-		}
-
-		return '/';
+		return $this->pagePath->ofEvent(event: $event);
 	}
 }

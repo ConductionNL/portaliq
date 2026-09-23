@@ -134,6 +134,71 @@ class TrafficPathsTest extends TestCase {
 
 
 	/**
+	 * A built-in site event: the stored path is the renderer's for every
+	 * page, and the page is in the location's `route` parameter.
+	 *
+	 * @param string|null $route The route, or null for a location without one.
+	 *
+	 * @return array<string, mixed> The event.
+	 */
+	private function siteView(?string $route): array {
+		$location = 'https://portal.example/index.php/apps/portaliq/site?portal=open-tilburg';
+		if ($route !== null) {
+			$location .= '&route=' . rawurlencode($route);
+		}
+
+		return ['name' => 'page_view', 'pagePath' => '/index.php/apps/portaliq/site', 'pageLocation' => $location];
+	}//end siteView()
+
+
+	/**
+	 * On the built-in site every stored path is the renderer's; the steps
+	 * are the routes, by the same rule as the daily figures: the `route`
+	 * parameter, `/` for the renderer without one, no trailing slash.
+	 *
+	 * @return void
+	 */
+	public function testABuiltInSiteVisitIsItsRoutesNotTheRenderersPath(): void {
+		$session = [
+			'events' => [
+				$this->siteView(route: null),
+				$this->siteView(route: '/nieuws/'),
+				$this->siteView(route: '/nieuws'),
+				$this->siteView(route: '/contact'),
+			],
+		];
+
+		$this->assertSame(['/', '/nieuws', '/contact'], (new TrafficPaths())->sequence(session: $session));
+	}//end testABuiltInSiteVisitIsItsRoutesNotTheRenderersPath()
+
+
+	/**
+	 * Built-in site visits give distinct nodes per route, and a route can be
+	 * the start point.
+	 *
+	 * @return void
+	 */
+	public function testBuiltInSiteVisitsGiveDistinctNodes(): void {
+		$sessions = [
+			['events' => [$this->siteView(route: null), $this->siteView(route: '/nieuws'), $this->siteView(route: '/contact')]],
+			['events' => [$this->siteView(route: null), $this->siteView(route: '/over-ons')]],
+			['events' => [$this->siteView(route: '/nieuws'), $this->siteView(route: '/contact')]],
+		];
+		$paths = new TrafficPaths();
+		$folded = $paths->fold(folded: [], sessions: $sessions);
+
+		$explorer = $paths->explore(folded: $folded, mode: 'start', anchor: '', steps: 2, trail: []);
+		$this->assertSame(['/' => [2, 0], '/nieuws' => [1, 0]], $this->nodes(column: $explorer['columns'][0]));
+		$this->assertSame(['/contact' => [1, 1], '/nieuws' => [1, 0], '/over-ons' => [1, 1]], $this->nodes(column: $explorer['columns'][1]));
+		$this->assertSame(['/contact' => [1, 1]], $this->nodes(column: $explorer['columns'][2]));
+
+		$fromNews = $paths->explore(folded: $folded, mode: 'start', anchor: '/nieuws', steps: 1, trail: []);
+		$this->assertSame(['/nieuws' => [2, 0]], $this->nodes(column: $fromNews['columns'][0]));
+		$this->assertSame(['/contact' => [2, 2]], $this->nodes(column: $fromNews['columns'][1]));
+	}//end testBuiltInSiteVisitsGiveDistinctNodes()
+
+
+	/**
 	 * A visit is cut at MAX_VIEWS page views.
 	 *
 	 * @return void
