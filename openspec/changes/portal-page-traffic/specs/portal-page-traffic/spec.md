@@ -4,7 +4,7 @@
 
 ### Requirement: A page's traffic MUST be counted by its in-site route
 
-The daily page rows SHALL count a page view under its in-site route: the `route` query parameter of the page location when present, else the stored page path. The route SHALL start with a slash and SHALL NOT end with one, except the home route `/`. The page endpoint SHALL normalise a page's `route` by the same rule, so a page and its rows meet on one string.
+The daily page rows SHALL count a page view under its in-site route: the `route` query parameter of the page location when present, `/` for the built-in site renderer without one, else the stored page path. The route SHALL start with a slash and SHALL NOT end with one, except the home route `/`. The page endpoint SHALL normalise a page's `route` by the same rule, so a page and its rows meet on one string.
 
 #### Scenario: The built-in site counts each page by its route
 
@@ -24,10 +24,11 @@ Each row of `portalTrafficDaily.pages` SHALL carry `sessions` (sessions that vie
 
 #### Scenario: A page row counts its own sessions and sources
 
-- GIVEN one session entering on `/` from `www.google.com` and moving to `/contact`, and one engaged session viewing `/contact` twice
+- GIVEN one brief session entering on `/contact` from `www.google.com`, and one session viewing `/contact` twice and clicking a link to `https://www.tilburg.nl/`
 - WHEN the day is aggregated
-- THEN the `/contact` row has 2 sessions, 3 views and 1 engaged session
-- AND the `/` row lists `www.google.com` among its referrers with a count of 1
+- THEN the `/contact` row has 3 views, 2 sessions, 2 visitors and 1 engaged session
+- AND its referrers list `www.google.com` with a count of 1
+- AND its outbound links list `https://www.tilburg.nl/` with a count of 1
 
 #### Scenario: A roll-up leaves out a figure a member lacks
 
