@@ -12,6 +12,7 @@
  * server normalises the same way (TrafficPagePath::route); this only
  * spares the endpoint a refusal for a route stored without its slash.
  *
+ * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-a-pages-traffic-must-be-counted-by-its-in-site-route
  * @param {object|null} page The page object.
  * @return {string} The route, or '' when the page has none.
  */
@@ -40,6 +41,7 @@ export function pageRoute(page) {
  * (no day of the period counted it) stays null, so the widget can say
  * "Not available for this period" instead of drawing an empty table.
  *
+ * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-show-where-visitors-came-from-and-went-next
  * @param {object|null} answer    The endpoint's answer.
  * @param {string}      direction `incoming` or `outgoing`.
  * @return {{pages: Array<object>|null, boundary: number|null, sources: Array<object>|null}} The lists.
