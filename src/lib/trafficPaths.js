@@ -132,6 +132,7 @@ export function layoutPaths(result, measures = {}) {
  * The outline of one band: a top curve out, a straight edge down, a
  * bottom curve back, closed.
  *
+ * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-each-step-must-show-its-busiest-pages-the-rest-as-one-node-and-where-visits-ended
  * @param {number} x0 Where it leaves, x.
  * @param {number} y0 Where it leaves, top y.
  * @param {number} x1 Where it arrives, x.

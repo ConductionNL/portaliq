@@ -396,6 +396,31 @@ test.describe('traffic path explorer: the Traffic page', () => {
 		await expect(page.getByTestId('traffic-paths-diagram')).toHaveCount(0)
 	})
 
+	// @e2e portal-traffic-analytics::a-measured-portal-without-figures-is-not-the-same-as-an-unmeasured-one
+	test('a period without daily figures reads "No traffic recorded yet" in the explorer, not "Not measured"', async ({
+		page,
+	}) => {
+		test.skip(
+			CONTAINER === '',
+			'the page needs the daily figures; set E2E_CONTAINER',
+		)
+		await openTraffic(page)
+		const range = page.getByTestId('traffic-range-select')
+		await range.locator('input').first().click()
+		await range.locator('input').first().fill('Custom')
+		await page.keyboard.press('Enter')
+		// Years before any portal measured anything.
+		await page.locator('input#traffic-range-from').fill('2020-01-01')
+		await page.locator('input#traffic-range-to').fill('2020-01-02')
+
+		const explorer = page.getByTestId('traffic-paths')
+		await expect(explorer.getByTestId('traffic-empty')).toBeVisible({
+			timeout: 15_000,
+		})
+		await expect(explorer.getByTestId('traffic-not-measured')).toHaveCount(0)
+		await expect(page.getByTestId('traffic-paths-diagram')).toHaveCount(0)
+	})
+
 	// @e2e portal-traffic-path-explorer::a-capped-read-says-it-is-truncated
 	// @e2e portal-traffic-path-explorer::a-period-beyond-retention-names-the-days-covered
 	test('the explorer says when the paths cover less than the period', async ({
