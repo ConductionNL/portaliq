@@ -3,8 +3,10 @@
 
 <!--
   TrafficOverview — the portal, period and segment selectors, the Export
-  button and the four headline numbers (portal-traffic-analytics,
-  portal-traffic-visitors-and-geo, portal-traffic-reporting).
+  button and the notes (portal-traffic-analytics,
+  portal-traffic-visitors-and-geo, portal-traffic-reporting). The four
+  headline numbers are KPI cards of their own since portal-traffic-kpi-cards
+  (TrafficKpi).
 
   The selectors live here and drive every other Traffic widget through
   the shared report store. The warning card lists which sensitive
@@ -112,40 +114,10 @@
 		</NcNoteCard>
 
 		<TrafficEmptyState :state="emptyState" />
-
-		<div v-if="emptyState === ''" class="traffic-overview__tiles">
-			<CnStatsBlock
-				:title="t('portaliq', 'Page views')"
-				:count="summary.totals.pageViews"
-				:countLabel="rangeLabel"
-				:loading="loading"
-				variant="primary"
-				data-testid="traffic-tile-page-views" />
-			<CnStatsBlock
-				:title="t('portaliq', 'Sessions')"
-				:count="summary.totals.sessions"
-				:countLabel="rangeLabel"
-				:loading="loading"
-				data-testid="traffic-tile-sessions" />
-			<CnStatsBlock
-				:title="t('portaliq', 'Visitors')"
-				:count="summary.totals.visitors"
-				:countLabel="rangeLabel"
-				:loading="loading"
-				data-testid="traffic-tile-visitors" />
-			<CnStatsBlock
-				:title="t('portaliq', 'Engaged sessions')"
-				:count="summary.totals.engagedSessions"
-				:countLabel="rangeLabel"
-				:loading="loading"
-				variant="success"
-				data-testid="traffic-tile-engaged" />
-		</div>
 	</div>
 </template>
 
 <script>
-import { CnStatsBlock } from '@conduction/nextcloud-vue'
 import {
 	NcButton,
 	NcDateTimePickerNative,
@@ -162,7 +134,6 @@ export default {
 	name: 'TrafficOverview',
 
 	components: {
-		CnStatsBlock,
 		Download,
 		NcButton,
 		NcDateTimePickerNative,
@@ -302,10 +273,32 @@ export default {
 	},
 
 	mounted() {
+		this.selectFromQuery()
 		this.report.load()
 	},
 
 	methods: {
+		/**
+		 * Select the portal named in `?portal=`, as the KPI cards on a
+		 * portal's page link here. An unknown slug is left to `load()`,
+		 * which falls back to the first measured portal.
+		 *
+		 * @spec openspec/changes/portal-traffic-kpi-cards/specs/portal-traffic-kpi-cards/spec.md#requirement-the-traffic-page-must-show-its-four-headline-numbers-as-kpi-cards
+		 * @return {void}
+		 */
+		selectFromQuery() {
+			const slug = this.$route && this.$route.query && this.$route.query.portal
+			if (
+				typeof slug !== 'string'
+				|| slug === ''
+				|| slug === this.report.portalSlug
+			) {
+				return
+			}
+			this.report.portalSlug = slug
+			this.report.segment = ''
+		},
+
 		/**
 		 * Switch the page to another portal.
 		 *
@@ -479,12 +472,6 @@ export default {
 .traffic-overview__toolbar > * {
 	min-width: 200px;
 	max-width: 320px;
-}
-
-.traffic-overview__tiles {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-	gap: 12px;
 }
 
 .traffic-overview__switches {

@@ -27,6 +27,7 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Service\Traffic\TrafficEventStore;
 use OCA\Portaliq\Service\Traffic\TrafficExport;
+use OCA\Portaliq\Service\Traffic\TrafficReportNumbers;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -54,12 +55,19 @@ class TrafficReportController extends Controller {
 	public const MAX_DAYS = 366;
 
 	/**
+	 * The periods the summary answers, in days: exactly what the KPI
+	 * cards on a portal's page offer. An empty period means 30.
+	 */
+	public const SUMMARY_DAYS = ['7', '30', '90', '365'];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param string            $appName The app id.
 	 * @param IRequest          $request The request.
 	 * @param TrafficEventStore $store   Reads the daily records.
 	 * @param TrafficExport     $export  Renders the file.
+	 * @param TrafficReportNumbers $numbers Folds the records into totals.
 	 *
 	 * @return void
 	 */
@@ -68,6 +76,7 @@ class TrafficReportController extends Controller {
 		IRequest $request,
 		private readonly TrafficEventStore $store,
 		private readonly TrafficExport $export,
+		private readonly TrafficReportNumbers $numbers,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -110,6 +119,59 @@ class TrafficReportController extends Controller {
 
 		return $response;
 	}//end export()
+
+
+	/**
+	 * A portal's four headline totals over the last days, for the KPI
+	 * cards on its detail page.
+	 *
+	 * Reads the "all visits" records only: a segment's record repeats
+	 * visits the "all visits" record already counts. Folded by the same
+	 * arithmetic as the scheduled report, so a card and a mail agree.
+	 *
+	 * @param string $portal The portal slug.
+	 * @param string $days   7, 30, 90 or 365; '' for 30.
+	 *
+	 * @return JSONResponse The totals, or a 400 with a reason.
+	 *
+	 * @spec openspec/changes/portal-traffic-kpi-cards/specs/portal-traffic-kpi-cards/spec.md#requirement-the-summary-endpoint-must-return-a-portals-four-totals-for-a-period
+	 */
+	public function summary(string $portal = '', string $days = ''): JSONResponse {
+		if (preg_match('/^[A-Za-z0-9][A-Za-z0-9-]{0,127}$/', $portal) !== 1) {
+			return new JSONResponse(['error' => 'missing-portal'], Http::STATUS_BAD_REQUEST);
+		}
+
+		if ($days === '') {
+			$days = '30';
+		}
+
+		if (in_array($days, self::SUMMARY_DAYS, true) === false) {
+			return new JSONResponse(['error' => 'invalid-period'], Http::STATUS_BAD_REQUEST);
+		}
+
+		$span = (int)$days;
+
+		$today = new \DateTimeImmutable('today', new \DateTimeZone('UTC'));
+		$from = $today->modify('-'.($span - 1).' days')->format('Y-m-d');
+		$to = $today->format('Y-m-d');
+		$folded = $this->numbers->fold(records: $this->store->dailyBetween(portal: $portal, from: $from, to: $to));
+
+		$response = new JSONResponse(
+			[
+				'portal' => $portal,
+				'from' => $from,
+				'to' => $to,
+				'days' => $span,
+				'pageViews' => $folded['pageViews'],
+				'sessions' => $folded['sessions'],
+				'visitors' => $folded['visitors'],
+				'engagedSessions' => $folded['engagedSessions'],
+			]
+		);
+		$response->addHeader('Cache-Control', 'private, no-store');
+
+		return $response;
+	}//end summary()
 
 
 	/**

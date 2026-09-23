@@ -43,6 +43,7 @@ import ExampleModal from './modals/ExampleModal.vue'
 import CustomExample from './views/CustomExample.vue'
 import FlowDetailSidebar from './views/flows/FlowDetailSidebar.vue'
 import PageLayoutDesigner from './views/PageLayoutDesigner.vue'
+import PortalTrafficKpi from './widgets/PortalTrafficKpi.vue'
 import TrafficDaily from './widgets/TrafficDaily.vue'
 import TrafficDimensions from './widgets/TrafficDimensions.vue'
 import TrafficErrors from './widgets/TrafficErrors.vue'
@@ -52,6 +53,7 @@ import TrafficFunnels from './widgets/TrafficFunnels.vue'
 import TrafficGoals from './widgets/TrafficGoals.vue'
 import TrafficHeatmap from './widgets/TrafficHeatmap.vue'
 import TrafficJourneys from './widgets/TrafficJourneys.vue'
+import TrafficKpi from './widgets/TrafficKpi.vue'
 import TrafficOverview from './widgets/TrafficOverview.vue'
 import TrafficPages from './widgets/TrafficPages.vue'
 import TrafficRecordings from './widgets/TrafficRecordings.vue'
@@ -65,6 +67,16 @@ const TRAFFIC_WIDGET_META = {
 	defaultSize: { w: 12, h: 3 },
 	minSize: { w: 6, h: 2 },
 	maxSize: { w: 12, h: 8 },
+	allowedSlots: ['body'],
+	propsSchema: null,
+}
+
+// The traffic KPI cards (portal-traffic-kpi-cards): a quarter of a row,
+// four side by side.
+const TRAFFIC_KPI_META = {
+	defaultSize: { w: 3, h: 2 },
+	minSize: { w: 2, h: 1 },
+	maxSize: { w: 6, h: 3 },
 	allowedSlots: ['body'],
 	propsSchema: null,
 }
@@ -91,7 +103,19 @@ export default {
 		kind: 'widget',
 		component: TrafficOverview,
 		...TRAFFIC_WIDGET_META,
-		_note: 'Portal selector plus four CnStatsBlock tiles (page views, sessions, visitors, engaged sessions, 30 days) read from portalTrafficDaily through the OR object API. Custom because it must render "Not measured for this portal" DIFFERENTLY from "No traffic recorded yet" and warn about the sensitive switches; a stats-block dataSource shows a zero for both.',
+		_note: 'Portal, period and segment selectors, the Export button, and the notes: roll-up, sensitive switches, and "Not measured for this portal" versus "No traffic recorded yet". Custom because a stats-block dataSource shows a zero for both. Its four headline numbers moved to TrafficKpi cards (portal-traffic-kpi-cards).',
+	},
+	TrafficKpi: {
+		kind: 'widget',
+		component: TrafficKpi,
+		...TRAFFIC_KPI_META,
+		_note: 'One headline number of the Traffic page (content.metric: pageViews, sessions, visitors or engagedSessions) as a CnStatsBlock KPI card, read from the report store so it follows the overview\'s portal, period and segment (portal-traffic-kpi-cards). Custom for the same reason as TrafficOverview: an unmeasured portal must read "Not measured", not zero.',
+	},
+	PortalTrafficKpi: {
+		kind: 'widget',
+		component: PortalTrafficKpi,
+		...TRAFFIC_KPI_META,
+		_note: 'One traffic KPI card on a portal\'s detail page (portal-traffic-kpi-cards): nc-vue\'s CnStatWidget over /api/traffic/summary with its own period picker. The wrapper exists for three things a manifest stat widget cannot do: say "Not measured" without asking, link to the Traffic page with the portal selected (route tokens cannot read @object), and pass the picked period, because nc-vue 2.56.0 never resolves the @range tokens it documents.',
 	},
 	TrafficDaily: {
 		kind: 'widget',
