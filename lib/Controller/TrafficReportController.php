@@ -25,6 +25,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
+use DateTimeImmutable;
+use DateTimeZone;
 use OCA\Portaliq\Service\Traffic\TrafficEventStore;
 use OCA\Portaliq\Service\Traffic\TrafficExport;
 use OCA\Portaliq\Service\Traffic\TrafficReportNumbers;
@@ -153,7 +155,7 @@ class TrafficReportController extends Controller {
 
 		$span = (int)$days;
 
-		$today = new \DateTimeImmutable('today', new \DateTimeZone('UTC'));
+		$today = new DateTimeImmutable('today', new DateTimeZone('UTC'));
 		$from = $today->modify('-'.($span - 1).' days')->format('Y-m-d');
 		$to = $today->format('Y-m-d');
 		$folded = $this->numbers->fold(records: $this->store->dailyBetween(portal: $portal, from: $from, to: $to));
