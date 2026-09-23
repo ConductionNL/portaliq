@@ -272,8 +272,10 @@ class TrafficAggregationServiceTest extends TestCase {
 		$afterFirst = $this->daily;
 		$second = $service->run();
 
-		$this->assertSame(['portals' => 2, 'days' => 3, 'purged' => 3, 'recordingsPurged' => 2], $first);
-		$this->assertSame(['portals' => 2, 'days' => 3, 'purged' => 3, 'recordingsPurged' => 2], $second);
+		// The first run also back-fills the retained days once
+		// (portal-page-traffic); the second finds the marker and does not.
+		$this->assertSame(['portals' => 2, 'days' => 3, 'backfilled' => 3, 'purged' => 3, 'recordingsPurged' => 2], $first);
+		$this->assertSame(['portals' => 2, 'days' => 3, 'backfilled' => 0, 'purged' => 3, 'recordingsPurged' => 2], $second);
 		$this->assertCount(3, $this->daily, 'one object per portal-day, not one per run');
 		$this->assertSame($afterFirst, $this->daily, 'the second run replaced, it did not add');
 
@@ -406,4 +408,73 @@ class TrafficAggregationServiceTest extends TestCase {
 			$this->assertNotSame('/never', $record['pages'][0]['path'] ?? '');
 		}
 	}//end testARollUpPortalSumsItsMembersAndNeverCountsItself()
+
+
+	/**
+	 * The back-fill (portal-page-traffic): a stored day written before the
+	 * per-page counts, whose raw events are all still retained, is rebuilt
+	 * once and gains them; the next run does not back-fill again.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
+	 */
+	public function testARetainedDayGainsThePerPageCountsOnce(): void {
+		$this->daily['old'] = [
+			'portal' => 'open-tilburg',
+			'date' => '2026-08-20',
+			'segment' => '',
+			'pageViews' => 2,
+			'events' => ['page_view' => 2],
+			'pages' => [['path' => '/', 'views' => 2, 'entrances' => 2, 'exits' => 2, 'avgEngagementSeconds' => 0.0]],
+		];
+		$this->events = [
+			$this->event('open-tilburg', '2026-08-20T10:00:00.000Z', '/', receivedAt: '2026-08-20T10:00:01.000Z'),
+			$this->event('open-tilburg', '2026-08-20T11:00:00.000Z', '/', receivedAt: '2026-08-20T11:00:01.000Z', visitor: 'h2'),
+		];
+		$service = $this->service();
+
+		$first = $service->run();
+		$second = $service->run();
+
+		$this->assertSame(1, $first['backfilled']);
+		$this->assertSame(0, $second['backfilled']);
+		$this->assertSame('page-traffic-1', $this->config->values['portaliq/traffic_backfilled']);
+		$page = $this->daily['old']['pages'][0];
+		$this->assertSame('/', $page['path']);
+		$this->assertSame(2, $page['sessions']);
+		$this->assertSame(2, $page['visitors']);
+		$this->assertSame(0, $page['engagedSessions']);
+	}//end testARetainedDayGainsThePerPageCountsOnce()
+
+
+	/**
+	 * A day whose raw events were partly purged keeps its complete record:
+	 * the back-fill never trades 100 page views for 40.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
+	 */
+	public function testAPartlyPurgedDayKeepsItsOldRecord(): void {
+		$stored = [
+			'portal' => 'open-tilburg',
+			'date' => '2026-06-07',
+			'segment' => '',
+			'pageViews' => 100,
+			'events' => ['page_view' => 100],
+			'pages' => [['path' => '/', 'views' => 100, 'entrances' => 60, 'exits' => 60, 'avgEngagementSeconds' => 3.0]],
+		];
+		$this->daily['edge'] = $stored;
+		for ($i = 0; $i < 40; $i++) {
+			$this->events[] = $this->event('open-tilburg', sprintf('2026-06-07T10:%02d:00.000Z', $i), '/', receivedAt: '2026-06-07T12:00:00.000Z', visitor: 'h' . $i);
+		}
+
+		$result = $this->service()->backfill();
+
+		$this->assertSame($stored, $this->daily['edge']);
+		$this->assertSame(0, $result['days']);
+		$this->assertSame(2, $result['portals'], 'both ordinary portals are walked');
+		$this->assertSame(0, $this->service()->backfill(only: 'open-venray')['days'], 'one portal on request, and the other is left alone');
+	}//end testAPartlyPurgedDayKeepsItsOldRecord()
 }//end class
