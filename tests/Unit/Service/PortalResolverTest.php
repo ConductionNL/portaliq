@@ -403,4 +403,175 @@ class PortalResolverTest extends TestCase {
 		$this->assertNull($resolver->resolveForCollector($request, null));
 		$this->assertNull($resolver->resolveForCollector($request, ''));
 	}//end testTheCollectorFallsBackToTheSlugOnlyWhenTheHostResolvesNothing()
+	/**
+	 * The published portals are read from OpenRegister once per request.
+	 *
+	 * `site()` composes its page from five helpers that each resolve the
+	 * portal themselves, and before this each one re-ran a
+	 * `findAll(limit: 500)` against OpenRegister on every public page load
+	 * (review of #516). Counting the reads is the only way to see it: every
+	 * assertion in this file passed with five reads and passes with one, so
+	 * the duplication was invisible from the return values alone.
+	 *
+	 * @return void
+	 */
+	public function testThePortalsAreReadOnceForTheWholeRequest(): void {
+		$reader   = $this->countingReader($this->sites);
+		$resolver = $this->resolverOver($reader);
+
+		$resolver->allPublishedPortals();
+		$resolver->allPublishedPortals();
+		$resolver->resolveByHost('tilburg.example', $resolver->allPublishedPortals());
+
+		$this->assertSame(1, $reader->calls, 'OpenRegister must be read once per request');
+	}//end testThePortalsAreReadOnceForTheWholeRequest()
+
+
+	/**
+	 * The memo returns the same portals it read.
+	 *
+	 * Guards the obvious way to make the counter above green: returning an
+	 * empty array from the second call onwards would also read once.
+	 *
+	 * @return void
+	 */
+	public function testTheMemoReturnsThePortalsNotAnEmptyList(): void {
+		$resolver = $this->resolverOver($this->countingReader($this->sites));
+
+		$first  = $resolver->allPublishedPortals();
+		$second = $resolver->allPublishedPortals();
+
+		$this->assertSame($this->sites, $first);
+		$this->assertSame($first, $second);
+	}//end testTheMemoReturnsThePortalsNotAnEmptyList()
+
+
+	/**
+	 * A failed read is NOT memoised.
+	 *
+	 * Fail-closed means this read returns `[]` when OpenRegister throws. If
+	 * that `[]` were cached, one unlucky read would 404 every remaining
+	 * lookup in the request instead of just its own — a worse failure than
+	 * the duplicate reads the memo removes.
+	 *
+	 * @return void
+	 */
+	public function testAFailedReadIsRetriedRatherThanMemoised(): void {
+		$attempts  = 0;
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willReturnCallback(
+			static function () use (&$attempts) {
+				$attempts++;
+				throw new RuntimeException('OR is down');
+			}
+		);
+
+		$resolver = new PortalResolver(
+			$container,
+			$this->createMock(LoggerInterface::class),
+			$this->contextDouble()
+		);
+
+		$this->assertSame([], $resolver->allPublishedPortals());
+		$this->assertSame([], $resolver->allPublishedPortals());
+		$this->assertSame(2, $attempts, 'a fail-closed read must be retried, not cached');
+	}//end testAFailedReadIsRetriedRatherThanMemoised()
+
+
+	/**
+	 * An ObjectService double that counts how often it is read.
+	 *
+	 * @param array $rows The rows to return.
+	 *
+	 * @return object The counting double, carrying a public `calls` counter.
+	 */
+	private function countingReader(array $rows): object {
+		return new class($rows) {
+
+			/**
+			 * The rows to return.
+			 *
+			 * @var array
+			 */
+			public array $rows;
+
+			/**
+			 * How often findAll() was called.
+			 *
+			 * @var int
+			 */
+			public int $calls = 0;
+
+
+			/**
+			 * Constructor.
+			 *
+			 * @param array $rows The rows.
+			 */
+			public function __construct(array $rows) {
+				$this->rows = $rows;
+			}
+
+
+			/**
+			 * Set the register context.
+			 *
+			 * @param string $register The register slug.
+			 *
+			 * @return void
+			 */
+			public function setRegister(string $register): void {
+			}
+
+
+			/**
+			 * Set the schema context.
+			 *
+			 * @param string $schema The schema slug.
+			 *
+			 * @return void
+			 */
+			public function setSchema(string $schema): void {
+			}
+
+
+			/**
+			 * Return the fixed rows and count the read.
+			 *
+			 * @param array $config        The query config.
+			 * @param bool  $_rbac         RBAC toggle.
+			 * @param bool  $_multitenancy Multitenancy toggle.
+			 *
+			 * @return array The rows.
+			 */
+			public function findAll(array $config = [], bool $_rbac = true, bool $_multitenancy = true): array {
+				$this->calls++;
+
+				return $this->rows;
+			}
+
+
+		};
+	}//end countingReader()
+
+
+	/**
+	 * A resolver reading through the given ObjectService double.
+	 *
+	 * @param object $reader The ObjectService double.
+	 *
+	 * @return PortalResolver The resolver.
+	 */
+	private function resolverOver(object $reader): PortalResolver {
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willReturn($reader);
+
+		return new PortalResolver(
+			$container,
+			$this->createMock(LoggerInterface::class),
+			$this->contextDouble()
+		);
+	}//end resolverOver()
+
+
 }//end class

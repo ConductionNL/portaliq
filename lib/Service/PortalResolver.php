@@ -71,6 +71,24 @@ class PortalResolver {
 	public const REGISTER = 'portaliq';
 
 	/**
+	 * The published portals, read once per request.
+	 *
+	 * `allPublishedPortals()` is a `findAll(limit: 500)` against OpenRegister,
+	 * and `site()` alone reaches it five times -- once for the resolved slug,
+	 * the theme stylesheet, the theme logo, the NLDS stylesheet and the title
+	 * (review of #516). The container hands out one PortalResolver per
+	 * request, so memoising on the instance is request scope: a portal edited
+	 * in one request is read fresh by the next.
+	 *
+	 * Null means "not read yet", which is NOT the same as the empty array a
+	 * fail-closed read returns -- see `allPublishedPortals()`.
+	 *
+	 * @var array|null
+	 */
+	private ?array $publishedPortals = null;
+
+
+	/**
 	 * Constructor.
 	 *
 	 * @param ContainerInterface    $container For the lazy OpenRegister lookup.
@@ -231,11 +249,26 @@ class PortalResolver {
 	/**
 	 * Every published portal.
 	 *
+	 * Memoised for the life of this instance, i.e. for the request (review of
+	 * #516): `site()` composes its page from five helpers that each resolve
+	 * the portal themselves, and without this each one re-ran a
+	 * `findAll(limit: 500)` against OpenRegister on every public page load.
+	 *
+	 * Only an ANSWERED read is memoised. The three `return []` paths are not:
+	 * two of them are transient (OpenRegister threw, or the shared
+	 * ObjectService could not be pointed at this app's schemas) and caching
+	 * them would turn one unlucky read into a 404 for the whole request,
+	 * which is a worse failure than the duplicate reads this removes.
+	 *
 	 * @return array The published portal objects.
 	 *
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-all-content-must-be-scoped-to-a-portal
 	 */
 	public function allPublishedPortals(): array {
+		if ($this->publishedPortals !== null) {
+			return $this->publishedPortals;
+		}
+
 		try {
 			$objectService = $this->container->get(self::OBJECT_SERVICE);
 			// Applied through the context helper rather than by two slug
@@ -271,7 +304,7 @@ class PortalResolver {
 			return [];
 		}
 
-		return array_map(
+		$this->publishedPortals = array_map(
 			static function ($row) {
 				if (is_array($row) === true) {
 					return $row;
@@ -281,6 +314,8 @@ class PortalResolver {
 			},
 			$rows
 		);
+
+		return $this->publishedPortals;
 	}//end allPublishedPortals()
 
 
