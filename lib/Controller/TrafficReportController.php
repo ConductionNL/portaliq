@@ -124,7 +124,7 @@ class TrafficReportController extends Controller {
 	 * @return string|null The reason.
 	 */
 	private function refusal(string $portal, string $from, string $to, string $segment, string $format): ?string {
-		if (preg_match('/^[a-z0-9][a-z0-9-]{0,127}$/', $portal) !== 1) {
+		if (preg_match('/^[A-Za-z0-9][A-Za-z0-9-]{0,127}$/', $portal) !== 1) {
 			return 'missing-portal';
 		}
 

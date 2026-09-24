@@ -42,6 +42,27 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "@babel/preset-env"
         update-types: ["version-update:semver-major"]
+      # Dexie must be the SAME version in every bundle on the page. When two
+      # copies at different versions load, the library throws "Two different
+      # versions of Dexie loaded in the same app" at module init and the SPA
+      # never mounts -- the app renders as bare chrome, with one console line
+      # and nothing else. openregister's `integration-global` bundle loads on
+      # EVERY page of the instance, so openregister's Dexie is the fleet's
+      # Dexie and no app may lead it.
+      #
+      # Measured 2026-09-22 on cloud.conduction.nl: portaliq and pipelinq on
+      # 4.4.6 against openregister 4.4.5, BOTH SPAs blank. pipelinq had been
+      # down since 19 September and nobody had noticed, because a blank app
+      # looks like a slow one.
+      #
+      # `scripts/check-single-dexie.js` cannot catch this and says so: it
+      # scans this repo's own `js/` and has no way to know what another app
+      # ships. That is why the version is pinned EXACTLY above rather than
+      # left as a caret: `^4.4.5` resolves to 4.4.6 on the next clean install
+      # and reintroduces the drift with nothing changed in the diff.
+      #
+      # Lift this WITH openregister, never before it.
+      - dependency-name: "dexie"
     cooldown:
       default-days: 1
       include:
