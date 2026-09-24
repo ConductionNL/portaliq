@@ -236,6 +236,126 @@ class PortalRuntimeConfigResolverTest extends TestCase {
 
 
 	/**
+	 * A frame ancestor is an ORIGIN, and nothing else reaches the policy.
+	 *
+	 * Nextcloud joins these strings into `frame-ancestors` with a space and
+	 * escapes nothing, and since this change an editor fills the list. So a
+	 * `;` would end the directive and start another one, and a bare `*` would
+	 * let every origin iframe a portal carrying a bearer token. Each such
+	 * value is dropped; each real origin is rebuilt as scheme://host[:port].
+	 *
+	 * @return void
+	 */
+	public function testOnlyOriginsReachTheFramePolicy(): void {
+		$config = $this->resolver()->runtimeConfigFor(
+			portal: [
+				'slug' => 'demo',
+				'frameAncestors' => [
+					'https://a.example; script-src *',
+					'*',
+					"'self'",
+					'https://a.example b.example',
+					'javascript:alert(1)',
+					'ftp://files.example',
+					'https://user:secret@creds.example',
+					'https://path.example/embed',
+					'https://query.example?x=1',
+					'https://*.gemeente.example',
+					'https://slash.example/',
+					'https://port.example:8443',
+					'HTTPS://Upper.Example',
+					42,
+				],
+			],
+			orgValue: '',
+			locale: 'nl'
+		);
+
+		$this->assertSame(
+			[
+				'https://*.gemeente.example',
+				'https://slash.example',
+				'https://port.example:8443',
+				'https://upper.example',
+			],
+			$config['allowedEmbedOrigins']
+		);
+	}//end testOnlyOriginsReachTheFramePolicy()
+
+
+	/**
+	 * The portal's own logo reaches the config when it is a web URL.
+	 *
+	 * @return void
+	 */
+	public function testThePortalsLogoReachesTheConfig(): void {
+		$resolver = $this->resolver();
+
+		foreach (['https://cdn.example/logo.svg', '/apps/portaliq/img/logo.svg'] as $logo) {
+			$config = $resolver->runtimeConfigFor(
+				portal: ['slug' => 'demo', 'logo' => $logo],
+				orgValue: '',
+				locale: 'nl'
+			);
+
+			$this->assertSame($logo, $config['logo']);
+		}
+	}//end testThePortalsLogoReachesTheConfig()
+
+
+	/**
+	 * A logo that is not an http(s) or root-relative URL is dropped.
+	 *
+	 * Nothing renders it today; the first consumer that binds it to `src` or
+	 * `href` must not inherit a script URL typed into a free-text field.
+	 *
+	 * @return void
+	 */
+	public function testAnUnsafeLogoLeavesTheDefaultStanding(): void {
+		$resolver = $this->resolver();
+
+		foreach (['javascript:alert(1)', 'data:image/svg+xml,<svg/>', '//elsewhere.example/logo.png', ['x']] as $logo) {
+			$config = $resolver->runtimeConfigFor(
+				portal: ['slug' => 'demo', 'logo' => $logo],
+				orgValue: '',
+				locale: 'nl'
+			);
+
+			$this->assertNull($config['logo']);
+		}
+	}//end testAnUnsafeLogoLeavesTheDefaultStanding()
+
+
+	/**
+	 * No portal means no token stylesheet, not the first one available.
+	 *
+	 * @return void
+	 */
+	public function testNoPortalLinksNoThemeStylesheet(): void {
+		$this->assertSame('', $this->resolver()->themeStylesheetFor(portal: null));
+	}//end testNoPortalLinksNoThemeStylesheet()
+
+
+	/**
+	 * A theme lookup that throws renders the page unstyled, not broken.
+	 *
+	 * @return void
+	 */
+	public function testAThrowingThemeLookupLinksNoStylesheet(): void {
+		$themeResolver = $this->createMock(PortalThemeResolver::class);
+		$themeResolver->method('stylesheetFor')->willThrowException(new \RuntimeException('theme app gone'));
+
+		$resolver = new PortalRuntimeConfigResolver(
+			$this->createMock(PortalResolver::class),
+			$this->orgResolverDouble(),
+			$themeResolver
+		);
+
+		$this->assertSame('', $resolver->themeStylesheetFor(portal: ['slug' => 'demo', 'theme' => 'opencatalogi']));
+	}//end testAThrowingThemeLookupLinksNoStylesheet()
+
+
+	/**
 	 * The OIDC providers still come from the ORGANISATION, off `?org=`.
 	 *
 	 * The presentation moved to the portal object; the broker did not. Two

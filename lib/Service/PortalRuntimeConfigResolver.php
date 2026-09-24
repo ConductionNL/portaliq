@@ -245,8 +245,11 @@ class PortalRuntimeConfigResolver {
 		// render an <img> for it today (the brand arrives through the token
 		// set's `--nldesign-logo-url` instead), but it is part of the
 		// documented config shape and a consumer reading the initial state
-		// should get the portal's value rather than a stale null.
-		$logo = trim((string)($portal['logo'] ?? ''));
+		// should get the portal's value rather than a stale null. Only an
+		// http(s) or root-relative URL gets through: the first consumer to
+		// bind this to `src` or `href` must not inherit a `javascript:` URL
+		// an editor typed into a free-text field.
+		$logo = $this->logoUrl(portal: $portal);
 		if ($logo !== '') {
 			$config['logo'] = $logo;
 		}
@@ -264,8 +267,26 @@ class PortalRuntimeConfigResolver {
 
 
 	/**
-	 * The portal's declared frame ancestors, normalised to a list of non-empty
-	 * strings.
+	 * The portal's declared frame ancestors, as CSP source expressions.
+	 *
+	 * These strings go into the `frame-ancestors` directive VERBATIM:
+	 * Nextcloud's policy builder joins them with a space and escapes nothing.
+	 * Before this change the list came from an override nothing ever wrote;
+	 * now it comes from a field any portal editor can fill. So every entry is
+	 * parsed and rebuilt as `scheme://host[:port]`, and anything that does
+	 * not survive that is DROPPED, not passed through:
+	 *
+	 *   - `*` and keywords (`'self'`, `'none'`) — a bare wildcard is the
+	 *     "any origin may iframe a portal carrying a bearer token" exposure
+	 *     the schema's own description says this field replaces;
+	 *   - anything with a `;`, a comma or whitespace inside — one such value
+	 *     ends the directive and starts a new one (`https://a.example;
+	 *     script-src *` would add a script policy to the portal page);
+	 *   - a path, query, fragment or credentials, and any scheme but http(s).
+	 *
+	 * A leading `*.` on the host stays allowed: `https://*.gemeente.nl` is a
+	 * legitimate CSP source and names one organisation's subdomains, not the
+	 * world.
 	 *
 	 * @param array $portal The resolved portal object.
 	 *
@@ -283,7 +304,7 @@ class PortalRuntimeConfigResolver {
 				continue;
 			}
 
-			$origin = trim($origin);
+			$origin = $this->cspOrigin(origin: $origin);
 			if ($origin === '') {
 				continue;
 			}
@@ -293,6 +314,94 @@ class PortalRuntimeConfigResolver {
 
 		return array_values(array_unique($origins));
 	}//end frameAncestors()
+
+
+	/**
+	 * One frame ancestor rebuilt as `scheme://host[:port]`, or '' to drop it.
+	 *
+	 * @param string $origin The value as the portal object carries it.
+	 *
+	 * @return string The normalised origin, or '' when it is not one.
+	 */
+	private function cspOrigin(string $origin): string {
+		$origin = trim($origin);
+		if ($origin === '' || preg_match('/[\s;,\'"]/', $origin) === 1) {
+			return '';
+		}
+
+		$parts = parse_url($origin);
+		if (is_array($parts) === false || $this->isBareOrigin(parts: $parts) === false) {
+			return '';
+		}
+
+		$origin = strtolower($parts['scheme']).'://'.strtolower($parts['host']);
+		if (isset($parts['port']) === false) {
+			return $origin;
+		}
+
+		return $origin.':'.(int)$parts['port'];
+	}//end cspOrigin()
+
+
+	/**
+	 * Whether parsed URL parts describe an origin and nothing more.
+	 *
+	 * @param array<string, int|string> $parts What parse_url() returned.
+	 *
+	 * @return bool True for http(s), a DNS host (optionally `*.`-prefixed) and
+	 *              at most a port.
+	 */
+	private function isBareOrigin(array $parts): bool {
+		$scheme = strtolower((string)($parts['scheme'] ?? ''));
+		if (in_array($scheme, ['https', 'http'], true) === false) {
+			return false;
+		}
+
+		// A DNS name, optionally `*.`-prefixed. Rejects `*`, IPv6 literals
+		// and anything parse_url() let through that CSP would read as more
+		// than one token.
+		$hostPattern = '/^(\*\.)?[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/';
+		if (preg_match($hostPattern, strtolower((string)($parts['host'] ?? ''))) !== 1) {
+			return false;
+		}
+
+		// An origin carries no credentials, path, query or fragment; a value
+		// that does is not what the editor meant, so it does not frame.
+		foreach (['user', 'pass', 'query', 'fragment'] as $part) {
+			if (isset($parts[$part]) === true) {
+				return false;
+			}
+		}
+
+		return in_array(($parts['path'] ?? ''), ['', '/'], true);
+	}//end isBareOrigin()
+
+
+	/**
+	 * The portal's logo URL, or '' when it is absent or not a safe URL.
+	 *
+	 * @param array $portal The resolved portal object.
+	 *
+	 * @return string An http(s) or root-relative URL, or ''.
+	 */
+	private function logoUrl(array $portal): string {
+		$logo = ($portal['logo'] ?? '');
+		if (is_string($logo) === false) {
+			return '';
+		}
+
+		$logo = trim($logo);
+		if (str_starts_with($logo, '/') === true && str_starts_with($logo, '//') === false) {
+			return $logo;
+		}
+
+		$scheme = strtolower((string)parse_url($logo, PHP_URL_SCHEME));
+		if (in_array($scheme, ['https', 'http'], true) === true) {
+			return $logo;
+		}
+
+		return '';
+	}//end logoUrl()
 
 
 }//end class

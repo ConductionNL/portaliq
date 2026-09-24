@@ -247,7 +247,6 @@ class PortalResolver {
 	}//end resolveByOrganisation()
 
 
-
 	/**
 	 * Match a host against the verified domains of the published portals.
 	 *
