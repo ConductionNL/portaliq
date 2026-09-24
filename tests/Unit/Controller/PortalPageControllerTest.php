@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\PortalPageController;
-use OCA\Portaliq\Service\PortalOrganisationConfigService;
+use OCA\Portaliq\Service\PortalRuntimeConfigResolver;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalThemeResolver;
 use OCP\AppFramework\Http\TemplateResponse;
@@ -90,9 +90,9 @@ class PortalPageControllerTest extends TestCase {
 
 	public function testIndexPassesTheFirstAcceptLanguageTagToTheResolver(): void {
 		$received = null;
-		$resolver = $this->createMock(PortalOrganisationConfigService::class);
-		$resolver->method('resolve')->willReturnCallback(
-			function (string $orgSlug, string $locale = 'nl') use (&$received) {
+		$resolver = $this->createMock(PortalRuntimeConfigResolver::class);
+		$resolver->method('runtimeConfigFor')->willReturnCallback(
+			function (?array $portal, string $orgValue, string $locale) use (&$received) {
 				$received = $locale;
 				return ['allowedEmbedOrigins' => []];
 			}
@@ -104,8 +104,8 @@ class PortalPageControllerTest extends TestCase {
 		);
 		$request->method('getHeader')->willReturnMap([['Accept-Language', 'en-US,en;q=0.9,nl;q=0.8']]);
 
-		// index() does not consult the portal/theme resolvers — that is site()'s
-		// job — so they are inert mocks here rather than configured ones.
+		// index() does not consult the portal/theme resolvers directly — the
+		// runtime-config resolver owns that now — so they are inert mocks here.
 		(new PortalPageController(
 			$request,
 			$resolver,
@@ -117,6 +117,92 @@ class PortalPageControllerTest extends TestCase {
 		$this->assertSame('en-US', $received);
 
 	}//end testIndexPassesTheFirstAcceptLanguageTagToTheResolver()
+
+
+	/**
+	 * `?portal=` and `?org=` both reach the resolver, unchanged.
+	 *
+	 * The ORIGINAL bug in one assertion: `index()` read only `?org=` and
+	 * handed it to a service that looked up an OpenRegister Organisation, so
+	 * `?portal=demo` — the parameter `/site` has always used and the one
+	 * WOO-571's portal action builds — was silently dropped on the floor.
+	 *
+	 * @return void
+	 */
+	public function testIndexPassesBothTenantParametersToTheResolver(): void {
+		$seen = [];
+		$resolver = $this->createMock(PortalRuntimeConfigResolver::class);
+		$resolver->method('resolvePortal')->willReturnCallback(
+			function (IRequest $request, string $portalSlug, string $orgValue) use (&$seen) {
+				$seen = ['portal' => $portalSlug, 'org' => $orgValue];
+				return null;
+			}
+		);
+		$resolver->method('runtimeConfigFor')->willReturn(['allowedEmbedOrigins' => []]);
+
+		$request = $this->createMock(IRequest::class);
+		$request->method('getParam')->willReturnCallback(
+			static function (string $key, $default = null) {
+				return match ($key) {
+					'portal' => 'demo',
+					'org' => 'dev-org',
+					default => $default,
+				};
+			}
+		);
+		$request->method('getHeader')->willReturn('');
+
+		(new PortalPageController(
+			$request,
+			$resolver,
+			$this->createMock(IURLGenerator::class),
+			$this->createMock(PortalResolver::class),
+			$this->createMock(PortalThemeResolver::class)
+		))->index();
+
+		$this->assertSame(['portal' => 'demo', 'org' => 'dev-org'], $seen);
+
+	}//end testIndexPassesBothTenantParametersToTheResolver()
+
+
+	/**
+	 * The resolved portal's token stylesheet reaches the template.
+	 *
+	 * Without this parameter the white-label fix is invisible: the runtime
+	 * config would name a theme that no stylesheet on the page declares, and
+	 * the shell would render its fallback colours under a correct-looking
+	 * `theme-<name>` class.
+	 *
+	 * @return void
+	 */
+	public function testIndexHandsTheTemplateTheResolvedThemeStylesheet(): void {
+		$controller = $this->controller(
+			orgSlug: '',
+			portal: ['slug' => 'demo', 'theme' => 'opencatalogi'],
+			themeStylesheet: 'tokens/opencatalogi'
+		);
+
+		$params = $controller->index()->getParams();
+
+		$this->assertSame('tokens/opencatalogi', $params['themeStylesheet']);
+
+	}//end testIndexHandsTheTemplateTheResolvedThemeStylesheet()
+
+
+	/**
+	 * An unresolved request links NO token set at all.
+	 *
+	 * Fail-closed, and the alternative is the one failure this whole ticket is
+	 * about: a page that renders in some brand rather than in none.
+	 *
+	 * @return void
+	 */
+	public function testIndexLinksNoStylesheetWhenNothingResolves(): void {
+		$controller = $this->controller(orgSlug: '');
+
+		$this->assertSame('', $controller->index()->getParams()['themeStylesheet']);
+
+	}//end testIndexLinksNoStylesheetWhenNothingResolves()
 
 	/**
 	 * The site shell carries no platform chrome AND no platform stylesheet.
@@ -238,6 +324,50 @@ class PortalPageControllerTest extends TestCase {
 
 
 	/**
+	 * The shell titles the document with the PORTAL's name, before boot.
+	 *
+	 * The template has carried the slot since it took over the document; the
+	 * controller never filled it, so a themed municipal portal served a tab
+	 * reading "Portaal" until the bundle had fetched the site.
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-request-must-resolve-to-exactly-one-portal-or-to-none
+	 */
+	public function testSiteCarriesTheResolvedPortalTitle(): void {
+		$controller = $this->controller(
+			orgSlug: '',
+			portal: ['slug' => 'open-tilburg', 'title' => 'Gemeente Tilburg', 'theme' => 'vng'],
+			themeStylesheet: 'themes/vng',
+			nldsStylesheet: 'themes/vng-tokens'
+		);
+
+		$params = $controller->site()->getParams();
+
+		$this->assertSame(expected: 'Gemeente Tilburg', actual: $params['portalConfig']['title']);
+
+	}//end testSiteCarriesTheResolvedPortalTitle()
+
+
+	/**
+	 * Every unresolved shape answers '' — never a title borrowed from
+	 * whichever portal happened to be first. The template turns '' into its
+	 * own neutral fallback, so the page still renders.
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-request-must-resolve-to-exactly-one-portal-or-to-none
+	 */
+	public function testSiteCarriesNoTitleWhenResolutionFails(): void {
+		$throwing = $this->controller(orgSlug: '', portalResolverThrows: true);
+		$this->assertSame(expected: '', actual: $throwing->site()->getParams()['portalConfig']['title']);
+
+		$none = $this->controller(orgSlug: '');
+		$this->assertSame(expected: '', actual: $none->site()->getParams()['portalConfig']['title']);
+
+		$untitled = $this->controller(orgSlug: '', portal: ['slug' => 'open-tilburg']);
+		$this->assertSame(expected: '', actual: $untitled->site()->getParams()['portalConfig']['title']);
+
+	}//end testSiteCarriesNoTitleWhenResolutionFails()
+
+
+	/**
 	 * The standalone shell renders the whole document, so it needs a `lang`.
 	 *
 	 * With no `Accept-Language` the answer is `nl`, not the empty string —
@@ -290,8 +420,14 @@ class PortalPageControllerTest extends TestCase {
 			'locale' => 'nl',
 		];
 
-		$resolver = $this->createMock(PortalOrganisationConfigService::class);
-		$resolver->method('resolve')->willReturn(array_merge($default, $resolved));
+		// WOO-566: index() no longer asks PortalOrganisationConfigService for a
+		// tenant. The presentation comes from the portal object, through
+		// PortalRuntimeConfigResolver; the organisation service keeps only the
+		// OIDC half, which that resolver consults itself.
+		$runtimeConfigResolver = $this->createMock(PortalRuntimeConfigResolver::class);
+		$runtimeConfigResolver->method('runtimeConfigFor')->willReturn(array_merge($default, $resolved));
+		$runtimeConfigResolver->method('resolvePortal')->willReturn($portal);
+		$runtimeConfigResolver->method('themeStylesheetFor')->willReturn((string)$themeStylesheet);
 
 		// The site renderer (`site()`) needs a URL generator to hand the
 		// content API base to the client. Returning the real route shape here
@@ -333,7 +469,7 @@ class PortalPageControllerTest extends TestCase {
 
 		return new PortalPageController(
 			$request,
-			$resolver,
+			$runtimeConfigResolver,
 			$urlGenerator,
 			$portalResolver,
 			$themeResolver

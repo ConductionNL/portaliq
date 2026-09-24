@@ -35,7 +35,7 @@
     "check:register": "node tests/validate-register.js",
     "check:registry": "node tests/registry.spec.js",
     "check:json-strict": "node tests/validate-json-strict.js",
-    "check:specs": "npm run check:json-strict && npm run check:manifest-v2 && npm run check:register && npm run check:registry && npm run check:site-auth && npm run check:federated-search && npm run check:campaign-tracking && npm run check:traffic-client && npm run check:traffic-summary && npm run check:open-portal-site && npm run check:shared-instance && npm run check:connection-registry && npm run check:leaf-integrations",
+    "check:specs": "npm run check:json-strict && npm run check:manifest-v2 && npm run check:register && npm run check:registry && npm run check:site-auth && npm run check:federated-search && npm run check:campaign-tracking && npm run check:traffic-client && npm run check:traffic-summary && npm run check:open-portal-site && npm run check:shared-instance && npm run check:connection-registry && npm run check:leaf-integrations && npm run check:page-layout-entry",
     "prepare": "git config core.hooksPath .githooks || true",
     "build:site": "NODE_ENV=production webpack --config webpack.site.js --progress",
     "postbuild:site": "node scripts/check-single-dexie.js",
@@ -50,7 +50,8 @@
     "check:traffic-summary": "node --test tests/traffic-summary.spec.mjs",
     "check:shared-instance": "node --test tests/shared-instance.spec.mjs",
     "check:connection-registry": "node --test tests/connection-registry.spec.mjs",
-    "check:leaf-integrations": "node --test tests/leaf-integrations.spec.mjs"
+    "check:leaf-integrations": "node --test tests/leaf-integrations.spec.mjs",
+    "check:page-layout-entry": "node --test tests/page-layout-entry.spec.mjs"
   },
   "browserslist": [
     "extends @nextcloud/browserslist-config"
@@ -80,7 +81,7 @@
     "node-polyfill-webpack-plugin": "4.0.0",
     "pinia": "^2.1.7",
     "react": "^19.3.0",
-    "react-dom": "^19.2.8",
+    "react-dom": "^19.3.0",
     "react-router-dom": "^7.18.3",
     "vue": "^3.5.42",
     "vue-material-design-icons": "^5.3.0",
