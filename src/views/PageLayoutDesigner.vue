@@ -268,6 +268,7 @@ import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 import { NcButton, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 import WidgetPaletteDialog from '../dialogs/WidgetPaletteDialog.vue'
+import { pageSiteUrl } from '../lib/pageSiteUrl.js'
 import {
 	defaultSizeFor,
 	fieldsFor,
@@ -323,12 +324,10 @@ export default {
 		 *
 		 * @return {string} The site URL for this page's route.
 		 *
-		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-designer-must-be-reachable-from-the-page-administration-surfaces
 		 */
 		siteUrl() {
-			const route = String(this.page.route || '/')
-
-			return `${generateUrl('/apps/portaliq/site')}?route=${encodeURIComponent(route)}`
+			return pageSiteUrl(this.page, generateUrl)
 		},
 
 		/**
