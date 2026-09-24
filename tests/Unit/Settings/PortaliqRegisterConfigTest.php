@@ -145,19 +145,43 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// have re-imported the fix either. This test could not say so: every
 		// PHPUnit cell aborted before it ran, on `occ app:enable dossiq`.
 		// Additive.
-		// 0.25.0 (portalAuditEntry 0.2.0): `complete` joins the audit verb
+		// 0.25.0: `traffic` declares `widget: "json"`, so the block renders in
+		// the portal form at all. `fieldsFromSchema` (nextcloud-vue
+		// src/utils/schema.js) drops an object property carrying neither a
+		// widget nor a $ref, which is why measurement could not be switched on
+		// from the interface. Its own CONFIGURATION version because 0.24.0 was
+		// already taken by the schema-binding fix: a change that shares a
+		// version with one already imported never re-imports, and the field
+		// would have stayed missing.
+		// The `portal` SCHEMA version deliberately stays at 0.6.0. An earlier
+		// draft of this comment said 0.7.0 and the assertion below said 0.6.0;
+		// the assertion was right. ImportHandler treats a schema's version as
+		// "an OPTIMISATION, not the source of truth" and re-imports whenever
+		// `schemaContentDiffers()` sees different `properties`, which adding a
+		// `widget` key does. Bumping it here would not help either: this
+		// configuration version is already published, and a version-only edit
+		// under the SAME configuration version is exactly the no-op the
+		// paragraph above describes.
+		// That the pattern reaches the form is not assumed: integriq's
+		// `consumer` schema already stores three `type: object` properties
+		// carrying `widget: "json"` (authorizationConfiguration, rateLimit,
+		// quota), so OpenRegister demonstrably persists the key rather than
+		// dropping it on save.
+		// 0.26.0 (portalAuditEntry 0.2.0): `complete` joins the audit verb
 		// enum. Described under 0.22.0 above, where this branch first wrote
-		// it; development reached 0.24.0 first, so it is re-parented here.
+		// it; development reached 0.24.0 and then 0.25.0 first, so it is
+		// re-parented here.
 		// The bump is the point, not bookkeeping: OpenRegister re-imports a
-		// register only when `info.version` moves, so leaving this at 0.24.0
+		// register only when `info.version` moves, so leaving this at 0.25.0
 		// would ship the enum to a clean install and to nobody else --
-		// exactly the silent non-upgrade the 0.24.0 note above describes.
+		// exactly the silent non-upgrade the 0.24.0 and 0.25.0 notes above
+		// describe.
 		// Additive.
 		// Every new schema is listed in
 		// `components.registers.portaliq.schemas` (ImportHandler binds only
 		// what is listed there) and declares a non-empty `read` rule.
-		$this->assertSame('0.25.0', self::$register['info']['version']);
-		$this->assertSame('0.25.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.26.0', self::$register['info']['version']);
+		$this->assertSame('0.26.0', self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalAuditEntry']['version']);
 		$this->assertContains('complete', self::$register['components']['schemas']['portalAuditEntry']['properties']['verb']['enum']);
 		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalCaseType']['version']);
