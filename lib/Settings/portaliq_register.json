@@ -52,7 +52,10 @@
                     "portalAccessRequest",
                     "portalFormBinding",
                     "portalIntakeSubmission",
-                    "changeProposal"
+                    "changeProposal",
+                    "newsItem",
+                    "newsletter",
+                    "guardianAudienceFixture"
                 ]
             }
         },
@@ -336,6 +339,162 @@
                         ]
                     }
                 ]
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "guardianAudienceFixture",
+                    "slug": "fixture-guardian-anna-devries"
+                },
+                "guardianRef": "guardian-anna-devries",
+                "schoolRef": "school-de-regenboog",
+                "groupRefs": [
+                    "groep-5a"
+                ],
+                "childRefs": [
+                    "child-devries-lars"
+                ],
+                "photoConsent": {
+                    "child-devries-lars": {
+                        "news": true
+                    }
+                }
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "guardianAudienceFixture",
+                    "slug": "fixture-guardian-piet-bakker"
+                },
+                "guardianRef": "guardian-piet-bakker",
+                "schoolRef": "school-de-regenboog",
+                "groupRefs": [
+                    "groep-3b",
+                    "groep-7a"
+                ],
+                "childRefs": [
+                    "child-bakker-eva",
+                    "child-bakker-tim"
+                ],
+                "photoConsent": {
+                    "child-bakker-eva": {
+                        "news": true
+                    },
+                    "child-bakker-tim": {
+                        "news": true
+                    }
+                }
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "guardianAudienceFixture",
+                    "slug": "fixture-guardian-fatima-elamrani"
+                },
+                "guardianRef": "guardian-fatima-elamrani",
+                "schoolRef": "school-het-kompas",
+                "groupRefs": [
+                    "groep-4c"
+                ],
+                "childRefs": [
+                    "child-elamrani-yusuf"
+                ],
+                "photoConsent": {
+                    "child-elamrani-yusuf": {
+                        "news": false
+                    }
+                }
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "guardianAudienceFixture",
+                    "slug": "fixture-guardian-noor-yilmaz"
+                },
+                "guardianRef": "guardian-noor-yilmaz",
+                "schoolRef": "school-oude-vestiging",
+                "groupRefs": [
+                    "groep-6b"
+                ],
+                "childRefs": [
+                    "child-yilmaz-can"
+                ],
+                "photoConsent": {
+                    "child-yilmaz-can": {
+                        "news": true
+                    }
+                }
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "newsItem",
+                    "slug": "news-herfstvakantie-rooster"
+                },
+                "title": "Herfstvakantie rooster",
+                "body": "De herfstvakantie loopt van 19 tot 23 oktober.",
+                "target": {
+                    "schoolRef": "school-de-regenboog"
+                },
+                "authorRef": "staff-directie-1",
+                "status": "published",
+                "photoRefs": [],
+                "readReceipts": []
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "newsItem",
+                    "slug": "news-schoolreisje-groep-5a"
+                },
+                "title": "Groep 5a: schoolreisje",
+                "body": "Op 12 november gaat groep 5a op schoolreis naar de kinderboerderij.",
+                "target": {
+                    "groupRefs": [
+                        "groep-5a"
+                    ]
+                },
+                "authorRef": "staff-leerkracht-5a",
+                "status": "published",
+                "photoRefs": [],
+                "readReceipts": []
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "newsItem",
+                    "slug": "news-fotos-sportdag"
+                },
+                "title": "Foto's sportdag",
+                "body": "Wat een geweldige sportdag! Foto's hieronder.",
+                "target": {
+                    "groupRefs": [
+                        "groep-4c"
+                    ]
+                },
+                "authorRef": "staff-leerkracht-4c",
+                "status": "published",
+                "photoRefs": [
+                    "photo-sportdag-1.jpg",
+                    "photo-sportdag-2.jpg"
+                ],
+                "readReceipts": []
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "newsletter",
+                    "slug": "newsletter-weekbrief-de-regenboog"
+                },
+                "title": "Weekbrief De Regenboog",
+                "itemRefs": [
+                    "news-herfstvakantie-rooster"
+                ],
+                "target": {
+                    "schoolRef": "school-de-regenboog"
+                },
+                "sentAt": null,
+                "archived": false
             }
         ],
         "schemas": {
@@ -5787,6 +5946,248 @@
                         "format": "date-time",
                         "description": "When it was asked.",
                         "example": ""
+                    }
+                }
+            },
+            "newsItem": {
+                "slug": "newsItem",
+                "icon": "Newspaper",
+                "version": "0.1.0",
+                "title": "News item",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "A news item authored by staff and targeted at a school, one or more groups, or specific children (news-and-newsletter-authoring, findings 9.1). Read by a guardian ONLY when `target` intersects their own resolved audience (NewsAudienceMatcher) — never a broadcast-to-everyone fallback, the gap RosarioSIS's Portal Notes shows (rosariosis/round1/journeys.md J6).",
+                "type": "object",
+                "required": [
+                    "title",
+                    "body",
+                    "target",
+                    "authorRef",
+                    "status"
+                ],
+                "properties": {
+                    "title": {
+                        "title": "Title",
+                        "type": "string",
+                        "description": "News item heading.",
+                        "example": "Herfstvakantie rooster"
+                    },
+                    "body": {
+                        "title": "Body",
+                        "type": "string",
+                        "description": "Plain text / markdown body. Not translated by this change (see hermiq's message-translation-delegate).",
+                        "example": "De herfstvakantie loopt van 19 tot 23 oktober."
+                    },
+                    "target": {
+                        "title": "Target",
+                        "type": "object",
+                        "description": "Audience this item is targeted at. At least one of schoolRef/groupRefs/childRefs MUST be present; NewsAudienceMatcher treats them as an OR — any match includes the item.",
+                        "properties": {
+                            "schoolRef": {
+                                "title": "School",
+                                "type": "string",
+                                "example": "school-de-regenboog"
+                            },
+                            "groupRefs": {
+                                "title": "Groups",
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "example": [
+                                    "groep-5a"
+                                ]
+                            },
+                            "childRefs": {
+                                "title": "Children",
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "example": [
+                                    "child-devries-lars"
+                                ]
+                            }
+                        }
+                    },
+                    "authorRef": {
+                        "title": "Author",
+                        "type": "string",
+                        "description": "Staff subject reference of the author.",
+                        "example": "staff-directie-1"
+                    },
+                    "status": {
+                        "title": "Status",
+                        "type": "string",
+                        "description": "Lifecycle status. A draft item is indistinguishable from an absent one, exactly like an unpublished `page`.",
+                        "enum": [
+                            "draft",
+                            "published"
+                        ],
+                        "example": "published"
+                    },
+                    "photoRefs": {
+                        "title": "Photos",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "References/URLs to attached photos. Withheld from every read when any targeted child's photo consent is not granted (NewsPhotoConsentGate) — the item's title/body still deliver.",
+                        "example": []
+                    },
+                    "readReceipts": {
+                        "title": "Read receipts",
+                        "type": "array",
+                        "description": "Server-managed. One entry per guardian who has read this item (idempotent append by NewsReadReceiptService); never client-writable.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "subjectRef": {
+                                    "type": "string"
+                                },
+                                "readAt": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                }
+                            }
+                        },
+                        "example": []
+                    }
+                }
+            },
+            "newsletter": {
+                "slug": "newsletter",
+                "icon": "EmailNewsletter",
+                "version": "0.1.0",
+                "title": "Newsletter",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "A newsletter composed from existing newsItem objects, sent per school or group with a recipient-count preflight (findings 9.2; the Gibbon Messenger preflight pattern, gibbon/round1/pages/Messenger.md).",
+                "type": "object",
+                "required": [
+                    "title",
+                    "itemRefs",
+                    "target"
+                ],
+                "properties": {
+                    "title": {
+                        "title": "Title",
+                        "type": "string",
+                        "example": "Weekbrief De Regenboog"
+                    },
+                    "itemRefs": {
+                        "title": "News items",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Ids of the newsItem objects composed into this newsletter.",
+                        "example": []
+                    },
+                    "target": {
+                        "title": "Target",
+                        "type": "object",
+                        "description": "Same shape and OR-matching rule as newsItem.target.",
+                        "properties": {
+                            "schoolRef": {
+                                "type": "string"
+                            },
+                            "groupRefs": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "childRefs": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "sentAt": {
+                        "title": "Sent at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Null until sent. Stamped server-side by NewsletterController::send — never client-writable. A send is refused (this stays null) when the resolved audience is zero (NewsletterPreflightService)."
+                    },
+                    "archived": {
+                        "title": "Archived",
+                        "type": "boolean",
+                        "description": "Staff may archive a sent newsletter explicitly; an archived newsletter is no longer surfaced as ‘recent’ but stays in the guardian's archive list.",
+                        "example": false
+                    }
+                }
+            },
+            "guardianAudienceFixture": {
+                "slug": "guardianAudienceFixture",
+                "icon": "AccountGroup",
+                "version": "0.1.0",
+                "title": "Guardian audience fixture (interim)",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "description": "INTERIM stand-in for learniq's portal-contribution-guardian-audiences change (another lane, in flight, see design.md 'Audience source seam' in openspec/changes/news-and-newsletter-authoring/). Never publicly readable — read only server-side by GuardianAudienceFixtureReader. Delete this schema and repoint the reader at learniq's real collection once that change ships.",
+                "type": "object",
+                "required": [
+                    "guardianRef"
+                ],
+                "properties": {
+                    "guardianRef": {
+                        "title": "Guardian",
+                        "type": "string",
+                        "description": "The guardian's own subjectRef.",
+                        "example": "guardian-anna-devries"
+                    },
+                    "schoolRef": {
+                        "title": "School",
+                        "type": "string",
+                        "example": "school-de-regenboog"
+                    },
+                    "groupRefs": {
+                        "title": "Groups",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "groep-5a"
+                        ]
+                    },
+                    "childRefs": {
+                        "title": "Children",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "child-devries-lars"
+                        ]
+                    },
+                    "photoConsent": {
+                        "title": "Photo consent",
+                        "type": "object",
+                        "description": "Map of childRef to a map of consent PURPOSE to whether it is granted for that child (findings 2.8 names schoolgids/website/nieuwsbrief/social media/Parro as separate purposes; this change models one, GuardianAudienceFixtureReader::PURPOSE_NEWS = \"news\", covering news items and newsletters). An absent child, or an absent purpose entry, is treated as withheld (fail-closed).",
+                        "example": {
+                            "child-devries-lars": {
+                                "news": true
+                            }
+                        }
                     }
                 }
             }
