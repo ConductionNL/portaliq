@@ -90,7 +90,8 @@ class AuditTrailService {
 	 * app's own id (the download hook always records portaliq's own action)
 	 * and an absent `$jti` simply records an empty token id.
 	 *
-	 * @param string $verb One of create|update|forward|download|login|logout|refresh.
+	 * @param string $verb One of create|update|forward|download|login|logout|refresh|complete
+	 *                     (`complete` = a confirmed portal-task completion, WOO-569).
 	 * @param string $subjectRef The subject the event belongs to.
 	 * @param string $organisation The subject's tenant.
 	 * @param string $register The target register (or a stand-in namespace for
@@ -153,7 +154,7 @@ class AuditTrailService {
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T10
 	 */
 	public function countsByVerb(): array {
-		$verbs = ['create', 'update', 'forward', 'download', 'login', 'logout', 'refresh'];
+		$verbs = ['create', 'update', 'forward', 'download', 'login', 'logout', 'refresh', 'complete'];
 		$counts = [];
 		foreach ($verbs as $verb) {
 			$counts[$verb] = $this->writer->countObjects(

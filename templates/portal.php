@@ -16,6 +16,38 @@ $appId = OCA\Portaliq\AppInfo\Application::APP_ID;
 \OC::$server->get(\OCP\IInitialStateService::class)
     ->provideInitialState($appId, 'runtimeConfig', $_['runtimeConfig'] ?? []);
 
+// THE SERVING PORTAL'S TOKEN SET (WOO-566).
+//
+// Without this the white-label fix would have been invisible. The runtime
+// config below carries the resolved theme, and `App.jsx` turns it into a
+// `theme-<name>` class on the shell's root element -- but nothing on this page
+// ever DECLARED those brands. `src/portal/theme.css` shipped one hard-coded
+// accent colour and a single `.theme-utrecht` placeholder, so a portal
+// configured as `opencatalogi` rendered a correct class name on a page wearing
+// none of OpenCatalogi's colours. Reading the DOM would have confirmed the fix;
+// looking at the page would have refuted it.
+//
+// The brands live in the theme app (44+ sets), and `theme.css` now reads their
+// `--nldesign-color-*` layer -- the one the token files themselves document as
+// "the layer Nextcloud chrome and the Portaliq site renderer read". Linking the
+// resolved set is what connects the two.
+//
+// Resolved SERVER-SIDE and linked here rather than fetched by the bundle, for
+// the same reason `/site` does it: colours resolved after boot mean the first
+// paint is unbranded and the page visibly repaints a moment later.
+//
+// Empty when nothing resolved -- no portal, no theme, theme app not installed,
+// or a theme reference with no token file. The page then renders in the
+// fallback values `theme.css` declares, which is the neutral shell it has
+// always rendered. NEVER another tenant's brand.
+$themeStylesheet = (string)($_['themeStylesheet'] ?? '');
+if ($themeStylesheet !== '') {
+    $themeApp = \OCP\Server::get(\OCA\Portaliq\Service\PortalThemeResolver::class)->themeAppId();
+    if ($themeApp !== null) {
+        Util::addStyle($themeApp, $themeStylesheet);
+    }
+}
+
 // The public portal is a standalone React + NL Design System SPA, built
 // separately from the app's internal Vue admin bundle (see webpack.portal.js).
 // It boots into #portaliq-portal and drives its own routing + auth edge.

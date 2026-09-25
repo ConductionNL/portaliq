@@ -2,7 +2,7 @@
 
 > Portaliq's half of the resident task leg (openregister#3282 seam): the
 > "Mijn taken" surface, the assertion-minting proxy, and the delivery worker.
-> Checkbox budget: 5 tasks × 2 = 10 unindented `- [ ]` lines (cap 20).
+> Checkbox budget: 6 tasks × 2 = 12 unindented `- [ ]` lines (cap 20).
 
 ## Implementation Tasks
 
@@ -60,3 +60,14 @@
 
 - [x] T5 implemented
 - [x] T5 checks green
+
+### Task 6: Completion audit + WMEBV receipt (WOO-569)
+- **spec_ref**: `openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-mijn-taken-lists-details-and-completes-the-partys-open-tasks`
+- **files**: `lib/Controller/PortalTaskProxyController.php`, `lib/Service/AuditTrailService.php`, `lib/Settings/portaliq_register.json`, `lib/Settings/portaliq_mock_register.json`, `tests/Unit/Controller/PortalTaskProxyControllerTest.php`, `tests/Unit/Service/AuditTrailServiceTest.php`
+- **acceptance_criteria**:
+  - After a 2xx relay of `complete`, `AuditTrailService::record(verb: 'complete', …)` names the task (`openregister` / `portalTask` / uuid, session jti) and `SubmissionReceiptService::record()` writes the receipt + proof log under `portaliq` / `task.complete` with a copy of answers, comment, recorded outcome, task and upload NAMES — never file content or temp paths
+  - A null / 401 / 4xx / 5xx relay records neither; the D-3 refusal mapping is unchanged
+  - `portalAuditEntry.verb` enum carries `complete` (schema 0.2.0, document + register 0.22.0 so the upgrade import picks it up) and `countsByVerb()` counts it for MetricsController
+
+- [x] T6 implemented
+- [x] T6 tests green

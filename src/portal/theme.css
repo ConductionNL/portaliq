@@ -12,6 +12,15 @@
  * own page chrome), so NC's own `--color-*` custom properties are not
  * available here; these are the portal's OWN token set, named distinctly
  * (`--portaliq-*`) so they never collide with or shadow NC's variables.
+ *
+ * Each reads the serving portal's brand first (WOO-566): the theme app's
+ * `--nldesign-color-*` layer, linked per request by templates/portal.php,
+ * which carries the long-form why. The literals below are the FALLBACKS and
+ * are load-bearing -- with no token set linked the page renders exactly as it
+ * always did, never half a brand and never another tenant's.
+ *
+ * Comments here ship to every visitor (css-loader embeds this file in the
+ * bundle), so the reasoning lives in the PHP rather than in this file.
  */
 
 /* The public portal mounts into Nextcloud's guest `#content` chrome, which is
@@ -27,11 +36,12 @@
 }
 
 .portaliq-shell {
-	--portaliq-color-text: #1b1b1b;
-	--portaliq-color-text-muted: #5c5c5c;
+	--portaliq-color-text: var(--nldesign-color-text, #1b1b1b);
+	--portaliq-color-text-muted: var(--nldesign-color-text-muted, #5c5c5c);
+	/* No brand token for a page background; the sets colour surfaces per component. */
 	--portaliq-color-background: #ffffff;
-	--portaliq-color-accent: #01689b; /* Rijkshuisstijl-adjacent blue, the common NL-DS default accent */
-	--portaliq-color-border: #d6d6d6;
+	--portaliq-color-accent: var(--nldesign-color-primary, #01689b);
+	--portaliq-color-border: var(--nldesign-color-border, #d6d6d6);
 	--portaliq-space-sm: 0.5rem;
 	--portaliq-space-md: 1rem;
 	--portaliq-space-lg: 1.5rem;
@@ -40,14 +50,12 @@
 	min-height: 100vh;
 	color: var(--portaliq-color-text);
 	background: var(--portaliq-color-background);
-	font-family: system-ui, sans-serif;
+	font-family: var(--nldesign-font-family, system-ui, sans-serif);
 }
 
-/* A tenant configuring theme: 'utrecht' opts into a slightly warmer accent —
-   a placeholder for real per-tenant NL-DS theme packages, not a redesign. */
-.portaliq-shell.theme-utrecht {
-	--portaliq-color-accent: #ca005d;
-}
+/* The `.theme-utrecht` placeholder is gone (WOO-566): a class-based accent
+   outranks the block above, so it would have been the one theme that ignores
+   the real token set it now gets. */
 
 .portaliq-header {
 	display: flex;
