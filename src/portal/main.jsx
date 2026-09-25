@@ -43,6 +43,29 @@ const RUNTIME_CONFIG = loadState('portaliq', 'runtimeConfig', {
 	locale: 'nl',
 })
 
+// THE TAB TITLE, SET FROM JAVASCRIPT BECAUSE THE SERVER CANNOT (WOO-566).
+//
+// A public government portal was rendering "Nextcloud" in the browser tab, on
+// the one page in the fleet built for citizens who have no Nextcloud account
+// and no idea what Nextcloud is.
+//
+// It is not fixable server-side on this route. `/portal` renders through
+// `TemplateResponse::RENDER_AS_BASE`, and core's `layout.base.php` emits
+// `<title><?php p($theme->getTitle()) ?></title>` -- hard-coded, no parameter,
+// nothing an app can pass. `Util::addHeader('title', ...)` appends a SECOND
+// <title> after that one, and browsers use the first, so the page would end up
+// carrying two titles and showing the wrong one.
+//
+// `/site`, which owns its whole document, sets this server-side and does not
+// need this line. That asymmetry is temporary by design: ADR-084 retires this
+// React portal in favour of that renderer.
+//
+// Guarded on a truthy value so an unresolved tenant keeps whatever the layout
+// rendered rather than blanking the tab.
+if (RUNTIME_CONFIG.organisationName) {
+	document.title = RUNTIME_CONFIG.organisationName
+}
+
 // Locale-bound translator (portal-spa-i18n-locale-support): every
 // user-visible string in App.jsx goes through this instead of a hard-coded
 // Dutch literal.

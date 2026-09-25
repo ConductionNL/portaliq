@@ -164,3 +164,30 @@ offered a widget that would render as an inert placeholder without warning.
 - **GIVEN** a widget the public renderer mounts
 - **WHEN** the editor opens the palette
 - **THEN** the entry is selectable
+
+### Requirement: The designer MUST be reachable from the page administration surfaces
+
+A declared designer route is not an entry point. Every surface on which an
+administrator works with a page — the page's own detail page and the pages
+overview — SHALL offer an action that opens the layout designer for that page,
+and the designer SHALL offer the way back: a link to the page as the public
+site serves it, naming the page's own portal so the link resolves on an
+instance whose domain is not delegated.
+
+#### Scenario: The page detail offers the designer
+
+- **GIVEN** an administrator on a portal page's detail page
+- **WHEN** they look at the page's actions
+- **THEN** an action opens the layout designer for that same page
+
+#### Scenario: The pages overview offers the designer per row
+
+- **GIVEN** an administrator on the pages overview
+- **WHEN** they open a row's actions
+- **THEN** an action opens the layout designer for that row's page
+
+#### Scenario: The designer links to the page on the public site
+
+- **GIVEN** an editor in the layout designer for a page that belongs to a portal
+- **WHEN** they follow the link to the site
+- **THEN** the URL carries the page's route and that portal's slug
