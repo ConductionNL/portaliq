@@ -216,6 +216,45 @@ class ProposalService {
 	}//end forSubject()
 
 	/**
+	 * Every proposal a proposer made, any state.
+	 *
+	 * Unlike `forSubject()`, no reviewer permission gates this: the filter
+	 * IS the authorization. The caller MUST derive `$proposedBy` from the
+	 * subject's own session, never from client input — passing an
+	 * arbitrary reference here would turn this into an unscoped read.
+	 *
+	 * @param string $proposedBy Who proposed it, from the session.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/guardian-self-service-profile/specs/change-proposal-queue/spec.md#requirement-a-proposer-can-list-their-own-proposals-req-cpq-005
+	 */
+	public function mine(string $proposedBy): array {
+		if ($proposedBy === '') {
+			return [];
+		}
+
+		$rows = $this->reader->readCollection(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: 'proposedBy',
+			subjectRef: $proposedBy,
+			organisation: '',
+			limit: 200,
+			filter: []
+		);
+
+		$out = [];
+		foreach ($rows as $row) {
+			if (is_array($row) === true && ($row['proposedBy'] ?? '') === $proposedBy) {
+				$out[] = $row;
+			}
+		}
+
+		return $out;
+	}//end mine()
+
+	/**
 	 * Accept a proposal: write the record as the reviewer, then close the
 	 * proposal.
 	 *

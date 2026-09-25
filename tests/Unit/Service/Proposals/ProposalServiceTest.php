@@ -211,6 +211,40 @@ class ProposalServiceTest extends TestCase {
 	}//end testTheQueueOnARecordListsOnlyThatRecordsProposals()
 
 	/**
+	 * `mine()` returns every proposal a proposer made, any state, and never
+	 * another proposer's.
+	 *
+	 * @return void
+	 */
+	public function testMineListsOnlyThatProposersProposalsAnyState(): void {
+		$service = $this->service();
+		$service->propose(subject: $this->subject(), changes: [['property' => 'applicantPhone', 'proposedValue' => '1']], proposable: ['applicantPhone'], subjectRow: [], proposedBy: 'guardian-1');
+		$service->propose(subject: ['register' => 'learniq', 'schema' => 'guardianProfile', 'id' => 'profile-9'], changes: [['property' => 'phone', 'proposedValue' => '2']], proposable: ['phone'], subjectRow: [], proposedBy: 'guardian-2');
+		$service->propose(subject: $this->subject(), changes: [['property' => 'applicantPhone', 'proposedValue' => '3']], proposable: ['applicantPhone'], subjectRow: [], proposedBy: 'guardian-1');
+
+		$mine = $service->mine(proposedBy: 'guardian-1');
+
+		$this->assertCount(expectedCount: 2, haystack: $mine);
+		foreach ($mine as $proposal) {
+			$this->assertSame(expected: 'guardian-1', actual: $proposal['proposedBy']);
+		}
+
+	}//end testMineListsOnlyThatProposersProposalsAnyState()
+
+	/**
+	 * An empty reference is never treated as "everyone" — it answers nothing.
+	 *
+	 * @return void
+	 */
+	public function testMineOfAnEmptyReferenceReturnsNothing(): void {
+		$service = $this->service();
+		$service->propose(subject: $this->subject(), changes: [['property' => 'applicantPhone', 'proposedValue' => '1']], proposable: ['applicantPhone'], subjectRow: [], proposedBy: 'guardian-1');
+
+		$this->assertSame(expected: [], actual: $service->mine(proposedBy: ''));
+
+	}//end testMineOfAnEmptyReferenceReturnsNothing()
+
+	/**
 	 * The record a proposal is about.
 	 *
 	 * @return array<string, string>
