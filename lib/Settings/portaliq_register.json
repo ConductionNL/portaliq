@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.27.0"
+        "version": "0.28.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.27.0",
+                "version": "0.28.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -3228,7 +3228,7 @@
                     ]
                 },
                 "icon": "ChartLine",
-                "version": "0.5.0",
+                "version": "0.6.0",
                 "title": "Portal Traffic Daily",
                 "description": "One portal's traffic for one UTC day, recomputed from the raw events by the aggregation job every fifteen minutes. Contains counts only, never a visitor. The Traffic page and any export read these records through the ordinary object API. One record per portal-day for all visits and one per configured segment; a roll-up portal's record sums its members.",
                 "type": "object",
@@ -3340,14 +3340,14 @@
                     "pages": {
                         "title": "Pages",
                         "type": "array",
-                        "description": "Per-path views, entrances, exits and engagement.",
+                        "description": "Per-route views, entrances, exits and engagement, and per route the sessions, visitors, engaged sessions, referrers and outbound links. A page is keyed by its in-site route: the `route` query parameter of the built-in site, else the URL path, without a trailing slash. A row written before portal-page-traffic has no sessions, visitors, engagedSessions, referrers or outbound; read their absence as not counted, never as zero.",
                         "items": {
                             "type": "object",
                             "properties": {
                                 "path": {
                                     "title": "Path",
                                     "type": "string",
-                                    "description": "The page path, query stripped.",
+                                    "description": "The in-site route: the built-in site's `route` parameter, else the URL path. Query stripped, no trailing slash.",
                                     "example": "/"
                                 },
                                 "views": {
@@ -3373,6 +3373,87 @@
                                     "type": "number",
                                     "description": "Mean seconds on this path before the next page view.",
                                     "example": 1
+                                },
+                                "sessions": {
+                                    "title": "Sessions",
+                                    "type": "integer",
+                                    "description": "Sessions that viewed this route. Absent on a row written before per-page counts existed.",
+                                    "example": 1
+                                },
+                                "visitors": {
+                                    "title": "Visitors",
+                                    "type": "integer",
+                                    "description": "Distinct visitors that viewed this route, by daily hash or client id. Absent on a row written before per-page counts existed.",
+                                    "example": 1
+                                },
+                                "engagedSessions": {
+                                    "title": "Engaged sessions",
+                                    "type": "integer",
+                                    "description": "Engaged sessions that viewed this route, by the same definition as the day's engaged sessions. Absent on a row written before per-page counts existed.",
+                                    "example": 1
+                                },
+                                "referrers": {
+                                    "title": "Referrers",
+                                    "type": "array",
+                                    "description": "Sessions that entered the portal on this route, by referrer host and channel, top ten. Absent on a row written before per-page counts existed.",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "host": {
+                                                "title": "Host",
+                                                "type": "string",
+                                                "description": "The referring host, empty for a direct visit.",
+                                                "example": "www.google.com"
+                                            },
+                                            "channel": {
+                                                "title": "Channel",
+                                                "type": "string",
+                                                "description": "The acquisition channel.",
+                                                "example": "organic"
+                                            },
+                                            "count": {
+                                                "title": "Count",
+                                                "type": "integer",
+                                                "description": "Sessions that entered here from this source.",
+                                                "example": 1
+                                            }
+                                        }
+                                    },
+                                    "example": [
+                                        {
+                                            "host": "www.google.com",
+                                            "channel": "organic",
+                                            "count": 40
+                                        }
+                                    ]
+                                },
+                                "outbound": {
+                                    "title": "Outbound links",
+                                    "type": "array",
+                                    "description": "Outbound links clicked on this route, top ten. Absent on a row written before per-page counts existed.",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "url": {
+                                                "title": "URL",
+                                                "type": "string",
+                                                "description": "The link clicked.",
+                                                "example": "https://www.tilburg.nl/"
+                                            },
+                                            "count": {
+                                                "title": "Count",
+                                                "type": "integer",
+                                                "description": "Clicks on this link from this route.",
+                                                "example": 1
+                                            }
+                                        }
+                                    },
+                                    "example": [
+                                        {
+                                            "url": "https://www.tilburg.nl/",
+                                            "count": 12
+                                        }
+                                    ]
                                 }
                             }
                         },
@@ -3382,7 +3463,23 @@
                                 "views": 600,
                                 "entrances": 300,
                                 "exits": 200,
-                                "avgEngagementSeconds": 40
+                                "avgEngagementSeconds": 40,
+                                "sessions": 280,
+                                "visitors": 260,
+                                "engagedSessions": 150,
+                                "referrers": [
+                                    {
+                                        "host": "www.google.com",
+                                        "channel": "organic",
+                                        "count": 120
+                                    }
+                                ],
+                                "outbound": [
+                                    {
+                                        "url": "https://www.tilburg.nl/",
+                                        "count": 12
+                                    }
+                                ]
                             }
                         ]
                     },
