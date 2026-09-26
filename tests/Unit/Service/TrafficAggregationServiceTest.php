@@ -27,6 +27,7 @@ use OCA\Portaliq\Service\Traffic\TrafficRollupSum;
 use OCA\Portaliq\Service\Traffic\TrafficSegments;
 use OCA\Portaliq\Service\Traffic\TrafficSessioniser;
 use OCA\Portaliq\Service\TrafficAggregationService;
+use OCA\Portaliq\Service\TrafficBackfillService;
 use OCA\Portaliq\Service\TrafficConfigResolver;
 use OCA\Portaliq\Tests\Unit\Service\Traffic\FakeAppConfig;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -87,6 +88,14 @@ class TrafficAggregationServiceTest extends TestCase {
 	 * @var array<int, array<string, mixed>>|null
 	 */
 	private ?array $portals = null;
+
+	/**
+	 * The resolver, store and clock doubles of the last service(), so the
+	 * back-fill service can share them.
+	 *
+	 * @var array<string, mixed>
+	 */
+	private array $doubles = [];
 
 	/**
 	 * The frozen clock: 2026-09-04 23:30:00 UTC.
@@ -192,6 +201,8 @@ class TrafficAggregationServiceTest extends TestCase {
 			}
 		);
 
+		$this->doubles = ['portals' => $portals, 'store' => $store, 'clock' => $clock];
+
 		return new TrafficAggregationService(
 			$portals,
 			new TrafficConfigResolver(),
@@ -206,6 +217,26 @@ class TrafficAggregationServiceTest extends TestCase {
 			$recordings
 		);
 	}//end service()
+
+
+	/**
+	 * The back-fill service (portal-page-traffic) over the same doubles
+	 * and a fresh aggregation service.
+	 *
+	 * @return TrafficBackfillService The service.
+	 */
+	private function backfillService(): TrafficBackfillService {
+		$aggregation = $this->service();
+
+		return new TrafficBackfillService(
+			$this->doubles['portals'],
+			new TrafficConfigResolver(),
+			$this->doubles['store'],
+			$aggregation,
+			$this->config->mock($this),
+			$this->doubles['clock']
+		);
+	}//end backfillService()
 
 
 	/**
@@ -406,4 +437,73 @@ class TrafficAggregationServiceTest extends TestCase {
 			$this->assertNotSame('/never', $record['pages'][0]['path'] ?? '');
 		}
 	}//end testARollUpPortalSumsItsMembersAndNeverCountsItself()
+
+
+	/**
+	 * The back-fill (portal-page-traffic): a stored day written before the
+	 * per-page counts, whose raw events are all still retained, is rebuilt
+	 * once and gains them; the next run does not back-fill again.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
+	 */
+	public function testARetainedDayGainsThePerPageCountsOnce(): void {
+		$this->daily['old'] = [
+			'portal' => 'open-tilburg',
+			'date' => '2026-08-20',
+			'segment' => '',
+			'pageViews' => 2,
+			'events' => ['page_view' => 2],
+			'pages' => [['path' => '/', 'views' => 2, 'entrances' => 2, 'exits' => 2, 'avgEngagementSeconds' => 0.0]],
+		];
+		$this->events = [
+			$this->event('open-tilburg', '2026-08-20T10:00:00.000Z', '/', receivedAt: '2026-08-20T10:00:01.000Z'),
+			$this->event('open-tilburg', '2026-08-20T11:00:00.000Z', '/', receivedAt: '2026-08-20T11:00:01.000Z', visitor: 'h2'),
+		];
+		$backfill = $this->backfillService();
+
+		$first = $backfill->runOnce();
+		$second = $backfill->runOnce();
+
+		$this->assertSame(1, $first);
+		$this->assertSame(0, $second);
+		$this->assertSame('page-traffic-1', $this->config->values['portaliq/traffic_backfilled']);
+		$page = $this->daily['old']['pages'][0];
+		$this->assertSame('/', $page['path']);
+		$this->assertSame(2, $page['sessions']);
+		$this->assertSame(2, $page['visitors']);
+		$this->assertSame(0, $page['engagedSessions']);
+	}//end testARetainedDayGainsThePerPageCountsOnce()
+
+
+	/**
+	 * A day whose raw events were partly purged keeps its complete record:
+	 * the back-fill never trades 100 page views for 40.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
+	 */
+	public function testAPartlyPurgedDayKeepsItsOldRecord(): void {
+		$stored = [
+			'portal' => 'open-tilburg',
+			'date' => '2026-06-07',
+			'segment' => '',
+			'pageViews' => 100,
+			'events' => ['page_view' => 100],
+			'pages' => [['path' => '/', 'views' => 100, 'entrances' => 60, 'exits' => 60, 'avgEngagementSeconds' => 3.0]],
+		];
+		$this->daily['edge'] = $stored;
+		for ($i = 0; $i < 40; $i++) {
+			$this->events[] = $this->event('open-tilburg', sprintf('2026-06-07T10:%02d:00.000Z', $i), '/', receivedAt: '2026-06-07T12:00:00.000Z', visitor: 'h' . $i);
+		}
+
+		$result = $this->backfillService()->backfill();
+
+		$this->assertSame($stored, $this->daily['edge']);
+		$this->assertSame(0, $result['days']);
+		$this->assertSame(2, $result['portals'], 'both ordinary portals are walked');
+		$this->assertSame(1, $this->backfillService()->backfill(only: 'open-venray')['portals'], 'one portal on request');
+	}//end testAPartlyPurgedDayKeepsItsOldRecord()
 }//end class

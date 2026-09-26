@@ -43,6 +43,8 @@ import ExampleModal from './modals/ExampleModal.vue'
 import CustomExample from './views/CustomExample.vue'
 import FlowDetailSidebar from './views/flows/FlowDetailSidebar.vue'
 import PageLayoutDesigner from './views/PageLayoutDesigner.vue'
+import PageTrafficFlow from './widgets/PageTrafficFlow.vue'
+import PortalTrafficKpi from './widgets/PortalTrafficKpi.vue'
 import TrafficDaily from './widgets/TrafficDaily.vue'
 import TrafficDimensions from './widgets/TrafficDimensions.vue'
 import TrafficErrors from './widgets/TrafficErrors.vue'
@@ -51,9 +53,10 @@ import TrafficForms from './widgets/TrafficForms.vue'
 import TrafficFunnels from './widgets/TrafficFunnels.vue'
 import TrafficGoals from './widgets/TrafficGoals.vue'
 import TrafficHeatmap from './widgets/TrafficHeatmap.vue'
-import TrafficJourneys from './widgets/TrafficJourneys.vue'
+import TrafficKpi from './widgets/TrafficKpi.vue'
 import TrafficOverview from './widgets/TrafficOverview.vue'
 import TrafficPages from './widgets/TrafficPages.vue'
+import TrafficPathExplorer from './widgets/TrafficPathExplorer.vue'
 import TrafficRecordings from './widgets/TrafficRecordings.vue'
 import TrafficSources from './widgets/TrafficSources.vue'
 import TrafficVisitors from './widgets/TrafficVisitors.vue'
@@ -65,6 +68,16 @@ const TRAFFIC_WIDGET_META = {
 	defaultSize: { w: 12, h: 3 },
 	minSize: { w: 6, h: 2 },
 	maxSize: { w: 12, h: 8 },
+	allowedSlots: ['body'],
+	propsSchema: null,
+}
+
+// The traffic KPI cards (portal-traffic-kpi-cards): a quarter of a row,
+// four side by side.
+const TRAFFIC_KPI_META = {
+	defaultSize: { w: 3, h: 2 },
+	minSize: { w: 2, h: 1 },
+	maxSize: { w: 6, h: 3 },
 	allowedSlots: ['body'],
 	propsSchema: null,
 }
@@ -91,7 +104,28 @@ export default {
 		kind: 'widget',
 		component: TrafficOverview,
 		...TRAFFIC_WIDGET_META,
-		_note: 'Portal selector plus four CnStatsBlock tiles (page views, sessions, visitors, engaged sessions, 30 days) read from portalTrafficDaily through the OR object API. Custom because it must render "Not measured for this portal" DIFFERENTLY from "No traffic recorded yet" and warn about the sensitive switches; a stats-block dataSource shows a zero for both.',
+		_note: 'Portal, period and segment selectors, the Export button, and the notes: roll-up, sensitive switches, and "Not measured for this portal" versus "No traffic recorded yet". Custom because a stats-block dataSource shows a zero for both. Its four headline numbers moved to TrafficKpi cards (portal-traffic-kpi-cards).',
+	},
+	// @custom-widget-ratchet exclude no built-in widget can read the Traffic page's report store, so a built-in card cannot follow the overview's portal, period and segment
+	TrafficKpi: {
+		kind: 'widget',
+		component: TrafficKpi,
+		...TRAFFIC_KPI_META,
+		_note: 'One headline number of the Traffic page (content.metric: pageViews, sessions, visitors or engagedSessions) as a CnStatsBlock KPI card, read from the report store so it follows the overview\'s portal, period and segment (portal-traffic-kpi-cards). Custom for the same reason as TrafficOverview: an unmeasured portal must read "Not measured", not zero.',
+	},
+	// @custom-widget-ratchet exclude a built-in stat card cannot resolve @object tokens in its link nor pass its own picked period to its endpoint in nc-vue 2.56.0
+	PortalTrafficKpi: {
+		kind: 'widget',
+		component: PortalTrafficKpi,
+		...TRAFFIC_KPI_META,
+		_note: 'One traffic KPI card on a portal\'s detail page (portal-traffic-kpi-cards): nc-vue\'s CnStatWidget over /api/traffic/summary with its own period picker. The wrapper exists for three things a manifest stat widget cannot do: say "Not measured" without asking, link to the Traffic page with the portal selected (route tokens cannot read @object), and pass the picked period, because nc-vue 2.56.0 never resolves the @range tokens it documents. With content.scope \'page\' (portal-page-traffic) the same card shows one portal page from /api/traffic/page, and reads "Not measured" or "Not available for this period" from that answer.',
+	},
+	// @custom-widget-ratchet exclude no built-in widget renders ranked lists from an app endpoint and says "Not measured" or "Not available for this period" instead of an empty table
+	PageTrafficFlow: {
+		kind: 'widget',
+		component: PageTrafficFlow,
+		...TRAFFIC_WIDGET_META,
+		_note: "Incoming or outgoing traffic of one portal page (portal-page-traffic), content.direction 'incoming' or 'outgoing': the previous or next pages, the entrances or exits, and the referrers or outbound links, from /api/traffic/page with its own period. One component for both directions so the registry grows by one entry, not two.",
 	},
 	TrafficDaily: {
 		kind: 'widget',
@@ -105,11 +139,11 @@ export default {
 		...TRAFFIC_WIDGET_META,
 		_note: 'Top pages with entrances and exits, merged across the daily rollups of the selected portal. Custom because the rows live inside each rollup object (pages[]), which object-table cannot unfold or sum across objects.',
 	},
-	TrafficJourneys: {
+	TrafficPathExplorer: {
 		kind: 'widget',
-		component: TrafficJourneys,
+		component: TrafficPathExplorer,
 		...TRAFFIC_WIDGET_META,
-		_note: 'Top page-to-page transitions, merged across the daily rollups. Custom for the same reason as TrafficPages: transitions[] is nested per rollup.',
+		_note: 'The steps visitors took from a starting point or to an ending point, with the top pages per step, "+N more", drop-offs and flow bands, drawn in SVG (portal-traffic-path-explorer). Replaces TrafficJourneys. Custom because no built-in widget draws a flow diagram or reads /api/traffic/paths, and because its nodes are buttons that re-ask the endpoint with the chosen trail.',
 	},
 	TrafficSources: {
 		kind: 'widget',
