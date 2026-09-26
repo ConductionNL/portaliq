@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\BackgroundJob;
 
 use OCA\Portaliq\Service\TrafficAggregationService;
+use OCA\Portaliq\Service\TrafficBackfillService;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJob;
 use OCP\BackgroundJob\TimedJob;
@@ -57,6 +58,7 @@ class TrafficAggregationJob extends TimedJob {
 	 * @param ITimeFactory              $time        Testable clock (job base class).
 	 * @param TrafficAggregationService $aggregation Does the work.
 	 * @param LoggerInterface           $logger      The logger.
+	 * @param TrafficBackfillService    $backfill    Rebuilds the retained days once after an upgrade (portal-page-traffic).
 	 *
 	 * @return void
 	 */
@@ -64,6 +66,7 @@ class TrafficAggregationJob extends TimedJob {
 		ITimeFactory $time,
 		private readonly TrafficAggregationService $aggregation,
 		private readonly LoggerInterface $logger,
+		private readonly ?TrafficBackfillService $backfill = null,
 	) {
 		parent::__construct(time: $time);
 		$this->setInterval(seconds: self::INTERVAL);
@@ -75,6 +78,10 @@ class TrafficAggregationJob extends TimedJob {
 	/**
 	 * Rebuild the open rollups and purge expired raw events.
 	 *
+	 * Then, once per back-fill version, rebuild every day whose raw events
+	 * are still retained (portal-page-traffic), in its own try so a failed
+	 * back-fill never costs the ordinary run.
+	 *
 	 * Every failure is caught and logged: the job never lets an exception
 	 * escape to the cron runner, which would mark it failed and back off.
 	 *
@@ -84,6 +91,7 @@ class TrafficAggregationJob extends TimedJob {
 	 * @return void
 	 *
 	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) -- the base class dictates
 	 * the signature; dropping the parameter breaks the override.
@@ -93,6 +101,16 @@ class TrafficAggregationJob extends TimedJob {
 			$this->aggregation->run();
 		} catch (Throwable $failure) {
 			$this->logger->error('[TrafficAggregationJob] aggregation failed: ' . $failure->getMessage(), ['exception' => $failure]);
+		}
+
+		if ($this->backfill === null) {
+			return;
+		}
+
+		try {
+			$this->backfill->runOnce();
+		} catch (Throwable $failure) {
+			$this->logger->error('[TrafficAggregationJob] back-fill failed: ' . $failure->getMessage(), ['exception' => $failure]);
 		}
 	}//end run()
 }//end class
