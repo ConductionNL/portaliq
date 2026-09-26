@@ -6101,7 +6101,7 @@
             },
             "groupStaffFixture": {
                 "slug": "groupStaffFixture",
-                "icon": "AccountTie",
+                "icon": "Account",
                 "version": "0.1.0",
                 "title": "Group staff fixture (interim)",
                 "authorization": {
@@ -6140,7 +6140,7 @@
             },
             "guardianAudienceFixture": {
                 "slug": "guardianAudienceFixture",
-                "icon": "AccountGroup",
+                "icon": "Account",
                 "version": "0.1.0",
                 "title": "Guardian audience fixture (interim)",
                 "authorization": {
