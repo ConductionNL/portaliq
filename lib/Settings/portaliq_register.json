@@ -5916,6 +5916,7 @@
                     "kind": {
                         "title": "Kind",
                         "type": "string",
+                        "description": "Whether this thread is a two-participant `direct` thread or a `group` thread scoped to a whole group.",
                         "enum": [
                             "direct",
                             "group"
@@ -5937,12 +5938,14 @@
                     },
                     "createdBy": {
                         "title": "Created by",
-                        "type": "string"
+                        "type": "string",
+                        "description": "The subjectRef of whoever created this thread: the staff member for a `group` thread."
                     },
                     "createdAt": {
                         "title": "Created at",
                         "type": "string",
-                        "format": "date-time"
+                        "format": "date-time",
+                        "description": "When this thread was created, in ISO 8601."
                     }
                 }
             },
@@ -5969,20 +5972,24 @@
                 "properties": {
                     "threadRef": {
                         "title": "Thread",
-                        "type": "string"
+                        "type": "string",
+                        "description": "The messageThread this message belongs to."
                     },
                     "senderRef": {
                         "title": "Sender",
-                        "type": "string"
+                        "type": "string",
+                        "description": "The subjectRef of whoever sent this message."
                     },
                     "body": {
                         "title": "Body",
-                        "type": "string"
+                        "type": "string",
+                        "description": "The message text."
                     },
                     "sentAt": {
                         "title": "Sent at",
                         "type": "string",
-                        "format": "date-time"
+                        "format": "date-time",
+                        "description": "When this message was sent, in ISO 8601."
                     },
                     "readBy": {
                         "title": "Read by",
@@ -6018,11 +6025,13 @@
                     "groupRef": {
                         "title": "Group",
                         "type": "string",
+                        "description": "The group this fixture row is for.",
                         "example": "groep-5a"
                     },
                     "staffRefs": {
                         "title": "Staff",
                         "type": "array",
+                        "description": "The staff subjectRefs who teach this group.",
                         "items": {
                             "type": "string"
                         },
@@ -6054,16 +6063,19 @@
                     "guardianRef": {
                         "title": "Guardian",
                         "type": "string",
+                        "description": "The guardian's own subjectRef.",
                         "example": "guardian-anna-devries"
                     },
                     "schoolRef": {
                         "title": "School",
                         "type": "string",
+                        "description": "The guardian's own child's school.",
                         "example": "school-de-regenboog"
                     },
                     "groupRefs": {
                         "title": "Groups",
                         "type": "array",
+                        "description": "The groups the guardian's own children are in.",
                         "items": {
                             "type": "string"
                         },
@@ -6074,6 +6086,7 @@
                     "childRefs": {
                         "title": "Children",
                         "type": "array",
+                        "description": "The guardian's own children.",
                         "items": {
                             "type": "string"
                         },

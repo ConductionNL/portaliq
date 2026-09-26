@@ -2288,6 +2288,171 @@
         "decidedBy": "behandelaar-2002",
         "decidedAt": "2026-02-13T09:30:00+00:00",
         "decisionReason": "De fusie is nog niet ingeschreven bij de Kamer van Koophandel."
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "groupStaffFixture",
+          "slug": "groupstafffixture-groupstafffixture-1-1"
+        },
+        "groupRef": "Voorbeeld Groupref 1",
+        "staffRefs": [
+          "Voorbeeld Staffrefs 1"
+        ]
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "groupStaffFixture",
+          "slug": "groupstafffixture-groupstafffixture-2-2"
+        },
+        "groupRef": "Voorbeeld Groupref 2",
+        "staffRefs": [
+          "Voorbeeld Staffrefs 2"
+        ]
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "groupStaffFixture",
+          "slug": "groupstafffixture-groupstafffixture-3-3"
+        },
+        "groupRef": "Voorbeeld Groupref 3",
+        "staffRefs": [
+          "Voorbeeld Staffrefs 3"
+        ]
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "guardianAudienceFixture",
+          "slug": "guardianaudiencefixture-guardianaudiencefixture-1-1"
+        },
+        "guardianRef": "Voorbeeld Guardianref 1",
+        "schoolRef": "Voorbeeld Schoolref 1",
+        "groupRefs": [
+          "Voorbeeld Grouprefs 1"
+        ],
+        "childRefs": [
+          "Voorbeeld Childrefs 1"
+        ],
+        "photoConsent": {}
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "guardianAudienceFixture",
+          "slug": "guardianaudiencefixture-guardianaudiencefixture-2-2"
+        },
+        "guardianRef": "Voorbeeld Guardianref 2",
+        "schoolRef": "Voorbeeld Schoolref 2",
+        "groupRefs": [
+          "Voorbeeld Grouprefs 2"
+        ],
+        "childRefs": [
+          "Voorbeeld Childrefs 2"
+        ],
+        "photoConsent": {}
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "guardianAudienceFixture",
+          "slug": "guardianaudiencefixture-guardianaudiencefixture-3-3"
+        },
+        "guardianRef": "Voorbeeld Guardianref 3",
+        "schoolRef": "Voorbeeld Schoolref 3",
+        "groupRefs": [
+          "Voorbeeld Grouprefs 3"
+        ],
+        "childRefs": [
+          "Voorbeeld Childrefs 3"
+        ],
+        "photoConsent": {}
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "message",
+          "slug": "message-message-1-1"
+        },
+        "threadRef": "Voorbeeld Threadref 1",
+        "senderRef": "Voorbeeld Senderref 1",
+        "body": "Voorbeeld Body 1",
+        "sentAt": "2026-03-01T09:00:00+00:00",
+        "readBy": [
+          "Voorbeeld Readby 1"
+        ]
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "message",
+          "slug": "message-message-2-2"
+        },
+        "threadRef": "Voorbeeld Threadref 2",
+        "senderRef": "Voorbeeld Senderref 2",
+        "body": "Voorbeeld Body 2",
+        "sentAt": "2026-03-02T09:00:00+00:00",
+        "readBy": [
+          "Voorbeeld Readby 2"
+        ]
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "message",
+          "slug": "message-message-3-3"
+        },
+        "threadRef": "Voorbeeld Threadref 3",
+        "senderRef": "Voorbeeld Senderref 3",
+        "body": "Voorbeeld Body 3",
+        "sentAt": "2026-03-03T09:00:00+00:00",
+        "readBy": [
+          "Voorbeeld Readby 3"
+        ]
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "messageThread",
+          "slug": "messagethread-messagethread-1-1"
+        },
+        "kind": "direct",
+        "createdBy": "Voorbeeld Createdby 1",
+        "participantRefs": [
+          "Voorbeeld Participantrefs 1"
+        ],
+        "groupRef": "Voorbeeld Groupref 1",
+        "createdAt": "2026-03-01T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "messageThread",
+          "slug": "messagethread-messagethread-2-2"
+        },
+        "kind": "group",
+        "createdBy": "Voorbeeld Createdby 2",
+        "participantRefs": [
+          "Voorbeeld Participantrefs 2"
+        ],
+        "groupRef": "Voorbeeld Groupref 2",
+        "createdAt": "2026-03-02T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "messageThread",
+          "slug": "messagethread-messagethread-3-3"
+        },
+        "kind": "direct",
+        "createdBy": "Voorbeeld Createdby 3",
+        "participantRefs": [
+          "Voorbeeld Participantrefs 3"
+        ],
+        "groupRef": "Voorbeeld Groupref 3",
+        "createdAt": "2026-03-03T09:00:00+00:00"
       }
     ]
   }

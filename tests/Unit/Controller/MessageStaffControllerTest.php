@@ -65,6 +65,34 @@ class MessageStaffControllerTest extends TestCase {
 		$this->assertSame(['groep-5a' => [['id' => 't1']]], $response->getData());
 	}//end testInboxReturnsTheServicesOwnBucketedResult()
 
+	public function testInboxRefusesAnUnauthenticatedCaller(): void {
+		$userSession = $this->createMock(IUserSession::class);
+		$userSession->method('getUser')->willReturn(null);
+		$controller = new MessageStaffController(
+			$this->createMock(IRequest::class),
+			$userSession,
+			$this->createMock(GuardianMessagingLeafInterface::class),
+			$this->createMock(TeacherInboxService::class)
+		);
+
+		$this->expectException(\OCP\AppFramework\OCS\OCSForbiddenException::class);
+		$controller->inbox();
+	}//end testInboxRefusesAnUnauthenticatedCaller()
+
+	public function testCreateGroupThreadRefusesAnUnauthenticatedCaller(): void {
+		$userSession = $this->createMock(IUserSession::class);
+		$userSession->method('getUser')->willReturn(null);
+		$controller = new MessageStaffController(
+			$this->createMock(IRequest::class),
+			$userSession,
+			$this->createMock(GuardianMessagingLeafInterface::class),
+			$this->createMock(TeacherInboxService::class)
+		);
+
+		$this->expectException(\OCP\AppFramework\OCS\OCSForbiddenException::class);
+		$controller->createGroupThread('groep-5a');
+	}//end testCreateGroupThreadRefusesAnUnauthenticatedCaller()
+
 	public function testCreateGroupThreadReturns403WhenRefused(): void {
 		$messaging = $this->createMock(GuardianMessagingLeafInterface::class);
 		$messaging->method('createThread')->willReturn(null);
