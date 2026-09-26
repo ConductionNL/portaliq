@@ -830,25 +830,6 @@
 			"featureConfidence": "high"
 		},
 		{
-			"id": "sib-shillinq-sal-customer-portal",
-			"area": "cases",
-			"name": "Let customers view, download and pay their invoices in a portal.",
-			"portaliq": "unknown",
-			"open-inwoner": "unknown",
-			"nl-portal": "unknown",
-			"xxllnc-pip": "unknown",
-			"mijnoverheid": "unknown",
-			"liferay-dxp": "unknown",
-			"built": {
-				"state": "none",
-				"note": "seed row, not yet read from portaliq code; source shillinq capabilities[sal-customer-portal] rates itself partial",
-				"origin": "sibling",
-				"owner": "ConductionNL/portaliq"
-			},
-			"provider": "portaliq",
-			"providerHow": "owed by the shillinq matrix, not yet read"
-		},
-		{
 			"id": "act-amend-case",
 			"area": "case-actions",
 			"name": "Correct an answer you already gave on your own case.",
@@ -916,6 +897,122 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "withdrawing-your-own-case-from-the-portal",
+			"featureConfidence": "high"
+		},
+		{
+			"id": "act-write-throttle",
+			"area": "case-actions",
+			"name": "Be rate-limited from making too many corrections to a case in quick succession.",
+			"portaliq": "yes",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "built",
+				"evidence": "lib/Controller/CitizenCaseController.php:504-535 guardWrite() calls CitizenWriteThrottle::allow(), counted per identity and per case, shared by amend() and addDocument()",
+				"reachedOn": "invoked on every citizenCase#amend and citizenCase#addDocument call (see act-amend-case, act-add-document)",
+				"owner": "ConductionNL/portaliq",
+				"note": "Not a user-visible feature by itself, but a real, invoked guard rather than a declaration.",
+				"origin": "code"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"feature": "what-the-citizen-may-write-on-their-own-case",
+			"featureConfidence": "high"
+		},
+		{
+			"id": "act-propose-citizen",
+			"area": "case-actions",
+			"name": "Propose a change to a field on a record as a citizen, for a colleague to accept or reject.",
+			"portaliq": "no",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "built",
+				"evidence": "lib/Controller/ProposalController.php proposeFromPortal(); routes.php:250 POST /portal/api/proposals",
+				"reachedOn": "nothing reaches it (see sib-2.21)",
+				"owner": "ConductionNL/portaliq",
+				"note": null,
+				"origin": "code"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"feature": "change-proposal-queue",
+			"featureConfidence": "high"
+		},
+		{
+			"id": "act-propose-colleague",
+			"area": "case-actions",
+			"name": "Propose a change to a record you can read but not write, as a colleague.",
+			"portaliq": "no",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "built",
+				"evidence": "lib/Controller/ProposalController.php proposeAsColleague(); routes.php:243 POST /api/proposals",
+				"reachedOn": "nothing reaches it: no manifest page, no admin view, no widget calls this route (see sib-2.21)",
+				"owner": "ConductionNL/portaliq",
+				"note": null,
+				"origin": "code"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"feature": "change-proposal-queue",
+			"featureConfidence": "high"
+		},
+		{
+			"id": "act-withdraw-proposal",
+			"area": "case-actions",
+			"name": "Withdraw a change proposal you made before it is decided.",
+			"portaliq": "no",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "built",
+				"evidence": "lib/Controller/ProposalController.php withdraw(); routes.php:251 POST /portal/api/proposals/{id}/withdraw",
+				"reachedOn": "nothing reaches it (see sib-2.21)",
+				"owner": "ConductionNL/portaliq",
+				"note": null,
+				"origin": "code"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"feature": "change-proposal-queue",
+			"featureConfidence": "high"
+		},
+		{
+			"id": "act-staff-review-queue",
+			"area": "case-actions",
+			"name": "As staff, see the queue of pending change proposals and accept or reject each one.",
+			"portaliq": "no",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "built",
+				"evidence": "lib/Controller/ProposalController.php index()/accept()/acceptConfirmingDrift()/reject(); lib/Service/Proposals/ReviewerObjectWriter.php applies an accepted proposal with the REVIEWER's own rights; routes.php:242-249; gated by lib/actions.seed.json:11 'portal.review-proposal': ['admin']",
+				"reachedOn": "nothing reaches it: no manifest page or admin view lists src/manifest.json 'proposal'; grep across src/views and src/widgets for 'proposal' or 'Proposal': zero hits",
+				"owner": "ConductionNL/portaliq",
+				"note": "A queue with drift detection (acceptConfirmingDrift, for when the record changed since the proposal was made) exists server-side with no staff screen to use it from.",
+				"origin": "code",
+				"defectCandidate": "no manifest page or admin view anywhere exposes /api/proposals; a reviewer can only act through raw API calls (code reading, needs a live check)"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"feature": "change-proposal-queue",
 			"featureConfidence": "high"
 		},
 		{
@@ -1033,44 +1130,6 @@
 			"providerHow": "read-from-code",
 			"feature": "change-proposal-queue",
 			"featureConfidence": "high"
-		},
-		{
-			"id": "sib-dossiq-2-21",
-			"area": "case-actions",
-			"name": "Change proposals from colleagues or citizens queued for acceptance.",
-			"portaliq": "unknown",
-			"open-inwoner": "unknown",
-			"nl-portal": "unknown",
-			"xxllnc-pip": "unknown",
-			"mijnoverheid": "unknown",
-			"liferay-dxp": "unknown",
-			"built": {
-				"state": "none",
-				"note": "seed row, not yet read from portaliq code; source dossiq capabilities[2.21] rates itself partial",
-				"origin": "sibling",
-				"owner": "ConductionNL/portaliq"
-			},
-			"provider": "portaliq",
-			"providerHow": "owed by the dossiq matrix, not yet read"
-		},
-		{
-			"id": "sib-dossiq-2-47",
-			"area": "case-actions",
-			"name": "Applicant withdraws their own case from the portal.",
-			"portaliq": "unknown",
-			"open-inwoner": "unknown",
-			"nl-portal": "unknown",
-			"xxllnc-pip": "unknown",
-			"mijnoverheid": "unknown",
-			"liferay-dxp": "unknown",
-			"built": {
-				"state": "none",
-				"note": "seed row, not yet read from portaliq code; source dossiq pending[2.47] rates itself partial",
-				"origin": "sibling",
-				"owner": "ConductionNL/portaliq"
-			},
-			"provider": "portaliq",
-			"providerHow": "owed by the dossiq matrix, not yet read"
 		},
 		{
 			"id": "tsk-list",
@@ -1345,25 +1404,6 @@
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"featureConfidence": "high"
-		},
-		{
-			"id": "sib-dossiq-3-19",
-			"area": "tasks",
-			"name": "External (supply chain partner) task assignment.",
-			"portaliq": "unknown",
-			"open-inwoner": "unknown",
-			"nl-portal": "unknown",
-			"xxllnc-pip": "unknown",
-			"mijnoverheid": "unknown",
-			"liferay-dxp": "unknown",
-			"built": {
-				"state": "none",
-				"note": "seed row, not yet read from portaliq code; source dossiq capabilities[3.19] rates itself partial",
-				"origin": "sibling",
-				"owner": "ConductionNL/portaliq"
-			},
-			"provider": "portaliq",
-			"providerHow": "owed by the dossiq matrix, not yet read"
 		},
 		{
 			"id": "cmp-inb-reply",
