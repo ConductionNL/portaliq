@@ -33,7 +33,9 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IRequest;
+use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -42,6 +44,11 @@ use Throwable;
  * Staff authoring for newsletters.
  *
  * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsletter-send-is-preceded-by-a-recipient-count-preflight
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- `IUserSession` is the
+ * gate-7 (no-admin-idor) authorization guard every `#[NoAdminRequired]`
+ * method now calls first; it is a security requirement, not incidental
+ * coupling (see `ContributionController`'s identical suppression).
  */
 class NewsletterController extends Controller {
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
@@ -54,18 +61,35 @@ class NewsletterController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
+	 * @param IUserSession $userSession Confirms an authenticated Nextcloud user reached this endpoint.
 	 * @param ContainerInterface $container For resolving OpenRegister services.
 	 * @param NewsletterPreflightService $preflight The recipient-count/refusal check.
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
 		IRequest $request,
+		private readonly IUserSession $userSession,
 		private readonly ContainerInterface $container,
 		private readonly NewsletterPreflightService $preflight,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
+
+	/**
+	 * The staff authorization guard every `#[NoAdminRequired]` method calls
+	 * FIRST, before any read or write (see `NewsController`'s identical
+	 * guard for the full rationale).
+	 *
+	 * @return void
+	 *
+	 * @throws OCSForbiddenException When no Nextcloud user is authenticated.
+	 */
+	private function requireAuthenticatedStaff(): void {
+		if ($this->userSession->getUser() === null) {
+			throw new OCSForbiddenException('Authentication required');
+		}
+	}//end requireAuthenticatedStaff()
 
 	/**
 	 * Compose a draft newsletter from existing news items.
@@ -80,6 +104,8 @@ class NewsletterController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function create(string $title, array $itemRefs, array $target): JSONResponse {
+		$this->requireAuthenticatedStaff();
+
 		if ($title === '' || count($itemRefs) === 0) {
 			return new JSONResponse(['error' => 'invalid_request'], Http::STATUS_BAD_REQUEST);
 		}
@@ -123,6 +149,8 @@ class NewsletterController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function preflight(string $id): JSONResponse {
+		$this->requireAuthenticatedStaff();
+
 		$newsletter = $this->fetch(id: $id);
 		if ($newsletter === null) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
@@ -149,6 +177,8 @@ class NewsletterController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function send(string $id): JSONResponse {
+		$this->requireAuthenticatedStaff();
+
 		$newsletter = $this->fetch(id: $id);
 		if ($newsletter === null) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);

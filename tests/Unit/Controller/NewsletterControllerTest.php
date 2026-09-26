@@ -25,7 +25,10 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Controller\NewsletterController;
 use OCA\Portaliq\Service\NewsletterPreflightService;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IRequest;
+use OCP\IUser;
+use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -41,6 +44,16 @@ use RuntimeException;
 class NewsletterControllerTest extends TestCase {
 
 	private const OS = 'OCA\\OpenRegister\\Service\\ObjectService';
+
+	private function authenticatedUserSession(): IUserSession {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('staff-directie-1');
+
+		$userSession = $this->createMock(IUserSession::class);
+		$userSession->method('getUser')->willReturn($user);
+
+		return $userSession;
+	}//end authenticatedUserSession()
 
 	private function container(object $objectService): ContainerInterface {
 		$container = $this->createMock(ContainerInterface::class);
@@ -86,12 +99,22 @@ class NewsletterControllerTest extends TestCase {
 		};
 	}//end fakeObjectServiceReturning()
 
+	public function testCreateRefusesAnUnauthenticatedCaller(): void {
+		$userSession = $this->createMock(IUserSession::class);
+		$userSession->method('getUser')->willReturn(null);
+
+		$controller = new NewsletterController($this->createMock(IRequest::class), $userSession, $this->createMock(ContainerInterface::class), $this->createMock(NewsletterPreflightService::class), $this->createMock(LoggerInterface::class));
+
+		$this->expectException(OCSForbiddenException::class);
+		$controller->create('Title', ['n1'], ['groupRefs' => ['groep-5a']]);
+	}//end testCreateRefusesAnUnauthenticatedCaller()
+
 	public function testPreflightReportsTheExactCount(): void {
 		$objectService = $this->fakeObjectServiceReturning(['id' => 'nl1', 'target' => ['groupRefs' => ['groep-5a']]]);
 		$preflight = $this->createMock(NewsletterPreflightService::class);
 		$preflight->expects($this->once())->method('countRecipients')->with(['groupRefs' => ['groep-5a']])->willReturn(3);
 
-		$controller = new NewsletterController($this->createMock(IRequest::class), $this->container($objectService), $preflight, $this->createMock(LoggerInterface::class));
+		$controller = new NewsletterController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $preflight, $this->createMock(LoggerInterface::class));
 		$response = $controller->preflight('nl1');
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
@@ -103,7 +126,7 @@ class NewsletterControllerTest extends TestCase {
 		$preflight = $this->createMock(NewsletterPreflightService::class);
 		$preflight->method('sendIsRefused')->willReturn(true);
 
-		$controller = new NewsletterController($this->createMock(IRequest::class), $this->container($objectService), $preflight, $this->createMock(LoggerInterface::class));
+		$controller = new NewsletterController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $preflight, $this->createMock(LoggerInterface::class));
 		$response = $controller->send('nl1');
 
 		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
@@ -115,7 +138,7 @@ class NewsletterControllerTest extends TestCase {
 		$preflight = $this->createMock(NewsletterPreflightService::class);
 		$preflight->method('sendIsRefused')->willReturn(false);
 
-		$controller = new NewsletterController($this->createMock(IRequest::class), $this->container($objectService), $preflight, $this->createMock(LoggerInterface::class));
+		$controller = new NewsletterController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $preflight, $this->createMock(LoggerInterface::class));
 		$response = $controller->send('nl1');
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());

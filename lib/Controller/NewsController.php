@@ -33,7 +33,9 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IRequest;
+use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -54,16 +56,36 @@ class NewsController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
+	 * @param IUserSession $userSession Confirms an authenticated Nextcloud user reached this endpoint.
 	 * @param ContainerInterface $container For resolving OpenRegister services.
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
 		IRequest $request,
+		private readonly IUserSession $userSession,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
+
+	/**
+	 * The staff authorization guard every `#[NoAdminRequired]` method calls
+	 * FIRST, before any read or write: `#[NoAdminRequired]` already opens
+	 * this endpoint to every authenticated Nextcloud user, so this makes the
+	 * requirement explicit at the call site (ADR-005) rather than relying
+	 * only on the framework attribute, and gives future role-narrowing (e.g.
+	 * a dedicated staff group) exactly one place to land.
+	 *
+	 * @return void
+	 *
+	 * @throws OCSForbiddenException When no Nextcloud user is authenticated.
+	 */
+	private function requireAuthenticatedStaff(): void {
+		if ($this->userSession->getUser() === null) {
+			throw new OCSForbiddenException('Authentication required');
+		}
+	}//end requireAuthenticatedStaff()
 
 	/**
 	 * Create a draft news item.
@@ -80,6 +102,8 @@ class NewsController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function create(string $title, string $body, array $target, string $authorRef, array $photoRefs = []): JSONResponse {
+		$this->requireAuthenticatedStaff();
+
 		if ($title === '' || $body === '' || $this->hasAnyTarget(target: $target) === false) {
 			return new JSONResponse(['error' => 'invalid_target'], Http::STATUS_BAD_REQUEST);
 		}
@@ -124,6 +148,8 @@ class NewsController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function publish(string $id): JSONResponse {
+		$this->requireAuthenticatedStaff();
+
 		return $this->setStatus(id: $id, status: 'published');
 	}//end publish()
 
@@ -138,6 +164,8 @@ class NewsController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function unpublish(string $id): JSONResponse {
+		$this->requireAuthenticatedStaff();
+
 		return $this->setStatus(id: $id, status: 'draft');
 	}//end unpublish()
 

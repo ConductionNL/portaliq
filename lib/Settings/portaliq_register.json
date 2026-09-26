@@ -5992,7 +5992,8 @@
                             "schoolRef": {
                                 "title": "School",
                                 "type": "string",
-                                "example": "school-de-regenboog"
+                                "example": "school-de-regenboog",
+                                "description": "The school this item is targeted at, when targeting a whole school."
                             },
                             "groupRefs": {
                                 "title": "Groups",
@@ -6002,7 +6003,8 @@
                                 },
                                 "example": [
                                     "groep-5a"
-                                ]
+                                ],
+                                "description": "The groups this item is targeted at, when targeting one or more groups."
                             },
                             "childRefs": {
                                 "title": "Children",
@@ -6012,7 +6014,8 @@
                                 },
                                 "example": [
                                     "child-devries-lars"
-                                ]
+                                ],
+                                "description": "The specific children this item is targeted at, when targeting individual children."
                             }
                         }
                     },
@@ -6049,11 +6052,15 @@
                             "type": "object",
                             "properties": {
                                 "subjectRef": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "title": "Guardian",
+                                    "description": "The subjectRef of the guardian who read this item."
                                 },
                                 "readAt": {
                                     "type": "string",
-                                    "format": "date-time"
+                                    "format": "date-time",
+                                    "title": "Read at",
+                                    "description": "When this guardian read the item, in ISO 8601."
                                 }
                             }
                         },
@@ -6085,7 +6092,8 @@
                     "title": {
                         "title": "Title",
                         "type": "string",
-                        "example": "Weekbrief De Regenboog"
+                        "example": "Weekbrief De Regenboog",
+                        "description": "The newsletter's own title, shown in the composer and the guardian's archive."
                     },
                     "itemRefs": {
                         "title": "News items",
@@ -6102,19 +6110,25 @@
                         "description": "Same shape and OR-matching rule as newsItem.target.",
                         "properties": {
                             "schoolRef": {
-                                "type": "string"
+                                "type": "string",
+                                "title": "School",
+                                "description": "The school this newsletter is targeted at, when targeting a whole school."
                             },
                             "groupRefs": {
                                 "type": "array",
                                 "items": {
                                     "type": "string"
-                                }
+                                },
+                                "title": "Groups",
+                                "description": "The groups this newsletter is targeted at, when targeting one or more groups."
                             },
                             "childRefs": {
                                 "type": "array",
                                 "items": {
                                     "type": "string"
-                                }
+                                },
+                                "title": "Children",
+                                "description": "The specific children this newsletter is targeted at, when targeting individual children."
                             }
                         }
                     },
@@ -6157,7 +6171,8 @@
                     "schoolRef": {
                         "title": "School",
                         "type": "string",
-                        "example": "school-de-regenboog"
+                        "example": "school-de-regenboog",
+                        "description": "The guardian's own child's school."
                     },
                     "groupRefs": {
                         "title": "Groups",
@@ -6167,7 +6182,8 @@
                         },
                         "example": [
                             "groep-5a"
-                        ]
+                        ],
+                        "description": "The groups the guardian's own children are in."
                     },
                     "childRefs": {
                         "title": "Children",
@@ -6177,7 +6193,8 @@
                         },
                         "example": [
                             "child-devries-lars"
-                        ]
+                        ],
+                        "description": "The guardian's own children."
                     },
                     "photoConsent": {
                         "title": "Photo consent",
