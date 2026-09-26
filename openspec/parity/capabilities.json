@@ -19,8 +19,68 @@
 			"vendor": "Maykin Media",
 			"readOn": "2026-09-26",
 			"columnAddedOn": "2026-09-26",
-			"evidenceGrade": "docs-only",
-			"unknownReason": "Read from docs.openinwoner.nl (v2.5-dev/latest admin manual chapters 04,05,07,08,09,10,11,12), the maykinmedia/open-inwoner README and CHANGELOG, opengem.nl's product page, and open-forms.readthedocs.io for the companion form product OI links to for intake; did not drive a running instance, so any capability not stated in these specific pages/chapters is left unknown rather than assumed."
+			"evidenceGrade": "driven",
+			"unknownReason": "source read at v2.4.3 and a minimal instance of the same version driven on 2026-09-26; the cells left unknown are analytics reports that the portal hands to Matomo, Google Analytics or Siteimprove and intake features that live in Open Forms, which the source of this product cannot settle, and each says so on the cell.",
+			"version": "v2.4.3",
+			"commit": "3ac441111e74b8aa91b2634f34c3cc7ad07a381d",
+			"readNote": "Source read at tag v2.4.3 (every cell cites path:line). A lab of the same version (maykinmedia/open-inwoner:2.4.3 with postgis and redis, DigiD and eHerkenning mocks on, no Open Zaak, Open Klant, Elasticsearch or Celery) was driven for the admin, CMS, sign-in and profile rows: id-remove-own-account, cmp-inb-notif-prefs, cmp-id-contact-channel, id-update-own-details, id-self-registration-form, cmp-site-versions, cmp-site-seo and ops-demo-data carry 'driven on the v2.4.3 lab' evidence. Case, task and inbox rows that need the ZGW back-ends rest on the source read only. The grade is 'driven' because both halves were done at one version; the per-cell evidence says which half each cell rests on.",
+			"sources": {
+				"docs": [
+					"https://docs.openinwoner.nl/",
+					"https://open-inwoner.readthedocs.io/"
+				],
+				"sourceRepo": {
+					"url": "https://github.com/maykinmedia/open-inwoner",
+					"tagRead": "v2.4.3 (3ac441111e74b8aa91b2634f34c3cc7ad07a381d, released 2026-08-11, latest release on 2026-09-26)"
+				},
+				"featurePage": "https://github.com/maykinmedia/open-inwoner/blob/v2.4.3/publiccode.yaml",
+				"featureRequests": {
+					"url": "https://github.com/maykinmedia/open-inwoner/issues?q=is%3Aopen+label%3Aenhancement",
+					"note": "no separate idea board; requests arrive as issues labelled enhancement and per-municipality owner labels (owner: dimpact, owner: almelo, owner: westerkwartier)"
+				},
+				"issueTracker": {
+					"url": "https://github.com/maykinmedia/open-inwoner/issues",
+					"featureLabel": "enhancement"
+				},
+				"roadmap": null,
+				"changelog": [
+					"https://github.com/maykinmedia/open-inwoner/blob/v2.4.3/CHANGELOG.rst",
+					"https://github.com/maykinmedia/open-inwoner/releases"
+				],
+				"apiReference": "https://github.com/maykinmedia/open-inwoner/tree/v2.4.3/src/open_inwoner/api",
+				"marketplace": null,
+				"pricing": null,
+				"accessibilityStatement": null,
+				"securityDocs": [
+					"https://github.com/maykinmedia/open-inwoner/blob/v2.4.3/SECURITY.rst"
+				],
+				"demoInstance": null,
+				"community": "https://opengem.nl/",
+				"reviews": null,
+				"videos": null,
+				"caseStudies": null,
+				"partnerDirectory": null,
+				"trainingCurriculum": null,
+				"jobPostings": null,
+				"tenders": [
+					"TenderNed 244959 Open Inwoner Platform (2021-11-26)",
+					"TenderNed 232093 Open Inwoner Platform (2021-07-03)"
+				],
+				"nullReasons": {
+					"roadmap": "no public roadmap: searched the repo docs at v2.4.3, docs.openinwoner.nl and opengem.nl on 2026-09-26; release planning is visible only as issues such as 'Prepare release 2.5' (#2958)",
+					"marketplace": "no plugin or extension marketplace; CMS plugins ship inside the codebase",
+					"pricing": "open source under EUPL-1.2 (publiccode.yaml); no plan comparison, hosting is priced by suppliers and the Dimpact cooperative, not published",
+					"accessibilityStatement": "no product accessibility statement or VPAT found in the repo or docs on 2026-09-26; statements exist per deploying municipality only",
+					"demoInstance": "no public demo instance found on 2026-09-26; the repo ships a development docker-compose instead",
+					"reviews": "no G2, Capterra or Gartner listing found; a government open-source component has none",
+					"videos": "no current product video channel found on 2026-09-26",
+					"caseStudies": "no published case study pages found on 2026-09-26; deploying municipalities appear only as issue owner labels",
+					"partnerDirectory": "no partner directory; Maykin Media is the repo owner and Dimpact the copyright owner (publiccode.yaml)",
+					"trainingCurriculum": "no course or certification catalogue found; the beheerhandleiding at docs.openinwoner.nl is the only training material",
+					"jobPostings": "https://www.maykinmedia.nl/nl/vacatures/ answered 404 on 2026-09-26; no product-specific postings found"
+				},
+				"notes": "URLs checked on 2026-09-26 by HTTP status (docs, readthedocs, opengem.nl, GitHub releases and issues all 200); tenders from the intelligence database (tenders.name matching 'open inwoner', source tenderned)"
+			}
 		},
 		{
 			"key": "nl-portal",
@@ -887,7 +947,7 @@
 			"mijnoverheid": "no",
 			"liferay-dxp": "partial",
 			"evidence": {
-				"open-inwoner": "src/open_inwoner/urls.py:79 accounts/register/; src/open_inwoner/accounts/views/registration.py:65 CustomRegistrationView; src/open_inwoner/accounts/templates/registration/login.html:99 link shown when login_allow_registration [reached on login page, 'Maak een account aan'; behind SiteConfiguration.login_allow_registration (src/open_inwoner/configurations/models.py:124)]",
+				"open-inwoner": "driven on the v2.4.3 lab 2026-09-26: after mock DigiD sign-in /profile/register/necessary/ asks name and e-mail with notification preferences; /accounts/register/ answered 500 until a CMS page with the profile apphook existed, so it depends on CMS set-up; source: src/open_inwoner/urls.py:79 accounts/register/; src/open_inwoner/accounts/views/registration.py:65 CustomRegistrationView; src/open_inwoner/accounts/templates/registration/login.html:99 link shown when login_allow_registration",
 				"nl-portal": "no registration page in frontend/packages/app/src/constants/routes.tsx; login only through Keycloak [reached on nothing]",
 				"xxllnc-pip": "code-census.md:180,207 shows only broker logins (DigiD/eHerkenning/Auth0/SAML) and alternative-authentication accounts issued by staff; no citizen self-registration form is documented for the PIP",
 				"mijnoverheid": "MijnOverheid accounts are auto-provisioned by BSN (mijn.overheid.nl/vragen/: 'Cannot cancel the account'); there is no self-registration form since the account already exists",
@@ -1067,7 +1127,7 @@
 			"mijnoverheid": "no",
 			"liferay-dxp": "partial",
 			"evidence": {
-				"open-inwoner": "src/open_inwoner/accounts/views/profile.py:237 EditProfileView (name, e-mail, phone, synced to OpenKlant/e-Suite :462); src/open_inwoner/accounts/middleware.py:20 EmailVerificationMiddleware forces verification of a changed address (src/open_inwoner/accounts/models.py:186 has_verified_email) [reached on profile page, 'Bewerken' (/mijn-profiel/edit/); verification gate is behind SiteConfiguration.email_verification_required; was unknown from docs]",
+				"open-inwoner": "driven on the v2.4.3 lab 2026-09-26: /profile/edit/ edits name, several e-mail addresses and phone numbers each with 'Stel in als voorkeur', and address; source: src/open_inwoner/accounts/views/profile.py:237 EditProfileView (name, e-mail, phone, synced to OpenKlant/e-Suite :462); src/open_inwoner/accounts/middleware.py:20 EmailVerificationMiddleware forces verification of a changed address (src/open_inwoner/accounts/models.py:186 has_verified_email)",
 				"nl-portal": "frontend/packages/user-interface/src/pages/EditContactInfoPage.tsx:77 change e-mail and phone; backend/zgw/openklant/src/main/resources/graphql/schema.graphqls:26 digitale adressen mutations in OpenKlant [reached on /account/wijzig/contact (frontend/packages/app/src/constants/routes.tsx:108); name comes from BRP and cannot be edited; a new e-mail is stored without confirmation; was no from docs]",
 				"xxllnc-pip": "code-census.md:272 lists '/pip/contact' (own data) as a PIP route, and spec.md notes citizens can set preferred_contact_channel; whether e-mail changes require confirmation before use is not detailed",
 				"mijnoverheid": "mijn.overheid.nl/vragen/ (read today): 'Residents cannot directly edit data; they must contact originating organizations' for BRP data; MijnOverheid itself is a read/aggregation surface, not a self-service edit form",
@@ -1097,7 +1157,7 @@
 			"mijnoverheid": "no",
 			"liferay-dxp": "unknown",
 			"evidence": {
-				"open-inwoner": "src/open_inwoner/accounts/views/profile.py:208 MyProfileView.post deletes the user and flushes the session; src/open_inwoner/templates/pages/profile/me.html:340 text: personal data and cases are not deleted [reached on profile page, 'Profiel verwijderen'; refused while the user still has plans; was unknown from docs]",
+				"open-inwoner": "driven on the v2.4.3 lab 2026-09-26: /profile/ shows 'Profiel verwijderen' with the text that personal data and cases are not deleted; source: src/open_inwoner/accounts/views/profile.py:208 MyProfileView.post deletes the user and flushes the session; src/open_inwoner/templates/pages/profile/me.html:340 text: personal data and cases are not deleted",
 				"nl-portal": "no account to remove; no delete-account mutation in any *.graphqls [reached on nothing; was unknown from docs]",
 				"xxllnc-pip": "not checked: not found in code-census.md's identity/PIP sections",
 				"mijnoverheid": "mijn.overheid.nl/vragen/: 'Cannot cancel the account', residents cannot remove their own MijnOverheid account",
@@ -1429,7 +1489,7 @@
 			"mijnoverheid": "yes",
 			"liferay-dxp": "unknown",
 			"evidence": {
-				"open-inwoner": "src/open_inwoner/accounts/choices.py:56 NotificationChannelChoice digital_and_post or digital_only; src/open_inwoner/accounts/forms.py:306 case_notification_channel shown when enable_notification_channel_choice; digital addresses e-mail/phone in src/open_inwoner/accounts/views/profile.py:414 [reached on profile, notifications page (/mijn-profiel/notificaties/); choice is only digital versus digital plus post, synced to e-Suite; no per-channel pick of portal, e-mail, phone; was unknown from docs]",
+				"open-inwoner": "driven on the v2.4.3 lab 2026-09-26: /profile/ shows 'Communicatiekanaal: E-mail'; the digital or post choice is hidden until the admin toggle 'Activeer keuzemogelijkheid voor notificatie kanaal' is on; source: src/open_inwoner/accounts/choices.py:56 NotificationChannelChoice digital_and_post or digital_only; src/open_inwoner/accounts/forms.py:306 case_notification_channel shown when enable_notification_channel_choice; digital addresses e-mail/phone in src/open_inwoner/accounts/views/profile.py:414",
 				"nl-portal": "frontend/packages/user-interface/src/pages/EditContactInfoPage.tsx:77 e-mail and phone saved to OpenKlant; frontend/packages/user-interface/src/pages/AccountPage.tsx:50 showNotificationSubSection commented out, :212 'meldingen' section commented out [reached on /account/wijzig/contact; channel preferences exist only as i18n strings; the section is disabled in code; was unknown from docs]",
 				"xxllnc-pip": "specs/citizen-portal/spec.md:80 'Citizens can set preferred_contact_channel: pip | email | phone | mail'",
 				"mijnoverheid": "mijn.overheid.nl/vragen/ (read today): resident can 'set preferences for which organizations send messages digitally' and 'enable email notifications ... or download the Berichtenbox app'",
@@ -3228,7 +3288,7 @@
 			"mijnoverheid": "yes",
 			"liferay-dxp": "unknown",
 			"evidence": {
-				"open-inwoner": "src/open_inwoner/accounts/views/profile.py:607 MyNotificationsView; src/open_inwoner/accounts/forms.py:303 cases, messages and plans toggles, :306 case_notification_channel [reached on profile, Notificaties; which notifications yes; channel is only digital versus digital plus post]",
+				"open-inwoner": "driven on the v2.4.3 lab 2026-09-26: /profile/notificaties/ offers toggles for case, message and collaboration e-mails, action-required case mails cannot be switched off; the channel choice only appears when the admin switches on 'Activeer keuzemogelijkheid voor notificatie kanaal', off by default; source: src/open_inwoner/accounts/views/profile.py:607 MyNotificationsView; src/open_inwoner/accounts/forms.py:303 cases, messages and plans toggles, :306 case_notification_channel",
 				"nl-portal": "frontend/packages/user-interface/src/pages/AccountPage.tsx:50 showNotificationSubSection commented out; frontend/packages/app/src/constants/paths.ts:20 changeNotifications path has no route [reached on nothing; claimed in i18n strings, not wired; was unknown from docs]",
 				"xxllnc-pip": "specs/citizen-portal/spec.md:80 preferred_contact_channel: pip|email|phone|mail is a citizen-settable notification preference",
 				"mijnoverheid": "mijn.overheid.nl/vragen/: resident can 'set preferences for which organizations send messages digitally' and choose email vs app notifications",
@@ -4676,7 +4736,7 @@
 			"mijnoverheid": "no",
 			"liferay-dxp": "yes",
 			"evidence": {
-				"open-inwoner": "src/open_inwoner/conf/base.py:325 djangocms_versioning (requirements/base.txt:338 v2.5.1): version history, compare and revert [reached on CMS toolbar, Manage versions]",
+				"open-inwoner": "driven on the v2.4.3 lab 2026-09-26: the CMS page list offers Publiceer, Verwijder concept and Beheer versies; the versions list shows each version's status with Bewerken, Archiveer, Publiceer and a 'Vergelijk versies' action; source: src/open_inwoner/conf/base.py:325 djangocms_versioning (requirements/base.txt:338 v2.5.1): version history, compare and revert",
 				"nl-portal": "no CMS, page or widget model in backend/ or frontend/packages; the portal is a login-only SPA (frontend/packages/app/src/constants/routes.tsx:18) [reached on nothing]",
 				"xxllnc-pip": "code-census.md:374 case-type *configuration* is versioned with publish/change-log/activate, but this is process configuration, not a public CMS page's version history",
 				"mijnoverheid": "not applicable: no CMS page versioning on MijnOverheid",
@@ -4766,7 +4826,7 @@
 			"mijnoverheid": "no",
 			"liferay-dxp": "yes",
 			"evidence": {
-				"open-inwoner": "src/open_inwoner/templates/master.html:15 og:title and :17 meta description per page (django-cms page meta, products use summary at src/open_inwoner/pdc/views.py:217); src/open_inwoner/configurations/models.py:684 enable_crawler_indexing; sitemap src/open_inwoner/urls.py:123 [reached on every public page; was unknown from docs]",
+				"open-inwoner": "driven on the v2.4.3 lab 2026-09-26: the CMS 'Nieuwe pagina' form has Pagina-titel and 'Meta tag Omschrijving' per page; source: src/open_inwoner/templates/master.html:15 og:title and :17 meta description per page (django-cms page meta, products use summary at src/open_inwoner/pdc/views.py:217); src/open_inwoner/configurations/models.py:684 enable_crawler_indexing; sitemap src/open_inwoner/urls.py:123",
 				"nl-portal": "no CMS, page or widget model in backend/ or frontend/packages; the portal is a login-only SPA (frontend/packages/app/src/constants/routes.tsx:18) [reached on nothing]",
 				"xxllnc-pip": "not applicable: xxllnc has no public CMS pages to set SEO metadata on",
 				"mijnoverheid": "not applicable: MijnOverheid is an authenticated portal, not an SEO-optimised public content site",
@@ -6563,13 +6623,13 @@
 			"area": "operate",
 			"name": "Load example data to see the app working straight after install.",
 			"portaliq": "yes",
-			"open-inwoner": "partial",
+			"open-inwoner": "no",
 			"nl-portal": "yes",
 			"xxllnc-pip": "unknown",
 			"mijnoverheid": "no",
 			"liferay-dxp": "yes",
 			"evidence": {
-				"open-inwoner": "src/open_inwoner/conf/fixtures/cms-pages.json, profile_apphook_config.json, mail-editor.json starter fixtures; fixture loading is commented out in bin/docker_start.sh:20 [reached on manual loaddata; starter CMS pages and templates, no example resident data; was unknown from docs]",
+				"open-inwoner": "driven on the v2.4.3 lab 2026-09-26: 'manage.py loaddata cms-pages' failed with 'Page has no field named publication_date', so the shipped starter CMS fixture does not load at this version and a fresh install shows an empty page tree; source: src/open_inwoner/conf/fixtures/cms-pages.json, profile_apphook_config.json, mail-editor.json starter fixtures; fixture loading is commented out in bin/docker_start.sh:20 [was partial from source]",
 				"nl-portal": "docker-compose/imports/open-zaak, objects-api/fixtures, openklant-2, openproduct and keycloak realm users [reached on docker compose demo environment; was partial from docs]",
 				"xxllnc-pip": "not checked: not documented in the research corpus; product-features.md describes templates for forms/processes but not an example-dataset load",
 				"mijnoverheid": "not applicable: MijnOverheid is a live production service with real resident data, no example-data concept",
