@@ -5882,33 +5882,42 @@
                 "properties": {
                     "subjectRef": {
                         "title": "Subject",
-                        "type": "string"
+                        "type": "string",
+                        "description": "The subjectRef this subscription belongs to."
                     },
                     "endpoint": {
                         "title": "Endpoint",
                         "type": "string",
+                        "description": "The Web Push service's delivery endpoint URL.",
                         "example": "https://push.example.org/send/EXAMPLE_TOKEN"
                     },
                     "keys": {
                         "title": "Keys",
                         "type": "object",
+                        "description": "The subscription's Web Push encryption keys.",
                         "properties": {
                             "p256dh": {
-                                "type": "string"
+                                "title": "P256dh",
+                                "type": "string",
+                                "description": "The subscription's public key for message encryption."
                             },
                             "auth": {
-                                "type": "string"
+                                "title": "Auth",
+                                "type": "string",
+                                "description": "The subscription's authentication secret."
                             }
                         }
                     },
                     "deviceRef": {
                         "title": "Device",
-                        "type": "string"
+                        "type": "string",
+                        "description": "An opaque reference to the subscribing device, when known."
                     },
                     "createdAt": {
                         "title": "Created at",
                         "type": "string",
-                        "format": "date-time"
+                        "format": "date-time",
+                        "description": "When this subscription was created, in ISO 8601."
                     },
                     "active": {
                         "title": "Active",
@@ -5941,16 +5950,19 @@
                 "properties": {
                     "subjectRef": {
                         "title": "Subject",
-                        "type": "string"
+                        "type": "string",
+                        "description": "The subjectRef (guardian or staff) this quiet-hours window belongs to."
                     },
                     "startTime": {
                         "title": "Start",
                         "type": "string",
+                        "description": "The window's start time, `HH:MM` 24h.",
                         "example": "22:00"
                     },
                     "endTime": {
                         "title": "End",
                         "type": "string",
+                        "description": "The window's end time, `HH:MM` 24h.",
                         "example": "07:00"
                     }
                 }
@@ -5979,24 +5991,29 @@
                 "properties": {
                     "subjectRef": {
                         "title": "Subject",
-                        "type": "string"
+                        "type": "string",
+                        "description": "The subjectRef this deferred push is for."
                     },
                     "title": {
                         "title": "Title",
-                        "type": "string"
+                        "type": "string",
+                        "description": "The push notification's title."
                     },
                     "body": {
                         "title": "Body",
-                        "type": "string"
+                        "type": "string",
+                        "description": "The push notification's body text."
                     },
                     "deliverAfter": {
                         "title": "Deliver after",
                         "type": "string",
-                        "format": "date-time"
+                        "format": "date-time",
+                        "description": "The subject's quiet-hours window end; PendingPushDeliveryJob delivers this push once reached."
                     },
                     "delivered": {
                         "title": "Delivered",
                         "type": "boolean",
+                        "description": "Whether PendingPushDeliveryJob has already delivered this push.",
                         "example": false
                     }
                 }
@@ -6023,16 +6040,19 @@
                     "guardianRef": {
                         "title": "Guardian",
                         "type": "string",
+                        "description": "The guardian's own subjectRef.",
                         "example": "guardian-anna-devries"
                     },
                     "schoolRef": {
                         "title": "School",
                         "type": "string",
+                        "description": "The guardian's own child's school.",
                         "example": "school-de-regenboog"
                     },
                     "groupRefs": {
                         "title": "Groups",
                         "type": "array",
+                        "description": "The groups the guardian's own children are in.",
                         "items": {
                             "type": "string"
                         },
@@ -6043,6 +6063,7 @@
                     "childRefs": {
                         "title": "Children",
                         "type": "array",
+                        "description": "The guardian's own children.",
                         "items": {
                             "type": "string"
                         },

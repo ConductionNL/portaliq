@@ -33,6 +33,7 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IRequest;
 use OCP\IUserSession;
 
@@ -64,6 +65,7 @@ class QuietHoursStaffController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function index(): JSONResponse {
+		$this->requireAuthenticatedStaff();
 		return new JSONResponse($this->quietHours->resolveWindow(subjectRef: $this->staffRef()));
 	}//end index()
 
@@ -79,6 +81,7 @@ class QuietHoursStaffController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function update(string $start, string $end): JSONResponse {
+		$this->requireAuthenticatedStaff();
 		$saved = $this->quietHours->setWindow(subjectRef: $this->staffRef(), start: $start, end: $end);
 		if ($saved === false) {
 			return new JSONResponse(['error' => 'invalid_request'], Http::STATUS_BAD_REQUEST);
@@ -88,7 +91,24 @@ class QuietHoursStaffController extends Controller {
 	}//end update()
 
 	/**
+	 * The staff authorization guard every `#[NoAdminRequired]` method calls
+	 * FIRST, before any read or write (see `NewsController`'s identical
+	 * guard for the full rationale).
+	 *
+	 * @return void
+	 *
+	 * @throws OCSForbiddenException When no Nextcloud user is authenticated.
+	 */
+	private function requireAuthenticatedStaff(): void {
+		if ($this->userSession->getUser() === null) {
+			throw new OCSForbiddenException('Authentication required');
+		}
+	}//end requireAuthenticatedStaff()
+
+	/**
 	 * The calling staff member's own subjectRef — their Nextcloud user id.
+	 * Callers MUST call `requireAuthenticatedStaff()` first; this method
+	 * itself performs no guard.
 	 *
 	 * @return string
 	 */

@@ -45,6 +45,15 @@ class QuietHoursStaffControllerTest extends TestCase {
 		return new QuietHoursStaffController($this->createMock(IRequest::class), $userSession, $quietHours ?? $this->createMock(QuietHoursPolicy::class));
 	}//end controller()
 
+	public function testUpdateRefusesAnUnauthenticatedCaller(): void {
+		$userSession = $this->createMock(IUserSession::class);
+		$userSession->method('getUser')->willReturn(null);
+		$controller = new QuietHoursStaffController($this->createMock(IRequest::class), $userSession, $this->createMock(QuietHoursPolicy::class));
+
+		$this->expectException(\OCP\AppFramework\OCS\OCSForbiddenException::class);
+		$controller->update('22:00', '07:00');
+	}//end testUpdateRefusesAnUnauthenticatedCaller()
+
 	public function testIndexReturnsTheStaffMembersOwnWindow(): void {
 		$quietHours = $this->createMock(QuietHoursPolicy::class);
 		$quietHours->expects($this->once())->method('resolveWindow')->with('staff-leerkracht-5a')->willReturn(['start' => '22:00', 'end' => '07:00']);
