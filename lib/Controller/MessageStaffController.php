@@ -35,6 +35,7 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IRequest;
 use OCP\IUserSession;
 
@@ -70,6 +71,7 @@ class MessageStaffController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function createGroupThread(string $groupRef): JSONResponse {
+		$this->requireAuthenticatedStaff();
 		$staffRef = $this->staffRef();
 		$id = $this->messaging->createThread(kind: 'group', participantRefs: [], groupRef: $groupRef, createdBy: $staffRef);
 		if ($id === null) {
@@ -88,6 +90,7 @@ class MessageStaffController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function threads(): JSONResponse {
+		$this->requireAuthenticatedStaff();
 		return new JSONResponse($this->messaging->listThreads(subjectRef: $this->staffRef(), isStaff: true));
 	}//end threads()
 
@@ -102,6 +105,7 @@ class MessageStaffController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function messages(string $id): JSONResponse {
+		$this->requireAuthenticatedStaff();
 		$messages = $this->messaging->listMessages(threadId: $id, subjectRef: $this->staffRef(), isStaff: true);
 		if ($messages === null) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
@@ -122,6 +126,7 @@ class MessageStaffController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function post(string $id, string $body): JSONResponse {
+		$this->requireAuthenticatedStaff();
 		$posted = $this->messaging->postMessage(threadId: $id, senderRef: $this->staffRef(), senderIsStaff: true, body: $body);
 		if ($posted === false) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
@@ -141,6 +146,7 @@ class MessageStaffController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function markRead(string $id): JSONResponse {
+		$this->requireAuthenticatedStaff();
 		$marked = $this->messaging->markThreadRead(threadId: $id, subjectRef: $this->staffRef(), isStaff: true);
 		if ($marked === false) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
@@ -150,10 +156,24 @@ class MessageStaffController extends Controller {
 	}//end markRead()
 
 	/**
+	 * The staff authorization guard every `#[NoAdminRequired]` method calls
+	 * FIRST, before any read or write (see `NewsController`'s identical
+	 * guard for the full rationale).
+	 *
+	 * @return void
+	 *
+	 * @throws OCSForbiddenException When no Nextcloud user is authenticated.
+	 */
+	private function requireAuthenticatedStaff(): void {
+		if ($this->userSession->getUser() === null) {
+			throw new OCSForbiddenException('Authentication required');
+		}
+	}//end requireAuthenticatedStaff()
+
+	/**
 	 * The calling staff member's own subjectRef — their Nextcloud user id.
-	 * `#[NoAdminRequired]` guarantees a signed-in user reaches these methods,
-	 * so a null user here would be an OCP framework/session inconsistency,
-	 * not a normal-flow input to guard.
+	 * Callers MUST call `requireAuthenticatedStaff()` first; this method
+	 * itself performs no guard.
 	 *
 	 * @return string
 	 */

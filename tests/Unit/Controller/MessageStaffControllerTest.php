@@ -45,6 +45,15 @@ class MessageStaffControllerTest extends TestCase {
 		return new MessageStaffController($this->createMock(IRequest::class), $userSession, $messaging);
 	}//end controller()
 
+	public function testCreateGroupThreadRefusesAnUnauthenticatedCaller(): void {
+		$userSession = $this->createMock(IUserSession::class);
+		$userSession->method('getUser')->willReturn(null);
+		$controller = new MessageStaffController($this->createMock(IRequest::class), $userSession, $this->createMock(GuardianMessagingLeafInterface::class));
+
+		$this->expectException(\OCP\AppFramework\OCS\OCSForbiddenException::class);
+		$controller->createGroupThread('groep-5a');
+	}//end testCreateGroupThreadRefusesAnUnauthenticatedCaller()
+
 	public function testCreateGroupThreadReturns403WhenRefused(): void {
 		$messaging = $this->createMock(GuardianMessagingLeafInterface::class);
 		$messaging->method('createThread')->willReturn(null);
