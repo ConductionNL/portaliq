@@ -72,7 +72,7 @@ class EventFeedReader {
 	 */
 	public function feedFor(string $subjectRef): array {
 		$audience = $this->audienceReader->resolveAudience(subjectRef: $subjectRef);
-		$rows = $this->findAll(schema: 'event');
+		$rows = $this->findAll(schema: 'schoolEvent');
 		$rsvps = $this->findAll(schema: 'eventRsvp');
 
 		$matched = [];
@@ -114,7 +114,7 @@ class EventFeedReader {
 		}
 
 		$audience = $this->audienceReader->resolveAudience(subjectRef: $subjectRef);
-		$rows = $this->findAll(schema: 'event');
+		$rows = $this->findAll(schema: 'schoolEvent');
 
 		foreach ($rows as $row) {
 			if ($this->rowId(row: $row) !== $id) {

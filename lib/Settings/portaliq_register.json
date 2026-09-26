@@ -53,7 +53,7 @@
                     "portalFormBinding",
                     "portalIntakeSubmission",
                     "changeProposal",
-                    "event",
+                    "schoolEvent",
                     "eventRsvp",
                     "eventSignup",
                     "guardianAudienceFixture"
@@ -410,8 +410,8 @@
             {
                 "@self": {
                     "register": "portaliq",
-                    "schema": "event",
-                    "slug": "event-schoolreisje-groep-5a"
+                    "schema": "schoolEvent",
+                    "slug": "schoolevent-schoolreisje-groep-5a"
                 },
                 "title": "Schoolreisje groep 5a",
                 "description": "Op 12 november gaat groep 5a op schoolreis.",
@@ -430,8 +430,8 @@
             {
                 "@self": {
                     "register": "portaliq",
-                    "schema": "event",
-                    "slug": "event-sportdag-hulp-gevraagd"
+                    "schema": "schoolEvent",
+                    "slug": "schoolevent-sportdag-hulp-gevraagd"
                 },
                 "title": "Sportdag: hulp gevraagd",
                 "description": "We zoeken hulpouders voor de sportdag.",
@@ -5909,8 +5909,8 @@
                     }
                 }
             },
-            "event": {
-                "slug": "event",
+            "schoolEvent": {
+                "slug": "schoolEvent",
                 "icon": "Calendar",
                 "version": "0.1.0",
                 "title": "Event",

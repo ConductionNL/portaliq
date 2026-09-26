@@ -114,7 +114,12 @@ Same 4 rows as `news-and-newsletter-authoring` (`fixture-guardian-anna-devries`,
 values; not repeated here to avoid the two documents drifting on values that
 must stay identical while both are open.
 
-### Schema: `event`
+### Schema: `schoolEvent`
+
+Renamed from `event` (gate-106 cross-app-schema-slug: the bare slug `event`
+is claimed fleet-wide by `integriq`; slugs are global on a shared
+OpenRegister, so a second app declaring the same one lets either
+definition answer for it).
 
 | Field | Object 1 | Object 2 |
 | --- | --- | --- |

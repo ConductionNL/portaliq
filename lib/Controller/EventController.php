@@ -49,7 +49,7 @@ class EventController extends Controller {
 
 	private const REGISTER = 'portaliq';
 
-	private const SCHEMA = 'event';
+	private const SCHEMA = 'schoolEvent';
 
 	/**
 	 * Constructor.

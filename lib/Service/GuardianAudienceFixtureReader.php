@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/news-and-newsletter-authoring/design.md#audience-source-seam
+ * @spec openspec/changes/events-and-signups/design.md#audience-source-seam
  */
 
 declare(strict_types=1);
@@ -39,7 +39,7 @@ use Throwable;
  * Resolves a guardian's audience (school/group/child + photo consent) from
  * the interim fixture register.
  *
- * @spec openspec/changes/news-and-newsletter-authoring/design.md#audience-source-seam
+ * @spec openspec/changes/events-and-signups/design.md#audience-source-seam
  *
  * @SuppressWarnings(PHPMD.StaticAccess) -- NewsAudienceMatcher::matches() is
  * deliberately the ONE stateless match predicate every caller (this class,
@@ -85,7 +85,7 @@ class GuardianAudienceFixtureReader {
 	 *
 	 * @return array{schoolRef: string, groupRefs: array<int, string>, childRefs: array<int, string>, photoConsent: array<string, array<string, bool>>}
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/design.md#audience-source-seam
+	 * @spec openspec/changes/events-and-signups/design.md#audience-source-seam
 	 */
 	public function resolveAudience(string $subjectRef): array {
 		$empty = ['schoolRef' => '', 'groupRefs' => [], 'childRefs' => [], 'photoConsent' => []];
@@ -140,7 +140,7 @@ class GuardianAudienceFixtureReader {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-photos-in-a-news-item-are-gated-by-the-target-childs-photo-consent
+	 * @spec exclude inherited unmodified copy; this change has no photo-consent concern and never calls this method
 	 */
 	public function photoConsentGranted(string $subjectRef, string $childRef, string $purpose = self::PURPOSE_NEWS): bool {
 		$audience = $this->resolveAudience(subjectRef: $subjectRef);
@@ -161,7 +161,7 @@ class GuardianAudienceFixtureReader {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-photos-in-a-news-item-are-gated-by-the-target-childs-photo-consent
+	 * @spec exclude inherited unmodified copy; this change has no photo-consent concern and never calls this method
 	 */
 	public function childPhotoConsentGranted(string $childRef, string $purpose = self::PURPOSE_NEWS): bool {
 		if ($childRef === '') {
@@ -215,7 +215,7 @@ class GuardianAudienceFixtureReader {
 	 *
 	 * @return array<int, string> Distinct guardian subjectRefs.
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsletter-send-is-preceded-by-a-recipient-count-preflight
+	 * @spec exclude inherited unmodified copy; this change never calls guardiansMatching()
 	 */
 	public function guardiansMatching(array $target): array {
 		$objectService = $this->objectService();

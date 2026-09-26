@@ -2292,8 +2292,8 @@
       {
         "@self": {
           "register": "portaliq",
-          "schema": "event",
-          "slug": "event-voorbeeld-title-1-1"
+          "schema": "schoolEvent",
+          "slug": "schoolevent-voorbeeld-title-1-1"
         },
         "title": "Voorbeeld Title 1",
         "start": "2026-03-01T09:00:00+00:00",
@@ -2322,8 +2322,8 @@
       {
         "@self": {
           "register": "portaliq",
-          "schema": "event",
-          "slug": "event-voorbeeld-title-2-2"
+          "schema": "schoolEvent",
+          "slug": "schoolevent-voorbeeld-title-2-2"
         },
         "title": "Voorbeeld Title 2",
         "start": "2026-03-02T09:00:00+00:00",
@@ -2352,8 +2352,8 @@
       {
         "@self": {
           "register": "portaliq",
-          "schema": "event",
-          "slug": "event-voorbeeld-title-3-3"
+          "schema": "schoolEvent",
+          "slug": "schoolevent-voorbeeld-title-3-3"
         },
         "title": "Voorbeeld Title 3",
         "start": "2026-03-03T09:00:00+00:00",
