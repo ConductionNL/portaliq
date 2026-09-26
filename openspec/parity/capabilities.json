@@ -1,0 +1,1629 @@
+{
+	"comparedOn": "2026-09-26",
+	"category": "External self-service portal for government and semi-public organisations (a mijn-omgeving or PIP with its public website): citizens, businesses and supply-chain partners sign in with DigiD, eHerkenning, eIDAS or an OIDC broker, see and act on their own cases, messages, tasks, documents and forms from every back-office app in one white-label portal, while the organisation runs the public site around it (pages, menus, glossary, search, landing pages) and measures its visitors. Staff stay inside Nextcloud. Buyers compare it with a municipal citizen portal (Open Inwoner Platform, NL Portal, the PIP inside xxllnc Zaken), with the national MijnOverheid, and with a general digital experience platform such as Liferay DXP.",
+	"corpus": {
+		"repo": "ConductionNL/market-intelligence",
+		"file": "procest/xxllnc-zaken/specs/citizen-portal/spec.md; intelligence-db competitor_features ids 895, 914; vendor documentation read 2026-09-26"
+	},
+	"systems": [
+		{
+			"key": "portaliq",
+			"name": "Portaliq",
+			"vendor": "Conduction",
+			"isSelf": true,
+			"readOn": "2026-09-26"
+		},
+		{
+			"key": "open-inwoner",
+			"name": "Open Inwoner Platform",
+			"vendor": "Maykin Media",
+			"readOn": "2026-09-26",
+			"columnAddedOn": "2026-09-26",
+			"evidenceGrade": "not-read"
+		},
+		{
+			"key": "nl-portal",
+			"name": "NL Portal",
+			"vendor": "Ritense",
+			"readOn": "2026-09-26",
+			"columnAddedOn": "2026-09-26",
+			"evidenceGrade": "not-read"
+		},
+		{
+			"key": "xxllnc-pip",
+			"name": "xxllnc Zaken PIP (Persoonlijke Internet Pagina)",
+			"vendor": "xxllnc",
+			"readOn": "2026-03-14",
+			"columnAddedOn": "2026-09-26",
+			"evidenceGrade": "not-read"
+		},
+		{
+			"key": "mijnoverheid",
+			"name": "MijnOverheid",
+			"vendor": "Logius",
+			"readOn": "2026-04-10",
+			"columnAddedOn": "2026-09-26",
+			"evidenceGrade": "not-read"
+		},
+		{
+			"key": "liferay-dxp",
+			"name": "Liferay DXP",
+			"vendor": "Liferay",
+			"readOn": "2026-04-10",
+			"columnAddedOn": "2026-09-26",
+			"evidenceGrade": "not-read"
+		}
+	],
+	"areas": [
+		{
+			"key": "signin",
+			"name": "Sign in and stay signed in",
+			"name_nl": "Inloggen en ingelogd blijven"
+		},
+		{
+			"key": "identity",
+			"name": "Portal accounts and who you act for",
+			"name_nl": "Portaalaccounts en namens wie je handelt"
+		},
+		{
+			"key": "cases",
+			"name": "See and follow your own cases and records",
+			"name_nl": "Je eigen zaken en gegevens inzien en volgen"
+		},
+		{
+			"key": "case-actions",
+			"name": "Act on your own case",
+			"name_nl": "Handelen op je eigen zaak"
+		},
+		{
+			"key": "tasks",
+			"name": "Tasks for residents and partners",
+			"name_nl": "Taken voor inwoners en ketenpartners"
+		},
+		{
+			"key": "inbox",
+			"name": "Messages and notifications",
+			"name_nl": "Berichten en meldingen"
+		},
+		{
+			"key": "intake",
+			"name": "Submit requests, forms and reports",
+			"name_nl": "Aanvragen, formulieren en meldingen indienen"
+		},
+		{
+			"key": "contributions",
+			"name": "Bring every app into one portal",
+			"name_nl": "Alle apps in een portaal"
+		},
+		{
+			"key": "site",
+			"name": "Run the public website",
+			"name_nl": "De publieke website beheren"
+		},
+		{
+			"key": "search",
+			"name": "Search and publications",
+			"name_nl": "Zoeken en publicaties"
+		},
+		{
+			"key": "theming",
+			"name": "House style, languages and accessibility",
+			"name_nl": "Huisstijl, talen en toegankelijkheid"
+		},
+		{
+			"key": "analytics",
+			"name": "Understand your visitors",
+			"name_nl": "Je bezoekers begrijpen"
+		},
+		{
+			"key": "operate",
+			"name": "Set up, run and administer it",
+			"name_nl": "Inrichten, draaien en beheren"
+		}
+	],
+	"providers": [
+		{
+			"key": "portaliq",
+			"name": "Portaliq",
+			"kind": "self"
+		},
+		{
+			"key": "openregister",
+			"name": "OpenRegister",
+			"kind": "app"
+		},
+		{
+			"key": "opencatalogi",
+			"name": "OpenCatalogi",
+			"kind": "app"
+		},
+		{
+			"key": "dossiq",
+			"name": "Dossiq",
+			"kind": "app"
+		},
+		{
+			"key": "integriq",
+			"name": "Integriq",
+			"kind": "app"
+		},
+		{
+			"key": "buildiq",
+			"name": "Buildiq",
+			"kind": "app"
+		},
+		{
+			"key": "thematiq",
+			"name": "Thematiq",
+			"kind": "app"
+		},
+		{
+			"key": "hermiq",
+			"name": "Hermiq",
+			"kind": "app"
+		},
+		{
+			"key": "nextcloud",
+			"name": "Nextcloud",
+			"kind": "platform"
+		}
+	],
+	"capabilities": [
+		{
+			"id": "sib-decidiq-plt-02",
+			"area": "signin",
+			"name": "Open confidential papers after signing in with DigiD or eHerkenning.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row, not yet read from portaliq code; source decidiq capabilities[plt-02] rates itself no",
+				"origin": "sibling",
+				"owner": "ConductionNL/portaliq"
+			},
+			"provider": "portaliq",
+			"providerHow": "owed by the decidiq matrix, not yet read"
+		},
+		{
+			"id": "sib-opencatalogi-pub-restricted",
+			"area": "signin",
+			"name": "Show some documents only to readers who log in with DigiD or eHerkenning.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row, not yet read from portaliq code; source opencatalogi capabilities[pub-restricted] rates itself partial",
+				"origin": "sibling",
+				"owner": "ConductionNL/portaliq"
+			},
+			"provider": "portaliq",
+			"providerHow": "owed by the opencatalogi matrix, not yet read"
+		},
+		{
+			"id": "cmp-sig-machtiging",
+			"area": "signin",
+			"name": "Act on behalf of someone else through a DigiD Machtigen or eHerkenning mandate.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-sig-sso",
+			"area": "signin",
+			"name": "Move between the portal and the organisation's other citizen services without signing in again.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-sig-eidas",
+			"area": "signin",
+			"name": "Sign in from another EU country with an eIDAS means.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-sig-level",
+			"area": "signin",
+			"name": "Ask for a higher assurance level before a sensitive page or action.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "sib-learniq-gua-guardian-sees-the-child",
+			"area": "identity",
+			"name": "Let a guardian see their own child's record and nobody else's.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row, not yet read from portaliq code; source learniq capabilities[gua-guardian-sees-the-child] rates itself partial",
+				"origin": "sibling",
+				"owner": "ConductionNL/portaliq"
+			},
+			"provider": "portaliq",
+			"providerHow": "owed by the learniq matrix, not yet read"
+		},
+		{
+			"id": "sib-dossiq-q1-14",
+			"area": "identity",
+			"name": "Can an external party file and follow a case with an identity that is not a staff account.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row, not yet read from portaliq code; source dossiq pending[Q1.14] rates itself partial",
+				"origin": "sibling",
+				"owner": "ConductionNL/portaliq"
+			},
+			"provider": "portaliq",
+			"providerHow": "owed by the dossiq matrix, not yet read"
+		},
+		{
+			"id": "sib-dossiq-13-38",
+			"area": "identity",
+			"name": "Portal visibility derived from the party tree, so a parent sees its subsidiaries.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row, not yet read from portaliq code; source dossiq pending[13.38] rates itself no",
+				"origin": "sibling",
+				"owner": "ConductionNL/portaliq"
+			},
+			"provider": "portaliq",
+			"providerHow": "owed by the dossiq matrix, not yet read"
+		},
+		{
+			"id": "cmp-id-brp",
+			"area": "identity",
+			"name": "See the personal details the base registration (BRP) holds about you.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-id-correct",
+			"area": "identity",
+			"name": "Ask for a correction of your personal details.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-id-contact-channel",
+			"area": "identity",
+			"name": "Choose how the organisation contacts you: portal, e-mail, phone or post.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-id-company",
+			"area": "identity",
+			"name": "See the details the Chamber of Commerce (KvK) holds about your company.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "sib-shillinq-sal-customer-portal",
+			"area": "cases",
+			"name": "Let customers view, download and pay their invoices in a portal.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row, not yet read from portaliq code; source shillinq capabilities[sal-customer-portal] rates itself partial",
+				"origin": "sibling",
+				"owner": "ConductionNL/portaliq"
+			},
+			"provider": "portaliq",
+			"providerHow": "owed by the shillinq matrix, not yet read"
+		},
+		{
+			"id": "cmp-cas-all-gov",
+			"area": "cases",
+			"name": "See your cases from several organisations in one overview.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-cas-closed",
+			"area": "cases",
+			"name": "See closed cases next to open ones.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-cas-status-timeline",
+			"area": "cases",
+			"name": "Follow the steps a case has passed and the step it is in now.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-cas-documents-published",
+			"area": "cases",
+			"name": "See the documents the organisation published to you on a case, and only those.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-cas-decision-download",
+			"area": "cases",
+			"name": "Download the decision letter on your case.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-cas-permits",
+			"area": "cases",
+			"name": "See the status of your permits.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-cas-benefits",
+			"area": "cases",
+			"name": "See your benefits and provisions (voorzieningen).",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-cas-tax",
+			"area": "cases",
+			"name": "See your municipal taxes and what you still owe.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-cas-pay",
+			"area": "cases",
+			"name": "Pay an invoice, fee or tax assessment from the portal.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-cas-woz",
+			"area": "cases",
+			"name": "See the WOZ value of your home.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-cas-address-services",
+			"area": "cases",
+			"name": "See services tied to your address, such as the waste collection calendar.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "sib-dossiq-2-21",
+			"area": "case-actions",
+			"name": "Change proposals from colleagues or citizens queued for acceptance.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row, not yet read from portaliq code; source dossiq capabilities[2.21] rates itself partial",
+				"origin": "sibling",
+				"owner": "ConductionNL/portaliq"
+			},
+			"provider": "portaliq",
+			"providerHow": "owed by the dossiq matrix, not yet read"
+		},
+		{
+			"id": "sib-dossiq-2-47",
+			"area": "case-actions",
+			"name": "Applicant withdraws their own case from the portal.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row, not yet read from portaliq code; source dossiq pending[2.47] rates itself partial",
+				"origin": "sibling",
+				"owner": "ConductionNL/portaliq"
+			},
+			"provider": "portaliq",
+			"providerHow": "owed by the dossiq matrix, not yet read"
+		},
+		{
+			"id": "sib-dossiq-3-19",
+			"area": "tasks",
+			"name": "External (supply chain partner) task assignment.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row, not yet read from portaliq code; source dossiq capabilities[3.19] rates itself partial",
+				"origin": "sibling",
+				"owner": "ConductionNL/portaliq"
+			},
+			"provider": "portaliq",
+			"providerHow": "owed by the dossiq matrix, not yet read"
+		},
+		{
+			"id": "cmp-tsk-appointment",
+			"area": "tasks",
+			"name": "Book, move or cancel an appointment at the counter.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-tsk-questionnaire",
+			"area": "tasks",
+			"name": "Answer a self-check questionnaire that tells you which service fits you.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-tsk-plan",
+			"area": "tasks",
+			"name": "Work on a shared plan with a caseworker, with goals and actions.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-inb-reply",
+			"area": "inbox",
+			"name": "Reply to a message from the organisation inside the portal.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-inb-attach",
+			"area": "inbox",
+			"name": "Attach a file to a message you send.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-inb-push",
+			"area": "inbox",
+			"name": "Get a push notification on your phone when a message arrives.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-inb-email-alert",
+			"area": "inbox",
+			"name": "Get an e-mail telling you there is a new message in the portal.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-inb-read-receipt",
+			"area": "inbox",
+			"name": "Let the organisation see that you opened a message.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-inb-notif-prefs",
+			"area": "inbox",
+			"name": "Choose which notifications you receive and through which channel.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-inb-download",
+			"area": "inbox",
+			"name": "Download a message with its attachments.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-inb-contact-history",
+			"area": "inbox",
+			"name": "See the history of your contacts with the organisation (contactmomenten).",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "sib-dossiq-q1-16",
+			"area": "intake",
+			"name": "Can the intake form be embedded on the municipality's own website, and does a submission arrive as a case.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row, not yet read from portaliq code; source dossiq pending[Q1.16] rates itself no",
+				"origin": "sibling",
+				"owner": "ConductionNL/portaliq"
+			},
+			"provider": "portaliq",
+			"providerHow": "owed by the dossiq matrix, not yet read"
+		},
+		{
+			"id": "sib-dossiq-13-33",
+			"area": "intake",
+			"name": "Report accepted without an account, unmasked only by a named custodian.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row, not yet read from portaliq code; source dossiq pending[13.33] rates itself no",
+				"origin": "sibling",
+				"owner": "ConductionNL/portaliq"
+			},
+			"provider": "portaliq",
+			"providerHow": "owed by the dossiq matrix, not yet read"
+		},
+		{
+			"id": "sib-decidiq-par-10",
+			"area": "intake",
+			"name": "Let citizens submit a contribution through the public portal.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row, not yet read from portaliq code; source decidiq pending[par-10] rates itself unknown",
+				"origin": "sibling",
+				"owner": "ConductionNL/portaliq"
+			},
+			"provider": "portaliq",
+			"providerHow": "owed by the decidiq matrix, not yet read"
+		},
+		{
+			"id": "cmp-int-conditional",
+			"area": "intake",
+			"name": "Fill in a form that shows or hides questions based on earlier answers.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-int-prefill",
+			"area": "intake",
+			"name": "Start a form with your known personal details already filled in.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-int-save-resume",
+			"area": "intake",
+			"name": "Save a half-finished form and continue later.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-int-pay",
+			"area": "intake",
+			"name": "Pay the fee when you submit a request.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-int-pdf-receipt",
+			"area": "intake",
+			"name": "Get a PDF copy of what you submitted.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-int-report-map",
+			"area": "intake",
+			"name": "Report a problem in public space and point it out on a map.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-int-objection",
+			"area": "intake",
+			"name": "File an objection (bezwaar) against a decision online.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-int-product-catalogue",
+			"area": "intake",
+			"name": "Browse the products and services you can request, with conditions and costs.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "sib-stackiq-share-portal",
+			"area": "contributions",
+			"name": "Show catalogue content on a shared external portal next to other apps' content.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row, not yet read from portaliq code; source stackiq pending[share-portal] rates itself partial",
+				"origin": "sibling",
+				"owner": "ConductionNL/portaliq"
+			},
+			"provider": "portaliq",
+			"providerHow": "owed by the stackiq matrix, not yet read"
+		},
+		{
+			"id": "sib-opencatalogi-od-visualise",
+			"area": "site",
+			"name": "Show a dataset as a table, chart or map on its public page.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row, not yet read from portaliq code; source opencatalogi capabilities[od-visualise] rates itself no",
+				"origin": "sibling",
+				"owner": "ConductionNL/portaliq"
+			},
+			"provider": "portaliq",
+			"providerHow": "owed by the opencatalogi matrix, not yet read"
+		},
+		{
+			"id": "sib-opencatalogi-pub-portal",
+			"area": "site",
+			"name": "Offer readers a public website of the publications that needs no login.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row, not yet read from portaliq code; source opencatalogi capabilities[pub-portal] rates itself yes",
+				"origin": "sibling",
+				"owner": "ConductionNL/portaliq"
+			},
+			"provider": "portaliq",
+			"providerHow": "owed by the opencatalogi matrix, not yet read"
+		},
+		{
+			"id": "sib-opencatalogi-pub-pages",
+			"area": "site",
+			"name": "Write the reading room's own pages and menus.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row, not yet read from portaliq code; source opencatalogi capabilities[pub-pages] rates itself yes",
+				"origin": "sibling",
+				"owner": "ConductionNL/portaliq"
+			},
+			"provider": "portaliq",
+			"providerHow": "owed by the opencatalogi matrix, not yet read"
+		},
+		{
+			"id": "cmp-site-inline-edit",
+			"area": "site",
+			"name": "Edit a page in place while looking at the live site.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-site-workflow",
+			"area": "site",
+			"name": "Send a page for approval before it goes live.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-site-schedule",
+			"area": "site",
+			"name": "Schedule a page to publish or unpublish at a set time.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-site-versions",
+			"area": "site",
+			"name": "Go back to an earlier version of a page.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-site-multisite",
+			"area": "site",
+			"name": "Run several websites from one installation.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-site-media",
+			"area": "site",
+			"name": "Keep images and files in a media library and reuse them on pages.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-site-seo",
+			"area": "site",
+			"name": "Set page titles, descriptions and other search-engine metadata per page.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-site-personalise",
+			"area": "site",
+			"name": "Show different content to different visitor groups.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-site-headless",
+			"area": "site",
+			"name": "Serve the pages and menus as an API for another frontend.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-site-news",
+			"area": "site",
+			"name": "Publish news items with a date and an overview page.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-site-map",
+			"area": "site",
+			"name": "Show locations on a map on a public page.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "sib-opencatalogi-fed-portal",
+			"area": "search",
+			"name": "Run one public portal over the publications of many organisations.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row, not yet read from portaliq code; source opencatalogi capabilities[fed-portal] rates itself yes",
+				"origin": "sibling",
+				"owner": "ConductionNL/portaliq"
+			},
+			"provider": "portaliq",
+			"providerHow": "owed by the opencatalogi matrix, not yet read"
+		},
+		{
+			"id": "sib-opencatalogi-srch-plain",
+			"area": "search",
+			"name": "Search published information in plain words without an account.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row, not yet read from portaliq code; source opencatalogi capabilities[srch-plain] rates itself yes",
+				"origin": "sibling",
+				"owner": "ConductionNL/portaliq"
+			},
+			"provider": "portaliq",
+			"providerHow": "owed by the opencatalogi matrix, not yet read"
+		},
+		{
+			"id": "sib-opencatalogi-srch-facets",
+			"area": "search",
+			"name": "Narrow search results by category, organisation, theme and date.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row, not yet read from portaliq code; source opencatalogi capabilities[srch-facets] rates itself partial",
+				"origin": "sibling",
+				"owner": "ConductionNL/portaliq"
+			},
+			"provider": "portaliq",
+			"providerHow": "owed by the opencatalogi matrix, not yet read"
+		},
+		{
+			"id": "sib-opencatalogi-srch-sort",
+			"area": "search",
+			"name": "Sort search results by date or by relevance.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row, not yet read from portaliq code; source opencatalogi capabilities[srch-sort] rates itself partial",
+				"origin": "sibling",
+				"owner": "ConductionNL/portaliq"
+			},
+			"provider": "portaliq",
+			"providerHow": "owed by the opencatalogi matrix, not yet read"
+		},
+		{
+			"id": "sib-opencatalogi-pub-house-style",
+			"area": "theming",
+			"name": "Give the reading room the organisation's own house style.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row, not yet read from portaliq code; source opencatalogi capabilities[pub-house-style] rates itself yes",
+				"origin": "sibling",
+				"owner": "ConductionNL/portaliq"
+			},
+			"provider": "portaliq",
+			"providerHow": "owed by the opencatalogi matrix, not yet read"
+		},
+		{
+			"id": "sib-opencatalogi-pub-wcag",
+			"area": "theming",
+			"name": "Meet WCAG 2.1 AA accessibility on the public reading room.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row, not yet read from portaliq code; source opencatalogi capabilities[pub-wcag] rates itself partial",
+				"origin": "sibling",
+				"owner": "ConductionNL/portaliq"
+			},
+			"provider": "portaliq",
+			"providerHow": "owed by the opencatalogi matrix, not yet read"
+		},
+		{
+			"id": "cmp-thm-languages",
+			"area": "theming",
+			"name": "Offer the portal in more than one language, including the texts editors write.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-thm-mobile-app",
+			"area": "theming",
+			"name": "Use the portal through a mobile app.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-thm-b1",
+			"area": "theming",
+			"name": "Write the portal's own texts at language level B1.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-ana-ab",
+			"area": "analytics",
+			"name": "Run an A/B test between two versions of a page.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-ana-profiles",
+			"area": "analytics",
+			"name": "Keep a profile per visitor across visits.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-ana-cookieless",
+			"area": "analytics",
+			"name": "Measure visits without cookies or consent banners.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-ana-feedback",
+			"area": "analytics",
+			"name": "Ask visitors whether a page helped them.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-ops-multitenant",
+			"area": "operate",
+			"name": "Run portals for several organisations on one installation, each with its own data.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-ops-rbac",
+			"area": "operate",
+			"name": "Give editors and administrators separate rights over content and settings.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-ops-audit",
+			"area": "operate",
+			"name": "Keep an audit trail of what users and administrators did.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-ops-saas",
+			"area": "operate",
+			"name": "Get the portal as a hosted service rather than running it yourself.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		},
+		{
+			"id": "cmp-ops-open-source",
+			"area": "operate",
+			"name": "Run the portal under an open-source licence.",
+			"portaliq": "unknown",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"note": "seed row derived from competitor research, not yet read from portaliq code",
+				"origin": "competitor",
+				"owner": "ConductionNL/portaliq"
+			}
+		}
+	],
+	"pending": []
+}
