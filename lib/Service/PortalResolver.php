@@ -71,6 +71,24 @@ class PortalResolver {
 	public const REGISTER = 'portaliq';
 
 	/**
+	 * The published portals, read once per request.
+	 *
+	 * `allPublishedPortals()` is a `findAll(limit: 500)` against OpenRegister,
+	 * and `site()` alone reaches it five times -- once for the resolved slug,
+	 * the theme stylesheet, the theme logo, the NLDS stylesheet and the title
+	 * (review of #516). The container hands out one PortalResolver per
+	 * request, so memoising on the instance is request scope: a portal edited
+	 * in one request is read fresh by the next.
+	 *
+	 * Null means "not read yet", which is NOT the same as the empty array a
+	 * fail-closed read returns -- see `allPublishedPortals()`.
+	 *
+	 * @var array|null
+	 */
+	private ?array $publishedPortals = null;
+
+
+	/**
 	 * Constructor.
 	 *
 	 * @param ContainerInterface    $container For the lazy OpenRegister lookup.
@@ -160,6 +178,74 @@ class PortalResolver {
 		return null;
 	}//end resolveForCollector()
 
+	/**
+	 * Resolve the portal an `?org=` value names — an ALIAS, never a key.
+	 *
+	 * `portal.organisation` is not unique and is not meant to be. The product
+	 * decision of 2026-09-22 (WOO-566) is explicit: one organisation may run
+	 * several portals that look different from each other. So the only answer
+	 * this method can give honestly is the unambiguous one — EXACTLY ONE
+	 * published portal carries the value.
+	 *
+	 * At zero matches the organisation is unknown here. At two or more the
+	 * question "which branding belongs to this organisation" genuinely has no
+	 * answer, and the tempting shortcut — take the first, or the newest —
+	 * would serve one tenant's brand under another tenant's name. That failure
+	 * is invisible from inside the request: the page renders, the colours are
+	 * a real municipality's, and nothing looks wrong to anyone who is not
+	 * already the wronged tenant.
+	 *
+	 * Both misses therefore return null and the caller falls back to the
+	 * neutral default, which is the same posture `resolve()` takes for an
+	 * unknown slug.
+	 *
+	 * @param string $organisation The `?org=` value.
+	 *
+	 * @return array|null The single matching portal, or null.
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-request-must-resolve-to-exactly-one-portal-or-to-none
+	 */
+	public function resolveByOrganisation(string $organisation): ?array {
+		$organisation = trim($organisation);
+		if ($organisation === '') {
+			return null;
+		}
+
+		$matches = [];
+		foreach ($this->allPublishedPortals() as $site) {
+			$value = ($site['organisation'] ?? null);
+			if (is_string($value) === false || trim($value) !== $organisation) {
+				continue;
+			}
+
+			$matches[] = $site;
+		}
+
+		if (count($matches) === 1) {
+			return $matches[0];
+		}
+
+		if ($matches !== []) {
+			// Worth a log line rather than silence: an ambiguous `?org=` is a
+			// deployment that has outgrown the alias, and the neutral default
+			// the visitor gets looks like a bug from the outside.
+			$this->logger->info(
+				'Portaliq: ?org= matched several published portals; refusing to guess a brand',
+				[
+					'organisation' => $organisation,
+					'portals' => array_map(
+						static function (array $site): string {
+							return (string)($site['slug'] ?? '');
+						},
+						$matches
+					),
+				]
+			);
+		}
+
+		return null;
+	}//end resolveByOrganisation()
+
 
 	/**
 	 * Match a host against the verified domains of the published portals.
@@ -231,11 +317,26 @@ class PortalResolver {
 	/**
 	 * Every published portal.
 	 *
+	 * Memoised for the life of this instance, i.e. for the request (review of
+	 * #516): `site()` composes its page from five helpers that each resolve
+	 * the portal themselves, and without this each one re-ran a
+	 * `findAll(limit: 500)` against OpenRegister on every public page load.
+	 *
+	 * Only an ANSWERED read is memoised. The three `return []` paths are not:
+	 * two of them are transient (OpenRegister threw, or the shared
+	 * ObjectService could not be pointed at this app's schemas) and caching
+	 * them would turn one unlucky read into a 404 for the whole request,
+	 * which is a worse failure than the duplicate reads this removes.
+	 *
 	 * @return array The published portal objects.
 	 *
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-all-content-must-be-scoped-to-a-portal
 	 */
 	public function allPublishedPortals(): array {
+		if ($this->publishedPortals !== null) {
+			return $this->publishedPortals;
+		}
+
 		try {
 			$objectService = $this->container->get(self::OBJECT_SERVICE);
 			// Applied through the context helper rather than by two slug
@@ -271,7 +372,7 @@ class PortalResolver {
 			return [];
 		}
 
-		return array_map(
+		$this->publishedPortals = array_map(
 			static function ($row) {
 				if (is_array($row) === true) {
 					return $row;
@@ -281,6 +382,8 @@ class PortalResolver {
 			},
 			$rows
 		);
+
+		return $this->publishedPortals;
 	}//end allPublishedPortals()
 
 

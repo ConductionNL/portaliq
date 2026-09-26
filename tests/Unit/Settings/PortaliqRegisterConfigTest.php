@@ -119,10 +119,14 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// session recording (portal-traffic-experiments); `heat_click` and
 		// `heat_scroll` join the enum, the daily record gains `experiments`
 		// and `heatmaps`, and the recording schema arrives, admin-readable
-		// like the raw events. Additive. 0.22.0 (portalCaseType 0.1.0 new,
-		// portalCase 0.1.0 new): the demo case and its type, so what a citizen
-		// may write on their own case is demonstrable without a case app
-		// installed (what-the-citizen-may-write-on-their-own-case). Both are
+		// like the raw events. Additive. 0.22.0 (portalAuditEntry 0.2.0,
+		// portalCaseType 0.1.0 new, portalCase 0.1.0 new): `complete` joins
+		// the audit verb enum — a seam-confirmed portal-task completion is
+		// audited like a create (WOO-569); hardValidation would otherwise
+		// refuse the write silently. And the demo case and its type arrive,
+		// so what a citizen may write on their own case is demonstrable
+		// without a case app installed
+		// (what-the-citizen-may-write-on-their-own-case). Both are
 		// authenticated-read only, like every other portal-facing schema:
 		// what may be WRITTEN is decided by the case type, through portaliq,
 		// never by a grant on the schema. 0.23.0 (portalPage 0.3.0): the
@@ -149,6 +153,14 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// already taken by the schema-binding fix: a change that shares a
 		// version with one already imported never re-imports, and the field
 		// would have stayed missing.
+		// 0.27.0 (portalTrafficDaily 0.6.0): each row of `pages` gains
+		// `sessions`, `visitors`, `engagedSessions`, `referrers` and
+		// `outbound` (portal-page-traffic), and `path` is the in-site route.
+		// Additive: a row written before them simply lacks them, and the
+		// page endpoint reads the absence as "not counted", never zero.
+		// Written as 0.26.0 on its branch; development took 0.26.0 first for
+		// portalAuditEntry (below), so this change moved to 0.27.0 or it
+		// would never re-import on an instance already at 0.26.0.
 		// The `portal` SCHEMA version deliberately stays at 0.6.0. An earlier
 		// draft of this comment said 0.7.0 and the assertion below said 0.6.0;
 		// the assertion was right. ImportHandler treats a schema's version as
@@ -163,14 +175,27 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// carrying `widget: "json"` (authorizationConfiguration, rateLimit,
 		// quota), so OpenRegister demonstrably persists the key rather than
 		// dropping it on save.
+		// 0.26.0 (portalAuditEntry 0.2.0): `complete` joins the audit verb
+		// enum. Described under 0.22.0 above, where this branch first wrote
+		// it; development reached 0.24.0 and then 0.25.0 first, so it is
+		// re-parented here.
+		// The bump is the point, not bookkeeping: OpenRegister re-imports a
+		// register only when `info.version` moves, so leaving this at 0.25.0
+		// would ship the enum to a clean install and to nobody else --
+		// exactly the silent non-upgrade the 0.24.0 and 0.25.0 notes above
+		// describe.
+		// Additive.
 		// Every new schema is listed in
 		// `components.registers.portaliq.schemas` (ImportHandler binds only
 		// what is listed there) and declares a non-empty `read` rule.
-		$this->assertSame('0.25.0', self::$register['info']['version']);
+		$this->assertSame('0.27.0', self::$register['info']['version']);
+		$this->assertSame('0.27.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalAuditEntry']['version']);
+		$this->assertContains('complete', self::$register['components']['schemas']['portalAuditEntry']['properties']['verb']['enum']);
 		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalCaseType']['version']);
 		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalCase']['version']);
 		$this->assertSame(['authenticated'], self::$register['components']['schemas']['portalCase']['authorization']['read']);
-		$this->assertSame('0.5.0', self::$register['components']['schemas']['portalTrafficDaily']['version']);
+		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalTrafficDaily']['version']);
 		$this->assertSame('0.4.0', self::$register['components']['schemas']['portalTrafficEvent']['version']);
 		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalTrafficRecording']['version']);
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalTrafficRecording']['authorization']['read']);
