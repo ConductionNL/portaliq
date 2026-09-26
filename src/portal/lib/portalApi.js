@@ -312,7 +312,13 @@ export function createPortalApi(config) {
 		 * @return {Promise<object>} `{ ok, status, object }` result envelope (`object` is the queued proposal).
 		 */
 		async proposeChange(action, id, changes, note) {
-			return send('POST', '/proposals', { register: action.register, schema: action.schema, id, changes, note })
+			return send('POST', '/proposals', {
+				register: action.register,
+				schema: action.schema,
+				id,
+				changes,
+				note,
+			})
 		},
 
 		/**
