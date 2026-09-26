@@ -52,7 +52,11 @@
                     "portalAccessRequest",
                     "portalFormBinding",
                     "portalIntakeSubmission",
-                    "changeProposal"
+                    "changeProposal",
+                    "messageThread",
+                    "guardianMessage",
+                    "groupStaffFixture",
+                    "guardianAudienceFixture"
                 ]
             }
         },
@@ -335,6 +339,105 @@
                             }
                         ]
                     }
+                ]
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "guardianAudienceFixture",
+                    "slug": "fixture-guardian-anna-devries"
+                },
+                "guardianRef": "guardian-anna-devries",
+                "schoolRef": "school-de-regenboog",
+                "groupRefs": [
+                    "groep-5a"
+                ],
+                "childRefs": [
+                    "child-devries-lars"
+                ],
+                "photoConsent": {}
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "guardianAudienceFixture",
+                    "slug": "fixture-guardian-piet-bakker"
+                },
+                "guardianRef": "guardian-piet-bakker",
+                "schoolRef": "school-de-regenboog",
+                "groupRefs": [
+                    "groep-3b",
+                    "groep-7a"
+                ],
+                "childRefs": [
+                    "child-bakker-eva",
+                    "child-bakker-tim"
+                ],
+                "photoConsent": {}
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "guardianAudienceFixture",
+                    "slug": "fixture-guardian-fatima-elamrani"
+                },
+                "guardianRef": "guardian-fatima-elamrani",
+                "schoolRef": "school-het-kompas",
+                "groupRefs": [
+                    "groep-4c"
+                ],
+                "childRefs": [
+                    "child-elamrani-yusuf"
+                ],
+                "photoConsent": {}
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "guardianAudienceFixture",
+                    "slug": "fixture-guardian-noor-yilmaz"
+                },
+                "guardianRef": "guardian-noor-yilmaz",
+                "schoolRef": "school-oude-vestiging",
+                "groupRefs": [
+                    "groep-6b"
+                ],
+                "childRefs": [
+                    "child-yilmaz-can"
+                ],
+                "photoConsent": {}
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "groupStaffFixture",
+                    "slug": "groupstaff-groep-5a"
+                },
+                "groupRef": "groep-5a",
+                "staffRefs": [
+                    "staff-leerkracht-5a"
+                ]
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "groupStaffFixture",
+                    "slug": "groupstaff-groep-3b"
+                },
+                "groupRef": "groep-3b",
+                "staffRefs": [
+                    "staff-leerkracht-3b"
+                ]
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "groupStaffFixture",
+                    "slug": "groupstaff-groep-4c"
+                },
+                "groupRef": "groep-4c",
+                "staffRefs": [
+                    "staff-leerkracht-4c"
                 ]
             }
         ],
@@ -5884,6 +5987,215 @@
                         "format": "date-time",
                         "description": "When it was asked.",
                         "example": ""
+                    }
+                }
+            },
+            "messageThread": {
+                "slug": "messageThread",
+                "icon": "MessageText",
+                "version": "0.1.0",
+                "title": "Message thread",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "A guardian-participant message thread (guardian-direct-messages, finding 9.3). `direct` names two explicit participants; `group` scopes participation to a group via GroupStaffFixtureReader (staff) / GuardianAudienceFixtureReader (guardians). Read/write is never enforced by this schema's own authorization block alone — InAppMessagingLeaf re-verifies participation server-side on every call.",
+                "type": "object",
+                "required": [
+                    "kind",
+                    "createdBy"
+                ],
+                "properties": {
+                    "kind": {
+                        "title": "Kind",
+                        "type": "string",
+                        "description": "Whether this thread is a two-participant `direct` thread or a `group` thread scoped to a whole group.",
+                        "enum": [
+                            "direct",
+                            "group"
+                        ]
+                    },
+                    "participantRefs": {
+                        "title": "Participants",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Explicit participant subjectRefs, used for `direct` threads.",
+                        "example": []
+                    },
+                    "groupRef": {
+                        "title": "Group",
+                        "type": "string",
+                        "description": "The group this thread is scoped to, used for `group` threads."
+                    },
+                    "createdBy": {
+                        "title": "Created by",
+                        "type": "string",
+                        "description": "The subjectRef of whoever created this thread: the staff member for a `group` thread."
+                    },
+                    "createdAt": {
+                        "title": "Created at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When this thread was created, in ISO 8601."
+                    }
+                }
+            },
+            "guardianMessage": {
+                "slug": "guardianMessage",
+                "icon": "Email",
+                "version": "0.1.0",
+                "title": "Message",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "One message in a messageThread. `readBy` is server-managed (idempotent append by InAppMessagingLeaf::markThreadRead); never client-writable.",
+                "type": "object",
+                "required": [
+                    "threadRef",
+                    "senderRef",
+                    "body"
+                ],
+                "properties": {
+                    "threadRef": {
+                        "title": "Thread",
+                        "type": "string",
+                        "description": "The messageThread this message belongs to."
+                    },
+                    "senderRef": {
+                        "title": "Sender",
+                        "type": "string",
+                        "description": "The subjectRef of whoever sent this message."
+                    },
+                    "body": {
+                        "title": "Body",
+                        "type": "string",
+                        "description": "The message text."
+                    },
+                    "sentAt": {
+                        "title": "Sent at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When this message was sent, in ISO 8601."
+                    },
+                    "readBy": {
+                        "title": "Read by",
+                        "type": "array",
+                        "description": "Server-managed. One entry per subject who has read this message.",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": []
+                    }
+                }
+            },
+            "groupStaffFixture": {
+                "slug": "groupStaffFixture",
+                "icon": "Account",
+                "version": "0.1.0",
+                "title": "Group staff fixture (interim)",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "INTERIM stand-in for 'which staff teach which group', analogous to guardianAudienceFixture, pending learniq's real staff-assignment data. Never publicly readable; read only server-side by GroupStaffFixtureReader.",
+                "type": "object",
+                "required": [
+                    "groupRef",
+                    "staffRefs"
+                ],
+                "properties": {
+                    "groupRef": {
+                        "title": "Group",
+                        "type": "string",
+                        "description": "The group this fixture row is for.",
+                        "example": "groep-5a"
+                    },
+                    "staffRefs": {
+                        "title": "Staff",
+                        "type": "array",
+                        "description": "The staff subjectRefs who teach this group.",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "staff-leerkracht-5a"
+                        ]
+                    }
+                }
+            },
+            "guardianAudienceFixture": {
+                "slug": "guardianAudienceFixture",
+                "icon": "Account",
+                "version": "0.1.0",
+                "title": "Guardian audience fixture (interim)",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "INTERIM stand-in for learniq's portal-contribution-guardian-audiences change (another lane, in flight; shared shape with news-and-newsletter-authoring/events-and-signups, same lane). Never publicly readable.",
+                "type": "object",
+                "required": [
+                    "guardianRef"
+                ],
+                "properties": {
+                    "guardianRef": {
+                        "title": "Guardian",
+                        "type": "string",
+                        "description": "The guardian's own subjectRef.",
+                        "example": "guardian-anna-devries"
+                    },
+                    "schoolRef": {
+                        "title": "School",
+                        "type": "string",
+                        "description": "The guardian's own child's school.",
+                        "example": "school-de-regenboog"
+                    },
+                    "groupRefs": {
+                        "title": "Groups",
+                        "type": "array",
+                        "description": "The groups the guardian's own children are in.",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "groep-5a"
+                        ]
+                    },
+                    "childRefs": {
+                        "title": "Children",
+                        "type": "array",
+                        "description": "The guardian's own children.",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "child-devries-lars"
+                        ]
+                    },
+                    "photoConsent": {
+                        "title": "Photo consent",
+                        "type": "object",
+                        "description": "Not used by this change; kept for shape parity with sibling changes' identical fixture.",
+                        "example": {}
                     }
                 }
             }

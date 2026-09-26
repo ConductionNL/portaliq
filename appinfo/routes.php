@@ -89,6 +89,22 @@ return [
             'postfix' => 'byroute',
         ],
 
+        // Guardian direct messages (guardian-direct-messages, finding 9.3).
+        // Guardian routes are PortalProtected (bearer session); staff routes
+        // require a Nextcloud session.
+        ['name' => 'messageGuardian#createThread', 'url' => '/api/messages/threads', 'verb' => 'POST'],
+        ['name' => 'messageGuardian#threads', 'url' => '/api/messages/threads', 'verb' => 'GET'],
+        ['name' => 'messageGuardian#messages', 'url' => '/api/messages/threads/{id}/messages', 'verb' => 'GET'],
+        ['name' => 'messageGuardian#post', 'url' => '/api/messages/threads/{id}/messages', 'verb' => 'POST'],
+        ['name' => 'messageGuardian#markRead', 'url' => '/api/messages/threads/{id}/read', 'verb' => 'POST'],
+        ['name' => 'messageStaff#createGroupThread', 'url' => '/api/staff/messages/threads/group', 'verb' => 'POST'],
+        ['name' => 'messageStaff#threads', 'url' => '/api/staff/messages/threads', 'verb' => 'GET'],
+        ['name' => 'messageStaff#messages', 'url' => '/api/staff/messages/threads/{id}/messages', 'verb' => 'GET'],
+        ['name' => 'messageStaff#post', 'url' => '/api/staff/messages/threads/{id}/messages', 'verb' => 'POST'],
+        ['name' => 'messageStaff#markRead', 'url' => '/api/staff/messages/threads/{id}/read', 'verb' => 'POST'],
+        // teacher-inbox-per-group: the per-group inbox VIEW over the routes above.
+        ['name' => 'messageStaff#inbox', 'url' => '/api/staff/messages/inbox', 'verb' => 'GET'],
+
         // Traffic analytics (portal-traffic-analytics). Public like the
         // content API above, for the same reason: a visitor's browser on a
         // portal's own domain, or on a statically built site elsewhere, has
