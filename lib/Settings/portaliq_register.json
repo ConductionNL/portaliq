@@ -5503,7 +5503,7 @@
                         "authenticated"
                     ]
                 },
-                "icon": "PollBox",
+                "icon": "FormSelect",
                 "version": "0.1.0",
                 "title": "Portal Poll",
                 "description": "A question with fixed options, addressed to one audience within one organisation (parent-polls, learniq round-1 finding 9.9). Every portal subject of that audience answers once, through `portalPollResponse`. No per-group targeting yet — see the change's proposal.md Motivation.",
@@ -5592,7 +5592,7 @@
                         "authenticated"
                     ]
                 },
-                "icon": "PollBox",
+                "icon": "FormSelect",
                 "version": "0.1.0",
                 "title": "Portal Poll Response",
                 "description": "One subject's current answer to one portalPoll (parent-polls). Exactly one row per (pollId, subjectRef) — a later response UPDATES this row, it never appends a second one, since a poll response has no reviewer and no drift concern.",
