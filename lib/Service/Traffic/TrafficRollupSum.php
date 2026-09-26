@@ -67,6 +67,12 @@ class TrafficRollupSum {
 	private const COUNTERS = ['pageViews', 'sessions', 'visitors', 'engagedSessions'];
 
 	/**
+	 * The most referrers and outbound links a summed page row keeps, as
+	 * many as one member's row carries (portal-page-traffic).
+	 */
+	private const PAGE_TOP = 10;
+
+	/**
 	 * The counters that are null when no member could tell.
 	 *
 	 * @var string[]
@@ -354,10 +360,19 @@ class TrafficRollupSum {
 	/**
 	 * Merge page rows by path.
 	 *
+	 * The per-page sessions, visitors, engaged sessions, referrers and
+	 * outbound links (portal-page-traffic) add up like the views. A row
+	 * written before they existed has none of them, and summing it as a
+	 * zero would understate the page; the merged row then carries none of
+	 * them either, so the page reads "not available" rather than a number
+	 * that is only part of the truth.
+	 *
 	 * @param array<string, array<string, mixed>> $into The accumulator.
 	 * @param mixed                               $rows The record's pages.
 	 *
 	 * @return array<string, array<string, mixed>> The accumulator.
+	 *
+	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-each-daily-page-row-must-carry-its-sessions-visitors-sources-and-outbound-links
 	 */
 	private function addPages(array $into, mixed $rows): array {
 		if (is_array($rows) === false) {
@@ -370,16 +385,52 @@ class TrafficRollupSum {
 			}
 
 			$path = (string)$row['path'];
-			$page = $into[$path] ?? ['path' => $path, 'views' => 0, 'entrances' => 0, 'exits' => 0, 'seconds' => 0.0];
+			$page = $into[$path] ?? [
+				'path' => $path,
+				'views' => 0,
+				'entrances' => 0,
+				'exits' => 0,
+				'seconds' => 0.0,
+				'detail' => true,
+				'sessions' => 0,
+				'visitors' => 0,
+				'engagedSessions' => 0,
+				'referrers' => [],
+				'outbound' => [],
+			];
 			$views = $this->int(value: $row['views'] ?? 0);
 			$page['views'] += $views;
 			$page['entrances'] += $this->int(value: $row['entrances'] ?? 0);
 			$page['exits'] += $this->int(value: $row['exits'] ?? 0);
 			$page['seconds'] += $this->float(value: $row['avgEngagementSeconds'] ?? 0) * $views;
-			$into[$path] = $page;
+			$into[$path] = $this->addPageDetail(page: $page, row: $row);
 		}
 
 		return $into;
+	}
+
+	/**
+	 * Add a page row's per-page figures, or mark the page as lacking them.
+	 *
+	 * @param array<string, mixed> $page The page accumulator.
+	 * @param array<string, mixed> $row  The record's page row.
+	 *
+	 * @return array<string, mixed> The accumulator.
+	 */
+	private function addPageDetail(array $page, array $row): array {
+		if (array_key_exists('sessions', $row) === false) {
+			$page['detail'] = false;
+			return $page;
+		}
+
+		foreach (['sessions', 'visitors', 'engagedSessions'] as $key) {
+			$page[$key] += $this->int(value: $row[$key] ?? 0);
+		}
+
+		$page['referrers'] = $this->addList(into: $page['referrers'], rows: ($row['referrers'] ?? []), keys: ['host', 'channel'], counts: ['count']);
+		$page['outbound'] = $this->addList(into: $page['outbound'], rows: ($row['outbound'] ?? []), keys: ['url'], counts: ['count']);
+
+		return $page;
 	}
 
 	/**
@@ -393,13 +444,22 @@ class TrafficRollupSum {
 		$out = [];
 		foreach ($pages as $page) {
 			$views = (int)$page['views'];
-			$out[] = [
+			$row = [
 				'path' => $page['path'],
 				'views' => $views,
 				'entrances' => $page['entrances'],
 				'exits' => $page['exits'],
 				'avgEngagementSeconds' => $this->rate(numerator: (float)$page['seconds'], denominator: $views, decimals: 1),
 			];
+			if ($page['detail'] === true) {
+				$row['sessions'] = $page['sessions'];
+				$row['visitors'] = $page['visitors'];
+				$row['engagedSessions'] = $page['engagedSessions'];
+				$row['referrers'] = array_slice($this->ranked(rows: $page['referrers'], countKey: 'count'), 0, self::PAGE_TOP);
+				$row['outbound'] = array_slice($this->ranked(rows: $page['outbound'], countKey: 'count'), 0, self::PAGE_TOP);
+			}
+
+			$out[] = $row;
 		}
 
 		usort($out, static fn (array $a, array $b): int => (int)$b['views'] <=> (int)$a['views']);
