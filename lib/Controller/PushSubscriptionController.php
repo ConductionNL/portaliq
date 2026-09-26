@@ -32,6 +32,7 @@ use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
@@ -80,6 +81,7 @@ class PushSubscriptionController extends Controller implements PortalProtected {
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 20, period: 60)]
 	public function subscribe(string $endpoint, array $keys = [], string $deviceRef = ''): JSONResponse {
 		$subject = $this->subject();
 		if ($subject === null) {
@@ -135,6 +137,7 @@ class PushSubscriptionController extends Controller implements PortalProtected {
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 20, period: 60)]
 	public function unsubscribe(string $endpoint): JSONResponse {
 		$subject = $this->subject();
 		if ($subject === null) {

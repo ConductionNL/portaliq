@@ -34,6 +34,7 @@ use OCA\Portaliq\Service\Notifications\QuietHoursPolicy;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
@@ -67,6 +68,7 @@ class QuietHoursGuardianController extends Controller implements PortalProtected
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 60, period: 60)]
 	public function index(): JSONResponse {
 		$subject = $this->subject();
 		if ($subject === null) {
@@ -88,6 +90,7 @@ class QuietHoursGuardianController extends Controller implements PortalProtected
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 20, period: 60)]
 	public function update(string $start, string $end): JSONResponse {
 		$subject = $this->subject();
 		if ($subject === null) {
