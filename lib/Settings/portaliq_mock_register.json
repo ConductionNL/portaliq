@@ -2336,6 +2336,168 @@
         "decidedBy": "behandelaar-2002",
         "decidedAt": "2026-02-13T09:30:00+00:00",
         "decisionReason": "De fusie is nog niet ingeschreven bij de Kamer van Koophandel."
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "guardianAudienceFixture",
+          "slug": "guardianaudiencefixture-guardianaudiencefixture-1-1"
+        },
+        "guardianRef": "Voorbeeld Guardianref 1",
+        "schoolRef": "Voorbeeld Schoolref 1",
+        "groupRefs": [
+          "Voorbeeld Grouprefs 1"
+        ],
+        "childRefs": [
+          "Voorbeeld Childrefs 1"
+        ],
+        "photoConsent": {}
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "guardianAudienceFixture",
+          "slug": "guardianaudiencefixture-guardianaudiencefixture-2-2"
+        },
+        "guardianRef": "Voorbeeld Guardianref 2",
+        "schoolRef": "Voorbeeld Schoolref 2",
+        "groupRefs": [
+          "Voorbeeld Grouprefs 2"
+        ],
+        "childRefs": [
+          "Voorbeeld Childrefs 2"
+        ],
+        "photoConsent": {}
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "guardianAudienceFixture",
+          "slug": "guardianaudiencefixture-guardianaudiencefixture-3-3"
+        },
+        "guardianRef": "Voorbeeld Guardianref 3",
+        "schoolRef": "Voorbeeld Schoolref 3",
+        "groupRefs": [
+          "Voorbeeld Grouprefs 3"
+        ],
+        "childRefs": [
+          "Voorbeeld Childrefs 3"
+        ],
+        "photoConsent": {}
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "notificationQuietHours",
+          "slug": "notificationquiethours-notificationquiethours-1-1"
+        },
+        "subjectRef": "Voorbeeld Subjectref 1",
+        "startTime": "Voorbeeld Starttime 1",
+        "endTime": "Voorbeeld Endtime 1"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "notificationQuietHours",
+          "slug": "notificationquiethours-notificationquiethours-2-2"
+        },
+        "subjectRef": "Voorbeeld Subjectref 2",
+        "startTime": "Voorbeeld Starttime 2",
+        "endTime": "Voorbeeld Endtime 2"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "notificationQuietHours",
+          "slug": "notificationquiethours-notificationquiethours-3-3"
+        },
+        "subjectRef": "Voorbeeld Subjectref 3",
+        "startTime": "Voorbeeld Starttime 3",
+        "endTime": "Voorbeeld Endtime 3"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "pendingPush",
+          "slug": "pendingpush-voorbeeld-title-1-1"
+        },
+        "subjectRef": "Voorbeeld Subjectref 1",
+        "title": "Voorbeeld Title 1",
+        "body": "Voorbeeld Body 1",
+        "deliverAfter": "2026-03-01T09:00:00+00:00",
+        "delivered": true
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "pendingPush",
+          "slug": "pendingpush-voorbeeld-title-2-2"
+        },
+        "subjectRef": "Voorbeeld Subjectref 2",
+        "title": "Voorbeeld Title 2",
+        "body": "Voorbeeld Body 2",
+        "deliverAfter": "2026-03-02T09:00:00+00:00",
+        "delivered": false
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "pendingPush",
+          "slug": "pendingpush-voorbeeld-title-3-3"
+        },
+        "subjectRef": "Voorbeeld Subjectref 3",
+        "title": "Voorbeeld Title 3",
+        "body": "Voorbeeld Body 3",
+        "deliverAfter": "2026-03-03T09:00:00+00:00",
+        "delivered": true
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "pushSubscription",
+          "slug": "pushsubscription-pushsubscription-1-1"
+        },
+        "subjectRef": "Voorbeeld Subjectref 1",
+        "endpoint": "Voorbeeld Endpoint 1",
+        "keys": {
+          "p256dh": "Voorbeeld P256Dh 1",
+          "auth": "Voorbeeld Auth 1"
+        },
+        "deviceRef": "Voorbeeld Deviceref 1",
+        "createdAt": "2026-03-01T09:00:00+00:00",
+        "active": true
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "pushSubscription",
+          "slug": "pushsubscription-pushsubscription-2-2"
+        },
+        "subjectRef": "Voorbeeld Subjectref 2",
+        "endpoint": "Voorbeeld Endpoint 2",
+        "keys": {
+          "p256dh": "Voorbeeld P256Dh 2",
+          "auth": "Voorbeeld Auth 2"
+        },
+        "deviceRef": "Voorbeeld Deviceref 2",
+        "createdAt": "2026-03-02T09:00:00+00:00",
+        "active": false
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "pushSubscription",
+          "slug": "pushsubscription-pushsubscription-3-3"
+        },
+        "subjectRef": "Voorbeeld Subjectref 3",
+        "endpoint": "Voorbeeld Endpoint 3",
+        "keys": {
+          "p256dh": "Voorbeeld P256Dh 3",
+          "auth": "Voorbeeld Auth 3"
+        },
+        "deviceRef": "Voorbeeld Deviceref 3",
+        "createdAt": "2026-03-03T09:00:00+00:00",
+        "active": true
       }
     ]
   }
