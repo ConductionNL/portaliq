@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.26.0"
+        "version": "0.27.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.26.0",
+                "version": "0.27.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -52,7 +52,9 @@
                     "portalAccessRequest",
                     "portalFormBinding",
                     "portalIntakeSubmission",
-                    "changeProposal"
+                    "changeProposal",
+                    "portalPoll",
+                    "portalPollResponse"
                 ]
             }
         },
@@ -5491,6 +5493,140 @@
                         "type": "string",
                         "description": "Why it was rejected. Required on a rejection: a refusal nobody explained is one the proposer cannot answer.",
                         "example": "Wij hebben het nummer al op een andere manier gewijzigd."
+                    }
+                }
+            },
+            "portalPoll": {
+                "slug": "portalPoll",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "icon": "PollBox",
+                "version": "0.1.0",
+                "title": "Portal Poll",
+                "description": "A question with fixed options, addressed to one audience within one organisation (parent-polls, learniq round-1 finding 9.9). Every portal subject of that audience answers once, through `portalPollResponse`. No per-group targeting yet — see the change's proposal.md Motivation.",
+                "type": "object",
+                "required": [
+                    "question",
+                    "options",
+                    "audience",
+                    "organisation"
+                ],
+                "properties": {
+                    "question": {
+                        "title": "Question",
+                        "type": "string",
+                        "description": "What is being asked.",
+                        "example": "Welke datum past het beste voor de ouderavond?"
+                    },
+                    "options": {
+                        "title": "Options",
+                        "type": "array",
+                        "description": "The fixed answers a subject may choose from.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "title": "Id",
+                                    "type": "string",
+                                    "description": "The option's own identifier, referenced by a response's optionId."
+                                },
+                                "label": {
+                                    "title": "Label",
+                                    "type": "string",
+                                    "description": "The option as shown to the subject."
+                                }
+                            }
+                        },
+                        "example": [
+                            {
+                                "id": "a",
+                                "label": "Dinsdag 6 oktober"
+                            },
+                            {
+                                "id": "b",
+                                "label": "Donderdag 8 oktober"
+                            }
+                        ]
+                    },
+                    "audience": {
+                        "title": "Audience",
+                        "type": "string",
+                        "description": "Which portal audience this poll is addressed to. Open string set, matching portalAccount.audience (contract v2 A2) — e.g. parent.",
+                        "example": "parent"
+                    },
+                    "organisation": {
+                        "title": "Organisation",
+                        "type": "string",
+                        "description": "The tenant (OpenRegister Organisation) this poll is addressed within.",
+                        "example": "gemeente-x"
+                    },
+                    "closesAt": {
+                        "title": "Closes at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "After this moment a subject may no longer answer or change their answer; a subject who already answered still sees their own answer.",
+                        "example": "2026-10-01T00:00:00+00:00"
+                    },
+                    "createdBy": {
+                        "title": "Created by",
+                        "type": "string",
+                        "description": "The Nextcloud user id of the staff member who created the poll.",
+                        "example": "clerk-anna"
+                    },
+                    "createdAt": {
+                        "title": "Created at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the poll was created.",
+                        "example": "2026-09-26T09:00:00+00:00"
+                    }
+                }
+            },
+            "portalPollResponse": {
+                "slug": "portalPollResponse",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "icon": "PollBox",
+                "version": "0.1.0",
+                "title": "Portal Poll Response",
+                "description": "One subject's current answer to one portalPoll (parent-polls). Exactly one row per (pollId, subjectRef) — a later response UPDATES this row, it never appends a second one, since a poll response has no reviewer and no drift concern.",
+                "type": "object",
+                "required": [
+                    "pollId",
+                    "subjectRef",
+                    "optionId"
+                ],
+                "properties": {
+                    "pollId": {
+                        "title": "Poll id",
+                        "type": "string",
+                        "description": "The portalPoll this response answers.",
+                        "example": "00000000-0000-0000-0000-000000000000"
+                    },
+                    "subjectRef": {
+                        "title": "Subject reference",
+                        "type": "string",
+                        "description": "Who answered. Server-derived from the bearer; never accepted from the client.",
+                        "example": "b3d9c2a1-0000-4000-8000-000000000000"
+                    },
+                    "optionId": {
+                        "title": "Option id",
+                        "type": "string",
+                        "description": "The chosen option's id, from the poll's own options list.",
+                        "example": "a"
+                    },
+                    "respondedAt": {
+                        "title": "Responded at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the current answer was given (or last changed).",
+                        "example": "2026-09-26T10:00:00+00:00"
                     }
                 }
             },
