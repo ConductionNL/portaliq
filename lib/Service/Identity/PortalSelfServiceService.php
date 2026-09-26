@@ -88,25 +88,30 @@ class PortalSelfServiceService {
 	 * @param string $subjectRef The account.
 	 * @param string $displayName A new name, or '' to leave it.
 	 * @param string $email A new address, or '' to leave it.
+	 * @param bool|null $emailNotifications The account's own opt-in/opt-out
+	 *                                      for the email channel
+	 *                                      (notification-preferences-per-role),
+	 *                                      or null to leave it unchanged.
 	 *
 	 * @return array{updated: bool, confirmationToken: string}|null Null when
 	 *         there is no such account or nothing usable was asked.
 	 *
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/changes/notification-preferences-per-role/specs/supplier-portal/spec.md#requirement-an-accounts-own-channel-opt-out-gates-dispatch
 	 */
-	public function updateDetails(string $subjectRef, string $displayName = '', string $email = ''): ?array {
+	public function updateDetails(string $subjectRef, string $displayName = '', string $email = '', ?bool $emailNotifications = null): ?array {
 		$account = $this->ownAccount(subjectRef: $subjectRef);
-		if ($account === null) {
-			return null;
-		}
-
-		if ($displayName === '' && $email === '') {
+		if ($account === null || $this->nothingAsked(displayName: $displayName, email: $email, emailNotifications: $emailNotifications) === true) {
 			return null;
 		}
 
 		$data = [];
 		if ($displayName !== '') {
 			$data['displayName'] = $displayName;
+		}
+
+		if ($emailNotifications !== null) {
+			$data['notificationChannels'] = $this->withEmailChannel(account: $account, emailNotifications: $emailNotifications);
 		}
 
 		$token = '';
@@ -128,6 +133,37 @@ class PortalSelfServiceService {
 
 		return ['updated' => true, 'confirmationToken' => $token];
 	}//end updateDetails()
+
+	/**
+	 * Whether an `updateDetails()` call asked for nothing at all.
+	 *
+	 * @param string $displayName A new name, or '' to leave it.
+	 * @param string $email A new address, or '' to leave it.
+	 * @param bool|null $emailNotifications The channel opt-in/opt-out, or
+	 *                                      null to leave it.
+	 *
+	 * @return bool
+	 */
+	private function nothingAsked(string $displayName, string $email, ?bool $emailNotifications): bool {
+		return $displayName === '' && $email === '' && $emailNotifications === null;
+	}//end nothingAsked()
+
+	/**
+	 * The account's `notificationChannels` with the email key set, its other
+	 * channels (if any exist in future) left untouched.
+	 *
+	 * @param array<string, mixed> $account The account as it stands.
+	 * @param bool $emailNotifications The new value for the email channel.
+	 *
+	 * @return array<string, bool>
+	 *
+	 * @spec openspec/changes/notification-preferences-per-role/specs/supplier-portal/spec.md#requirement-an-accounts-own-channel-opt-out-gates-dispatch
+	 */
+	private function withEmailChannel(array $account, bool $emailNotifications): array {
+		$channels = (array)($account['notificationChannels'] ?? []);
+		$channels['email'] = $emailNotifications;
+		return $channels;
+	}//end withEmailChannel()
 
 	/**
 	 * Confirm a new address through the link.

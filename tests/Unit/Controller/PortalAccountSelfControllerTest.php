@@ -56,6 +56,30 @@ class PortalAccountSelfControllerTest extends TestCase {
 	}//end testTheConfirmationSecretIsNotReadableFromTheOldSession()
 
 	/**
+	 * notification-preferences-per-role: the channel opt-out is forwarded
+	 * to the service exactly as given, alongside the other optional fields.
+	 *
+	 * @return void
+	 */
+	public function testTheChannelPreferenceIsForwardedToTheService(): void {
+		$controller = $this->controller(subject: ['subjectRef' => 'subject-1', 'organisation' => 'gemeente-x']);
+		$this->doubles['selfService']->expects($this->once())
+			->method('updateDetails')
+			->with(
+				$this->equalTo(value: 'subject-1'),
+				$this->equalTo(value: ''),
+				$this->equalTo(value: ''),
+				$this->equalTo(value: false)
+			)
+			->willReturn(['updated' => true, 'confirmationToken' => '']);
+
+		$response = $controller->updateDetails(emailNotifications: false);
+
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+
+	}//end testTheChannelPreferenceIsForwardedToTheService()
+
+	/**
 	 * The controller over doubles, all of which can only answer methods the
 	 * real classes have.
 	 *

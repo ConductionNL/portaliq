@@ -301,6 +301,77 @@ class NotificationDispatchJobTest extends TestCase {
 
 	}//end testNoAccountFoundSkipsSilentlyWithoutSendingOrLogging()
 
+	/**
+	 * notification-preferences-per-role: an account that opted out of the
+	 * email channel is skipped the SAME way a missing account is — no send,
+	 * no `portalNotification` row, and (unlike a missing email address)
+	 * nothing that could ever count toward `needsAlternativeContact`.
+	 *
+	 * @return void
+	 */
+	public function testAccountOptedOutOfEmailChannelSkipsSilentlyWithoutSendingOrLogging(): void {
+		$account = ['@self' => ['id' => 'account-1'], 'email' => 'supplier@example.org', 'notificationChannels' => ['email' => false]];
+
+		$created = [];
+		$updated = [];
+		$captured = [];
+
+		$job = new NotificationDispatchJob(
+			$this->timeFactory(),
+			$this->reader(account: $account),
+			$this->writer(created: $created, updated: $updated),
+			$this->orgConfig(),
+			$this->mailer(captured: $captured, outcome: true),
+			$this->l10nFactory(),
+			$this->deepLinks(),
+			$this->config(),
+			$this->createMock(LoggerInterface::class)
+		);
+
+		$this->invokeRun($job, self::ARGUMENT);
+
+		$this->assertCount(expectedCount: 0, haystack: $created);
+		$this->assertCount(expectedCount: 0, haystack: $updated);
+		$this->assertArrayNotHasKey(key: 'to', array: $captured);
+
+	}//end testAccountOptedOutOfEmailChannelSkipsSilentlyWithoutSendingOrLogging()
+
+	/**
+	 * A missing `notificationChannels` key — every account that existed
+	 * before this property did — is opted IN (fail-open), so dispatch
+	 * proceeds exactly as it always has. This is the same fixture as
+	 * `testSendsAContentFreeEmailAndLogsASentAttempt`, unmodified, asserted
+	 * again here to pin the regression this change must never cause.
+	 *
+	 * @return void
+	 */
+	public function testAnAccountWithNoChannelPreferenceIsSentToAsBefore(): void {
+		$account = ['@self' => ['id' => 'account-1'], 'email' => 'supplier@example.org'];
+
+		$created = [];
+		$updated = [];
+		$captured = [];
+
+		$job = new NotificationDispatchJob(
+			$this->timeFactory(),
+			$this->reader(account: $account),
+			$this->writer(created: $created, updated: $updated),
+			$this->orgConfig(),
+			$this->mailer(captured: $captured, outcome: true),
+			$this->l10nFactory(),
+			$this->deepLinks(),
+			$this->config(),
+			$this->createMock(LoggerInterface::class)
+		);
+
+		$this->invokeRun($job, self::ARGUMENT);
+
+		$this->assertSame(expected: ['supplier@example.org'], actual: $captured['to']);
+		$this->assertCount(expectedCount: 1, haystack: $created);
+		$this->assertSame(expected: 'sent', actual: $created[0]['data']['status']);
+
+	}//end testAnAccountWithNoChannelPreferenceIsSentToAsBefore()
+
 	public function testNoEmailRecordsAFailedAttemptWithoutSending(): void {
 		$account = ['@self' => ['id' => 'account-1'], 'email' => ''];
 
