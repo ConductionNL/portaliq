@@ -5959,7 +5959,7 @@
             },
             "pushSubscription": {
                 "slug": "pushSubscription",
-                "icon": "Bell",
+                "icon": "BellOutline",
                 "version": "0.1.0",
                 "title": "Push subscription",
                 "authorization": {
@@ -6026,7 +6026,7 @@
             },
             "notificationQuietHours": {
                 "slug": "notificationQuietHours",
-                "icon": "SleepOutline",
+                "icon": "Calendar",
                 "version": "0.1.0",
                 "title": "Notification quiet hours",
                 "authorization": {
@@ -6066,7 +6066,7 @@
             },
             "pendingPush": {
                 "slug": "pendingPush",
-                "icon": "ClockOutline",
+                "icon": "History",
                 "version": "0.1.0",
                 "title": "Pending push",
                 "authorization": {
@@ -6117,7 +6117,7 @@
             },
             "guardianAudienceFixture": {
                 "slug": "guardianAudienceFixture",
-                "icon": "AccountGroup",
+                "icon": "Account",
                 "version": "0.1.0",
                 "title": "Guardian audience fixture (interim)",
                 "authorization": {
