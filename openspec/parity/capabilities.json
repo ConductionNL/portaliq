@@ -7038,7 +7038,7 @@
 				"state": "building",
 				"evidence": "decidiq's own sibling row (matrix decidiq, id par-10) self-rated 'unknown', citing lib/Portal/PortalContributionProvider.php:200 citizenContribution(), :219 four read collections, :308 citizenActions() createReaction + createBudgetProposal, guarded by PortalCreateOpenParentGuardListener; re-verified here that the generic create-action path (con-registry-discovery, int-generic-create-action) is real and would carry these actions if decidiq is installed",
 				"reachedOn": "would reach via the same PageView.jsx -> SchemaForm.jsx -> POST /portal/api/collections/{register}/{schema} path as any other type:create action, PROVIDED decidiq is installed alongside portaliq",
-				"owner": "ConductionNL/decidesk (decidiq)",
+				"owner": "ConductionNL/decidiq",
 				"note": "Same conclusion as decidiq's own matrix: the mechanism portaliq provides is real and generic, but proving decidiq's specific createReaction/createBudgetProposal actions actually render and succeed end to end requires decidiq's own repo/a live check, which this portaliq-only reading cannot settle. Kept 'unknown' rather than upgraded, per the brief's rule that unknown needs a genuine reason.",
 				"sourceId": "con-decidiq-par-10",
 				"origin": "sibling"
