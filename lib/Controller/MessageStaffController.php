@@ -31,6 +31,7 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\Messaging\GuardianMessagingLeafInterface;
+use OCA\Portaliq\Service\TeacherInboxService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -50,14 +51,28 @@ class MessageStaffController extends Controller {
 	 * @param IRequest $request The request.
 	 * @param IUserSession $userSession Resolves the calling staff member's Nextcloud user id, used as their subjectRef.
 	 * @param GuardianMessagingLeafInterface $messaging The messaging leaf.
+	 * @param TeacherInboxService $inboxService Builds the per-group inbox view (teacher-inbox-per-group).
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly IUserSession $userSession,
 		private readonly GuardianMessagingLeafInterface $messaging,
+		private readonly TeacherInboxService $inboxService,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
+
+	/**
+	 * The staff member's own inbox, bucketed by group.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/teacher-inbox-per-group/specs/guardian-direct-messaging/spec.md#requirement-a-staff-members-inbox-is-bucketed-by-group-with-an-unread-count
+	 */
+	#[NoAdminRequired]
+	public function inbox(): JSONResponse {
+		return new JSONResponse($this->inboxService->inboxFor(staffRef: $this->staffRef()));
+	}//end inbox()
 
 	/**
 	 * Create a group thread for a group the caller teaches.

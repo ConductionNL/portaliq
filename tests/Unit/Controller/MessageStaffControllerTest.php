@@ -24,6 +24,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\MessageStaffController;
 use OCA\Portaliq\Service\Messaging\GuardianMessagingLeafInterface;
+use OCA\Portaliq\Service\TeacherInboxService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -35,15 +36,34 @@ use PHPUnit\Framework\TestCase;
  */
 class MessageStaffControllerTest extends TestCase {
 
-	private function controller(GuardianMessagingLeafInterface $messaging, string $staffUid = 'staff-leerkracht-5a'): MessageStaffController {
+	private function controller(
+		GuardianMessagingLeafInterface $messaging,
+		string $staffUid = 'staff-leerkracht-5a',
+		?TeacherInboxService $inboxService = null,
+	): MessageStaffController {
 		$user = $this->createMock(IUser::class);
 		$user->method('getUID')->willReturn($staffUid);
 
 		$userSession = $this->createMock(IUserSession::class);
 		$userSession->method('getUser')->willReturn($user);
 
-		return new MessageStaffController($this->createMock(IRequest::class), $userSession, $messaging);
+		return new MessageStaffController(
+			$this->createMock(IRequest::class),
+			$userSession,
+			$messaging,
+			$inboxService ?? $this->createMock(TeacherInboxService::class)
+		);
 	}//end controller()
+
+	public function testInboxReturnsTheServicesOwnBucketedResult(): void {
+		$inboxService = $this->createMock(TeacherInboxService::class);
+		$inboxService->expects($this->once())->method('inboxFor')->with('staff-leerkracht-5a')->willReturn(['groep-5a' => [['id' => 't1']]]);
+
+		$response = $this->controller($this->createMock(GuardianMessagingLeafInterface::class), inboxService: $inboxService)->inbox();
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['groep-5a' => [['id' => 't1']]], $response->getData());
+	}//end testInboxReturnsTheServicesOwnBucketedResult()
 
 	public function testCreateGroupThreadReturns403WhenRefused(): void {
 		$messaging = $this->createMock(GuardianMessagingLeafInterface::class);

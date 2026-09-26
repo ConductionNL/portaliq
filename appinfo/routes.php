@@ -102,6 +102,8 @@ return [
         ['name' => 'messageStaff#messages', 'url' => '/api/staff/messages/threads/{id}/messages', 'verb' => 'GET'],
         ['name' => 'messageStaff#post', 'url' => '/api/staff/messages/threads/{id}/messages', 'verb' => 'POST'],
         ['name' => 'messageStaff#markRead', 'url' => '/api/staff/messages/threads/{id}/read', 'verb' => 'POST'],
+        // teacher-inbox-per-group: the per-group inbox VIEW over the routes above.
+        ['name' => 'messageStaff#inbox', 'url' => '/api/staff/messages/inbox', 'verb' => 'GET'],
 
         // Traffic analytics (portal-traffic-analytics). Public like the
         // content API above, for the same reason: a visitor's browser on a
