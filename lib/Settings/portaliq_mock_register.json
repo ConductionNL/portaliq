@@ -1574,7 +1574,23 @@
             "views": 1,
             "entrances": 1,
             "exits": 1,
-            "avgEngagementSeconds": 1.0
+            "avgEngagementSeconds": 1.0,
+            "sessions": 1,
+            "visitors": 1,
+            "engagedSessions": 1,
+            "referrers": [
+              {
+                "host": "Voorbeeld Host 1",
+                "channel": "Voorbeeld Channel 1",
+                "count": 1
+              }
+            ],
+            "outbound": [
+              {
+                "url": "Voorbeeld Url 1",
+                "count": 1
+              }
+            ]
           }
         ],
         "transitions": [
@@ -1634,7 +1650,23 @@
             "views": 2,
             "entrances": 2,
             "exits": 2,
-            "avgEngagementSeconds": 2.0
+            "avgEngagementSeconds": 2.0,
+            "sessions": 1,
+            "visitors": 1,
+            "engagedSessions": 1,
+            "referrers": [
+              {
+                "host": "Voorbeeld Host 1",
+                "channel": "Voorbeeld Channel 1",
+                "count": 1
+              }
+            ],
+            "outbound": [
+              {
+                "url": "Voorbeeld Url 1",
+                "count": 1
+              }
+            ]
           }
         ],
         "transitions": [
@@ -1694,7 +1726,23 @@
             "views": 3,
             "entrances": 3,
             "exits": 3,
-            "avgEngagementSeconds": 3.0
+            "avgEngagementSeconds": 3.0,
+            "sessions": 1,
+            "visitors": 1,
+            "engagedSessions": 1,
+            "referrers": [
+              {
+                "host": "Voorbeeld Host 1",
+                "channel": "Voorbeeld Channel 1",
+                "count": 1
+              }
+            ],
+            "outbound": [
+              {
+                "url": "Voorbeeld Url 1",
+                "count": 1
+              }
+            ]
           }
         ],
         "transitions": [
@@ -2373,8 +2421,8 @@
       {
         "@self": {
           "register": "portaliq",
-          "schema": "message",
-          "slug": "message-message-1-1"
+          "schema": "guardianMessage",
+          "slug": "guardianmessage-message-1-1"
         },
         "threadRef": "Voorbeeld Threadref 1",
         "senderRef": "Voorbeeld Senderref 1",
@@ -2387,8 +2435,8 @@
       {
         "@self": {
           "register": "portaliq",
-          "schema": "message",
-          "slug": "message-message-2-2"
+          "schema": "guardianMessage",
+          "slug": "guardianmessage-message-2-2"
         },
         "threadRef": "Voorbeeld Threadref 2",
         "senderRef": "Voorbeeld Senderref 2",
@@ -2401,8 +2449,8 @@
       {
         "@self": {
           "register": "portaliq",
-          "schema": "message",
-          "slug": "message-message-3-3"
+          "schema": "guardianMessage",
+          "slug": "guardianmessage-message-3-3"
         },
         "threadRef": "Voorbeeld Threadref 3",
         "senderRef": "Voorbeeld Senderref 3",

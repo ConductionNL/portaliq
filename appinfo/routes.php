@@ -119,6 +119,16 @@ return [
         // token-guarded), and an admin downloads the daily records.
         ['name' => 'traffic#server', 'url' => '/api/traffic/server', 'verb' => 'POST'],
         ['name' => 'trafficReport#export', 'url' => '/api/traffic/export', 'verb' => 'GET'],
+        // portal-traffic-kpi-cards: the four totals behind the KPI cards
+        // on a portal's detail page. Admin only, like the export.
+        ['name' => 'trafficReport#summary', 'url' => '/api/traffic/summary', 'verb' => 'GET'],
+        // portal-traffic-path-explorer: the steps visitors took, counted
+        // from the raw events. Admin only, like the summary.
+        ['name' => 'trafficPath#paths', 'url' => '/api/traffic/paths', 'verb' => 'GET'],
+        // portal-page-traffic: one page's figures behind the KPI cards and
+        // the incoming and outgoing traffic on a page's detail page. Admin
+        // only, like the summary.
+        ['name' => 'trafficPage#page', 'url' => '/api/traffic/page', 'verb' => 'GET'],
         // portal-traffic-experiments: a session recording chunk, and the
         // recorder the client loads only for a portal that switched
         // recording on. Both public for the collector's reasons.
