@@ -45,9 +45,17 @@ const MOBILE_UA =
 
 let visitor = 0
 
+// A run token in every User-Agent. The collector keys a cookieless visitor on
+// the day's salt, the portal, the User-Agent and the IP, and keeps a visit open
+// for 30 minutes. Without this a rerun on the same instance posts as the SAME
+// visitors, and its visits are stitched onto the previous run's: a backward
+// read from /contact then finds an older page before /home. Numeric so no bot
+// keyword can form in it.
+const RUN_UA = ` Run/${Date.now()}`
+
 /**
  * Post one cookieless visit: its page views, in order, as one batch from a
- * User-Agent no other visit uses.
+ * User-Agent no other visit uses, in this run or an earlier one.
  *
  * @param request The request context.
  * @param pages The page paths.
@@ -60,8 +68,8 @@ async function visit(
 ): Promise<void> {
 	visitor++
 	const ua = mobile
-		? MOBILE_UA.replace('17_0', `17_${visitor}`)
-		: `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.${visitor}.0 Safari/537.36`
+		? MOBILE_UA.replace('17_0', `17_${visitor}`) + RUN_UA
+		: `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.${visitor}.0 Safari/537.36${RUN_UA}`
 	const res = await post(
 		request,
 		pages.map((page, i) => event(i, page)),
