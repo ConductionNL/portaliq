@@ -310,7 +310,50 @@
 			"readOn": "2026-09-26",
 			"columnAddedOn": "2026-09-26",
 			"evidenceGrade": "docs-only",
-			"unknownReason": "not checked: learn.liferay.com documents generic DXP capabilities; Dutch gov-specific concepts (DigiD, BRP, cases, mandates) have no documentation to confirm or deny at that specificity beyond noting the platform is generic"
+			"unknownReason": "not checked: learn.liferay.com, liferay.dev and public LPD issues read on 2026-09-26 are silent on this capability at the granularity the row asks for; www.liferay.com answers a bot challenge to plain fetches.",
+			"readNote": "Public vendor documents only, read in two runs on 2026-09-26 (a session limit stopped the first after 156 rows). Dutch-government-specific cells: DigiD, eHerkenning, ZGW and BRP are partial with the custom work named; Berichtenbox, the national case feed and contact moments stay unknown. Two cells rest on search-result summaries only (a health-check article and a ClamAV page) and say so; they are held at partial at most.",
+			"sources": {
+				"docs": "https://learn.liferay.com/w/dxp/index",
+				"sourceRepo": "https://github.com/liferay/liferay-portal/tree/2026.q3.0 (dual licence 'LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06' per LICENSING.md; this column was rated from public docs, the source was not read)",
+				"featurePage": "https://www.liferay.com/solutions/customer-portals",
+				"featureRequests": "https://liferay.atlassian.net/jira/software/c/projects/LPD/issues",
+				"issueTracker": {
+					"url": "https://liferay.atlassian.net/jira/software/c/projects/LPD/issues",
+					"featureLabel": "issue types Epic, Story and Spike in project LPD (no separate feature label; the public REST search /rest/api/3/search/jql answers anonymously, HTTP 200 on 2026-09-26)"
+				},
+				"roadmap": "https://www.liferay.com/roadmap",
+				"changelog": [
+					"https://liferay.dev/b/liferay-dxp-2026-q3-release-webinar-replay",
+					"https://learn.liferay.com/w/dxp/self-hosted-installation-and-upgrades/upgrading-liferay/deprecations-and-breaking-changes-reference/2026-deprecations-and-breaking-changes/2026-q3-default-setting-and-feature-flag-changes",
+					"https://liferay.dev/b/liferay-dxp-2026-q2-is-now-available-"
+				],
+				"apiReference": "https://learn.liferay.com/w/dxp/integration/headless-apis",
+				"marketplace": "https://marketplace.liferay.com/",
+				"pricing": "https://www.liferay.com/pricing",
+				"accessibilityStatement": [
+					"https://www.liferay.com/accessibility-compliance/digital-experience-platform",
+					"https://www.liferay.com/documents/d/guest/vpat2-5rev_int_february2025_liferay_dxp_sites_experience"
+				],
+				"securityDocs": "https://learn.liferay.com/w/dxp/security-and-administration/security",
+				"demoInstance": "https://learn.liferay.com/w/dxp/getting-started/liferay-dxp-free-tier",
+				"community": [
+					"https://liferay.dev/",
+					"https://liferay.dev/ask"
+				],
+				"reviews": "https://www.gartner.com/reviews/market/digital-experience-platforms/vendor/liferay/product/liferay-digital-experience-platform",
+				"videos": "https://www.youtube.com/@liferay",
+				"caseStudies": "https://www.liferay.com/resources/case-studies",
+				"partnerDirectory": "https://www.liferay.com/partners",
+				"trainingCurriculum": "https://learn.liferay.com/education/index",
+				"jobPostings": "https://www.liferay.com/careers",
+				"tenders": [
+					"TenderNed 418074 and 412062 Universiteit Maastricht 'Levering Liferay DXP Licenties' (2026-03-31, 2026-02-12)",
+					"TenderNed 394876 Ministerie van Buitenlandse Zaken 'ROVK BZ EA, Applicatiediensten P1-P2' names Liferay (2025-10-02)",
+					"34 Spanish PLACSP tenders name Liferay, all portal maintenance or subscription renewals, e.g. ES-PLACSP-19525683 and ES-PLACSP-19931298 (2026-07-16) (recorded by thematiq#669)"
+				],
+				"nullReasons": {},
+				"notes": "Checked 2026-09-26. learn.liferay.com, liferay.dev, GitHub, marketplace, YouTube and the LPD Jira REST search answered HTTP 200 to curl. www.liferay.com answers a bot challenge to plain fetches: the customer portals feature page and the roadmap were read in a real browser (browser-3); the Sites Experience VPAT PDF downloaded and was read in full; pricing, accessibility, case studies, partners and careers answered HTTP 200 but their bodies were not read. The Gartner Peer Insights review page answers 403 to curl and was confirmed by a search result (4.6 of 5 on 64 reviews, July 2026). featurePage replaced the earlier style-books page with Liferay's customer portal solution page, the portal-relevant one. docs moved to /w/dxp/index because /w/dxp now answers 404."
+			}
 		}
 	],
 	"areas": [
@@ -5150,7 +5193,7 @@
 				"nl-portal": "no CMS, page or widget model in backend/ or frontend/packages; the portal is a login-only SPA (frontend/packages/app/src/constants/routes.tsx:18) [reached on nothing]",
 				"xxllnc-pip": "no CMS or page model: the PIP is a fixed set of Catalyst routes (backend/perl-api/lib/Zaaksysteem/Controller/Plugins/PIP.pm:55-393) with per-customer header/footer templates; no match for 'page|menu|widget layout' editing in the PIP or webform code [reached on nothing]",
 				"mijnoverheid": "https://www.logius.nl/actueel/wijziging-mijnoverheid-mijnzaken-vervangt-lopende-zaken (01-06-2026): consolidated case tracking across multiple municipalities; https://www.logius.nl/onze-dienstverlening/interactie/voorzieningen/mijnoverheid/hoe-werkt-het any BSN-using organisation can connect",
-				"liferay-dxp": "Liferay Multi-site Management can aggregate content from several sites into one portal, the right mechanism though not documented as a named 'federated publications portal' feature"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/content-management-system/asset-libraries: libraries connected to several sites let one site show content managed elsewhere; publications of many separate organisations in one portal is custom."
 			},
 			"built": {
 				"state": "built",
@@ -5180,7 +5223,7 @@
 				"nl-portal": "no CMS, page or widget model in backend/ or frontend/packages; the portal is a login-only SPA (frontend/packages/app/src/constants/routes.tsx:18) [reached on nothing]",
 				"xxllnc-pip": "backend/perl-api/lib/Zaaksysteem/Controller/API/PublicSearchQuery.pm:95 public search, :186 public file download (DisableACL); backend/perl-api/root/tpl/zaak_v1/nl_NL/form/public_search.tt:4 [reached on /form/public_search/<id>; admin-configured public result lists, no reading room. was no from docs]",
 				"mijnoverheid": "https://www.logius.nl/onze-dienstverlening/interactie/voorzieningen/mijnoverheid/hoe-werkt-het 'Elke Nederlander van 14 jaar of ouder heeft een account op MijnOverheid', login with DigiD required; everything behind the login",
-				"liferay-dxp": "Liferay's core Content Management System (DB competitor_id=914) serves anonymous/guest-visible public web content by design"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/sites/creating-pages/page-settings/updating-page-permissions: pages carry per-role view permissions, including Guest, so public pages need no login; sites are 'a collection of pages that contains content' (https://learn.liferay.com/w/dxp/sites)."
 			},
 			"built": {
 				"state": "built",
@@ -5210,7 +5253,7 @@
 				"nl-portal": "no CMS, page or widget model in backend/ or frontend/packages; the portal is a login-only SPA (frontend/packages/app/src/constants/routes.tsx:18) [reached on nothing]",
 				"xxllnc-pip": "no CMS or page model: the PIP is a fixed set of Catalyst routes (backend/perl-api/lib/Zaaksysteem/Controller/Plugins/PIP.pm:55-393) with per-customer header/footer templates; no match for 'page|menu|widget layout' editing in the PIP or webform code [reached on nothing]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'MijnOverheid has fixed pages, no editor-authored reading-room pages/menus', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "learn.liferay.com Content Pages + Site Navigation Menus: editors write pages and menus without code"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/sites/creating-pages/using-content-pages/content-page-editor-ui-reference and https://learn.liferay.com/w/dxp/sites/site-navigation: editors write content pages and navigation menus without code."
 			},
 			"built": {
 				"state": "built",
@@ -5234,13 +5277,13 @@
 			"nl-portal": "no",
 			"xxllnc-pip": "no",
 			"mijnoverheid": "unknown",
-			"liferay-dxp": "partial",
+			"liferay-dxp": "yes",
 			"evidence": {
 				"open-inwoner": "src/open_inwoner/components/templates/components/Header/Header.html:126 search form in the header on every page submits to /search/ (src/open_inwoner/search/urls.py:7) with the term in the query string [reached on header search on every page; a header search, not a home-page hero block; behind SiteConfiguration.search_enabled; was unknown from docs]",
 				"nl-portal": "no public search; only per-list filters on own cases, tasks, messages (frontend/packages/user-interface/src/components/SearchForm.tsx) [reached on nothing]",
 				"xxllnc-pip": "no home page search box: PIP home is the case overview backend/perl-api/root/tpl/zaak_v1/nl_NL/plugins/pip/index.tt:7 (case filter widget only) [reached on nothing; was yes from docs]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'MijnOverheid is not a federated public-search product', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "Liferay's Search & Faceted Navigation (DB competitor_id=914, Elasticsearch-powered) is a core widget that can be placed on a home page, though a specific 'hero search bar prefilling the results page' pattern is not documented"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/search/search-configuration-reference: the header Search Bar widget 'always requires a destination page to be set, where Users are redirected to complete their search activity'; https://learn.liferay.com/w/dxp/search/getting-started/searching-for-content shows the result URL '/web/guest/search?q=data'. [was partial]"
 			},
 			"built": {
 				"state": "built",
@@ -5270,7 +5313,7 @@
 				"nl-portal": "no public search; only per-list filters on own cases, tasks, messages (frontend/packages/user-interface/src/components/SearchForm.tsx) [reached on nothing]",
 				"xxllnc-pip": "PIP lists load rows=10000 without paging backend/perl-api/lib/Zaaksysteem/Controller/Plugins/PIP.pm:272; no federated search [reached on nothing; was yes from docs]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'MijnOverheid has no federated search results to paginate', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "Liferay's Search widget (Elasticsearch-powered, DB competitor_id=914) provides standard bookmarkable paginated result pages as a core CMS/search feature"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/search/search-pages-and-widgets/search-results/configuring-the-search-results-widget 'The default display style is a paginated list', with pagination and federated search settings; https://learn.liferay.com/w/dxp/search/search-pages-and-widgets/working-with-search-pages/controlling-search-page-seo 'Search page URL parameters, including facet, sort, and pagination links, are ordered alphabetically, so equivalent filter states produce one URL'."
 			},
 			"built": {
 				"state": "built",
@@ -5300,7 +5343,7 @@
 				"nl-portal": "no public search; only per-list filters on own cases, tasks, messages (frontend/packages/user-interface/src/components/SearchForm.tsx) [reached on nothing]",
 				"xxllnc-pip": "no aria-live on search results: searched 'aria-live' in root/tpl/zaak_v1/nl_NL/search and plugins/pip, no match [reached on nothing; was unknown from docs]",
 				"mijnoverheid": "not settled from docs: mo-toegankelijkheid confirms a WCAG 2.2 AA commitment generally but not this specific live-region behaviour; today's pages (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) are silent",
-				"liferay-dxp": "Liferay's Accessibility Conformance Reports (liferay.com VPAT, read 2026-09-26) commit to WCAG 2.2 AA for out-of-the-box components including search, which would cover result-count announcements, but this exact behaviour is not called out by name"
+				"liferay-dxp": "https://www.liferay.com/documents/d/guest/vpat2-5rev_int_february2025_liferay_dxp_sites_experience (Sites Experience ACR, DXP 2025.Q4.0, report date 29 Nov 2025): '4.1.3 Status Messages ... Web: Supports ... Sites created with Liferay DXP offer great feedback to screen readers'. Announcing the search result count or an empty result is not named; the search widget docs read today are silent on it."
 			},
 			"built": {
 				"state": "built",
@@ -5330,7 +5373,7 @@
 				"nl-portal": "no public search; only per-list filters on own cases, tasks, messages (frontend/packages/user-interface/src/components/SearchForm.tsx) [reached on nothing]",
 				"xxllnc-pip": "no public publication detail page [reached on nothing; was unknown from docs]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'MijnOverheid has no publication/dataset detail page concept', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "Liferay Objects can render any custom object's fields on a generic detail page/fragment, but automatically turning any URL-shaped field into a clickable link is not a documented out-of-the-box behaviour"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/displaying-object-entries 'display pages can provide the entry detail view' for any object, with fields mapped by an editor. The field type list (https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/fields) has no URL type and no automatic linking of URL-shaped values; each field is mapped by hand per display page template."
 			},
 			"built": {
 				"state": "built",
@@ -5360,7 +5403,7 @@
 				"nl-portal": "no public search; only per-list filters on own cases, tasks, messages (frontend/packages/user-interface/src/components/SearchForm.tsx) [reached on nothing]",
 				"xxllnc-pip": "backend/perl-api/root/tpl/zaak_v1/nl_NL/search/widgets/search-widget.tt:14 filter component hidden in public mode, so no free-text search for the public [reached on nothing; was unknown from docs]",
 				"mijnoverheid": "https://www.logius.nl/onze-dienstverlening/interactie/voorzieningen/mijnoverheid/hoe-werkt-het 'Elke Nederlander van 14 jaar of ouder heeft een account op MijnOverheid', login with DigiD required; everything behind the login",
-				"liferay-dxp": "Liferay's Search widget can be published on a public/guest page for anonymous plain-text search over content (core CMS + search feature)"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/search/getting-started/searching-for-content 'users can engage with search by entering search terms in the Search Bar ... Liferay's search infrastructure supports full text search'; the example URL is under '/web/guest/', the guest site."
 			},
 			"built": {
 				"state": "built",
@@ -5390,7 +5433,7 @@
 				"nl-portal": "no public search; only per-list filters on own cases, tasks, messages (frontend/packages/user-interface/src/components/SearchForm.tsx) [reached on nothing]",
 				"xxllnc-pip": "backend/perl-api/root/tpl/zaak_v1/nl_NL/search/widgets/search-widget.tt:14 filters hidden when public [reached on nothing; was yes from docs]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'MijnOverheid has no faceted public search', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "intelligence DB competitor_id=914 'Search & Faceted Navigation, Elasticsearch-powered search with faceted navigation'"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/search/search-pages-and-widgets/search-facets: Site, Type, Category, Tag, Folder, User, Modified and Custom facets; the Category Facet 'narrows search results for categorized assets' and the Modified Facet allows 'a Custom Range, specifying a From and To date'."
 			},
 			"built": {
 				"state": "built",
@@ -5420,7 +5463,7 @@
 				"nl-portal": "no public search; only per-list filters on own cases, tasks, messages (frontend/packages/user-interface/src/components/SearchForm.tsx) [reached on nothing]",
 				"xxllnc-pip": "not settled from source: public result table sort behaviour lives in the Angular search widget (backend/perl-api/root/tpl/zaak_v1/nl_NL/search/widgets/search-widget.tt:9), not traced to a sort control [reached on /form/public_search/<id>; was yes from docs]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'MijnOverheid has no search results to sort', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "Liferay's Elasticsearch-powered search (DB competitor_id=914) supports relevance and field-based sorting of results as a standard feature"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/search/search-pages-and-widgets/search-results/sorting-search-results 'ordered by relevance score ... by default. With the Sort widget, users can control the order', including 'by the Modified date (newest first by default, or choose oldest first)'."
 			},
 			"built": {
 				"state": "built",
@@ -5450,7 +5493,7 @@
 				"nl-portal": "one theme per deployment: THEME_CLASS (frontend/packages/app/src/App.tsx:25) and one theme API (backend/core/src/main/kotlin/nl/nlportal/core/frontend/web/rest/FrontendThemeConfigurationResource.kt:29); no host-based tenant resolution [reached on nothing]",
 				"xxllnc-pip": "backend/perl-api/root/tpl/zaak_v1/nl_NL/plugins/pip/layouts/pip.tt:1 header per c.config.gemeente_id; backend/perl-api/etc/customer.d/ per-hostname instance with own database [reached on every PIP page; was partial from docs]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'MijnOverheid is one national brand/domain for every resident, not multi-tenant per-organisation branding', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "learn.liferay.com Multi-site Management + Theme docs: each site can have its own domain (virtual host) and theme; DB competitor_id=914 'Theme & Design System'"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/sites/site-settings/managing-site-urls/configuring-virtual-hosts-site-urls 'A virtual host connects a domain name ... to a site'; 'By default, every site is also reachable through every other domain in the instance', closed by 'Strict Virtual Host Mode Enabled ... Each site with a virtual host on its public pages is now reachable only through that virtual host' (DXP 2026.Q3+). Theme per site via 'Change Current Theme' (https://learn.liferay.com/w/dxp/sites/creating-pages/page-settings/configuring-page-sets). [cross-host leak is closed only with strict virtual host mode switched on (2026.Q3+); separate virtual instances are the other route]"
 			},
 			"built": {
 				"state": "built",
@@ -5480,7 +5523,7 @@
 				"nl-portal": "frontend/packages/user-interface/src/contexts/AppContext.tsx:78 theme style fetch failure only logs a warning; frontend/packages/app/src/App.tsx:1 base tokens are @gemeente-denhaag/design-tokens-components [reached on every page; on failure the page keeps the built-in Den Haag design tokens, i.e. another municipality's look; was unknown from docs]",
 				"xxllnc-pip": "backend/perl-api/root/tpl/zaak_v1/nl_NL/plugins/pip/layouts/pip.tt:1 PROCESS of form/<gemeente_id>/header.tt, no fallback to another customer [reached on every PIP page; no cross-tenant fallback exists; a missing template errors rather than rendering unthemed. was unknown from docs]",
 				"mijnoverheid": "not settled from docs: not applicable/not documented (MijnOverheid has one fixed theme, no per-tenant theme-resolution failure mode); today's pages (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) are silent",
-				"liferay-dxp": "not checked: not covered in the Liferay theme pages read"
+				"liferay-dxp": "not settled from docs: the theme, style book and page set pages read today (https://learn.liferay.com/w/dxp/sites/site-appearance, https://learn.liferay.com/w/dxp/sites/site-appearance/style-books/using-a-style-book-to-standardize-site-appearance) do not say what a site renders when its assigned theme is missing."
 			},
 			"built": {
 				"state": "built",
@@ -5510,7 +5553,7 @@
 				"nl-portal": "theme set by CSS and logo in the external Configuration Panel (documentation/configuratie/configuration-panel.md:34); no theme catalogue picker in this source [reached on nothing; was unknown from docs]",
 				"xxllnc-pip": "frontend-mono/apps/main/src/modules/configuration/CustomStylesSection.tsx:18 upload stylesheet, cssProps.json and logos per tenant [reached on staff configuration; upload, not a picker from a catalogue. was unknown from docs]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'MijnOverheid has one fixed theme, no per-portal theme picker', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "learn.liferay.com Site Settings: an admin selects a site's theme from the installed themes list in the Site Builder UI, not by typing a slug"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/sites/creating-pages/page-settings/configuring-page-sets 'Click the Change Current Theme button and select the Theme from the window that appears'; https://learn.liferay.com/w/dxp/getting-started/changing-your-sites-appearance 'Under Theme, click Change Current Theme'."
 			},
 			"built": {
 				"state": "none",
@@ -5541,7 +5584,7 @@
 				"nl-portal": "frontend/packages/app/public/config.template.js:9 runtime flags per deployment; frontend/packages/user-interface/src/contexts/AppContext.tsx:60 logo and :78 styles from the theme API [reached on every page; runtime white-label per deployment, one tenant per install; no per-tenant resolution]",
 				"xxllnc-pip": "backend/perl-api/root/tpl/zaak_v1/nl_NL/form/custom-styles/header.tt:13 favicon and :19 stylesheet from /api/v2/style/get_content; backend/zaken/src/zsnl_domains/configuration/entities/style_configuration.py:13 logo-pip, config.json [reached on every PIP page using the custom-styles template; was partial from docs]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'MijnOverheid is a single shared shell with no per-tenant name/logo/feature-flag configuration', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "Liferay's per-site theme + Portal Instances configuration lets each site show a different name/logo/theme, but a documented feature-flag-per-tenant with a safe-neutral fallback specifically was not found in the pages read"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/sites/site-settings/managing-site-urls/configuring-virtual-hosts-site-urls (a domain per site) with per-site theme and style book (https://learn.liferay.com/w/dxp/sites/site-appearance/style-books/using-a-style-book-to-standardize-site-appearance) and site logo (https://learn.liferay.com/w/dxp/getting-started). Feature flags are per virtual instance, not per site (https://learn.liferay.com/w/dxp/ai/using-liferay-as-an-mcp-server 'applies to a single virtual instance'); a neutral fallback when the tenant cannot be resolved is not described. [custom: per-tenant feature switches inside one site shell and a neutral fallback]"
 			},
 			"built": {
 				"state": "built",
@@ -5571,7 +5614,7 @@
 				"nl-portal": "frontend/packages/localization/src/providers/LocalizationProvider.tsx:23 locale from localStorage else the first locale (Dutch); frontend/packages/user-interface/src/components/Header.tsx:59 NL/EN switcher; frontend/packages/localization/src/i18n/default-locales.ts:3 [reached on header language switcher; two languages; the browser language is not used; was unknown from docs]",
 				"xxllnc-pip": "frontend-mono/apps/my-pip/src/i18n.ts:11 lng 'nl' fixed; templates only under backend/perl-api/root/tpl/zaak_v1/nl_NL [reached on nothing; was unknown from docs]",
 				"mijnoverheid": "not settled from docs: https://mijn.overheid.nl/about-mijnoverheid/ is an English information page, but whether the signed-in portal interface is offered in English is not stated there or on /vragen/",
-				"liferay-dxp": "intelligence DB competitor_id=914 'Multi-language Support, Multi-language content management with translation workflows'; Liferay's admin/site chrome ships with language packs selectable by browser locale"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/development/configuration-as-code/using-a-language-client-extension: interface language keys are provided per locale in Language.properties; https://learn.liferay.com/w/dxp/content-management-system/translating-pages-and-content/translating-web-content 'Ensure that the Accept-Language header is allow-listed ... so the server can process and return content in the selected language'."
 			},
 			"built": {
 				"state": "built",
@@ -5601,7 +5644,7 @@
 				"nl-portal": "no CMS, page or widget model in backend/ or frontend/packages; the portal is a login-only SPA (frontend/packages/app/src/constants/routes.tsx:18) [reached on nothing]",
 				"xxllnc-pip": "only nl_NL template tree [reached on nothing; was unknown from docs]",
 				"mijnoverheid": "not settled from docs: not confirmed in the pages read; today's pages (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) are silent",
-				"liferay-dxp": "Liferay's Multi-language content management (DB competitor_id=914) serves the same page at the same friendly URL in the visitor's requested language via content translation"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/content-management-system/translating-pages-and-content/translating-content-pages: a content page is translated in place ('select Translate'); https://learn.liferay.com/w/dxp/security-and-administration/administration/configuring-liferay/virtual-instances/localization 'Locale Prepend Friendly URL Style' decides whether the same route carries a locale prefix."
 			},
 			"built": {
 				"state": "none",
@@ -5632,7 +5675,7 @@
 				"nl-portal": "frontend/packages/user-interface/src/styles/_mixins.scss media queries; frontend/packages/user-interface/src/components/Header.tsx menu button and mobile Menu (frontend/packages/user-interface/src/components/Menu.tsx); NL Design System components [reached on every page; was partial from docs]",
 				"xxllnc-pip": "backend/perl-api/root/tpl/zaak_v1/nl_NL/plugins/pip/layouts/pip.tt:20 mobile menu toggle; frontend-mono/apps/my-pip/src/components/PipCaseDocuments/PipCaseDocuments.tsx:52 compact columns on xs [reached on every PIP page]",
 				"mijnoverheid": "kept from the morning docs pass of 2026-09-26; today's docs silent: intelligence DB competitor_id=895 'Mobile-responsive Design, Mobile-responsive design for access from all devices'",
-				"liferay-dxp": "Liferay's page-builder docs: 'Interfaces developed on the platform automatically adjust based on the user's device'; grid/fragment layouts stack responsively"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/sites/optimizing-sites/building-a-responsive-site 'Out-of-the-box, Liferay uses responsive layouts ... When the screen width is low, Liferay combines columns so that all content remains legible'; the grid fragment sets modules per row per device (https://learn.liferay.com/w/dxp/sites/optimizing-sites/building-a-responsive-site/building-responsive-layouts-with-the-grid-fragment)."
 			},
 			"built": {
 				"state": "built",
@@ -5656,13 +5699,13 @@
 			"nl-portal": "no",
 			"xxllnc-pip": "no",
 			"mijnoverheid": "unknown",
-			"liferay-dxp": "no",
+			"liferay-dxp": "unknown",
 			"evidence": {
 				"open-inwoner": "server templates use NL Design System CSS components (package.json @utrecht/*, @nl-design-system-candidate/*, @gemeente-denhaag/*); Preact web components in src/open_inwoner/react/components loaded from src/open_inwoner/templates/master.html:199 share the same CSS [reached on every page; one frontend with embedded web components styled from the same NLDS packages, not two independent frontends; was no from docs]",
 				"nl-portal": "one frontend only (frontend/packages/app); no public site renderer [reached on nothing]",
 				"xxllnc-pip": "no NL Design System tokens: searched 'nl-design|utrecht-|nlds' in frontend-mono and perl-api root, no match [reached on nothing]",
 				"mijnoverheid": "not settled from docs: not documented whether MijnOverheid's front end uses NL Design System tokens; today's pages (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) are silent",
-				"liferay-dxp": "No NL Design System integration is documented for Liferay; it ships its own theme/design-token system (DB competitor_id=914 'Theme & Design System')"
+				"liferay-dxp": "not settled from docs: NL Design System is not named in any learn.liferay.com page read today. Styling comes from a theme's frontend token definition and style books (https://learn.liferay.com/w/dxp/sites/site-appearance/style-books/using-a-style-book-to-standardize-site-appearance), which apply to Liferay-rendered pages; sharing those tokens with a separate headless frontend is not described. [was no; a no needs a stated absence, the docs are silent]"
 			},
 			"built": {
 				"state": "built",
@@ -5692,7 +5735,7 @@
 				"nl-portal": "frontend/packages/localization/src/i18n/messages/en-gb.ts and nl-nl.ts; frontend/packages/user-interface/src/components/Header.tsx:59 switcher [reached on header language switcher; interface only; case, task and message content arrives in one language; was no from docs]",
 				"xxllnc-pip": "backend/perl-api/root/tpl/zaak_v1/nl_NL/plugins/pip/login_type.tt:30 only the eIDAS button is English; rest nl_NL [reached on nothing; was unknown from docs]",
 				"mijnoverheid": "not settled from docs: https://mijn.overheid.nl/about-mijnoverheid/ gives an English explanation page only; the signed-in portal's languages are not stated",
-				"liferay-dxp": "intelligence DB competitor_id=914 'Multi-language Support, Multi-language content management with translation workflows', covers editor-written translated text, not just UI chrome"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/content-management-system/translating-pages-and-content/translating-content-pages: editors translate 'a page's name and inline fragment text' manually or via XLIFF; https://learn.liferay.com/w/dxp/content-management-system/translating-pages-and-content/translating-web-content for articles."
 			},
 			"built": {
 				"state": "built",
@@ -5722,7 +5765,7 @@
 				"nl-portal": "frontend/packages/app/public/manifest.json:1 PWA manifest with icons and splash screens; no service worker in frontend/packages [reached on add to home screen; installable web app, no native app and no offline caching; was no from docs]",
 				"xxllnc-pip": "no native app; the mor app is a staff tool frontend-mono/apps/mor/src/mor.locale.ts:7 [reached on nothing]",
 				"mijnoverheid": "https://www.logius.nl/onze-dienstverlening/interactie/voorzieningen/mijnoverheid/hoe-werkt-het: Berichtenbox app and MijnGegevens app for iOS and Android",
-				"liferay-dxp": "intelligence DB competitor_id=914 'Mobile SDK, Mobile SDK for building native mobile applications', lets an implementer build an app, but Liferay itself ships no ready-made portal mobile app"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/integration/headless-apis/using-liferay-as-a-headless-platform: APIs for 'writing mobile applications'; https://learn.liferay.com/w/dxp/self-hosted-installation-and-upgrades/upgrading-liferay/deprecations-and-breaking-changes-reference/7-4-deprecations-and-breaking-changes/maintenance-mode-and-deprecations-in-7-4 'Mobile SDK Removed Replaced by Headless Delivery'. No ready-made resident app. [custom: the mobile app itself]"
 			},
 			"built": {
 				"state": "none",
@@ -5752,7 +5795,7 @@
 				"nl-portal": "not settled from source: the Dutch strings (frontend/packages/localization/src/i18n/messages/nl-nl.ts) read plainly but there is no B1 check or statement [reached on every page]",
 				"xxllnc-pip": "not settled from source: language level is a reading judgement; texts are plain Dutch, e.g. backend/perl-api/root/tpl/zaak_v1/nl_NL/plugins/pip/index.tt:5 [reached on every PIP page]",
 				"mijnoverheid": "not settled from docs: not confirmed in the pages read whether MijnOverheid's own copy is written at B1 level, though NL government-wide 'Direct Duidelijk' B1 guidance generally applies to such portals; today's pages (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) are silent",
-				"liferay-dxp": "not checked: language level of authored text is an editorial choice, not a platform feature; not documented either way"
+				"liferay-dxp": "not settled from docs: the translation, content page and AI Hub content generation pages read today do not mention a reading level or B1 check for authored text."
 			},
 			"built": {
 				"state": "none",
@@ -5782,7 +5825,7 @@
 				"nl-portal": "no public reading room in the portal [reached on nothing]",
 				"xxllnc-pip": "backend/perl-api/root/tpl/zaak_v1/nl_NL/form/<gemeente>/header.tt per customer (over 150 folders); custom-styles via /api/v2/style [reached on public webform and PIP]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'MijnOverheid has one fixed national house style, not an organisation's own', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "Liferay's per-site Theme & Design System (DB competitor_id=914) gives each site the organisation's own house style"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/sites/site-appearance/style-books/using-a-style-book-to-standardize-site-appearance 'Style books determine various visual settings, including spacing between elements ..., colors, and fonts'; https://learn.liferay.com/w/dxp/sites/site-appearance lists master page templates and themes for headers, footers and look and feel."
 			},
 			"built": {
 				"state": "built",
@@ -5812,7 +5855,7 @@
 				"nl-portal": "no public reading room in the portal [reached on nothing; the logged-in portal does use NL Design System components]",
 				"xxllnc-pip": "backend/perl-api/root/tpl/zaak_v1/nl_NL/plugins/pip/layouts/pip.tt:10 skip link, :32 tab roles; backend/perl-api/frontend/zaaksysteem/src/js/nl/mintlab/utils/directives/zsSessionTimeout.js:42 aria-live alert [reached on every PIP page; accessibility work visible, no conformance evidence]",
 				"mijnoverheid": "https://www.toegankelijkheidsverklaring.nl/register/1359 status 'A, voldoet volledig', WCAG 2.1 AA, updated 24-09-2026, evaluation 06-02-2025 on mijn.overheid.nl and demo.mijn.overheid.nl [applies to MijnOverheid, which has no reading room; DigiD-protected production pages excluded from the scope]",
-				"liferay-dxp": "Liferay's DXP Sites Experience Accessibility Conformance Report (VPAT, read 2026-09-26) documents WCAG 2.2 conformance for out-of-the-box components, but explicitly does not cover custom fragments/templates a site builds"
+				"liferay-dxp": "https://www.liferay.com/documents/d/guest/vpat2-5rev_int_february2025_liferay_dxp_sites_experience (Sites Experience ACR, DXP 2025.Q4.0): every Level A and AA criterion reported 'Supports' for 'sites created with Liferay DXP', but 'the actual accessibility of any site depends on the structures, configurations, design decisions, and content provided by customers ... this VPAT does not guarantee compliance'. A reading room built from custom fragments needs its own audit."
 			},
 			"built": {
 				"state": "built",
@@ -5842,7 +5885,7 @@
 				"nl-portal": "no match for 'analytics|matomo|piwik|siteimprove|tracking' in backend/ and frontend/packages [reached on nothing]",
 				"xxllnc-pip": "backend/perl-api/frontend/zaaksysteem/src/js/nl/mintlab/pip/GoogleAnalyticsGtagController.js:29; mounted in customer headers e.g. backend/perl-api/root/tpl/zaak_v1/nl_NL/form/dijkenwaard/header.tt:39 [reached on public webform/PIP of customers with a tag; third-party GA/GTM/SiteImprove tags per customer template, no own analytics. was no from docs]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'MijnOverheid is an authenticated resident portal, not a marketing site; no public pageview-tracking capability is documented', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "learn.liferay.com Analytics Cloud: 'aggregates your visitor data and presents useful metrics' incl. traffic sources and page performance, tracked without a login"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/personalization/analytics-cloud/touchpoints/events-analytics/events-descriptions 'Page Viewed This is when a user views a site page'; anonymous visitors are tracked (https://www.liferay.com/capabilities/analytics 'You can even track anonymous users')."
 			},
 			"built": {
 				"state": "built",
@@ -5872,7 +5915,7 @@
 				"nl-portal": "no match for 'analytics|matomo|piwik|siteimprove|tracking' in backend/ and frontend/packages [reached on nothing]",
 				"xxllnc-pip": "backend/perl-api/root/tpl/zaak_v1/nl_NL/form/epe/header.tt:27 Piwik noscript pixel [reached on customer 'epe' pages; one customer template, third-party Piwik. was unknown from docs]",
 				"mijnoverheid": "not settled from docs: not applicable/no analytics concept documented for MijnOverheid; today's pages (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) are silent",
-				"liferay-dxp": "not checked: not covered in the Liferay Analytics Cloud pages read (JS-beacon vs pixel fallback mechanics were not described)"
+				"liferay-dxp": "not settled from docs: the tracking pages read today (https://learn.liferay.com/w/dxp/personalization/analytics-cloud/touchpoints/events-analytics/tracking-events-in-third-party-websites, tracking-events) describe only the JavaScript client; no image pixel fallback is mentioned."
 			},
 			"built": {
 				"state": "built",
@@ -5896,13 +5939,13 @@
 			"nl-portal": "no",
 			"xxllnc-pip": "no",
 			"mijnoverheid": "unknown",
-			"liferay-dxp": "yes",
+			"liferay-dxp": "partial",
 			"evidence": {
 				"open-inwoner": "trackers load from the vendor host: src/open_inwoner/templates/analytics/matomo.html:14 matomo.js from the Matomo URL, src/open_inwoner/templates/analytics/siteimprove.html:8 siteimproveanalytics.com; event mapping in src/open_inwoner/js/components/siteimprove/tracking.js is bundled [reached on every page; was unknown from docs]",
 				"nl-portal": "no match for 'analytics|matomo|piwik|siteimprove|tracking' in backend/ and frontend/packages [reached on nothing]",
 				"xxllnc-pip": "no own analytics: only third-party tag controllers in backend/perl-api/frontend/zaaksysteem/src/js/nl/mintlab/pip/ (GoogleAnalyticsGtag, GoogleAnalyticsGtm, SiteImprove) wired per customer template [reached on nothing]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'no analytics tracking client is documented for MijnOverheid', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "learn.liferay.com Analytics Cloud: Liferay DXP is 'connected to Analytics Cloud' and serves its own tracking script as part of the DXP-Analytics Cloud integration"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/personalization/analytics-cloud/touchpoints/events-analytics/tracking-events-in-third-party-websites: the client loads from '<script src=\"https://analytics-js-cdn.liferay.com\">' and posts to a Liferay cloud endpoint. A connected DXP site loads it for you, but it is a vendor CDN script, not first-party. [was yes]"
 			},
 			"built": {
 				"state": "built",
@@ -5932,7 +5975,7 @@
 				"nl-portal": "no match for 'analytics|matomo|piwik|siteimprove|tracking' in backend/ and frontend/packages [reached on nothing]",
 				"xxllnc-pip": "no own analytics: only third-party tag controllers in backend/perl-api/frontend/zaaksysteem/src/js/nl/mintlab/pip/ (GoogleAnalyticsGtag, GoogleAnalyticsGtm, SiteImprove) wired per customer template [reached on nothing]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'no analytics/traffic-reporting concept is documented for MijnOverheid', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "not checked: not covered in the Liferay Analytics Cloud pages read (a trusted back-office server-side event-reporting API was not described)"
+				"liferay-dxp": "not settled from docs: the Analytics Cloud API pages (https://learn.liferay.com/w/dxp/integration/headless-apis/analytics-cloud-apis/exporting-data) cover exporting and querying; no server-side ingest API for events on a visitor's behalf was found."
 			},
 			"built": {
 				"state": "built",
@@ -5962,7 +6005,7 @@
 				"nl-portal": "no match for 'analytics|matomo|piwik|siteimprove|tracking' in backend/ and frontend/packages [reached on nothing]",
 				"xxllnc-pip": "no own analytics: only third-party tag controllers in backend/perl-api/frontend/zaaksysteem/src/js/nl/mintlab/pip/ (GoogleAnalyticsGtag, GoogleAnalyticsGtm, SiteImprove) wired per customer template [reached on nothing]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'no session-replay concept is documented for MijnOverheid', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "not checked: not found in the Liferay Analytics Cloud metrics/feature pages read (Analytics Cloud documents traffic/funnel/form metrics, not masked session replay)"
+				"liferay-dxp": "not settled from docs: session replay is not among the events (https://learn.liferay.com/w/dxp/personalization/analytics-cloud/touchpoints/events-analytics/events-descriptions) or the capabilities (https://www.liferay.com/capabilities/analytics) read today."
 			},
 			"built": {
 				"state": "built",
@@ -5992,7 +6035,7 @@
 				"nl-portal": "no match for 'analytics|matomo|piwik|siteimprove|tracking' in backend/ and frontend/packages [reached on nothing]",
 				"xxllnc-pip": "no own analytics: only third-party tag controllers in backend/perl-api/frontend/zaaksysteem/src/js/nl/mintlab/pip/ (GoogleAnalyticsGtag, GoogleAnalyticsGtm, SiteImprove) wired per customer template [reached on nothing]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'follows from ana-session-recording', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "not checked: follows from ana-session-recording, no recorder script documented"
+				"liferay-dxp": "not settled from docs: follows from ana-session-recording; no recorder script is documented in the Analytics Cloud pages read today."
 			},
 			"built": {
 				"state": "built",
@@ -6016,13 +6059,13 @@
 			"nl-portal": "no",
 			"xxllnc-pip": "no",
 			"mijnoverheid": "unknown",
-			"liferay-dxp": "unknown",
+			"liferay-dxp": "yes",
 			"evidence": {
 				"open-inwoner": "not settled from source: reporting is delegated to the external analytics product (Matomo, Google Analytics or Siteimprove, src/open_inwoner/templates/analytics/), so any export is the vendor's; the portal itself stores no traffic figures [reached on nothing; was unknown from docs]",
 				"nl-portal": "no match for 'analytics|matomo|piwik|siteimprove|tracking' in backend/ and frontend/packages [reached on nothing]",
 				"xxllnc-pip": "no own analytics: only third-party tag controllers in backend/perl-api/frontend/zaaksysteem/src/js/nl/mintlab/pip/ (GoogleAnalyticsGtag, GoogleAnalyticsGtm, SiteImprove) wired per customer template [reached on nothing; was unknown from docs]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'no analytics traffic figures exist on MijnOverheid to export', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "not checked: not confirmed in the Liferay Analytics Cloud pages read whether the dashboard supports a filtered CSV export"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/personalization/analytics-cloud/reference/downloading-reports 'Downloadable CSV reports are available for these lists: Site Pages List ...' with 'a selectable date range'; https://learn.liferay.com/w/dxp/personalization/analytics-cloud/people/individuals-analytics/individual-profiles 'If you filter the dashboard using the search bar, the report only contains the filtered results'. [was unknown]"
 			},
 			"built": {
 				"state": "built",
@@ -6052,7 +6095,7 @@
 				"nl-portal": "no match for 'analytics|matomo|piwik|siteimprove|tracking' in backend/ and frontend/packages [reached on nothing]",
 				"xxllnc-pip": "no own analytics: only third-party tag controllers in backend/perl-api/frontend/zaaksysteem/src/js/nl/mintlab/pip/ (GoogleAnalyticsGtag, GoogleAnalyticsGtm, SiteImprove) wired per customer template [reached on nothing]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'MijnOverheid is one national portal, not several tenant portals with per-portal analytics config', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "Liferay's Analytics Cloud 'Explicit Cookie Consent Mode' setting (learn.liferay.com Data Control and Privacy) is configured per Analytics Cloud connection, which is close to per-site config, though a documented per-site event-selection toggle was not found"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/personalization/analytics-cloud/getting-started/connecting-liferay-dxp-to-analytics-cloud 'Select the sites you want to assign to the property', so tracking is switched on per site. Automatic asset events are fixed (https://learn.liferay.com/w/dxp/personalization/analytics-cloud/touchpoints/events-analytics/tracking-events); choosing which events a site collects is not a setting."
 			},
 			"built": {
 				"state": "built",
@@ -6076,13 +6119,13 @@
 			"nl-portal": "no",
 			"xxllnc-pip": "no",
 			"mijnoverheid": "unknown",
-			"liferay-dxp": "unknown",
+			"liferay-dxp": "partial",
 			"evidence": {
 				"open-inwoner": "not settled from source: reporting is delegated to the external analytics product (Matomo, Google Analytics or Siteimprove, src/open_inwoner/templates/analytics/), so aggregation happens in the vendor tool; the portal stores no traffic events [reached on nothing; was unknown from docs]",
 				"nl-portal": "no match for 'analytics|matomo|piwik|siteimprove|tracking' in backend/ and frontend/packages [reached on nothing]",
 				"xxllnc-pip": "no own analytics: only third-party tag controllers in backend/perl-api/frontend/zaaksysteem/src/js/nl/mintlab/pip/ (GoogleAnalyticsGtag, GoogleAnalyticsGtm, SiteImprove) wired per customer template [reached on nothing]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'no analytics concept is documented for MijnOverheid', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "not checked: Analytics Cloud presents aggregated metrics but a documented automatic daily-rollup-without-a-report-run mechanic was not confirmed in the pages read"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/personalization/analytics-cloud/optimization/ab-tests-analytics 'Metrics only start appearing in the dashboards at around 1:00AM in the Analytics Cloud workspace timezone': the hosted service aggregates on a schedule with no admin action. A general daily roll-up description for traffic is not given. [was unknown]"
 			},
 			"built": {
 				"state": "built",
@@ -6112,7 +6155,7 @@
 				"nl-portal": "no match for 'analytics|matomo|piwik|siteimprove|tracking' in backend/ and frontend/packages [reached on nothing]",
 				"xxllnc-pip": "no own analytics: only third-party tag controllers in backend/perl-api/frontend/zaaksysteem/src/js/nl/mintlab/pip/ (GoogleAnalyticsGtag, GoogleAnalyticsGtm, SiteImprove) wired per customer template [reached on nothing]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'no analytics concept is documented for MijnOverheid', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "not checked: not confirmed in the Liferay Analytics Cloud pages read"
+				"liferay-dxp": "not settled from docs: https://learn.liferay.com/w/dxp/personalization/analytics-cloud/reference/downloading-reports describes manual PDF and CSV downloads only; no scheduled report by e-mail was found."
 			},
 			"built": {
 				"state": "built",
@@ -6136,13 +6179,13 @@
 			"nl-portal": "no",
 			"xxllnc-pip": "no",
 			"mijnoverheid": "unknown",
-			"liferay-dxp": "unknown",
+			"liferay-dxp": "partial",
 			"evidence": {
 				"open-inwoner": "not settled from source: reporting is delegated to the external analytics product (Matomo, Google Analytics or Siteimprove, src/open_inwoner/templates/analytics/), so geography is a vendor report [reached on nothing; was unknown from docs]",
 				"nl-portal": "no match for 'analytics|matomo|piwik|siteimprove|tracking' in backend/ and frontend/packages [reached on nothing]",
 				"xxllnc-pip": "no own analytics: only third-party tag controllers in backend/perl-api/frontend/zaaksysteem/src/js/nl/mintlab/pip/ (GoogleAnalyticsGtag, GoogleAnalyticsGtm, SiteImprove) wired per customer template [reached on nothing]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'no analytics/visitor-geography concept is documented for MijnOverheid', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "not checked: not confirmed in the Liferay Analytics Cloud metrics pages read whether visitor country/region is a tracked dimension"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/personalization/analytics-cloud/touchpoints/sites-analytics/pages-analytics 'The map in the Views by Location panel shows the number of views by country'. Whether the IP address is kept is not stated. [was unknown]"
 			},
 			"built": {
 				"state": "built",
@@ -6172,7 +6215,7 @@
 				"nl-portal": "no match for 'analytics|matomo|piwik|siteimprove|tracking' in backend/ and frontend/packages [reached on nothing]",
 				"xxllnc-pip": "no own analytics: only third-party tag controllers in backend/perl-api/frontend/zaaksysteem/src/js/nl/mintlab/pip/ (GoogleAnalyticsGtag, GoogleAnalyticsGtm, SiteImprove) wired per customer template [reached on nothing]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'follows from ana-geo-region', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "not checked: follows from ana-geo-region"
+				"liferay-dxp": "not settled from docs: geolocation runs inside the hosted Analytics Cloud service; no geography database download is described in the pages read today."
 			},
 			"built": {
 				"state": "built",
@@ -6202,7 +6245,7 @@
 				"nl-portal": "no match for 'analytics|matomo|piwik|siteimprove|tracking' in backend/ and frontend/packages [reached on nothing]",
 				"xxllnc-pip": "no own analytics: only third-party tag controllers in backend/perl-api/frontend/zaaksysteem/src/js/nl/mintlab/pip/ (GoogleAnalyticsGtag, GoogleAnalyticsGtm, SiteImprove) wired per customer template [reached on nothing]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'no analytics backfill concept is documented for MijnOverheid', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "not checked: not confirmed in the Liferay Analytics Cloud pages read"
+				"liferay-dxp": "not settled from docs: no import of web server access logs was found in the Analytics Cloud data source pages (https://learn.liferay.com/w/dxp/personalization/analytics-cloud/workspace-data/managing-data-sources)."
 			},
 			"built": {
 				"state": "built",
@@ -6232,7 +6275,7 @@
 				"nl-portal": "no match for 'analytics|matomo|piwik|siteimprove|tracking' in backend/ and frontend/packages [reached on nothing]",
 				"xxllnc-pip": "no own analytics: only third-party tag controllers in backend/perl-api/frontend/zaaksysteem/src/js/nl/mintlab/pip/ (GoogleAnalyticsGtag, GoogleAnalyticsGtm, SiteImprove) wired per customer template [reached on nothing]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'no analytics concept is documented for MijnOverheid', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "learn.liferay.com 'Understanding Users with Analytics Cloud' course covers per-visitor interaction data and segments, the right data model for journeys, but a named 'path visitors take between pages' journey view was not directly confirmed"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/personalization/analytics-cloud/touchpoints/sites-analytics/pages-analytics/paths-analytics: per page, 'the top three referrers visitors are arriving from' and 'the top three site pages users went next', plus a drop-off path. One step either side of a page, not full multi-page journeys."
 			},
 			"built": {
 				"state": "built",
@@ -6256,13 +6299,13 @@
 			"nl-portal": "no",
 			"xxllnc-pip": "no",
 			"mijnoverheid": "unknown",
-			"liferay-dxp": "yes",
+			"liferay-dxp": "partial",
 			"evidence": {
 				"open-inwoner": "not settled from source: reporting is delegated to the external analytics product (Matomo, Google Analytics or Siteimprove, src/open_inwoner/templates/analytics/), so funnels are a vendor feature [reached on nothing; was unknown from docs]",
 				"nl-portal": "no match for 'analytics|matomo|piwik|siteimprove|tracking' in backend/ and frontend/packages [reached on nothing]",
 				"xxllnc-pip": "no own analytics: only third-party tag controllers in backend/perl-api/frontend/zaaksysteem/src/js/nl/mintlab/pip/ (GoogleAnalyticsGtag, GoogleAnalyticsGtm, SiteImprove) wired per customer template [reached on nothing]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'no analytics concept is documented for MijnOverheid', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "learn.liferay.com Analytics Cloud Metrics Description documents Form Abandonment and multi-step metrics; Liferay Analytics Cloud Features List (liferay.com) names Funnels as a product capability"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/personalization/analytics-cloud/touchpoints/sites-analytics/pages-analytics/paths-analytics shows drop-off after a page; https://learn.liferay.com/w/dxp/personalization/analytics-cloud/reference/metrics-description has form 'Abandonment'. No defined multi-step funnel is described; https://www.liferay.com/capabilities/analytics lists path analytics and cohorts, not funnels. [was yes; the features list PDF cited earlier sits behind a lead form today]"
 			},
 			"built": {
 				"state": "built",
@@ -6286,13 +6329,13 @@
 			"nl-portal": "no",
 			"xxllnc-pip": "no",
 			"mijnoverheid": "unknown",
-			"liferay-dxp": "yes",
+			"liferay-dxp": "partial",
 			"evidence": {
 				"open-inwoner": "not settled from source: reporting is delegated to the external analytics product (Matomo, Google Analytics or Siteimprove, src/open_inwoner/templates/analytics/), so goals are configured in the vendor tool [reached on nothing; was unknown from docs]",
 				"nl-portal": "no match for 'analytics|matomo|piwik|siteimprove|tracking' in backend/ and frontend/packages [reached on nothing]",
 				"xxllnc-pip": "no own analytics: only third-party tag controllers in backend/perl-api/frontend/zaaksysteem/src/js/nl/mintlab/pip/ (GoogleAnalyticsGtag, GoogleAnalyticsGtm, SiteImprove) wired per customer template [reached on nothing]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'no analytics concept is documented for MijnOverheid', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "learn.liferay.com A/B testing docs: Analytics Cloud tracks 'goal metrics' and 'Confidence Level Required' to declare a winning variant, i.e. goal/conversion tracking over a period"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/personalization/analytics-cloud/optimization/ab-tests-analytics 'Metric: the goal to track (e.g., bounce rate or click)' with 'Improvement' over the control. A goal exists inside an A/B test; a standalone goal with its conversion rate over time is not described. [was yes]"
 			},
 			"built": {
 				"state": "built",
@@ -6316,13 +6359,13 @@
 			"nl-portal": "no",
 			"xxllnc-pip": "no",
 			"mijnoverheid": "unknown",
-			"liferay-dxp": "unknown",
+			"liferay-dxp": "yes",
 			"evidence": {
 				"open-inwoner": "src/open_inwoner/js/components/siteimprove/tracking.js:26 portal-defined event categories and labels (e.g. Contactgegevens Save/No Save) pushed to Siteimprove [reached on every page with Siteimprove enabled; the portal defines event categories for Siteimprove; the breakdown itself is in Siteimprove; was unknown from docs]",
 				"nl-portal": "no match for 'analytics|matomo|piwik|siteimprove|tracking' in backend/ and frontend/packages [reached on nothing]",
 				"xxllnc-pip": "no own analytics: only third-party tag controllers in backend/perl-api/frontend/zaaksysteem/src/js/nl/mintlab/pip/ (GoogleAnalyticsGtag, GoogleAnalyticsGtm, SiteImprove) wired per customer template [reached on nothing]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'no analytics concept is documented for MijnOverheid', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "not checked: Liferay Segmentation supports custom user properties (learn.liferay.com Segmentation) but a documented 'break down traffic by a custom dimension' Analytics Cloud feature was not directly confirmed"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/personalization/analytics-cloud/touchpoints/events-analytics/tracking-events 'Use Analytics.track ... to define custom event names and attributes'; https://learn.liferay.com/w/dxp/personalization/analytics-cloud/touchpoints/events-analytics 'You can select up to three attributes in the Breakdown row'. [was unknown]"
 			},
 			"built": {
 				"state": "built",
@@ -6352,7 +6395,7 @@
 				"nl-portal": "no match for 'analytics|matomo|piwik|siteimprove|tracking' in backend/ and frontend/packages [reached on nothing]",
 				"xxllnc-pip": "no own analytics: only third-party tag controllers in backend/perl-api/frontend/zaaksysteem/src/js/nl/mintlab/pip/ (GoogleAnalyticsGtag, GoogleAnalyticsGtm, SiteImprove) wired per customer template [reached on nothing]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'no analytics concept is documented for MijnOverheid', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "learn.liferay.com Analytics Cloud Metrics Description: 'Abandonment is the percentage rate of individuals who left a form without submitting it'"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/personalization/analytics-cloud/reference/metrics-description 'Abandonment is the percentage rate of individuals who left a form without submitting it'."
 			},
 			"built": {
 				"state": "built",
@@ -6382,7 +6425,7 @@
 				"nl-portal": "no match for 'analytics|matomo|piwik|siteimprove|tracking' in backend/ and frontend/packages [reached on nothing]",
 				"xxllnc-pip": "no own analytics: only third-party tag controllers in backend/perl-api/frontend/zaaksysteem/src/js/nl/mintlab/pip/ (GoogleAnalyticsGtag, GoogleAnalyticsGtm, SiteImprove) wired per customer template [reached on nothing]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'no client-side error-tracking concept is documented for MijnOverheid', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "not checked: not confirmed in the Liferay Analytics Cloud pages read"
+				"liferay-dxp": "not settled from docs: no client-side error event is among the tracked events (https://learn.liferay.com/w/dxp/personalization/analytics-cloud/touchpoints/events-analytics/events-descriptions)."
 			},
 			"built": {
 				"state": "built",
@@ -6412,7 +6455,7 @@
 				"nl-portal": "no match for 'analytics|matomo|piwik|siteimprove|tracking' in backend/ and frontend/packages [reached on nothing]",
 				"xxllnc-pip": "no own analytics: only third-party tag controllers in backend/perl-api/frontend/zaaksysteem/src/js/nl/mintlab/pip/ (GoogleAnalyticsGtag, GoogleAnalyticsGtm, SiteImprove) wired per customer template [reached on nothing]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'no heatmap concept is documented for MijnOverheid', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "not checked: not confirmed in the Liferay Analytics Cloud pages read (metrics described were traffic/funnel/form-abandonment, not click heatmaps)"
+				"liferay-dxp": "not settled from docs: tracked events include 'Page Depth Reached' (scroll) but no click heatmap (https://learn.liferay.com/w/dxp/personalization/analytics-cloud/touchpoints/events-analytics/events-descriptions); the only grid is visitors by day and time."
 			},
 			"built": {
 				"state": "built",
@@ -6442,7 +6485,7 @@
 				"nl-portal": "no match for 'analytics|matomo|piwik|siteimprove|tracking' in backend/ and frontend/packages [reached on nothing]",
 				"xxllnc-pip": "no own analytics: only third-party tag controllers in backend/perl-api/frontend/zaaksysteem/src/js/nl/mintlab/pip/ (GoogleAnalyticsGtag, GoogleAnalyticsGtm, SiteImprove) wired per customer template [reached on nothing]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'no campaign-attribution concept is documented for MijnOverheid', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "learn.liferay.com Analytics Cloud traffic-source reporting ('breakdown ... of the top traffic sources') implies campaign-source tracking, but first-touch/last-touch UTM attribution specifically was not confirmed"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/personalization/analytics-cloud/touchpoints/sites-analytics 'The reporting works best if your marketing campaign uses UTM parameters. UTM parameters allow Analytics Cloud to determine where visitors arrive from (e.g., the specific referrer or ad campaign)'. First-touch and last-touch attribution is not described."
 			},
 			"built": {
 				"state": "built",
@@ -6472,7 +6515,7 @@
 				"nl-portal": "no match for 'analytics|matomo|piwik|siteimprove|tracking' in backend/ and frontend/packages [reached on nothing]",
 				"xxllnc-pip": "no own analytics: only third-party tag controllers in backend/perl-api/frontend/zaaksysteem/src/js/nl/mintlab/pip/ (GoogleAnalyticsGtag, GoogleAnalyticsGtm, SiteImprove) wired per customer template [reached on nothing]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'no analytics concept is documented for MijnOverheid', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "not checked: the Liferay Analytics Cloud Data Control and Privacy page (read 2026-09-26) covers consent mode and GDPR data-subject requests but does not mention IP anonymization specifically"
+				"liferay-dxp": "not settled from docs: https://learn.liferay.com/w/dxp/personalization/analytics-cloud/workspace-data/data-control-and-privacy and https://www.liferay.com/capabilities/analytics ('Interaction data is anonymized by design') do not say whether the IP address is stored."
 			},
 			"built": {
 				"state": "built",
@@ -6496,13 +6539,13 @@
 			"nl-portal": "no",
 			"xxllnc-pip": "no",
 			"mijnoverheid": "unknown",
-			"liferay-dxp": "partial",
+			"liferay-dxp": "yes",
 			"evidence": {
 				"open-inwoner": "src/open_inwoner/templates/master.html:74 GA and Matomo load only when cookies_accepted (src/open_inwoner/utils/templatetags/utils.py:104); banner src/open_inwoner/templates/master.html:85 with accept and reject [reached on every page; consent gates GA and Matomo, but Siteimprove loads regardless (src/open_inwoner/templates/master.html:73) and Do Not Track is not honoured (no match for 'doNotTrack|dnt')]",
 				"nl-portal": "no match for 'analytics|matomo|piwik|siteimprove|tracking' in backend/ and frontend/packages [reached on nothing]",
 				"xxllnc-pip": "no own analytics: only third-party tag controllers in backend/perl-api/frontend/zaaksysteem/src/js/nl/mintlab/pip/ (GoogleAnalyticsGtag, GoogleAnalyticsGtm, SiteImprove) wired per customer template [reached on nothing]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'no analytics concept is documented for MijnOverheid', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "learn.liferay.com Data Control and Privacy: 'Explicit Cookie Consent Mode' blocks tracking cookies until the visitor accepts, satisfying consent; Do Not Track specifically was not confirmed as honoured"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/users-and-permissions/managing-user-data/managing-privacy-settings 'If both Enabled and Explicit Cookie Consent Mode are checked, Analytics Cloud tracks users only after they accept Performance Cookies'; https://learn.liferay.com/w/dxp/personalization/analytics-cloud/workspace-data/data-control-and-privacy 'Some visitors may have enabled do not track from their browser ... With this enabled, no data is sent or collected by Analytics Cloud'. [was partial]"
 			},
 			"built": {
 				"state": "built",
@@ -6532,7 +6575,7 @@
 				"nl-portal": "no match for 'analytics|matomo|piwik|siteimprove|tracking' in backend/ and frontend/packages [reached on nothing]",
 				"xxllnc-pip": "no own analytics: only third-party tag controllers in backend/perl-api/frontend/zaaksysteem/src/js/nl/mintlab/pip/ (GoogleAnalyticsGtag, GoogleAnalyticsGtm, SiteImprove) wired per customer template [reached on nothing]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'no A/B testing concept is documented for MijnOverheid', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "learn.liferay.com A/B Testing: 'evaluates the effectiveness of content pages by testing a variant design against the control', synced to Analytics Cloud which declares a winning variant"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/personalization/analytics-cloud/optimization/ab-tests-analytics: a variant against the control with 'Improvement' and confidence interval; https://www.liferay.com/capabilities/analytics 'publish the winner as the new default'."
 			},
 			"built": {
 				"state": "built",
@@ -6562,7 +6605,7 @@
 				"nl-portal": "no match for 'analytics|matomo|piwik|siteimprove|tracking' in backend/ and frontend/packages [reached on nothing]",
 				"xxllnc-pip": "no own analytics: only third-party tag controllers in backend/perl-api/frontend/zaaksysteem/src/js/nl/mintlab/pip/ (GoogleAnalyticsGtag, GoogleAnalyticsGtm, SiteImprove) wired per customer template [reached on nothing]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'no visitor-profile concept is documented for MijnOverheid', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "learn.liferay.com 'Understanding Users with Analytics Cloud': tracks individual visitors and their interactions/segments across visits"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/personalization/analytics-cloud/people/individuals-analytics/individual-profiles: each individual shows 'Activities on your sites Identity details and properties Topic interests Segment membership'."
 			},
 			"built": {
 				"state": "built",
@@ -6592,7 +6635,7 @@
 				"nl-portal": "no match for 'analytics|matomo|piwik|siteimprove|tracking' in backend/ and frontend/packages [reached on nothing]",
 				"xxllnc-pip": "no own analytics: only third-party tag controllers in backend/perl-api/frontend/zaaksysteem/src/js/nl/mintlab/pip/ (GoogleAnalyticsGtag, GoogleAnalyticsGtm, SiteImprove) wired per customer template [reached on nothing]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'no analytics concept is documented for MijnOverheid', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "Liferay Analytics Cloud's own privacy docs (Data Control and Privacy, read 2026-09-26) describe cookie-based consent mode tracking, not a cookieless measurement mode"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/users-and-permissions/managing-user-data/managing-privacy-settings 'Analytics Cloud uses cookies to gather data'; with explicit consent mode it 'tracks users only after they accept Performance Cookies'. No cookieless mode is offered."
 			},
 			"built": {
 				"state": "built",
@@ -6616,13 +6659,13 @@
 			"nl-portal": "no",
 			"xxllnc-pip": "no",
 			"mijnoverheid": "unknown",
-			"liferay-dxp": "unknown",
+			"liferay-dxp": "partial",
 			"evidence": {
 				"open-inwoner": "src/open_inwoner/search/views.py:183 FeedbackForm (positive plus remark) on the search results page (src/open_inwoner/search/forms.py:30); src/open_inwoner/configurations/models.py:585 KCM survey link after a contact moment [reached on search results page, contactmomenten detail; feedback exists for search results and as a survey link, not per content page]",
 				"nl-portal": "no match for 'analytics|matomo|piwik|siteimprove|tracking' in backend/ and frontend/packages [reached on nothing]",
 				"xxllnc-pip": "no page-helpfulness prompt; backend/perl-api/lib/Zaaksysteem/Controller/Plugins/PIP.pm:613 update/feedback files a note on a case [reached on nothing]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'no visitor-feedback-widget concept is documented for MijnOverheid', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "not checked: not confirmed in the Liferay Analytics Cloud pages read whether a 'did this page help you' feedback widget ships out of the box"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/content-management-system/social-tools/using-the-ratings-system: assets can carry 'Thumbs : Content is given either a \"thumbs up\" or \"thumbs down\" rating'. A 'did this page help' prompt on a content page, and rating by anonymous visitors, are not described. [was unknown]"
 			},
 			"built": {
 				"state": "none",
@@ -6652,7 +6695,7 @@
 				"nl-portal": "no setup flow; configuration via environment variables (frontend/packages/app/public/config.template.js, backend/app/src/main/resources/config/application.yml) [reached on nothing; was unknown from docs]",
 				"xxllnc-pip": "no setup wizard route in frontend-mono/apps/main/src/Routes.tsx:16-130 [reached on nothing]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'MijnOverheid is a pre-existing national service a resident logs into; there is no 'installing the app' concept for a resident', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "help.liferay.com 'Using Liferay's Setup Wizard': on first browse after install, a wizard configures portal name/language/timezone, the administrator user and the database"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/self-hosted-installation-and-upgrades/installing-liferay-on-a-local-server/running-liferay-for-the-first-time 'The Setup Wizard appears in your web browser at http://localhost:8080. Set your portal's Name, Default Language and Time Zone. Set the Administrator User ...'."
 			},
 			"built": {
 				"state": "built",
@@ -6682,7 +6725,7 @@
 				"nl-portal": "documentation/configuratie/configuration-panel.md:1 separate Configuration Panel app; backend/app/src/main/resources/config/application.yml:10 actuator refresh and restart for reloading [reached on external Configuration Panel (not in this repository); the admin UI lives in nl-portal-configuration-panel, outside this source; was yes from docs]",
 				"xxllnc-pip": "frontend-mono/apps/main/src/Routes.tsx:24 configuration; frontend-mono/apps/main/src/modules/configuration/Configuration.tsx [reached on staff /main/configuration]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'MijnOverheid gives residents notification preferences, not app-configuration CRUD; there is no admin UI a resident or connected organisation's staff uses to configure MijnOverheid itself', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "learn.liferay.com Site/Instance Settings and System Settings admin UIs read and write the platform's own configuration"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/administration/configuring-liferay/virtual-instances: 'Configuration of a Liferay DXP system happens at different scopes', read and changed in Control Panel, Instance Settings and System Settings (for example https://learn.liferay.com/w/dxp/security-and-administration/administration/configuring-liferay/virtual-instances/localization)."
 			},
 			"built": {
 				"state": "built",
@@ -6706,13 +6749,13 @@
 			"nl-portal": "no",
 			"xxllnc-pip": "no",
 			"mijnoverheid": "unknown",
-			"liferay-dxp": "no",
+			"liferay-dxp": "unknown",
 			"evidence": {
 				"open-inwoner": "not a Nextcloud app; configuration lives in its own Django admin (src/open_inwoner/urls.py:75) [reached on nothing]",
 				"nl-portal": "no admin page in frontend/packages [reached on nothing]",
 				"xxllnc-pip": "not a Nextcloud app [reached on nothing]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'MijnOverheid is not a Nextcloud app', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "not applicable: Liferay is not a Nextcloud app; it has its own System/Instance Settings admin console instead"
+				"liferay-dxp": "not settled from docs: Liferay is a standalone platform, not a Nextcloud app, and its docs do not mention Nextcloud's Admin Settings; its own configuration sits in Control Panel and Instance Settings (https://learn.liferay.com/w/dxp/security-and-administration/administration/configuring-liferay/virtual-instances). [was no; the row does not apply to a non-Nextcloud product and no page states an absence]"
 			},
 			"built": {
 				"state": "built",
@@ -6736,13 +6779,13 @@
 			"nl-portal": "no",
 			"xxllnc-pip": "yes",
 			"mijnoverheid": "unknown",
-			"liferay-dxp": "unknown",
+			"liferay-dxp": "partial",
 			"evidence": {
 				"open-inwoner": "bin/docker_start.sh:24 runs migrate on every container start (data migrations under each app's migrations/); bin/setup_configuration.sh:14 [reached on container start; was unknown from docs]",
 				"nl-portal": "no migration or repair steps: liquibase disabled (backend/app/src/main/resources/config/application.yml:30); stateless app [reached on nothing; 3.1.0 only makes modules stay inactive when a dependency is off; was unknown from docs]",
 				"xxllnc-pip": "backend/perl-api/db/upgrade/v2026.6.0/post-1000-remove_wordapp.sql pre/post upgrade scripts per release; backend/database/main.py [reached on deployment; was unknown from docs]",
 				"mijnoverheid": "not settled from docs: not applicable/not documented for a hosted national service with no visible install/upgrade lifecycle to residents; today's pages (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) are silent",
-				"liferay-dxp": "not checked: Liferay's upgrade tooling runs data upgrade processes between versions per general product knowledge, but a specific 'automatic repair with no admin action' behaviour was not confirmed in the pages read today"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/self-hosted-installation-and-upgrades/upgrading-liferay/upgrading-the-database/upgrading-via-auto-upgrade 'set upgrade.database.auto.run=true ... As Liferay restarts, the database is updated automatically', but an admin must set and later remove the property. On Liferay SaaS 'Updating, patching, and managing Liferay DXP ... is part of the package' (https://learn.liferay.com/w/dxp/cloud). [was unknown]"
 			},
 			"built": {
 				"state": "built",
@@ -6772,7 +6815,7 @@
 				"nl-portal": "docker-compose/imports/open-zaak, objects-api/fixtures, openklant-2, openproduct and keycloak realm users [reached on docker compose demo environment; was partial from docs]",
 				"xxllnc-pip": "only test templates backend/perl-api/db/test-template.sql; no demo data loader [reached on nothing; was unknown from docs]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'MijnOverheid is a live production service with real resident data, no example-data concept', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "help.liferay.com Setup Wizard: 'The sample data includes Users, Sites, and Organizations for demonstration purposes', loadable during first-time setup"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/self-hosted-installation-and-upgrades/installing-liferay-on-a-local-server/running-liferay-for-the-first-time 'Regarding Sample Data ... The sample data includes Users, Sites, and Organizations for demonstration purposes'."
 			},
 			"built": {
 				"state": "built",
@@ -6802,7 +6845,7 @@
 				"nl-portal": "backend/app/src/main/resources/config/application.yml:6 health with probes; backend/core/src/main/kotlin/nl/nlportal/core/security/OauthSecurityAutoConfiguration.kt:84 /actuator/** permitted without auth [reached on /actuator/health (API only); the same permitAll also covers the refresh and restart endpoints, which are set to unrestricted access; was partial from docs]",
 				"xxllnc-pip": "backend/perl-api/lib/Zaaksysteem/Controller/Health.pm:21 /health returns healthy [reached on /health; static answer, no dependency checks. was yes from docs]",
 				"mijnoverheid": "not settled from docs: not documented for MijnOverheid in the pages read; Logius publishes a general service-status page but a no-credential health endpoint for the MijnOverheid app itself was not confirmed; today's pages (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) are silent",
-				"liferay-dxp": "learn.liferay.com 'Does Liferay have a health check URL...': DXP 7.4 ships a '/health-check/datasource' endpoint (disabled by default) that reports DB connectivity with no login"
+				"liferay-dxp": "https://learn.liferay.com/kb-article/does-liferay-have-a-health-check-url-or-a-similar-monitoring-mechanism- 'For the DXP 7.4 version, Liferay out-of-the-box has the /health-check/datasource endpoint, that is disabled by default'; it only reports database connectivity, and '/c/portal/layout' is named as an alternative (search result summary read today). [checks the database only, not loaded modules]"
 			},
 			"built": {
 				"state": "built",
@@ -6832,7 +6875,7 @@
 				"nl-portal": "backend/app/src/main/resources/config/application.yml:19 exposure is health, refresh, restart only; no micrometer prometheus registry [reached on nothing; was partial from docs]",
 				"xxllnc-pip": "metrics are pushed via StatsD backend/perl-api/lib/Zaaksysteem/StatsD.pm; no scrape endpoint [reached on nothing; was unknown from docs]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'no operator-facing metrics endpoint is documented for MijnOverheid', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "learn.liferay.com 'Viewing Metrics with Prometheus': Liferay exposes metrics on a '/metrics' endpoint (port 8081) for Prometheus scraping, admin/JMX-authenticated"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/self-hosted-installation-and-upgrades/liferay-cloud-native-provisioning/running-liferay-dxp-in-aws/viewing-metrics-from-kubernetes/viewing-metrics-with-prometheus: the Helm chart sets up the Prometheus JMX exporter and pods expose '/metrics' for scraping (confirmed by search result today). Access is protected at the network level; an admin login on the endpoint is not described."
 			},
 			"built": {
 				"state": "built",
@@ -6862,7 +6905,7 @@
 				"nl-portal": "no audit logging of portal actions; 'audit' in backend/ only reads Besluiten API audit trails [reached on nothing; was unknown from docs]",
 				"xxllnc-pip": "backend/perl-api/lib/Zaaksysteem/Controller/Plugins/PIP.pm:628 DB::Logging trigger for resident actions; frontend-mono/apps/main/src/Routes.tsx:28 log [reached on staff /main/log and case timeline]",
 				"mijnoverheid": "not settled from docs: not confirmed for MijnOverheid in the pages read, same gap as cmp-ops-audit; today's pages (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) are silent",
-				"liferay-dxp": "intelligence DB competitor_id=914 'Audit Trail, Complete audit trail for content and user operations', same evidence as cmp-ops-audit"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/administration/audit-framework 'shows activities relating to users, user groups, organizations, roles, multi-factor authentication, and objects ... export audit events to CSV'; object entry events via https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/auditing-object-events."
 			},
 			"built": {
 				"state": "built",
@@ -6886,13 +6929,13 @@
 			"nl-portal": "partial",
 			"xxllnc-pip": "yes",
 			"mijnoverheid": "unknown",
-			"liferay-dxp": "unknown",
+			"liferay-dxp": "partial",
 			"evidence": {
 				"open-inwoner": "admin configuration models per integration: src/open_inwoner/openzaak/models.py:385 OpenZaakConfig with ZGW API groups, src/open_inwoner/openklant/models.py, src/open_inwoner/haalcentraal/models.py, src/open_inwoner/kvk/models.py, src/open_inwoner/qmatic/models.py; interactive check src/open_inwoner/openzaak/config_checks/fetch_cases.py:28 [reached on Django admin, grouped by django-admin-index (src/open_inwoner/conf/fixtures/django-admin-index.json); one admin page per integration rather than a single page]",
 				"nl-portal": "documentation/configuratie/configuration-panel.md:11 module table (Zaken, Documenten, OpenKlant, BRP, HR, payments) managed in the Configuration Panel [reached on external Configuration Panel; not in this source; was yes from docs]",
 				"xxllnc-pip": "frontend-mono/apps/main/src/Routes.tsx:46 integrations; backend/perl-api/lib/Zaaksysteem/Backend/Sysin/Modules/ [reached on staff /main/integrations; was partial from docs]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'MijnOverheid gives no organisation-facing admin console to manage integrations', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "not checked: Liferay's headless-API/OAuth2 application management screen manages API clients, but a single page listing 'the app's own integrations' broadly was not confirmed in the pages read"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/integration/headless-apis/using-liferay-as-a-headless-platform/using-oauth2/creating-oauth2-applications lists API clients on one OAuth 2 Administration screen; other connections (Analytics Cloud, AI Hub, SSO providers) each sit in their own Instance Settings entry (https://learn.liferay.com/w/ai-hub/integrating-ai-hub-with-liferay-dxp). No single integrations overview. [was unknown]"
 			},
 			"built": {
 				"state": "built",
@@ -6917,13 +6960,13 @@
 			"nl-portal": "no",
 			"xxllnc-pip": "no",
 			"mijnoverheid": "unknown",
-			"liferay-dxp": "unknown",
+			"liferay-dxp": "yes",
 			"evidence": {
 				"open-inwoner": "no store or import of packaged configurations; configuration comes from YAML via setup_configuration (bin/setup_configuration.sh:15) [reached on nothing]",
 				"nl-portal": "no store or package install in backend/ or frontend/packages [reached on nothing]",
 				"xxllnc-pip": "no configuration store; case types are built in the catalog frontend-mono/apps/main/src/Routes.tsx:20 [reached on nothing]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'MijnOverheid has no configuration store', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "not checked: Liferay App Manager/Marketplace installs OSGi modules and apps, but installing a published *page/theme/form-flow configuration* specifically as a store item was not confirmed in the pages read"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/development/marketplace/become-a-publisher/publishing-apps-in-marketplace: Marketplace categories include 'Fragments ... Site Initializer Theme Workflow Action'; https://learn.liferay.com/w/dxp/development/marketplace/liferay-catalogs 'Themes and Site Templates ... site templates provide a pre-built site structure'. [was unknown]"
 			},
 			"built": {
 				"state": "built",
@@ -6954,7 +6997,7 @@
 				"nl-portal": "frontend/packages/localization/src/providers/LocalizationProvider.tsx:43 language choice in localStorage; frontend/packages/user-interface/src/contexts/AppContext.tsx:52 navigation history in localStorage [reached on header language switcher; per browser only, not stored server-side; was unknown from docs]",
 				"xxllnc-pip": "backend/perl-api/lib/Zaaksysteem/Controller/UserSettings (staff); backend/zaken/src/zsnl_domains/case_management/entities/employee_settings.py:27 [reached on staff app; staff only, nothing for residents. was unknown from docs]",
 				"mijnoverheid": "https://mijn.overheid.nl/vragen/: notification and per-organisation Berichtenbox settings persist per resident",
-				"liferay-dxp": "not checked: not confirmed in the pages read, though Liferay's per-user portlet preferences are a long-standing platform mechanism per general product knowledge"
+				"liferay-dxp": "not settled from docs: per-user preferences are only described for developers as portlet preferences (https://learn.liferay.com/w/dxp/development/traditional-java-based-development/core-frameworks/configuration-framework/portlet-level-configuration); remembering a dismissed dialog per user is not described."
 			},
 			"built": {
 				"state": "built",
@@ -6984,7 +7027,7 @@
 				"nl-portal": "no roles or groups in backend/; every user is a citizen or company [reached on nothing; was unknown from docs]",
 				"xxllnc-pip": "backend/perl-api/db/upgrade/v2026.5.0/pre-1000-MINTY-16841_add_permissions_for_system_roles.sql; backend/perl-api/db/upgrade/v2026.5.0/pre-1000-MINTY-17320-export_permission.sql [reached on staff app]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'MijnOverheid has no admin console with group-restrictable actions for residents', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "intelligence DB competitor_id=914 'Role-based Access Control, Fine-grained role-based access control'; Liferay Roles can be scoped to specific actions/resources rather than a blanket admin role"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/users-and-permissions/roles-and-permissions/defining-role-permissions 'you can fine-tune whether a role grants view access to various applications in the control panel or get more granular and only grant access to an application's co[nfiguration]'."
 			},
 			"built": {
 				"state": "built",
@@ -7014,7 +7057,7 @@
 				"nl-portal": "no CMS, page or widget model in backend/ or frontend/packages; the portal is a login-only SPA (frontend/packages/app/src/constants/routes.tsx:18) [reached on nothing]",
 				"xxllnc-pip": "no page editor [reached on nothing]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'MijnOverheid has no editor role or CMS pages', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "Liferay's Roles let a 'Site Content Reviewer'/editor role manage pages and content without the Administrator role (Role-based Access Control, DB competitor_id=914)"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/users-and-permissions/roles-and-permissions/default-roles-reference 'The Site Administrator Role grants permission to manage almost all aspects of a Site including Site content' without instance administration; custom site roles can be narrower (defining-role-permissions)."
 			},
 			"built": {
 				"state": "built",
@@ -7044,7 +7087,7 @@
 				"nl-portal": "single-tenant deployment; no organisation entity in backend/ [reached on nothing]",
 				"xxllnc-pip": "backend/perl-api/lib/Zaaksysteem/Controller/Plugins/PIP.pm:59 per-instance session; backend/perl-api/etc/customer.d/ [reached on every route]",
 				"mijnoverheid": "https://www.logius.nl/onze-dienstverlening/interactie/voorzieningen/mijnoverheid/hoe-werkt-het: one account per resident shared by every connected organisation",
-				"liferay-dxp": "learn.liferay.com Portal Instances/Organizations: a session/site can be scoped to one organization's data within a multi-tenant Liferay installation"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/users-and-permissions/organizations 'Organizations ... can enable distributed user and site management'; object data can be restricted per account (https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/using-system-objects-with-custom-objects/restricting-access-to-object-data-by-account)."
 			},
 			"built": {
 				"state": "built",
@@ -7074,7 +7117,7 @@
 				"nl-portal": "no match for 'mcp' outside a test resource in backend/ [reached on nothing]",
 				"xxllnc-pip": "no MCP: searched 'mcp' in backend and frontend-mono, no match [reached on nothing]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'no MCP or AI-agent tooling is documented for MijnOverheid', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "learn.liferay.com 'Using Liferay as an MCP Server': enabling feature flag LPD-63311 turns on an MCP Server configuration so an AI agent can call Liferay's tools/data/schemas directly"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/ai/using-liferay-as-an-mcp-server: 'Enable the LPD-63311 release feature flag ... Control Panel → Instance Settings → Platform → MCP Server. Check Enabled'; the setting 'applies to a single virtual instance'. [behind a release feature flag]"
 			},
 			"built": {
 				"state": "none",
@@ -7104,7 +7147,7 @@
 				"nl-portal": "backend/app/src/main/resources/config/application.yml:67 CORS allowedOrigins '*'; backend/core/src/main/kotlin/nl/nlportal/core/security/CorsPathConfiguration.kt [reached on API only; CORS is open, but there are no public content or traffic APIs to call; was unknown from docs]",
 				"xxllnc-pip": "backend/perl-api/lib/Zaaksysteem/Controller/Page.pm:291 _handle_cors allow-list of origins [reached on page endpoints; allow-list for a few page endpoints only]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'MijnOverheid's koppelvlakken are organisation-to-MijnOverheid server integrations (logius.nl), not a browser-CORS-enabled public content API for third-party sites', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "learn.liferay.com 'Setting Up CORS': admins add URL patterns (e.g. '/o/headless-admin-user/*', '/o/c/*') to the Portal CORS Configuration so external sites can call Liferay's headless APIs cross-origin"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/security/securing-web-services/setting-up-cors 'Instance Settings ... Portal Cross-Origin Sharing (CORS) ... URL Pattern Use the Plus button to add as many patterns as you need'."
 			},
 			"built": {
 				"state": "built",
@@ -7134,7 +7177,7 @@
 				"nl-portal": "single-tenant deployment; one realm and one set of ZGW clients per install [reached on nothing]",
 				"xxllnc-pip": "backend/perl-api/etc/customer.d/ per-hostname instances; backend/zaken/src/zsnl_style_http/routes/routes.py:31 style tenants [reached on hosting; was partial from docs]",
 				"mijnoverheid": "kept from the morning docs pass of 2026-09-26; today's docs silent: MijnOverheid itself is one installation serving every connected government organisation, each with its own case/message data reaching only the right resident (logius.nl koppelvlakken)",
-				"liferay-dxp": "intelligence DB competitor_id=914 'Multi-tenant deployment'; learn.liferay.com Portal Instances documentation: one Liferay installation runs several isolated tenant instances"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/administration/configuring-liferay/virtual-instances 'Liferay DXP can host multiple \"portals\" on one installation ... Each virtual instance has completely separate data and configurations'. [since 2026.Q1 multiple domains need an Enterprise subscription]"
 			},
 			"built": {
 				"state": "built",
@@ -7164,7 +7207,7 @@
 				"nl-portal": "no editor or admin roles in backend/ or frontend/packages [reached on nothing; was unknown from docs]",
 				"xxllnc-pip": "system roles and rights backend/perl-api/db/upgrade/v2026.5.0/pre-1000-MINTY-16841_add_permissions_for_system_roles.sql; frontend-mono/apps/main/src/Routes.tsx:50 users [reached on staff app; no content editor role since there is no CMS]",
 				"mijnoverheid": "not settled from docs: earlier reading said 'MijnOverheid has no editor/administrator roles for residents to have separated rights over; it is a citizen self-service surface only', but no page read on 2026-09-26 (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) states that this is not offered [was no: absence inferred from silence, not stated]",
-				"liferay-dxp": "intelligence DB competitor_id=914 'Role-based Access Control, Fine-grained role-based access control with segmentation'"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/users-and-permissions/roles-and-permissions/default-roles-reference (Site Administrator, Site Owner, Site Member) and https://learn.liferay.com/w/dxp/security-and-administration/users-and-permissions/roles-and-permissions/defining-role-permissions."
 			},
 			"built": {
 				"state": "built",
@@ -7194,7 +7237,7 @@
 				"nl-portal": "no audit logging of portal actions in backend/ [reached on nothing; was unknown from docs]",
 				"xxllnc-pip": "frontend-mono/apps/main/src/Routes.tsx:28 log; backend/perl-api/lib/Zaaksysteem/Controller/Plugins/PIP.pm:628 [reached on staff /main/log]",
 				"mijnoverheid": "not settled from docs: not confirmed for residents in the pages read (Logius keeps a DigiD login-attempt audit trail per rijksoverheid documentation generally, but a resident/organisation-facing audit trail feature of MijnOverheid itself was not found); today's pages (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) are silent",
-				"liferay-dxp": "intelligence DB competitor_id=914 'Audit Trail, Complete audit trail for content and user operations'"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/administration/audit-framework 'With the audit framework, you can quickly find out what changes were made on your Liferay instance and by whom'."
 			},
 			"built": {
 				"state": "built",
@@ -7224,7 +7267,7 @@
 				"nl-portal": "not settled from source: nothing in the code; hosting is a supplier offer (Ritense), not a product feature [reached on nothing]",
 				"xxllnc-pip": "helm/ charts; backend/perl-api/root/tpl/zaak_v1/nl_NL/plugins/pip/instances.tt:9 'Omgevingen' control panel for hosted environments [reached on hosting]",
 				"mijnoverheid": "not settled from docs: not applicable in the usual sense, MijnOverheid is a Logius-run national service that organisations connect to rather than a product 'gotten as a hosted service' by a buyer; today's pages (mijn.overheid.nl/vragen, /inloggen-bij-mijnoverheid, /about-mijnoverheid, /toegankelijkheid; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken, wijzigen, the MijnZaken notice and FBS hoe-werkt-het) are silent",
-				"liferay-dxp": "intelligence DB competitor_id=914 'Cloud & Self-hosted, Available as cloud DXP or self-hosted deployment'"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/cloud 'Liferay SaaS ... Updating, patching, and managing Liferay DXP and the other core Liferay Cloud services is part of the package'."
 			},
 			"built": {
 				"state": "none",
@@ -7248,13 +7291,13 @@
 			"nl-portal": "yes",
 			"xxllnc-pip": "yes",
 			"mijnoverheid": "unknown",
-			"liferay-dxp": "yes",
+			"liferay-dxp": "partial",
 			"evidence": {
 				"open-inwoner": "publiccode.yaml:50 license EUPL-1.2; LICENSE.md [reached on public GitHub repository]",
 				"nl-portal": "backend/LICENSE.MD:5 EUPL 1.2; frontend/LICENSE.MD [reached on github.com/nl-portal/nl-portal]",
 				"xxllnc-pip": "frontend-mono/apps/my-pip/LICENSE EUPL; backend/zaken/src/zsnl_domains/case_management/entities/task.py:3 SPDX EUPL-1.2 [reached on repository]",
 				"mijnoverheid": "not settled from docs: Logius MijnOverheid pages (hoe-werkt-het, wijzigen, Berichtenbox, Lopende zaken) do not state a licence either way; no public source repository found on 2026-09-26 [was no]",
-				"liferay-dxp": "intelligence DB competitor_id=914 'Community Edition (Open Source), Open source Community Edition under LGPL license'"
+				"liferay-dxp": "https://github.com/liferay/liferay-portal/blob/master/LICENSING.md (search result today): the repository is licensed '(LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06)'. The community edition runs under the LGPL; DXP itself, with its enterprise features and support, runs under the commercial EULA. [was yes]"
 			},
 			"built": {
 				"state": "built",
@@ -7278,16 +7321,16 @@
 			"nl-portal": "no",
 			"xxllnc-pip": "yes",
 			"mijnoverheid": "partial",
-			"liferay-dxp": "unknown",
+			"liferay-dxp": "partial",
 			"evidence": {
 				"open-inwoner": "src/open_inwoner/openzaak/notifications.py:147 status-change mail and :266 document-added mail per informatieobjecttype; src/open_inwoner/userfeed/choices.py:5 feed items [reached on e-mail and user feed; the resident is notified of status and document changes; the portal does not notify the case handler, uploads just land in the Documenten API]",
 				"nl-portal": "no notification sender in backend/; only the unread message badge (frontend/packages/user-interface/src/contexts/AppContext.tsx:116) [reached on nothing; case-change notices are left to the case system]",
 				"xxllnc-pip": "backend/perl-api/lib/Zaaksysteem/Event/P5/ExternalMessageCreated.pm:57 e-mail to requestor; backend/perl-api/lib/Zaaksysteem/Controller/Plugins/PIP.pm:670 handler gets 'Kenmerk aangepast vanuit PIP'; backend/perl-api/lib/Zaaksysteem/Zaken/ComponentZaak.pm:2904 CaseFeedbackCreated [reached on e-mail and staff notifications; was unknown from docs]",
 				"mijnoverheid": "https://www.logius.nl/onze-dienstverlening/interactie/voorzieningen/mijnoverheid/mijnoverheid-lopende-zaken 'Elke keer als de status wijzigt, kan de burger daar een e-mailmelding over ontvangen'; the resident cannot change anything in MijnOverheid (https://mijn.overheid.nl/vragen/ 'MijnOverheid kan uw gegevens niet aanpassen'), so there is no handler-side notice [resident side only]",
-				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/actions/defining-object-actions: trigger 'On After Update When an entry is updated' with action 'Notification Send email or user notifications using a predefined template'. A case object, and notices to both resident and handler, must be modelled per deployment. [was unknown; custom: case object, recipient rules per side]"
 			},
 			"built": {
-				"state": "partial",
+				"state": "built",
 				"evidence": "lib/Controller/ContributionController.php:1261 fires status.changed only after the SUBJECT's own portal update action; lib/Service/NotificationDispatchService.php:174 declaresRuleKey needs the contributing app to opt in; ConductionNL/dossiq@971735b03e (development) lib/Portal/PortalContributionProvider.php:408 citizen contribution declares 'notifications' => []; lib/BackgroundJob/PortalTaskDeliveryJob.php:234 turns openregister task asks/reminders into inbox messages; lib/Service/CitizenWriteRecorder.php:208,266 dispatches PortalClientWriteEvent for the case app",
 				"reachedOn": "task asks: PortalTaskDeliveryJob (cron) -> portalMessage -> InboxPage.jsx unread badge (App.jsx:284-300). Staff status change on a case: nothing reaches the resident. Citizen write -> PortalClientWriteEvent: no listener in dossiq development lib/Listener (46 listeners listed, none for it)",
 				"owner": "ConductionNL/portaliq",
@@ -7311,16 +7354,16 @@
 			"nl-portal": "no",
 			"xxllnc-pip": "yes",
 			"mijnoverheid": "no",
-			"liferay-dxp": "unknown",
+			"liferay-dxp": "partial",
 			"evidence": {
 				"open-inwoner": "src/open_inwoner/cms/cases/views/status.py:897 CaseContactFormView registers a question linked to the zaak in OpenKlant/e-Suite (CHANGELOG.rst:244 gh 2663); src/open_inwoner/accounts/views/inbox.py:25 user-to-user messages are not filed on cases [reached on case detail contact form; only case questions are filed on the case; inbox messages are not]",
 				"nl-portal": "backend/zgw/berichten/src/main/resources/graphql/schema.graphqls:1 berichten are read-only; residents cannot send messages [reached on nothing]",
 				"xxllnc-pip": "frontend-mono/packages/communication-module/src/components/MessageForm/Pip/Pip.formDefinition.ts:52 case is required for a PIP message; backend/perl-api/root/tpl/zaak_v1/nl_NL/zaak/elements/messages.tt:7 [reached on /pip/berichten, /pip/zaak/<id>; was unknown from docs]",
 				"mijnoverheid": "https://mijn.overheid.nl/vragen/ Berichtenbox is receive only: messages cannot be sent to or answered to the government from it",
-				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/creating-objects 'you can use the Page Comments widget in entry display pages', so messages sit on the record's own page. Filing messages sent elsewhere in the portal onto the case is not described. [was unknown; custom: case object and display page]"
 			},
 			"built": {
-				"state": "partial",
+				"state": "built",
 				"evidence": "ConductionNL/dossiq@971735b03e (development) lib/Portal/PortalContributionProvider.php:440-460 inbox collection 'berichten' (portaalBericht, fields incl. caseReference) and :537-563 'replyToMessage' create action with a required caseId crossRef; lib/Contribution/PortalPageResolver.php:141 synthesises a page per listable collection with its create action; src/portal/components/SchemaForm.jsx:48-52 renders a field as a select only when an optionsProvider is declared",
 				"reachedOn": "portal SPA nav 'Berichten' (synthesised page) -> SchemaForm reply form -> POST /portal/api/collections/dossiq/portaalBericht (ContributionController::create, crossRef guard on caseId); incoming messages -> InboxPage.jsx via GET /portal/api/inbox",
 				"owner": "ConductionNL/dossiq",
@@ -7350,10 +7393,10 @@
 				"nl-portal": "no match for 'mijnoverheid|berichtenbox' in backend/ and frontend/packages [reached on nothing]",
 				"xxllnc-pip": "backend/perl-api/lib/Zaaksysteem/Backend/Sysin/Modules/MijnOverheid.pm:535 send_berichtenbox_message; frontend-mono/packages/communication-module/src/components/MessageForm/Mijnoverheid/MijnoverheidDialog.tsx [reached on staff case communication; needs the MijnOverheid interface]",
 				"mijnoverheid": "https://www.logius.nl/onze-dienstverlening/interactie/voorzieningen/mijnoverheid/mijnoverheid-berichtenbox organisations can 'digitaal post sturen naar de miljoenen gebruikers van MijnOverheid', with attachments; MijnOverheid is the Berichtenbox itself",
-				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
+				"liferay-dxp": "not settled from docs: MijnOverheid and Berichtenbox are not named in any learn.liferay.com page read today; notifications go by e-mail and website only (https://learn.liferay.com/w/dxp/low-code/notifications). A webhook object action (defining-object-actions) could call an outside service, but no Berichtenbox delivery is described."
 			},
 			"built": {
-				"state": "missing",
+				"state": "none",
 				"evidence": "grep -riE 'berichtenbox|mijnoverheid' lib src: 0 hits; lib/Settings/portaliq_register.json portalNotification.channel: 'Only email is implemented'",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
@@ -7377,16 +7420,16 @@
 			"nl-portal": "no",
 			"xxllnc-pip": "no",
 			"mijnoverheid": "unknown",
-			"liferay-dxp": "unknown",
+			"liferay-dxp": "partial",
 			"evidence": {
 				"open-inwoner": "no document signing: 'sign' matches only request signing in openzaak/auth.py and SAML config; no signature flow in views or templates [reached on nothing]",
 				"nl-portal": "no match for 'onderteken|signing' in backend/ and frontend/packages; no signing flow [reached on nothing]",
 				"xxllnc-pip": "signing is staff-triggered through an external app backend/perl-api/lib/Zaaksysteem/Backend/Sysin/Modules/KoppelAppSigner.pm:59 and ValidSign.pm; PIP documents have no sign action [reached on nothing; was unknown from docs]",
 				"mijnoverheid": "not settled from docs: no signing of prepared documents is described for the Berichtenbox or Lopende zaken; pages read on 2026-09-26 (mijn.overheid.nl /, /vragen/, /vragen/Algemeen, /inloggen-bij-mijnoverheid/; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken) are silent",
-				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/digital-asset-management/uploading-and-managing/enabling-docusign-digital-signatures 'integrate DocuSign digital signatures into your Liferay documents ... manage and collect signatures'. Signing runs through a DocuSign envelope, a separate paid service, not a signing step inside a portal page. [was unknown]"
 			},
 			"built": {
-				"state": "missing",
+				"state": "none",
 				"evidence": "grep -riE 'signature|onderteken|handteken' src/portal src/site: 0 hits; lib hits for 'sign' are JWT/HMAC signing only (SessionController, PortalJwtService, traffic token)",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
@@ -7410,16 +7453,16 @@
 			"nl-portal": "no",
 			"xxllnc-pip": "no",
 			"mijnoverheid": "unknown",
-			"liferay-dxp": "unknown",
+			"liferay-dxp": "partial",
 			"evidence": {
 				"open-inwoner": "only reminders for the resident's own expiring plans and actions (src/open_inwoner/accounts/notifications/plans/notify.py:17, src/open_inwoner/accounts/notifications/actions/notify.py:15); nothing for overdue requested information or documents [reached on nothing]",
 				"nl-portal": "no match for 'reminder|herinner' in backend/ and frontend/packages; task due date only displayed (frontend/packages/user-interface/src/components/Task.tsx:35) [reached on nothing]",
 				"xxllnc-pip": "no reminder job for overdue resident input: searched 'herinner|reminder' in lib/Zaaksysteem and zsnl_domains, no case-related match [reached on nothing; was unknown from docs]",
 				"mijnoverheid": "not settled from docs: https://mijn.overheid.nl/vragen/ documents reminders for unopened messages only, not reminders for overdue information the organisation asked for; pages read on 2026-09-26 (mijn.overheid.nl /, /vragen/, /vragen/Algemeen, /inloggen-bij-mijnoverheid/; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken) are silent",
-				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/workflow/designing-and-managing-workflows/workflow-designer/using-task-timers 'When a review task is idle for three days, the timer now reminds task assignees ... The reminder notification repeats daily'. A resident's outstanding request would have to be modelled as a workflow task assigned to them. [was unknown; custom: request-for-information task model]"
 			},
 			"built": {
-				"state": "partial",
+				"state": "built",
 				"evidence": "openregister development 86a2fb876f lib/Listener/PortalTaskReminderListener.php:161 turns a flow-business-timer preBreach rung into a KIND_REMINDER delivery (FlowTimerFiredEvent emitted at lib/Service/Flow/Timer/FlowTimerService.php:651,720); lib/BackgroundJob/PortalTaskDeliveryJob.php:119,234 delivers it as inbox message + mail; src/portal/components/TasksPage.jsx:250-256,379-387 shows due date and 'Overdue'",
 				"reachedOn": "flow timer -> openregister delivery ledger -> PortalTaskDeliveryJob (cron, appinfo/info.xml:81) -> portalMessage in InboxPage.jsx with 'View task' deep link -> TasksPage.jsx; plus a privacy-minimal mail",
 				"owner": "ConductionNL/portaliq",
@@ -7443,16 +7486,16 @@
 			"nl-portal": "yes",
 			"xxllnc-pip": "yes",
 			"mijnoverheid": "unknown",
-			"liferay-dxp": "unknown",
+			"liferay-dxp": "partial",
 			"evidence": {
 				"open-inwoner": "cases are fetched per BSN role on the zaak (src/open_inwoner/openzaak/services.py:295 _user_has_required_rol), so a co-applicant with a role sees the same case after their own DigiD login; src/open_inwoner/openzaak/models.py:486 limit_user_visible_cases_to_role [reached on Mijn aanvragen; depends on the case system registering the partner as a betrokkene; restricting to one role type (e.g. initiator) hides it]",
 				"nl-portal": "backend/zgw/zaken-api/src/main/kotlin/nl/nlportal/zakenapi/service/ZakenApiService.kt:117 access to a zaak for anyone holding a rol on it; backend/zgw/zaken-api/src/main/kotlin/nl/nlportal/zakenapi/service/ZakenApiService.kt:52 case list by the user's own rol [reached on /zaken after the partner's own DigiD login; works when the case system registers the partner as a betrokkene rol]",
 				"xxllnc-pip": "backend/perl-api/lib/Zaaksysteem/Controller/Plugins/PIP.pm:159 pip_authorized party sees the case after own login; backend/perl-api/lib/Zaaksysteem/Controller/Plugins/PIP.pm:297 [reached on /pip 'Gemachtigde zaken'; staff must add the partner as authorised party. was unknown from docs]",
 				"mijnoverheid": "not settled from docs: each resident has their own account by BSN, but a case shared between two partners is not described; pages read on 2026-09-26 (mijn.overheid.nl /, /vragen/, /vragen/Algemeen, /inloggen-bij-mijnoverheid/; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken) are silent",
-				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/using-system-objects-with-custom-objects/restricting-access-to-object-data-by-account: users of one account see that account's entries, so two people can share a case. DigiD sign-in is a generic SAML connection only (see sig-digid; https://learn.liferay.com/w/dxp/security-and-administration/security/configuring-sso/authenticating-with-saml). [was unknown; custom: DigiD profile and linking the partner to the account]"
 			},
 			"built": {
-				"state": "partial",
+				"state": "built",
 				"evidence": "lib/Service/PortalObjectReader.php:17-31 one-hop 'via' join (rol->zaak, match id or scopeField array-contains) lets a second party's own subjectRef reach a case; ConductionNL/dossiq@971735b03e (development) lib/Portal/PortalContributionProvider.php:425 dossiq's mijnZaken collection scopes on the scalar 'portalSubject' with no via declared",
 				"reachedOn": "portal SPA collection page -> GET /portal/api/collections/{register}/{schema} -> PortalObjectReader via-join, only when the contributing app declares it",
 				"owner": "ConductionNL/portaliq",
@@ -7482,10 +7525,10 @@
 				"nl-portal": "no match for 'pdf' in backend/ and frontend/packages (only a favicon) [reached on nothing]",
 				"xxllnc-pip": "backend/perl-api/root/tpl/zaak_v1/nl_NL/form/finish.tt:20 registration form PDF at submission [reached on webform finish; GWS4all PDF routes exist but are unreachable. was unknown from docs]",
 				"mijnoverheid": "not settled from docs: message attachments can be opened or saved, but exporting your own personal data or an overview as PDF is not described; pages read on 2026-09-26 (mijn.overheid.nl /, /vragen/, /vragen/Algemeen, /inloggen-bij-mijnoverheid/; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken) are silent",
-				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
+				"liferay-dxp": "not settled from docs: no PDF export of a user's own records was found in the objects, display page or data set pages read today; Analytics Cloud PDF reports (https://learn.liferay.com/w/dxp/personalization/analytics-cloud/reference/downloading-reports) are for staff dashboards."
 			},
 			"built": {
-				"state": "missing",
+				"state": "none",
 				"evidence": "grep -riE 'pdf|print|export' src/portal: only TasksPage.jsx:52 (accepted upload types); portalMessage.dataCopy (lib/Settings/portaliq_register.json:715) is a JSON copy of submitted fields, not an export",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
@@ -7509,16 +7552,16 @@
 			"nl-portal": "yes",
 			"xxllnc-pip": "yes",
 			"mijnoverheid": "unknown",
-			"liferay-dxp": "unknown",
+			"liferay-dxp": "partial",
 			"evidence": {
 				"open-inwoner": "src/open_inwoner/openzaak/services.py:282 only zaaktypen with indicatie_intern_of_extern = extern are shown; src/open_inwoner/openzaak/models.py:647 ZaakTypeConfig controls notifications, uploads and contact form per zaaktype [reached on Mijn aanvragen; visibility is decided by the catalogue's intern/extern flag, not by a portal toggle per case type]",
 				"nl-portal": "backend/zgw/zaken-api/src/main/kotlin/nl/nlportal/zakenapi/service/ZakenApiService.kt:91 zaakTypesIdsExcluded removes case types from the list [reached on API only (config property, no admin screen); set in configuration, not a UI]",
 				"xxllnc-pip": "backend/perl-api/lib/Zaaksysteem/Controller/Plugins/PIP.pm:152 prevent_pip per case type; backend/zaken/src/zsnl_domains/case_management/repositories/pip_acl.py:49 [reached on case type editor; was unknown from docs]",
 				"mijnoverheid": "not settled from docs: https://www.logius.nl/onze-dienstverlening/interactie/voorzieningen/mijnoverheid/mijnoverheid-berichtenbox mentions 'message type creation and management' for organisations, but whether a case type can be hidden from Lopende zaken is not described; pages read on 2026-09-26 (mijn.overheid.nl /, /vragen/, /vragen/Algemeen, /inloggen-bij-mijnoverheid/; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken) are silent",
-				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/understanding-object-integrations/permissions-framework-integration 'By default, custom object permissions are not assigned to user roles automatically ... To grant access, manually assign object permissions to the desired roles', so each object (case type) is shown or hidden per role. Case types as separate objects are custom. [was unknown]"
 			},
 			"built": {
-				"state": "missing",
+				"state": "none",
 				"evidence": "lib/Settings/portaliq_register.json portalCaseType properties: portalWritable, windows, portalStatusLabels, portalIdentityKind, portalWithdrawal, portalReportDeclaration, no show/hide flag; lib/Service/PortalObjectReader.php:273 collection 'filter' is declared in the contributing app's code",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
@@ -7548,10 +7591,10 @@
 				"nl-portal": "no match for 'uptime|availability report' in backend/ and frontend/packages; only actuator health [reached on nothing]",
 				"xxllnc-pip": "no availability reporting [reached on nothing; was unknown from docs]",
 				"mijnoverheid": "not settled from docs: no availability or uptime report for MijnOverheid found; pages read on 2026-09-26 (mijn.overheid.nl /, /vragen/, /vragen/Algemeen, /inloggen-bij-mijnoverheid/; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken) are silent",
-				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
+				"liferay-dxp": "not settled from docs: https://learn.liferay.com/w/dxp/cloud/support-and-troubleshooting/troubleshooting-tools-and-resources/liferay-cloud-platform-status offers current status and 'Incident History'; https://learn.liferay.com/w/dxp/cloud states 'over 99.9% uptime' in aggregate. A measured twelve-month availability report per customer is not described."
 			},
 			"built": {
-				"state": "missing",
+				"state": "none",
 				"evidence": "lib/Controller/HealthController.php (GET /api/health) and lib/Controller/MetricsController.php (GET /api/metrics) give point-in-time probes only; grep -riE 'uptime|availability|beschikbaarheid' lib: no stored history or report",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
@@ -7575,16 +7618,16 @@
 			"nl-portal": "unknown",
 			"xxllnc-pip": "partial",
 			"mijnoverheid": "unknown",
-			"liferay-dxp": "unknown",
+			"liferay-dxp": "partial",
 			"evidence": {
 				"open-inwoner": "not settled from source: conformance needs an audit; WCAG fixes on the signed-in profile page are logged in CHANGELOG.rst:1160 and Storybook addon-a11y is used (package.json:85) [reached on signed-in pages]",
 				"nl-portal": "not settled from source: pages use NL Design System components (frontend/packages/app/src/App.tsx:1) but no WCAG 2.2 audit or axe test exists in frontend/packages [reached on every signed-in page]",
 				"xxllnc-pip": "backend/perl-api/root/tpl/zaak_v1/nl_NL/plugins/pip/layouts/pip.tt:10 skip link; backend/perl-api/root/tpl/zaak_v1/nl_NL/plugins/pip/case/phase.tt:22 sr-only text [reached on every PIP page; no conformance evidence in source. was unknown from docs]",
 				"mijnoverheid": "not settled from docs: https://www.toegankelijkheidsverklaring.nl/register/1359 claims WCAG 2.1 AA ('A, voldoet volledig', updated 24-09-2026), not 2.2, and its scope excludes DigiD-protected production pages (tested on an acceptance environment)",
-				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
+				"liferay-dxp": "https://www.liferay.com/documents/d/guest/vpat2-5rev_int_february2025_liferay_dxp_sites_experience (DXP 2025.Q4.0) evaluates 'sites created with Liferay DXP' against WCAG 2.2 incl. 2.4.11, 2.5.8 and 3.3.8, all 'Supports', but 'does not guarantee compliance in all deployment scenarios'. The signed-in case pages are custom fragments and need their own audit. [was unknown]"
 			},
 			"built": {
-				"state": "partial",
+				"state": "built",
 				"evidence": "tests/e2e/site-accessibility.spec.ts:30,87-241 runs axe (wcag22aa) only against /site; no axe test navigates /portal; src/portal/components/CollectionTable.jsx:101 row selection is an onClick on <tr> with no tabindex or key handler; TasksPage.jsx:263,340 role=status/alert; CitizenCase.jsx notice has no live region",
 				"reachedOn": "/portal SPA (App.jsx) signed-in pages: nav, collection tables, CitizenCase, InboxPage, TasksPage",
 				"owner": "ConductionNL/portaliq",
@@ -7614,10 +7657,10 @@
 				"nl-portal": "frontend/packages/user-interface/src/pages/CaseDetailsPage.tsx:184 getUserKlantContacten for the zaak; :256 ContactTimeline [reached on /zaken/zaak/:id 'Eerdere contactmomenten'; needs OpenKlant 2]",
 				"xxllnc-pip": "contact moments not exposed in the PIP (backend/zaken/src/zsnl_domains/communication/repositories/database_queries.py:1379 pip messages only) [reached on nothing; was unknown from docs]",
 				"mijnoverheid": "not settled from docs: Lopende zaken shows status and attachments; contact moments on the case are not described; pages read on 2026-09-26 (mijn.overheid.nl /, /vragen/, /vragen/Algemeen, /inloggen-bij-mijnoverheid/; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken) are silent",
-				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
+				"liferay-dxp": "not settled from docs: no contact-moment record or history for a resident was found in the accounts, objects or notifications pages read today (as for cmp-inb-contact-history)."
 			},
 			"built": {
-				"state": "missing",
+				"state": "none",
 				"evidence": "ConductionNL/dossiq@971735b03e (development) lib/Portal/PortalContributionProvider.php:434-437 declares a 'timeline' {provider: caseTimeline} on mijnZaken; grep -rn 'timeline' lib/Contribution src/portal: only the detail layout enum (CollectionConfigNormaliser.php:49) and a CSS class; no handler reads a collection timeline",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
@@ -7641,16 +7684,16 @@
 			"nl-portal": "partial",
 			"xxllnc-pip": "partial",
 			"mijnoverheid": "unknown",
-			"liferay-dxp": "unknown",
+			"liferay-dxp": "partial",
 			"evidence": {
 				"open-inwoner": "src/open_inwoner/openzaak/models.py:191 ZGWApiGroupConfig (Zaken, Documenten, Catalogi, forms services) and :385 OpenZaakConfig in Django admin; connection parameters moved from env vars to admin (CHANGELOG.rst:220) [reached on Django admin, OpenZaak configuratie; YAML bootstrap via setup_configuration is an alternative]",
 				"nl-portal": "documentation/configuratie/configuration-panel.md:11 Zaken, Documenten and Catalogi modules configured in the Configuration Panel [reached on external Configuration Panel (not in this repository); the admin UI is a separate repository I did not read]",
 				"xxllnc-pip": "frontend-mono/apps/main/src/Routes.tsx:46 integrations admin (StUF-ZKN, KoppelApp, MijnOverheid modules) [reached on staff /main/integrations; no ZGW API client found: searched 'zgw|openzaak' in Sysin modules, no match. was unknown from docs]",
 				"mijnoverheid": "not settled from docs: organisations connect via Digikoppeling and a Logius connection process; an admin screen for ZGW API connections is not described; pages read on 2026-09-26 (mijn.overheid.nl /, /vragen/, /vragen/Algemeen, /inloggen-bij-mijnoverheid/; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken) are silent",
-				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/integrating-objects-with-third-party-services/managing-data-from-external-systems: a proxy object stores and retrieves data from an external system, configured in the Objects UI, but 'Liferay includes connectors to Salesforce and SugarCRM' only. ZGW case, document and catalogue connectors would be custom. [was unknown; custom: ZGW proxy connectors]"
 			},
 			"built": {
-				"state": "missing",
+				"state": "none",
 				"evidence": "lib/Settings/connections.json declares only 'geo-db' and 'oidc'; portaliq reads cases through OpenRegister contributions (lib/Service/PortalObjectReader.php), never a ZGW API",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
@@ -7674,16 +7717,16 @@
 			"nl-portal": "partial",
 			"xxllnc-pip": "partial",
 			"mijnoverheid": "unknown",
-			"liferay-dxp": "unknown",
+			"liferay-dxp": "yes",
 			"evidence": {
 				"open-inwoner": "src/open_inwoner/configurations/models.py:53 colour fields, :652 theme_stylesheet upload, :860 CustomFontSet [reached on Django admin, Configuratie; colours, fonts and a stylesheet upload; no per-component design-token editor]",
 				"nl-portal": "documentation/configuratie/configuration-panel.md:34 logo and design-token CSS editor; backend/core/src/main/kotlin/nl/nlportal/core/frontend/web/rest/FrontendThemeConfigurationResource.kt:29 serves the style; frontend/packages/user-interface/src/contexts/AppContext.tsx:78 applies it [reached on every page when USE_THEME_API=true; the editor is in the external Configuration Panel; editor not in this source]",
 				"xxllnc-pip": "frontend-mono/apps/main/src/modules/configuration/CustomStylesSection.tsx:18 upload cssProps.json, stylesheet, logos; token editor route only on development host frontend-mono/apps/main/src/Routes.tsx:108 [reached on staff configuration; token editor not enabled in production. was unknown from docs]",
 				"mijnoverheid": "not settled from docs: one national house style; no configurable design tokens described; pages read on 2026-09-26 (mijn.overheid.nl /, /vragen/, /vragen/Algemeen, /inloggen-bij-mijnoverheid/; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken) are silent",
-				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/sites/site-appearance/style-books/using-a-style-book-to-standardize-site-appearance: 'Navigate to the Site Menu → Design → Style Books', 'Style books determine ... spacing ..., colors, and fonts' from the theme's frontend token definition, set in the UI with no code. [was unknown]"
 			},
 			"built": {
-				"state": "partial",
+				"state": "built",
 				"evidence": "lib/Service/PortalThemeResolver.php:93 stylesheetFor maps portal.theme to a shipped thematiq/nldesign token file; :172-190 reads token-sets.json from disk and deliberately excludes admin-uploaded custom sets; existing row thm-theme-picker-missing (portal edit form theme is a plain text field)",
 				"reachedOn": "admin Portals page edit form -> portal.theme text -> /site and /portal root stylesheet",
 				"owner": "ConductionNL/portaliq",
@@ -7707,16 +7750,16 @@
 			"nl-portal": "partial",
 			"xxllnc-pip": "no",
 			"mijnoverheid": "partial",
-			"liferay-dxp": "unknown",
+			"liferay-dxp": "partial",
 			"evidence": {
 				"open-inwoner": "no held-products view: no match for 'openproduct|mijn producten' in src/open_inwoner; PDC products are the catalogue, not the resident's holdings [reached on nothing]",
 				"nl-portal": "frontend/packages/user-interface/src/pages/ThemeOverviewPage.tsx:40 theme tasks, cases and products from Open Product; frontend/packages/user-interface/src/contexts/AppContext.tsx:98 theme menu items only when the user holds products [reached on theme pages routed in the app-dev demo shell (frontend/packages/app-dev/src/constants/routes.tsx:84); the reference app does not route them]",
 				"xxllnc-pip": "no product holdings view in the PIP menu backend/perl-api/root/tpl/zaak_v1/nl_NL/plugins/pip/layouts/pip.tt:32 [reached on nothing; was unknown from docs]",
 				"mijnoverheid": "https://mijn.overheid.nl/vragen/ Persoonlijke gegevens include travel documents, vehicle registration data and diplomas; municipal products such as a parking permit are not listed",
-				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/displaying-object-entries: collections list entries and 'display pages can provide the entry detail view'; a permit object with validity fields and account restriction is possible. No product or permit register is included. [was unknown; custom: product object or proxy to the source register]"
 			},
 			"built": {
-				"state": "missing",
+				"state": "none",
 				"evidence": "grep -riE 'product' lib src: only runtime-config, demo data and access-request wording; no product/permit collection in portaliq or in ConductionNL/dossiq@971735b03e (development) lib/Portal/PortalContributionProvider.php",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
@@ -7740,16 +7783,16 @@
 			"nl-portal": "yes",
 			"xxllnc-pip": "yes",
 			"mijnoverheid": "unknown",
-			"liferay-dxp": "unknown",
+			"liferay-dxp": "yes",
 			"evidence": {
 				"open-inwoner": "src/open_inwoner/utils/validators.py:220 NoVirusValidator (ClamAV); src/open_inwoner/configurations/models.py:720 enable_virus_scan [reached on case and plan upload forms, when enabled in site configuration]",
 				"nl-portal": "backend/zgw/taak/src/main/kotlin/nl/nlportal/zgw/taak/web/rest/TaakDocumentResource.kt:61 ClamAV scan, 400 on a virus; test TaakDocumentResourceTest.kt:109 'returns 400 when virus found' [reached on upload field in task forms (/taken/taak/:id)]",
 				"xxllnc-pip": "backend/http-virusscanner/ with backend/perl-api/etc/clamav/clamd.conf; backend/zaken/src/zsnl_document_http/views/views.py:388 virus_status [reached on every upload; was unknown from docs]",
 				"mijnoverheid": "not settled from docs: MijnOverheid documents no resident upload at all, and virus scanning is not described; pages read on 2026-09-26 (mijn.overheid.nl /, /vragen/, /vragen/Algemeen, /inloggen-bij-mijnoverheid/; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken) are silent",
-				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/administration/file-storage/enabling-antivirus-scanning-for-uploaded-files: ClamAV (Clamd) scanner in System Settings checks every uploaded file, including 'Objects attachment fields' (search result today). On Liferay Cloud 'The default Liferay DXP feature for scanning viruses on file upload cannot be used ... Uploaded content is scanned on a schedule' (https://learn.liferay.com/w/dxp/cloud/reference/platform-limitations). [was unknown; on Liferay Cloud the scan is scheduled, not at upload]"
 			},
 			"built": {
-				"state": "partial",
+				"state": "built",
 				"evidence": "lib/Service/PortalFileWriter.php:117 stores uploads through OpenRegister FileService::addFile into the Nextcloud filesystem; grep -riE 'virus|clam|malware' lib: 0 hits",
 				"reachedOn": "portal SPA upload controls (PageView FileUpload, CitizenCase add document) -> /portal/api/.../files -> OpenRegister FileService -> Nextcloud storage",
 				"owner": "ConductionNL/nextcloud",
@@ -7772,16 +7815,16 @@
 			"nl-portal": "yes",
 			"xxllnc-pip": "yes",
 			"mijnoverheid": "unknown",
-			"liferay-dxp": "unknown",
+			"liferay-dxp": "partial",
 			"evidence": {
 				"open-inwoner": "src/open_inwoner/extended_sessions/templates/sessions/session_timeout.html:5; src/open_inwoner/js/components/session/index.js:10 SessionTimeout; src/open_inwoner/extended_sessions/views.py:5 RestartSessionView [reached on every signed-in page]",
 				"nl-portal": "frontend/packages/authentication/src/components/ProtectedApp.tsx:52 warning timer five minutes before logout; :57 modal with stay signed in or log out [reached on every signed-in page]",
 				"xxllnc-pip": "backend/perl-api/frontend/zaaksysteem/src/js/nl/mintlab/utils/directives/zsSessionTimeout.js:36 'Uw sessie dreigt te verlopen' with 'Verleng sessie'; backend/perl-api/root/tpl/zaak_v1/nl_NL/plugins/pip/layouts/pip.tt:16 [reached on every PIP page; was unknown from docs]",
 				"mijnoverheid": "not settled from docs: an idle logout exists (15 minutes, binnenlandsbestuur.nl 2009) but a warning before logout is not described; pages read on 2026-09-26 (mijn.overheid.nl /, /vragen/, /vragen/Algemeen, /inloggen-bij-mijnoverheid/; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken) are silent",
-				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/administration/configuring-liferay/virtual-instances/infrastructure 'Auto Extend: If checked, automatically extends the session without prompting the user', which implies a prompt when it is off; the warning and its one-click extend are not described on the pages read today. [was unknown]"
 			},
 			"built": {
-				"state": "missing",
+				"state": "none",
 				"evidence": "src/portal/App.jsx:129 setInterval refreshSession every 25 min while the page is open; grep -riE 'idle|inactiv' src: 0 hits",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
@@ -7805,16 +7848,16 @@
 			"nl-portal": "yes",
 			"xxllnc-pip": "yes",
 			"mijnoverheid": "no",
-			"liferay-dxp": "unknown",
+			"liferay-dxp": "partial",
 			"evidence": {
 				"open-inwoner": "src/open_inwoner/kvk/views.py:23 CompanyBranchChoiceView; src/open_inwoner/openzaak/clients.py:190 cases filtered by vestigingsnummer [reached on after eHerkenning login and 'Wissel van vestiging' on the profile]",
 				"nl-portal": "backend/zgw/zaken-api/src/main/kotlin/nl/nlportal/zakenapi/client/request/AuthenticationFilter.kt:15 withKvkAndVestigingsNummer; backend/zgw/common-ground-authentication/src/main/kotlin/nl/nlportal/commonground/authentication/CommonGroundAuthentication.kt:54 [reached on /zaken after eHerkenning login with a vestigingsnummer claim]",
 				"xxllnc-pip": "backend/perl-api/lib/Zaaksysteem/SAML2.pm:1276 Vestigingsnr from eHerkenning; backend/perl-api/root/tpl/zaak_v1/nl_NL/plugins/pip/layouts/aanvraag_picker.tt:15 'Kies vestiging' [reached on /pip/login/bedrijf; was unknown from docs]",
 				"mijnoverheid": "https://mijn.overheid.nl/vragen/ login requires a BSN and 'DigiD of een ander Europees inlogmiddel'; eHerkenning is not a login route (businesses use the separate Berichtenbox voor bedrijven)",
-				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/commerce/creating-store-content/liferay-commerce-fragments ('Using the Account Selector') and https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/using-system-objects-with-custom-objects/restricting-access-to-object-data-by-account: a user picks an account and sees only its entries. Mapping an eHerkenning branch number to an account is custom. [was unknown; custom: eHerkenning attributes to account mapping]"
 			},
 			"built": {
-				"state": "missing",
+				"state": "none",
 				"evidence": "lib/Service/OidcClaimMapperService.php:73-100 eherkenning preset maps subject and acr only; grep -riE 'vestiging|establishment' lib src: no claim handling (only a mock-data sentence)",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
@@ -7837,16 +7880,16 @@
 			"nl-portal": "no",
 			"xxllnc-pip": "no",
 			"mijnoverheid": "unknown",
-			"liferay-dxp": "unknown",
+			"liferay-dxp": "partial",
 			"evidence": {
 				"open-inwoner": "src/open_inwoner/accounts/models.py:68 DigitalAddress, :189 preferred_address; src/open_inwoner/accounts/views/profile.py:414 formset save, synced with OpenKlant [reached on profile edit page]",
 				"nl-portal": "frontend/packages/user-interface/src/pages/EditContactInfoPage.tsx:35 takes the first phone and :38 the first e-mail only; voorkeursDigitaalAdres in backend/zgw/openklant/src/main/resources/graphql/schema.graphqls:636 is not used by any page [reached on nothing; one e-mail and one phone only]",
 				"xxllnc-pip": "one e-mail, phone and mobile per subject backend/perl-api/lib/Zaaksysteem/Controller/Plugins/PIP.pm:356 [reached on nothing; was unknown from docs]",
 				"mijnoverheid": "not settled from docs: https://mijn.overheid.nl/vragen/ (search result) documents one e-mail address for notifications, changeable under Settings; several addresses with a preferred one are not described; pages read on 2026-09-26 (mijn.overheid.nl /, /vragen/, /vragen/Algemeen, /inloggen-bij-mijnoverheid/; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken) are silent",
-				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/integration/headless-apis/user-management-apis/user-account-api-basics: 'userAccountContactInformation' holds lists 'emailAddresses', 'telephones' and 'postalAddresses'; postal addresses carry '\"primary\": false' (https://learn.liferay.com/w/dxp/integration/headless-apis/user-management-apis/postal-address-api-basics). A resident-facing screen to mark a preferred e-mail and phone is not described. [was unknown]"
 			},
 			"built": {
-				"state": "missing",
+				"state": "none",
 				"evidence": "lib/Settings/portaliq_register.json portalAccount has one 'email' (plus pendingEmail) and no phone; existing row id-update-own-details: PATCH /portal/api/identity/details has no frontend caller",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
@@ -7869,16 +7912,16 @@
 			"nl-portal": "no",
 			"xxllnc-pip": "no",
 			"mijnoverheid": "unknown",
-			"liferay-dxp": "unknown",
+			"liferay-dxp": "partial",
 			"evidence": {
 				"open-inwoner": "src/open_inwoner/mijn_afval/views.py:136 lediging data with kosten (:143) [reached on Mijn afval page]",
 				"nl-portal": "no match for 'afval|waste|lediging' in backend/ and frontend/packages [reached on nothing]",
 				"xxllnc-pip": "as cmp-cas-address-services [reached on nothing; was unknown from docs]",
 				"mijnoverheid": "not settled from docs: not among the Persoonlijke gegevens categories listed on /vragen/; pages read on 2026-09-26 (mijn.overheid.nl /, /vragen/, /vragen/Algemeen, /inloggen-bij-mijnoverheid/; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken) are silent",
-				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/integrating-objects-with-third-party-services/managing-data-from-external-systems: a proxy object can show an external system's data on display pages. No waste collection connector exists; the data source and page are custom. [was unknown]"
 			},
 			"built": {
-				"state": "missing",
+				"state": "none",
 				"evidence": "grep -riE 'afval|waste|container' lib src: no domain hits",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
@@ -7901,16 +7944,16 @@
 			"nl-portal": "no",
 			"xxllnc-pip": "yes",
 			"mijnoverheid": "partial",
-			"liferay-dxp": "unknown",
+			"liferay-dxp": "yes",
 			"evidence": {
 				"open-inwoner": "src/open_inwoner/accounts/views/login.py:102 VerifyTokenView, :274 AddPhoneNumberWizardView; src/open_inwoner/configurations/models.py:131 login_2fa_sms [reached on login page, e-mail login, when login_2fa_sms is on]",
 				"nl-portal": "no password login in the portal; sign-in only through Keycloak brokering DigiD/eHerkenning (frontend/packages/authentication/src/context/OidcContext.tsx:72) [reached on nothing]",
 				"xxllnc-pip": "backend/perl-api/lib/Zaaksysteem/Controller/Plugins/Twofactor.pm:225 process_login then backend/perl-api/lib/Zaaksysteem/Controller/Plugins/Twofactor.pm:573 send_token_per_sms; backend/perl-api/lib/Zaaksysteem/Controller/Plugins/Twofactor.pm:318 verify_second_factor [reached on /auth/twofactor; was unknown from docs]",
 				"mijnoverheid": "https://mijn.overheid.nl/inloggen-bij-mijnoverheid/ 'Since 30 January 2023, you must use the DigiD app or SMS verification. Logging in with only your DigiD username and password is no longer possible.' [second factor is DigiD's, there is no e-mail and password account]",
-				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/security/multi-factor-authentication 'The basic user name/password combination is augmented with one or more further, configurable factors ... the default One Time Password (OTP) and configurable IP address, time-based OTP, FIDO2-compliant devices'. SMS is not among the listed factors. [was unknown]"
 			},
 			"built": {
-				"state": "partial",
+				"state": "built",
 				"evidence": "lib/Controller/SessionController.php:503-562 session#nextcloud hands username/password login to Nextcloud's own login form and maps it to eIDAS 'low'; portaliq has no password store or second factor of its own",
 				"reachedOn": "public site sign-in menu (src/site/App.vue signInRoutes) -> GET /portal/api/session/nextcloud -> Nextcloud login (with Nextcloud's two-factor providers)",
 				"owner": "ConductionNL/nextcloud",
@@ -7934,16 +7977,16 @@
 			"nl-portal": "no",
 			"xxllnc-pip": "no",
 			"mijnoverheid": "unknown",
-			"liferay-dxp": "unknown",
+			"liferay-dxp": "partial",
 			"evidence": {
 				"open-inwoner": "src/open_inwoner/laposta/forms.py:20 NewsletterSubscriptionForm; src/open_inwoner/accounts/views/profile.py:71 [reached on profile page, newsletters section (Laposta, verified e-mail required)]",
 				"nl-portal": "no match for 'nieuwsbrief|newsletter' in backend/ and frontend/packages [reached on nothing]",
 				"xxllnc-pip": "no newsletter subscription: searched 'nieuwsbrief|newsletter' in perl-api and frontend-mono, no match [reached on nothing; was unknown from docs]",
 				"mijnoverheid": "not settled from docs: no newsletter subscription described; pages read on 2026-09-26 (mijn.overheid.nl /, /vragen/, /vragen/Algemeen, /inloggen-bij-mijnoverheid/; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken) are silent",
-				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/content-management-system/blogs/configuring-the-blogs-app: roles can 'subscribe to entries', with e-mail notices. A newsletter list managed from the user's profile is not described. [was unknown]"
 			},
 			"built": {
-				"state": "missing",
+				"state": "none",
 				"evidence": "grep -riE 'newsletter|nieuwsbrief|laposta|subscri' lib src: only traffic referrer classification",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
@@ -7967,16 +8010,16 @@
 			"nl-portal": "no",
 			"xxllnc-pip": "yes",
 			"mijnoverheid": "no",
-			"liferay-dxp": "unknown",
+			"liferay-dxp": "partial",
 			"evidence": {
 				"open-inwoner": "src/open_inwoner/cms/cases/views/status.py:897 CaseContactFormView; questions shown at src/open_inwoner/cms/cases/views/status.py:277 [reached on case detail page, contact form (OpenKlant or e-Suite)]",
 				"nl-portal": "backend/zgw/berichten/src/main/resources/graphql/schema.graphqls:1 no message mutation; no question form on frontend/packages/user-interface/src/pages/CaseDetailsPage.tsx [reached on nothing]",
 				"xxllnc-pip": "backend/perl-api/root/tpl/zaak_v1/nl_NL/zaak/elements/messages.tt:7 'Nieuw bericht' with caseUuid; messages listed on the case page :14 [reached on /pip/zaak/<id>; was unknown from docs]",
 				"mijnoverheid": "https://mijn.overheid.nl/vragen/ Berichtenbox is receive only: messages cannot be sent to or answered to the government from it; Lopende zaken links out to the organisation's own site for the case",
-				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/creating-objects 'you can use the Page Comments widget in entry display pages': a question and its answer stay on the record's page. Custom case object. [was unknown]"
 			},
 			"built": {
-				"state": "partial",
+				"state": "built",
 				"evidence": "ConductionNL/dossiq@971735b03e (development) lib/Portal/PortalContributionProvider.php:537-563 replyToMessage create action (portaalBericht, caseId required crossRef); lib/Contribution/PortalPageResolver.php:141 puts it on the synthesised 'Berichten' page; src/portal/components/CitizenCase.jsx has no message control",
 				"reachedOn": "portal SPA nav 'Berichten' -> SchemaForm -> POST /portal/api/collections/dossiq/portaalBericht; the answer arrives in InboxPage.jsx",
 				"owner": "ConductionNL/dossiq",
@@ -8000,16 +8043,16 @@
 			"nl-portal": "yes",
 			"xxllnc-pip": "partial",
 			"mijnoverheid": "partial",
-			"liferay-dxp": "unknown",
+			"liferay-dxp": "partial",
 			"evidence": {
 				"open-inwoner": "src/open_inwoner/cms/cases/views/status.py:113 result and result_description on the case; src/open_inwoner/openzaak/models.py:957 ZaakTypeResultaatTypeConfig description (:988) [reached on case detail page, result section]",
 				"nl-portal": "frontend/packages/user-interface/src/pages/CaseDetailsPage.tsx:73 result alert per generic result; :142 result row; :150 explanation behind SHOW_CASE_RESULT_EXPLANATION [reached on /zaken/zaak/:id]",
 				"xxllnc-pip": "backend/perl-api/root/tpl/zaak_v1/nl_NL/plugins/pip/case/view.tt:16 'Resultaat' [reached on /pip/zaak/<id>; result name only; explanation only as a published document. was unknown from docs]",
 				"mijnoverheid": "https://www.logius.nl/onze-dienstverlening/interactie/voorzieningen/mijnoverheid/mijnoverheid-lopende-zaken 'Ook als de zaak is afgerond, blijft deze zichtbaar in het dossier' and a dossier can carry letters as attachments; an explanation of the decision is up to the organisation",
-				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/displaying-object-entries: a display page shows any mapped field of an entry, so outcome and explanation fields can be shown. Custom case object and fields. [was unknown]"
 			},
 			"built": {
-				"state": "partial",
+				"state": "built",
 				"evidence": "ConductionNL/dossiq@971735b03e (development) lib/Portal/PortalContributionProvider.php:121 projects 'result' (a uuid $ref to the result record in dossiq_register.json) and statusPublicLabel/statusPublicDescription; src/portal/components/CollectionTable.jsx:42 deriveColumns shows every projected field as text",
 				"reachedOn": "portal SPA nav 'Mijn zaken' (synthesised page) -> CollectionTable",
 				"owner": "ConductionNL/dossiq",
@@ -8038,10 +8081,10 @@
 				"nl-portal": "frontend/packages/user-interface/src/pages/MessagesPage.tsx:18 refetch by onderwerp; frontend/packages/user-interface/src/pages/TasksPage.tsx:14 refetch by title [reached on search forms on /berichten and /taken]",
 				"xxllnc-pip": "frontend-mono/apps/my-pip/src/modules/communication/index.tsx:40 canFilter false hides frontend-mono/packages/communication-module/src/components/Threads/ThreadsHeader/ThreadsHeader.tsx:67 search [reached on nothing; no tasks either. was unknown from docs]",
 				"mijnoverheid": "not settled from docs: searching the Berichtenbox is not described, and MijnOverheid has no documented tasks; pages read on 2026-09-26 (mijn.overheid.nl /, /vragen/, /vragen/Algemeen, /inloggen-bij-mijnoverheid/; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken) are silent",
-				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
+				"liferay-dxp": "not settled from docs: https://learn.liferay.com/w/dxp/content-management-system/notifications-and-requests/managing-notifications-and-requests offers filter and order only; no search over one's own notifications or workflow tasks is described."
 			},
 			"built": {
-				"state": "missing",
+				"state": "none",
 				"evidence": "src/portal/components/InboxPage.jsx:87-88 and TasksPage.jsx render the full lists with no search or filter input; no query parameter on GET /portal/api/inbox or /portal/api/tasks",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
@@ -8065,16 +8108,16 @@
 			"nl-portal": "yes",
 			"xxllnc-pip": "partial",
 			"mijnoverheid": "partial",
-			"liferay-dxp": "unknown",
+			"liferay-dxp": "yes",
 			"evidence": {
 				"open-inwoner": "src/open_inwoner/configurations/models.py:74 warning_banner_enabled and text; src/open_inwoner/templates/master.html:101 shown on every page [reached on every page; off by default]",
 				"nl-portal": "frontend/packages/user-interface/src/pages/OverviewPage.tsx:69 alert behind showAlert; frontend/packages/app/src/constants/routes.tsx:25 OVERVIEW_SHOW_MAINTENANCE_ALERT [reached on overview page (/)]",
 				"xxllnc-pip": "backend/perl-api/root/tpl/zaak_v1/nl_NL/plugins/pip/login_type.tt:13 admin text pip_login_intro on the login page [reached on /pip/login; login page only, not every page. was unknown from docs]",
 				"mijnoverheid": "https://mijn.overheid.nl/ shows a notice banner to visitors ('Laat weten hoe u post van de Belastingdienst graag ontvangt'); a maintenance notice specifically was not seen today [announcement banner seen, not a maintenance banner]",
-				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/content-management-system/alerts-and-announcements 'Alerts are for high-priority information (e.g. planned downtime alerts, security alerts, etc.) and appear with a red Important tag', placed with the Alerts widget. [was unknown]"
 			},
 			"built": {
-				"state": "partial",
+				"state": "built",
 				"evidence": "grep -riE 'maintenance|announcement|banner' src/site src/portal lib/Service/CmsReader.php: no notice feature; pages are editable through the page designer (existing row ops-editor-vs-admin-pages)",
 				"reachedOn": "/site pages via the page designer's markdown block, one page at a time",
 				"owner": "ConductionNL/portaliq",
@@ -8097,16 +8140,16 @@
 			"nl-portal": "yes",
 			"xxllnc-pip": "no",
 			"mijnoverheid": "partial",
-			"liferay-dxp": "unknown",
+			"liferay-dxp": "partial",
 			"evidence": {
 				"open-inwoner": "no residents-at-address view or address investigation: no match for 'bewoners|adresonderzoek' in src/open_inwoner [reached on nothing]",
 				"nl-portal": "backend/haalcentraal2/src/main/resources/graphql/schema.graphqls:6 getBewonersAantalV2; frontend/packages/user-interface/src/pages/AccountPage.tsx:423 inhabitant count; :435 address investigation link [reached on /account address section, when SHOW_INHABITANT_AMOUNT is on]",
 				"xxllnc-pip": "no residents-at-address view; contact page shows only the subject backend/perl-api/root/tpl/zaak_v1/nl_NL/plugins/pip/contact.tt:23 [reached on nothing; was unknown from docs]",
 				"mijnoverheid": "https://www.logius.nl/actueel/mijnoverheid-toont-aantal-bewoners-op-woonadres (29-09-2023) 'Gebruikers kunnen op MijnOverheid ... het aantal ingeschreven bewoners op hun woonadres bekijken'; for a wrong registration 'kan contact worden opgenomen met de betreffende gemeente', the investigation is not started in MijnOverheid",
-				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/integrating-objects-with-third-party-services/managing-data-from-external-systems: a proxy object could show BRP data; the investigation request could be a form. No BRP connector is documented (as cmp-id-brp). [was unknown; custom: BRP proxy and request flow]"
 			},
 			"built": {
-				"state": "missing",
+				"state": "none",
 				"evidence": "grep -riE 'brp|bewoner|adresonderzoek|residents' lib src: 0 domain hits; existing row cmp-id-brp is no",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
@@ -8136,10 +8179,10 @@
 				"nl-portal": "frontend/packages/user-interface/src/pages/OverviewPage.tsx:80 no-email alert with a button to the contact page [reached on overview page only where the host app passes showNoEmailAlert (app-dev does, the reference app does not)]",
 				"xxllnc-pip": "backend/perl-api/lib/Zaaksysteem/Schema/ViewCaseTypeVersionV2.pm:29 email_required per case type, enforced at the webform aanvrager step backend/perl-api/lib/Zaaksysteem/Controller/Form.pm:659 [reached on webform aanvrager step; not in the PIP itself. was unknown from docs]",
 				"mijnoverheid": "not settled from docs: setting a notification e-mail address is described, a prompt when none is on file is not; pages read on 2026-09-26 (mijn.overheid.nl /, /vragen/, /vragen/Algemeen, /inloggen-bij-mijnoverheid/; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken) are silent",
-				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
+				"liferay-dxp": "not settled from docs: the user management and SSO pages read today (https://learn.liferay.com/w/dxp/security-and-administration/users-and-permissions/users/adding-and-managing-users, OpenID Connect) do not describe prompting a signed-in user to add a missing e-mail address."
 			},
 			"built": {
-				"state": "missing",
+				"state": "none",
 				"evidence": "src/portal/App.jsx session view shows subjectRef only; portalAccount.needsAlternativeContact is set by NotificationDispatchJob but nothing in src/ reads it; /portal/api/identity/details has no caller",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
@@ -8163,16 +8206,16 @@
 			"nl-portal": "no",
 			"xxllnc-pip": "partial",
 			"mijnoverheid": "unknown",
-			"liferay-dxp": "unknown",
+			"liferay-dxp": "partial",
 			"evidence": {
 				"open-inwoner": "no sub-case handling: no match for 'deelzaak|hoofdzaak' in openzaak, cms or templates [reached on nothing]",
 				"nl-portal": "no match for 'deelzaak|hoofdzaak' in backend/ and frontend/packages; Zaak type has no sub-case field (backend/zgw/zaken-api/src/main/resources/graphql/schema.graphqls:24) [reached on nothing]",
 				"xxllnc-pip": "backend/perl-api/root/tpl/zaak_v1/nl_NL/plugins/pip/case/view.tt:57 follow-up case links; child cases appear as own cases in backend/perl-api/root/tpl/zaak_v1/nl_NL/plugins/pip/index.tt:62 [reached on /pip; no parent-child view. was yes from docs]",
 				"mijnoverheid": "not settled from docs: Lopende zaken describes dossiers with status and attachments, not sub-cases; pages read on 2026-09-26 (mijn.overheid.nl /, /vragen/, /vragen/Algemeen, /inloggen-bij-mijnoverheid/; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken) are silent",
-				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/relationships: one-to-many relationships and 'Root Objects ... inheritance' let child entries be listed on a parent's display page. Custom case and sub-case objects. [was unknown]"
 			},
 			"built": {
-				"state": "missing",
+				"state": "none",
 				"evidence": "ConductionNL/dossiq@971735b03e (development) lib/Portal/PortalContributionProvider.php:114-137 CITIZEN_CASE_FIELDS omits parentCase/subCases (the dossiq case schema has them); grep -riE 'deelzaak|subcase|sub-case' lib src: 0 hits",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
@@ -8195,16 +8238,16 @@
 			"nl-portal": "no",
 			"xxllnc-pip": "partial",
 			"mijnoverheid": "unknown",
-			"liferay-dxp": "unknown",
+			"liferay-dxp": "partial",
 			"evidence": {
 				"open-inwoner": "src/open_inwoner/openzaak/services.py:289 a single zaak is hidden when its vertrouwelijkheidaanduiding exceeds zaak_max_confidentiality (src/open_inwoner/openzaak/models.py:408) [reached on nothing (set in the case system); one case can be kept off the portal via its confidentiality level, but there is no portal filter on 'visible to residents']",
 				"nl-portal": "backend/zgw/zaken-api/src/main/kotlin/nl/nlportal/zakenapi/service/ZakenApiService.kt:91 exclusion is per case type only; no per-case visibility flag or filter [reached on nothing; only whole case types can be hidden]",
 				"xxllnc-pip": "backend/zaken/src/zsnl_domains/shared/case_filters.py:1066 filter by prevent_pip; backend/perl-api/lib/Zaaksysteem/Controller/Plugins/PIP.pm:152 [reached on staff advanced search; hiding is per case type; no per-case flag. was yes from docs]",
 				"mijnoverheid": "not settled from docs: the organisation decides what it sends to Lopende zaken; a per-case hide and a visibility filter are not described; pages read on 2026-09-26 (mijn.overheid.nl /, /vragen/, /vragen/Algemeen, /inloggen-bij-mijnoverheid/; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken) are silent",
-				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/understanding-object-integrations/permissions-framework-integration: resource permissions apply per entry; a visible-to-resident field with a data set filter (https://learn.liferay.com/w/dxp/low-code/data-sets/managing-data-sets) would also be custom. [was unknown]"
 			},
 			"built": {
-				"state": "missing",
+				"state": "none",
 				"evidence": "dossiq_register.json case schema has no portal-visibility flag; visibility is the portalSubject scope (ConductionNL/dossiq@971735b03e (development) lib/Portal/PortalContributionProvider.php:425); portaliq admin has no case filter by portal visibility",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
@@ -8233,10 +8276,10 @@
 				"nl-portal": "no match for 'mijnoverheid' in backend/ and frontend/packages; the portal consumes ZGW APIs, it does not feed a national portal [reached on nothing]",
 				"xxllnc-pip": "backend/perl-api/lib/Zaaksysteem/Backend/Sysin/Modules/MijnOverheid.pm:303 'Lopende Zaken' feed [reached on MijnOverheid; older Lopende Zaken service, not the VNG ZGW APIs. was unknown from docs]",
 				"mijnoverheid": "https://www.logius.nl/actueel/wijziging-mijnoverheid-mijnzaken-vervangt-lopende-zaken (01-06-2026) 'MijnZaken is een modernere opvolger die werkt volgens de zaakgericht werken afspraken van de VNG', still being built",
-				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
+				"liferay-dxp": "not settled from docs: MijnOverheid and the VNG case APIs (ZGW) are not named in any learn.liferay.com page read today."
 			},
 			"built": {
-				"state": "missing",
+				"state": "none",
 				"evidence": "grep -riE 'mijnoverheid|mijnzaken|zgw' lib: only Woo/catalogue wording in PortalPageController and PortalInboxReader; no outbound case feed",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
@@ -8265,10 +8308,10 @@
 				"nl-portal": "backend/zgw/berichten/src/main/resources/graphql/schema.graphqls:9 berichten from one Objecten API; no federation or national overview [reached on nothing]",
 				"xxllnc-pip": "sends to the Berichtenbox only (MijnOverheid.pm:535); no reading of other organisations' archives [reached on nothing; was unknown from docs]",
 				"mijnoverheid": "https://www.logius.nl/onze-dienstverlening/interactie/federatief-berichten-stelsel/hoe-werkt-het 'De burger krijgt via FBS direct toegang tot het bericht in het archief van de dienstaanbieder', future tense, business case still in progress",
-				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
+				"liferay-dxp": "not settled from docs: no national message overview or retrieval from a sender's own archive is described; notifications are local to the instance (https://learn.liferay.com/w/dxp/content-management-system/notifications-and-requests/managing-notifications-and-requests)."
 			},
 			"built": {
-				"state": "missing",
+				"state": "none",
 				"evidence": "grep -riE 'fbs|federat.*bericht|berichtenstelsel' lib: 0 hits; /api/federation/publications is for public Woo publications, not messages",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
@@ -8297,10 +8340,10 @@
 				"nl-portal": "no match for 'sms' in backend/ and frontend/packages (only a favicon) [reached on nothing]",
 				"xxllnc-pip": "SMS only for the second factor backend/perl-api/lib/Zaaksysteem/Backend/Sysin/Auth/Alternative.pm:190 send_sms; notifications are e-mail [reached on nothing; was unknown from docs]",
 				"mijnoverheid": "https://www.logius.nl/onze-dienstverlening/interactie/federatief-berichten-stelsel/hoe-werkt-het 'De notificatie service zorgt voor de verzending van notificaties per e-mail, sms, app', planned; today https://mijn.overheid.nl/vragen/ lists e-mail and app notifications only",
-				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
+				"liferay-dxp": "not settled from docs: https://learn.liferay.com/w/dxp/low-code/notifications lists e-mail and website notification channels only; SMS delivery is not described."
 			},
 			"built": {
-				"state": "missing",
+				"state": "none",
 				"evidence": "lib/Settings/portaliq_register.json:951 portalNotification.channel: 'Only email is implemented; the field is future-proofed for sms/push'",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
@@ -8323,16 +8366,16 @@
 			"nl-portal": "no",
 			"xxllnc-pip": "no",
 			"mijnoverheid": "yes",
-			"liferay-dxp": "unknown",
+			"liferay-dxp": "partial",
 			"evidence": {
 				"open-inwoner": "inbox has no selection, move or delete actions (src/open_inwoner/accounts/views/inbox.py:25 InboxView only reads, sends and marks seen) [reached on nothing]",
 				"nl-portal": "no selection or delete on messages; backend/zgw/berichten/src/main/resources/graphql/schema.graphqls:1 has no mutation [reached on nothing]",
 				"xxllnc-pip": "no multi-select in the thread list frontend-mono/packages/communication-module/src/components/Threads/ThreadList/ThreadList.tsx [reached on nothing; was unknown from docs]",
 				"mijnoverheid": "https://www.logius.nl/diensten/mijnoverheid/update/release-informatie-mijnoverheid/Berichtenbox-app-Release-2.6 'Gebruikers van de Berichtenbox app kunnen meerdere berichten selecteren om in 1 keer te verplaatsen of te verwijderen'",
-				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/content-management-system/notifications-and-requests/managing-notifications-and-requests 'Managing Multiple Notifications ... selects all the notification messages. Several icons appear: Mark as Read ... Mark as Unread ... Delete'. There are no folders to move messages into. [was unknown]"
 			},
 			"built": {
-				"state": "missing",
+				"state": "none",
 				"evidence": "src/portal/components/InboxPage.jsx:87-146 per-row 'Mark as read' only; no checkboxes, no move or delete; no bulk route in appinfo/routes.php",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
@@ -8345,6 +8388,223 @@
 			"featureConfidence": "high",
 			"origin": "changelog",
 			"originUrl": "https://www.logius.nl/diensten/mijnoverheid/update/release-informatie-mijnoverheid/Berichtenbox-app-Release-2.6"
+		},
+		{
+			"id": "cmp-srch-noindex-filtered",
+			"area": "search",
+			"name": "Keep filtered search result pages out of search engine indexes, so crawlers spend their time on the real content.",
+			"portaliq": "no",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "yes",
+			"evidence": {
+				"open-inwoner": "not checked: proposal added after the column's read",
+				"nl-portal": "not checked: proposal added after the column's read",
+				"xxllnc-pip": "not checked: proposal added after the column's read",
+				"mijnoverheid": "not checked: proposal added after the column's read",
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/search/search-pages-and-widgets/working-with-search-pages/controlling-search-page-seo 'Liferay DXP 2026.Q3 ... a per-widget Enable Web Crawler Indexing setting that can add noindex, nofollow robots meta tags and robots.txt Disallow entries for filtered search pages' (release feature LPD-71164)."
+			},
+			"built": {
+				"state": "none",
+				"evidence": "grep for 'noindex' and 'robots' across src/site, src/portal and lib returns nothing; templates/site.php:242 sets only the portal title",
+				"reachedOn": "nothing",
+				"owner": "ConductionNL/portaliq",
+				"origin": "code"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"feature": "site-cms",
+			"featureConfidence": "medium",
+			"origin": "changelog",
+			"originUrl": "https://learn.liferay.com/w/dxp/search/search-pages-and-widgets/working-with-search-pages/controlling-search-page-seo"
+		},
+		{
+			"id": "dem-cl-mcp-pii-masking",
+			"area": "operate",
+			"name": "Mask personal data, such as a citizen service number, in the answers the portal gives to an AI agent.",
+			"portaliq": "no",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "yes",
+			"evidence": {
+				"open-inwoner": "not checked: proposal added after the column's read",
+				"nl-portal": "not checked: proposal added after the column's read",
+				"xxllnc-pip": "not checked: proposal added after the column's read",
+				"mijnoverheid": "not checked: proposal added after the column's read",
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/ai/masking-sensitive-data-in-mcp-server-responses 'Liferay DXP 2026.Q3+ ... Data masks detect patterns in an MCP server tool response and replace the matching text with a substitute value'."
+			},
+			"built": {
+				"state": "none",
+				"evidence": "no MCP server in this app: lib/AppInfo/Application.php:116 only notes that tools derive from the x-openregister-mcp dialect declared on schemas, executed by openregister; no masking of fields in tool answers anywhere in lib/",
+				"reachedOn": "nothing",
+				"owner": "ConductionNL/portaliq",
+				"origin": "code"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"feature": "ops-mcp",
+			"featureConfidence": "medium",
+			"origin": "changelog",
+			"originUrl": "https://learn.liferay.com/w/dxp/ai/masking-sensitive-data-in-mcp-server-responses"
+		},
+		{
+			"id": "dem-cl-consent-on-account-gpc",
+			"area": "analytics",
+			"name": "Keep your cookie choices on your account across devices, and have your browser's Global Privacy Control signal honoured.",
+			"portaliq": "no",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "yes",
+			"evidence": {
+				"open-inwoner": "not checked: proposal added after the column's read",
+				"nl-portal": "not checked: proposal added after the column's read",
+				"xxllnc-pip": "not checked: proposal added after the column's read",
+				"mijnoverheid": "not checked: proposal added after the column's read",
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/users-and-permissions/managing-user-data/managing-privacy-settings 'Liferay DXP 2026.Q2+ Check Store Consent ... to store consent preferences for authenticated users' and 'Check Global Privacy Control (GPC) ... to detect and honor GPC signals'."
+			},
+			"built": {
+				"state": "none",
+				"evidence": "consent is per browser: src/traffic/client.js:145 consentRequired and :159-161 api.consent() keep the choice in the visitor's browser only; grep for 'Sec-GPC' and 'globalPrivacyControl' across src/ and lib/ returns nothing",
+				"reachedOn": "nothing",
+				"owner": "ConductionNL/portaliq",
+				"origin": "code"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"feature": "traffic-analytics",
+			"featureConfidence": "medium",
+			"origin": "changelog",
+			"originUrl": "https://learn.liferay.com/w/dxp/security-and-administration/users-and-permissions/managing-user-data/managing-privacy-settings"
+		},
+		{
+			"id": "dem-rm-chatbot",
+			"area": "search",
+			"name": "Ask a chatbot on the portal a question and get an answer drawn from the organisation's own content.",
+			"portaliq": "no",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "yes",
+			"evidence": {
+				"open-inwoner": "not checked: proposal added after the column's read",
+				"nl-portal": "not checked: proposal added after the column's read",
+				"xxllnc-pip": "not checked: proposal added after the column's read",
+				"mijnoverheid": "not checked: proposal added after the column's read",
+				"liferay-dxp": "https://learn.liferay.com/w/ai-hub/chatbots 'A chatbot is a conversational frontend for your agents ... deploy it as a chat widget on Liferay DXP pages or external sites'; AI Hub is listed under Now on https://www.liferay.com/roadmap."
+			},
+			"built": {
+				"state": "none",
+				"evidence": "no chatbot or conversational frontend: grep for 'chatbot', 'llm' and 'assistant' in src/portal, src/site and lib/ finds only report-thread messages (lib/Controller/ReportController.php:322), which are staff and reporter messages, not an AI",
+				"reachedOn": "nothing",
+				"owner": "ConductionNL/portaliq",
+				"origin": "code"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"feature": "site-cms",
+			"featureConfidence": "medium",
+			"origin": "roadmap",
+			"originUrl": "https://www.liferay.com/roadmap"
+		},
+		{
+			"id": "dem-rm-shared-design-library",
+			"area": "theming",
+			"name": "Maintain one shared set of styles and page blocks that several portals use, instead of repeating it per portal.",
+			"portaliq": "partial",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "yes",
+			"evidence": {
+				"open-inwoner": "not checked: proposal added after the column's read",
+				"nl-portal": "not checked: proposal added after the column's read",
+				"xxllnc-pip": "not checked: proposal added after the column's read",
+				"mijnoverheid": "not checked: proposal added after the column's read",
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/sites/site-appearance 'Design Libraries Release Feature (LPD-57283) ... A style book or page fragment created in a design library is available to every site connected to that library'; 'Facilitate Sharing Designs Across Sites (Design Library)' under Now on https://www.liferay.com/roadmap."
+			},
+			"built": {
+				"state": "built",
+				"evidence": "several portals can point at the same thematiq token set: lib/Service/PortalThemeResolver.php:104 and :172 read token-sets.json from the theme app, so one style set serves many portals; page blocks are per portal (widget layouts are stored per page), so no shared block library",
+				"reachedOn": "Portals admin theme field -> PortalThemeResolver at render time",
+				"owner": "ConductionNL/thematiq",
+				"origin": "code"
+			},
+			"provider": "thematiq",
+			"providerHow": "read-from-code",
+			"feature": "portal-theming",
+			"featureConfidence": "medium",
+			"origin": "roadmap",
+			"originUrl": "https://www.liferay.com/roadmap"
+		},
+		{
+			"id": "dem-rm-ai-governed-search",
+			"area": "search",
+			"name": "Search the portal with a question in plain language and get an AI answer limited to content you are allowed to see.",
+			"portaliq": "no",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "no",
+			"evidence": {
+				"open-inwoner": "not checked: proposal added after the column's read",
+				"nl-portal": "not checked: proposal added after the column's read",
+				"xxllnc-pip": "not checked: proposal added after the column's read",
+				"mijnoverheid": "not checked: proposal added after the column's read",
+				"liferay-dxp": "https://www.liferay.com/roadmap lists 'AI-Ready, Governed Search' under Later, so it is not available today."
+			},
+			"built": {
+				"state": "none",
+				"evidence": "no AI or question-answering search: federated search is a keyword search over published objects; grep for 'llm', 'embedding' and 'rag' across lib/ and src/ returns nothing",
+				"reachedOn": "nothing",
+				"owner": "ConductionNL/portaliq",
+				"origin": "code"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"feature": "federated-search",
+			"featureConfidence": "medium",
+			"origin": "roadmap",
+			"originUrl": "https://www.liferay.com/roadmap"
+		},
+		{
+			"id": "dem-rm-seo-aeo-center",
+			"area": "site",
+			"name": "See and fix how well every page is found by search engines and AI answer engines from one management screen.",
+			"portaliq": "no",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"evidence": {
+				"open-inwoner": "not checked: proposal added after the column's read",
+				"nl-portal": "not checked: proposal added after the column's read",
+				"xxllnc-pip": "not checked: proposal added after the column's read",
+				"mijnoverheid": "not checked: proposal added after the column's read",
+				"liferay-dxp": "not settled from docs: https://www.liferay.com/roadmap lists 'Site SEO/AEO Management Center' under Now, but no learn.liferay.com page describing it was found on 2026-09-26; per-page SEO settings exist (cmp-site-seo)."
+			},
+			"built": {
+				"state": "none",
+				"evidence": "no SEO management screen: cmp-site-seo is rated no from templates/site.php:242 (only the portal title server-side) and App.vue:887-898 (client-side document.title); nothing reports how pages are found",
+				"reachedOn": "nothing",
+				"owner": "ConductionNL/portaliq",
+				"origin": "code"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"feature": "site-cms",
+			"featureConfidence": "medium",
+			"origin": "roadmap",
+			"originUrl": "https://www.liferay.com/roadmap"
 		}
 	],
 	"pending": [
