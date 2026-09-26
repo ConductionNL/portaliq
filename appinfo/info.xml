@@ -126,6 +126,9 @@
              the access-log import. -->
         <command>OCA\Portaliq\Command\TrafficToken</command>
         <command>OCA\Portaliq\Command\TrafficImportLog</command>
+        <!-- portal-page-traffic: rebuild the retained days now, the same
+             back-fill the aggregation job runs once after an upgrade. -->
+        <command>OCA\Portaliq\Command\TrafficReaggregate</command>
     </commands>
 
     <settings>
