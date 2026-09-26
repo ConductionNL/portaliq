@@ -10,6 +10,7 @@
 - [portal-shared-runtime](../../changes/portal-shared-runtime/)
 - [contribution-landing-page-action](../../changes/contribution-landing-page-action/)
 - [portals-open-site-action](../../changes/archive/2026-09-10-portals-open-site-action/)
+- [events-and-signups](../../changes/events-and-signups/)
 
 ## Purpose
 
