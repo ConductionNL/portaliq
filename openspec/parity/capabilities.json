@@ -7277,13 +7277,13 @@
 			"open-inwoner": "partial",
 			"nl-portal": "no",
 			"xxllnc-pip": "yes",
-			"mijnoverheid": "unknown",
+			"mijnoverheid": "partial",
 			"liferay-dxp": "unknown",
 			"evidence": {
 				"open-inwoner": "src/open_inwoner/openzaak/notifications.py:147 status-change mail and :266 document-added mail per informatieobjecttype; src/open_inwoner/userfeed/choices.py:5 feed items [reached on e-mail and user feed; the resident is notified of status and document changes; the portal does not notify the case handler, uploads just land in the Documenten API]",
 				"nl-portal": "no notification sender in backend/; only the unread message badge (frontend/packages/user-interface/src/contexts/AppContext.tsx:116) [reached on nothing; case-change notices are left to the case system]",
 				"xxllnc-pip": "backend/perl-api/lib/Zaaksysteem/Event/P5/ExternalMessageCreated.pm:57 e-mail to requestor; backend/perl-api/lib/Zaaksysteem/Controller/Plugins/PIP.pm:670 handler gets 'Kenmerk aangepast vanuit PIP'; backend/perl-api/lib/Zaaksysteem/Zaken/ComponentZaak.pm:2904 CaseFeedbackCreated [reached on e-mail and staff notifications; was unknown from docs]",
-				"mijnoverheid": "not checked: row added on 2026-09-26 after this column was read; back-fill pending",
+				"mijnoverheid": "https://www.logius.nl/onze-dienstverlening/interactie/voorzieningen/mijnoverheid/mijnoverheid-lopende-zaken 'Elke keer als de status wijzigt, kan de burger daar een e-mailmelding over ontvangen'; the resident cannot change anything in MijnOverheid (https://mijn.overheid.nl/vragen/ 'MijnOverheid kan uw gegevens niet aanpassen'), so there is no handler-side notice [resident side only]",
 				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
 			},
 			"built": {
@@ -7310,13 +7310,13 @@
 			"open-inwoner": "partial",
 			"nl-portal": "no",
 			"xxllnc-pip": "yes",
-			"mijnoverheid": "unknown",
+			"mijnoverheid": "no",
 			"liferay-dxp": "unknown",
 			"evidence": {
 				"open-inwoner": "src/open_inwoner/cms/cases/views/status.py:897 CaseContactFormView registers a question linked to the zaak in OpenKlant/e-Suite (CHANGELOG.rst:244 gh 2663); src/open_inwoner/accounts/views/inbox.py:25 user-to-user messages are not filed on cases [reached on case detail contact form; only case questions are filed on the case; inbox messages are not]",
 				"nl-portal": "backend/zgw/berichten/src/main/resources/graphql/schema.graphqls:1 berichten are read-only; residents cannot send messages [reached on nothing]",
 				"xxllnc-pip": "frontend-mono/packages/communication-module/src/components/MessageForm/Pip/Pip.formDefinition.ts:52 case is required for a PIP message; backend/perl-api/root/tpl/zaak_v1/nl_NL/zaak/elements/messages.tt:7 [reached on /pip/berichten, /pip/zaak/<id>; was unknown from docs]",
-				"mijnoverheid": "not checked: row added on 2026-09-26 after this column was read; back-fill pending",
+				"mijnoverheid": "https://mijn.overheid.nl/vragen/ Berichtenbox is receive only: messages cannot be sent to or answered to the government from it",
 				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
 			},
 			"built": {
@@ -7343,13 +7343,13 @@
 			"open-inwoner": "no",
 			"nl-portal": "no",
 			"xxllnc-pip": "yes",
-			"mijnoverheid": "unknown",
+			"mijnoverheid": "yes",
 			"liferay-dxp": "unknown",
 			"evidence": {
 				"open-inwoner": "no MijnOverheid Berichtenbox integration: no match for 'berichtenbox|mijnoverheid' in src/open_inwoner [reached on nothing]",
 				"nl-portal": "no match for 'mijnoverheid|berichtenbox' in backend/ and frontend/packages [reached on nothing]",
 				"xxllnc-pip": "backend/perl-api/lib/Zaaksysteem/Backend/Sysin/Modules/MijnOverheid.pm:535 send_berichtenbox_message; frontend-mono/packages/communication-module/src/components/MessageForm/Mijnoverheid/MijnoverheidDialog.tsx [reached on staff case communication; needs the MijnOverheid interface]",
-				"mijnoverheid": "not checked: row added on 2026-09-26 after this column was read; back-fill pending",
+				"mijnoverheid": "https://www.logius.nl/onze-dienstverlening/interactie/voorzieningen/mijnoverheid/mijnoverheid-berichtenbox organisations can 'digitaal post sturen naar de miljoenen gebruikers van MijnOverheid', with attachments; MijnOverheid is the Berichtenbox itself",
 				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
 			},
 			"built": {
@@ -7382,7 +7382,7 @@
 				"open-inwoner": "no document signing: 'sign' matches only request signing in openzaak/auth.py and SAML config; no signature flow in views or templates [reached on nothing]",
 				"nl-portal": "no match for 'onderteken|signing' in backend/ and frontend/packages; no signing flow [reached on nothing]",
 				"xxllnc-pip": "signing is staff-triggered through an external app backend/perl-api/lib/Zaaksysteem/Backend/Sysin/Modules/KoppelAppSigner.pm:59 and ValidSign.pm; PIP documents have no sign action [reached on nothing; was unknown from docs]",
-				"mijnoverheid": "not checked: row added on 2026-09-26 after this column was read; back-fill pending",
+				"mijnoverheid": "not settled from docs: no signing of prepared documents is described for the Berichtenbox or Lopende zaken; pages read on 2026-09-26 (mijn.overheid.nl /, /vragen/, /vragen/Algemeen, /inloggen-bij-mijnoverheid/; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken) are silent",
 				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
 			},
 			"built": {
@@ -7415,7 +7415,7 @@
 				"open-inwoner": "only reminders for the resident's own expiring plans and actions (src/open_inwoner/accounts/notifications/plans/notify.py:17, src/open_inwoner/accounts/notifications/actions/notify.py:15); nothing for overdue requested information or documents [reached on nothing]",
 				"nl-portal": "no match for 'reminder|herinner' in backend/ and frontend/packages; task due date only displayed (frontend/packages/user-interface/src/components/Task.tsx:35) [reached on nothing]",
 				"xxllnc-pip": "no reminder job for overdue resident input: searched 'herinner|reminder' in lib/Zaaksysteem and zsnl_domains, no case-related match [reached on nothing; was unknown from docs]",
-				"mijnoverheid": "not checked: row added on 2026-09-26 after this column was read; back-fill pending",
+				"mijnoverheid": "not settled from docs: https://mijn.overheid.nl/vragen/ documents reminders for unopened messages only, not reminders for overdue information the organisation asked for; pages read on 2026-09-26 (mijn.overheid.nl /, /vragen/, /vragen/Algemeen, /inloggen-bij-mijnoverheid/; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken) are silent",
 				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
 			},
 			"built": {
@@ -7448,7 +7448,7 @@
 				"open-inwoner": "cases are fetched per BSN role on the zaak (src/open_inwoner/openzaak/services.py:295 _user_has_required_rol), so a co-applicant with a role sees the same case after their own DigiD login; src/open_inwoner/openzaak/models.py:486 limit_user_visible_cases_to_role [reached on Mijn aanvragen; depends on the case system registering the partner as a betrokkene; restricting to one role type (e.g. initiator) hides it]",
 				"nl-portal": "backend/zgw/zaken-api/src/main/kotlin/nl/nlportal/zakenapi/service/ZakenApiService.kt:117 access to a zaak for anyone holding a rol on it; backend/zgw/zaken-api/src/main/kotlin/nl/nlportal/zakenapi/service/ZakenApiService.kt:52 case list by the user's own rol [reached on /zaken after the partner's own DigiD login; works when the case system registers the partner as a betrokkene rol]",
 				"xxllnc-pip": "backend/perl-api/lib/Zaaksysteem/Controller/Plugins/PIP.pm:159 pip_authorized party sees the case after own login; backend/perl-api/lib/Zaaksysteem/Controller/Plugins/PIP.pm:297 [reached on /pip 'Gemachtigde zaken'; staff must add the partner as authorised party. was unknown from docs]",
-				"mijnoverheid": "not checked: row added on 2026-09-26 after this column was read; back-fill pending",
+				"mijnoverheid": "not settled from docs: each resident has their own account by BSN, but a case shared between two partners is not described; pages read on 2026-09-26 (mijn.overheid.nl /, /vragen/, /vragen/Algemeen, /inloggen-bij-mijnoverheid/; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken) are silent",
 				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
 			},
 			"built": {
@@ -7481,7 +7481,7 @@
 				"open-inwoner": "src/open_inwoner/plans/views.py:756 PlanExportView; route src/open_inwoner/cms/collaborate/urls.py:66 [reached on plan detail page, export]",
 				"nl-portal": "no match for 'pdf' in backend/ and frontend/packages (only a favicon) [reached on nothing]",
 				"xxllnc-pip": "backend/perl-api/root/tpl/zaak_v1/nl_NL/form/finish.tt:20 registration form PDF at submission [reached on webform finish; GWS4all PDF routes exist but are unreachable. was unknown from docs]",
-				"mijnoverheid": "not checked: row added on 2026-09-26 after this column was read; back-fill pending",
+				"mijnoverheid": "not settled from docs: message attachments can be opened or saved, but exporting your own personal data or an overview as PDF is not described; pages read on 2026-09-26 (mijn.overheid.nl /, /vragen/, /vragen/Algemeen, /inloggen-bij-mijnoverheid/; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken) are silent",
 				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
 			},
 			"built": {
@@ -7514,7 +7514,7 @@
 				"open-inwoner": "src/open_inwoner/openzaak/services.py:282 only zaaktypen with indicatie_intern_of_extern = extern are shown; src/open_inwoner/openzaak/models.py:647 ZaakTypeConfig controls notifications, uploads and contact form per zaaktype [reached on Mijn aanvragen; visibility is decided by the catalogue's intern/extern flag, not by a portal toggle per case type]",
 				"nl-portal": "backend/zgw/zaken-api/src/main/kotlin/nl/nlportal/zakenapi/service/ZakenApiService.kt:91 zaakTypesIdsExcluded removes case types from the list [reached on API only (config property, no admin screen); set in configuration, not a UI]",
 				"xxllnc-pip": "backend/perl-api/lib/Zaaksysteem/Controller/Plugins/PIP.pm:152 prevent_pip per case type; backend/zaken/src/zsnl_domains/case_management/repositories/pip_acl.py:49 [reached on case type editor; was unknown from docs]",
-				"mijnoverheid": "not checked: row added on 2026-09-26 after this column was read; back-fill pending",
+				"mijnoverheid": "not settled from docs: https://www.logius.nl/onze-dienstverlening/interactie/voorzieningen/mijnoverheid/mijnoverheid-berichtenbox mentions 'message type creation and management' for organisations, but whether a case type can be hidden from Lopende zaken is not described; pages read on 2026-09-26 (mijn.overheid.nl /, /vragen/, /vragen/Algemeen, /inloggen-bij-mijnoverheid/; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken) are silent",
 				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
 			},
 			"built": {
@@ -7547,7 +7547,7 @@
 				"open-inwoner": "no uptime tracking or report; only liveness health checks ({P}/urls.py:139) [reached on nothing]",
 				"nl-portal": "no match for 'uptime|availability report' in backend/ and frontend/packages; only actuator health [reached on nothing]",
 				"xxllnc-pip": "no availability reporting [reached on nothing; was unknown from docs]",
-				"mijnoverheid": "not checked: row added on 2026-09-26 after this column was read; back-fill pending",
+				"mijnoverheid": "not settled from docs: no availability or uptime report for MijnOverheid found; pages read on 2026-09-26 (mijn.overheid.nl /, /vragen/, /vragen/Algemeen, /inloggen-bij-mijnoverheid/; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken) are silent",
 				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
 			},
 			"built": {
@@ -7580,7 +7580,7 @@
 				"open-inwoner": "not settled from source: conformance needs an audit; WCAG fixes on the signed-in profile page are logged in CHANGELOG.rst:1160 and Storybook addon-a11y is used (package.json:85) [reached on signed-in pages]",
 				"nl-portal": "not settled from source: pages use NL Design System components (frontend/packages/app/src/App.tsx:1) but no WCAG 2.2 audit or axe test exists in frontend/packages [reached on every signed-in page]",
 				"xxllnc-pip": "backend/perl-api/root/tpl/zaak_v1/nl_NL/plugins/pip/layouts/pip.tt:10 skip link; backend/perl-api/root/tpl/zaak_v1/nl_NL/plugins/pip/case/phase.tt:22 sr-only text [reached on every PIP page; no conformance evidence in source. was unknown from docs]",
-				"mijnoverheid": "not checked: row added on 2026-09-26 after this column was read; back-fill pending",
+				"mijnoverheid": "not settled from docs: https://www.toegankelijkheidsverklaring.nl/register/1359 claims WCAG 2.1 AA ('A, voldoet volledig', updated 24-09-2026), not 2.2, and its scope excludes DigiD-protected production pages (tested on an acceptance environment)",
 				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
 			},
 			"built": {
@@ -7613,7 +7613,7 @@
 				"open-inwoner": "src/open_inwoner/cms/cases/views/status.py:277 questions for the zaak from OpenKlant/e-Suite; src/open_inwoner/templates/pages/cases/status_inner.html:70 questions partial [reached on case detail page]",
 				"nl-portal": "frontend/packages/user-interface/src/pages/CaseDetailsPage.tsx:184 getUserKlantContacten for the zaak; :256 ContactTimeline [reached on /zaken/zaak/:id 'Eerdere contactmomenten'; needs OpenKlant 2]",
 				"xxllnc-pip": "contact moments not exposed in the PIP (backend/zaken/src/zsnl_domains/communication/repositories/database_queries.py:1379 pip messages only) [reached on nothing; was unknown from docs]",
-				"mijnoverheid": "not checked: row added on 2026-09-26 after this column was read; back-fill pending",
+				"mijnoverheid": "not settled from docs: Lopende zaken shows status and attachments; contact moments on the case are not described; pages read on 2026-09-26 (mijn.overheid.nl /, /vragen/, /vragen/Algemeen, /inloggen-bij-mijnoverheid/; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken) are silent",
 				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
 			},
 			"built": {
@@ -7646,7 +7646,7 @@
 				"open-inwoner": "src/open_inwoner/openzaak/models.py:191 ZGWApiGroupConfig (Zaken, Documenten, Catalogi, forms services) and :385 OpenZaakConfig in Django admin; connection parameters moved from env vars to admin (CHANGELOG.rst:220) [reached on Django admin, OpenZaak configuratie; YAML bootstrap via setup_configuration is an alternative]",
 				"nl-portal": "documentation/configuratie/configuration-panel.md:11 Zaken, Documenten and Catalogi modules configured in the Configuration Panel [reached on external Configuration Panel (not in this repository); the admin UI is a separate repository I did not read]",
 				"xxllnc-pip": "frontend-mono/apps/main/src/Routes.tsx:46 integrations admin (StUF-ZKN, KoppelApp, MijnOverheid modules) [reached on staff /main/integrations; no ZGW API client found: searched 'zgw|openzaak' in Sysin modules, no match. was unknown from docs]",
-				"mijnoverheid": "not checked: row added on 2026-09-26 after this column was read; back-fill pending",
+				"mijnoverheid": "not settled from docs: organisations connect via Digikoppeling and a Logius connection process; an admin screen for ZGW API connections is not described; pages read on 2026-09-26 (mijn.overheid.nl /, /vragen/, /vragen/Algemeen, /inloggen-bij-mijnoverheid/; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken) are silent",
 				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
 			},
 			"built": {
@@ -7679,7 +7679,7 @@
 				"open-inwoner": "src/open_inwoner/configurations/models.py:53 colour fields, :652 theme_stylesheet upload, :860 CustomFontSet [reached on Django admin, Configuratie; colours, fonts and a stylesheet upload; no per-component design-token editor]",
 				"nl-portal": "documentation/configuratie/configuration-panel.md:34 logo and design-token CSS editor; backend/core/src/main/kotlin/nl/nlportal/core/frontend/web/rest/FrontendThemeConfigurationResource.kt:29 serves the style; frontend/packages/user-interface/src/contexts/AppContext.tsx:78 applies it [reached on every page when USE_THEME_API=true; the editor is in the external Configuration Panel; editor not in this source]",
 				"xxllnc-pip": "frontend-mono/apps/main/src/modules/configuration/CustomStylesSection.tsx:18 upload cssProps.json, stylesheet, logos; token editor route only on development host frontend-mono/apps/main/src/Routes.tsx:108 [reached on staff configuration; token editor not enabled in production. was unknown from docs]",
-				"mijnoverheid": "not checked: row added on 2026-09-26 after this column was read; back-fill pending",
+				"mijnoverheid": "not settled from docs: one national house style; no configurable design tokens described; pages read on 2026-09-26 (mijn.overheid.nl /, /vragen/, /vragen/Algemeen, /inloggen-bij-mijnoverheid/; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken) are silent",
 				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
 			},
 			"built": {
@@ -7706,13 +7706,13 @@
 			"open-inwoner": "no",
 			"nl-portal": "partial",
 			"xxllnc-pip": "no",
-			"mijnoverheid": "unknown",
+			"mijnoverheid": "partial",
 			"liferay-dxp": "unknown",
 			"evidence": {
 				"open-inwoner": "no held-products view: no match for 'openproduct|mijn producten' in src/open_inwoner; PDC products are the catalogue, not the resident's holdings [reached on nothing]",
 				"nl-portal": "frontend/packages/user-interface/src/pages/ThemeOverviewPage.tsx:40 theme tasks, cases and products from Open Product; frontend/packages/user-interface/src/contexts/AppContext.tsx:98 theme menu items only when the user holds products [reached on theme pages routed in the app-dev demo shell (frontend/packages/app-dev/src/constants/routes.tsx:84); the reference app does not route them]",
 				"xxllnc-pip": "no product holdings view in the PIP menu backend/perl-api/root/tpl/zaak_v1/nl_NL/plugins/pip/layouts/pip.tt:32 [reached on nothing; was unknown from docs]",
-				"mijnoverheid": "not checked: row added on 2026-09-26 after this column was read; back-fill pending",
+				"mijnoverheid": "https://mijn.overheid.nl/vragen/ Persoonlijke gegevens include travel documents, vehicle registration data and diplomas; municipal products such as a parking permit are not listed",
 				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
 			},
 			"built": {
@@ -7745,7 +7745,7 @@
 				"open-inwoner": "src/open_inwoner/utils/validators.py:220 NoVirusValidator (ClamAV); src/open_inwoner/configurations/models.py:720 enable_virus_scan [reached on case and plan upload forms, when enabled in site configuration]",
 				"nl-portal": "backend/zgw/taak/src/main/kotlin/nl/nlportal/zgw/taak/web/rest/TaakDocumentResource.kt:61 ClamAV scan, 400 on a virus; test TaakDocumentResourceTest.kt:109 'returns 400 when virus found' [reached on upload field in task forms (/taken/taak/:id)]",
 				"xxllnc-pip": "backend/http-virusscanner/ with backend/perl-api/etc/clamav/clamd.conf; backend/zaken/src/zsnl_document_http/views/views.py:388 virus_status [reached on every upload; was unknown from docs]",
-				"mijnoverheid": "not checked: row added on 2026-09-26 after this column was read; back-fill pending",
+				"mijnoverheid": "not settled from docs: MijnOverheid documents no resident upload at all, and virus scanning is not described; pages read on 2026-09-26 (mijn.overheid.nl /, /vragen/, /vragen/Algemeen, /inloggen-bij-mijnoverheid/; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken) are silent",
 				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
 			},
 			"built": {
@@ -7777,7 +7777,7 @@
 				"open-inwoner": "src/open_inwoner/extended_sessions/templates/sessions/session_timeout.html:5; src/open_inwoner/js/components/session/index.js:10 SessionTimeout; src/open_inwoner/extended_sessions/views.py:5 RestartSessionView [reached on every signed-in page]",
 				"nl-portal": "frontend/packages/authentication/src/components/ProtectedApp.tsx:52 warning timer five minutes before logout; :57 modal with stay signed in or log out [reached on every signed-in page]",
 				"xxllnc-pip": "backend/perl-api/frontend/zaaksysteem/src/js/nl/mintlab/utils/directives/zsSessionTimeout.js:36 'Uw sessie dreigt te verlopen' with 'Verleng sessie'; backend/perl-api/root/tpl/zaak_v1/nl_NL/plugins/pip/layouts/pip.tt:16 [reached on every PIP page; was unknown from docs]",
-				"mijnoverheid": "not checked: row added on 2026-09-26 after this column was read; back-fill pending",
+				"mijnoverheid": "not settled from docs: an idle logout exists (15 minutes, binnenlandsbestuur.nl 2009) but a warning before logout is not described; pages read on 2026-09-26 (mijn.overheid.nl /, /vragen/, /vragen/Algemeen, /inloggen-bij-mijnoverheid/; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken) are silent",
 				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
 			},
 			"built": {
@@ -7804,13 +7804,13 @@
 			"open-inwoner": "yes",
 			"nl-portal": "yes",
 			"xxllnc-pip": "yes",
-			"mijnoverheid": "unknown",
+			"mijnoverheid": "no",
 			"liferay-dxp": "unknown",
 			"evidence": {
 				"open-inwoner": "src/open_inwoner/kvk/views.py:23 CompanyBranchChoiceView; src/open_inwoner/openzaak/clients.py:190 cases filtered by vestigingsnummer [reached on after eHerkenning login and 'Wissel van vestiging' on the profile]",
 				"nl-portal": "backend/zgw/zaken-api/src/main/kotlin/nl/nlportal/zakenapi/client/request/AuthenticationFilter.kt:15 withKvkAndVestigingsNummer; backend/zgw/common-ground-authentication/src/main/kotlin/nl/nlportal/commonground/authentication/CommonGroundAuthentication.kt:54 [reached on /zaken after eHerkenning login with a vestigingsnummer claim]",
 				"xxllnc-pip": "backend/perl-api/lib/Zaaksysteem/SAML2.pm:1276 Vestigingsnr from eHerkenning; backend/perl-api/root/tpl/zaak_v1/nl_NL/plugins/pip/layouts/aanvraag_picker.tt:15 'Kies vestiging' [reached on /pip/login/bedrijf; was unknown from docs]",
-				"mijnoverheid": "not checked: row added on 2026-09-26 after this column was read; back-fill pending",
+				"mijnoverheid": "https://mijn.overheid.nl/vragen/ login requires a BSN and 'DigiD of een ander Europees inlogmiddel'; eHerkenning is not a login route (businesses use the separate Berichtenbox voor bedrijven)",
 				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
 			},
 			"built": {
@@ -7842,7 +7842,7 @@
 				"open-inwoner": "src/open_inwoner/accounts/models.py:68 DigitalAddress, :189 preferred_address; src/open_inwoner/accounts/views/profile.py:414 formset save, synced with OpenKlant [reached on profile edit page]",
 				"nl-portal": "frontend/packages/user-interface/src/pages/EditContactInfoPage.tsx:35 takes the first phone and :38 the first e-mail only; voorkeursDigitaalAdres in backend/zgw/openklant/src/main/resources/graphql/schema.graphqls:636 is not used by any page [reached on nothing; one e-mail and one phone only]",
 				"xxllnc-pip": "one e-mail, phone and mobile per subject backend/perl-api/lib/Zaaksysteem/Controller/Plugins/PIP.pm:356 [reached on nothing; was unknown from docs]",
-				"mijnoverheid": "not checked: row added on 2026-09-26 after this column was read; back-fill pending",
+				"mijnoverheid": "not settled from docs: https://mijn.overheid.nl/vragen/ (search result) documents one e-mail address for notifications, changeable under Settings; several addresses with a preferred one are not described; pages read on 2026-09-26 (mijn.overheid.nl /, /vragen/, /vragen/Algemeen, /inloggen-bij-mijnoverheid/; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken) are silent",
 				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
 			},
 			"built": {
@@ -7874,7 +7874,7 @@
 				"open-inwoner": "src/open_inwoner/mijn_afval/views.py:136 lediging data with kosten (:143) [reached on Mijn afval page]",
 				"nl-portal": "no match for 'afval|waste|lediging' in backend/ and frontend/packages [reached on nothing]",
 				"xxllnc-pip": "as cmp-cas-address-services [reached on nothing; was unknown from docs]",
-				"mijnoverheid": "not checked: row added on 2026-09-26 after this column was read; back-fill pending",
+				"mijnoverheid": "not settled from docs: not among the Persoonlijke gegevens categories listed on /vragen/; pages read on 2026-09-26 (mijn.overheid.nl /, /vragen/, /vragen/Algemeen, /inloggen-bij-mijnoverheid/; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken) are silent",
 				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
 			},
 			"built": {
@@ -7900,13 +7900,13 @@
 			"open-inwoner": "yes",
 			"nl-portal": "no",
 			"xxllnc-pip": "yes",
-			"mijnoverheid": "unknown",
+			"mijnoverheid": "partial",
 			"liferay-dxp": "unknown",
 			"evidence": {
 				"open-inwoner": "src/open_inwoner/accounts/views/login.py:102 VerifyTokenView, :274 AddPhoneNumberWizardView; src/open_inwoner/configurations/models.py:131 login_2fa_sms [reached on login page, e-mail login, when login_2fa_sms is on]",
 				"nl-portal": "no password login in the portal; sign-in only through Keycloak brokering DigiD/eHerkenning (frontend/packages/authentication/src/context/OidcContext.tsx:72) [reached on nothing]",
 				"xxllnc-pip": "backend/perl-api/lib/Zaaksysteem/Controller/Plugins/Twofactor.pm:225 process_login then backend/perl-api/lib/Zaaksysteem/Controller/Plugins/Twofactor.pm:573 send_token_per_sms; backend/perl-api/lib/Zaaksysteem/Controller/Plugins/Twofactor.pm:318 verify_second_factor [reached on /auth/twofactor; was unknown from docs]",
-				"mijnoverheid": "not checked: row added on 2026-09-26 after this column was read; back-fill pending",
+				"mijnoverheid": "https://mijn.overheid.nl/inloggen-bij-mijnoverheid/ 'Since 30 January 2023, you must use the DigiD app or SMS verification. Logging in with only your DigiD username and password is no longer possible.' [second factor is DigiD's, there is no e-mail and password account]",
 				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
 			},
 			"built": {
@@ -7939,7 +7939,7 @@
 				"open-inwoner": "src/open_inwoner/laposta/forms.py:20 NewsletterSubscriptionForm; src/open_inwoner/accounts/views/profile.py:71 [reached on profile page, newsletters section (Laposta, verified e-mail required)]",
 				"nl-portal": "no match for 'nieuwsbrief|newsletter' in backend/ and frontend/packages [reached on nothing]",
 				"xxllnc-pip": "no newsletter subscription: searched 'nieuwsbrief|newsletter' in perl-api and frontend-mono, no match [reached on nothing; was unknown from docs]",
-				"mijnoverheid": "not checked: row added on 2026-09-26 after this column was read; back-fill pending",
+				"mijnoverheid": "not settled from docs: no newsletter subscription described; pages read on 2026-09-26 (mijn.overheid.nl /, /vragen/, /vragen/Algemeen, /inloggen-bij-mijnoverheid/; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken) are silent",
 				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
 			},
 			"built": {
@@ -7966,13 +7966,13 @@
 			"open-inwoner": "yes",
 			"nl-portal": "no",
 			"xxllnc-pip": "yes",
-			"mijnoverheid": "unknown",
+			"mijnoverheid": "no",
 			"liferay-dxp": "unknown",
 			"evidence": {
 				"open-inwoner": "src/open_inwoner/cms/cases/views/status.py:897 CaseContactFormView; questions shown at src/open_inwoner/cms/cases/views/status.py:277 [reached on case detail page, contact form (OpenKlant or e-Suite)]",
 				"nl-portal": "backend/zgw/berichten/src/main/resources/graphql/schema.graphqls:1 no message mutation; no question form on frontend/packages/user-interface/src/pages/CaseDetailsPage.tsx [reached on nothing]",
 				"xxllnc-pip": "backend/perl-api/root/tpl/zaak_v1/nl_NL/zaak/elements/messages.tt:7 'Nieuw bericht' with caseUuid; messages listed on the case page :14 [reached on /pip/zaak/<id>; was unknown from docs]",
-				"mijnoverheid": "not checked: row added on 2026-09-26 after this column was read; back-fill pending",
+				"mijnoverheid": "https://mijn.overheid.nl/vragen/ Berichtenbox is receive only: messages cannot be sent to or answered to the government from it; Lopende zaken links out to the organisation's own site for the case",
 				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
 			},
 			"built": {
@@ -7999,13 +7999,13 @@
 			"open-inwoner": "yes",
 			"nl-portal": "yes",
 			"xxllnc-pip": "partial",
-			"mijnoverheid": "unknown",
+			"mijnoverheid": "partial",
 			"liferay-dxp": "unknown",
 			"evidence": {
 				"open-inwoner": "src/open_inwoner/cms/cases/views/status.py:113 result and result_description on the case; src/open_inwoner/openzaak/models.py:957 ZaakTypeResultaatTypeConfig description (:988) [reached on case detail page, result section]",
 				"nl-portal": "frontend/packages/user-interface/src/pages/CaseDetailsPage.tsx:73 result alert per generic result; :142 result row; :150 explanation behind SHOW_CASE_RESULT_EXPLANATION [reached on /zaken/zaak/:id]",
 				"xxllnc-pip": "backend/perl-api/root/tpl/zaak_v1/nl_NL/plugins/pip/case/view.tt:16 'Resultaat' [reached on /pip/zaak/<id>; result name only; explanation only as a published document. was unknown from docs]",
-				"mijnoverheid": "not checked: row added on 2026-09-26 after this column was read; back-fill pending",
+				"mijnoverheid": "https://www.logius.nl/onze-dienstverlening/interactie/voorzieningen/mijnoverheid/mijnoverheid-lopende-zaken 'Ook als de zaak is afgerond, blijft deze zichtbaar in het dossier' and a dossier can carry letters as attachments; an explanation of the decision is up to the organisation",
 				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
 			},
 			"built": {
@@ -8037,7 +8037,7 @@
 				"open-inwoner": "search covers only products and CMS pages (src/open_inwoner/search/documents.py:19, :108); cases have a case-number search only (src/open_inwoner/cms/cases/views/cases.py:129) [reached on nothing]",
 				"nl-portal": "frontend/packages/user-interface/src/pages/MessagesPage.tsx:18 refetch by onderwerp; frontend/packages/user-interface/src/pages/TasksPage.tsx:14 refetch by title [reached on search forms on /berichten and /taken]",
 				"xxllnc-pip": "frontend-mono/apps/my-pip/src/modules/communication/index.tsx:40 canFilter false hides frontend-mono/packages/communication-module/src/components/Threads/ThreadsHeader/ThreadsHeader.tsx:67 search [reached on nothing; no tasks either. was unknown from docs]",
-				"mijnoverheid": "not checked: row added on 2026-09-26 after this column was read; back-fill pending",
+				"mijnoverheid": "not settled from docs: searching the Berichtenbox is not described, and MijnOverheid has no documented tasks; pages read on 2026-09-26 (mijn.overheid.nl /, /vragen/, /vragen/Algemeen, /inloggen-bij-mijnoverheid/; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken) are silent",
 				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
 			},
 			"built": {
@@ -8064,13 +8064,13 @@
 			"open-inwoner": "yes",
 			"nl-portal": "yes",
 			"xxllnc-pip": "partial",
-			"mijnoverheid": "unknown",
+			"mijnoverheid": "partial",
 			"liferay-dxp": "unknown",
 			"evidence": {
 				"open-inwoner": "src/open_inwoner/configurations/models.py:74 warning_banner_enabled and text; src/open_inwoner/templates/master.html:101 shown on every page [reached on every page; off by default]",
 				"nl-portal": "frontend/packages/user-interface/src/pages/OverviewPage.tsx:69 alert behind showAlert; frontend/packages/app/src/constants/routes.tsx:25 OVERVIEW_SHOW_MAINTENANCE_ALERT [reached on overview page (/)]",
 				"xxllnc-pip": "backend/perl-api/root/tpl/zaak_v1/nl_NL/plugins/pip/login_type.tt:13 admin text pip_login_intro on the login page [reached on /pip/login; login page only, not every page. was unknown from docs]",
-				"mijnoverheid": "not checked: row added on 2026-09-26 after this column was read; back-fill pending",
+				"mijnoverheid": "https://mijn.overheid.nl/ shows a notice banner to visitors ('Laat weten hoe u post van de Belastingdienst graag ontvangt'); a maintenance notice specifically was not seen today [announcement banner seen, not a maintenance banner]",
 				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
 			},
 			"built": {
@@ -8096,13 +8096,13 @@
 			"open-inwoner": "no",
 			"nl-portal": "yes",
 			"xxllnc-pip": "no",
-			"mijnoverheid": "unknown",
+			"mijnoverheid": "partial",
 			"liferay-dxp": "unknown",
 			"evidence": {
 				"open-inwoner": "no residents-at-address view or address investigation: no match for 'bewoners|adresonderzoek' in src/open_inwoner [reached on nothing]",
 				"nl-portal": "backend/haalcentraal2/src/main/resources/graphql/schema.graphqls:6 getBewonersAantalV2; frontend/packages/user-interface/src/pages/AccountPage.tsx:423 inhabitant count; :435 address investigation link [reached on /account address section, when SHOW_INHABITANT_AMOUNT is on]",
 				"xxllnc-pip": "no residents-at-address view; contact page shows only the subject backend/perl-api/root/tpl/zaak_v1/nl_NL/plugins/pip/contact.tt:23 [reached on nothing; was unknown from docs]",
-				"mijnoverheid": "not checked: row added on 2026-09-26 after this column was read; back-fill pending",
+				"mijnoverheid": "https://www.logius.nl/actueel/mijnoverheid-toont-aantal-bewoners-op-woonadres (29-09-2023) 'Gebruikers kunnen op MijnOverheid ... het aantal ingeschreven bewoners op hun woonadres bekijken'; for a wrong registration 'kan contact worden opgenomen met de betreffende gemeente', the investigation is not started in MijnOverheid",
 				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
 			},
 			"built": {
@@ -8135,7 +8135,7 @@
 				"open-inwoner": "src/open_inwoner/accounts/middleware.py:8 NecessaryFieldsMiddleware redirects to src/open_inwoner/accounts/views/registration.py:142 NecessaryFieldsUserView when required fields such as e-mail are missing [reached on after first DigiD/eHerkenning login]",
 				"nl-portal": "frontend/packages/user-interface/src/pages/OverviewPage.tsx:80 no-email alert with a button to the contact page [reached on overview page only where the host app passes showNoEmailAlert (app-dev does, the reference app does not)]",
 				"xxllnc-pip": "backend/perl-api/lib/Zaaksysteem/Schema/ViewCaseTypeVersionV2.pm:29 email_required per case type, enforced at the webform aanvrager step backend/perl-api/lib/Zaaksysteem/Controller/Form.pm:659 [reached on webform aanvrager step; not in the PIP itself. was unknown from docs]",
-				"mijnoverheid": "not checked: row added on 2026-09-26 after this column was read; back-fill pending",
+				"mijnoverheid": "not settled from docs: setting a notification e-mail address is described, a prompt when none is on file is not; pages read on 2026-09-26 (mijn.overheid.nl /, /vragen/, /vragen/Algemeen, /inloggen-bij-mijnoverheid/; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken) are silent",
 				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
 			},
 			"built": {
@@ -8168,7 +8168,7 @@
 				"open-inwoner": "no sub-case handling: no match for 'deelzaak|hoofdzaak' in openzaak, cms or templates [reached on nothing]",
 				"nl-portal": "no match for 'deelzaak|hoofdzaak' in backend/ and frontend/packages; Zaak type has no sub-case field (backend/zgw/zaken-api/src/main/resources/graphql/schema.graphqls:24) [reached on nothing]",
 				"xxllnc-pip": "backend/perl-api/root/tpl/zaak_v1/nl_NL/plugins/pip/case/view.tt:57 follow-up case links; child cases appear as own cases in backend/perl-api/root/tpl/zaak_v1/nl_NL/plugins/pip/index.tt:62 [reached on /pip; no parent-child view. was yes from docs]",
-				"mijnoverheid": "not checked: row added on 2026-09-26 after this column was read; back-fill pending",
+				"mijnoverheid": "not settled from docs: Lopende zaken describes dossiers with status and attachments, not sub-cases; pages read on 2026-09-26 (mijn.overheid.nl /, /vragen/, /vragen/Algemeen, /inloggen-bij-mijnoverheid/; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken) are silent",
 				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
 			},
 			"built": {
@@ -8200,7 +8200,7 @@
 				"open-inwoner": "src/open_inwoner/openzaak/services.py:289 a single zaak is hidden when its vertrouwelijkheidaanduiding exceeds zaak_max_confidentiality (src/open_inwoner/openzaak/models.py:408) [reached on nothing (set in the case system); one case can be kept off the portal via its confidentiality level, but there is no portal filter on 'visible to residents']",
 				"nl-portal": "backend/zgw/zaken-api/src/main/kotlin/nl/nlportal/zakenapi/service/ZakenApiService.kt:91 exclusion is per case type only; no per-case visibility flag or filter [reached on nothing; only whole case types can be hidden]",
 				"xxllnc-pip": "backend/zaken/src/zsnl_domains/shared/case_filters.py:1066 filter by prevent_pip; backend/perl-api/lib/Zaaksysteem/Controller/Plugins/PIP.pm:152 [reached on staff advanced search; hiding is per case type; no per-case flag. was yes from docs]",
-				"mijnoverheid": "not checked: row added on 2026-09-26 after this column was read; back-fill pending",
+				"mijnoverheid": "not settled from docs: the organisation decides what it sends to Lopende zaken; a per-case hide and a visibility filter are not described; pages read on 2026-09-26 (mijn.overheid.nl /, /vragen/, /vragen/Algemeen, /inloggen-bij-mijnoverheid/; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken) are silent",
 				"liferay-dxp": "not checked: row added on 2026-09-26 after this column was read; back-fill pending"
 			},
 			"built": {
