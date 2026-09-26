@@ -36,7 +36,7 @@ namespace OCA\Portaliq\Service\Messaging;
 class InAppMessagingLeaf implements GuardianMessagingLeafInterface {
 	private const THREAD_SCHEMA = 'messageThread';
 
-	private const MESSAGE_SCHEMA = 'message';
+	private const MESSAGE_SCHEMA = 'guardianMessage';
 
 	private const KIND_DIRECT = 'direct';
 

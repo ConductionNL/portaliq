@@ -2373,8 +2373,8 @@
       {
         "@self": {
           "register": "portaliq",
-          "schema": "message",
-          "slug": "message-message-1-1"
+          "schema": "guardianMessage",
+          "slug": "guardianmessage-message-1-1"
         },
         "threadRef": "Voorbeeld Threadref 1",
         "senderRef": "Voorbeeld Senderref 1",
@@ -2387,8 +2387,8 @@
       {
         "@self": {
           "register": "portaliq",
-          "schema": "message",
-          "slug": "message-message-2-2"
+          "schema": "guardianMessage",
+          "slug": "guardianmessage-message-2-2"
         },
         "threadRef": "Voorbeeld Threadref 2",
         "senderRef": "Voorbeeld Senderref 2",
@@ -2401,8 +2401,8 @@
       {
         "@self": {
           "register": "portaliq",
-          "schema": "message",
-          "slug": "message-message-3-3"
+          "schema": "guardianMessage",
+          "slug": "guardianmessage-message-3-3"
         },
         "threadRef": "Voorbeeld Threadref 3",
         "senderRef": "Voorbeeld Senderref 3",

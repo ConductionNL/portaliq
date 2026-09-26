@@ -54,7 +54,7 @@
                     "portalIntakeSubmission",
                     "changeProposal",
                     "messageThread",
-                    "message",
+                    "guardianMessage",
                     "groupStaffFixture",
                     "guardianAudienceFixture"
                 ]
@@ -5949,8 +5949,8 @@
                     }
                 }
             },
-            "message": {
-                "slug": "message",
+            "guardianMessage": {
+                "slug": "guardianMessage",
                 "icon": "Email",
                 "version": "0.1.0",
                 "title": "Message",
