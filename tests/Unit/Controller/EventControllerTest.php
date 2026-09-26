@@ -25,6 +25,8 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Controller\EventController;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
+use OCP\IUser;
+use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -43,8 +45,24 @@ class EventControllerTest extends TestCase {
 		return $container;
 	}//end container()
 
+	private function authenticatedUserSession(): IUserSession {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('staff-directie-1');
+		$userSession = $this->createMock(IUserSession::class);
+		$userSession->method('getUser')->willReturn($user);
+		return $userSession;
+	}//end authenticatedUserSession()
+
+	public function testCreateRefusesAnUnauthenticatedCaller(): void {
+		$userSession = $this->createMock(IUserSession::class);
+		$userSession->method('getUser')->willReturn(null);
+		$controller = new EventController($this->createMock(IRequest::class), $userSession, $this->createMock(ContainerInterface::class), $this->createMock(LoggerInterface::class));
+		$this->expectException(\OCP\AppFramework\OCS\OCSForbiddenException::class);
+		$controller->create('Title', '2026-11-12T09:00:00+00:00', ['groupRefs' => ['groep-5a']]);
+	}//end testCreateRefusesAnUnauthenticatedCaller()
+
 	public function testCreateRejectsATargetWithNoDimension(): void {
-		$controller = new EventController($this->createMock(IRequest::class), $this->createMock(ContainerInterface::class), $this->createMock(LoggerInterface::class));
+		$controller = new EventController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->createMock(ContainerInterface::class), $this->createMock(LoggerInterface::class));
 		$response = $controller->create('Title', '2026-11-12T09:00:00+00:00', []);
 
 		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
@@ -63,7 +81,7 @@ class EventControllerTest extends TestCase {
 			}//end saveObject()
 		};
 
-		$controller = new EventController($this->createMock(IRequest::class), $this->container($objectService), $this->createMock(LoggerInterface::class));
+		$controller = new EventController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class));
 		$response = $controller->create('Schoolreisje', '2026-11-12T09:00:00+00:00', ['groupRefs' => ['groep-5a']], rsvpEnabled: true);
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
@@ -78,7 +96,7 @@ class EventControllerTest extends TestCase {
 			}//end find()
 		};
 
-		$controller = new EventController($this->createMock(IRequest::class), $this->container($objectService), $this->createMock(LoggerInterface::class));
+		$controller = new EventController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class));
 		$response = $controller->publish('missing');
 
 		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
@@ -101,7 +119,7 @@ class EventControllerTest extends TestCase {
 			}//end saveObject()
 		};
 
-		$controller = new EventController($this->createMock(IRequest::class), $this->container($objectService), $this->createMock(LoggerInterface::class));
+		$controller = new EventController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class));
 		$response = $controller->publish('e1');
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());

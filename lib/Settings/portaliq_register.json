@@ -5934,22 +5934,26 @@
                     "title": {
                         "title": "Title",
                         "type": "string",
-                        "example": "Schoolreisje groep 5a"
+                        "example": "Schoolreisje groep 5a",
+                        "description": "The event's own title, shown in the guardian feed and the staff authoring list."
                     },
                     "description": {
                         "title": "Description",
                         "type": "string",
-                        "example": "Op 12 november gaat groep 5a op schoolreis."
+                        "example": "Op 12 november gaat groep 5a op schoolreis.",
+                        "description": "Free-text details about the event, shown alongside the title."
                     },
                     "start": {
                         "title": "Start",
                         "type": "string",
-                        "format": "date-time"
+                        "format": "date-time",
+                        "description": "When the event starts, in ISO 8601."
                     },
                     "end": {
                         "title": "End",
                         "type": "string",
-                        "format": "date-time"
+                        "format": "date-time",
+                        "description": "When the event ends, in ISO 8601. Optional."
                     },
                     "target": {
                         "title": "Target",
@@ -5959,7 +5963,8 @@
                             "schoolRef": {
                                 "title": "School",
                                 "type": "string",
-                                "example": "school-de-regenboog"
+                                "example": "school-de-regenboog",
+                                "description": "The school this event is targeted at, when targeting a whole school."
                             },
                             "groupRefs": {
                                 "title": "Groups",
@@ -5969,7 +5974,8 @@
                                 },
                                 "example": [
                                     "groep-5a"
-                                ]
+                                ],
+                                "description": "The groups this event is targeted at, when targeting one or more groups."
                             },
                             "childRefs": {
                                 "title": "Children",
@@ -5977,7 +5983,8 @@
                                 "items": {
                                     "type": "string"
                                 },
-                                "example": []
+                                "example": [],
+                                "description": "The specific children this event is targeted at, when targeting individual children."
                             }
                         }
                     },
@@ -5988,12 +5995,14 @@
                             "draft",
                             "published"
                         ],
-                        "example": "published"
+                        "example": "published",
+                        "description": "Lifecycle status. A draft event is indistinguishable from an absent one, exactly like an unpublished newsItem."
                     },
                     "rsvpEnabled": {
                         "title": "RSVP enabled",
                         "type": "boolean",
-                        "example": true
+                        "example": true,
+                        "description": "Whether a guardian may RSVP to this event."
                     },
                     "signupRoles": {
                         "title": "Sign-up roles",
@@ -6003,13 +6012,19 @@
                             "type": "object",
                             "properties": {
                                 "id": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "title": "Role id",
+                                    "description": "Unique within this event; referenced by an eventSignup's roleId."
                                 },
                                 "label": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "title": "Label",
+                                    "description": "Display name for this role, such as \"Begeleiding\" or \"Limonade meenemen\"."
                                 },
                                 "capacity": {
-                                    "type": "integer"
+                                    "type": "integer",
+                                    "title": "Capacity",
+                                    "description": "The maximum number of guardians who may sign up for this role."
                                 }
                             }
                         },
@@ -6018,7 +6033,8 @@
                     "authorRef": {
                         "title": "Author",
                         "type": "string",
-                        "example": "staff-directie-1"
+                        "example": "staff-directie-1",
+                        "description": "Staff subject reference of the author."
                     }
                 }
             },
@@ -6046,15 +6062,18 @@
                 "properties": {
                     "eventRef": {
                         "title": "Event",
-                        "type": "string"
+                        "type": "string",
+                        "description": "The event this RSVP is for."
                     },
                     "guardianRef": {
                         "title": "Guardian",
-                        "type": "string"
+                        "type": "string",
+                        "description": "The guardian's own subjectRef."
                     },
                     "childRef": {
                         "title": "Child",
-                        "type": "string"
+                        "type": "string",
+                        "description": "The child this RSVP is for."
                     },
                     "response": {
                         "title": "Response",
@@ -6063,12 +6082,14 @@
                             "yes",
                             "no",
                             "maybe"
-                        ]
+                        ],
+                        "description": "The guardian's response."
                     },
                     "respondedAt": {
                         "title": "Responded at",
                         "type": "string",
-                        "format": "date-time"
+                        "format": "date-time",
+                        "description": "When the guardian last responded, in ISO 8601."
                     }
                 }
             },
@@ -6095,29 +6116,35 @@
                 "properties": {
                     "eventRef": {
                         "title": "Event",
-                        "type": "string"
+                        "type": "string",
+                        "description": "The event this sign-up is for."
                     },
                     "roleId": {
                         "title": "Role",
-                        "type": "string"
+                        "type": "string",
+                        "description": "The signupRoles entry this sign-up is for."
                     },
                     "guardianRef": {
                         "title": "Guardian",
-                        "type": "string"
+                        "type": "string",
+                        "description": "The guardian's own subjectRef."
                     },
                     "childRef": {
                         "title": "Child",
-                        "type": "string"
+                        "type": "string",
+                        "description": "The child this sign-up is for, when relevant to the role."
                     },
                     "note": {
                         "title": "Note",
                         "type": "string",
-                        "example": "Neemt limonade mee"
+                        "example": "Neemt limonade mee",
+                        "description": "An optional note from the guardian, such as what they are bringing."
                     },
                     "signedUpAt": {
                         "title": "Signed up at",
                         "type": "string",
-                        "format": "date-time"
+                        "format": "date-time",
+                        "description": "When the guardian signed up, in ISO 8601."
                     }
                 }
             },
@@ -6143,12 +6170,14 @@
                     "guardianRef": {
                         "title": "Guardian",
                         "type": "string",
-                        "example": "guardian-anna-devries"
+                        "example": "guardian-anna-devries",
+                        "description": "The guardian's own subjectRef."
                     },
                     "schoolRef": {
                         "title": "School",
                         "type": "string",
-                        "example": "school-de-regenboog"
+                        "example": "school-de-regenboog",
+                        "description": "The guardian's own child's school."
                     },
                     "groupRefs": {
                         "title": "Groups",
@@ -6158,7 +6187,8 @@
                         },
                         "example": [
                             "groep-5a"
-                        ]
+                        ],
+                        "description": "The groups the guardian's own children are in."
                     },
                     "childRefs": {
                         "title": "Children",
@@ -6168,7 +6198,8 @@
                         },
                         "example": [
                             "child-devries-lars"
-                        ]
+                        ],
+                        "description": "The guardian's own children."
                     },
                     "photoConsent": {
                         "title": "Photo consent",

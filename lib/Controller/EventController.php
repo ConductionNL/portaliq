@@ -32,7 +32,9 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IRequest;
+use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -53,16 +55,33 @@ class EventController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
+	 * @param IUserSession $userSession Confirms an authenticated Nextcloud user reached this endpoint.
 	 * @param ContainerInterface $container For resolving OpenRegister services.
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
 		IRequest $request,
+		private readonly IUserSession $userSession,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
+
+	/**
+	 * The staff authorization guard every `#[NoAdminRequired]` method calls
+	 * FIRST, before any read or write (see `NewsController`'s identical
+	 * guard for the full rationale).
+	 *
+	 * @return void
+	 *
+	 * @throws OCSForbiddenException When no Nextcloud user is authenticated.
+	 */
+	private function requireAuthenticatedStaff(): void {
+		if ($this->userSession->getUser() === null) {
+			throw new OCSForbiddenException('Authentication required');
+		}
+	}//end requireAuthenticatedStaff()
 
 	/**
 	 * Create a draft event.
@@ -95,6 +114,8 @@ class EventController extends Controller {
 		array $signupRoles = [],
 		string $authorRef = '',
 	): JSONResponse {
+		$this->requireAuthenticatedStaff();
+
 		if ($title === '' || $start === '' || $this->hasAnyTarget(target: $target) === false) {
 			return new JSONResponse(['error' => 'invalid_target'], Http::STATUS_BAD_REQUEST);
 		}
@@ -141,6 +162,8 @@ class EventController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function publish(string $id): JSONResponse {
+		$this->requireAuthenticatedStaff();
+
 		if ($id === '') {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
