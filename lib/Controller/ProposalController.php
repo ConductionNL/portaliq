@@ -226,6 +226,25 @@ class ProposalController extends Controller {
 	}//end index()
 
 	/**
+	 * The bearer's own proposals, any state.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/guardian-self-service-profile/specs/change-proposal-queue/spec.md#requirement-a-proposer-can-list-their-own-proposals-req-cpq-005
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 20, period: 60)]
+	public function mine(): JSONResponse {
+		$subject = $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
+		if ($subject === null) {
+			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+		}
+
+		return new JSONResponse(['proposals' => $this->proposals->mine(proposedBy: (string)($subject['subjectRef'] ?? ''))]);
+	}//end mine()
+
+	/**
 	 * Accept a proposal, writing the record as the reviewer.
 	 *
 	 * Refuses with 409 when the record moved since the proposal was made. The

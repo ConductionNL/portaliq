@@ -258,6 +258,10 @@ return [
         ['name' => 'proposal#acceptConfirmingDrift', 'url' => '/api/proposals/{id}/accept-confirming-drift', 'verb' => 'POST'],
         ['name' => 'proposal#reject', 'url' => '/api/proposals/{id}/reject', 'verb' => 'POST'],
         ['name' => 'proposal#proposeFromPortal', 'url' => '/portal/api/proposals', 'verb' => 'POST'],
+        // A proposer's own queue, any state (guardian-self-service-profile).
+        // Filtered server-side by the bearer's own subjectRef, never a
+        // client-supplied id — registered before the /portal/{path} catch-all.
+        ['name' => 'proposal#mine', 'url' => '/portal/api/proposals/mine', 'verb' => 'GET'],
         ['name' => 'proposal#withdraw', 'url' => '/portal/api/proposals/{id}/withdraw', 'verb' => 'POST'],
 
         // A report of wrongdoing filed without an account

@@ -12,6 +12,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import CitizenCase from './CitizenCase.jsx'
 import CollectionTable from './CollectionTable.jsx'
+import ProposeChangeForm from './ProposeChangeForm.jsx'
 import RichText from './RichText.jsx'
 import SchemaForm from './SchemaForm.jsx'
 
@@ -133,14 +134,95 @@ function FileList({ collection, row, api }) {
 	)
 }
 
+// The subject's own queue on this record for a `type: propose-change`
+// rowAction (change-proposal-queue, guardian-self-service-profile): the
+// existing queued/decided proposals plus the form to add another. Shown in a
+// detail card only when the collection names such an action — the server
+// re-verifies ownership on every read and write regardless, so this is a
+// convenience surface, not the authority. `fetchMyProposals()` returns every
+// proposal the bearer's own subject made; filtered here to this one record
+// because the endpoint is deliberately not parameterised by record (ADR-046 —
+// the filter is the bearer, not a client-supplied id).
+/**
+ * @param root0
+ * @param root0.action
+ * @param root0.row
+ * @param root0.api
+ */
+function ProposalQueue({ action, row, api }) {
+	const rowId = row && (row.id || row['@self']?.id)
+	const [queue, setQueue] = useState([])
+	const [showForm, setShowForm] = useState(false)
+	const [busyId, setBusyId] = useState(null)
+
+	const refresh = useCallback(async () => {
+		if (!rowId || !api) {
+			return
+		}
+		const mine = await api.fetchMyProposals()
+		setQueue(mine.filter((p) => p.subjectId === rowId && p.subjectRegister === action.register && p.subjectSchema === action.schema))
+	}, [rowId, api, action.register, action.schema])
+
+	useEffect(() => {
+		refresh()
+	}, [refresh])
+
+	/**
+	 * @param id
+	 */
+	async function onWithdraw(id) {
+		setBusyId(id)
+		await api.withdrawProposal(id)
+		setBusyId(null)
+		refresh()
+	}
+
+	/**
+	 * @param changes
+	 * @param note
+	 */
+	async function onSubmit(changes, note) {
+		const result = await api.proposeChange(action, rowId, changes, note)
+		if (result.ok) {
+			setShowForm(false)
+			refresh()
+		}
+		return result
+	}
+
+	return (
+		<div className="portaliq-propose-queue">
+			{queue.length > 0 && (
+				<ul className="portaliq-propose-list">
+					{queue.map((p) => (
+						<li key={p.uuid || p.id}>
+							{(p.changes || []).map((c) => `${c.property}: ${c.proposedValue}`).join(', ')}
+							{' — '}<span className={`portaliq-badge portaliq-badge-${p.state}`}>{p.state}</span>
+							{p.state === 'queued' && (
+								<button type="button" disabled={busyId === (p.uuid || p.id)} onClick={() => onWithdraw(p.uuid || p.id)}>
+									Intrekken
+								</button>
+							)}
+						</li>
+					))}
+				</ul>
+			)}
+			{showForm
+				? <ProposeChangeForm action={action} row={row} onSubmit={onSubmit} onCancel={() => setShowForm(false)} />
+				: <button type="button" className="portaliq-propose-toggle" onClick={() => setShowForm(true)}>Wijziging voorstellen</button>}
+		</div>
+	)
+}
+
 /**
  *
  * @param root0
  * @param root0.collection
  * @param root0.row
  * @param root0.api
+ * @param root0.proposeAction
  */
-function DetailCard({ collection, row, api }) {
+function DetailCard({ collection, row, api, proposeAction }) {
 	const rowId = row && (row.id || row['@self']?.id)
 	// The FULL single-object read carries the server-attached `_files` listing
 	// the file-download block needs — the collection list projection omits it.
@@ -182,6 +264,7 @@ function DetailCard({ collection, row, api }) {
 			</dl>
 			{collection.filesUpload === true && api && <FileUpload collection={collection} row={row} api={api} onUploaded={refresh} />}
 			{collection.filesDownload === true && api && <FileList collection={collection} row={detailRow} api={api} />}
+			{proposeAction && api && <ProposalQueue action={proposeAction} row={detailRow} api={api} />}
 		</>
 	)
 }
@@ -222,8 +305,18 @@ export default function PageView({ page, contribution, api, dataByCollection, on
 						return null
 					}
 					const loaded = dataByCollection[collection.id]
+					const rowActions = (collection.rowActions || [])
+						.map((id) => findAction(contribution, id))
+						.filter(Boolean)
 					if (block.type === 'detail') {
-						return <DetailCard key={i} collection={collection} row={selected[collection.id]} api={api} />
+						// Only `propose-change` renders in the detail card today
+						// (ProposalQueue). `type: update` rowActions are the table's
+						// per-row transition buttons (portal-status-transitions) — a
+						// silent, no-field-data PATCH is the wrong affordance on a
+						// single-record view, so they are deliberately not rendered
+						// here yet.
+						const proposeAction = rowActions.find((a) => a.type === 'propose-change') || null
+						return <DetailCard key={i} collection={collection} row={selected[collection.id]} api={api} proposeAction={proposeAction} />
 					}
 					if (block.type === 'citizenCase') {
 						return (
@@ -236,9 +329,6 @@ export default function PageView({ page, contribution, api, dataByCollection, on
 							/>
 						)
 					}
-					const rowActions = (collection.rowActions || [])
-						.map((id) => findAction(contribution, id))
-						.filter(Boolean)
 					return (
 						<div key={i} className="portaliq-block-collection">
 							{collection.label && <h3>{collection.label}</h3>}
@@ -247,7 +337,12 @@ export default function PageView({ page, contribution, api, dataByCollection, on
 								objects={loaded?.objects || []}
 								loading={loaded?.loading}
 								onSelect={(row) => setSelected((s) => ({ ...s, [collection.id]: row }))}
-								rowActions={rowActions}
+								// `onRowAction` (App.jsx) invokes `type: update`'s server-
+								// enforced `set` transition with no field data — a
+								// `propose-change` rowAction would misfire the same way, so
+								// only update actions reach the table's row buttons; a
+								// propose-change action belongs on the `detail` block above.
+								rowActions={rowActions.filter((a) => a.type === 'update')}
 								busyRow={busyRow}
 								onRowAction={(action, row) => onRowAction && onRowAction(action, row, collection)}
 							/>

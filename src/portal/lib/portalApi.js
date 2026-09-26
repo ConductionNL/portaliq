@@ -299,6 +299,50 @@ export function createPortalApi(config) {
 		},
 
 		/**
+		 * Queue a change proposal against an owned record via a declared
+		 * `type: propose-change` action (change-proposal-queue,
+		 * guardian-self-service-profile). The server re-verifies the record is
+		 * the subject's own and re-whitelists against the action's `proposable`
+		 * list regardless of what is sent here.
+		 *
+		 * @param {object} action Manifest action: `{ id, register, schema }`.
+		 * @param {string} id The object id the proposal is against.
+		 * @param {Array<{property: string, proposedValue: *}>} changes The changed fields only.
+		 * @param {string} note What the proposer says about it.
+		 * @return {Promise<object>} `{ ok, status, object }` result envelope (`object` is the queued proposal).
+		 */
+		async proposeChange(action, id, changes, note) {
+			return send('POST', '/proposals', {
+				register: action.register,
+				schema: action.schema,
+				id,
+				changes,
+				note,
+			})
+		},
+
+		/**
+		 * Withdraw a proposal this same subject made, while it is still queued.
+		 *
+		 * @param {string} id The proposal id.
+		 * @return {Promise<object>} `{ ok, status, object }` result envelope.
+		 */
+		async withdrawProposal(id) {
+			return send('POST', `/proposals/${encodeURIComponent(id)}/withdraw`, {})
+		},
+
+		/**
+		 * Every proposal this subject made, any state — filtered server-side by
+		 * the bearer, never by anything the client sends.
+		 *
+		 * @return {Promise<Array<object>>} The subject's own proposals.
+		 */
+		async fetchMyProposals() {
+			const body = await get('/proposals/mine')
+			return body && Array.isArray(body.proposals) ? body.proposals : []
+		},
+
+		/**
 		 * The citizen's own case, with the writable set that governs it: which
 		 * fields are open, which are closed and why, whether documents may
 		 * still be added, and the public status label the case app supplied.
