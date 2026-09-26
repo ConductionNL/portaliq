@@ -80,6 +80,10 @@
 					"jobPostings": "https://www.maykinmedia.nl/nl/vacatures/ answered 404 on 2026-09-26; no product-specific postings found"
 				},
 				"notes": "URLs checked on 2026-09-26 by HTTP status (docs, readthedocs, opengem.nl, GitHub releases and issues all 200); tenders from the intelligence database (tenders.name matching 'open inwoner', source tenderned)"
+			},
+			"readVersion": {
+				"tag": "v2.4.3",
+				"commit": "3ac441111e74b8aa91b2634f34c3cc7ad07a381d"
 			}
 		},
 		{
