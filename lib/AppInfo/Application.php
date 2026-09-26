@@ -52,6 +52,8 @@ use OCA\Portaliq\Listener\PortalAccountProvisionListener;
 use OCA\Portaliq\Middleware\PortalAuthMiddleware;
 use OCA\Portaliq\Middleware\PublicApiCorsMiddleware;
 use OCA\Portaliq\Notification\Notifier;
+use OCA\Portaliq\Service\Messaging\GuardianMessagingLeafInterface;
+use OCA\Portaliq\Service\Messaging\InAppMessagingLeaf;
 use OCA\Portaliq\Service\Traffic\Geo\MmdbGeoResolver;
 use OCA\Portaliq\Service\Traffic\GeoResolverInterface;
 use OCP\AppFramework\App;
@@ -161,6 +163,14 @@ class Application extends App implements IBootstrap {
 		// for the tests and for an instance that wants no geography at all
 		// (the settings provider `none` makes this resolver answer null too).
 		$context->registerServiceAlias(GeoResolverInterface::class, MmdbGeoResolver::class);
+
+		// Guardian-direct-messages: InAppMessagingLeaf is the FIRST
+		// implementation of the messaging-leaf interface, backed by this
+		// app's own OpenRegister schemas. When OpenRegister's planned
+		// guardian-participant-messaging-leaf ships, a second
+		// implementation can be aliased here instead, with no controller
+		// change (design.md "Messaging leaf interface").
+		$context->registerServiceAlias(GuardianMessagingLeafInterface::class, InAppMessagingLeaf::class);
 
 		// Traffic reports and alerts (portal-traffic-reporting) reach a
 		// user as an in-app notification beside the mail; this renders it.
