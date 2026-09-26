@@ -348,6 +348,48 @@
             "title": "Traffic"
           },
           {
+            "id": "traffic-kpi-page-views",
+            "type": "TrafficKpi",
+            "title": "Page views",
+            "content": {
+              "metric": "pageViews",
+              "label": "Page views",
+              "testId": "traffic-tile-page-views",
+              "variant": "primary"
+            }
+          },
+          {
+            "id": "traffic-kpi-sessions",
+            "type": "TrafficKpi",
+            "title": "Sessions",
+            "content": {
+              "metric": "sessions",
+              "label": "Sessions",
+              "testId": "traffic-tile-sessions"
+            }
+          },
+          {
+            "id": "traffic-kpi-visitors",
+            "type": "TrafficKpi",
+            "title": "Visitors",
+            "content": {
+              "metric": "visitors",
+              "label": "Visitors",
+              "testId": "traffic-tile-visitors"
+            }
+          },
+          {
+            "id": "traffic-kpi-engaged",
+            "type": "TrafficKpi",
+            "title": "Engaged sessions",
+            "content": {
+              "metric": "engagedSessions",
+              "label": "Engaged sessions",
+              "testId": "traffic-tile-engaged",
+              "variant": "success"
+            }
+          },
+          {
             "id": "traffic-daily",
             "type": "TrafficDaily",
             "title": "Per day"
@@ -420,13 +462,49 @@
             "gridX": 0,
             "gridY": 0,
             "gridWidth": 12,
-            "gridHeight": 3
+            "gridHeight": 2
+          },
+          {
+            "id": 15,
+            "widgetId": "traffic-kpi-page-views",
+            "gridX": 0,
+            "gridY": 2,
+            "gridWidth": 3,
+            "gridHeight": 2,
+            "showTitle": false
+          },
+          {
+            "id": 16,
+            "widgetId": "traffic-kpi-sessions",
+            "gridX": 3,
+            "gridY": 2,
+            "gridWidth": 3,
+            "gridHeight": 2,
+            "showTitle": false
+          },
+          {
+            "id": 17,
+            "widgetId": "traffic-kpi-visitors",
+            "gridX": 6,
+            "gridY": 2,
+            "gridWidth": 3,
+            "gridHeight": 2,
+            "showTitle": false
+          },
+          {
+            "id": 18,
+            "widgetId": "traffic-kpi-engaged",
+            "gridX": 9,
+            "gridY": 2,
+            "gridWidth": 3,
+            "gridHeight": 2,
+            "showTitle": false
           },
           {
             "id": 2,
             "widgetId": "traffic-daily",
             "gridX": 0,
-            "gridY": 3,
+            "gridY": 4,
             "gridWidth": 12,
             "gridHeight": 3
           },
@@ -434,7 +512,7 @@
             "id": 3,
             "widgetId": "traffic-pages",
             "gridX": 0,
-            "gridY": 6,
+            "gridY": 7,
             "gridWidth": 6,
             "gridHeight": 4
           },
@@ -442,7 +520,7 @@
             "id": 4,
             "widgetId": "traffic-journeys",
             "gridX": 6,
-            "gridY": 6,
+            "gridY": 7,
             "gridWidth": 6,
             "gridHeight": 4
           },
@@ -450,7 +528,7 @@
             "id": 5,
             "widgetId": "traffic-sources",
             "gridX": 0,
-            "gridY": 10,
+            "gridY": 11,
             "gridWidth": 12,
             "gridHeight": 3
           },
@@ -458,7 +536,7 @@
             "id": 6,
             "widgetId": "traffic-visitors",
             "gridX": 0,
-            "gridY": 13,
+            "gridY": 14,
             "gridWidth": 12,
             "gridHeight": 5
           },
@@ -466,7 +544,7 @@
             "id": 7,
             "widgetId": "traffic-goals",
             "gridX": 0,
-            "gridY": 18,
+            "gridY": 19,
             "gridWidth": 6,
             "gridHeight": 4
           },
@@ -474,7 +552,7 @@
             "id": 8,
             "widgetId": "traffic-funnels",
             "gridX": 6,
-            "gridY": 18,
+            "gridY": 19,
             "gridWidth": 6,
             "gridHeight": 4
           },
@@ -482,7 +560,7 @@
             "id": 9,
             "widgetId": "traffic-forms",
             "gridX": 0,
-            "gridY": 22,
+            "gridY": 23,
             "gridWidth": 6,
             "gridHeight": 4
           },
@@ -490,7 +568,7 @@
             "id": 10,
             "widgetId": "traffic-dimensions",
             "gridX": 6,
-            "gridY": 22,
+            "gridY": 23,
             "gridWidth": 6,
             "gridHeight": 4
           },
@@ -498,7 +576,7 @@
             "id": 11,
             "widgetId": "traffic-errors",
             "gridX": 0,
-            "gridY": 26,
+            "gridY": 27,
             "gridWidth": 12,
             "gridHeight": 3
           },
@@ -506,7 +584,7 @@
             "id": 12,
             "widgetId": "traffic-experiments",
             "gridX": 0,
-            "gridY": 29,
+            "gridY": 30,
             "gridWidth": 12,
             "gridHeight": 4
           },
@@ -514,7 +592,7 @@
             "id": 13,
             "widgetId": "traffic-heatmap",
             "gridX": 0,
-            "gridY": 33,
+            "gridY": 34,
             "gridWidth": 6,
             "gridHeight": 5
           },
@@ -522,13 +600,13 @@
             "id": 14,
             "widgetId": "traffic-recordings",
             "gridX": 6,
-            "gridY": 33,
+            "gridY": 34,
             "gridWidth": 6,
             "gridHeight": 5
           }
         ]
       },
-      "_note": "portal-traffic-analytics. The three stats-blocks this page used to carry counted portalSession, revoked portalSession and portalMessage rows: authenticated-session bookkeeping that said nothing about visitors (task 0.1). The six widgets here read portalTrafficDaily through the object API and say 'not measured' for a portal with measurement off instead of drawing a zero. portal-traffic-visitors-and-geo added the period selector (on the overview, read by every widget through the report store) and the Visitors widget. portal-traffic-outcomes added Goals, Funnels, Forms and Custom dimensions, the missing pages under Pages and the searches under Sources. portal-traffic-reporting added the segment selector and the Export button on the overview, the roll-up note, and the Script errors widget. The Export is a button on the overview widget rather than a manifest headerAction: nc-vue's dashboard header actions cannot read the portal, period and segment the page has selected, and a download of the wrong selection is worse than none. portal-traffic-experiments added Experiments, Heatmap and Session recordings; the last two say \"off for this portal\" unless the operator accepted the switch's warning."
+      "_note": "portal-traffic-analytics. The three stats-blocks this page used to carry counted portalSession, revoked portalSession and portalMessage rows: authenticated-session bookkeeping that said nothing about visitors (task 0.1). The six widgets here read portalTrafficDaily through the object API and say 'not measured' for a portal with measurement off instead of drawing a zero. portal-traffic-visitors-and-geo added the period selector (on the overview, read by every widget through the report store) and the Visitors widget. portal-traffic-outcomes added Goals, Funnels, Forms and Custom dimensions, the missing pages under Pages and the searches under Sources. portal-traffic-reporting added the segment selector and the Export button on the overview, the roll-up note, and the Script errors widget. The Export is a button on the overview widget rather than a manifest headerAction: nc-vue's dashboard header actions cannot read the portal, period and segment the page has selected, and a download of the wrong selection is worse than none. portal-traffic-experiments added Experiments, Heatmap and Session recordings; the last two say \"off for this portal\" unless the operator accepted the switch's warning. portal-traffic-kpi-cards moved the four headline numbers out of the overview into four TrafficKpi cards below it. They follow the overview's portal, period and segment and carry no picker of their own: the page has one period. The page selects the portal named in ?portal=, which is how a portal page's KPI cards link here."
     },
     {
       "id": "PortalAccounts",
@@ -1123,8 +1201,126 @@
       "config": {
         "register": "portaliq",
         "schema": "portal",
-        "_note": "A portal's menus, pages and glossary live HERE rather than as their own top-level navigation entries: they are not free-standing collections, they are what one portal is made of, and a fleet-wide list of 'all pages' answers no question an editor actually has. They are `object-list` widgets filtered on `portal: @object.slug` — the token resolves against the portal being viewed. NOT `@objectId`: these children reference their portal by SLUG, not by object id, and a filter naming a property the rows do not carry matches nothing and says nothing (see PortalAccountDetail, where exactly that went unnoticed). Each filter was run against the API before being written here: 7 pages, 1 menu, 2 glossary terms for open-tilburg.",
+        "_note": "A portal's menus, pages and glossary live HERE rather than as their own top-level navigation entries: they are not free-standing collections, they are what one portal is made of, and a fleet-wide list of 'all pages' answers no question an editor actually has. They are `object-list` widgets filtered on `portal: @object.slug` — the token resolves against the portal being viewed. NOT `@objectId`: these children reference their portal by SLUG, not by object id, and a filter naming a property the rows do not carry matches nothing and says nothing (see PortalAccountDetail, where exactly that went unnoticed). Each filter was run against the API before being written here: 7 pages, 1 menu, 2 glossary terms for open-tilburg. portal-traffic-kpi-cards: four traffic KPI cards head the page (page views, sessions, visitors, engaged sessions), the same four numbers the Traffic page shows. Each is a PortalTrafficKpi around nc-vue's CnStatWidget with its own period picker; the 30-day preset has the id '' so the picker opens on it, and the summary endpoint reads an empty period as 30. A card opens the Traffic page with this portal selected. A portal with measurement off reads 'Not measured' and asks for nothing.",
         "widgets": [
+          {
+            "id": "portal-kpi-page-views",
+            "type": "PortalTrafficKpi",
+            "content": {
+              "metric": "pageViews",
+              "label": "Page views",
+              "testId": "portal-kpi-page-views",
+              "dateRange": {
+                "presets": [
+                  {
+                    "id": "7",
+                    "label": "Last 7 days"
+                  },
+                  {
+                    "id": "",
+                    "label": "Last 30 days"
+                  },
+                  {
+                    "id": "90",
+                    "label": "Last 90 days"
+                  },
+                  {
+                    "id": "365",
+                    "label": "Last 365 days"
+                  }
+                ]
+              },
+              "variant": "primary"
+            }
+          },
+          {
+            "id": "portal-kpi-sessions",
+            "type": "PortalTrafficKpi",
+            "content": {
+              "metric": "sessions",
+              "label": "Sessions",
+              "testId": "portal-kpi-sessions",
+              "dateRange": {
+                "presets": [
+                  {
+                    "id": "7",
+                    "label": "Last 7 days"
+                  },
+                  {
+                    "id": "",
+                    "label": "Last 30 days"
+                  },
+                  {
+                    "id": "90",
+                    "label": "Last 90 days"
+                  },
+                  {
+                    "id": "365",
+                    "label": "Last 365 days"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "portal-kpi-visitors",
+            "type": "PortalTrafficKpi",
+            "content": {
+              "metric": "visitors",
+              "label": "Visitors",
+              "testId": "portal-kpi-visitors",
+              "dateRange": {
+                "presets": [
+                  {
+                    "id": "7",
+                    "label": "Last 7 days"
+                  },
+                  {
+                    "id": "",
+                    "label": "Last 30 days"
+                  },
+                  {
+                    "id": "90",
+                    "label": "Last 90 days"
+                  },
+                  {
+                    "id": "365",
+                    "label": "Last 365 days"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "portal-kpi-engaged",
+            "type": "PortalTrafficKpi",
+            "content": {
+              "metric": "engagedSessions",
+              "label": "Engaged sessions",
+              "testId": "portal-kpi-engaged",
+              "dateRange": {
+                "presets": [
+                  {
+                    "id": "7",
+                    "label": "Last 7 days"
+                  },
+                  {
+                    "id": "",
+                    "label": "Last 30 days"
+                  },
+                  {
+                    "id": "90",
+                    "label": "Last 90 days"
+                  },
+                  {
+                    "id": "365",
+                    "label": "Last 365 days"
+                  }
+                ]
+              },
+              "variant": "success"
+            }
+          },
           {
             "id": "portal-data",
             "type": "data",
@@ -1234,10 +1430,42 @@
         ],
         "layout": [
           {
+            "id": "kpi-page-views",
+            "widgetId": "portal-kpi-page-views",
+            "gridX": 0,
+            "gridY": 0,
+            "gridWidth": 3,
+            "gridHeight": 2
+          },
+          {
+            "id": "kpi-sessions",
+            "widgetId": "portal-kpi-sessions",
+            "gridX": 3,
+            "gridY": 0,
+            "gridWidth": 3,
+            "gridHeight": 2
+          },
+          {
+            "id": "kpi-visitors",
+            "widgetId": "portal-kpi-visitors",
+            "gridX": 6,
+            "gridY": 0,
+            "gridWidth": 3,
+            "gridHeight": 2
+          },
+          {
+            "id": "kpi-engaged",
+            "widgetId": "portal-kpi-engaged",
+            "gridX": 9,
+            "gridY": 0,
+            "gridWidth": 3,
+            "gridHeight": 2
+          },
+          {
             "id": "1",
             "widgetId": "portal-data",
             "gridX": 0,
-            "gridY": 0,
+            "gridY": 2,
             "gridWidth": 12,
             "gridHeight": 5
           },
@@ -1245,7 +1473,7 @@
             "id": "2",
             "widgetId": "portal-pages",
             "gridX": 0,
-            "gridY": 5,
+            "gridY": 7,
             "gridWidth": 12,
             "gridHeight": 5
           },
@@ -1253,7 +1481,7 @@
             "id": "3",
             "widgetId": "portal-menus",
             "gridX": 0,
-            "gridY": 10,
+            "gridY": 12,
             "gridWidth": 6,
             "gridHeight": 4
           },
@@ -1261,7 +1489,7 @@
             "id": "4",
             "widgetId": "portal-glossary",
             "gridX": 6,
-            "gridY": 10,
+            "gridY": 12,
             "gridWidth": 6,
             "gridHeight": 4
           }

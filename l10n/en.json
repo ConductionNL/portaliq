@@ -1194,7 +1194,13 @@
         "Withdrawal reason": "Withdrawal reason",
         "Work factor": "Work factor",
         "`hosted` renders the published form here. `external` names a start form on another host: the portal shows a card naming the destination and never proxies or embeds it (REQ-PIFO-002).": "`hosted` renders the published form here. `external` names a start form on another host: the portal shows a card naming the destination and never proxies or embeds it (REQ-PIFO-002).",
-        "`off`: no account is created by a stranger. `approval`: the account waits for a decision. `activation`: it waits for a mail the registrant confirms.": "`off`: no account is created by a stranger. `approval`: the account waits for a decision. `activation`: it waits for a mail the registrant confirms."
+        "`off`: no account is created by a stranger. `approval`: the account waits for a decision. `activation`: it waits for a mail the registrant confirms.": "`off`: no account is created by a stranger. `approval`: the account waits for a decision. `activation`: it waits for a mail the registrant confirms.",
+        "Not measured": "Not measured",
+        "No traffic recorded yet": "No traffic recorded yet",
+        "Last 7 days": "Last 7 days",
+        "Last 30 days": "Last 30 days",
+        "Last 90 days": "Last 90 days",
+        "Last 365 days": "Last 365 days"
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

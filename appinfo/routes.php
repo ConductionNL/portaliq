@@ -103,6 +103,9 @@ return [
         // token-guarded), and an admin downloads the daily records.
         ['name' => 'traffic#server', 'url' => '/api/traffic/server', 'verb' => 'POST'],
         ['name' => 'trafficReport#export', 'url' => '/api/traffic/export', 'verb' => 'GET'],
+        // portal-traffic-kpi-cards: the four totals behind the KPI cards
+        // on a portal's detail page. Admin only, like the export.
+        ['name' => 'trafficReport#summary', 'url' => '/api/traffic/summary', 'verb' => 'GET'],
         // portal-traffic-experiments: a session recording chunk, and the
         // recorder the client loads only for a portal that switched
         // recording on. Both public for the collector's reasons.

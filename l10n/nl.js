@@ -1253,7 +1253,13 @@ OC.L10N.register(
         "Which audience's form of that type this page renders. One case type can carry a client form and a supplier form; this picks one.": "Van welke doelgroep deze pagina het formulier van dat type toont. Een zaaktype kan een formulier voor een klant en een formulier voor een leverancier hebben; dit kiest er een.",
         "Which contact fields were shown, when it was allowed. The values are not copied here.": "Welke contactvelden zijn getoond, als het werd toegestaan. De waarden worden hier niet gekopieerd.",
         "Work factor": "Rekenlast",
-        "`hosted` renders the published form here. `external` names a start form on another host: the portal shows a card naming the destination and never proxies or embeds it (REQ-PIFO-002).": "`hosted` toont het gepubliceerde formulier hier. `external` noemt een startformulier op een andere host: het portaal toont een kaart met de bestemming erop en zet er nooit een proxy of een embed voor in (REQ-PIFO-002)."
+        "`hosted` renders the published form here. `external` names a start form on another host: the portal shows a card naming the destination and never proxies or embeds it (REQ-PIFO-002).": "`hosted` toont het gepubliceerde formulier hier. `external` noemt een startformulier op een andere host: het portaal toont een kaart met de bestemming erop en zet er nooit een proxy of een embed voor in (REQ-PIFO-002).",
+        "Not measured": "Niet gemeten",
+        "No traffic recorded yet": "Nog geen verkeer geregistreerd",
+        "Last 7 days": "Afgelopen 7 dagen",
+        "Last 30 days": "Afgelopen 30 dagen",
+        "Last 90 days": "Afgelopen 90 dagen",
+        "Last 365 days": "Afgelopen 365 dagen"
     },
     "nplurals=2; plural=(n != 1);"
 )
