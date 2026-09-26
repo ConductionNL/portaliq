@@ -1916,14 +1916,15 @@
 				"state": "built",
 				"evidence": "portaliq's generic endpoint-action forwarder is the whole mechanism: src/portal/App.jsx:225-238 onAction() -> POST /portal/api/actions/{appId}/{actionId}; lib/Controller/ContributionController.php:1409 action(); lib/Service/PortalActionForwarder.php:89 forward(). shillinq supplies the target: shillinq appinfo/routes.php:764 portalPaymentInitiation#initiate, shillinq lib/Portal/PortalContributionProvider.php:427 declares endpoint '/apps/shillinq/api/portal/payments/initiate'; shillinq's Mollie adapter is LogMolliePaymentAdapter by default (shillinq lib/AppInfo/Application.php)",
 				"reachedOn": "PageView.jsx 'action'/'cta' block (endpoint type) -> onAction -> PortalActionForwarder -> shillinq's own controller",
-				"owner": "ConductionNL/shillinq (payment logic); ConductionNL/portaliq (forwarding + rendering)",
+				"owner": "ConductionNL/shillinq",
 				"note": "portaliq's forwarding path itself works. Whether a real payment happens depends entirely on shillinq's Mollie adapter, which logs instead of charging by default (matches the sal-customer-portal sibling row).",
 				"origin": "sibling"
 			},
 			"provider": "shillinq",
 			"providerHow": "read-from-code",
 			"feature": "sal-customer-portal",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"note": "Owners: ConductionNL/shillinq holds the payment logic; ConductionNL/portaliq forwards the action and renders it."
 		},
 		{
 			"id": "cmp-cas-woz",
@@ -2998,11 +2999,12 @@
 				"state": "built",
 				"evidence": "sibling dossiq (dir procest) lib/Portal/PortalContributionProvider.php citizenContribution(): collection 'berichten', kind:'inbox', schema portaalBericht, scopeField recipientRef, fields incl. caseReference/senderType/senderName/subject/content/attachments/direction/sentAt/readByRecipientAt; portaliq's PortalInboxReader.php:171-231 reads any kind:inbox collection through the same path regardless of owning app; dossiq docs/research/competitor-gap-re-read-2026-09-13.md:51 rates its own row 6.7 'partial' because the schema (register.d/50-zaakportaal.json) is still declared and move-portals-to-portaliq T7 is deferred on portaliq#16",
 				"reachedOn": "portal SPA InboxPage.jsx via the same aggregated /portal/api/inbox call",
-				"owner": "ConductionNL/procest (dossiq)",
-				"note": "The message itself displays fine (subject/body/date/source label). dossiq's own 'attachments' and structured 'content' fields ride in the row but portaliq's InboxPage.jsx never reads or renders an attachments field (see cmp-inb-attach) and 'content' vs the generic 'body' key is a possible field-name mismatch not verified live.",
+				"owner": "ConductionNL/dossiq",
+				"note": "The message itself displays fine (subject/body/date/source label). dossiq's own 'attachments' and structured 'content' fields ride in the row but portaliq's InboxPage.jsx never reads or renders an attachments field (see cmp-inb-attach) and 'content' vs the generic 'body' key is a possible field-name mismatch not verified live. The partial also rests on a field-contract mismatch found 2026-09-26: dossiq writes content, sentAt and readByRecipientAt, portaliq's inbox reads body, receivedAt and read, so only the subject shows (portaliq#702).",
 				"sourceId": "inb-dossiq-portaalbericht",
 				"origin": "sibling",
-				"defectCandidate": "src/portal/components/InboxPage.jsx:86-148 never reads message.attachments or message.content; a dossiq portaalBericht row carrying attachments renders with no way to see or download them (code reading, needs a live check)"
+				"defectCandidate": "src/portal/components/InboxPage.jsx:86-148 never reads message.attachments or message.content; a dossiq portaalBericht row carrying attachments renders with no way to see or download them (code reading, needs a live check)",
+				"readOn": "2026-09-26"
 			},
 			"provider": "dossiq",
 			"providerHow": "read-from-code",
@@ -3797,7 +3799,7 @@
 			"id": "cmp-int-objection",
 			"area": "intake",
 			"name": "File an objection (bezwaar) against a decision online.",
-			"portaliq": "no",
+			"portaliq": "partial",
 			"open-inwoner": "unknown",
 			"nl-portal": "unknown",
 			"xxllnc-pip": "yes",
@@ -3812,11 +3814,12 @@
 			},
 			"built": {
 				"state": "none",
-				"evidence": "dossiq (procest) lib/Portal/PortalContributionProvider.php citizenContribution() docblock explicitly: 'The bezwaar (objection) create is DEFERRED, it needs a client tegenZaakId cross-reference + AWB deadline validation the flat writer cannot verify (write-IDOR, portaliq#16)'; no other sibling or portaliq-native objection action was found",
-				"reachedOn": "nothing reaches it: no declared type:create action for an objection exists anywhere in the checked contribution providers",
-				"owner": "ConductionNL/procest (dossiq)",
-				"note": "Deliberately deferred for a security reason (write-IDOR risk), not an oversight.",
-				"origin": "competitor"
+				"evidence": "dossiq lib/Portal/PortalContributionProvider.php:509-535 declares the citizen action createBezwaar (type create, schema portaalVerzoek, kind defaulted to bezwaarschrift) with a required crossRefs entry againstCaseId scoped to the citizen's own cases; portaliq lib/Controller/ContributionController.php:961 runs PortalCrossRefGuard::refusedField() before the write and refuses a foreign case with 403 cross_ref_refused. dossiq's class docblock at PortalContributionProvider.php:38 still calls the bezwaar create deferred on portaliq#16; that comment is stale, the code at :357-365 and :509 says it ships.",
+				"reachedOn": "the declared createBezwaar action in dossiq's citizen contribution, forwarded through contribution#create behind PortalCrossRefGuard",
+				"owner": "ConductionNL/dossiq",
+				"note": "Re-rated no to partial on 2026-09-26. The action is declared and guarded server-side. Partial and not yes because the portal SPA's rendering of the againstCaseId field was not traced, and the AWB deadline validation the old docblock asked for is not in the declaration.",
+				"origin": "competitor",
+				"readOn": "2026-09-26"
 			},
 			"provider": "dossiq",
 			"providerHow": "read-from-code",
@@ -4147,7 +4150,8 @@
 				"owner": "ConductionNL/portaliq",
 				"note": "This is a platform capability, not a UI one: it is what lets a sibling safely accept a client-supplied cross-reference (e.g. 'which case is this objection against') without a write-IDOR.",
 				"origin": "code",
-				"defectCandidate": "dossiq (procest) lib/Portal/PortalContributionProvider.php still documents its bezwaar/objection create AND the message-reply create as DEFERRED 'write-IDOR, portaliq#16' even though portal-create-cross-refs, built specifically to unblock this, is fully shipped in portaliq; dossiq's own contribution has not been updated to declare crossRefs and un-defer either action, so a resolved platform capability is going unused by the sibling that asked for it (code reading, needs a live check)"
+				"defectCandidate": "Corrected 2026-09-26, no longer a portaliq-side gap: dossiq now declares crossRefs on createBezwaar and replyToMessage and ships both (dossiq lib/Portal/PortalContributionProvider.php:509-586). Only dossiq's class docblock at :38 still calls them deferred on portaliq#16, which is a stale comment in dossiq.",
+				"readOn": "2026-09-26"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4429,7 +4433,7 @@
 			"id": "site-landing-page-provisioning",
 			"area": "site",
 			"name": "Let another app request a ready-to-publish landing page with a bound lead-capture form through a cross-app event, without building its own CMS page.",
-			"portaliq": "partial",
+			"portaliq": "yes",
 			"open-inwoner": "unknown",
 			"nl-portal": "no",
 			"xxllnc-pip": "no",
@@ -4445,10 +4449,11 @@
 			"built": {
 				"state": "built",
 				"evidence": "lib/Event/LandingPageRequestedEvent.php; lib/Listener/LandingPageRequestedEventListener.php; lib/Service/LandingPageProvisioningService.php:7-10,43,93,146 (enforces route uniqueness, always creates the page as `status: draft`); registered lib/AppInfo/Application.php:147",
-				"reachedOn": "nothing reaches it: none of the sibling repos readable for this matrix (procest, decidesk, docudesk, openconnector, scholiq, openbuild, opencatalogi) dispatch `new LandingPageRequestedEvent` (git grep, 0 hits each). The change's own proposal names pipelinq as the intended producer (openspec/changes/contribution-landing-page-action/proposal.md), a repo outside this reader's access.",
+				"reachedOn": "pipelinq campaign page: pipelinq src/components/marketing/CampaignLandingPageSection.vue calls POST /api/campaigns/{id}/landing-page (pipelinq appinfo/routes.php:658) -> CampaignController::createLandingPage (lib/Controller/CampaignController.php:208) -> LandingPageProvisioningService, which dispatches OCA\\Portaliq\\Event\\LandingPageRequestedEvent (pipelinq lib/Service/LandingPageProvisioningService.php:60, :258 dispatchTyped).",
 				"owner": "ConductionNL/portaliq",
-				"note": "The receiving side is fully implemented and tested (tasks.md all checked), but this reader could not confirm any live producer calls it.",
-				"origin": "code"
+				"note": "Re-rated partial to yes on 2026-09-26: the producer is pipelinq, a repo the first reader could not read. The receiving side creates the page as a draft by design.",
+				"origin": "code",
+				"readOn": "2026-09-26"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6639,14 +6644,15 @@
 				"state": "built",
 				"evidence": "src/manifest.json:1436-1441 Integrations page, permission admin, visibleIf appInstalled:'integriq'; lib/Settings/connections.json declares geo-db and oidc rows with reportedOnly health; src/lib/connectionRegistry.js:22-25 builds the 'Add integration' handler pointed at /apps/integriq/connections?app=portaliq&link=1",
 				"reachedOn": "Settings > Integrations menu entry (src/manifest.json:126-140) -> Integrations page -> integriq's own Connections overview",
-				"owner": "ConductionNL/portaliq (health reporting) + integriq (connection management UI)",
+				"owner": "ConductionNL/portaliq",
 				"note": "Verified integriq's <id> has already moved to 'integriq' on its own development branch (apps-extra/openconnector, appinfo/info.xml:4), so this appInstalled gate is not a silent no-op from a stale app id, unlike the fleet's general renaming risk.",
 				"origin": "code"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": null,
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"note": "Owners: ConductionNL/portaliq does the health reporting; ConductionNL/integriq owns the connection management UI."
 		},
 		{
 			"id": "ops-store-page",
@@ -6669,14 +6675,15 @@
 				"state": "built",
 				"evidence": "src/manifest.json:143-153 Store page, type 'store', app: portaliq; appinfo/routes.php:27-46 registers store#search (GET /api/store/items) and store#install (POST /api/store/items/{slug}/install) verbatim from OpenRegister's Routes::standard(), aliased by lib/AppInfo/StorePlaneRegistrar.php to OpenRegister's GenericStoreController; portaliq ships NO StoreController of its own",
 				"reachedOn": "confirmed via the shared component's own source: nextcloud-vue src/components/CnStorePage/CnStorePage.vue:562,604 fetches /apps/{app}/api/store/items and POSTs .../install. The Store page's manifest type resolves to this shared component, which resolves the endpoint itself using the app id from its own config, exactly the pattern the lane brief asked to check before concluding 'no caller'.",
-				"owner": "OpenRegister (engine) + portaliq (route aliasing + manifest declaration)",
+				"owner": "ConductionNL/openregister",
 				"note": "routes.php's own comments record the FAILURE MODE this shipped to fix: without these two route entries, the SPA catch-all answered 200 HTML and the page read 'The store registry did not answer' (WOO-559) with nothing erroring. Search is reachable by any signed-in user (one tier below the rest of this app's admin-only /api/), accepted not chosen, because OpenRegister's store-plane engine has no searchAuth key to narrow it further.",
 				"origin": "code"
 			},
 			"provider": "openregister",
 			"providerHow": "read-from-code",
 			"feature": null,
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"note": "Owners: ConductionNL/openregister is the engine; ConductionNL/portaliq aliases the routes and declares the manifest page."
 		},
 		{
 			"id": "ops-preferences",
@@ -7031,7 +7038,7 @@
 				"state": "building",
 				"evidence": "decidiq's own sibling row (matrix decidiq, id par-10) self-rated 'unknown', citing lib/Portal/PortalContributionProvider.php:200 citizenContribution(), :219 four read collections, :308 citizenActions() createReaction + createBudgetProposal, guarded by PortalCreateOpenParentGuardListener; re-verified here that the generic create-action path (con-registry-discovery, int-generic-create-action) is real and would carry these actions if decidiq is installed",
 				"reachedOn": "would reach via the same PageView.jsx -> SchemaForm.jsx -> POST /portal/api/collections/{register}/{schema} path as any other type:create action, PROVIDED decidiq is installed alongside portaliq",
-				"owner": "ConductionNL/decidesk (decidiq)",
+				"owner": "ConductionNL/decidiq",
 				"note": "Same conclusion as decidiq's own matrix: the mechanism portaliq provides is real and generic, but proving decidiq's specific createReaction/createBudgetProposal actions actually render and succeed end to end requires decidiq's own repo/a live check, which this portaliq-only reading cannot settle. Kept 'unknown' rather than upgraded, per the brief's rule that unknown needs a genuine reason.",
 				"sourceId": "con-decidiq-par-10",
 				"origin": "sibling"
