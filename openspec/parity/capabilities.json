@@ -346,7 +346,6 @@
 				"reachedOn": "src/portal/lib/portalApi.js:497-515 refreshSession() -> POST /portal/api/session/refresh",
 				"owner": "ConductionNL/portaliq",
 				"note": "Fails closed silently: a revoked/expired/past-cap bearer is simply not rotated, and the next getSession() call surfaces the real state.",
-				"feature": "portal-session-hardening-v2",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -540,7 +539,7 @@
 			"featureConfidence": "high"
 		},
 		{
-			"id": "plt-02",
+			"id": "sib-decidiq-plt-02",
 			"area": "signin",
 			"name": "Open confidential papers after signing in with DigiD or eHerkenning.",
 			"portaliq": "partial",
@@ -555,31 +554,13 @@
 				"reachedOn": "same OIDC broker path as sig-digid/sig-eherkenning; whether decidiq's own contribution actually GATES its confidential papers by minTrust is decidesk's question to answer, not portaliq's",
 				"owner": "ConductionNL/portaliq",
 				"note": "Re-rated from decidiq's original 'no': portaliq's DigiD/eHerkenning OIDC broker login (portal-oidc-broker-login, commit eb85956) is real and reached, contradicting the stale docblock decidiq's evidence quoted. See overlayClaimsFalse: SessionController.php's own class comment says the broker is dormant while its @spec tags cite the very change (portal-oidc-broker-login T06/T07) that wired it, and the code below fully implements it.",
+				"sourceId": "plt-02",
 				"origin": "sibling"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-oidc-broker-login",
 			"featureConfidence": "medium"
-		},
-		{
-			"id": "sib-decidiq-plt-02",
-			"area": "signin",
-			"name": "Open confidential papers after signing in with DigiD or eHerkenning.",
-			"portaliq": "unknown",
-			"open-inwoner": "unknown",
-			"nl-portal": "unknown",
-			"xxllnc-pip": "unknown",
-			"mijnoverheid": "unknown",
-			"liferay-dxp": "unknown",
-			"built": {
-				"state": "none",
-				"note": "seed row, not yet read from portaliq code; source decidiq capabilities[plt-02] rates itself no",
-				"origin": "sibling",
-				"owner": "ConductionNL/portaliq"
-			},
-			"provider": "portaliq",
-			"providerHow": "owed by the decidiq matrix, not yet read"
 		},
 		{
 			"id": "sib-opencatalogi-pub-restricted",
@@ -877,7 +858,7 @@
 			"featureConfidence": "medium"
 		},
 		{
-			"id": "gua-guardian-sees-the-child",
+			"id": "sib-learniq-gua-guardian-sees-the-child",
 			"area": "identity",
 			"name": "Let a guardian see their own child's record and nobody else's.",
 			"portaliq": "partial",
@@ -891,16 +872,17 @@
 				"evidence": "learniq's own matrix (learniq gua-guardian-sees-the-child) cites openspec/specs/portal-identity/spec.md and its own lib/Portal/PortalContributionProvider.php as the seam; from portaliq's side the mechanism that would carry this is the mandate/party-tree pair (lib/Service/Identity/PortalMandateService.php, PortalPartyTreeResolver.php), reached from CitizenCaseController.php:118,682 and MyCasesController.php:67,100",
 				"reachedOn": "the portal SPA reads a citizen's own contributions/cases (src/portal/lib/portalApi.js fetchCollection/fetchCitizenCase) but has no concept of 'my child' distinct from 'my own mandate'; whether learniq issues a guardian-scoped mandate that resolves correctly through PortalMandateService is learniq's question, portaliq only provides the generic mandate/party-tree seam",
 				"owner": "ConductionNL/portaliq",
+				"note": "Kept learniq's selfRating (partial); portaliq supplies the generic mandate seam, not a guardian-specific concept.",
+				"sourceId": "gua-guardian-sees-the-child",
 				"origin": "sibling"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-identity-and-the-organisations-cases",
-			"featureConfidence": "low",
-			"note": "Kept learniq's selfRating (partial); portaliq supplies the generic mandate seam, not a guardian-specific concept."
+			"featureConfidence": "low"
 		},
 		{
-			"id": "acc-end-user-accounts",
+			"id": "sib-openregister-acc-end-user-accounts",
 			"area": "identity",
 			"name": "Let an app's end users sign up with their own accounts, separate from staff accounts.",
 			"portaliq": "yes",
@@ -914,70 +896,14 @@
 				"evidence": "id-auto-provision-on-login (SessionController.php:429-438) and lib/Settings/portaliq_register.json:356 'Portal Account' schema are the mechanism; openregister's own matrix (_lane/sib-openregister.json id acc-end-user-accounts) rates itself 'no' and notes 'End-user accounts sit with portaliq, which asserts subjects to OpenRegister.'",
 				"reachedOn": "every broker login across every leaf app that contributes portal pages (lib/Contribution/IPortalContributionProvider.php)",
 				"owner": "ConductionNL/portaliq",
+				"note": "Cross-referenced from openregister's matrix (source matrix openregister, id acc-end-user-accounts): openregister correctly declines this capability and names portaliq as the provider. Confirmed from portaliq's own code: end-user accounts are real, broker-authenticated, and separate from Nextcloud staff accounts.",
+				"sourceId": "acc-end-user-accounts",
 				"origin": "sibling"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-identity-space",
-			"featureConfidence": "high",
-			"note": "Cross-referenced from openregister's matrix (source matrix openregister, id acc-end-user-accounts): openregister correctly declines this capability and names portaliq as the provider. Confirmed from portaliq's own code: end-user accounts are real, broker-authenticated, and separate from Nextcloud staff accounts."
-		},
-		{
-			"id": "sib-learniq-gua-guardian-sees-the-child",
-			"area": "identity",
-			"name": "Let a guardian see their own child's record and nobody else's.",
-			"portaliq": "unknown",
-			"open-inwoner": "unknown",
-			"nl-portal": "unknown",
-			"xxllnc-pip": "unknown",
-			"mijnoverheid": "unknown",
-			"liferay-dxp": "unknown",
-			"built": {
-				"state": "none",
-				"note": "seed row, not yet read from portaliq code; source learniq capabilities[gua-guardian-sees-the-child] rates itself partial",
-				"origin": "sibling",
-				"owner": "ConductionNL/portaliq"
-			},
-			"provider": "portaliq",
-			"providerHow": "owed by the learniq matrix, not yet read"
-		},
-		{
-			"id": "sib-dossiq-q1-14",
-			"area": "identity",
-			"name": "Can an external party file and follow a case with an identity that is not a staff account.",
-			"portaliq": "unknown",
-			"open-inwoner": "unknown",
-			"nl-portal": "unknown",
-			"xxllnc-pip": "unknown",
-			"mijnoverheid": "unknown",
-			"liferay-dxp": "unknown",
-			"built": {
-				"state": "none",
-				"note": "seed row, not yet read from portaliq code; source dossiq pending[Q1.14] rates itself partial",
-				"origin": "sibling",
-				"owner": "ConductionNL/portaliq"
-			},
-			"provider": "portaliq",
-			"providerHow": "owed by the dossiq matrix, not yet read"
-		},
-		{
-			"id": "sib-dossiq-13-38",
-			"area": "identity",
-			"name": "Portal visibility derived from the party tree, so a parent sees its subsidiaries.",
-			"portaliq": "unknown",
-			"open-inwoner": "unknown",
-			"nl-portal": "unknown",
-			"xxllnc-pip": "unknown",
-			"mijnoverheid": "unknown",
-			"liferay-dxp": "unknown",
-			"built": {
-				"state": "none",
-				"note": "seed row, not yet read from portaliq code; source dossiq pending[13.38] rates itself no",
-				"origin": "sibling",
-				"owner": "ConductionNL/portaliq"
-			},
-			"provider": "portaliq",
-			"providerHow": "owed by the dossiq matrix, not yet read"
+			"featureConfidence": "high"
 		},
 		{
 			"id": "cas-contrib-list",
@@ -1687,7 +1613,7 @@
 			"featureConfidence": "high"
 		},
 		{
-			"id": "sib-2.21",
+			"id": "sib-dossiq-2-21",
 			"area": "case-actions",
 			"name": "Change proposals from a citizen or a colleague, queued for staff acceptance.",
 			"portaliq": "no",
@@ -1702,6 +1628,7 @@
 				"reachedOn": "nothing reaches it: grep 'proposal'/'Proposal' across src/portal, src/site, src/views, src/manifest.json returns zero hits (only unrelated OpenSpec-tooling mentions); grep across every sibling app repo (procest, scholiq, decidesk, docudesk, openconnector, openbuild, shillinq, stackiq) for '/api/proposals' or 'ProposalController' also returns zero code hits, only a proposal-doc mention in openconnector's competitor-parity table",
 				"owner": "ConductionNL/portaliq",
 				"note": "dossiq's own evidence for this row (register.d/50-zaakportaal.json#portaalVerzoek) is dossiq's register entry, not a caller of portaliq's queue; the actual queue mechanism in portaliq has no admin page, no portal-SPA propose button, and no accept/reject UI anywhere.",
+				"sourceId": "sib-2.21",
 				"origin": "sibling",
 				"defectCandidate": "lib/Controller/ProposalController.php:1 the whole change-proposal-queue feature (proposing, listing, accepting, rejecting, withdrawing) is unreachable from any UI in this repo (code reading, needs a live check)"
 			},
@@ -1896,7 +1823,7 @@
 			"featureConfidence": "high"
 		},
 		{
-			"id": "sib-3.19",
+			"id": "sib-dossiq-3-19",
 			"area": "tasks",
 			"name": "External (supply chain partner) task assignment.",
 			"portaliq": "no",
@@ -1911,6 +1838,7 @@
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
 				"note": "dossiq's matrix rates this 'partial' citing its own ExternalConsultationResponse page and a merged PR (#611); the PR shipped the portaliq-side controller, but nothing calls it, and dossiq's old ExternalConsultationResponse flow it was meant to retire is still shipping unchanged.",
+				"sourceId": "sib-3.19",
 				"origin": "sibling"
 			},
 			"provider": "portaliq",
@@ -1985,140 +1913,212 @@
 			"featureConfidence": "high"
 		},
 		{
-			"id": "cmp-inb-reply",
+			"id": "inb-view-unified",
 			"area": "inbox",
-			"name": "Reply to a message from the organisation inside the portal.",
-			"portaliq": "unknown",
+			"name": "See every message addressed to you, merged from every app, in one inbox.",
+			"portaliq": "yes",
 			"open-inwoner": "unknown",
 			"nl-portal": "unknown",
 			"xxllnc-pip": "unknown",
 			"mijnoverheid": "unknown",
 			"liferay-dxp": "unknown",
 			"built": {
-				"state": "none",
-				"note": "seed row derived from competitor research, not yet read from portaliq code",
-				"origin": "competitor",
-				"owner": "ConductionNL/portaliq"
-			}
+				"state": "built",
+				"evidence": "lib/Controller/ContributionController.php:333 inbox(); lib/Service/PortalInboxReader.php:93 aggregateInbox() merges every kind:inbox collection across contributions, sorted by receivedAt; src/portal/lib/portalApi.js:141 fetchInbox(); src/portal/components/InboxPage.jsx:39-49 renders it",
+				"reachedOn": "portal SPA InboxPage.jsx -> portalApi.fetchInbox() -> GET /portal/api/inbox (appinfo/routes.php:168)",
+				"owner": "ConductionNL/portaliq",
+				"note": "Works end to end. Each row carries a _source provenance tag (appId/label) so the SPA can show which app it came from.",
+				"origin": "code"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"feature": "portal-inbox-v2",
+			"featureConfidence": "high"
 		},
 		{
-			"id": "cmp-inb-attach",
+			"id": "inb-mark-read",
 			"area": "inbox",
-			"name": "Attach a file to a message you send.",
-			"portaliq": "unknown",
+			"name": "Mark a message as read.",
+			"portaliq": "yes",
 			"open-inwoner": "unknown",
 			"nl-portal": "unknown",
 			"xxllnc-pip": "unknown",
 			"mijnoverheid": "unknown",
 			"liferay-dxp": "unknown",
 			"built": {
-				"state": "none",
-				"note": "seed row derived from competitor research, not yet read from portaliq code",
-				"origin": "competitor",
-				"owner": "ConductionNL/portaliq"
-			}
+				"state": "built",
+				"evidence": "lib/Controller/ContributionController.php:369 markRead() re-resolves the (register,schema) to an authorised kind:inbox collection before writing (authorisedInboxCollection, :436) so the write can't be pointed at a non-inbox row; src/portal/lib/portalApi.js:229 markMessageRead(); src/portal/components/InboxPage.jsx:55 onToggleRead()",
+				"reachedOn": "InboxPage.jsx 'Mark as read' button -> PATCH /portal/api/inbox/{register}/{schema}/{id}/read",
+				"owner": "ConductionNL/portaliq",
+				"note": "Optimistic UI update only flips read on server confirmation; only the read field can ever be set by this endpoint.",
+				"origin": "code"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"feature": "portal-inbox-v2",
+			"featureConfidence": "high"
 		},
 		{
-			"id": "cmp-inb-push",
+			"id": "inb-unread-badge",
 			"area": "inbox",
-			"name": "Get a push notification on your phone when a message arrives.",
-			"portaliq": "unknown",
+			"name": "See how many unread messages you have, as a badge in the portal navigation.",
+			"portaliq": "yes",
 			"open-inwoner": "unknown",
 			"nl-portal": "unknown",
 			"xxllnc-pip": "unknown",
 			"mijnoverheid": "unknown",
 			"liferay-dxp": "unknown",
 			"built": {
-				"state": "none",
-				"note": "seed row derived from competitor research, not yet read from portaliq code",
-				"origin": "competitor",
-				"owner": "ConductionNL/portaliq"
-			}
+				"state": "built",
+				"evidence": "lib/Controller/ContributionController.php:305 aggregate['unreadCount'] = inboxReader->unreadCount(); src/portal/lib/portalApi.js:127 getContributions(); src/portal/App.jsx:141 unreadCount, :298-299 badge rendered next to the Inbox nav entry, :347 onRead callback decrements it live when a message is marked read",
+				"reachedOn": "portal SPA nav badge, App.jsx:298",
+				"owner": "ConductionNL/portaliq",
+				"note": "Live-decrements on markRead without a full reload.",
+				"origin": "code"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"feature": "portal-inbox-v2",
+			"featureConfidence": "high"
 		},
 		{
-			"id": "cmp-inb-email-alert",
+			"id": "inb-wmebv-fields",
 			"area": "inbox",
-			"name": "Get an e-mail telling you there is a new message in the portal.",
-			"portaliq": "unknown",
+			"name": "See the legal nature, effect and deadline of a formal decision message, when the sending app supplies them.",
+			"portaliq": "partial",
 			"open-inwoner": "unknown",
 			"nl-portal": "unknown",
 			"xxllnc-pip": "unknown",
 			"mijnoverheid": "unknown",
 			"liferay-dxp": "unknown",
 			"built": {
-				"state": "none",
-				"note": "seed row derived from competitor research, not yet read from portaliq code",
-				"origin": "competitor",
-				"owner": "ConductionNL/portaliq"
-			}
+				"state": "built",
+				"evidence": "lib/Settings/portaliq_register.json:686-704 portalMessage.nature/rechtsgevolg/term (WMEBV art 2:10 readiness, all optional); src/portal/components/InboxPage.jsx:103-124 renders them only when present",
+				"reachedOn": "InboxPage.jsx message detail body",
+				"owner": "ConductionNL/portaliq",
+				"note": "Only renders when a contributing app's row happens to populate these optional fields; nothing in this repo enforces that a decision message always carries them.",
+				"origin": "code"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"feature": "wmebv-submission-receipts",
+			"featureConfidence": "medium"
 		},
 		{
-			"id": "cmp-inb-read-receipt",
+			"id": "inb-task-link",
 			"area": "inbox",
-			"name": "Let the organisation see that you opened a message.",
-			"portaliq": "unknown",
+			"name": "Open the related task directly from an inbox message that announces one.",
+			"portaliq": "yes",
 			"open-inwoner": "unknown",
 			"nl-portal": "unknown",
 			"xxllnc-pip": "unknown",
 			"mijnoverheid": "unknown",
 			"liferay-dxp": "unknown",
 			"built": {
-				"state": "none",
-				"note": "seed row derived from competitor research, not yet read from portaliq code",
-				"origin": "competitor",
-				"owner": "ConductionNL/portaliq"
-			}
+				"state": "built",
+				"evidence": "lib/Settings/portaliq_register.json:717-725 portalMessage.taskUuid; src/portal/components/InboxPage.jsx:126-134 'View task' button calls onOpenTask(message.taskUuid) when present",
+				"reachedOn": "InboxPage.jsx task-link button",
+				"owner": "ConductionNL/portaliq",
+				"note": "Ties portal-task-delivery messages to the 'Mijn taken' surface; absent taskUuid renders no link.",
+				"origin": "code"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"feature": "portal-task-delivery",
+			"featureConfidence": "high"
 		},
 		{
-			"id": "cmp-inb-notif-prefs",
+			"id": "inb-staff-admin-list",
 			"area": "inbox",
-			"name": "Choose which notifications you receive and through which channel.",
-			"portaliq": "unknown",
+			"name": "Staff can see and search every portal message sent to any subject.",
+			"portaliq": "yes",
 			"open-inwoner": "unknown",
 			"nl-portal": "unknown",
 			"xxllnc-pip": "unknown",
 			"mijnoverheid": "unknown",
 			"liferay-dxp": "unknown",
 			"built": {
-				"state": "none",
-				"note": "seed row derived from competitor research, not yet read from portaliq code",
-				"origin": "competitor",
-				"owner": "ConductionNL/portaliq"
-			}
+				"state": "built",
+				"evidence": "src/manifest.json:881-905 PortalMessages index page (register portaliq/portalMessage, columns subject/subjectRef/read badge/receivedAt); src/manifest.json:911-962 PortalMessageDetail full record view",
+				"reachedOn": "admin Vue app /messages route (manifest page)",
+				"owner": "ConductionNL/portaliq",
+				"note": "Generic OpenRegister-backed index/detail pages, staff-only.",
+				"origin": "code"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"feature": "portal-inbox-v2",
+			"featureConfidence": "high"
 		},
 		{
-			"id": "cmp-inb-download",
+			"id": "inb-staff-unread-widget",
 			"area": "inbox",
-			"name": "Download a message with its attachments.",
-			"portaliq": "unknown",
+			"name": "Staff dashboard shows a live count of unread portal messages.",
+			"portaliq": "yes",
 			"open-inwoner": "unknown",
 			"nl-portal": "unknown",
 			"xxllnc-pip": "unknown",
 			"mijnoverheid": "unknown",
 			"liferay-dxp": "unknown",
 			"built": {
-				"state": "none",
-				"note": "seed row derived from competitor research, not yet read from portaliq code",
-				"origin": "competitor",
-				"owner": "ConductionNL/portaliq"
-			}
+				"state": "built",
+				"evidence": "src/manifest.json:199-213 'unread-messages' stats-block widget, dataSource schema portalMessage filter {read:false} aggregate count; src/manifest.json:224-236 placed on dashboard layout",
+				"reachedOn": "admin dashboard widget",
+				"owner": "ConductionNL/portaliq",
+				"note": null,
+				"origin": "code"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"feature": "portal-inbox-v2",
+			"featureConfidence": "high"
 		},
 		{
-			"id": "cmp-inb-contact-history",
+			"id": "inb-staff-talk-leaf",
 			"area": "inbox",
-			"name": "See the history of your contacts with the organisation (contactmomenten).",
-			"portaliq": "unknown",
+			"name": "Staff can attach an internal Nextcloud Talk conversation to a message to coordinate a reply, kept separate from what the citizen sees.",
+			"portaliq": "yes",
 			"open-inwoner": "unknown",
 			"nl-portal": "unknown",
 			"xxllnc-pip": "unknown",
 			"mijnoverheid": "unknown",
 			"liferay-dxp": "unknown",
 			"built": {
-				"state": "none",
-				"note": "seed row derived from competitor research, not yet read from portaliq code",
-				"origin": "competitor",
-				"owner": "ConductionNL/portaliq"
-			}
+				"state": "built",
+				"evidence": "openspec/specs/portaliq-leaf-integrations/spec.md:70-91 requirement + scenarios; src/manifest.json:931,948 message-talk integration widget on PortalMessageDetail",
+				"reachedOn": "admin PortalMessageDetail talk leaf widget",
+				"owner": "ConductionNL/portaliq",
+				"note": "Internal-only per ADR-046: no Talk join link or token is ever written into a portalMessage field. The citizen's half of any answer must still arrive as an ordinary portalMessage (see inb-reply).",
+				"origin": "code"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"feature": "portaliq-leaf-integrations",
+			"featureConfidence": "high"
+		},
+		{
+			"id": "inb-dossiq-portaalbericht",
+			"area": "inbox",
+			"name": "See dossiq case messages (berichtenbox) in the shared portal inbox.",
+			"portaliq": "partial",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "built",
+				"evidence": "sibling dossiq (dir procest) lib/Portal/PortalContributionProvider.php citizenContribution(): collection 'berichten', kind:'inbox', schema portaalBericht, scopeField recipientRef, fields incl. caseReference/senderType/senderName/subject/content/attachments/direction/sentAt/readByRecipientAt; portaliq's PortalInboxReader.php:171-231 reads any kind:inbox collection through the same path regardless of owning app; dossiq docs/research/competitor-gap-re-read-2026-09-13.md:51 rates its own row 6.7 'partial' because the schema (register.d/50-zaakportaal.json) is still declared and move-portals-to-portaliq T7 is deferred on portaliq#16",
+				"reachedOn": "portal SPA InboxPage.jsx via the same aggregated /portal/api/inbox call",
+				"owner": "ConductionNL/procest (dossiq)",
+				"note": "The message itself displays fine (subject/body/date/source label). dossiq's own 'attachments' and structured 'content' fields ride in the row but portaliq's InboxPage.jsx never reads or renders an attachments field (see cmp-inb-attach) and 'content' vs the generic 'body' key is a possible field-name mismatch not verified live.",
+				"origin": "sibling",
+				"defectCandidate": "src/portal/components/InboxPage.jsx:86-148 never reads message.attachments or message.content; a dossiq portaalBericht row carrying attachments renders with no way to see or download them (code reading, needs a live check)"
+			},
+			"provider": "dossiq",
+			"providerHow": "read-from-code",
+			"feature": "portal-inbox-v2",
+			"featureConfidence": "medium"
 		},
 		{
 			"id": "sib-dossiq-q1-16",
@@ -2965,7 +2965,7 @@
 			"featureConfidence": "medium"
 		},
 		{
-			"id": "Q1.14",
+			"id": "sib-dossiq-q1-14",
 			"area": "identity",
 			"name": "Can an external party file and follow a case with an identity that is not a staff account.",
 			"portaliq": "partial",
@@ -2979,16 +2979,17 @@
 				"evidence": "id-auto-provision-on-login (SessionController.php:429-438, PortalAccountLookup.php) creates a non-staff portalAccount on first broker login; lib/Controller/CitizenCaseController.php:show/amend/addDocument reached from the portal SPA scope the case to that subjectRef via the mandate",
 				"reachedOn": "portal SPA (src/portal/lib/portalApi.js:314,331,368) -> /portal/api/citizen/cases/{register}/{schema}/{id} for an already-known case id; but /portal/api/my-cases (the index that would let a new external party FIND their cases without already knowing the id) has no frontend caller anywhere in this repo",
 				"owner": "ConductionNL/portaliq",
+				"note": "Kept dossiq's selfRating (partial): filing/following an already-known case works end to end for a non-staff broker identity, but the discovery step (my-cases index, or self-registration/reference-link to attach a case before first login) is unreached, so a party who does not already have a case id or a broker-matched identity has no way in.",
+				"sourceId": "Q1.14",
 				"origin": "sibling"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-identity-and-the-organisations-cases",
-			"featureConfidence": "medium",
-			"note": "Kept dossiq's selfRating (partial): filing/following an already-known case works end to end for a non-staff broker identity, but the discovery step (my-cases index, or self-registration/reference-link to attach a case before first login) is unreached, so a party who does not already have a case id or a broker-matched identity has no way in."
+			"featureConfidence": "medium"
 		},
 		{
-			"id": "13.38",
+			"id": "sib-dossiq-13-38",
 			"area": "identity",
 			"name": "Portal visibility derived from the party tree, so a parent sees its subsidiaries.",
 			"portaliq": "yes",
@@ -3002,13 +3003,14 @@
 				"evidence": "lib/Service/Identity/PortalPartyTreeResolver.php:90-175 entitiesFor()/walkDown()/childrenOf(); lib/Service/Identity/PortalMandateService.php:204-222 reachOf() returns REACH_TREE vs a single organisation; wired at lib/Controller/CitizenCaseController.php:695 and MyCasesController.php:109",
 				"reachedOn": "CitizenCaseController is reached from the portal SPA's citizen-case calls (see Q1.14); the reach decision (REACH_TREE vs single-org) is made server-side from the active mandate",
 				"owner": "ConductionNL/portaliq",
+				"note": "Re-rated from dossiq's original 'no': the party-tree walk is real, wired into the reached case-read path, and gated by whether the active mandate's reachOf() is REACH_TREE. Caveat shared with cmp-sig-machtiging: the SPA never sends a `mandate` parameter, so which mandate (and therefore whether tree-reach applies) is always the service's default, not a citizen's explicit choice.",
+				"sourceId": "13.38",
 				"origin": "sibling"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "portal-visibility-follows-the-party-tree",
-			"featureConfidence": "high",
-			"note": "Re-rated from dossiq's original 'no': the party-tree walk is real, wired into the reached case-read path, and gated by whether the active mandate's reachOf() is REACH_TREE. Caveat shared with cmp-sig-machtiging: the SPA never sends a `mandate` parameter, so which mandate (and therefore whether tree-reach applies) is always the service's default, not a citizen's explicit choice."
+			"featureConfidence": "high"
 		},
 		{
 			"id": "cmp-id-brp",
@@ -3099,7 +3101,7 @@
 			"featureConfidence": "high"
 		},
 		{
-			"id": "sib-2.47",
+			"id": "sib-dossiq-2-47",
 			"area": "case-actions",
 			"name": "Applicant withdraws their own case from the portal.",
 			"portaliq": "no",
@@ -3114,11 +3116,197 @@
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
 				"note": "dossiq matrix rated this 'partial' with no evidence given; from portaliq's code the honest rating is no, since the whole path is unreached (see the defect on act-withdraw-case).",
+				"sourceId": "sib-2.47",
 				"origin": "sibling"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "withdrawing-your-own-case-from-the-portal",
+			"featureConfidence": "high"
+		},
+		{
+			"id": "cmp-inb-reply",
+			"area": "inbox",
+			"name": "Reply to a message from the organisation inside the portal.",
+			"portaliq": "partial",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"evidence": "grep reply/compose in src/portal: 0 hits; InboxPage.jsx (full file read) has no compose/reply control; dossiq's own citizen contribution provider explicitly defers this: 'the message reply (needs a verified case/thread linkage)' (procest lib/Portal/PortalContributionProvider.php, citizenContribution() docblock); portaliq's own leaf-integrations spec (openspec/specs/portaliq-leaf-integrations/spec.md:88 'The visitor's reply path stays the portal edge') only says an answer must arrive as a portalMessage, it does not build a compose UI",
+				"reachedOn": "citizen side: nothing reaches it, no compose control anywhere in src/portal. Staff side: no dedicated 'reply' action either, but src/manifest.json:881 PortalMessages index has no allowCreate:false, so a staff member CAN hand-create a new portalMessage row via the generic OpenRegister create dialog, which the citizen would then see appear in their inbox.",
+				"owner": "ConductionNL/portaliq",
+				"note": "No citizen-facing reply exists anywhere. A staff 'reply' is possible only as a manually created, unthreaded portalMessage through the generic admin object form -- there is no button, no thread, no quoting of the original message.",
+				"origin": "competitor"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"feature": "portaliq-leaf-integrations",
+			"featureConfidence": "high"
+		},
+		{
+			"id": "cmp-inb-attach",
+			"area": "inbox",
+			"name": "Attach a file to a message you send.",
+			"portaliq": "no",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"evidence": "lib/Settings/portaliq_register.json:629-732 portalMessage schema has no file/attachment property; InboxPage.jsx (full file read) has no upload control or attachment renderer",
+				"reachedOn": "nothing reaches it: no attachment field, no upload UI, and no way to send a message at all (see cmp-inb-reply)",
+				"owner": "ConductionNL/portaliq",
+				"note": "dossiq's portaalBericht declares an 'attachments' field to portaliq (see inb-dossiq-portaalbericht) but nothing renders it, so even a sibling-supplied attachment is invisible.",
+				"origin": "competitor"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"feature": null,
+			"featureConfidence": "high"
+		},
+		{
+			"id": "cmp-inb-push",
+			"area": "inbox",
+			"name": "Get a push notification on your phone when a message arrives.",
+			"portaliq": "no",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"evidence": "lib/BackgroundJob/NotificationDispatchJob.php:95 'private const CHANNEL_EMAIL = ... // The only channel implemented — future-proofed field, single value today'; no service-worker/push code anywhere under src/portal",
+				"reachedOn": "nothing reaches it: only channel implemented is email",
+				"owner": "ConductionNL/portaliq",
+				"note": null,
+				"origin": "competitor"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"feature": "portal-notifications-dispatch",
+			"featureConfidence": "high"
+		},
+		{
+			"id": "cmp-inb-email-alert",
+			"area": "inbox",
+			"name": "Get an e-mail telling you there is a new message in the portal.",
+			"portaliq": "partial",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "built",
+				"evidence": "lib/Service/NotificationDispatchService.php dispatch()/doDispatch() matches a fired ruleKey against the contributing app's declared 'notifications' list, fail-closed on no match; lib/BackgroundJob/NotificationDispatchJob.php sends a privacy-minimal NL/EN email via IMailer, logs every attempt as an append-only portalNotification row, and flags needsAlternativeContact after 3 consecutive failures; called from lib/Service/SubmissionReceiptService.php:278 (RULE_MESSAGE_CREATED, after a WMEBV receipt message) and lib/Controller/ContributionController.php:1260 (RULE_STATUS_CHANGED, after a generic update action)",
+				"reachedOn": "async, off the request path, via IJobList (NotificationDispatchJob is a QueuedJob, does not need an info.xml background-jobs entry to run)",
+				"owner": "ConductionNL/portaliq",
+				"note": "Real and working for the two triggers the code actually fires: a WMEBV submission receipt and a generic status-change update. Only ever fires for ruleKey 'message.created' or 'status.changed' (the two constants); a sibling that declares any OTHER rule key never gets an email — dossiq's own supplier contribution declares notifications ['tenderPublished','contractExpiring','invoiceDue'], none of which will ever match, so those specific events are silently unreachable. A staff-authored manual portalMessage (see cmp-inb-reply) also does not go through SubmissionReceiptService, so it triggers no email either.",
+				"origin": "competitor",
+				"defectCandidate": "dossiq (procest) lib/Portal/PortalContributionProvider.php supplierContribution() declares notifications ['tenderPublished','contractExpiring','invoiceDue'] but NotificationDispatchService::declaresRuleKey() is only ever called with 'message.created' or 'status.changed' (grep of both constants in lib/ confirms no other call site), so those three declared rule keys can never match and no email is ever sent for them (code reading, needs a live check)"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"feature": "portal-notifications-dispatch",
+			"featureConfidence": "high"
+		},
+		{
+			"id": "cmp-inb-read-receipt",
+			"area": "inbox",
+			"name": "Let the organisation see that you opened a message.",
+			"portaliq": "yes",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "built",
+				"evidence": "portalMessage.read boolean (lib/Settings/portaliq_register.json:672-677), set only by markRead; src/manifest.json:889-899 PortalMessages index shows a Read badge column per message; src/manifest.json:672-703 account-messages widget on PortalAccountDetail also lists Read",
+				"reachedOn": "admin PortalMessages index and account-messages widget",
+				"owner": "ConductionNL/portaliq",
+				"note": "Binary read flag visible to staff on both the messages index and the account detail widget; no read timestamp is surfaced to staff (only the boolean), and dossiq's own richer 'readByRecipientAt' field is not part of portaliq's own portalMessage schema.",
+				"origin": "competitor"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"feature": "portal-inbox-v2",
+			"featureConfidence": "high"
+		},
+		{
+			"id": "cmp-inb-notif-prefs",
+			"area": "inbox",
+			"name": "Choose which notifications you receive and through which channel.",
+			"portaliq": "no",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"evidence": "grep for preference/notif-setting/channel-choice in src/portal: 0 hits; the only channel is a hardcoded email send in NotificationDispatchJob.php, with no per-subject opt-out or channel choice; the opt-in that exists (portalMessage notifications list, portaliq_register.json:1380) is set by the CONTRIBUTING APP's developer, not by the citizen",
+				"reachedOn": "nothing reaches it: no citizen-facing preferences UI or API",
+				"owner": "ConductionNL/portaliq",
+				"note": null,
+				"origin": "competitor"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"feature": null,
+			"featureConfidence": "high"
+		},
+		{
+			"id": "cmp-inb-download",
+			"area": "inbox",
+			"name": "Download a message with its attachments.",
+			"portaliq": "no",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"evidence": "InboxPage.jsx (full file read) has no download/export control; portalMessage has no attachment field (see cmp-inb-attach); no PDF/export endpoint under /portal/api/inbox in appinfo/routes.php",
+				"reachedOn": "nothing reaches it",
+				"owner": "ConductionNL/portaliq",
+				"note": null,
+				"origin": "competitor"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"feature": null,
+			"featureConfidence": "high"
+		},
+		{
+			"id": "cmp-inb-contact-history",
+			"area": "inbox",
+			"name": "See the history of your contacts with the organisation (contactmomenten).",
+			"portaliq": "no",
+			"open-inwoner": "unknown",
+			"nl-portal": "unknown",
+			"xxllnc-pip": "unknown",
+			"mijnoverheid": "unknown",
+			"liferay-dxp": "unknown",
+			"built": {
+				"state": "none",
+				"evidence": "grep contactmoment across lib/, src/, openspec/: only hits are in an ARCHIVED change (openspec/changes/archive/2026-09-07-field-projection/) discussing that a sibling's contactmoment.notes field is staff-only and gets fail-closed field projection when contributed; no contactmoment collection, page or contribution actually ships",
+				"reachedOn": "nothing reaches it: the only mentions are design notes about a field-projection rule, not a shipped contactmoment surface",
+				"owner": "ConductionNL/portaliq",
+				"note": "The unified inbox (portalMessage) is not the same thing as a full contact-moment log (calls, counter visits, letters); no such log exists here.",
+				"origin": "competitor"
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"feature": null,
 			"featureConfidence": "high"
 		}
 	]
