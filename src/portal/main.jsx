@@ -74,6 +74,19 @@ const t = createTranslator(RUNTIME_CONFIG.locale || 'nl')
 const mount = document.getElementById('portaliq-portal')
 if (mount) {
 	createRoot(mount).render(<App config={RUNTIME_CONFIG} t={t} />)
+
+	// parent-pwa-installability: registers the shell-caching worker
+	// PortalManifestController::serviceWorker() serves. Fail-silent by
+	// design (a rejected promise here is caught, never thrown) — a browser
+	// without support, or a registration that fails, must never stop the
+	// app itself from booting; installability is additive, not load-bearing.
+	// Not started for the embed frame below: an <iframe> embed is not a
+	// surface anyone installs.
+	if ('serviceWorker' in navigator) {
+		navigator.serviceWorker.register(`${RUNTIME_CONFIG.apiBase.replace(/\/portal\/api$/, '')}/portal/sw.js`).catch(() => {
+			// Best-effort only; see comment above.
+		})
+	}
 }
 
 // 🔴 THE FRAME ROUTE HAD NO RENDERER. templates/embed.php emits

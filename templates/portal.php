@@ -48,6 +48,16 @@ if ($themeStylesheet !== '') {
     }
 }
 
+// PWA installability (parent-pwa-installability): links the manifest
+// PortalManifestController::manifest() serves for this SAME resolved
+// portal, built by the controller from the identical `?org=`/`?portal=`
+// query the runtime config above was already resolved from — so the
+// installed app and the page installing it can never name two tenants.
+$manifestUrl = (string)($_['manifestUrl'] ?? '');
+if ($manifestUrl !== '') {
+    Util::addHeader('link', ['rel' => 'manifest', 'href' => $manifestUrl]);
+}
+
 // The public portal is a standalone React + NL Design System SPA, built
 // separately from the app's internal Vue admin bundle (see webpack.portal.js).
 // It boots into #portaliq-portal and drives its own routing + auth edge.

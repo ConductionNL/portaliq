@@ -125,6 +125,7 @@ class PortalPageController extends Controller {
 	#[AnonRateLimit(limit: 120, period: 60)]
 	public function index(): TemplateResponse {
 		$orgValue = (string)$this->request->getParam('org', '');
+		$portalSlug = (string)$this->request->getParam('portal', '');
 		$locale = $this->resolveLocale();
 
 		// Resolved ONCE and passed down. The runtime config and the stylesheet
@@ -133,7 +134,7 @@ class PortalPageController extends Controller {
 		// another one's tokens.
 		$portal = $this->configResolver->resolvePortal(
 			request: $this->request,
-			portalSlug: (string)$this->request->getParam('portal', ''),
+			portalSlug: $portalSlug,
 			orgValue: $orgValue
 		);
 
@@ -153,6 +154,10 @@ class PortalPageController extends Controller {
 				// the first paint is unthemed and the page visibly repaints
 				// into its brand a moment later.
 				'themeStylesheet' => $this->configResolver->themeStylesheetFor(portal: $portal),
+				// PWA installability: the SAME org/portal reference this page
+				// was just resolved with, so PortalManifestController::
+				// manifest() names the identical tenant (templates/portal.php).
+				'manifestUrl' => $this->manifestUrl(orgValue: $orgValue, portalSlug: $portalSlug),
 			],
 			// BASE, NOT PUBLIC — same leak, same reasoning as site() below.
 			// This route's own docblock calls it "the one genuinely public HTML
@@ -546,4 +551,27 @@ class PortalPageController extends Controller {
 
 		return trim($first);
 	}//end resolveLocale()
+
+	/**
+	 * The manifest URL for the SAME org/portal reference this page resolved,
+	 * so the installed app and the page installing it can never name two
+	 * different tenants (parent-pwa-installability).
+	 *
+	 * @param string $orgValue The `?org=` value, or ''.
+	 * @param string $portalSlug The `?portal=` value, or ''.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/parent-pwa-installability/specs/parent-pwa-installability/spec.md#requirement-the-portal-serves-a-web-app-manifest-naming-the-resolved-portal
+	 */
+	private function manifestUrl(string $orgValue, string $portalSlug): string {
+		$params = [];
+		if ($portalSlug !== '') {
+			$params['portal'] = $portalSlug;
+		} elseif ($orgValue !== '') {
+			$params['org'] = $orgValue;
+		}
+
+		return $this->urlGenerator->linkToRoute('portaliq.portalManifest.manifest', $params);
+	}//end manifestUrl()
 }//end class

@@ -56,5 +56,9 @@
 	"Documents": "Documents",
 	"Add a document": "Add a document",
 	"{name} has been added to your case.": "{name} has been added to your case.",
-	"The document could not be added. Please try again.": "The document could not be added. Please try again."
+	"The document could not be added. Please try again.": "The document could not be added. Please try again.",
+	"Install this app": "Install this app",
+	"Install this app on your device?": "Install this app on your device?",
+	"Install": "Install",
+	"Not now": "Not now"
 }
