@@ -2336,6 +2336,219 @@
         "decidedBy": "behandelaar-2002",
         "decidedAt": "2026-02-13T09:30:00+00:00",
         "decisionReason": "De fusie is nog niet ingeschreven bij de Kamer van Koophandel."
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "schoolEvent",
+          "slug": "schoolevent-voorbeeld-title-1-1"
+        },
+        "title": "Voorbeeld Title 1",
+        "start": "2026-03-01T09:00:00+00:00",
+        "target": {
+          "schoolRef": "Voorbeeld Schoolref 1",
+          "groupRefs": [
+            "Voorbeeld Grouprefs 1"
+          ],
+          "childRefs": [
+            "Voorbeeld Childrefs 1"
+          ]
+        },
+        "status": "draft",
+        "description": "Voorbeeld Description 1",
+        "end": "2026-03-01T09:00:00+00:00",
+        "rsvpEnabled": true,
+        "signupRoles": [
+          {
+            "id": "Voorbeeld Id 1",
+            "label": "Voorbeeld Label 1",
+            "capacity": 1
+          }
+        ],
+        "authorRef": "Voorbeeld Authorref 1"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "schoolEvent",
+          "slug": "schoolevent-voorbeeld-title-2-2"
+        },
+        "title": "Voorbeeld Title 2",
+        "start": "2026-03-02T09:00:00+00:00",
+        "target": {
+          "schoolRef": "Voorbeeld Schoolref 2",
+          "groupRefs": [
+            "Voorbeeld Grouprefs 2"
+          ],
+          "childRefs": [
+            "Voorbeeld Childrefs 2"
+          ]
+        },
+        "status": "published",
+        "description": "Voorbeeld Description 2",
+        "end": "2026-03-02T09:00:00+00:00",
+        "rsvpEnabled": false,
+        "signupRoles": [
+          {
+            "id": "Voorbeeld Id 2",
+            "label": "Voorbeeld Label 2",
+            "capacity": 2
+          }
+        ],
+        "authorRef": "Voorbeeld Authorref 2"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "schoolEvent",
+          "slug": "schoolevent-voorbeeld-title-3-3"
+        },
+        "title": "Voorbeeld Title 3",
+        "start": "2026-03-03T09:00:00+00:00",
+        "target": {
+          "schoolRef": "Voorbeeld Schoolref 3",
+          "groupRefs": [
+            "Voorbeeld Grouprefs 3"
+          ],
+          "childRefs": [
+            "Voorbeeld Childrefs 3"
+          ]
+        },
+        "status": "draft",
+        "description": "Voorbeeld Description 3",
+        "end": "2026-03-03T09:00:00+00:00",
+        "rsvpEnabled": true,
+        "signupRoles": [
+          {
+            "id": "Voorbeeld Id 3",
+            "label": "Voorbeeld Label 3",
+            "capacity": 3
+          }
+        ],
+        "authorRef": "Voorbeeld Authorref 3"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "eventRsvp",
+          "slug": "eventrsvp-eventrsvp-1-1"
+        },
+        "eventRef": "Voorbeeld Eventref 1",
+        "guardianRef": "Voorbeeld Guardianref 1",
+        "childRef": "Voorbeeld Childref 1",
+        "response": "yes",
+        "respondedAt": "2026-03-01T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "eventRsvp",
+          "slug": "eventrsvp-eventrsvp-2-2"
+        },
+        "eventRef": "Voorbeeld Eventref 2",
+        "guardianRef": "Voorbeeld Guardianref 2",
+        "childRef": "Voorbeeld Childref 2",
+        "response": "no",
+        "respondedAt": "2026-03-02T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "eventRsvp",
+          "slug": "eventrsvp-eventrsvp-3-3"
+        },
+        "eventRef": "Voorbeeld Eventref 3",
+        "guardianRef": "Voorbeeld Guardianref 3",
+        "childRef": "Voorbeeld Childref 3",
+        "response": "maybe",
+        "respondedAt": "2026-03-03T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "eventSignup",
+          "slug": "eventsignup-eventsignup-1-1"
+        },
+        "eventRef": "Voorbeeld Eventref 1",
+        "roleId": "Voorbeeld Roleid 1",
+        "guardianRef": "Voorbeeld Guardianref 1",
+        "childRef": "Voorbeeld Childref 1",
+        "note": "Voorbeeld Note 1",
+        "signedUpAt": "2026-03-01T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "eventSignup",
+          "slug": "eventsignup-eventsignup-2-2"
+        },
+        "eventRef": "Voorbeeld Eventref 2",
+        "roleId": "Voorbeeld Roleid 2",
+        "guardianRef": "Voorbeeld Guardianref 2",
+        "childRef": "Voorbeeld Childref 2",
+        "note": "Voorbeeld Note 2",
+        "signedUpAt": "2026-03-02T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "eventSignup",
+          "slug": "eventsignup-eventsignup-3-3"
+        },
+        "eventRef": "Voorbeeld Eventref 3",
+        "roleId": "Voorbeeld Roleid 3",
+        "guardianRef": "Voorbeeld Guardianref 3",
+        "childRef": "Voorbeeld Childref 3",
+        "note": "Voorbeeld Note 3",
+        "signedUpAt": "2026-03-03T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "guardianAudienceFixture",
+          "slug": "guardianaudiencefixture-guardianaudiencefixture-1-1"
+        },
+        "guardianRef": "Voorbeeld Guardianref 1",
+        "schoolRef": "Voorbeeld Schoolref 1",
+        "groupRefs": [
+          "Voorbeeld Grouprefs 1"
+        ],
+        "childRefs": [
+          "Voorbeeld Childrefs 1"
+        ],
+        "photoConsent": {}
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "guardianAudienceFixture",
+          "slug": "guardianaudiencefixture-guardianaudiencefixture-2-2"
+        },
+        "guardianRef": "Voorbeeld Guardianref 2",
+        "schoolRef": "Voorbeeld Schoolref 2",
+        "groupRefs": [
+          "Voorbeeld Grouprefs 2"
+        ],
+        "childRefs": [
+          "Voorbeeld Childrefs 2"
+        ],
+        "photoConsent": {}
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "guardianAudienceFixture",
+          "slug": "guardianaudiencefixture-guardianaudiencefixture-3-3"
+        },
+        "guardianRef": "Voorbeeld Guardianref 3",
+        "schoolRef": "Voorbeeld Schoolref 3",
+        "groupRefs": [
+          "Voorbeeld Grouprefs 3"
+        ],
+        "childRefs": [
+          "Voorbeeld Childrefs 3"
+        ],
+        "photoConsent": {}
       }
     ]
   }

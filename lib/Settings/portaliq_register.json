@@ -52,7 +52,11 @@
                     "portalAccessRequest",
                     "portalFormBinding",
                     "portalIntakeSubmission",
-                    "changeProposal"
+                    "changeProposal",
+                    "schoolEvent",
+                    "eventRsvp",
+                    "eventSignup",
+                    "guardianAudienceFixture"
                 ]
             }
         },
@@ -336,6 +340,121 @@
                         ]
                     }
                 ]
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "guardianAudienceFixture",
+                    "slug": "fixture-guardian-anna-devries"
+                },
+                "guardianRef": "guardian-anna-devries",
+                "schoolRef": "school-de-regenboog",
+                "groupRefs": [
+                    "groep-5a"
+                ],
+                "childRefs": [
+                    "child-devries-lars"
+                ],
+                "photoConsent": {}
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "guardianAudienceFixture",
+                    "slug": "fixture-guardian-piet-bakker"
+                },
+                "guardianRef": "guardian-piet-bakker",
+                "schoolRef": "school-de-regenboog",
+                "groupRefs": [
+                    "groep-3b",
+                    "groep-7a"
+                ],
+                "childRefs": [
+                    "child-bakker-eva",
+                    "child-bakker-tim"
+                ],
+                "photoConsent": {}
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "guardianAudienceFixture",
+                    "slug": "fixture-guardian-fatima-elamrani"
+                },
+                "guardianRef": "guardian-fatima-elamrani",
+                "schoolRef": "school-het-kompas",
+                "groupRefs": [
+                    "groep-4c"
+                ],
+                "childRefs": [
+                    "child-elamrani-yusuf"
+                ],
+                "photoConsent": {}
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "guardianAudienceFixture",
+                    "slug": "fixture-guardian-noor-yilmaz"
+                },
+                "guardianRef": "guardian-noor-yilmaz",
+                "schoolRef": "school-oude-vestiging",
+                "groupRefs": [
+                    "groep-6b"
+                ],
+                "childRefs": [
+                    "child-yilmaz-can"
+                ],
+                "photoConsent": {}
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "schoolEvent",
+                    "slug": "schoolevent-schoolreisje-groep-5a"
+                },
+                "title": "Schoolreisje groep 5a",
+                "description": "Op 12 november gaat groep 5a op schoolreis.",
+                "start": "2026-11-12T09:00:00+00:00",
+                "end": "2026-11-12T15:00:00+00:00",
+                "target": {
+                    "groupRefs": [
+                        "groep-5a"
+                    ]
+                },
+                "status": "published",
+                "rsvpEnabled": true,
+                "signupRoles": [],
+                "authorRef": "staff-leerkracht-5a"
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "schoolEvent",
+                    "slug": "schoolevent-sportdag-hulp-gevraagd"
+                },
+                "title": "Sportdag: hulp gevraagd",
+                "description": "We zoeken hulpouders voor de sportdag.",
+                "start": "2026-10-02T08:30:00+00:00",
+                "end": "2026-10-02T14:00:00+00:00",
+                "target": {
+                    "schoolRef": "school-de-regenboog"
+                },
+                "status": "published",
+                "rsvpEnabled": false,
+                "signupRoles": [
+                    {
+                        "id": "begeleiding",
+                        "label": "Begeleiding",
+                        "capacity": 4
+                    },
+                    {
+                        "id": "materiaal",
+                        "label": "Limonade meenemen",
+                        "capacity": 2
+                    }
+                ],
+                "authorRef": "staff-directie-1"
             }
         ],
         "schemas": {
@@ -5884,6 +6003,306 @@
                         "format": "date-time",
                         "description": "When it was asked.",
                         "example": ""
+                    }
+                }
+            },
+            "schoolEvent": {
+                "slug": "schoolEvent",
+                "icon": "Calendar",
+                "version": "0.1.0",
+                "title": "Event",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "A school/group/child-targeted event with optional guardian RSVP and sign-up roles for volunteers/materials (events-and-signups, findings 9.6, 9.8).",
+                "type": "object",
+                "required": [
+                    "title",
+                    "start",
+                    "target",
+                    "status"
+                ],
+                "properties": {
+                    "title": {
+                        "title": "Title",
+                        "type": "string",
+                        "example": "Schoolreisje groep 5a",
+                        "description": "The event's own title, shown in the guardian feed and the staff authoring list."
+                    },
+                    "description": {
+                        "title": "Description",
+                        "type": "string",
+                        "example": "Op 12 november gaat groep 5a op schoolreis.",
+                        "description": "Free-text details about the event, shown alongside the title."
+                    },
+                    "start": {
+                        "title": "Start",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the event starts, in ISO 8601."
+                    },
+                    "end": {
+                        "title": "End",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the event ends, in ISO 8601. Optional."
+                    },
+                    "target": {
+                        "title": "Target",
+                        "type": "object",
+                        "description": "Audience this is targeted at. At least one of schoolRef/groupRefs/childRefs MUST be present; NewsAudienceMatcher treats them as an OR.",
+                        "properties": {
+                            "schoolRef": {
+                                "title": "School",
+                                "type": "string",
+                                "example": "school-de-regenboog",
+                                "description": "The school this event is targeted at, when targeting a whole school."
+                            },
+                            "groupRefs": {
+                                "title": "Groups",
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "example": [
+                                    "groep-5a"
+                                ],
+                                "description": "The groups this event is targeted at, when targeting one or more groups."
+                            },
+                            "childRefs": {
+                                "title": "Children",
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "example": [],
+                                "description": "The specific children this event is targeted at, when targeting individual children."
+                            }
+                        }
+                    },
+                    "status": {
+                        "title": "Status",
+                        "type": "string",
+                        "enum": [
+                            "draft",
+                            "published"
+                        ],
+                        "example": "published",
+                        "description": "Lifecycle status. A draft event is indistinguishable from an absent one, exactly like an unpublished newsItem."
+                    },
+                    "rsvpEnabled": {
+                        "title": "RSVP enabled",
+                        "type": "boolean",
+                        "example": true,
+                        "description": "Whether a guardian may RSVP to this event."
+                    },
+                    "signupRoles": {
+                        "title": "Sign-up roles",
+                        "type": "array",
+                        "description": "Volunteer/material roles (activiteitenplanner/ouderhulp). Each role's capacity is enforced server-side by EventSignupService.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "type": "string",
+                                    "title": "Role id",
+                                    "description": "Unique within this event; referenced by an eventSignup's roleId."
+                                },
+                                "label": {
+                                    "type": "string",
+                                    "title": "Label",
+                                    "description": "Display name for this role, such as \"Begeleiding\" or \"Limonade meenemen\"."
+                                },
+                                "capacity": {
+                                    "type": "integer",
+                                    "title": "Capacity",
+                                    "description": "The maximum number of guardians who may sign up for this role."
+                                }
+                            }
+                        },
+                        "example": []
+                    },
+                    "authorRef": {
+                        "title": "Author",
+                        "type": "string",
+                        "example": "staff-directie-1",
+                        "description": "Staff subject reference of the author."
+                    }
+                }
+            },
+            "eventRsvp": {
+                "slug": "eventRsvp",
+                "icon": "FileCheckOutline",
+                "version": "0.1.0",
+                "title": "Event RSVP",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "One guardian's RSVP for one child on one event. Upserted by EventRsvpService — a second RSVP for the same guardian+child+event updates rather than duplicates.",
+                "type": "object",
+                "required": [
+                    "eventRef",
+                    "guardianRef",
+                    "childRef",
+                    "response"
+                ],
+                "properties": {
+                    "eventRef": {
+                        "title": "Event",
+                        "type": "string",
+                        "description": "The event this RSVP is for."
+                    },
+                    "guardianRef": {
+                        "title": "Guardian",
+                        "type": "string",
+                        "description": "The guardian's own subjectRef."
+                    },
+                    "childRef": {
+                        "title": "Child",
+                        "type": "string",
+                        "description": "The child this RSVP is for."
+                    },
+                    "response": {
+                        "title": "Response",
+                        "type": "string",
+                        "enum": [
+                            "yes",
+                            "no",
+                            "maybe"
+                        ],
+                        "description": "The guardian's response."
+                    },
+                    "respondedAt": {
+                        "title": "Responded at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the guardian last responded, in ISO 8601."
+                    }
+                }
+            },
+            "eventSignup": {
+                "slug": "eventSignup",
+                "icon": "Account",
+                "version": "0.1.0",
+                "title": "Event sign-up",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "One guardian's sign-up for one role on one event (activiteitenplanner/ouderhulp). Capacity is enforced server-side by EventSignupService BEFORE this object is written.",
+                "type": "object",
+                "required": [
+                    "eventRef",
+                    "roleId",
+                    "guardianRef"
+                ],
+                "properties": {
+                    "eventRef": {
+                        "title": "Event",
+                        "type": "string",
+                        "description": "The event this sign-up is for."
+                    },
+                    "roleId": {
+                        "title": "Role",
+                        "type": "string",
+                        "description": "The signupRoles entry this sign-up is for."
+                    },
+                    "guardianRef": {
+                        "title": "Guardian",
+                        "type": "string",
+                        "description": "The guardian's own subjectRef."
+                    },
+                    "childRef": {
+                        "title": "Child",
+                        "type": "string",
+                        "description": "The child this sign-up is for, when relevant to the role."
+                    },
+                    "note": {
+                        "title": "Note",
+                        "type": "string",
+                        "example": "Neemt limonade mee",
+                        "description": "An optional note from the guardian, such as what they are bringing."
+                    },
+                    "signedUpAt": {
+                        "title": "Signed up at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the guardian signed up, in ISO 8601."
+                    }
+                }
+            },
+            "guardianAudienceFixture": {
+                "slug": "guardianAudienceFixture",
+                "icon": "Account",
+                "version": "0.1.0",
+                "title": "Guardian audience fixture (interim)",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "INTERIM stand-in for learniq's portal-contribution-guardian-audiences change (another lane, in flight; shared with news-and-newsletter-authoring, same lane — see that change's design.md 'Audience source seam'). Never publicly readable.",
+                "type": "object",
+                "required": [
+                    "guardianRef"
+                ],
+                "properties": {
+                    "guardianRef": {
+                        "title": "Guardian",
+                        "type": "string",
+                        "example": "guardian-anna-devries",
+                        "description": "The guardian's own subjectRef."
+                    },
+                    "schoolRef": {
+                        "title": "School",
+                        "type": "string",
+                        "example": "school-de-regenboog",
+                        "description": "The guardian's own child's school."
+                    },
+                    "groupRefs": {
+                        "title": "Groups",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "groep-5a"
+                        ],
+                        "description": "The groups the guardian's own children are in."
+                    },
+                    "childRefs": {
+                        "title": "Children",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "child-devries-lars"
+                        ],
+                        "description": "The guardian's own children."
+                    },
+                    "photoConsent": {
+                        "title": "Photo consent",
+                        "type": "object",
+                        "description": "Map of childRef to a map of purpose to whether it is granted. Not used by this change directly (events-and-signups carries no photos); kept for shape parity with the sibling change's identical fixture.",
+                        "example": {}
                     }
                 }
             }
