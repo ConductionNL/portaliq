@@ -151,4 +151,45 @@ class NewsControllerTest extends TestCase {
 		$this->assertSame('published', $objectService->saved['status']);
 		$this->assertSame('X', $objectService->saved['title']);
 	}//end testPublishFlipsStatusAndPreservesOtherFields()
+
+	public function testUnpublishReturns404ForAMissingId(): void {
+		$objectService = new class {
+			public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				return null;
+			}//end find()
+		};
+
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class));
+		$response = $controller->unpublish('missing');
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+	}//end testUnpublishReturns404ForAMissingId()
+
+	public function testUnpublishRevertsToADraftAndPreservesOtherFields(): void {
+		$objectService = new class {
+			/**
+			 * @var array<string,mixed>
+			 */
+			public array $saved = [];
+
+			public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				return ['id' => $id, 'title' => 'X', 'status' => 'published'];
+			}//end find()
+
+			/**
+			 * @param array<string,mixed> $object
+			 */
+			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$this->saved = $object;
+				return $object;
+			}//end saveObject()
+		};
+
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class));
+		$response = $controller->unpublish('n1');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame('draft', $objectService->saved['status']);
+		$this->assertSame('X', $objectService->saved['title']);
+	}//end testUnpublishRevertsToADraftAndPreservesOtherFields()
 }//end class

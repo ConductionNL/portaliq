@@ -36,6 +36,7 @@ use OCA\Portaliq\Service\NewsReadReceiptService;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
@@ -73,6 +74,7 @@ class NewsGuardianController extends Controller implements PortalProtected {
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 60, period: 60)]
 	public function feed(): JSONResponse {
 		$subject = $this->subject();
 		if ($subject === null) {
@@ -94,6 +96,7 @@ class NewsGuardianController extends Controller implements PortalProtected {
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 60, period: 60)]
 	public function markRead(string $id): JSONResponse {
 		$subject = $this->subject();
 		if ($subject === null) {
@@ -118,6 +121,7 @@ class NewsGuardianController extends Controller implements PortalProtected {
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 60, period: 60)]
 	public function archive(): JSONResponse {
 		$subject = $this->subject();
 		if ($subject === null) {
