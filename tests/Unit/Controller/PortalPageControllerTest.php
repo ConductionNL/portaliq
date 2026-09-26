@@ -205,6 +205,24 @@ class PortalPageControllerTest extends TestCase {
 	}//end testIndexLinksNoStylesheetWhenNothingResolves()
 
 	/**
+	 * parent-pwa-installability: the manifest link carries the SAME org
+	 * reference this page itself resolved, built through the dedicated
+	 * `portaliq.manifest.manifest` route — not a hardcoded string, and not
+	 * the `?portal=` branch when only `?org=` was given.
+	 *
+	 * @return void
+	 */
+	public function testManifestUrlNamesTheSameOrgThePageResolved(): void {
+		$controller = $this->controller(orgSlug: 'gemeente-x');
+
+		$manifestUrl = $controller->index()->getParams()['manifestUrl'];
+
+		$this->assertStringContainsString('portaliq.manifest.manifest', $manifestUrl);
+		$this->assertStringContainsString('org=gemeente-x', $manifestUrl);
+
+	}//end testManifestUrlNamesTheSameOrgThePageResolved()
+
+	/**
 	 * The site shell carries no platform chrome AND no platform stylesheet.
 	 *
 	 * `site()` had NO unit assertion on its render mode at all — the helper
@@ -441,8 +459,17 @@ class PortalPageControllerTest extends TestCase {
 			->willReturnCallback(
 				static fn (string $app, string $file): string => ('/apps/' . $app . '/' . $file)
 			);
+		// A route-aware callback rather than one fixed literal, so
+		// testManifestUrlNamesTheSameOrgThePageResolved() below can assert
+		// which route + params the manifest link was actually built from,
+		// without disturbing site()'s own use of the same mocked method
+		// (still answers a `/api/content/site`-shaped path for that route).
 		$urlGenerator->method('linkToRoute')
-			->willReturn('/index.php/apps/portaliq/api/content/site');
+			->willReturnCallback(
+				static fn (string $name, array $params = []): string => ($name === 'portaliq.content.site')
+					? '/index.php/apps/portaliq/api/content/site'
+					: ('/index.php/apps/portaliq/route/' . $name . '?' . http_build_query($params))
+			);
 
 		// The portal + theme resolvers decide which token stylesheets `site()`
 		// emits. The DEFAULT is still "resolve nothing", so every pre-existing
