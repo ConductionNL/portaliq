@@ -89,6 +89,9 @@
         <!-- portal-intake-form-as-an-object: turns queued intake submissions
              into cases after the citizen already has their reference. -->
         <job>OCA\Portaliq\BackgroundJob\PortalIntakeDeliveryJob</job>
+        <!-- push-notifications-quiet-hours: every 5 minutes, delivers every
+             deferred push whose quiet-hours window has ended. -->
+        <job>OCA\Portaliq\BackgroundJob\PendingPushDeliveryJob</job>
     </background-jobs>
 
     <!-- @spec openspec/architecture/adr-023-action-authorization.md -->

@@ -52,6 +52,8 @@ use OCA\Portaliq\Listener\PortalAccountProvisionListener;
 use OCA\Portaliq\Middleware\PortalAuthMiddleware;
 use OCA\Portaliq\Middleware\PublicApiCorsMiddleware;
 use OCA\Portaliq\Notification\Notifier;
+use OCA\Portaliq\Service\Notifications\LoggingPushSender;
+use OCA\Portaliq\Service\Notifications\PushSenderInterface;
 use OCA\Portaliq\Service\Traffic\Geo\MmdbGeoResolver;
 use OCA\Portaliq\Service\Traffic\GeoResolverInterface;
 use OCP\AppFramework\App;
@@ -161,6 +163,14 @@ class Application extends App implements IBootstrap {
 		// for the tests and for an instance that wants no geography at all
 		// (the settings provider `none` makes this resolver answer null too).
 		$context->registerServiceAlias(GeoResolverInterface::class, MmdbGeoResolver::class);
+
+		// Push-notifications-quiet-hours: LoggingPushSender is the FIRST
+		// implementation of the push transport seam (a real Web Push
+		// implementation needs VAPID key provisioning, an admin-settings
+		// concern for a follow-up change — design.md "Messaging leaf
+		// interface"). Alias here so a real transport can be swapped in
+		// with no caller change.
+		$context->registerServiceAlias(PushSenderInterface::class, LoggingPushSender::class);
 
 		// Traffic reports and alerts (portal-traffic-reporting) reach a
 		// user as an in-app notification beside the mail; this renders it.
