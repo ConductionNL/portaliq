@@ -107,6 +107,55 @@ class PortalSelfServiceServiceTest extends TestCase {
 	}//end testAnUnknownSubjectChangesNothing()
 
 	/**
+	 * notification-preferences-per-role REQ: setting the channel opt-out
+	 * changes only that field.
+	 *
+	 * @return void
+	 */
+	public function testOptingOutOfEmailChangesOnlyThatField(): void {
+		$this->seedAccount();
+		$service = $this->service();
+
+		$changed = $service->updateDetails(subjectRef: 'subject-1', emailNotifications: false);
+
+		$this->assertSame(expected: '', actual: $changed['confirmationToken']);
+		$account = $this->account();
+		$this->assertSame(expected: false, actual: $account['notificationChannels']['email']);
+		$this->assertSame(expected: 'oud@example.org', actual: $account['email']);
+
+	}//end testOptingOutOfEmailChangesOnlyThatField()
+
+	/**
+	 * Omitting the field entirely leaves it exactly as it was — including
+	 * absent, for every account that predates this property.
+	 *
+	 * @return void
+	 */
+	public function testOmittingTheChannelPreferenceLeavesItUnset(): void {
+		$this->seedAccount();
+		$service = $this->service();
+
+		$service->updateDetails(subjectRef: 'subject-1', displayName: 'Iemand anders');
+
+		$this->assertArrayNotHasKey(key: 'notificationChannels', array: $this->account());
+
+	}//end testOmittingTheChannelPreferenceLeavesItUnset()
+
+	/**
+	 * The preference alone is enough to ask for a change — it does not need
+	 * a display name or email alongside it.
+	 *
+	 * @return void
+	 */
+	public function testTheChannelPreferenceAloneIsEnoughToAsk(): void {
+		$this->seedAccount();
+		$service = $this->service();
+
+		$this->assertNotNull($service->updateDetails(subjectRef: 'subject-1', emailNotifications: true));
+
+	}//end testTheChannelPreferenceAloneIsEnoughToAsk()
+
+	/**
 	 * The account row as it now stands.
 	 *
 	 * @return array<string, mixed>

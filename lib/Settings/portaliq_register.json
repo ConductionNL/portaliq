@@ -411,6 +411,14 @@
                         "description": "Contact email for notifications (masked in logs).",
                         "example": "contact@example.org"
                     },
+                    "notificationChannels": {
+                        "title": "Notification channels",
+                        "type": "object",
+                        "description": "Per-channel opt-out for out-of-band notification dispatch (notification-preferences-per-role), keyed by channel. A missing key or any value other than `false` opts in (fail-open, matches the behaviour every account already had before this property existed); `false` opts out. The account's own `audience` is already the role this preference applies to. Set through the account's own PATCH /portal/api/identity/details (`emailNotifications`), never accepted for another account. Today's only channel is `email`.",
+                        "example": {
+                            "email": true
+                        }
+                    },
                     "status": {
                         "title": "Status",
                         "type": "string",
