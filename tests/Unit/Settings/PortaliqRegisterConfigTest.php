@@ -153,6 +153,14 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// already taken by the schema-binding fix: a change that shares a
 		// version with one already imported never re-imports, and the field
 		// would have stayed missing.
+		// 0.27.0 (portalTrafficDaily 0.6.0): each row of `pages` gains
+		// `sessions`, `visitors`, `engagedSessions`, `referrers` and
+		// `outbound` (portal-page-traffic), and `path` is the in-site route.
+		// Additive: a row written before them simply lacks them, and the
+		// page endpoint reads the absence as "not counted", never zero.
+		// Written as 0.26.0 on its branch; development took 0.26.0 first for
+		// portalAuditEntry (below), so this change moved to 0.27.0 or it
+		// would never re-import on an instance already at 0.26.0.
 		// The `portal` SCHEMA version deliberately stays at 0.6.0. An earlier
 		// draft of this comment said 0.7.0 and the assertion below said 0.6.0;
 		// the assertion was right. ImportHandler treats a schema's version as
@@ -180,14 +188,14 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// Every new schema is listed in
 		// `components.registers.portaliq.schemas` (ImportHandler binds only
 		// what is listed there) and declares a non-empty `read` rule.
-		$this->assertSame('0.26.0', self::$register['info']['version']);
-		$this->assertSame('0.26.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.27.0', self::$register['info']['version']);
+		$this->assertSame('0.27.0', self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalAuditEntry']['version']);
 		$this->assertContains('complete', self::$register['components']['schemas']['portalAuditEntry']['properties']['verb']['enum']);
 		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalCaseType']['version']);
 		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalCase']['version']);
 		$this->assertSame(['authenticated'], self::$register['components']['schemas']['portalCase']['authorization']['read']);
-		$this->assertSame('0.5.0', self::$register['components']['schemas']['portalTrafficDaily']['version']);
+		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalTrafficDaily']['version']);
 		$this->assertSame('0.4.0', self::$register['components']['schemas']['portalTrafficEvent']['version']);
 		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalTrafficRecording']['version']);
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalTrafficRecording']['authorization']['read']);
