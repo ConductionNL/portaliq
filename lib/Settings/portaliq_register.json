@@ -6137,7 +6137,7 @@
             },
             "eventRsvp": {
                 "slug": "eventRsvp",
-                "icon": "Check",
+                "icon": "FileCheckOutline",
                 "version": "0.1.0",
                 "title": "Event RSVP",
                 "authorization": {
@@ -6192,7 +6192,7 @@
             },
             "eventSignup": {
                 "slug": "eventSignup",
-                "icon": "AccountPlus",
+                "icon": "Account",
                 "version": "0.1.0",
                 "title": "Event sign-up",
                 "authorization": {
@@ -6247,7 +6247,7 @@
             },
             "guardianAudienceFixture": {
                 "slug": "guardianAudienceFixture",
-                "icon": "AccountGroup",
+                "icon": "Account",
                 "version": "0.1.0",
                 "title": "Guardian audience fixture (interim)",
                 "authorization": {
