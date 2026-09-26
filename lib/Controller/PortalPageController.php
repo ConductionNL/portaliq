@@ -572,6 +572,6 @@ class PortalPageController extends Controller {
 			$params['org'] = $orgValue;
 		}
 
-		return $this->urlGenerator->linkToRoute('portaliq.manifest.manifest', $params);
+		return $this->urlGenerator->linkToRoute('portaliq.portalManifest.manifest', $params);
 	}//end manifestUrl()
 }//end class

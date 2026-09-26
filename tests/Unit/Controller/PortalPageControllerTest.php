@@ -207,7 +207,7 @@ class PortalPageControllerTest extends TestCase {
 	/**
 	 * parent-pwa-installability: the manifest link carries the SAME org
 	 * reference this page itself resolved, built through the dedicated
-	 * `portaliq.manifest.manifest` route — not a hardcoded string, and not
+	 * `portaliq.portalManifest.manifest` route — not a hardcoded string, and not
 	 * the `?portal=` branch when only `?org=` was given.
 	 *
 	 * @return void
@@ -217,7 +217,7 @@ class PortalPageControllerTest extends TestCase {
 
 		$manifestUrl = $controller->index()->getParams()['manifestUrl'];
 
-		$this->assertStringContainsString('portaliq.manifest.manifest', $manifestUrl);
+		$this->assertStringContainsString('portaliq.portalManifest.manifest', $manifestUrl);
 		$this->assertStringContainsString('org=gemeente-x', $manifestUrl);
 
 	}//end testManifestUrlNamesTheSameOrgThePageResolved()

@@ -52,6 +52,39 @@ class PortalManifestControllerTest extends TestCase {
 
 	}//end testManifestFallsBackToANeutralNameWhenNothingResolves()
 
+	/**
+	 * `short_name` falls back to the neutral default when the resolved name
+	 * exceeds the platform's ~12-character guidance, rather than truncating
+	 * it into something unreadable.
+	 *
+	 * @return void
+	 */
+	public function testShortNameFallsBackWhenTheResolvedNameIsTooLong(): void {
+		$controller = $this->controller(orgSlug: '', resolved: ['organisationName' => 'Een heel erg lange gemeentenaam']);
+
+		$manifest = json_decode((string)$controller->manifest()->getData(), true);
+
+		$this->assertSame(expected: 'Portaal', actual: $manifest['short_name']);
+
+	}//end testShortNameFallsBackWhenTheResolvedNameIsTooLong()
+
+	/**
+	 * A `?portal=` reference takes priority over `?org=` when building
+	 * `start_url`, matching `PortalRuntimeConfigResolver::resolvePortal()`'s
+	 * own precedence.
+	 *
+	 * @return void
+	 */
+	public function testStartUrlPrefersThePortalSlugOverOrg(): void {
+		$controller = $this->controller(orgSlug: 'gemeente-x', portalSlug: 'a-specific-portal');
+
+		$manifest = json_decode((string)$controller->manifest()->getData(), true);
+
+		$this->assertStringContainsString(needle: 'portal=a-specific-portal', haystack: $manifest['start_url']);
+		$this->assertStringNotContainsString(needle: 'org=gemeente-x', haystack: $manifest['start_url']);
+
+	}//end testStartUrlPrefersThePortalSlugOverOrg()
+
 	public function testServiceWorkerAnswersTheAllowedScopeHeader(): void {
 		$controller = $this->controller(orgSlug: '');
 
@@ -83,13 +116,24 @@ class PortalManifestControllerTest extends TestCase {
 	 *
 	 * @param string $orgSlug The `?org=` value.
 	 * @param array<string, mixed> $resolved Overrides onto the neutral runtime config default.
+	 * @param string $portalSlug The `?portal=` value.
 	 *
 	 * @return PortalManifestController
 	 */
-	private function controller(string $orgSlug, array $resolved = []): PortalManifestController {
+	private function controller(string $orgSlug, array $resolved = [], string $portalSlug = ''): PortalManifestController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getParam')->willReturnCallback(
-			fn (string $key, $default = null) => ($key === 'org' ? $orgSlug : $default)
+			function (string $key, $default = null) use ($orgSlug, $portalSlug) {
+				if ($key === 'org') {
+					return $orgSlug;
+				}
+
+				if ($key === 'portal') {
+					return $portalSlug;
+				}
+
+				return $default;
+			}
 		);
 
 		$default = [

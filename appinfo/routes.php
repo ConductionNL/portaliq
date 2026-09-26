@@ -127,8 +127,8 @@ return [
         // installed; the service worker caches the app SHELL only, never
         // /portal/api/* (design.md D-1). Both public — a visitor installing
         // has no session yet.
-        ['name' => 'manifest#manifest', 'url' => '/portal/manifest.webmanifest', 'verb' => 'GET'],
-        ['name' => 'manifest#serviceWorker', 'url' => '/portal/sw.js', 'verb' => 'GET'],
+        ['name' => 'portalManifest#manifest', 'url' => '/portal/manifest.webmanifest', 'verb' => 'GET'],
+        ['name' => 'portalManifest#serviceWorker', 'url' => '/portal/sw.js', 'verb' => 'GET'],
 
         // The built-in SITE renderer (ADR-084) — the Vue replacement for the
         // React portal above. Served alongside it while parity is being
