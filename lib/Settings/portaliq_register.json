@@ -6048,7 +6048,7 @@
             },
             "newsItem": {
                 "slug": "newsItem",
-                "icon": "Newspaper",
+                "icon": "FileDocument",
                 "version": "0.1.0",
                 "title": "News item",
                 "authorization": {
@@ -6167,7 +6167,7 @@
             },
             "newsletter": {
                 "slug": "newsletter",
-                "icon": "EmailNewsletter",
+                "icon": "EmailOutline",
                 "version": "0.1.0",
                 "title": "Newsletter",
                 "authorization": {
@@ -6245,7 +6245,7 @@
             },
             "guardianAudienceFixture": {
                 "slug": "guardianAudienceFixture",
-                "icon": "AccountGroup",
+                "icon": "Account",
                 "version": "0.1.0",
                 "title": "Guardian audience fixture (interim)",
                 "authorization": {
