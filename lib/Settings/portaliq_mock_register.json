@@ -2336,6 +2336,207 @@
         "decidedBy": "behandelaar-2002",
         "decidedAt": "2026-02-13T09:30:00+00:00",
         "decisionReason": "De fusie is nog niet ingeschreven bij de Kamer van Koophandel."
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "guardianAudienceFixture",
+          "slug": "guardianaudiencefixture-guardianaudiencefixture-1-1"
+        },
+        "guardianRef": "Voorbeeld Guardianref 1",
+        "schoolRef": "Voorbeeld Schoolref 1",
+        "groupRefs": [
+          "Voorbeeld Grouprefs 1"
+        ],
+        "childRefs": [
+          "Voorbeeld Childrefs 1"
+        ],
+        "photoConsent": {}
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "guardianAudienceFixture",
+          "slug": "guardianaudiencefixture-guardianaudiencefixture-2-2"
+        },
+        "guardianRef": "Voorbeeld Guardianref 2",
+        "schoolRef": "Voorbeeld Schoolref 2",
+        "groupRefs": [
+          "Voorbeeld Grouprefs 2"
+        ],
+        "childRefs": [
+          "Voorbeeld Childrefs 2"
+        ],
+        "photoConsent": {}
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "guardianAudienceFixture",
+          "slug": "guardianaudiencefixture-guardianaudiencefixture-3-3"
+        },
+        "guardianRef": "Voorbeeld Guardianref 3",
+        "schoolRef": "Voorbeeld Schoolref 3",
+        "groupRefs": [
+          "Voorbeeld Grouprefs 3"
+        ],
+        "childRefs": [
+          "Voorbeeld Childrefs 3"
+        ],
+        "photoConsent": {}
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "newsItem",
+          "slug": "newsitem-voorbeeld-title-1-1"
+        },
+        "title": "Voorbeeld Title 1",
+        "body": "Voorbeeld Body 1",
+        "target": {
+          "schoolRef": "Voorbeeld Schoolref 1",
+          "groupRefs": [
+            "Voorbeeld Grouprefs 1"
+          ],
+          "childRefs": [
+            "Voorbeeld Childrefs 1"
+          ]
+        },
+        "authorRef": "Voorbeeld Authorref 1",
+        "status": "draft",
+        "photoRefs": [
+          "Voorbeeld Photorefs 1"
+        ],
+        "readReceipts": [
+          {
+            "subjectRef": "Voorbeeld Subjectref 1",
+            "readAt": "2026-03-01T09:00:00+00:00"
+          }
+        ]
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "newsItem",
+          "slug": "newsitem-voorbeeld-title-2-2"
+        },
+        "title": "Voorbeeld Title 2",
+        "body": "Voorbeeld Body 2",
+        "target": {
+          "schoolRef": "Voorbeeld Schoolref 2",
+          "groupRefs": [
+            "Voorbeeld Grouprefs 2"
+          ],
+          "childRefs": [
+            "Voorbeeld Childrefs 2"
+          ]
+        },
+        "authorRef": "Voorbeeld Authorref 2",
+        "status": "published",
+        "photoRefs": [
+          "Voorbeeld Photorefs 2"
+        ],
+        "readReceipts": [
+          {
+            "subjectRef": "Voorbeeld Subjectref 2",
+            "readAt": "2026-03-02T09:00:00+00:00"
+          }
+        ]
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "newsItem",
+          "slug": "newsitem-voorbeeld-title-3-3"
+        },
+        "title": "Voorbeeld Title 3",
+        "body": "Voorbeeld Body 3",
+        "target": {
+          "schoolRef": "Voorbeeld Schoolref 3",
+          "groupRefs": [
+            "Voorbeeld Grouprefs 3"
+          ],
+          "childRefs": [
+            "Voorbeeld Childrefs 3"
+          ]
+        },
+        "authorRef": "Voorbeeld Authorref 3",
+        "status": "draft",
+        "photoRefs": [
+          "Voorbeeld Photorefs 3"
+        ],
+        "readReceipts": [
+          {
+            "subjectRef": "Voorbeeld Subjectref 3",
+            "readAt": "2026-03-03T09:00:00+00:00"
+          }
+        ]
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "newsletter",
+          "slug": "newsletter-voorbeeld-title-1-1"
+        },
+        "title": "Voorbeeld Title 1",
+        "itemRefs": [
+          "Voorbeeld Itemrefs 1"
+        ],
+        "target": {
+          "schoolRef": "Voorbeeld Schoolref 1",
+          "groupRefs": [
+            "Voorbeeld Grouprefs 1"
+          ],
+          "childRefs": [
+            "Voorbeeld Childrefs 1"
+          ]
+        },
+        "sentAt": "2026-03-01T09:00:00+00:00",
+        "archived": true
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "newsletter",
+          "slug": "newsletter-voorbeeld-title-2-2"
+        },
+        "title": "Voorbeeld Title 2",
+        "itemRefs": [
+          "Voorbeeld Itemrefs 2"
+        ],
+        "target": {
+          "schoolRef": "Voorbeeld Schoolref 2",
+          "groupRefs": [
+            "Voorbeeld Grouprefs 2"
+          ],
+          "childRefs": [
+            "Voorbeeld Childrefs 2"
+          ]
+        },
+        "sentAt": "2026-03-02T09:00:00+00:00",
+        "archived": false
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "newsletter",
+          "slug": "newsletter-voorbeeld-title-3-3"
+        },
+        "title": "Voorbeeld Title 3",
+        "itemRefs": [
+          "Voorbeeld Itemrefs 3"
+        ],
+        "target": {
+          "schoolRef": "Voorbeeld Schoolref 3",
+          "groupRefs": [
+            "Voorbeeld Grouprefs 3"
+          ],
+          "childRefs": [
+            "Voorbeeld Childrefs 3"
+          ]
+        },
+        "sentAt": "2026-03-03T09:00:00+00:00",
+        "archived": true
       }
     ]
   }
