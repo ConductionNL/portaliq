@@ -78,8 +78,9 @@ introduced.
 
 ```
 lib/
-  Controller/ProposalController.php     (+ mine())
-  Service/Proposals/ProposalService.php (+ mine())
+  Controller/ProposalController.php          (+ mine())
+  Service/Proposals/ProposalService.php      (+ mine(), delegates read to ProposalQueueReader)
+  Service/Proposals/ProposalQueueReader.php  (new — see Trade-offs)
 appinfo/routes.php                      (+ 1 route)
 src/portal/
   components/ProposeChangeForm.jsx      (new)
@@ -115,6 +116,22 @@ tests/Unit/Controller/ProposalControllerTest.php       (+ mine() cases, if the h
   proposal is a targeted correction, not a full-record resubmission — sending
   every proposable field back unchanged would make `drift()`'s later
   did-the-record-move check noisier for no benefit.
+
+- **`ProposalQueueReader` split out as its own class, discovered mid-build.**
+  Adding `mine()` directly onto `ProposalService` (the first cut) pushed
+  PHPMD's `ExcessiveClassComplexity` from just under 50 to 53 — the class
+  already carried `propose`/`accept`/`acceptConfirmingDrift`/`reject`/
+  `withdraw`/`drift`/`close`. `forSubject()` and the new `mine()` are
+  structurally identical (scope by one field, re-verify per row) and were the
+  ONLY two callers of `PortalObjectReader` in the class, so extracting them
+  into a dedicated reader — the exact same "one class writes as the reviewer,
+  a separate collaborator does the rest" shape `ReviewerObjectWriter` already
+  established in this file — removed the duplicated branch entirely rather
+  than just moving it, and dropped `ProposalService` back under threshold
+  with room to spare. `ProposalService`'s constructor swaps `PortalObjectReader
+  $reader` for `ProposalQueueReader $queueReader` (autowired the same way,
+  no explicit DI registration existed for either); the one call site
+  (`ProposalServiceTest::service()`) is updated to match.
 
 ## Open Questions
 

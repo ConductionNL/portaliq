@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\Proposals;
 
+use OCA\Portaliq\Service\Proposals\ProposalQueueReader;
 use OCA\Portaliq\Service\Proposals\ProposalService;
 use OCA\Portaliq\Service\Proposals\ReviewerObjectWriter;
 use OCA\Portaliq\Tests\Unit\Service\Identity\PortalIdentityStoreTrait;
@@ -273,7 +274,7 @@ class ProposalServiceTest extends TestCase {
 			}
 		);
 
-		return new ProposalService($this->fakeReader(), $this->fakeWriter(), $reviewerWriter);
+		return new ProposalService($this->fakeWriter(), $reviewerWriter, new ProposalQueueReader($this->fakeReader()));
 	}//end service()
 
 }//end class

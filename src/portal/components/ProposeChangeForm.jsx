@@ -24,7 +24,10 @@ export default function ProposeChangeForm({ action, row, onSubmit, onCancel }) {
 	const [values, setValues] = useState(() => {
 		const initial = {}
 		for (const field of fields) {
-			initial[field] = row?.[field] === null || row?.[field] === undefined ? '' : String(row[field])
+			initial[field] =
+				row?.[field] === null || row?.[field] === undefined
+					? ''
+					: String(row[field])
 		}
 		return initial
 	})
@@ -48,7 +51,10 @@ export default function ProposeChangeForm({ action, row, onSubmit, onCancel }) {
 		setError(null)
 		const changes = fields
 			.filter((field) => {
-				const original = row?.[field] === null || row?.[field] === undefined ? '' : String(row[field])
+				const original =
+					row?.[field] === null || row?.[field] === undefined
+						? ''
+						: String(row[field])
 				return original !== values[field]
 			})
 			.map((field) => ({ property: field, proposedValue: values[field] }))
@@ -85,10 +91,15 @@ export default function ProposeChangeForm({ action, row, onSubmit, onCancel }) {
 				onChange={(event) => setNote(event.target.value)}
 			/>
 			<div className="portaliq-propose-form__buttons">
-				<Button type="submit" appearance="primary-action-button" disabled={submitting}>
+				<Button
+					type="submit"
+					appearance="primary-action-button"
+					disabled={submitting}>
 					{submitting ? '…' : 'Voorstel indienen'}
 				</Button>
-				<Button type="button" appearance="subtle-button" onClick={onCancel}>Annuleren</Button>
+				<Button type="button" appearance="subtle-button" onClick={onCancel}>
+					Annuleren
+				</Button>
 			</div>
 			{error && <p className="portaliq-error">{error}</p>}
 		</form>

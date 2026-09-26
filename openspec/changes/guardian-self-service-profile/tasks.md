@@ -4,7 +4,7 @@
 
 ### Task 1: A proposer can list their own proposals
 - **spec_ref**: `openspec/changes/guardian-self-service-profile/specs/change-proposal-queue/spec.md#requirement-a-proposer-can-list-their-own-proposals-req-cpq-005`
-- **files**: `lib/Service/Proposals/ProposalService.php`, `lib/Controller/ProposalController.php`, `appinfo/routes.php`, `tests/Unit/Service/Proposals/ProposalServiceTest.php`, `tests/Unit/Controller/ProposalControllerTest.php`
+- **files**: `lib/Service/Proposals/ProposalService.php`, `lib/Service/Proposals/ProposalQueueReader.php`, `lib/Controller/ProposalController.php`, `appinfo/routes.php`, `tests/Unit/Service/Proposals/ProposalServiceTest.php`, `tests/Unit/Controller/ProposalControllerTest.php`
 - **acceptance_criteria**:
   - GIVEN two proposals with different `proposedBy` WHEN `ProposalService::mine()` is called with one of them THEN only that one is returned, any state
   - GIVEN a valid bearer resolving to `subjectRef = guardian-1` WHEN `GET /portal/api/proposals/mine` is called THEN the query is filtered by `guardian-1`, never a client-supplied value
