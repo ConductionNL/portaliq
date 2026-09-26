@@ -9,8 +9,8 @@
   - GIVEN two proposals with different `proposedBy` WHEN `ProposalService::mine()` is called with one of them THEN only that one is returned, any state
   - GIVEN a valid bearer resolving to `subjectRef = guardian-1` WHEN `GET /portal/api/proposals/mine` is called THEN the query is filtered by `guardian-1`, never a client-supplied value
   - GIVEN no valid bearer WHEN `GET /portal/api/proposals/mine` is called THEN the response is 401 and no read is issued
-- [ ] Implement
-- [ ] Test
+- [x] Implement
+- [x] Test
 
 ### Task 2: The portal SPA renders propose-change, submit and withdraw
 - **spec_ref**: `openspec/changes/guardian-self-service-profile/specs/change-proposal-queue/spec.md#requirement-the-portal-spa-can-submit-and-withdraw-a-proposal-req-cpq-006`
@@ -19,8 +19,9 @@
   - GIVEN a `propose-change` action's `proposable` list and a detail row WHEN the guardian edits one field and submits with a note THEN the request body carries only that field's `{property, proposedValue}` and the note
   - GIVEN a queued proposal the guardian made WHEN they open their own proposals list THEN it shows with a withdraw action, and withdrawing calls the existing withdraw route
   - GIVEN an accepted or rejected proposal WHEN shown in the list THEN no withdraw action is offered
-- [ ] Implement
-- [ ] Test
+- [x] Implement
+- [ ] Test (no vitest/jest harness exists yet for `src/portal/`'s `.jsx` files — verified by code
+  inspection + ESLint only; see PR #683's "Inherited, not introduced" note)
 
 ## Quality checklist
 
