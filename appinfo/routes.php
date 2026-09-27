@@ -288,6 +288,12 @@ return [
         // ADR-063). Ownership re-verified via the scoped reader; the collection
         // must declare `filesUpload: true`.
         ['name' => 'contribution#uploadFile', 'url' => '/portal/api/collections/{register}/{schema}/{id}/files', 'verb' => 'POST'],
+        // Upload one file into a declared file field of an owned object
+        // (assignment-portal-file-upload): the action is named with ?action=,
+        // ownership is proven the way that action writes, and the server
+        // writes the file reference into the field. The {field} segment keeps
+        // it apart from the files routes around it.
+        ['name' => 'portalFieldFile#upload', 'url' => '/portal/api/collections/{register}/{schema}/{id}/fields/{field}', 'verb' => 'POST'],
         // Stream a file attached to an owned object (portal-document-download,
         // the read-side counterpart of uploadFile). Ownership re-verified via
         // the scoped reader BEFORE the file is resolved; the collection must

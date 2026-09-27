@@ -217,7 +217,12 @@ class ActionConfigNormaliser {
 				continue;
 			}
 
-			$configs[$field] = $this->fieldConfigEntry(field: (string)$field, config: $config, mandatory: $mandatory);
+			$configs[$field] = $this->fieldConfigEntry(
+				field: (string)$field,
+				config: $config,
+				mandatory: $mandatory,
+				actionType: (string)($action['type'] ?? '')
+			);
 		}
 
 		$action['fieldConfigs'] = $configs;
@@ -226,17 +231,21 @@ class ActionConfigNormaliser {
 
 	/**
 	 * Build ONE sanitised field-config entry: the string labels, the boolean
-	 * flags (WMEBV-guarded), and the size enum.
+	 * flags (WMEBV-guarded), the size enum, and the file keys when the field is
+	 * a file field (assignment-portal-file-upload).
 	 *
 	 * @param string $field The whitelisted field name.
 	 * @param array<string, mixed> $config The declared field config.
 	 * @param array<int, string> $mandatory The action's schema `required` set.
+	 * @param string $actionType The action's `type`; a file field lives only
+	 *                           on a create or update action.
 	 *
 	 * @return array<string, mixed>
 	 *
 	 * @spec openspec/specs/supplier-portal/spec.md#form-data-minimisation-no-non-mandatory-field-may-be-required
+	 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-an-action-must-be-able-to-declare-a-file-field
 	 */
-	private function fieldConfigEntry(string $field, array $config, array $mandatory): array {
+	private function fieldConfigEntry(string $field, array $config, array $mandatory, string $actionType = ''): array {
 		$entry = [];
 		foreach (['label', 'placeholder', 'help'] as $textKey) {
 			if (isset($config[$textKey]) === true && is_string($config[$textKey]) === true) {
@@ -247,7 +256,7 @@ class ActionConfigNormaliser {
 		$entry = $this->applyFieldFlags(entry: $entry, field: $field, config: $config, mandatory: $mandatory);
 		$entry['size'] = $this->values->oneOf(value: ($config['size'] ?? null), allowed: self::FIELD_SIZES, default: 'medium');
 
-		return $entry;
+		return (new FileFieldConfigNormaliser())->apply(entry: $entry, config: $config, actionType: $actionType);
 	}//end fieldConfigEntry()
 
 	/**
