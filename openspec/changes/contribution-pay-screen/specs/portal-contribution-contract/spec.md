@@ -123,7 +123,7 @@ step of a row action; a row without it SHALL show no notice.
 - WHEN the guardian opens it, and when the guardian presses its pay button
 - THEN the sentence is shown as a notice in the detail card and in the confirm step
 - AND a contribution that is not voluntary shows no notice
-- @e2e exclude Rendered markup asserted by tests/row-action.spec.mjs::the confirm step shows the notice; the normaliser half by tests/Unit/Contribution/RowActionResolverTest.php::testNoticeFieldIsKeptOnlyWhenWellFormed.
+- @e2e exclude Rendered markup asserted by tests/row-action.spec.mjs::the confirm step shows the notice on a voluntary contribution, and none otherwise (the detail card renders the same rowNotice value); the normaliser half by tests/Unit/Contribution/RowActionResolverTest.php::testNoticeFieldIsKeptOnlyWhenWellFormed.
 
 ### Requirement: The portal MUST let a guardian pay a school contribution from its row
 

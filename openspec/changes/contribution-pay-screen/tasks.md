@@ -49,7 +49,7 @@ and D2 of `case-actions-sign-a-document`.
 - [x] Implement
 
 ## Verification
-- [ ] `openspec validate contribution-pay-screen`, diff-scoped checks, `composer check:strict` once, `npm run lint`, `npm run format`, `npm run check:specs`, hydra gates
+- [x] `openspec validate contribution-pay-screen`, diff-scoped checks, `composer check:strict` once, `npm run lint`, `npm run format`, `npm run check:specs`, hydra gates
 
 ## Quality checklist
 
