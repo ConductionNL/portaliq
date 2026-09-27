@@ -274,7 +274,7 @@ class ActivitySignupService {
 	 * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-freed-place-must-go-to-the-child-who-waited-longest
 	 */
 	public function setSupervisors(string $activityId, array $supervisorRefs): ?array {
-		$activity = $this->store->find(schema: ActivityStore::OFFER, id: $activityId);
+		$activity = $this->store->lookup(schema: ActivityStore::OFFER, id: $activityId);
 		if ($activity === null) {
 			return null;
 		}
@@ -303,7 +303,7 @@ class ActivitySignupService {
 	 * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-freed-place-must-go-to-the-child-who-waited-longest
 	 */
 	public function roster(string $activityId): ?array {
-		$activity = $this->store->find(schema: ActivityStore::OFFER, id: $activityId);
+		$activity = $this->store->lookup(schema: ActivityStore::OFFER, id: $activityId);
 		if ($activity === null) {
 			return null;
 		}

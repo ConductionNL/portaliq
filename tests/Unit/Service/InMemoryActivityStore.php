@@ -10,7 +10,7 @@ use Psr\Log\LoggerInterface;
 
 /**
  * An ActivityStore that keeps its rows in memory, so the activity services'
- * rules run against real reads and writes without OpenRegister. `find()`,
+ * rules run against real reads and writes without OpenRegister. `lookup()`,
  * `keys()` and `idOf()` are the real ones; only `rows()` and `save()` are
  * replaced. A schema listed in `$unreadable` reads as null, the store's
  * failure value.

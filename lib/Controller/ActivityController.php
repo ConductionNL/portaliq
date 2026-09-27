@@ -148,7 +148,7 @@ class ActivityController extends Controller {
 	public function open(string $id): JSONResponse {
 		$this->requireAuthenticatedStaff();
 
-		$activity = $this->store->find(schema: ActivityStore::OFFER, id: $id);
+		$activity = $this->store->lookup(schema: ActivityStore::OFFER, id: $id);
 		if ($activity === null) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
@@ -173,7 +173,7 @@ class ActivityController extends Controller {
 	public function close(string $id): JSONResponse {
 		$this->requireAuthenticatedStaff();
 
-		$activity = $this->store->find(schema: ActivityStore::OFFER, id: $id);
+		$activity = $this->store->lookup(schema: ActivityStore::OFFER, id: $id);
 		if ($activity === null) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}

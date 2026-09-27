@@ -140,7 +140,7 @@ class ActivityStore {
 	 *
 	 * @spec openspec/changes/extracurricular-activity-offer/design.md#d6-a-store-class-instead-of-openregister-calls-in-every-service
 	 */
-	public function find(string $schema, string $id): ?array {
+	public function lookup(string $schema, string $id): ?array {
 		if ($id === '') {
 			return null;
 		}
@@ -152,7 +152,7 @@ class ActivityStore {
 		}
 
 		return null;
-	}//end find()
+	}//end lookup()
 
 	/**
 	 * Save one row: create it, or update it when an id is given.

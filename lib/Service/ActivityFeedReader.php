@@ -105,7 +105,7 @@ class ActivityFeedReader {
 			return null;
 		}
 
-		$activity = $this->store->find(schema: ActivityStore::OFFER, id: $activityId);
+		$activity = $this->store->lookup(schema: ActivityStore::OFFER, id: $activityId);
 		if ($activity === null) {
 			return null;
 		}

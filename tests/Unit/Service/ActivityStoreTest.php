@@ -132,7 +132,7 @@ class ActivityStoreTest extends TestCase {
 	}//end testAFailedReadIsNullNotEmpty()
 
 	/**
-	 * A row answers to its id, uuid and slug; find() uses all three.
+	 * A row answers to its id, uuid and slug; lookup() uses all three.
 	 *
 	 * @return void
 	 */
@@ -144,10 +144,10 @@ class ActivityStoreTest extends TestCase {
 		$this->assertSame('uuid-1', $store->idOf($row));
 		$this->assertSame('uuid-9', $store->idOf(['@self' => ['uuid' => 'uuid-9']]));
 		$this->assertSame('', $store->idOf([]));
-		$this->assertSame($row, $store->find(ActivityStore::OFFER, 'activity-schaakclub-najaar'));
-		$this->assertSame($row, $store->find(ActivityStore::OFFER, 'uuid-1'));
-		$this->assertNull($store->find(ActivityStore::OFFER, 'unknown'));
-		$this->assertNull($store->find(ActivityStore::OFFER, ''));
+		$this->assertSame($row, $store->lookup(ActivityStore::OFFER, 'activity-schaakclub-najaar'));
+		$this->assertSame($row, $store->lookup(ActivityStore::OFFER, 'uuid-1'));
+		$this->assertNull($store->lookup(ActivityStore::OFFER, 'unknown'));
+		$this->assertNull($store->lookup(ActivityStore::OFFER, ''));
 	}//end testARowAnswersToItsIdAndSlug()
 
 	/**

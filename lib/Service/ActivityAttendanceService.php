@@ -94,7 +94,7 @@ class ActivityAttendanceService {
 	 * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-mark-attendance-per-session
 	 */
 	public function mark(string $activityId, string $sessionId, string $childRef, string $status, string $markedByRef): array {
-		$activity = $this->store->find(schema: ActivityStore::OFFER, id: $activityId);
+		$activity = $this->store->lookup(schema: ActivityStore::OFFER, id: $activityId);
 		if ($activity === null) {
 			return ['error' => self::REASON_NOT_FOUND];
 		}
