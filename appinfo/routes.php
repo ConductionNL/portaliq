@@ -233,6 +233,8 @@ return [
         // Registered before the /portal/{path} SPA catch-all; the {id} segment
         // makes these distinct from the collection-level routes above.
         ['name' => 'contribution#object', 'url' => '/portal/api/collections/{register}/{schema}/{id}', 'verb' => 'GET'],
+        // The declared history of one object the subject owns (portaliq#723).
+        ['name' => 'portalTimeline#show', 'url' => '/portal/api/collections/{register}/{schema}/{id}/timeline', 'verb' => 'GET'],
         ['name' => 'contribution#update', 'url' => '/portal/api/collections/{register}/{schema}/{id}', 'verb' => 'PATCH'],
         // Attach an uploaded file to an owned object (the file-upload block,
         // ADR-063). Ownership re-verified via the scoped reader; the collection
@@ -266,7 +268,17 @@ return [
         ['name' => 'proposal#acceptConfirmingDrift', 'url' => '/api/proposals/{id}/accept-confirming-drift', 'verb' => 'POST'],
         ['name' => 'proposal#reject', 'url' => '/api/proposals/{id}/reject', 'verb' => 'POST'],
         ['name' => 'proposal#proposeFromPortal', 'url' => '/portal/api/proposals', 'verb' => 'POST'],
+        // A proposer's own queue, any state (guardian-self-service-profile).
+        // Filtered server-side by the bearer's own subjectRef, never a
+        // client-supplied id — registered before the /portal/{path} catch-all.
+        ['name' => 'proposal#mine', 'url' => '/portal/api/proposals/mine', 'verb' => 'GET'],
         ['name' => 'proposal#withdraw', 'url' => '/portal/api/proposals/{id}/withdraw', 'verb' => 'POST'],
+
+        // Parent polls (parent-polls, learniq round-1 finding 9.9). A staff
+        // route to create, two bearer-gated portal routes to list and answer.
+        ['name' => 'poll#create', 'url' => '/api/polls', 'verb' => 'POST'],
+        ['name' => 'poll#index', 'url' => '/portal/api/polls', 'verb' => 'GET'],
+        ['name' => 'poll#respond', 'url' => '/portal/api/polls/{id}/respond', 'verb' => 'POST'],
 
         // A report of wrongdoing filed without an account
         // (a-report-without-an-account-and-a-custodian-who-may-reveal-it).

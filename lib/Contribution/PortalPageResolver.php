@@ -130,8 +130,8 @@ class PortalPageResolver {
 
 	/**
 	 * Synthesise one default page per listable collection (v2 rendering): the
-	 * collection's create action (when one is declared for its schema) followed
-	 * by the collection table.
+	 * collection's create action (when one is declared for its schema), the
+	 * collection table, and a detail block that renders the selected row.
 	 *
 	 * @param array<int, array<string, mixed>> $collections The sanitised collections.
 	 * @param array<int, array<string, mixed>> $actions The sanitised actions.
@@ -153,6 +153,9 @@ class PortalPageResolver {
 			}
 
 			$blocks[] = ['type' => 'collection', 'collection' => $id];
+			// The selected row needs somewhere to render, or a resident can
+			// pick their own case and see nothing (portaliq#723).
+			$blocks[] = ['type' => 'detail', 'collection' => $id];
 
 			$page = ['id' => $id, 'blocks' => $blocks];
 			if (isset($collection['label']) === true && is_string($collection['label']) === true) {
