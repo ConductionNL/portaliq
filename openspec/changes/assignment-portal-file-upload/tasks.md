@@ -55,7 +55,7 @@ Kind: code. Learniq round 2, recon C, change row `assignment-portal-file-upload`
 - [x] Implement
 
 ## Verification
-- [ ] `openspec validate assignment-portal-file-upload` passes, diff checks green, `composer check:strict` run once
+- [x] `openspec validate assignment-portal-file-upload` passes, diff checks green, `composer check:strict` run once (its only red is 29 inherited PHPUnit errors, reproduced on a clean development worktree)
 
 ## Quality checklist
 
