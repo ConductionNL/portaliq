@@ -56,5 +56,9 @@
 	"Documents": "Documenten",
 	"Add a document": "Document toevoegen",
 	"{name} has been added to your case.": "{name} is aan uw zaak toegevoegd.",
-	"The document could not be added. Please try again.": "Het document kon niet worden toegevoegd. Probeer het opnieuw."
+	"The document could not be added. Please try again.": "Het document kon niet worden toegevoegd. Probeer het opnieuw.",
+	"Install this app": "App installeren",
+	"Install this app on your device?": "Wilt u deze app op uw apparaat installeren?",
+	"Install": "Installeren",
+	"Not now": "Niet nu"
 }

@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.27.0"
+        "version": "0.31.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.27.0",
+                "version": "0.31.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -53,10 +53,14 @@
                     "portalFormBinding",
                     "portalIntakeSubmission",
                     "changeProposal",
+                    "portalPoll",
+                    "portalPollResponse",
+                    "newsItem",
+                    "newsletter",
+                    "guardianAudienceFixture",
                     "schoolEvent",
                     "eventRsvp",
-                    "eventSignup",
-                    "guardianAudienceFixture"
+                    "eventSignup"
                 ]
             }
         },
@@ -355,7 +359,11 @@
                 "childRefs": [
                     "child-devries-lars"
                 ],
-                "photoConsent": {}
+                "photoConsent": {
+                    "child-devries-lars": {
+                        "news": true
+                    }
+                }
             },
             {
                 "@self": {
@@ -373,7 +381,14 @@
                     "child-bakker-eva",
                     "child-bakker-tim"
                 ],
-                "photoConsent": {}
+                "photoConsent": {
+                    "child-bakker-eva": {
+                        "news": true
+                    },
+                    "child-bakker-tim": {
+                        "news": true
+                    }
+                }
             },
             {
                 "@self": {
@@ -389,7 +404,11 @@
                 "childRefs": [
                     "child-elamrani-yusuf"
                 ],
-                "photoConsent": {}
+                "photoConsent": {
+                    "child-elamrani-yusuf": {
+                        "news": false
+                    }
+                }
             },
             {
                 "@self": {
@@ -405,7 +424,82 @@
                 "childRefs": [
                     "child-yilmaz-can"
                 ],
-                "photoConsent": {}
+                "photoConsent": {
+                    "child-yilmaz-can": {
+                        "news": true
+                    }
+                }
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "newsItem",
+                    "slug": "news-herfstvakantie-rooster"
+                },
+                "title": "Herfstvakantie rooster",
+                "body": "De herfstvakantie loopt van 19 tot 23 oktober.",
+                "target": {
+                    "schoolRef": "school-de-regenboog"
+                },
+                "authorRef": "staff-directie-1",
+                "status": "published",
+                "photoRefs": [],
+                "readReceipts": []
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "newsItem",
+                    "slug": "news-schoolreisje-groep-5a"
+                },
+                "title": "Groep 5a: schoolreisje",
+                "body": "Op 12 november gaat groep 5a op schoolreis naar de kinderboerderij.",
+                "target": {
+                    "groupRefs": [
+                        "groep-5a"
+                    ]
+                },
+                "authorRef": "staff-leerkracht-5a",
+                "status": "published",
+                "photoRefs": [],
+                "readReceipts": []
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "newsItem",
+                    "slug": "news-fotos-sportdag"
+                },
+                "title": "Foto's sportdag",
+                "body": "Wat een geweldige sportdag! Foto's hieronder.",
+                "target": {
+                    "groupRefs": [
+                        "groep-4c"
+                    ]
+                },
+                "authorRef": "staff-leerkracht-4c",
+                "status": "published",
+                "photoRefs": [
+                    "photo-sportdag-1.jpg",
+                    "photo-sportdag-2.jpg"
+                ],
+                "readReceipts": []
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "newsletter",
+                    "slug": "newsletter-weekbrief-de-regenboog"
+                },
+                "title": "Weekbrief De Regenboog",
+                "itemRefs": [
+                    "news-herfstvakantie-rooster"
+                ],
+                "target": {
+                    "schoolRef": "school-de-regenboog"
+                },
+                "sentAt": null,
+                "archived": false
             },
             {
                 "@self": {
@@ -466,7 +560,7 @@
                     ]
                 },
                 "icon": "AccountKey",
-                "version": "0.8.0",
+                "version": "0.9.0",
                 "configuration": {
                     "linkedTypes": [
                         "calendar"
@@ -529,6 +623,14 @@
                         "type": "string",
                         "description": "Contact email for notifications (masked in logs).",
                         "example": "contact@example.org"
+                    },
+                    "notificationChannels": {
+                        "title": "Notification channels",
+                        "type": "object",
+                        "description": "Per-channel opt-out for out-of-band notification dispatch (notification-preferences-per-role), keyed by channel. A missing key or any value other than `false` opts in (fail-open, matches the behaviour every account already had before this property existed); `false` opts out. The account's own `audience` is already the role this preference applies to. Set through the account's own PATCH /portal/api/identity/details (`emailNotifications`), never accepted for another account. Today's only channel is `email`.",
+                        "example": {
+                            "email": true
+                        }
                     },
                     "status": {
                         "title": "Status",
@@ -1738,6 +1840,12 @@
                                     "high"
                                 ],
                                 "example": "low"
+                            },
+                            "requiresIdentifiedIntake": {
+                                "title": "Sign-in for every form",
+                                "type": "boolean",
+                                "description": "Whether every form on this portal needs a signed-in visitor. An embedded form is then not shown and not accepted: the visitor is sent to the portal's own page to sign in.",
+                                "example": false
                             },
                             "oidc": {
                                 "title": "OIDC configuration",
@@ -5469,6 +5577,17 @@
                         "description": "What the citizen is told after submitting. The form's words, not the portal's.",
                         "example": "Bedankt. U hoort binnen vijf werkdagen van ons."
                     },
+                    "minTrust": {
+                        "title": "Sign-in level",
+                        "type": "string",
+                        "description": "The sign-in this form needs before it is shown or accepted. Absent or low means anyone may fill it in. Substantial or high needs a DigiD or eHerkenning session at that level, and the embedded form then sends the visitor to the portal's own page.",
+                        "enum": [
+                            "low",
+                            "substantial",
+                            "high"
+                        ],
+                        "example": "low"
+                    },
                     "allowedOrigins": {
                         "title": "Allowed origins",
                         "type": "array",
@@ -5707,6 +5826,140 @@
                         "type": "string",
                         "description": "Why it was rejected. Required on a rejection: a refusal nobody explained is one the proposer cannot answer.",
                         "example": "Wij hebben het nummer al op een andere manier gewijzigd."
+                    }
+                }
+            },
+            "portalPoll": {
+                "slug": "portalPoll",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "icon": "FormSelect",
+                "version": "0.1.0",
+                "title": "Portal Poll",
+                "description": "A question with fixed options, addressed to one audience within one organisation (parent-polls, learniq round-1 finding 9.9). Every portal subject of that audience answers once, through `portalPollResponse`. No per-group targeting yet — see the change's proposal.md Motivation.",
+                "type": "object",
+                "required": [
+                    "question",
+                    "options",
+                    "audience",
+                    "organisation"
+                ],
+                "properties": {
+                    "question": {
+                        "title": "Question",
+                        "type": "string",
+                        "description": "What is being asked.",
+                        "example": "Welke datum past het beste voor de ouderavond?"
+                    },
+                    "options": {
+                        "title": "Options",
+                        "type": "array",
+                        "description": "The fixed answers a subject may choose from.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "title": "Id",
+                                    "type": "string",
+                                    "description": "The option's own identifier, referenced by a response's optionId."
+                                },
+                                "label": {
+                                    "title": "Label",
+                                    "type": "string",
+                                    "description": "The option as shown to the subject."
+                                }
+                            }
+                        },
+                        "example": [
+                            {
+                                "id": "a",
+                                "label": "Dinsdag 6 oktober"
+                            },
+                            {
+                                "id": "b",
+                                "label": "Donderdag 8 oktober"
+                            }
+                        ]
+                    },
+                    "audience": {
+                        "title": "Audience",
+                        "type": "string",
+                        "description": "Which portal audience this poll is addressed to. Open string set, matching portalAccount.audience (contract v2 A2) — e.g. parent.",
+                        "example": "parent"
+                    },
+                    "organisation": {
+                        "title": "Organisation",
+                        "type": "string",
+                        "description": "The tenant (OpenRegister Organisation) this poll is addressed within.",
+                        "example": "gemeente-x"
+                    },
+                    "closesAt": {
+                        "title": "Closes at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "After this moment a subject may no longer answer or change their answer; a subject who already answered still sees their own answer.",
+                        "example": "2026-10-01T00:00:00+00:00"
+                    },
+                    "createdBy": {
+                        "title": "Created by",
+                        "type": "string",
+                        "description": "The Nextcloud user id of the staff member who created the poll.",
+                        "example": "clerk-anna"
+                    },
+                    "createdAt": {
+                        "title": "Created at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the poll was created.",
+                        "example": "2026-09-26T09:00:00+00:00"
+                    }
+                }
+            },
+            "portalPollResponse": {
+                "slug": "portalPollResponse",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "icon": "FormSelect",
+                "version": "0.1.0",
+                "title": "Portal Poll Response",
+                "description": "One subject's current answer to one portalPoll (parent-polls). Exactly one row per (pollId, subjectRef) — a later response UPDATES this row, it never appends a second one, since a poll response has no reviewer and no drift concern.",
+                "type": "object",
+                "required": [
+                    "pollId",
+                    "subjectRef",
+                    "optionId"
+                ],
+                "properties": {
+                    "pollId": {
+                        "title": "Poll id",
+                        "type": "string",
+                        "description": "The portalPoll this response answers.",
+                        "example": "00000000-0000-0000-0000-000000000000"
+                    },
+                    "subjectRef": {
+                        "title": "Subject reference",
+                        "type": "string",
+                        "description": "Who answered. Server-derived from the bearer; never accepted from the client.",
+                        "example": "b3d9c2a1-0000-4000-8000-000000000000"
+                    },
+                    "optionId": {
+                        "title": "Option id",
+                        "type": "string",
+                        "description": "The chosen option's id, from the poll's own options list.",
+                        "example": "a"
+                    },
+                    "respondedAt": {
+                        "title": "Responded at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the current answer was given (or last changed).",
+                        "example": "2026-09-26T10:00:00+00:00"
                     }
                 }
             },
@@ -6006,6 +6259,265 @@
                     }
                 }
             },
+            "newsItem": {
+                "slug": "newsItem",
+                "icon": "FileDocument",
+                "version": "0.1.0",
+                "title": "News item",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "A news item authored by staff and targeted at a school, one or more groups, or specific children (news-and-newsletter-authoring, findings 9.1). Read by a guardian ONLY when `target` intersects their own resolved audience (NewsAudienceMatcher) — never a broadcast-to-everyone fallback, the gap RosarioSIS's Portal Notes shows (rosariosis/round1/journeys.md J6).",
+                "type": "object",
+                "required": [
+                    "title",
+                    "body",
+                    "target",
+                    "authorRef",
+                    "status"
+                ],
+                "properties": {
+                    "title": {
+                        "title": "Title",
+                        "type": "string",
+                        "description": "News item heading.",
+                        "example": "Herfstvakantie rooster"
+                    },
+                    "body": {
+                        "title": "Body",
+                        "type": "string",
+                        "description": "Plain text / markdown body. Not translated by this change (see hermiq's message-translation-delegate).",
+                        "example": "De herfstvakantie loopt van 19 tot 23 oktober."
+                    },
+                    "target": {
+                        "title": "Target",
+                        "type": "object",
+                        "description": "Audience this item is targeted at. At least one of schoolRef/groupRefs/childRefs MUST be present; NewsAudienceMatcher treats them as an OR — any match includes the item.",
+                        "properties": {
+                            "schoolRef": {
+                                "title": "School",
+                                "type": "string",
+                                "example": "school-de-regenboog",
+                                "description": "The school this item is targeted at, when targeting a whole school."
+                            },
+                            "groupRefs": {
+                                "title": "Groups",
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "example": [
+                                    "groep-5a"
+                                ],
+                                "description": "The groups this item is targeted at, when targeting one or more groups."
+                            },
+                            "childRefs": {
+                                "title": "Children",
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "example": [
+                                    "child-devries-lars"
+                                ],
+                                "description": "The specific children this item is targeted at, when targeting individual children."
+                            }
+                        }
+                    },
+                    "authorRef": {
+                        "title": "Author",
+                        "type": "string",
+                        "description": "Staff subject reference of the author.",
+                        "example": "staff-directie-1"
+                    },
+                    "status": {
+                        "title": "Status",
+                        "type": "string",
+                        "description": "Lifecycle status. A draft item is indistinguishable from an absent one, exactly like an unpublished `page`.",
+                        "enum": [
+                            "draft",
+                            "published"
+                        ],
+                        "example": "published"
+                    },
+                    "photoRefs": {
+                        "title": "Photos",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "References/URLs to attached photos. Withheld from every read when any targeted child's photo consent is not granted (NewsPhotoConsentGate) — the item's title/body still deliver.",
+                        "example": []
+                    },
+                    "readReceipts": {
+                        "title": "Read receipts",
+                        "type": "array",
+                        "description": "Server-managed. One entry per guardian who has read this item (idempotent append by NewsReadReceiptService); never client-writable.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "subjectRef": {
+                                    "type": "string",
+                                    "title": "Guardian",
+                                    "description": "The subjectRef of the guardian who read this item."
+                                },
+                                "readAt": {
+                                    "type": "string",
+                                    "format": "date-time",
+                                    "title": "Read at",
+                                    "description": "When this guardian read the item, in ISO 8601."
+                                }
+                            }
+                        },
+                        "example": []
+                    }
+                }
+            },
+            "newsletter": {
+                "slug": "newsletter",
+                "icon": "EmailOutline",
+                "version": "0.1.0",
+                "title": "Newsletter",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "A newsletter composed from existing newsItem objects, sent per school or group with a recipient-count preflight (findings 9.2; the Gibbon Messenger preflight pattern, gibbon/round1/pages/Messenger.md).",
+                "type": "object",
+                "required": [
+                    "title",
+                    "itemRefs",
+                    "target"
+                ],
+                "properties": {
+                    "title": {
+                        "title": "Title",
+                        "type": "string",
+                        "example": "Weekbrief De Regenboog",
+                        "description": "The newsletter's own title, shown in the composer and the guardian's archive."
+                    },
+                    "itemRefs": {
+                        "title": "News items",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Ids of the newsItem objects composed into this newsletter.",
+                        "example": []
+                    },
+                    "target": {
+                        "title": "Target",
+                        "type": "object",
+                        "description": "Same shape and OR-matching rule as newsItem.target.",
+                        "properties": {
+                            "schoolRef": {
+                                "type": "string",
+                                "title": "School",
+                                "description": "The school this newsletter is targeted at, when targeting a whole school."
+                            },
+                            "groupRefs": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "title": "Groups",
+                                "description": "The groups this newsletter is targeted at, when targeting one or more groups."
+                            },
+                            "childRefs": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "title": "Children",
+                                "description": "The specific children this newsletter is targeted at, when targeting individual children."
+                            }
+                        }
+                    },
+                    "sentAt": {
+                        "title": "Sent at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Null until sent. Stamped server-side by NewsletterController::send — never client-writable. A send is refused (this stays null) when the resolved audience is zero (NewsletterPreflightService)."
+                    },
+                    "archived": {
+                        "title": "Archived",
+                        "type": "boolean",
+                        "description": "Staff may archive a sent newsletter explicitly; an archived newsletter is no longer surfaced as ‘recent’ but stays in the guardian's archive list.",
+                        "example": false
+                    }
+                }
+            },
+            "guardianAudienceFixture": {
+                "slug": "guardianAudienceFixture",
+                "icon": "Account",
+                "version": "0.1.0",
+                "title": "Guardian audience fixture (interim)",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ]
+                },
+                "description": "INTERIM stand-in for learniq's portal-contribution-guardian-audiences change (another lane, in flight, see design.md 'Audience source seam' in openspec/changes/news-and-newsletter-authoring/). Never publicly readable — read only server-side by GuardianAudienceFixtureReader. Delete this schema and repoint the reader at learniq's real collection once that change ships.",
+                "type": "object",
+                "required": [
+                    "guardianRef"
+                ],
+                "properties": {
+                    "guardianRef": {
+                        "title": "Guardian",
+                        "type": "string",
+                        "description": "The guardian's own subjectRef.",
+                        "example": "guardian-anna-devries"
+                    },
+                    "schoolRef": {
+                        "title": "School",
+                        "type": "string",
+                        "example": "school-de-regenboog",
+                        "description": "The guardian's own child's school."
+                    },
+                    "groupRefs": {
+                        "title": "Groups",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "groep-5a"
+                        ],
+                        "description": "The groups the guardian's own children are in."
+                    },
+                    "childRefs": {
+                        "title": "Children",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "child-devries-lars"
+                        ],
+                        "description": "The guardian's own children."
+                    },
+                    "photoConsent": {
+                        "title": "Photo consent",
+                        "type": "object",
+                        "description": "Map of childRef to a map of consent PURPOSE to whether it is granted for that child (findings 2.8 names schoolgids/website/nieuwsbrief/social media/Parro as separate purposes; this change models one, GuardianAudienceFixtureReader::PURPOSE_NEWS = \"news\", covering news items and newsletters). An absent child, or an absent purpose entry, is treated as withheld (fail-closed).",
+                        "example": {
+                            "child-devries-lars": {
+                                "news": true
+                            }
+                        }
+                    }
+                }
+            },
             "schoolEvent": {
                 "slug": "schoolEvent",
                 "icon": "Calendar",
@@ -6242,67 +6754,6 @@
                         "type": "string",
                         "format": "date-time",
                         "description": "When the guardian signed up, in ISO 8601."
-                    }
-                }
-            },
-            "guardianAudienceFixture": {
-                "slug": "guardianAudienceFixture",
-                "icon": "Account",
-                "version": "0.1.0",
-                "title": "Guardian audience fixture (interim)",
-                "authorization": {
-                    "read": [
-                        "authenticated"
-                    ],
-                    "create": [],
-                    "update": [],
-                    "delete": []
-                },
-                "description": "INTERIM stand-in for learniq's portal-contribution-guardian-audiences change (another lane, in flight; shared with news-and-newsletter-authoring, same lane — see that change's design.md 'Audience source seam'). Never publicly readable.",
-                "type": "object",
-                "required": [
-                    "guardianRef"
-                ],
-                "properties": {
-                    "guardianRef": {
-                        "title": "Guardian",
-                        "type": "string",
-                        "example": "guardian-anna-devries",
-                        "description": "The guardian's own subjectRef."
-                    },
-                    "schoolRef": {
-                        "title": "School",
-                        "type": "string",
-                        "example": "school-de-regenboog",
-                        "description": "The guardian's own child's school."
-                    },
-                    "groupRefs": {
-                        "title": "Groups",
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "example": [
-                            "groep-5a"
-                        ],
-                        "description": "The groups the guardian's own children are in."
-                    },
-                    "childRefs": {
-                        "title": "Children",
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "example": [
-                            "child-devries-lars"
-                        ],
-                        "description": "The guardian's own children."
-                    },
-                    "photoConsent": {
-                        "title": "Photo consent",
-                        "type": "object",
-                        "description": "Map of childRef to a map of purpose to whether it is granted. Not used by this change directly (events-and-signups carries no photos); kept for shape parity with the sibling change's identical fixture.",
-                        "example": {}
                     }
                 }
             }
