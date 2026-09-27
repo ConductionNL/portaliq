@@ -3023,6 +3023,219 @@
         "deviceRef": "Voorbeeld Deviceref 3",
         "createdAt": "2026-03-03T09:00:00+00:00",
         "active": true
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "activityOffer",
+          "slug": "activityoffer-schaakclub"
+        },
+        "title": "Schaakclub groep 5 tot en met 8",
+        "description": "Elke maandag na school leren we schaken in de aula.",
+        "kind": "club",
+        "target": {
+          "schoolRef": "school-de-regenboog"
+        },
+        "termStart": "2026-10-05",
+        "termEnd": "2026-12-14",
+        "signupDeadline": "2026-09-30T23:59:00+02:00",
+        "capacity": 16,
+        "waitlistEnabled": true,
+        "sessions": [
+          {
+            "id": "week-1",
+            "start": "2026-10-05T15:15:00+02:00",
+            "end": "2026-10-05T16:15:00+02:00"
+          },
+          {
+            "id": "week-2",
+            "start": "2026-10-12T15:15:00+02:00",
+            "end": "2026-10-12T16:15:00+02:00"
+          },
+          {
+            "id": "week-3",
+            "start": "2026-10-19T15:15:00+02:00",
+            "end": "2026-10-19T16:15:00+02:00"
+          }
+        ],
+        "supervisorRefs": [
+          "staff-leerkracht-5a"
+        ],
+        "childrenPerSupervisor": 12,
+        "paymentRequested": false,
+        "location": "Aula, De Regenboog",
+        "status": "open",
+        "authorRef": "staff-leerkracht-5a"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "activityOffer",
+          "slug": "activityoffer-schoolzwemmen"
+        },
+        "title": "Schoolzwemmen groep 5",
+        "description": "Zwemles in het Sportfondsenbad, met bus heen en terug.",
+        "kind": "sport",
+        "target": {
+          "groupRefs": [
+            "groep-5a"
+          ]
+        },
+        "termStart": "2026-10-07",
+        "termEnd": "2027-01-27",
+        "capacity": 24,
+        "waitlistEnabled": true,
+        "sessions": [
+          {
+            "id": "week-1",
+            "start": "2026-10-07T13:00:00+02:00",
+            "end": "2026-10-07T14:00:00+02:00"
+          },
+          {
+            "id": "week-2",
+            "start": "2026-10-14T13:00:00+02:00",
+            "end": "2026-10-14T14:00:00+02:00"
+          },
+          {
+            "id": "week-3",
+            "start": "2026-10-21T13:00:00+02:00",
+            "end": "2026-10-21T14:00:00+02:00"
+          }
+        ],
+        "supervisorRefs": [
+          "staff-leerkracht-5a",
+          "staff-leerkracht-3b"
+        ],
+        "childrenPerSupervisor": 10,
+        "paymentRequested": true,
+        "location": "Sportfondsenbad",
+        "status": "open",
+        "authorRef": "staff-leerkracht-5a"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "activityOffer",
+          "slug": "activityoffer-natuurexcursies"
+        },
+        "title": "Natuurexcursies in het najaar",
+        "description": "Drie ochtenden het bos in met een boswachter.",
+        "kind": "trip",
+        "target": {
+          "groupRefs": [
+            "groep-3b",
+            "groep-4c"
+          ]
+        },
+        "termStart": "2026-10-09",
+        "termEnd": "2026-11-20",
+        "capacity": 30,
+        "waitlistEnabled": false,
+        "sessions": [
+          {
+            "id": "week-1",
+            "start": "2026-10-09T09:00:00+02:00",
+            "end": "2026-10-09T12:00:00+02:00"
+          },
+          {
+            "id": "week-2",
+            "start": "2026-10-23T09:00:00+02:00",
+            "end": "2026-10-23T12:00:00+02:00"
+          },
+          {
+            "id": "week-3",
+            "start": "2026-11-06T09:00:00+02:00",
+            "end": "2026-11-06T12:00:00+02:00"
+          }
+        ],
+        "supervisorRefs": [
+          "staff-leerkracht-3b",
+          "staff-leerkracht-4c"
+        ],
+        "childrenPerSupervisor": 8,
+        "paymentRequested": true,
+        "location": "Boswachterij Dorst",
+        "status": "draft",
+        "authorRef": "staff-leerkracht-3b"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "activitySignup",
+          "slug": "activitysignup-schaakclub-lars"
+        },
+        "activityRef": "activityoffer-schaakclub",
+        "childRef": "child-devries-lars",
+        "guardianRef": "guardian-anna-devries",
+        "status": "confirmed",
+        "note": "Lars neemt zijn eigen schaakbord mee.",
+        "signedUpAt": "2026-09-21T19:02:00+02:00",
+        "confirmedAt": "2026-09-21T19:02:00+02:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "activitySignup",
+          "slug": "activitysignup-schaakclub-tim"
+        },
+        "activityRef": "activityoffer-schaakclub",
+        "childRef": "child-bakker-tim",
+        "guardianRef": "guardian-piet-bakker",
+        "status": "waitlisted",
+        "signedUpAt": "2026-09-24T08:15:00+02:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "activitySignup",
+          "slug": "activitysignup-zwemmen-lars"
+        },
+        "activityRef": "activityoffer-schoolzwemmen",
+        "childRef": "child-devries-lars",
+        "guardianRef": "guardian-anna-devries",
+        "status": "confirmed",
+        "signedUpAt": "2026-09-22T20:40:00+02:00",
+        "confirmedAt": "2026-09-22T20:40:00+02:00",
+        "paymentRequestRef": "00000000-0000-0000-0000-000000000000"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "activityAttendance",
+          "slug": "activityattendance-schaakclub-lars-week-1"
+        },
+        "activityRef": "activityoffer-schaakclub",
+        "sessionId": "week-1",
+        "childRef": "child-devries-lars",
+        "status": "present",
+        "markedByRef": "staff-leerkracht-5a",
+        "markedAt": "2026-10-05T16:20:00+02:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "activityAttendance",
+          "slug": "activityattendance-schaakclub-lars-week-2"
+        },
+        "activityRef": "activityoffer-schaakclub",
+        "sessionId": "week-2",
+        "childRef": "child-devries-lars",
+        "status": "excused",
+        "markedByRef": "staff-leerkracht-5a",
+        "markedAt": "2026-10-12T15:05:00+02:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "activityAttendance",
+          "slug": "activityattendance-zwemmen-lars-week-1"
+        },
+        "activityRef": "activityoffer-schoolzwemmen",
+        "sessionId": "week-1",
+        "childRef": "child-devries-lars",
+        "status": "present",
+        "markedByRef": "staff-leerkracht-3b",
+        "markedAt": "2026-10-07T14:10:00+02:00"
       }
     ]
   }
