@@ -1802,10 +1802,10 @@
 			},
 			"built": {
 				"state": "built",
-				"evidence": "src/portal/components/PageView.jsx:151-176 DetailCard renders collection.detail.fields or row keys; src/portal/lib/portalApi.js:263 fetchObject() -> GET /portal/api/collections/{register}/{schema}/{id}; lib/Controller/ContributionController.php contribution#object route.php:217",
+				"evidence": "src/portal/components/PageView.jsx DetailCard renders collection.detail.fields or row keys; lib/Contribution/PortalPageResolver.php synthesiseDefaultPages() adds a detail block after every listable collection's table; src/portal/lib/portalApi.js fetchObject() -> GET /portal/api/collections/{register}/{schema}/{id}; lib/Controller/ContributionController.php contribution#object",
 				"reachedOn": "PageView.jsx 'detail' block, selected from a CollectionTable row (onSelect)",
 				"owner": "ConductionNL/portaliq",
-				"note": "Works when the manifest declares a detail block for the collection.",
+				"note": "Works for a declared detail block and, since portaliq#723, for every page portaliq synthesises for a contribution that declares no pages.",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -7650,7 +7650,7 @@
 			"id": "dem-fr-case-contact-moments",
 			"area": "cases",
 			"name": "See the contact moments about a case on that case's own page.",
-			"portaliq": "no",
+			"portaliq": "yes",
 			"open-inwoner": "yes",
 			"nl-portal": "yes",
 			"xxllnc-pip": "no",
@@ -7664,11 +7664,11 @@
 				"liferay-dxp": "not settled from docs: no contact-moment record or history for a resident was found in the accounts, objects or notifications pages read today (as for cmp-inb-contact-history)."
 			},
 			"built": {
-				"state": "none",
-				"evidence": "ConductionNL/dossiq@971735b03e (development) lib/Portal/PortalContributionProvider.php:434-437 declares a 'timeline' {provider: caseTimeline} on mijnZaken; grep -rn 'timeline' lib/Contribution src/portal: only the detail layout enum (CollectionConfigNormaliser.php:49) and a CSS class; no handler reads a collection timeline",
-				"reachedOn": "nothing reaches it",
+				"state": "built",
+				"evidence": "lib/Contribution/CollectionConfigNormaliser.php normaliseTimeline() keeps a collection's timeline {label, provider}; lib/Controller/PortalTimelineController.php show() proves ownership through the scoped readObject, then lib/Service/PortalTimelineReader.php calls the declared provider method; src/portal/components/TimelineList.jsx renders it inside the DetailCard (src/portal/components/PageView.jsx). dossiq's caseTimeline returns CaseTimeline::publicEntries(), which carries contact moments marked visible to the applicant (ConductionNL/dossiq lib/Portal/PortalContributionProvider.php:434-437)",
+				"reachedOn": "Mijn zaken page: select a case row -> detail block -> GET /portal/api/collections/{register}/{schema}/{id}/timeline -> 'Wat er is gebeurd'",
 				"owner": "ConductionNL/portaliq",
-				"note": "dossiq declares a per-case timeline for the portal but portaliq's normaliser and SPA have no support for it, so nothing (contact moments included) is shown on a case page.",
+				"note": "Which entries show is dossiq's decision: portaliq renders what caseTimeline returns, newest first. Only contact moments dossiq marks public reach the resident.",
 				"origin": "code"
 			},
 			"provider": "portaliq",
