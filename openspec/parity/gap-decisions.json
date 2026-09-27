@@ -24,6 +24,14 @@
 		"decidedOn": "2026-09-27"
 	},
 	{
+		"row": "act-withdraw-case",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Open change withdrawing-your-own-case-from-the-portal has every task checked (11 of 11) but no screen in src/portal, src/site or src/manifest.json calls its endpoints (read at eeda3fa). Treated as the archived case of the rule: shipped without the capability, so this change builds the missing screens.",
+		"change": "case-actions-withdraw-screen",
+		"decidedOn": "2026-09-27"
+	},
+	{
 		"row": "act-withdraw-proposal",
 		"matrix": "portaliq",
 		"decision": "existing",
@@ -749,6 +757,14 @@
 		"decision": "existing",
 		"reason": "Open change change-proposal-queue carries the colleague and reviewer screens as its open tasks T05 and T06 (the portaliq-change-proposals data-provider and the portaliq-change-proposal-queue render-surface leaf).",
 		"change": "change-proposal-queue",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "sib-dossiq-2-47",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Open change withdrawing-your-own-case-from-the-portal has every task checked (11 of 11) but no screen in src/portal, src/site or src/manifest.json calls its endpoints (read at eeda3fa). Treated as the archived case of the rule: shipped without the capability, so this change builds the missing screens.",
+		"change": "case-actions-withdraw-screen",
 		"decidedOn": "2026-09-27"
 	},
 	{

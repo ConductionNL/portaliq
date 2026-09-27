@@ -2370,11 +2370,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/understanding-object-integrations/permissions-framework-integration: the entry owner holds Delete; a withdraw step can also be a standalone button action (https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/actions/using-manual-actions 'Buttons in pages'). Custom case object. [was unknown]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "lib/Controller/CitizenCaseController.php:304-331 withdraw(), fully implemented (guardWrite, writableSet.withdrawal, applyWithdrawal, PortalClientWithdrawalEvent); routes.php:287 POST /portal/api/citizen/cases/{register}/{schema}/{id}/withdraw",
 				"reachedOn": "nothing reaches it: src/portal/lib/portalApi.js has no withdraw method, and src/portal/components/CitizenCase.jsx has no withdraw button; grep 'withdraw' across all of src/ finds only an unrelated traffic-consent comment",
 				"owner": "ConductionNL/portaliq",
-				"note": "A complete server-side withdrawal path with its own event and openspec (withdrawing-your-own-case-from-the-portal) has no UI trigger anywhere in this repo.",
+				"note": "A complete server-side withdrawal path with its own event and openspec (withdrawing-your-own-case-from-the-portal) has no UI trigger anywhere in this repo. Specified in openspec/changes/case-actions-withdraw-screen (OpenSpec pass 2026-09-27).",
 				"origin": "code",
 				"defectCandidate": "src/portal/components/CitizenCase.jsx has no withdraw control; the working backend at lib/Controller/CitizenCaseController.php:304 is unreachable from the portal SPA (code reading, needs a live check)"
 			},
@@ -2401,11 +2401,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/understanding-object-integrations/permissions-framework-integration: the entry owner holds Delete; a withdraw action can be a standalone action button (https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/actions/using-manual-actions). Custom case object. [was unknown]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "same finding as act-withdraw-case: lib/Controller/CitizenCaseController.php:304 withdraw() is implemented but has no frontend caller",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
-				"note": "dossiq matrix rated this 'partial' with no evidence given; from portaliq's code the honest rating is no, since the whole path is unreached (see the defect on act-withdraw-case).",
+				"note": "dossiq matrix rated this 'partial' with no evidence given; from portaliq's code the honest rating is no, since the whole path is unreached (see the defect on act-withdraw-case). Specified in openspec/changes/case-actions-withdraw-screen (OpenSpec pass 2026-09-27).",
 				"sourceId": "sib-2.47",
 				"origin": "sibling"
 			},
