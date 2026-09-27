@@ -194,11 +194,22 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// moved to 0.28.0 because development had already taken 0.27.0 for
 		// portalTrafficDaily's per-page rows (above) by the time this merged.
 		// Additive.
+		// 0.27.0 (portalPoll/portalPollResponse): written as 0.27.0 on its own
+		// branch, added `portalPoll`/`portalPollResponse` (parent-polls,
+		// learniq round-1 finding 9.9) and listed both in
+		// `components.registers.portaliq.schemas`. Development took 0.27.0
+		// first for portalTrafficDaily's per-page `pages` rows (a parallel
+		// branch, same race the 0.26.0 note above describes), so THIS change
+		// moved to 0.28.0 on merge, and then to 0.29.0 because development
+		// took 0.28.0 for portalAccount's `notificationChannels` (above) first.
+		// It would never re-import on an instance already at 0.28.0 otherwise.
+		// Additive; no content conflict with either change, only the version
+		// number.
 		// Every new schema is listed in
 		// `components.registers.portaliq.schemas` (ImportHandler binds only
 		// what is listed there) and declares a non-empty `read` rule.
-		$this->assertSame('0.28.0', self::$register['info']['version']);
-		$this->assertSame('0.28.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.29.0', self::$register['info']['version']);
+		$this->assertSame('0.29.0', self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalAuditEntry']['version']);
 		$this->assertContains('complete', self::$register['components']['schemas']['portalAuditEntry']['properties']['verb']['enum']);
 		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalCaseType']['version']);

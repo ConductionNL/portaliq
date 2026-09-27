@@ -266,6 +266,12 @@ return [
         ['name' => 'proposal#mine', 'url' => '/portal/api/proposals/mine', 'verb' => 'GET'],
         ['name' => 'proposal#withdraw', 'url' => '/portal/api/proposals/{id}/withdraw', 'verb' => 'POST'],
 
+        // Parent polls (parent-polls, learniq round-1 finding 9.9). A staff
+        // route to create, two bearer-gated portal routes to list and answer.
+        ['name' => 'poll#create', 'url' => '/api/polls', 'verb' => 'POST'],
+        ['name' => 'poll#index', 'url' => '/portal/api/polls', 'verb' => 'GET'],
+        ['name' => 'poll#respond', 'url' => '/portal/api/polls/{id}/respond', 'verb' => 'POST'],
+
         // A report of wrongdoing filed without an account
         // (a-report-without-an-account-and-a-custodian-who-may-reveal-it).
         // The three portal routes take no session and no address: the receipt
