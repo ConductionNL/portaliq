@@ -353,6 +353,53 @@ class PortalManifestNormaliserTest extends TestCase {
 
 	}//end testAbsentPagesSynthesiseOneDefaultPerListableCollection()
 
+	public function testASynthesisedPageCarriesADetailBlockSoARowCanBeOpened(): void {
+		// portaliq#723: a page synthesised for a contribution that declares no
+		// pages held only the create form and the table. Selecting a row
+		// stored the choice and nothing rendered it, so a resident could not
+		// open their own case.
+		$out = $this->normaliser()->normalise(
+			[
+				'collections' => [['id' => 'mijnZaken', 'schema' => 'case', 'label' => 'Mijn zaken', 'listable' => true]],
+				'actions' => [],
+			]
+		);
+
+		$this->assertSame(
+			[
+				['type' => 'collection', 'collection' => 'mijnZaken'],
+				['type' => 'detail', 'collection' => 'mijnZaken'],
+			],
+			$out['pages'][0]['blocks']
+		);
+
+	}//end testASynthesisedPageCarriesADetailBlockSoARowCanBeOpened()
+
+	public function testATimelineIsKeptOnlyWhenItNamesAProviderMethod(): void {
+		$out = $this->normaliser()->normalise(
+			[
+				'collections' => [
+					['id' => 'c1', 'schema' => 's', 'timeline' => ['label' => 'Wat er is gebeurd', 'provider' => 'caseTimeline']],
+					['id' => 'c2', 'schema' => 's', 'timeline' => ['provider' => 'caseTimeline', 'label' => 7]],
+					['id' => 'c3', 'schema' => 's', 'timeline' => ['label' => 'Geen provider']],
+					['id' => 'c4', 'schema' => 's', 'timeline' => ['provider' => '__construct']],
+					['id' => 'c5', 'schema' => 's', 'timeline' => ['provider' => 'case-timeline']],
+					['id' => 'c6', 'schema' => 's', 'timeline' => 'caseTimeline'],
+					['id' => 'c7', 'schema' => 's', 'timeline' => ['provider' => 'getContribution']],
+				],
+			]
+		);
+
+		$byId = array_column($out['collections'], null, 'id');
+		$this->assertSame(['label' => 'Wat er is gebeurd', 'provider' => 'caseTimeline'], $byId['c1']['timeline']);
+		// A label that is not text falls back to none; the provider stands.
+		$this->assertSame(['label' => '', 'provider' => 'caseTimeline'], $byId['c2']['timeline']);
+		foreach (['c3', 'c4', 'c5', 'c6', 'c7'] as $id) {
+			$this->assertArrayNotHasKey('timeline', $byId[$id], $id);
+		}
+
+	}//end testATimelineIsKeptOnlyWhenItNamesAProviderMethod()
+
 	/**
 	 * ADDITIVE-COMPAT: a pure v2 manifest round-trips with collections + actions
 	 * byte-identical; only an additive synthesised `pages` array appears.

@@ -75,16 +75,21 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 	 *
 	 * @param string $displayName A new name, or ''.
 	 * @param string $email A new address, or ''.
+	 * @param bool|null $emailNotifications The account's own opt-in/opt-out
+	 *                                      for the email channel, or null
+	 *                                      to leave it unchanged
+	 *                                      (notification-preferences-per-role).
 	 *
 	 * @return JSONResponse Whether the change landed, and whether a
 	 *                      confirmation is now waiting.
 	 *
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/changes/notification-preferences-per-role/specs/supplier-portal/spec.md#requirement-an-accounts-own-channel-opt-out-gates-dispatch
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 20, period: 60)]
-	public function updateDetails(string $displayName = '', string $email = ''): JSONResponse {
+	public function updateDetails(string $displayName = '', string $email = '', ?bool $emailNotifications = null): JSONResponse {
 		$subject = $this->subject();
 		if ($subject === null) {
 			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
@@ -93,7 +98,8 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 		$updated = $this->selfService->updateDetails(
 			subjectRef: (string)($subject['subjectRef'] ?? ''),
 			displayName: $displayName,
-			email: $email
+			email: $email,
+			emailNotifications: $emailNotifications
 		);
 		if ($updated === null) {
 			return new JSONResponse(['error' => 'refused'], Http::STATUS_BAD_REQUEST);
