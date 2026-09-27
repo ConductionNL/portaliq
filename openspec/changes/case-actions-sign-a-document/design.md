@@ -94,6 +94,11 @@ be replayed with another body inside its 60 seconds. A claim inside the
 signed assertion cannot. This is the option filinq's
 `portal-signing-actions` design lists as "(a, preferred)".
 
+Shillinq shows a third road: its `PortalPaymentSessionService` reads
+portaliq's `portalAccount` register itself to resolve the scope claim. That
+ties every receiver to portaliq's schema and to reading it with RBAC off. A
+claim inside the assertion keeps the receiver on the wire format alone.
+
 ## D4. The signing screen
 
 A new `src/portal/components/SigningDialog.jsx`, opened from a row's endpoint
