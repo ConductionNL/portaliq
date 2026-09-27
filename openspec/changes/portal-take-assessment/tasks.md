@@ -45,7 +45,7 @@ Kind: code. Recon C change row `portal-take-assessment`; decision D15 (wave 2).
 - [x] Implement
 
 ## Verification
-- [ ] `openspec validate portal-take-assessment` passes, diff checks green, `composer check:strict` run once
+- [x] `openspec validate portal-take-assessment` passes, diff checks green, `composer check:strict` run once (its only red is the 29 inherited PHPUnit errors)
 
 ## Quality checklist
 

@@ -231,6 +231,7 @@ src/portal/lib/timedTask.js                         new, pure
 src/portal/components/TimedTaskView.jsx             new
 src/portal/components/TimedTaskItem.jsx             new
 src/portal/components/PageView.jsx                  routes kind timedTask
+src/portal/theme.css                                .portaliq-sr-only for the minute announcement
 src/portal/lib/portalApi.js                         forwardAction()
 src/portal/i18n/en.json, nl.json
 tests/Unit/Contribution/TimedTaskConfigNormaliserTest.php
