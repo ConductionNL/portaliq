@@ -42,11 +42,12 @@ class PortalFormTrustLevel {
 	public const UNRECOGNISED = 'unrecognised';
 
 	/**
-	 * Declared levels that mean "no sign-in needed". `low` is the anonymous
-	 * floor in portaliq's own contract, and buildiq writes `0` for the same
-	 * thing (buildiq#921).
+	 * Declared levels that mean "no sign-in needed": an empty value, the `0`
+	 * older buildiq forms still carry (buildiq#921) and `anonymous`. `low` is
+	 * not one of them: it is the lowest signed-in level, as it is for a
+	 * portalPage entry and for requiresIdentifiedIntake (portaliq#731).
 	 */
-	private const ANONYMOUS_LEVELS = ['', '0', 'low', 'anonymous', 'none'];
+	private const ANONYMOUS_LEVELS = ['', '0', 'anonymous'];
 
 	/**
 	 * The sign-in level a submission of this form needs, or null for none.
@@ -110,7 +111,7 @@ class PortalFormTrustLevel {
 			return null;
 		}
 
-		if (in_array($declared, ['substantial', 'high'], true) === true) {
+		if (in_array($declared, ['low', 'substantial', 'high'], true) === true) {
 			return $declared;
 		}
 

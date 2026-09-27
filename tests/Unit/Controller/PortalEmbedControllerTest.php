@@ -213,6 +213,38 @@ class PortalEmbedControllerTest extends TestCase {
 
 	}//end testAnAnonymousFormNextToASignedInOneIsStillFramed()
 
+	public function testAFormRequiringLevelLowIsNotFramed(): void {
+		// portaliq#731: a maker who set "DigiD or eHerkenning, level low" in
+		// buildiq asked for a signed-in session, so the anonymous frame
+		// refuses and points at the portal instead.
+		$controller = $this->controller(origin: 'https://www.gemeente.nl', formMinTrust: 'low');
+
+		$params = $controller->frame(route: 'aanvragen/verhuizing')->getParams()['embed'];
+
+		$this->assertSame('identified_intake', $params['refused']);
+		$this->assertSame([], $params['fields']);
+
+	}//end testAFormRequiringLevelLowIsNotFramed()
+
+	public function testAFormRequiringLevelLowAcceptsNoSubmissionThroughTheFrame(): void {
+		$controller = $this->controller(origin: 'https://www.gemeente.nl', formMinTrust: 'low');
+		$this->doubles['queue']->expects($this->never())->method('accept');
+
+		$response = $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB']);
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+
+	}//end testAFormRequiringLevelLowAcceptsNoSubmissionThroughTheFrame()
+
+	public function testABindingRequiringLevelLowIsNotFramed(): void {
+		$controller = $this->controller(origin: 'https://www.gemeente.nl', bindingMinTrust: 'low');
+
+		$params = $controller->frame(route: 'aanvragen/verhuizing')->getParams()['embed'];
+
+		$this->assertSame('identified_intake', $params['refused']);
+
+	}//end testABindingRequiringLevelLowIsNotFramed()
+
 	public function testAnUnrecognisedSignInLevelFailsClosed(): void {
 		$controller = $this->controller(origin: 'https://www.gemeente.nl', formMinTrust: 'digid');
 		$this->doubles['queue']->expects($this->never())->method('accept');
