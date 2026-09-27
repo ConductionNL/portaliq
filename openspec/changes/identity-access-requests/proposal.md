@@ -35,6 +35,8 @@ organisation's cases."
 they were answered." Portaliq `no`, `built`: "Read side of id-request-access,
 equally unreached." No competitor is rated `yes` or `partial`.
 
+**How the pass treated the original change.** `portal-identity-and-the-organisations-cases` is open with every task checked, and no screen calls its endpoints. The OpenSpec pass of 2026-09-27 treats that as an archived change that shipped without the capability, so this change builds the missing half and leaves the shipped backend as it is.
+
 ## What changes
 
 - On the signed-in portal's "My cases" page, a link "Ask for access to cases"

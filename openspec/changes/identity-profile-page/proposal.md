@@ -54,6 +54,8 @@ UI affordance in the portal SPA to request it." Open Inwoner Platform is `yes`:
 user and flushes the session; [...] text: personal data and cases are not
 deleted".
 
+**How the pass treated the original change.** `portal-identity-and-the-organisations-cases` is open with every task checked, and no screen calls its endpoints. The OpenSpec pass of 2026-09-27 treats that as an archived change that shipped without the capability, so this change builds the missing half and leaves the shipped backend as it is.
+
 ## What changes
 
 - A "My account" page in the signed-in portal with four parts: your name and

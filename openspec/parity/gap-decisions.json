@@ -107,7 +107,7 @@
 		"row": "cmp-cas-status-timeline",
 		"matrix": "portaliq",
 		"decision": "existing",
-		"reason": "Matrix corrected. Shipped after the rating with portaliq#723 (commit 69ca851, no change directory): the case detail shows the history the case app declares (src/portal/components/TimelineList.jsx, lib/Controller/PortalTimelineController.php) and CitizenCase.jsx shows the current public status. Rating no to yes, built.state none to built.",
+		"reason": "Matrix corrected. Shipped after the rating with portaliq#732 (fixes issue #723, commit 69ca851, no change directory): the case detail shows the history the case app declares (src/portal/components/TimelineList.jsx, lib/Controller/PortalTimelineController.php) and CitizenCase.jsx shows the current public status. Rating no to yes, built.state none to built.",
 		"change": null,
 		"decidedOn": "2026-09-27"
 	},

@@ -2041,11 +2041,18 @@
 			},
 			"built": {
 				"state": "built",
-				"evidence": "src/portal/components/TimelineList.jsx renders the entries newest first inside the DetailCard (src/portal/components/PageView.jsx:284); lib/Controller/PortalTimelineController.php:93 show(); appinfo/routes.php:298 GET /portal/api/collections/{register}/{schema}/{id}/timeline; src/portal/components/CitizenCase.jsx:155-158 the current public status",
+				"evidence": "portaliq#732 (266328d, fixes #723): src/portal/components/TimelineList.jsx renders the entries newest first inside the DetailCard (src/portal/components/PageView.jsx:284); lib/Controller/PortalTimelineController.php:93 show(); appinfo/routes.php:298 GET /portal/api/collections/{register}/{schema}/{id}/timeline; src/portal/components/CitizenCase.jsx:155-158 the current public status",
 				"reachedOn": "Mijn zaken: select a case row -> detail block -> the case history the case app declares, and the case screen shows the current status",
 				"owner": "ConductionNL/portaliq",
-				"note": "Only the current status is shown, never the path a case took to get there. Matrix corrected in the OpenSpec pass 2026-09-27: shipped after the rating with portaliq#723 (commit 69ca851, no change directory). Which steps show is the case app's decision: portaliq renders what the declared timeline provider returns.",
-				"origin": "competitor"
+				"note": "Matrix corrected in the OpenSpec pass 2026-09-27: shipped after the rating with portaliq#732 (fixes issue #723, commit 69ca851, no change directory). Which steps show is the case app's decision: portaliq renders what the declared timeline provider returns.",
+				"origin": "competitor",
+				"prs": [
+					{
+						"repo": "ConductionNL/portaliq",
+						"number": 732,
+						"sha": "266328d4d95cda118bd22bb4b65077c34d54ceea"
+					}
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2456,11 +2463,18 @@
 			},
 			"built": {
 				"state": "built",
-				"evidence": "src/portal/components/PageView.jsx:154-214 ProposalQueue and :336 offers a propose-change rowAction on the detail card; src/portal/components/ProposeChangeForm.jsx; lib/Controller/ProposalController.php:99 proposeFromPortal() and :238 mine(); appinfo/routes.php:337 POST /portal/api/proposals, :341 GET /portal/api/proposals/mine",
+				"evidence": "portaliq#683 (2f202ee): src/portal/components/PageView.jsx:154-214 ProposalQueue and :336 offers a propose-change rowAction on the detail card; src/portal/components/ProposeChangeForm.jsx; lib/Controller/ProposalController.php:99 proposeFromPortal() and :238 mine(); appinfo/routes.php:337 POST /portal/api/proposals, :341 GET /portal/api/proposals/mine",
 				"reachedOn": "portal SPA detail card of a collection that declares a propose-change rowAction -> Wijziging voorstellen -> POST /portal/api/proposals",
 				"owner": "ConductionNL/portaliq",
 				"note": "Matrix corrected in the OpenSpec pass 2026-09-27: shipped after the rating with openspec/changes/guardian-self-service-profile (portaliq#683). Partial because it renders only where a contribution declares a propose-change action, and dossiq declares none yet.",
-				"origin": "code"
+				"origin": "code",
+				"prs": [
+					{
+						"repo": "ConductionNL/portaliq",
+						"number": 683,
+						"sha": "2f202ee1f5aee894a66364eaa43dab7c71c68e1a"
+					}
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2516,11 +2530,18 @@
 			},
 			"built": {
 				"state": "built",
-				"evidence": "src/portal/components/PageView.jsx:177 withdrawProposal() from the proposer's own queue (ProposalQueue, :154-214); lib/Controller/ProposalController.php:358 withdraw(); appinfo/routes.php:342 POST /portal/api/proposals/{id}/withdraw",
+				"evidence": "portaliq#683 (2f202ee): src/portal/components/PageView.jsx:177 withdrawProposal() from the proposer's own queue (ProposalQueue, :154-214); lib/Controller/ProposalController.php:358 withdraw(); appinfo/routes.php:342 POST /portal/api/proposals/{id}/withdraw",
 				"reachedOn": "portal SPA detail card -> own proposal list -> withdraw a queued proposal",
 				"owner": "ConductionNL/portaliq",
 				"note": "Matrix corrected in the OpenSpec pass 2026-09-27: shipped after the rating with openspec/changes/guardian-self-service-profile (portaliq#683). Partial because the queue renders only where a contribution declares a propose-change action, and dossiq declares none yet.",
-				"origin": "code"
+				"origin": "code",
+				"prs": [
+					{
+						"repo": "ConductionNL/portaliq",
+						"number": 683,
+						"sha": "2f202ee1f5aee894a66364eaa43dab7c71c68e1a"
+					}
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -5111,11 +5132,18 @@
 			},
 			"built": {
 				"state": "built",
-				"evidence": "lib/Controller/NewsController.php:104 create(), :150 publish(); lib/Controller/NewsGuardianController.php:78 feed(); appinfo/routes.php:97-103; newsItem and newsletter schemas at lib/Settings/portaliq_register.json:6436,6555",
+				"evidence": "portaliq#682 (d8a38bd): lib/Controller/NewsController.php:104 create(), :150 publish(); lib/Controller/NewsGuardianController.php:78 feed(); appinfo/routes.php:97-103; newsItem and newsletter schemas at lib/Settings/portaliq_register.json:6436,6555",
 				"reachedOn": "GET /apps/portaliq/api/news/feed for a signed-in guardian; staff author through /api/news",
 				"owner": "ConductionNL/portaliq",
-				"note": "An editor could hand-build a news list as ordinary markdown/pages, but there is no dated news TYPE or generated overview. Matrix corrected in the OpenSpec pass 2026-09-27: a dated NewsItem targeted per school, group or child shipped after the rating with openspec/changes/news-and-newsletter-authoring (portaliq#682). Partial because there is no public news overview page on the site.",
-				"origin": "competitor"
+				"note": "Matrix corrected in the OpenSpec pass 2026-09-27: a dated NewsItem targeted per school, group or child shipped after the rating with openspec/changes/news-and-newsletter-authoring (portaliq#682). Partial because there is no public news overview page on the site.",
+				"origin": "competitor",
+				"prs": [
+					{
+						"repo": "ConductionNL/portaliq",
+						"number": 682,
+						"sha": "d8a38bd1e9772e41ca06b3e53034fa0c0ff76ab5"
+					}
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -5773,11 +5801,18 @@
 			},
 			"built": {
 				"state": "decided-no",
-				"evidence": "lib/Controller/PortalManifestController.php:85 manifest() and :133 serviceWorker(); appinfo/routes.php:201-202; src/portal/main.jsx:85-86 registers the service worker; src/portal/App.jsx:116-150 the install prompt",
+				"evidence": "portaliq#714 (7c5cc2a): lib/Controller/PortalManifestController.php:85 manifest() and :133 serviceWorker(); appinfo/routes.php:201-202; src/portal/main.jsx:85-86 registers the service worker; src/portal/App.jsx:116-150 the install prompt",
 				"reachedOn": "portal SPA: the browser offers Add to Home Screen from /portal/manifest.webmanifest",
 				"owner": "ConductionNL/portaliq",
-				"note": "Responsive web only (see thm-mobile-responsive); not an installable PWA and not a native app. Matrix corrected in the OpenSpec pass 2026-09-27: the installable portal shipped after the rating with openspec/changes/parent-pwa-installability (portaliq#714). The missing half, a native app, is decided no: parent-pwa-installability/proposal.md Out of Scope, \"Any native iOS/Android app-store app\".",
-				"origin": "competitor"
+				"note": "Matrix corrected in the OpenSpec pass 2026-09-27: the installable portal shipped after the rating with openspec/changes/parent-pwa-installability (portaliq#714). The missing half, a native app, is decided no: parent-pwa-installability/proposal.md Out of Scope, \"Any native iOS/Android app-store app\".",
+				"origin": "competitor",
+				"prs": [
+					{
+						"repo": "ConductionNL/portaliq",
+						"number": 714,
+						"sha": "7c5cc2abd1422e4b35223189632b2dbf506e6178"
+					}
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",

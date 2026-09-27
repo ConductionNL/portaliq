@@ -69,6 +69,8 @@ role acted under' as done." Two competitors `yes`:
 - MijnOverheid: "via DigiD Machtigen a designated person can read, move, delete
   and forward the messages assigned to them".
 
+**How the pass treated the original change.** `portal-identity-space` and `portal-identity-and-the-organisations-cases` are open with every task checked, and no screen calls their endpoints. The OpenSpec pass of 2026-09-27 treats that as an archived change that shipped without the capability, so this change builds the missing half and leaves the shipped backend as it is.
+
 ## What changes
 
 - A fixed "My cases" page in the signed-in portal over `GET /portal/api/my-cases`:

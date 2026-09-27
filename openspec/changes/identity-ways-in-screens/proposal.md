@@ -71,6 +71,8 @@ xxllnc Zaken PIP ("backend/perl-api/lib/Zaaksysteem/Controller/Form.pm:182
 /aanvragen/<id>/<persoon|organisatie|onbekend>") and MijnOverheid. The case
 list half of this row is `cases-my-cases-page`; this change is the way in.
 
+**How the pass treated the original change.** `portal-identity-and-the-organisations-cases` is open with every task checked, and no screen calls its endpoints. The OpenSpec pass of 2026-09-27 treats that as an archived change that shipped without the capability, so this change builds the missing half and leaves the shipped backend as it is.
+
 ## What changes
 
 - The portal's sign-in screen offers three more doors next to the login
