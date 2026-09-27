@@ -4957,11 +4957,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/sites/publishing-tools/publications/reverting-changes 'Liferay Publications maintains a history of all published changes. You can use this publishing history to easily create publications that revert earlier changes'. Publications is in maintenance mode as of 2026.Q1 and published changes cannot be reverted after an upgrade."
 			},
 			"built": {
-				"state": "none",
+				"state": "specified",
 				"evidence": "No revision/version-history class or schema anywhere in lib/ (grep -in \"revision|version.*history\" lib/Settings/portaliq_register.json: 0 hits; find lib -iname '*Revision*' -o -iname '*History*': 0 hits). `page.draftBody` exists but is a single working copy, not a history",
 				"reachedOn": "nothing reaches it: no code exists",
 				"owner": "ConductionNL/portaliq",
-				"note": null,
+				"note": "Specified in openspec/changes/site-page-seo-history-and-media (OpenSpec pass 2026-09-27).",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -5017,11 +5017,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/digital-asset-management/documents-and-media: a Documents and Media library per site, and asset libraries share files across connected sites (https://learn.liferay.com/w/dxp/content-management-system/asset-libraries)."
 			},
 			"built": {
-				"state": "none",
+				"state": "specified",
 				"evidence": "No media-library controller, schema or component (grep -rln \"media.*librar|MediaLibrary\" lib/ src/: 0 hits). `page.heroImage` is a single per-page reference field, not a reusable library",
 				"reachedOn": "nothing reaches it: no code exists",
 				"owner": "ConductionNL/portaliq",
-				"note": null,
+				"note": "Specified in openspec/changes/site-page-seo-history-and-media (OpenSpec pass 2026-09-27).",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -5047,11 +5047,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/sites/creating-pages/page-settings/page-settings-ui-reference: page configuration tabs 'General Design SEO Open Graph Custom Meta Tags'."
 			},
 			"built": {
-				"state": "none",
+				"state": "specified",
 				"evidence": "templates/site.php:242 sets only the PORTAL's title in <title>, once, server-side; the page title after that is set client-side via App.vue:887-898 applyDocumentTitle() (document.title, not a server-rendered <title> a crawler executing no JS would see); no <meta name=\"description\">/og:* tag is emitted anywhere in templates/site.php or App.vue, even though page.summary's schema description says it is 'used for... the page's meta description'",
 				"reachedOn": "nothing reaches it: page.summary is stored but nothing reads it into a meta tag",
 				"owner": "ConductionNL/portaliq",
-				"note": "The schema's own field description makes a claim (meta description) the renderer does not carry out.",
+				"note": "The schema's own field description makes a claim (meta description) the renderer does not carry out. Specified in openspec/changes/site-page-seo-history-and-media (OpenSpec pass 2026-09-27).",
 				"origin": "competitor",
 				"defectCandidate": "templates/site.php:242 + src/site/App.vue:887-898: page.summary is documented as the meta description but is never emitted as one. (code reading, needs a live check)"
 			},
@@ -5505,11 +5505,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/search/search-pages-and-widgets/search-results/sorting-search-results 'ordered by relevance score ... by default. With the Sort widget, users can control the order', including 'by the Modified date (newest first by default, or choose oldest first)'."
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "src/site/components/FederatedSearchBlock.vue:140 sortOptions rendering, ~662-670 options are publicationDate ASC/DESC and title only; no relevance ranking anywhere in this component (opencatalogi's own relevance-capable SearchSideBar is unreachable, per opencatalogi matrix)",
 				"reachedOn": "/zoeken route",
 				"owner": "ConductionNL/portaliq",
-				"note": "Date sort works; relevance sort does not exist on any reachable path. Matches source rating (opencatalogi matrix, id srch-sort).",
+				"note": "Date sort works; relevance sort does not exist on any reachable path. Matches source rating (opencatalogi matrix, id srch-sort). Specified in openspec/changes/search-sort-by-relevance (OpenSpec pass 2026-09-27).",
 				"origin": "sibling"
 			},
 			"provider": "opencatalogi",
@@ -8546,11 +8546,12 @@
 				"liferay-dxp": "https://learn.liferay.com/w/ai-hub/chatbots 'A chatbot is a conversational frontend for your agents ... deploy it as a chat widget on Liferay DXP pages or external sites'; AI Hub is listed under Now on https://www.liferay.com/roadmap."
 			},
 			"built": {
-				"state": "none",
+				"state": "specified",
 				"evidence": "no chatbot or conversational frontend: grep for 'chatbot', 'llm' and 'assistant' in src/portal, src/site and lib/ finds only report-thread messages (lib/Controller/ReportController.php:322), which are staff and reporter messages, not an AI",
 				"reachedOn": "nothing",
 				"owner": "ConductionNL/portaliq",
-				"origin": "code"
+				"origin": "code",
+				"note": "Specified in openspec/changes/search-assistant-from-public-content (OpenSpec pass 2026-09-27)."
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",

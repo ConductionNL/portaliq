@@ -400,6 +400,14 @@
 		"decidedOn": "2026-09-27"
 	},
 	{
+		"row": "cmp-site-media",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Two competitors rated yes (Open Inwoner, Liferay DXP). Open change portal-cms-content-model declares a media schema, but no change builds the library screen or reuse on a page.",
+		"change": "site-page-seo-history-and-media",
+		"decidedOn": "2026-09-27"
+	},
+	{
 		"row": "cmp-site-news",
 		"matrix": "portaliq",
 		"decision": "defer",
@@ -421,6 +429,22 @@
 		"decision": "defer",
 		"reason": "No competitor rated yes and no tender, featureRequest or roadmap demand; outside portaliq's core area (sign-in and identity).",
 		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-site-seo",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Two competitors rated yes (Open Inwoner, Liferay DXP).",
+		"change": "site-page-seo-history-and-media",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-site-versions",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Two competitors rated yes (Open Inwoner, Liferay DXP).",
+		"change": "site-page-seo-history-and-media",
 		"decidedOn": "2026-09-27"
 	},
 	{
@@ -597,6 +621,14 @@
 		"decision": "defer",
 		"reason": "Roadmap demand (Liferay roadmap) but no competitor rated yes; outside portaliq's core area.",
 		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "dem-rm-chatbot",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Roadmap demand (Liferay roadmap) plus one competitor rated yes (Liferay DXP).",
+		"change": "search-assistant-from-public-content",
 		"decidedOn": "2026-09-27"
 	},
 	{
@@ -952,6 +984,14 @@
 		"decidedOn": "2026-09-27"
 	},
 	{
+		"row": "sib-opencatalogi-srch-sort",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Same capability as opencatalogi row srch-sort, where two competitors rated yes on the missing half (CKAN and DKAN sort by relevance).",
+		"change": "search-sort-by-relevance",
+		"decidedOn": "2026-09-27"
+	},
+	{
 		"row": "sib-stackiq-share-portal",
 		"matrix": "portaliq",
 		"decision": "defer",
@@ -1037,6 +1077,14 @@
 		"decision": "existing",
 		"reason": "Open change portal-public-search Task 3 computes facets after RBAC on the portal's search over OpenRegister, which covers narrowing by category, organisation, theme and date.",
 		"change": "portal-public-search",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "srch-sort",
+		"matrix": "opencatalogi",
+		"decision": "build",
+		"reason": "Partial and built, and two competitors rated yes on the missing half (CKAN and DKAN sort by relevance). No change covers relevance: portal-federated-search sorts by date and title only.",
+		"change": "search-sort-by-relevance",
 		"decidedOn": "2026-09-27"
 	},
 	{
