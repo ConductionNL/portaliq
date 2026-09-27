@@ -4,7 +4,7 @@ Read at portaliq `development` `eeda3fa`.
 
 ## What exists
 
-- `lib/Controller/ContentController.php:211-247` `site()` returns the
+- `lib/Controller/ContentController.php:212-246` `site()` returns the
   resolved portal's title, slug, theme, logo, tagline, locales, locale,
   authentication modes and traffic config. No notice.
 - `ContentController::publicJson()` (line 518) caches the anonymous response
