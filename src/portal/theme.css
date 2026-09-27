@@ -274,3 +274,25 @@ body .guest-box {
 	white-space: nowrap;
 	border: 0;
 }
+
+/* A row's notice (contribution-pay-screen `noticeField`): a voluntary school
+   contribution says so on its card and in the confirm step, before paying. */
+.portaliq-notice {
+	margin: 0 0 var(--portaliq-space-sm);
+	padding: var(--portaliq-space-sm) var(--portaliq-space-md);
+	border-inline-start: 4px solid var(--portaliq-color-accent);
+	background: var(--portaliq-color-background);
+	color: var(--portaliq-color-text);
+}
+
+/* The confirm step of an endpoint row action, shown below its table. */
+.portaliq-rowaction-confirm {
+	margin: var(--portaliq-space-md) 0;
+	padding: var(--portaliq-space-md);
+	border: 1px solid var(--portaliq-color-border);
+}
+
+.portaliq-rowaction-buttons {
+	display: flex;
+	gap: var(--portaliq-space-sm);
+}
