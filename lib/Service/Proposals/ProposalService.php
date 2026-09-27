@@ -34,7 +34,6 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Proposals;
 
 use DateTimeImmutable;
-use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 
 /**
@@ -76,15 +75,19 @@ class ProposalService {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader Reads proposals and the subject.
 	 * @param PortalObjectWriter $writer Records the proposal itself.
 	 * @param ReviewerObjectWriter $reviewerWriter Writes the subject as the
 	 *                                             reviewer, with their rights.
+	 * @param ProposalQueueReader $queueReader The read half — which
+	 *                                         proposals, scoped one field at
+	 *                                         a time (kept a separate class
+	 *                                         so this one stays "what may
+	 *                                         happen to one").
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly ReviewerObjectWriter $reviewerWriter,
+		private readonly ProposalQueueReader $queueReader,
 	) {
 	}//end __construct()
 
@@ -185,35 +188,26 @@ class ProposalService {
 	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
 	 */
 	public function forSubject(array $subject, string $state = self::STATE_QUEUED): array {
-		$id = (string)($subject['id'] ?? '');
-		if ($id === '') {
-			return [];
-		}
-
-		$filter = ['subjectSchema' => (string)($subject['schema'] ?? '')];
-		if ($state !== '') {
-			$filter['state'] = $state;
-		}
-
-		$rows = $this->reader->readCollection(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: 'subjectId',
-			subjectRef: $id,
-			organisation: '',
-			limit: 200,
-			filter: $filter
-		);
-
-		$out = [];
-		foreach ($rows as $row) {
-			if (is_array($row) === true && ($row['subjectId'] ?? '') === $id) {
-				$out[] = $row;
-			}
-		}
-
-		return $out;
+		return $this->queueReader->forSubject(subject: $subject, state: $state);
 	}//end forSubject()
+
+	/**
+	 * Every proposal a proposer made, any state.
+	 *
+	 * Unlike `forSubject()`, no reviewer permission gates this: the filter
+	 * IS the authorization. The caller MUST derive `$proposedBy` from the
+	 * subject's own session, never from client input — passing an
+	 * arbitrary reference here would turn this into an unscoped read.
+	 *
+	 * @param string $proposedBy Who proposed it, from the session.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/guardian-self-service-profile/specs/change-proposal-queue/spec.md#requirement-a-proposer-can-list-their-own-proposals-req-cpq-005
+	 */
+	public function mine(string $proposedBy): array {
+		return $this->queueReader->mine(proposedBy: $proposedBy);
+	}//end mine()
 
 	/**
 	 * Accept a proposal: write the record as the reviewer, then close the
