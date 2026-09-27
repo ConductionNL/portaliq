@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\ContributionController;
+use OCA\Portaliq\Controller\PortalFieldFileController;
 use OCA\Portaliq\Controller\SessionController;
 use OCA\Portaliq\Controller\TrafficController;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -45,6 +46,8 @@ class RateLimitAttributesTest extends TestCase {
 			'contribution update' => [ContributionController::class, 'update'],
 			'contribution action' => [ContributionController::class, 'action'],
 			'contribution downloadFile' => [ContributionController::class, 'downloadFile'],
+			// assignment-portal-file-upload: the upload into a declared file field.
+			'portalFieldFile upload' => [PortalFieldFileController::class, 'upload'],
 			// portal-traffic-analytics: the public collector, its pixel and the
 			// served client (CONTRACT section 7, BUG-RATE-1).
 			'traffic collect' => [TrafficController::class, 'collect'],

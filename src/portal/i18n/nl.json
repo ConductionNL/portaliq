@@ -60,5 +60,12 @@
 	"Install this app": "App installeren",
 	"Install this app on your device?": "Wilt u deze app op uw apparaat installeren?",
 	"Install": "Installeren",
-	"Not now": "Niet nu"
+	"Not now": "Niet nu",
+	"Selected: {files}": "Gekozen: {files}",
+	"Up to {size} MB per file": "Maximaal {size} MB per bestand",
+	"Please choose a file for {field}.": "Kies een bestand voor {field}.",
+	"These files are too large: {files}": "Deze bestanden zijn te groot: {files}",
+	"Saved, but these files were not attached: {files}": "Opgeslagen, maar deze bestanden zijn niet toegevoegd: {files}",
+	"Try these files again": "Probeer deze bestanden opnieuw",
+	"All files are attached.": "Alle bestanden zijn toegevoegd."
 }

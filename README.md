@@ -107,6 +107,7 @@ the session routes are the public auth edge.
 | `GET` | `/apps/portaliq/portal/api/collections/{register}/{schema}/{id}` | Read a single object, subject-scoped; per-row ownership re-verified (404 for a foreign-owned or absent id — no existence oracle) |
 | `PATCH` | `/apps/portaliq/portal/api/collections/{register}/{schema}/{id}` | Update an object via a declared `type: update` action (whitelisted fields only); ownership re-verified against OR before any write, scope field re-stamped (closes #16) |
 | `POST` | `/apps/portaliq/portal/api/collections/{register}/{schema}/{id}/files` | Attach an uploaded file to an owned object; ownership re-verified server-side; the collection must declare `filesUpload: true` (403 otherwise, before any read) |
+| `POST` | `/apps/portaliq/portal/api/collections/{register}/{schema}/{id}/fields/{field}?action={actionId}` | Upload one file into a declared file field of an owned object (assignment-portal-file-upload). The named create or update action must declare `field` as `type: file`; ownership is proven the way that action writes; the file is checked against `accept` and `maxSizeMb`, attached, and its id written into the field by the server. See `docs/operations/file-fields-in-portal-forms.md` |
 | `GET` | `/apps/portaliq/portal/api/collections/{register}/{schema}/{id}/files/{fileId}` | Stream a file attached to an owned object; ownership + tenant + trust re-verified BEFORE the file is resolved. The collection must declare `filesDownload: true`; a non-opted-in collection, a foreign/absent object, and a non-existent `fileId` all return the IDENTICAL 404 — no existence oracle, and the raw stored path is never exposed |
 | `POST` | `/apps/portaliq/portal/api/actions/{appId}/{actionId}` | Forward a declared endpoint action server-to-server with a signed `X-Portal-Subject` assertion (contract v2, A6) |
 
@@ -417,7 +418,7 @@ fail-closed `PortalManifestNormaliser` sanitises them in the aggregate.
 | Level | Keys |
 |---|---|
 | Collection | `columns` (`[{field, label?, render?}]`, render ∈ `text·date·datetime·badge·currency·boolean·link`), `detail` (`{layout: card·timeline, fields?}`), `defaultSort` (`{field, direction}`), `defaultFilters` |
-| Action | `fieldConfigs` (per-**whitelisted**-field `{label?, visible?, required?, disabled?, size?, placeholder?, help?}`), `optionsProviders`, `submitLabel`, `successMessage` |
+| Action | `fieldConfigs` (per-**whitelisted**-field `{label?, visible?, required?, disabled?, size?, placeholder?, help?}`, plus `{type: file, multiple?, accept?, maxSizeMb?}` for a file field on a create or update action), `optionsProviders`, `submitLabel`, `successMessage` |
 | Contribution | `pages` (`[{id, label?, icon?, blocks[]}]`) of typed blocks `collection·action·detail·richText·cta` |
 
 **UI config never widens access — the invariant.** The action `fields`
