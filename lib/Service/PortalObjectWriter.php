@@ -45,6 +45,8 @@ use Throwable;
  * @spec openspec/changes/supplier-portal/tasks.md#T06
  */
 class PortalObjectWriter {
+	use PortalScopeMatch;
+
 	/**
 	 * OpenRegister's object service.
 	 */
@@ -55,10 +57,18 @@ class PortalObjectWriter {
 	 *
 	 * @param ContainerInterface $container For resolving OpenRegister services.
 	 * @param LoggerInterface $logger The logger.
+	 * @param PortalSchemaReader|null $schemaReader Reads the target schema so a
+	 *                                              create on an `array` scope
+	 *                                              field stamps a one-element
+	 *                                              list. Absent (the three
+	 *                                              controllers that build the
+	 *                                              writer by hand) means the
+	 *                                              single-value stamp.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
+		private readonly ?PortalSchemaReader $schemaReader = null,
 	) {
 	}//end __construct()
 
@@ -75,6 +85,7 @@ class PortalObjectWriter {
 	 * @return array<string, mixed>|null The created object, or null on failure.
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T06
+	 * @spec openspec/changes/portal-scope-list-membership/specs/portal-contribution-contract/spec.md#requirement-a-write-must-keep-a-verified-list-and-stamp-a-list-for-an-array-scope-field
 	 */
 	public function createObject(
 		string $register,
@@ -90,8 +101,9 @@ class PortalObjectWriter {
 		}
 
 		// Server-side ownership stamps ALWAYS win over any client-supplied value.
+		// An `array` scope field gets the subject's ref as a one-element list.
 		if ($scopeField !== '') {
-			$data[$scopeField] = $subjectRef;
+			$data[$scopeField] = $this->createStamp(schema: $schema, scopeField: $scopeField, subjectRef: $subjectRef);
 		}
 
 		if ($organisation !== '') {
@@ -214,6 +226,7 @@ class PortalObjectWriter {
 	 * @return array<string, mixed>|null The updated object, or null on ownership/OR failure.
 	 *
 	 * @spec openspec/changes/archive/2026-09-07-portal-scoped-crud/tasks.md#T2
+	 * @spec openspec/changes/portal-scope-list-membership/specs/portal-contribution-contract/spec.md#requirement-a-write-must-keep-a-verified-list-and-stamp-a-list-for-an-array-scope-field
 	 */
 	public function updateObject(
 		string $register,
@@ -255,9 +268,15 @@ class PortalObjectWriter {
 		unset($merged['@self']);
 
 		// (3) RE-STAMP the ownership fields AFTER the merge, so a client value
-		// can never win — a patch can never move the row out of scope.
+		// can never win — a patch can never move the row out of scope. A
+		// verified membership list is re-stamped with the stored list itself:
+		// it already contains the subject, and portaliq never edits who else
+		// is on it.
 		if ($scopeField !== '') {
 			$merged[$scopeField] = $subjectRef;
+			if ($this->isScopeList(stored: ($existing[$scopeField] ?? null)) === true) {
+				$merged[$scopeField] = $existing[$scopeField];
+			}
 		}
 
 		if ($organisation !== '') {
@@ -284,10 +303,11 @@ class PortalObjectWriter {
 
 	/**
 	 * Re-read a row by id and return it ONLY when it is the subject's: the row
-	 * must carry the exact subject ref at `scopeField` and pass the tenant
-	 * check — the SAME per-row ownership boundary the reader's verifyScope
-	 * enforces. The client-supplied id is matched in-memory against the row's
-	 * identifier candidates (best-effort query-side filter). Any mismatch —
+	 * must carry the exact subject ref at `scopeField` (or a list that
+	 * contains it) and pass the tenant check — the SAME per-row ownership
+	 * boundary the reader's verifyScope enforces. The client-supplied id is
+	 * matched in-memory against the row's identifier candidates (best-effort
+	 * query-side filter). Any mismatch —
 	 * foreign owner, wrong tenant, or non-existent id — returns null, so the
 	 * caller writes nothing and the controller cannot leak an existence oracle.
 	 *
@@ -302,6 +322,7 @@ class PortalObjectWriter {
 	 * @return array<string, mixed>|null The owned row, or null.
 	 *
 	 * @spec openspec/changes/archive/2026-09-07-portal-scoped-crud/tasks.md#T2
+	 * @spec openspec/changes/portal-scope-list-membership/specs/portal-contribution-contract/spec.md#requirement-a-direct-scope-field-must-match-a-single-value-or-strict-list-membership
 	 */
 	private function fetchOwnedObject(
 		object $objectService,
@@ -343,8 +364,9 @@ class PortalObjectWriter {
 
 		// THE ownership boundary — identical to the reader's verifyScope. The
 		// client id only SELECTS a candidate; the row's own stored scopeField
-		// value decides whether the subject may touch it.
-		if ($scopeField !== '' && (string)($row[$scopeField] ?? '') !== $subjectRef) {
+		// value decides whether the subject may touch it: an equal single
+		// value or a list that contains it, the one rule the reader uses too.
+		if ($scopeField !== '' && $this->scopeMatches(stored: ($row[$scopeField] ?? null), scopeValue: $subjectRef) === false) {
 			return null;
 		}
 
@@ -354,6 +376,31 @@ class PortalObjectWriter {
 
 		return $row;
 	}//end fetchOwnedObject()
+
+	/**
+	 * The ownership value a create writes at the scope field: the subject's
+	 * ref as a one-element list when the target schema types the field as
+	 * `array`, else the single ref. The schema only picks the shape; both
+	 * shapes hold the subject's own ref and nothing else. An absent reader or
+	 * an unreadable schema keeps the single value, and a wrong shape can only
+	 * make OpenRegister refuse the write.
+	 *
+	 * @param string $schema The target schema slug.
+	 * @param string $scopeField The scope field being stamped.
+	 * @param string $subjectRef The server-derived subject reference.
+	 *
+	 * @return string|array<int, string>
+	 *
+	 * @spec openspec/changes/portal-scope-list-membership/specs/portal-contribution-contract/spec.md#requirement-a-write-must-keep-a-verified-list-and-stamp-a-list-for-an-array-scope-field
+	 */
+	private function createStamp(string $schema, string $scopeField, string $subjectRef): string|array {
+		$definition = $this->schemaReader?->readSchema(slug: $schema);
+		if (($definition['properties'][$scopeField]['type'] ?? null) === 'array') {
+			return [$subjectRef];
+		}
+
+		return $subjectRef;
+	}//end createStamp()
 
 	/**
 	 * Collect a row's identifier candidates (`id` / `uuid`, flat or in the
