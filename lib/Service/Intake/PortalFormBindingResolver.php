@@ -264,8 +264,31 @@ class PortalFormBindingResolver {
 			'formName' => (string)($form['name'] ?? ''),
 			'fields' => $this->fieldsOf(form: $form),
 			'settings' => $settings,
+			// The sign-in level the maker chose for this form (buildiq#935).
+			// Carried as declared; requiredTrust() decides what it means.
+			'minTrust' => ($form['minTrust'] ?? null),
 		];
 	}//end render()
+
+	/**
+	 * The sign-in level a submission of this form needs, or null for none.
+	 *
+	 * The strictest of the portal's, the binding's and the form's own level;
+	 * see PortalFormTrustLevel for what each declared value means.
+	 *
+	 * @param array<string, mixed> $site The portal.
+	 * @param array<string, mixed> $binding The binding.
+	 * @param array<string, mixed> $render What render() returned for it.
+	 *
+	 * @return string|null `low`, `substantial`, `high`,
+	 *                     PortalFormTrustLevel::UNRECOGNISED, or null when an
+	 *                     anonymous visitor may fill the form in.
+	 *
+	 * @spec openspec/changes/embedded-intake-form/specs/embedded-intake-form/spec.md
+	 */
+	public function requiredTrust(array $site, array $binding, array $render): ?string {
+		return (new PortalFormTrustLevel())->required(site: $site, binding: $binding, render: $render);
+	}//end requiredTrust()
 
 	/**
 	 * The published form a binding resolves to today, or null.
