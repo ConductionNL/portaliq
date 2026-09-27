@@ -32,6 +32,22 @@
 		"decidedOn": "2026-09-27"
 	},
 	{
+		"row": "cas-deeplink-notify",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Partial and built, three competitors rated yes on the missing half: a notification deep-links to a task, never to a case, because the case screen has no stable URL.",
+		"change": "inbox-notifications-and-preferences",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cas-documents-view",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Partial and built, three or more competitors rated yes on the missing half: CitizenCase.jsx lists document names with no download, and a decision letter has no affordance of its own.",
+		"change": "cases-documents-on-the-case",
+		"decidedOn": "2026-09-27"
+	},
+	{
 		"row": "cas-mandate-org-cases",
 		"matrix": "portaliq",
 		"decision": "build",
@@ -93,6 +109,22 @@
 		"decision": "build",
 		"reason": "Partial and built, four competitors rated yes on the missing half: no open and closed grouping on the case list.",
 		"change": "cases-my-cases-page",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-cas-decision-download",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Partial and built, three or more competitors rated yes on the missing half: CitizenCase.jsx lists document names with no download, and a decision letter has no affordance of its own.",
+		"change": "cases-documents-on-the-case",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-cas-documents-published",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Partial and built, three or more competitors rated yes on the missing half: CitizenCase.jsx lists document names with no download, and a decision letter has no affordance of its own.",
+		"change": "cases-documents-on-the-case",
 		"decidedOn": "2026-09-27"
 	},
 	{
@@ -176,6 +208,14 @@
 		"decidedOn": "2026-09-27"
 	},
 	{
+		"row": "cmp-inb-attach",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Two competitors rated yes (Open Inwoner, xxllnc PIP).",
+		"change": "inbox-reply-with-attachments",
+		"decidedOn": "2026-09-27"
+	},
+	{
 		"row": "cmp-inb-contact-history",
 		"matrix": "portaliq",
 		"decision": "defer",
@@ -192,6 +232,14 @@
 		"decidedOn": "2026-09-27"
 	},
 	{
+		"row": "cmp-inb-email-alert",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Partial and built, four competitors rated yes on the missing half: only rule keys message.created and status.changed ever send, so a sibling's declared notifications never reach anyone.",
+		"change": "inbox-notifications-and-preferences",
+		"decidedOn": "2026-09-27"
+	},
+	{
 		"row": "cmp-inb-newsletter",
 		"matrix": "portaliq",
 		"decision": "defer",
@@ -200,11 +248,27 @@
 		"decidedOn": "2026-09-27"
 	},
 	{
+		"row": "cmp-inb-notif-prefs",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Two competitors rated yes (MijnOverheid, Liferay DXP). Matrix corrected: an e-mail opt-out shipped after the rating (notification-preferences-per-role, portaliq#685) on PATCH /portal/api/identity/details with no screen, so the rating moves from no to partial; the SPA control and a choice per kind of notification are this change.",
+		"change": "inbox-notifications-and-preferences",
+		"decidedOn": "2026-09-27"
+	},
+	{
 		"row": "cmp-inb-push",
 		"matrix": "portaliq",
 		"decision": "defer",
 		"reason": "Only one competitor rated yes (MijnOverheid) and no tender, featureRequest or roadmap demand; outside portaliq's core area (sign-in and identity). push-notifications-quiet-hours built the delivery seam with a logging sender only, and no arriving message triggers it.",
 		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-inb-reply",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "One competitor rated yes on its own, but it is the prerequisite of cmp-inb-attach (two competitors yes): a resident cannot attach a file to a message without a way to send one.",
+		"change": "inbox-reply-with-attachments",
 		"decidedOn": "2026-09-27"
 	},
 	{
@@ -232,6 +296,22 @@
 		"decidedOn": "2026-09-27"
 	},
 	{
+		"row": "cmp-sig-eidas",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Partial and built, and three or more competitors rated yes on the missing half: portaliq signs in only through an organisation-supplied OIDC broker. The fleet put the DigiD and eHerkenning broker in integriq (open change idp-broker-envelope-runtime, which leaves portaliq out of scope), so portaliq's half is consuming that envelope exchange.",
+		"change": "signin-integriq-broker-login",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-sig-idle-warning",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Three competitors rated yes (Open Inwoner, NL Portal, xxllnc PIP) and the row is in portaliq's core area (sign-in).",
+		"change": "signin-session-idle-warning-and-sso",
+		"decidedOn": "2026-09-27"
+	},
+	{
 		"row": "cmp-sig-level",
 		"matrix": "portaliq",
 		"decision": "defer",
@@ -245,6 +325,14 @@
 		"decision": "build",
 		"reason": "Partial and built, two competitors rated yes on the missing half (NL Portal, MijnOverheid): the mandate engine is reached on every case read but no screen names or switches the mandate, although portal-identity-and-the-organisations-cases marks T04 and T05 done.",
 		"change": "cases-my-cases-page",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-sig-sso",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Two competitors rated yes (MijnOverheid, Liferay DXP) and the row is in portaliq's core area (sign-in).",
+		"change": "signin-session-idle-warning-and-sso",
 		"decidedOn": "2026-09-27"
 	},
 	{
@@ -504,11 +592,27 @@
 		"decidedOn": "2026-09-27"
 	},
 	{
+		"row": "dem-tnd-export-pdf",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Tender demand (TenderNed 409958).",
+		"change": "cases-export-own-data-pdf",
+		"decidedOn": "2026-09-27"
+	},
+	{
 		"row": "dem-tnd-joint-case-partner",
 		"matrix": "portaliq",
 		"decision": "existing",
 		"reason": "Portaliq's half shipped with archived change 2026-09-07-contract-v2 (the one-hop via join, lib/Service/PortalObjectReader.php) and 2026-09-07-reverse-scope-join. The missing half is dossiq's: its mijnZaken collection scopes on the single portalSubject and declares no via over the case roles.",
 		"change": "2026-09-07-contract-v2",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "dem-tnd-notify-on-change",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Tender demand (TenderNed 397282, also 415380).",
+		"change": "inbox-notifications-and-preferences",
 		"decidedOn": "2026-09-27"
 	},
 	{
@@ -624,6 +728,14 @@
 		"decidedOn": "2026-09-27"
 	},
 	{
+		"row": "sib-decidiq-plt-02",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Partial and built, and three or more competitors rated yes on the missing half: portaliq signs in only through an organisation-supplied OIDC broker. The fleet put the DigiD and eHerkenning broker in integriq (open change idp-broker-envelope-runtime, which leaves portaliq out of scope), so portaliq's half is consuming that envelope exchange.",
+		"change": "signin-integriq-broker-login",
+		"decidedOn": "2026-09-27"
+	},
+	{
 		"row": "sib-dossiq-2-21",
 		"matrix": "portaliq",
 		"decision": "existing",
@@ -696,6 +808,22 @@
 		"decidedOn": "2026-09-27"
 	},
 	{
+		"row": "sig-digid",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Partial and built, and three or more competitors rated yes on the missing half: portaliq signs in only through an organisation-supplied OIDC broker. The fleet put the DigiD and eHerkenning broker in integriq (open change idp-broker-envelope-runtime, which leaves portaliq out of scope), so portaliq's half is consuming that envelope exchange.",
+		"change": "signin-integriq-broker-login",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "sig-eherkenning",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Partial and built, and three or more competitors rated yes on the missing half: portaliq signs in only through an organisation-supplied OIDC broker. The fleet put the DigiD and eHerkenning broker in integriq (open change idp-broker-envelope-runtime, which leaves portaliq out of scope), so portaliq's half is consuming that envelope exchange.",
+		"change": "signin-integriq-broker-login",
+		"decidedOn": "2026-09-27"
+	},
+	{
 		"row": "srch-detail-generic-properties",
 		"matrix": "portaliq",
 		"decision": "defer",
@@ -749,6 +877,14 @@
 		"decision": "existing",
 		"reason": "Open change portal-public-search Task 3 computes facets after RBAC on the portal's search over OpenRegister, which covers narrowing by category, organisation, theme and date.",
 		"change": "portal-public-search",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "plt-02",
+		"matrix": "decidiq",
+		"decision": "build",
+		"reason": "Same capability as portaliq row sib-decidiq-plt-02 (three competitors yes): signing in with DigiD or eHerkenning without an organisation-supplied OIDC broker, through integriq's broker envelope.",
+		"change": "signin-integriq-broker-login",
 		"decidedOn": "2026-09-27"
 	},
 	{

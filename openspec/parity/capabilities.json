@@ -508,11 +508,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/security/configuring-sso/authenticating-with-saml 'All MUST of Web Browser SSO and Single Logout Profiles are implemented'; same page: 'Authentication Context ... Not supported' and vendor-specific features are left to 'external solutions'. DigiD is a SAML broker, so a generic SP connection is documented; requesting a DigiD assurance level and the DigiD-specific profile would be custom or external. [custom: DigiD connection profile, AuthnContext level request, BSN attribute mapping]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "lib/Service/OidcClaimMapperService.php:75-81 digid preset (identityType digid, acr LoA claim); lib/Controller/SessionController.php:284,370 oidcStart/oidcCallback; src/portal/App.jsx:270-321 renders a login button per config.oidcProviders",
 				"reachedOn": "portal SPA login screen (src/portal/App.jsx:313-321) -> GET /portal/api/session/oidc/start?provider=digid -> broker -> /portal/api/session/oidc/callback",
 				"owner": "ConductionNL/portaliq",
-				"note": "Real generic-OIDC broker login with a digid preset, not a direct Logius/SAML connector: it works only when the organisation fronts DigiD with its own OIDC-compliant broker and supplies issuer/clientId/clientSecret. No broker means no button (App.jsx:323-325 shows a hint instead).",
+				"note": "Real generic-OIDC broker login with a digid preset, not a direct Logius/SAML connector: it works only when the organisation fronts DigiD with its own OIDC-compliant broker and supplies issuer/clientId/clientSecret. No broker means no button (App.jsx:323-325 shows a hint instead). Specified in openspec/changes/signin-integriq-broker-login (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -538,11 +538,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/security/configuring-sso/authenticating-with-saml 'All MUST of Web Browser SSO and Single Logout Profiles are implemented'; 'Authentication Context ... Not supported'. An eHerkenning broker can be federated as a generic SAML IdP; the eHerkenning level (EH3/EH4) request and KvK attribute handling are not documented and would be custom. [custom: eHerkenning broker profile, level request, KvK and service attributes]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "lib/Service/OidcClaimMapperService.php:82-88 eherkenning preset (audience supplier); lib/Controller/SessionController.php:284,370",
 				"reachedOn": "portal SPA login screen (src/portal/App.jsx:313-321) -> /portal/api/session/oidc/start?provider=eherkenning",
 				"owner": "ConductionNL/portaliq",
-				"note": "Same broker-fronted model as DigiD: works when the organisation configures a real eHerkenning-fronting OIDC broker. No ketenmachtiging-specific claim handling beyond the generic mandate service (see cmp-sig-machtiging).",
+				"note": "Same broker-fronted model as DigiD: works when the organisation configures a real eHerkenning-fronting OIDC broker. No ketenmachtiging-specific claim handling beyond the generic mandate service (see cmp-sig-machtiging). Specified in openspec/changes/signin-integriq-broker-login (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -959,11 +959,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/security/configuring-sso/authenticating-with-saml/saml-authentication-process-overview describes SAML Web Browser SSO and single logout across multiple service providers; https://learn.liferay.com/w/dxp/security-and-administration/security/configuring-sso/using-openid-connect covers OIDC providers."
 			},
 			"built": {
-				"state": "none",
+				"state": "specified",
 				"evidence": "Searched lib/ and src/ for a shared-cookie or federation-token mechanism beyond the portal's own bearer (lib/Service/PortalJwtService.php, PortalSessionService.php): the session is a Portaliq-minted HS256 bearer scoped to this app only",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
-				"note": "No evidence of single sign-on with any external citizen-service beyond the identity broker exchange itself (which authenticates INTO portaliq, not FROM it to somewhere else).",
+				"note": "No evidence of single sign-on with any external citizen-service beyond the identity broker exchange itself (which authenticates INTO portaliq, not FROM it to somewhere else). Specified in openspec/changes/signin-session-idle-warning-and-sso (OpenSpec pass 2026-09-27).",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -988,11 +988,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/security/configuring-sso/authenticating-with-saml implements the SAML Web Browser SSO profile, so an eIDAS node or broker can be connected as a SAML IdP; eIDAS itself is not named and the level of assurance request needs Authentication Context, which the same page lists as 'Not supported'. Custom or external. [was no: the earlier no rested on silence]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "lib/Service/OidcClaimMapperService.php:89-95 eidas preset (identityType eidas, audience client)",
 				"reachedOn": "portal SPA login screen -> /portal/api/session/oidc/start?provider=eidas, same path as sig-digid",
 				"owner": "ConductionNL/portaliq",
-				"note": "Same broker-fronted OIDC model as DigiD/eHerkenning: works only if the organisation configures a real eIDAS-node-fronting OIDC broker; no built-in eIDAS node connector.",
+				"note": "Same broker-fronted OIDC model as DigiD/eHerkenning: works only if the organisation configures a real eIDAS-node-fronting OIDC broker; no built-in eIDAS node connector. Specified in openspec/changes/signin-integriq-broker-login (OpenSpec pass 2026-09-27).",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -1048,11 +1048,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/sites/creating-pages/page-settings/updating-page-permissions 'configure permissions for individual pages to restrict access based on user roles'; DigiD or eHerkenning sign-in itself is a generic SAML connection that is custom (see sig-digid). [was unknown]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "lib/Service/OidcClaimMapperService.php:75-88 digid/eherkenning presets; lib/Controller/ContentController.php:106-163 minTrust gate. Decidiq's own matrix rated this 'no' citing lib/Portal/PortalContributionProvider.php:18 in decidesk's OWN repo, which says 'DigiD/eHerkenning is DEFERRED', and portaliq's SessionController.php:1-10 class docblock which still says the DigiD/eHerkenning broker is 'dormant, awaiting OpenConnector'",
 				"reachedOn": "same OIDC broker path as sig-digid/sig-eherkenning; whether decidiq's own contribution actually GATES its confidential papers by minTrust is decidesk's question to answer, not portaliq's",
 				"owner": "ConductionNL/portaliq",
-				"note": "Re-rated from decidiq's original 'no': portaliq's DigiD/eHerkenning OIDC broker login (portal-oidc-broker-login, commit eb85956) is real and reached, contradicting the stale docblock decidiq's evidence quoted. See overlayClaimsFalse: SessionController.php's own class comment says the broker is dormant while its @spec tags cite the very change (portal-oidc-broker-login T06/T07) that wired it, and the code below fully implements it.",
+				"note": "Re-rated from decidiq's original 'no': portaliq's DigiD/eHerkenning OIDC broker login (portal-oidc-broker-login, commit eb85956) is real and reached, contradicting the stale docblock decidiq's evidence quoted. See overlayClaimsFalse: SessionController.php's own class comment says the broker is dormant while its @spec tags cite the very change (portal-oidc-broker-login T06/T07) that wired it, and the code below fully implements it. Specified in openspec/changes/signin-integriq-broker-login (OpenSpec pass 2026-09-27).",
 				"sourceId": "plt-02",
 				"origin": "sibling"
 			},
@@ -1861,11 +1861,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/fields/attachment-fields 'Once attached, you can view an object entry to download the file'; each attachment field holds one file ('Each field can only be linked to one file at a time'). Documents on a custom case object only. [was unknown]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "src/portal/components/CitizenCase.jsx:181-186 lists state.data.documents as plain <li>{file.name}</li>, no download control; the generic FileList in PageView.jsx:96-127 (a different block, for filesDownload collections) DOES render a download button",
 				"reachedOn": "PageView.jsx 'citizenCase' block for the list; the generic 'detail' block's FileList for download",
 				"owner": "ConductionNL/portaliq",
-				"note": "On the citizen-case view itself the citizen can see a document's name but has no way to download it from that screen; downloading only works through the separate generic detail/FileList block.",
+				"note": "On the citizen-case view itself the citizen can see a document's name but has no way to download it from that screen; downloading only works through the separate generic detail/FileList block. Specified in openspec/changes/cases-documents-on-the-case (OpenSpec pass 2026-09-27).",
 				"origin": "code",
 				"defectCandidate": "src/portal/components/CitizenCase.jsx:181-186 the case's own document list has no download link/button, even though portalApi.js:452 downloadFile() exists and PortalFileReader backs it; a live check should confirm the citizen truly cannot fetch a case document from this screen (code reading, needs a live check)"
 			},
@@ -1952,11 +1952,11 @@
 				"liferay-dxp": "not settled from docs: https://learn.liferay.com/w/dxp/low-code/notifications/creating-notification-templates describes field references and attachments in object notifications but does not name a link to the entry's display page."
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "lib/Service/PortalDeepLinkBuilder.php used by lib/BackgroundJob/PortalTaskDeliveryJob.php (task deep link) and lib/BackgroundJob/NotificationDispatchJob.php",
 				"reachedOn": "outbound e-mail/inbox message built by PortalTaskDeliveryJob (registered appinfo/info.xml:81); confirmed for tasks, not confirmed for a plain case record",
 				"owner": "ConductionNL/portaliq",
-				"note": "Deep links are confirmed wired for tasks (see tsk-notify); no evidence found of the same builder producing a link straight into a case screen, since the case screen itself is reached only through per-contribution nav, not a stable case URL.",
+				"note": "Deep links are confirmed wired for tasks (see tsk-notify); no evidence found of the same builder producing a link straight into a case screen, since the case screen itself is reached only through per-contribution nav, not a stable case URL. Specified in openspec/changes/inbox-notifications-and-preferences (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -2076,11 +2076,11 @@
 				"liferay-dxp": "not settled from docs: no per-document publish-to-requester control on object attachments was found in the attachment field or permissions pages read today."
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "same mechanism as cas-documents-view/cas-download-generic: server-side ownership re-verification (PortalFileReader) scopes files to the subject, but the citizen-case screen's own list has no download action",
 				"reachedOn": "PageView.jsx citizenCase block (list only) / detail block (list + download)",
 				"owner": "ConductionNL/portaliq",
-				"note": "See cas-documents-view for the split between viewing and downloading.",
+				"note": "See cas-documents-view for the split between viewing and downloading. Specified in openspec/changes/cases-documents-on-the-case (OpenSpec pass 2026-09-27).",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -2105,11 +2105,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/fields/attachment-fields: a file on an object entry can be downloaded by users with view permission; a decision letter would be an attachment on a custom case object. [was unknown]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "no dedicated 'decision letter' concept anywhere in lib/ or src/; a decision letter would have to arrive as an ordinary file on a filesDownload-enabled collection, reachable only through the generic detail block (see cas-download-generic), not the citizen-case screen",
 				"reachedOn": "PageView.jsx detail block's FileList, if the contributing app attaches the decision as a file there",
 				"owner": "ConductionNL/portaliq",
-				"note": "No decision-specific affordance exists; it rides on the generic file-download mechanism, which the case's own screen does not expose (cas-documents-view defect).",
+				"note": "No decision-specific affordance exists; it rides on the generic file-download mechanism, which the case's own screen does not expose (cas-documents-view defect). Specified in openspec/changes/cases-documents-on-the-case (OpenSpec pass 2026-09-27).",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -3351,11 +3351,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/creating-objects 'Enable or disable comments for object display pages. While enabled, you can use the Page Comments widget in entry display pages', so a resident and staff can exchange comments on a record. A reply to an organisation message in an inbox is not described. [was unknown]"
 			},
 			"built": {
-				"state": "none",
+				"state": "specified",
 				"evidence": "grep reply/compose in src/portal: 0 hits; InboxPage.jsx (full file read) has no compose/reply control; dossiq's own citizen contribution provider explicitly defers this: 'the message reply (needs a verified case/thread linkage)' (procest lib/Portal/PortalContributionProvider.php, citizenContribution() docblock); portaliq's own leaf-integrations spec (openspec/specs/portaliq-leaf-integrations/spec.md:88 'The visitor's reply path stays the portal edge') only says an answer must arrive as a portalMessage, it does not build a compose UI",
 				"reachedOn": "citizen side: nothing reaches it, no compose control anywhere in src/portal. Staff side: no dedicated 'reply' action either, but src/manifest.json:881 PortalMessages index has no allowCreate:false, so a staff member CAN hand-create a new portalMessage row via the generic OpenRegister create dialog, which the citizen would then see appear in their inbox.",
 				"owner": "ConductionNL/portaliq",
-				"note": "No citizen-facing reply exists anywhere. A staff 'reply' is possible only as a manually created, unthreaded portalMessage through the generic admin object form, there is no button, no thread, no quoting of the original message.",
+				"note": "No citizen-facing reply exists anywhere. A staff 'reply' is possible only as a manually created, unthreaded portalMessage through the generic admin object form, there is no button, no thread, no quoting of the original message. Specified in openspec/changes/inbox-reply-with-attachments (OpenSpec pass 2026-09-27).",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -3381,11 +3381,11 @@
 				"liferay-dxp": "not settled from docs: attaching a file to a message a resident sends is not described in the notifications or page comments pages read today."
 			},
 			"built": {
-				"state": "none",
+				"state": "specified",
 				"evidence": "lib/Settings/portaliq_register.json:629-732 portalMessage schema has no file/attachment property; InboxPage.jsx (full file read) has no upload control or attachment renderer",
 				"reachedOn": "nothing reaches it: no attachment field, no upload UI, and no way to send a message at all (see cmp-inb-reply)",
 				"owner": "ConductionNL/portaliq",
-				"note": "dossiq's portaalBericht declares an 'attachments' field to portaliq (see inb-dossiq-portaalbericht) but nothing renders it, so even a sibling-supplied attachment is invisible.",
+				"note": "dossiq's portaalBericht declares an 'attachments' field to portaliq (see inb-dossiq-portaalbericht) but nothing renders it, so even a sibling-supplied attachment is invisible. Specified in openspec/changes/inbox-reply-with-attachments (OpenSpec pass 2026-09-27).",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -3441,11 +3441,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/notifications/configuring-personal-notifications 'Users can customize which notifications they receive by enabling email, or website notifications'; object notification actions send e-mail on entry events (https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/actions/understanding-action-types). [was unknown]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "lib/Service/NotificationDispatchService.php dispatch()/doDispatch() matches a fired ruleKey against the contributing app's declared 'notifications' list, fail-closed on no match; lib/BackgroundJob/NotificationDispatchJob.php sends a privacy-minimal NL/EN email via IMailer, logs every attempt as an append-only portalNotification row, and flags needsAlternativeContact after 3 consecutive failures; called from lib/Service/SubmissionReceiptService.php:278 (RULE_MESSAGE_CREATED, after a WMEBV receipt message) and lib/Controller/ContributionController.php:1260 (RULE_STATUS_CHANGED, after a generic update action)",
 				"reachedOn": "async, off the request path, via IJobList (NotificationDispatchJob is a QueuedJob, does not need an info.xml background-jobs entry to run)",
 				"owner": "ConductionNL/portaliq",
-				"note": "Real and working for the two triggers the code actually fires: a WMEBV submission receipt and a generic status-change update. Only ever fires for ruleKey 'message.created' or 'status.changed' (the two constants); a sibling that declares any OTHER rule key never gets an email, dossiq's own supplier contribution declares notifications ['tenderPublished','contractExpiring','invoiceDue'], none of which will ever match, so those specific events are silently unreachable. A staff-authored manual portalMessage (see cmp-inb-reply) also does not go through SubmissionReceiptService, so it triggers no email either.",
+				"note": "Real and working for the two triggers the code actually fires: a WMEBV submission receipt and a generic status-change update. Only ever fires for ruleKey 'message.created' or 'status.changed' (the two constants); a sibling that declares any OTHER rule key never gets an email, dossiq's own supplier contribution declares notifications ['tenderPublished','contractExpiring','invoiceDue'], none of which will ever match, so those specific events are silently unreachable. A staff-authored manual portalMessage (see cmp-inb-reply) also does not go through SubmissionReceiptService, so it triggers no email either. Specified in openspec/changes/inbox-notifications-and-preferences (OpenSpec pass 2026-09-27).",
 				"origin": "competitor",
 				"defectCandidate": "dossiq (procest) lib/Portal/PortalContributionProvider.php supplierContribution() declares notifications ['tenderPublished','contractExpiring','invoiceDue'] but NotificationDispatchService::declaresRuleKey() is only ever called with 'message.created' or 'status.changed' (grep of both constants in lib/ confirms no other call site), so those three declared rule keys can never match and no email is ever sent for them (code reading, needs a live check)"
 			},
@@ -3488,7 +3488,7 @@
 			"id": "cmp-inb-notif-prefs",
 			"area": "inbox",
 			"name": "Choose which notifications you receive and through which channel.",
-			"portaliq": "no",
+			"portaliq": "partial",
 			"open-inwoner": "partial",
 			"nl-portal": "no",
 			"xxllnc-pip": "partial",
@@ -3502,12 +3502,19 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/notifications/configuring-personal-notifications 'Users can customize which notifications they receive by enabling email, or website notifications for the desired applications.' [was unknown]"
 			},
 			"built": {
-				"state": "none",
-				"evidence": "grep for preference/notif-setting/channel-choice in src/portal: 0 hits; the only channel is a hardcoded email send in NotificationDispatchJob.php, with no per-subject opt-out or channel choice; the opt-in that exists (portalMessage notifications list, portaliq_register.json:1380) is set by the CONTRIBUTING APP's developer, not by the citizen",
+				"state": "specified",
+				"evidence": "portaliq#685 (efba78c): lib/BackgroundJob/NotificationDispatchJob.php:202 skips an account whose notificationChannels.email is false (:374-377 optedOutOfEmail()); lib/Service/Identity/PortalSelfServiceService.php:114 writes it from PATCH /portal/api/identity/details; lib/Settings/portaliq_register.json:801 notificationChannels. No screen in src/portal sets it.",
 				"reachedOn": "nothing reaches it: no citizen-facing preferences UI or API",
 				"owner": "ConductionNL/portaliq",
-				"note": null,
-				"origin": "competitor"
+				"note": "Rating corrected from no to partial in the OpenSpec pass 2026-09-27: the e-mail opt-out shipped after the rating with openspec/changes/notification-preferences-per-role (portaliq#685), API only. Specified in openspec/changes/inbox-notifications-and-preferences (OpenSpec pass 2026-09-27).",
+				"origin": "competitor",
+				"prs": [
+					{
+						"repo": "ConductionNL/portaliq",
+						"number": 685,
+						"sha": "efba78c53d4fd4ca8840b3cfd536443a0bdb7b94"
+					}
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -7369,11 +7376,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/actions/defining-object-actions: trigger 'On After Update When an entry is updated' with action 'Notification Send email or user notifications using a predefined template'. A case object, and notices to both resident and handler, must be modelled per deployment. [was unknown; custom: case object, recipient rules per side]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "lib/Controller/ContributionController.php:1261 fires status.changed only after the SUBJECT's own portal update action; lib/Service/NotificationDispatchService.php:174 declaresRuleKey needs the contributing app to opt in; ConductionNL/dossiq@971735b03e (development) lib/Portal/PortalContributionProvider.php:408 citizen contribution declares 'notifications' => []; lib/BackgroundJob/PortalTaskDeliveryJob.php:234 turns openregister task asks/reminders into inbox messages; lib/Service/CitizenWriteRecorder.php:208,266 dispatches PortalClientWriteEvent for the case app",
 				"reachedOn": "task asks: PortalTaskDeliveryJob (cron) -> portalMessage -> InboxPage.jsx unread badge (App.jsx:284-300). Staff status change on a case: nothing reaches the resident. Citizen write -> PortalClientWriteEvent: no listener in dossiq development lib/Listener (46 listeners listed, none for it)",
 				"owner": "ConductionNL/portaliq",
-				"note": "Resident side: only a new task (ask, re-ask, reminder) or a message a case app writes into an inbox collection shows up as unread; nothing in portaliq observes a staff-made status or data change on a case, and the one status trigger (status.changed) fires on the resident's own update and is opted out by dossiq anyway. Handler side: portaliq raises PortalClientWriteEvent on every amendment, document and task answer, but no dossiq listener consumes it, so the handler is not told.",
+				"note": "Resident side: only a new task (ask, re-ask, reminder) or a message a case app writes into an inbox collection shows up as unread; nothing in portaliq observes a staff-made status or data change on a case, and the one status trigger (status.changed) fires on the resident's own update and is opted out by dossiq anyway. Handler side: portaliq raises PortalClientWriteEvent on every amendment, document and task answer, but no dossiq listener consumes it, so the handler is not told. Specified in openspec/changes/inbox-notifications-and-preferences (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -7567,11 +7574,11 @@
 				"liferay-dxp": "not settled from docs: no PDF export of a user's own records was found in the objects, display page or data set pages read today; Analytics Cloud PDF reports (https://learn.liferay.com/w/dxp/personalization/analytics-cloud/reference/downloading-reports) are for staff dashboards."
 			},
 			"built": {
-				"state": "none",
+				"state": "specified",
 				"evidence": "grep -riE 'pdf|print|export' src/portal: only TasksPage.jsx:52 (accepted upload types); portalMessage.dataCopy (lib/Settings/portaliq_register.json:715) is a JSON copy of submitted fields, not an export",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
-				"note": "No PDF or print export of the resident's own data, statements or plan; the WMEBV receipt carries a field copy in the inbox message only.",
+				"note": "No PDF or print export of the resident's own data, statements or plan; the WMEBV receipt carries a field copy in the inbox message only. Specified in openspec/changes/cases-export-own-data-pdf (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -7863,11 +7870,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/administration/configuring-liferay/virtual-instances/infrastructure 'Auto Extend: If checked, automatically extends the session without prompting the user', which implies a prompt when it is off; the warning and its one-click extend are not described on the pages read today. [was unknown]"
 			},
 			"built": {
-				"state": "none",
+				"state": "specified",
 				"evidence": "src/portal/App.jsx:129 setInterval refreshSession every 25 min while the page is open; grep -riE 'idle|inactiv' src: 0 hits",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
-				"note": "The session is slid forward silently while the tab is open; there is no inactivity timer, no warning dialog and no 'stay signed in' control.",
+				"note": "The session is slid forward silently while the tab is open; there is no inactivity timer, no warning dialog and no 'stay signed in' control. Specified in openspec/changes/signin-session-idle-warning-and-sso (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",

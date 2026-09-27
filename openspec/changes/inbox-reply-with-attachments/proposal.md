@@ -46,7 +46,7 @@ Reading dossiq development for this change found its citizen contribution alread
 - A sent folder. The resident's reply lands in the case app, which is scoped by who received it; showing sent replies needs a collection the case app does not declare today.
 - Replying to portaliq's own messages (receipts, task announcements). They declare no reply, so they get no button.
 - Starting a new conversation without a message to answer.
-- Virus scanning uploads. The portaliq matrix row `dem-cl-upload-virus-scan` is owned by `ConductionNL/nextcloud`, and the lane treats it as Nextcloud server's.
+- Virus scanning uploads. The portaliq matrix row `dem-cl-upload-virus-scan` belongs to Nextcloud server (`nextcloud/server`), decided no in this pass.
 
 ## Sibling halves
 
