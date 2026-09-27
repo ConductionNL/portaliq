@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.32.0"
+        "version": "0.33.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.32.0",
+                "version": "0.33.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -63,7 +63,10 @@
                     "eventSignup",
                     "messageThread",
                     "guardianMessage",
-                    "groupStaffFixture"
+                    "groupStaffFixture",
+                    "pushSubscription",
+                    "notificationQuietHours",
+                    "pendingPush"
                 ]
             }
         },
@@ -6938,6 +6941,164 @@
                         "example": [
                             "staff-leerkracht-5a"
                         ]
+                    }
+                }
+            },
+            "pushSubscription": {
+                "slug": "pushSubscription",
+                "icon": "BellOutline",
+                "version": "0.1.0",
+                "title": "Push subscription",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "A guardian's Web Push subscription endpoint (push-notifications-quiet-hours, finding 9.14). The real Web Push transport is out of scope for this change (LoggingPushSender is the interim implementation); this schema exists so subscriptions are captured now.",
+                "type": "object",
+                "required": [
+                    "subjectRef",
+                    "endpoint"
+                ],
+                "properties": {
+                    "subjectRef": {
+                        "title": "Subject",
+                        "type": "string",
+                        "description": "The subjectRef this subscription belongs to."
+                    },
+                    "endpoint": {
+                        "title": "Endpoint",
+                        "type": "string",
+                        "description": "The Web Push service's delivery endpoint URL.",
+                        "example": "https://push.example.org/send/EXAMPLE_TOKEN"
+                    },
+                    "keys": {
+                        "title": "Keys",
+                        "type": "object",
+                        "description": "The subscription's Web Push encryption keys.",
+                        "properties": {
+                            "p256dh": {
+                                "title": "P256dh",
+                                "type": "string",
+                                "description": "The subscription's public key for message encryption."
+                            },
+                            "auth": {
+                                "title": "Auth",
+                                "type": "string",
+                                "description": "The subscription's authentication secret."
+                            }
+                        }
+                    },
+                    "deviceRef": {
+                        "title": "Device",
+                        "type": "string",
+                        "description": "An opaque reference to the subscribing device, when known."
+                    },
+                    "createdAt": {
+                        "title": "Created at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When this subscription was created, in ISO 8601."
+                    },
+                    "active": {
+                        "title": "Active",
+                        "type": "boolean",
+                        "description": "False once unsubscribed. A revoked subscription is kept (not deleted) so its history is auditable; PushDeliveryService's real transport (a future change) MUST skip inactive subscriptions.",
+                        "example": true
+                    }
+                }
+            },
+            "notificationQuietHours": {
+                "slug": "notificationQuietHours",
+                "icon": "Calendar",
+                "version": "0.1.0",
+                "title": "Notification quiet hours",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "One subject's (guardian or staff) configured quiet-hours window, HH:MM 24h strings. Read/written EXCLUSIVELY through QuietHoursPolicy — the single source of truth for the quiet-hours rule (push-notifications-quiet-hours).",
+                "type": "object",
+                "required": [
+                    "subjectRef",
+                    "startTime",
+                    "endTime"
+                ],
+                "properties": {
+                    "subjectRef": {
+                        "title": "Subject",
+                        "type": "string",
+                        "description": "The subjectRef (guardian or staff) this quiet-hours window belongs to."
+                    },
+                    "startTime": {
+                        "title": "Start",
+                        "type": "string",
+                        "description": "The window's start time, `HH:MM` 24h.",
+                        "example": "22:00"
+                    },
+                    "endTime": {
+                        "title": "End",
+                        "type": "string",
+                        "description": "The window's end time, `HH:MM` 24h.",
+                        "example": "07:00"
+                    }
+                }
+            },
+            "pendingPush": {
+                "slug": "pendingPush",
+                "icon": "History",
+                "version": "0.1.0",
+                "title": "Pending push",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "A non-emergency push deferred because the subject was in quiet hours when PushDeliveryService::deliver() was called. PendingPushDeliveryJob delivers it once `deliverAfter` is reached; never dropped.",
+                "type": "object",
+                "required": [
+                    "subjectRef",
+                    "title",
+                    "body",
+                    "deliverAfter"
+                ],
+                "properties": {
+                    "subjectRef": {
+                        "title": "Subject",
+                        "type": "string",
+                        "description": "The subjectRef this deferred push is for."
+                    },
+                    "title": {
+                        "title": "Title",
+                        "type": "string",
+                        "description": "The push notification's title."
+                    },
+                    "body": {
+                        "title": "Body",
+                        "type": "string",
+                        "description": "The push notification's body text."
+                    },
+                    "deliverAfter": {
+                        "title": "Deliver after",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "The subject's quiet-hours window end; PendingPushDeliveryJob delivers this push once reached."
+                    },
+                    "delivered": {
+                        "title": "Delivered",
+                        "type": "boolean",
+                        "description": "Whether PendingPushDeliveryJob has already delivered this push.",
+                        "example": false
                     }
                 }
             }

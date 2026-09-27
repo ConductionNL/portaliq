@@ -54,6 +54,8 @@ use OCA\Portaliq\Middleware\PublicApiCorsMiddleware;
 use OCA\Portaliq\Notification\Notifier;
 use OCA\Portaliq\Service\Messaging\GuardianMessagingLeafInterface;
 use OCA\Portaliq\Service\Messaging\InAppMessagingLeaf;
+use OCA\Portaliq\Service\Notifications\LoggingPushSender;
+use OCA\Portaliq\Service\Notifications\PushSenderInterface;
 use OCA\Portaliq\Service\Traffic\Geo\MmdbGeoResolver;
 use OCA\Portaliq\Service\Traffic\GeoResolverInterface;
 use OCP\AppFramework\App;
@@ -171,6 +173,13 @@ class Application extends App implements IBootstrap {
 		// implementation can be aliased here instead, with no controller
 		// change (design.md "Messaging leaf interface").
 		$context->registerServiceAlias(GuardianMessagingLeafInterface::class, InAppMessagingLeaf::class);
+		// Push-notifications-quiet-hours: LoggingPushSender is the FIRST
+		// implementation of the push transport seam (a real Web Push
+		// implementation needs VAPID key provisioning, an admin-settings
+		// concern for a follow-up change — design.md "Messaging leaf
+		// interface"). Alias here so a real transport can be swapped in
+		// with no caller change.
+		$context->registerServiceAlias(PushSenderInterface::class, LoggingPushSender::class);
 
 		// Traffic reports and alerts (portal-traffic-reporting) reach a
 		// user as an in-app notification beside the mail; this renders it.

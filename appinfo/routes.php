@@ -126,6 +126,16 @@ return [
         ['name' => 'messageStaff#markRead', 'url' => '/api/staff/messages/threads/{id}/read', 'verb' => 'POST'],
         // teacher-inbox-per-group: the per-group inbox VIEW over the routes above.
         ['name' => 'messageStaff#inbox', 'url' => '/api/staff/messages/inbox', 'verb' => 'GET'],
+        // Push notifications and quiet hours (push-notifications-quiet-hours,
+        // findings 9.14, PA-new-1). Guardian routes are PortalProtected
+        // (bearer session); staff routes require a Nextcloud session.
+        ['name' => 'pushSubscription#subscribe', 'url' => '/api/push/subscribe', 'verb' => 'POST'],
+        ['name' => 'pushSubscription#unsubscribe', 'url' => '/api/push/unsubscribe', 'verb' => 'POST'],
+        ['name' => 'quietHoursGuardian#index', 'url' => '/api/quiet-hours', 'verb' => 'GET'],
+        ['name' => 'quietHoursGuardian#update', 'url' => '/api/quiet-hours', 'verb' => 'POST'],
+        ['name' => 'quietHoursStaff#index', 'url' => '/api/staff/quiet-hours', 'verb' => 'GET'],
+        ['name' => 'quietHoursStaff#update', 'url' => '/api/staff/quiet-hours', 'verb' => 'POST'],
+        ['name' => 'emergencyPush#send', 'url' => '/api/staff/emergency-push', 'verb' => 'POST'],
 
         // Traffic analytics (portal-traffic-analytics). Public like the
         // content API above, for the same reason: a visitor's browser on a
