@@ -132,6 +132,14 @@ return [
         // /portal is not swallowed by /{path}.
         ['name' => 'portalPage#index', 'url' => '/portal', 'verb' => 'GET'],
 
+        // PWA installability (parent-pwa-installability, learniq round-1
+        // finding 10.3): the manifest names whichever portal is being
+        // installed; the service worker caches the app SHELL only, never
+        // /portal/api/* (design.md D-1). Both public — a visitor installing
+        // has no session yet.
+        ['name' => 'portalManifest#manifest', 'url' => '/portal/manifest.webmanifest', 'verb' => 'GET'],
+        ['name' => 'portalManifest#serviceWorker', 'url' => '/portal/sw.js', 'verb' => 'GET'],
+
         // The built-in SITE renderer (ADR-084) — the Vue replacement for the
         // React portal above. Served alongside it while parity is being
         // measured: a comparison against a portal that has already been
