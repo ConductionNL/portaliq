@@ -1253,7 +1253,11 @@ OC.L10N.register(
         "No outbound link clicked yet.": "No outbound link clicked yet.",
         "No visitor came here from another page yet.": "No visitor came here from another page yet.",
         "No visitor went on to another page yet.": "No visitor went on to another page yet.",
-        "Could not load the traffic of this page.": "Could not load the traffic of this page."
+        "Could not load the traffic of this page.": "Could not load the traffic of this page.",
+        "Sign-in level": "Sign-in level",
+        "The sign-in this form needs before it is shown or accepted. Absent or low means anyone may fill it in. Substantial or high needs a DigiD or eHerkenning session at that level, and the embedded form then sends the visitor to the portal's own page.": "The sign-in this form needs before it is shown or accepted. Absent or low means anyone may fill it in. Substantial or high needs a DigiD or eHerkenning session at that level, and the embedded form then sends the visitor to the portal's own page.",
+        "Sign-in for every form": "Sign-in for every form",
+        "Whether every form on this portal needs a signed-in visitor. An embedded form is then not shown and not accepted: the visitor is sent to the portal's own page to sign in.": "Whether every form on this portal needs a signed-in visitor. An embedded form is then not shown and not accepted: the visitor is sent to the portal's own page to sign in."
     },
     "nplurals=2; plural=(n != 1);"
 )

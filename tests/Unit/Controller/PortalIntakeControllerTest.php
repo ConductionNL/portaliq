@@ -137,6 +137,68 @@ class PortalIntakeControllerTest extends TestCase {
 
 	}//end testTheEntryPointListsWhatTheCatalogueSaysToday()
 
+	public function testAFormRequiringDigidIsNotRenderedToAnAnonymousVisitor(): void {
+		// portaliq#725: on the portal's own page a form above `low` needs a
+		// session at or above that level before it is rendered.
+		$controller = $this->controller(render: $this->hostedForm() + ['minTrust' => 'substantial']);
+		$this->doubles['prefill']->expects($this->never())->method('forSubject');
+
+		$response = $controller->form(route: 'aanvragen/verhuizing');
+
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+		$this->assertSame('sign_in_required', $response->getData()['error']);
+		$this->assertSame('substantial', $response->getData()['minTrust']);
+
+	}//end testAFormRequiringDigidIsNotRenderedToAnAnonymousVisitor()
+
+	public function testAFormRequiringDigidAcceptsNothingFromAnAnonymousVisitor(): void {
+		$controller = $this->controller(render: $this->hostedForm() + ['minTrust' => 'substantial']);
+		$this->doubles['queue']->expects($this->never())->method('accept');
+
+		$response = $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB']);
+
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+
+	}//end testAFormRequiringDigidAcceptsNothingFromAnAnonymousVisitor()
+
+	public function testASessionBelowTheFormsLevelIsRefused(): void {
+		$controller = $this->controller(
+			render: $this->hostedForm() + ['minTrust' => 'high'],
+			subject: ['subjectRef' => 'bsn:999993653', 'trust' => 'substantial']
+		);
+		$this->doubles['queue']->expects($this->never())->method('accept');
+
+		$response = $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB']);
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		$this->assertSame('sign_in_required', $response->getData()['error']);
+
+	}//end testASessionBelowTheFormsLevelIsRefused()
+
+	public function testASessionAtTheFormsLevelIsAccepted(): void {
+		$controller = $this->controller(
+			render: $this->hostedForm() + ['minTrust' => 'substantial'],
+			subject: ['subjectRef' => 'bsn:999993653', 'trust' => 'substantial']
+		);
+		$this->doubles['queue']->expects($this->once())->method('accept')->willReturn(['reference' => 'AANVRAAG-ABC123', 'state' => 'queued']);
+
+		$data = $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB'])->getData();
+
+		$this->assertSame('AANVRAAG-ABC123', $data['reference']);
+
+	}//end testASessionAtTheFormsLevelIsAccepted()
+
+	public function testAPortalRequiringIdentifiedIntakeAcceptsNothingAnonymous(): void {
+		$controller = $this->controller(
+			render: $this->hostedForm(),
+			site: ['slug' => 'gemeente-x', 'authentication' => ['requiresIdentifiedIntake' => true]]
+		);
+		$this->doubles['queue']->expects($this->never())->method('accept');
+
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB'])->getStatus());
+
+	}//end testAPortalRequiringIdentifiedIntakeAcceptsNothingAnonymous()
+
 	/**
 	 * A hosted form requiring a postcode.
 	 *
@@ -157,18 +219,25 @@ class PortalIntakeControllerTest extends TestCase {
 	 *
 	 * @param array<string, mixed> $render What the binding renders to.
 	 * @param array<string, mixed>|null $binding The binding found, or null.
+	 * @param array<string, mixed>|null $subject The signed-in subject, or null.
+	 * @param array<string, mixed> $site The portal resolved.
 	 *
 	 * @return PortalIntakeController
 	 */
-	private function controller(array $render, ?array $binding = ['portal' => 'gemeente-x']): PortalIntakeController {
+	private function controller(
+		array $render,
+		?array $binding = ['portal' => 'gemeente-x'],
+		?array $subject = null,
+		array $site = ['slug' => 'gemeente-x', 'organisation' => 'gemeente-x'],
+	): PortalIntakeController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('');
 
 		$portals = $this->double(PortalResolver::class, ['resolve']);
-		$portals->method('resolve')->willReturn(['slug' => 'gemeente-x', 'organisation' => 'gemeente-x']);
+		$portals->method('resolve')->willReturn($site);
 
 		$session = $this->double(PortalSessionService::class, ['resolveFromBearer']);
-		$session->method('resolveFromBearer')->willReturn(null);
+		$session->method('resolveFromBearer')->willReturn($subject);
 
 		$bindings = $this->double(PortalFormBindingResolver::class, ['bindingFor', 'render']);
 		$bindings->method('bindingFor')->willReturn($binding);
