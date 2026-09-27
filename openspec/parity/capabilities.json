@@ -7442,11 +7442,11 @@
 				"liferay-dxp": "not settled from docs: MijnOverheid and Berichtenbox are not named in any learn.liferay.com page read today; notifications go by e-mail and website only (https://learn.liferay.com/w/dxp/low-code/notifications). A webhook object action (defining-object-actions) could call an outside service, but no Berichtenbox delivery is described."
 			},
 			"built": {
-				"state": "none",
+				"state": "specified",
 				"evidence": "grep -riE 'berichtenbox|mijnoverheid' lib src: 0 hits; lib/Settings/portaliq_register.json portalNotification.channel: 'Only email is implemented'",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
-				"note": "No outbound channel to the MijnOverheid Berichtenbox exists; portal messages stay in the portaliq inbox and the only out-of-band channel is e-mail.",
+				"note": "No outbound channel to the MijnOverheid Berichtenbox exists; portal messages stay in the portaliq inbox and the only out-of-band channel is e-mail. Specified in openspec/changes/inbox-berichtenbox-channel (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",

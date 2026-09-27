@@ -592,6 +592,14 @@
 		"decidedOn": "2026-09-27"
 	},
 	{
+		"row": "dem-tnd-berichtenbox",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Tender demand (TenderNed 407031, also 415380) and two competitors rated yes (xxllnc PIP, MijnOverheid). integriq's berichtenbox-digital-post-adapter is the adapter this channel hands to.",
+		"change": "inbox-berichtenbox-channel",
+		"decidedOn": "2026-09-27"
+	},
+	{
 		"row": "dem-tnd-export-pdf",
 		"matrix": "portaliq",
 		"decision": "build",
