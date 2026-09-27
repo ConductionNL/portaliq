@@ -2371,7 +2371,7 @@
 			},
 			"built": {
 				"state": "specified",
-				"evidence": "lib/Controller/CitizenCaseController.php:304-331 withdraw(), fully implemented (guardWrite, writableSet.withdrawal, applyWithdrawal, PortalClientWithdrawalEvent); routes.php:287 POST /portal/api/citizen/cases/{register}/{schema}/{id}/withdraw",
+				"evidence": "lib/Controller/CitizenCaseController.php:304-331 withdraw(), fully implemented (guardWrite, writableSet.withdrawal, applyWithdrawal, PortalClientWithdrawalEvent); routes.php:384 POST /portal/api/citizen/cases/{register}/{schema}/{id}/withdraw",
 				"reachedOn": "nothing reaches it: src/portal/lib/portalApi.js has no withdraw method, and src/portal/components/CitizenCase.jsx has no withdraw button; grep 'withdraw' across all of src/ finds only an unrelated traffic-consent comment",
 				"owner": "ConductionNL/portaliq",
 				"note": "A complete server-side withdrawal path with its own event and openspec (withdrawing-your-own-case-from-the-portal) has no UI trigger anywhere in this repo. Specified in openspec/changes/case-actions-withdraw-screen (OpenSpec pass 2026-09-27).",
@@ -3199,7 +3199,7 @@
 			},
 			"built": {
 				"state": "built",
-				"evidence": "lib/Settings/portaliq_register.json:686-704 portalMessage.nature/rechtsgevolg/term (WMEBV art 2:10 readiness, all optional); src/portal/components/InboxPage.jsx:103-124 renders them only when present",
+				"evidence": "lib/Settings/portaliq_register.json:1083-1100 portalMessage.nature/rechtsgevolg/term (WMEBV art 2:10 readiness, all optional); src/portal/components/InboxPage.jsx:103-124 renders them only when present",
 				"reachedOn": "InboxPage.jsx message detail body",
 				"owner": "ConductionNL/portaliq",
 				"note": "Only renders when a contributing app's row happens to populate these optional fields; nothing in this repo enforces that a decision message always carries them.",
@@ -3382,7 +3382,7 @@
 			},
 			"built": {
 				"state": "specified",
-				"evidence": "lib/Settings/portaliq_register.json:629-732 portalMessage schema has no file/attachment property; InboxPage.jsx (full file read) has no upload control or attachment renderer",
+				"evidence": "lib/Settings/portaliq_register.json:1024-1128 portalMessage schema has no file/attachment property; InboxPage.jsx (full file read) has no upload control or attachment renderer",
 				"reachedOn": "nothing reaches it: no attachment field, no upload UI, and no way to send a message at all (see cmp-inb-reply)",
 				"owner": "ConductionNL/portaliq",
 				"note": "dossiq's portaalBericht declares an 'attachments' field to portaliq (see inb-dossiq-portaalbericht) but nothing renders it, so even a sibling-supplied attachment is invisible. Specified in openspec/changes/inbox-reply-with-attachments (OpenSpec pass 2026-09-27).",
@@ -4083,7 +4083,7 @@
 			},
 			"built": {
 				"state": "built",
-				"evidence": "lib/Service/SubmissionReceiptService.php fires on a successful create action, writes an append-only portalSubmission log row + a portalMessage carrying referenceId and dataCopy (a JSON copy of the whitelisted submitted fields, lib/Settings/portaliq_register.json:697-706); no PDF rendering anywhere (grep 'pdf' in lib/Service/SubmissionReceiptService.php and PortalIntakeController.php: 0 hits)",
+				"evidence": "lib/Service/SubmissionReceiptService.php fires on a successful create action, writes an append-only portalSubmission log row + a portalMessage carrying referenceId and dataCopy (a JSON copy of the whitelisted submitted fields, lib/Settings/portaliq_register.json:1107-1114); no PDF rendering anywhere (grep 'pdf' in lib/Service/SubmissionReceiptService.php and PortalIntakeController.php: 0 hits)",
 				"reachedOn": "the receipt message reaches the citizen through the ordinary inbox (see inb-view-unified); dataCopy is shown as plain data on the message, never as a downloadable file",
 				"owner": "ConductionNL/portaliq",
 				"note": "You get an honest, structured copy of what you submitted (WMEBV burden-of-proof), just not a PDF, and not through the unreached PortalIntakeController#status page either.",
