@@ -529,6 +529,40 @@ export function createPortalApi(config) {
 		},
 
 		/**
+		 * Upload one file into a declared file field of an object the subject
+		 * owns (assignment-portal-file-upload). The server proves ownership the
+		 * way the named action writes, checks the file against the field's
+		 * `accept` and `maxSizeMb`, attaches it and writes the reference into the
+		 * field itself. Not retried: a retried append could store the file twice.
+		 *
+		 * @param {object} action Manifest action: `{ id, register, schema }`.
+		 * @param {string} id The owning object's id.
+		 * @param {string} field The file field.
+		 * @param {File} file The file to upload.
+		 * @return {Promise<object>} `{ ok, file, value }` on success, `{ ok: false, status, error }` otherwise.
+		 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-the-generic-portal-form-must-render-a-file-field-as-a-file-picker
+		 */
+		async uploadFieldFile(action, id, field, file) {
+			const form = new FormData()
+			form.append('file', file)
+			const url = `${base}${col(action.register, action.schema)}/${encodeURIComponent(id)}/fields/${encodeURIComponent(field)}?action=${encodeURIComponent(action.id)}`
+			try {
+				const res = await fetch(url, {
+					method: 'POST',
+					headers: { Accept: 'application/json', ...authHeaders() },
+					body: form,
+				})
+				const json = await res.json().catch(() => ({}))
+				if (!res.ok) {
+					return { ok: false, status: res.status, error: json.error || '' }
+				}
+				return { ok: true, file: json.file || null, value: json.value }
+			} catch {
+				return { ok: false, status: 0, error: '' }
+			}
+		},
+
+		/**
 		 * Download a file attached to an object the subject owns (the
 		 * file-download block, portal-document-download — the read-side
 		 * counterpart of `uploadFile`). Ownership + the collection's

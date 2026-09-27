@@ -394,7 +394,7 @@ export default function PageView({ page, contribution, api, dataByCollection, on
 						return (
 							<div key={i} className="portaliq-block-action">
 								<h3>{action.label || action.id}</h3>
-								<SchemaForm action={action} api={api} onSubmitted={(obj) => onCreated && onCreated(obj, action)} />
+								<SchemaForm action={action} api={api} t={translate} onSubmitted={(obj) => onCreated && onCreated(obj, action)} />
 							</div>
 						)
 					}
