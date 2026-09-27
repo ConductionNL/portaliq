@@ -15,6 +15,7 @@ import CollectionTable from './CollectionTable.jsx'
 import ProposeChangeForm from './ProposeChangeForm.jsx'
 import RichText from './RichText.jsx'
 import SchemaForm from './SchemaForm.jsx'
+import TimedTaskView from './TimedTaskView.jsx'
 import TimelineList from './TimelineList.jsx'
 
 /**
@@ -346,6 +347,22 @@ export default function PageView({ page, contribution, api, dataByCollection, on
 							/>
 						)
 					}
+					// A timed task (portal-take-assessment): the attempts are
+					// this collection's rows; the test screen drives the
+					// collection's five endpoint actions.
+					if (collection.kind === 'timedTask' && collection.timedTask) {
+						return (
+							<TimedTaskView
+								key={i}
+								collection={collection}
+								app={contribution.app || ''}
+								attempts={loaded?.objects || []}
+								api={api}
+								t={translate}
+								onChanged={() => onCreated && onCreated(null, { register: collection.register, schema: collection.schema })}
+							/>
+						)
+					}
 					return (
 						<div key={i} className="portaliq-block-collection">
 							{collection.label && <h3>{collection.label}</h3>}
@@ -377,7 +394,7 @@ export default function PageView({ page, contribution, api, dataByCollection, on
 						return (
 							<div key={i} className="portaliq-block-action">
 								<h3>{action.label || action.id}</h3>
-								<SchemaForm action={action} api={api} onSubmitted={(obj) => onCreated && onCreated(obj, action)} />
+								<SchemaForm action={action} api={api} t={translate} onSubmitted={(obj) => onCreated && onCreated(obj, action)} />
 							</div>
 						)
 					}

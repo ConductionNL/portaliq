@@ -446,6 +446,39 @@ export function createPortalApi(config) {
 		},
 
 		/**
+		 * Forward a declared endpoint action and return the leaf app's answer
+		 * (portal-take-assessment). Portaliq checks the action is the
+		 * subject's, stamps any declared `subjectField` and signs the subject
+		 * assertion; the status and JSON body come back as the leaf app sent them.
+		 *
+		 * @param {string} app The contributing app.
+		 * @param {string} actionId The endpoint action id.
+		 * @param {object} body The request body (only the action's `fields` are forwarded).
+		 * @return {Promise<{ok: boolean, status: number, body: object}>} The relayed answer.
+		 * @spec openspec/changes/portal-take-assessment/specs/portal-contribution-contract/spec.md#requirement-the-portal-must-let-a-subject-take-a-timed-task
+		 */
+		async forwardAction(app, actionId, body) {
+			try {
+				const res = await fetch(
+					`${base}/actions/${encodeURIComponent(app)}/${encodeURIComponent(actionId)}`,
+					{
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+							Accept: 'application/json',
+							...authHeaders(),
+						},
+						body: JSON.stringify(body || {}),
+					},
+				)
+				const json = await res.json().catch(() => ({}))
+				return { ok: res.ok, status: res.status, body: json }
+			} catch {
+				return { ok: false, status: 0, body: {} }
+			}
+		},
+
+		/**
 		 * Attach a file to an object the subject owns (the file-upload block).
 		 * Ownership is re-verified server-side; the collection must declare
 		 * `filesUpload`. Sends multipart with field name `file`.
@@ -493,6 +526,40 @@ export function createPortalApi(config) {
 				}
 			}
 			return { ok: false, status: 0 }
+		},
+
+		/**
+		 * Upload one file into a declared file field of an object the subject
+		 * owns (assignment-portal-file-upload). The server proves ownership the
+		 * way the named action writes, checks the file against the field's
+		 * `accept` and `maxSizeMb`, attaches it and writes the reference into the
+		 * field itself. Not retried: a retried append could store the file twice.
+		 *
+		 * @param {object} action Manifest action: `{ id, register, schema }`.
+		 * @param {string} id The owning object's id.
+		 * @param {string} field The file field.
+		 * @param {File} file The file to upload.
+		 * @return {Promise<object>} `{ ok, file, value }` on success, `{ ok: false, status, error }` otherwise.
+		 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-the-generic-portal-form-must-render-a-file-field-as-a-file-picker
+		 */
+		async uploadFieldFile(action, id, field, file) {
+			const form = new FormData()
+			form.append('file', file)
+			const url = `${base}${col(action.register, action.schema)}/${encodeURIComponent(id)}/fields/${encodeURIComponent(field)}?action=${encodeURIComponent(action.id)}`
+			try {
+				const res = await fetch(url, {
+					method: 'POST',
+					headers: { Accept: 'application/json', ...authHeaders() },
+					body: form,
+				})
+				const json = await res.json().catch(() => ({}))
+				if (!res.ok) {
+					return { ok: false, status: res.status, error: json.error || '' }
+				}
+				return { ok: true, file: json.file || null, value: json.value }
+			} catch {
+				return { ok: false, status: 0, error: '' }
+			}
 		},
 
 		/**

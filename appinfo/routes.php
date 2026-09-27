@@ -111,6 +111,19 @@ return [
         ['name' => 'eventGuardian#feed', 'url' => '/api/events/feed', 'verb' => 'GET'],
         ['name' => 'eventGuardian#rsvp', 'url' => '/api/events/{id}/rsvp', 'verb' => 'POST'],
         ['name' => 'eventGuardian#signup', 'url' => '/api/events/{id}/signup', 'verb' => 'POST'],
+        // Term-long activities (extracurricular-activity-offer). Staff
+        // (Nextcloud session): create, open, close, supervisors, roster and
+        // attendance. Guardian (portal bearer): feed, sign-up, withdraw. The
+        // literal /feed segment is registered before the {id} routes.
+        ['name' => 'activityGuardian#feed', 'url' => '/api/activities/feed', 'verb' => 'GET'],
+        ['name' => 'activity#create', 'url' => '/api/activities', 'verb' => 'POST'],
+        ['name' => 'activity#open', 'url' => '/api/activities/{id}/open', 'verb' => 'PUT'],
+        ['name' => 'activity#close', 'url' => '/api/activities/{id}/close', 'verb' => 'PUT'],
+        ['name' => 'activity#supervisors', 'url' => '/api/activities/{id}/supervisors', 'verb' => 'PUT'],
+        ['name' => 'activity#roster', 'url' => '/api/activities/{id}/roster', 'verb' => 'GET'],
+        ['name' => 'activity#attendance', 'url' => '/api/activities/{id}/attendance', 'verb' => 'PUT'],
+        ['name' => 'activityGuardian#signup', 'url' => '/api/activities/{id}/signup', 'verb' => 'POST'],
+        ['name' => 'activityGuardian#withdraw', 'url' => '/api/activities/{id}/withdraw', 'verb' => 'POST'],
         // Guardian direct messages (guardian-direct-messages, finding 9.3).
         // Guardian routes are PortalProtected (bearer session); staff routes
         // require a Nextcloud session.
@@ -288,6 +301,12 @@ return [
         // ADR-063). Ownership re-verified via the scoped reader; the collection
         // must declare `filesUpload: true`.
         ['name' => 'contribution#uploadFile', 'url' => '/portal/api/collections/{register}/{schema}/{id}/files', 'verb' => 'POST'],
+        // Upload one file into a declared file field of an owned object
+        // (assignment-portal-file-upload): the action is named with ?action=,
+        // ownership is proven the way that action writes, and the server
+        // writes the file reference into the field. The {field} segment keeps
+        // it apart from the files routes around it.
+        ['name' => 'portalFieldFile#upload', 'url' => '/portal/api/collections/{register}/{schema}/{id}/fields/{field}', 'verb' => 'POST'],
         // Stream a file attached to an owned object (portal-document-download,
         // the read-side counterpart of uploadFile). Ownership re-verified via
         // the scoped reader BEFORE the file is resolved; the collection must

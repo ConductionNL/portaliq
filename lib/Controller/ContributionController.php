@@ -47,6 +47,7 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
+use OCA\Portaliq\Contribution\FileFieldConfigNormaliser;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\NotificationDispatchService;
@@ -940,7 +941,7 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		$data = $this->whitelist(fields: (array)($action['fields'] ?? []));
+		$data = $this->withoutFileFields(action: $action, data: $this->whitelist(fields: (array)($action['fields'] ?? [])));
 
 		// A declared action `defaults` map is stamped server-side over the
 		// whitelisted client payload. It carries values the client must not choose
@@ -1066,7 +1067,7 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		$data = $this->whitelist(fields: (array)($action['fields'] ?? []));
+		$data = $this->withoutFileFields(action: $action, data: $this->whitelist(fields: (array)($action['fields'] ?? [])));
 
 		// Server-forced defaults, applied AFTER the whitelist so a client can
 		// never override them — identical discipline to the authenticated
@@ -1209,7 +1210,7 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		$data = $this->whitelist(fields: (array)($action['fields'] ?? []));
+		$data = $this->withoutFileFields(action: $action, data: $this->whitelist(fields: (array)($action['fields'] ?? [])));
 
 		$data = $this->withTransitionSet(action: $action, data: $data);
 
@@ -1338,6 +1339,32 @@ class ContributionController extends Controller implements PortalProtected {
 	}//end whitelist()
 
 	/**
+	 * Remove every declared file field from a write body.
+	 *
+	 * A file field (`fieldConfigs.<field>.type: file`) holds references to
+	 * files in the object's own folder, and only the scoped field upload
+	 * writes it, with a reference portaliq produced itself. A value typed into
+	 * a create or update body could name any file, including another
+	 * person's, so it never reaches the writer.
+	 *
+	 * @param array<string, mixed> $action The matched action (normalised).
+	 * @param array<string, mixed> $data The whitelisted body.
+	 *
+	 * @return array<string, mixed> The body without file fields.
+	 *
+	 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-a-file-field-must-never-be-written-from-a-request-body
+	 */
+	private function withoutFileFields(array $action, array $data): array {
+		foreach ((array)($action['fieldConfigs'] ?? []) as $field => $config) {
+			if (is_array($config) === true && ($config['type'] ?? null) === FileFieldConfigNormaliser::TYPE_FILE) {
+				unset($data[$field]);
+			}
+		}
+
+		return $data;
+	}//end withoutFileFields()
+
+	/**
 	 * Extract a saved row's identifier (`id`/`uuid`, flat or in `@self`) for
 	 * the audit trail's target id — the same identifier candidates every
 	 * other reader/writer in this app checks.
@@ -1394,6 +1421,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
 	 * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
 	 * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
+	 * @spec openspec/changes/portal-take-assessment/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-receive-the-subjects-scope-from-the-server
 	 *
 	 * @SuppressWarnings(PHPMD.CyclomaticComplexity) -- the audit fact-record
 	 * (portal-session-hardening-v2), the WMEBV receipt follow-on
@@ -1417,6 +1445,24 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
+		// A declared `fields` whitelist rebuilds the forwarded body server-side
+		// from ONLY those request params; an action that declares none relays
+		// the raw request body as-is (contract v2, A6).
+		$whitelisted = null;
+		if (array_key_exists('fields', $action) === true) {
+			$whitelisted = $this->whitelist(fields: (array)$action['fields']);
+		}
+
+		// A declared `subjectField` (portal-take-assessment) receives the
+		// subject's resolved scope from the server, over any client value; a
+		// scope that does not resolve stops the forward before it is made.
+		if (is_string($action['subjectField'] ?? null) === true) {
+			$whitelisted = $this->withSubjectField(action: $action, subject: $subject, appId: $appId, body: ($whitelisted ?? []));
+			if ($whitelisted === null) {
+				return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+			}
+		}
+
 		// Recorded once the forward is AUTHORISED — regardless of the domain
 		// app's own response status or a transport failure below — because the
 		// fact being audited is "the subject invoked this forward", not
@@ -1432,14 +1478,6 @@ class ContributionController extends Controller implements PortalProtected {
 			id: '',
 			jti: (string)($subject['jti'] ?? '')
 		);
-
-		// A declared `fields` whitelist rebuilds the forwarded body server-side
-		// from ONLY those request params; an action that declares none relays
-		// the raw request body as-is (contract v2, A6).
-		$whitelisted = null;
-		if (array_key_exists('fields', $action) === true) {
-			$whitelisted = $this->whitelist(fields: (array)$action['fields']);
-		}
 
 		$response = $this->forwarder->forward(action: $action, subject: $subject, whitelisted: $whitelisted);
 		if ($response === null) {
@@ -1467,6 +1505,39 @@ class ContributionController extends Controller implements PortalProtected {
 
 		return new JSONResponse($decoded, $status);
 	}//end action()
+
+	/**
+	 * The forwarded body with the subject's resolved scope stamped under the
+	 * action's `subjectField`, or null when the scope does not resolve.
+	 *
+	 * The scope resolves the way reads do: the action's `scopeClaim` from the
+	 * subject's own portal account, else the subject reference. The stamp
+	 * overwrites whatever the client sent under that name, so a leaf app can
+	 * take the learner (or any scoped party) from the body without trusting
+	 * the browser.
+	 *
+	 * @param array<string, mixed> $action The authorised endpoint action.
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param string $appId The contributing app (the claim namespace).
+	 * @param array<string, mixed> $body The whitelisted body.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/portal-take-assessment/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-receive-the-subjects-scope-from-the-server
+	 */
+	private function withSubjectField(array $action, array $subject, string $appId, array $body): ?array {
+		$value = $this->reader->resolveScopeValue(
+			scopeClaim: (string)($action['scopeClaim'] ?? ''),
+			contributingApp: $appId,
+			subject: $subject
+		);
+		if ($value === null || $value === '') {
+			return null;
+		}
+
+		$body[(string)$action['subjectField']] = $value;
+		return $body;
+	}//end withSubjectField()
 
 	/**
 	 * Find an authorised endpoint action {appId, actionId} in the subject's

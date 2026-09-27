@@ -122,6 +122,13 @@ class ActionConfigNormaliser {
 			// surface rather than opening it.
 			$action = ($this->citizenWrite ?? new CitizenWriteConfigNormaliser())->normaliseAction(action: $action);
 
+			// A server-stamped subject field (portal-take-assessment) is a
+			// guard too: an action whose field name cannot be read is removed
+			// rather than forwarded without its stamp.
+			if ($this->subjectFieldIsMalformed(action: $action) === true) {
+				continue;
+			}
+
 			// The cross-reference guard, and the one normaliser that can
 			// remove an action rather than a key: a create whose guard could
 			// not be read must not be offered without it.
@@ -136,6 +143,26 @@ class ActionConfigNormaliser {
 
 		return $out;
 	}//end normaliseActions()
+
+	/**
+	 * Whether an action declares a `subjectField` that is not a plain field
+	 * name. Absent is fine; anything declared must match
+	 * `^[a-zA-Z][a-zA-Z0-9_]*$`.
+	 *
+	 * @param array<string, mixed> $action The action.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/portal-take-assessment/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-receive-the-subjects-scope-from-the-server
+	 */
+	private function subjectFieldIsMalformed(array $action): bool {
+		if (array_key_exists('subjectField', $action) === false) {
+			return false;
+		}
+
+		return is_string($action['subjectField']) === false
+			|| preg_match('/^[a-zA-Z][a-zA-Z0-9_]*$/', $action['subjectField']) !== 1;
+	}//end subjectFieldIsMalformed()
 
 	/**
 	 * Drop a non-string `submitLabel` / `successMessage`.
@@ -217,7 +244,12 @@ class ActionConfigNormaliser {
 				continue;
 			}
 
-			$configs[$field] = $this->fieldConfigEntry(field: (string)$field, config: $config, mandatory: $mandatory);
+			$configs[$field] = $this->fieldConfigEntry(
+				field: (string)$field,
+				config: $config,
+				mandatory: $mandatory,
+				actionType: (string)($action['type'] ?? '')
+			);
 		}
 
 		$action['fieldConfigs'] = $configs;
@@ -226,17 +258,21 @@ class ActionConfigNormaliser {
 
 	/**
 	 * Build ONE sanitised field-config entry: the string labels, the boolean
-	 * flags (WMEBV-guarded), and the size enum.
+	 * flags (WMEBV-guarded), the size enum, and the file keys when the field is
+	 * a file field (assignment-portal-file-upload).
 	 *
 	 * @param string $field The whitelisted field name.
 	 * @param array<string, mixed> $config The declared field config.
 	 * @param array<int, string> $mandatory The action's schema `required` set.
+	 * @param string $actionType The action's `type`; a file field lives only
+	 *                           on a create or update action.
 	 *
 	 * @return array<string, mixed>
 	 *
 	 * @spec openspec/specs/supplier-portal/spec.md#form-data-minimisation-no-non-mandatory-field-may-be-required
+	 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-an-action-must-be-able-to-declare-a-file-field
 	 */
-	private function fieldConfigEntry(string $field, array $config, array $mandatory): array {
+	private function fieldConfigEntry(string $field, array $config, array $mandatory, string $actionType = ''): array {
 		$entry = [];
 		foreach (['label', 'placeholder', 'help'] as $textKey) {
 			if (isset($config[$textKey]) === true && is_string($config[$textKey]) === true) {
@@ -247,7 +283,7 @@ class ActionConfigNormaliser {
 		$entry = $this->applyFieldFlags(entry: $entry, field: $field, config: $config, mandatory: $mandatory);
 		$entry['size'] = $this->values->oneOf(value: ($config['size'] ?? null), allowed: self::FIELD_SIZES, default: 'medium');
 
-		return $entry;
+		return (new FileFieldConfigNormaliser())->apply(entry: $entry, config: $config, actionType: $actionType);
 	}//end fieldConfigEntry()
 
 	/**
