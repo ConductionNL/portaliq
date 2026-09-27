@@ -225,6 +225,8 @@ return [
         // Registered before the /portal/{path} SPA catch-all; the {id} segment
         // makes these distinct from the collection-level routes above.
         ['name' => 'contribution#object', 'url' => '/portal/api/collections/{register}/{schema}/{id}', 'verb' => 'GET'],
+        // The declared history of one object the subject owns (portaliq#723).
+        ['name' => 'portalTimeline#show', 'url' => '/portal/api/collections/{register}/{schema}/{id}/timeline', 'verb' => 'GET'],
         ['name' => 'contribution#update', 'url' => '/portal/api/collections/{register}/{schema}/{id}', 'verb' => 'PATCH'],
         // Attach an uploaded file to an owned object (the file-upload block,
         // ADR-063). Ownership re-verified via the scoped reader; the collection

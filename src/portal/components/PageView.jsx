@@ -15,6 +15,7 @@ import CollectionTable from './CollectionTable.jsx'
 import ProposeChangeForm from './ProposeChangeForm.jsx'
 import RichText from './RichText.jsx'
 import SchemaForm from './SchemaForm.jsx'
+import TimelineList from './TimelineList.jsx'
 
 /**
  *
@@ -245,6 +246,19 @@ function DetailCard({ collection, row, api, proposeAction }) {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [rowId])
 
+	// The object's declared history (portaliq#723), read once per selected
+	// row. `false` means the collection declares none or it could not be
+	// read, so the section is left out rather than shown empty.
+	const [timeline, setTimeline] = useState(null)
+	useEffect(() => {
+		let current = true
+		setTimeline(null)
+		if (rowId && collection.timeline && api && api.fetchTimeline) {
+			api.fetchTimeline(collection, rowId).then((t) => { if (current) setTimeline(t || false) })
+		}
+		return () => { current = false }
+	}, [rowId, collection, api])
+
 	if (!row) {
 		return <p className="portaliq-empty"><em>Selecteer een item.</em></p>
 	}
@@ -265,6 +279,9 @@ function DetailCard({ collection, row, api, proposeAction }) {
 			{collection.filesUpload === true && api && <FileUpload collection={collection} row={row} api={api} onUploaded={refresh} />}
 			{collection.filesDownload === true && api && <FileList collection={collection} row={detailRow} api={api} />}
 			{proposeAction && api && <ProposalQueue action={proposeAction} row={detailRow} api={api} />}
+			{collection.timeline && timeline !== false && (
+				<TimelineList label={collection.timeline.label} entries={timeline ? timeline.entries : null} />
+			)}
 		</>
 	)
 }
@@ -337,6 +354,7 @@ export default function PageView({ page, contribution, api, dataByCollection, on
 								objects={loaded?.objects || []}
 								loading={loaded?.loading}
 								onSelect={(row) => setSelected((s) => ({ ...s, [collection.id]: row }))}
+								selectedRow={selected[collection.id]}
 								// `onRowAction` (App.jsx) invokes `type: update`'s server-
 								// enforced `set` transition with no field data — a
 								// `propose-change` rowAction would misfire the same way, so

@@ -36,7 +36,13 @@
  *
  * - Collections: `columns` (`[{field, label?, render?}]`, render ∈ text|date|
  *   datetime|badge|currency|boolean|link), `detail` (`{layout: card|timeline,
- *   fields?[]}`), `defaultSort` (`{field, direction: asc|desc}`), `defaultFilters`.
+ *   fields?[]}`), `defaultSort` (`{field, direction: asc|desc}`), `defaultFilters`,
+ *   `timeline` (`{label?, provider}`: `provider` names a public method on this
+ *   provider taking one object id and returning that object's history; the
+ *   portal calls it only after the subject's scoped read of the object
+ *   succeeded, and renders the entries as returned, so the provider decides
+ *   what is public. A name that is not a plain identifier, or names a
+ *   contract method, drops the key; portaliq#723).
  * - Actions: `fieldConfigs` (per-whitelisted-field `{label?, visible?, required?,
  *   disabled?, size?, placeholder?, help?}` — a config for a non-whitelisted field
  *   is dropped), `optionsProviders` (per-field `{type: static, options[]}` or
