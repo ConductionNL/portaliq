@@ -3065,7 +3065,9 @@
         "paymentRequested": false,
         "location": "Aula, De Regenboog",
         "status": "open",
-        "authorRef": "staff-leerkracht-5a"
+        "authorRef": "staff-leerkracht-5a",
+        "consentRequired": false,
+        "photosTaken": false
       },
       {
         "@self": {
@@ -3110,7 +3112,10 @@
         "paymentRequested": true,
         "location": "Sportfondsenbad",
         "status": "open",
-        "authorRef": "staff-leerkracht-5a"
+        "authorRef": "staff-leerkracht-5a",
+        "consentRequired": true,
+        "consentStatement": "Mijn kind mag met de bus mee naar het Sportfondsenbad en daar onder begeleiding zwemles volgen.",
+        "photosTaken": true
       },
       {
         "@self": {
@@ -3156,7 +3161,10 @@
         "paymentRequested": true,
         "location": "Boswachterij Dorst",
         "status": "draft",
-        "authorRef": "staff-leerkracht-3b"
+        "authorRef": "staff-leerkracht-3b",
+        "consentRequired": true,
+        "consentStatement": "Mijn kind mag drie ochtenden met de klas en een boswachter het bos in.",
+        "photosTaken": true
       },
       {
         "@self": {
@@ -3196,7 +3204,12 @@
         "status": "confirmed",
         "signedUpAt": "2026-09-22T20:40:00+02:00",
         "confirmedAt": "2026-09-22T20:40:00+02:00",
-        "paymentRequestRef": "00000000-0000-0000-0000-000000000000"
+        "paymentRequestRef": "00000000-0000-0000-0000-000000000000",
+        "consent": {
+          "statement": "Mijn kind mag met de bus mee naar het Sportfondsenbad en daar onder begeleiding zwemles volgen.",
+          "grantedByRef": "guardian-anna-devries",
+          "grantedAt": "2026-09-22T20:40:00+02:00"
+        }
       },
       {
         "@self": {

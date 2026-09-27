@@ -8,6 +8,7 @@ use OCA\Portaliq\Controller\ActivityController;
 use OCA\Portaliq\Service\ActivityAttendanceService;
 use OCA\Portaliq\Service\ActivityDraft;
 use OCA\Portaliq\Service\ActivityPlaces;
+use OCA\Portaliq\Service\ActivityRoster;
 use OCA\Portaliq\Service\ActivitySignupService;
 use OCA\Portaliq\Service\ActivityStore;
 use OCA\Portaliq\Tests\Unit\Service\InMemoryActivityStore;
@@ -35,6 +36,7 @@ class ActivityControllerTest extends TestCase {
 	 * @param bool $signedIn Whether a Nextcloud user is signed in.
 	 * @param ActivitySignupService|null $signups The sign-up service double.
 	 * @param ActivityAttendanceService|null $attendance The attendance service double.
+	 * @param ActivityRoster|null $rosters The roster double.
 	 *
 	 * @return ActivityController
 	 */
@@ -44,6 +46,7 @@ class ActivityControllerTest extends TestCase {
 		bool $signedIn = true,
 		?ActivitySignupService $signups = null,
 		?ActivityAttendanceService $attendance = null,
+		?ActivityRoster $rosters = null,
 	): ActivityController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getParam')->willReturnCallback(fn (string $key, $default = null) => ($params[$key] ?? $default));
@@ -61,7 +64,8 @@ class ActivityControllerTest extends TestCase {
 			new ActivityPlaces(),
 			($signups ?? $this->createMock(ActivitySignupService::class)),
 			($attendance ?? $this->createMock(ActivityAttendanceService::class)),
-			new ActivityDraft()
+			new ActivityDraft(),
+			($rosters ?? $this->createMock(ActivityRoster::class))
 		);
 	}//end controller()
 
@@ -165,6 +169,26 @@ class ActivityControllerTest extends TestCase {
 	}//end testOpenRefusesAnActivityWithNoPlace()
 
 	/**
+	 * An activity needing consent does not open without a consent text.
+	 *
+	 * @spec openspec/changes/activity-parental-consent/specs/portaliq-cms/spec.md#requirement-an-activity-must-be-able-to-require-a-guardians-consent-recorded-on-the-sign-up
+	 *
+	 * @return void
+	 */
+	public function testOpenRefusesConsentWithoutAStatement(): void {
+		$store = $this->store([
+			['id' => 'no-text', 'status' => 'draft', 'capacity' => 10, 'consentRequired' => true, 'consentStatement' => '  '],
+			['id' => 'with-text', 'status' => 'draft', 'capacity' => 10, 'consentRequired' => true, 'consentStatement' => 'Mijn kind mag mee.'],
+		]);
+		$controller = $this->controller($store);
+
+		$refused = $controller->open('no-text');
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $refused->getStatus());
+		$this->assertSame(['error' => 'no_consent_statement'], $refused->getData());
+		$this->assertSame('open', $controller->open('with-text')->getData()['status']);
+	}//end testOpenRefusesConsentWithoutAStatement()
+
+	/**
 	 * Supervisors, roster and attendance map the services' answers to the
 	 * contract's status codes; attendance is marked by the signed-in user.
 	 *
@@ -173,7 +197,8 @@ class ActivityControllerTest extends TestCase {
 	public function testServiceAnswersMapToTheContract(): void {
 		$signups = $this->createMock(ActivitySignupService::class);
 		$signups->method('setSupervisors')->willReturnCallback(fn (string $id) => $id === 'a' ? ['activity' => ['id' => 'a'], 'promoted' => 2] : null);
-		$signups->method('roster')->willReturnCallback(fn (string $id) => $id === 'a' ? ['places' => 4, 'confirmed' => [], 'waitlist' => []] : null);
+		$rosters = $this->createMock(ActivityRoster::class);
+		$rosters->method('roster')->willReturnCallback(fn (string $id) => $id === 'a' ? ['places' => 4, 'confirmed' => [], 'waitlist' => []] : null);
 
 		$attendance = $this->createMock(ActivityAttendanceService::class);
 		$attendance->method('mark')->willReturnCallback(
@@ -184,7 +209,7 @@ class ActivityControllerTest extends TestCase {
 			}
 		);
 
-		$controller = $this->controller($this->store(), signups: $signups, attendance: $attendance);
+		$controller = $this->controller($this->store(), signups: $signups, attendance: $attendance, rosters: $rosters);
 
 		$this->assertSame(2, $controller->supervisors('a', ['s1', 's2'])->getData()['promoted']);
 		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->supervisors('b', [])->getStatus());

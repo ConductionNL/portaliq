@@ -63,6 +63,9 @@ class ActivityDraftTest extends TestCase {
 			$this->required(),
 			[
 				'termEnd' => '2026-12-14',
+				'consentRequired' => 'true',
+				'consentStatement' => 'Mijn kind mag mee.',
+				'photosTaken' => 'nope',
 				'description' => 7,
 				'waitlistEnabled' => '1',
 				'paymentRequested' => 'maybe',
@@ -74,6 +77,9 @@ class ActivityDraftTest extends TestCase {
 		);
 
 		$this->assertSame('2026-12-14', $draft['termEnd']);
+		$this->assertTrue($draft['consentRequired']);
+		$this->assertSame('Mijn kind mag mee.', $draft['consentStatement']);
+		$this->assertFalse($draft['photosTaken']);
 		$this->assertArrayNotHasKey('description', $draft);
 		$this->assertTrue($draft['waitlistEnabled']);
 		$this->assertFalse($draft['paymentRequested']);

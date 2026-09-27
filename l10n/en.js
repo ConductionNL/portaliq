@@ -1456,7 +1456,18 @@ OC.L10N.register(
         "Marked by": "Marked by",
         "The staff member who marked it.": "The staff member who marked it.",
         "Marked at": "Marked at",
-        "When it was last marked.": "When it was last marked."
+        "When it was last marked.": "When it was last marked.",
+        "A guardian must agree to the consent text before their child can be signed up.": "A guardian must agree to the consent text before their child can be signed up.",
+        "What a guardian agrees to when signing up. Required before an activity that needs consent can open.": "What a guardian agrees to when signing up. Required before an activity that needs consent can open.",
+        "Photos taken": "Photos taken",
+        "Photos are taken during this activity, so supervisors see which children have photo consent.": "Photos are taken during this activity, so supervisors see which children have photo consent.",
+        "The guardian's agreement to the activity's consent text, kept as agreed. Absent when the activity needs no consent.": "The guardian's agreement to the activity's consent text, kept as agreed. Absent when the activity needs no consent.",
+        "Agreed text": "Agreed text",
+        "The consent text exactly as the guardian agreed to it.": "The consent text exactly as the guardian agreed to it.",
+        "Agreed by": "Agreed by",
+        "The guardian who agreed.": "The guardian who agreed.",
+        "Agreed at": "Agreed at",
+        "When the guardian agreed.": "When the guardian agreed."
     },
     "nplurals=2; plural=(n != 1);"
 )

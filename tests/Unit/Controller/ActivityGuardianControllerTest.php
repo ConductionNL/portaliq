@@ -71,9 +71,11 @@ class ActivityGuardianControllerTest extends TestCase {
 	public function testSignupAnswersMapToTheContract(): void {
 		$signups = $this->createMock(ActivitySignupService::class);
 		$signups->method('signUp')->willReturnCallback(
-			function (string $subjectRef, string $activityId, string $childRef, string $note) {
+			function (string $subjectRef, string $activityId, string $childRef, string $note, string $acceptedStatement) {
 				$this->assertSame('guardian-anna-devries', $subjectRef);
 				return match ($childRef) {
+					'unconsented' => ['error' => ActivitySignupService::REASON_CONSENT_REQUIRED],
+					'consented' => ['status' => $acceptedStatement === 'Mijn kind mag mee.' ? 'confirmed' : 'wrong'],
 					'placed' => ['status' => 'confirmed'],
 					'waiting' => ['status' => 'waitlisted', 'position' => 3],
 					'foreign' => ['error' => ActivitySignupService::REASON_NOT_FOUND],
@@ -93,6 +95,9 @@ class ActivityGuardianControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $controller->signup('a', 'late')->getStatus());
 		$this->assertSame(['error' => 'activity_full'], $controller->signup('a', 'full')->getData());
 		$this->assertSame(Http::STATUS_BAD_GATEWAY, $controller->signup('a', 'broken')->getStatus());
+		$this->assertSame(['error' => 'consent_required'], $controller->signup('a', 'unconsented')->getData());
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $controller->signup('a', 'unconsented')->getStatus());
+		$this->assertSame(['status' => 'confirmed'], $controller->signup('a', 'consented', '', 'Mijn kind mag mee.')->getData());
 	}//end testSignupAnswersMapToTheContract()
 
 	/**

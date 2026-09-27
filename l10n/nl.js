@@ -1514,7 +1514,18 @@ OC.L10N.register(
         "Marked by": "Geregistreerd door",
         "The staff member who marked it.": "De medewerker die het heeft geregistreerd.",
         "Marked at": "Geregistreerd op",
-        "When it was last marked.": "Wanneer het voor het laatst is geregistreerd."
+        "When it was last marked.": "Wanneer het voor het laatst is geregistreerd.",
+        "A guardian must agree to the consent text before their child can be signed up.": "Een ouder of verzorger moet akkoord gaan met de toestemmingstekst voordat het kind kan worden aangemeld.",
+        "What a guardian agrees to when signing up. Required before an activity that needs consent can open.": "Waar een ouder of verzorger mee akkoord gaat bij het aanmelden. Nodig voordat een activiteit met toestemming kan openen.",
+        "Photos taken": "Er worden foto's gemaakt",
+        "Photos are taken during this activity, so supervisors see which children have photo consent.": "Tijdens deze activiteit worden foto's gemaakt, dus begeleiders zien welke kinderen toestemming voor foto's hebben.",
+        "The guardian's agreement to the activity's consent text, kept as agreed. Absent when the activity needs no consent.": "Het akkoord van de ouder of verzorger met de toestemmingstekst, bewaard zoals gegeven. Leeg als de activiteit geen toestemming vraagt.",
+        "Agreed text": "Akkoord gegeven op tekst",
+        "The consent text exactly as the guardian agreed to it.": "De toestemmingstekst precies zoals de ouder of verzorger ermee akkoord ging.",
+        "Agreed by": "Akkoord gegeven door",
+        "The guardian who agreed.": "De ouder of verzorger die akkoord gaf.",
+        "Agreed at": "Akkoord gegeven op",
+        "When the guardian agreed.": "Wanneer de ouder of verzorger akkoord gaf."
     },
     "nplurals=2; plural=(n != 1);"
 )

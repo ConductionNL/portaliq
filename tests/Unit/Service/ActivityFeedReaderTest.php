@@ -32,12 +32,12 @@ class ActivityFeedReaderTest extends TestCase {
 			[
 				ActivityStore::OFFER => [
 					['id' => 'schaak', '@self' => ['slug' => 'activity-schaakclub-najaar'], 'title' => 'Schaakclub', 'status' => 'open', 'target' => ['schoolRef' => 'school-de-regenboog'], 'capacity' => 3, 'childrenPerSupervisor' => 0],
-					['id' => 'zwem', 'title' => 'Zwemmen', 'status' => 'closed', 'target' => ['groupRefs' => ['groep-5a']], 'capacity' => 2],
+					['id' => 'zwem', 'title' => 'Zwemmen', 'status' => 'closed', 'target' => ['groupRefs' => ['groep-5a']], 'capacity' => 2, 'photosTaken' => true],
 					['id' => 'concept', 'title' => 'Nog geheim', 'status' => 'draft', 'target' => ['schoolRef' => 'school-de-regenboog'], 'capacity' => 9],
 					['id' => 'elders', 'title' => 'Andere school', 'status' => 'open', 'target' => ['schoolRef' => 'school-het-kompas'], 'capacity' => 9],
 				],
 				ActivityStore::SIGNUP => [
-					['id' => 's1', 'activityRef' => 'activity-schaakclub-najaar', 'childRef' => 'child-devries-lars', 'status' => 'confirmed', 'paymentRequestRef' => '00000000-0000-0000-0000-000000000000'],
+					['id' => 's1', 'activityRef' => 'activity-schaakclub-najaar', 'childRef' => 'child-devries-lars', 'status' => 'confirmed', 'paymentRequestRef' => '00000000-0000-0000-0000-000000000000', 'consent' => ['statement' => 'Mag mee.', 'grantedByRef' => 'guardian-anna-devries', 'grantedAt' => '2026-09-21T19:02:00+02:00']],
 					['id' => 's2', 'activityRef' => 'schaak', 'childRef' => 'child-bakker-tim', 'status' => 'confirmed'],
 					['id' => 's3', 'activityRef' => 'zwem', 'childRef' => 'child-bakker-eva', 'status' => 'confirmed'],
 					['id' => 's4', 'activityRef' => 'zwem', 'childRef' => 'child-devries-lars', 'status' => 'waitlisted', 'signedUpAt' => '2026-09-02T10:00:00+00:00'],
@@ -50,6 +50,9 @@ class ActivityFeedReaderTest extends TestCase {
 			static fn (string $subjectRef): array => $subjectRef === 'guardian-anna-devries'
 				? ['schoolRef' => 'school-de-regenboog', 'groupRefs' => ['groep-5a'], 'childRefs' => ['child-devries-lars'], 'photoConsent' => []]
 				: ['schoolRef' => '', 'groupRefs' => [], 'childRefs' => [], 'photoConsent' => []]
+		);
+		$audience->method('photoConsentGranted')->willReturnCallback(
+			static fn (string $subjectRef, string $childRef, string $purpose): bool => $subjectRef === 'guardian-anna-devries' && $childRef === 'child-devries-lars' && $purpose === 'news'
 		);
 
 		return [new ActivityFeedReader($store, $audience, new ActivityPlaces()), $store];
@@ -68,9 +71,11 @@ class ActivityFeedReaderTest extends TestCase {
 
 		$this->assertSame(['schaak', 'zwem'], array_column($feed, 'id'));
 		$this->assertSame(1, $feed[0]['placesLeft']);
-		$this->assertSame([['childRef' => 'child-devries-lars', 'status' => 'confirmed', 'paymentRequestRef' => '00000000-0000-0000-0000-000000000000']], $feed[0]['mySignups']);
+		$this->assertSame([['childRef' => 'child-devries-lars', 'status' => 'confirmed', 'paymentRequestRef' => '00000000-0000-0000-0000-000000000000', 'consentGrantedAt' => '2026-09-21T19:02:00+02:00']], $feed[0]['mySignups']);
 		$this->assertSame(1, $feed[1]['placesLeft']);
-		$this->assertSame([['childRef' => 'child-devries-lars', 'status' => 'waitlisted', 'position' => 2]], $feed[1]['mySignups']);
+		$this->assertSame([['childRef' => 'child-devries-lars', 'status' => 'waitlisted', 'position' => 2, 'photoConsent' => true]], $feed[1]['mySignups'], 'photos are taken at zwem, so photo consent shows');
+		$this->assertFalse($reader->photoConsentGranted('guardian-anna-devries', ''));
+		$this->assertFalse($reader->photoConsentGranted('guardian-piet-bakker', 'child-bakker-tim'));
 		$this->assertSame([], $reader->feedFor('guardian-unknown'));
 		$this->assertSame([], $reader->feedFor(''));
 	}//end testTheFeedShowsOnlyReachableActivitiesAndOwnSignups()

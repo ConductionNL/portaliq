@@ -55,6 +55,7 @@ class ActivityGuardianController extends Controller implements PortalProtected {
 		ActivitySignupService::REASON_FULL => Http::STATUS_UNPROCESSABLE_ENTITY,
 		ActivitySignupService::REASON_DUPLICATE => Http::STATUS_CONFLICT,
 		ActivitySignupService::REASON_UNAVAILABLE => Http::STATUS_BAD_GATEWAY,
+		ActivitySignupService::REASON_CONSENT_REQUIRED => Http::STATUS_UNPROCESSABLE_ENTITY,
 	];
 
 	/**
@@ -100,21 +101,23 @@ class ActivityGuardianController extends Controller implements PortalProtected {
 	 * @param string $id The activity id or slug.
 	 * @param string $childRef The child.
 	 * @param string $note An optional note for the supervisor.
+	 * @param string $acceptedStatement The consent text the guardian agreed to, when the activity needs consent.
 	 *
 	 * @return JSONResponse `{status, position?}`, or 401 / 404 / 409 / 422 / 502.
 	 *
 	 * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-guardian-must-be-able-to-sign-up-one-of-their-own-children-with-a-waiting-list-when-full
+	 * @spec openspec/changes/activity-parental-consent/specs/portaliq-cms/spec.md#requirement-an-activity-must-be-able-to-require-a-guardians-consent-recorded-on-the-sign-up
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 20, period: 60)]
-	public function signup(string $id, string $childRef, string $note = ''): JSONResponse {
+	public function signup(string $id, string $childRef, string $note = '', string $acceptedStatement = ''): JSONResponse {
 		$subjectRef = $this->subjectRef();
 		if ($subjectRef === '') {
 			return new JSONResponse(['error' => 'unauthorized'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$result = $this->signups->signUp(subjectRef: $subjectRef, activityId: $id, childRef: $childRef, note: $note);
+		$result = $this->signups->signUp(subjectRef: $subjectRef, activityId: $id, childRef: $childRef, note: $note, acceptedStatement: $acceptedStatement);
 		if (isset($result['error']) === true) {
 			return new JSONResponse(['error' => $result['error']], self::REFUSAL_STATUS[$result['error']]);
 		}

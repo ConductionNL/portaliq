@@ -6,6 +6,7 @@ namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\Service\ActivityFeedReader;
 use OCA\Portaliq\Service\ActivityPlaces;
+use OCA\Portaliq\Service\ActivityRoster;
 use OCA\Portaliq\Service\ActivitySignupService;
 use OCA\Portaliq\Service\ActivityStore;
 use OCA\Portaliq\Service\GuardianAudienceFixtureReader;
@@ -65,20 +66,52 @@ class ActivitySignupServiceTest extends TestCase {
 	 * The service over an in-memory store.
 	 *
 	 * @param InMemoryActivityStore $store The store.
+	 * @param array<string, bool> $photoConsent Photo consent per "guardian|child".
 	 *
 	 * @return ActivitySignupService
 	 */
-	private function service(InMemoryActivityStore $store): ActivitySignupService {
-		$audience = $this->createMock(GuardianAudienceFixtureReader::class);
-		$audience->method('resolveAudience')->willReturnCallback(
-			static fn (string $subjectRef): array => (self::AUDIENCES[$subjectRef] ?? ['schoolRef' => '', 'groupRefs' => [], 'childRefs' => [], 'photoConsent' => []])
-		);
+	private function service(InMemoryActivityStore $store, array $photoConsent = []): ActivitySignupService {
 		$time = $this->createMock(ITimeFactory::class);
 		$time->method('getTime')->willReturn(self::NOW);
 		$places = new ActivityPlaces();
 
-		return new ActivitySignupService($store, new ActivityFeedReader($store, $audience, $places), $places, $time);
+		return new ActivitySignupService($store, $this->feedReader($store, $photoConsent), $places, $time);
 	}//end service()
+
+	/**
+	 * The staff roster over an in-memory store.
+	 *
+	 * @param InMemoryActivityStore $store The store.
+	 * @param array<string, bool> $photoConsent Photo consent per "guardian|child".
+	 *
+	 * @return ActivityRoster
+	 */
+	private function roster(InMemoryActivityStore $store, array $photoConsent = []): ActivityRoster {
+		return new ActivityRoster($store, new ActivityPlaces(), $this->feedReader($store, $photoConsent));
+	}//end roster()
+
+	/**
+	 * The real feed reader over a doubled guardian audience.
+	 *
+	 * @param InMemoryActivityStore $store The store.
+	 * @param array<string, bool> $photoConsent Photo consent per "guardian|child".
+	 *
+	 * @return ActivityFeedReader
+	 */
+	private function feedReader(InMemoryActivityStore $store, array $photoConsent): ActivityFeedReader {
+		$audience = $this->createMock(GuardianAudienceFixtureReader::class);
+		$audience->method('resolveAudience')->willReturnCallback(
+			static fn (string $subjectRef): array => (self::AUDIENCES[$subjectRef] ?? ['schoolRef' => '', 'groupRefs' => [], 'childRefs' => [], 'photoConsent' => []])
+		);
+		$audience->method('photoConsentGranted')->willReturnCallback(
+			function (string $subjectRef, string $childRef, string $purpose) use ($photoConsent): bool {
+				$this->assertSame(GuardianAudienceFixtureReader::PURPOSE_NEWS, $purpose);
+				return ($photoConsent[$subjectRef . '|' . $childRef] ?? false);
+			}
+		);
+
+		return new ActivityFeedReader($store, $audience, new ActivityPlaces());
+	}//end feedReader()
 
 	/**
 	 * A store holding one activity and some sign-ups.
@@ -95,6 +128,17 @@ class ActivitySignupServiceTest extends TestCase {
 			[ActivityStore::OFFER => [$activity], ActivityStore::SIGNUP => $signups]
 		);
 	}//end store()
+
+	/**
+	 * A store whose sign-ups cannot be read.
+	 *
+	 * @return InMemoryActivityStore
+	 */
+	private function unreadableSignups(): InMemoryActivityStore {
+		$store = $this->store($this->activity());
+		$store->unreadable = [ActivityStore::SIGNUP];
+		return $store;
+	}//end unreadableSignups()
 
 	/**
 	 * Confirmed sign-ups for filler children.
@@ -265,11 +309,41 @@ class ActivitySignupServiceTest extends TestCase {
 		$this->assertSame('confirmed', $store->where(ActivityStore::SIGNUP, 'childRef', 'child-3')[0]['status']);
 		$this->assertSame('waitlisted', $store->where(ActivityStore::SIGNUP, 'childRef', 'child-5')[0]['status']);
 
-		$roster = $service->roster('activity-1');
+		$roster = $this->roster($store)->roster('activity-1');
 		$this->assertSame(4, $roster['places']);
 		$this->assertCount(4, $roster['confirmed']);
 		$this->assertSame(['child-5'], array_column($roster['waitlist'], 'childRef'));
-		$this->assertNull($service->roster('unknown'));
+		$this->assertNull($this->roster($store)->roster('unknown'));
 		$this->assertNull($service->setSupervisors('unknown', ['staff-a']));
 	}//end testMoreSupervisorsPromoteFromTheWaitingList()
+
+	/**
+	 * An activity needing consent refuses a sign-up without the current text,
+	 * or with an older one, before any write; the exact text is kept on the
+	 * sign-up with who agreed and when. No consent needed, no record.
+	 *
+	 * @spec openspec/changes/activity-parental-consent/specs/portaliq-cms/spec.md#requirement-an-activity-must-be-able-to-require-a-guardians-consent-recorded-on-the-sign-up
+	 *
+	 * @return void
+	 */
+	public function testConsentIsRequiredAndRecorded(): void {
+		$text = 'Mijn kind mag met de bus mee naar het Sportfondsenbad.';
+		$store = $this->store($this->activity(['consentRequired' => true, 'consentStatement' => $text]));
+		$service = $this->service($store);
+
+		$this->assertSame(['error' => ActivitySignupService::REASON_CONSENT_REQUIRED], $service->signUp('guardian-anna-devries', 'activity-1', 'child-devries-lars'));
+		$this->assertSame(['error' => ActivitySignupService::REASON_CONSENT_REQUIRED], $service->signUp('guardian-anna-devries', 'activity-1', 'child-devries-lars', '', 'Mijn kind mag mee.'));
+		$this->assertSame([], $store->saves);
+
+		$this->assertSame(['status' => 'confirmed'], $service->signUp('guardian-anna-devries', 'activity-1', 'child-devries-lars', '', $text));
+		$consent = $store->where(ActivityStore::SIGNUP, 'childRef', 'child-devries-lars')[0]['consent'];
+		$this->assertSame(['statement' => $text, 'grantedByRef' => 'guardian-anna-devries', 'grantedAt' => gmdate('c', self::NOW)], $consent);
+
+		$noText = $this->store($this->activity(['consentRequired' => true, 'consentStatement' => '']));
+		$this->assertSame(['error' => ActivitySignupService::REASON_CONSENT_REQUIRED], $this->service($noText)->signUp('guardian-anna-devries', 'activity-1', 'child-devries-lars', '', ''));
+
+		$free = $this->store($this->activity());
+		$this->service($free)->signUp('guardian-anna-devries', 'activity-1', 'child-devries-lars', '', 'ignored');
+		$this->assertArrayNotHasKey('consent', $free->where(ActivityStore::SIGNUP, 'childRef', 'child-devries-lars')[0]);
+	}//end testConsentIsRequiredAndRecorded()
 }//end class

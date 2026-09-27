@@ -79,14 +79,14 @@ class ActivityDraft {
 	 */
 	private function optionalFields(array $params): array {
 		$fields = [];
-		foreach (['termEnd', 'signupDeadline', 'description', 'location'] as $key) {
+		foreach (['termEnd', 'signupDeadline', 'description', 'location', 'consentStatement'] as $key) {
 			$value = ($params[$key] ?? null);
 			if (is_string($value) === true && $value !== '') {
 				$fields[$key] = $value;
 			}
 		}
 
-		foreach (['waitlistEnabled', 'paymentRequested'] as $key) {
+		foreach (['waitlistEnabled', 'paymentRequested', 'consentRequired', 'photosTaken'] as $key) {
 			$value = ($params[$key] ?? null);
 			$fields[$key] = ($value === true || $value === 'true' || $value === 1 || $value === '1');
 		}

@@ -68,6 +68,11 @@ class ActivitySignupService {
 	public const REASON_UNAVAILABLE = 'activity_unavailable';
 
 	/**
+	 * Refusal: the activity needs consent and the current consent text was not accepted (422).
+	 */
+	public const REASON_CONSENT_REQUIRED = 'consent_required';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param ActivityStore $store The activity rows.
@@ -90,13 +95,16 @@ class ActivitySignupService {
 	 * @param string $activityId The activity id or slug.
 	 * @param string $childRef The child.
 	 * @param string $note An optional note for the supervisor.
+	 * @param string $acceptedStatement The consent text the guardian agreed to; must equal the
+	 *                                  activity's current text when it needs consent.
 	 *
 	 * @return array{status?: string, position?: int|null, error?: string}
 	 *
 	 * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-guardian-must-be-able-to-sign-up-one-of-their-own-children-with-a-waiting-list-when-full
+	 * @spec openspec/changes/activity-parental-consent/specs/portaliq-cms/spec.md#requirement-an-activity-must-be-able-to-require-a-guardians-consent-recorded-on-the-sign-up
 	 */
-	public function signUp(string $subjectRef, string $activityId, string $childRef, string $note = ''): array {
-		$checked = $this->checkedSignup(subjectRef: $subjectRef, activityId: $activityId, childRef: $childRef);
+	public function signUp(string $subjectRef, string $activityId, string $childRef, string $note = '', string $acceptedStatement = ''): array {
+		$checked = $this->checkedSignup(subjectRef: $subjectRef, activityId: $activityId, childRef: $childRef, acceptedStatement: $acceptedStatement);
 		if (is_string($checked) === true) {
 			return ['error' => $checked];
 		}
@@ -118,17 +126,19 @@ class ActivitySignupService {
 
 	/**
 	 * Every check a sign-up must pass, in order, before anything is written:
-	 * reach and own child, open and before the deadline, sign-ups readable, no
-	 * sign-up that still counts, room or a waiting list.
+	 * reach and own child, open and before the deadline, consent accepted when
+	 * needed, sign-ups readable, no sign-up that still counts, room or a
+	 * waiting list.
 	 *
 	 * @param string $subjectRef The guardian's own subjectRef.
 	 * @param string $activityId The activity id or slug.
 	 * @param string $childRef The child.
+	 * @param string $acceptedStatement The consent text the guardian agreed to.
 	 *
 	 * @return array{activity: array<string, mixed>, signups: array<int, array<string, mixed>>, status: string}|string
 	 *         The context, or a REASON_* constant.
 	 */
-	private function checkedSignup(string $subjectRef, string $activityId, string $childRef): array|string {
+	private function checkedSignup(string $subjectRef, string $activityId, string $childRef, string $acceptedStatement): array|string {
 		$activity = $this->feedReader->readOwnActivity(subjectRef: $subjectRef, activityId: $activityId);
 		if ($activity === null || $this->feedReader->isOwnChild(subjectRef: $subjectRef, childRef: $childRef) === false) {
 			return self::REASON_NOT_FOUND;
@@ -136,6 +146,10 @@ class ActivitySignupService {
 
 		if ($this->acceptsSignups(activity: $activity) === false) {
 			return self::REASON_CLOSED;
+		}
+
+		if ($this->consentAccepted(activity: $activity, acceptedStatement: $acceptedStatement) === false) {
+			return self::REASON_CONSENT_REQUIRED;
 		}
 
 		$signups = $this->signupsOf(activity: $activity);
@@ -180,8 +194,35 @@ class ActivitySignupService {
 			$row['confirmedAt'] = $now;
 		}
 
+		// The consent record copies the text as agreed: the activity's text can
+		// change later, what this guardian agreed to cannot.
+		if (($activity['consentRequired'] ?? false) === true) {
+			$row['consent'] = ['statement' => (string)$activity['consentStatement'], 'grantedByRef' => $subjectRef, 'grantedAt' => $now];
+		}
+
 		return $this->store->save(schema: ActivityStore::SIGNUP, data: $row);
 	}//end writeSignup()
+
+	/**
+	 * Whether the consent the activity needs was given: no consent needed, or
+	 * the accepted text is exactly the current consent text. An activity that
+	 * needs consent but has no text accepts nobody.
+	 *
+	 * @param array<string, mixed> $activity The activity row.
+	 * @param string $acceptedStatement The text the guardian agreed to.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/activity-parental-consent/specs/portaliq-cms/spec.md#requirement-an-activity-must-be-able-to-require-a-guardians-consent-recorded-on-the-sign-up
+	 */
+	private function consentAccepted(array $activity, string $acceptedStatement): bool {
+		if (($activity['consentRequired'] ?? false) !== true) {
+			return true;
+		}
+
+		$statement = (string)($activity['consentStatement'] ?? '');
+		return $statement !== '' && $acceptedStatement === $statement;
+	}//end consentAccepted()
 
 	/**
 	 * Withdraw a child's sign-up; a freed place goes to the waiting list.
@@ -291,34 +332,6 @@ class ActivitySignupService {
 
 		return ['activity' => $saved, 'promoted' => $this->promote(activity: $saved)];
 	}//end setSupervisors()
-
-	/**
-	 * The roster staff read: the places, who holds one and the waiting list
-	 * in order. Null when the activity is unknown or its sign-ups unreadable.
-	 *
-	 * @param string $activityId The activity id or slug.
-	 *
-	 * @return array{places: int, confirmed: array<int, array<string, mixed>>, waitlist: array<int, array<string, mixed>>}|null
-	 *
-	 * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-freed-place-must-go-to-the-child-who-waited-longest
-	 */
-	public function roster(string $activityId): ?array {
-		$activity = $this->store->lookup(schema: ActivityStore::OFFER, id: $activityId);
-		if ($activity === null) {
-			return null;
-		}
-
-		$signups = $this->signupsOf(activity: $activity);
-		if ($signups === null) {
-			return null;
-		}
-
-		return [
-			'places' => $this->places->placesFor(activity: $activity),
-			'confirmed' => $this->places->confirmed(signups: $signups),
-			'waitlist' => $this->places->waitlist(signups: $signups),
-		];
-	}//end roster()
 
 	/**
 	 * Whether an activity takes sign-ups now: open, and before its deadline.
