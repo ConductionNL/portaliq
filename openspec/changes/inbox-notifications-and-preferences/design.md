@@ -66,7 +66,7 @@ The same listener class also listens to `ObjectCreatedEvent`. For a created obje
 
 Two new routes on `PortalAccountSelfController`, next to `updateDetails` (`appinfo/routes.php:278`): `GET /portal/api/identity/notification-preferences` returns the caller's own choices with `pushAvailable`, whether the account has a push subscription; `PATCH` on the same path writes only the two known kinds and the two known channels, for the caller's own account. There is no GET for the account's details today, and the lane change `identity-profile-page` owns that screen, so the preferences get their own pair rather than a field on it. `emailNotifications` on `PATCH /portal/api/identity/details` keeps working and keeps meaning `notificationChannels.email`.
 
-`NotificationDispatchJob` checks the kind's e-mail choice before sending, and sends a push through `PushDeliveryService::deliver()` when the kind's push choice is on. Push attempts are logged as `portalNotification` rows with `channel` `push`.
+`NotificationDispatchJob` checks the kind's e-mail choice before sending, and sends a push through `PushDeliveryService::deliver()` when the kind's push choice is on. Push attempts are logged as `portalNotification` rows with `channel` `push`, which the schema's `channel` enum (`portaliq_register.json:1298`, today `['email']`) gains.
 
 The in-portal inbox message is not a preference. It is the record of what happened, and it is always written.
 
