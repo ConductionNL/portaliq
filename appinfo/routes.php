@@ -89,6 +89,21 @@ return [
             'postfix' => 'byroute',
         ],
 
+        // News and newsletter authoring (news-and-newsletter-authoring,
+        // findings 9.1/9.2). Staff authoring requires a Nextcloud session
+        // (NoAdminRequired, same posture as the CMS admin surface); the
+        // guardian-facing feed/read/archive routes are PortalProtected
+        // (bearer session, never a client-supplied subject).
+        ['name' => 'news#create', 'url' => '/api/news', 'verb' => 'POST'],
+        ['name' => 'news#publish', 'url' => '/api/news/{id}/publish', 'verb' => 'PUT'],
+        ['name' => 'news#unpublish', 'url' => '/api/news/{id}/unpublish', 'verb' => 'PUT'],
+        ['name' => 'newsletter#create', 'url' => '/api/newsletters', 'verb' => 'POST'],
+        ['name' => 'newsletter#preflight', 'url' => '/api/newsletters/{id}/preflight', 'verb' => 'GET'],
+        ['name' => 'newsletter#send', 'url' => '/api/newsletters/{id}/send', 'verb' => 'POST'],
+        ['name' => 'newsGuardian#feed', 'url' => '/api/news/feed', 'verb' => 'GET'],
+        ['name' => 'newsGuardian#markRead', 'url' => '/api/news/{id}/read', 'verb' => 'POST'],
+        ['name' => 'newsGuardian#archive', 'url' => '/api/newsletters/archive', 'verb' => 'GET'],
+
         // Traffic analytics (portal-traffic-analytics). Public like the
         // content API above, for the same reason: a visitor's browser on a
         // portal's own domain, or on a statically built site elsewhere, has
