@@ -30,7 +30,7 @@ Kind: code. Stacked on `extracurricular-activity-offer`. Recon E, row "parental 
 - [x] Test
 
 ## Verification
-- [ ] `openspec validate activity-parental-consent` passes, diff checks green, `composer check:strict` run once
+- [x] `openspec validate activity-parental-consent` passes, diff checks green, `composer check:strict` run once (its only red is the 29 inherited PHPUnit errors)
 
 ## Quality checklist
 
