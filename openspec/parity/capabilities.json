@@ -508,11 +508,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/security/configuring-sso/authenticating-with-saml 'All MUST of Web Browser SSO and Single Logout Profiles are implemented'; same page: 'Authentication Context ... Not supported' and vendor-specific features are left to 'external solutions'. DigiD is a SAML broker, so a generic SP connection is documented; requesting a DigiD assurance level and the DigiD-specific profile would be custom or external. [custom: DigiD connection profile, AuthnContext level request, BSN attribute mapping]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "lib/Service/OidcClaimMapperService.php:75-81 digid preset (identityType digid, acr LoA claim); lib/Controller/SessionController.php:284,370 oidcStart/oidcCallback; src/portal/App.jsx:270-321 renders a login button per config.oidcProviders",
 				"reachedOn": "portal SPA login screen (src/portal/App.jsx:313-321) -> GET /portal/api/session/oidc/start?provider=digid -> broker -> /portal/api/session/oidc/callback",
 				"owner": "ConductionNL/portaliq",
-				"note": "Real generic-OIDC broker login with a digid preset, not a direct Logius/SAML connector: it works only when the organisation fronts DigiD with its own OIDC-compliant broker and supplies issuer/clientId/clientSecret. No broker means no button (App.jsx:323-325 shows a hint instead).",
+				"note": "Real generic-OIDC broker login with a digid preset, not a direct Logius/SAML connector: it works only when the organisation fronts DigiD with its own OIDC-compliant broker and supplies issuer/clientId/clientSecret. No broker means no button (App.jsx:323-325 shows a hint instead). Specified in openspec/changes/signin-integriq-broker-login (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -538,11 +538,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/security/configuring-sso/authenticating-with-saml 'All MUST of Web Browser SSO and Single Logout Profiles are implemented'; 'Authentication Context ... Not supported'. An eHerkenning broker can be federated as a generic SAML IdP; the eHerkenning level (EH3/EH4) request and KvK attribute handling are not documented and would be custom. [custom: eHerkenning broker profile, level request, KvK and service attributes]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "lib/Service/OidcClaimMapperService.php:82-88 eherkenning preset (audience supplier); lib/Controller/SessionController.php:284,370",
 				"reachedOn": "portal SPA login screen (src/portal/App.jsx:313-321) -> /portal/api/session/oidc/start?provider=eherkenning",
 				"owner": "ConductionNL/portaliq",
-				"note": "Same broker-fronted model as DigiD: works when the organisation configures a real eHerkenning-fronting OIDC broker. No ketenmachtiging-specific claim handling beyond the generic mandate service (see cmp-sig-machtiging).",
+				"note": "Same broker-fronted model as DigiD: works when the organisation configures a real eHerkenning-fronting OIDC broker. No ketenmachtiging-specific claim handling beyond the generic mandate service (see cmp-sig-machtiging). Specified in openspec/changes/signin-integriq-broker-login (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -928,11 +928,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/commerce/users-and-accounts/account-management/inviting-users-to-an-account 'Corporate accounts can have more than one user assigned'; the Account Selector fragment lets a user switch the account they act for. This is a generic act-for-an-account mechanism; DigiD Machtigen and eHerkenning mandate registers are not documented and would be custom. [was no: the earlier no rested on silence]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "lib/Service/Identity/PortalMandateService.php:90-241 mandatesFor()/activeMandate()/describe()/covers()/reachOf(); lib/Controller/CitizenCaseController.php:118,682,695 and lib/Controller/MyCasesController.php:67,100,109 wire the mandate into a case read",
 				"reachedOn": "CitizenCaseController is reached from the portal SPA (src/portal/lib/portalApi.js:314,331,368 fetchCitizenCase/amendCitizenCase/addCitizenDocument), which passes through activeMandate(); but no request from the SPA ever sends a `mandate` query parameter",
 				"owner": "ConductionNL/portaliq",
-				"note": "The mandate engine is real and reached on every citizen case call, but the portal SPA has no UI to name or switch between mandates (grep for 'mandate' in src/portal/*.jsx and portalApi.js is empty), so a person holding two mandates cannot choose which to act under even though openspec/changes/portal-identity-and-the-organisations-cases/tasks.md T04/T05 mark 'name the mandate on the view' and 'switch the organisation or role acted under' as done. See defect.",
+				"note": "The mandate engine is real and reached on every citizen case call, but the portal SPA has no UI to name or switch between mandates (grep for 'mandate' in src/portal/*.jsx and portalApi.js is empty), so a person holding two mandates cannot choose which to act under even though openspec/changes/portal-identity-and-the-organisations-cases/tasks.md T04/T05 mark 'name the mandate on the view' and 'switch the organisation or role acted under' as done. See defect. Specified in openspec/changes/cases-my-cases-page (OpenSpec pass 2026-09-27).",
 				"origin": "competitor",
 				"defectCandidate": "src/portal/App.jsx and src/portal/lib/portalApi.js never reference 'mandate'; MyCasesController.php:100 and CitizenCaseController.php:682 read a `mandate` request param the SPA never sends, so activeMandate() always falls back to its default. tasks.md T04/T05 claim this UI exists; needs a live check. (code reading, needs a live check)"
 			},
@@ -959,11 +959,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/security/configuring-sso/authenticating-with-saml/saml-authentication-process-overview describes SAML Web Browser SSO and single logout across multiple service providers; https://learn.liferay.com/w/dxp/security-and-administration/security/configuring-sso/using-openid-connect covers OIDC providers."
 			},
 			"built": {
-				"state": "none",
+				"state": "specified",
 				"evidence": "Searched lib/ and src/ for a shared-cookie or federation-token mechanism beyond the portal's own bearer (lib/Service/PortalJwtService.php, PortalSessionService.php): the session is a Portaliq-minted HS256 bearer scoped to this app only",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
-				"note": "No evidence of single sign-on with any external citizen-service beyond the identity broker exchange itself (which authenticates INTO portaliq, not FROM it to somewhere else).",
+				"note": "No evidence of single sign-on with any external citizen-service beyond the identity broker exchange itself (which authenticates INTO portaliq, not FROM it to somewhere else). Specified in openspec/changes/signin-session-idle-warning-and-sso (OpenSpec pass 2026-09-27).",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -988,11 +988,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/security/configuring-sso/authenticating-with-saml implements the SAML Web Browser SSO profile, so an eIDAS node or broker can be connected as a SAML IdP; eIDAS itself is not named and the level of assurance request needs Authentication Context, which the same page lists as 'Not supported'. Custom or external. [was no: the earlier no rested on silence]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "lib/Service/OidcClaimMapperService.php:89-95 eidas preset (identityType eidas, audience client)",
 				"reachedOn": "portal SPA login screen -> /portal/api/session/oidc/start?provider=eidas, same path as sig-digid",
 				"owner": "ConductionNL/portaliq",
-				"note": "Same broker-fronted OIDC model as DigiD/eHerkenning: works only if the organisation configures a real eIDAS-node-fronting OIDC broker; no built-in eIDAS node connector.",
+				"note": "Same broker-fronted OIDC model as DigiD/eHerkenning: works only if the organisation configures a real eIDAS-node-fronting OIDC broker; no built-in eIDAS node connector. Specified in openspec/changes/signin-integriq-broker-login (OpenSpec pass 2026-09-27).",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -1048,11 +1048,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/sites/creating-pages/page-settings/updating-page-permissions 'configure permissions for individual pages to restrict access based on user roles'; DigiD or eHerkenning sign-in itself is a generic SAML connection that is custom (see sig-digid). [was unknown]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "lib/Service/OidcClaimMapperService.php:75-88 digid/eherkenning presets; lib/Controller/ContentController.php:106-163 minTrust gate. Decidiq's own matrix rated this 'no' citing lib/Portal/PortalContributionProvider.php:18 in decidesk's OWN repo, which says 'DigiD/eHerkenning is DEFERRED', and portaliq's SessionController.php:1-10 class docblock which still says the DigiD/eHerkenning broker is 'dormant, awaiting OpenConnector'",
 				"reachedOn": "same OIDC broker path as sig-digid/sig-eherkenning; whether decidiq's own contribution actually GATES its confidential papers by minTrust is decidesk's question to answer, not portaliq's",
 				"owner": "ConductionNL/portaliq",
-				"note": "Re-rated from decidiq's original 'no': portaliq's DigiD/eHerkenning OIDC broker login (portal-oidc-broker-login, commit eb85956) is real and reached, contradicting the stale docblock decidiq's evidence quoted. See overlayClaimsFalse: SessionController.php's own class comment says the broker is dormant while its @spec tags cite the very change (portal-oidc-broker-login T06/T07) that wired it, and the code below fully implements it.",
+				"note": "Re-rated from decidiq's original 'no': portaliq's DigiD/eHerkenning OIDC broker login (portal-oidc-broker-login, commit eb85956) is real and reached, contradicting the stale docblock decidiq's evidence quoted. See overlayClaimsFalse: SessionController.php's own class comment says the broker is dormant while its @spec tags cite the very change (portal-oidc-broker-login T06/T07) that wired it, and the code below fully implements it. Specified in openspec/changes/signin-integriq-broker-login (OpenSpec pass 2026-09-27).",
 				"sourceId": "plt-02",
 				"origin": "sibling"
 			},
@@ -1140,11 +1140,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/administration/configuring-liferay/virtual-instances/user-authentication 'Allow strangers to create accounts? Enable/Disable account creation by unauthenticated guest users. If running an Internet site, leave this enabled so visitors can create accounts.' [was partial]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "lib/Controller/PortalIdentityController.php:210 register(); appinfo/routes.php:197 POST /portal/api/identity/register; backed by lib/Service/Identity/PortalRegistrationPolicyService.php and PortalChallengeService.php (proof-of-work/honeypot)",
 				"reachedOn": "nothing reaches it: no reference to 'identity' anywhere in src/portal or src/site (grep confirmed); the only exerciser is tests/e2e/portal-identity-and-the-organisations-cases.spec.ts, which calls the API directly with Playwright's `request` fixture (line ~for register-equivalent flows), never `page.goto` into a form",
 				"owner": "ConductionNL/portaliq",
-				"note": "Fully implemented backend with PHPUnit and an 'e2e' spec, but the e2e spec is API-only, not a browser walking a real form, so no visitor can actually reach this.",
+				"note": "Fully implemented backend with PHPUnit and an 'e2e' spec, but the e2e spec is API-only, not a browser walking a real form, so no visitor can actually reach this. Specified in openspec/changes/identity-ways-in-screens (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -1170,11 +1170,11 @@
 				"liferay-dxp": "not settled from docs: no case-number plus verified e-mail access claim was found in the user authentication, account users, guest object entry or forms pages read today; there is no case concept out of the box."
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "lib/Controller/PortalIdentityController.php:126 requestReferenceLink(), :182 redeemReferenceLink(); appinfo/routes.php:195-196; lib/Service/Identity/PortalReferenceLinkService.php",
 				"reachedOn": "nothing reaches it: no frontend in src/ references /portal/api/identity/reference-link",
 				"owner": "ConductionNL/portaliq",
-				"note": "Backend-complete (task T02 'the reference route' in portal-identity-and-the-organisations-cases/tasks.md marked done) but no page in this repo offers the one-time-link form.",
+				"note": "Backend-complete (task T02 'the reference route' in portal-identity-and-the-organisations-cases/tasks.md marked done) but no page in this repo offers the one-time-link form. Specified in openspec/changes/identity-ways-in-screens (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -1200,11 +1200,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/users-and-permissions/accounts/account-users 'Inviting a New User by Email (7.4 U55+) ... Each recipient can click Create Account in the email to register for a new user on the Liferay instance. Upon creation, the user is associated with the account and has the assigned account role.' [was unknown]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "lib/Controller/PortalIdentityController.php:280 acceptInvitation(); appinfo/routes.php:198; lib/Service/Identity/PortalInvitationService.php",
 				"reachedOn": "nothing reaches it: no frontend calls /portal/api/identity/invitation/accept",
 				"owner": "ConductionNL/portaliq",
-				"note": "Pairs with id-staff-invite, also unreached on the staff side, so both ends of the invitation flow are dark.",
+				"note": "Pairs with id-staff-invite, also unreached on the staff side, so both ends of the invitation flow are dark. Specified in openspec/changes/identity-ways-in-screens (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -1230,11 +1230,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/users-and-permissions/accounts/account-users: staff invite e-mail addresses into an account with chosen account roles ('Liferay sends an invitation to the included email addresses'). A visible invitation state and an expiry are not described. [was unknown]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "lib/Controller/PortalAccountAdminController.php (not shown here, invite()/invitations()); appinfo/routes.php:52-53 POST/GET /api/invitations; register schema 'Portal Invitation' at lib/Settings/portaliq_register.json:4901",
 				"reachedOn": "nothing reaches it: grep for 'invit' across src/ finds no admin-app caller and manifest.json has no page for the portalInvitation schema",
 				"owner": "ConductionNL/portaliq",
-				"note": "No manifest page exists for portalInvitation at all (unlike portalAccount and portalSession, which at least have generic OR index/detail pages), so staff cannot even browse invitations generically, let alone send one.",
+				"note": "No manifest page exists for portalInvitation at all (unlike portalAccount and portalSession, which at least have generic OR index/detail pages), so staff cannot even browse invitations generically, let alone send one. Specified in openspec/changes/identity-staff-account-screens (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -1260,11 +1260,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/users-and-permissions/users/adding-and-managing-users: administrators add users in Control Panel → Users and Organizations and can create an account for any person; generic admin provisioning, not tied to a national login. [was unknown]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "lib/Controller/PortalAccountAdminController.php:83-124 provision(), gated by ActionAuthService action portal.provision; appinfo/routes.php:57",
 				"reachedOn": "the dedicated endpoint (/api/accounts/provision) is reached by nothing in src/; PortalAccounts index (src/manifest.json:531-552) is a generic OpenRegister create/edit page for the same portalAccount schema with no allowCreate:false, so staff CAN create a raw portalAccount object there instead",
 				"owner": "ConductionNL/portaliq",
-				"note": "The dedicated, validated provision() action (identity de-duplication, ADR-023 authorization) is unreached; the only working path is the generic OR object-create form, which bypasses that validation.",
+				"note": "The dedicated, validated provision() action (identity de-duplication, ADR-023 authorization) is unreached; the only working path is the generic OR object-create form, which bypasses that validation. Specified in openspec/changes/identity-staff-account-screens (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -1290,11 +1290,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/users-and-permissions/users/adding-and-managing-users 'Deactivate: Disable the user's account' and 'Removing users is a two-step process' (deactivate, then delete); 'Erase Personal Data' is also offered. [was unknown]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "lib/Controller/PortalAccountAdminController.php void() method (self::ACTION_PROVISION-gated, same file as provision()); appinfo/routes.php:58",
 				"reachedOn": "the dedicated /api/accounts/void endpoint is unreached; the generic OR PortalAccountDetail page (src/manifest.json:566ff) exposes the record's own status lifecycle (active/suspended per the note at manifest.json:566) which a clerk could use instead, and the generic index/detail page's own delete action",
 				"owner": "ConductionNL/portaliq",
-				"note": "Same pattern as id-staff-provision-desk: a purpose-built, audited action exists but is unreached, while a cruder generic path stands in for it.",
+				"note": "Same pattern as id-staff-provision-desk: a purpose-built, audited action exists but is unreached, while a cruder generic path stands in for it. Specified in openspec/changes/identity-staff-account-screens (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -1320,11 +1320,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/users-and-permissions/users/updating-user-profile-pictures: a user opens My Profile → Edit Information → Account Settings to edit their own details. https://learn.liferay.com/w/dxp/security-and-administration/administration/configuring-liferay/virtual-instances/user-authentication: 'Require strangers to verify their email address' covers new accounts and admin e-mail changes ('Manual updating of current Users' emails by administrators also requires verification'); confirmation of a self-service address change before use is not stated."
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "lib/Controller/PortalAccountSelfController.php:87 updateDetails(), :119 confirmEmail(); appinfo/routes.php:199-200",
 				"reachedOn": "nothing reaches it: no frontend calls /portal/api/identity/details or /identity/email/confirm; the portal SPA (src/portal/App.jsx) shows only a read-only subject line, no edit form",
 				"owner": "ConductionNL/portaliq",
-				"note": "tasks.md T10 'change your own details, with a new e-mail confirmed by a link' is marked done for the backend only.",
+				"note": "tasks.md T10 'change your own details, with a new e-mail confirmed by a link' is marked done for the backend only. Specified in openspec/changes/identity-profile-page (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -1350,11 +1350,11 @@
 				"liferay-dxp": "not settled from docs: https://learn.liferay.com/w/dxp/security-and-administration/users-and-permissions/users/adding-and-managing-users documents admin 'Erase Personal Data' and deactivate/delete, but no self-service request to remove one's own account was found."
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "lib/Controller/PortalAccountSelfController.php:138 removeAccount(); appinfo/routes.php:201",
 				"reachedOn": "nothing reaches it: no frontend calls /portal/api/identity/remove",
 				"owner": "ConductionNL/portaliq",
-				"note": "tasks.md T11 marked done; no UI affordance in the portal SPA to request it.",
+				"note": "tasks.md T11 marked done; no UI affordance in the portal SPA to request it. Specified in openspec/changes/identity-profile-page (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -1380,11 +1380,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/sites/site-membership/changing-site-membership-type 'Restricted: The site appears in the My Sites application, but users must request membership to join.' This is access to a site, not to an organisation's cases. [was unknown]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "lib/Controller/PortalAccountSelfController.php:165 requestAccess(); appinfo/routes.php:202; lib/Service/Identity/PortalAccessRequestService.php",
 				"reachedOn": "nothing reaches it: no frontend calls /portal/api/identity/access-requests (POST)",
 				"owner": "ConductionNL/portaliq",
-				"note": "tasks.md T12 'ask for access you do not have' marked done; the only exerciser is the API-only e2e spec.",
+				"note": "tasks.md T12 'ask for access you do not have' marked done; the only exerciser is the API-only e2e spec. Specified in openspec/changes/identity-access-requests (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -1410,11 +1410,11 @@
 				"liferay-dxp": "not settled from docs: https://learn.liferay.com/w/dxp/sites/site-membership/adding-members-to-sites describes requesting to join via My Sites but not a list where the requester sees how requests were answered."
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "lib/Controller/PortalAccountSelfController.php:194 myAccessRequests(); appinfo/routes.php:203",
 				"reachedOn": "nothing reaches it: no frontend calls /portal/api/identity/access-requests (GET)",
 				"owner": "ConductionNL/portaliq",
-				"note": "Read side of id-request-access, equally unreached.",
+				"note": "Read side of id-request-access, equally unreached. Specified in openspec/changes/identity-access-requests (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -1440,11 +1440,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/administration/configuring-liferay/virtual-instances/user-authentication: 'Allow strangers to create accounts?', 'Allow strangers to create accounts with a company email address?' and 'Require strangers to verify their email address?' per virtual instance. No per-organisation policy, no approval step and no allowed-domain list are documented."
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "lib/Service/Identity/PortalRegistrationPolicyService.php (off/approval/activation, allowedDomains[])",
 				"reachedOn": "only consumed by PortalIdentityController::register(), which is itself unreached (see id-self-registration-form)",
 				"owner": "ConductionNL/portaliq",
-				"note": "A real policy engine gating a dead endpoint; no admin UI to set the policy either.",
+				"note": "A real policy engine gating a dead endpoint; no admin UI to set the policy either. Specified in openspec/changes/identity-staff-account-screens (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -1531,11 +1531,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/using-system-objects-with-custom-objects/restricting-access-to-object-data-by-account 'Business account users must open claims without seeing claims made by other accounts'; guest users can be granted 'Add Object Entry' (https://learn.liferay.com/w/dxp/low-code/objects/understanding-object-integrations/managing-guest-user-entries). A case object and its follow-up screens are custom low-code builds. [was unknown]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "id-auto-provision-on-login (SessionController.php:429-438, PortalAccountLookup.php) creates a non-staff portalAccount on first broker login; lib/Controller/CitizenCaseController.php:show/amend/addDocument reached from the portal SPA scope the case to that subjectRef via the mandate",
 				"reachedOn": "portal SPA (src/portal/lib/portalApi.js:314,331,368) -> /portal/api/citizen/cases/{register}/{schema}/{id} for an already-known case id; but /portal/api/my-cases (the index that would let a new external party FIND their cases without already knowing the id) has no frontend caller anywhere in this repo",
 				"owner": "ConductionNL/portaliq",
-				"note": "Kept dossiq's selfRating (partial): filing/following an already-known case works end to end for a non-staff broker identity, but the discovery step (my-cases index, or self-registration/reference-link to attach a case before first login) is unreached, so a party who does not already have a case id or a broker-matched identity has no way in.",
+				"note": "Kept dossiq's selfRating (partial): filing/following an already-known case works end to end for a non-staff broker identity, but the discovery step (my-cases index, or self-registration/reference-link to attach a case before first login) is unreached, so a party who does not already have a case id or a broker-matched identity has no way in. Specified in openspec/changes/identity-ways-in-screens (OpenSpec pass 2026-09-27).",
 				"sourceId": "Q1.14",
 				"origin": "sibling"
 			},
@@ -1624,11 +1624,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/integrating-objects-with-third-party-services/managing-data-from-external-systems: a proxy object can 'store and retrieve data from an external data source', so BRP data could be shown on a display page. No BRP connector is documented; the proxy storage type for BRP would be custom (only Salesforce is named). [was no: the earlier no rested on silence]"
 			},
 			"built": {
-				"state": "none",
+				"state": "specified",
 				"evidence": "Searched lib/ for BRP/StUF-BG/Basisregistratie/haalcentraal: no match outside comment prose. portalAccount only stores identityType/identityRef/displayName/email (lib/Settings/portaliq_register.json:356-400), no BRP-sourced field set",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
-				"note": "Portaliq's own account record holds only what the broker's claims or a clerk typed in; there is no BRP/Haal Centraal lookup anywhere in this app.",
+				"note": "Portaliq's own account record holds only what the broker's claims or a clerk typed in; there is no BRP/Haal Centraal lookup anywhere in this app. Specified in openspec/changes/identity-registered-details (OpenSpec pass 2026-09-27).",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -1653,11 +1653,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/understanding-object-integrations/using-forms-with-objects and https://learn.liferay.com/w/dxp/low-code/objects/enabling-workflows-for-objects: a correction request can be a form-backed object entry routed through workflow. The correction process against a base registration is not documented and would be custom. [was no: the earlier no rested on silence]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "The nearest capability is id-update-own-details (PortalAccountSelfController.php:87 updateDetails, PATCH /portal/api/identity/details) which lets a subject change displayName/email directly, not 'ask for a correction' of an authoritative source",
 				"reachedOn": "nothing reaches it (same as id-update-own-details)",
 				"owner": "ConductionNL/portaliq",
-				"note": "Even if reached, updateDetails() edits portaliq's own copy of the two fields it stores; it is not a correction-request workflow against a base registration.",
+				"note": "Even if reached, updateDetails() edits portaliq's own copy of the two fields it stores; it is not a correction-request workflow against a base registration. Specified in openspec/changes/identity-registered-details (OpenSpec pass 2026-09-27).",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -1682,11 +1682,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/notifications/configuring-personal-notifications 'Users can customize which notifications they receive by enabling email, or website notifications'. Only e-mail and website channels; phone and post preferences are not documented. [was unknown]"
 			},
 			"built": {
-				"state": "none",
+				"state": "specified",
 				"evidence": "Searched portalAccount schema (lib/Settings/portaliq_register.json:356-400) and PortalAccountSelfController.php: no contactPreference/channel field or endpoint",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
-				"note": "portalAccount carries a single e-mail address, no channel preference of any kind.",
+				"note": "portalAccount carries a single e-mail address, no channel preference of any kind. Specified in openspec/changes/identity-profile-page (OpenSpec pass 2026-09-27).",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -1711,11 +1711,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/integrating-objects-with-third-party-services/managing-data-from-external-systems: proxy objects read external data sources; a KvK connector is not documented and the storage type would be custom. [was no: the earlier no rested on silence]"
 			},
 			"built": {
-				"state": "none",
+				"state": "specified",
 				"evidence": "Searched lib/ for KvK/Kamer van Koophandel/company-register lookups: none found; eherkenning preset (OidcClaimMapperService.php:82-88) only maps identityRef/audience, no company-detail fetch",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
-				"note": "eHerkenning login authenticates the business identity but portaliq does not fetch or display KvK company data.",
+				"note": "eHerkenning login authenticates the business identity but portaliq does not fetch or display KvK company data. Specified in openspec/changes/identity-registered-details (OpenSpec pass 2026-09-27).",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -1770,11 +1770,11 @@
 				"liferay-dxp": "not settled from docs: no merged cross-application case list was found in the objects, data sets or proxy object pages read today; each object or proxy object is listed on its own. [was no: the earlier no rested on silence]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "lib/Controller/MyCasesController.php (index(), full mandate-aware merge, ~200 lines); lib/Service/PortalCaseListReader.php (KIND='cases' fan-out); routes.php:208 GET /portal/api/my-cases",
 				"reachedOn": "nothing reaches it: grep for 'my-cases'/'myCases'/'MyCases' across src/portal, src/site, src/, and sibling repos (procest, scholiq, decidesk, docudesk, openconnector, openbuild, shillinq, stackiq) returns zero hits; src/portal/lib/portalApi.js has no fetchMyCases method",
 				"owner": "ConductionNL/portaliq",
-				"note": "A fully built, mandate-aware unified case list (with organisation/party-tree merging) that no frontend anywhere calls. The portal SPA instead shows cases per-contribution via separate nav pages (see cas-contrib-list).",
+				"note": "A fully built, mandate-aware unified case list (with organisation/party-tree merging) that no frontend anywhere calls. The portal SPA instead shows cases per-contribution via separate nav pages (see cas-contrib-list). Specified in openspec/changes/cases-my-cases-page (OpenSpec pass 2026-09-27).",
 				"origin": "code",
 				"defectCandidate": "lib/Controller/MyCasesController.php:1 whole controller is dead code from the frontend's perspective; routes.php:208 (code reading, needs a live check)"
 			},
@@ -1861,11 +1861,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/fields/attachment-fields 'Once attached, you can view an object entry to download the file'; each attachment field holds one file ('Each field can only be linked to one file at a time'). Documents on a custom case object only. [was unknown]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "src/portal/components/CitizenCase.jsx:181-186 lists state.data.documents as plain <li>{file.name}</li>, no download control; the generic FileList in PageView.jsx:96-127 (a different block, for filesDownload collections) DOES render a download button",
 				"reachedOn": "PageView.jsx 'citizenCase' block for the list; the generic 'detail' block's FileList for download",
 				"owner": "ConductionNL/portaliq",
-				"note": "On the citizen-case view itself the citizen can see a document's name but has no way to download it from that screen; downloading only works through the separate generic detail/FileList block.",
+				"note": "On the citizen-case view itself the citizen can see a document's name but has no way to download it from that screen; downloading only works through the separate generic detail/FileList block. Specified in openspec/changes/cases-documents-on-the-case (OpenSpec pass 2026-09-27).",
 				"origin": "code",
 				"defectCandidate": "src/portal/components/CitizenCase.jsx:181-186 the case's own document list has no download link/button, even though portalApi.js:452 downloadFile() exists and PortalFileReader backs it; a live check should confirm the citizen truly cannot fetch a case document from this screen (code reading, needs a live check)"
 			},
@@ -1922,11 +1922,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/using-system-objects-with-custom-objects/restricting-access-to-object-data-by-account: users of a business account see that account's entries and 'Customer success managers (CSMs) must review claims made by the accounts they manage'. A generic act-for-an-account model; mandate registers are not documented. [was no: the earlier no rested on silence]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "lib/Controller/MyCasesController.php:96-133 mandate resolution, party-tree scope, 'group_too_large' refusal; lib/Service/Identity/PortalMandateService.php; lib/Service/Identity/PortalPartyTreeResolver.php",
 				"reachedOn": "nothing reaches it: this logic lives entirely inside MyCasesController::index(), which has no frontend caller (see cas-mycases-unified)",
 				"owner": "ConductionNL/portaliq",
-				"note": "Substantial mandate/party-tree machinery (machtiging, 'a parent sees its subsidiaries') exists server-side but is stranded behind the same unreached /portal/api/my-cases endpoint.",
+				"note": "Substantial mandate/party-tree machinery (machtiging, 'a parent sees its subsidiaries') exists server-side but is stranded behind the same unreached /portal/api/my-cases endpoint. Specified in openspec/changes/cases-my-cases-page (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -1952,11 +1952,11 @@
 				"liferay-dxp": "not settled from docs: https://learn.liferay.com/w/dxp/low-code/notifications/creating-notification-templates describes field references and attachments in object notifications but does not name a link to the entry's display page."
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "lib/Service/PortalDeepLinkBuilder.php used by lib/BackgroundJob/PortalTaskDeliveryJob.php (task deep link) and lib/BackgroundJob/NotificationDispatchJob.php",
 				"reachedOn": "outbound e-mail/inbox message built by PortalTaskDeliveryJob (registered appinfo/info.xml:81); confirmed for tasks, not confirmed for a plain case record",
 				"owner": "ConductionNL/portaliq",
-				"note": "Deep links are confirmed wired for tasks (see tsk-notify); no evidence found of the same builder producing a link straight into a case screen, since the case screen itself is reached only through per-contribution nav, not a stable case URL.",
+				"note": "Deep links are confirmed wired for tasks (see tsk-notify); no evidence found of the same builder producing a link straight into a case screen, since the case screen itself is reached only through per-contribution nav, not a stable case URL. Specified in openspec/changes/inbox-notifications-and-preferences (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -1982,11 +1982,11 @@
 				"liferay-dxp": "not settled from docs: one virtual instance holds one organisation's data ('completely separate data', virtual instances page); no cross-organisation case overview was found. [was no: the earlier no rested on silence]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "the only cross-app/cross-org merge is lib/Controller/MyCasesController.php, unreached (see cas-mycases-unified/cas-mandate-org-cases)",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
-				"note": "The per-contribution nav shows one app's cases per page, not a merged cross-organisation overview.",
+				"note": "The per-contribution nav shows one app's cases per page, not a merged cross-organisation overview. Specified in openspec/changes/cases-my-cases-page (OpenSpec pass 2026-09-27).",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -2011,11 +2011,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/fields/adding-and-managing-custom-states: entries carry a state field and object views can filter on it (https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/views/adding-filters-to-views), so open and closed entries can be listed together. Custom case object. [was unknown]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "src/portal/components/CollectionTable.jsx has no open/closed filter or tab; a collection lists whatever objects the subject-scoped read returns, so a closed case appears in the same table as an open one if the contributing app includes it",
 				"reachedOn": "CollectionTable.jsx (all rows of a collection, undifferentiated)",
 				"owner": "ConductionNL/portaliq",
-				"note": "Closed and open cases can appear together in one table if the collection includes both, but there is no distinct open/closed grouping, filter or tab; whether a closed case is even included depends on the contributing app's collection query.",
+				"note": "Closed and open cases can appear together in one table if the collection includes both, but there is no distinct open/closed grouping, filter or tab; whether a closed case is even included depends on the contributing app's collection query. Specified in openspec/changes/cases-my-cases-page (OpenSpec pass 2026-09-27).",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -2026,7 +2026,7 @@
 			"id": "cmp-cas-status-timeline",
 			"area": "cases",
 			"name": "Follow the steps a case has passed and the step it is in now.",
-			"portaliq": "no",
+			"portaliq": "yes",
 			"open-inwoner": "yes",
 			"nl-portal": "yes",
 			"xxllnc-pip": "yes",
@@ -2040,12 +2040,19 @@
 				"liferay-dxp": "not settled from docs: https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/fields/adding-and-managing-custom-states defines the allowed state flow but no user-facing history of passed steps was found; object audit events (https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/auditing-object-events) are an admin tool."
 			},
 			"built": {
-				"state": "none",
-				"evidence": "src/portal/components/CitizenCase.jsx:88-92 renders only ONE current status label + description, never a history of prior statuses; grep for 'timeline'/'history'/'stappen' in src/portal and src/site: no hits",
-				"reachedOn": "n/a",
+				"state": "built",
+				"evidence": "portaliq#732 (266328d, fixes #723): src/portal/components/TimelineList.jsx renders the entries newest first inside the DetailCard (src/portal/components/PageView.jsx:284); lib/Controller/PortalTimelineController.php:93 show(); appinfo/routes.php:298 GET /portal/api/collections/{register}/{schema}/{id}/timeline; src/portal/components/CitizenCase.jsx:155-158 the current public status",
+				"reachedOn": "Mijn zaken: select a case row -> detail block -> the case history the case app declares, and the case screen shows the current status",
 				"owner": "ConductionNL/portaliq",
-				"note": "Only the current status is shown, never the path a case took to get there.",
-				"origin": "competitor"
+				"note": "Matrix corrected in the OpenSpec pass 2026-09-27: shipped after the rating with portaliq#732 (fixes issue #723, commit 69ca851, no change directory). Which steps show is the case app's decision: portaliq renders what the declared timeline provider returns.",
+				"origin": "competitor",
+				"prs": [
+					{
+						"repo": "ConductionNL/portaliq",
+						"number": 732,
+						"sha": "266328d4d95cda118bd22bb4b65077c34d54ceea"
+					}
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2069,11 +2076,11 @@
 				"liferay-dxp": "not settled from docs: no per-document publish-to-requester control on object attachments was found in the attachment field or permissions pages read today."
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "same mechanism as cas-documents-view/cas-download-generic: server-side ownership re-verification (PortalFileReader) scopes files to the subject, but the citizen-case screen's own list has no download action",
 				"reachedOn": "PageView.jsx citizenCase block (list only) / detail block (list + download)",
 				"owner": "ConductionNL/portaliq",
-				"note": "See cas-documents-view for the split between viewing and downloading.",
+				"note": "See cas-documents-view for the split between viewing and downloading. Specified in openspec/changes/cases-documents-on-the-case (OpenSpec pass 2026-09-27).",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -2098,11 +2105,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/fields/attachment-fields: a file on an object entry can be downloaded by users with view permission; a decision letter would be an attachment on a custom case object. [was unknown]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "no dedicated 'decision letter' concept anywhere in lib/ or src/; a decision letter would have to arrive as an ordinary file on a filesDownload-enabled collection, reachable only through the generic detail block (see cas-download-generic), not the citizen-case screen",
 				"reachedOn": "PageView.jsx detail block's FileList, if the contributing app attaches the decision as a file there",
 				"owner": "ConductionNL/portaliq",
-				"note": "No decision-specific affordance exists; it rides on the generic file-download mechanism, which the case's own screen does not expose (cas-documents-view defect).",
+				"note": "No decision-specific affordance exists; it rides on the generic file-download mechanism, which the case's own screen does not expose (cas-documents-view defect). Specified in openspec/changes/cases-documents-on-the-case (OpenSpec pass 2026-09-27).",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -2127,11 +2134,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/integrating-objects-with-third-party-services/managing-data-from-external-systems: a proxy object can show records from an external system; a permit register connector is not documented and would be custom. [was no: the earlier no rested on silence]"
 			},
 			"built": {
-				"state": "none",
+				"state": "decided-no",
 				"evidence": "grep 'permit'/'vergunning' across lib/ and src/: no domain concept; portaliq is schema-agnostic and has no permit-specific logic",
 				"reachedOn": "n/a",
 				"owner": "ConductionNL/portaliq",
-				"note": "Would only ever appear as an ordinary 'kind: cases' contribution from a permits-domain app; no such contribution exists in this repo.",
+				"note": "Would only ever appear as an ordinary 'kind: cases' contribution from a permits-domain app; no such contribution exists in this repo. Decided no in the OpenSpec pass 2026-09-27: openspec/project.md Boundaries: portaliq does not own domain business logic (it stays in the domain apps) or data storage. The portal already renders any collection a domain app contributes; the permit data is that app's to contribute.",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -2156,11 +2163,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/integrating-objects-with-third-party-services/managing-data-from-external-systems: proxy objects show external records on display pages; a benefits (voorzieningen) connector is not documented and would be custom. [was no: the earlier no rested on silence]"
 			},
 			"built": {
-				"state": "none",
+				"state": "decided-no",
 				"evidence": "grep 'benefit'/'voorziening'/'uitkering' across lib/ and src/: no hits",
 				"reachedOn": "n/a",
 				"owner": "ConductionNL/portaliq",
-				"note": null,
+				"note": "Decided no in the OpenSpec pass 2026-09-27: openspec/project.md Boundaries: portaliq does not own domain business logic (it stays in the domain apps) or data storage. The portal already renders any collection a domain app contributes; the benefits and provisions data is that app's to contribute.",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -2185,11 +2192,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/integrating-objects-with-third-party-services/managing-data-from-external-systems: proxy objects show external records; a municipal tax system connector is not documented and would be custom. [was no: the earlier no rested on silence]"
 			},
 			"built": {
-				"state": "none",
+				"state": "decided-no",
 				"evidence": "grep 'tax'/'belasting'/'aanslag' across lib/ and src/: no domain concept, only the unrelated 'contribution' vocabulary",
 				"reachedOn": "n/a",
 				"owner": "ConductionNL/portaliq",
-				"note": null,
+				"note": "Decided no in the OpenSpec pass 2026-09-27: openspec/project.md Boundaries: portaliq does not own domain business logic (it stays in the domain apps) or data storage. The portal already renders any collection a domain app contributes; the municipal tax data is that app's to contribute.",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -2245,11 +2252,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/integrating-objects-with-third-party-services/managing-data-from-external-systems: proxy objects show external records; a WOZ connector is not documented and would be custom. [was no: the earlier no rested on silence]"
 			},
 			"built": {
-				"state": "none",
+				"state": "decided-no",
 				"evidence": "grep 'woz' across lib/ and src/: no hits",
 				"reachedOn": "n/a",
 				"owner": "ConductionNL/portaliq",
-				"note": null,
+				"note": "Decided no in the OpenSpec pass 2026-09-27: openspec/project.md Boundaries: portaliq does not own domain business logic (it stays in the domain apps) or data storage. The portal already renders any collection a domain app contributes; the WOZ value is that app's to contribute.",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -2274,11 +2281,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/integrating-objects-with-third-party-services/managing-data-from-external-systems: address-bound data from an external service can be shown through a proxy object; a waste calendar or address service connector is not documented and would be custom. [was unknown]"
 			},
 			"built": {
-				"state": "none",
+				"state": "decided-no",
 				"evidence": "grep 'waste'/'afval'/'address-service' across lib/ and src/: no domain concept",
 				"reachedOn": "n/a",
 				"owner": "ConductionNL/portaliq",
-				"note": null,
+				"note": "Decided no in the OpenSpec pass 2026-09-27: openspec/project.md Boundaries: portaliq does not own domain business logic (it stays in the domain apps) or data storage. The portal already renders any collection a domain app contributes; the address-bound service data (such as a waste calendar) is that app's to contribute.",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -2363,11 +2370,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/understanding-object-integrations/permissions-framework-integration: the entry owner holds Delete; a withdraw step can also be a standalone button action (https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/actions/using-manual-actions 'Buttons in pages'). Custom case object. [was unknown]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "lib/Controller/CitizenCaseController.php:304-331 withdraw(), fully implemented (guardWrite, writableSet.withdrawal, applyWithdrawal, PortalClientWithdrawalEvent); routes.php:287 POST /portal/api/citizen/cases/{register}/{schema}/{id}/withdraw",
 				"reachedOn": "nothing reaches it: src/portal/lib/portalApi.js has no withdraw method, and src/portal/components/CitizenCase.jsx has no withdraw button; grep 'withdraw' across all of src/ finds only an unrelated traffic-consent comment",
 				"owner": "ConductionNL/portaliq",
-				"note": "A complete server-side withdrawal path with its own event and openspec (withdrawing-your-own-case-from-the-portal) has no UI trigger anywhere in this repo.",
+				"note": "A complete server-side withdrawal path with its own event and openspec (withdrawing-your-own-case-from-the-portal) has no UI trigger anywhere in this repo. Specified in openspec/changes/case-actions-withdraw-screen (OpenSpec pass 2026-09-27).",
 				"origin": "code",
 				"defectCandidate": "src/portal/components/CitizenCase.jsx has no withdraw control; the working backend at lib/Controller/CitizenCaseController.php:304 is unreachable from the portal SPA (code reading, needs a live check)"
 			},
@@ -2394,11 +2401,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/understanding-object-integrations/permissions-framework-integration: the entry owner holds Delete; a withdraw action can be a standalone action button (https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/actions/using-manual-actions). Custom case object. [was unknown]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "same finding as act-withdraw-case: lib/Controller/CitizenCaseController.php:304 withdraw() is implemented but has no frontend caller",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
-				"note": "dossiq matrix rated this 'partial' with no evidence given; from portaliq's code the honest rating is no, since the whole path is unreached (see the defect on act-withdraw-case).",
+				"note": "dossiq matrix rated this 'partial' with no evidence given; from portaliq's code the honest rating is no, since the whole path is unreached (see the defect on act-withdraw-case). Specified in openspec/changes/case-actions-withdraw-screen (OpenSpec pass 2026-09-27).",
 				"sourceId": "sib-2.47",
 				"origin": "sibling"
 			},
@@ -2441,7 +2448,7 @@
 			"id": "act-propose-citizen",
 			"area": "case-actions",
 			"name": "Propose a change to a field on a record as a citizen, for a colleague to accept or reject.",
-			"portaliq": "no",
+			"portaliq": "partial",
 			"open-inwoner": "no",
 			"nl-portal": "no",
 			"xxllnc-pip": "yes",
@@ -2456,11 +2463,18 @@
 			},
 			"built": {
 				"state": "built",
-				"evidence": "lib/Controller/ProposalController.php proposeFromPortal(); routes.php:250 POST /portal/api/proposals",
-				"reachedOn": "nothing reaches it (see sib-2.21)",
+				"evidence": "portaliq#683 (2f202ee): src/portal/components/PageView.jsx:154-214 ProposalQueue and :336 offers a propose-change rowAction on the detail card; src/portal/components/ProposeChangeForm.jsx; lib/Controller/ProposalController.php:99 proposeFromPortal() and :238 mine(); appinfo/routes.php:337 POST /portal/api/proposals, :341 GET /portal/api/proposals/mine",
+				"reachedOn": "portal SPA detail card of a collection that declares a propose-change rowAction -> Wijziging voorstellen -> POST /portal/api/proposals",
 				"owner": "ConductionNL/portaliq",
-				"note": null,
-				"origin": "code"
+				"note": "Matrix corrected in the OpenSpec pass 2026-09-27: shipped after the rating with openspec/changes/guardian-self-service-profile (portaliq#683). Partial because it renders only where a contribution declares a propose-change action, and dossiq declares none yet.",
+				"origin": "code",
+				"prs": [
+					{
+						"repo": "ConductionNL/portaliq",
+						"number": 683,
+						"sha": "2f202ee1f5aee894a66364eaa43dab7c71c68e1a"
+					}
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2485,11 +2499,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/enabling-workflows-for-objects plus https://learn.liferay.com/w/dxp/low-code/workflow/designing-and-managing-workflows/workflow-designer/assigning-task-nodes: a workflow review task on an object entry is approved or rejected by an assigned role. A read-only colleague proposing a change to a record is a custom flow."
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "lib/Controller/ProposalController.php proposeAsColleague(); routes.php:243 POST /api/proposals",
 				"reachedOn": "nothing reaches it: no manifest page, no admin view, no widget calls this route (see sib-2.21)",
 				"owner": "ConductionNL/portaliq",
-				"note": null,
+				"note": "Specified in openspec/changes/change-proposal-queue (existing change, OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -2501,7 +2515,7 @@
 			"id": "act-withdraw-proposal",
 			"area": "case-actions",
 			"name": "Withdraw a change proposal you made before it is decided.",
-			"portaliq": "no",
+			"portaliq": "partial",
 			"open-inwoner": "no",
 			"nl-portal": "no",
 			"xxllnc-pip": "no",
@@ -2516,11 +2530,18 @@
 			},
 			"built": {
 				"state": "built",
-				"evidence": "lib/Controller/ProposalController.php withdraw(); routes.php:251 POST /portal/api/proposals/{id}/withdraw",
-				"reachedOn": "nothing reaches it (see sib-2.21)",
+				"evidence": "portaliq#683 (2f202ee): src/portal/components/PageView.jsx:177 withdrawProposal() from the proposer's own queue (ProposalQueue, :154-214); lib/Controller/ProposalController.php:358 withdraw(); appinfo/routes.php:342 POST /portal/api/proposals/{id}/withdraw",
+				"reachedOn": "portal SPA detail card -> own proposal list -> withdraw a queued proposal",
 				"owner": "ConductionNL/portaliq",
-				"note": null,
-				"origin": "code"
+				"note": "Matrix corrected in the OpenSpec pass 2026-09-27: shipped after the rating with openspec/changes/guardian-self-service-profile (portaliq#683). Partial because the queue renders only where a contribution declares a propose-change action, and dossiq declares none yet.",
+				"origin": "code",
+				"prs": [
+					{
+						"repo": "ConductionNL/portaliq",
+						"number": 683,
+						"sha": "2f202ee1f5aee894a66364eaa43dab7c71c68e1a"
+					}
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2545,11 +2566,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/workflow/designing-and-managing-workflows/workflow-designer/assigning-task-nodes 'users see the tasks in their My Workflow Tasks application under the tab Assigned to My Roles'; tasks are approved or rejected there. A queue for field-change proposals specifically is custom."
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "lib/Controller/ProposalController.php index()/accept()/acceptConfirmingDrift()/reject(); lib/Service/Proposals/ReviewerObjectWriter.php applies an accepted proposal with the REVIEWER's own rights; routes.php:242-249; gated by lib/actions.seed.json:11 'portal.review-proposal': ['admin']",
 				"reachedOn": "nothing reaches it: no manifest page or admin view lists src/manifest.json 'proposal'; grep across src/views and src/widgets for 'proposal' or 'Proposal': zero hits",
 				"owner": "ConductionNL/portaliq",
-				"note": "A queue with drift detection (acceptConfirmingDrift, for when the record changed since the proposal was made) exists server-side with no staff screen to use it from.",
+				"note": "A queue with drift detection (acceptConfirmingDrift, for when the record changed since the proposal was made) exists server-side with no staff screen to use it from. Specified in openspec/changes/change-proposal-queue (existing change, OpenSpec pass 2026-09-27).",
 				"origin": "code",
 				"defectCandidate": "no manifest page or admin view anywhere exposes /api/proposals; a reviewer can only act through raw API calls (code reading, needs a live check)"
 			},
@@ -2696,11 +2717,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/enabling-workflows-for-objects with https://learn.liferay.com/w/dxp/low-code/workflow/designing-and-managing-workflows/workflow-designer/assigning-task-nodes: changes submitted on object entries can queue as workflow tasks in My Workflow Tasks for staff approval. Proposal-per-field handling is custom. [was unknown]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "lib/Controller/ProposalController.php (498 lines: proposeAsColleague, proposeFromPortal, accept, acceptConfirmingDrift, reject, withdraw), lib/Service/Proposals/ProposalService.php, lib/Service/Proposals/ReviewerObjectWriter.php; routes.php:242-251 the full route set; lib/actions.seed.json 'portal.review-proposal': ['admin']",
 				"reachedOn": "nothing reaches it: grep 'proposal'/'Proposal' across src/portal, src/site, src/views, src/manifest.json returns zero hits (only unrelated OpenSpec-tooling mentions); grep across every sibling app repo (procest, scholiq, decidesk, docudesk, openconnector, openbuild, shillinq, stackiq) for '/api/proposals' or 'ProposalController' also returns zero code hits, only a proposal-doc mention in openconnector's competitor-parity table",
 				"owner": "ConductionNL/portaliq",
-				"note": "dossiq's own evidence for this row (register.d/50-zaakportaal.json#portaalVerzoek) is dossiq's register entry, not a caller of portaliq's queue; the actual queue mechanism in portaliq has no admin page, no portal-SPA propose button, and no accept/reject UI anywhere.",
+				"note": "dossiq's own evidence for this row (register.d/50-zaakportaal.json#portaalVerzoek) is dossiq's register entry, not a caller of portaliq's queue; the actual queue mechanism in portaliq has no admin page, no portal-SPA propose button, and no accept/reject UI anywhere. Specified in openspec/changes/change-proposal-queue (existing change, OpenSpec pass 2026-09-27).",
 				"sourceId": "sib-2.21",
 				"origin": "sibling",
 				"defectCandidate": "lib/Controller/ProposalController.php:1 the whole change-proposal-queue feature (proposing, listing, accepting, rejecting, withdrawing) is unreachable from any UI in this repo (code reading, needs a live check)"
@@ -2942,7 +2963,7 @@
 				"evidence": "lib/Controller/PartnerTaskController.php:83-129 ask(), guarded by PortalCaseAccessGuard::mayAsk() (RBAC action 'portal.ask-partner', lib/actions.seed.json:7 admin-only by default), lib/Service/Tasks/PartnerAskService.php pre-provisions a portal account and freezes due date + upload rules onto the task; routes.php:269 POST /api/partner-tasks/ask",
 				"reachedOn": "nothing reaches it: grep 'partner-tasks'/'partnerTask'/'PartnerTask'/'ask-partner' across all of src/ returns zero hits; portaliq's own manifest has no page or widget for it; dossiq (procest) has no code caller either, only a mention in its own competitor-parity proposal doc that this change would 'retire ExternalConsultationResponse', dossiq's ExternalConsultationResponse public page (src/manifest.d/consultation-public.json) is still present and unretired",
 				"owner": "ConductionNL/portaliq",
-				"note": "A fully built, guarded backend for asking an outside partner has no caseworker-facing button anywhere; the sibling row (dossiq 3.19) rated it 'partial' pointing at dossiq's own legacy page, which is unrelated and un-retired.",
+				"note": "A fully built, guarded backend for asking an outside partner has no caseworker-facing button anywhere; the sibling row (dossiq 3.19) rated it 'partial' pointing at dossiq's own legacy page, which is unrelated and un-retired. Portaliq's half is built (openspec/changes/partner-tasks-in-the-portal). The handler's ask button is dossiq's consumer half: declare ask-partner on its case contribution and retire ExternalConsultationResponse (OpenSpec pass 2026-09-27).",
 				"origin": "code",
 				"defectCandidate": "lib/Controller/PartnerTaskController.php:1 whole controller has no UI caller in portaliq or in dossiq (code reading, needs a live check)"
 			},
@@ -2973,7 +2994,7 @@
 				"evidence": "same finding as tsk-ask-partner: lib/Controller/PartnerTaskController.php:83 ask() is implemented and RBAC-guarded but has no caller anywhere in portaliq or dossiq",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
-				"note": "dossiq's matrix rates this 'partial' citing its own ExternalConsultationResponse page and a merged PR (#611); the PR shipped the portaliq-side controller, but nothing calls it, and dossiq's old ExternalConsultationResponse flow it was meant to retire is still shipping unchanged.",
+				"note": "dossiq's matrix rates this 'partial' citing its own ExternalConsultationResponse page and a merged PR (#611); the PR shipped the portaliq-side controller, but nothing calls it, and dossiq's old ExternalConsultationResponse flow it was meant to retire is still shipping unchanged. Portaliq's half is built (openspec/changes/partner-tasks-in-the-portal). The handler's ask button is dossiq's consumer half: declare ask-partner on its case contribution and retire ExternalConsultationResponse (OpenSpec pass 2026-09-27).",
 				"sourceId": "sib-3.19",
 				"origin": "sibling"
 			},
@@ -3330,11 +3351,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/creating-objects 'Enable or disable comments for object display pages. While enabled, you can use the Page Comments widget in entry display pages', so a resident and staff can exchange comments on a record. A reply to an organisation message in an inbox is not described. [was unknown]"
 			},
 			"built": {
-				"state": "none",
+				"state": "specified",
 				"evidence": "grep reply/compose in src/portal: 0 hits; InboxPage.jsx (full file read) has no compose/reply control; dossiq's own citizen contribution provider explicitly defers this: 'the message reply (needs a verified case/thread linkage)' (procest lib/Portal/PortalContributionProvider.php, citizenContribution() docblock); portaliq's own leaf-integrations spec (openspec/specs/portaliq-leaf-integrations/spec.md:88 'The visitor's reply path stays the portal edge') only says an answer must arrive as a portalMessage, it does not build a compose UI",
 				"reachedOn": "citizen side: nothing reaches it, no compose control anywhere in src/portal. Staff side: no dedicated 'reply' action either, but src/manifest.json:881 PortalMessages index has no allowCreate:false, so a staff member CAN hand-create a new portalMessage row via the generic OpenRegister create dialog, which the citizen would then see appear in their inbox.",
 				"owner": "ConductionNL/portaliq",
-				"note": "No citizen-facing reply exists anywhere. A staff 'reply' is possible only as a manually created, unthreaded portalMessage through the generic admin object form, there is no button, no thread, no quoting of the original message.",
+				"note": "No citizen-facing reply exists anywhere. A staff 'reply' is possible only as a manually created, unthreaded portalMessage through the generic admin object form, there is no button, no thread, no quoting of the original message. Specified in openspec/changes/inbox-reply-with-attachments (OpenSpec pass 2026-09-27).",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -3360,11 +3381,11 @@
 				"liferay-dxp": "not settled from docs: attaching a file to a message a resident sends is not described in the notifications or page comments pages read today."
 			},
 			"built": {
-				"state": "none",
+				"state": "specified",
 				"evidence": "lib/Settings/portaliq_register.json:629-732 portalMessage schema has no file/attachment property; InboxPage.jsx (full file read) has no upload control or attachment renderer",
 				"reachedOn": "nothing reaches it: no attachment field, no upload UI, and no way to send a message at all (see cmp-inb-reply)",
 				"owner": "ConductionNL/portaliq",
-				"note": "dossiq's portaalBericht declares an 'attachments' field to portaliq (see inb-dossiq-portaalbericht) but nothing renders it, so even a sibling-supplied attachment is invisible.",
+				"note": "dossiq's portaalBericht declares an 'attachments' field to portaliq (see inb-dossiq-portaalbericht) but nothing renders it, so even a sibling-supplied attachment is invisible. Specified in openspec/changes/inbox-reply-with-attachments (OpenSpec pass 2026-09-27).",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -3420,11 +3441,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/notifications/configuring-personal-notifications 'Users can customize which notifications they receive by enabling email, or website notifications'; object notification actions send e-mail on entry events (https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/actions/understanding-action-types). [was unknown]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "lib/Service/NotificationDispatchService.php dispatch()/doDispatch() matches a fired ruleKey against the contributing app's declared 'notifications' list, fail-closed on no match; lib/BackgroundJob/NotificationDispatchJob.php sends a privacy-minimal NL/EN email via IMailer, logs every attempt as an append-only portalNotification row, and flags needsAlternativeContact after 3 consecutive failures; called from lib/Service/SubmissionReceiptService.php:278 (RULE_MESSAGE_CREATED, after a WMEBV receipt message) and lib/Controller/ContributionController.php:1260 (RULE_STATUS_CHANGED, after a generic update action)",
 				"reachedOn": "async, off the request path, via IJobList (NotificationDispatchJob is a QueuedJob, does not need an info.xml background-jobs entry to run)",
 				"owner": "ConductionNL/portaliq",
-				"note": "Real and working for the two triggers the code actually fires: a WMEBV submission receipt and a generic status-change update. Only ever fires for ruleKey 'message.created' or 'status.changed' (the two constants); a sibling that declares any OTHER rule key never gets an email, dossiq's own supplier contribution declares notifications ['tenderPublished','contractExpiring','invoiceDue'], none of which will ever match, so those specific events are silently unreachable. A staff-authored manual portalMessage (see cmp-inb-reply) also does not go through SubmissionReceiptService, so it triggers no email either.",
+				"note": "Real and working for the two triggers the code actually fires: a WMEBV submission receipt and a generic status-change update. Only ever fires for ruleKey 'message.created' or 'status.changed' (the two constants); a sibling that declares any OTHER rule key never gets an email, dossiq's own supplier contribution declares notifications ['tenderPublished','contractExpiring','invoiceDue'], none of which will ever match, so those specific events are silently unreachable. A staff-authored manual portalMessage (see cmp-inb-reply) also does not go through SubmissionReceiptService, so it triggers no email either. Specified in openspec/changes/inbox-notifications-and-preferences (OpenSpec pass 2026-09-27).",
 				"origin": "competitor",
 				"defectCandidate": "dossiq (procest) lib/Portal/PortalContributionProvider.php supplierContribution() declares notifications ['tenderPublished','contractExpiring','invoiceDue'] but NotificationDispatchService::declaresRuleKey() is only ever called with 'message.created' or 'status.changed' (grep of both constants in lib/ confirms no other call site), so those three declared rule keys can never match and no email is ever sent for them (code reading, needs a live check)"
 			},
@@ -3467,7 +3488,7 @@
 			"id": "cmp-inb-notif-prefs",
 			"area": "inbox",
 			"name": "Choose which notifications you receive and through which channel.",
-			"portaliq": "no",
+			"portaliq": "partial",
 			"open-inwoner": "partial",
 			"nl-portal": "no",
 			"xxllnc-pip": "partial",
@@ -3481,12 +3502,19 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/notifications/configuring-personal-notifications 'Users can customize which notifications they receive by enabling email, or website notifications for the desired applications.' [was unknown]"
 			},
 			"built": {
-				"state": "none",
-				"evidence": "grep for preference/notif-setting/channel-choice in src/portal: 0 hits; the only channel is a hardcoded email send in NotificationDispatchJob.php, with no per-subject opt-out or channel choice; the opt-in that exists (portalMessage notifications list, portaliq_register.json:1380) is set by the CONTRIBUTING APP's developer, not by the citizen",
+				"state": "specified",
+				"evidence": "portaliq#685 (efba78c): lib/BackgroundJob/NotificationDispatchJob.php:202 skips an account whose notificationChannels.email is false (:374-377 optedOutOfEmail()); lib/Service/Identity/PortalSelfServiceService.php:114 writes it from PATCH /portal/api/identity/details; lib/Settings/portaliq_register.json:801 notificationChannels. No screen in src/portal sets it.",
 				"reachedOn": "nothing reaches it: no citizen-facing preferences UI or API",
 				"owner": "ConductionNL/portaliq",
-				"note": null,
-				"origin": "competitor"
+				"note": "Rating corrected from no to partial in the OpenSpec pass 2026-09-27: the e-mail opt-out shipped after the rating with openspec/changes/notification-preferences-per-role (portaliq#685), API only. Specified in openspec/changes/inbox-notifications-and-preferences (OpenSpec pass 2026-09-27).",
+				"origin": "competitor",
+				"prs": [
+					{
+						"repo": "ConductionNL/portaliq",
+						"number": 685,
+						"sha": "efba78c53d4fd4ca8840b3cfd536443a0bdb7b94"
+					}
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -5096,7 +5124,7 @@
 			"id": "cmp-site-news",
 			"area": "site",
 			"name": "Publish news items with a date and an overview page.",
-			"portaliq": "no",
+			"portaliq": "partial",
 			"open-inwoner": "no",
 			"nl-portal": "no",
 			"xxllnc-pip": "no",
@@ -5110,12 +5138,19 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/sites/creating-pages/page-fragments-and-widgets/using-widgets/default-widgets-reference: 'Blogs Adds a Blogs widget' and 'Blogs Aggregator ... to publish blog entries from multiple sources'; dated entries shown in a listing. [was unknown]"
 			},
 			"built": {
-				"state": "none",
-				"evidence": "No news/article schema in lib/Settings/portaliq_register.json (python check of components.schemas keys: no entry containing 'news')",
-				"reachedOn": "nothing reaches it: no code exists",
+				"state": "built",
+				"evidence": "portaliq#682 (d8a38bd): lib/Controller/NewsController.php:104 create(), :150 publish(); lib/Controller/NewsGuardianController.php:78 feed(); appinfo/routes.php:97-103; newsItem and newsletter schemas at lib/Settings/portaliq_register.json:6436,6555",
+				"reachedOn": "GET /apps/portaliq/api/news/feed for a signed-in guardian; staff author through /api/news",
 				"owner": "ConductionNL/portaliq",
-				"note": "An editor could hand-build a news list as ordinary markdown/pages, but there is no dated news TYPE or generated overview.",
-				"origin": "competitor"
+				"note": "Matrix corrected in the OpenSpec pass 2026-09-27: a dated NewsItem targeted per school, group or child shipped after the rating with openspec/changes/news-and-newsletter-authoring (portaliq#682). Partial because there is no public news overview page on the site.",
+				"origin": "competitor",
+				"prs": [
+					{
+						"repo": "ConductionNL/portaliq",
+						"number": 682,
+						"sha": "d8a38bd1e9772e41ca06b3e53034fa0c0ff76ab5"
+					}
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -5440,11 +5475,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/search/search-pages-and-widgets/search-facets: Site, Type, Category, Tag, Folder, User, Modified and Custom facets; the Category Facet 'narrows search results for categorized assets' and the Modified Facet allows 'a Custom Range, specifying a From and To date'."
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "src/site/components/FederatedSearchBlock.vue:341-357,524-529 facets on ONE object field, default 'themes'; opencatalogi's SearchSideBar.vue (facets+sort) is mounted only from src/sidebars/SideBars.vue, which nothing imports (per opencatalogi matrix; not independently re-verified in opencatalogi's own repo, outside this reader's read set)",
 				"reachedOn": "/zoeken route, one facet column",
 				"owner": "ConductionNL/portaliq",
-				"note": "No category, organisation or date filter reachable; only one configurable facet field at a time. Matches source rating (opencatalogi matrix, id srch-facets).",
+				"note": "No category, organisation or date filter reachable; only one configurable facet field at a time. Matches source rating (opencatalogi matrix, id srch-facets). Specified in openspec/changes/portal-public-search (existing change, OpenSpec pass 2026-09-27).",
 				"origin": "sibling"
 			},
 			"provider": "opencatalogi",
@@ -5560,11 +5595,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/sites/creating-pages/page-settings/configuring-page-sets 'Click the Change Current Theme button and select the Theme from the window that appears'; https://learn.liferay.com/w/dxp/getting-started/changing-your-sites-appearance 'Under Theme, click Change Current Theme'."
 			},
 			"built": {
-				"state": "none",
+				"state": "specified",
 				"evidence": "src/manifest.json:1100 'theme' appears only as a listing COLUMN on the Portals index, not as a form field with options anywhere in the manifest; grep for token-sets/tokenSets across src/ and lib/Controller: 0 hits, so nothing in this app calls the theme app's `/api/token-sets` catalogue endpoint",
 				"reachedOn": "nothing reaches it: the Portal edit form falls through to a plain text schema property",
 				"owner": "ConductionNL/portaliq",
-				"note": "PortalThemeResolver.php:190-220's own docblock claims '/api/token-sets... the admin UI, which is authenticated, is the endpoint's intended caller and uses it for the theme picker', that caller was not found in this repo, so the theme value is validated only at render time (fail-closed to unstyled, see thm-theme-fail-closed), not guided at entry time.",
+				"note": "PortalThemeResolver.php:190-220's own docblock claims '/api/token-sets... the admin UI, which is authenticated, is the endpoint's intended caller and uses it for the theme picker', that caller was not found in this repo, so the theme value is validated only at render time (fail-closed to unstyled, see thm-theme-fail-closed), not guided at entry time. Specified in openspec/changes/nldesign-theme-integration (existing change, OpenSpec pass 2026-09-27).",
 				"origin": "code",
 				"defectCandidate": "PortalThemeResolver.php:190-220 docblock claims an admin theme picker consumes the catalogue endpoint; no such caller exists in src/ or lib/Controller. (code reading, needs a live check)"
 			},
@@ -5758,7 +5793,7 @@
 			"id": "cmp-thm-mobile-app",
 			"area": "theming",
 			"name": "Use the portal through a mobile app.",
-			"portaliq": "no",
+			"portaliq": "partial",
 			"open-inwoner": "no",
 			"nl-portal": "partial",
 			"xxllnc-pip": "no",
@@ -5772,12 +5807,19 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/integration/headless-apis/using-liferay-as-a-headless-platform: APIs for 'writing mobile applications'; https://learn.liferay.com/w/dxp/self-hosted-installation-and-upgrades/upgrading-liferay/deprecations-and-breaking-changes-reference/7-4-deprecations-and-breaking-changes/maintenance-mode-and-deprecations-in-7-4 'Mobile SDK Removed Replaced by Headless Delivery'. No ready-made resident app. [custom: the mobile app itself]"
 			},
 			"built": {
-				"state": "none",
-				"evidence": "No webmanifest, service worker or native app packaging found (find for manifest.webmanifest/*.apk: 0 hits; grep for serviceWorker under src/portal, src/site: 0 hits)",
-				"reachedOn": "nothing reaches it: no code exists",
+				"state": "decided-no",
+				"evidence": "portaliq#714 (7c5cc2a): lib/Controller/PortalManifestController.php:85 manifest() and :133 serviceWorker(); appinfo/routes.php:201-202; src/portal/main.jsx:85-86 registers the service worker; src/portal/App.jsx:116-150 the install prompt",
+				"reachedOn": "portal SPA: the browser offers Add to Home Screen from /portal/manifest.webmanifest",
 				"owner": "ConductionNL/portaliq",
-				"note": "Responsive web only (see thm-mobile-responsive); not an installable PWA and not a native app.",
-				"origin": "competitor"
+				"note": "Matrix corrected in the OpenSpec pass 2026-09-27: the installable portal shipped after the rating with openspec/changes/parent-pwa-installability (portaliq#714). The missing half, a native app, is decided no: parent-pwa-installability/proposal.md Out of Scope, \"Any native iOS/Android app-store app\".",
+				"origin": "competitor",
+				"prs": [
+					{
+						"repo": "ConductionNL/portaliq",
+						"number": 714,
+						"sha": "7c5cc2abd1422e4b35223189632b2dbf506e6178"
+					}
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -7124,11 +7166,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/ai/using-liferay-as-an-mcp-server: 'Enable the LPD-63311 release feature flag ... Control Panel → Instance Settings → Platform → MCP Server. Check Enabled'; the setting 'applies to a single virtual instance'. [behind a release feature flag]"
 			},
 			"built": {
-				"state": "none",
+				"state": "specified",
 				"evidence": "no lib/Mcp directory or any Mcp*/Tool* class exists in this checkout; grep for 'mcp' across appinfo/ and lib/Settings/*.json returns nothing; openspec/changes/portaliq-mcp-adoption/proposal.md itself describes the ONLY prior MCP surface, lib/Mcp/ExampleToolProvider.php, as 'unmodified app-template scaffold' exposing two teaching tools (portaliq.ping, portaliq.describeApp) and recommends DELETING it, that file no longer exists in this checkout, so even the scaffold is gone; the change's tasks.md is 0 of 8 done",
 				"reachedOn": "nothing reaches it: there is no MCP tool provider in the app at all",
 				"owner": "ConductionNL/portaliq",
-				"note": "openspec/changes/hermiq-ai-tooling (0 of 12 tasks done) is the fleet-wide AI-tooling change this would eventually plug into; neither change has landed code here.",
+				"note": "openspec/changes/hermiq-ai-tooling (0 of 12 tasks done) is the fleet-wide AI-tooling change this would eventually plug into; neither change has landed code here. Specified in openspec/changes/portaliq-mcp-adoption (existing change, OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -7334,11 +7376,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/actions/defining-object-actions: trigger 'On After Update When an entry is updated' with action 'Notification Send email or user notifications using a predefined template'. A case object, and notices to both resident and handler, must be modelled per deployment. [was unknown; custom: case object, recipient rules per side]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "lib/Controller/ContributionController.php:1261 fires status.changed only after the SUBJECT's own portal update action; lib/Service/NotificationDispatchService.php:174 declaresRuleKey needs the contributing app to opt in; ConductionNL/dossiq@971735b03e (development) lib/Portal/PortalContributionProvider.php:408 citizen contribution declares 'notifications' => []; lib/BackgroundJob/PortalTaskDeliveryJob.php:234 turns openregister task asks/reminders into inbox messages; lib/Service/CitizenWriteRecorder.php:208,266 dispatches PortalClientWriteEvent for the case app",
 				"reachedOn": "task asks: PortalTaskDeliveryJob (cron) -> portalMessage -> InboxPage.jsx unread badge (App.jsx:284-300). Staff status change on a case: nothing reaches the resident. Citizen write -> PortalClientWriteEvent: no listener in dossiq development lib/Listener (46 listeners listed, none for it)",
 				"owner": "ConductionNL/portaliq",
-				"note": "Resident side: only a new task (ask, re-ask, reminder) or a message a case app writes into an inbox collection shows up as unread; nothing in portaliq observes a staff-made status or data change on a case, and the one status trigger (status.changed) fires on the resident's own update and is opted out by dossiq anyway. Handler side: portaliq raises PortalClientWriteEvent on every amendment, document and task answer, but no dossiq listener consumes it, so the handler is not told.",
+				"note": "Resident side: only a new task (ask, re-ask, reminder) or a message a case app writes into an inbox collection shows up as unread; nothing in portaliq observes a staff-made status or data change on a case, and the one status trigger (status.changed) fires on the resident's own update and is opted out by dossiq anyway. Handler side: portaliq raises PortalClientWriteEvent on every amendment, document and task answer, but no dossiq listener consumes it, so the handler is not told. Specified in openspec/changes/inbox-notifications-and-preferences (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -7400,11 +7442,11 @@
 				"liferay-dxp": "not settled from docs: MijnOverheid and Berichtenbox are not named in any learn.liferay.com page read today; notifications go by e-mail and website only (https://learn.liferay.com/w/dxp/low-code/notifications). A webhook object action (defining-object-actions) could call an outside service, but no Berichtenbox delivery is described."
 			},
 			"built": {
-				"state": "none",
+				"state": "specified",
 				"evidence": "grep -riE 'berichtenbox|mijnoverheid' lib src: 0 hits; lib/Settings/portaliq_register.json portalNotification.channel: 'Only email is implemented'",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
-				"note": "No outbound channel to the MijnOverheid Berichtenbox exists; portal messages stay in the portaliq inbox and the only out-of-band channel is e-mail.",
+				"note": "No outbound channel to the MijnOverheid Berichtenbox exists; portal messages stay in the portaliq inbox and the only out-of-band channel is e-mail. Specified in openspec/changes/inbox-berichtenbox-channel (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -7503,7 +7545,7 @@
 				"evidence": "lib/Service/PortalObjectReader.php:17-31 one-hop 'via' join (rol->zaak, match id or scopeField array-contains) lets a second party's own subjectRef reach a case; ConductionNL/dossiq@971735b03e (development) lib/Portal/PortalContributionProvider.php:425 dossiq's mijnZaken collection scopes on the scalar 'portalSubject' with no via declared",
 				"reachedOn": "portal SPA collection page -> GET /portal/api/collections/{register}/{schema} -> PortalObjectReader via-join, only when the contributing app declares it",
 				"owner": "ConductionNL/portaliq",
-				"note": "The mechanism for a co-applicant signing in with their own DigiD and seeing a shared case is in portaliq (role-join scoping), but dossiq, the case app, scopes cases on one portalSubject value, so in the fleet as shipped the partner sees nothing.",
+				"note": "The mechanism for a co-applicant signing in with their own DigiD and seeing a shared case is in portaliq (role-join scoping), but dossiq, the case app, scopes cases on one portalSubject value, so in the fleet as shipped the partner sees nothing. Portaliq's half is built (openspec/changes/archive/2026-09-07-contract-v2, the via join, and 2026-09-07-reverse-scope-join). The missing half is dossiq's: declare a via over the case roles on mijnZaken so a co-applicant's own subjectRef reaches the shared case (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -7532,11 +7574,11 @@
 				"liferay-dxp": "not settled from docs: no PDF export of a user's own records was found in the objects, display page or data set pages read today; Analytics Cloud PDF reports (https://learn.liferay.com/w/dxp/personalization/analytics-cloud/reference/downloading-reports) are for staff dashboards."
 			},
 			"built": {
-				"state": "none",
+				"state": "specified",
 				"evidence": "grep -riE 'pdf|print|export' src/portal: only TasksPage.jsx:52 (accepted upload types); portalMessage.dataCopy (lib/Settings/portaliq_register.json:715) is a JSON copy of submitted fields, not an export",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
-				"note": "No PDF or print export of the resident's own data, statements or plan; the WMEBV receipt carries a field copy in the inbox message only.",
+				"note": "No PDF or print export of the resident's own data, statements or plan; the WMEBV receipt carries a field copy in the inbox message only. Specified in openspec/changes/cases-export-own-data-pdf (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -7631,11 +7673,11 @@
 				"liferay-dxp": "https://www.liferay.com/documents/d/guest/vpat2-5rev_int_february2025_liferay_dxp_sites_experience (DXP 2025.Q4.0) evaluates 'sites created with Liferay DXP' against WCAG 2.2 incl. 2.4.11, 2.5.8 and 3.3.8, all 'Supports', but 'does not guarantee compliance in all deployment scenarios'. The signed-in case pages are custom fragments and need their own audit. [was unknown]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "tests/e2e/site-accessibility.spec.ts:30,87-241 runs axe (wcag22aa) only against /site; no axe test navigates /portal; src/portal/components/CollectionTable.jsx:101 row selection is an onClick on <tr> with no tabindex or key handler; TasksPage.jsx:263,340 role=status/alert; CitizenCase.jsx notice has no live region",
 				"reachedOn": "/portal SPA (App.jsx) signed-in pages: nav, collection tables, CitizenCase, InboxPage, TasksPage",
 				"owner": "ConductionNL/portaliq",
-				"note": "Some accessibility work on the signed-in SPA (labelled inputs, status roles on tasks) but no automated WCAG check covers it, and opening a case or detail from a table row is mouse-only, a WCAG 2.1.1 keyboard failure on the main signed-in path (code reading, needs a live check).",
+				"note": "Some accessibility work on the signed-in SPA (labelled inputs, status roles on tasks) but no automated WCAG check covers it, and opening a case or detail from a table row is mouse-only, a WCAG 2.1.1 keyboard failure on the main signed-in path (code reading, needs a live check). Specified in openspec/changes/portal-spa-nl-design-system-styling (existing change, OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -7697,11 +7739,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/integrating-objects-with-third-party-services/managing-data-from-external-systems: a proxy object stores and retrieves data from an external system, configured in the Objects UI, but 'Liferay includes connectors to Salesforce and SugarCRM' only. ZGW case, document and catalogue connectors would be custom. [was unknown; custom: ZGW proxy connectors]"
 			},
 			"built": {
-				"state": "none",
+				"state": "decided-no",
 				"evidence": "lib/Settings/connections.json declares only 'geo-db' and 'oidc'; portaliq reads cases through OpenRegister contributions (lib/Service/PortalObjectReader.php), never a ZGW API",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
-				"note": "Portaliq has no ZGW Zaken/Documenten/Catalogi client to configure; its connections page (via integriq) lists only the geo database and login brokers. Case data arrives through sibling contributions.",
+				"note": "Portaliq has no ZGW Zaken/Documenten/Catalogi client to configure; its connections page (via integriq) lists only the geo database and login brokers. Case data arrives through sibling contributions. Decided no in the OpenSpec pass 2026-09-27: openspec/project.md Boundaries: portaliq owns no data storage and makes no app-to-app calls; it reads cases through OpenRegister contributions and has no ZGW client to configure. Connections to the case, document and catalogue APIs belong to integriq's connection registry, which adopt-connection-registry already surfaces.",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -7730,11 +7772,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/sites/site-appearance/style-books/using-a-style-book-to-standardize-site-appearance: 'Navigate to the Site Menu → Design → Style Books', 'Style books determine ... spacing ..., colors, and fonts' from the theme's frontend token definition, set in the UI with no code. [was unknown]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "lib/Service/PortalThemeResolver.php:93 stylesheetFor maps portal.theme to a shipped thematiq/nldesign token file; :172-190 reads token-sets.json from disk and deliberately excludes admin-uploaded custom sets; existing row thm-theme-picker-missing (portal edit form theme is a plain text field)",
 				"reachedOn": "admin Portals page edit form -> portal.theme text -> /site and /portal root stylesheet",
 				"owner": "ConductionNL/portaliq",
-				"note": "An admin can switch a portal between the catalogue house styles with no code change, but only by typing the set name, and colour, typography or component token edits made in thematiq's editor never reach the portal, because custom sets are excluded on purpose.",
+				"note": "An admin can switch a portal between the catalogue house styles with no code change, but only by typing the set name, and colour, typography or component token edits made in thematiq's editor never reach the portal, because custom sets are excluded on purpose. Specified in openspec/changes/nldesign-theme-integration (existing change, OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -7763,11 +7805,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/displaying-object-entries: collections list entries and 'display pages can provide the entry detail view'; a permit object with validity fields and account restriction is possible. No product or permit register is included. [was unknown; custom: product object or proxy to the source register]"
 			},
 			"built": {
-				"state": "none",
+				"state": "decided-no",
 				"evidence": "grep -riE 'product' lib src: only runtime-config, demo data and access-request wording; no product/permit collection in portaliq or in ConductionNL/dossiq@971735b03e (development) lib/Portal/PortalContributionProvider.php",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
-				"note": "No 'my products' view; it could only arrive as a sibling's contributed collection and none contributes one.",
+				"note": "No 'my products' view; it could only arrive as a sibling's contributed collection and none contributes one. Decided no in the OpenSpec pass 2026-09-27: openspec/project.md Boundaries: portaliq does not own domain business logic (it stays in the domain apps) or data storage. The portal already renders any collection a domain app contributes; the product data (Open Product) is that app's to contribute.",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -7796,11 +7838,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/administration/file-storage/enabling-antivirus-scanning-for-uploaded-files: ClamAV (Clamd) scanner in System Settings checks every uploaded file, including 'Objects attachment fields' (search result today). On Liferay Cloud 'The default Liferay DXP feature for scanning viruses on file upload cannot be used ... Uploaded content is scanned on a schedule' (https://learn.liferay.com/w/dxp/cloud/reference/platform-limitations). [was unknown; on Liferay Cloud the scan is scheduled, not at upload]"
 			},
 			"built": {
-				"state": "built",
+				"state": "decided-no",
 				"evidence": "lib/Service/PortalFileWriter.php:117 stores uploads through OpenRegister FileService::addFile into the Nextcloud filesystem; grep -riE 'virus|clam|malware' lib: 0 hits",
 				"reachedOn": "portal SPA upload controls (PageView FileUpload, CitizenCase add document) -> /portal/api/.../files -> OpenRegister FileService -> Nextcloud storage",
-				"owner": "ConductionNL/nextcloud",
-				"note": "Portaliq does no scanning itself. Because uploads land in Nextcloud storage, Nextcloud's files_antivirus app (when an admin installs it) scans and refuses infected writes; the portal then shows its generic 'upload failed' text, not a virus-specific refusal.",
+				"owner": "nextcloud/server",
+				"note": "Portaliq does no scanning itself. Because uploads land in Nextcloud storage, Nextcloud's files_antivirus app (when an admin installs it) scans and refuses infected writes; the portal then shows its generic 'upload failed' text, not a virus-specific refusal. Decided no in the OpenSpec pass 2026-09-27: Owned by nextcloud/server (built.owner was the non-canonical ConductionNL/nextcloud): uploads land in Nextcloud storage, where the files_antivirus app scans them. Platform-provided, outside the fleet.",
 				"origin": "code"
 			},
 			"provider": "nextcloud",
@@ -7828,11 +7870,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/administration/configuring-liferay/virtual-instances/infrastructure 'Auto Extend: If checked, automatically extends the session without prompting the user', which implies a prompt when it is off; the warning and its one-click extend are not described on the pages read today. [was unknown]"
 			},
 			"built": {
-				"state": "none",
+				"state": "specified",
 				"evidence": "src/portal/App.jsx:129 setInterval refreshSession every 25 min while the page is open; grep -riE 'idle|inactiv' src: 0 hits",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
-				"note": "The session is slid forward silently while the tab is open; there is no inactivity timer, no warning dialog and no 'stay signed in' control.",
+				"note": "The session is slid forward silently while the tab is open; there is no inactivity timer, no warning dialog and no 'stay signed in' control. Specified in openspec/changes/signin-session-idle-warning-and-sso (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -7861,11 +7903,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/commerce/creating-store-content/liferay-commerce-fragments ('Using the Account Selector') and https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/using-system-objects-with-custom-objects/restricting-access-to-object-data-by-account: a user picks an account and sees only its entries. Mapping an eHerkenning branch number to an account is custom. [was unknown; custom: eHerkenning attributes to account mapping]"
 			},
 			"built": {
-				"state": "none",
+				"state": "specified",
 				"evidence": "lib/Service/OidcClaimMapperService.php:73-100 eherkenning preset maps subject and acr only; grep -riE 'vestiging|establishment' lib src: no claim handling (only a mock-data sentence)",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
-				"note": "No branch (vestigingsnummer) claim is read or scoped on; an eHerkenning login acts for the whole company subjectRef.",
+				"note": "No branch (vestigingsnummer) claim is read or scoped on; an eHerkenning login acts for the whole company subjectRef. Specified in openspec/changes/signin-eherkenning-branch (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -7893,11 +7935,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/integration/headless-apis/user-management-apis/user-account-api-basics: 'userAccountContactInformation' holds lists 'emailAddresses', 'telephones' and 'postalAddresses'; postal addresses carry '\"primary\": false' (https://learn.liferay.com/w/dxp/integration/headless-apis/user-management-apis/postal-address-api-basics). A resident-facing screen to mark a preferred e-mail and phone is not described. [was unknown]"
 			},
 			"built": {
-				"state": "none",
+				"state": "specified",
 				"evidence": "lib/Settings/portaliq_register.json portalAccount has one 'email' (plus pendingEmail) and no phone; existing row id-update-own-details: PATCH /portal/api/identity/details has no frontend caller",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
-				"note": "One e-mail per account, no phone numbers, no preferred marker, and the resident cannot edit contact details from any page.",
+				"note": "One e-mail per account, no phone numbers, no preferred marker, and the resident cannot edit contact details from any page. Specified in openspec/changes/identity-profile-page (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -7925,11 +7967,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/integrating-objects-with-third-party-services/managing-data-from-external-systems: a proxy object can show an external system's data on display pages. No waste collection connector exists; the data source and page are custom. [was unknown]"
 			},
 			"built": {
-				"state": "none",
+				"state": "decided-no",
 				"evidence": "grep -riE 'afval|waste|container' lib src: no domain hits",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
-				"note": "No waste-emptying data or collection.",
+				"note": "No waste-emptying data or collection. Decided no in the OpenSpec pass 2026-09-27: openspec/project.md Boundaries: portaliq does not own domain business logic (it stays in the domain apps) or data storage. The portal already renders any collection a domain app contributes; the waste-emptying data is that app's to contribute.",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -7957,11 +7999,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/security/multi-factor-authentication 'The basic user name/password combination is augmented with one or more further, configurable factors ... the default One Time Password (OTP) and configurable IP address, time-based OTP, FIDO2-compliant devices'. SMS is not among the listed factors. [was unknown]"
 			},
 			"built": {
-				"state": "built",
+				"state": "decided-no",
 				"evidence": "lib/Controller/SessionController.php:503-562 session#nextcloud hands username/password login to Nextcloud's own login form and maps it to eIDAS 'low'; portaliq has no password store or second factor of its own",
 				"reachedOn": "public site sign-in menu (src/site/App.vue signInRoutes) -> GET /portal/api/session/nextcloud -> Nextcloud login (with Nextcloud's two-factor providers)",
-				"owner": "ConductionNL/nextcloud",
-				"note": "The only password login is Nextcloud's, so a second factor exists only as Nextcloud two-factor (TOTP built in, SMS via the twofactor_gateway app) on that account; portaliq neither requires nor configures it.",
+				"owner": "nextcloud/server",
+				"note": "The only password login is Nextcloud's, so a second factor exists only as Nextcloud two-factor (TOTP built in, SMS via the twofactor_gateway app) on that account; portaliq neither requires nor configures it. Decided no in the OpenSpec pass 2026-09-27: Owned by nextcloud/server (built.owner was the non-canonical ConductionNL/nextcloud): the only password login is Nextcloud's own, with Nextcloud's two-factor providers. Platform-provided, outside the fleet.",
 				"origin": "code"
 			},
 			"provider": "nextcloud",
@@ -8153,11 +8195,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/integrating-objects-with-third-party-services/managing-data-from-external-systems: a proxy object could show BRP data; the investigation request could be a form. No BRP connector is documented (as cmp-id-brp). [was unknown; custom: BRP proxy and request flow]"
 			},
 			"built": {
-				"state": "none",
+				"state": "specified",
 				"evidence": "grep -riE 'brp|bewoner|adresonderzoek|residents' lib src: 0 domain hits; existing row cmp-id-brp is no",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
-				"note": "No BRP read and no address-investigation request.",
+				"note": "No BRP read and no address-investigation request. Specified in openspec/changes/identity-registered-details (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -8186,11 +8228,11 @@
 				"liferay-dxp": "not settled from docs: the user management and SSO pages read today (https://learn.liferay.com/w/dxp/security-and-administration/users-and-permissions/users/adding-and-managing-users, OpenID Connect) do not describe prompting a signed-in user to add a missing e-mail address."
 			},
 			"built": {
-				"state": "none",
+				"state": "specified",
 				"evidence": "src/portal/App.jsx session view shows subjectRef only; portalAccount.needsAlternativeContact is set by NotificationDispatchJob but nothing in src/ reads it; /portal/api/identity/details has no caller",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
-				"note": "No prompt; a missing or failing e-mail only flags the account for staff.",
+				"note": "No prompt; a missing or failing e-mail only flags the account for staff. Specified in openspec/changes/identity-profile-page (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",

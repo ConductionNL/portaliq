@@ -1,0 +1,954 @@
+[
+	{
+		"row": "act-propose-citizen",
+		"matrix": "portaliq",
+		"decision": "existing",
+		"reason": "Matrix corrected. Shipped after the rating with open change guardian-self-service-profile (portaliq#683): the detail card offers a propose-change action, the proposer's own queue and a withdraw button (src/portal/components/PageView.jsx ProposalQueue, GET /portal/api/proposals/mine). Rating no to partial: it renders only where a contribution declares a propose-change action, and dossiq declares none yet.",
+		"change": "guardian-self-service-profile",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "act-propose-colleague",
+		"matrix": "portaliq",
+		"decision": "existing",
+		"reason": "Open change change-proposal-queue carries the colleague and reviewer screens as its open tasks T05 and T06 (the portaliq-change-proposals data-provider and the portaliq-change-proposal-queue render-surface leaf).",
+		"change": "change-proposal-queue",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "act-staff-review-queue",
+		"matrix": "portaliq",
+		"decision": "existing",
+		"reason": "Open change change-proposal-queue carries the colleague and reviewer screens as its open tasks T05 and T06 (the portaliq-change-proposals data-provider and the portaliq-change-proposal-queue render-surface leaf).",
+		"change": "change-proposal-queue",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "act-withdraw-case",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Open change withdrawing-your-own-case-from-the-portal has every task checked (11 of 11) but no screen in src/portal, src/site or src/manifest.json calls its endpoints (read at eeda3fa). Treated as the archived case of the rule: shipped without the capability, so this change builds the missing screens.",
+		"change": "case-actions-withdraw-screen",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "act-withdraw-proposal",
+		"matrix": "portaliq",
+		"decision": "existing",
+		"reason": "Matrix corrected. Shipped after the rating with open change guardian-self-service-profile (portaliq#683): the detail card offers a propose-change action, the proposer's own queue and a withdraw button (src/portal/components/PageView.jsx ProposalQueue, GET /portal/api/proposals/mine). Rating no to partial: it renders only where a contribution declares a propose-change action, and dossiq declares none yet.",
+		"change": "guardian-self-service-profile",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cas-deeplink-notify",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Partial and built, three competitors rated yes on the missing half: a notification deep-links to a task, never to a case, because the case screen has no stable URL.",
+		"change": "inbox-notifications-and-preferences",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cas-documents-view",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Partial and built, three or more competitors rated yes on the missing half: CitizenCase.jsx lists document names with no download, and a decision letter has no affordance of its own.",
+		"change": "cases-documents-on-the-case",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cas-mandate-org-cases",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Open change portal-identity-space has every task checked (8 of 8) but no screen in src/portal, src/site or src/manifest.json calls its endpoints (read at eeda3fa). Treated as the archived case of the rule: shipped without the capability, so this change builds the missing screens. GET /portal/api/my-cases (MyCasesController) has no caller; the organisation and mandate scope it needs is built.",
+		"change": "cases-my-cases-page",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cas-mycases-unified",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Open change portal-identity-space has every task checked (8 of 8) but no screen in src/portal, src/site or src/manifest.json calls its endpoints (read at eeda3fa). Treated as the archived case of the rule: shipped without the capability, so this change builds the missing screens. GET /portal/api/my-cases (MyCasesController) has no caller; two competitors rated yes.",
+		"change": "cases-my-cases-page",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-ana-feedback",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "No competitor rated yes and no tender, featureRequest or roadmap demand; outside portaliq's core area (sign-in and identity).",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-ana-profiles",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "Partial, built, no demand: no demand row and fewer than two competitors rated yes on the missing half.",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-cas-address-services",
+		"matrix": "portaliq",
+		"decision": "decided-no",
+		"reason": "openspec/project.md Boundaries: portaliq does not own domain business logic (it stays in the domain apps) or data storage. The portal already renders any collection a domain app contributes; the address-bound service data (such as a waste calendar) is that app's to contribute.",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-cas-all-gov",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Open change portal-identity-space has every task checked (8 of 8) but no screen in src/portal, src/site or src/manifest.json calls its endpoints (read at eeda3fa). Treated as the archived case of the rule: shipped without the capability, so this change builds the missing screens. GET /portal/api/my-cases (MyCasesController) has no caller; the cross-organisation merge it needs is built.",
+		"change": "cases-my-cases-page",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-cas-benefits",
+		"matrix": "portaliq",
+		"decision": "decided-no",
+		"reason": "openspec/project.md Boundaries: portaliq does not own domain business logic (it stays in the domain apps) or data storage. The portal already renders any collection a domain app contributes; the benefits and provisions data is that app's to contribute.",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-cas-closed",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Partial and built, four competitors rated yes on the missing half: no open and closed grouping on the case list.",
+		"change": "cases-my-cases-page",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-cas-decision-download",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Partial and built, three or more competitors rated yes on the missing half: CitizenCase.jsx lists document names with no download, and a decision letter has no affordance of its own.",
+		"change": "cases-documents-on-the-case",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-cas-documents-published",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Partial and built, three or more competitors rated yes on the missing half: CitizenCase.jsx lists document names with no download, and a decision letter has no affordance of its own.",
+		"change": "cases-documents-on-the-case",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-cas-permits",
+		"matrix": "portaliq",
+		"decision": "decided-no",
+		"reason": "openspec/project.md Boundaries: portaliq does not own domain business logic (it stays in the domain apps) or data storage. The portal already renders any collection a domain app contributes; the permit data is that app's to contribute.",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-cas-status-timeline",
+		"matrix": "portaliq",
+		"decision": "existing",
+		"reason": "Matrix corrected. Shipped after the rating with portaliq#732 (fixes issue #723, commit 69ca851, no change directory): the case detail shows the history the case app declares (src/portal/components/TimelineList.jsx, lib/Controller/PortalTimelineController.php) and CitizenCase.jsx shows the current public status. Rating no to yes, built.state none to built.",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-cas-tax",
+		"matrix": "portaliq",
+		"decision": "decided-no",
+		"reason": "openspec/project.md Boundaries: portaliq does not own domain business logic (it stays in the domain apps) or data storage. The portal already renders any collection a domain app contributes; the municipal tax data is that app's to contribute.",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-cas-woz",
+		"matrix": "portaliq",
+		"decision": "decided-no",
+		"reason": "openspec/project.md Boundaries: portaliq does not own domain business logic (it stays in the domain apps) or data storage. The portal already renders any collection a domain app contributes; the WOZ value is that app's to contribute.",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-id-brp",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Core area (identity); cmp-id-brp has four competitors yes and cmp-id-company two. OpenRegister's integration-brp-haalcentraal and integration-kvk-opencorporates changes provide the person and company lookup this change reads.",
+		"change": "identity-registered-details",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-id-company",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Core area (identity); cmp-id-brp has four competitors yes and cmp-id-company two. OpenRegister's integration-brp-haalcentraal and integration-kvk-opencorporates changes provide the person and company lookup this change reads.",
+		"change": "identity-registered-details",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-id-contact-channel",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Core area (identity); no change specifies it (portalAccount holds one e-mail and no channel preference).",
+		"change": "identity-profile-page",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-id-correct",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Core area (identity); cmp-id-brp has four competitors yes and cmp-id-company two. OpenRegister's integration-brp-haalcentraal and integration-kvk-opencorporates changes provide the person and company lookup this change reads.",
+		"change": "identity-registered-details",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-id-prompt-missing-email",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Core area (identity); no change specifies it (portalAccount holds one e-mail and no channel preference).",
+		"change": "identity-profile-page",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-id-residents-at-address",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Core area (identity); cmp-id-brp has four competitors yes and cmp-id-company two. OpenRegister's integration-brp-haalcentraal and integration-kvk-opencorporates changes provide the person and company lookup this change reads.",
+		"change": "identity-registered-details",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-inb-attach",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Two competitors rated yes (Open Inwoner, xxllnc PIP).",
+		"change": "inbox-reply-with-attachments",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-inb-contact-history",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "Only one competitor rated yes (Open Inwoner) and no tender, featureRequest or roadmap demand; outside portaliq's core area (sign-in and identity).",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-inb-download",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "Only one competitor rated yes (MijnOverheid) and no tender, featureRequest or roadmap demand; outside portaliq's core area (sign-in and identity).",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-inb-email-alert",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Partial and built, four competitors rated yes on the missing half: only rule keys message.created and status.changed ever send, so a sibling's declared notifications never reach anyone.",
+		"change": "inbox-notifications-and-preferences",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-inb-newsletter",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "Only one competitor rated yes (Open Inwoner) and no tender, featureRequest or roadmap demand; outside portaliq's core area (sign-in and identity). news-and-newsletter-authoring sends newsletters but has no subscribe or unsubscribe from a profile.",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-inb-notif-prefs",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Two competitors rated yes (MijnOverheid, Liferay DXP). Matrix corrected: an e-mail opt-out shipped after the rating (notification-preferences-per-role, portaliq#685) on PATCH /portal/api/identity/details with no screen, so the rating moves from no to partial; the SPA control and a choice per kind of notification are this change.",
+		"change": "inbox-notifications-and-preferences",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-inb-push",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "Only one competitor rated yes (MijnOverheid) and no tender, featureRequest or roadmap demand; outside portaliq's core area (sign-in and identity). push-notifications-quiet-hours built the delivery seam with a logging sender only, and no arriving message triggers it.",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-inb-reply",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "One competitor rated yes on its own, but it is the prerequisite of cmp-inb-attach (two competitors yes): a resident cannot attach a file to a message without a way to send one.",
+		"change": "inbox-reply-with-attachments",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-int-pdf-receipt",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "Partial, built, no demand: no demand row and fewer than two competitors rated yes on the missing half.",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-int-report-map",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "Only one competitor rated yes (xxllnc PIP) and no tender, featureRequest or roadmap demand; outside portaliq's core area (sign-in and identity).",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-sig-2fa-password",
+		"matrix": "portaliq",
+		"decision": "decided-no",
+		"reason": "Owned by nextcloud/server (built.owner was the non-canonical ConductionNL/nextcloud): the only password login is Nextcloud's own, with Nextcloud's two-factor providers. Platform-provided, outside the fleet.",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-sig-eidas",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Partial and built, and three or more competitors rated yes on the missing half: portaliq signs in only through an organisation-supplied OIDC broker. The fleet put the DigiD and eHerkenning broker in integriq (open change idp-broker-envelope-runtime, which leaves portaliq out of scope), so portaliq's half is consuming that envelope exchange.",
+		"change": "signin-integriq-broker-login",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-sig-idle-warning",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Three competitors rated yes (Open Inwoner, NL Portal, xxllnc PIP) and the row is in portaliq's core area (sign-in).",
+		"change": "signin-session-idle-warning-and-sso",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-sig-level",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "Partial, built, no demand: no demand row and fewer than two competitors rated yes on the missing half.",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-sig-machtiging",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Partial and built, two competitors rated yes on the missing half (NL Portal, MijnOverheid): the mandate engine is reached on every case read but no screen names or switches the mandate, although portal-identity-and-the-organisations-cases marks T04 and T05 done.",
+		"change": "cases-my-cases-page",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-sig-sso",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Two competitors rated yes (MijnOverheid, Liferay DXP) and the row is in portaliq's core area (sign-in).",
+		"change": "signin-session-idle-warning-and-sso",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-site-map",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "Only one competitor rated yes (Open Inwoner) and no tender, featureRequest or roadmap demand; outside portaliq's core area (sign-in and identity).",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-site-news",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "Only one competitor rated yes (Liferay DXP) and no tender, featureRequest or roadmap demand; outside portaliq's core area (sign-in and identity). Matrix corrected: news-and-newsletter-authoring (portaliq#682) shipped a dated NewsItem targeted at signed-in guardians after the rating, so the rating moves from no to partial; a public news overview page is the missing half.",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-site-personalise",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "Only one competitor rated yes (Liferay DXP) and no tender, featureRequest or roadmap demand; outside portaliq's core area (sign-in and identity).",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-site-schedule",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "No competitor rated yes and no tender, featureRequest or roadmap demand; outside portaliq's core area (sign-in and identity).",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-site-workflow",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "Only one competitor rated yes (Liferay DXP) and no tender, featureRequest or roadmap demand; outside portaliq's core area (sign-in and identity).",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-srch-noindex-filtered",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "Changelog demand and one competitor rated yes (Liferay DXP); the rule needs a featureRequest or roadmap row for a single competitor.",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-srch-own-messages-tasks",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "Only one competitor rated yes (NL Portal) and no tender, featureRequest or roadmap demand; outside portaliq's core area (sign-in and identity).",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-thm-b1",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "No competitor rated yes and no tender, featureRequest or roadmap demand; outside portaliq's core area (sign-in and identity).",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-thm-languages",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "Partial, built, no demand: no demand row and fewer than two competitors rated yes on the missing half.",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-thm-mobile-app",
+		"matrix": "portaliq",
+		"decision": "decided-no",
+		"reason": "Matrix corrected: the installable portal (manifest, service worker, install prompt) shipped after the rating with parent-pwa-installability (portaliq#714), so the rating moves from no to partial. The missing half, a native app, is a recorded non-goal: parent-pwa-installability/proposal.md Out of Scope, 'Any native iOS/Android app-store app'.",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-tsk-appointment",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "Only one competitor rated yes (xxllnc PIP) and no tender, featureRequest or roadmap demand; outside portaliq's core area (sign-in and identity). Booking itself is pipelinq's (appointment-booking changes).",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-tsk-plan",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "Only one competitor rated yes (Open Inwoner) and no tender, featureRequest or roadmap demand; outside portaliq's core area (sign-in and identity).",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-tsk-questionnaire",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "Only one competitor rated yes (Open Inwoner) and no tender, featureRequest or roadmap demand; outside portaliq's core area (sign-in and identity).",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "con-fleet-adoption",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "Partial, built, no demand: no demand row and fewer than two competitors rated yes on the missing half.",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "con-trust-filtering",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "Partial, built, no demand: no demand row and fewer than two competitors rated yes on the missing half.",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "dem-cl-consent-on-account-gpc",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "Changelog demand and one competitor rated yes (Liferay DXP); the rule needs a featureRequest or roadmap row for a single competitor.",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "dem-cl-eherkenning-branch",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Three competitors rated yes (Open Inwoner, NL Portal, xxllnc PIP) and the row is in portaliq's core area (sign-in).",
+		"change": "signin-eherkenning-branch",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "dem-cl-hide-one-case",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "Changelog demand only and no competitor rated yes; outside portaliq's core area.",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "dem-cl-inbox-bulk-actions",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "Changelog demand and one competitor rated yes (MijnOverheid); the rule needs a featureRequest or roadmap row for a single competitor. Outside portaliq's core area.",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "dem-cl-mcp-pii-masking",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "Changelog demand and one competitor rated yes (Liferay DXP); the rule needs a featureRequest or roadmap row for a single competitor.",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "dem-cl-multiple-contact-addresses",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Core area (identity); no change specifies it (portalAccount holds one e-mail and no channel preference).",
+		"change": "identity-profile-page",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "dem-cl-sub-cases",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "Changelog demand only and no competitor rated yes; the sub-case projection is dossiq's (CITIZEN_CASE_FIELDS omits parentCase and subCases).",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "dem-cl-upload-virus-scan",
+		"matrix": "portaliq",
+		"decision": "decided-no",
+		"reason": "Owned by nextcloud/server (built.owner was the non-canonical ConductionNL/nextcloud): uploads land in Nextcloud storage, where the files_antivirus app scans them. Platform-provided, outside the fleet.",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "dem-cl-waste-emptying",
+		"matrix": "portaliq",
+		"decision": "decided-no",
+		"reason": "openspec/project.md Boundaries: portaliq does not own domain business logic (it stays in the domain apps) or data storage. The portal already renders any collection a domain app contributes; the waste-emptying data is that app's to contribute.",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "dem-rm-ai-governed-search",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "Roadmap demand (Liferay roadmap) but no competitor rated yes; outside portaliq's core area.",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "dem-rm-federated-messages",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "Roadmap demand (Logius Federatief Berichtenstelsel) but no competitor rated yes; outside portaliq's core area.",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "dem-rm-house-style-ui",
+		"matrix": "portaliq",
+		"decision": "existing",
+		"reason": "Open change nldesign-theme-integration covers the missing half: tasks 4.1 and 4.2 let a portal adopt a custom token set shared through OpenRegister after CustomTokenSetValidator, task 1.4 turns the typed theme name into a choice.",
+		"change": "nldesign-theme-integration",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "dem-rm-my-products",
+		"matrix": "portaliq",
+		"decision": "decided-no",
+		"reason": "openspec/project.md Boundaries: portaliq does not own domain business logic (it stays in the domain apps) or data storage. The portal already renders any collection a domain app contributes; the product data (Open Product) is that app's to contribute.",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "dem-rm-national-case-feed",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "Roadmap demand (Logius MijnZaken) but no competitor rated yes; outside portaliq's core area.",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "dem-rm-seo-aeo-center",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "Roadmap demand (Liferay) but no competitor rated yes; outside portaliq's core area.",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "dem-rm-sms-alert",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "Roadmap demand (Logius Federatief Berichtenstelsel) but no competitor rated yes; outside portaliq's core area.",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "dem-rm-zgw-config-ui",
+		"matrix": "portaliq",
+		"decision": "decided-no",
+		"reason": "openspec/project.md Boundaries: portaliq owns no data storage and makes no app-to-app calls; it reads cases through OpenRegister contributions and has no ZGW client to configure. Connections to the case, document and catalogue APIs belong to integriq's connection registry, which adopt-connection-registry already surfaces.",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "dem-tnd-berichtenbox",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Tender demand (TenderNed 407031, also 415380) and two competitors rated yes (xxllnc PIP, MijnOverheid). integriq's berichtenbox-digital-post-adapter is the adapter this channel hands to.",
+		"change": "inbox-berichtenbox-channel",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "dem-tnd-export-pdf",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Tender demand (TenderNed 409958).",
+		"change": "cases-export-own-data-pdf",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "dem-tnd-joint-case-partner",
+		"matrix": "portaliq",
+		"decision": "existing",
+		"reason": "Portaliq's half shipped with archived change 2026-09-07-contract-v2 (the one-hop via join, lib/Service/PortalObjectReader.php) and 2026-09-07-reverse-scope-join. The missing half is dossiq's: its mijnZaken collection scopes on the single portalSubject and declares no via over the case roles.",
+		"change": "2026-09-07-contract-v2",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "dem-tnd-notify-on-change",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Tender demand (TenderNed 397282, also 415380).",
+		"change": "inbox-notifications-and-preferences",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "dem-tnd-wcag22-portal",
+		"matrix": "portaliq",
+		"decision": "existing",
+		"reason": "Open change portal-spa-nl-design-system-styling carries the missing half as open tasks 4.1 (an axe check of the signed-in /portal SPA in Playwright) and 4.2 (a keyboard-only pass). The mouse-only table row it names was fixed after the rating (commit b632f2b, portaliq#729).",
+		"change": "portal-spa-nl-design-system-styling",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "id-invitation-accept",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Core area (identity). Open change portal-identity-and-the-organisations-cases has every task checked (15 of 15) but no screen in src/portal, src/site or src/manifest.json calls its endpoints (read at eeda3fa). Treated as the archived case of the rule: shipped without the capability, so this change builds the missing screens.",
+		"change": "identity-ways-in-screens",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "id-my-access-requests",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Core area (identity). Open change portal-identity-and-the-organisations-cases has every task checked (15 of 15) but no screen in src/portal, src/site or src/manifest.json calls its endpoints (read at eeda3fa). Treated as the archived case of the rule: shipped without the capability, so this change builds the missing screens.",
+		"change": "identity-access-requests",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "id-reference-link",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Core area (identity). Open change portal-identity-and-the-organisations-cases has every task checked (15 of 15) but no screen in src/portal, src/site or src/manifest.json calls its endpoints (read at eeda3fa). Treated as the archived case of the rule: shipped without the capability, so this change builds the missing screens.",
+		"change": "identity-ways-in-screens",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "id-registration-policy",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Core area (identity). Open change portal-identity-and-the-organisations-cases has every task checked (15 of 15) but no screen in src/portal, src/site or src/manifest.json calls its endpoints (read at eeda3fa). Treated as the archived case of the rule: shipped without the capability, so this change builds the missing screens.",
+		"change": "identity-staff-account-screens",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "id-remove-own-account",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Core area (identity). Open change portal-identity-and-the-organisations-cases has every task checked (15 of 15) but no screen in src/portal, src/site or src/manifest.json calls its endpoints (read at eeda3fa). Treated as the archived case of the rule: shipped without the capability, so this change builds the missing screens.",
+		"change": "identity-profile-page",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "id-request-access",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Core area (identity). Open change portal-identity-and-the-organisations-cases has every task checked (15 of 15) but no screen in src/portal, src/site or src/manifest.json calls its endpoints (read at eeda3fa). Treated as the archived case of the rule: shipped without the capability, so this change builds the missing screens.",
+		"change": "identity-access-requests",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "id-self-registration-form",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Core area (identity). Open change portal-identity-and-the-organisations-cases has every task checked (15 of 15) but no screen in src/portal, src/site or src/manifest.json calls its endpoints (read at eeda3fa). Treated as the archived case of the rule: shipped without the capability, so this change builds the missing screens.",
+		"change": "identity-ways-in-screens",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "id-staff-invite",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Core area (identity). Open change portal-identity-and-the-organisations-cases has every task checked (15 of 15) but no screen in src/portal, src/site or src/manifest.json calls its endpoints (read at eeda3fa). Treated as the archived case of the rule: shipped without the capability, so this change builds the missing screens.",
+		"change": "identity-staff-account-screens",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "id-staff-provision-desk",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Partial and built, three competitors rated yes on the missing half: the validated provision() and void() actions (portal-identity-space) have no screen, so staff fall back to the generic object form that skips their checks.",
+		"change": "identity-staff-account-screens",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "id-staff-void",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Partial and built, three competitors rated yes on the missing half: the validated provision() and void() actions (portal-identity-space) have no screen, so staff fall back to the generic object form that skips their checks.",
+		"change": "identity-staff-account-screens",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "id-update-own-details",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Core area (identity). Open change portal-identity-and-the-organisations-cases has every task checked (15 of 15) but no screen in src/portal, src/site or src/manifest.json calls its endpoints (read at eeda3fa). Treated as the archived case of the rule: shipped without the capability, so this change builds the missing screens.",
+		"change": "identity-profile-page",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "inb-wmebv-fields",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "Partial, built, no demand: no demand row and fewer than two competitors rated yes on the missing half.",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "ops-mcp-tooling",
+		"matrix": "portaliq",
+		"decision": "existing",
+		"reason": "Open change portaliq-mcp-adoption (0 of 8 tasks) specifies it, extended by hermiq-ai-tooling.",
+		"change": "portaliq-mcp-adoption",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "sib-decidiq-plt-02",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Partial and built, and three or more competitors rated yes on the missing half: portaliq signs in only through an organisation-supplied OIDC broker. The fleet put the DigiD and eHerkenning broker in integriq (open change idp-broker-envelope-runtime, which leaves portaliq out of scope), so portaliq's half is consuming that envelope exchange.",
+		"change": "signin-integriq-broker-login",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "sib-dossiq-2-21",
+		"matrix": "portaliq",
+		"decision": "existing",
+		"reason": "Open change change-proposal-queue carries the colleague and reviewer screens as its open tasks T05 and T06 (the portaliq-change-proposals data-provider and the portaliq-change-proposal-queue render-surface leaf).",
+		"change": "change-proposal-queue",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "sib-dossiq-2-47",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Open change withdrawing-your-own-case-from-the-portal has every task checked (11 of 11) but no screen in src/portal, src/site or src/manifest.json calls its endpoints (read at eeda3fa). Treated as the archived case of the rule: shipped without the capability, so this change builds the missing screens.",
+		"change": "case-actions-withdraw-screen",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "sib-dossiq-3-19",
+		"matrix": "portaliq",
+		"decision": "existing",
+		"reason": "Open change partner-tasks-in-the-portal built portaliq's half (lib/Controller/PartnerTaskController.php ask, guarded, routed). The handler's button is dossiq's consumer half: declare ask-partner on its case contribution and retire ExternalConsultationResponse.",
+		"change": "partner-tasks-in-the-portal",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "sib-dossiq-q1-14",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Partial and built, three competitors rated yes on the missing half: a party with no case id or broker-matched identity has no way in, because self-registration, the reference link and the case list are unreached.",
+		"change": "identity-ways-in-screens",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "sib-opencatalogi-od-visualise",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "No competitor rated yes and no tender, featureRequest or roadmap demand; outside portaliq's core area (sign-in and identity).",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "sib-opencatalogi-pub-restricted",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "Partial, built, no demand: no demand row and fewer than two competitors rated yes on the missing half.",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "sib-opencatalogi-pub-wcag",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "Partial, built, no demand: no demand row and fewer than two competitors rated yes on the missing half.",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "sib-opencatalogi-srch-facets",
+		"matrix": "portaliq",
+		"decision": "existing",
+		"reason": "Open change portal-public-search Task 3 computes facets after RBAC on the portal's search, which covers the missing category, organisation and date filters.",
+		"change": "portal-public-search",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "sib-stackiq-share-portal",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "Partial, built, no demand: no demand row and fewer than two competitors rated yes on the missing half.",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "sig-broker-health",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "Partial, built, no demand: no demand row and fewer than two competitors rated yes on the missing half. Open change adopt-connection-registry reports the broker after a real login only; an active probe is not specified anywhere.",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "sig-digid",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Partial and built, and three or more competitors rated yes on the missing half: portaliq signs in only through an organisation-supplied OIDC broker. The fleet put the DigiD and eHerkenning broker in integriq (open change idp-broker-envelope-runtime, which leaves portaliq out of scope), so portaliq's half is consuming that envelope exchange.",
+		"change": "signin-integriq-broker-login",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "sig-eherkenning",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Partial and built, and three or more competitors rated yes on the missing half: portaliq signs in only through an organisation-supplied OIDC broker. The fleet put the DigiD and eHerkenning broker in integriq (open change idp-broker-envelope-runtime, which leaves portaliq out of scope), so portaliq's half is consuming that envelope exchange.",
+		"change": "signin-integriq-broker-login",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "srch-detail-generic-properties",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "Partial, built, no demand: no demand row and fewer than two competitors rated yes on the missing half.",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "thm-content-i18n",
+		"matrix": "portaliq",
+		"decision": "defer",
+		"reason": "Only one competitor rated yes (Liferay DXP) and no tender, featureRequest or roadmap demand; outside portaliq's core area (sign-in and identity).",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "thm-theme-picker-missing",
+		"matrix": "portaliq",
+		"decision": "existing",
+		"reason": "Open change nldesign-theme-integration task 1.4: surface the resolvable set to the admin UI so portal.theme becomes a chosen id rather than free text.",
+		"change": "nldesign-theme-integration",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "tsk-ask-partner",
+		"matrix": "portaliq",
+		"decision": "existing",
+		"reason": "Open change partner-tasks-in-the-portal built portaliq's half (lib/Controller/PartnerTaskController.php ask, guarded, routed). The handler's button is dossiq's consumer half: declare ask-partner on its case contribution and retire ExternalConsultationResponse.",
+		"change": "partner-tasks-in-the-portal",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "od-visualise",
+		"matrix": "opencatalogi",
+		"decision": "defer",
+		"reason": "No competitor rated yes and no tender, featureRequest or roadmap demand; outside portaliq's core area (sign-in and identity).",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "pub-wcag",
+		"matrix": "opencatalogi",
+		"decision": "defer",
+		"reason": "Partial, built, no demand: no demand row and fewer than two competitors rated yes on the missing half.",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "srch-facets",
+		"matrix": "opencatalogi",
+		"decision": "existing",
+		"reason": "Open change portal-public-search Task 3 computes facets after RBAC on the portal's search over OpenRegister, which covers narrowing by category, organisation, theme and date.",
+		"change": "portal-public-search",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "plt-02",
+		"matrix": "decidiq",
+		"decision": "build",
+		"reason": "Same capability as portaliq row sib-decidiq-plt-02 (three competitors yes): signing in with DigiD or eHerkenning without an organisation-supplied OIDC broker, through integriq's broker envelope.",
+		"change": "signin-integriq-broker-login",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "acc-public-access",
+		"matrix": "buildiq",
+		"decision": "existing",
+		"reason": "Open change portal-theme-blocks-and-contributed-pages covers it: Task 9 gives a page a contributing app publishes its own public route, Task 10 its anonymous ownership.",
+		"change": "portal-theme-blocks-and-contributed-pages",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "form-usage-stats",
+		"matrix": "buildiq",
+		"decision": "existing",
+		"reason": "Portaliq's half shipped with open change portal-traffic-outcomes: src/widgets/TrafficForms.vue shows started, submitted, abandoned and the field people left on for forms served on a portal. The missing half, statistics on buildiq's own internal form pages, is buildiq's.",
+		"change": "portal-traffic-outcomes",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "2.21",
+		"matrix": "dossiq",
+		"decision": "existing",
+		"reason": "Open change change-proposal-queue carries the colleague and reviewer halves as its open tasks T05 and T06 (the data-provider and render-surface leaves dossiq places on the case).",
+		"change": "change-proposal-queue",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "3.19",
+		"matrix": "dossiq",
+		"decision": "existing",
+		"reason": "Open change partner-tasks-in-the-portal built portaliq's half (PartnerTaskController ask, partner audience on Mijn taken). The handler's button is dossiq's consumer half: declare ask-partner on its case contribution and retire ExternalConsultationResponse.",
+		"change": "partner-tasks-in-the-portal",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "sal-customer-portal",
+		"matrix": "shillinq",
+		"decision": "defer",
+		"reason": "Partial, built, no demand: no demand row and fewer than two competitors rated yes on the missing half. The missing half (a live payment adapter behind PortalPaymentSessionService) is shillinq's.",
+		"change": null,
+		"decidedOn": "2026-09-27"
+	}
+]
