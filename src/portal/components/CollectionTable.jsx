@@ -69,8 +69,9 @@ function deriveColumns(collection, objects) {
  * @param root0.rowActions
  * @param root0.onRowAction
  * @param root0.busyRow
+ * @param {object} [root0.selectedRow] The row open in the detail, marked with aria-current.
  */
-export default function CollectionTable({ collection, objects, loading, onSelect, rowActions, onRowAction, busyRow }) {
+export default function CollectionTable({ collection, objects, loading, onSelect, rowActions, onRowAction, busyRow, selectedRow }) {
 	if (loading) {
 		return <p className="portaliq-loading">…</p>
 	}
@@ -94,19 +95,39 @@ export default function CollectionTable({ collection, objects, loading, onSelect
 			<tbody>
 				{objects.map((row, i) => {
 					const id = row.id || row['@self']?.id || i
+					const selectedId = selectedRow ? (selectedRow.id || selectedRow['@self']?.id) : undefined
+					const isSelected = selectedId !== undefined && selectedId === (row.id || row['@self']?.id)
 					return (
+						// The row click stays as a mouse convenience; the
+						// keyboard path is the button in the first cell
+						// (WCAG 2.1.1, portaliq#722). Enter and Space on a
+						// <button> fire its click, and Tab reaches it.
 						<tr
 							key={id}
 							className={onSelect ? 'portaliq-row-clickable' : undefined}
 							onClick={onSelect ? () => onSelect(row) : undefined}
+							aria-current={isSelected ? 'true' : undefined}
 						>
-							{columns.map((c) => (
-								<td key={c.field}>
-									{c.render === 'badge'
-										? <span className={`portaliq-badge portaliq-badge-${String(row[c.field] || '').toLowerCase()}`}>{formatCell(row[c.field], 'text')}</span>
-										: formatCell(row[c.field], c.render)}
-								</td>
-							))}
+							{columns.map((c, ci) => {
+								const cell = c.render === 'badge'
+									? <span className={`portaliq-badge portaliq-badge-${String(row[c.field] || '').toLowerCase()}`}>{formatCell(row[c.field], 'text')}</span>
+									: formatCell(row[c.field], c.render)
+								return (
+									<td key={c.field}>
+										{onSelect && ci === 0
+											? (
+												<button
+													type="button"
+													className="portaliq-row-select"
+													onClick={(e) => { e.stopPropagation(); onSelect(row) }}
+												>
+													{cell === '' ? 'Openen' : cell}
+												</button>
+											)
+											: cell}
+									</td>
+								)
+							})}
 							{actions.length > 0 && (
 								<td className="portaliq-rowactions">
 									{actions.map((a) => (
