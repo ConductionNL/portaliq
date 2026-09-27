@@ -1,0 +1,32 @@
+# Tasks: site-page-seo-history-and-media
+
+## Search-engine metadata
+
+- [ ] **T01**: `page.seo` (title, description, noindex, image) in the register, projected by `CmsReader` and the content API (REQ-SPH-001)
+  - Verify: PHPUnit on `CmsReader` projection; register import on a clean instance
+- [ ] **T02**: `PortalPageController::site()` resolves the page for `route` through `CmsReader::page()` with the anonymous audience and passes `head`; `templates/site.php` prints title, description, robots, canonical and Open Graph tags (REQ-SPH-001, REQ-SPH-002)
+  - Verify: PHPUnit controller test for a public page, a draft (no leak), a gated page (no leak) and an unknown route (`noindex`); a curl of `/site?route=/contact` without JavaScript shows the tags
+- [ ] **T03**: The SEO section in the page editor, with the length hints (REQ-SPH-001)
+  - Verify: Playwright `tests/e2e/site-page-seo-history-and-media.spec.ts`: set a description, publish, read it in the served HTML
+
+## History
+
+- [ ] **T04**: The History panel over OpenRegister's page audit trail, published versions newest first (REQ-SPH-003)
+  - Verify: Playwright: publish twice, see two versions with who and when
+- [ ] **T05**: "Restore this version" copies the version's `body` into `draftBody`; the live page does not change until published (REQ-SPH-003)
+  - Verify: Playwright: restore, confirm the public page still shows the newer text, publish, confirm the older text
+
+## Media
+
+- [ ] **T06**: `media` schema in `lib/Settings/portaliq_register.json` with file attachment through OpenRegister object files (REQ-SPH-004)
+  - Verify: register import; PHPUnit on the alt text rule for images
+- [ ] **T07**: `GET /api/content/media/{id}` streams a published item of the resolved portal, 404 otherwise (REQ-SPH-004)
+  - Verify: PHPUnit for a draft item, another portal's item and an unknown id; `hydra-gate-route-auth` green
+- [ ] **T08**: The Media manifest page and the picker dialog in `src/dialogs/`; `heroImage`, `seo.image` and `media:<id>` in markdown resolve to the item (REQ-SPH-004, REQ-SPH-005)
+  - Verify: Playwright: upload once, use on two pages, replace the file, both pages show the new one
+- [ ] **T09**: Refuse deleting a media item a published page references, naming the pages; invalidate the portal cache on every media write (REQ-SPH-005)
+  - Verify: PHPUnit for the refusal and the invalidation
+
+## Close
+
+- [ ] **T10**: Dutch and English strings; editor docs; `openspec validate site-page-seo-history-and-media --strict`
