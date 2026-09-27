@@ -1394,6 +1394,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
 	 * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
 	 * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
+	 * @spec openspec/changes/portal-take-assessment/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-receive-the-subjects-scope-from-the-server
 	 *
 	 * @SuppressWarnings(PHPMD.CyclomaticComplexity) -- the audit fact-record
 	 * (portal-session-hardening-v2), the WMEBV receipt follow-on
@@ -1417,6 +1418,24 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
+		// A declared `fields` whitelist rebuilds the forwarded body server-side
+		// from ONLY those request params; an action that declares none relays
+		// the raw request body as-is (contract v2, A6).
+		$whitelisted = null;
+		if (array_key_exists('fields', $action) === true) {
+			$whitelisted = $this->whitelist(fields: (array)$action['fields']);
+		}
+
+		// A declared `subjectField` (portal-take-assessment) receives the
+		// subject's resolved scope from the server, over any client value; a
+		// scope that does not resolve stops the forward before it is made.
+		if (is_string($action['subjectField'] ?? null) === true) {
+			$whitelisted = $this->withSubjectField(action: $action, subject: $subject, appId: $appId, body: ($whitelisted ?? []));
+			if ($whitelisted === null) {
+				return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+			}
+		}
+
 		// Recorded once the forward is AUTHORISED — regardless of the domain
 		// app's own response status or a transport failure below — because the
 		// fact being audited is "the subject invoked this forward", not
@@ -1432,14 +1451,6 @@ class ContributionController extends Controller implements PortalProtected {
 			id: '',
 			jti: (string)($subject['jti'] ?? '')
 		);
-
-		// A declared `fields` whitelist rebuilds the forwarded body server-side
-		// from ONLY those request params; an action that declares none relays
-		// the raw request body as-is (contract v2, A6).
-		$whitelisted = null;
-		if (array_key_exists('fields', $action) === true) {
-			$whitelisted = $this->whitelist(fields: (array)$action['fields']);
-		}
 
 		$response = $this->forwarder->forward(action: $action, subject: $subject, whitelisted: $whitelisted);
 		if ($response === null) {
@@ -1467,6 +1478,39 @@ class ContributionController extends Controller implements PortalProtected {
 
 		return new JSONResponse($decoded, $status);
 	}//end action()
+
+	/**
+	 * The forwarded body with the subject's resolved scope stamped under the
+	 * action's `subjectField`, or null when the scope does not resolve.
+	 *
+	 * The scope resolves the way reads do: the action's `scopeClaim` from the
+	 * subject's own portal account, else the subject reference. The stamp
+	 * overwrites whatever the client sent under that name, so a leaf app can
+	 * take the learner (or any scoped party) from the body without trusting
+	 * the browser.
+	 *
+	 * @param array<string, mixed> $action The authorised endpoint action.
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param string $appId The contributing app (the claim namespace).
+	 * @param array<string, mixed> $body The whitelisted body.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/portal-take-assessment/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-receive-the-subjects-scope-from-the-server
+	 */
+	private function withSubjectField(array $action, array $subject, string $appId, array $body): ?array {
+		$value = $this->reader->resolveScopeValue(
+			scopeClaim: (string)($action['scopeClaim'] ?? ''),
+			contributingApp: $appId,
+			subject: $subject
+		);
+		if ($value === null || $value === '') {
+			return null;
+		}
+
+		$body[(string)$action['subjectField']] = $value;
+		return $body;
+	}//end withSubjectField()
 
 	/**
 	 * Find an authorised endpoint action {appId, actionId} in the subject's

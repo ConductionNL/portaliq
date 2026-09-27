@@ -10,6 +10,7 @@
 - [portal-scoped-crud](../../changes/portal-scoped-crud/)
 - [contribution-manifest-v3](../../changes/contribution-manifest-v3/)
 - [portal-status-transitions](../../changes/portal-status-transitions/)
+- [portal-take-assessment](../../changes/portal-take-assessment/)
 
 ## Purpose
 

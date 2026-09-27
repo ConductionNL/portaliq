@@ -15,6 +15,7 @@ import CollectionTable from './CollectionTable.jsx'
 import ProposeChangeForm from './ProposeChangeForm.jsx'
 import RichText from './RichText.jsx'
 import SchemaForm from './SchemaForm.jsx'
+import TimedTaskView from './TimedTaskView.jsx'
 import TimelineList from './TimelineList.jsx'
 
 /**
@@ -343,6 +344,22 @@ export default function PageView({ page, contribution, api, dataByCollection, on
 								row={selected[collection.id]}
 								api={api}
 								t={translate}
+							/>
+						)
+					}
+					// A timed task (portal-take-assessment): the attempts are
+					// this collection's rows; the test screen drives the
+					// collection's five endpoint actions.
+					if (collection.kind === 'timedTask' && collection.timedTask) {
+						return (
+							<TimedTaskView
+								key={i}
+								collection={collection}
+								app={contribution.app || ''}
+								attempts={loaded?.objects || []}
+								api={api}
+								t={translate}
+								onChanged={() => onCreated && onCreated(null, { register: collection.register, schema: collection.schema })}
 							/>
 						)
 					}
