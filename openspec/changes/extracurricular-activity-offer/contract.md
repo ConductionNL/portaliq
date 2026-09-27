@@ -30,12 +30,12 @@ Staff endpoints need a Nextcloud session (`#[NoAdminRequired]`, guarded like
 
 | Method | Path | Body | Success | Errors |
 |---|---|---|---|---|
-| POST | `/apps/portaliq/api/activities` | `title`, `kind`, `target`, `termStart`, `capacity`, optional `termEnd`, `signupDeadline`, `sessions`, `supervisorRefs`, `childrenPerSupervisor`, `waitlistEnabled`, `paymentRequested`, `description`, `location`, `authorRef` | 200 the draft | 400 `invalid_activity`, 500 |
-| PUT | `/apps/portaliq/api/activities/{id}/open` | | 200 the activity | 404, 422 `no_places` |
-| PUT | `/apps/portaliq/api/activities/{id}/close` | | 200 the activity | 404 |
-| PUT | `/apps/portaliq/api/activities/{id}/supervisors` | `supervisorRefs` | 200 `{activity, promoted}` | 404 |
-| GET | `/apps/portaliq/api/activities/{id}/roster` | | 200 `{places, confirmed[], waitlist[]}` | 404 |
-| PUT | `/apps/portaliq/api/activities/{id}/attendance` | `sessionId`, `childRef`, `status` | 200 the attendance row | 404, 422 `unknown_session` / `not_confirmed` / `invalid_status` |
+| POST | `/apps/portaliq/api/activities` | `title`, `kind`, `target`, `termStart`, `capacity`, optional `termEnd`, `signupDeadline`, `sessions`, `supervisorRefs`, `childrenPerSupervisor`, `waitlistEnabled`, `paymentRequested`, `description`, `location`, `authorRef` | 200 the draft | 400 `invalid_activity`, 403, 502 `write_failed` |
+| PUT | `/apps/portaliq/api/activities/{id}/open` | | 200 the activity | 403, 404, 422 `no_places`, 502 `write_failed` |
+| PUT | `/apps/portaliq/api/activities/{id}/close` | | 200 the activity | 403, 404, 502 `write_failed` |
+| PUT | `/apps/portaliq/api/activities/{id}/supervisors` | `supervisorRefs` | 200 `{activity, promoted}` | 403, 404 |
+| GET | `/apps/portaliq/api/activities/{id}/roster` | | 200 `{places, confirmed[], waitlist[]}` | 403, 404 |
+| PUT | `/apps/portaliq/api/activities/{id}/attendance` | `sessionId`, `childRef`, `status` | 200 the attendance row | 403, 404, 422 `unknown_session` / `not_confirmed` / `invalid_status`, 502 `unavailable` |
 
 ### Guardian
 
@@ -43,7 +43,7 @@ Staff endpoints need a Nextcloud session (`#[NoAdminRequired]`, guarded like
 |---|---|---|---|---|
 | GET | `/apps/portaliq/api/activities/feed` | | 200 `[activity + placesLeft + mySignups[]]` | 401 |
 | POST | `/apps/portaliq/api/activities/{id}/signup` | `childRef`, optional `note` | 200 `{status: confirmed}` or `{status: waitlisted, position}` | 401, 404, 409 `already_signed_up`, 422 `signup_closed` / `activity_full`, 502 `activity_unavailable` |
-| POST | `/apps/portaliq/api/activities/{id}/withdraw` | `childRef` | 204 | 401, 404 |
+| POST | `/apps/portaliq/api/activities/{id}/withdraw` | `childRef` | 204 | 401, 404, 502 `activity_unavailable` |
 
 `mySignups[]` entries: `{childRef, status, position?, paymentRequestRef?}`,
 only for the calling guardian's own children.
@@ -58,7 +58,7 @@ only for the calling guardian's own children.
 | 404 | Not found | Unknown activity, outside the audience, or not the guardian's own child |
 | 409 | Conflict | The child already has a sign-up that is not withdrawn |
 | 422 | Unprocessable | `no_places`, `signup_closed`, `activity_full`, `unknown_session`, `not_confirmed`, `invalid_status` |
-| 502 | Bad gateway | Sign-ups could not be read, so no place can be promised |
+| 502 | Bad gateway | Rows could not be read or written: `write_failed`, `unavailable`, `activity_unavailable` |
 
 ## Versioning
 

@@ -55,7 +55,7 @@ Kind: code. Learniq round 2, recon E, change row `extracurricular-activity-offer
 - [x] Test
 
 ## Verification
-- [ ] `openspec validate extracurricular-activity-offer` passes, diff checks green, `composer check:strict` run once
+- [x] `openspec validate extracurricular-activity-offer` passes, diff checks green, `composer check:strict` run once (its only red is the 29 inherited PHPUnit errors)
 
 ## Quality checklist
 
