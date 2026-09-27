@@ -7234,7 +7234,7 @@
             },
             "activityOffer": {
                 "slug": "activityOffer",
-                "icon": "CalendarStar",
+                "icon": "Pulse",
                 "version": "0.1.0",
                 "title": "Activity",
                 "authorization": {
@@ -7433,7 +7433,7 @@
             },
             "activitySignup": {
                 "slug": "activitySignup",
-                "icon": "AccountCheck",
+                "icon": "Account",
                 "version": "0.1.0",
                 "title": "Activity sign-up",
                 "authorization": {
@@ -7514,7 +7514,7 @@
             },
             "activityAttendance": {
                 "slug": "activityAttendance",
-                "icon": "ClipboardCheckOutline",
+                "icon": "ClipboardText",
                 "version": "0.1.0",
                 "title": "Activity attendance",
                 "authorization": {
