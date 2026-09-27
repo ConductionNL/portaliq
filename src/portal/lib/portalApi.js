@@ -268,6 +268,23 @@ export function createPortalApi(config) {
 		},
 
 		/**
+		 * The declared history of one object the subject owns (portaliq#723):
+		 * `{ label, entries }`, the entries exactly as the contributing app
+		 * returned them. Null when the collection declares none, the object is
+		 * not the subject's, or the history could not be read.
+		 *
+		 * @param {object} collection Manifest collection: `{ id, register, schema }`.
+		 * @param {string} id The object id.
+		 * @return {Promise<object|null>} The timeline, or null.
+		 */
+		async fetchTimeline(collection, id) {
+			const body = await get(
+				`${col(collection.register, collection.schema)}/${encodeURIComponent(id)}/timeline?collection=${encodeURIComponent(collection.id)}`,
+			)
+			return body && Array.isArray(body.entries) ? body : null
+		},
+
+		/**
 		 * Create an object via a declared `type: create` action. Only the action's
 		 * whitelisted fields are sent; the server stamps ownership.
 		 *
