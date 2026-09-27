@@ -130,6 +130,24 @@ class GuardianAudienceFixtureReader {
 	}//end resolveAudience()
 
 	/**
+	 * Whether a guardian's own audience includes a group.
+	 *
+	 * @param string $subjectRef The guardian's own subjectRef.
+	 * @param string $groupRef The group to check.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/guardian-direct-messages/design.md#participation-model
+	 */
+	public function guardianReachesGroup(string $subjectRef, string $groupRef): bool {
+		if ($groupRef === '') {
+			return false;
+		}
+
+		return in_array($groupRef, $this->resolveAudience(subjectRef: $subjectRef)['groupRefs'], true);
+	}//end guardianReachesGroup()
+
+	/**
 	 * Whether photo consent for a PURPOSE is granted for one child, in one
 	 * guardian's resolved audience. An absent entry is WITHHELD (ADR-005
 	 * fail-closed) — never treated as granted.

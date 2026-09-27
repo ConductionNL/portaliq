@@ -215,11 +215,16 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.27.0). That branch also carried its own copy of
 		// guardianAudienceFixture; development's (0.30.0, news) copy is the
 		// one kept. Bumped past development's 0.30.0 at merge time. Additive.
+		// 0.32.0 (messageThread/guardianMessage/groupStaffFixture): added on the
+		// guardian-direct-messages branch with NO version bump (it still read
+		// 0.27.0); its own guardianAudienceFixture copy was a subset of
+		// development's, which is kept. Bumped past development's 0.31.0 at
+		// merge time. Additive.
 		// Every new schema is listed in
 		// `components.registers.portaliq.schemas` (ImportHandler binds only
 		// what is listed there) and declares a non-empty `read` rule.
-		$this->assertSame('0.31.0', self::$register['info']['version']);
-		$this->assertSame('0.31.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.32.0', self::$register['info']['version']);
+		$this->assertSame('0.32.0', self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalAuditEntry']['version']);
 		$this->assertContains('complete', self::$register['components']['schemas']['portalAuditEntry']['properties']['verb']['enum']);
 		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalCaseType']['version']);

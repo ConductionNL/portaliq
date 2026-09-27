@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.31.0"
+        "version": "0.32.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.31.0",
+                "version": "0.32.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -60,7 +60,10 @@
                     "guardianAudienceFixture",
                     "schoolEvent",
                     "eventRsvp",
-                    "eventSignup"
+                    "eventSignup",
+                    "messageThread",
+                    "guardianMessage",
+                    "groupStaffFixture"
                 ]
             }
         },
@@ -549,6 +552,39 @@
                     }
                 ],
                 "authorRef": "staff-directie-1"
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "groupStaffFixture",
+                    "slug": "groupstaff-groep-5a"
+                },
+                "groupRef": "groep-5a",
+                "staffRefs": [
+                    "staff-leerkracht-5a"
+                ]
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "groupStaffFixture",
+                    "slug": "groupstaff-groep-3b"
+                },
+                "groupRef": "groep-3b",
+                "staffRefs": [
+                    "staff-leerkracht-3b"
+                ]
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "groupStaffFixture",
+                    "slug": "groupstaff-groep-4c"
+                },
+                "groupRef": "groep-4c",
+                "staffRefs": [
+                    "staff-leerkracht-4c"
+                ]
             }
         ],
         "schemas": {
@@ -6754,6 +6790,154 @@
                         "type": "string",
                         "format": "date-time",
                         "description": "When the guardian signed up, in ISO 8601."
+                    }
+                }
+            },
+            "messageThread": {
+                "slug": "messageThread",
+                "icon": "MessageText",
+                "version": "0.1.0",
+                "title": "Message thread",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "A guardian-participant message thread (guardian-direct-messages, finding 9.3). `direct` names two explicit participants; `group` scopes participation to a group via GroupStaffFixtureReader (staff) / GuardianAudienceFixtureReader (guardians). Read/write is never enforced by this schema's own authorization block alone — InAppMessagingLeaf re-verifies participation server-side on every call.",
+                "type": "object",
+                "required": [
+                    "kind",
+                    "createdBy"
+                ],
+                "properties": {
+                    "kind": {
+                        "title": "Kind",
+                        "type": "string",
+                        "description": "Whether this thread is a two-participant `direct` thread or a `group` thread scoped to a whole group.",
+                        "enum": [
+                            "direct",
+                            "group"
+                        ]
+                    },
+                    "participantRefs": {
+                        "title": "Participants",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Explicit participant subjectRefs, used for `direct` threads.",
+                        "example": []
+                    },
+                    "groupRef": {
+                        "title": "Group",
+                        "type": "string",
+                        "description": "The group this thread is scoped to, used for `group` threads."
+                    },
+                    "createdBy": {
+                        "title": "Created by",
+                        "type": "string",
+                        "description": "The subjectRef of whoever created this thread: the staff member for a `group` thread."
+                    },
+                    "createdAt": {
+                        "title": "Created at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When this thread was created, in ISO 8601."
+                    }
+                }
+            },
+            "guardianMessage": {
+                "slug": "guardianMessage",
+                "icon": "Email",
+                "version": "0.1.0",
+                "title": "Message",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "One message in a messageThread. `readBy` is server-managed (idempotent append by InAppMessagingLeaf::markThreadRead); never client-writable.",
+                "type": "object",
+                "required": [
+                    "threadRef",
+                    "senderRef",
+                    "body"
+                ],
+                "properties": {
+                    "threadRef": {
+                        "title": "Thread",
+                        "type": "string",
+                        "description": "The messageThread this message belongs to."
+                    },
+                    "senderRef": {
+                        "title": "Sender",
+                        "type": "string",
+                        "description": "The subjectRef of whoever sent this message."
+                    },
+                    "body": {
+                        "title": "Body",
+                        "type": "string",
+                        "description": "The message text."
+                    },
+                    "sentAt": {
+                        "title": "Sent at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When this message was sent, in ISO 8601."
+                    },
+                    "readBy": {
+                        "title": "Read by",
+                        "type": "array",
+                        "description": "Server-managed. One entry per subject who has read this message.",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": []
+                    }
+                }
+            },
+            "groupStaffFixture": {
+                "slug": "groupStaffFixture",
+                "icon": "Account",
+                "version": "0.1.0",
+                "title": "Group staff fixture (interim)",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "INTERIM stand-in for 'which staff teach which group', analogous to guardianAudienceFixture, pending learniq's real staff-assignment data. Never publicly readable; read only server-side by GroupStaffFixtureReader.",
+                "type": "object",
+                "required": [
+                    "groupRef",
+                    "staffRefs"
+                ],
+                "properties": {
+                    "groupRef": {
+                        "title": "Group",
+                        "type": "string",
+                        "description": "The group this fixture row is for.",
+                        "example": "groep-5a"
+                    },
+                    "staffRefs": {
+                        "title": "Staff",
+                        "type": "array",
+                        "description": "The staff subjectRefs who teach this group.",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "staff-leerkracht-5a"
+                        ]
                     }
                 }
             }

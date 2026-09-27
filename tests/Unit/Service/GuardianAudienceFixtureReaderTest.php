@@ -133,4 +133,13 @@ class GuardianAudienceFixtureReaderTest extends TestCase {
 
 		$this->assertSame(['guardian-anna-devries'], $matched);
 	}//end testGuardiansMatchingEnumeratesEveryMatchingRowOnce()
+
+	public function testGuardianReachesGroup(): void {
+		$os = $this->fakeObjectService([['guardianRef' => 'guardian-anna-devries', 'groupRefs' => ['groep-5a']]]);
+		$reader = new GuardianAudienceFixtureReader($this->container($os), $this->createMock(LoggerInterface::class));
+
+		$this->assertTrue($reader->guardianReachesGroup('guardian-anna-devries', 'groep-5a'));
+		$this->assertFalse($reader->guardianReachesGroup('guardian-anna-devries', 'groep-9z'));
+		$this->assertFalse($reader->guardianReachesGroup('guardian-unknown', 'groep-5a'));
+	}//end testGuardianReachesGroup()
 }//end class

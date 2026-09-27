@@ -111,6 +111,19 @@ return [
         ['name' => 'eventGuardian#feed', 'url' => '/api/events/feed', 'verb' => 'GET'],
         ['name' => 'eventGuardian#rsvp', 'url' => '/api/events/{id}/rsvp', 'verb' => 'POST'],
         ['name' => 'eventGuardian#signup', 'url' => '/api/events/{id}/signup', 'verb' => 'POST'],
+        // Guardian direct messages (guardian-direct-messages, finding 9.3).
+        // Guardian routes are PortalProtected (bearer session); staff routes
+        // require a Nextcloud session.
+        ['name' => 'messageGuardian#createThread', 'url' => '/api/messages/threads', 'verb' => 'POST'],
+        ['name' => 'messageGuardian#threads', 'url' => '/api/messages/threads', 'verb' => 'GET'],
+        ['name' => 'messageGuardian#messages', 'url' => '/api/messages/threads/{id}/messages', 'verb' => 'GET'],
+        ['name' => 'messageGuardian#post', 'url' => '/api/messages/threads/{id}/messages', 'verb' => 'POST'],
+        ['name' => 'messageGuardian#markRead', 'url' => '/api/messages/threads/{id}/read', 'verb' => 'POST'],
+        ['name' => 'messageStaff#createGroupThread', 'url' => '/api/staff/messages/threads/group', 'verb' => 'POST'],
+        ['name' => 'messageStaff#threads', 'url' => '/api/staff/messages/threads', 'verb' => 'GET'],
+        ['name' => 'messageStaff#messages', 'url' => '/api/staff/messages/threads/{id}/messages', 'verb' => 'GET'],
+        ['name' => 'messageStaff#post', 'url' => '/api/staff/messages/threads/{id}/messages', 'verb' => 'POST'],
+        ['name' => 'messageStaff#markRead', 'url' => '/api/staff/messages/threads/{id}/read', 'verb' => 'POST'],
 
         // Traffic analytics (portal-traffic-analytics). Public like the
         // content API above, for the same reason: a visitor's browser on a
