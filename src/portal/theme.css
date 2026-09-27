@@ -131,6 +131,24 @@
 	outline-offset: 2px;
 }
 
+/* The control that opens a table row (portaliq#722). A real button, so Tab
+   reaches it and Enter or Space opens the row; styled as the link it reads
+   as. The open row is marked with aria-current and shown with the accent. */
+.portaliq-row-select {
+	padding: 0;
+	border: 0;
+	background: none;
+	color: var(--portaliq-color-accent);
+	font: inherit;
+	text-align: start;
+	text-decoration: underline;
+	cursor: pointer;
+}
+
+.portaliq-table tr[aria-current='true'] {
+	box-shadow: inset 4px 0 0 var(--portaliq-color-accent);
+}
+
 /* Unified inbox (portal-inbox-v2 T05/T06). */
 .portaliq-inbox {
 	list-style: none;

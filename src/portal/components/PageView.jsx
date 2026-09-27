@@ -247,6 +247,7 @@ export default function PageView({ page, contribution, api, dataByCollection, on
 								objects={loaded?.objects || []}
 								loading={loaded?.loading}
 								onSelect={(row) => setSelected((s) => ({ ...s, [collection.id]: row }))}
+								selectedRow={selected[collection.id]}
 								rowActions={rowActions}
 								busyRow={busyRow}
 								onRowAction={(action, row) => onRowAction && onRowAction(action, row, collection)}
