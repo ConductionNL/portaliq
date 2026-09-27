@@ -20,7 +20,7 @@
 
 - [ ] **T06**: `NotificationDispatchJob` picks its text by kind and links with `PortalDeepLinkBuilder::forRecord()` when the trigger carried a record (REQ-NAP-005, REQ-NAP-006)
   - PHPUnit `NotificationDispatchJobTest::testChangeRuleTextCarriesNoCaseContent`, `PortalDeepLinkBuilderTest::testForRecordAddsTheFragment`
-- [ ] **T07**: Per-kind e-mail and push choices in the job; push through `PushDeliveryService::deliver()`, logged with `channel` `push` (REQ-NAP-007)
+- [ ] **T07**: Per-kind e-mail and push choices in the job; push through `PushDeliveryService::deliver()`, logged with `channel` `push`, added to the `portalNotification.channel` enum (REQ-NAP-007)
   - PHPUnit `NotificationDispatchJobTest::testKindEmailOffSendsNoEmail`, `::testKindPushOnSendsAPush`, `::testGlobalEmailOptOutStillWins`
 
 ## Preferences
