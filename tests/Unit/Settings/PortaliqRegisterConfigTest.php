@@ -226,11 +226,23 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// development's, which is kept. Bumped past development's 0.32.0 at
 		// merge time. Additive.
 		// 0.33.1: no schema change; bumped past development's 0.33.0 when the assignment-portal-file-upload branch landed.
+		// 0.34.0 (activityOffer/activitySignup/activityAttendance): term-long
+		// activities with places, a waiting list and attendance per session
+		// (extracurricular-activity-offer). Sign-ups and attendance hold
+		// children's data, so their read rule is `admin` only. Additive.
 		// Every new schema is listed in
 		// `components.registers.portaliq.schemas` (ImportHandler binds only
 		// what is listed there) and declares a non-empty `read` rule.
-		$this->assertSame('0.33.1', self::$register['info']['version']);
-		$this->assertSame('0.33.1', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.34.0', self::$register['info']['version']);
+		$this->assertSame('0.34.0', self::$register['components']['registers']['portaliq']['version']);
+		foreach (['activityOffer', 'activitySignup', 'activityAttendance'] as $slug) {
+			$this->assertSame('0.1.0', self::$register['components']['schemas'][$slug]['version']);
+		}
+
+		$this->assertSame(['admin'], self::$register['components']['schemas']['activitySignup']['authorization']['read']);
+		$this->assertSame(['admin'], self::$register['components']['schemas']['activityAttendance']['authorization']['read']);
+		$this->assertArrayNotHasKey('fee', self::$register['components']['schemas']['activityOffer']['properties'], 'D19: an activity holds no amount');
+		$this->assertArrayNotHasKey('amount', self::$register['components']['schemas']['activityOffer']['properties'], 'D19: an activity holds no amount');
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalAuditEntry']['version']);
 		$this->assertContains('complete', self::$register['components']['schemas']['portalAuditEntry']['properties']['verb']['enum']);
 		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalCaseType']['version']);

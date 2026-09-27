@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.33.1"
+        "version": "0.34.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.33.1",
+                "version": "0.34.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -66,7 +66,10 @@
                     "groupStaffFixture",
                     "pushSubscription",
                     "notificationQuietHours",
-                    "pendingPush"
+                    "pendingPush",
+                    "activityOffer",
+                    "activitySignup",
+                    "activityAttendance"
                 ]
             }
         },
@@ -588,6 +591,133 @@
                 "staffRefs": [
                     "staff-leerkracht-4c"
                 ]
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "activityOffer",
+                    "slug": "activity-schaakclub-najaar"
+                },
+                "title": "Schaakclub groep 5 tot en met 8",
+                "description": "Elke maandag na school leren we schaken in de aula.",
+                "kind": "club",
+                "target": {
+                    "schoolRef": "school-de-regenboog"
+                },
+                "termStart": "2026-10-05",
+                "termEnd": "2026-12-14",
+                "signupDeadline": "2026-09-30T23:59:00+02:00",
+                "capacity": 16,
+                "waitlistEnabled": true,
+                "sessions": [
+                    {
+                        "id": "week-1",
+                        "start": "2026-10-05T15:15:00+02:00",
+                        "end": "2026-10-05T16:15:00+02:00"
+                    },
+                    {
+                        "id": "week-2",
+                        "start": "2026-10-12T15:15:00+02:00",
+                        "end": "2026-10-12T16:15:00+02:00"
+                    },
+                    {
+                        "id": "week-3",
+                        "start": "2026-10-19T15:15:00+02:00",
+                        "end": "2026-10-19T16:15:00+02:00"
+                    }
+                ],
+                "supervisorRefs": [
+                    "staff-leerkracht-5a"
+                ],
+                "childrenPerSupervisor": 12,
+                "paymentRequested": false,
+                "location": "Aula, De Regenboog",
+                "status": "open",
+                "authorRef": "staff-leerkracht-5a"
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "activityOffer",
+                    "slug": "activity-schoolzwemmen-groep-5"
+                },
+                "title": "Schoolzwemmen groep 5",
+                "description": "Zwemles in het Sportfondsenbad, met bus heen en terug.",
+                "kind": "sport",
+                "target": {
+                    "groupRefs": [
+                        "groep-5a"
+                    ]
+                },
+                "termStart": "2026-10-07",
+                "termEnd": "2027-01-27",
+                "capacity": 24,
+                "waitlistEnabled": true,
+                "sessions": [
+                    {
+                        "id": "week-1",
+                        "start": "2026-10-07T13:00:00+02:00",
+                        "end": "2026-10-07T14:00:00+02:00"
+                    },
+                    {
+                        "id": "week-2",
+                        "start": "2026-10-14T13:00:00+02:00",
+                        "end": "2026-10-14T14:00:00+02:00"
+                    },
+                    {
+                        "id": "week-3",
+                        "start": "2026-10-21T13:00:00+02:00",
+                        "end": "2026-10-21T14:00:00+02:00"
+                    }
+                ],
+                "supervisorRefs": [
+                    "staff-leerkracht-5a",
+                    "staff-leerkracht-3b"
+                ],
+                "childrenPerSupervisor": 10,
+                "paymentRequested": true,
+                "location": "Sportfondsenbad",
+                "status": "open",
+                "authorRef": "staff-leerkracht-5a"
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "activitySignup",
+                    "slug": "signup-schaakclub-lars"
+                },
+                "activityRef": "activity-schaakclub-najaar",
+                "childRef": "child-devries-lars",
+                "guardianRef": "guardian-anna-devries",
+                "status": "confirmed",
+                "note": "Lars neemt zijn eigen schaakbord mee.",
+                "signedUpAt": "2026-09-21T19:02:00+02:00",
+                "confirmedAt": "2026-09-21T19:02:00+02:00"
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "activitySignup",
+                    "slug": "signup-schaakclub-tim"
+                },
+                "activityRef": "activity-schaakclub-najaar",
+                "childRef": "child-bakker-tim",
+                "guardianRef": "guardian-piet-bakker",
+                "status": "waitlisted",
+                "signedUpAt": "2026-09-24T08:15:00+02:00"
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "activityAttendance",
+                    "slug": "attendance-schaakclub-lars-week-1"
+                },
+                "activityRef": "activity-schaakclub-najaar",
+                "sessionId": "week-1",
+                "childRef": "child-devries-lars",
+                "status": "present",
+                "markedByRef": "staff-leerkracht-5a",
+                "markedAt": "2026-10-05T16:20:00+02:00"
             }
         ],
         "schemas": {
@@ -7099,6 +7229,350 @@
                         "type": "boolean",
                         "description": "Whether PendingPushDeliveryJob has already delivered this push.",
                         "example": false
+                    }
+                }
+            },
+            "activityOffer": {
+                "slug": "activityOffer",
+                "icon": "Pulse",
+                "version": "0.1.0",
+                "title": "Activity",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "A club, course or series of trips that runs for a term, with places, sessions, supervisors and a waiting list (extracurricular-activity-offer). It holds no amount: a place that costs money is paid through a shillinq payment request.",
+                "type": "object",
+                "required": [
+                    "title",
+                    "kind",
+                    "target",
+                    "termStart",
+                    "capacity",
+                    "status"
+                ],
+                "properties": {
+                    "title": {
+                        "title": "Title",
+                        "type": "string",
+                        "example": "Schaakclub groep 5 tot en met 8",
+                        "description": "The name parents see in the portal."
+                    },
+                    "description": {
+                        "title": "Description",
+                        "type": "string",
+                        "example": "Elke maandag na school leren we schaken in de aula.",
+                        "description": "What the children do, where and what to bring."
+                    },
+                    "kind": {
+                        "title": "Kind",
+                        "type": "string",
+                        "enum": [
+                            "club",
+                            "sport",
+                            "culture",
+                            "trip",
+                            "course",
+                            "other"
+                        ],
+                        "example": "club",
+                        "description": "What sort of activity this is."
+                    },
+                    "target": {
+                        "title": "Target",
+                        "type": "object",
+                        "description": "Who may sign up: a school, one or more groups, or specific children. At least one must be present; any single match is enough.",
+                        "properties": {
+                            "schoolRef": {
+                                "title": "School",
+                                "type": "string",
+                                "example": "school-de-regenboog",
+                                "description": "The school this activity is open to, when it is open to a whole school."
+                            },
+                            "groupRefs": {
+                                "title": "Groups",
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "example": [
+                                    "groep-5a"
+                                ],
+                                "description": "The groups this activity is open to."
+                            },
+                            "childRefs": {
+                                "title": "Children",
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "example": [],
+                                "description": "The specific children this activity is open to."
+                            }
+                        }
+                    },
+                    "termStart": {
+                        "title": "Term start",
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-10-05",
+                        "description": "The first day of the term, as a date."
+                    },
+                    "termEnd": {
+                        "title": "Term end",
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-12-14",
+                        "description": "The last day of the term, as a date. Optional."
+                    },
+                    "signupDeadline": {
+                        "title": "Sign-up deadline",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-09-30T23:59:00+02:00",
+                        "description": "After this moment parents can no longer sign up. Optional."
+                    },
+                    "capacity": {
+                        "title": "Capacity",
+                        "type": "integer",
+                        "minimum": 1,
+                        "example": 16,
+                        "description": "The most children who can have a place."
+                    },
+                    "waitlistEnabled": {
+                        "title": "Waiting list",
+                        "type": "boolean",
+                        "example": true,
+                        "description": "When full, a new sign-up joins the waiting list instead of being refused."
+                    },
+                    "sessions": {
+                        "title": "Sessions",
+                        "type": "array",
+                        "description": "The meetings in this term. Attendance is marked per session.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "title": "Session id",
+                                    "type": "string",
+                                    "description": "Unique within this activity; attendance rows point at it."
+                                },
+                                "start": {
+                                    "title": "Start",
+                                    "type": "string",
+                                    "format": "date-time",
+                                    "description": "When the session starts."
+                                },
+                                "end": {
+                                    "title": "End",
+                                    "type": "string",
+                                    "format": "date-time",
+                                    "description": "When the session ends. Optional."
+                                },
+                                "location": {
+                                    "title": "Location",
+                                    "type": "string",
+                                    "description": "Where the session takes place, when it differs from the activity."
+                                }
+                            }
+                        },
+                        "example": []
+                    },
+                    "supervisorRefs": {
+                        "title": "Supervisors",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "staff-leerkracht-5a"
+                        ],
+                        "description": "The staff who supervise this activity."
+                    },
+                    "childrenPerSupervisor": {
+                        "title": "Children per supervisor",
+                        "type": "integer",
+                        "minimum": 0,
+                        "example": 8,
+                        "description": "How many children one supervisor may take. Places never exceed supervisors times this number. Leave it at 0 for no limit."
+                    },
+                    "paymentRequested": {
+                        "title": "Payment requested",
+                        "type": "boolean",
+                        "example": false,
+                        "description": "A contribution is asked per place. Shillinq raises the payment request and holds the amount."
+                    },
+                    "location": {
+                        "title": "Location",
+                        "type": "string",
+                        "example": "Aula, De Regenboog",
+                        "description": "Where the activity usually takes place."
+                    },
+                    "status": {
+                        "title": "Status",
+                        "type": "string",
+                        "enum": [
+                            "draft",
+                            "open",
+                            "closed"
+                        ],
+                        "example": "open",
+                        "description": "Draft is invisible to parents. Open takes sign-ups. Closed shows the activity but takes no new sign-ups."
+                    },
+                    "authorRef": {
+                        "title": "Author",
+                        "type": "string",
+                        "example": "staff-leerkracht-5a",
+                        "description": "The staff member who created the activity."
+                    }
+                }
+            },
+            "activitySignup": {
+                "slug": "activitySignup",
+                "icon": "Account",
+                "version": "0.1.0",
+                "title": "Activity sign-up",
+                "authorization": {
+                    "read": [
+                        "admin"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "One child's place, or spot on the waiting list, for one activity, signed up by one of their guardians. Written by ActivitySignupService after it has counted the places.",
+                "type": "object",
+                "required": [
+                    "activityRef",
+                    "childRef",
+                    "guardianRef",
+                    "status"
+                ],
+                "properties": {
+                    "activityRef": {
+                        "title": "Activity",
+                        "type": "string",
+                        "description": "The activity this sign-up is for."
+                    },
+                    "childRef": {
+                        "title": "Child",
+                        "type": "string",
+                        "example": "child-devries-lars",
+                        "description": "The child who takes part."
+                    },
+                    "guardianRef": {
+                        "title": "Guardian",
+                        "type": "string",
+                        "example": "guardian-anna-devries",
+                        "description": "The guardian who signed the child up."
+                    },
+                    "status": {
+                        "title": "Status",
+                        "type": "string",
+                        "enum": [
+                            "confirmed",
+                            "waitlisted",
+                            "withdrawn"
+                        ],
+                        "example": "confirmed",
+                        "description": "Confirmed has a place. Waitlisted waits for one, in sign-up order. Withdrawn no longer takes part."
+                    },
+                    "note": {
+                        "title": "Note",
+                        "type": "string",
+                        "example": "Lars neemt zijn eigen schaakbord mee.",
+                        "description": "Something the guardian wants the supervisor to know."
+                    },
+                    "signedUpAt": {
+                        "title": "Signed up at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the guardian signed up. The waiting list follows this order."
+                    },
+                    "confirmedAt": {
+                        "title": "Confirmed at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the child got a place."
+                    },
+                    "withdrawnAt": {
+                        "title": "Withdrawn at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the sign-up was withdrawn."
+                    },
+                    "paymentRequestRef": {
+                        "title": "Payment request",
+                        "type": "string",
+                        "description": "The shillinq payment request for this place, when the activity asks a contribution. Written by shillinq."
+                    }
+                }
+            },
+            "activityAttendance": {
+                "slug": "activityAttendance",
+                "icon": "ClipboardText",
+                "version": "0.1.0",
+                "title": "Activity attendance",
+                "authorization": {
+                    "read": [
+                        "admin"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "Whether a child with a place was there for one session of an activity. One row per activity, session and child; a second mark updates it.",
+                "type": "object",
+                "required": [
+                    "activityRef",
+                    "sessionId",
+                    "childRef",
+                    "status"
+                ],
+                "properties": {
+                    "activityRef": {
+                        "title": "Activity",
+                        "type": "string",
+                        "description": "The activity the session belongs to."
+                    },
+                    "sessionId": {
+                        "title": "Session",
+                        "type": "string",
+                        "example": "week-1",
+                        "description": "The session id from the activity's sessions."
+                    },
+                    "childRef": {
+                        "title": "Child",
+                        "type": "string",
+                        "example": "child-devries-lars",
+                        "description": "The child this mark is for."
+                    },
+                    "status": {
+                        "title": "Status",
+                        "type": "string",
+                        "enum": [
+                            "present",
+                            "absent",
+                            "excused"
+                        ],
+                        "example": "present",
+                        "description": "Present, absent, or absent with a reason given."
+                    },
+                    "markedByRef": {
+                        "title": "Marked by",
+                        "type": "string",
+                        "example": "staff-leerkracht-5a",
+                        "description": "The staff member who marked it."
+                    },
+                    "markedAt": {
+                        "title": "Marked at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When it was last marked."
                     }
                 }
             }

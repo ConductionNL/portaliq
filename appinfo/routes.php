@@ -111,6 +111,19 @@ return [
         ['name' => 'eventGuardian#feed', 'url' => '/api/events/feed', 'verb' => 'GET'],
         ['name' => 'eventGuardian#rsvp', 'url' => '/api/events/{id}/rsvp', 'verb' => 'POST'],
         ['name' => 'eventGuardian#signup', 'url' => '/api/events/{id}/signup', 'verb' => 'POST'],
+        // Term-long activities (extracurricular-activity-offer). Staff
+        // (Nextcloud session): create, open, close, supervisors, roster and
+        // attendance. Guardian (portal bearer): feed, sign-up, withdraw. The
+        // literal /feed segment is registered before the {id} routes.
+        ['name' => 'activityGuardian#feed', 'url' => '/api/activities/feed', 'verb' => 'GET'],
+        ['name' => 'activity#create', 'url' => '/api/activities', 'verb' => 'POST'],
+        ['name' => 'activity#open', 'url' => '/api/activities/{id}/open', 'verb' => 'PUT'],
+        ['name' => 'activity#close', 'url' => '/api/activities/{id}/close', 'verb' => 'PUT'],
+        ['name' => 'activity#supervisors', 'url' => '/api/activities/{id}/supervisors', 'verb' => 'PUT'],
+        ['name' => 'activity#roster', 'url' => '/api/activities/{id}/roster', 'verb' => 'GET'],
+        ['name' => 'activity#attendance', 'url' => '/api/activities/{id}/attendance', 'verb' => 'PUT'],
+        ['name' => 'activityGuardian#signup', 'url' => '/api/activities/{id}/signup', 'verb' => 'POST'],
+        ['name' => 'activityGuardian#withdraw', 'url' => '/api/activities/{id}/withdraw', 'verb' => 'POST'],
         // Guardian direct messages (guardian-direct-messages, finding 9.3).
         // Guardian routes are PortalProtected (bearer session); staff routes
         // require a Nextcloud session.

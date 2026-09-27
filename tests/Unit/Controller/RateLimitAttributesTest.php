@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
+use OCA\Portaliq\Controller\ActivityGuardianController;
 use OCA\Portaliq\Controller\ContributionController;
 use OCA\Portaliq\Controller\PortalFieldFileController;
 use OCA\Portaliq\Controller\SessionController;
@@ -46,6 +47,10 @@ class RateLimitAttributesTest extends TestCase {
 			'contribution update' => [ContributionController::class, 'update'],
 			'contribution action' => [ContributionController::class, 'action'],
 			'contribution downloadFile' => [ContributionController::class, 'downloadFile'],
+			// extracurricular-activity-offer: the guardian activity endpoints.
+			'activityGuardian feed' => [ActivityGuardianController::class, 'feed'],
+			'activityGuardian signup' => [ActivityGuardianController::class, 'signup'],
+			'activityGuardian withdraw' => [ActivityGuardianController::class, 'withdraw'],
 			// assignment-portal-file-upload: the upload into a declared file field.
 			'portalFieldFile upload' => [PortalFieldFileController::class, 'upload'],
 			// portal-traffic-analytics: the public collector, its pixel and the
