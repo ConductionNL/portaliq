@@ -13,6 +13,7 @@
 - [news-and-newsletter-authoring](../../changes/news-and-newsletter-authoring/)
 - [events-and-signups](../../changes/events-and-signups/)
 - [extracurricular-activity-offer](../../changes/extracurricular-activity-offer/)
+- [activity-parental-consent](../../changes/activity-parental-consent/)
 
 ## Purpose
 

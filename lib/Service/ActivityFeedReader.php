@@ -82,7 +82,7 @@ class ActivityFeedReader {
 
 			$own = $this->places->forActivity(signups: $signups, activityKeys: $this->store->keys(row: $activity));
 			$activity['placesLeft'] = max(0, $this->places->placesFor(activity: $activity) - count($this->places->confirmed(signups: $own)));
-			$activity['mySignups'] = $this->mySignups(signups: $own, childRefs: $audience['childRefs']);
+			$activity['mySignups'] = $this->mySignups(activity: $activity, signups: $own, subjectRef: $subjectRef, childRefs: $audience['childRefs']);
 			$feed[] = $activity;
 		}
 
@@ -138,6 +138,29 @@ class ActivityFeedReader {
 	}//end isOwnChild()
 
 	/**
+	 * Whether a guardian has photo consent on file for a child, for the purpose
+	 * school photos are shared under. Absent means no.
+	 *
+	 * @param string $guardianRef The guardian.
+	 * @param string $childRef The child.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/activity-parental-consent/specs/portaliq-cms/spec.md#requirement-where-photos-are-taken-the-roster-must-show-each-childs-photo-consent
+	 */
+	public function photoConsentGranted(string $guardianRef, string $childRef): bool {
+		if ($guardianRef === '' || $childRef === '') {
+			return false;
+		}
+
+		return $this->audienceReader->photoConsentGranted(
+			subjectRef: $guardianRef,
+			childRef: $childRef,
+			purpose: GuardianAudienceFixtureReader::PURPOSE_NEWS
+		);
+	}//end photoConsentGranted()
+
+	/**
 	 * Whether a guardian may see an activity: not a draft, and its target
 	 * meets their audience.
 	 *
@@ -161,14 +184,17 @@ class ActivityFeedReader {
 
 	/**
 	 * The guardian's own children's sign-ups on one activity, withdrawn ones
-	 * left out, with the waiting-list position where it applies.
+	 * left out, with the waiting-list position, when consent was given, and,
+	 * where photos are taken, whether this guardian has photo consent on file.
 	 *
+	 * @param array<string, mixed> $activity The activity row.
 	 * @param array<int, array<string, mixed>> $signups The activity's sign-ups.
+	 * @param string $subjectRef The guardian reading.
 	 * @param array<int, string> $childRefs The guardian's own children.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 */
-	private function mySignups(array $signups, array $childRefs): array {
+	private function mySignups(array $activity, array $signups, string $subjectRef, array $childRefs): array {
 		$mine = [];
 		foreach ($childRefs as $childRef) {
 			$signup = $this->places->activeFor(signups: $signups, childRef: $childRef);
@@ -185,9 +211,33 @@ class ActivityFeedReader {
 				$entry['paymentRequestRef'] = $signup['paymentRequestRef'];
 			}
 
-			$mine[] = $entry;
+			$mine[] = $this->withConsent(entry: $entry, activity: $activity, signup: $signup, subjectRef: $subjectRef);
 		}
 
 		return $mine;
 	}//end mySignups()
+
+	/**
+	 * Add when consent was given and, where photos are taken, the reading
+	 * guardian's photo consent for the child.
+	 *
+	 * @param array<string, mixed> $entry The entry built so far.
+	 * @param array<string, mixed> $activity The activity row.
+	 * @param array<string, mixed> $signup The sign-up.
+	 * @param string $subjectRef The guardian reading.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withConsent(array $entry, array $activity, array $signup, string $subjectRef): array {
+		$grantedAt = ($signup['consent']['grantedAt'] ?? null);
+		if (is_string($grantedAt) === true && $grantedAt !== '') {
+			$entry['consentGrantedAt'] = $grantedAt;
+		}
+
+		if (($activity['photosTaken'] ?? false) === true) {
+			$entry['photoConsent'] = $this->photoConsentGranted(guardianRef: $subjectRef, childRef: (string)$entry['childRef']);
+		}
+
+		return $entry;
+	}//end withConsent()
 }//end class

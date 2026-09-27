@@ -31,6 +31,7 @@ use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\ActivityAttendanceService;
 use OCA\Portaliq\Service\ActivityDraft;
 use OCA\Portaliq\Service\ActivityPlaces;
+use OCA\Portaliq\Service\ActivityRoster;
 use OCA\Portaliq\Service\ActivitySignupService;
 use OCA\Portaliq\Service\ActivityStore;
 use OCP\AppFramework\Controller;
@@ -65,9 +66,10 @@ class ActivityController extends Controller {
 	 * @param IUserSession $userSession Confirms a Nextcloud user reached this endpoint.
 	 * @param ActivityStore $store The activity rows.
 	 * @param ActivityPlaces $places The places arithmetic.
-	 * @param ActivitySignupService $signups Supervisors, promotion and roster.
+	 * @param ActivitySignupService $signups Supervisors and promotion.
 	 * @param ActivityAttendanceService $attendance Attendance marks.
 	 * @param ActivityDraft $drafts Validates and sanitises a new activity.
+	 * @param ActivityRoster $rosters The staff roster.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -77,6 +79,7 @@ class ActivityController extends Controller {
 		private readonly ActivitySignupService $signups,
 		private readonly ActivityAttendanceService $attendance,
 		private readonly ActivityDraft $drafts,
+		private readonly ActivityRoster $rosters,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -140,9 +143,10 @@ class ActivityController extends Controller {
 	 *
 	 * @param string $id The activity id or slug.
 	 *
-	 * @return JSONResponse The activity, or 404 / 422 `no_places` / 502.
+	 * @return JSONResponse The activity, or 404 / 422 `no_places` / 422 `no_consent_statement` / 502.
 	 *
 	 * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-term-long-activity-must-be-offered-with-places-set-by-capacity-and-supervision
+	 * @spec openspec/changes/activity-parental-consent/specs/portaliq-cms/spec.md#requirement-an-activity-must-be-able-to-require-a-guardians-consent-recorded-on-the-sign-up
 	 */
 	#[NoAdminRequired]
 	public function open(string $id): JSONResponse {
@@ -155,6 +159,11 @@ class ActivityController extends Controller {
 
 		if ($this->places->placesFor(activity: $activity) < 1) {
 			return new JSONResponse(['error' => 'no_places'], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+
+		// A permission slip with no text cannot be agreed to (activity-parental-consent).
+		if (($activity['consentRequired'] ?? false) === true && trim((string)($activity['consentStatement'] ?? '')) === '') {
+			return new JSONResponse(['error' => 'no_consent_statement'], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
 
 		return $this->saveStatus(activity: $activity, status: 'open');
@@ -216,7 +225,7 @@ class ActivityController extends Controller {
 	public function roster(string $id): JSONResponse {
 		$this->requireAuthenticatedStaff();
 
-		$roster = $this->signups->roster(activityId: $id);
+		$roster = $this->rosters->roster(activityId: $id);
 		if ($roster === null) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}

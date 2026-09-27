@@ -23,6 +23,9 @@ the portal, and the school sees who has a place and who is waiting.
 | `sessions` | The meetings. Attendance is marked per session. |
 | `paymentRequested` | A contribution is asked per place. Shillinq raises the payment request and holds the amount; portaliq stores only its reference. |
 
+| `consentRequired`, `consentStatement` | Parents must agree to this text before their child can be signed up. |
+| `photosTaken` | Photos are taken, so the roster shows who has photo consent. |
+
 The number of places is the lower of `capacity` and supervisors times
 `childrenPerSupervisor`. An activity without enough supervisors for one child
 does not open.
@@ -45,6 +48,18 @@ does not open.
 | GET | `/apps/portaliq/api/activities/feed` | Activities in reach, with places left and your own children's sign-ups |
 | POST | `/apps/portaliq/api/activities/{id}/signup` | Sign up one of your children: a place, a spot on the waiting list, or `activity_full` |
 | POST | `/apps/portaliq/api/activities/{id}/withdraw` | Withdraw; a freed place goes to the child who waited longest |
+
+## Permission slips and photo consent
+
+When an activity needs consent, the portal shows the consent text and sends it
+back with the sign-up as `acceptedStatement`. The server compares it with the
+current text; an older or missing text answers 422 `consent_required`. The
+sign-up keeps the text as agreed, who agreed and when. An activity that needs
+consent cannot open without a text (422 `no_consent_statement`).
+
+Where photos are taken, the roster marks each child with `photoConsent`, read
+from the photo consent on file. No consent on file reads as no. To withdraw
+consent, withdraw the sign-up.
 
 A guardian can only sign up their own children, for an activity in their
 audience. Anything else answers 404, the same as an activity that does not

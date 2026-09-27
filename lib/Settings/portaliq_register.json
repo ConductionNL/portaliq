@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.34.0"
+        "version": "0.35.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.34.0",
+                "version": "0.35.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -633,7 +633,9 @@
                 "paymentRequested": false,
                 "location": "Aula, De Regenboog",
                 "status": "open",
-                "authorRef": "staff-leerkracht-5a"
+                "authorRef": "staff-leerkracht-5a",
+                "consentRequired": false,
+                "photosTaken": false
             },
             {
                 "@self": {
@@ -678,7 +680,10 @@
                 "paymentRequested": true,
                 "location": "Sportfondsenbad",
                 "status": "open",
-                "authorRef": "staff-leerkracht-5a"
+                "authorRef": "staff-leerkracht-5a",
+                "consentRequired": true,
+                "consentStatement": "Mijn kind mag met de bus mee naar het Sportfondsenbad en daar onder begeleiding zwemles volgen.",
+                "photosTaken": true
             },
             {
                 "@self": {
@@ -7235,7 +7240,7 @@
             "activityOffer": {
                 "slug": "activityOffer",
                 "icon": "Pulse",
-                "version": "0.1.0",
+                "version": "0.2.0",
                 "title": "Activity",
                 "authorization": {
                     "read": [
@@ -7406,6 +7411,24 @@
                         "example": false,
                         "description": "A contribution is asked per place. Shillinq raises the payment request and holds the amount."
                     },
+                    "consentRequired": {
+                        "title": "Consent required",
+                        "type": "boolean",
+                        "example": true,
+                        "description": "A guardian must agree to the consent text before their child can be signed up."
+                    },
+                    "consentStatement": {
+                        "title": "Consent text",
+                        "type": "string",
+                        "example": "Mijn kind mag met de bus mee naar het Sportfondsenbad en daar onder begeleiding zwemles volgen.",
+                        "description": "What a guardian agrees to when signing up. Required before an activity that needs consent can open."
+                    },
+                    "photosTaken": {
+                        "title": "Photos taken",
+                        "type": "boolean",
+                        "example": false,
+                        "description": "Photos are taken during this activity, so supervisors see which children have photo consent."
+                    },
                     "location": {
                         "title": "Location",
                         "type": "string",
@@ -7434,7 +7457,7 @@
             "activitySignup": {
                 "slug": "activitySignup",
                 "icon": "Account",
-                "version": "0.1.0",
+                "version": "0.2.0",
                 "title": "Activity sign-up",
                 "authorization": {
                     "read": [
@@ -7509,6 +7532,29 @@
                         "title": "Payment request",
                         "type": "string",
                         "description": "The shillinq payment request for this place, when the activity asks a contribution. Written by shillinq."
+                    },
+                    "consent": {
+                        "title": "Consent",
+                        "type": "object",
+                        "description": "The guardian's agreement to the activity's consent text, kept as agreed. Absent when the activity needs no consent.",
+                        "properties": {
+                            "statement": {
+                                "title": "Agreed text",
+                                "type": "string",
+                                "description": "The consent text exactly as the guardian agreed to it."
+                            },
+                            "grantedByRef": {
+                                "title": "Agreed by",
+                                "type": "string",
+                                "description": "The guardian who agreed."
+                            },
+                            "grantedAt": {
+                                "title": "Agreed at",
+                                "type": "string",
+                                "format": "date-time",
+                                "description": "When the guardian agreed."
+                            }
+                        }
                     }
                 }
             },
