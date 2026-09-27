@@ -32,6 +32,22 @@
 		"decidedOn": "2026-09-27"
 	},
 	{
+		"row": "cas-mandate-org-cases",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Open change portal-identity-space has every task checked (8 of 8) but no screen in src/portal, src/site or src/manifest.json calls its endpoints (read at eeda3fa). Treated as the archived case of the rule: shipped without the capability, so this change builds the missing screens. GET /portal/api/my-cases (MyCasesController) has no caller; the organisation and mandate scope it needs is built.",
+		"change": "cases-my-cases-page",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cas-mycases-unified",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Open change portal-identity-space has every task checked (8 of 8) but no screen in src/portal, src/site or src/manifest.json calls its endpoints (read at eeda3fa). Treated as the archived case of the rule: shipped without the capability, so this change builds the missing screens. GET /portal/api/my-cases (MyCasesController) has no caller; two competitors rated yes.",
+		"change": "cases-my-cases-page",
+		"decidedOn": "2026-09-27"
+	},
+	{
 		"row": "cmp-ana-feedback",
 		"matrix": "portaliq",
 		"decision": "defer",
@@ -56,11 +72,27 @@
 		"decidedOn": "2026-09-27"
 	},
 	{
+		"row": "cmp-cas-all-gov",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Open change portal-identity-space has every task checked (8 of 8) but no screen in src/portal, src/site or src/manifest.json calls its endpoints (read at eeda3fa). Treated as the archived case of the rule: shipped without the capability, so this change builds the missing screens. GET /portal/api/my-cases (MyCasesController) has no caller; the cross-organisation merge it needs is built.",
+		"change": "cases-my-cases-page",
+		"decidedOn": "2026-09-27"
+	},
+	{
 		"row": "cmp-cas-benefits",
 		"matrix": "portaliq",
 		"decision": "decided-no",
 		"reason": "openspec/project.md Boundaries: portaliq does not own domain business logic (it stays in the domain apps) or data storage. The portal already renders any collection a domain app contributes; the benefits and provisions data is that app's to contribute.",
 		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-cas-closed",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Partial and built, four competitors rated yes on the missing half: no open and closed grouping on the case list.",
+		"change": "cases-my-cases-page",
 		"decidedOn": "2026-09-27"
 	},
 	{
@@ -208,6 +240,14 @@
 		"decidedOn": "2026-09-27"
 	},
 	{
+		"row": "cmp-sig-machtiging",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Partial and built, two competitors rated yes on the missing half (NL Portal, MijnOverheid): the mandate engine is reached on every case read but no screen names or switches the mandate, although portal-identity-and-the-organisations-cases marks T04 and T05 done.",
+		"change": "cases-my-cases-page",
+		"decidedOn": "2026-09-27"
+	},
+	{
 		"row": "cmp-site-map",
 		"matrix": "portaliq",
 		"decision": "defer",
@@ -333,6 +373,14 @@
 		"decision": "defer",
 		"reason": "Changelog demand and one competitor rated yes (Liferay DXP); the rule needs a featureRequest or roadmap row for a single competitor.",
 		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "dem-cl-eherkenning-branch",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Three competitors rated yes (Open Inwoner, NL Portal, xxllnc PIP) and the row is in portaliq's core area (sign-in).",
+		"change": "signin-eherkenning-branch",
 		"decidedOn": "2026-09-27"
 	},
 	{
