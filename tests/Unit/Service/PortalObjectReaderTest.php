@@ -1262,6 +1262,152 @@ class PortalObjectReaderTest extends TestCase {
 	}//end testReadObjectViaCollectionVerifiesJoinMembership()
 
 	/**
+	 * LIST MEMBERSHIP (portal-scope-list-membership): a direct collection
+	 * scoped by a list field (learniq `Submission.learnerRefs`) returns the row
+	 * whose list contains the subject's scoping value. Before this change the
+	 * list was cast to "Array" and every such row was dropped.
+	 */
+	public function testListScopeFieldContainingTheRefIsReturned(): void {
+		$objectService = $this->objectService(
+			[
+				'submission' => [
+					['id' => 'sub-1', 'learnerRefs' => ['learner-2', 'learner-1'], 'assignmentId' => 'a-1'],
+					['id' => 'sub-2', 'learnerRefs' => [7, 'learner-1'], 'assignmentId' => 'a-2'],
+					['id' => 'sub-3', 'learnerRefs' => ['learner-2'], 'assignmentId' => 'a-3'],
+				],
+			]
+		);
+
+		$reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
+		$rows = $reader->readCollection('learniq', 'submission', 'learnerRefs', 'learner-1');
+
+		$this->assertSame(['sub-1', 'sub-2'], array_column($rows, 'id'));
+		// The query-side filter is unchanged: OpenRegister turns it into a
+		// containment test for an array property.
+		$this->assertSame('learner-1', $objectService->calls[0]['config']['filters']['learnerRefs']);
+
+	}//end testListScopeFieldContainingTheRefIsReturned()
+
+	/**
+	 * ISOLATION: a list that does not contain the subject's value is dropped,
+	 * even when OpenRegister returned it.
+	 */
+	public function testListScopeFieldWithoutTheRefIsDropped(): void {
+		$objectService = $this->objectService(
+			[
+				'submission' => [
+					['id' => 'sub-9', 'learnerRefs' => ['learner-2', 'learner-3']],
+					// A near miss: a substring of the value is not the value.
+					['id' => 'sub-10', 'learnerRefs' => ['learner-10']],
+				],
+			]
+		);
+
+		$reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
+		$this->assertSame([], $reader->readCollection('learniq', 'submission', 'learnerRefs', 'learner-1'));
+
+	}//end testListScopeFieldWithoutTheRefIsDropped()
+
+	/**
+	 * FAIL CLOSED: an empty list belongs to nobody.
+	 */
+	public function testEmptyListScopeFieldIsDropped(): void {
+		$objectService = $this->objectService(
+			[
+				'submission' => [
+					['id' => 'sub-4', 'learnerRefs' => []],
+				],
+			]
+		);
+
+		$reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
+		$this->assertSame([], $reader->readCollection('learniq', 'submission', 'learnerRefs', 'learner-1'));
+
+	}//end testEmptyListScopeFieldIsDropped()
+
+	/**
+	 * UNCHANGED: a single-value scope field matches exactly as before, an
+	 * integer value still matches its decimal string, and a foreign value is
+	 * still dropped.
+	 */
+	public function testSingleValueScopeFieldStillMatches(): void {
+		$objectService = $this->objectService(
+			[
+				'exampleDocument' => [
+					['id' => 'd-1', 'subjectRef' => 's1'],
+					['id' => 'd-2', 'subjectRef' => 's2'],
+				],
+				'counter' => [
+					['id' => 'c-1', 'ownerNumber' => 42],
+					['id' => 'c-2', 'ownerNumber' => 43],
+				],
+			]
+		);
+
+		$reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
+
+		$this->assertSame(['d-1'], array_column($reader->readCollection('portaliq', 'exampleDocument', 'subjectRef', 's1'), 'id'));
+		$this->assertSame(['c-1'], array_column($reader->readCollection('portaliq', 'counter', 'ownerNumber', '42'), 'id'));
+
+	}//end testSingleValueScopeFieldStillMatches()
+
+	/**
+	 * FAIL CLOSED: every shape other than an equal single value or a list
+	 * containing it is dropped, and an empty scoping value matches nothing,
+	 * not even a row whose scope field is absent or empty.
+	 */
+	public function testOtherScopeShapesFailClosed(): void {
+		$objectService = $this->objectService(
+			[
+				'submission' => [
+					// An associative array (an object reference) is not a list.
+					['id' => 'x-1', 'learnerRefs' => ['value' => 'learner-1']],
+					// A nested list is not membership.
+					['id' => 'x-2', 'learnerRefs' => [['learner-1']]],
+					['id' => 'x-3', 'learnerRefs' => null],
+					['id' => 'x-4'],
+					['id' => 'x-5', 'learnerRefs' => true],
+					['id' => 'x-6', 'learnerRefs' => ''],
+				],
+			]
+		);
+
+		$reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
+
+		$this->assertSame([], $reader->readCollection('learniq', 'submission', 'learnerRefs', 'learner-1'));
+		// An empty scoping value: no query filter is sent, and the per-row
+		// check must still return nothing (x-3, x-4 and x-6 would have matched
+		// the old string cast).
+		$this->assertSame([], $reader->readCollection('learniq', 'submission', 'learnerRefs', ''));
+
+	}//end testOtherScopeShapesFailClosed()
+
+	/**
+	 * SINGLE READ: the detail read uses the same rule. An object whose list
+	 * contains the subject's value is returned; a list without it, or an empty
+	 * one, is the identical null (→ 404).
+	 */
+	public function testReadObjectMatchesAListScopeFieldByMembership(): void {
+		$objectService = $this->objectService(
+			[
+				'learner-profile' => [
+					['id' => 'p-1', 'guardianRefs' => ['g-1', 'g-2'], 'givenName' => 'Sam'],
+					['id' => 'p-2', 'guardianRefs' => ['g-3'], 'givenName' => 'Noor'],
+					['id' => 'p-3', 'guardianRefs' => [], 'givenName' => 'Lou'],
+				],
+			]
+		);
+
+		$reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
+
+		$own = $reader->readObject(register: 'learniq', schema: 'learner-profile', scopeField: 'guardianRefs', subjectRef: 'g-2', id: 'p-1');
+		$this->assertSame('Sam', $own['givenName']);
+		$this->assertNull($reader->readObject(register: 'learniq', schema: 'learner-profile', scopeField: 'guardianRefs', subjectRef: 'g-2', id: 'p-2'));
+		$this->assertNull($reader->readObject(register: 'learniq', schema: 'learner-profile', scopeField: 'guardianRefs', subjectRef: 'g-2', id: 'p-3'));
+
+	}//end testReadObjectMatchesAListScopeFieldByMembership()
+
+	/**
 	 * An ObjectService stand-in serving canned rows per schema and recording
 	 * every call (register/schema context, config, rbac/multitenancy flags).
 	 */

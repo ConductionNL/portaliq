@@ -88,6 +88,8 @@ use Throwable;
  * splitting the file would scatter one security boundary across classes.
  */
 class PortalObjectReader {
+	use PortalScopeMatch;
+
 	/**
 	 * OpenRegister's object service, resolved lazily.
 	 */
@@ -1052,8 +1054,9 @@ class PortalObjectReader {
 
 	/**
 	 * Re-check every row against the subject ref (and organisation, when known).
-	 * Any row that does not carry the exact subject ref — or belongs to a
-	 * different tenant — is dropped, so a mis-scoped OR result never leaks.
+	 * Any row whose scope field is not the exact subject ref, or a list that
+	 * contains it, is dropped, and so is a row from a different tenant, so a
+	 * mis-scoped OR result never leaks.
 	 *
 	 * @param array<int, mixed> $rows The raw rows from OpenRegister.
 	 * @param string $scopeField The scope field to check.
@@ -1061,6 +1064,8 @@ class PortalObjectReader {
 	 * @param string $organisation The expected tenant (empty = skip).
 	 *
 	 * @return array<int, array<string, mixed>> The verified rows.
+	 *
+	 * @spec openspec/changes/portal-scope-list-membership/specs/portal-contribution-contract/spec.md#requirement-a-direct-scope-field-must-match-a-single-value-or-strict-list-membership
 	 */
 	private function verifyScope(array $rows, string $scopeField, string $subjectRef, string $organisation = ''): array {
 		$verified = [];
@@ -1070,7 +1075,10 @@ class PortalObjectReader {
 				continue;
 			}
 
-			if ($scopeField !== '' && (string)($normalised[$scopeField] ?? '') !== $subjectRef) {
+			// One rule for single values and lists (portal-scope-list-membership):
+			// an equal value, or a list that contains it. Every other shape and
+			// an empty scoping value drop the row.
+			if ($scopeField !== '' && $this->scopeMatches(stored: ($normalised[$scopeField] ?? null), scopeValue: $subjectRef) === false) {
 				continue;
 			}
 

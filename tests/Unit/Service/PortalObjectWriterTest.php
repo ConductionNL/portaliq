@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\PortalSchemaReader;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -231,6 +232,96 @@ class PortalObjectWriterTest extends TestCase {
 		$this->assertNull($writer->updateObject('portaliq', 'exampleDocument', 'subjectRef', 's1', 'org-1', 'd-1', ['title' => 'X']));
 
 	}//end testUpdateFailsClosedOnOpenRegisterWriteError()
+
+	/**
+	 * LIST MEMBERSHIP (portal-scope-list-membership): a subject on a shared
+	 * list may patch the row, and the stored list is kept whole. A client
+	 * value for the scope field never wins, so a patch can neither drop the
+	 * other members nor add anyone.
+	 */
+	public function testUpdateOnAListScopeFieldContainingTheRefKeepsTheList(): void {
+		$objectService = $this->updatableObjectService(
+			[
+				'submission' => [
+					['id' => 'sub-1', 'learnerRefs' => ['learner-1', 'learner-2'], 'feedbackText' => 'old'],
+				],
+			]
+		);
+
+		$writer = new PortalObjectWriter($this->container($objectService), $this->createMock(LoggerInterface::class));
+		$result = $writer->updateObject('learniq', 'submission', 'learnerRefs', 'learner-1', '', 'sub-1', ['feedbackText' => 'new', 'learnerRefs' => ['intruder']]);
+
+		$this->assertTrue($objectService->saveCalled);
+		$this->assertSame(['learner-1', 'learner-2'], $objectService->saved['learnerRefs']);
+		$this->assertSame('new', $objectService->saved['feedbackText']);
+		$this->assertSame('sub-1', $objectService->savedUuid);
+		$this->assertSame('new', $result['feedbackText']);
+
+	}//end testUpdateOnAListScopeFieldContainingTheRefKeepsTheList()
+
+	/**
+	 * ISOLATION / IDOR: a list without the subject's value, and an empty list,
+	 * are refused before any write.
+	 */
+	public function testUpdateRefusesAListScopeFieldWithoutTheRef(): void {
+		$objectService = $this->updatableObjectService(
+			[
+				'submission' => [
+					['id' => 'sub-2', 'learnerRefs' => ['learner-2']],
+					['id' => 'sub-3', 'learnerRefs' => []],
+					['id' => 'sub-4', 'learnerRefs' => ['value' => 'learner-1']],
+				],
+			]
+		);
+
+		$writer = new PortalObjectWriter($this->container($objectService), $this->createMock(LoggerInterface::class));
+
+		$this->assertNull($writer->updateObject('learniq', 'submission', 'learnerRefs', 'learner-1', '', 'sub-2', ['feedbackText' => 'X']));
+		$this->assertNull($writer->updateObject('learniq', 'submission', 'learnerRefs', 'learner-1', '', 'sub-3', ['feedbackText' => 'X']));
+		$this->assertNull($writer->updateObject('learniq', 'submission', 'learnerRefs', 'learner-1', '', 'sub-4', ['feedbackText' => 'X']));
+		$this->assertFalse($objectService->saveCalled);
+
+	}//end testUpdateRefusesAListScopeFieldWithoutTheRef()
+
+	/**
+	 * CREATE on an `array` scope field: the stamp is the subject's own ref as
+	 * a one-element list, overwriting any client value.
+	 */
+	public function testCreateStampsAOneElementListForAnArrayScopeField(): void {
+		$objectService = $this->updatableObjectService([]);
+		$schemaReader = $this->createMock(PortalSchemaReader::class);
+		$schemaReader->method('readSchema')->with('submission')->willReturn(
+			['slug' => 'submission', 'properties' => ['learnerRefs' => ['type' => 'array', 'items' => ['type' => 'string']]]]
+		);
+
+		$writer = new PortalObjectWriter($this->container($objectService), $this->createMock(LoggerInterface::class), $schemaReader);
+		$writer->createObject('learniq', 'submission', 'learnerRefs', 'learner-1', '', ['assignmentId' => 'a-1', 'learnerRefs' => ['intruder']]);
+
+		$this->assertTrue($objectService->saveCalled);
+		$this->assertSame(['learner-1'], $objectService->saved['learnerRefs']);
+		$this->assertSame('a-1', $objectService->saved['assignmentId']);
+
+	}//end testCreateStampsAOneElementListForAnArrayScopeField()
+
+	/**
+	 * CREATE on any other scope field keeps the single-value stamp: a string
+	 * property, an unreadable schema, and no schema reader at all.
+	 */
+	public function testCreateStampsTheSingleValueWhenTheSchemaIsNotAnArray(): void {
+		$stringSchema = $this->createMock(PortalSchemaReader::class);
+		$stringSchema->method('readSchema')->willReturn(['properties' => ['subjectRef' => ['type' => 'string']]]);
+		$unreadable = $this->createMock(PortalSchemaReader::class);
+		$unreadable->method('readSchema')->willReturn(null);
+
+		foreach ([$stringSchema, $unreadable, null] as $schemaReader) {
+			$objectService = $this->updatableObjectService([]);
+			$writer = new PortalObjectWriter($this->container($objectService), $this->createMock(LoggerInterface::class), $schemaReader);
+			$writer->createObject('portaliq', 'exampleDocument', 'subjectRef', 's1', '', ['title' => 'X', 'subjectRef' => ['HACKER']]);
+
+			$this->assertSame('s1', $objectService->saved['subjectRef']);
+		}
+
+	}//end testCreateStampsTheSingleValueWhenTheSchemaIsNotAnArray()
 
 	/**
 	 * A container resolving OpenRegister's ObjectService to the given stub.

@@ -352,6 +352,14 @@ optional with a v1-equivalent default:
   the pseudonymous `subjectRef`. `"claimName"` resolves in the contributing
   app's own namespace, `"appId.claimName"` is explicit. Absent claim → the
   collection contributes zero rows (200 + empty, never an error).
+- **`scopeField` as a list** (portal-scope-list-membership): a direct
+  collection or action may scope by a list field, such as learniq
+  `Submission.learnerRefs`. A row is the subject's when the field equals the
+  scoping value, or is a list that contains it. The same rule runs on the list
+  read, the detail read and the verified update. An empty list, an object, a
+  nested list, null and an empty scoping value never match. An update keeps
+  the stored list as it is; a create on a field the schema types as `array`
+  stamps the subject's own ref as a one-element list.
 - **`via`** on a collection — one-hop join scoping:
   `{register, schema, scopeField, targetField, match?}` (dot paths allowed in
   `scopeField`). The join pre-pass resolves the subject → a verified set of
