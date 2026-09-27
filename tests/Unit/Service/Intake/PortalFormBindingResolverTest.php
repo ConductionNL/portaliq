@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service\Intake;
 
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
+use OCA\Portaliq\Service\Intake\PortalFormTrustLevel;
 use OCA\Portaliq\Tests\Unit\Service\Identity\PortalIdentityStoreTrait;
 use PHPUnit\Framework\TestCase;
 
@@ -72,6 +73,34 @@ class PortalFormBindingResolverTest extends TestCase {
 		$this->assertSame('Gemeente X', $render['fields'][0]['preset']);
 
 	}//end testAPresetIsCarriedOntoItsField()
+
+	public function testTheFormsSignInLevelIsCarriedToTheRender(): void {
+		// portaliq#725: buildiq writes the per-form sign-in level on the
+		// registration form (buildiq#935); the render must carry it or no
+		// caller can enforce it.
+		$this->seedForm(audience: 'client', fields: [['name' => 'postcode', 'order' => 1]], extra: ['minTrust' => 'substantial']);
+		$resolver = $this->resolver();
+
+		$render = $resolver->render(binding: $this->binding());
+
+		$this->assertSame('substantial', $render['minTrust']);
+		$this->assertSame('substantial', $resolver->requiredTrust(site: ['slug' => 'gemeente-x'], binding: $this->binding(), render: $render));
+
+	}//end testTheFormsSignInLevelIsCarriedToTheRender()
+
+	public function testTheStrictestOfPortalBindingAndFormWins(): void {
+		$resolver = $this->resolver();
+		$identified = ['authentication' => ['requiresIdentifiedIntake' => true]];
+
+		$this->assertNull($resolver->requiredTrust(site: [], binding: [], render: []));
+		$this->assertNull($resolver->requiredTrust(site: [], binding: ['minTrust' => 'low'], render: ['minTrust' => 0]));
+		$this->assertSame('low', $resolver->requiredTrust(site: $identified, binding: [], render: []));
+		$this->assertSame('high', $resolver->requiredTrust(site: $identified, binding: ['minTrust' => 'substantial'], render: ['minTrust' => 'high']));
+		$this->assertSame('substantial', $resolver->requiredTrust(site: [], binding: ['minTrust' => 'substantial'], render: []));
+		// A typo never widens access: it wins over every known level.
+		$this->assertSame(PortalFormTrustLevel::UNRECOGNISED, $resolver->requiredTrust(site: [], binding: ['minTrust' => 'high'], render: ['minTrust' => 'digid']));
+
+	}//end testTheStrictestOfPortalBindingAndFormWins()
 
 	public function testTheConfirmationTextIsTheFormsOwn(): void {
 		$this->seedForm(audience: 'client', fields: [['name' => 'postcode', 'order' => 1]], extra: ['confirmationText' => 'Bedankt, u hoort van ons.']);

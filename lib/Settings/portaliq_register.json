@@ -1620,6 +1620,12 @@
                                 ],
                                 "example": "low"
                             },
+                            "requiresIdentifiedIntake": {
+                                "title": "Sign-in for every form",
+                                "type": "boolean",
+                                "description": "Whether every form on this portal needs a signed-in visitor. An embedded form is then not shown and not accepted: the visitor is sent to the portal's own page to sign in.",
+                                "example": false
+                            },
                             "oidc": {
                                 "title": "OIDC configuration",
                                 "type": "object",
@@ -5349,6 +5355,17 @@
                         "type": "string",
                         "description": "What the citizen is told after submitting. The form's words, not the portal's.",
                         "example": "Bedankt. U hoort binnen vijf werkdagen van ons."
+                    },
+                    "minTrust": {
+                        "title": "Sign-in level",
+                        "type": "string",
+                        "description": "The sign-in this form needs before it is shown or accepted. Absent or low means anyone may fill it in. Substantial or high needs a DigiD or eHerkenning session at that level, and the embedded form then sends the visitor to the portal's own page.",
+                        "enum": [
+                            "low",
+                            "substantial",
+                            "high"
+                        ],
+                        "example": "low"
                     },
                     "allowedOrigins": {
                         "title": "Allowed origins",

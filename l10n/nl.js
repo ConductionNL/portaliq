@@ -1309,7 +1309,11 @@ OC.L10N.register(
         "No outbound link clicked yet.": "Nog geen uitgaande link aangeklikt.",
         "No visitor came here from another page yet.": "Nog geen bezoeker kwam hier vanaf een andere pagina.",
         "No visitor went on to another page yet.": "Nog geen bezoeker ging hiervandaan naar een andere pagina.",
-        "Could not load the traffic of this page.": "Het verkeer van deze pagina kon niet worden geladen."
+        "Could not load the traffic of this page.": "Het verkeer van deze pagina kon niet worden geladen.",
+        "Sign-in level": "Inlogniveau",
+        "The sign-in this form needs before it is shown or accepted. Absent or low means anyone may fill it in. Substantial or high needs a DigiD or eHerkenning session at that level, and the embedded form then sends the visitor to the portal's own page.": "De inlog die dit formulier nodig heeft voordat het wordt getoond of aangenomen. Leeg of laag betekent dat iedereen het mag invullen. Substantieel of hoog vraagt een DigiD- of eHerkenning-sessie op dat niveau, en het ingesloten formulier stuurt de bezoeker dan naar de eigen pagina van het portaal.",
+        "Sign-in for every form": "Inloggen voor elk formulier",
+        "Whether every form on this portal needs a signed-in visitor. An embedded form is then not shown and not accepted: the visitor is sent to the portal's own page to sign in.": "Of elk formulier op dit portaal een ingelogde bezoeker nodig heeft. Een ingesloten formulier wordt dan niet getoond en niet aangenomen: de bezoeker gaat naar de eigen pagina van het portaal om in te loggen."
     },
     "nplurals=2; plural=(n != 1);"
 )
