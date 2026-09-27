@@ -270,11 +270,14 @@ class PortalObjectWriterTest extends TestCase {
 					['id' => 'sub-2', 'learnerRefs' => ['learner-2']],
 					['id' => 'sub-3', 'learnerRefs' => []],
 					['id' => 'sub-4', 'learnerRefs' => ['value' => 'learner-1']],
+					// A list match does not skip the tenant check.
+					['id' => 'sub-5', 'learnerRefs' => ['learner-1'], 'organisation' => 'org-2'],
 				],
 			]
 		);
 
 		$writer = new PortalObjectWriter($this->container($objectService), $this->createMock(LoggerInterface::class));
+		$this->assertNull($writer->updateObject('learniq', 'submission', 'learnerRefs', 'learner-1', 'org-1', 'sub-5', ['feedbackText' => 'X']));
 
 		$this->assertNull($writer->updateObject('learniq', 'submission', 'learnerRefs', 'learner-1', '', 'sub-2', ['feedbackText' => 'X']));
 		$this->assertNull($writer->updateObject('learniq', 'submission', 'learnerRefs', 'learner-1', '', 'sub-3', ['feedbackText' => 'X']));

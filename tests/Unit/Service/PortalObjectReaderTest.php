@@ -1289,6 +1289,27 @@ class PortalObjectReaderTest extends TestCase {
 	}//end testListScopeFieldContainingTheRefIsReturned()
 
 	/**
+	 * ISOLATION: a list match does not skip the tenant check. A row from
+	 * another tenant is dropped even when its list contains the value.
+	 */
+	public function testListScopeMatchStillEnforcesTheTenant(): void {
+		$objectService = $this->objectService(
+			[
+				'submission' => [
+					['id' => 'sub-5', 'learnerRefs' => ['learner-1'], 'organisation' => 'org-1'],
+					['id' => 'sub-6', 'learnerRefs' => ['learner-1'], 'organisation' => 'org-2'],
+				],
+			]
+		);
+
+		$reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
+		$rows = $reader->readCollection('learniq', 'submission', 'learnerRefs', 'learner-1', 'org-1');
+
+		$this->assertSame(['sub-5'], array_column($rows, 'id'));
+
+	}//end testListScopeMatchStillEnforcesTheTenant()
+
+	/**
 	 * ISOLATION: a list that does not contain the subject's value is dropped,
 	 * even when OpenRegister returned it.
 	 */
