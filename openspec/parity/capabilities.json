@@ -3841,11 +3841,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/understanding-object-integrations/managing-guest-user-entries: guest users can create object entries with no account. A receipt code to follow the report up later is not documented. [was unknown]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "lib/Controller/ReportController.php:134 file(), :255 thread(), :285 answer() are #[PublicPage] and fully implemented (ReportIntakeService mints an ISecureRandom code and stores only its SHA-256, ReportThreadService throttles via Nextcloud's own throttler); appinfo/routes.php:259-261 routes them at /portal/api/reports, /portal/api/reports/thread, /portal/api/reports/thread/answer; grep of src/portal, src/site and src/manifest.json for 'reports' or 'reveal' returns 0 real hits (only unrelated matches, e.g. the Traffic 'Reports' hub page); the feature's own Playwright spec (tests/e2e/a-report-without-an-account-and-a-custodian-who-may-reveal-it.spec.ts) uses only the `request` fixture, never `page.*`, it is a headless API test, not a browser test, and its own comment block documents exactly which assertions live only in PHPUnit",
 				"reachedOn": "nothing in any frontend in this repo calls it; the only caller anywhere is a Playwright test hitting the raw HTTP API directly, never navigating a page",
 				"owner": "ConductionNL/portaliq",
-				"note": "Every task in openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/tasks.md is checked, including e2e and PHPUnit, and the backend (receipt code, two-way thread, contact separation, reveal workflow) is genuinely complete and well-tested at the API level. But there is no page anywhere, not the portal SPA, not the public site, not the admin app, that a reporter or a citizen could actually open to use it. This is the strongest 'code, not capability' finding in this area.",
+				"note": "Every task in openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/tasks.md is checked, including e2e and PHPUnit, and the backend (receipt code, two-way thread, contact separation, reveal workflow) is genuinely complete and well-tested at the API level. But there is no page anywhere, not the portal SPA, not the public site, not the admin app, that a reporter or a citizen could actually open to use it. This is the strongest 'code, not capability' finding in this area. Specified in openspec/changes/intake-report-pages (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -3871,11 +3871,11 @@
 				"liferay-dxp": "not settled from docs: follow-up messaging keyed on a receipt code, with no account, is not described in the guest entry, comments or notifications pages read today."
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "lib/Controller/ReportController.php:255 thread() and :285 answer() implement a genuine two-way exchange keyed on the receipt code (not an account); lib/Service/Reports/ReportThreadService.php backs it; same reachability finding as int-report-anonymous-file",
 				"reachedOn": "nothing reaches it: no frontend page anywhere calls /portal/api/reports/thread or /portal/api/reports/thread/answer",
 				"owner": "ConductionNL/portaliq",
-				"note": "This is the one place in the whole repo where a genuine two-way citizen<->organisation reply channel is fully built (unlike the ordinary inbox, see cmp-inb-reply), but it is completely unreached by any UI.",
+				"note": "This is the one place in the whole repo where a genuine two-way citizen<->organisation reply channel is fully built (unlike the ordinary inbox, see cmp-inb-reply), but it is completely unreached by any UI. Specified in openspec/changes/intake-report-pages (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -3901,11 +3901,11 @@
 				"liferay-dxp": "not settled from docs: https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/fields/encrypted-fields says 'only users with the decryption key can read it' (self-hosted and PaaS only), which is encryption at rest, not a custodian reveal with a logged reason."
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "lib/Controller/ReportController.php:309 show(), :342 reply(), :380 requestReveal(), :417 decideReveal() are #[NoAdminRequired] (staff-side); appinfo/routes.php:262-265 routes /api/reports/{id}, /api/reports/{id}/messages, /api/reports/{id}/reveal-requests, /api/reveal-requests/{id}/decide; lib/Event/PortalReportRevealedEvent.php raises the reveal for audit; no manifest page anywhere references the portalReport/portalRevealRequest schemas (grep src/manifest.json: 0 hits) and no admin Vue view calls these routes",
 				"reachedOn": "nothing reaches it: not even a generic OpenRegister index page exists for portalReport/portalRevealRequest in src/manifest.json, so staff have no UI at all for this, not even the fallback generic-pages route",
 				"owner": "ConductionNL/portaliq",
-				"note": "Matches dossiq's own owed row 13.33 ('Report accepted without an account, unmasked only by a named custodian'), which dossiq itself rates 'no'. Confirmed from portaliq's code: the backend fully implements the requirement (this is the a-report-without-an-account-and-a-custodian-who-may-reveal-it change, all tasks checked) but ships with literally no staff-facing screen, so a custodian could not act on a reveal request through this app today.",
+				"note": "Matches dossiq's own owed row 13.33 ('Report accepted without an account, unmasked only by a named custodian'), which dossiq itself rates 'no'. Confirmed from portaliq's code: the backend fully implements the requirement (this is the a-report-without-an-account-and-a-custodian-who-may-reveal-it change, all tasks checked) but ships with literally no staff-facing screen, so a custodian could not act on a reveal request through this app today. Specified in openspec/changes/intake-report-pages (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -3931,11 +3931,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/understanding-object-integrations/managing-guest-user-entries: a report can be accepted from a guest with no account. Unmasking only by a named custodian is not documented. [was unknown]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "see int-report-anonymous-file, int-report-two-way-thread and int-report-custodian-reveal for the full re-rating from portaliq's code",
 				"reachedOn": "nothing reaches it (see the three rows above)",
 				"owner": "ConductionNL/portaliq",
-				"note": "dossiq's self-rating of 'no' is confirmed, but for a stronger reason than dossiq could see from its own repo: portaliq did build the entire feature (schemas, services, both PHPUnit and an API-level Playwright spec), it is simply not wired to any page a reporter, citizen or custodian could open.",
+				"note": "dossiq's self-rating of 'no' is confirmed, but for a stronger reason than dossiq could see from its own repo: portaliq did build the entire feature (schemas, services, both PHPUnit and an API-level Playwright spec), it is simply not wired to any page a reporter, citizen or custodian could open. Specified in openspec/changes/intake-report-pages (OpenSpec pass 2026-09-27).",
 				"sourceId": "int-dossiq-13.33",
 				"origin": "sibling"
 			},
@@ -3962,11 +3962,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/forms/form-rules 'Forms can be dynamic, where the answer to one question changes the rest of the form' with Show-Hide, Require and Jump to Page rules. The page warns the Forms application 'is in maintenance mode as of Liferay DXP 2024.Q4'."
 			},
 			"built": {
-				"state": "none",
+				"state": "specified",
 				"evidence": "grep for conditional/showIf/dependsOn/visibleWhen across src/portal/components/SchemaForm.jsx, ActionFieldsForm.jsx and lib/Service/Intake/: 0 hits; SchemaForm.jsx (full file read) renders a flat field list with no branching logic",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
-				"note": null,
+				"note": "Specified in openspec/changes/intake-conditional-questions-and-drafts (OpenSpec pass 2026-09-27).",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -4022,11 +4022,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/creating-objects 'Enable or disable draft mode for object entries. While enabled, users can save entries as a draft and finalize them at a later time.' [was unknown]"
 			},
 			"built": {
-				"state": "none",
+				"state": "specified",
 				"evidence": "grep for draft/save-for-later/resume across src/portal/components/SchemaForm.jsx, EmbeddedForm.jsx, ActionFieldsForm.jsx: the only 'draft' hits are unrelated (CitizenCase.jsx's in-memory edit buffer for amending an EXISTING case, and CMS page/binding publish-status); no localStorage/session persistence of partial form answers anywhere",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
-				"note": null,
+				"note": "Specified in openspec/changes/intake-conditional-questions-and-drafts (OpenSpec pass 2026-09-27).",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -4052,11 +4052,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/commerce/store-management/configuring-payment-methods lists Money order, Authorize.net, Mercanet and PayPal out of the box; payment is part of Commerce checkout. Charging a fee on form submission is custom."
 			},
 			"built": {
-				"state": "none",
+				"state": "specified",
 				"evidence": "grep for pay/payment/mollie/ideal across lib/Controller/PortalIntakeController.php, lib/Service/Intake/, src/portal/components/SchemaForm.jsx: 0 hits; the only payment code anywhere in portaliq is the shillinq sibling contribution's invoice PortalPaymentSessionService, which is a customer-portal invoice-payment feature, unrelated to paying a fee on a new request",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
-				"note": null,
+				"note": "Specified in openspec/changes/intake-pay-on-submit (OpenSpec pass 2026-09-27).",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -7076,11 +7076,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/users-and-permissions/roles-and-permissions/defining-role-permissions 'you can fine-tune whether a role grants view access to various applications in the control panel or get more granular and only grant access to an application's co[nfiguration]'."
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "lib/Service/ActionAuthService.php:57-70 requireAction() checks group membership against an IAppConfig-backed matrix, admins always pass; lib/actions.seed.json seeds three actions (portal.provision, portal.ask-partner, portal.review-proposal) called from lib/Controller/PortalAccountAdminController.php and lib/Service/Tasks/PortalCaseAccessGuard.php; customizable via Admin Settings > Portaliq > Actions per the seed file's own $comment",
 				"reachedOn": "PortalAccountAdminController and PortalCaseAccessGuard call ActionAuthService::requireAction() on real request paths",
 				"owner": "ConductionNL/portaliq",
-				"note": "The mechanism is real and wired, but every shipped seed entry is ['admin'], admin-only out of the box, so there is no shipped example of a non-admin group actually granted an action. The seed file's own $comment is also unedited app-template boilerplate ('remove the $comment field... when implementing your app'), left in production.",
+				"note": "The mechanism is real and wired, but every shipped seed entry is ['admin'], admin-only out of the box, so there is no shipped example of a non-admin group actually granted an action. The seed file's own $comment is also unedited app-template boilerplate ('remove the $comment field... when implementing your app'), left in production. Specified in openspec/changes/operate-roles-for-content-and-actions (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -7136,11 +7136,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/users-and-permissions/organizations 'Organizations ... can enable distributed user and site management'; object data can be restricted per account (https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/using-system-objects-with-custom-objects/restricting-access-to-object-data-by-account)."
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "portal-traffic-analytics tasks.md 0.1 documents portalSession's own fields as subjectRef, jti, issuedAt, expiresAt, revoked, trustLevel, audience, organisation; lib/Service/PortalOrganisationConfigService.php resolves per-organisation white-label runtime config and 'fails closed to a safe NEUTRAL default on every unresolved path... NEVER another tenant's branding'; organisation appears across 19 files under lib/Service and lib/Controller (PortalObjectReader/Writer, PortalCaseListReader, PortalAccountService, etc.)",
 				"reachedOn": "every authenticated portal session carries an organisation claim that scopes reads/writes through PortalObjectReader/PortalObjectWriter",
 				"owner": "ConductionNL/portaliq",
-				"note": "Rated partial rather than yes: this reader confirmed the session claim and the branding-isolation guard, but did not trace a full object-store query to prove row-level data isolation end to end for every schema; that needs a live check across the 13 schemas in lib/Settings/portaliq_register.json.",
+				"note": "Rated partial rather than yes: this reader confirmed the session claim and the branding-isolation guard, but did not trace a full object-store query to prove row-level data isolation end to end for every schema; that needs a live check across the 13 schemas in lib/Settings/portaliq_register.json. Specified in openspec/changes/operate-portals-per-organisation (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -7226,11 +7226,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/administration/configuring-liferay/virtual-instances 'Liferay DXP can host multiple \"portals\" on one installation ... Each virtual instance has completely separate data and configurations'. [since 2026.Q1 multiple domains need an Enterprise subscription]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "same evidence as ops-multitenancy-organisation: portalSession's organisation claim and PortalOrganisationConfigService's fail-closed, never-cross-tenant branding guard; src/manifest.json:1080,1120 Portals/:id admin pages manage multiple portal records on one installation",
 				"reachedOn": "Portals admin page lists/edits multiple portal records; each portal resolves its own organisation-scoped config and session",
 				"owner": "ConductionNL/portaliq",
-				"note": "Same caveat as ops-multitenancy-organisation: the session-level and branding-level isolation is confirmed, full row-level data isolation across every schema was not traced end to end in this pass.",
+				"note": "Same caveat as ops-multitenancy-organisation: the session-level and branding-level isolation is confirmed, full row-level data isolation across every schema was not traced end to end in this pass. Specified in openspec/changes/operate-portals-per-organisation (OpenSpec pass 2026-09-27).",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -7256,11 +7256,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/users-and-permissions/roles-and-permissions/default-roles-reference (Site Administrator, Site Owner, Site Member) and https://learn.liferay.com/w/dxp/security-and-administration/users-and-permissions/roles-and-permissions/defining-role-permissions."
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "same evidence as ops-editor-vs-admin-pages (content: PageEditorService.mayEdit(), group-configurable) and ops-action-auth-rbac (actions: ActionAuthService, group-based but shipped admin-only)",
 				"reachedOn": "CmsEditorController for content editing rights; PortalAccountAdminController/PortalCaseAccessGuard for action rights",
 				"owner": "ConductionNL/portaliq",
-				"note": "Content editing genuinely separates 'editor group' from 'admin'. Settings/action rights are mechanically group-based but every shipped action is admin-only, so out of the box there is no non-admin role over settings.",
+				"note": "Content editing genuinely separates 'editor group' from 'admin'. Settings/action rights are mechanically group-based but every shipped action is admin-only, so out of the box there is no non-admin role over settings. Specified in openspec/changes/operate-roles-for-content-and-actions (OpenSpec pass 2026-09-27).",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -7316,11 +7316,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/cloud 'Liferay SaaS ... Updating, patching, and managing Liferay DXP and the other core Liferay Cloud services is part of the package'."
 			},
 			"built": {
-				"state": "none",
+				"state": "specified",
 				"evidence": "portaliq is distributed as a Nextcloud app (appinfo/info.xml) installed into a self-hosted or self-managed Nextcloud instance; no signup flow, tenant-provisioning API or hosted-plan billing surface exists in this repo",
 				"reachedOn": "nothing reaches it: no hosted-service surface exists here",
 				"owner": "ConductionNL/portaliq",
-				"note": "A hosting company could offer managed Nextcloud+portaliq as a service, but that would be an external arrangement, not a capability this codebase provides.",
+				"note": "A hosting company could offer managed Nextcloud+portaliq as a service, but that would be an external arrangement, not a capability this codebase provides. Specified in openspec/changes/operate-portals-per-organisation (OpenSpec pass 2026-09-27).",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -7475,11 +7475,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/digital-asset-management/uploading-and-managing/enabling-docusign-digital-signatures 'integrate DocuSign digital signatures into your Liferay documents ... manage and collect signatures'. Signing runs through a DocuSign envelope, a separate paid service, not a signing step inside a portal page. [was unknown]"
 			},
 			"built": {
-				"state": "none",
+				"state": "specified",
 				"evidence": "grep -riE 'signature|onderteken|handteken' src/portal src/site: 0 hits; lib hits for 'sign' are JWT/HMAC signing only (SessionController, PortalJwtService, traffic token)",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
-				"note": "No e-signature step, provider or signing UI in the portal; documents can only be downloaded or uploaded.",
+				"note": "No e-signature step, provider or signing UI in the portal; documents can only be downloaded or uploaded. Specified in openspec/changes/case-actions-sign-a-document (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -7508,11 +7508,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/workflow/designing-and-managing-workflows/workflow-designer/using-task-timers 'When a review task is idle for three days, the timer now reminds task assignees ... The reminder notification repeats daily'. A resident's outstanding request would have to be modelled as a workflow task assigned to them. [was unknown; custom: request-for-information task model]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "openregister development 86a2fb876f lib/Listener/PortalTaskReminderListener.php:161 turns a flow-business-timer preBreach rung into a KIND_REMINDER delivery (FlowTimerFiredEvent emitted at lib/Service/Flow/Timer/FlowTimerService.php:651,720); lib/BackgroundJob/PortalTaskDeliveryJob.php:119,234 delivers it as inbox message + mail; src/portal/components/TasksPage.jsx:250-256,379-387 shows due date and 'Overdue'",
 				"reachedOn": "flow timer -> openregister delivery ledger -> PortalTaskDeliveryJob (cron, appinfo/info.xml:81) -> portalMessage in InboxPage.jsx with 'View task' deep link -> TasksPage.jsx; plus a privacy-minimal mail",
 				"owner": "ConductionNL/portaliq",
-				"note": "Automatic reminders exist, but they fire BEFORE the deadline (preBreach); once a task is actually overdue (slaBreached) the listener deliberately sends the party nothing and escalates inward. The resident sees 'Overdue' on the task list. Reminders only happen when a business timer is configured on the task.",
+				"note": "Automatic reminders exist, but they fire BEFORE the deadline (preBreach); once a task is actually overdue (slaBreached) the listener deliberately sends the party nothing and escalates inward. The resident sees 'Overdue' on the task list. Reminders only happen when a business timer is configured on the task. Specified in openspec/changes/tasks-reminders-after-the-deadline (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -7607,11 +7607,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/understanding-object-integrations/permissions-framework-integration 'By default, custom object permissions are not assigned to user roles automatically ... To grant access, manually assign object permissions to the desired roles', so each object (case type) is shown or hidden per role. Case types as separate objects are custom. [was unknown]"
 			},
 			"built": {
-				"state": "none",
+				"state": "specified",
 				"evidence": "lib/Settings/portaliq_register.json portalCaseType properties: portalWritable, windows, portalStatusLabels, portalIdentityKind, portalWithdrawal, portalReportDeclaration, no show/hide flag; lib/Service/PortalObjectReader.php:273 collection 'filter' is declared in the contributing app's code",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
-				"note": "Which case types appear is decided by the contributing app's manifest code (collections and an optional narrowing filter), not by an admin choice per case type or service. portalIdentityKind limits WHO may reach a type, not whether it is shown.",
+				"note": "Which case types appear is decided by the contributing app's manifest code (collections and an optional narrowing filter), not by an admin choice per case type or service. portalIdentityKind limits WHO may reach a type, not whether it is shown. Specified in openspec/changes/operate-show-per-case-type (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -7640,11 +7640,11 @@
 				"liferay-dxp": "not settled from docs: https://learn.liferay.com/w/dxp/cloud/support-and-troubleshooting/troubleshooting-tools-and-resources/liferay-cloud-platform-status offers current status and 'Incident History'; https://learn.liferay.com/w/dxp/cloud states 'over 99.9% uptime' in aggregate. A measured twelve-month availability report per customer is not described."
 			},
 			"built": {
-				"state": "none",
+				"state": "specified",
 				"evidence": "lib/Controller/HealthController.php (GET /api/health) and lib/Controller/MetricsController.php (GET /api/metrics) give point-in-time probes only; grep -riE 'uptime|availability|beschikbaarheid' lib: no stored history or report",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
-				"note": "An external monitor can measure availability from the health and metrics endpoints, but portaliq keeps no availability history and produces no twelve-month report.",
+				"note": "An external monitor can measure availability from the health and metrics endpoints, but portaliq keeps no availability history and produces no twelve-month report. Specified in openspec/changes/operate-availability-report (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -8163,11 +8163,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/content-management-system/alerts-and-announcements 'Alerts are for high-priority information (e.g. planned downtime alerts, security alerts, etc.) and appear with a red Important tag', placed with the Alerts widget. [was unknown]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "grep -riE 'maintenance|announcement|banner' src/site src/portal lib/Service/CmsReader.php: no notice feature; pages are editable through the page designer (existing row ops-editor-vs-admin-pages)",
 				"reachedOn": "/site pages via the page designer's markdown block, one page at a time",
 				"owner": "ConductionNL/portaliq",
-				"note": "An editor can write a warning into a page's content, but there is no site-wide notice or banner, nothing time-boxed, and nothing on the signed-in /portal SPA.",
+				"note": "An editor can write a warning into a page's content, but there is no site-wide notice or banner, nothing time-boxed, and nothing on the signed-in /portal SPA. Specified in openspec/changes/operate-maintenance-notice (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",

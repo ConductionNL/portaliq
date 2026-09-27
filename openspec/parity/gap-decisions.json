@@ -280,6 +280,22 @@
 		"decidedOn": "2026-09-27"
 	},
 	{
+		"row": "cmp-int-conditional",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Three competitors rated yes (NL Portal, xxllnc PIP, Liferay DXP).",
+		"change": "intake-conditional-questions-and-drafts",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-int-pay",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Same capability as buildiq row form-payment, which carries tender demand (TenderNed 382064).",
+		"change": "intake-pay-on-submit",
+		"decidedOn": "2026-09-27"
+	},
+	{
 		"row": "cmp-int-pdf-receipt",
 		"matrix": "portaliq",
 		"decision": "defer",
@@ -293,6 +309,38 @@
 		"decision": "defer",
 		"reason": "Only one competitor rated yes (xxllnc PIP) and no tender, featureRequest or roadmap demand; outside portaliq's core area (sign-in and identity).",
 		"change": null,
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-int-save-resume",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Two competitors rated yes (xxllnc PIP, Liferay DXP).",
+		"change": "intake-conditional-questions-and-drafts",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-ops-multitenant",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Partial and built, two or more competitors rated yes on the missing half: row-level isolation across the portaliq schemas was never traced end to end.",
+		"change": "operate-portals-per-organisation",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-ops-rbac",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Partial and built, three competitors rated yes on the missing half: every seeded action is admin-only and no screen grants an action to a group.",
+		"change": "operate-roles-for-content-and-actions",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "cmp-ops-saas",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Two competitors rated yes (xxllnc PIP, Liferay DXP).",
+		"change": "operate-portals-per-organisation",
 		"decidedOn": "2026-09-27"
 	},
 	{
@@ -496,6 +544,14 @@
 		"decidedOn": "2026-09-27"
 	},
 	{
+		"row": "dem-cl-maintenance-notice",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Partial and built, three competitors rated yes on the missing half (Open Inwoner, NL Portal, Liferay DXP): no site-wide or time-boxed notice.",
+		"change": "operate-maintenance-notice",
+		"decidedOn": "2026-09-27"
+	},
+	{
 		"row": "dem-cl-mcp-pii-masking",
 		"matrix": "portaliq",
 		"decision": "defer",
@@ -600,6 +656,14 @@
 		"decidedOn": "2026-09-27"
 	},
 	{
+		"row": "dem-tnd-availability-report",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Tender demand (TenderNed 415380).",
+		"change": "operate-availability-report",
+		"decidedOn": "2026-09-27"
+	},
+	{
 		"row": "dem-tnd-berichtenbox",
 		"matrix": "portaliq",
 		"decision": "build",
@@ -629,6 +693,30 @@
 		"decision": "build",
 		"reason": "Tender demand (TenderNed 397282, also 415380).",
 		"change": "inbox-notifications-and-preferences",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "dem-tnd-reminders-overdue",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Tender demand (TenderNed 409958): reminders exist before the deadline only.",
+		"change": "tasks-reminders-after-the-deadline",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "dem-tnd-show-per-casetype",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Tender demand (TenderNed 402189) and two competitors rated yes (NL Portal, xxllnc PIP).",
+		"change": "operate-show-per-case-type",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "dem-tnd-sign-in-portal",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Tender demand (TenderNed 409958). filinq owns the fleet signing rail; this change is the resident's signing surface.",
+		"change": "case-actions-sign-a-document",
 		"decidedOn": "2026-09-27"
 	},
 	{
@@ -736,6 +824,38 @@
 		"decidedOn": "2026-09-27"
 	},
 	{
+		"row": "int-report-anonymous-file",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Open change a-report-without-an-account-and-a-custodian-who-may-reveal-it has every task checked (13 of 13) but no screen in src/portal, src/site or src/manifest.json calls its endpoints (read at eeda3fa). Treated as the archived case of the rule: shipped without the capability, so this change builds the missing screens.",
+		"change": "intake-report-pages",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "int-report-custodian-reveal",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Open change a-report-without-an-account-and-a-custodian-who-may-reveal-it has every task checked (13 of 13) but no screen in src/portal, src/site or src/manifest.json calls its endpoints (read at eeda3fa). Treated as the archived case of the rule: shipped without the capability, so this change builds the missing screens.",
+		"change": "intake-report-pages",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "int-report-two-way-thread",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Open change a-report-without-an-account-and-a-custodian-who-may-reveal-it has every task checked (13 of 13) but no screen in src/portal, src/site or src/manifest.json calls its endpoints (read at eeda3fa). Treated as the archived case of the rule: shipped without the capability, so this change builds the missing screens.",
+		"change": "intake-report-pages",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "ops-action-auth-rbac",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Partial and built, three competitors rated yes on the missing half: every seeded action is admin-only and no screen grants an action to a group.",
+		"change": "operate-roles-for-content-and-actions",
+		"decidedOn": "2026-09-27"
+	},
+	{
 		"row": "ops-mcp-tooling",
 		"matrix": "portaliq",
 		"decision": "existing",
@@ -744,11 +864,27 @@
 		"decidedOn": "2026-09-27"
 	},
 	{
+		"row": "ops-multitenancy-organisation",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Partial and built, two or more competitors rated yes on the missing half: row-level isolation across the portaliq schemas was never traced end to end.",
+		"change": "operate-portals-per-organisation",
+		"decidedOn": "2026-09-27"
+	},
+	{
 		"row": "sib-decidiq-plt-02",
 		"matrix": "portaliq",
 		"decision": "build",
 		"reason": "Partial and built, and three or more competitors rated yes on the missing half: portaliq signs in only through an organisation-supplied OIDC broker. The fleet put the DigiD and eHerkenning broker in integriq (open change idp-broker-envelope-runtime, which leaves portaliq out of scope), so portaliq's half is consuming that envelope exchange.",
 		"change": "signin-integriq-broker-login",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "sib-dossiq-13-33",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Open change a-report-without-an-account-and-a-custodian-who-may-reveal-it has every task checked (13 of 13) but no screen in src/portal, src/site or src/manifest.json calls its endpoints (read at eeda3fa). Treated as the archived case of the rule: shipped without the capability, so this change builds the missing screens.",
+		"change": "intake-report-pages",
 		"decidedOn": "2026-09-27"
 	},
 	{
@@ -917,6 +1053,14 @@
 		"decision": "existing",
 		"reason": "Open change portal-theme-blocks-and-contributed-pages covers it: Task 9 gives a page a contributing app publishes its own public route, Task 10 its anonymous ownership.",
 		"change": "portal-theme-blocks-and-contributed-pages",
+		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "form-payment",
+		"matrix": "buildiq",
+		"decision": "build",
+		"reason": "Tender demand (TenderNed 382064). Same capability as portaliq row cmp-int-pay.",
+		"change": "intake-pay-on-submit",
 		"decidedOn": "2026-09-27"
 	},
 	{
