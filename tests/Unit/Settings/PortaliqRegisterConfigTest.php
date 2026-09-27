@@ -225,6 +225,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// read 0.27.0); its own guardianAudienceFixture copy was a subset of
 		// development's, which is kept. Bumped past development's 0.32.0 at
 		// merge time. Additive.
+		// 0.33.1: no schema change; bumped past development's 0.33.0 when the assignment-portal-file-upload branch landed.
 		// 0.34.0 (activityOffer/activitySignup/activityAttendance): term-long
 		// activities with places, a waiting list and attendance per session
 		// (extracurricular-activity-offer). Sign-ups and attendance hold

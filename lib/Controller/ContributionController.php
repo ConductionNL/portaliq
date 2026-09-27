@@ -47,6 +47,7 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
+use OCA\Portaliq\Contribution\FileFieldConfigNormaliser;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\NotificationDispatchService;
@@ -940,7 +941,7 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		$data = $this->whitelist(fields: (array)($action['fields'] ?? []));
+		$data = $this->withoutFileFields(action: $action, data: $this->whitelist(fields: (array)($action['fields'] ?? [])));
 
 		// A declared action `defaults` map is stamped server-side over the
 		// whitelisted client payload. It carries values the client must not choose
@@ -1066,7 +1067,7 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		$data = $this->whitelist(fields: (array)($action['fields'] ?? []));
+		$data = $this->withoutFileFields(action: $action, data: $this->whitelist(fields: (array)($action['fields'] ?? [])));
 
 		// Server-forced defaults, applied AFTER the whitelist so a client can
 		// never override them — identical discipline to the authenticated
@@ -1209,7 +1210,7 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		$data = $this->whitelist(fields: (array)($action['fields'] ?? []));
+		$data = $this->withoutFileFields(action: $action, data: $this->whitelist(fields: (array)($action['fields'] ?? [])));
 
 		$data = $this->withTransitionSet(action: $action, data: $data);
 
@@ -1336,6 +1337,32 @@ class ContributionController extends Controller implements PortalProtected {
 
 		return $data;
 	}//end whitelist()
+
+	/**
+	 * Remove every declared file field from a write body.
+	 *
+	 * A file field (`fieldConfigs.<field>.type: file`) holds references to
+	 * files in the object's own folder, and only the scoped field upload
+	 * writes it, with a reference portaliq produced itself. A value typed into
+	 * a create or update body could name any file, including another
+	 * person's, so it never reaches the writer.
+	 *
+	 * @param array<string, mixed> $action The matched action (normalised).
+	 * @param array<string, mixed> $data The whitelisted body.
+	 *
+	 * @return array<string, mixed> The body without file fields.
+	 *
+	 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-a-file-field-must-never-be-written-from-a-request-body
+	 */
+	private function withoutFileFields(array $action, array $data): array {
+		foreach ((array)($action['fieldConfigs'] ?? []) as $field => $config) {
+			if (is_array($config) === true && ($config['type'] ?? null) === FileFieldConfigNormaliser::TYPE_FILE) {
+				unset($data[$field]);
+			}
+		}
+
+		return $data;
+	}//end withoutFileFields()
 
 	/**
 	 * Extract a saved row's identifier (`id`/`uuid`, flat or in `@self`) for
