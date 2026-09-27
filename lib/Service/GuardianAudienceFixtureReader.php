@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/push-notifications-quiet-hours/design.md#nextcloud-integration
+ * @spec openspec/changes/news-and-newsletter-authoring/design.md#audience-source-seam
  */
 
 declare(strict_types=1);
@@ -39,7 +39,7 @@ use Throwable;
  * Resolves a guardian's audience (school/group/child + photo consent) from
  * the interim fixture register.
  *
- * @spec openspec/changes/push-notifications-quiet-hours/design.md#nextcloud-integration
+ * @spec openspec/changes/news-and-newsletter-authoring/design.md#audience-source-seam
  *
  * @SuppressWarnings(PHPMD.StaticAccess) -- NewsAudienceMatcher::matches() is
  * deliberately the ONE stateless match predicate every caller (this class,
@@ -85,7 +85,7 @@ class GuardianAudienceFixtureReader {
 	 *
 	 * @return array{schoolRef: string, groupRefs: array<int, string>, childRefs: array<int, string>, photoConsent: array<string, array<string, bool>>}
 	 *
-	 * @spec openspec/changes/push-notifications-quiet-hours/design.md#nextcloud-integration
+	 * @spec openspec/changes/news-and-newsletter-authoring/design.md#audience-source-seam
 	 */
 	public function resolveAudience(string $subjectRef): array {
 		$empty = ['schoolRef' => '', 'groupRefs' => [], 'childRefs' => [], 'photoConsent' => []];
@@ -130,6 +130,24 @@ class GuardianAudienceFixtureReader {
 	}//end resolveAudience()
 
 	/**
+	 * Whether a guardian's own audience includes a group.
+	 *
+	 * @param string $subjectRef The guardian's own subjectRef.
+	 * @param string $groupRef The group to check.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/guardian-direct-messages/design.md#participation-model
+	 */
+	public function guardianReachesGroup(string $subjectRef, string $groupRef): bool {
+		if ($groupRef === '') {
+			return false;
+		}
+
+		return in_array($groupRef, $this->resolveAudience(subjectRef: $subjectRef)['groupRefs'], true);
+	}//end guardianReachesGroup()
+
+	/**
 	 * Whether photo consent for a PURPOSE is granted for one child, in one
 	 * guardian's resolved audience. An absent entry is WITHHELD (ADR-005
 	 * fail-closed) — never treated as granted.
@@ -140,7 +158,7 @@ class GuardianAudienceFixtureReader {
 	 *
 	 * @return bool
 	 *
-	 * @spec exclude inherited unmodified copy; this change has no photo-consent concern and never calls this method
+	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-photos-in-a-news-item-are-gated-by-the-target-childs-photo-consent
 	 */
 	public function photoConsentGranted(string $subjectRef, string $childRef, string $purpose = self::PURPOSE_NEWS): bool {
 		$audience = $this->resolveAudience(subjectRef: $subjectRef);
@@ -161,7 +179,7 @@ class GuardianAudienceFixtureReader {
 	 *
 	 * @return bool
 	 *
-	 * @spec exclude inherited unmodified copy; this change has no photo-consent concern and never calls this method
+	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-photos-in-a-news-item-are-gated-by-the-target-childs-photo-consent
 	 */
 	public function childPhotoConsentGranted(string $childRef, string $purpose = self::PURPOSE_NEWS): bool {
 		if ($childRef === '') {
@@ -215,7 +233,7 @@ class GuardianAudienceFixtureReader {
 	 *
 	 * @return array<int, string> Distinct guardian subjectRefs.
 	 *
-	 * @spec openspec/changes/push-notifications-quiet-hours/design.md#nextcloud-integration
+	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsletter-send-is-preceded-by-a-recipient-count-preflight
 	 */
 	public function guardiansMatching(array $target): array {
 		$objectService = $this->objectService();

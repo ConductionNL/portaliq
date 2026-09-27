@@ -52,6 +52,8 @@ use OCA\Portaliq\Listener\PortalAccountProvisionListener;
 use OCA\Portaliq\Middleware\PortalAuthMiddleware;
 use OCA\Portaliq\Middleware\PublicApiCorsMiddleware;
 use OCA\Portaliq\Notification\Notifier;
+use OCA\Portaliq\Service\Messaging\GuardianMessagingLeafInterface;
+use OCA\Portaliq\Service\Messaging\InAppMessagingLeaf;
 use OCA\Portaliq\Service\Notifications\LoggingPushSender;
 use OCA\Portaliq\Service\Notifications\PushSenderInterface;
 use OCA\Portaliq\Service\Traffic\Geo\MmdbGeoResolver;
@@ -164,6 +166,13 @@ class Application extends App implements IBootstrap {
 		// (the settings provider `none` makes this resolver answer null too).
 		$context->registerServiceAlias(GeoResolverInterface::class, MmdbGeoResolver::class);
 
+		// Guardian-direct-messages: InAppMessagingLeaf is the FIRST
+		// implementation of the messaging-leaf interface, backed by this
+		// app's own OpenRegister schemas. When OpenRegister's planned
+		// guardian-participant-messaging-leaf ships, a second
+		// implementation can be aliased here instead, with no controller
+		// change (design.md "Messaging leaf interface").
+		$context->registerServiceAlias(GuardianMessagingLeafInterface::class, InAppMessagingLeaf::class);
 		// Push-notifications-quiet-hours: LoggingPushSender is the FIRST
 		// implementation of the push transport seam (a real Web Push
 		// implementation needs VAPID key provisioning, an admin-settings

@@ -199,6 +199,17 @@ class NotificationDispatchJob extends QueuedJob {
 			return;
 		}
 
+		if ($this->optedOutOfEmail(account: $account) === true) {
+			// Notification-preferences-per-role: the subject chose this — it is
+			// neither a missing declaration nor a delivery failure, so it gets
+			// the SAME no-op shape as "no matching rule key" (nothing sent,
+			// nothing logged), never the "no email address" shape below (which
+			// counts toward needsAlternativeContact). Judged before anything
+			// about deliverability, on purpose.
+			$this->logger->debug('Portaliq: NotificationDispatchJob — account opted out of the email channel, skipping', ['subjectRef' => $subjectRef]);
+			return;
+		}
+
 		$accountId = $this->rowId(row: $account);
 		if ($accountId === null) {
 			return;
@@ -345,6 +356,25 @@ class NotificationDispatchJob extends QueuedJob {
 
 		return ($rows[0] ?? null);
 	}//end findAccount()
+
+	/**
+	 * Whether this account has opted out of the email channel
+	 * (notification-preferences-per-role). Fail-OPEN, the deliberate
+	 * exception to this file's usual fail-closed posture (design.md D-2): a
+	 * missing `notificationChannels` key — every account that existed before
+	 * this property did — reads as opted IN, so a change that adds the
+	 * property never silently stops notifying an account that never set it.
+	 *
+	 * @param array<string, mixed> $account The resolved account.
+	 *
+	 * @return bool True only when the channel is explicitly `false`.
+	 *
+	 * @spec openspec/changes/notification-preferences-per-role/specs/supplier-portal/spec.md#requirement-an-accounts-own-channel-opt-out-gates-dispatch
+	 */
+	private function optedOutOfEmail(array $account): bool {
+		$channels = (array)($account['notificationChannels'] ?? []);
+		return ($channels[self::CHANNEL_EMAIL] ?? true) === false;
+	}//end optedOutOfEmail()
 
 	/**
 	 * The consecutive-failure streak going into THIS attempt: the `attempts`

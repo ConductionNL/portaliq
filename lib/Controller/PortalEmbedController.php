@@ -123,10 +123,13 @@ class PortalEmbedController extends Controller {
 			return $this->refusal(binding: $binding, reason: 'form_not_published');
 		}
 
-		if (($site['authentication']['requiresIdentifiedIntake'] ?? false) === true) {
+		if ($this->bindings->requiredTrust(site: (array)$site, binding: $binding, render: $render) !== null) {
 			// An identified intake is not something a frame can do: it would
-			// mean a login inside somebody else's page. The visitor is offered
-			// the portal's own page instead, and the frame renders no field.
+			// mean a login inside somebody else's page. That holds for a
+			// portal that requires it for every form and for one form that
+			// requires DigiD or eHerkenning (portaliq#725). The visitor is
+			// offered the portal's own page instead, and the frame renders no
+			// field.
 			return $this->refusal(
 				binding: $binding,
 				reason: 'identified_intake',
@@ -181,6 +184,15 @@ class PortalEmbedController extends Controller {
 		}
 
 		$render = $this->bindings->render(binding: $binding);
+		if ($this->bindings->requiredTrust(site: $site, binding: $binding, render: $render) !== null) {
+			// The frame refuses a form that needs a sign-in, and so must its
+			// submit: the refusal may not depend on the frame being used,
+			// because anybody can POST here directly with an allowed Origin
+			// (portaliq#725). This route reads no session, so no submission
+			// to such a form is ever accepted here.
+			return new JSONResponse(['error' => 'identified_intake'], Http::STATUS_FORBIDDEN);
+		}
+
 		$validated = $this->validator->validate(fields: (array)($render['fields'] ?? []), answers: $answers);
 		if ($validated['valid'] === false) {
 			return new JSONResponse(['errors' => $validated['errors']], Http::STATUS_BAD_REQUEST);
