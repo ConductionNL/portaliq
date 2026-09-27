@@ -93,7 +93,7 @@ class PortalFormBindingResolverTest extends TestCase {
 		$identified = ['authentication' => ['requiresIdentifiedIntake' => true]];
 
 		$this->assertNull($resolver->requiredTrust(site: [], binding: [], render: []));
-		$this->assertNull($resolver->requiredTrust(site: [], binding: ['minTrust' => 'low'], render: ['minTrust' => 0]));
+		$this->assertSame('low', $resolver->requiredTrust(site: [], binding: ['minTrust' => 'low'], render: ['minTrust' => 0]));
 		$this->assertSame('low', $resolver->requiredTrust(site: $identified, binding: [], render: []));
 		$this->assertSame('high', $resolver->requiredTrust(site: $identified, binding: ['minTrust' => 'substantial'], render: ['minTrust' => 'high']));
 		$this->assertSame('substantial', $resolver->requiredTrust(site: [], binding: ['minTrust' => 'substantial'], render: []));
@@ -101,6 +101,27 @@ class PortalFormBindingResolverTest extends TestCase {
 		$this->assertSame(PortalFormTrustLevel::UNRECOGNISED, $resolver->requiredTrust(site: [], binding: ['minTrust' => 'high'], render: ['minTrust' => 'digid']));
 
 	}//end testTheStrictestOfPortalBindingAndFormWins()
+
+	public function testADeclaredLowNeedsASignedInSession(): void {
+		// portaliq#731: `low` is DigiD basis, the lowest signed-in level, the
+		// same `low` a portalPage entry and requiresIdentifiedIntake mean. It
+		// never means anonymous, on the form or on the binding.
+		$resolver = $this->resolver();
+
+		$this->assertSame('low', $resolver->requiredTrust(site: [], binding: [], render: ['minTrust' => 'low']));
+		$this->assertSame('low', $resolver->requiredTrust(site: [], binding: ['minTrust' => 'low'], render: []));
+
+	}//end testADeclaredLowNeedsASignedInSession()
+
+	public function testOnlyAbsenceZeroAndAnonymousMeanAnonymous(): void {
+		$resolver = $this->resolver();
+
+		$this->assertNull($resolver->requiredTrust(site: [], binding: [], render: []));
+		$this->assertNull($resolver->requiredTrust(site: [], binding: [], render: ['minTrust' => 0]));
+		$this->assertNull($resolver->requiredTrust(site: [], binding: [], render: ['minTrust' => '0']));
+		$this->assertNull($resolver->requiredTrust(site: [], binding: ['minTrust' => 'anonymous'], render: ['minTrust' => '']));
+
+	}//end testOnlyAbsenceZeroAndAnonymousMeanAnonymous()
 
 	public function testTheConfirmationTextIsTheFormsOwn(): void {
 		$this->seedForm(audience: 'client', fields: [['name' => 'postcode', 'order' => 1]], extra: ['confirmationText' => 'Bedankt, u hoort van ons.']);
