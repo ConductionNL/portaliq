@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.27.0"
+        "version": "0.28.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.27.0",
+                "version": "0.28.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -347,7 +347,7 @@
                     ]
                 },
                 "icon": "AccountKey",
-                "version": "0.8.0",
+                "version": "0.9.0",
                 "configuration": {
                     "linkedTypes": [
                         "calendar"
@@ -410,6 +410,14 @@
                         "type": "string",
                         "description": "Contact email for notifications (masked in logs).",
                         "example": "contact@example.org"
+                    },
+                    "notificationChannels": {
+                        "title": "Notification channels",
+                        "type": "object",
+                        "description": "Per-channel opt-out for out-of-band notification dispatch (notification-preferences-per-role), keyed by channel. A missing key or any value other than `false` opts in (fail-open, matches the behaviour every account already had before this property existed); `false` opts out. The account's own `audience` is already the role this preference applies to. Set through the account's own PATCH /portal/api/identity/details (`emailNotifications`), never accepted for another account. Today's only channel is `email`.",
+                        "example": {
+                            "email": true
+                        }
                     },
                     "status": {
                         "title": "Status",
