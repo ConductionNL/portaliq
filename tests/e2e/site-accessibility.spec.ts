@@ -16,9 +16,12 @@
  * without knowing which axe.
  */
 
+import type { APIRequestContext, Page } from '@playwright/test'
+
 import { expect, test } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 import { resolveBaseURL } from './base-url.ts'
+import { openPortaliqDemoPage } from './portal-nav.ts'
 
 // CommonJS require, because this suite is compiled as CJS (no "type": "module"
 // in package.json) and `import.meta` is a syntax error there.
@@ -248,5 +251,70 @@ test.describe('site renderer — responsive', () => {
 			clientWidth: document.documentElement.clientWidth,
 		}))
 		expect(doc.scrollWidth).toBeLessThanOrEqual(doc.clientWidth + 1)
+	})
+})
+
+/**
+ * Mint a low-trust supplier dev session and seed it into the SPA's token slot
+ * before the app boots, as tests/e2e/portal-document-download.spec.ts does.
+ *
+ * @param request The API request context.
+ * @param page The Playwright page.
+ * @param subjectRef The subject to sign in as.
+ */
+async function signInToThePortal(
+	request: APIRequestContext,
+	page: Page,
+	subjectRef: string,
+): Promise<void> {
+	const res = await request.post('/apps/portaliq/portal/api/session/dev-login', {
+		data: { subjectRef, audience: 'supplier', organisation: 'e2e-org' },
+	})
+	expect(
+		res.ok(),
+		'dev-login must be enabled on the target instance (system config debug: true)',
+	).toBeTruthy()
+	const token = (await res.json()).token as string
+	expect(token).toBeTruthy()
+	await page.addInitScript((t) => {
+		window.localStorage.setItem('portaliq_token', t)
+	}, token)
+}
+
+test.describe('signed-in portal — accessibility', () => {
+	// portaliq#722: a table row used to open only on a mouse click on the
+	// <tr>. Tab walked past it and Enter did nothing, and axe cannot see a
+	// click handler on a row, so this drives the keyboard itself.
+	test('S18: a keyboard user opens a row of a portal table with Enter', async ({
+		page,
+		request,
+	}) => {
+		await signInToThePortal(request, page, `e2e-keyboard-${Date.now()}`)
+		await page.goto('/apps/portaliq/portal')
+		await page.waitForLoadState('domcontentloaded')
+		await openPortaliqDemoPage(page)
+
+		const title = `E2E keyboard ${Date.now()}`
+		await page.getByLabel('Onderwerp').fill(title)
+		await page.getByRole('button', { name: 'Aanmaken' }).click()
+		await expect(page.getByText('Voorbeeld aangemaakt')).toBeVisible({
+			timeout: 20_000,
+		})
+
+		const row = page
+			.locator('tr.portaliq-row-clickable')
+			.filter({ hasText: title })
+		await row.waitFor({ timeout: 20_000 })
+		const open = row.locator('button.portaliq-row-select')
+
+		// A real button is in the tab order; the row itself never was.
+		expect(await open.evaluate((el) => el.tabIndex)).toBeGreaterThanOrEqual(0)
+		await open.focus()
+		await expect(open).toBeFocused()
+		await page.keyboard.press('Enter')
+
+		// The open row is announced, and its detail renders.
+		await expect(row).toHaveAttribute('aria-current', 'true')
+		await expect(page.locator('.portaliq-fileupload')).toBeVisible()
 	})
 })

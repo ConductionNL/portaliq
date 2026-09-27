@@ -108,6 +108,49 @@ export default function App({ config, t: tProp }) {
 	// message) is never disturbed. Null = use the manifest's own count.
 	const [unreadOverride, setUnreadOverride] = useState(null)
 
+	// parent-pwa-installability: the browser's own install offer, captured so
+	// this shell can show its own dismissible control instead of (or as well
+	// as) the browser's default mini-infobar. Null on a browser that never
+	// fires the event (Safari, or an already-installed app) — the control
+	// below renders nothing in that case, by construction, not by a flag.
+	const [installPrompt, setInstallPrompt] = useState(null)
+	const [installDismissed, setInstallDismissed] = useState(false)
+
+	useEffect(() => {
+		/**
+		 * @param event
+		 */
+		function onBeforeInstallPrompt(event) {
+			event.preventDefault()
+			setInstallPrompt(event)
+		}
+
+		/**
+		 *
+		 */
+		function onAppInstalled() {
+			setInstallPrompt(null)
+		}
+
+		window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt)
+		window.addEventListener('appinstalled', onAppInstalled)
+		return () => {
+			window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt)
+			window.removeEventListener('appinstalled', onAppInstalled)
+		}
+	}, [])
+
+	/**
+	 *
+	 */
+	async function installApp() {
+		if (!installPrompt) {
+			return
+		}
+		await installPrompt.prompt()
+		setInstallPrompt(null)
+	}
+
 	const refresh = useCallback(async () => {
 		setState((s) => ({ ...s, loading: true }))
 		const session = await api.getSession()
@@ -279,6 +322,14 @@ export default function App({ config, t: tProp }) {
 					<button type="button" className="portaliq-logout" onClick={logout}>Uitloggen</button>
 				)}
 			</header>
+
+			{installPrompt && !installDismissed && (
+				<div className="portaliq-install-banner" role="region" aria-label={t('Install this app')}>
+					<span>{t('Install this app on your device?')}</span>
+					<button type="button" className="portaliq-install-accept" onClick={installApp}>{t('Install')}</button>
+					<button type="button" className="portaliq-install-dismiss" onClick={() => setInstallDismissed(true)}>{t('Not now')}</button>
+				</div>
+			)}
 
 			{!state.loading && state.session && nav.length > 0 && (
 				<nav className="portaliq-nav">
