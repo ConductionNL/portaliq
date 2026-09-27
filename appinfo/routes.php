@@ -103,6 +103,14 @@ return [
         ['name' => 'newsGuardian#feed', 'url' => '/api/news/feed', 'verb' => 'GET'],
         ['name' => 'newsGuardian#markRead', 'url' => '/api/news/{id}/read', 'verb' => 'POST'],
         ['name' => 'newsGuardian#archive', 'url' => '/api/newsletters/archive', 'verb' => 'GET'],
+        // Events and sign-ups (events-and-signups, findings 9.6, 9.8). Staff
+        // authoring requires a Nextcloud session; the guardian-facing
+        // feed/rsvp/signup routes are PortalProtected (bearer session).
+        ['name' => 'event#create', 'url' => '/api/events', 'verb' => 'POST'],
+        ['name' => 'event#publish', 'url' => '/api/events/{id}/publish', 'verb' => 'PUT'],
+        ['name' => 'eventGuardian#feed', 'url' => '/api/events/feed', 'verb' => 'GET'],
+        ['name' => 'eventGuardian#rsvp', 'url' => '/api/events/{id}/rsvp', 'verb' => 'POST'],
+        ['name' => 'eventGuardian#signup', 'url' => '/api/events/{id}/signup', 'verb' => 'POST'],
 
         // Traffic analytics (portal-traffic-analytics). Public like the
         // content API above, for the same reason: a visitor's browser on a

@@ -210,11 +210,16 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// read 0.27.0), so an instance already on 0.29.0 would never import
 		// the three schemas. Bumped past development's 0.29.0 at merge time.
 		// Additive.
+		// 0.31.0 (schoolEvent/eventRsvp/eventSignup): added on the
+		// events-and-signups branch with NO version bump (it still read
+		// 0.27.0). That branch also carried its own copy of
+		// guardianAudienceFixture; development's (0.30.0, news) copy is the
+		// one kept. Bumped past development's 0.30.0 at merge time. Additive.
 		// Every new schema is listed in
 		// `components.registers.portaliq.schemas` (ImportHandler binds only
 		// what is listed there) and declares a non-empty `read` rule.
-		$this->assertSame('0.30.0', self::$register['info']['version']);
-		$this->assertSame('0.30.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.31.0', self::$register['info']['version']);
+		$this->assertSame('0.31.0', self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalAuditEntry']['version']);
 		$this->assertContains('complete', self::$register['components']['schemas']['portalAuditEntry']['properties']['verb']['enum']);
 		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalCaseType']['version']);

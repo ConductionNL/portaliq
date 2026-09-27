@@ -11,6 +11,7 @@
 - [contribution-landing-page-action](../../changes/contribution-landing-page-action/)
 - [portals-open-site-action](../../changes/archive/2026-09-10-portals-open-site-action/)
 - [news-and-newsletter-authoring](../../changes/news-and-newsletter-authoring/)
+- [events-and-signups](../../changes/events-and-signups/)
 
 ## Purpose
 
