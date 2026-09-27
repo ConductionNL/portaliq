@@ -122,6 +122,13 @@ class ActionConfigNormaliser {
 			// surface rather than opening it.
 			$action = ($this->citizenWrite ?? new CitizenWriteConfigNormaliser())->normaliseAction(action: $action);
 
+			// A server-stamped subject field (portal-take-assessment) is a
+			// guard too: an action whose field name cannot be read is removed
+			// rather than forwarded without its stamp.
+			if ($this->subjectFieldIsMalformed(action: $action) === true) {
+				continue;
+			}
+
 			// The cross-reference guard, and the one normaliser that can
 			// remove an action rather than a key: a create whose guard could
 			// not be read must not be offered without it.
@@ -136,6 +143,26 @@ class ActionConfigNormaliser {
 
 		return $out;
 	}//end normaliseActions()
+
+	/**
+	 * Whether an action declares a `subjectField` that is not a plain field
+	 * name. Absent is fine; anything declared must match
+	 * `^[a-zA-Z][a-zA-Z0-9_]*$`.
+	 *
+	 * @param array<string, mixed> $action The action.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/portal-take-assessment/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-receive-the-subjects-scope-from-the-server
+	 */
+	private function subjectFieldIsMalformed(array $action): bool {
+		if (array_key_exists('subjectField', $action) === false) {
+			return false;
+		}
+
+		return is_string($action['subjectField']) === false
+			|| preg_match('/^[a-zA-Z][a-zA-Z0-9_]*$/', $action['subjectField']) !== 1;
+	}//end subjectFieldIsMalformed()
 
 	/**
 	 * Drop a non-string `submitLabel` / `successMessage`.

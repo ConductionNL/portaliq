@@ -446,6 +446,39 @@ export function createPortalApi(config) {
 		},
 
 		/**
+		 * Forward a declared endpoint action and return the leaf app's answer
+		 * (portal-take-assessment). Portaliq checks the action is the
+		 * subject's, stamps any declared `subjectField` and signs the subject
+		 * assertion; the status and JSON body come back as the leaf app sent them.
+		 *
+		 * @param {string} app The contributing app.
+		 * @param {string} actionId The endpoint action id.
+		 * @param {object} body The request body (only the action's `fields` are forwarded).
+		 * @return {Promise<{ok: boolean, status: number, body: object}>} The relayed answer.
+		 * @spec openspec/changes/portal-take-assessment/specs/portal-contribution-contract/spec.md#requirement-the-portal-must-let-a-subject-take-a-timed-task
+		 */
+		async forwardAction(app, actionId, body) {
+			try {
+				const res = await fetch(
+					`${base}/actions/${encodeURIComponent(app)}/${encodeURIComponent(actionId)}`,
+					{
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+							Accept: 'application/json',
+							...authHeaders(),
+						},
+						body: JSON.stringify(body || {}),
+					},
+				)
+				const json = await res.json().catch(() => ({}))
+				return { ok: res.ok, status: res.status, body: json }
+			} catch {
+				return { ok: false, status: 0, body: {} }
+			}
+		},
+
+		/**
 		 * Attach a file to an object the subject owns (the file-upload block).
 		 * Ownership is re-verified server-side; the collection must declare
 		 * `filesUpload`. Sends multipart with field name `file`.

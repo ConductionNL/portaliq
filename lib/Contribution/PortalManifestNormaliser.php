@@ -119,6 +119,7 @@ class PortalManifestNormaliser {
 	 *                              a resolved/synthesised `pages` array.
 	 *
 	 * @spec openspec/changes/contribution-manifest-v3/tasks.md#T3
+	 * @spec openspec/changes/portal-take-assessment/specs/portal-contribution-contract/spec.md#requirement-a-collection-must-be-able-to-declare-a-timed-task-driven-by-five-endpoint-actions
 	 */
 	public function normalise(array $contribution): array {
 		$collections = $this->collections->normaliseCollections(collections: (array)($contribution['collections'] ?? []));
@@ -128,6 +129,11 @@ class PortalManifestNormaliser {
 		// THIS contribution — a per-row transition button (approve/reject/close)
 		// may only reference a `type: update` action the subject is entitled to.
 		$collections = $this->collections->resolveRowActions(collections: $collections, actions: $actions);
+
+		// A timed task names five endpoint actions of THIS contribution
+		// (portal-take-assessment); a block that cannot be resolved falls
+		// back to an ordinary list.
+		$collections = (new TimedTaskConfigNormaliser())->resolve(collections: $collections, actions: $actions);
 
 		$contribution['collections'] = $collections;
 		$contribution['actions'] = $actions;
