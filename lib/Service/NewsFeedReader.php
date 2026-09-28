@@ -34,7 +34,6 @@ namespace OCA\Portaliq\Service;
 use OCA\Portaliq\Service\Messaging\GuardianMessageTranslator;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * @spec openspec/changes/news-and-newsletter-authoring/design.md#architecture-overview
@@ -45,9 +44,12 @@ use Throwable;
  * and this read path can never disagree.
  */
 class NewsFeedReader {
-	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
-
-	private const REGISTER = 'portaliq';
+	/**
+	 * The OpenRegister read of news rows.
+	 *
+	 * @var NewsRowSource
+	 */
+	private readonly NewsRowSource $rows;
 
 	/**
 	 * Constructor.
@@ -62,12 +64,13 @@ class NewsFeedReader {
 	 *                                                   built by hand keeps its old shape.
 	 */
 	public function __construct(
-		private readonly ContainerInterface $container,
+		ContainerInterface $container,
 		private readonly GuardianAudienceFixtureReader $audienceReader,
 		private readonly NewsPhotoConsentGate $photoGate,
-		private readonly LoggerInterface $logger,
+		LoggerInterface $logger,
 		private readonly ?GuardianMessageTranslator $translator = null,
 	) {
+		$this->rows = new NewsRowSource(container: $container, logger: $logger);
 	}//end __construct()
 
 	/**
@@ -88,32 +91,11 @@ class NewsFeedReader {
 	 *
 	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
 	 * @spec openspec/changes/news-item-translation/specs/guardian-message-translation/spec.md#requirement-a-news-item-keeps-its-ai-translations-next-to-the-original
+	 * @spec openspec/changes/news-title-and-newsletter-translation/specs/guardian-message-translation/spec.md#requirement-a-news-title-is-translated-with-its-body
 	 */
 	public function feedFor(string $subjectRef, string $language = ''): array {
 		$audience = $this->audienceReader->resolveAudience(subjectRef: $subjectRef);
-		$rows = $this->findAllPublished(schema: 'newsItem');
-
-		$matched = [];
-		foreach ($rows as $row) {
-			if (($row['status'] ?? '') !== 'published') {
-				continue;
-			}
-
-			$target = [];
-			if (is_array($row['target'] ?? null) === true) {
-				$target = $row['target'];
-			}
-
-			if (NewsAudienceMatcher::matches(target: $target, audience: $audience) === false) {
-				continue;
-			}
-
-			$matched[] = $row;
-		}
-
-		if ($this->translator !== null && $language !== '') {
-			$matched = $this->translator->forReader(messages: $matched, readerRef: $subjectRef, language: $language, schema: 'newsItem');
-		}
+		$matched  = $this->translated(items: $this->itemsFor(audience: $audience), subjectRef: $subjectRef, language: $language);
 
 		return array_map(fn (array $row): array => $this->photoGate->apply(item: $row), $matched);
 	}//end feedFor()
@@ -137,27 +119,10 @@ class NewsFeedReader {
 		}
 
 		$audience = $this->audienceReader->resolveAudience(subjectRef: $subjectRef);
-		$rows = $this->findAllPublished(schema: 'newsItem');
-
-		foreach ($rows as $row) {
-			if ((string)($this->rowId(row: $row)) !== $id) {
-				continue;
+		foreach ($this->itemsFor(audience: $audience) as $row) {
+			if ($this->rows->rowId(row: $row) === $id) {
+				return $this->photoGate->apply(item: $row);
 			}
-
-			if (($row['status'] ?? '') !== 'published') {
-				return null;
-			}
-
-			$target = [];
-			if (is_array($row['target'] ?? null) === true) {
-				$target = $row['target'];
-			}
-
-			if (NewsAudienceMatcher::matches(target: $target, audience: $audience) === false) {
-				return null;
-			}
-
-			return $this->photoGate->apply(item: $row);
 		}
 
 		return null;
@@ -167,15 +132,22 @@ class NewsFeedReader {
 	 * Every SENT (`sentAt` not null) `newsletter` in the guardian's own
 	 * resolved audience, most recently sent first.
 	 *
+	 * Each newsletter carries `items`: the news items it references that are
+	 * published and in the reader's audience, translated and photo-gated
+	 * exactly as the feed serves them, so the archive shows the same
+	 * translation and notice as the News page.
+	 *
 	 * @param string $subjectRef The guardian's own subjectRef.
+	 * @param string $language The reader's `messageLanguage`, '' for as written.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
 	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsletter-composes-existing-news-items-with-an-archive
+	 * @spec openspec/changes/news-title-and-newsletter-translation/specs/guardian-message-translation/spec.md#requirement-the-newsletter-archive-shows-its-items-as-the-news-page-does
 	 */
-	public function archiveFor(string $subjectRef): array {
+	public function archiveFor(string $subjectRef, string $language = ''): array {
 		$audience = $this->audienceReader->resolveAudience(subjectRef: $subjectRef);
-		$rows = $this->findAllPublished(schema: 'newsletter');
+		$rows = $this->rows->findAll(schema: 'newsletter');
 
 		$matched = [];
 		foreach ($rows as $row) {
@@ -198,111 +170,97 @@ class NewsFeedReader {
 
 		usort($matched, static fn (array $a, array $b): int => strcmp((string)($b['sentAt'] ?? ''), (string)($a['sentAt'] ?? '')));
 
-		return $matched;
+		return $this->withItems(newsletters: $matched, audience: $audience, subjectRef: $subjectRef, language: $language);
 	}//end archiveFor()
 
 	/**
-	 * Fetch every row of a schema in this app's register, unfiltered — the
-	 * matching happens in PHP against the already-fetched rows since the
-	 * OR-of-three-dimensions target shape is not a filterable OR query
-	 * (design.md "Architecture Overview").
+	 * Each newsletter with the items it references, in its order. One
+	 * translation pass covers every item of the archive, so the per-request
+	 * bound holds across newsletters.
 	 *
-	 * @param string $schema The schema slug.
+	 * @param array<int, array<string, mixed>> $newsletters The sent newsletters in the reader's audience.
+	 * @param array<string, mixed> $audience The reader's audience.
+	 * @param string $subjectRef The reader.
+	 * @param string $language The reader's language.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 */
-	private function findAllPublished(string $schema): array {
-		$objectService = $this->objectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		try {
-			$objectService->setRegister(register: self::REGISTER);
-			$objectService->setSchema(schema: $schema);
-			$rows = $objectService->findAll(config: ['filters' => [], 'limit' => 500, 'offset' => 0], _rbac: false, _multitenancy: false);
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: news feed read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
-			return [];
-		}
-
-		if (is_array($rows) === false) {
-			return [];
-		}
-
-		$normalised = [];
-		foreach ($rows as $row) {
-			$row = $this->normalise(row: $row);
-			if ($row !== null) {
-				$normalised[] = $row;
+	private function withItems(array $newsletters, array $audience, string $subjectRef, string $language): array {
+		$referenced = [];
+		foreach ($newsletters as $newsletter) {
+			foreach ((array)($newsletter['itemRefs'] ?? []) as $ref) {
+				$referenced[(string)$ref] = true;
 			}
 		}
 
-		return $normalised;
-	}//end findAllPublished()
-
-	/**
-	 * The row's id/uuid, from a flat property or its `@self` envelope.
-	 *
-	 * @param array<string, mixed> $row The row.
-	 *
-	 * @return string
-	 */
-	private function rowId(array $row): string {
-		if (isset($row['id']) === true) {
-			return (string)$row['id'];
-		}
-
-		if (isset($row['uuid']) === true) {
-			return (string)$row['uuid'];
-		}
-
-		$self = $row['@self'] ?? [];
-		if (is_array($self) === true) {
-			return (string)($self['id'] ?? $self['uuid'] ?? '');
-		}
-
-		return '';
-	}//end rowId()
-
-	/**
-	 * Normalise an OpenRegister row (array or object) to an associative array.
-	 *
-	 * @param mixed $row The row.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function normalise(mixed $row): ?array {
-		if (is_array($row) === true) {
-			return $row;
-		}
-
-		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-			$data = $row->jsonSerialize();
-			if (is_array($data) === true) {
-				return $data;
+		$items = [];
+		foreach ($this->itemsFor(audience: $audience) as $item) {
+			if (isset($referenced[$this->rows->rowId(row: $item)]) === true) {
+				$items[] = $item;
 			}
 		}
 
-		return null;
-	}//end normalise()
+		$byId = [];
+		foreach ($this->translated(items: $items, subjectRef: $subjectRef, language: $language) as $item) {
+			$byId[$this->rows->rowId(row: $item)] = $this->photoGate->apply(item: $item);
+		}
+
+		foreach ($newsletters as $index => $newsletter) {
+			$newsletters[$index]['items'] = [];
+			foreach ((array)($newsletter['itemRefs'] ?? []) as $ref) {
+				if (isset($byId[(string)$ref]) === true) {
+					$newsletters[$index]['items'][] = $byId[(string)$ref];
+				}
+			}
+		}
+
+		return $newsletters;
+	}//end withItems()
 
 	/**
-	 * Resolve OpenRegister's ObjectService, or null when unavailable.
+	 * The published news items in the reader's audience, as stored.
 	 *
-	 * @return object|null
+	 * @param array<string, mixed> $audience The reader's audience.
+	 *
+	 * @return array<int, array<string, mixed>>
 	 */
-	private function objectService(): ?object {
-		try {
-			$service = $this->container->get(self::OBJECT_SERVICE);
-		} catch (Throwable $e) {
-			return null;
+	private function itemsFor(array $audience): array {
+		$matched = [];
+		foreach ($this->rows->findAll(schema: 'newsItem') as $row) {
+			if (($row['status'] ?? '') !== 'published') {
+				continue;
+			}
+
+			$target = [];
+			if (is_array($row['target'] ?? null) === true) {
+				$target = $row['target'];
+			}
+
+			if (NewsAudienceMatcher::matches(target: $target, audience: $audience) === true) {
+				$matched[] = $row;
+			}
 		}
 
-		if (is_object($service) === true) {
-			return $service;
+		return $matched;
+	}//end itemsFor()
+
+	/**
+	 * The items in the reader's language, title and body in one entry. Runs on
+	 * the stored rows, before the photo gate, so a translation write keeps the
+	 * photos the reader's copy withholds.
+	 *
+	 * @param array<int, array<string, mixed>> $items The stored rows.
+	 * @param string $subjectRef The reader.
+	 * @param string $language The reader's language, '' for as written.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function translated(array $items, string $subjectRef, string $language): array {
+		if ($this->translator === null || $language === '') {
+			return $items;
 		}
 
-		return null;
-	}//end objectService()
+		return $this->translator->forReader(messages: $items, readerRef: $subjectRef, language: $language, schema: 'newsItem', titleField: 'title');
+	}//end translated()
+
 }//end class

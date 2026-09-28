@@ -373,6 +373,25 @@ body .guest-box {
 	margin: 0 0 var(--portaliq-space-sm);
 }
 
+/* A translated news title's original, above the original body
+   (news-title-and-newsletter-translation). */
+.portaliq-translated__original-title {
+	margin: 0 0 var(--portaliq-space-sm);
+	font-weight: 700;
+}
+
+.portaliq-news__archive {
+	margin-top: var(--portaliq-space-lg);
+}
+
+.portaliq-newsletter {
+	margin-bottom: var(--portaliq-space-md);
+}
+
+.portaliq-newsletter__title {
+	margin: 0 0 var(--portaliq-space-sm);
+}
+
 .portaliq-message {
 	margin-bottom: var(--portaliq-space-sm);
 	padding: var(--portaliq-space-sm) var(--portaliq-space-md);

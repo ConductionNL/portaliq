@@ -120,7 +120,7 @@ test('the news page carries the same language picker as the messages page', () =
 test('newsItem declares translations and the register moved', () => {
 	const register = JSON.parse(readFileSync(join(ROOT, 'lib', 'Settings', 'portaliq_register.json'), 'utf8'))
 	const newsItem = register.components.schemas.newsItem
-	assert.equal(newsItem.version, '0.2.0')
+	assert.ok(['0.2.0', '0.2.1'].includes(newsItem.version), `newsItem ${newsItem.version}`)
 	assert.equal(newsItem.properties.translations.type, 'array')
 	assert.equal(register.info.version, register.components.registers.portaliq.version)
 })

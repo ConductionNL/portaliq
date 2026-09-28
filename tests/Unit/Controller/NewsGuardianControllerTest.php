@@ -102,6 +102,27 @@ class NewsGuardianControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_OK, $controller->feed()->getStatus());
 	}//end testFeedIsReadInTheGuardiansMessageLanguage()
 
+	/**
+	 * The archive is read in the guardian's own message language, as the feed is.
+	 *
+	 * @spec openspec/changes/news-title-and-newsletter-translation/specs/guardian-message-translation/spec.md#requirement-the-newsletter-archive-shows-its-items-as-the-news-page-does
+	 */
+	public function testArchiveIsReadInTheGuardiansMessageLanguage(): void {
+		$feedReader = $this->createMock(NewsFeedReader::class);
+		$feedReader->expects($this->once())->method('archiveFor')->with('guardian-anna-devries', 'ar')->willReturn([]);
+		$selfService = $this->createMock(PortalSelfServiceService::class);
+		$selfService->method('messageLanguage')->with('guardian-anna-devries')->willReturn('ar');
+
+		$request = $this->createMock(IRequest::class);
+		$request->method('getHeader')->willReturn('Bearer token');
+		$session = $this->createMock(PortalSessionService::class);
+		$session->method('resolveFromBearer')->willReturn(['subjectRef' => 'guardian-anna-devries']);
+
+		$controller = new NewsGuardianController($request, $session, $feedReader, $this->createMock(NewsReadReceiptService::class), $selfService);
+
+		$this->assertSame(Http::STATUS_OK, $controller->archive()->getStatus());
+	}//end testArchiveIsReadInTheGuardiansMessageLanguage()
+
 	public function testMarkReadReturns404WhenTheServiceRefuses(): void {
 		$readReceipts = $this->createMock(NewsReadReceiptService::class);
 		$readReceipts->method('markRead')->willReturn(false);

@@ -310,6 +310,29 @@ export function createPortalApi(config) {
 		},
 
 		/**
+		 * The newsletters sent to this guardian (news-and-newsletter-authoring),
+		 * newest first, each carrying its `items` translated like the feed's
+		 * (news-title-and-newsletter-translation). A refused answer reads as no
+		 * newsletters, never as an error.
+		 *
+		 * @return {Promise<Array<object>>} The newsletters, or `[]`.
+		 */
+		async fetchNewsletterArchive() {
+			try {
+				const res = await fetch(`${appRoot}/api/newsletters/archive`, {
+					headers: { Accept: 'application/json', ...authHeaders() },
+				})
+				if (!res.ok) {
+					return []
+				}
+				const json = await res.json()
+				return Array.isArray(json) ? json : []
+			} catch {
+				return []
+			}
+		},
+
+		/**
 		 * The account holder's own details, including `messageLanguage`.
 		 *
 		 * @return {Promise<object|null>}
