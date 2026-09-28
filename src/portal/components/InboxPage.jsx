@@ -10,6 +10,7 @@
 // never an empty placeholder.
 
 import React, { useCallback, useEffect, useState } from 'react'
+import NotificationSettings from './NotificationSettings.jsx'
 import TranslatedText from './TranslatedText.jsx'
 
 /**
@@ -36,8 +37,9 @@ function formatDateTime(value, locale) {
  * @param root0.locale
  * @param root0.onRead
  * @param root0.onOpenTask
+ * @param {Function} root0.onOpenRecord Opens the record a message is about (REQ-NAP-005).
  */
-export default function InboxPage({ api, t, locale, onRead, onOpenTask }) {
+export default function InboxPage({ api, t, locale, onRead, onOpenTask, onOpenRecord }) {
 	const [state, setState] = useState({ loading: true, messages: [] })
 	const [busyId, setBusyId] = useState(null)
 
@@ -80,12 +82,23 @@ export default function InboxPage({ api, t, locale, onRead, onOpenTask }) {
 		return <p className="portaliq-loading">…</p>
 	}
 
+	// The resident's notice choices sit at the top of the inbox
+	// (inbox-notifications-and-preferences, REQ-NAP-008), also when it is empty.
+	const settings = <NotificationSettings api={api} t={t} />
+
 	if (state.messages.length === 0) {
-		return <p className="portaliq-empty"><em>{t('No messages.')}</em></p>
+		return (
+			<>
+				{settings}
+				<p className="portaliq-empty"><em>{t('No messages.')}</em></p>
+			</>
+		)
 	}
 
 	return (
-		<ul className="portaliq-inbox">
+		<>
+			{settings}
+			<ul className="portaliq-inbox">
 			{state.messages.map((message, i) => {
 				const id = message.id || message['@self']?.id || i
 				const unread = message.read !== true
@@ -133,6 +146,16 @@ export default function InboxPage({ api, t, locale, onRead, onOpenTask }) {
 							</dl>
 						)}
 
+						{message.recordLink?.id && onOpenRecord && (
+							<button
+								type="button"
+								className="portaliq-inbox-row__task-link"
+								onClick={() => onOpenRecord(message.recordLink)}
+							>
+								{t('Open')}
+							</button>
+						)}
+
 						{message.taskUuid && onOpenTask && (
 							<button
 								type="button"
@@ -154,6 +177,7 @@ export default function InboxPage({ api, t, locale, onRead, onOpenTask }) {
 					</li>
 				)
 			})}
-		</ul>
+			</ul>
+		</>
 	)
 }

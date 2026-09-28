@@ -10,6 +10,7 @@
 // blocks, so a ref that does not resolve here is a defensive skip, not expected.
 
 import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { rowFor } from '../lib/openRecord.js'
 import { isEndpointRowAction, offersRowAction, rowNotice } from '../lib/rowAction.js'
 import { dialogFor, tableRowActions } from '../lib/signing.js'
 import CitizenCase from './CitizenCase.jsx'
@@ -309,7 +310,7 @@ function DetailCard({ collection, row, api, proposeAction }) {
  * @param root0.busyRow
  * @param root0.t
  */
-export default function PageView({ page, contribution, api, dataByCollection, onCreated, onAction, onRowAction, busyRow, t }) {
+export default function PageView({ page, contribution, api, dataByCollection, onCreated, onAction, onRowAction, busyRow, t, openRecord = null, onRecordOpened = null }) {
 	// `t` is optional so a caller that does not supply a translator still
 	// renders English rather than an undefined string.
 	const translate = t || ((key) => key)
@@ -319,9 +320,34 @@ export default function PageView({ page, contribution, api, dataByCollection, on
 	// The endpoint row action waiting for its confirm step (contribution-pay-
 	// screen): `{ collectionId, action, row }`, or null.
 	const [pending, setPending] = useState(null)
+	// A record a notification link asked for (inbox-notifications-and-
+	// preferences, REQ-NAP-005): preselected once its collection has loaded,
+	// from the resident's OWN scoped rows only. A link to a record that is not
+	// in that list opens nothing of it and says so.
+	const [recordNotFound, setRecordNotFound] = useState(false)
+	useEffect(() => {
+		if (!openRecord) {
+			return
+		}
+		const loaded = dataByCollection[openRecord.collection]
+		if (!loaded || loaded.loading) {
+			return
+		}
+		const row = rowFor(loaded.objects, openRecord.id)
+		if (row) {
+			setSelected((s) => ({ ...s, [openRecord.collection]: row }))
+		}
+		setRecordNotFound(!row)
+		if (onRecordOpened) {
+			onRecordOpened()
+		}
+	}, [openRecord, dataByCollection, onRecordOpened])
 
 	return (
 		<section className="portaliq-page">
+			{recordNotFound && (
+				<p className="portaliq-empty" role="status">{translate('This record is not in your list, so nothing of it is shown.')}</p>
+			)}
 			{(page.blocks || []).map((block, i) => {
 				switch (block.type) {
 				case 'richText':

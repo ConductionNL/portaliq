@@ -158,5 +158,15 @@
 	"Download {documentName}": "{documentName} downloaden",
 	"This document is too large to show here. Download it to read it.": "Dit document is te groot om hier te tonen. Download het om het te lezen.",
 	"Give a reason.": "Geef een reden.",
-	"Loading the document…": "Document laden…"
+	"Loading the document…": "Document laden…",
+	"Open": "Openen",
+	"Notification settings": "Meldingen instellen",
+	"Changes on your cases": "Wijzigingen in uw zaken",
+	"New messages": "Nieuwe berichten",
+	"E-mail": "E-mail",
+	"Push": "Push",
+	"Save": "Opslaan",
+	"Your choices are saved.": "Uw keuzes zijn opgeslagen.",
+	"Your choices could not be saved. Try again.": "Uw keuzes zijn niet opgeslagen. Probeer het opnieuw.",
+	"This record is not in your list, so nothing of it is shown.": "Dit staat niet in uw lijst, dus we tonen er niets van."
 }
