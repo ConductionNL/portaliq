@@ -1941,7 +1941,7 @@
 			"id": "cas-deeplink-notify",
 			"area": "cases",
 			"name": "Follow a link from a notification straight to the record it is about.",
-			"portaliq": "partial",
+			"portaliq": "yes",
 			"open-inwoner": "yes",
 			"nl-portal": "yes",
 			"xxllnc-pip": "partial",
@@ -1955,12 +1955,13 @@
 				"liferay-dxp": "not settled from docs: https://learn.liferay.com/w/dxp/low-code/notifications/creating-notification-templates describes field references and attachments in object notifications but does not name a link to the entry's display page."
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "lib/Service/PortalDeepLinkBuilder.php used by lib/BackgroundJob/PortalTaskDeliveryJob.php (task deep link) and lib/BackgroundJob/NotificationDispatchJob.php",
-				"reachedOn": "outbound e-mail/inbox message built by PortalTaskDeliveryJob (registered appinfo/info.xml:81); confirmed for tasks, not confirmed for a plain case record",
+				"state": "built",
+				"evidence": "lib/Service/PortalDeepLinkBuilder.php forRecord() (#open=<app>/<collection>/<id>) used by NotificationDispatchJob; src/portal/lib/openRecord.js read and stripped in src/portal/App.jsx, kept in sessionStorage through sign-in, row preselected in PageView.jsx from the resident's own scoped rows; tests/open-record.spec.mjs, PortalDeepLinkBuilderTest::testForRecordAddsTheFragment",
+				"reachedOn": "the link in a change e-mail and the Open button on an inbox message (src/portal/components/InboxPage.jsx)",
 				"owner": "ConductionNL/portaliq",
-				"note": "Deep links are confirmed wired for tasks (see tsk-notify); no evidence found of the same builder producing a link straight into a case screen, since the case screen itself is reached only through per-contribution nav, not a stable case URL. Specified in openspec/changes/inbox-notifications-and-preferences (OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"note": "Built 2026-09-28. A link to a record that is not in the reader's own list shows nothing of it.",
+				"origin": "code",
+				"change": "2026-09-28-inbox-notifications-and-preferences"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3430,7 +3431,7 @@
 			"id": "cmp-inb-email-alert",
 			"area": "inbox",
 			"name": "Get an e-mail telling you there is a new message in the portal.",
-			"portaliq": "partial",
+			"portaliq": "yes",
 			"open-inwoner": "yes",
 			"nl-portal": "no",
 			"xxllnc-pip": "yes",
@@ -3444,13 +3445,14 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/notifications/configuring-personal-notifications 'Users can customize which notifications they receive by enabling email, or website notifications'; object notification actions send e-mail on entry events (https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/actions/understanding-action-types). [was unknown]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "lib/Service/NotificationDispatchService.php dispatch()/doDispatch() matches a fired ruleKey against the contributing app's declared 'notifications' list, fail-closed on no match; lib/BackgroundJob/NotificationDispatchJob.php sends a privacy-minimal NL/EN email via IMailer, logs every attempt as an append-only portalNotification row, and flags needsAlternativeContact after 3 consecutive failures; called from lib/Service/SubmissionReceiptService.php:278 (RULE_MESSAGE_CREATED, after a WMEBV receipt message) and lib/Controller/ContributionController.php:1260 (RULE_STATUS_CHANGED, after a generic update action)",
-				"reachedOn": "async, off the request path, via IJobList (NotificationDispatchJob is a QueuedJob, does not need an info.xml background-jobs entry to run)",
+				"state": "built",
+				"evidence": "lib/Listener/PortalRecordChangeListener.php (OpenRegister ObjectUpdatedEvent/ObjectCreatedEvent, registered in lib/AppInfo/Application.php) over lib/Service/Notifications/PortalChangeRuleIndex.php; change rules normalised by lib/Contribution/NotificationRuleNormaliser.php; lib/BackgroundJob/NotificationDispatchJob.php picks text and channels by kind; a new record in a case app's kind:inbox collection dispatches message.created; tests/Unit/BackgroundJob/NotificationDispatchJobTest.php",
+				"reachedOn": "async via IJobList after a change rule fires or a case app writes into its inbox collection",
 				"owner": "ConductionNL/portaliq",
-				"note": "Real and working for the two triggers the code actually fires: a WMEBV submission receipt and a generic status-change update. Only ever fires for ruleKey 'message.created' or 'status.changed' (the two constants); a sibling that declares any OTHER rule key never gets an email, dossiq's own supplier contribution declares notifications ['tenderPublished','contractExpiring','invoiceDue'], none of which will ever match, so those specific events are silently unreachable. A staff-authored manual portalMessage (see cmp-inb-reply) also does not go through SubmissionReceiptService, so it triggers no email either. Specified in openspec/changes/inbox-notifications-and-preferences (OpenSpec pass 2026-09-27).",
-				"origin": "competitor",
-				"defectCandidate": "dossiq (procest) lib/Portal/PortalContributionProvider.php supplierContribution() declares notifications ['tenderPublished','contractExpiring','invoiceDue'] but NotificationDispatchService::declaresRuleKey() is only ever called with 'message.created' or 'status.changed' (grep of both constants in lib/ confirms no other call site), so those three declared rule keys can never match and no email is ever sent for them (code reading, needs a live check)"
+				"note": "Built 2026-09-28: a case app's own inbox message now gets the e-mail nudge, and a change rule gets its own content-free text. The defect candidate below stands for dossiq's three supplier keys, which still match no trigger.",
+				"origin": "code",
+				"defectCandidate": "dossiq (procest) lib/Portal/PortalContributionProvider.php supplierContribution() declares notifications ['tenderPublished','contractExpiring','invoiceDue'] but NotificationDispatchService::declaresRuleKey() is only ever called with 'message.created' or 'status.changed' (grep of both constants in lib/ confirms no other call site), so those three declared rule keys can never match and no email is ever sent for them (code reading, needs a live check)",
+				"change": "2026-09-28-inbox-notifications-and-preferences"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3491,7 +3493,7 @@
 			"id": "cmp-inb-notif-prefs",
 			"area": "inbox",
 			"name": "Choose which notifications you receive and through which channel.",
-			"portaliq": "partial",
+			"portaliq": "yes",
 			"open-inwoner": "partial",
 			"nl-portal": "no",
 			"xxllnc-pip": "partial",
@@ -3505,19 +3507,20 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/notifications/configuring-personal-notifications 'Users can customize which notifications they receive by enabling email, or website notifications for the desired applications.' [was unknown]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "portaliq#685 (efba78c): lib/BackgroundJob/NotificationDispatchJob.php:202 skips an account whose notificationChannels.email is false (:374-377 optedOutOfEmail()); lib/Service/Identity/PortalSelfServiceService.php:114 writes it from PATCH /portal/api/identity/details; lib/Settings/portaliq_register.json:801 notificationChannels. No screen in src/portal sets it.",
-				"reachedOn": "nothing reaches it: no citizen-facing preferences UI or API",
+				"state": "built",
+				"evidence": "GET/PATCH /portal/api/identity/notification-preferences (PortalAccountSelfController, PortalSelfServiceService), portalAccount.notificationPreferences; src/portal/components/NotificationSettings.jsx on InboxPage.jsx; PortalAccountSelfControllerTest::testPreferencesAreTheCallersOwn",
+				"reachedOn": "portal SPA Inbox, 'Notification settings' section",
 				"owner": "ConductionNL/portaliq",
-				"note": "Rating corrected from no to partial in the OpenSpec pass 2026-09-27: the e-mail opt-out shipped after the rating with openspec/changes/notification-preferences-per-role (portaliq#685), API only. Specified in openspec/changes/inbox-notifications-and-preferences (OpenSpec pass 2026-09-27).",
-				"origin": "competitor",
+				"note": "Built 2026-09-28: e-mail and push per kind (changes on your cases, new messages), push only with a registered device; the account-wide e-mail opt-out still wins.",
+				"origin": "code",
 				"prs": [
 					{
 						"repo": "ConductionNL/portaliq",
 						"number": 685,
 						"sha": "efba78c53d4fd4ca8840b3cfd536443a0bdb7b94"
 					}
-				]
+				],
+				"change": "2026-09-28-inbox-notifications-and-preferences"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -7370,7 +7373,7 @@
 			"id": "dem-tnd-notify-on-change",
 			"area": "cases",
 			"name": "Be notified in the portal when something changes on your case, with the case handler notified of your changes too.",
-			"portaliq": "partial",
+			"portaliq": "yes",
 			"open-inwoner": "partial",
 			"nl-portal": "no",
 			"xxllnc-pip": "yes",
@@ -7384,12 +7387,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/actions/defining-object-actions: trigger 'On After Update When an entry is updated' with action 'Notification Send email or user notifications using a predefined template'. A case object, and notices to both resident and handler, must be modelled per deployment. [was unknown; custom: case object, recipient rules per side]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "lib/Controller/ContributionController.php:1261 fires status.changed only after the SUBJECT's own portal update action; lib/Service/NotificationDispatchService.php:174 declaresRuleKey needs the contributing app to opt in; ConductionNL/dossiq@971735b03e (development) lib/Portal/PortalContributionProvider.php:408 citizen contribution declares 'notifications' => []; lib/BackgroundJob/PortalTaskDeliveryJob.php:234 turns openregister task asks/reminders into inbox messages; lib/Service/CitizenWriteRecorder.php:208,266 dispatches PortalClientWriteEvent for the case app",
-				"reachedOn": "task asks: PortalTaskDeliveryJob (cron) -> portalMessage -> InboxPage.jsx unread badge (App.jsx:284-300). Staff status change on a case: nothing reaches the resident. Citizen write -> PortalClientWriteEvent: no listener in dossiq development lib/Listener (46 listeners listed, none for it)",
+				"state": "built",
+				"evidence": "lib/Listener/PortalRecordChangeListener.php (OpenRegister ObjectUpdatedEvent/ObjectCreatedEvent, registered in lib/AppInfo/Application.php) over lib/Service/Notifications/PortalChangeRuleIndex.php; change rules normalised by lib/Contribution/NotificationRuleNormaliser.php; lib/BackgroundJob/NotificationDispatchJob.php picks text and channels by kind; tests/Unit/Listener/PortalRecordChangeListenerTest.php with OpenRegister's real events",
+				"reachedOn": "a case app's declared change rule; the resident's portal inbox (Inbox) and the dispatched e-mail/push",
 				"owner": "ConductionNL/portaliq",
-				"note": "Resident side: only a new task (ask, re-ask, reminder) or a message a case app writes into an inbox collection shows up as unread; nothing in portaliq observes a staff-made status or data change on a case, and the one status trigger (status.changed) fires on the resident's own update and is opted out by dossiq anyway. Handler side: portaliq raises PortalClientWriteEvent on every amendment, document and task answer, but no dossiq listener consumes it, so the handler is not told. Specified in openspec/changes/inbox-notifications-and-preferences (OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"note": "Built 2026-09-28: a declared field change on a resident's record writes an inbox message with a record link and dispatches the rule. Reaches a resident only once a case app declares a change rule in its contribution (docs/operations/notices-on-a-case.md); no sibling declares one yet.",
+				"origin": "code",
+				"change": "2026-09-28-inbox-notifications-and-preferences"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
