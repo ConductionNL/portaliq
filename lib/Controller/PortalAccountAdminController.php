@@ -29,6 +29,7 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\ActionAuthService;
+use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
 use OCA\Portaliq\Service\Identity\PortalInvitationService;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCP\AppFramework\Controller;
@@ -58,6 +59,7 @@ class PortalAccountAdminController extends Controller {
 	 * @param ActionAuthService $actionAuth Decides whether this clerk may.
 	 * @param IUserSession $userSession The staff user making the request.
 	 * @param PortalInvitationService $invitations Invitations into the portal.
+	 * @param PortalIdentityMailer $mailer Mails the invitation to its address.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -65,6 +67,7 @@ class PortalAccountAdminController extends Controller {
 		private readonly ActionAuthService $actionAuth,
 		private readonly IUserSession $userSession,
 		private readonly PortalInvitationService $invitations,
+		private readonly PortalIdentityMailer $mailer,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -171,9 +174,11 @@ class PortalAccountAdminController extends Controller {
 	 * @param string $organisation The tenant inviting.
 	 * @param string $audience The audience the account will carry.
 	 *
-	 * @return JSONResponse The invitation's secret, for the mail, or a refusal.
+	 * @return JSONResponse That it was sent and until when, or a refusal.
+	 *                      Never the secret: that is in the mail only.
 	 *
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/changes/identity-staff-account-screens/tasks.md#T01
 	 */
 	#[NoAdminRequired]
 	public function invite(string $email, string $organisation, string $audience = 'client'): JSONResponse {
@@ -198,7 +203,22 @@ class PortalAccountAdminController extends Controller {
 			return new JSONResponse(['error' => 'refused'], Http::STATUS_BAD_REQUEST);
 		}
 
-		return new JSONResponse($invited);
+		// A secret shown to a clerk is a secret a clerk could use, and the
+		// mail is what proves the address. So it goes to the invited address
+		// and the answer carries only the state and the expiry.
+		$sent = $this->mailer->send(
+			template: PortalIdentityMailer::TEMPLATE_INVITATION,
+			email: $email,
+			secret: (string)$invited['token'],
+			organisation: $organisation
+		);
+		if ($sent === false) {
+			// Nobody holds the secret now, so this invitation admits nobody
+			// and runs out on its own. The clerk sends a new one.
+			return new JSONResponse(['error' => 'mail_not_sent'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
+
+		return new JSONResponse(['state' => 'sent', 'expiresAt' => $invited['expiresAt']]);
 	}//end invite()
 
 	/**

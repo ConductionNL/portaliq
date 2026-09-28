@@ -1475,7 +1475,21 @@ OC.L10N.register(
         "Message language": "Message language",
         "The language this person reads school messages in, as a language tag such as ar or tr. Messages from school are translated by AI into it and marked as such. Empty shows messages as written. Only the person themselves sets it.": "The language this person reads school messages in, as a language tag such as ar or tr. Messages from school are translated by AI into it and marked as such. Empty shows messages as written. Only the person themselves sets it.",
         "Translations": "Translations",
-        "Server-managed. One entry per language this message was translated into by AI: the translated text, the source language, the model, a reference to this message and the disclosure sentence. The body stays as written.": "Server-managed. One entry per language this message was translated into by AI: the translated text, the source language, the model, a reference to this message and the disclosure sentence. The body stays as written."
+        "Server-managed. One entry per language this message was translated into by AI: the translated text, the source language, the model, a reference to this message and the disclosure sentence. The body stays as written.": "Server-managed. One entry per language this message was translated into by AI: the translated text, the source language, the model, a reference to this message and the disclosure sentence. The body stays as written.",
+        "Your link to follow your case at %1$s": "Your link to follow your case at %1$s",
+        "Follow your case": "Follow your case",
+        "You asked for a link to follow your case at %1$s.": "You asked for a link to follow your case at %1$s.",
+        "Open your case": "Open your case",
+        "You are invited to the portal of %1$s": "You are invited to the portal of %1$s",
+        "You are invited": "You are invited",
+        "Accept the invitation to create your account at %1$s.": "Accept the invitation to create your account at %1$s.",
+        "Accept the invitation": "Accept the invitation",
+        "Confirm your new e-mail address for %1$s": "Confirm your new e-mail address for %1$s",
+        "Confirm your e-mail address": "Confirm your e-mail address",
+        "You asked to use this address for your account at %1$s. Until you confirm it, we keep using your old address.": "You asked to use this address for your account at %1$s. Until you confirm it, we keep using your old address.",
+        "Confirm this address": "Confirm this address",
+        "The link works once and for a limited time.": "The link works once and for a limited time.",
+        "Did you not ask for this? Then you can ignore this mail.": "Did you not ask for this? Then you can ignore this mail."
     },
     "nplurals=2; plural=(n != 1);"
 )

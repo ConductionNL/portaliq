@@ -80,6 +80,24 @@ final class PortalDeepLinkBuilderTest extends TestCase {
 		self::assertSame('https://portal.example.test/index.php/apps/portaliq/portal', $builder->forOrganisation(''));
 	}//end testAnUnknownTenantYieldsTheBarePortalWithoutAQuery()
 
+	/**
+	 * portaliq#795: an identity mail belongs to the portal it was asked on,
+	 * so it names that portal by slug rather than the tenant by `?org=`.
+	 *
+	 * @return void
+	 */
+	public function testANamedPortalIsLinkedByItsSlug(): void {
+		$builder = $this->builder(['portal' => 'gemeente-x'], '/apps/portaliq/portal?portal=gemeente-x');
+
+		self::assertSame('https://portal.example.test/apps/portaliq/portal?portal=gemeente-x', $builder->forPortal('gemeente-x', 'organisatie-x'));
+	}//end testANamedPortalIsLinkedByItsSlug()
+
+	public function testAnEmptySlugFallsBackToTheTenantLink(): void {
+		$builder = $this->builder(['org' => 'organisatie-x'], '/apps/portaliq/portal?org=organisatie-x');
+
+		self::assertSame('https://portal.example.test/apps/portaliq/portal?org=organisatie-x', $builder->forPortal('', 'organisatie-x'));
+	}//end testAnEmptySlugFallsBackToTheTenantLink()
+
 	public function testTheTenantIsPassedToTheRouteTableVerbatimSoTheGeneratorEncodesIt(): void {
 		// Encoding is the URL generator's job (it owns the query-string
 		// rendering); the builder must hand the raw value over, not pre-encode

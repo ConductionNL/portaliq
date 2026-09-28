@@ -7,6 +7,8 @@ namespace OCA\Portaliq\Tests\Unit\Middleware;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Auth\PortalUnauthorizedException;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Controller\PortalAccountSelfController;
+use OCA\Portaliq\Controller\PortalIdentityController;
 use OCA\Portaliq\Middleware\PortalAuthMiddleware;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Http;
@@ -55,6 +57,42 @@ class PortalAuthMiddlewareTest extends TestCase {
 		$this->assertTrue(true);
 
 	}//end testProtectedControllerWithSessionPasses()
+
+	/**
+	 * portaliq#795. The way in is anonymous by design: a visitor with no
+	 * session asks for a reference link, follows it, registers or accepts an
+	 * invitation. PortalIdentityController carried the bearer marker, so this
+	 * gate answered 401 before any of it ran, and no reference link could be
+	 * asked for, let alone mailed.
+	 *
+	 * @return void
+	 */
+	public function testTheAnonymousWayInIsNotBehindTheBearerGate(): void {
+		$mw = $this->middleware($this->session(null), $this->registry([]));
+		$controller = (new \ReflectionClass(PortalIdentityController::class))->newInstanceWithoutConstructor();
+
+		foreach (['challenge', 'requestReferenceLink', 'redeemReferenceLink', 'register', 'acceptInvitation'] as $method) {
+			$mw->beforeController($controller, $method);
+		}
+
+		$this->assertNotInstanceOf(PortalProtected::class, $controller);
+
+	}//end testTheAnonymousWayInIsNotBehindTheBearerGate()
+
+	/**
+	 * The other half of the split: what a bearer does to their OWN account
+	 * stays behind the gate.
+	 *
+	 * @return void
+	 */
+	public function testTheBearersOwnAccountStaysBehindTheBearerGate(): void {
+		$mw = $this->middleware($this->session(null), $this->registry([]));
+		$controller = (new \ReflectionClass(PortalAccountSelfController::class))->newInstanceWithoutConstructor();
+
+		$this->expectException(PortalUnauthorizedException::class);
+		$mw->beforeController($controller, 'updateDetails');
+
+	}//end testTheBearersOwnAccountStaysBehindTheBearerGate()
 
 	public function testAfterExceptionConvertsAuthFailureTo401(): void {
 		$mw = $this->middleware($this->session(null), $this->registry([]));

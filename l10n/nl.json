@@ -1544,7 +1544,21 @@
         "Message language": "Taal voor berichten",
         "The language this person reads school messages in, as a language tag such as ar or tr. Messages from school are translated by AI into it and marked as such. Empty shows messages as written. Only the person themselves sets it.": "De taal waarin deze persoon berichten van school leest, als taalcode zoals ar of tr. Berichten van school worden door AI naar deze taal vertaald en zo gemarkeerd. Leeg toont berichten zoals ze geschreven zijn. Alleen de persoon zelf stelt dit in.",
         "Translations": "Vertalingen",
-        "Server-managed. One entry per language this message was translated into by AI: the translated text, the source language, the model, a reference to this message and the disclosure sentence. The body stays as written.": "Wordt door de server bijgehouden. Eén item per taal waarnaar AI dit bericht heeft vertaald: de vertaalde tekst, de brontaal, het model, een verwijzing naar dit bericht en de melding voor de lezer. De berichttekst blijft zoals hij geschreven is."
+        "Server-managed. One entry per language this message was translated into by AI: the translated text, the source language, the model, a reference to this message and the disclosure sentence. The body stays as written.": "Wordt door de server bijgehouden. Eén item per taal waarnaar AI dit bericht heeft vertaald: de vertaalde tekst, de brontaal, het model, een verwijzing naar dit bericht en de melding voor de lezer. De berichttekst blijft zoals hij geschreven is.",
+        "Your link to follow your case at %1$s": "Uw link om uw zaak te volgen bij %1$s",
+        "Follow your case": "Volg uw zaak",
+        "You asked for a link to follow your case at %1$s.": "U vroeg om een link om uw zaak te volgen bij %1$s.",
+        "Open your case": "Open uw zaak",
+        "You are invited to the portal of %1$s": "U bent uitgenodigd voor het portaal van %1$s",
+        "You are invited": "U bent uitgenodigd",
+        "Accept the invitation to create your account at %1$s.": "Neem de uitnodiging aan om uw account bij %1$s te maken.",
+        "Accept the invitation": "Neem de uitnodiging aan",
+        "Confirm your new e-mail address for %1$s": "Bevestig uw nieuwe e-mailadres voor %1$s",
+        "Confirm your e-mail address": "Bevestig uw e-mailadres",
+        "You asked to use this address for your account at %1$s. Until you confirm it, we keep using your old address.": "U vroeg om dit adres te gebruiken voor uw account bij %1$s. Tot u het bevestigt, gebruiken we uw oude adres.",
+        "Confirm this address": "Bevestig dit adres",
+        "The link works once and for a limited time.": "De link werkt één keer en een beperkte tijd.",
+        "Did you not ask for this? Then you can ignore this mail.": "Vroeg u hier niet om? Dan kunt u deze mail negeren."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

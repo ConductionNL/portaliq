@@ -36,6 +36,7 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Service\Identity\PortalAccessRequestService;
+use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
 use OCA\Portaliq\Service\Identity\PortalSelfServiceService;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
@@ -60,12 +61,14 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 	 * @param PortalSessionService $session Resolves the subject from the bearer.
 	 * @param PortalSelfServiceService $selfService The account's own details.
 	 * @param PortalAccessRequestService $accessRequests Asking for access.
+	 * @param PortalIdentityMailer $mailer Mails the confirmation to the new address.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PortalSessionService $session,
 		private readonly PortalSelfServiceService $selfService,
 		private readonly PortalAccessRequestService $accessRequests,
+		private readonly PortalIdentityMailer $mailer,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -84,10 +87,12 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 	 *                                     null to leave it
 	 *                                     (translated-message-notice).
 	 *
-	 * @return JSONResponse Whether the change landed, and whether a
-	 *                      confirmation is now waiting.
+	 * @return JSONResponse Whether the change landed, whether a
+	 *                      confirmation is now waiting, and whether its
+	 *                      mail left.
 	 *
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/changes/identity-profile-page/tasks.md#T01
 	 * @spec openspec/changes/notification-preferences-per-role/specs/supplier-portal/spec.md#requirement-an-accounts-own-channel-opt-out-gates-dispatch
 	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-a-guardian-chooses-the-language-messages-are-shown-in
 	 */
@@ -116,9 +121,23 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 			return new JSONResponse(['error' => 'refused'], Http::STATUS_BAD_REQUEST);
 		}
 
+		$token = (string)($updated['confirmationToken'] ?? '');
+		if ($token === '') {
+			return new JSONResponse(['updated' => true, 'confirmationPending' => false]);
+		}
+
 		// The confirmation secret goes to the NEW address by mail; the answer
-		// only says one is waiting, so the old session cannot read it.
-		return new JSONResponse(['updated' => true, 'confirmationPending' => ($updated['confirmationToken'] !== '')]);
+		// only says one is waiting and whether the mail left, so the old
+		// session cannot read it. A mail that did not leave can be asked for
+		// again by saving the address once more.
+		$sent = $this->mailer->send(
+			template: PortalIdentityMailer::TEMPLATE_EMAIL_CONFIRMATION,
+			email: $email,
+			secret: $token,
+			organisation: (string)($subject['organisation'] ?? '')
+		);
+
+		return new JSONResponse(['updated' => true, 'confirmationPending' => true, 'confirmationSent' => $sent]);
 	}//end updateDetails()
 
 	/**
