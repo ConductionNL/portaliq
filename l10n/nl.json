@@ -1590,6 +1590,7 @@
         "The acquisition channel.": "Het acquisitiekanaal.",
         "The in-site route: the built-in site's `route` parameter, else the URL path. Query stripped, no trailing slash.": "De route binnen de site: de `route`-parameter van de ingebouwde site, anders het URL-pad. Zonder querystring en zonder slash aan het eind.",
         "The link clicked.": "De aangeklikte link.",
+        "Server-managed. One entry per language this newsletter's title was translated into by AI: the translated title (as both text and title), the source language, the model, a reference to this newsletter and the disclosure sentence. The title stays as written.": "Beheerd door de server. Eén item per taal waarin de titel van deze nieuwsbrief door AI is vertaald: de vertaalde titel (als tekst en als titel), de brontaal, het model, een verwijzing naar deze nieuwsbrief en de toelichtende zin. De titel blijft zoals hij geschreven is.",
         "Server-managed. One entry per language this news item was translated into by AI: the translated text, the translated title, the source language, the model, a reference to this item and the disclosure sentence. The title and body stay as written.": "Beheerd door de server. Eén item per taal waarin dit nieuwsbericht door AI is vertaald: de vertaalde tekst, de vertaalde titel, de brontaal, het model, een verwijzing naar dit bericht en de toelichtende zin. De titel en de tekst blijven zoals ze geschreven zijn."
     },
     "plurals": "",

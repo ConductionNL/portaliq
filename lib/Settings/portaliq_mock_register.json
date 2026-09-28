@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "portaliq demo data",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "description": "Demo data covering every schema this app supplies, offered as the first step of the app's setup walkthrough. Generated from the schemas themselves, so every object satisfies the schema that will validate it."
   },
   "x-openregister": {
@@ -2602,7 +2602,8 @@
           ]
         },
         "sentAt": "2026-03-01T09:00:00+00:00",
-        "archived": true
+        "archived": true,
+        "translations": []
       },
       {
         "@self": {
@@ -2624,7 +2625,22 @@
           ]
         },
         "sentAt": "2026-03-02T09:00:00+00:00",
-        "archived": false
+        "archived": false,
+        "translations": [
+          {
+            "targetLanguage": "ar",
+            "text": "نشرة تجريبية 2",
+            "title": "نشرة تجريبية 2",
+            "translatedByAi": true,
+            "sourceLanguage": "nl",
+            "sourceLanguageDetected": true,
+            "model": "nextcloud",
+            "originalRef": "portaliq:newsletter:demo-2",
+            "disclosure": "تُرجم بواسطة الذكاء الاصطناعي. اللغة الأصلية: الهولندية. قد تحتوي هذه الترجمة على أخطاء.",
+            "disclosureLanguage": "ar",
+            "translatedAt": "2026-09-28T09:00:00+00:00"
+          }
+        ]
       },
       {
         "@self": {
@@ -2646,7 +2662,8 @@
           ]
         },
         "sentAt": "2026-03-03T09:00:00+00:00",
-        "archived": true
+        "archived": true,
+        "translations": []
       },
       {
         "@self": {
