@@ -22,6 +22,9 @@ SPA NewsPage ─> feed + archive ─> NewsItem (title in reader's language, orig
 - D4. Archive items are read through the same published and in-audience filter as
   the feed; `readOwnItem()` now reads through that filter too, which removes the
   duplicated matching.
+- D6. The OpenRegister row read moves from `NewsFeedReader` to `NewsRowSource`, so
+  the reader stays under phpmd's class complexity threshold of 50 with the archive
+  composition added.
 - D5. In the SPA an archive item uses an id prefix per newsletter, so an item that is
   both in the feed and in a newsletter does not produce duplicate element ids for
   `aria-controls`.
@@ -38,7 +41,7 @@ translation write stores the stored row, before the gate.
 ## File Structure
 
 - `lib/Service/Messaging/GuardianMessageTranslator.php`
-- `lib/Service/NewsFeedReader.php`
+- `lib/Service/NewsFeedReader.php`, `lib/Service/NewsRowSource.php` (new)
 - `lib/Controller/NewsGuardianController.php`
 - `lib/Settings/portaliq_register.json`, `lib/Settings/portaliq_mock_register.json`
 - `src/portal/components/NewsPage.jsx`, `TranslatedText.jsx`, `lib/portalApi.js`,
