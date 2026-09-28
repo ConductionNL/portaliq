@@ -71,8 +71,9 @@ object for term-long activities, leaving `schoolEvent` for one-off items.
 ### Out of Scope
 
 - Parental consent on a sign-up: the next change, `activity-parental-consent`.
-- Raising the payment request itself: shillinq's `extracurricular-fee-to-shillinq`
-  (plan wave 2, lane L8) writes `paymentRequestRef`. Portaliq only stores it.
+- Raising the payment request itself. (Amended by `activity-offer-contract-fix`:
+  portaliq raises through shillinq's contributions raise and writes
+  `paymentRequestRef` from the answer; shillinq does not write it.)
 - Screens. Like `events-and-signups`, this ships the API; the staff and portal
   screens for school communication come as one later change.
 - Eligibility against grades or attendance (`RS-new-3`).

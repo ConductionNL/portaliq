@@ -6,6 +6,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\ActivityController;
 use OCA\Portaliq\Service\ActivityAttendanceService;
+use OCA\Portaliq\Service\ActivityContributionService;
 use OCA\Portaliq\Service\ActivityDraft;
 use OCA\Portaliq\Service\ActivityPlaces;
 use OCA\Portaliq\Service\ActivityRoster;
@@ -37,6 +38,7 @@ class ActivityControllerTest extends TestCase {
 	 * @param ActivitySignupService|null $signups The sign-up service double.
 	 * @param ActivityAttendanceService|null $attendance The attendance service double.
 	 * @param ActivityRoster|null $rosters The roster double.
+	 * @param ActivityContributionService|null $contributions The contribution raise double.
 	 *
 	 * @return ActivityController
 	 */
@@ -47,6 +49,7 @@ class ActivityControllerTest extends TestCase {
 		?ActivitySignupService $signups = null,
 		?ActivityAttendanceService $attendance = null,
 		?ActivityRoster $rosters = null,
+		?ActivityContributionService $contributions = null,
 	): ActivityController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getParam')->willReturnCallback(fn (string $key, $default = null) => ($params[$key] ?? $default));
@@ -65,7 +68,8 @@ class ActivityControllerTest extends TestCase {
 			($signups ?? $this->createMock(ActivitySignupService::class)),
 			($attendance ?? $this->createMock(ActivityAttendanceService::class)),
 			new ActivityDraft(),
-			($rosters ?? $this->createMock(ActivityRoster::class))
+			($rosters ?? $this->createMock(ActivityRoster::class)),
+			($contributions ?? $this->createMock(ActivityContributionService::class))
 		);
 	}//end controller()
 
@@ -93,6 +97,7 @@ class ActivityControllerTest extends TestCase {
 			fn (ActivityController $c) => $c->supervisors('a', ['s']),
 			fn (ActivityController $c) => $c->roster('a'),
 			fn (ActivityController $c) => $c->attendance('a', 'week-1', 'child', 'present'),
+			fn (ActivityController $c) => $c->contributions('a'),
 		];
 		foreach ($calls as $index => $call) {
 			$store = $this->store([['id' => 'a', 'status' => 'draft', 'capacity' => 5]]);
@@ -219,4 +224,42 @@ class ActivityControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $controller->attendance('a', 'week-1', 'waiting', 'present')->getStatus());
 		$this->assertSame(Http::STATUS_BAD_GATEWAY, $controller->attendance('a', 'week-1', 'gone', 'present')->getStatus());
 	}//end testServiceAnswersMapToTheContract()
+
+	/**
+	 * The contribution raise (activity-offer-contract-fix) passes the request
+	 * body to the service and maps each refusal to its status; no refusal
+	 * writes anything here.
+	 *
+	 * @return void
+	 */
+	public function testContributionsMapsEachRefusal(): void {
+		$params = ['amount' => 25, 'voluntary' => true, 'administrationId' => 'adm-school-1'];
+		$expected = [
+			'not_found' => Http::STATUS_NOT_FOUND,
+			'payment_not_requested' => Http::STATUS_UNPROCESSABLE_ENTITY,
+			'activity_unavailable' => Http::STATUS_BAD_GATEWAY,
+			'invalid_charge' => Http::STATUS_BAD_REQUEST,
+			'forbidden' => Http::STATUS_FORBIDDEN,
+			'shillinq_unavailable' => Http::STATUS_SERVICE_UNAVAILABLE,
+			'raise_failed' => Http::STATUS_BAD_GATEWAY,
+		];
+
+		foreach ($expected as $error => $status) {
+			$contributions = $this->createMock(ActivityContributionService::class);
+			$contributions->expects($this->once())->method('raise')->with('a', $params)->willReturn(['error' => $error]);
+			$store = $this->store();
+
+			$response = $this->controller($store, params: $params, contributions: $contributions)->contributions('a');
+
+			$this->assertSame($status, $response->getStatus(), $error);
+			$this->assertSame(['error' => $error], $response->getData());
+			$this->assertSame([], $store->saves);
+		}
+
+		$contributions = $this->createMock(ActivityContributionService::class);
+		$contributions->method('raise')->willReturn(['raised' => 1, 'skipped' => 0, 'failed' => 0, 'results' => []]);
+		$ok = $this->controller($this->store(), params: $params, contributions: $contributions)->contributions('a');
+		$this->assertSame(Http::STATUS_OK, $ok->getStatus());
+		$this->assertSame(1, $ok->getData()['raised']);
+	}//end testContributionsMapsEachRefusal()
 }//end class

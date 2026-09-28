@@ -234,13 +234,16 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// require a guardian's consent to a stated text, kept on the sign-up as
 		// agreed, and say photos are taken (activity-parental-consent). Additive.
 		// 0.35.1: no schema change; bumped past development's 0.35.0 when the portal-take-assessment branch landed.
+		// 0.35.2 (activityOffer 0.2.1, activitySignup 0.2.1): descriptions only;
+		// portaliq, not shillinq, writes `paymentRequestRef` from the raise
+		// answer (activity-offer-contract-fix).
 		// Every new schema is listed in
 		// `components.registers.portaliq.schemas` (ImportHandler binds only
 		// what is listed there) and declares a non-empty `read` rule.
-		$this->assertSame('0.35.1', self::$register['info']['version']);
-		$this->assertSame('0.35.1', self::$register['components']['registers']['portaliq']['version']);
-		$this->assertSame('0.2.0', self::$register['components']['schemas']['activityOffer']['version']);
-		$this->assertSame('0.2.0', self::$register['components']['schemas']['activitySignup']['version']);
+		$this->assertSame('0.35.2', self::$register['info']['version']);
+		$this->assertSame('0.35.2', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.2.1', self::$register['components']['schemas']['activityOffer']['version']);
+		$this->assertSame('0.2.1', self::$register['components']['schemas']['activitySignup']['version']);
 		$this->assertSame('0.1.0', self::$register['components']['schemas']['activityAttendance']['version']);
 		$this->assertArrayHasKey('consent', self::$register['components']['schemas']['activitySignup']['properties']);
 

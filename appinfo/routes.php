@@ -122,6 +122,9 @@ return [
         ['name' => 'activity#supervisors', 'url' => '/api/activities/{id}/supervisors', 'verb' => 'PUT'],
         ['name' => 'activity#roster', 'url' => '/api/activities/{id}/roster', 'verb' => 'GET'],
         ['name' => 'activity#attendance', 'url' => '/api/activities/{id}/attendance', 'verb' => 'PUT'],
+        // Raise the contribution per confirmed place through shillinq and write
+        // each reference into its sign-up (activity-offer-contract-fix).
+        ['name' => 'activity#contributions', 'url' => '/api/activities/{id}/contributions', 'verb' => 'POST'],
         ['name' => 'activityGuardian#signup', 'url' => '/api/activities/{id}/signup', 'verb' => 'POST'],
         ['name' => 'activityGuardian#withdraw', 'url' => '/api/activities/{id}/withdraw', 'verb' => 'POST'],
         // Guardian direct messages (guardian-direct-messages, finding 9.3).
