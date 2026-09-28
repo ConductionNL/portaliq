@@ -2221,11 +2221,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/commerce/store-management/configuring-payment-methods 'Liferay ships with four payment methods by default: Money order (offline), Authorize.net, Mercanet, and PayPal'; Adyen and Stripe pages exist. Payment runs through Commerce checkout; paying a municipal invoice or assessment from a case is custom."
 			},
 			"built": {
-				"state": "built",
-				"evidence": "portaliq's generic endpoint-action forwarder is the whole mechanism: src/portal/App.jsx:225-238 onAction() -> POST /portal/api/actions/{appId}/{actionId}; lib/Controller/ContributionController.php:1409 action(); lib/Service/PortalActionForwarder.php:89 forward(). shillinq supplies the target: shillinq appinfo/routes.php:764 portalPaymentInitiation#initiate, shillinq lib/Portal/PortalContributionProvider.php:427 declares endpoint '/apps/shillinq/api/portal/payments/initiate'; shillinq's Mollie adapter is LogMolliePaymentAdapter by default (shillinq lib/AppInfo/Application.php)",
+				"state": "specified",
+				"evidence": "portaliq's generic endpoint-action forwarder is the whole mechanism: src/portal/App.jsx:225-238 onAction() -> POST /portal/api/actions/{appId}/{actionId}; lib/Controller/ContributionController.php:1409 action(); lib/Service/PortalActionForwarder.php:89 forward(). shillinq supplies the target: shillinq appinfo/routes.php:772 portalPaymentInitiation#initiate, shillinq lib/Portal/PortalContributionProvider.php:452 declares endpoint '/apps/shillinq/api/portal/payments/initiate'; shillinq's Mollie adapter is LogMolliePaymentAdapter by default (shillinq lib/AppInfo/Application.php)",
 				"reachedOn": "PageView.jsx 'action'/'cta' block (endpoint type) -> onAction -> PortalActionForwarder -> shillinq's own controller",
 				"owner": "ConductionNL/shillinq",
-				"note": "portaliq's forwarding path itself works. Whether a real payment happens depends entirely on shillinq's Mollie adapter, which logs instead of charging by default (matches the sal-customer-portal sibling row).",
+				"note": "portaliq's forwarding path itself works. Whether a real payment happens depends entirely on shillinq's Mollie adapter, which logs instead of charging by default (matches the sal-customer-portal sibling row). Specified in ConductionNL/shillinq openspec/changes/receivables-payment-links (shillinq lane, OpenSpec pass 2026-09-27).",
 				"origin": "sibling"
 			},
 			"provider": "shillinq",
@@ -3318,11 +3318,11 @@
 				"liferay-dxp": "not settled from docs: messages from an external case system in the Liferay notifications list would need a custom notification type; no such integration is documented."
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "sibling dossiq (dir procest) lib/Portal/PortalContributionProvider.php citizenContribution(): collection 'berichten', kind:'inbox', schema portaalBericht, scopeField recipientRef, fields incl. caseReference/senderType/senderName/subject/content/attachments/direction/sentAt/readByRecipientAt; portaliq's PortalInboxReader.php:171-231 reads any kind:inbox collection through the same path regardless of owning app; dossiq docs/research/competitor-gap-re-read-2026-09-13.md:51 rates its own row 6.7 'partial' because the schema (register.d/50-zaakportaal.json) is still declared and move-portals-to-portaliq T7 is deferred on portaliq#16",
 				"reachedOn": "portal SPA InboxPage.jsx via the same aggregated /portal/api/inbox call",
 				"owner": "ConductionNL/dossiq",
-				"note": "The message itself displays fine (subject/body/date/source label). dossiq's own 'attachments' and structured 'content' fields ride in the row but portaliq's InboxPage.jsx never reads or renders an attachments field (see cmp-inb-attach) and 'content' vs the generic 'body' key is a possible field-name mismatch not verified live. The partial also rests on a field-contract mismatch found 2026-09-26: dossiq writes content, sentAt and readByRecipientAt, portaliq's inbox reads body, receivedAt and read, so only the subject shows (portaliq#702).",
+				"note": "The message itself displays fine (subject/body/date/source label). dossiq's own 'attachments' and structured 'content' fields ride in the row but portaliq's InboxPage.jsx never reads or renders an attachments field (see cmp-inb-attach) and 'content' vs the generic 'body' key is a possible field-name mismatch not verified live. The partial also rests on a field-contract mismatch found 2026-09-26: dossiq writes content, sentAt and readByRecipientAt, portaliq's inbox reads body, receivedAt and read, so only the subject shows (portaliq#702). Specified in ConductionNL/dossiq openspec/changes/communication-portal-conversation-on-the-case (dossiq lane, OpenSpec pass 2026-09-27).",
 				"sourceId": "inb-dossiq-portaalbericht",
 				"origin": "sibling",
 				"defectCandidate": "src/portal/components/InboxPage.jsx:86-148 never reads message.attachments or message.content; a dossiq portaalBericht row carrying attachments renders with no way to see or download them (code reading, needs a live check)",
@@ -7140,7 +7140,7 @@
 				"evidence": "portal-traffic-analytics tasks.md 0.1 documents portalSession's own fields as subjectRef, jti, issuedAt, expiresAt, revoked, trustLevel, audience, organisation; lib/Service/PortalOrganisationConfigService.php resolves per-organisation white-label runtime config and 'fails closed to a safe NEUTRAL default on every unresolved path... NEVER another tenant's branding'; organisation appears across 19 files under lib/Service and lib/Controller (PortalObjectReader/Writer, PortalCaseListReader, PortalAccountService, etc.)",
 				"reachedOn": "every authenticated portal session carries an organisation claim that scopes reads/writes through PortalObjectReader/PortalObjectWriter",
 				"owner": "ConductionNL/portaliq",
-				"note": "Rated partial rather than yes: this reader confirmed the session claim and the branding-isolation guard, but did not trace a full object-store query to prove row-level data isolation end to end for every schema; that needs a live check across the 13 schemas in lib/Settings/portaliq_register.json. Specified in openspec/changes/operate-portals-per-organisation (OpenSpec pass 2026-09-27).",
+				"note": "Rated partial rather than yes: this reader confirmed the session claim and the branding-isolation guard, but did not trace a full object-store query to prove row-level data isolation end to end for every schema; that needs a live check across the schemas in lib/Settings/portaliq_register.json (48 at portaliq db4a6cf, 23 of them without an organisation or portal property). Specified in openspec/changes/operate-portals-per-organisation (OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -7409,11 +7409,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/creating-objects 'you can use the Page Comments widget in entry display pages', so messages sit on the record's own page. Filing messages sent elsewhere in the portal onto the case is not described. [was unknown; custom: case object and display page]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "ConductionNL/dossiq@971735b03e (development) lib/Portal/PortalContributionProvider.php:440-460 inbox collection 'berichten' (portaalBericht, fields incl. caseReference) and :537-563 'replyToMessage' create action with a required caseId crossRef; lib/Contribution/PortalPageResolver.php:141 synthesises a page per listable collection with its create action; src/portal/components/SchemaForm.jsx:48-52 renders a field as a select only when an optionsProvider is declared",
 				"reachedOn": "portal SPA nav 'Berichten' (synthesised page) -> SchemaForm reply form -> POST /portal/api/collections/dossiq/portaalBericht (ContributionController::create, crossRef guard on caseId); incoming messages -> InboxPage.jsx via GET /portal/api/inbox",
 				"owner": "ConductionNL/dossiq",
-				"note": "Messages both ways carry the case on dossiq's schema, so they are filed on the case. Not automatic from the resident's side: the reply form shows caseId as a free text field (no optionsProvider declared), so the resident must type the case uuid, and there is no reply-from-this-message or reply-from-the-case-page control. Note: the existing row cmp-inb-reply ('no compose control') predates this dossiq action and may be stale.",
+				"note": "Messages both ways carry the case on dossiq's schema, so they are filed on the case. Not automatic from the resident's side: the reply form shows caseId as a free text field (no optionsProvider declared), so the resident must type the case uuid, and there is no reply-from-this-message or reply-from-the-case-page control. Note: the existing row cmp-inb-reply ('no compose control') predates this dossiq action and may be stale. Specified in ConductionNL/dossiq openspec/changes/communication-portal-conversation-on-the-case (dossiq lane, OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "dossiq",
@@ -8065,11 +8065,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/creating-objects 'you can use the Page Comments widget in entry display pages': a question and its answer stay on the record's page. Custom case object. [was unknown]"
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "ConductionNL/dossiq@971735b03e (development) lib/Portal/PortalContributionProvider.php:537-563 replyToMessage create action (portaalBericht, caseId required crossRef); lib/Contribution/PortalPageResolver.php:141 puts it on the synthesised 'Berichten' page; src/portal/components/CitizenCase.jsx has no message control",
 				"reachedOn": "portal SPA nav 'Berichten' -> SchemaForm -> POST /portal/api/collections/dossiq/portaalBericht; the answer arrives in InboxPage.jsx",
 				"owner": "ConductionNL/dossiq",
-				"note": "A resident can send a message tied to one of their cases, but from the messages page with the case uuid typed by hand, not from the case page, and the answer shows in the inbox, not on the case.",
+				"note": "A resident can send a message tied to one of their cases, but from the messages page with the case uuid typed by hand, not from the case page, and the answer shows in the inbox, not on the case. Specified in ConductionNL/dossiq openspec/changes/communication-portal-conversation-on-the-case (dossiq lane, OpenSpec pass 2026-09-27).",
 				"origin": "code"
 			},
 			"provider": "dossiq",
@@ -8099,10 +8099,10 @@
 			},
 			"built": {
 				"state": "built",
-				"evidence": "ConductionNL/dossiq@971735b03e (development) lib/Portal/PortalContributionProvider.php:121 projects 'result' (a uuid $ref to the result record in dossiq_register.json) and statusPublicLabel/statusPublicDescription; src/portal/components/CollectionTable.jsx:42 deriveColumns shows every projected field as text",
+				"evidence": "ConductionNL/dossiq 9489ca2c6 (development, fixes dossiq#3143): lib/Settings/dossiq_register.json case schema gains resultPublicLabel and resultPublicDescription, calculated from the linked result record, the description from its publicExplanation; lib/Portal/PortalContributionProvider.php mijnZaken projects those under labelled columns instead of the result uuid",
 				"reachedOn": "portal SPA nav 'Mijn zaken' (synthesised page) -> CollectionTable",
 				"owner": "ConductionNL/dossiq",
-				"note": "The final status's public label and description are shown, which can carry the decision in words, but the result itself renders as a raw uuid and there is no field for the organisation's explanation of the decision (code reading, needs a live check).",
+				"note": "The final status's public label and description are shown, which can carry the decision in words, but the result itself renders as a raw uuid and there is no field for the organisation's explanation of the decision (code reading, needs a live check). The dossiq half shipped in 9489ca2c6 (dossiq lane: existing): the outcome reads in words, with the organisation's explanation, and no uuid is shown. Before: ConductionNL/dossiq@971735b03e (development) lib/Portal/PortalContributionProvider.php:121 projects 'result' (a uuid $ref to the result record in dossiq_register.json) and statusPublicLabel/statusPublicDescription; src/portal/components/CollectionTable.jsx:42 deriveColumns shows every projected field as text (OpenSpec pass 2026-09-27, corrected 2026-09-28).",
 				"origin": "code"
 			},
 			"provider": "dossiq",
@@ -8581,8 +8581,9 @@
 				"state": "built",
 				"evidence": "several portals can point at the same thematiq token set: lib/Service/PortalThemeResolver.php:104 and :172 read token-sets.json from the theme app, so one style set serves many portals; page blocks are per portal (widget layouts are stored per page), so no shared block library",
 				"reachedOn": "Portals admin theme field -> PortalThemeResolver at render time",
-				"owner": "ConductionNL/thematiq",
-				"origin": "code"
+				"owner": "ConductionNL/portaliq",
+				"origin": "code",
+				"note": "Owner moved to ConductionNL/portaliq (thematiq lane): the shared token set is built in thematiq; the missing half is a shared library of page blocks, which is portaliq's (thematiq lane, OpenSpec pass 2026-09-27; owner was ConductionNL/thematiq)."
 			},
 			"provider": "thematiq",
 			"providerHow": "read-from-code",
