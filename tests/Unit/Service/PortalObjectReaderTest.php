@@ -1091,6 +1091,65 @@ class PortalObjectReaderTest extends TestCase {
 
 	}//end testAStaffReadAsksOpenRegisterWithRbacOn()
 
+	/**
+	 * A read with no subject scope that names a tenant has only the tenant to
+	 * go on, so a row without an organisation belongs to no tenant and is
+	 * dropped, like one of another tenant (portaliq#801).
+	 */
+	public function testAnUnscopedTenantReadDropsARowWithoutAnOrganisation(): void {
+		$objectService = $this->objectService(
+			[
+				'portalPoll' => [
+					['id' => 'p-1', 'organisation' => 'org-a', 'audience' => 'parent'],
+					['id' => 'p-2', 'organisation' => '', 'audience' => 'parent'],
+					['id' => 'p-3', 'audience' => 'parent'],
+					['id' => 'p-4', 'organisation' => 'org-b', 'audience' => 'parent'],
+				],
+			]
+		);
+
+		$reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
+		$rows = $reader->readCollection(
+			register: 'portaliq',
+			schema: 'portalPoll',
+			scopeField: '',
+			subjectRef: '',
+			organisation: 'org-a',
+			filter: ['audience' => 'parent']
+		);
+
+		$this->assertSame(['p-1'], array_column($rows, 'id'));
+
+	}//end testAnUnscopedTenantReadDropsARowWithoutAnOrganisation()
+
+	/**
+	 * A read scoped to the subject keeps the documented rule: a schema
+	 * without an organisation is scoped by the subject reference alone.
+	 */
+	public function testASubjectScopedReadStillKeepsItsRowWithoutAnOrganisation(): void {
+		$objectService = $this->objectService(
+			['supplierTender' => [['id' => 't-1', 'subjectRef' => 's1'], ['id' => 't-2', 'subjectRef' => 's2']]]
+		);
+
+		$reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
+		$rows = $reader->readCollection(register: 'procest', schema: 'supplierTender', scopeField: 'subjectRef', subjectRef: 's1', organisation: 'org-a');
+
+		$this->assertSame(['t-1'], array_column($rows, 'id'));
+
+	}//end testASubjectScopedReadStillKeepsItsRowWithoutAnOrganisation()
+
+	/**
+	 * A system read by id that names no tenant is left as it was.
+	 */
+	public function testAReadThatNamesNoTenantIsUnchanged(): void {
+		$objectService = $this->objectService(['portalReport' => [['id' => 'r-1', 'uuid' => 'r-1', 'subject' => 'Melding']]]);
+
+		$reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
+
+		$this->assertSame('Melding', $reader->readObject(register: 'portaliq', schema: 'portalReport', scopeField: '', subjectRef: '', id: 'r-1')['subject']);
+
+	}//end testAReadThatNamesNoTenantIsUnchanged()
+
 	public function testReadObjectReturnsNullForAForeignOwnedObject(): void {
 		$objectService = $this->objectService(
 			[
