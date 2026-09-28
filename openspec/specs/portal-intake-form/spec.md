@@ -1,21 +1,12 @@
----
-status: proposed
----
-
-# Spec: portal-intake-form
-
-**Status:** proposed
-**Scope:** portaliq (owner); buildiq publishes the form, opencatalogi publishes the catalogue, the case app declares its intake
-**Depends on:** `embedded-intake-form` (anonymous submit, throttle); `portal-contribution-contract` (the create); `portaliq-cms` and `portal-page-designer` (pages, topics, layouts); `portal-identity-space` (the identity the applicant block reads)
+# portal-intake-form Specification
 
 ## Purpose
-
 A citizen finds the request they need in the portal and fills in the form
 that belongs to it. The form is its own object, published for the case
 type, and portaliq renders it. Requested by the dossiq competitor
 analysis, round 4 cluster 51.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: A portal page binds to a published form, not to a field list (REQ-PIFO-001)
 
@@ -49,6 +40,7 @@ prefill from earlier cases, a challenge, and the confirmation text.
 - **WHEN** an administrator opens the page in the CMS admin
 - **THEN** the admin surface states that the binding resolves to no form
 - **AND** the portal page renders a message and no fields
+- @e2e exclude A toast over an admin row action; pinned by FormBindingAdminControllerTest::testABindingThatResolvesToNoFormSaysSoInTheAdmin and tests/form-binding-preview.spec.mjs
 
 ### Requirement: Intake can point at an externally hosted start form (REQ-PIFO-002)
 

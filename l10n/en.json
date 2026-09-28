@@ -1533,7 +1533,15 @@
         "The in-site route: the built-in site's `route` parameter, else the URL path. Query stripped, no trailing slash.": "The in-site route: the built-in site's `route` parameter, else the URL path. Query stripped, no trailing slash.",
         "The link clicked.": "The link clicked.",
         "Server-managed. One entry per language this newsletter's title was translated into by AI: the translated title (as both text and title), the source language, the model, a reference to this newsletter and the disclosure sentence. The title stays as written.": "Server-managed. One entry per language this newsletter's title was translated into by AI: the translated title (as both text and title), the source language, the model, a reference to this newsletter and the disclosure sentence. The title stays as written.",
-        "Server-managed. One entry per language this news item was translated into by AI: the translated text, the translated title, the source language, the model, a reference to this item and the disclosure sentence. The title and body stay as written.": "Server-managed. One entry per language this news item was translated into by AI: the translated text, the translated title, the source language, the model, a reference to this item and the disclosure sentence. The title and body stay as written."
+        "Server-managed. One entry per language this news item was translated into by AI: the translated text, the translated title, the source language, the model, a reference to this item and the disclosure sentence. The title and body stay as written.": "Server-managed. One entry per language this news item was translated into by AI: the translated text, the translated title, the source language, the model, a reference to this item and the disclosure sentence. The title and body stay as written.",
+        "Request forms": "Request forms",
+        "Check form": "Check form",
+        "This entry opens \"{form}\" today.": "This entry opens \"{form}\" today.",
+        "This entry sends people to {destination}. Nothing arrives here.": "This entry sends people to {destination}. Nothing arrives here.",
+        "This entry sends people to another website, but has no address. Nobody can start it.": "This entry sends people to another website, but has no address. Nobody can start it.",
+        "This entry opens no form today. It asks for \"{form}\", and no form of that name is published to its audience.": "This entry opens no form today. It asks for \"{form}\", and no form of that name is published to its audience.",
+        "This entry opens no form today. No published form matches its case type and audience.": "This entry opens no form today. No published form matches its case type and audience.",
+        "Could not check which form this entry opens. Try again.": "Could not check which form this entry opens. Try again."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

@@ -32,7 +32,7 @@
  *
  * @link https://Portaliq.app
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+ * @spec openspec/specs/portal-intake-form/spec.md#requirement-a-portal-page-binds-to-a-published-form-not-to-a-field-list-req-pifo-001
  */
 
 declare(strict_types=1);
@@ -41,6 +41,8 @@ namespace OCA\Portaliq\Service\Intake;
 
 /**
  * Describes one binding's current resolution for an administrator.
+ *
+ * @spec openspec/specs/portal-intake-form/spec.md#requirement-a-portal-page-binds-to-a-published-form-not-to-a-field-list-req-pifo-001
  */
 class PortalBindingPreview {
 
@@ -66,6 +68,28 @@ class PortalBindingPreview {
 	public const EXTERNAL = 'external';
 
 	/**
+	 * Why nothing resolves: an external entry with no address filled in.
+	 *
+	 * @var string
+	 */
+	public const REASON_EXTERNAL_WITHOUT_ADDRESS = 'external_without_address';
+
+	/**
+	 * Why nothing resolves: the binding asks for a form by name, and no form of
+	 * that name is published to its audience.
+	 *
+	 * @var string
+	 */
+	public const REASON_NAMED_FORM_NOT_PUBLISHED = 'named_form_not_published';
+
+	/**
+	 * Why nothing resolves: no published form matches the type and audience.
+	 *
+	 * @var string
+	 */
+	public const REASON_NO_FORM = 'no_form_for_type_and_audience';
+
+	/**
 	 * Wire the preview.
 	 *
 	 * @param PortalFormBindingResolver $resolver The resolution the render uses.
@@ -85,7 +109,7 @@ class PortalBindingPreview {
 	 *
 	 * @return array<string, mixed> The preview.
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md#requirement-a-portal-page-binds-to-a-published-form-not-to-a-field-list-req-pifo-001
 	 */
 	public function describe(array $binding): array {
 		$render = $this->resolver->render(binding: $binding);
@@ -96,6 +120,8 @@ class PortalBindingPreview {
 			return [
 				'state' => self::EXTERNAL,
 				'formName' => null,
+				'reason' => null,
+				'askedFor' => null,
 				'destination' => (string)($render['destination'] ?? ''),
 				'message' => sprintf(
 					'This entry sends people to %s. Nothing is filled in here, so nothing arrives here either.',
@@ -108,6 +134,8 @@ class PortalBindingPreview {
 			return [
 				'state' => self::RESOLVED,
 				'formName' => (string)($render['formName'] ?? ''),
+				'reason' => null,
+				'askedFor' => null,
 				'destination' => null,
 				'message' => sprintf(
 					'This entry opens "%s" today.',
@@ -118,13 +146,44 @@ class PortalBindingPreview {
 
 		// 🔴 NO NAME IS INVENTED HERE. Not the configured formName, not a last
 		// known value: a stale name tells an administrator the binding works.
+		// The reason travels as a code as well as a sentence, so the admin
+		// screen can say it in the administrator's own language.
+		$askedFor = trim((string)($binding['formName'] ?? ''));
+		$reason = $this->reasonCodeFor(render: $render, askedFor: $askedFor);
+		if ($askedFor === '') {
+			$askedFor = null;
+		}
+
+
 		return [
 			'state' => self::RESOLVES_TO_NONE,
 			'formName' => null,
+			'reason' => $reason,
+			'askedFor' => $askedFor,
 			'destination' => null,
 			'message' => $this->reasonFor(render: $render, binding: $binding),
 		];
 	}//end describe()
+
+	/**
+	 * Why the binding resolves to nothing, as a code the admin screen translates.
+	 *
+	 * @param array<string, mixed> $render   The resolution.
+	 * @param string               $askedFor The form name the binding asks for, or ''.
+	 *
+	 * @return string One of the REASON_ constants.
+	 */
+	private function reasonCodeFor(array $render, string $askedFor): string {
+		if ((string)($render['kind'] ?? '') === PortalFormBindingResolver::KIND_EXTERNAL) {
+			return self::REASON_EXTERNAL_WITHOUT_ADDRESS;
+		}
+
+		if ($askedFor !== '') {
+			return self::REASON_NAMED_FORM_NOT_PUBLISHED;
+		}
+
+		return self::REASON_NO_FORM;
+	}//end reasonCodeFor()
 
 	/**
 	 * Why the binding resolves to nothing, in words an administrator can act on.
@@ -163,7 +222,7 @@ class PortalBindingPreview {
 	 *
 	 * @return bool True when it resolves to nothing.
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md#requirement-a-portal-page-binds-to-a-published-form-not-to-a-field-list-req-pifo-001
 	 */
 	public function needsAttention(array $binding): bool {
 		return ((string)$this->describe(binding: $binding)['state'] === self::RESOLVES_TO_NONE);

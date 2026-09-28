@@ -4,7 +4,7 @@
 
 - [x] **T01**: A portal form page stores a form binding: type tuple, audience, optional form name, `intakeKind` (REQ-PIFO-001, REQ-PIFO-002)
 - [x] **T02**: Resolve the binding against the `buildiq-registration-form` leaf at render time, applying `presets[]` and the form's order (REQ-PIFO-001)
-- [ ] **T03**: The admin surface names the form the binding resolves to today, and says so when it resolves to none (D2, risks)
+- [x] **T03**: The admin surface names the form the binding resolves to today, and says so when it resolves to none (D2, risks). The admin app's Request forms page lists the bindings; its Check form row action posts the row to `POST /api/form-bindings/preview` (FormBindingAdminController, admin-only), which runs PortalBindingPreview over the real resolver. Tests: FormBindingAdminControllerTest, tests/form-binding-preview.spec.mjs.
 
 ## The intake settings
 
@@ -38,9 +38,8 @@ signed-in identity only, per-field validation before any create
 the job that creates the case afterwards, and the entry point over
 opencatalogi's published catalogue (`PortalCatalogueReader`).
 
-T09 landed on 2026-09-28 (see the design's "The entry point on the public site"). Left open, and marked so: **T03**. T03 is the CMS admin surface
-that prints which form a binding resolves to today; the resolver already
-answers `resolvesToNoForm` with its reason, so the admin screen is the
-remaining piece. T09 arranges the entry point's pages and layouts as
+T09 landed on 2026-09-28 (see the design's "The entry point on the public site"). T03 landed the same day: the admin app's Request forms page, whose
+Check form action says which form a binding resolves to today, or that it
+resolves to none and why. T09 arranges the entry point's pages and layouts as
 portaliq-cms content, which is editor-facing work over the existing CMS.
 

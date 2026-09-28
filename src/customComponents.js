@@ -36,6 +36,7 @@ import {
 	showError,
 	showInfo,
 	showSuccess,
+	showWarning,
 } from '@nextcloud/dialogs'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
@@ -44,6 +45,7 @@ import RefuseAccessRequestDialog from './dialogs/RefuseAccessRequestDialog.vue'
 import CustomExample from './views/CustomExample.vue'
 import { createAccessRequestHandlers } from './lib/accessRequestActions.js'
 import { createConnectionHandlers } from './lib/connectionRegistry.js'
+import { createFormBindingPreview } from './lib/formBindingPreview.js'
 import { createOpenPortalSite } from './lib/openPortalSite.js'
 
 /**
@@ -84,6 +86,20 @@ const accessRequestHandlers = createAccessRequestHandlers({
 	// the answered request in its new state.
 	reload: () => window.location.reload(),
 })
+
+/**
+ * The `Check form` row action on the Request forms page
+ * (portal-intake-form-as-an-object T03): says which form a binding opens
+ * today, or that it opens none and why. See src/lib/formBindingPreview.js.
+ */
+const formBindingPreview = createFormBindingPreview({
+	post: (url, body) => axios.post(url, body),
+	generateUrl,
+	notify: showSuccess,
+	notifyWarning: showWarning,
+	notifyError: showError,
+	translate: (text, vars) => t('portaliq', text, vars),
+})
 // Features & Roadmap page — thin wrapper around the lib's
 // CnFeaturesAndRoadmapView (in-product roadmap surface powered by
 // OpenRegister's github-issue-proxy). Shipped wired-up so apps scaffolded
@@ -122,6 +138,10 @@ export default {
 	 * AccessRequestAdminController, and a grant also records the mandate.
 	 */
 	...accessRequestHandlers,
+	/**
+	 * `Check form` row action on the Request forms index page.
+	 */
+	...formBindingPreview,
 	// Features & Roadmap page (lib's CnFeaturesAndRoadmapView) — wired up
 	// in src/manifest.json (the `FeaturesRoadmap` custom page + the
 	// `FeaturesRoadmapMenu` settings entry).

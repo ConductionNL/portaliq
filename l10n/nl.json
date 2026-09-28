@@ -1591,7 +1591,15 @@
         "The in-site route: the built-in site's `route` parameter, else the URL path. Query stripped, no trailing slash.": "De route binnen de site: de `route`-parameter van de ingebouwde site, anders het URL-pad. Zonder querystring en zonder slash aan het eind.",
         "The link clicked.": "De aangeklikte link.",
         "Server-managed. One entry per language this newsletter's title was translated into by AI: the translated title (as both text and title), the source language, the model, a reference to this newsletter and the disclosure sentence. The title stays as written.": "Beheerd door de server. Eén item per taal waarin de titel van deze nieuwsbrief door AI is vertaald: de vertaalde titel (als tekst en als titel), de brontaal, het model, een verwijzing naar deze nieuwsbrief en de toelichtende zin. De titel blijft zoals hij geschreven is.",
-        "Server-managed. One entry per language this news item was translated into by AI: the translated text, the translated title, the source language, the model, a reference to this item and the disclosure sentence. The title and body stay as written.": "Beheerd door de server. Eén item per taal waarin dit nieuwsbericht door AI is vertaald: de vertaalde tekst, de vertaalde titel, de brontaal, het model, een verwijzing naar dit bericht en de toelichtende zin. De titel en de tekst blijven zoals ze geschreven zijn."
+        "Server-managed. One entry per language this news item was translated into by AI: the translated text, the translated title, the source language, the model, a reference to this item and the disclosure sentence. The title and body stay as written.": "Beheerd door de server. Eén item per taal waarin dit nieuwsbericht door AI is vertaald: de vertaalde tekst, de vertaalde titel, de brontaal, het model, een verwijzing naar dit bericht en de toelichtende zin. De titel en de tekst blijven zoals ze geschreven zijn.",
+        "Request forms": "Aanvraagformulieren",
+        "Check form": "Formulier controleren",
+        "This entry opens \"{form}\" today.": "Deze ingang opent vandaag \"{form}\".",
+        "This entry sends people to {destination}. Nothing arrives here.": "Deze ingang stuurt mensen naar {destination}. Hier komt niets binnen.",
+        "This entry sends people to another website, but has no address. Nobody can start it.": "Deze ingang stuurt mensen naar een andere website, maar heeft geen adres. Niemand kan hem starten.",
+        "This entry opens no form today. It asks for \"{form}\", and no form of that name is published to its audience.": "Deze ingang opent vandaag geen formulier. Hij vraagt om \"{form}\", en geen formulier met die naam is gepubliceerd voor zijn doelgroep.",
+        "This entry opens no form today. No published form matches its case type and audience.": "Deze ingang opent vandaag geen formulier. Geen gepubliceerd formulier past bij het zaaktype en de doelgroep.",
+        "Could not check which form this entry opens. Try again.": "Kon niet controleren welk formulier deze ingang opent. Probeer het opnieuw."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

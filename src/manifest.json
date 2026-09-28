@@ -84,6 +84,13 @@
       "order": 35
     },
     {
+      "id": "FormBindingsMenu",
+      "label": "Request forms",
+      "icon": "FormSelect",
+      "route": "FormBindings",
+      "order": 36
+    },
+    {
       "id": "Themes",
       "label": "Themes",
       "icon": "Palette",
@@ -1864,6 +1871,48 @@
             "icon": "Close",
             "type": "handler",
             "handler": "refuseAccessRequest"
+          }
+        ]
+      }
+    },
+    {
+      "id": "FormBindings",
+      "route": "/form-bindings",
+      "type": "index",
+      "title": "Request forms",
+      "config": {
+        "register": "portaliq",
+        "schema": "portalFormBinding",
+        "_note": "Which form each portal entry opens (portal-intake-form-as-an-object T03). The row shows the binding as configured, which reads the same whether its form is published or not; Check form asks FormBindingAdminController for the form it resolves to today. See src/lib/formBindingPreview.js.",
+        "columns": [
+          "portal",
+          "route",
+          "audience",
+          "formName",
+          "intakeKind",
+          {
+            "key": "status",
+            "label": "Status",
+            "widget": "badge",
+            "widgetProps": {
+              "colorMap": {
+                "published": "success",
+                "draft": "warning"
+              }
+            }
+          }
+        ],
+        "sidebar": {
+          "enabled": true,
+          "showMetadata": true
+        },
+        "actions": [
+          {
+            "id": "check-form",
+            "label": "Check form",
+            "icon": "FormSelect",
+            "type": "handler",
+            "handler": "previewFormBinding"
           }
         ]
       }

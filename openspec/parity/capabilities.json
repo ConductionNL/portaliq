@@ -3728,9 +3728,9 @@
 				"evidence": "src/site/components/IntakeCatalogueBlock.vue lists GET /portal/api/intake/catalogue by topic and links each entry to the form page; src/site/components/IntakeFormBlock.vue renders GET /portal/api/intake/form and posts /portal/api/intake/submit (src/site/lib/intakeApi.js); both are on the public allow-list in src/site/components/WidgetGrid.vue and offered by the page designer (src/lib/pageWidgetCatalogue.js); tests/intake-entry.spec.mjs",
 				"reachedOn": "a public site page on which an editor placed the intakeCatalogue block, linking to a page with the intakeForm block",
 				"owner": "ConductionNL/portaliq",
-				"note": "This is the feature the 'intake' capability is named after in its own openspec change, and its entry point is unbuilt. The WORKING way a citizen actually submits a request today is the generic type:create action path (int-generic-create-action) or the embedded form (int-embedded-form), both of which reuse pieces of this backend (PortalIntakeQueue, PortalFormValidator) but bypass its own catalogue/form/status controller entirely. Moved building to built on 2026-09-28: the public site now reaches the intake endpoints (portal-intake-form-as-an-object T09). T03, the admin view of which form a binding resolves to, is still open.",
+				"note": "This is the feature the 'intake' capability is named after in its own openspec change, and its entry point is unbuilt. The WORKING way a citizen actually submits a request today is the generic type:create action path (int-generic-create-action) or the embedded form (int-embedded-form), both of which reuse pieces of this backend (PortalIntakeQueue, PortalFormValidator) but bypass its own catalogue/form/status controller entirely. Moved building to built on 2026-09-28: the public site now reaches the intake endpoints (portal-intake-form-as-an-object T09). T03, the admin view of which form a binding resolves to, landed on 2026-09-28 as the admin app's Request forms page and its Check form action.",
 				"origin": "code",
-				"change": "portal-intake-form-as-an-object"
+				"change": "2026-09-28-portal-intake-form-as-an-object"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3759,9 +3759,9 @@
 				"evidence": "src/site/components/IntakeStatusBlock.vue posts the reference to GET /portal/api/intake/status and reads queued, registered or failed as a sentence (statusView in src/site/lib/intakeApi.js), and looks up a ?reference= parameter on mount; tests/intake-entry.spec.mjs",
 				"reachedOn": "a public site page with the intakeStatus block; the embedded form's followUrl lands on it when it sits on the home page",
 				"owner": "ConductionNL/portaliq",
-				"note": "A citizen who submits through the embedded form is shown the reference once, inline, on the same page (EmbeddedForm.jsx confirmation state) but has no way to come back later and check it. Moved building to built on 2026-09-28: the public site now reaches the intake endpoints (portal-intake-form-as-an-object T09). T03, the admin view of which form a binding resolves to, is still open.",
+				"note": "A citizen who submits through the embedded form is shown the reference once, inline, on the same page (EmbeddedForm.jsx confirmation state) but has no way to come back later and check it. Moved building to built on 2026-09-28: the public site now reaches the intake endpoints (portal-intake-form-as-an-object T09). T03, the admin view of which form a binding resolves to, landed on 2026-09-28 as the admin app's Request forms page and its Check form action.",
 				"origin": "code",
-				"change": "portal-intake-form-as-an-object"
+				"change": "2026-09-28-portal-intake-form-as-an-object"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3790,9 +3790,9 @@
 				"evidence": "src/site/components/IntakeFormBlock.vue loads the form with the site's portal bearer (adoptSessionToken), so PortalIntakeController::form() answers PortalApplicantPrefill::forSubject() for a signed-in visitor and initialValues() fills the fields; an anonymous visitor sends no bearer and gets presets only; tests/intake-entry.spec.mjs",
 				"reachedOn": "the intakeForm block on a public site page, signed in through the site's sign-in routes",
 				"owner": "ConductionNL/portaliq",
-				"note": "Built and unit-tested per the change's own task list, but stranded behind the same unreached controller. Moved building to built on 2026-09-28: the public site now reaches the intake endpoints (portal-intake-form-as-an-object T09). T03, the admin view of which form a binding resolves to, is still open.",
+				"note": "Built and unit-tested per the change's own task list, but stranded behind the same unreached controller. Moved building to built on 2026-09-28: the public site now reaches the intake endpoints (portal-intake-form-as-an-object T09). T03, the admin view of which form a binding resolves to, landed on 2026-09-28 as the admin app's Request forms page and its Check form action.",
 				"origin": "code",
-				"change": "portal-intake-form-as-an-object"
+				"change": "2026-09-28-portal-intake-form-as-an-object"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4002,9 +4002,9 @@
 				"evidence": "see int-applicant-prefill-unreached: src/site/components/IntakeFormBlock.vue sends the bearer and fills the fields from the prefill the endpoint answers",
 				"reachedOn": "the intakeForm block on a public site page, signed in",
 				"owner": "ConductionNL/portaliq",
-				"note": "Duplicate of int-applicant-prefill-unreached, kept as its own row because it is a named competitor capability. Moved building to built on 2026-09-28: the public site now reaches the intake endpoints (portal-intake-form-as-an-object T09). T03, the admin view of which form a binding resolves to, is still open.",
+				"note": "Duplicate of int-applicant-prefill-unreached, kept as its own row because it is a named competitor capability. Moved building to built on 2026-09-28: the public site now reaches the intake endpoints (portal-intake-form-as-an-object T09). T03, the admin view of which form a binding resolves to, landed on 2026-09-28 as the admin app's Request forms page and its Check form action.",
 				"origin": "competitor",
-				"change": "portal-intake-form-as-an-object"
+				"change": "2026-09-28-portal-intake-form-as-an-object"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4184,9 +4184,9 @@
 				"evidence": "src/site/components/IntakeCatalogueBlock.vue lists the published catalogue by topic with each entry's title and summary; conditions and costs show only as far as an editor writes them into the summary, the catalogue entry carries no structured conditions or cost fields",
 				"reachedOn": "a public site page with the intakeCatalogue block",
 				"owner": "ConductionNL/portaliq",
-				"note": "Kept as its own row because it is a named competitor capability distinct from starting one specific form. Moved building to built on 2026-09-28: the public site now reaches the intake endpoints (portal-intake-form-as-an-object T09). T03, the admin view of which form a binding resolves to, is still open.",
+				"note": "Kept as its own row because it is a named competitor capability distinct from starting one specific form. Moved building to built on 2026-09-28: the public site now reaches the intake endpoints (portal-intake-form-as-an-object T09). T03, the admin view of which form a binding resolves to, landed on 2026-09-28 as the admin app's Request forms page and its Check form action.",
 				"origin": "competitor",
-				"change": "portal-intake-form-as-an-object"
+				"change": "2026-09-28-portal-intake-form-as-an-object"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
