@@ -63,7 +63,10 @@ uses for admissions, which recon E names.
 
 A shillinq `PaymentRequest` has one debtor, so the reference sits on the
 sign-up (`paymentRequestRef`), and the activity only says a payment is
-requested. Portaliq stores no amount (D19).
+requested. Portaliq stores no amount (D19). Amended by
+`activity-offer-contract-fix`: portaliq raises through shillinq and writes the
+reference itself; the request's subject is the activity, the child the
+beneficiary.
 
 ### D5: A guardian signs up only their own child
 
