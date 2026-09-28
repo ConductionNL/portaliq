@@ -119,6 +119,27 @@ if (!defined('OC_CONSOLE') && $portaliqNcRoot !== null) {
 	}
 }
 
+// OpenRegister outside the container. Listener tests build OpenRegister's REAL
+// event and entity classes (a faked event once hid a wrong accessor that made
+// every object update 500). Inside the container Nextcloud loads them; outside
+// it, point PORTALIQ_OPENREGISTER_LIB at an openregister checkout's lib/ and
+// they autoload from there. Without either, those tests skip and say why.
+$portaliqOrLib = getenv('PORTALIQ_OPENREGISTER_LIB');
+if (is_string($portaliqOrLib) === true && $portaliqOrLib !== '' && is_dir($portaliqOrLib) === true) {
+	spl_autoload_register(
+		static function (string $class) use ($portaliqOrLib): void {
+			if (str_starts_with($class, 'OCA\\OpenRegister\\') === false) {
+				return;
+			}
+
+			$file = rtrim($portaliqOrLib, '/') . '/' . str_replace('\\', '/', substr($class, strlen('OCA\\OpenRegister\\'))) . '.php';
+			if (is_file($file) === true) {
+				require_once $file;
+			}
+		}
+	);
+}
+
 // OCP outside the container. `nextcloud/ocp` ships the public API as plain
 // PSR-4 files but declares no `autoload` block of its own, so Composer never
 // maps `OCP\` and every test that doubles an OCP interface dies with "Class or

@@ -63,10 +63,12 @@ class PortalFileWriter {
 	 *
 	 * @param ContainerInterface $container For resolving OpenRegister's FileService.
 	 * @param LoggerInterface $logger The logger.
+	 * @param PortalWriteContext|null $writeContext Marks this writer's attaches as portaliq's own.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
+		private readonly ?PortalWriteContext $writeContext = null,
 	) {
 	}//end __construct()
 
@@ -114,13 +116,13 @@ class PortalFileWriter {
 		}
 
 		try {
-			$file = $fileService->addFile(
+			$file = $this->insideWriteContext(write: static fn () => $fileService->addFile(
 				objectEntity: $entity,
 				fileName: $fileName,
 				content: $content,
 				_schema: $schema,
 				_register: $register
-			);
+			));
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: OR file attach failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
 			return null;
@@ -213,4 +215,22 @@ class PortalFileWriter {
 			return null;
 		}//end try
 	}//end resolveObjectEntity()
+
+	/**
+	 * Run an OpenRegister write inside the write context, so the change
+	 * listener knows portaliq itself made it.
+	 *
+	 * @param callable $write The write.
+	 *
+	 * @return mixed What the write returned.
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-is-not-told-about-their-own-change-req-nap-003
+	 */
+	private function insideWriteContext(callable $write): mixed {
+		if ($this->writeContext === null) {
+			return $write();
+		}
+
+		return $this->writeContext->run(write: $write);
+	}//end insideWriteContext()
 }//end class

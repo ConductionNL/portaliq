@@ -49,6 +49,7 @@ use OCA\Portaliq\Listener\LandingPageRequestedEventListener;
 use OCA\Portaliq\Listener\LandingPageSubmissionDispatchListener;
 use OCA\Portaliq\Listener\PortalAccountClaimListener;
 use OCA\Portaliq\Listener\PortalAccountProvisionListener;
+use OCA\Portaliq\Listener\PortalRecordChangeListener;
 use OCA\Portaliq\Middleware\PortalAuthMiddleware;
 use OCA\Portaliq\Middleware\PublicApiCorsMiddleware;
 use OCA\Portaliq\Notification\Notifier;
@@ -142,6 +143,14 @@ class Application extends App implements IBootstrap {
 		// editor sees a broken site and is right.
 		foreach ([ObjectCreatedEvent::class, ObjectUpdatedEvent::class, ObjectDeletedEvent::class] as $event) {
 			$context->registerEventListener($event, CmsCacheInvalidationListener::class);
+		}
+
+		// Tell a resident when a record they follow changes, or when a case
+		// app writes to their inbox (inbox-notifications-and-preferences). The
+		// listener's first check is a lookup built once per request, and it
+		// never fails the save it listens to.
+		foreach ([ObjectCreatedEvent::class, ObjectUpdatedEvent::class] as $event) {
+			$context->registerEventListener($event, PortalRecordChangeListener::class);
 		}
 
 		// Landing-page-provisioning (ADR-041, contribution-landing-page-action):
