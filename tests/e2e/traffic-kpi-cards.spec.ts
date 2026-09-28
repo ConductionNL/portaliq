@@ -173,7 +173,7 @@ test.describe('traffic KPI cards', () => {
 			page
 				.getByTestId('portal-kpi-sessions')
 				.getByTestId('cn-stat-widget-range'),
-		).toHaveValue('')
+		).toHaveValue('30')
 		expect(await cardValue(page, 'portal-kpi-sessions')).toBe(thirty.sessions)
 	})
 
