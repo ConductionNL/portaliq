@@ -47,6 +47,7 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
+use OCA\Portaliq\Contribution\ActionScopeResolver;
 use OCA\Portaliq\Contribution\FileFieldConfigNormaliser;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\AuditTrailService;
@@ -1454,20 +1455,13 @@ class ContributionController extends Controller implements PortalProtected {
 		}
 
 		// A declared `subjectField` (portal-take-assessment) receives the
-		// subject's resolved scope from the server, over any client value; a
-		// scope that does not resolve stops the forward before it is made.
-		if (is_string($action['subjectField'] ?? null) === true) {
-			$whitelisted = $this->withSubjectField(action: $action, subject: $subject, appId: $appId, body: ($whitelisted ?? []));
-			if ($whitelisted === null) {
-				return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
-			}
-		}
-
-		// A declared `scopeClaim` rides, server-resolved, inside the signed
-		// assertion (case-actions-sign-a-document D3); a claim that does not
-		// resolve stops the forward before it is audited or made.
-		$scopeValue = $this->declaredScopeValue(action: $action, subject: $subject, appId: $appId);
-		if ($scopeValue === null) {
+		// subject's resolved scope from the server, over any client value, and
+		// a declared `scopeClaim` rides server-resolved inside the signed
+		// assertion (case-actions-sign-a-document D3). Either one that does
+		// not resolve stops the forward before it is audited or made.
+		$scoped = (new ActionScopeResolver(reader: $this->reader))
+			->prepare(action: $action, subject: $subject, appId: $appId, body: $whitelisted);
+		if ($scoped === null) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
@@ -1487,7 +1481,7 @@ class ContributionController extends Controller implements PortalProtected {
 			jti: (string)($subject['jti'] ?? '')
 		);
 
-		$response = $this->forwarder->forward(action: $action, subject: $subject, whitelisted: $whitelisted, scopeValue: $scopeValue);
+		$response = $this->forwarder->forward(action: $action, subject: $subject, whitelisted: $scoped['body'], scopeValue: $scoped['scopeValue']);
 		if ($response === null) {
 			// Transport failure — mirrors the writer's 502 posture. Never leak
 			// transport internals to the portal client.
@@ -1513,66 +1507,6 @@ class ContributionController extends Controller implements PortalProtected {
 
 		return new JSONResponse($decoded, $status);
 	}//end action()
-
-	/**
-	 * The forwarded body with the subject's resolved scope stamped under the
-	 * action's `subjectField`, or null when the scope does not resolve.
-	 *
-	 * The scope resolves the way reads do: the action's `scopeClaim` from the
-	 * subject's own portal account, else the subject reference. The stamp
-	 * overwrites whatever the client sent under that name, so a leaf app can
-	 * take the learner (or any scoped party) from the body without trusting
-	 * the browser.
-	 *
-	 * @param array<string, mixed> $action The authorised endpoint action.
-	 * @param array<string, mixed> $subject The resolved subject.
-	 * @param string $appId The contributing app (the claim namespace).
-	 * @param array<string, mixed> $body The whitelisted body.
-	 *
-	 * @return array<string, mixed>|null
-	 *
-	 * @spec openspec/changes/portal-take-assessment/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-receive-the-subjects-scope-from-the-server
-	 */
-	private function withSubjectField(array $action, array $subject, string $appId, array $body): ?array {
-		$value = $this->reader->resolveScopeValue(
-			scopeClaim: (string)($action['scopeClaim'] ?? ''),
-			contributingApp: $appId,
-			subject: $subject
-		);
-		if ($value === null || $value === '') {
-			return null;
-		}
-
-		$body[(string)$action['subjectField']] = $value;
-		return $body;
-	}//end withSubjectField()
-
-	/**
-	 * The server-resolved value of the action's declared `scopeClaim`, for
-	 * the signed assertion: '' when the action declares none, null when it
-	 * declares one that does not resolve for this subject (the forward stops).
-	 *
-	 * @param array<string, mixed> $action The authorised endpoint action.
-	 * @param array<string, mixed> $subject The resolved subject.
-	 * @param string $appId The contributing app (the claim namespace).
-	 *
-	 * @return string|null
-	 *
-	 * @spec openspec/changes/case-actions-sign-a-document/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
-	 */
-	private function declaredScopeValue(array $action, array $subject, string $appId): ?string {
-		$scopeClaim = ($action['scopeClaim'] ?? '');
-		if (is_string($scopeClaim) === false || $scopeClaim === '') {
-			return '';
-		}
-
-		$value = $this->reader->resolveScopeValue(scopeClaim: $scopeClaim, contributingApp: $appId, subject: $subject);
-		if ($value === null || $value === '') {
-			return null;
-		}
-
-		return $value;
-	}//end declaredScopeValue()
 
 	/**
 	 * Find an authorised endpoint action {appId, actionId} in the subject's

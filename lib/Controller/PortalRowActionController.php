@@ -36,6 +36,7 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
+use OCA\Portaliq\Contribution\ActionScopeResolver;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Contribution\RowActionResolver;
 use OCA\Portaliq\Service\AuditTrailService;
@@ -131,14 +132,6 @@ class PortalRowActionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		// A declared `scopeClaim` rides, server-resolved, inside the signed
-		// assertion (case-actions-sign-a-document D3), the way filinq's `sign`
-		// receives its `signerEmail`; unresolved, the forward stops here.
-		$scopeValue = $this->declaredScopeValue(match: $match, subject: $subject);
-		if ($scopeValue === null) {
-			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
-		}
-
 		// Recorded once the forward is authorised, whatever the leaf app then
 		// answers: the audited fact is that the subject invoked it (as
 		// ContributionController::action()).
@@ -152,7 +145,7 @@ class PortalRowActionController extends Controller implements PortalProtected {
 			jti: (string)($subject['jti'] ?? '')
 		);
 
-		$response = $this->forwarder->forward(action: $match['action'], subject: $subject, whitelisted: $body, scopeValue: $scopeValue);
+		$response = $this->forwarder->forward(action: $match['action'], subject: $subject, whitelisted: $body['body'], scopeValue: $body['scopeValue']);
 		if ($response === null) {
 			return new JSONResponse(['error' => 'forward_failed'], Http::STATUS_BAD_GATEWAY);
 		}
@@ -199,32 +192,6 @@ class PortalRowActionController extends Controller implements PortalProtected {
 
 		return null;
 	}//end authorisedRowAction()
-
-	/**
-	 * The server-resolved value of the row action's declared `scopeClaim`:
-	 * '' when it declares none, null when it declares one that does not
-	 * resolve for this subject.
-	 *
-	 * @param array{collection: array<string, mixed>, action: array<string, mixed>, app: string} $match The authorised row action.
-	 * @param array<string, mixed> $subject The resolved subject.
-	 *
-	 * @return string|null
-	 *
-	 * @spec openspec/changes/case-actions-sign-a-document/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
-	 */
-	private function declaredScopeValue(array $match, array $subject): ?string {
-		$scopeClaim = ($match['action']['scopeClaim'] ?? '');
-		if (is_string($scopeClaim) === false || $scopeClaim === '') {
-			return '';
-		}
-
-		$value = $this->reader->resolveScopeValue(scopeClaim: $scopeClaim, contributingApp: $match['app'], subject: $subject);
-		if ($value === null || $value === '') {
-			return null;
-		}
-
-		return $value;
-	}//end declaredScopeValue()
 
 	/**
 	 * The endpoint row action a collection offers under this id, or null.
@@ -299,13 +266,14 @@ class PortalRowActionController extends Controller implements PortalProtected {
 	/**
 	 * The forwarded body: the action's `fields` whitelist of the request
 	 * params, then the proven row id under `rowField`, then the resolved scope
-	 * under a declared `subjectField`. Null when that scope does not resolve.
+	 * under a declared `subjectField`, with the declared `scopeClaim`'s value
+	 * for the assertion. Null when either does not resolve.
 	 *
 	 * @param array{collection: array<string, mixed>, action: array<string, mixed>, app: string} $match The authorised row action.
 	 * @param array<string, mixed> $subject The resolved subject.
 	 * @param string $rowId The proven row id.
 	 *
-	 * @return array<string, mixed>|null
+	 * @return array{body: array<string, mixed>|null, scopeValue: string}|null The body and assertion scope value, or null (403).
 	 */
 	private function forwardBody(array $match, array $subject, string $rowId): ?array {
 		$action = $match['action'];
@@ -323,20 +291,12 @@ class PortalRowActionController extends Controller implements PortalProtected {
 
 		$body[(string)$action['rowField']] = $rowId;
 
-		if (is_string($action['subjectField'] ?? null) === true) {
-			$scope = $this->reader->resolveScopeValue(
-				scopeClaim: (string)($action['scopeClaim'] ?? ''),
-				contributingApp: $match['app'],
-				subject: $subject
-			);
-			if ($scope === null || $scope === '') {
-				return null;
-			}
-
-			$body[$action['subjectField']] = $scope;
-		}
-
-		return $body;
+		// A declared `subjectField` is stamped from the subject's scope and a
+		// declared `scopeClaim` rides in the signed assertion (the way
+		// filinq's `sign` receives its `signerEmail`); either one that does
+		// not resolve stops the forward.
+		return (new ActionScopeResolver(reader: $this->reader))
+			->prepare(action: $action, subject: $subject, appId: $match['app'], body: $body);
 	}//end forwardBody()
 
 	/**

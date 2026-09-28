@@ -241,12 +241,7 @@ class PortalJwtService {
 	 * @spec openspec/changes/case-actions-sign-a-document/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
 	 */
 	public static function scopeClaimName(string $scopeClaim): ?string {
-		$dot = strpos($scopeClaim, '.');
-		$name = $scopeClaim;
-		if ($dot !== false) {
-			$name = substr($scopeClaim, ($dot + 1));
-		}
-
+		$name = self::bareClaimName(scopeClaim: $scopeClaim);
 		if (preg_match('/^[a-z][a-zA-Z0-9_]*$/', $name) !== 1) {
 			return null;
 		}
@@ -257,6 +252,41 @@ class PortalJwtService {
 
 		return $name;
 	}//end scopeClaimName()
+
+	/**
+	 * Whether a declared scope claim names one of the nine frozen assertion
+	 * claims (case-actions-sign-a-document T03). Anything that is not a
+	 * non-empty string is not a declared claim and so not reserved.
+	 *
+	 * @param mixed $scopeClaim The declared `scopeClaim` value.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/case-actions-sign-a-document/tasks.md#T03
+	 */
+	public static function isReservedScopeClaim(mixed $scopeClaim): bool {
+		if (is_string($scopeClaim) === false || $scopeClaim === '') {
+			return false;
+		}
+
+		return in_array(self::bareClaimName(scopeClaim: $scopeClaim), self::RESERVED_ASSERTION_CLAIMS, true);
+	}//end isReservedScopeClaim()
+
+	/**
+	 * A scope claim without its app prefix: the part after the first `.`.
+	 *
+	 * @param string $scopeClaim The declared scope claim.
+	 *
+	 * @return string
+	 */
+	private static function bareClaimName(string $scopeClaim): string {
+		$dot = strpos($scopeClaim, '.');
+		if ($dot === false) {
+			return $scopeClaim;
+		}
+
+		return substr($scopeClaim, ($dot + 1));
+	}//end bareClaimName()
 
 	/**
 	 * Mint a reference session: read-only access to one case, for thirty
