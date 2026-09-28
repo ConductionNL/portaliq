@@ -106,4 +106,22 @@ final class PortalDeepLinkBuilderTest extends TestCase {
 
 		self::assertStringEndsWith('?org=Gemeente+%C3%9C%26co', $builder->forOrganisation('Gemeente Ãœ&co'));
 	}//end testTheTenantIsPassedToTheRouteTableVerbatimSoTheGeneratorEncodesIt()
+
+	/**
+	 * A notice about a record links to that record: the tenant link plus a
+	 * fragment the portal reads on load (REQ-NAP-005). A fragment never
+	 * reaches the server, so the record id stays out of access logs.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-notification-leads-to-the-record-req-nap-005
+	 */
+	public function testForRecordAddsTheFragment(): void {
+		$builder = $this->builder(['org' => 'venray'], '/apps/portaliq/portal?org=venray');
+
+		self::assertSame(
+			'https://portal.example.test/apps/portaliq/portal?org=venray#open=dossiq/mijnZaken/zaak%201',
+			$builder->forRecord('venray', 'dossiq', 'mijnZaken', 'zaak 1')
+		);
+	}//end testForRecordAddsTheFragment()
 }//end class

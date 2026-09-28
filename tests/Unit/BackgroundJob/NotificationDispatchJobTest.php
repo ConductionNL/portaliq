@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\BackgroundJob;
 
 use OCA\Portaliq\BackgroundJob\NotificationDispatchJob;
+use OCA\Portaliq\Service\Notifications\PushDeliveryService;
 use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
@@ -127,7 +128,7 @@ class NotificationDispatchJobTest extends TestCase {
 	 * A reader stub: `portalAccount` lookups return the given account row;
 	 * `portalNotification` lookups return the given prior-history rows.
 	 */
-	private function reader(?array $account, array $notificationHistory = []): PortalObjectReader {
+	private function reader(?array $account, array $notificationHistory = [], array $subscriptions = []): PortalObjectReader {
 		$reader = $this->createMock(PortalObjectReader::class);
 		$reader->method('readCollection')->willReturnCallback(
 			function (
@@ -137,9 +138,13 @@ class NotificationDispatchJobTest extends TestCase {
 				string $subjectRef,
 				string $organisation = '',
 				int $limit = 200,
-			) use ($account, $notificationHistory) {
+			) use ($account, $notificationHistory, $subscriptions) {
 				if ($schema === 'portalAccount') {
 					return ($account === null) ? [] : [$account];
+				}
+
+				if ($schema === 'pushSubscription') {
+					return $subscriptions;
 				}
 
 				return $notificationHistory;
@@ -542,4 +547,137 @@ class NotificationDispatchJobTest extends TestCase {
 		$this->addToAssertionCount(1);
 
 	}//end testAnExceptionAnywhereIsNeverPropagated()
+
+	/**
+	 * A job over the given account, capturing mail, log rows and pushes.
+	 *
+	 * @param array<string, mixed>             $account       The account.
+	 * @param array<int, array<string, mixed>> $created       Captured log rows.
+	 * @param array<string, mixed>             $captured      Captured mail.
+	 * @param array<int, array<string, mixed>> $pushes        Captured pushes.
+	 * @param array<int, array<string, mixed>> $subscriptions The account's push subscriptions.
+	 *
+	 * @return NotificationDispatchJob
+	 */
+	private function jobWithPush(array $account, array &$created, array &$captured, array &$pushes, array $subscriptions = []): NotificationDispatchJob {
+		$updated = [];
+		$push = $this->createMock(PushDeliveryService::class);
+		$push->method('deliver')->willReturnCallback(
+			function (string $subjectRef, string $title, string $body) use (&$pushes): bool {
+				$pushes[] = compact('subjectRef', 'title', 'body');
+				return true;
+			}
+		);
+
+		return new NotificationDispatchJob(
+			$this->timeFactory(),
+			$this->reader(account: $account, subscriptions: $subscriptions),
+			$this->writer(created: $created, updated: $updated),
+			$this->orgConfig(),
+			$this->mailer(captured: $captured, outcome: true),
+			$this->l10nFactory(),
+			$this->deepLinks(),
+			$this->config(),
+			$this->createMock(LoggerInterface::class),
+			$push
+		);
+	}//end jobWithPush()
+
+	/**
+	 * A change rule's e-mail names the collection label and links to the
+	 * record, and carries no field value (REQ-NAP-005, REQ-NAP-006).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-e-mail-says-what-kind-of-thing-happened-and-nothing-more-req-nap-006
+	 */
+	public function testChangeRuleTextCarriesNoCaseContent(): void {
+		$created = [];
+		$captured = [];
+		$pushes = [];
+		$job = $this->jobWithPush(account: ['@self' => ['id' => 'account-1'], 'email' => 'r@example.org'], created: $created, captured: $captured, pushes: $pushes);
+
+		$this->invokeRun($job, ['ruleKey' => 'case.updated', 'record' => ['app' => 'dossiq', 'collection' => 'mijnZaken', 'id' => 'z-1', 'label' => 'Mijn zaken']] + self::ARGUMENT);
+
+		$this->assertStringContainsString('Something changed on your Mijn zaken in the portal of Test Org', $captured['body']);
+		$this->assertStringContainsString('?org=org-1#open=dossiq/mijnZaken/z-1', $captured['body']);
+		$this->assertStringNotContainsString('new message', $captured['subject'].$captured['body']);
+		$this->assertStringNotContainsString('Afgewezen', $captured['subject'].$captured['body']);
+	}//end testChangeRuleTextCarriesNoCaseContent()
+
+	/**
+	 * E-mail off for case changes: no e-mail for a change rule.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-resident-chooses-per-kind-and-per-channel-req-nap-007
+	 */
+	public function testKindEmailOffSendsNoEmail(): void {
+		$created = [];
+		$captured = [];
+		$pushes = [];
+		$account = ['@self' => ['id' => 'account-1'], 'email' => 'r@example.org', 'notificationPreferences' => ['case.updated' => ['email' => false]]];
+		$job = $this->jobWithPush(account: $account, created: $created, captured: $captured, pushes: $pushes);
+
+		$this->invokeRun($job, ['ruleKey' => 'case.updated', 'record' => ['app' => 'dossiq', 'collection' => 'mijnZaken', 'id' => 'z-1', 'label' => 'Mijn zaken']] + self::ARGUMENT);
+
+		$this->assertArrayNotHasKey('to', $captured);
+		$this->assertSame([], $created);
+
+		// The same account still gets e-mail for a new message.
+		$this->invokeRun($job, self::ARGUMENT);
+		$this->assertSame(['r@example.org'], $captured['to']);
+	}//end testKindEmailOffSendsNoEmail()
+
+	/**
+	 * Push on for new messages, with a registered device: a push, logged with
+	 * channel `push`. Without a device, no push is attempted.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-resident-chooses-per-kind-and-per-channel-req-nap-007
+	 */
+	public function testKindPushOnSendsAPush(): void {
+		$created = [];
+		$captured = [];
+		$pushes = [];
+		$account = ['@self' => ['id' => 'account-1'], 'email' => 'r@example.org', 'notificationPreferences' => ['message.created' => ['email' => false, 'push' => true]]];
+		$job = $this->jobWithPush(account: $account, created: $created, captured: $captured, pushes: $pushes, subscriptions: [['endpoint' => 'https://push.example/1']]);
+
+		$this->invokeRun($job, self::ARGUMENT);
+
+		$this->assertArrayNotHasKey('to', $captured, 'e-mail is off for messages');
+		$this->assertCount(1, $pushes);
+		$this->assertSame('s1', $pushes[0]['subjectRef']);
+		$this->assertStringContainsString('Test Org', $pushes[0]['body']);
+		$this->assertCount(1, $created);
+		$this->assertSame('push', $created[0]['data']['channel']);
+		$this->assertSame('sent', $created[0]['data']['status']);
+
+		$none = [];
+		$noPush = [];
+		$noMail = [];
+		$withoutDevice = $this->jobWithPush(account: $account, created: $none, captured: $noMail, pushes: $noPush);
+		$this->invokeRun($withoutDevice, self::ARGUMENT);
+		$this->assertSame([], $noPush);
+	}//end testKindPushOnSendsAPush()
+
+	/**
+	 * The account-wide e-mail opt-out still wins over a kind's e-mail choice.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-resident-chooses-per-kind-and-per-channel-req-nap-007
+	 */
+	public function testGlobalEmailOptOutStillWins(): void {
+		$created = [];
+		$captured = [];
+		$pushes = [];
+		$account = ['@self' => ['id' => 'account-1'], 'email' => 'r@example.org', 'notificationChannels' => ['email' => false], 'notificationPreferences' => ['message.created' => ['email' => true]]];
+		$job = $this->jobWithPush(account: $account, created: $created, captured: $captured, pushes: $pushes);
+
+		$this->invokeRun($job, self::ARGUMENT);
+
+		$this->assertArrayNotHasKey('to', $captured);
+	}//end testGlobalEmailOptOutStillWins()
 }//end class
