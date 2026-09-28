@@ -429,6 +429,59 @@ class PortalSessionServiceTest extends TestCase {
 		return $hPart . '.' . $cPart . '.' . $sig;
 	}//end legacyTokenWithoutAuthTimeClaim()
 
+	/**
+	 * portaliq#796, identity-ways-in-screens D2: a redeemed reference link
+	 * opens a short session for one case. It resolves as a reference session
+	 * with its claim, and is refused as a portal session everywhere else.
+	 *
+	 * @return void
+	 */
+	public function testAReferenceSessionReadsOnlyAsAReferenceSession(): void {
+		$store = [];
+		$service = $this->service(store: $store);
+
+		$issued = $service->issueReferenceSession(linkId: 'link-1', caseReference: 'Z-2026-0042', organisation: 'gemeente-x', register: 'dossiq', schema: 'case');
+		$this->assertNotNull($issued);
+
+		$reference = $service->resolveReferenceFromBearer('Bearer ' . $issued['token']);
+		$this->assertSame('Z-2026-0042', $reference['caseReference']);
+		$this->assertSame('dossiq', $reference['register']);
+		$this->assertSame('case', $reference['schema']);
+		$this->assertSame('reference:' . hash('sha256', 'link-1'), $reference['subjectRef']);
+
+		// Not a portal session: every route that takes one refuses it, and it
+		// cannot be refreshed into one.
+		$this->assertNull($service->resolveFromBearer('Bearer ' . $issued['token']));
+		$this->assertNull($service->refreshSession('Bearer ' . $issued['token']));
+
+		// Thirty minutes, not the two hours of a portal session.
+		$lifetime = (new \DateTimeImmutable($issued['expiresAt']))->getTimestamp() - time();
+		$this->assertLessThanOrEqual(1800, $lifetime);
+		$this->assertGreaterThan(1700, $lifetime);
+
+	}//end testAReferenceSessionReadsOnlyAsAReferenceSession()
+
+	public function testAPortalSessionIsNotAReferenceSession(): void {
+		$store = [];
+		$service = $this->service(store: $store);
+
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'client', organisation: 'gemeente-x');
+
+		$this->assertNull($service->resolveReferenceFromBearer('Bearer ' . $issued['token']));
+
+	}//end testAPortalSessionIsNotAReferenceSession()
+
+	public function testARevokedReferenceSessionReadsNothing(): void {
+		$store = [];
+		$service = $this->service(store: $store);
+		$issued = $service->issueReferenceSession(linkId: 'link-1', caseReference: 'Z-2026-0042', organisation: 'gemeente-x', register: 'dossiq', schema: 'case');
+
+		$service->revoke($issued['jti']);
+
+		$this->assertNull($service->resolveReferenceFromBearer('Bearer ' . $issued['token']));
+
+	}//end testARevokedReferenceSessionReadsNothing()
+
 	public function testIssueSessionRecordsALoginAuditEntry(): void {
 		// record(verb, subjectRef, organisation, register, schema, id, jti[, appId]);
 		// login supplies exactly 7 (appId defaults), the new session's jti in

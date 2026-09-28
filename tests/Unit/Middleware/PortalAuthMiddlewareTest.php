@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Middleware;
 
 use OCA\Portaliq\Auth\PortalProtected;
+use OCA\Portaliq\Auth\PortalReadOnlySessionException;
 use OCA\Portaliq\Auth\PortalUnauthorizedException;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\PortalAccountSelfController;
@@ -93,6 +94,29 @@ class PortalAuthMiddlewareTest extends TestCase {
 		$mw->beforeController($controller, 'updateDetails');
 
 	}//end testTheBearersOwnAccountStaysBehindTheBearerGate()
+
+	/**
+	 * portaliq#796, identity-ways-in-screens D2: a reference session reads
+	 * its one case and nothing else. Every protected route, an amend among
+	 * them, refuses it with a 403 before the controller runs.
+	 *
+	 * @return void
+	 */
+	public function testAReferenceSessionIsRefusedOnEveryProtectedRoute(): void {
+		$session = $this->createMock(PortalSessionService::class);
+		$session->method('resolveFromBearer')->willReturn(null);
+		$session->method('resolveReferenceFromBearer')->willReturn(['caseReference' => 'Z-2026-0042']);
+		$mw = $this->middleware($session, $this->registry([]));
+
+		try {
+			$mw->beforeController($this->protectedController(), 'update');
+			$this->fail('a reference session reached a protected route');
+		} catch (PortalReadOnlySessionException $refused) {
+			$response = $mw->afterException($this->protectedController(), 'update', $refused);
+			$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		}
+
+	}//end testAReferenceSessionIsRefusedOnEveryProtectedRoute()
 
 	public function testAfterExceptionConvertsAuthFailureTo401(): void {
 		$mw = $this->middleware($this->session(null), $this->registry([]));
