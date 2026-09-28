@@ -17,7 +17,7 @@ import { useEffect, useState } from 'react'
  * @param {{onBehalfOf: string, reason: string}} draft The form values.
  * @return {string} The problem, or ''.
  *
- * @spec openspec/changes/identity-access-requests/specs/portal-access-requests/spec.md#requirement-you-ask-for-access-and-follow-your-request-req-iar-001
+ * @spec openspec/specs/portal-access-requests/spec.md#requirement-you-ask-for-access-and-follow-your-request-req-iar-001
  */
 export function requestProblem(draft) {
 	if (String(draft?.onBehalfOf || '').trim() === '') {
@@ -37,7 +37,7 @@ export function requestProblem(draft) {
  * @param {Array<object>} requests The requests.
  * @return {Array<object>} A sorted copy.
  *
- * @spec openspec/changes/identity-access-requests/specs/portal-access-requests/spec.md#requirement-you-ask-for-access-and-follow-your-request-req-iar-001
+ * @spec openspec/specs/portal-access-requests/spec.md#requirement-you-ask-for-access-and-follow-your-request-req-iar-001
  */
 export function newestFirst(requests) {
 	const stamp = (request) => {
@@ -57,7 +57,7 @@ export function newestFirst(requests) {
  * @param {string} state The stored state.
  * @return {string} The label key.
  *
- * @spec openspec/changes/identity-access-requests/specs/portal-access-requests/spec.md#requirement-you-ask-for-access-and-follow-your-request-req-iar-001
+ * @spec openspec/specs/portal-access-requests/spec.md#requirement-you-ask-for-access-and-follow-your-request-req-iar-001
  */
 export function stateLabel(state) {
 	if (state === 'granted') {
@@ -103,7 +103,7 @@ function formatDate(value, locale) {
  * @param {Array<object>|null} [props.initialRequests] Requests to show without fetching (test seam).
  * @return {object} The element.
  *
- * @spec openspec/changes/identity-access-requests/specs/portal-access-requests/spec.md#requirement-you-ask-for-access-and-follow-your-request-req-iar-001
+ * @spec openspec/specs/portal-access-requests/spec.md#requirement-you-ask-for-access-and-follow-your-request-req-iar-001
  */
 export default function AccessRequestsPage({
 	api,

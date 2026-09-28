@@ -21,7 +21,7 @@ use PHPUnit\Framework\TestCase;
  * and assert it reaches `forOwner()`, `grant()` and `refuse()`, and that a
  * Nextcloud user without `portal.answer-access-request` reaches none of them.
  *
- * @spec openspec/changes/identity-access-requests/specs/portal-access-requests/spec.md
+ * @spec openspec/specs/portal-access-requests/spec.md
  */
 class AccessRequestAdminControllerTest extends TestCase {
 

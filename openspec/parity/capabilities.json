@@ -1366,7 +1366,7 @@
 			"id": "id-request-access",
 			"area": "identity",
 			"name": "Ask for access to an organisation's cases you do not already hold.",
-			"portaliq": "no",
+			"portaliq": "yes",
 			"open-inwoner": "no",
 			"nl-portal": "no",
 			"xxllnc-pip": "no",
@@ -1380,12 +1380,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/sites/site-membership/changing-site-membership-type 'Restricted: The site appears in the My Sites application, but users must request membership to join.' This is access to a site, not to an organisation's cases. [was unknown]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "lib/Controller/PortalAccountSelfController.php:165 requestAccess(); appinfo/routes.php:202; lib/Service/Identity/PortalAccessRequestService.php",
-				"reachedOn": "nothing reaches it: no frontend calls /portal/api/identity/access-requests (POST)",
+				"state": "built",
+				"evidence": "src/portal/components/AccessRequestsPage.jsx form posts through requestAccess() in src/portal/lib/portalApi.js to POST /portal/api/identity/access-requests (PortalAccountSelfController::requestAccess); a request without a reason is refused before and by the server; the owner answers on the Access requests page (AccessRequestAdminController, PR 835); tests/access-request-asker.spec.mjs, tests/e2e/identity-access-requests.spec.ts",
+				"reachedOn": "portal SPA navigation entry 'Access to cases' (src/portal/App.jsx, special 'access'), offered to every signed-in user",
 				"owner": "ConductionNL/portaliq",
-				"note": "tasks.md T12 'ask for access you do not have' marked done; the only exerciser is the API-only e2e spec. Specified in openspec/changes/identity-access-requests (OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"note": "Built 2026-09-28: the owner's side in PR 835, the asker's page in the identity-access-requests close-out PR. The page is its own portal entry because 'My cases' and 'My account' do not exist in the portal SPA yet.",
+				"origin": "code",
+				"change": "2026-09-28-identity-access-requests"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1396,7 +1397,7 @@
 			"id": "id-my-access-requests",
 			"area": "identity",
 			"name": "See the access requests you have made and how they were answered.",
-			"portaliq": "no",
+			"portaliq": "yes",
 			"open-inwoner": "no",
 			"nl-portal": "no",
 			"xxllnc-pip": "no",
@@ -1410,12 +1411,13 @@
 				"liferay-dxp": "not settled from docs: https://learn.liferay.com/w/dxp/sites/site-membership/adding-members-to-sites describes requesting to join via My Sites but not a list where the requester sees how requests were answered."
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "lib/Controller/PortalAccountSelfController.php:194 myAccessRequests(); appinfo/routes.php:203",
-				"reachedOn": "nothing reaches it: no frontend calls /portal/api/identity/access-requests (GET)",
+				"state": "built",
+				"evidence": "src/portal/components/AccessRequestsPage.jsx lists fetchMyAccessRequests() (GET /portal/api/identity/access-requests) newest first with the state in words and, for a refusal, the decisionReason; tests/access-request-asker.spec.mjs, tests/e2e/identity-access-requests.spec.ts",
+				"reachedOn": "portal SPA 'Access to cases' page, under the request form",
 				"owner": "ConductionNL/portaliq",
-				"note": "Read side of id-request-access, equally unreached. Specified in openspec/changes/identity-access-requests (OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"note": "Built 2026-09-28: the owner's side in PR 835, the asker's page in the identity-access-requests close-out PR. The page is its own portal entry because 'My cases' and 'My account' do not exist in the portal SPA yet.",
+				"origin": "code",
+				"change": "2026-09-28-identity-access-requests"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",

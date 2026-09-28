@@ -261,7 +261,7 @@ class PortalAccessRequestService {
 	 *
 	 * @return string One of the OUTCOME_* constants.
 	 *
-	 * @spec openspec/changes/identity-access-requests/specs/portal-access-requests/spec.md#requirement-a-granted-request-opens-the-cases-req-iar-003
+	 * @spec openspec/specs/portal-access-requests/spec.md#requirement-a-granted-request-opens-the-cases-req-iar-003
 	 */
 	public function grant(string $id, string $organisation, string $decidedBy): string {
 		$request = $this->pendingRequest(id: $id, organisation: $organisation);
@@ -321,7 +321,7 @@ class PortalAccessRequestService {
 	 *
 	 * @return string One of the OUTCOME_* constants.
 	 *
-	 * @spec openspec/changes/identity-access-requests/specs/portal-access-requests/spec.md#requirement-staff-answer-the-requests-of-their-organisation-req-iar-002
+	 * @spec openspec/specs/portal-access-requests/spec.md#requirement-staff-answer-the-requests-of-their-organisation-req-iar-002
 	 */
 	public function refuse(string $id, string $organisation, string $reason, string $decidedBy): string {
 		if (trim($reason) === '') {

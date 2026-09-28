@@ -295,7 +295,7 @@ export function createPortalApi(config) {
 		 * @param {string} reason What the asker needs the access for.
 		 * @return {Promise<{ok: boolean, error: string}>} The outcome.
 		 *
-		 * @spec openspec/changes/identity-access-requests/specs/portal-access-requests/spec.md#requirement-you-ask-for-access-and-follow-your-request-req-iar-001
+		 * @spec openspec/specs/portal-access-requests/spec.md#requirement-you-ask-for-access-and-follow-your-request-req-iar-001
 		 */
 		async requestAccess(onBehalfOf, reason) {
 			try {
@@ -325,7 +325,7 @@ export function createPortalApi(config) {
 		 *
 		 * @return {Promise<Array<object>>} The requests, or `[]`.
 		 *
-		 * @spec openspec/changes/identity-access-requests/specs/portal-access-requests/spec.md#requirement-you-ask-for-access-and-follow-your-request-req-iar-001
+		 * @spec openspec/specs/portal-access-requests/spec.md#requirement-you-ask-for-access-and-follow-your-request-req-iar-001
 		 */
 		async fetchMyAccessRequests() {
 			try {

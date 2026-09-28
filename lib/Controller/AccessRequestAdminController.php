@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/identity-access-requests/specs/portal-access-requests/spec.md
+ * @spec openspec/specs/portal-access-requests/spec.md
  */
 
 declare(strict_types=1);
@@ -43,7 +43,7 @@ use OCP\IUserSession;
 /**
  * Lists, grants and refuses access requests, for staff holding the action.
  *
- * @spec openspec/changes/identity-access-requests/specs/portal-access-requests/spec.md
+ * @spec openspec/specs/portal-access-requests/spec.md
  */
 class AccessRequestAdminController extends Controller {
 	/**
@@ -79,7 +79,7 @@ class AccessRequestAdminController extends Controller {
 	 *
 	 * @return JSONResponse The requests, or 401 / 403.
 	 *
-	 * @spec openspec/changes/identity-access-requests/specs/portal-access-requests/spec.md#requirement-staff-answer-the-requests-of-their-organisation-req-iar-002
+	 * @spec openspec/specs/portal-access-requests/spec.md#requirement-staff-answer-the-requests-of-their-organisation-req-iar-002
 	 */
 	#[NoAdminRequired]
 	public function index(string $organisation = '', string $state = 'pending'): JSONResponse {
@@ -109,7 +109,7 @@ class AccessRequestAdminController extends Controller {
 	 *
 	 * @return JSONResponse The new state, or 401 / 403 / 404 / 409 / 502.
 	 *
-	 * @spec openspec/changes/identity-access-requests/specs/portal-access-requests/spec.md#requirement-a-granted-request-opens-the-cases-req-iar-003
+	 * @spec openspec/specs/portal-access-requests/spec.md#requirement-a-granted-request-opens-the-cases-req-iar-003
 	 */
 	#[NoAdminRequired]
 	public function grant(string $id, string $organisation): JSONResponse {
@@ -132,7 +132,7 @@ class AccessRequestAdminController extends Controller {
 	 *
 	 * @return JSONResponse The new state, or 400 / 401 / 403 / 404 / 409.
 	 *
-	 * @spec openspec/changes/identity-access-requests/specs/portal-access-requests/spec.md#requirement-staff-answer-the-requests-of-their-organisation-req-iar-002
+	 * @spec openspec/specs/portal-access-requests/spec.md#requirement-staff-answer-the-requests-of-their-organisation-req-iar-002
 	 */
 	#[NoAdminRequired]
 	public function refuse(string $id, string $organisation, string $reason = ''): JSONResponse {
