@@ -124,6 +124,20 @@ test.describe('identity-access-requests', () => {
 		const id = row?.id || row?.uuid
 		expect(id, 'the request carries an id').toBeTruthy()
 
+		// @e2e portal-access-requests::a-clerk-refuses-without-a-reason
+		const withoutReason = await request.post(
+			`/apps/portaliq/api/access-requests/${id}/refuse`,
+			{
+				headers: STAFF_HEADERS,
+				data: { organisation: 'dev-org', reason: '' },
+			},
+		)
+		expect(withoutReason.status()).toBe(400)
+		const stillPending = (await myRequests(request, token)).find(
+			(r) => r.onBehalfOf === party,
+		)
+		expect(stillPending?.state).toBe('pending')
+
 		const refused = await request.post(
 			`/apps/portaliq/api/access-requests/${id}/refuse`,
 			{

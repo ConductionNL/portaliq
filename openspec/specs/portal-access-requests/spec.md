@@ -39,6 +39,9 @@ found.
 - **THEN** the refusal is not saved and the dialog reads "Give a reason for the refusal."
 
 #### Scenario: A colleague without the action cannot answer
+
+@e2e exclude needs a second Nextcloud user without the action; the 403 and the untouched request are covered by PHPUnit AccessRequestAdminControllerTest::testAUserWithoutTheActionGets403AndReachesNothing
+
 - **GIVEN** a Nextcloud user without `portal.answer-access-request`
 - **WHEN** they call `POST /apps/portaliq/api/access-requests/{id}/grant`
 - **THEN** the answer is 403 and the request stays pending
@@ -50,6 +53,9 @@ the named party, so the party's cases appear on the asker's "My cases". A grant
 SHALL NOT read as granted when the mandate could not be recorded.
 
 #### Scenario: After a grant the cases appear
+
+@e2e exclude the portal has no "My cases" page yet (cases-my-cases-page); the mandate the grant writes is covered by PHPUnit PortalAccessRequestServiceTest::testAGrantRecordsTheMandateThatOpensTheCases and testAGrantWhoseMandateFailsLeavesTheRequestPending
+
 - **GIVEN** a pending request from a bookkeeper for company 87654321
 - **WHEN** a clerk grants it
 - **THEN** the bookkeeper's "My cases" lists the cases of 87654321, labelled "Granted on request"
