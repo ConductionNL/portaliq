@@ -1438,5 +1438,14 @@
 		"reason": "Matrix corrected. The portaliq half shipped in portal-scope-list-membership (PR 750): a list scope field matches when it contains the subject's ref, which is what learniq's guardianRefs scope needs.",
 		"change": "portal-scope-list-membership",
 		"decidedOn": "2026-09-28"
+	},
+	{
+		"row": "dem-tnd-sign-in-portal",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Building row, missing half checked under the 29 Sep addendum. Tender demand, so build. The portaliq half is archived (2026-09-28-case-actions-sign-a-document); the missing half is three declarations in filinq's PortalContributionProvider, owed by ConductionNL/filinq and tracked in filinq#1256. No portaliq change is written for it.",
+		"change": "2026-09-28-case-actions-sign-a-document",
+		"owner": "ConductionNL/filinq",
+		"decidedOn": "2026-09-28"
 	}
 ]
