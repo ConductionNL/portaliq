@@ -108,6 +108,11 @@ class PortalSessionService {
 	private const DEFAULT_MAX_LIFETIME = 28800;
 
 	/**
+	 * The subject prefix of a reference session: `reference:<hash of the link id>`.
+	 */
+	private const REFERENCE_SUBJECT_PREFIX = 'reference:';
+
+	/**
 	 * The token minter/validator, built from the configured signing secret, or
 	 * null when no dedicated secret is configured yet (fail-closed window
 	 * between install and the repair step generating one).
@@ -449,6 +454,121 @@ class PortalSessionService {
 			'authTime' => (int)($claims['authTime'] ?? 0),
 		];
 	}//end resolveFromBearer()
+
+	/**
+	 * Mint the short, read-only session a redeemed reference link opens
+	 * (identity-ways-in-screens D2). It carries `use: reference`, so
+	 * `resolveFromBearer()` refuses it like any special-use token and no
+	 * route that takes a portal session accepts it; only the reference read
+	 * does, through `resolveReferenceFromBearer()`. It is recorded for
+	 * revocation and never refreshed.
+	 *
+	 * @param string $linkId The spent link's id; the subject is its hash.
+	 * @param string $caseReference The case number the session may read.
+	 * @param string $organisation The tenant.
+	 * @param string $register The case collection's register.
+	 * @param string $schema The case collection's schema.
+	 *
+	 * @return array{token: string, jti: string, expiresAt: string}|null Null
+	 *         when the auth edge is not configured or a field is empty.
+	 *
+	 * @spec openspec/changes/identity-ways-in-screens/design.md
+	 */
+	public function issueReferenceSession(string $linkId, string $caseReference, string $organisation, string $register, string $schema): ?array {
+		if ($this->jwt === null || in_array('', [$linkId, $caseReference, $organisation, $register, $schema], true) === true) {
+			return null;
+		}
+
+		$subjectRef = self::REFERENCE_SUBJECT_PREFIX . hash('sha256', $linkId);
+		$jti = $this->random->generate(32, (ISecureRandom::CHAR_LOWER . ISecureRandom::CHAR_DIGITS));
+		$now = new DateTimeImmutable();
+		$expiresAt = $now->add(new DateInterval('PT' . PortalJwtService::REFERENCE_TTL . 'S'));
+
+		$token = $this->jwt->createReferenceSession(
+			subjectRef: $subjectRef,
+			organisation: $organisation,
+			caseReference: $caseReference,
+			register: $register,
+			schema: $schema,
+			jti: $jti
+		);
+
+		$this->writer->createObject(
+			register: self::SESSION_REGISTER,
+			schema: self::SESSION_SCHEMA,
+			scopeField: '',
+			subjectRef: $subjectRef,
+			organisation: $organisation,
+			data: [
+				'subjectRef' => $subjectRef,
+				'audience' => 'client',
+				'organisation' => $organisation,
+				'jti' => $jti,
+				'trustLevel' => 'low',
+				'issuedAt' => $now->format(DATE_ATOM),
+				'expiresAt' => $expiresAt->format(DATE_ATOM),
+				'revoked' => false,
+				'authTime' => $now->format(DATE_ATOM),
+			]
+		);
+
+		$this->auditor->record(
+			verb: 'login',
+			subjectRef: $subjectRef,
+			organisation: $organisation,
+			register: self::SESSION_REGISTER,
+			schema: self::SESSION_SCHEMA,
+			id: $jti,
+			jti: $jti
+		);
+
+		return ['token' => $token, 'jti' => $jti, 'expiresAt' => $expiresAt->format(DATE_ATOM)];
+	}//end issueReferenceSession()
+
+	/**
+	 * Resolve a reference session, and only a reference session. FAILS CLOSED.
+	 *
+	 * @param string|null $authorizationHeader The raw Authorization header value.
+	 *
+	 * @return array{subjectRef: string, organisation: string, caseReference: string, register: string, schema: string, jti: string}|null
+	 *
+	 * @spec openspec/changes/identity-ways-in-screens/design.md
+	 */
+	public function resolveReferenceFromBearer(?string $authorizationHeader): ?array {
+		if ($this->jwt === null || $authorizationHeader === null || str_starts_with($authorizationHeader, self::BEARER_PREFIX) === false) {
+			return null;
+		}
+
+		try {
+			$claims = $this->jwt->validate(substr($authorizationHeader, strlen(self::BEARER_PREFIX)));
+		} catch (Throwable $e) {
+			$this->logger->debug('Portaliq: reference bearer rejected', ['reason' => $e->getMessage()]);
+			return null;
+		}
+
+		if (($claims['use'] ?? '') !== PortalJwtService::USE_REFERENCE) {
+			return null;
+		}
+
+		$jti = (string)($claims['jti'] ?? '');
+		if ($this->isJtiActive(jti: $jti) === false) {
+			return null;
+		}
+
+		$reference = [
+			'subjectRef' => (string)($claims['sub'] ?? ''),
+			'organisation' => (string)($claims['organisation'] ?? ''),
+			'caseReference' => (string)($claims['caseReference'] ?? ''),
+			'register' => (string)($claims['register'] ?? ''),
+			'schema' => (string)($claims['schema'] ?? ''),
+			'jti' => $jti,
+		];
+		if (in_array('', $reference, true) === true) {
+			return null;
+		}
+
+		return $reference;
+	}//end resolveReferenceFromBearer()
 
 	/**
 	 * Rotate a valid, unexpired, not-yet-revoked bearer into a NEW session with

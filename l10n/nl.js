@@ -499,6 +499,7 @@ OC.L10N.register(
         "Registration policy": "Registratiebeleid",
         "Registry key identifying the widget component. Resolved against nc-vue's communal dashboardWidgetRegistry — the SAME catalog LaunchPad and OpenBuild consume. Only entries flagged public render at a public origin; anything else renders an inert placeholder.": "Registersleutel die de widgetcomponent aanwijst. Opgezocht in het gedeelde dashboardWidgetRegistry van nc-vue, DEZELFDE catalogus die LaunchPad en OpenBuild gebruiken. Alleen vermeldingen die als publiek zijn gemarkeerd worden op een publieke origin getoond; al het andere toont een lege plaatshouder.",
         "Related terms": "Verwante begrippen",
+        "Reminder: you have an open task in the portal of %1$s": "Herinnering: u heeft een openstaande taak in het portaal van %1$s",
         "Reminder about your task: %1$s": "Herinnering aan uw taak: %1$s",
         "Removed at": "Verwijderd op",
         "Rendering hint: text, email, tel, number, date, url, textarea or select.": "Weergavehint: text, email, tel, number, date, url, textarea of select.",
@@ -947,6 +948,7 @@ OC.L10N.register(
         "Writable/forwardable actions this contribution exposes. Each entry mirrors IPortalContributionProvider's action shape (contract v2/v3), plus the new `anonymous` field.": "Schrijfbare of door te sturen acties die deze bijdrage aanbiedt. Elke vermelding volgt de actievorm van IPortalContributionProvider (contract v2/v3), plus het nieuwe veld `anonymous`.",
         "You have a new message in the portal of %1$s": "Er staat een nieuw bericht voor u klaar in het portaal van %1$s",
         "You have a new message in the portal of %1$s. Log in to view it: %2$s": "Er staat een nieuw bericht voor u klaar in het portaal van %1$s. Log in om het te bekijken: %2$s",
+        "You have an open task in the portal of %1$s. Log in to finish it: %2$s": "U heeft een openstaande taak in het portaal van %1$s. Log in om de taak af te ronden: %2$s",
         "You have a new task in the portal of %1$s": "U heeft een nieuwe taak in het portaal van %1$s",
         "You have a new task in the portal of %1$s. Log in to view it: %2$s": "U heeft een nieuwe taak in het portaal van %1$s. Log in om de taak te bekijken: %2$s",
         "You have a new task: %1$s": "U heeft een nieuwe taak: %1$s",
@@ -1545,7 +1547,9 @@ OC.L10N.register(
         "You asked to use this address for your account at %1$s. Until you confirm it, we keep using your old address.": "U vroeg om dit adres te gebruiken voor uw account bij %1$s. Tot u het bevestigt, gebruiken we uw oude adres.",
         "Confirm this address": "Bevestig dit adres",
         "The link works once and for a limited time.": "De link werkt één keer en een beperkte tijd.",
-        "Did you not ask for this? Then you can ignore this mail.": "Vroeg u hier niet om? Dan kunt u deze mail negeren."
+        "Did you not ask for this? Then you can ignore this mail.": "Vroeg u hier niet om? Dan kunt u deze mail negeren.",
+        "The register of the case collection the link opens. The session a followed link starts reads only this collection.": "Het register van de zaakverzameling die de link opent. De sessie die een gevolgde link start, leest alleen deze verzameling.",
+        "The schema of the case collection the link opens.": "Het schema van de zaakverzameling die de link opent."
     },
     "nplurals=2; plural=(n != 1);"
 )

@@ -462,6 +462,7 @@ OC.L10N.register(
         "Registration policy": "Registration policy",
         "Registry key identifying the widget component. Resolved against nc-vue's communal dashboardWidgetRegistry — the SAME catalog LaunchPad and OpenBuild consume. Only entries flagged public render at a public origin; anything else renders an inert placeholder.": "Registry key identifying the widget component. Resolved against nc-vue's communal dashboardWidgetRegistry — the SAME catalog LaunchPad and OpenBuild consume. Only entries flagged public render at a public origin; anything else renders an inert placeholder.",
         "Related terms": "Related terms",
+        "Reminder: you have an open task in the portal of %1$s": "Reminder: you have an open task in the portal of %1$s",
         "Reminder about your task: %1$s": "Reminder about your task: %1$s",
         "Removed at": "Removed at",
         "Rendering hint: text, email, tel, number, date, url, textarea or select.": "Rendering hint: text, email, tel, number, date, url, textarea or select.",
@@ -902,6 +903,7 @@ OC.L10N.register(
         "Writable/forwardable actions this contribution exposes. Each entry mirrors IPortalContributionProvider's action shape (contract v2/v3), plus the new `anonymous` field.": "Writable/forwardable actions this contribution exposes. Each entry mirrors IPortalContributionProvider's action shape (contract v2/v3), plus the new `anonymous` field.",
         "You have a new message in the portal of %1$s": "You have a new message in the portal of %1$s",
         "You have a new message in the portal of %1$s. Log in to view it: %2$s": "You have a new message in the portal of %1$s. Log in to view it: %2$s",
+        "You have an open task in the portal of %1$s. Log in to finish it: %2$s": "You have an open task in the portal of %1$s. Log in to finish it: %2$s",
         "You have a new task in the portal of %1$s": "You have a new task in the portal of %1$s",
         "You have a new task in the portal of %1$s. Log in to view it: %2$s": "You have a new task in the portal of %1$s. Log in to view it: %2$s",
         "You have a new task: %1$s": "You have a new task: %1$s",
@@ -1487,7 +1489,9 @@ OC.L10N.register(
         "You asked to use this address for your account at %1$s. Until you confirm it, we keep using your old address.": "You asked to use this address for your account at %1$s. Until you confirm it, we keep using your old address.",
         "Confirm this address": "Confirm this address",
         "The link works once and for a limited time.": "The link works once and for a limited time.",
-        "Did you not ask for this? Then you can ignore this mail.": "Did you not ask for this? Then you can ignore this mail."
+        "Did you not ask for this? Then you can ignore this mail.": "Did you not ask for this? Then you can ignore this mail.",
+        "The register of the case collection the link opens. The session a followed link starts reads only this collection.": "The register of the case collection the link opens. The session a followed link starts reads only this collection.",
+        "The schema of the case collection the link opens.": "The schema of the case collection the link opens."
     },
     "nplurals=2; plural=(n != 1);"
 )
