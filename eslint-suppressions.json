@@ -1,7 +1,7 @@
 {
   "src/portal/App.jsx": {
     "no-unused-vars": {
-      "count": 2
+      "count": 1
     }
   },
   "src/portal/components/ActionFieldsForm.jsx": {

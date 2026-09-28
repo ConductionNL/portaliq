@@ -120,16 +120,46 @@ class ContributionControllerSubjectFieldTest extends TestCase {
 	}//end testStampWithoutFieldsAndNoStampWithoutSubjectField()
 
 	/**
+	 * #804, case-actions-sign-a-document D3: an action that declares a
+	 * `scopeClaim` has the resolved value signed INTO the assertion, where a
+	 * receiver can trust it (filinq reads `signerEmail` there). A declared
+	 * claim that does not resolve stops the forward, with or without a
+	 * `subjectField`.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-actions-sign-a-document/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
+	 */
+	public function testADeclaredScopeClaimRidesInTheAssertion(): void {
+		$session = $this->createMock(PortalSessionService::class);
+		$session->expects($this->once())->method('issueAssertion')
+			->with(self::SUBJECT, 'learnerRef', 'learner-profile-7')
+			->willReturn('ASSERTION_JWT_HERE');
+		$sent = [];
+		$response = $this->controller(action: $this->action(), scopeValue: 'learner-profile-7', sent: $sent, session: $session)->action('learniq', 'submitTest');
+		$this->assertSame(200, $response->getStatus());
+		$this->assertSame('ASSERTION_JWT_HERE', $sent['headers']['X-Portal-Subject']);
+
+		$plain = $this->action();
+		unset($plain['subjectField']);
+		$sent = [];
+		$response = $this->controller(action: $plain, scopeValue: null, sent: $sent)->action('learniq', 'submitTest');
+		$this->assertSame(403, $response->getStatus());
+		$this->assertSame([], $sent, 'no outbound call');
+	}//end testADeclaredScopeClaimRidesInTheAssertion()
+
+	/**
 	 * Build the controller around a recording HTTP client.
 	 *
 	 * @param array<string, mixed> $action The one declared action.
 	 * @param string|null $scopeValue What the claim resolves to.
 	 * @param array<string, mixed> $sent Receives the outbound request options.
 	 * @param AuditTrailService|null $auditor The auditor.
+	 * @param PortalSessionService|null $session The session double, when a test pins the assertion.
 	 *
 	 * @return ContributionController
 	 */
-	private function controller(array $action, ?string $scopeValue, array &$sent, ?AuditTrailService $auditor = null): ContributionController {
+	private function controller(array $action, ?string $scopeValue, array &$sent, ?AuditTrailService $auditor = null, ?PortalSessionService $session = null): ContributionController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('Bearer token');
 		$request->method('getParam')->willReturnCallback(fn (string $key) => (self::BODY[$key] ?? null));
@@ -137,9 +167,12 @@ class ContributionControllerSubjectFieldTest extends TestCase {
 		$registry = $this->createMock(PortalContributionRegistry::class);
 		$registry->method('aggregateFor')->willReturn(['contributions' => [['app' => 'learniq', 'collections' => [], 'actions' => [$action]]]]);
 
-		$session = $this->createMock(PortalSessionService::class);
+		if ($session === null) {
+			$session = $this->createMock(PortalSessionService::class);
+			$session->method('issueAssertion')->willReturn('ASSERTION_JWT_HERE');
+		}
+
 		$session->method('resolveFromBearer')->willReturn(self::SUBJECT);
-		$session->method('issueAssertion')->willReturn('ASSERTION_JWT_HERE');
 
 		$reader = $this->createMock(PortalObjectReader::class);
 		$reader->method('resolveScopeValue')->willReturnCallback(

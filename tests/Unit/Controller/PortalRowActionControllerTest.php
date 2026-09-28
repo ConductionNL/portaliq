@@ -371,6 +371,41 @@ class PortalRowActionControllerTest extends TestCase {
 	}//end testASubjectFieldIsStampedOrTheForwardStops()
 
 	/**
+	 * #804, case-actions-sign-a-document D3: a row action that declares a
+	 * `scopeClaim` forwards with the resolved value for the assertion (the
+	 * way filinq's `sign` gets its `signerEmail`), and a claim that does not
+	 * resolve stops the forward with 403.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-actions-sign-a-document/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
+	 */
+	public function testADeclaredScopeClaimIsResolvedForTheAssertionOrTheForwardStops(): void {
+		$action = $this->pay(['scopeClaim' => 'customerMasterId']);
+
+		$reader = $this->readerReturning($this->invoice());
+		$reader->method('resolveScopeValue')->willReturn(null);
+		$result = $this->controller(collection: $this->salesInvoices(), action: $action, reader: $reader)
+			->forward('shillinq', 'ARInvoice', self::INVOICE_ID, 'pay');
+		$this->assertSame(Http::STATUS_FORBIDDEN, $result->getStatus());
+
+		$response = $this->createMock(IResponse::class);
+		$response->method('getStatusCode')->willReturn(200);
+		$forwarder = $this->createMock(PortalActionForwarder::class);
+		$forwarder->method('isForwardable')->willReturn(true);
+		$forwarder->expects($this->once())->method('forward')
+			->with($action, self::SUBJECT, ['invoiceId' => self::INVOICE_ID], 'customer-master-1')
+			->willReturn($response);
+		$forwarder->method('decodeBody')->willReturn([]);
+
+		$reader = $this->readerReturning($this->invoice());
+		$reader->method('resolveScopeValue')->with('customerMasterId', 'shillinq', self::SUBJECT)->willReturn('customer-master-1');
+		$result = $this->controller(collection: $this->salesInvoices(), action: $action, reader: $reader, forwarder: $forwarder)
+			->forward('shillinq', 'ARInvoice', self::INVOICE_ID, 'pay');
+		$this->assertSame(Http::STATUS_OK, $result->getStatus());
+	}//end testADeclaredScopeClaimIsResolvedForTheAssertionOrTheForwardStops()
+
+	/**
 	 * A transport failure is 502 and never leaks its cause.
 	 *
 	 * @return void
