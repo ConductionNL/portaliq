@@ -1500,13 +1500,14 @@
 				"liferay-dxp": "not settled from docs: no guardian or related-person access model was found in the accounts, organizations or object account-restriction pages read today."
 			},
 			"built": {
-				"state": "building",
-				"evidence": "learniq's own matrix (learniq gua-guardian-sees-the-child) cites openspec/specs/portal-identity/spec.md and its own lib/Portal/PortalContributionProvider.php as the seam; from portaliq's side the mechanism that would carry this is the mandate/party-tree pair (lib/Service/Identity/PortalMandateService.php, PortalPartyTreeResolver.php), reached from CitizenCaseController.php:118,682 and MyCasesController.php:67,100",
+				"state": "built",
+				"evidence": "lib/Service/PortalObjectReader.php verifyScope() calls scopeMatches(), which matches a list scope field when it contains the subject's ref (portal-scope-list-membership, PR 750); learniq's parentChildren contribution scopes learner-profile by the guardianRefs array, so a guardian reads their own child's profile and no other. The mandate and party-tree seam (lib/Service/Identity/PortalMandateService.php, PortalPartyTreeResolver.php) stays as before.",
 				"reachedOn": "the portal SPA reads a citizen's own contributions/cases (src/portal/lib/portalApi.js fetchCollection/fetchCitizenCase) but has no concept of 'my child' distinct from 'my own mandate'; whether learniq issues a guardian-scoped mandate that resolves correctly through PortalMandateService is learniq's question, portaliq only provides the generic mandate/party-tree seam",
 				"owner": "ConductionNL/portaliq",
-				"note": "Kept learniq's selfRating (partial); portaliq supplies the generic mandate seam, not a guardian-specific concept.",
+				"note": "Kept learniq's selfRating (partial): portaliq supplies the generic list-scope and mandate seam, not a guardian-specific concept. Moved building to built on 2026-09-28: the portaliq half shipped in portal-scope-list-membership.",
 				"sourceId": "gua-guardian-sees-the-child",
-				"origin": "sibling"
+				"origin": "sibling",
+				"change": "portal-scope-list-membership"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3021,11 +3022,11 @@
 				"liferay-dxp": "not settled from docs: the default widgets reference lists a 'Calendar widget to see and add events' (https://learn.liferay.com/w/dxp/sites/creating-pages/page-fragments-and-widgets/using-widgets/default-widgets-reference), not counter appointment booking; nothing found on booking, moving or cancelling appointments. [was no: the earlier no rested on silence]"
 			},
 			"built": {
-				"state": "none",
+				"state": "decided-no",
 				"evidence": "grep 'appointment'/'afspraak' across lib/ and src/: no domain concept anywhere",
 				"reachedOn": "n/a",
 				"owner": "ConductionNL/portaliq",
-				"note": null,
+				"note": "Decided no in the build-all pass 2026-09-28 (defer retired, reversible): single competitor, no demand: only xxllnc PIP rates it yes, no tender, featureRequest or roadmap row, outside the core area (sign-in and identity). Booking itself belongs to pipelinq's appointment-booking changes; the portal would only render a contribution.",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -3050,11 +3051,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/forms/form-rules 'Forms can be dynamic, where the answer to one question changes the rest of the form' (show-hide, jump-to-page rules). A self-check that recommends a service is a custom build; the page also warns 'The Forms application is in maintenance mode as of Liferay DXP 2024.Q4'."
 			},
 			"built": {
-				"state": "none",
+				"state": "decided-no",
 				"evidence": "grep 'questionnaire'/'zelftest'/'self-check' across lib/ and src/: no hits; the only form mechanism is SchemaForm.jsx driving a plain create/update action, with no branching or recommendation logic",
 				"reachedOn": "n/a",
 				"owner": "ConductionNL/portaliq",
-				"note": null,
+				"note": "Decided no in the build-all pass 2026-09-28 (defer retired, reversible): single competitor, no demand: only Open Inwoner rates it yes, no demand row, outside the core area.",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -3079,11 +3080,11 @@
 				"liferay-dxp": "not settled from docs: no shared plan with goals and actions between a resident and a caseworker was found in the objects, workflow or collaboration pages read today."
 			},
 			"built": {
-				"state": "none",
+				"state": "decided-no",
 				"evidence": "grep 'plan'/'goal'/'doel' across lib/Service/Tasks and src/portal: no shared-plan concept; the task model is one-shot ask/complete, not an ongoing collaborative plan",
 				"reachedOn": "n/a",
 				"owner": "ConductionNL/portaliq",
-				"note": null,
+				"note": "Decided no in the build-all pass 2026-09-28 (defer retired, reversible): single competitor, no demand: only Open Inwoner rates it yes, no demand row, outside the core area. A shared plan with goals is case-domain logic a domain app would own.",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -3411,11 +3412,11 @@
 				"liferay-dxp": "not settled from docs: no push notification to a phone was found in the notifications pages (https://learn.liferay.com/w/dxp/low-code/notifications lists e-mail and website channels only). [was no: the earlier no rested on silence]"
 			},
 			"built": {
-				"state": "none",
+				"state": "decided-no",
 				"evidence": "lib/BackgroundJob/NotificationDispatchJob.php:95 'private const CHANNEL_EMAIL = ... // The only channel implemented, future-proofed field, single value today'; no service-worker/push code anywhere under src/portal",
 				"reachedOn": "nothing reaches it: only channel implemented is email",
 				"owner": "ConductionNL/portaliq",
-				"note": null,
+				"note": "Decided no in the build-all pass 2026-09-28 (defer retired, reversible): single competitor, no demand: only MijnOverheid rates it yes, no demand row, outside the core area. push-notifications-quiet-hours built the delivery seam with a logging sender; a real push sender is the missing half.",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -3539,11 +3540,11 @@
 				"liferay-dxp": "not settled from docs: downloading a message with its attachments is not described in the notifications pages read today."
 			},
 			"built": {
-				"state": "none",
+				"state": "decided-no",
 				"evidence": "InboxPage.jsx (full file read) has no download/export control; portalMessage has no attachment field (see cmp-inb-attach); no PDF/export endpoint under /portal/api/inbox in appinfo/routes.php",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
-				"note": null,
+				"note": "Decided no in the build-all pass 2026-09-28 (defer retired, reversible): single competitor, no demand: only MijnOverheid rates it yes, no demand row, outside the core area.",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -3569,11 +3570,11 @@
 				"liferay-dxp": "not settled from docs: no contact-moment history for a resident was found in the accounts, contacts or notifications pages read today. [was no: the earlier no rested on silence]"
 			},
 			"built": {
-				"state": "none",
+				"state": "decided-no",
 				"evidence": "grep contactmoment across lib/, src/, openspec/: only hits are in an ARCHIVED change (openspec/changes/archive/2026-09-07-field-projection/) discussing that a sibling's contactmoment.notes field is staff-only and gets fail-closed field projection when contributed; no contactmoment collection, page or contribution actually ships",
 				"reachedOn": "nothing reaches it: the only mentions are design notes about a field-projection rule, not a shipped contactmoment surface",
 				"owner": "ConductionNL/portaliq",
-				"note": "The unified inbox (portalMessage) is not the same thing as a full contact-moment log (calls, counter visits, letters); no such log exists here.",
+				"note": "The unified inbox (portalMessage) is not the same thing as a full contact-moment log (calls, counter visits, letters); no such log exists here. Decided no in the build-all pass 2026-09-28 (defer retired, reversible): single competitor, no demand: only Open Inwoner rates it yes, no demand row, outside the core area. A contact-moment log is the customer-contact app's record, not the portal inbox.",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -4112,11 +4113,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/forms/creating-and-managing-forms/using-the-search-location-field lets a user pick a location through 'Google's Maps JavaScript API and Google Places API' and autofills the address. Pointing on a map for a public-space report with a non-Google map is not documented. [was unknown]"
 			},
 			"built": {
-				"state": "none",
+				"state": "decided-no",
 				"evidence": "no map/leaflet/maplibre code anywhere in src/portal or src/site outside the traffic analytics widgets (confirmed already by sibling row opencatalogi/od-visualise, which found the same 0 hits); SchemaForm.jsx has no geo/map field type",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
-				"note": null,
+				"note": "Decided no in the build-all pass 2026-09-28 (defer retired, reversible): single competitor, no demand: only xxllnc PIP rates it yes, no demand row, outside the core area.",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -4897,11 +4898,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/workflow/using-workflows/activating-workflow: workflow per asset type per site makes items 'require a review process before publication'; https://learn.liferay.com/w/dxp/sites/publishing-tools/publications/using-workflow-with-publications covers review of publications."
 			},
 			"built": {
-				"state": "none",
+				"state": "decided-no",
 				"evidence": "lib/Settings/portaliq_register.json `page.status` enum is only `[\"draft\", \"published\"]`; no review/approval/pending-review status, no reviewer role, no state machine found (grep for review|approval|workflow near the page schema: 0 hits beyond the enum itself)",
 				"reachedOn": "nothing reaches it: no code exists",
 				"owner": "ConductionNL/portaliq",
-				"note": "Publishing is a single editor flipping draft to published; there is no second-party approval step.",
+				"note": "Publishing is a single editor flipping draft to published; there is no second-party approval step. Decided no in the build-all pass 2026-09-28 (defer retired, reversible): single competitor, no demand: only Liferay DXP rates it yes, no demand row, outside the core area.",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -4927,11 +4928,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/sites/publishing-tools/publications/making-and-publishing-changes 'you can publish them immediately or schedule them to be published at a later time'. Scheduled unpublishing of a page is not described (announcements have an Expiration Date). https://learn.liferay.com/w/dxp/sites/publishing-tools/publications notes Publications 'is in maintenance mode as of Liferay DXP 2026.Q1'. [was yes]"
 			},
 			"built": {
-				"state": "none",
+				"state": "decided-no",
 				"evidence": "lib/Settings/portaliq_register.json `page` schema properties are `title, route, status, locale, summary, heroImage, body, draftBody, portal`, no publishAt/scheduledAt/unpublishAt field (grep across the register: 0 hits)",
 				"reachedOn": "nothing reaches it: no code exists",
 				"owner": "ConductionNL/portaliq",
-				"note": null,
+				"note": "Decided no in the build-all pass 2026-09-28 (defer retired, reversible): no competitor rates it yes and no demand row; outside the core area.",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -5078,11 +5079,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/personalization/experiences/content-page-personalization with https://learn.liferay.com/w/dxp/personalization/segmentation/creating-and-managing-user-segments: different experiences of one content page per segment."
 			},
 			"built": {
-				"state": "none",
+				"state": "decided-no",
 				"evidence": "The only audience split found is lib/Controller/ContentController.php:463-480 audience() (anonymous vs authenticated), which is a cache-key/security boundary, not content personalisation; no segment/persona/audience-targeting field on `page` or `menu`",
 				"reachedOn": "nothing reaches it: no code exists",
 				"owner": "ConductionNL/portaliq",
-				"note": null,
+				"note": "Decided no in the build-all pass 2026-09-28 (defer retired, reversible): single competitor, no demand: only Liferay DXP rates it yes, no demand row, outside the core area.",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -5175,11 +5176,11 @@
 				"liferay-dxp": "not settled from docs: no map fragment or widget for showing locations on a public page was found; the Geomap chart is a developer tag library (https://learn.liferay.com/w/dxp/development/traditional-java-based-development/developing-a-web-application/using-mvc/tag-libraries/chart-tag-library/geomap-chart), not an editor block."
 			},
 			"built": {
-				"state": "none",
+				"state": "decided-no",
 				"evidence": "No map library or component under src/site (grep -rln \"leaflet|maplibre|mapbox\" src/site: 0 hits)",
 				"reachedOn": "nothing reaches it: no code exists",
 				"owner": "ConductionNL/portaliq",
-				"note": null,
+				"note": "Decided no in the build-all pass 2026-09-28 (defer retired, reversible): single competitor, no demand: only Open Inwoner rates it yes, no demand row, outside the core area.",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -5205,11 +5206,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/data-sets/managing-data-sets: a data set fragment shows REST data as a table, list or cards ('the list and the card visualization modes'). Charts and maps for a dataset are not described. [was unknown]"
 			},
 			"built": {
-				"state": "none",
+				"state": "decided-no",
 				"evidence": "grep for chart/visuali/leaflet/maplibre across src/site: only src/widgets/Traffic*.vue (admin traffic dashboard widgets, not a public page); PublicationDetailBlock.vue renders a generic humanised property table (src/site/lib/publicationDetail.js:14-24), never a chart, table-of-rows preview or map",
 				"reachedOn": "nothing reaches it: no code exists",
 				"owner": "ConductionNL/portaliq",
-				"note": "Re-verified from portaliq's own code; matches the opencatalogi matrix's self-rating (source: opencatalogi matrix, id od-visualise).",
+				"note": "Re-verified from portaliq's own code; matches the opencatalogi matrix's self-rating (source: opencatalogi matrix, id od-visualise). Decided no in the build-all pass 2026-09-28 (defer retired, reversible): no competitor rates it yes and no demand row; outside the core area. Dataset visualisation is opencatalogi's publication surface.",
 				"origin": "sibling"
 			},
 			"provider": "portaliq",
@@ -5686,11 +5687,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/content-management-system/translating-pages-and-content/translating-content-pages: a content page is translated in place ('select Translate'); https://learn.liferay.com/w/dxp/security-and-administration/administration/configuring-liferay/virtual-instances/localization 'Locale Prepend Friendly URL Style' decides whether the same route carries a locale prefix."
 			},
 			"built": {
-				"state": "none",
+				"state": "decided-no",
 				"evidence": "lib/Settings/portaliq_register.json page.locale field description: 'Locale of this page's content. Part of the content cache key.'; lib/Service/CmsReader.php:201-229 page() queries only filters=['portal','route','status'] (locale is NOT a filter) and returns the FIRST matching row on the route, then just echoes that row's own stored `locale` back; :135-149 menus() and :318-340 glossary() likewise never filter on locale; menu and glossaryTerm schemas carry NO `locale` property at all (python check of portaliq_register.json properties)",
 				"reachedOn": "nothing reaches it: /api/content/page's `?locale=` parameter only picks the cache slot and the default in `portal.locales`; it never selects which stored page/menu/term is returned",
 				"owner": "ConductionNL/portaliq",
-				"note": "A portal can declare multiple `locales`, but two `page` rows at one route in different locales cannot both be served correctly (the query returns whichever comes first); menus and glossary terms have no per-language variant at all.",
+				"note": "A portal can declare multiple `locales`, but two `page` rows at one route in different locales cannot both be served correctly (the query returns whichever comes first); menus and glossary terms have no per-language variant at all. Decided no in the build-all pass 2026-09-28 (defer retired, reversible): single competitor, no demand: only Liferay DXP rates it yes, no demand row, outside the core area.",
 				"origin": "code",
 				"defectCandidate": "lib/Service/CmsReader.php:201-229 page()/:135,:318 menus()/glossary(): the `locale` parameter is part of the cache key but is never applied as a query filter, so multi-language page content is unenforced. (code reading, needs a live check)"
 			},
@@ -5844,11 +5845,11 @@
 				"liferay-dxp": "not settled from docs: the translation, content page and AI Hub content generation pages read today do not mention a reading level or B1 check for authored text."
 			},
 			"built": {
-				"state": "none",
+				"state": "decided-no",
 				"evidence": "No readability checker, B1 guidance or authoring aid found in the CMS editor path (PageLayoutDesigner.vue, MarkdownBlock.vue); grep -in 'B1|readab|leesniveau' under lib/ and src/ only matches lib/BackgroundJob/NotificationDispatchJob.php, which hand-authors SYSTEM notification e-mails at B1 level, not editor page content",
 				"reachedOn": "nothing reaches it: no code exists for page content",
 				"owner": "ConductionNL/portaliq",
-				"note": "The company clearly practises B1 discipline elsewhere (system notification copy), but nothing carries that discipline, or even a hint, into the page/markdown editor a portal's own editors use.",
+				"note": "The company clearly practises B1 discipline elsewhere (system notification copy), but nothing carries that discipline, or even a hint, into the page/markdown editor a portal's own editors use. Decided no in the build-all pass 2026-09-28 (defer retired, reversible): no competitor rates it yes and no demand row; outside the core area.",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -6714,11 +6715,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/content-management-system/social-tools/using-the-ratings-system: assets can carry 'Thumbs : Content is given either a \"thumbs up\" or \"thumbs down\" rating'. A 'did this page help' prompt on a content page, and rating by anonymous visitors, are not described. [was unknown]"
 			},
 			"built": {
-				"state": "none",
+				"state": "decided-no",
 				"evidence": "grep -i 'feedback|helpful|thumbs' across src/widgets/*.vue and src/site components: no hits; the shipped event vocabulary (tasks.md 1.2: page_view, session_start, scroll, outbound_click, file_download, search, form_submit) has no feedback/rating event",
 				"reachedOn": "nothing reaches it: no UI control, no event type, no widget",
 				"owner": "ConductionNL/portaliq",
-				"note": "Nothing in the codebase asks a visitor for page-level feedback or renders it back to an admin.",
+				"note": "Nothing in the codebase asks a visitor for page-level feedback or renders it back to an admin. Decided no in the build-all pass 2026-09-28 (defer retired, reversible): no competitor rates it yes and no demand row; outside the core area.",
 				"origin": "competitor"
 			},
 			"provider": "portaliq",
@@ -8032,11 +8033,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/content-management-system/blogs/configuring-the-blogs-app: roles can 'subscribe to entries', with e-mail notices. A newsletter list managed from the user's profile is not described. [was unknown]"
 			},
 			"built": {
-				"state": "none",
+				"state": "decided-no",
 				"evidence": "grep -riE 'newsletter|nieuwsbrief|laposta|subscri' lib src: only traffic referrer classification",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
-				"note": "No newsletter subscription management.",
+				"note": "No newsletter subscription management. Decided no in the build-all pass 2026-09-28 (defer retired, reversible): single competitor, no demand: only Open Inwoner rates it yes, no demand row, outside the core area. news-and-newsletter-authoring sends newsletters; subscribing from a profile is the missing half.",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -8130,11 +8131,11 @@
 				"liferay-dxp": "not settled from docs: https://learn.liferay.com/w/dxp/content-management-system/notifications-and-requests/managing-notifications-and-requests offers filter and order only; no search over one's own notifications or workflow tasks is described."
 			},
 			"built": {
-				"state": "none",
+				"state": "decided-no",
 				"evidence": "src/portal/components/InboxPage.jsx:87-88 and TasksPage.jsx render the full lists with no search or filter input; no query parameter on GET /portal/api/inbox or /portal/api/tasks",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
-				"note": "No search over the resident's own messages or tasks; site search (/zoeken) covers public publications only.",
+				"note": "No search over the resident's own messages or tasks; site search (/zoeken) covers public publications only. Decided no in the build-all pass 2026-09-28 (defer retired, reversible): single competitor, no demand: only NL Portal rates it yes, no demand row, outside the core area.",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -8261,11 +8262,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/relationships: one-to-many relationships and 'Root Objects ... inheritance' let child entries be listed on a parent's display page. Custom case and sub-case objects. [was unknown]"
 			},
 			"built": {
-				"state": "none",
+				"state": "decided-no",
 				"evidence": "ConductionNL/dossiq@971735b03e (development) lib/Portal/PortalContributionProvider.php:114-137 CITIZEN_CASE_FIELDS omits parentCase/subCases (the dossiq case schema has them); grep -riE 'deelzaak|subcase|sub-case' lib src: 0 hits",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
-				"note": "Sub-case relations exist in dossiq but are not projected to the portal and portaliq has no view for them.",
+				"note": "Sub-case relations exist in dossiq but are not projected to the portal and portaliq has no view for them. Decided no in the build-all pass 2026-09-28 (defer retired, reversible): changelog demand only and no competitor rates it yes; the sub-case projection is dossiq's (CITIZEN_CASE_FIELDS omits parentCase and subCases), so a portal view has nothing to show until dossiq projects it.",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -8293,11 +8294,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/understanding-object-integrations/permissions-framework-integration: resource permissions apply per entry; a visible-to-resident field with a data set filter (https://learn.liferay.com/w/dxp/low-code/data-sets/managing-data-sets) would also be custom. [was unknown]"
 			},
 			"built": {
-				"state": "none",
+				"state": "decided-no",
 				"evidence": "dossiq_register.json case schema has no portal-visibility flag; visibility is the portalSubject scope (ConductionNL/dossiq@971735b03e (development) lib/Portal/PortalContributionProvider.php:425); portaliq admin has no case filter by portal visibility",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
-				"note": "No per-case 'keep off the portal' switch and no staff filter on it; a case is visible exactly when its portalSubject matches.",
+				"note": "No per-case 'keep off the portal' switch and no staff filter on it; a case is visible exactly when its portalSubject matches. Decided no in the build-all pass 2026-09-28 (defer retired, reversible): changelog demand only and no competitor rates it yes; outside the core area. A per-case switch would live on dossiq's case, which the portal already filters by portalSubject.",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -8325,11 +8326,11 @@
 				"liferay-dxp": "not settled from docs: MijnOverheid and the VNG case APIs (ZGW) are not named in any learn.liferay.com page read today."
 			},
 			"built": {
-				"state": "none",
+				"state": "decided-no",
 				"evidence": "grep -riE 'mijnoverheid|mijnzaken|zgw' lib: only Woo/catalogue wording in PortalPageController and PortalInboxReader; no outbound case feed",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
-				"note": "Portaliq is itself the portal and exposes no VNG case API for MijnOverheid to read; any ZGW-compatible case API would be a sibling's (not rated here).",
+				"note": "Portaliq is itself the portal and exposes no VNG case API for MijnOverheid to read; any ZGW-compatible case API would be a sibling's (not rated here). Decided no in the build-all pass 2026-09-28 (defer retired, reversible): roadmap demand (Logius MijnZaken) but no competitor rates it yes; outside the core area. A ZGW case API for MijnOverheid to read is a case system's, not the portal's.",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -8357,11 +8358,11 @@
 				"liferay-dxp": "not settled from docs: no national message overview or retrieval from a sender's own archive is described; notifications are local to the instance (https://learn.liferay.com/w/dxp/content-management-system/notifications-and-requests/managing-notifications-and-requests)."
 			},
 			"built": {
-				"state": "none",
+				"state": "decided-no",
 				"evidence": "grep -riE 'fbs|federat.*bericht|berichtenstelsel' lib: 0 hits; /api/federation/publications is for public Woo publications, not messages",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
-				"note": "No Federatief Berichtenstelsel participation; messages live only in the portal's own inbox collections.",
+				"note": "No Federatief Berichtenstelsel participation; messages live only in the portal's own inbox collections. Decided no in the build-all pass 2026-09-28 (defer retired, reversible): roadmap demand (Logius Federatief Berichtenstelsel) but no competitor rates it yes; outside the core area.",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -8389,11 +8390,11 @@
 				"liferay-dxp": "not settled from docs: https://learn.liferay.com/w/dxp/low-code/notifications lists e-mail and website notification channels only; SMS delivery is not described."
 			},
 			"built": {
-				"state": "none",
+				"state": "decided-no",
 				"evidence": "lib/Settings/portaliq_register.json:951 portalNotification.channel: 'Only email is implemented; the field is future-proofed for sms/push'",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
-				"note": "Only e-mail alerts; no SMS channel.",
+				"note": "Only e-mail alerts; no SMS channel. Decided no in the build-all pass 2026-09-28 (defer retired, reversible): roadmap demand (Logius Federatief Berichtenstelsel) but no competitor rates it yes; outside the core area.",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -8421,11 +8422,11 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/content-management-system/notifications-and-requests/managing-notifications-and-requests 'Managing Multiple Notifications ... selects all the notification messages. Several icons appear: Mark as Read ... Mark as Unread ... Delete'. There are no folders to move messages into. [was unknown]"
 			},
 			"built": {
-				"state": "none",
+				"state": "decided-no",
 				"evidence": "src/portal/components/InboxPage.jsx:87-146 per-row 'Mark as read' only; no checkboxes, no move or delete; no bulk route in appinfo/routes.php",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
-				"note": "No multi-select, no folders to move to and no delete in the resident's inbox.",
+				"note": "No multi-select, no folders to move to and no delete in the resident's inbox. Decided no in the build-all pass 2026-09-28 (defer retired, reversible): changelog demand and one competitor (MijnOverheid); the rule needs a featureRequest or roadmap row for a single competitor. Outside the core area.",
 				"origin": "code"
 			},
 			"provider": "portaliq",
@@ -8453,11 +8454,12 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/search/search-pages-and-widgets/working-with-search-pages/controlling-search-page-seo 'Liferay DXP 2026.Q3 ... a per-widget Enable Web Crawler Indexing setting that can add noindex, nofollow robots meta tags and robots.txt Disallow entries for filtered search pages' (release feature LPD-71164)."
 			},
 			"built": {
-				"state": "none",
+				"state": "decided-no",
 				"evidence": "grep for 'noindex' and 'robots' across src/site, src/portal and lib returns nothing; templates/site.php:242 sets only the portal title",
 				"reachedOn": "nothing",
 				"owner": "ConductionNL/portaliq",
-				"origin": "code"
+				"origin": "code",
+				"note": "Decided no in the build-all pass 2026-09-28 (defer retired, reversible): changelog demand and one competitor (Liferay DXP); the rule needs a featureRequest or roadmap row for a single competitor."
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -8484,11 +8486,12 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/ai/masking-sensitive-data-in-mcp-server-responses 'Liferay DXP 2026.Q3+ ... Data masks detect patterns in an MCP server tool response and replace the matching text with a substitute value'."
 			},
 			"built": {
-				"state": "none",
+				"state": "decided-no",
 				"evidence": "no MCP server in this app: lib/AppInfo/Application.php:116 only notes that tools derive from the x-openregister-mcp dialect declared on schemas, executed by openregister; no masking of fields in tool answers anywhere in lib/",
 				"reachedOn": "nothing",
 				"owner": "ConductionNL/portaliq",
-				"origin": "code"
+				"origin": "code",
+				"note": "Decided no in the build-all pass 2026-09-28 (defer retired, reversible): changelog demand and one competitor (Liferay DXP); the rule needs a featureRequest or roadmap row for a single competitor."
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -8501,7 +8504,7 @@
 			"id": "dem-cl-consent-on-account-gpc",
 			"area": "analytics",
 			"name": "Keep your cookie choices on your account across devices, and have your browser's Global Privacy Control signal honoured.",
-			"portaliq": "no",
+			"portaliq": "partial",
 			"open-inwoner": "unknown",
 			"nl-portal": "unknown",
 			"xxllnc-pip": "unknown",
@@ -8515,11 +8518,12 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/users-and-permissions/managing-user-data/managing-privacy-settings 'Liferay DXP 2026.Q2+ Check Store Consent ... to store consent preferences for authenticated users' and 'Check Global Privacy Control (GPC) ... to detect and honor GPC signals'."
 			},
 			"built": {
-				"state": "none",
-				"evidence": "consent is per browser: src/traffic/client.js:145 consentRequired and :159-161 api.consent() keep the choice in the visitor's browser only; grep for 'Sec-GPC' and 'globalPrivacyControl' across src/ and lib/ returns nothing",
-				"reachedOn": "nothing",
+				"state": "decided-no",
+				"evidence": "src/traffic/helpers.js:137-146 optedOut() returns true for navigator.globalPrivacyControl (and Do Not Track), and the traffic client sends nothing then; consent itself stays per browser: src/traffic/client.js consentRequired and api.consent() keep the choice in the visitor's browser only, nothing stores it on the account",
+				"reachedOn": "every public page that loads the traffic client (src/traffic/client.js)",
 				"owner": "ConductionNL/portaliq",
-				"origin": "code"
+				"origin": "code",
+				"note": "Decided no in the build-all pass 2026-09-28 (defer retired, reversible): the Global Privacy Control half is built (src/traffic/helpers.js:137-146 optedOut() honours navigator.globalPrivacyControl before anything runs), so the rating moves no to partial. Keeping the choice on the account is the missing half: changelog demand and one competitor (Liferay DXP), and the rule needs a featureRequest or roadmap row for a single competitor."
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -8610,11 +8614,12 @@
 				"liferay-dxp": "https://www.liferay.com/roadmap lists 'AI-Ready, Governed Search' under Later, so it is not available today."
 			},
 			"built": {
-				"state": "none",
+				"state": "decided-no",
 				"evidence": "no AI or question-answering search: federated search is a keyword search over published objects; grep for 'llm', 'embedding' and 'rag' across lib/ and src/ returns nothing",
 				"reachedOn": "nothing",
 				"owner": "ConductionNL/portaliq",
-				"origin": "code"
+				"origin": "code",
+				"note": "Decided no in the build-all pass 2026-09-28 (defer retired, reversible): roadmap demand (Liferay roadmap) but no competitor rates it yes; outside the core area. search-assistant-from-public-content covers public content only, by design."
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -8641,11 +8646,12 @@
 				"liferay-dxp": "not settled from docs: https://www.liferay.com/roadmap lists 'Site SEO/AEO Management Center' under Now, but no learn.liferay.com page describing it was found on 2026-09-26; per-page SEO settings exist (cmp-site-seo)."
 			},
 			"built": {
-				"state": "none",
+				"state": "decided-no",
 				"evidence": "no SEO management screen: cmp-site-seo is rated no from templates/site.php:242 (only the portal title server-side) and App.vue:887-898 (client-side document.title); nothing reports how pages are found",
 				"reachedOn": "nothing",
 				"owner": "ConductionNL/portaliq",
-				"origin": "code"
+				"origin": "code",
+				"note": "Decided no in the build-all pass 2026-09-28 (defer retired, reversible): roadmap demand (Liferay) but no competitor rates it yes; outside the core area. site-page-seo-history-and-media covers per-page SEO fields."
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
