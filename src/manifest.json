@@ -1201,7 +1201,7 @@
       "config": {
         "register": "portaliq",
         "schema": "portal",
-        "_note": "A portal's menus, pages and glossary live HERE rather than as their own top-level navigation entries: they are not free-standing collections, they are what one portal is made of, and a fleet-wide list of 'all pages' answers no question an editor actually has. They are `object-list` widgets filtered on `portal: @object.slug` — the token resolves against the portal being viewed. NOT `@objectId`: these children reference their portal by SLUG, not by object id, and a filter naming a property the rows do not carry matches nothing and says nothing (see PortalAccountDetail, where exactly that went unnoticed). Each filter was run against the API before being written here: 7 pages, 1 menu, 2 glossary terms for open-tilburg. portal-traffic-kpi-cards: four traffic KPI cards head the page (page views, sessions, visitors, engaged sessions), the same four numbers the Traffic page shows. Each is a PortalTrafficKpi around nc-vue's CnStatWidget with its own period picker; the 30-day preset has the id '' so the picker opens on it, and the summary endpoint reads an empty period as 30. A card opens the Traffic page with this portal selected. A portal with measurement off reads 'Not measured' and asks for nothing.",
+        "_note": "A portal's menus, pages and glossary live HERE rather than as their own top-level navigation entries: they are not free-standing collections, they are what one portal is made of, and a fleet-wide list of 'all pages' answers no question an editor actually has. They are `object-list` widgets filtered on `portal: @object.slug` — the token resolves against the portal being viewed. NOT `@objectId`: these children reference their portal by SLUG, not by object id, and a filter naming a property the rows do not carry matches nothing and says nothing (see PortalAccountDetail, where exactly that went unnoticed). Each filter was run against the API before being written here: 7 pages, 1 menu, 2 glossary terms for open-tilburg. portal-traffic-kpi-cards: four traffic KPI cards head the page (page views, sessions, visitors, engaged sessions), the same four numbers the Traffic page shows. Each is a PortalTrafficKpi around nc-vue's CnStatWidget with its own period picker; the picker opens on its `default`, 30 days, and the card sends the picked preset as `days` through the `@range.preset` token. A card opens the Traffic page with this portal selected. A portal with measurement off reads 'Not measured' and asks for nothing.",
         "widgets": [
           {
             "id": "portal-kpi-page-views",
@@ -1211,13 +1211,14 @@
               "label": "Page views",
               "testId": "portal-kpi-page-views",
               "dateRange": {
+                "default": "30",
                 "presets": [
                   {
                     "id": "7",
                     "label": "Last 7 days"
                   },
                   {
-                    "id": "",
+                    "id": "30",
                     "label": "Last 30 days"
                   },
                   {
@@ -1241,13 +1242,14 @@
               "label": "Sessions",
               "testId": "portal-kpi-sessions",
               "dateRange": {
+                "default": "30",
                 "presets": [
                   {
                     "id": "7",
                     "label": "Last 7 days"
                   },
                   {
-                    "id": "",
+                    "id": "30",
                     "label": "Last 30 days"
                   },
                   {
@@ -1270,13 +1272,14 @@
               "label": "Visitors",
               "testId": "portal-kpi-visitors",
               "dateRange": {
+                "default": "30",
                 "presets": [
                   {
                     "id": "7",
                     "label": "Last 7 days"
                   },
                   {
-                    "id": "",
+                    "id": "30",
                     "label": "Last 30 days"
                   },
                   {
@@ -1299,13 +1302,14 @@
               "label": "Engaged sessions",
               "testId": "portal-kpi-engaged",
               "dateRange": {
+                "default": "30",
                 "presets": [
                   {
                     "id": "7",
                     "label": "Last 7 days"
                   },
                   {
-                    "id": "",
+                    "id": "30",
                     "label": "Last 30 days"
                   },
                   {
@@ -1665,13 +1669,14 @@
               "label": "Page views",
               "testId": "page-kpi-page-views",
               "dateRange": {
+                "default": "30",
                 "presets": [
                   {
                     "id": "7",
                     "label": "Last 7 days"
                   },
                   {
-                    "id": "",
+                    "id": "30",
                     "label": "Last 30 days"
                   },
                   {
@@ -1696,13 +1701,14 @@
               "label": "Sessions",
               "testId": "page-kpi-sessions",
               "dateRange": {
+                "default": "30",
                 "presets": [
                   {
                     "id": "7",
                     "label": "Last 7 days"
                   },
                   {
-                    "id": "",
+                    "id": "30",
                     "label": "Last 30 days"
                   },
                   {
@@ -1726,13 +1732,14 @@
               "label": "Visitors",
               "testId": "page-kpi-visitors",
               "dateRange": {
+                "default": "30",
                 "presets": [
                   {
                     "id": "7",
                     "label": "Last 7 days"
                   },
                   {
-                    "id": "",
+                    "id": "30",
                     "label": "Last 30 days"
                   },
                   {
@@ -1756,13 +1763,14 @@
               "label": "Engaged sessions",
               "testId": "page-kpi-engaged",
               "dateRange": {
+                "default": "30",
                 "presets": [
                   {
                     "id": "7",
                     "label": "Last 7 days"
                   },
                   {
-                    "id": "",
+                    "id": "30",
                     "label": "Last 30 days"
                   },
                   {

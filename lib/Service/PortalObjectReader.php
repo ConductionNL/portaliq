@@ -1080,8 +1080,12 @@ class PortalObjectReader {
 	}//end rowIds()
 
 	/**
-	 * The per-row tenant check shared by every portal read path: enforced only
-	 * when both the subject and the row carry an organisation.
+	 * The per-row tenant check for a read that is ALSO scoped to the subject:
+	 * enforced only when both the subject and the row carry an organisation.
+	 * A schema without an organisation (e.g. procest supplierTender) is scoped
+	 * by the subject reference alone, which is globally unique, so its rows
+	 * pass here after the subject check already held them to the subject.
+	 * A read WITHOUT a subject scope must use tenantMatches() instead.
 	 *
 	 * @param array<string, mixed> $row The normalised row.
 	 * @param string $organisation The expected tenant (empty = skip).
@@ -1092,6 +1096,29 @@ class PortalObjectReader {
 		$rowOrganisation = (string)($row['organisation'] ?? '');
 		return $organisation === '' || $rowOrganisation === '' || $rowOrganisation === $organisation;
 	}//end organisationMatches()
+
+	/**
+	 * The per-row tenant check for a read WITHOUT a subject scope that names a
+	 * tenant, such as the polls for an audience and organisation. The tenant
+	 * is its only boundary, so it fails closed: a row without an organisation
+	 * belongs to no tenant and is dropped, instead of passing for every one
+	 * (portaliq#801, operate-portals-per-organisation D2). A read that names
+	 * no tenant is a system lookup by id or secret and is left as it was.
+	 *
+	 * @param array<string, mixed> $row The normalised row.
+	 * @param string $organisation The tenant the read names (empty = none named).
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/operate-portals-per-organisation/specs/portal-tenancy/spec.md
+	 */
+	private function tenantMatches(array $row, string $organisation): bool {
+		if ($organisation === '') {
+			return true;
+		}
+
+		return (string)($row['organisation'] ?? '') === $organisation;
+	}//end tenantMatches()
 
 	/**
 	 * Re-check every row against the subject ref (and organisation, when known).
@@ -1123,10 +1150,16 @@ class PortalObjectReader {
 				continue;
 			}
 
-			// Only enforce tenant isolation when the row actually carries an
-			// organisation; schemas without one (e.g. procest supplierTender) are
-			// scoped by the subject reference alone, which is globally unique.
-			if ($this->organisationMatches(row: $normalised, organisation: $organisation) === false) {
+			// With a subject scope, tenant isolation applies only when the row
+			// carries an organisation; schemas without one are scoped by the
+			// subject reference alone, which is globally unique. Without a
+			// subject scope the tenant is the only boundary, and it fails closed.
+			$tenantHolds = $this->organisationMatches(row: $normalised, organisation: $organisation);
+			if ($scopeField === '') {
+				$tenantHolds = $this->tenantMatches(row: $normalised, organisation: $organisation);
+			}
+
+			if ($tenantHolds === false) {
 				continue;
 			}
 

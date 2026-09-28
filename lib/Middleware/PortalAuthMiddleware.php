@@ -41,6 +41,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Middleware;
 
 use OCA\Portaliq\Auth\PortalProtected;
+use OCA\Portaliq\Auth\PortalReadOnlySessionException;
 use OCA\Portaliq\Auth\PortalUnauthorizedException;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\PortalSessionService;
@@ -107,9 +108,18 @@ class PortalAuthMiddleware extends Middleware {
 			return;
 		}
 
-		$subject = $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
+		$authorization = $this->request->getHeader('Authorization');
+		$subject = $this->session->resolveFromBearer($authorization);
 		if ($subject !== null) {
 			return;
+		}
+
+		// A reference session reads its one case through the identity route
+		// and nothing else (identity-ways-in-screens D2): every protected
+		// route, and every write among them, refuses it with a 403. Checked
+		// before the anonymous branch, so it cannot create where anonymous may.
+		if ($this->session->resolveReferenceFromBearer($authorization) !== null) {
+			throw new PortalReadOnlySessionException(message: 'A reference session reads one case only');
 		}
 
 		if ($this->anonymousEntryMatches(methodName: $methodName) === true) {
@@ -204,6 +214,10 @@ class PortalAuthMiddleware extends Middleware {
 	public function afterException($controller, $methodName, \Throwable $exception): Response {
 		if ($exception instanceof PortalUnauthorizedException) {
 			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($exception instanceof PortalReadOnlySessionException) {
+			return new JSONResponse(['error' => 'reference_session_reads_only'], Http::STATUS_FORBIDDEN);
 		}
 
 		throw $exception;

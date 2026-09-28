@@ -107,13 +107,27 @@ class PortalReferenceLinkService {
 	 * @param string $caseReference The case number.
 	 * @param string $email The address the link is sent to.
 	 * @param string $organisation The tenant.
+	 * @param string $caseRegister The register of the case collection the
+	 *                             link opens (identity-ways-in-screens D2).
+	 * @param string $caseSchema The schema of that collection.
 	 *
 	 * @return array{token: string, expiresAt: string}|null Null when the case
 	 *         type does not admit the reference route, or the call is empty.
 	 *
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/changes/identity-ways-in-screens/design.md
+	 *
+	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- each field is stored
+	 * on the link row; the reference session reads the case through them.
 	 */
-	public function issue(array $caseType, string $caseReference, string $email, string $organisation): ?array {
+	public function issue(
+		array $caseType,
+		string $caseReference,
+		string $email,
+		string $organisation,
+		string $caseRegister = '',
+		string $caseSchema = '',
+	): ?array {
 		if ($this->admitsReference(caseType: $caseType) === false) {
 			return null;
 		}
@@ -138,6 +152,8 @@ class PortalReferenceLinkService {
 			organisation: $organisation,
 			data: [
 				'caseReference' => $caseReference,
+				'caseRegister' => $caseRegister,
+				'caseSchema' => $caseSchema,
 				'email' => $email,
 				'organisation' => $organisation,
 				'tokenHash' => hash('sha256', $token),
@@ -159,8 +175,12 @@ class PortalReferenceLinkService {
 	 * @param string $token The secret from the mail.
 	 * @param DateTimeImmutable|null $now The moment to judge expiry against.
 	 *
-	 * @return array{caseReference: string, organisation: string}|null Null when
-	 *         the link admits nobody: unknown, already used or expired.
+	 * @return array{caseReference: string, organisation: string, register: string, schema: string, linkId: string}|null
+	 *         Null when the link admits nobody: unknown, already used or
+	 *         expired. `linkId` is for the session the link opens, never for
+	 *         the answer.
+	 *
+	 * @spec openspec/changes/identity-ways-in-screens/design.md
 	 *
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
@@ -198,8 +218,23 @@ class PortalReferenceLinkService {
 		return [
 			'caseReference' => (string)($row['caseReference'] ?? ''),
 			'organisation' => (string)($row['organisation'] ?? ''),
+			'register' => (string)($row['caseRegister'] ?? ''),
+			'schema' => (string)($row['caseSchema'] ?? ''),
+			'linkId' => $id,
 		];
 	}//end redeem()
+
+	/**
+	 * The expiry a link issued now would carry. The answer to a request that
+	 * issues nothing carries it too, so the two answers cannot be told apart.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/identity-ways-in-screens/design.md
+	 */
+	public function nominalExpiry(): string {
+		return (new DateTimeImmutable())->add(new DateInterval(self::TTL))->format(DATE_ATOM);
+	}//end nominalExpiry()
 
 	/**
 	 * The unspent, unexpired link behind a token hash, or null.

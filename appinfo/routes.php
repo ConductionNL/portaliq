@@ -276,6 +276,9 @@ return [
         ['name' => 'portalIdentity#challenge', 'url' => '/portal/api/identity/challenge', 'verb' => 'GET'],
         ['name' => 'portalIdentity#requestReferenceLink', 'url' => '/portal/api/identity/reference-link', 'verb' => 'POST'],
         ['name' => 'portalIdentity#redeemReferenceLink', 'url' => '/portal/api/identity/reference-link/redeem', 'verb' => 'POST'],
+        // The one case a redeemed reference link opens, read only, for the
+        // short reference session it started (identity-ways-in-screens D2).
+        ['name' => 'portalIdentity#referenceCase', 'url' => '/portal/api/identity/reference-case', 'verb' => 'GET'],
         ['name' => 'portalIdentity#register', 'url' => '/portal/api/identity/register', 'verb' => 'POST'],
         ['name' => 'portalIdentity#acceptInvitation', 'url' => '/portal/api/identity/invitation/accept', 'verb' => 'POST'],
         ['name' => 'portalAccountSelf#updateDetails', 'url' => '/portal/api/identity/details', 'verb' => 'PATCH'],

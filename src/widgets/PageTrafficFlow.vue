@@ -170,8 +170,8 @@ export default {
 	 */
 	data() {
 		return {
-			// '' is the default period, 30 days, as on the KPI cards.
-			days: '',
+			// The default period, 30 days, as on the KPI cards.
+			days: '30',
 			answer: null,
 			loading: false,
 			failed: false,
@@ -223,7 +223,7 @@ export default {
 		periods() {
 			return [
 				{ id: '7', label: this.t('portaliq', 'Last 7 days') },
-				{ id: '', label: this.t('portaliq', 'Last 30 days') },
+				{ id: '30', label: this.t('portaliq', 'Last 30 days') },
 				{ id: '90', label: this.t('portaliq', 'Last 90 days') },
 				{ id: '365', label: this.t('portaliq', 'Last 365 days') },
 			]
