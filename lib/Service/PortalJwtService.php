@@ -72,6 +72,14 @@ class PortalJwtService {
 	public const USE_ASSERTION = 'assertion';
 
 	/**
+	 * The nine frozen assertion claims. A declared scope claim may never take
+	 * one of these names (case-actions-sign-a-document D3).
+	 *
+	 * @var string[]
+	 */
+	public const RESERVED_ASSERTION_CLAIMS = ['sub', 'audience', 'organisation', 'trust', 'jti', 'use', 'iat', 'exp', 'iss'];
+
+	/**
 	 * Token issuer claim.
 	 */
 	private const ISSUER = 'portaliq';
@@ -163,10 +171,13 @@ class PortalJwtService {
 	 * @param string $trust Normalised trust level (`low|substantial|high`).
 	 * @param string $jti The originating SESSION's token id.
 	 * @param int|null $ttl Override the assertion TTL (seconds).
+	 * @param string $scopeClaim The action's declared scope claim (`app.claimName` or `claimName`), or ''.
+	 * @param string $scopeValue The server-resolved value of that claim, or ''.
 	 *
 	 * @return string Compact JWT string.
 	 *
 	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T7
+	 * @spec openspec/changes/case-actions-sign-a-document/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
 	 */
 	public function createAssertion(
 		string $subjectRef,
@@ -175,6 +186,8 @@ class PortalJwtService {
 		string $trust,
 		string $jti,
 		?int $ttl = null,
+		string $scopeClaim = '',
+		string $scopeValue = '',
 	): string {
 		$iat = time();
 		$exp = ($iat + ($ttl ?? self::ASSERTION_TTL));
@@ -192,11 +205,47 @@ class PortalJwtService {
 			'iss' => self::ISSUER,
 		];
 
+		$claimName = self::scopeClaimName(scopeClaim: $scopeClaim);
+		if ($claimName !== null && $scopeValue !== '') {
+			$claims[$claimName] = $scopeValue;
+		}
+
 		$hPart = $this->b64UrlEncode(bytes: (string)json_encode($header, JSON_UNESCAPED_SLASHES));
 		$cPart = $this->b64UrlEncode(bytes: (string)json_encode($claims, JSON_UNESCAPED_SLASHES));
 		$sig = $this->b64UrlEncode(bytes: $this->signRaw(input: $hPart . '.' . $cPart));
 		return $hPart . '.' . $cPart . '.' . $sig;
 	}//end createAssertion()
+
+	/**
+	 * The assertion claim name a declared scope claim maps to.
+	 *
+	 * The part after the first `.` (the app prefix) is the name. It is null
+	 * when the name is malformed or is one of the nine frozen claims, so a
+	 * scope claim can never overwrite `sub`, `iss` or any other of them.
+	 *
+	 * @param string $scopeClaim The declared scope claim.
+	 *
+	 * @return string|null The claim name, or null when none may be added.
+	 *
+	 * @spec openspec/changes/case-actions-sign-a-document/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
+	 */
+	public static function scopeClaimName(string $scopeClaim): ?string {
+		$dot = strpos($scopeClaim, '.');
+		$name = $scopeClaim;
+		if ($dot !== false) {
+			$name = substr($scopeClaim, ($dot + 1));
+		}
+
+		if (preg_match('/^[a-z][a-zA-Z0-9_]*$/', $name) !== 1) {
+			return null;
+		}
+
+		if (in_array($name, self::RESERVED_ASSERTION_CLAIMS, true) === true) {
+			return null;
+		}
+
+		return $name;
+	}//end scopeClaimName()
 
 	/**
 	 * Validate a JWT and return its claims.

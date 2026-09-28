@@ -1463,6 +1463,14 @@ class ContributionController extends Controller implements PortalProtected {
 			}
 		}
 
+		// A declared `scopeClaim` rides, server-resolved, inside the signed
+		// assertion (case-actions-sign-a-document D3); a claim that does not
+		// resolve stops the forward before it is audited or made.
+		$scopeValue = $this->declaredScopeValue(action: $action, subject: $subject, appId: $appId);
+		if ($scopeValue === null) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
 		// Recorded once the forward is AUTHORISED — regardless of the domain
 		// app's own response status or a transport failure below — because the
 		// fact being audited is "the subject invoked this forward", not
@@ -1479,7 +1487,7 @@ class ContributionController extends Controller implements PortalProtected {
 			jti: (string)($subject['jti'] ?? '')
 		);
 
-		$response = $this->forwarder->forward(action: $action, subject: $subject, whitelisted: $whitelisted);
+		$response = $this->forwarder->forward(action: $action, subject: $subject, whitelisted: $whitelisted, scopeValue: $scopeValue);
 		if ($response === null) {
 			// Transport failure — mirrors the writer's 502 posture. Never leak
 			// transport internals to the portal client.
@@ -1538,6 +1546,33 @@ class ContributionController extends Controller implements PortalProtected {
 		$body[(string)$action['subjectField']] = $value;
 		return $body;
 	}//end withSubjectField()
+
+	/**
+	 * The server-resolved value of the action's declared `scopeClaim`, for
+	 * the signed assertion: '' when the action declares none, null when it
+	 * declares one that does not resolve for this subject (the forward stops).
+	 *
+	 * @param array<string, mixed> $action The authorised endpoint action.
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param string $appId The contributing app (the claim namespace).
+	 *
+	 * @return string|null
+	 *
+	 * @spec openspec/changes/case-actions-sign-a-document/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
+	 */
+	private function declaredScopeValue(array $action, array $subject, string $appId): ?string {
+		$scopeClaim = ($action['scopeClaim'] ?? '');
+		if (is_string($scopeClaim) === false || $scopeClaim === '') {
+			return '';
+		}
+
+		$value = $this->reader->resolveScopeValue(scopeClaim: $scopeClaim, contributingApp: $appId, subject: $subject);
+		if ($value === null || $value === '') {
+			return null;
+		}
+
+		return $value;
+	}//end declaredScopeValue()
 
 	/**
 	 * Find an authorised endpoint action {appId, actionId} in the subject's

@@ -131,6 +131,14 @@ class PortalRowActionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
+		// A declared `scopeClaim` rides, server-resolved, inside the signed
+		// assertion (case-actions-sign-a-document D3), the way filinq's `sign`
+		// receives its `signerEmail`; unresolved, the forward stops here.
+		$scopeValue = $this->declaredScopeValue(match: $match, subject: $subject);
+		if ($scopeValue === null) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
 		// Recorded once the forward is authorised, whatever the leaf app then
 		// answers: the audited fact is that the subject invoked it (as
 		// ContributionController::action()).
@@ -144,7 +152,7 @@ class PortalRowActionController extends Controller implements PortalProtected {
 			jti: (string)($subject['jti'] ?? '')
 		);
 
-		$response = $this->forwarder->forward(action: $match['action'], subject: $subject, whitelisted: $body);
+		$response = $this->forwarder->forward(action: $match['action'], subject: $subject, whitelisted: $body, scopeValue: $scopeValue);
 		if ($response === null) {
 			return new JSONResponse(['error' => 'forward_failed'], Http::STATUS_BAD_GATEWAY);
 		}
@@ -191,6 +199,32 @@ class PortalRowActionController extends Controller implements PortalProtected {
 
 		return null;
 	}//end authorisedRowAction()
+
+	/**
+	 * The server-resolved value of the row action's declared `scopeClaim`:
+	 * '' when it declares none, null when it declares one that does not
+	 * resolve for this subject.
+	 *
+	 * @param array{collection: array<string, mixed>, action: array<string, mixed>, app: string} $match The authorised row action.
+	 * @param array<string, mixed> $subject The resolved subject.
+	 *
+	 * @return string|null
+	 *
+	 * @spec openspec/changes/case-actions-sign-a-document/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
+	 */
+	private function declaredScopeValue(array $match, array $subject): ?string {
+		$scopeClaim = ($match['action']['scopeClaim'] ?? '');
+		if (is_string($scopeClaim) === false || $scopeClaim === '') {
+			return '';
+		}
+
+		$value = $this->reader->resolveScopeValue(scopeClaim: $scopeClaim, contributingApp: $match['app'], subject: $subject);
+		if ($value === null || $value === '') {
+			return null;
+		}
+
+		return $value;
+	}//end declaredScopeValue()
 
 	/**
 	 * The endpoint row action a collection offers under this id, or null.

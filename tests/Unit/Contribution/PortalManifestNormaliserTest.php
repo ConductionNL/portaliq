@@ -634,4 +634,35 @@ class PortalManifestNormaliserTest extends TestCase {
 		$this->assertTrue($out['collections'][1]['anonymous']);
 
 	}//end testAnonymousSurvivesWithNoOrLowMinTrust()
-}//end class
+
+	/**
+	 * #804, T03: an action whose `scopeClaim` names one of the nine frozen
+	 * assertion claims is dropped, so its value can never stand in for `sub`,
+	 * `iss` or any other of them; an ordinary claim name keeps the action.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-actions-sign-a-document/tasks.md#T03
+	 */
+	public function testReservedScopeClaimNameIsDropped(): void {
+		$action = static fn (string $id, string $claim): array => [
+			'id' => $id,
+			'type' => 'endpoint',
+			'endpoint' => '/apps/filinq/api/sign',
+			'method' => 'POST',
+			'scopeClaim' => $claim,
+		];
+		$out = (new PortalManifestNormaliser())->normalise(
+			[
+				'collections' => [],
+				'actions' => [
+					$action('sign', 'filinq.signerEmail'),
+					$action('hijackSub', 'filinq.sub'),
+					$action('hijackIss', 'iss'),
+				],
+			]
+		);
+
+		$this->assertSame(['sign'], array_column($out['actions'], 'id'));
+	}//end testReservedScopeClaimNameIsDropped()
+}

@@ -754,6 +754,8 @@ class PortalSessionService {
 	 * can never come back as a portal session (contract v2, A6).
 	 *
 	 * @param array<string, mixed> $subject The resolved subject (from resolveFromBearer).
+	 * @param string $scopeClaim The action's declared scope claim, or ''.
+	 * @param string $scopeValue The server-resolved value of that claim, or ''.
 	 *
 	 * @return string Compact assertion JWT (TTL ~60s).
 	 *
@@ -764,7 +766,7 @@ class PortalSessionService {
 	 *
 	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T7
 	 */
-	public function issueAssertion(array $subject): string {
+	public function issueAssertion(array $subject, string $scopeClaim = '', string $scopeValue = ''): string {
 		if ($this->jwt === null) {
 			throw new RuntimeException('Portaliq: cannot issue an assertion — no dedicated jwt_signing_secret configured');
 		}
@@ -774,7 +776,9 @@ class PortalSessionService {
 			audience: (string)($subject['audience'] ?? ''),
 			organisation: (string)($subject['organisation'] ?? ''),
 			trust: self::normaliseTrust(trust: ($subject['trust'] ?? '')),
-			jti: (string)($subject['jti'] ?? '')
+			jti: (string)($subject['jti'] ?? ''),
+			scopeClaim: $scopeClaim,
+			scopeValue: $scopeValue
 		);
 	}//end issueAssertion()
 }//end class

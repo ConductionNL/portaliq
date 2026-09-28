@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Service\PortalJwtService;
 use OCA\Portaliq\Service\PortalSchemaReader;
 
 /**
@@ -129,6 +130,13 @@ class ActionConfigNormaliser {
 				continue;
 			}
 
+			// A declared scope claim rides in the signed assertion; one that
+			// names a frozen assertion claim (`sub`, `iss`, ...) is removed with
+			// its action, so it can never stand in for that claim.
+			if ($this->scopeClaimIsReserved(action: $action) === true) {
+				continue;
+			}
+
 			// The cross-reference guard, and the one normaliser that can
 			// remove an action rather than a key: a create whose guard could
 			// not be read must not be offered without it.
@@ -163,6 +171,31 @@ class ActionConfigNormaliser {
 		return is_string($action['subjectField']) === false
 			|| preg_match('/^[a-zA-Z][a-zA-Z0-9_]*$/', $action['subjectField']) !== 1;
 	}//end subjectFieldIsMalformed()
+
+	/**
+	 * Whether an action declares a `scopeClaim` whose claim name (the part
+	 * after the app prefix) is one of the nine frozen assertion claims.
+	 *
+	 * @param array<string, mixed> $action The action.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/case-actions-sign-a-document/tasks.md#T03
+	 */
+	private function scopeClaimIsReserved(array $action): bool {
+		$scopeClaim = ($action['scopeClaim'] ?? null);
+		if (is_string($scopeClaim) === false || $scopeClaim === '') {
+			return false;
+		}
+
+		$dot = strpos($scopeClaim, '.');
+		$name = $scopeClaim;
+		if ($dot !== false) {
+			$name = substr($scopeClaim, ($dot + 1));
+		}
+
+		return in_array($name, PortalJwtService::RESERVED_ASSERTION_CLAIMS, true);
+	}//end scopeClaimIsReserved()
 
 	/**
 	 * Drop a non-string `submitLabel` / `successMessage`.

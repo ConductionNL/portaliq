@@ -146,3 +146,26 @@ export async function runRowAction(api, collection, row, action) {
 	const redirect = redirectTarget(result)
 	return { redirect, messageKey: redirect ? '' : outcomeKey(result) }
 }
+
+/**
+ * Run one page-level endpoint action and decide what the screen does, the
+ * same way a row action does: go to `redirect`, or show `messageKey`. The
+ * portal forwards it by app and action id and signs the assertion; the leaf
+ * app's answer is relayed, never discarded (#804, case-actions T09).
+ *
+ * @param {object} api The portal api (forwardAction).
+ * @param {string} app The contributing app.
+ * @param {object} action The endpoint action.
+ * @return {Promise<{redirect: string|null, messageKey: string}>}
+ */
+export async function runAction(api, app, action) {
+	if (!api || !app || !action || !action.id) {
+		return {
+			redirect: null,
+			messageKey: outcomeKey({ ok: false, status: 0, body: {} }),
+		}
+	}
+	const result = await api.forwardAction(app, action.id, {})
+	const redirect = redirectTarget(result)
+	return { redirect, messageKey: redirect ? '' : outcomeKey(result) }
+}
