@@ -1549,7 +1549,24 @@ OC.L10N.register(
         "The link works once and for a limited time.": "De link werkt één keer en een beperkte tijd.",
         "Did you not ask for this? Then you can ignore this mail.": "Vroeg u hier niet om? Dan kunt u deze mail negeren.",
         "The register of the case collection the link opens. The session a followed link starts reads only this collection.": "Het register van de zaakverzameling die de link opent. De sessie die een gevolgde link start, leest alleen deze verzameling.",
-        "The schema of the case collection the link opens.": "Het schema van de zaakverzameling die de link opent."
+        "The schema of the case collection the link opens.": "Het schema van de zaakverzameling die de link opent.",
+        "Access requests": "Toegangsaanvragen",
+        "Cancel": "Annuleren",
+        "Give a reason for the refusal.": "Geef een reden voor de weigering.",
+        "Grant": "Toekennen",
+        "Reason for the refusal": "Reden van de weigering",
+        "Refuse": "Weigeren",
+        "Refuse this request": "Deze aanvraag weigeren",
+        "Someone already answered this request.": "Iemand heeft deze aanvraag al beantwoord.",
+        "The access could not be recorded, so the request is still waiting. Try again.": "De toegang kon niet worden vastgelegd, dus de aanvraag wacht nog. Probeer het opnieuw.",
+        "The access requests could not be loaded or saved. Try again.": "De toegangsaanvragen konden niet worden geladen of opgeslagen. Probeer het opnieuw.",
+        "The person who asked reads this reason.": "De aanvrager leest deze reden.",
+        "Why the request was refused. The person who asked reads it.": "Waarom de aanvraag is geweigerd. De aanvrager leest dit.",
+        "You may not answer access requests. Ask an administrator for this right.": "U mag geen toegangsaanvragen beantwoorden. Vraag een beheerder om dit recht.",
+        "Grant this request?": "Deze aanvraag toekennen?",
+        "{name} can then see the cases of {party}.": "{name} kan dan de zaken van {party} zien.",
+        "Access granted.": "Toegang toegekend.",
+        "Request refused.": "Aanvraag geweigerd."
     },
     "nplurals=2; plural=(n != 1);"
 )

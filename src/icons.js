@@ -30,7 +30,9 @@ import Calendar from 'vue-material-design-icons/Calendar.vue'
 import ChartBoxOutline from 'vue-material-design-icons/ChartBoxOutline.vue'
 import ChartLine from 'vue-material-design-icons/ChartLine.vue'
 import ChatOutline from 'vue-material-design-icons/ChatOutline.vue'
+import Check from 'vue-material-design-icons/Check.vue'
 import ClipboardText from 'vue-material-design-icons/ClipboardText.vue'
+import Close from 'vue-material-design-icons/Close.vue'
 import CursorDefaultClickOutline from 'vue-material-design-icons/CursorDefaultClickOutline.vue'
 import Email from 'vue-material-design-icons/Email.vue'
 import EmailOutline from 'vue-material-design-icons/EmailOutline.vue'
@@ -78,7 +80,10 @@ export default {
 	ChartBoxOutline,
 	ChartLine,
 	ChatOutline,
+	// The Grant and Refuse row actions of the Access requests page (#797).
+	Check,
 	ClipboardText,
+	Close,
 	CursorDefaultClickOutline,
 	Email,
 	EmailOutline,

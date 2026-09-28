@@ -52,6 +52,12 @@ return [
         ['name' => 'portalAccountAdmin#invite', 'url' => '/api/invitations', 'verb' => 'POST'],
         ['name' => 'portalAccountAdmin#invitations', 'url' => '/api/invitations', 'verb' => 'GET'],
 
+        // The owner's side of an access request (identity-access-requests):
+        // staff holding `portal.answer-access-request` list, grant and refuse.
+        ['name' => 'accessRequestAdmin#index', 'url' => '/api/access-requests', 'verb' => 'GET'],
+        ['name' => 'accessRequestAdmin#grant', 'url' => '/api/access-requests/{id}/grant', 'verb' => 'POST'],
+        ['name' => 'accessRequestAdmin#refuse', 'url' => '/api/access-requests/{id}/refuse', 'verb' => 'POST'],
+
         // The identity space (portal-identity-space). Staff acts, gated by
         // the ADR-023 action `portal.provision`; a citizen never reaches them.
         ['name' => 'portalAccountAdmin#provision', 'url' => '/api/accounts/provision', 'verb' => 'POST'],

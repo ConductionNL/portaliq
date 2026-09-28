@@ -35,7 +35,7 @@
     "check:register": "node tests/validate-register.js",
     "check:registry": "node tests/registry.spec.js",
     "check:json-strict": "node tests/validate-json-strict.js",
-    "check:specs": "npm run check:json-strict && npm run check:manifest-v2 && npm run check:register && npm run check:registry && npm run check:site-auth && npm run check:federated-search && npm run check:campaign-tracking && npm run check:traffic-client && npm run check:traffic-summary && npm run check:traffic-paths && npm run check:page-traffic && npm run check:open-portal-site && npm run check:shared-instance && npm run check:connection-registry && npm run check:leaf-integrations && npm run check:page-layout-entry && npm run check:collection-table && npm run check:case-timeline && npm run check:schema-form-file-field && npm run check:timed-task && npm run check:row-action && npm run check:translated-message-notice",
+    "check:specs": "npm run check:json-strict && npm run check:manifest-v2 && npm run check:register && npm run check:registry && npm run check:site-auth && npm run check:federated-search && npm run check:campaign-tracking && npm run check:traffic-client && npm run check:traffic-summary && npm run check:traffic-paths && npm run check:page-traffic && npm run check:open-portal-site && npm run check:shared-instance && npm run check:connection-registry && npm run check:leaf-integrations && npm run check:page-layout-entry && npm run check:collection-table && npm run check:case-timeline && npm run check:schema-form-file-field && npm run check:timed-task && npm run check:row-action && npm run check:translated-message-notice && npm run check:access-requests",
     "prepare": "git config core.hooksPath .githooks || true",
     "build:site": "NODE_ENV=production webpack --config webpack.site.js --progress",
     "postbuild:site": "node scripts/check-single-dexie.js",
@@ -59,7 +59,8 @@
     "check:translated-message-notice": "node --test tests/translated-message-notice.spec.mjs",
     "check:schema-form-file-field": "node --test tests/schema-form-file-field.spec.mjs",
     "check:timed-task": "node --test tests/timed-task.spec.mjs",
-    "check:row-action": "node --test tests/row-action.spec.mjs"
+    "check:row-action": "node --test tests/row-action.spec.mjs",
+    "check:access-requests": "node --test tests/access-requests.spec.mjs"
   },
   "browserslist": [
     "extends @nextcloud/browserslist-config"

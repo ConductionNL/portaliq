@@ -5577,7 +5577,7 @@
                     ]
                 },
                 "icon": "AccountKey",
-                "version": "0.1.0",
+                "version": "0.2.0",
                 "title": "Portal Access Request",
                 "description": "Somebody asking, in the product, for access they do not have (REQ-PIOC-007). It carries who asked and what for, and the answer the owner gave, which the asker sees.",
                 "type": "object",
@@ -5626,6 +5626,12 @@
                         ],
                         "description": "The owner's answer, which the asker sees.",
                         "example": "pending"
+                    },
+                    "decisionReason": {
+                        "title": "Reason for the refusal",
+                        "type": "string",
+                        "description": "Why the request was refused. The person who asked reads it.",
+                        "example": "No authorisation from the company"
                     },
                     "decidedBy": {
                         "title": "Decided by",
