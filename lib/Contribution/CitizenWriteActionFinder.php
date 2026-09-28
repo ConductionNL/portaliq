@@ -55,8 +55,10 @@ class CitizenWriteActionFinder {
 	 * @param string $register The register the case lives in.
 	 * @param string $schema The schema the case lives in.
 	 *
-	 * @return array{action: array<string, mixed>, app: string}|null Null when
-	 *         no contributed action admits a citizen write here.
+	 * @return array{action: array<string, mixed>, app: string, filesDownload: bool}|null
+	 *         Null when no contributed action admits a citizen write here.
+	 *         `filesDownload` says whether the same app opted a collection on
+	 *         this register and schema into downloads (portaliq#798).
 	 *
 	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
 	 */
@@ -72,10 +74,42 @@ class CitizenWriteActionFinder {
 					continue;
 				}
 
-				return ['action' => $action, 'app' => (string)($contribution['app'] ?? '')];
+				return [
+					'action' => $action,
+					'app' => (string)($contribution['app'] ?? ''),
+					'filesDownload' => $this->filesDownload(contribution: $contribution, register: $register, schema: $schema),
+				];
 			}
 		}
 
 		return null;
 	}//end forSubject()
+
+	/**
+	 * Whether the contribution opts a collection on this register and schema
+	 * into downloads. Only the app's own collections count, and only on the
+	 * case's own schema, the same opt-in contribution#object and
+	 * contribution#downloadFile honour. Absent means no.
+	 *
+	 * @param array<string, mixed> $contribution The contribution the action came from.
+	 * @param string $register The register the case lives in.
+	 * @param string $schema The schema the case lives in.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/supplier-portal/spec.md#download-is-opt-in-per-collection-fail-closed
+	 */
+	private function filesDownload(array $contribution, string $register, string $schema): bool {
+		foreach (($contribution['collections'] ?? []) as $collection) {
+			if (is_array($collection) === true
+				&& ($collection['register'] ?? '') === $register
+				&& ($collection['schema'] ?? '') === $schema
+				&& ($collection['filesDownload'] ?? false) === true
+			) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end filesDownload()
 }//end class
