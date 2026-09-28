@@ -319,6 +319,13 @@ export default {
 	},
 
 	watch: {
+		/**
+		 * Load the other form when the catalogue link changes under the page.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
+		 */
 		bindingRoute() {
 			this.load()
 		},
