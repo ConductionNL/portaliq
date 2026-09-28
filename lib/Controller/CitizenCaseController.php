@@ -150,9 +150,32 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			// from the case type rather than from any list the portal keeps
 			// (withdrawing-your-own-case REQ-WOC-001).
 			'withdrawal' => $this->writableSet->withdrawal(action: $context['action'], case: $context['case']),
-			'documents' => $this->fileReader->listFiles(register: $register, schema: $schema, id: $id),
+			'documents' => $this->releasedDocuments(context: $context, register: $register, schema: $schema, id: $id),
 		]);
 	}//end show()
+
+	/**
+	 * The files a resident may see on their own case. The case folder also
+	 * holds what staff added and never released, so the list is empty unless
+	 * the app opted the case's collection into downloads, and even then holds
+	 * only the files the organisation released (portaliq#798).
+	 *
+	 * @param array<string, mixed> $context The resolved context.
+	 * @param string $register The register the case lives in.
+	 * @param string $schema The schema the case lives in.
+	 * @param string $id The case id.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/cases-documents-on-the-case/design.md
+	 */
+	private function releasedDocuments(array $context, string $register, string $schema, string $id): array {
+		if (($context['filesDownload'] ?? false) !== true) {
+			return [];
+		}
+
+		return $this->fileReader->listReleasedFiles(register: $register, schema: $schema, id: $id);
+	}//end releasedDocuments()
 
 	/**
 	 * Amend the answers the citizen already gave, inside the declared window.
@@ -491,6 +514,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			'subject' => $subject,
 			'action' => $action,
 			'app' => $match['app'],
+			'filesDownload' => $match['filesDownload'],
 			'case' => $case,
 			'set' => $this->writableSet->resolve(
 				action: $action,

@@ -243,11 +243,16 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// the language school messages are shown in (`messageLanguage`), and a
 		// message keeps its AI translations with their provenance next to the
 		// original body (`translations`) (translated-message-notice, D24). Additive.
+		// 0.36.1 (portalCaseType 0.2.0): the report declaration names an optional
+		// `handlerGroup`, the group whose members may read, answer and ask about
+		// a report beside the custodian group (portaliq#799). Additive.
 		// Every new schema is listed in
 		// `components.registers.portaliq.schemas` (ImportHandler binds only
 		// what is listed there) and declares a non-empty `read` rule.
-		$this->assertSame('0.36.0', self::$register['info']['version']);
-		$this->assertSame('0.36.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.36.1', self::$register['info']['version']);
+		$this->assertSame('0.36.1', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalCaseType']['version']);
+		$this->assertArrayHasKey('handlerGroup', self::$register['components']['schemas']['portalCaseType']['properties']['portalReportDeclaration']['properties']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['guardianMessage']['version']);
 		$this->assertArrayHasKey('translations', self::$register['components']['schemas']['guardianMessage']['properties']);
 		$this->assertArrayHasKey('messageLanguage', self::$register['components']['schemas']['portalAccount']['properties']);
@@ -262,7 +267,6 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertArrayNotHasKey('amount', self::$register['components']['schemas']['activityOffer']['properties'], 'D19: an activity holds no amount');
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalAuditEntry']['version']);
 		$this->assertContains('complete', self::$register['components']['schemas']['portalAuditEntry']['properties']['verb']['enum']);
-		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalCaseType']['version']);
 		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalCase']['version']);
 		$this->assertSame(['authenticated'], self::$register['components']['schemas']['portalCase']['authorization']['read']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalTrafficDaily']['version']);

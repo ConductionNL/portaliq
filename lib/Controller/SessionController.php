@@ -69,6 +69,11 @@ use OCP\IUserSession;
  * mapping, state storage, account resolution) — see PortalSessionService's
  * identical rationale; collapsing them would hide the fail-closed seams this
  * edge depends on.
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- every sign-in route
+ * the portal offers (dev, OIDC start and callback, Nextcloud, refresh,
+ * logout) is one public entry with its own fail-closed guards, and the site's
+ * `?portal=` start (#802) added the last branch. Splitting the routes over
+ * controllers would scatter one auth edge without removing a single guard.
  * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- the constructor mirrors
  * that coupling 1:1; folding services into a facade would only relocate the
  * same count behind one more layer.
@@ -256,13 +261,21 @@ class SessionController extends Controller {
 	 * state-store write failure — returns the SAME generic error, never a
 	 * redirect (design.md).
 	 *
+	 * The public site names the PORTAL, not the organisation: its sign-in
+	 * links carry `?portal=<slug>` (`src/site/lib/authApi.js`). Without an
+	 * `org` the organisation is the named portal's own `organisation` field,
+	 * the tenant the portal belongs to (#802). An explicit `org` still wins,
+	 * so the portal SPA's `?org=` links are unchanged.
+	 *
 	 * @param string $org The `?org=` slug to log in to.
 	 * @param string $provider One of `digid|eherkenning|eidas|generic`.
+	 * @param string $portal The `?portal=` slug the public site sends when it names no org.
 	 *
 	 * @return Response 302 to the broker, or the generic OIDC error.
 	 *
 	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T06
 	 * @spec openspec/specs/supplier-portal/spec.md#oidc-start-builds-a-state-nonce-pkce-authorization-request
+	 * @spec openspec/changes/signin-integriq-broker-login/design.md#d2-two-new-routes-and-the-spas-follow-the-route-field
 	 *
 	 * @no-admin-idor-exempt the lookup is unscoped because it MUST be: this is
 	 * the anonymous entry point to a portal's login, so a caller with no
@@ -281,7 +294,11 @@ class SessionController extends Controller {
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 30, period: 60)]
-	public function oidcStart(string $org = '', string $provider = ''): Response {
+	public function oidcStart(string $org = '', string $provider = '', string $portal = ''): Response {
+		if ($org === '' && $portal !== '') {
+			$org = $this->organisationOfPortal(slug: $portal);
+		}
+
 		// THE AUTHORISATION DECISION, MADE EXPLICITLY AND BEFORE ANY SECRET IS
 		// TOUCHED. `resolveOidcConfig()` answers two different questions at
 		// once — "may this org+provider start a login" and "give me the client
@@ -332,6 +349,27 @@ class SessionController extends Controller {
 		// Explicit 302 (design.md) — RedirectResponse's own default is 303.
 		return new RedirectResponse($url, Http::STATUS_FOUND);
 	}//end oidcStart()
+
+	/**
+	 * The organisation slug a portal belongs to, or '' when the slug names no
+	 * published portal or the portal carries no organisation. An empty answer
+	 * reaches the same policy refusal as an empty `org`, so an unknown portal
+	 * gets the identical generic error and the start stays no oracle.
+	 *
+	 * @param string $slug The `?portal=` slug.
+	 *
+	 * @return string The organisation slug, or ''.
+	 *
+	 * @spec openspec/changes/signin-integriq-broker-login/design.md#d2-two-new-routes-and-the-spas-follow-the-route-field
+	 */
+	private function organisationOfPortal(string $slug): string {
+		$organisation = ($this->portalFor(slug: $slug)['organisation'] ?? null);
+		if (is_string($organisation) === false) {
+			return '';
+		}
+
+		return trim($organisation);
+	}//end organisationOfPortal()
 
 	/**
 	 * OIDC broker callback: consumes the single-use `state` (CSRF/replay

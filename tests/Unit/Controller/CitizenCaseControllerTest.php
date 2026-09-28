@@ -328,6 +328,56 @@ class CitizenCaseControllerTest extends TestCase {
 	}//end testTheCitizenSeesTheWritableSetBeforeTouchingAnything()
 
 	/**
+	 * A case whose collection never opted into downloads lists no file at all,
+	 * even when the case folder holds one: the folder also holds what staff
+	 * added and never released (portaliq#798).
+	 */
+	public function testTheCaseScreenListsNoFileWhenTheCollectionDidNotOptIn(): void {
+		$controller = $this->controller(
+			existingFiles: [['id' => 8, 'name' => 'intern-advies.pdf', 'size' => 512]],
+			collections: [['id' => 'mijn-zaken', 'register' => 'zaken', 'schema' => 'zaak']]
+		);
+
+		$response = $controller->show('zaken', 'zaak', self::CASE_ID);
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame([], $response->getData()['documents']);
+	}//end testTheCaseScreenListsNoFileWhenTheCollectionDidNotOptIn()
+
+	/**
+	 * Where the case collection opts into downloads, the screen lists only the
+	 * files the organisation released, never an internal note beside them.
+	 */
+	public function testTheCaseScreenListsOnlyReleasedFilesWhenTheCollectionOptsIn(): void {
+		$released = ['id' => 7, 'name' => 'besluit.pdf', 'size' => 2048];
+		$controller = $this->controller(
+			existingFiles: [$released, ['id' => 8, 'name' => 'intern-advies.pdf', 'size' => 512]],
+			collections: [['id' => 'mijn-zaken', 'register' => 'zaken', 'schema' => 'zaak', 'filesDownload' => true]],
+			releasedFiles: [$released]
+		);
+
+		$response = $controller->show('zaken', 'zaak', self::CASE_ID);
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame([$released], $response->getData()['documents']);
+	}//end testTheCaseScreenListsOnlyReleasedFilesWhenTheCollectionOptsIn()
+
+	/**
+	 * An opt-in counts only on the case's own register and schema: a
+	 * collection of the same app over another schema opens nothing here.
+	 */
+	public function testAnOptInOnAnotherSchemaOpensNothingOnTheCase(): void {
+		$controller = $this->controller(
+			existingFiles: [['id' => 8, 'name' => 'intern-advies.pdf', 'size' => 512]],
+			collections: [['id' => 'facturen', 'register' => 'zaken', 'schema' => 'factuur', 'filesDownload' => true]]
+		);
+
+		$response = $controller->show('zaken', 'zaak', self::CASE_ID);
+
+		$this->assertSame([], $response->getData()['documents']);
+	}//end testAnOptInOnAnotherSchemaOpensNothingOnTheCase()
+
+	/**
 	 * The case type dossiq would declare.
 	 *
 	 * @param array<int, string>|null $amendmentStatuses The statuses the amendment window is open in.
@@ -426,6 +476,10 @@ class CitizenCaseControllerTest extends TestCase {
 	 * @param array{name: string, content: string}|null $upload The multipart upload.
 	 * @param array<int, array<string, mixed>> $existingFiles Documents already on the case.
 	 * @param bool $throttleOpen Whether the throttle lets the write through.
+	 * @param array<string, mixed> $params Other request parameters.
+	 * @param array<int, array<string, mixed>> $collections The contribution's collections.
+	 * @param array<int, array<string, mixed>>|null $releasedFiles What the released
+	 *        listing answers; null means the same as $existingFiles.
 	 */
 	private function controller(
 		array|null $subject = self::SUBJECT,
@@ -436,6 +490,8 @@ class CitizenCaseControllerTest extends TestCase {
 		array $existingFiles = [],
 		bool $throttleOpen = true,
 		array $params = [],
+		array $collections = [],
+		?array $releasedFiles = null,
 	): CitizenCaseController {
 		$action = ($action ?? $this->action());
 		$cases = $this->cases();
@@ -462,7 +518,7 @@ class CitizenCaseControllerTest extends TestCase {
 
 		$registry = $this->createMock(PortalContributionRegistry::class);
 		$registry->method('aggregateFor')->willReturn([
-			'contributions' => [['app' => 'dossiq', 'actions' => [$action]]],
+			'contributions' => [['app' => 'dossiq', 'actions' => [$action], 'collections' => $collections]],
 		]);
 
 		$reader = $this->createMock(PortalObjectReader::class);
@@ -497,6 +553,7 @@ class CitizenCaseControllerTest extends TestCase {
 
 		$fileReader = $this->createMock(PortalFileReader::class);
 		$fileReader->method('listFiles')->willReturn($existingFiles);
+		$fileReader->method('listReleasedFiles')->willReturn($releasedFiles ?? $existingFiles);
 
 		$fileWriter = $this->createMock(PortalFileWriter::class);
 		$fileWriter->method('attachFile')->willReturnCallback(
