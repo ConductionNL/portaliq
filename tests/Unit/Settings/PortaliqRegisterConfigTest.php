@@ -246,11 +246,15 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.36.1 (portalCaseType 0.2.0): the report declaration names an optional
 		// `handlerGroup`, the group whose members may read, answer and ask about
 		// a report beside the custodian group (portaliq#799). Additive.
+		// 0.36.2 (portalReporterContact 0.2.0): what a reporter gave is readable
+		// by `admin` only, not by every signed-in user; portaliq reads it only
+		// inside an allowed reveal, with RBAC off (portaliq#800).
 		// Every new schema is listed in
 		// `components.registers.portaliq.schemas` (ImportHandler binds only
 		// what is listed there) and declares a non-empty `read` rule.
-		$this->assertSame('0.36.1', self::$register['info']['version']);
-		$this->assertSame('0.36.1', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.36.2', self::$register['info']['version']);
+		$this->assertSame('0.36.2', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalReporterContact']['version']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalCaseType']['version']);
 		$this->assertArrayHasKey('handlerGroup', self::$register['components']['schemas']['portalCaseType']['properties']['portalReportDeclaration']['properties']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['guardianMessage']['version']);
