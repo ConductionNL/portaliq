@@ -1,7 +1,6 @@
 OC.L10N.register(
     "portaliq",
     {
-        "Journeys": "Journeys",
         "Per day": "Per day",
         "Sources": "Sources",
         "The change could not be saved. Please try again.": "The change could not be saved. Please try again.",
