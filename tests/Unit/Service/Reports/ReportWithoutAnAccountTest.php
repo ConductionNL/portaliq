@@ -260,6 +260,24 @@ class ReportWithoutAnAccountTest extends TestCase {
 
 	}//end testACaseTypeThatNamedNoCustodianHasNobodyWhoMayReveal()
 
+	public function testOnlyTheDeclaredGroupsMayHandleAReport(): void {
+		$reveals = $this->reveals();
+		$both = [ReportTermsService::DECLARATION => ['custodianGroup' => 'vertrouwenspersonen', 'handlerGroup' => 'meldpunt']];
+		$custodianOnly = [ReportTermsService::DECLARATION => ['custodianGroup' => 'vertrouwenspersonen']];
+
+		// A member of the handler group handles; so does the custodian.
+		$this->assertTrue($reveals->mayHandle(user: $this->user('handler-anna'), caseType: $both));
+		$this->assertTrue($reveals->mayHandle(user: $this->user('vertrouwenspersoon-lena'), caseType: $both));
+		// Without a handler group only the custodian group may.
+		$this->assertFalse($reveals->mayHandle(user: $this->user('handler-anna'), caseType: $custodianOnly));
+		$this->assertTrue($reveals->mayHandle(user: $this->user('vertrouwenspersoon-lena'), caseType: $custodianOnly));
+		// Signed in, or an administrator, in neither group: no.
+		$this->assertFalse($reveals->mayHandle(user: $this->user('admin', inGroup: false), caseType: $both));
+		// No declaration at all: nobody.
+		$this->assertFalse($reveals->mayHandle(user: $this->user('handler-anna'), caseType: []));
+
+	}//end testOnlyTheDeclaredGroupsMayHandleAReport()
+
 	/**
 	 * A report with contact details, and a pending motivated request on it.
 	 *
@@ -328,7 +346,8 @@ class ReportWithoutAnAccountTest extends TestCase {
 		$groups = $this->createMock(IGroupManager::class);
 		$groups->method('isInGroup')->willReturnCallback(
 			static function (string $uid, string $group): bool {
-				return ($group === 'vertrouwenspersonen' && $uid === 'vertrouwenspersoon-lena');
+				return ($group === 'vertrouwenspersonen' && $uid === 'vertrouwenspersoon-lena')
+					|| ($group === 'meldpunt' && $uid === 'handler-anna');
 			}
 		);
 

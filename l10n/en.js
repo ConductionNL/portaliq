@@ -1134,6 +1134,8 @@ OC.L10N.register(
         "What governs a report of this type: the group that may reveal who filed it, the acknowledgement and feedback terms in days, and whether the reporting surface stays out of visitor analytics. The portal holds no term of its own.": "What governs a report of this type: the group that may reveal who filed it, the acknowledgement and feedback terms in days, and whether the reporting surface stays out of visitor analytics. The portal holds no term of its own.",
         "Custodian group": "Custodian group",
         "The Nextcloud group whose members may allow a reveal. An instance administrator who is not in it may not.": "The Nextcloud group whose members may allow a reveal. An instance administrator who is not in it may not.",
+        "Handler group": "Handler group",
+        "The Nextcloud group whose members may read a report, write on its thread and ask for a reveal. When it is not set, only the custodian group may.": "The Nextcloud group whose members may read a report, write on its thread and ask for a reveal. When it is not set, only the custodian group may.",
         "Acknowledgement term": "Acknowledgement term",
         "Days within which the report must be acknowledged.": "Days within which the report must be acknowledged.",
         "Feedback term": "Feedback term",

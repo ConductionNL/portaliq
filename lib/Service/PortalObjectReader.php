@@ -401,6 +401,40 @@ class PortalObjectReader {
 	}//end readObject()
 
 	/**
+	 * Read one row as the signed-in Nextcloud user, with OpenRegister's own
+	 * authorization ON: the schema's `authorization.read` rule is judged
+	 * against the user's groups. Every other read here runs for a portal
+	 * subject, who is no Nextcloud user, and so runs with RBAC off. A staff
+	 * surface whose caller IS a Nextcloud user reads through this instead
+	 * (portaliq#799), so a schema an organisation narrowed stays narrowed on
+	 * portaliq's own routes too.
+	 *
+	 * No subject scope and no projection apply: the caller gates who may read
+	 * the row before or after, as its own permission check. A refusal, an
+	 * OpenRegister error and a missing row are the same null.
+	 *
+	 * @param string $register The OpenRegister register slug/id.
+	 * @param string $schema The schema slug.
+	 * @param string $id The object id/uuid.
+	 *
+	 * @return array<string, mixed>|null The row, or null.
+	 *
+	 * @spec openspec/changes/intake-report-pages/specs/report-pages/spec.md
+	 */
+	public function readObjectAsUser(string $register, string $schema, string $id): ?array {
+		if ($id === '') {
+			return null;
+		}
+
+		$objectService = $this->objectService();
+		if ($objectService === null) {
+			return null;
+		}
+
+		return $this->fetchById(objectService: $objectService, register: $register, schema: $schema, id: $id, rbac: true);
+	}//end readObjectAsUser()
+
+	/**
 	 * Fetch a single OpenRegister row by id/uuid (best-effort query-side
 	 * filter — the per-row ownership check in readObject is the boundary). The
 	 * id is matched in-memory against the row's identifier candidates so it
@@ -410,21 +444,28 @@ class PortalObjectReader {
 	 * @param string $register The register slug/id.
 	 * @param string $schema The schema slug.
 	 * @param string $id The client-supplied id/uuid.
+	 * @param bool $rbac Whether OpenRegister judges the read against the
+	 *                   signed-in user's rights (readObjectAsUser only).
 	 *
 	 * @return array<string, mixed>|null The normalised row, or null.
 	 *
 	 * @spec openspec/changes/archive/2026-09-07-portal-scoped-crud/tasks.md#T1
+	 *
+	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) -- handed to OpenRegister's
+	 * own `_rbac` flag unchanged; readObject() and readObjectAsUser() are the
+	 * named entry points.
 	 */
-	private function fetchById(object $objectService, string $register, string $schema, string $id): ?array {
+	private function fetchById(object $objectService, string $register, string $schema, string $id, bool $rbac = false): ?array {
 		// OR only honours DATA-property filters, so findAll(filters:['id'=>…])
 		// does NOT select by identifier — fetch by id directly with find().
-		// RBAC/tenant off; the caller re-verifies ownership via verifyScope.
+		// Tenant off. RBAC off for a portal subject, whose ownership the caller
+		// re-verifies via verifyScope; on for a staff read (readObjectAsUser).
 		try {
 			$entity = $objectService->find(
 				id: $id,
 				register: $register,
 				schema: $schema,
-				_rbac: false,
+				_rbac: $rbac,
 				_multitenancy: false
 			);
 		} catch (Throwable $e) {

@@ -52,6 +52,7 @@ use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 
 /**
@@ -308,11 +309,12 @@ class ReportController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function show(string $id): JSONResponse {
-		if ($this->userSession->getUser() === null) {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
 			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$report = $this->report(id: $id);
+		$report = $this->handledReport(id: $id, user: $user);
 		if ($report === null) {
 			return new JSONResponse(['error' => 'report_not_found'], Http::STATUS_NOT_FOUND);
 		}
@@ -345,7 +347,7 @@ class ReportController extends Controller {
 			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		if ($this->report(id: $id) === null) {
+		if ($this->handledReport(id: $id, user: $user) === null) {
 			return new JSONResponse(['error' => 'report_not_found'], Http::STATUS_NOT_FOUND);
 		}
 
@@ -383,7 +385,7 @@ class ReportController extends Controller {
 			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		if ($this->report(id: $id) === null) {
+		if ($this->handledReport(id: $id, user: $user) === null) {
 			return new JSONResponse(['error' => 'report_not_found'], Http::STATUS_NOT_FOUND);
 		}
 
@@ -459,8 +461,33 @@ class ReportController extends Controller {
 	}//end decideReveal()
 
 	/**
-	 * One report row, read with no scoping: a report has no subject to scope
-	 * it to, which is the point of it.
+	 * One report, for a user who may handle it. A report the user may not
+	 * handle answers exactly like one that does not exist, so the staff
+	 * routes are no oracle for which reports there are (REQ-IRP-005,
+	 * portaliq#799).
+	 *
+	 * @param string $id The report.
+	 * @param IUser $user The signed-in staff user.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function handledReport(string $id, IUser $user): ?array {
+		$report = $this->report(id: $id);
+		if ($report === null) {
+			return null;
+		}
+
+		if ($this->reveals->mayHandle(user: $user, caseType: $this->declarationFor(report: $report)) === false) {
+			return null;
+		}
+
+		return $report;
+	}//end handledReport()
+
+	/**
+	 * One report row, read with no subject scoping (a report has no subject
+	 * to scope it to, which is the point of it) but with OpenRegister's own
+	 * authorization on, since the caller is a Nextcloud user.
 	 *
 	 * @param string $id The report.
 	 *
@@ -471,13 +498,7 @@ class ReportController extends Controller {
 			return null;
 		}
 
-		return $this->reader->readObject(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: '',
-			subjectRef: '',
-			id: $id
-		);
+		return $this->reader->readObjectAsUser(register: self::REGISTER, schema: self::SCHEMA, id: $id);
 	}//end report()
 
 	/**
