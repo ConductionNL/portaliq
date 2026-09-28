@@ -287,6 +287,29 @@ export function createPortalApi(config) {
 		},
 
 		/**
+		 * The guardian's news feed (news-and-newsletter-authoring), each body in
+		 * the reader's `messageLanguage` when the server translated it: such a row
+		 * carries `translation` (news-item-translation). A refused answer reads as
+		 * no news, never as an error.
+		 *
+		 * @return {Promise<Array<object>>} The published items, or `[]`.
+		 */
+		async fetchNewsFeed() {
+			try {
+				const res = await fetch(`${appRoot}/api/news/feed`, {
+					headers: { Accept: 'application/json', ...authHeaders() },
+				})
+				if (!res.ok) {
+					return []
+				}
+				const json = await res.json()
+				return Array.isArray(json) ? json : []
+			} catch {
+				return []
+			}
+		},
+
+		/**
 		 * The account holder's own details, including `messageLanguage`.
 		 *
 		 * @return {Promise<object|null>}

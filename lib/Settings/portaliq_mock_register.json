@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "portaliq demo data",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "description": "Demo data covering every schema this app supplies, offered as the first step of the app's setup walkthrough. Generated from the schemas themselves, so every object satisfies the schema that will validate it."
   },
   "x-openregister": {
@@ -2505,7 +2505,8 @@
             "subjectRef": "Voorbeeld Subjectref 1",
             "readAt": "2026-03-01T09:00:00+00:00"
           }
-        ]
+        ],
+        "translations": []
       },
       {
         "@self": {
@@ -2514,7 +2515,7 @@
           "slug": "newsitem-voorbeeld-title-2-2"
         },
         "title": "Voorbeeld Title 2",
-        "body": "Voorbeeld Body 2",
+        "body": "De school is vrijdag gesloten vanwege een studiedag.",
         "target": {
           "schoolRef": "Voorbeeld Schoolref 2",
           "groupRefs": [
@@ -2533,6 +2534,20 @@
           {
             "subjectRef": "Voorbeeld Subjectref 2",
             "readAt": "2026-03-02T09:00:00+00:00"
+          }
+        ],
+        "translations": [
+          {
+            "targetLanguage": "ar",
+            "text": "المدرسة مغلقة يوم الجمعة بسبب يوم دراسي للمعلمين.",
+            "translatedByAi": true,
+            "sourceLanguage": "nl",
+            "sourceLanguageDetected": true,
+            "model": "nextcloud",
+            "originalRef": "portaliq:newsItem:demo-2",
+            "disclosure": "تُرجم بواسطة الذكاء الاصطناعي. اللغة الأصلية: الهولندية. قد تحتوي هذه الترجمة على أخطاء.",
+            "disclosureLanguage": "ar",
+            "translatedAt": "2026-09-28T09:00:00+00:00"
           }
         ]
       },
@@ -2563,7 +2578,8 @@
             "subjectRef": "Voorbeeld Subjectref 3",
             "readAt": "2026-03-03T09:00:00+00:00"
           }
-        ]
+        ],
+        "translations": []
       },
       {
         "@self": {

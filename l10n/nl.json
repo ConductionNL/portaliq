@@ -1577,7 +1577,9 @@
         "Grant this request?": "Deze aanvraag toekennen?",
         "{name} can then see the cases of {party}.": "{name} kan dan de zaken van {party} zien.",
         "Access granted.": "Toegang toegekend.",
-        "Request refused.": "Aanvraag geweigerd."
+        "Request refused.": "Aanvraag geweigerd.",
+        "Plain text / markdown body, as written. An AI translation for a reader's language is kept in translations, never here.": "Platte tekst of markdown, zoals geschreven. Een AI-vertaling naar de taal van een lezer staat in de vertalingen, nooit hier.",
+        "Server-managed. One entry per language this news item was translated into by AI: the translated text, the source language, the model, a reference to this item and the disclosure sentence. The body stays as written.": "Beheerd door de server. Eén regel per taal waarin dit nieuwsbericht door AI is vertaald: de vertaalde tekst, de brontaal, het model, een verwijzing naar dit bericht en de vermelding dat AI het vertaalde. De tekst zelf blijft zoals geschreven."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

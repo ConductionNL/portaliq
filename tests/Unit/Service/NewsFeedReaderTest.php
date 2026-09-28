@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\Service\GuardianAudienceFixtureReader;
+use OCA\Portaliq\Service\Messaging\GuardianMessageTranslator;
+use OCA\Portaliq\Service\Messaging\MessageStore;
+use OCA\Portaliq\Service\Messaging\MessageTranslationClient;
 use OCA\Portaliq\Service\NewsFeedReader;
 use OCA\Portaliq\Service\NewsPhotoConsentGate;
 use PHPUnit\Framework\TestCase;
@@ -96,6 +99,90 @@ class NewsFeedReaderTest extends TestCase {
 		$this->assertCount(1, $feed);
 		$this->assertSame('In audience', $feed[0]['title']);
 	}//end testFeedReturnsOnlyPublishedInAudienceItems()
+
+	/**
+	 * A translator whose client answers labelled Arabic translations of Dutch
+	 * text, over a store that records every save.
+	 *
+	 * @param array<int, array<string, mixed>> $saved Receives each save.
+	 *
+	 * @return GuardianMessageTranslator
+	 */
+	private function translator(array &$saved): GuardianMessageTranslator {
+		$client = $this->getMockBuilder(MessageTranslationClient::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['translate'])
+			->getMock();
+		$client->method('translate')->willReturnCallback(
+			static fn (string $text, string $targetLanguage, string $originalRef): array => [
+				'targetLanguage' => $targetLanguage,
+				'text' => '[' . $targetLanguage . '] ' . $text,
+				'translatedByAi' => true,
+				'sourceLanguage' => 'nl',
+				'originalRef' => $originalRef,
+			]
+		);
+
+		$store = $this->getMockBuilder(MessageStore::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['save'])
+			->getMock();
+		$store->method('save')->willReturnCallback(
+			static function (string $schema, array $object, ?string $uuid = null) use (&$saved): string {
+				$saved[] = ['schema' => $schema, 'object' => $object, 'uuid' => $uuid];
+				return (string)$uuid;
+			}
+		);
+
+		return new GuardianMessageTranslator(client: $client, store: $store);
+	}//end translator()
+
+	/**
+	 * The feed translates a news body into the reader's language, keeps the
+	 * original, and stores the STORED row: the photo gate's redaction of the
+	 * reader's copy never reaches storage.
+	 *
+	 * @spec openspec/changes/news-item-translation/specs/guardian-message-translation/spec.md#requirement-a-news-item-keeps-its-ai-translations-next-to-the-original
+	 */
+	public function testFeedTranslatesTheBodyAndStoresTheStoredRow(): void {
+		$audienceReader = $this->createMock(GuardianAudienceFixtureReader::class);
+		$audienceReader->method('resolveAudience')->willReturn(['schoolRef' => 'school-1', 'groupRefs' => [], 'childRefs' => [], 'photoConsent' => []]);
+		$gate = $this->createMock(NewsPhotoConsentGate::class);
+		$gate->method('apply')->willReturnCallback(static fn (array $item): array => array_merge($item, ['photoRefs' => []]));
+
+		$rows = [['id' => 'n1', 'status' => 'published', 'target' => ['schoolRef' => 'school-1'], 'title' => 'Studiedag', 'body' => 'De school is morgen dicht.', 'photoRefs' => ['foto-1']]];
+		$saved = [];
+		$reader = new NewsFeedReader($this->container($rows), $audienceReader, $gate, $this->createMock(LoggerInterface::class), $this->translator($saved));
+
+		$feed = $reader->feedFor('guardian-anna-devries', 'ar');
+
+		$this->assertSame('[ar] De school is morgen dicht.', $feed[0]['translation']['text']);
+		$this->assertSame('De school is morgen dicht.', $feed[0]['body']);
+		$this->assertCount(1, $saved);
+		$this->assertSame('newsItem', $saved[0]['schema']);
+		$this->assertSame('n1', $saved[0]['uuid']);
+		$this->assertSame(['foto-1'], $saved[0]['object']['photoRefs']);
+		$this->assertSame('portaliq:newsItem:n1', $saved[0]['object']['translations'][0]['originalRef']);
+		$this->assertSame('De school is morgen dicht.', $saved[0]['object']['body']);
+	}//end testFeedTranslatesTheBodyAndStoresTheStoredRow()
+
+	/**
+	 * Without a language nothing is translated and nothing is stored.
+	 *
+	 * @spec openspec/changes/news-item-translation/specs/guardian-message-translation/spec.md#requirement-a-news-item-keeps-its-ai-translations-next-to-the-original
+	 */
+	public function testFeedWithoutALanguageTranslatesNothing(): void {
+		$audienceReader = $this->createMock(GuardianAudienceFixtureReader::class);
+		$audienceReader->method('resolveAudience')->willReturn(['schoolRef' => 'school-1', 'groupRefs' => [], 'childRefs' => [], 'photoConsent' => []]);
+		$rows = [['id' => 'n1', 'status' => 'published', 'target' => ['schoolRef' => 'school-1'], 'body' => 'Tekst']];
+		$saved = [];
+		$reader = new NewsFeedReader($this->container($rows), $audienceReader, $this->passThroughGate(), $this->createMock(LoggerInterface::class), $this->translator($saved));
+
+		$feed = $reader->feedFor('guardian-anna-devries');
+
+		$this->assertArrayNotHasKey('translation', $feed[0]);
+		$this->assertSame([], $saved);
+	}//end testFeedWithoutALanguageTranslatesNothing()
 
 	public function testReadOwnItemReturnsNullForOutOfAudienceAndForNonExistentIdenticaly(): void {
 		$audienceReader = $this->createMock(GuardianAudienceFixtureReader::class);
