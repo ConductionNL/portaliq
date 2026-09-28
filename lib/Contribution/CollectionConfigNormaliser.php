@@ -5,8 +5,9 @@
  *
  * The collection half of the fail-closed v3 UI-configuration vocabulary
  * (ADR-046 / ADR-063): columns, detail layout, default sort/filters, the
- * opt-in file flags, and the `rowActions` resolution against the surviving
- * update actions of the SAME contribution.
+ * opt-in file flags, the `noticeField`, and the `rowActions` resolution
+ * against the surviving update and endpoint row actions of the SAME
+ * contribution.
  *
  * INVARIANT: presentation-only. It NEVER alters a collection's scope /
  * scopeClaim / via / projection and never throws — every reject path returns
@@ -85,6 +86,7 @@ class CollectionConfigNormaliser {
 			$collection = $this->normaliseDefaults(collection: $collection);
 			$collection = $this->normaliseFileFlags(collection: $collection);
 			$collection = $this->normaliseKind(collection: $collection);
+			$collection = (new RowActionResolver())->normaliseNoticeField(collection: $collection);
 			$collection = $this->values->normaliseAnonymousFlag(entry: $collection);
 
 			$out[] = $collection;
@@ -94,10 +96,10 @@ class CollectionConfigNormaliser {
 	}//end normaliseCollections()
 
 	/**
-	 * Filter each collection's `rowActions` to ids that resolve to a `type:
-	 * update` action in the same contribution; drop the key when it empties out
-	 * or is malformed. A per-row transition can only ever invoke an update
-	 * action the subject already holds.
+	 * Resolve each collection's `rowActions` (and the singular `rowAction`)
+	 * against the actions of the same contribution: an update action, or an
+	 * endpoint row action that declares `rowField`. Unresolved entries are
+	 * dropped, and the key goes when it empties out (RowActionResolver).
 	 *
 	 * @param array<int, array<string, mixed>> $collections The sanitised collections.
 	 * @param array<int, array<string, mixed>> $actions The sanitised actions.
@@ -105,68 +107,11 @@ class CollectionConfigNormaliser {
 	 * @return array<int, array<string, mixed>>
 	 *
 	 * @spec openspec/changes/contribution-manifest-v3/tasks.md#T1
+	 * @spec openspec/changes/contribution-pay-screen/specs/portal-contribution-contract/spec.md#requirement-server-enforced-status-transitions
 	 */
 	public function resolveRowActions(array $collections, array $actions): array {
-		$updateIds = $this->updateActionIds(actions: $actions);
-		foreach ($collections as $index => $collection) {
-			$collections[$index] = $this->resolveEntryRowActions(collection: $collection, updateIds: $updateIds);
-		}
-
-		return $collections;
+		return (new RowActionResolver())->resolve(collections: $collections, actions: $actions);
 	}//end resolveRowActions()
-
-	/**
-	 * The ids of the `type: update` actions in a sanitised action list.
-	 *
-	 * @param array<int, array<string, mixed>> $actions The sanitised actions.
-	 *
-	 * @return array<int, string>
-	 */
-	private function updateActionIds(array $actions): array {
-		$updateIds = [];
-		foreach ($actions as $action) {
-			$id = ($action['id'] ?? null);
-			if (($action['type'] ?? null) === 'update' && is_string($id) === true && $id !== '') {
-				$updateIds[] = $id;
-			}
-		}
-
-		return $updateIds;
-	}//end updateActionIds()
-
-	/**
-	 * Resolve ONE collection's `rowActions` against the allowed update ids.
-	 *
-	 * @param array<string, mixed> $collection The sanitised collection.
-	 * @param array<int, string> $updateIds The resolvable update-action ids.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function resolveEntryRowActions(array $collection, array $updateIds): array {
-		if (array_key_exists('rowActions', $collection) === false) {
-			return $collection;
-		}
-
-		if (is_array($collection['rowActions']) === false) {
-			unset($collection['rowActions']);
-			return $collection;
-		}
-
-		$resolved = [];
-		foreach ($collection['rowActions'] as $ref) {
-			if (in_array($ref, $updateIds, true) === true) {
-				$resolved[] = $ref;
-			}
-		}
-
-		if ($resolved === []) {
-			unset($collection['rowActions']);
-			return $collection;
-		}
-
-		$collection['rowActions'] = $resolved;
-		return $collection;
-	}//end resolveEntryRowActions()
 
 	/**
 	 * Keep `kind` only when it is a non-empty string.

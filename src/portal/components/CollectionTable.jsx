@@ -55,10 +55,12 @@ function deriveColumns(collection, objects) {
 	return fields.map((f) => ({ field: f, render: 'text' }))
 }
 
-// `rowActions` are resolved `type: update` actions (contribution-manifest-v3):
-// per-row transition buttons (approve/reject/close). The server applies the
-// action's `set` values — the button sends no field data, so the transition
-// target can never be tampered with client-side.
+// `rowActions` are resolved row actions: `type: update` transitions
+// (contribution-manifest-v3), whose button sends no field data so the target
+// can never be tampered with client-side, and endpoint row actions
+// (contribution-pay-screen), which the caller confirms and forwards. `offers`
+// decides per row whether an action applies (an endpoint action's `rowWhen`);
+// without it every action shows on every row.
 /**
  *
  * @param root0
@@ -70,8 +72,9 @@ function deriveColumns(collection, objects) {
  * @param root0.onRowAction
  * @param root0.busyRow
  * @param {object} [root0.selectedRow] The row open in the detail, marked with aria-current.
+ * @param {(action: object, row: object) => boolean} [root0.offers] `(action, row) => boolean`: whether a row offers an action.
  */
-export default function CollectionTable({ collection, objects, loading, onSelect, rowActions, onRowAction, busyRow, selectedRow }) {
+export default function CollectionTable({ collection, objects, loading, onSelect, rowActions, onRowAction, busyRow, selectedRow, offers }) {
 	if (loading) {
 		return <p className="portaliq-loading">…</p>
 	}
@@ -130,7 +133,7 @@ export default function CollectionTable({ collection, objects, loading, onSelect
 							})}
 							{actions.length > 0 && (
 								<td className="portaliq-rowactions">
-									{actions.map((a) => (
+									{actions.filter((a) => !offers || offers(a, row)).map((a) => (
 										<button
 											key={a.id}
 											type="button"
