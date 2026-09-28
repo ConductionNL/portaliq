@@ -34,7 +34,6 @@ namespace OCA\Portaliq\Service;
 use OCA\Portaliq\Service\Messaging\GuardianMessageTranslator;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * @spec openspec/changes/news-and-newsletter-authoring/design.md#architecture-overview
@@ -45,9 +44,12 @@ use Throwable;
  * and this read path can never disagree.
  */
 class NewsFeedReader {
-	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
-
-	private const REGISTER = 'portaliq';
+	/**
+	 * The OpenRegister read of news rows.
+	 *
+	 * @var NewsRowSource
+	 */
+	private readonly NewsRowSource $rows;
 
 	/**
 	 * Constructor.
@@ -62,12 +64,13 @@ class NewsFeedReader {
 	 *                                                   built by hand keeps its old shape.
 	 */
 	public function __construct(
-		private readonly ContainerInterface $container,
+		ContainerInterface $container,
 		private readonly GuardianAudienceFixtureReader $audienceReader,
 		private readonly NewsPhotoConsentGate $photoGate,
-		private readonly LoggerInterface $logger,
+		LoggerInterface $logger,
 		private readonly ?GuardianMessageTranslator $translator = null,
 	) {
+		$this->rows = new NewsRowSource(container: $container, logger: $logger);
 	}//end __construct()
 
 	/**
@@ -117,7 +120,7 @@ class NewsFeedReader {
 
 		$audience = $this->audienceReader->resolveAudience(subjectRef: $subjectRef);
 		foreach ($this->itemsFor(audience: $audience) as $row) {
-			if ($this->rowId(row: $row) === $id) {
+			if ($this->rows->rowId(row: $row) === $id) {
 				return $this->photoGate->apply(item: $row);
 			}
 		}
@@ -144,7 +147,7 @@ class NewsFeedReader {
 	 */
 	public function archiveFor(string $subjectRef, string $language = ''): array {
 		$audience = $this->audienceReader->resolveAudience(subjectRef: $subjectRef);
-		$rows = $this->findAllPublished(schema: 'newsletter');
+		$rows = $this->rows->findAll(schema: 'newsletter');
 
 		$matched = [];
 		foreach ($rows as $row) {
@@ -192,14 +195,14 @@ class NewsFeedReader {
 
 		$items = [];
 		foreach ($this->itemsFor(audience: $audience) as $item) {
-			if (isset($referenced[$this->rowId(row: $item)]) === true) {
+			if (isset($referenced[$this->rows->rowId(row: $item)]) === true) {
 				$items[] = $item;
 			}
 		}
 
 		$byId = [];
 		foreach ($this->translated(items: $items, subjectRef: $subjectRef, language: $language) as $item) {
-			$byId[$this->rowId(row: $item)] = $this->photoGate->apply(item: $item);
+			$byId[$this->rows->rowId(row: $item)] = $this->photoGate->apply(item: $item);
 		}
 
 		foreach ($newsletters as $index => $newsletter) {
@@ -223,7 +226,7 @@ class NewsFeedReader {
 	 */
 	private function itemsFor(array $audience): array {
 		$matched = [];
-		foreach ($this->findAllPublished(schema: 'newsItem') as $row) {
+		foreach ($this->rows->findAll(schema: 'newsItem') as $row) {
 			if (($row['status'] ?? '') !== 'published') {
 				continue;
 			}
@@ -260,108 +263,4 @@ class NewsFeedReader {
 		return $this->translator->forReader(messages: $items, readerRef: $subjectRef, language: $language, schema: 'newsItem', titleField: 'title');
 	}//end translated()
 
-	/**
-	 * Fetch every row of a schema in this app's register, unfiltered — the
-	 * matching happens in PHP against the already-fetched rows since the
-	 * OR-of-three-dimensions target shape is not a filterable OR query
-	 * (design.md "Architecture Overview").
-	 *
-	 * @param string $schema The schema slug.
-	 *
-	 * @return array<int, array<string, mixed>>
-	 */
-	private function findAllPublished(string $schema): array {
-		$objectService = $this->objectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		try {
-			$objectService->setRegister(register: self::REGISTER);
-			$objectService->setSchema(schema: $schema);
-			$rows = $objectService->findAll(config: ['filters' => [], 'limit' => 500, 'offset' => 0], _rbac: false, _multitenancy: false);
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: news feed read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
-			return [];
-		}
-
-		if (is_array($rows) === false) {
-			return [];
-		}
-
-		$normalised = [];
-		foreach ($rows as $row) {
-			$row = $this->normalise(row: $row);
-			if ($row !== null) {
-				$normalised[] = $row;
-			}
-		}
-
-		return $normalised;
-	}//end findAllPublished()
-
-	/**
-	 * The row's id/uuid, from a flat property or its `@self` envelope.
-	 *
-	 * @param array<string, mixed> $row The row.
-	 *
-	 * @return string
-	 */
-	private function rowId(array $row): string {
-		if (isset($row['id']) === true) {
-			return (string)$row['id'];
-		}
-
-		if (isset($row['uuid']) === true) {
-			return (string)$row['uuid'];
-		}
-
-		$self = $row['@self'] ?? [];
-		if (is_array($self) === true) {
-			return (string)($self['id'] ?? $self['uuid'] ?? '');
-		}
-
-		return '';
-	}//end rowId()
-
-	/**
-	 * Normalise an OpenRegister row (array or object) to an associative array.
-	 *
-	 * @param mixed $row The row.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function normalise(mixed $row): ?array {
-		if (is_array($row) === true) {
-			return $row;
-		}
-
-		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-			$data = $row->jsonSerialize();
-			if (is_array($data) === true) {
-				return $data;
-			}
-		}
-
-		return null;
-	}//end normalise()
-
-	/**
-	 * Resolve OpenRegister's ObjectService, or null when unavailable.
-	 *
-	 * @return object|null
-	 */
-	private function objectService(): ?object {
-		try {
-			$service = $this->container->get(self::OBJECT_SERVICE);
-		} catch (Throwable $e) {
-			return null;
-		}
-
-		if (is_object($service) === true) {
-			return $service;
-		}
-
-		return null;
-	}//end objectService()
 }//end class
