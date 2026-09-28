@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\NewsGuardianController;
+use OCA\Portaliq\Service\Identity\PortalSelfServiceService;
 use OCA\Portaliq\Service\NewsFeedReader;
 use OCA\Portaliq\Service\NewsReadReceiptService;
 use OCA\Portaliq\Service\PortalSessionService;
@@ -79,6 +80,27 @@ class NewsGuardianControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertSame([['title' => 'X']], $response->getData());
 	}//end testFeedReturnsTheSubjectsOwnFeed()
+
+	/**
+	 * The feed is read in the guardian's own message language.
+	 *
+	 * @spec openspec/changes/news-item-translation/specs/guardian-message-translation/spec.md#requirement-a-news-item-keeps-its-ai-translations-next-to-the-original
+	 */
+	public function testFeedIsReadInTheGuardiansMessageLanguage(): void {
+		$feedReader = $this->createMock(NewsFeedReader::class);
+		$feedReader->expects($this->once())->method('feedFor')->with('guardian-anna-devries', 'ar')->willReturn([]);
+		$selfService = $this->createMock(PortalSelfServiceService::class);
+		$selfService->method('messageLanguage')->with('guardian-anna-devries')->willReturn('ar');
+
+		$request = $this->createMock(IRequest::class);
+		$request->method('getHeader')->willReturn('Bearer token');
+		$session = $this->createMock(PortalSessionService::class);
+		$session->method('resolveFromBearer')->willReturn(['subjectRef' => 'guardian-anna-devries']);
+
+		$controller = new NewsGuardianController($request, $session, $feedReader, $this->createMock(NewsReadReceiptService::class), $selfService);
+
+		$this->assertSame(Http::STATUS_OK, $controller->feed()->getStatus());
+	}//end testFeedIsReadInTheGuardiansMessageLanguage()
 
 	public function testMarkReadReturns404WhenTheServiceRefuses(): void {
 		$readReceipts = $this->createMock(NewsReadReceiptService::class);

@@ -31,6 +31,7 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
+use OCA\Portaliq\Service\Identity\PortalSelfServiceService;
 use OCA\Portaliq\Service\NewsFeedReader;
 use OCA\Portaliq\Service\NewsReadReceiptService;
 use OCA\Portaliq\Service\PortalSessionService;
@@ -55,12 +56,17 @@ class NewsGuardianController extends Controller implements PortalProtected {
 	 * @param PortalSessionService $session Resolves the subject from the bearer.
 	 * @param NewsFeedReader $feedReader The guardian-scoped read path.
 	 * @param NewsReadReceiptService $readReceipts Idempotent read-receipt recording.
+	 * @param PortalSelfServiceService|null $selfService Reads the reader's own `messageLanguage`
+	 *                                                   (news-item-translation). Nullable and
+	 *                                                   trailing so a controller built by hand
+	 *                                                   keeps its old shape.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PortalSessionService $session,
 		private readonly NewsFeedReader $feedReader,
 		private readonly NewsReadReceiptService $readReceipts,
+		private readonly ?PortalSelfServiceService $selfService = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -71,6 +77,7 @@ class NewsGuardianController extends Controller implements PortalProtected {
 	 * @return JSONResponse
 	 *
 	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
+	 * @spec openspec/changes/news-item-translation/specs/guardian-message-translation/spec.md#requirement-a-news-item-keeps-its-ai-translations-next-to-the-original
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -81,7 +88,13 @@ class NewsGuardianController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'unauthorized'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		return new JSONResponse($this->feedReader->feedFor(subjectRef: (string)($subject['subjectRef'] ?? '')));
+		$subjectRef = (string)($subject['subjectRef'] ?? '');
+		$language   = '';
+		if ($this->selfService !== null && $subjectRef !== '') {
+			$language = $this->selfService->messageLanguage(subjectRef: $subjectRef);
+		}
+
+		return new JSONResponse($this->feedReader->feedFor(subjectRef: $subjectRef, language: $language));
 	}//end feed()
 
 	/**

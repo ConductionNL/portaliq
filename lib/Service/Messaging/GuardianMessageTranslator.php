@@ -63,14 +63,17 @@ class GuardianMessageTranslator {
 	 * @param array<int, array<string, mixed>> $messages The thread's messages, already authorised.
 	 * @param string $readerRef The reader's own subjectRef.
 	 * @param string $language The reader's `messageLanguage`, '' for as written.
+	 * @param string $schema The schema the rows live in and are stored back to:
+	 *                       `guardianMessage`, or `newsItem` for the news feed.
 	 *
 	 * @return array<int, array<string, mixed>> The same messages, each carrying
 	 *                                          `translation` when one applies.
 	 *
 	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-translation-work-per-request-is-bounded-and-skips-what-needs-none
 	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-the-stored-message-keeps-both-texts-and-the-provenance
+	 * @spec openspec/changes/news-item-translation/specs/guardian-message-translation/spec.md#requirement-a-news-item-keeps-its-ai-translations-next-to-the-original
 	 */
-	public function forReader(array $messages, string $readerRef, string $language): array {
+	public function forReader(array $messages, string $readerRef, string $language, string $schema = self::MESSAGE_SCHEMA): array {
 		if ($language === '') {
 			return $messages;
 		}
@@ -84,7 +87,7 @@ class GuardianMessageTranslator {
 			$entry = $this->storedEntry(message: $message, language: $language);
 			if ($entry === null && $budget > 0) {
 				$budget--;
-				$entry = $this->translateAndStore(message: $message, language: $language);
+				$entry = $this->translateAndStore(message: $message, language: $language, schema: $schema);
 			}
 
 			if ($entry !== null && $this->differs(entry: $entry, language: $language) === true) {
@@ -118,12 +121,13 @@ class GuardianMessageTranslator {
 	 *
 	 * @param array<string, mixed> $message The message.
 	 * @param string $language The reader's language.
+	 * @param string $schema The schema the row is stored back to.
 	 *
 	 * @return array<string, mixed>|null The new entry, or null.
 	 *
 	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-the-stored-message-keeps-both-texts-and-the-provenance
 	 */
-	private function translateAndStore(array $message, string $language): ?array {
+	private function translateAndStore(array $message, string $language, string $schema): ?array {
 		$id = $this->store->rowId(row: $message);
 		if ($id === null) {
 			return null;
@@ -132,7 +136,7 @@ class GuardianMessageTranslator {
 		$entry = $this->client->translate(
 			text: (string)$message['body'],
 			targetLanguage: $language,
-			originalRef: 'portaliq:' . self::MESSAGE_SCHEMA . ':' . $id
+			originalRef: 'portaliq:' . $schema . ':' . $id
 		);
 		if ($entry === null) {
 			return null;
@@ -143,7 +147,7 @@ class GuardianMessageTranslator {
 		unset($stored['translation'], $stored['@self']);
 		$stored['translations']   = array_values((array)($message['translations'] ?? []));
 		$stored['translations'][] = $entry;
-		$this->store->save(schema: self::MESSAGE_SCHEMA, object: $stored, uuid: $id);
+		$this->store->save(schema: $schema, object: $stored, uuid: $id);
 
 		return $entry;
 	}//end translateAndStore()

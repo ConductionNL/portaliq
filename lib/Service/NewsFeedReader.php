@@ -31,6 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Service\Messaging\GuardianMessageTranslator;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -55,12 +56,17 @@ class NewsFeedReader {
 	 * @param GuardianAudienceFixtureReader $audienceReader Resolves the guardian's own audience.
 	 * @param NewsPhotoConsentGate $photoGate Redacts photos per the consent gate.
 	 * @param LoggerInterface $logger The logger.
+	 * @param GuardianMessageTranslator|null $translator Shows a news body in the reader's
+	 *                                                   language (news-item-translation).
+	 *                                                   Nullable and trailing so a reader
+	 *                                                   built by hand keeps its old shape.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
 		private readonly GuardianAudienceFixtureReader $audienceReader,
 		private readonly NewsPhotoConsentGate $photoGate,
 		private readonly LoggerInterface $logger,
+		private readonly ?GuardianMessageTranslator $translator = null,
 	) {
 	}//end __construct()
 
@@ -69,13 +75,21 @@ class NewsFeedReader {
 	 * audience. An empty/unresolvable audience yields an empty feed, never an
 	 * error (fail-closed empty).
 	 *
+	 * With a `$language` the body of each item is shown in it: a stored AI
+	 * translation is reused, at most three new ones are made per request and
+	 * stored on the item, and the item carries `translation` (decision D24).
+	 * Translation runs on the STORED rows, before the photo consent gate
+	 * redacts the reader's copy, so a stored translation never drops a photo.
+	 *
 	 * @param string $subjectRef The guardian's own subjectRef.
+	 * @param string $language The reader's `messageLanguage`, '' for as written.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
 	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
+	 * @spec openspec/changes/news-item-translation/specs/guardian-message-translation/spec.md#requirement-a-news-item-keeps-its-ai-translations-next-to-the-original
 	 */
-	public function feedFor(string $subjectRef): array {
+	public function feedFor(string $subjectRef, string $language = ''): array {
 		$audience = $this->audienceReader->resolveAudience(subjectRef: $subjectRef);
 		$rows = $this->findAllPublished(schema: 'newsItem');
 
@@ -94,10 +108,14 @@ class NewsFeedReader {
 				continue;
 			}
 
-			$matched[] = $this->photoGate->apply(item: $row);
+			$matched[] = $row;
 		}
 
-		return $matched;
+		if ($this->translator !== null && $language !== '') {
+			$matched = $this->translator->forReader(messages: $matched, readerRef: $subjectRef, language: $language, schema: 'newsItem');
+		}
+
+		return array_map(fn (array $row): array => $this->photoGate->apply(item: $row), $matched);
 	}//end feedFor()
 
 	/**
