@@ -36,12 +36,14 @@ use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\CaseTypeReader;
 use OCA\Portaliq\Service\Identity\PortalChallengeService;
 use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
+use OCA\Portaliq\Service\Identity\PortalReferenceCaseService;
 use OCA\Portaliq\Service\Identity\PortalInvitationService;
 use OCA\Portaliq\Service\Identity\PortalReferenceLinkService;
 use OCA\Portaliq\Service\Identity\PortalRegistrationPolicyService;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -74,6 +76,8 @@ class PortalIdentityController extends Controller {
 	 * @param CaseTypeReader $caseTypes Reads the case type's identity kinds.
 	 * @param PortalFormBindingResolver $bindings The case types this portal declares.
 	 * @param PortalIdentityMailer $mailer Mails the reference link to its address.
+	 * @param PortalReferenceCaseService $referenceCases The case behind a reference link.
+	 * @param PortalSessionService $sessions Mints and resolves the reference session.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -86,6 +90,8 @@ class PortalIdentityController extends Controller {
 		private readonly CaseTypeReader $caseTypes,
 		private readonly PortalFormBindingResolver $bindings,
 		private readonly PortalIdentityMailer $mailer,
+		private readonly PortalReferenceCaseService $referenceCases,
+		private readonly PortalSessionService $sessions,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -157,11 +163,31 @@ class PortalIdentityController extends Controller {
 			return new JSONResponse(['error' => 'route_not_offered'], Http::STATUS_NOT_FOUND);
 		}
 
+		// The address must be the one recorded on the case (portaliq#796).
+		// Otherwise anyone who knows or guesses a case number reads the case.
+		// A mismatch, an unknown case and a case app that declares no address
+		// field all answer exactly like a sent link, so this endpoint is no
+		// oracle for case numbers; no link is issued and no mail leaves.
+		$case = $this->referenceCases->linkableCase(
+			portal: (string)($site['slug'] ?? ''),
+			register: $register,
+			schema: $schema,
+			caseType: $caseType,
+			caseReference: $caseReference,
+			email: $email,
+			organisation: (string)($site['organisation'] ?? '')
+		);
+		if ($case === null) {
+			return new JSONResponse(['sent' => true, 'expiresAt' => $this->references->nominalExpiry()]);
+		}
+
 		$issued = $this->references->issue(
 			caseType: $type,
 			caseReference: $caseReference,
 			email: $email,
-			organisation: (string)($site['organisation'] ?? '')
+			organisation: (string)($site['organisation'] ?? ''),
+			caseRegister: $case['register'],
+			caseSchema: $case['schema']
 		);
 		if ($issued === null) {
 			return new JSONResponse(['error' => 'refused'], Http::STATUS_BAD_REQUEST);
@@ -183,13 +209,17 @@ class PortalIdentityController extends Controller {
 	}//end requestReferenceLink()
 
 	/**
-	 * Follow a reference link, once.
+	 * Follow a reference link, once. The link opens a short, read-only
+	 * session for its one case (identity-ways-in-screens D2): the answer
+	 * carries that session's bearer, which reads the case through
+	 * `referenceCase()` and nothing else.
 	 *
 	 * @param string $token The secret from the mail.
 	 *
-	 * @return JSONResponse The case the link admits to, or a refusal.
+	 * @return JSONResponse The case the link admits to with its bearer, or a refusal.
 	 *
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/changes/identity-ways-in-screens/design.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -202,8 +232,54 @@ class PortalIdentityController extends Controller {
 			return new JSONResponse(['error' => 'link_not_valid'], Http::STATUS_FORBIDDEN);
 		}
 
-		return new JSONResponse($redeemed);
+		$session = $this->sessions->issueReferenceSession(
+			linkId: $redeemed['linkId'],
+			caseReference: $redeemed['caseReference'],
+			organisation: $redeemed['organisation'],
+			register: $redeemed['register'],
+			schema: $redeemed['schema']
+		);
+		if ($session === null) {
+			// The link is spent either way: a link that worked twice would be
+			// worse than asking for a new one.
+			return new JSONResponse(['error' => 'session_unavailable'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
+
+		return new JSONResponse([
+			'caseReference' => $redeemed['caseReference'],
+			'organisation' => $redeemed['organisation'],
+			'bearer' => $session['token'],
+			'expiresAt' => $session['expiresAt'],
+		]);
 	}//end redeemReferenceLink()
+
+	/**
+	 * The one case a reference session may read, read only.
+	 *
+	 * Takes no identifier: the case is the row whose declared reference field
+	 * equals the session's claim, so there is no other row to name.
+	 *
+	 * @return JSONResponse The case, 401 without a reference session, 404 when
+	 *                      the case is not found.
+	 *
+	 * @spec openspec/changes/identity-ways-in-screens/design.md
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 60, period: 60)]
+	public function referenceCase(): JSONResponse {
+		$reference = $this->sessions->resolveReferenceFromBearer($this->request->getHeader('Authorization'));
+		if ($reference === null) {
+			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$case = $this->referenceCases->read(reference: $reference);
+		if ($case === null) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		return new JSONResponse(['case' => $case, 'caseReference' => $reference['caseReference'], 'readOnly' => true]);
+	}//end referenceCase()
 
 	/**
 	 * Register on this portal, under its policy.

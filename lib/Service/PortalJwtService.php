@@ -72,6 +72,17 @@ class PortalJwtService {
 	public const USE_ASSERTION = 'assertion';
 
 	/**
+	 * The `use` claim value marking a reference session (identity-ways-in-screens
+	 * D2). `resolveFromBearer()` refuses it like every special-use token.
+	 */
+	public const USE_REFERENCE = 'reference';
+
+	/**
+	 * A reference session's lifetime in seconds: thirty minutes, never refreshed.
+	 */
+	public const REFERENCE_TTL = 1800;
+
+	/**
 	 * Token issuer claim.
 	 */
 	private const ISSUER = 'portaliq';
@@ -197,6 +208,55 @@ class PortalJwtService {
 		$sig = $this->b64UrlEncode(bytes: $this->signRaw(input: $hPart . '.' . $cPart));
 		return $hPart . '.' . $cPart . '.' . $sig;
 	}//end createAssertion()
+
+	/**
+	 * Mint a reference session: read-only access to one case, for thirty
+	 * minutes (identity-ways-in-screens D2). It carries `use: reference`, so
+	 * the portal session resolver refuses it on every other route.
+	 *
+	 * @param string $subjectRef `reference:<hash of the link id>`.
+	 * @param string $organisation The tenant.
+	 * @param string $caseReference The case number it may read.
+	 * @param string $register The case collection's register.
+	 * @param string $schema The case collection's schema.
+	 * @param string $jti Unique token id (for revocation).
+	 *
+	 * @return string Compact JWT string.
+	 *
+	 * @spec openspec/changes/identity-ways-in-screens/design.md
+	 */
+	public function createReferenceSession(
+		string $subjectRef,
+		string $organisation,
+		string $caseReference,
+		string $register,
+		string $schema,
+		string $jti,
+	): string {
+		$iat = time();
+
+		$header = ['alg' => self::ALG, 'typ' => 'JWT'];
+		$claims = [
+			'sub' => $subjectRef,
+			'audience' => 'client',
+			'organisation' => $organisation,
+			'trust' => 'low',
+			'roles' => [],
+			'jti' => $jti,
+			'use' => self::USE_REFERENCE,
+			'caseReference' => $caseReference,
+			'register' => $register,
+			'schema' => $schema,
+			'iat' => $iat,
+			'exp' => ($iat + self::REFERENCE_TTL),
+			'iss' => self::ISSUER,
+		];
+
+		$hPart = $this->b64UrlEncode(bytes: (string)json_encode($header, JSON_UNESCAPED_SLASHES));
+		$cPart = $this->b64UrlEncode(bytes: (string)json_encode($claims, JSON_UNESCAPED_SLASHES));
+		$sig = $this->b64UrlEncode(bytes: $this->signRaw(input: $hPart . '.' . $cPart));
+		return $hPart . '.' . $cPart . '.' . $sig;
+	}//end createReferenceSession()
 
 	/**
 	 * Validate a JWT and return its claims.

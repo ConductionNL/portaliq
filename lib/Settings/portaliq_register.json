@@ -5505,6 +5505,18 @@
                         "description": "The case number the link admits to.",
                         "example": "ZAAK-2026-0001"
                     },
+                    "caseRegister": {
+                        "title": "Case register",
+                        "type": "string",
+                        "description": "The register of the case collection the link opens. The session a followed link starts reads only this collection.",
+                        "example": "dossiq"
+                    },
+                    "caseSchema": {
+                        "title": "Case schema",
+                        "type": "string",
+                        "description": "The schema of the case collection the link opens.",
+                        "example": "case"
+                    },
                     "email": {
                         "title": "Email",
                         "type": "string",

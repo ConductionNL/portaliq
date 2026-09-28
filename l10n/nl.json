@@ -1556,7 +1556,9 @@
         "You asked to use this address for your account at %1$s. Until you confirm it, we keep using your old address.": "U vroeg om dit adres te gebruiken voor uw account bij %1$s. Tot u het bevestigt, gebruiken we uw oude adres.",
         "Confirm this address": "Bevestig dit adres",
         "The link works once and for a limited time.": "De link werkt één keer en een beperkte tijd.",
-        "Did you not ask for this? Then you can ignore this mail.": "Vroeg u hier niet om? Dan kunt u deze mail negeren."
+        "Did you not ask for this? Then you can ignore this mail.": "Vroeg u hier niet om? Dan kunt u deze mail negeren.",
+        "The register of the case collection the link opens. The session a followed link starts reads only this collection.": "Het register van de zaakverzameling die de link opent. De sessie die een gevolgde link start, leest alleen deze verzameling.",
+        "The schema of the case collection the link opens.": "Het schema van de zaakverzameling die de link opent."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

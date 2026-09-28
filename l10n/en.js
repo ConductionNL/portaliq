@@ -1487,7 +1487,9 @@ OC.L10N.register(
         "You asked to use this address for your account at %1$s. Until you confirm it, we keep using your old address.": "You asked to use this address for your account at %1$s. Until you confirm it, we keep using your old address.",
         "Confirm this address": "Confirm this address",
         "The link works once and for a limited time.": "The link works once and for a limited time.",
-        "Did you not ask for this? Then you can ignore this mail.": "Did you not ask for this? Then you can ignore this mail."
+        "Did you not ask for this? Then you can ignore this mail.": "Did you not ask for this? Then you can ignore this mail.",
+        "The register of the case collection the link opens. The session a followed link starts reads only this collection.": "The register of the case collection the link opens. The session a followed link starts reads only this collection.",
+        "The schema of the case collection the link opens.": "The schema of the case collection the link opens."
     },
     "nplurals=2; plural=(n != 1);"
 )
