@@ -17,7 +17,7 @@ Under **Messages** the parent picks a language in **Show messages in**. Each mes
 
 The parent's own messages are never translated. **As written** switches translation off.
 
-School news follows the same choice. Under **News** each item shows its title and its text in the parent's language, with the same notice and the same **Show the original text** button, which then shows the title and the text as the school wrote them. The newsletters sent to the parent appear below, each with its items shown the same way. The **News** page carries the same language picker, so a parent without conversations can pick a language there.
+School news follows the same choice. Under **News** each item shows its title and its text in the parent's language, with the same notice and the same **Show the original text** button, which then shows the title and the text as the school wrote them. The newsletters sent to the parent appear below: each newsletter's own title shows in the parent's language under the same notice and button, and its items show the same way. The **News** page carries the same language picker, so a parent without conversations can pick a language there.
 
 ## What you need
 
@@ -35,6 +35,6 @@ The message, or news item, keeps its original text. Each translation is stored n
 | `PATCH` | `/portal/api/identity/details` | Set `messageLanguage` to a language tag such as `ar`, or `""` for as written |
 | `GET` | `/api/messages/threads/{id}/messages` | The messages; a translated one carries `translation` |
 | `GET` | `/api/news/feed` | The published news for this parent; a translated item carries `translation` |
-| `GET` | `/api/newsletters/archive` | The newsletters sent to this parent, newest first, each with its `items` translated like the feed |
+| `GET` | `/api/newsletters/archive` | The newsletters sent to this parent, newest first, each with its own title's `translation` and its `items` translated like the feed |
 
-A `translation` holds `targetLanguage`, `text` (and `title` for a news item), `translatedByAi`, `sourceLanguage`, `sourceLanguageDetected`, `model`, `originalRef`, `disclosure` and `disclosureLanguage`.
+A `translation` holds `targetLanguage`, `text` (and `title` for a news item or a newsletter, where a newsletter's `text` is its translated title too), `translatedByAi`, `sourceLanguage`, `sourceLanguageDetected`, `model`, `originalRef`, `disclosure` and `disclosureLanguage`.

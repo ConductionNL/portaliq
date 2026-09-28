@@ -67,6 +67,12 @@ class GuardianMessageTranslator {
 	 *                       `guardianMessage`, or `newsItem` for the news feed.
 	 * @param string $titleField A field translated with the body into the same
 	 *                           entry as `title` (`title` for news), '' for none.
+	 * @param string $textField The field translated into the entry's `text`:
+	 *                          `body`, or `title` for a newsletter, whose entry
+	 *                          then carries the same text as its `title`.
+	 * @param int|null $budget The new translations this request may still ask
+	 *                         for, spent in place so several calls share one
+	 *                         bound; null for a fresh bound.
 	 *
 	 * @return array<int, array<string, mixed>> The same messages, each carrying
 	 *                                          `translation` when one applies.
@@ -75,30 +81,39 @@ class GuardianMessageTranslator {
 	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-the-stored-message-keeps-both-texts-and-the-provenance
 	 * @spec openspec/changes/news-item-translation/specs/guardian-message-translation/spec.md#requirement-a-news-item-keeps-its-ai-translations-next-to-the-original
 	 * @spec openspec/changes/news-title-and-newsletter-translation/specs/guardian-message-translation/spec.md#requirement-a-news-title-is-translated-with-its-body
+	 * @spec openspec/changes/newsletter-title-translation/specs/guardian-message-translation/spec.md#requirement-a-newsletter-keeps-its-title-translations-next-to-the-original
 	 */
 	public function forReader(
 		array $messages,
 		string $readerRef,
 		string $language,
 		string $schema = self::MESSAGE_SCHEMA,
-		string $titleField = ''
+		string $titleField = '',
+		string $textField = 'body',
+		?int &$budget = null
 	): array {
 		if ($language === '') {
 			return $messages;
 		}
 
-		$budget = self::NEW_PER_REQUEST;
+		$remaining = $budget ?? self::NEW_PER_REQUEST;
 		foreach ($messages as $index => $message) {
-			if ((string)($message['senderRef'] ?? '') === $readerRef || (string)($message['body'] ?? '') === '') {
+			if ((string)($message['senderRef'] ?? '') === $readerRef || (string)($message[$textField] ?? '') === '') {
 				continue;
 			}
 
-			$entry = $this->entryFor(message: $message, language: $language, schema: $schema, titleField: $titleField, budget: $budget);
+			$entry = $this->entryFor(
+				message: $message,
+				language: $language,
+				fields: ['schema' => $schema, 'title' => $titleField, 'text' => $textField],
+				budget: $remaining
+			);
 			if ($entry !== null && $this->differs(entry: $entry, language: $language) === true) {
 				$messages[$index]['translation'] = $entry;
 			}
 		}
 
+		$budget = $remaining;
 		return $messages;
 	}//end forReader()
 
@@ -109,21 +124,23 @@ class GuardianMessageTranslator {
 	 *
 	 * @param array<string, mixed> $message The row.
 	 * @param string $language The reader's language.
-	 * @param string $schema The schema the row is stored back to.
-	 * @param string $titleField The title field, '' for none.
+	 * @param array{schema: string, title: string, text: string} $fields The schema
+	 *        the row is stored back to, its title field ('' for none) and its text field.
 	 * @param int $budget The remaining per-request budget, spent in place.
 	 *
 	 * @return array<string, mixed>|null The entry, or null.
 	 */
-	private function entryFor(array $message, string $language, string $schema, string $titleField, int &$budget): ?array {
-		$entry = $this->storedEntry(message: $message, language: $language);
+	private function entryFor(array $message, string $language, array $fields, int &$budget): ?array {
+		$schema     = $fields['schema'];
+		$titleField = $fields['title'];
+		$entry      = $this->storedEntry(message: $message, language: $language);
 		if ($budget <= 0) {
 			return $entry;
 		}
 
 		if ($entry === null) {
 			$budget--;
-			return $this->translateAndStore(message: $message, language: $language, schema: $schema, titleField: $titleField);
+			return $this->translateAndStore(message: $message, language: $language, schema: $schema, fields: $fields);
 		}
 
 		if ($this->lacksTitle(entry: $entry, message: $message, titleField: $titleField, language: $language) === true) {
@@ -158,21 +175,23 @@ class GuardianMessageTranslator {
 	 * @param array<string, mixed> $message The message.
 	 * @param string $language The reader's language.
 	 * @param string $schema The schema the row is stored back to.
-	 * @param string $titleField The field translated into the entry's `title`, '' for none.
+	 * @param array{schema: string, title: string, text: string} $fields The title
+	 *        field translated into the entry's `title` ('' for none) and the text field.
 	 *
 	 * @return array<string, mixed>|null The new entry, or null.
 	 *
 	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-the-stored-message-keeps-both-texts-and-the-provenance
 	 * @spec openspec/changes/news-title-and-newsletter-translation/specs/guardian-message-translation/spec.md#requirement-a-news-title-is-translated-with-its-body
+	 * @spec openspec/changes/newsletter-title-translation/specs/guardian-message-translation/spec.md#requirement-a-newsletter-keeps-its-title-translations-next-to-the-original
 	 */
-	private function translateAndStore(array $message, string $language, string $schema, string $titleField = ''): ?array {
+	private function translateAndStore(array $message, string $language, string $schema, array $fields): ?array {
 		$id = $this->store->rowId(row: $message);
 		if ($id === null) {
 			return null;
 		}
 
 		$entry = $this->client->translate(
-			text: (string)$message['body'],
+			text: (string)$message[$fields['text']],
 			targetLanguage: $language,
 			originalRef: 'portaliq:' . $schema . ':' . $id
 		);
@@ -180,7 +199,14 @@ class GuardianMessageTranslator {
 			return null;
 		}
 
-		$entry = $this->withTitle(entry: $entry, message: $message, schema: $schema, id: $id, titleField: $titleField);
+		if ($fields['title'] !== '' && $fields['title'] === $fields['text']) {
+			// A newsletter: the text is the title, so the entry's title is its text.
+			$entry['title'] = (string)$entry['text'];
+		}
+
+		if ($fields['title'] !== $fields['text']) {
+			$entry = $this->withTitle(entry: $entry, message: $message, schema: $schema, id: $id, titleField: $fields['title']);
+		}
 
 		$entries   = array_values((array)($message['translations'] ?? []));
 		$entries[] = $entry;

@@ -135,7 +135,10 @@ class NewsFeedReader {
 	 * Each newsletter carries `items`: the news items it references that are
 	 * published and in the reader's audience, translated and photo-gated
 	 * exactly as the feed serves them, so the archive shows the same
-	 * translation and notice as the News page.
+	 * translation and notice as the News page. A newsletter's own title is
+	 * translated into its own `translations` entry and carried as
+	 * `translation`, the shape a news item has. Titles and items share the
+	 * one per-request bound of new translations, titles first.
 	 *
 	 * @param string $subjectRef The guardian's own subjectRef.
 	 * @param string $language The reader's `messageLanguage`, '' for as written.
@@ -144,6 +147,7 @@ class NewsFeedReader {
 	 *
 	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsletter-composes-existing-news-items-with-an-archive
 	 * @spec openspec/changes/news-title-and-newsletter-translation/specs/guardian-message-translation/spec.md#requirement-the-newsletter-archive-shows-its-items-as-the-news-page-does
+	 * @spec openspec/changes/newsletter-title-translation/specs/guardian-message-translation/spec.md#requirement-a-newsletter-keeps-its-title-translations-next-to-the-original
 	 */
 	public function archiveFor(string $subjectRef, string $language = ''): array {
 		$audience = $this->audienceReader->resolveAudience(subjectRef: $subjectRef);
@@ -170,8 +174,40 @@ class NewsFeedReader {
 
 		usort($matched, static fn (array $a, array $b): int => strcmp((string)($b['sentAt'] ?? ''), (string)($a['sentAt'] ?? '')));
 
-		return $this->withItems(newsletters: $matched, audience: $audience, subjectRef: $subjectRef, language: $language);
+		$budget  = null;
+		$matched = $this->translatedTitles(newsletters: $matched, subjectRef: $subjectRef, language: $language, budget: $budget);
+
+		$reader = ['subjectRef' => $subjectRef, 'language' => $language];
+
+		return $this->withItems(newsletters: $matched, audience: $audience, reader: $reader, budget: $budget);
 	}//end archiveFor()
+
+	/**
+	 * The newsletters with their own title in the reader's language, stored on
+	 * the newsletter row in the shape a news item keeps.
+	 *
+	 * @param array<int, array<string, mixed>> $newsletters The sent newsletters, as stored.
+	 * @param string $subjectRef The reader.
+	 * @param string $language The reader's language, '' for as written.
+	 * @param int|null $budget The shared per-request bound, spent in place.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function translatedTitles(array $newsletters, string $subjectRef, string $language, ?int &$budget): array {
+		if ($this->translator === null || $language === '') {
+			return $newsletters;
+		}
+
+		return $this->translator->forReader(
+			messages: $newsletters,
+			readerRef: $subjectRef,
+			language: $language,
+			schema: 'newsletter',
+			titleField: 'title',
+			textField: 'title',
+			budget: $budget
+		);
+	}//end translatedTitles()
 
 	/**
 	 * Each newsletter with the items it references, in its order. One
@@ -180,12 +216,12 @@ class NewsFeedReader {
 	 *
 	 * @param array<int, array<string, mixed>> $newsletters The sent newsletters in the reader's audience.
 	 * @param array<string, mixed> $audience The reader's audience.
-	 * @param string $subjectRef The reader.
-	 * @param string $language The reader's language.
+	 * @param array{subjectRef: string, language: string} $reader The reader and their language.
+	 * @param int|null $budget The shared per-request bound, spent in place.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 */
-	private function withItems(array $newsletters, array $audience, string $subjectRef, string $language): array {
+	private function withItems(array $newsletters, array $audience, array $reader, ?int &$budget): array {
 		$referenced = [];
 		foreach ($newsletters as $newsletter) {
 			foreach ((array)($newsletter['itemRefs'] ?? []) as $ref) {
@@ -201,7 +237,7 @@ class NewsFeedReader {
 		}
 
 		$byId = [];
-		foreach ($this->translated(items: $items, subjectRef: $subjectRef, language: $language) as $item) {
+		foreach ($this->translated(items: $items, subjectRef: $reader['subjectRef'], language: $reader['language'], budget: $budget) as $item) {
 			$byId[$this->rows->rowId(row: $item)] = $this->photoGate->apply(item: $item);
 		}
 
@@ -252,15 +288,23 @@ class NewsFeedReader {
 	 * @param array<int, array<string, mixed>> $items The stored rows.
 	 * @param string $subjectRef The reader.
 	 * @param string $language The reader's language, '' for as written.
+	 * @param int|null $budget The shared per-request bound, spent in place; null for a fresh one.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 */
-	private function translated(array $items, string $subjectRef, string $language): array {
+	private function translated(array $items, string $subjectRef, string $language, ?int &$budget = null): array {
 		if ($this->translator === null || $language === '') {
 			return $items;
 		}
 
-		return $this->translator->forReader(messages: $items, readerRef: $subjectRef, language: $language, schema: 'newsItem', titleField: 'title');
+		return $this->translator->forReader(
+			messages: $items,
+			readerRef: $subjectRef,
+			language: $language,
+			schema: 'newsItem',
+			titleField: 'title',
+			budget: $budget
+		);
 	}//end translated()
 
 }//end class

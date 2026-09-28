@@ -8,7 +8,9 @@
 // AI notice and the original one click away, exactly as a message does. The
 // title is translated with the body and shares its notice, and the newsletter
 // archive renders its items through the same NewsItem
-// (news-title-and-newsletter-translation).
+// (news-title-and-newsletter-translation). A newsletter's own title is
+// translated too and shows under the same notice, with its original one click
+// away (newsletter-title-translation).
 
 import { useCallback, useEffect, useState } from 'react'
 import { MessageLanguagePicker } from './MessagesPage.jsx'
@@ -72,7 +74,8 @@ export function NewsItem({ item, t, locale, level = 3, idPrefix = 'news' }) {
 
 /**
  * The newsletters sent to this guardian, each with its items shown as the News
- * page shows them: translated, with the AI notice and the original.
+ * page shows them: translated, with the AI notice and the original. The
+ * newsletter's own title shows in the reader's language under the same notice.
  *
  * @param {object} props The props.
  * @param {Array<object>|null} props.archive The archive, newest first, each newsletter carrying `items`.
@@ -91,7 +94,15 @@ export function NewsletterArchive({ archive, t, locale }) {
 				const items = Array.isArray(newsletter.items) ? newsletter.items : []
 				return (
 					<article key={newsletterId} className="portaliq-newsletter">
-						<h3 className="portaliq-newsletter__title">{newsletter.title}</h3>
+						<TranslatedText
+							as="h3"
+							text={newsletter.title}
+							translation={newsletter.translation}
+							t={t}
+							locale={locale}
+							id={`newsletter-${newsletterId}`}
+							bodyClassName="portaliq-newsletter__title"
+						/>
 						{items.length === 0 && <p className="portaliq-empty"><em>{t('This newsletter has no items for you.')}</em></p>}
 						{items.map((item, j) => (
 							<NewsItem

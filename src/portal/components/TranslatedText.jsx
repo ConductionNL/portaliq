@@ -70,12 +70,14 @@ export function isLabelledTranslation(translation) {
  * @param {boolean} [props.defaultOpen] Start with the original shown.
  * @param {string} [props.originalTitle] A title translated with the text (a news
  *     item's): the original then shows it above the text, under the same notice.
+ * @param {string} [props.as] The element the shown text renders in, `p` by
+ *     default; a heading (a newsletter's title) keeps its level this way.
  */
-export default function TranslatedText({ text, translation, t, locale, id, bodyClassName = 'portaliq-message__body', defaultOpen = false, originalTitle }) {
+export default function TranslatedText({ text, translation, t, locale, id, bodyClassName = 'portaliq-message__body', defaultOpen = false, originalTitle, as: Shown = 'p' }) {
 	const [open, setOpen] = useState(defaultOpen)
 
 	if (!isLabelledTranslation(translation)) {
-		return <p className={bodyClassName}>{text}</p>
+		return <Shown className={bodyClassName}>{text}</Shown>
 	}
 
 	const originalId = `portaliq-original-${String(id).replace(/[^A-Za-z0-9_-]/g, '-')}`
@@ -83,7 +85,7 @@ export default function TranslatedText({ text, translation, t, locale, id, bodyC
 
 	return (
 		<div className="portaliq-translated">
-			<p className={bodyClassName} lang={translation.targetLanguage}>{translation.text}</p>
+			<Shown className={bodyClassName} lang={translation.targetLanguage}>{translation.text}</Shown>
 			<aside className="portaliq-ai-notice" aria-label={t('AI translation')}>
 				<span className="portaliq-ai-notice__mark" aria-hidden="true">AI</span>
 				<span className="portaliq-ai-notice__text">{noticeText(translation, t, locale)}</span>
