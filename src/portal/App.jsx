@@ -16,6 +16,7 @@ import MessagesPage from '@portal/components/MessagesPage.jsx'
 import PageView from '@portal/components/PageView.jsx'
 import TasksPage from '@portal/components/TasksPage.jsx'
 import { consumeOidcCallbackFragment, createPortalApi, getToken } from '@portal/lib/portalApi.js'
+import { runAction } from '@portal/lib/rowAction.js'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 // The fixed cross-app inbox nav entry's key (portal-inbox-v2 T05) — distinct
@@ -112,6 +113,7 @@ export default function App({ config, t: tProp }) {
 	const [dataByCollection, setDataByCollection] = useState({})
 	const [activeKey, setActiveKey] = useState(null)
 	const [busyRow, setBusyRow] = useState(null)
+	const [actionMessage, setActionMessage] = useState('')
 	// A live unread-count override (portal-inbox-v2): lets a create's receipt
 	// follow-on update the Inbox badge WITHOUT replacing the contributions
 	// object, so the active page's form/state (e.g. the just-shown success
@@ -279,25 +281,27 @@ export default function App({ config, t: tProp }) {
 		loadCollection(collection)
 	}, [api, loadCollection])
 
-	// Forward an endpoint / A6 action server-to-server (best-effort; the shell
-	// does not hold the target's credentials — Portaliq signs the assertion).
+	// Forward an endpoint / A6 action server-to-server by app + action id;
+	// Portaliq signs the assertion. The leaf app's answer is shown (or its
+	// checked redirect followed), never discarded (#804).
 	const onAction = useCallback(async (action) => {
-		if (!action.endpoint && !action.id) {
+		if (!action || !action.id) {
 			return
 		}
-		// A6 actions are addressed by app + action id; endpoint-only actions are
-		// forwarded by the backend. This is a thin trigger; result UI is a
-		// follow-up (Phase 4 blocks).
-		try {
-			await fetch(`${config.apiBase}/actions/${encodeURIComponent(action.app || active?.contribution?.app || '')}/${encodeURIComponent(action.id)}`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}) },
-				body: '{}',
-			})
-		} catch (e) {
-			/* best-effort */
+		setActionMessage('')
+		const app = action.app || active?.contribution?.app || ''
+		const { redirect, messageKey } = await runAction(api, app, action)
+		if (redirect) {
+			window.location.assign(redirect)
+			return
 		}
-	}, [config, active])
+		setActionMessage(t(messageKey))
+	}, [api, active, t])
+
+	// An action's answer belongs to the page it was run on.
+	useEffect(() => {
+		setActionMessage('')
+	}, [activeKey])
 
 	/**
 	 *
@@ -440,6 +444,10 @@ export default function App({ config, t: tProp }) {
 								locale={config.locale}
 								initialTaskUuid={pendingTaskUuid}
 							/>
+						)}
+
+						{active && !active.special && actionMessage && (
+							<p className="portaliq-rowaction-status" role="status">{actionMessage}</p>
 						)}
 
 						{active && !active.special && (

@@ -200,3 +200,25 @@ test('rowNotice reads the declared field only', () => {
 	assert.equal(rowAction.rowNotice({ id: 'x' }, issued), '')
 	assert.equal(rowAction.rowNotice(salesInvoices, { invoiceNote: 12 }), '')
 })
+
+test('a page-level action shows the leaf app answer instead of discarding it (#804)', async () => {
+	const calls = []
+	const refusing = {
+		async forwardAction(app, actionId, body) {
+			calls.push({ app, actionId, body })
+			return { ok: false, status: 403, body: { error: 'forbidden' } }
+		},
+	}
+	assert.deepEqual(await rowAction.runAction(refusing, 'filinq', { id: 'sign' }), {
+		redirect: null,
+		messageKey: 'This can no longer be done for this item.',
+	})
+	assert.deepEqual(calls, [{ app: 'filinq', actionId: 'sign', body: {} }])
+
+	const done = { forwardAction: async () => ({ ok: true, status: 200, body: {} }) }
+	assert.deepEqual(await rowAction.runAction(done, 'filinq', { id: 'sign' }), { redirect: null, messageKey: 'Done.' })
+	assert.deepEqual(await rowAction.runAction(done, '', { id: 'sign' }), {
+		redirect: null,
+		messageKey: 'This is not available right now. Try again later.',
+	})
+})

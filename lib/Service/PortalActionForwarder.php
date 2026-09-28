@@ -86,12 +86,20 @@ class PortalActionForwarder {
 	 * @param array<string, mixed> $action The already-authorised action declaration.
 	 * @param array<string, mixed> $subject The resolved subject.
 	 * @param array<string, mixed>|null $whitelisted The rebuilt whitelisted body, or null to relay raw.
+	 * @param string $scopeValue The server-resolved value of the action's declared `scopeClaim`,
+	 *                           signed into the assertion; '' when the action declares none.
 	 *
 	 * @return IResponse|null The domain app's response, or null on transport failure.
 	 *
 	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T8
+	 * @spec openspec/changes/case-actions-sign-a-document/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
 	 */
-	public function forward(array $action, array $subject, ?array $whitelisted = null): ?IResponse {
+	public function forward(array $action, array $subject, ?array $whitelisted = null, string $scopeValue = ''): ?IResponse {
+		$scopeClaim = '';
+		if (is_string($action['scopeClaim'] ?? null) === true) {
+			$scopeClaim = $action['scopeClaim'];
+		}
+
 		$body = $this->requestBody();
 		if ($whitelisted !== null) {
 			$body = (string)json_encode($whitelisted);
@@ -99,7 +107,11 @@ class PortalActionForwarder {
 
 		$options = [
 			'headers' => [
-				'X-Portal-Subject' => $this->session->issueAssertion($subject),
+				'X-Portal-Subject' => $this->session->issueAssertion(
+					subject: $subject,
+					scopeClaim: $scopeClaim,
+					scopeValue: $scopeValue
+				),
 				'Content-Type' => 'application/json',
 			],
 			'timeout' => self::FORWARD_TIMEOUT,
