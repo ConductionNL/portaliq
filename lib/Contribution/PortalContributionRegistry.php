@@ -142,7 +142,7 @@ class PortalContributionRegistry {
 				$this->logger->error('Portaliq: manifest normalisation failed', ['app' => $appId, 'reason' => $e->getMessage()]);
 			}
 
-			$contributions[] = $filtered;
+			$contributions[] = $this->normaliseNotifications(contribution: $filtered, appId: (string)$appId);
 		}//end foreach
 
 		return [
@@ -408,6 +408,72 @@ class PortalContributionRegistry {
 
 		return $contribution;
 	}//end filterByTrust()
+
+	/**
+	 * Every contribution of every installed app, once per audience it serves.
+	 *
+	 * The change-rule index needs the rules without a signed-in subject: an
+	 * OpenRegister save can come from a handler or a job, and the question is
+	 * "does any app want a resident told about this record?". Each audience is
+	 * asked with the highest trust, so no rule is lost to a trust filter; the
+	 * resident's own read still applies their trust when they open the record.
+	 *
+	 * @return array<int, array<string, mixed>> The normalised contributions, each with `app` and `audience`.
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-declared-change-reaches-the-residents-inbox-req-nap-002
+	 */
+	public function contributionsForEveryAudience(): array {
+		$contributions = [];
+		foreach ($this->appManager->getInstalledApps() as $appId) {
+			$provider = $this->resolveProvider(appId: (string)$appId);
+			if ($provider === null || method_exists($provider, 'getContribution') === false) {
+				continue;
+			}
+
+			foreach ($this->providerAudiences(provider: $provider) as $audience) {
+				$aggregate = $this->aggregateFor(
+					subject: ['audience' => $audience, 'trust' => 'high', 'subjectRef' => '', 'organisation' => '']
+				);
+				foreach (($aggregate['contributions'] ?? []) as $contribution) {
+					if ((string)($contribution['app'] ?? '') === (string)$appId) {
+						$contribution['audience'] = $audience;
+						$contributions[] = $contribution;
+					}
+				}
+			}
+		}
+
+		return $contributions;
+	}//end contributionsForEveryAudience()
+
+	/**
+	 * Keep the plain rule keys and the change rules the listener can act on,
+	 * and log each dropped rule with the app that declared it.
+	 *
+	 * @param array<string, mixed> $contribution The normalised contribution.
+	 * @param string               $appId        The app that contributed it.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-case-app-declares-which-change-a-resident-hears-about-req-nap-001
+	 */
+	private function normaliseNotifications(array $contribution, string $appId): array {
+		if (array_key_exists('notifications', $contribution) === false) {
+			return $contribution;
+		}
+
+		$result = (new NotificationRuleNormaliser())->normalise(
+			notifications: $contribution['notifications'],
+			collections: (array)($contribution['collections'] ?? [])
+		);
+		foreach ($result['dropped'] as $reason) {
+			$this->logger->warning('Portaliq: notification rule dropped', ['app' => $appId, 'rule' => $reason]);
+		}
+
+		$contribution['notifications'] = $result['kept'];
+
+		return $contribution;
+	}//end normaliseNotifications()
 
 	/**
 	 * Resolve one app's contribution provider, or null when it ships none.
