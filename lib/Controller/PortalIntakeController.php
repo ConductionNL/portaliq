@@ -91,6 +91,8 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	/**
 	 * The entry point: the published catalogue, by topic.
 	 *
+	 * @param string $portal The portal's slug, as the site renderer names it inside Nextcloud; empty resolves the portal from the host.
+	 *
 	 * @return JSONResponse The topics and their requests.
 	 *
 	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
@@ -98,8 +100,8 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 60, period: 60)]
-	public function catalogue(): JSONResponse {
-		$site = $this->site();
+	public function catalogue(string $portal = ''): JSONResponse {
+		$site = $this->site(portal: $portal);
 		if ($site === null) {
 			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
 		}
@@ -111,6 +113,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * The form a route is bound to, as it stands right now.
 	 *
 	 * @param string $route The in-portal route of the form page.
+	 * @param string $portal The portal's slug, as the site renderer names it inside Nextcloud; empty resolves the portal from the host.
 	 *
 	 * @return JSONResponse The render payload, or a refusal.
 	 *
@@ -119,8 +122,8 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 60, period: 60)]
-	public function form(string $route): JSONResponse {
-		$site = $this->site();
+	public function form(string $route, string $portal = ''): JSONResponse {
+		$site = $this->site(portal: $portal);
 		if ($site === null) {
 			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
 		}
@@ -158,6 +161,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @param string $solution The solution to it.
 	 * @param int $expiresAt The expiry issued with the nonce.
 	 * @param string $signature This instance's signature over the nonce.
+	 * @param string $portal The portal's slug, as the site renderer names it inside Nextcloud; empty resolves the portal from the host.
 	 *
 	 * @return JSONResponse The reference, the per-field errors, or a refusal.
 	 *
@@ -173,8 +177,9 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		string $solution = '',
 		int $expiresAt = 0,
 		string $signature = '',
+		string $portal = '',
 	): JSONResponse {
-		$site = $this->site();
+		$site = $this->site(portal: $portal);
 		if ($site === null) {
 			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
 		}
@@ -235,6 +240,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * What became of a submission.
 	 *
 	 * @param string $reference The reference the citizen was given.
+	 * @param string $portal The portal's slug, as the site renderer names it inside Nextcloud; empty resolves the portal from the host.
 	 *
 	 * @return JSONResponse The real state, including a create that failed.
 	 *
@@ -243,8 +249,8 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 60, period: 60)]
-	public function status(string $reference): JSONResponse {
-		$site = $this->site();
+	public function status(string $reference, string $portal = ''): JSONResponse {
+		$site = $this->site(portal: $portal);
 		if ($site === null) {
 			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
 		}
@@ -321,9 +327,15 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	/**
 	 * The portal being visited, or null.
 	 *
+	 * @param string $portal The portal's slug, or empty for the host.
+	 *
 	 * @return array<string, mixed>|null
 	 */
-	private function site(): ?array {
-		return $this->portals->resolve(request: $this->request);
+	private function site(string $portal = ''): ?array {
+		if ($portal === '') {
+			return $this->portals->resolve(request: $this->request, portalSlug: null);
+		}
+
+		return $this->portals->resolve(request: $this->request, portalSlug: $portal);
 	}//end site()
 }//end class

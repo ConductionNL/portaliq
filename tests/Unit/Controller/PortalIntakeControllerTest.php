@@ -137,6 +137,45 @@ class PortalIntakeControllerTest extends TestCase {
 
 	}//end testTheEntryPointListsWhatTheCatalogueSaysToday()
 
+	/**
+	 * The public site inside Nextcloud names its portal by slug, as the
+	 * content API does; every intake endpoint resolves that portal rather
+	 * than falling back to the host alone.
+	 *
+	 * @return void
+	 */
+	public function testTheSiteNamesItsPortalBySlugOnEveryIntakeEndpoint(): void {
+		$controller = $this->controller(render: $this->hostedForm());
+		$this->doubles['portals']->expects($this->exactly(4))
+			->method('resolve')
+			->with($this->anything(), 'gemeente-y');
+		$this->doubles['catalogue']->method('topicsFor')->willReturn([]);
+		$this->doubles['queue']->method('status')->willReturn(['reference' => 'AANVRAAG-1', 'state' => 'queued', 'caseId' => '', 'failureReason' => '', 'submittedAt' => '']);
+		$this->doubles['queue']->method('accept')->willReturn(['reference' => 'AANVRAAG-1', 'state' => 'queued']);
+
+		$controller->catalogue(portal: 'gemeente-y');
+		$controller->form(route: 'aanvragen/verhuizing', portal: 'gemeente-y');
+		$controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB'], portal: 'gemeente-y');
+		$controller->status(reference: 'AANVRAAG-1', portal: 'gemeente-y');
+
+	}//end testTheSiteNamesItsPortalBySlugOnEveryIntakeEndpoint()
+
+	/**
+	 * Without a slug the portal is resolved from the host, as before.
+	 *
+	 * @return void
+	 */
+	public function testWithoutASlugThePortalComesFromTheHost(): void {
+		$controller = $this->controller(render: $this->hostedForm());
+		$this->doubles['portals']->expects($this->once())
+			->method('resolve')
+			->with($this->anything(), null);
+		$this->doubles['catalogue']->method('topicsFor')->willReturn([]);
+
+		$controller->catalogue();
+
+	}//end testWithoutASlugThePortalComesFromTheHost()
+
 	public function testAFormRequiringDigidIsNotRenderedToAnAnonymousVisitor(): void {
 		// portaliq#725: on the portal's own page a form above `low` needs a
 		// session at or above that level before it is rendered.
@@ -247,6 +286,7 @@ class PortalIntakeControllerTest extends TestCase {
 		$l10n->method('t')->willReturnCallback(static fn (string $text): string => $text);
 
 		$this->doubles = [
+			'portals' => $portals,
 			'queue' => $this->double(PortalIntakeQueue::class, ['accept', 'status']),
 			'prefill' => $this->double(PortalApplicantPrefill::class, ['forSubject']),
 			'challenge' => $this->double(PortalChallengeService::class, ['issue', 'accepts']),
