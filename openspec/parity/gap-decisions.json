@@ -1206,5 +1206,237 @@
 		"reason": "Guest page for a signed pay link. Shillinq change receivables-payment-links (merged) depends on a portaliq guest page that forwards the pay action for a signed link (REQ-RPL-006), the same guest mechanism sales-cancellation asks for. No portaliq change offers an act without a portal session. Build: a half a merged sibling change depends on.",
 		"change": "identity-guest-page-for-signed-links",
 		"decidedOn": "2026-09-28"
+	},
+	{
+		"row": "cmp-tsk-appointment",
+		"matrix": "portaliq",
+		"decision": "decided-no",
+		"reason": "Single competitor, no demand: only xxllnc PIP rates it yes, no tender, featureRequest or roadmap row, outside the core area (sign-in and identity). Booking itself belongs to pipelinq's appointment-booking changes; the portal would only render a contribution.",
+		"change": null,
+		"decidedOn": "2026-09-28"
+	},
+	{
+		"row": "cmp-tsk-questionnaire",
+		"matrix": "portaliq",
+		"decision": "decided-no",
+		"reason": "Single competitor, no demand: only Open Inwoner rates it yes, no demand row, outside the core area.",
+		"change": null,
+		"decidedOn": "2026-09-28"
+	},
+	{
+		"row": "cmp-tsk-plan",
+		"matrix": "portaliq",
+		"decision": "decided-no",
+		"reason": "Single competitor, no demand: only Open Inwoner rates it yes, no demand row, outside the core area. A shared plan with goals is case-domain logic a domain app would own.",
+		"change": null,
+		"decidedOn": "2026-09-28"
+	},
+	{
+		"row": "cmp-inb-push",
+		"matrix": "portaliq",
+		"decision": "decided-no",
+		"reason": "Single competitor, no demand: only MijnOverheid rates it yes, no demand row, outside the core area. push-notifications-quiet-hours built the delivery seam with a logging sender; a real push sender is the missing half.",
+		"change": null,
+		"decidedOn": "2026-09-28"
+	},
+	{
+		"row": "cmp-inb-download",
+		"matrix": "portaliq",
+		"decision": "decided-no",
+		"reason": "Single competitor, no demand: only MijnOverheid rates it yes, no demand row, outside the core area.",
+		"change": null,
+		"decidedOn": "2026-09-28"
+	},
+	{
+		"row": "cmp-inb-contact-history",
+		"matrix": "portaliq",
+		"decision": "decided-no",
+		"reason": "Single competitor, no demand: only Open Inwoner rates it yes, no demand row, outside the core area. A contact-moment log is the customer-contact app's record, not the portal inbox.",
+		"change": null,
+		"decidedOn": "2026-09-28"
+	},
+	{
+		"row": "cmp-int-report-map",
+		"matrix": "portaliq",
+		"decision": "decided-no",
+		"reason": "Single competitor, no demand: only xxllnc PIP rates it yes, no demand row, outside the core area.",
+		"change": null,
+		"decidedOn": "2026-09-28"
+	},
+	{
+		"row": "cmp-site-workflow",
+		"matrix": "portaliq",
+		"decision": "decided-no",
+		"reason": "Single competitor, no demand: only Liferay DXP rates it yes, no demand row, outside the core area.",
+		"change": null,
+		"decidedOn": "2026-09-28"
+	},
+	{
+		"row": "cmp-site-schedule",
+		"matrix": "portaliq",
+		"decision": "decided-no",
+		"reason": "No competitor rates it yes and no demand row; outside the core area.",
+		"change": null,
+		"decidedOn": "2026-09-28"
+	},
+	{
+		"row": "cmp-site-personalise",
+		"matrix": "portaliq",
+		"decision": "decided-no",
+		"reason": "Single competitor, no demand: only Liferay DXP rates it yes, no demand row, outside the core area.",
+		"change": null,
+		"decidedOn": "2026-09-28"
+	},
+	{
+		"row": "cmp-site-map",
+		"matrix": "portaliq",
+		"decision": "decided-no",
+		"reason": "Single competitor, no demand: only Open Inwoner rates it yes, no demand row, outside the core area.",
+		"change": null,
+		"decidedOn": "2026-09-28"
+	},
+	{
+		"row": "sib-opencatalogi-od-visualise",
+		"matrix": "portaliq",
+		"decision": "decided-no",
+		"reason": "No competitor rates it yes and no demand row; outside the core area. Dataset visualisation is opencatalogi's publication surface.",
+		"change": null,
+		"decidedOn": "2026-09-28"
+	},
+	{
+		"row": "thm-content-i18n",
+		"matrix": "portaliq",
+		"decision": "decided-no",
+		"reason": "Single competitor, no demand: only Liferay DXP rates it yes, no demand row, outside the core area.",
+		"change": null,
+		"decidedOn": "2026-09-28"
+	},
+	{
+		"row": "cmp-thm-b1",
+		"matrix": "portaliq",
+		"decision": "decided-no",
+		"reason": "No competitor rates it yes and no demand row; outside the core area.",
+		"change": null,
+		"decidedOn": "2026-09-28"
+	},
+	{
+		"row": "cmp-ana-feedback",
+		"matrix": "portaliq",
+		"decision": "decided-no",
+		"reason": "No competitor rates it yes and no demand row; outside the core area.",
+		"change": null,
+		"decidedOn": "2026-09-28"
+	},
+	{
+		"row": "cmp-inb-newsletter",
+		"matrix": "portaliq",
+		"decision": "decided-no",
+		"reason": "Single competitor, no demand: only Open Inwoner rates it yes, no demand row, outside the core area. news-and-newsletter-authoring sends newsletters; subscribing from a profile is the missing half.",
+		"change": null,
+		"decidedOn": "2026-09-28"
+	},
+	{
+		"row": "cmp-srch-own-messages-tasks",
+		"matrix": "portaliq",
+		"decision": "decided-no",
+		"reason": "Single competitor, no demand: only NL Portal rates it yes, no demand row, outside the core area.",
+		"change": null,
+		"decidedOn": "2026-09-28"
+	},
+	{
+		"row": "dem-cl-sub-cases",
+		"matrix": "portaliq",
+		"decision": "decided-no",
+		"reason": "Changelog demand only and no competitor rates it yes; the sub-case projection is dossiq's (CITIZEN_CASE_FIELDS omits parentCase and subCases), so a portal view has nothing to show until dossiq projects it.",
+		"change": null,
+		"decidedOn": "2026-09-28"
+	},
+	{
+		"row": "dem-cl-hide-one-case",
+		"matrix": "portaliq",
+		"decision": "decided-no",
+		"reason": "Changelog demand only and no competitor rates it yes; outside the core area. A per-case switch would live on dossiq's case, which the portal already filters by portalSubject.",
+		"change": null,
+		"decidedOn": "2026-09-28"
+	},
+	{
+		"row": "dem-rm-national-case-feed",
+		"matrix": "portaliq",
+		"decision": "decided-no",
+		"reason": "Roadmap demand (Logius MijnZaken) but no competitor rates it yes; outside the core area. A ZGW case API for MijnOverheid to read is a case system's, not the portal's.",
+		"change": null,
+		"decidedOn": "2026-09-28"
+	},
+	{
+		"row": "dem-rm-federated-messages",
+		"matrix": "portaliq",
+		"decision": "decided-no",
+		"reason": "Roadmap demand (Logius Federatief Berichtenstelsel) but no competitor rates it yes; outside the core area.",
+		"change": null,
+		"decidedOn": "2026-09-28"
+	},
+	{
+		"row": "dem-rm-sms-alert",
+		"matrix": "portaliq",
+		"decision": "decided-no",
+		"reason": "Roadmap demand (Logius Federatief Berichtenstelsel) but no competitor rates it yes; outside the core area.",
+		"change": null,
+		"decidedOn": "2026-09-28"
+	},
+	{
+		"row": "dem-cl-inbox-bulk-actions",
+		"matrix": "portaliq",
+		"decision": "decided-no",
+		"reason": "Changelog demand and one competitor (MijnOverheid); the rule needs a featureRequest or roadmap row for a single competitor. Outside the core area.",
+		"change": null,
+		"decidedOn": "2026-09-28"
+	},
+	{
+		"row": "cmp-srch-noindex-filtered",
+		"matrix": "portaliq",
+		"decision": "decided-no",
+		"reason": "Changelog demand and one competitor (Liferay DXP); the rule needs a featureRequest or roadmap row for a single competitor.",
+		"change": null,
+		"decidedOn": "2026-09-28"
+	},
+	{
+		"row": "dem-cl-mcp-pii-masking",
+		"matrix": "portaliq",
+		"decision": "decided-no",
+		"reason": "Changelog demand and one competitor (Liferay DXP); the rule needs a featureRequest or roadmap row for a single competitor.",
+		"change": null,
+		"decidedOn": "2026-09-28"
+	},
+	{
+		"row": "dem-cl-consent-on-account-gpc",
+		"matrix": "portaliq",
+		"decision": "decided-no",
+		"reason": "The Global Privacy Control half is built (src/traffic/helpers.js:137-146 optedOut() honours navigator.globalPrivacyControl before anything runs), so the rating moves no to partial. Keeping the choice on the account is the missing half: changelog demand and one competitor (Liferay DXP), and the rule needs a featureRequest or roadmap row for a single competitor.",
+		"change": null,
+		"decidedOn": "2026-09-28"
+	},
+	{
+		"row": "dem-rm-ai-governed-search",
+		"matrix": "portaliq",
+		"decision": "decided-no",
+		"reason": "Roadmap demand (Liferay roadmap) but no competitor rates it yes; outside the core area. search-assistant-from-public-content covers public content only, by design.",
+		"change": null,
+		"decidedOn": "2026-09-28"
+	},
+	{
+		"row": "dem-rm-seo-aeo-center",
+		"matrix": "portaliq",
+		"decision": "decided-no",
+		"reason": "Roadmap demand (Liferay) but no competitor rates it yes; outside the core area. site-page-seo-history-and-media covers per-page SEO fields.",
+		"change": null,
+		"decidedOn": "2026-09-28"
+	},
+	{
+		"row": "sib-learniq-gua-guardian-sees-the-child",
+		"matrix": "portaliq",
+		"decision": "existing",
+		"reason": "Matrix corrected. The portaliq half shipped in portal-scope-list-membership (PR 750): a list scope field matches when it contains the subject's ref, which is what learniq's guardianRefs scope needs.",
+		"change": "portal-scope-list-membership",
+		"decidedOn": "2026-09-28"
 	}
 ]
