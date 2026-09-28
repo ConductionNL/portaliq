@@ -1597,7 +1597,13 @@ OC.L10N.register(
         "The record this message is about, as its app, collection and id. The inbox shows an Open button for it, and the portal reads the record through the resident's own scoped read.": "Het dossier waar dit bericht over gaat, als app, verzameling en id. Het postvak toont er een knop Openen voor, en het portaal leest het dossier via de eigen afgeschermde lijst van de inwoner.",
         "Notification preferences": "Meldingsvoorkeuren",
         "Per kind of notice, whether the resident wants it by e-mail and by push: `case.updated` for changes on their cases, `message.created` for new messages. A missing choice means on. `notificationChannels.email: false` still switches e-mail off for every kind. Set only through the account's own PATCH /portal/api/identity/notification-preferences.": "Per soort melding of de inwoner die per e-mail en per push wil: `case.updated` voor wijzigingen in hun zaken, `message.created` voor nieuwe berichten. Een ontbrekende keuze betekent aan. `notificationChannels.email: false` zet e-mail nog steeds uit voor elke soort. Alleen in te stellen via PATCH /portal/api/identity/notification-preferences van het eigen account.",
-        "The out-of-band channel used: `email`, or `push` for a web push to the resident's registered devices.": "Het gebruikte kanaal buiten het portaal: `email`, of `push` voor een webpush naar de geregistreerde apparaten van de inwoner."
+        "The out-of-band channel used: `email`, or `push` for a web push to the resident's registered devices.": "Het gebruikte kanaal buiten het portaal: `email`, of `push` voor een webpush naar de geregistreerde apparaten van de inwoner.",
+        "App": "App",
+        "Collection": "Verzameling",
+        "Record id": "Id van het dossier",
+        "The app that holds the record.": "De app waarin het dossier staat.",
+        "The collection of that app the record belongs to.": "De verzameling van die app waar het dossier bij hoort.",
+        "The id of the record.": "Het id van het dossier."
     },
     "nplurals=2; plural=(n != 1);"
 )

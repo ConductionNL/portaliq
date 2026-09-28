@@ -1145,13 +1145,19 @@
                         "description": "The record this message is about, as its app, collection and id. The inbox shows an Open button for it, and the portal reads the record through the resident's own scoped read.",
                         "properties": {
                             "app": {
-                                "type": "string"
+                                "title": "App",
+                                "type": "string",
+                                "description": "The app that holds the record."
                             },
                             "collection": {
-                                "type": "string"
+                                "title": "Collection",
+                                "type": "string",
+                                "description": "The collection of that app the record belongs to."
                             },
                             "id": {
-                                "type": "string"
+                                "title": "Record id",
+                                "type": "string",
+                                "description": "The id of the record."
                             }
                         },
                         "example": {

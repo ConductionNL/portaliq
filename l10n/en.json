@@ -1550,7 +1550,13 @@
         "The record this message is about, as its app, collection and id. The inbox shows an Open button for it, and the portal reads the record through the resident's own scoped read.": "The record this message is about, as its app, collection and id. The inbox shows an Open button for it, and the portal reads the record through the resident's own scoped read.",
         "Notification preferences": "Notification preferences",
         "Per kind of notice, whether the resident wants it by e-mail and by push: `case.updated` for changes on their cases, `message.created` for new messages. A missing choice means on. `notificationChannels.email: false` still switches e-mail off for every kind. Set only through the account's own PATCH /portal/api/identity/notification-preferences.": "Per kind of notice, whether the resident wants it by e-mail and by push: `case.updated` for changes on their cases, `message.created` for new messages. A missing choice means on. `notificationChannels.email: false` still switches e-mail off for every kind. Set only through the account's own PATCH /portal/api/identity/notification-preferences.",
-        "The out-of-band channel used: `email`, or `push` for a web push to the resident's registered devices.": "The out-of-band channel used: `email`, or `push` for a web push to the resident's registered devices."
+        "The out-of-band channel used: `email`, or `push` for a web push to the resident's registered devices.": "The out-of-band channel used: `email`, or `push` for a web push to the resident's registered devices.",
+        "App": "App",
+        "Collection": "Collection",
+        "Record id": "Record id",
+        "The app that holds the record.": "The app that holds the record.",
+        "The collection of that app the record belongs to.": "The collection of that app the record belongs to.",
+        "The id of the record.": "The id of the record."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"
