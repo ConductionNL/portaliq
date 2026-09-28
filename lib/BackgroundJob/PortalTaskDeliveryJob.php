@@ -129,12 +129,27 @@ class PortalTaskDeliveryJob extends TimedJob {
 	private const BODY_OPEN_KEY = 'Open "Mijn taken" in the portal to complete this task.';
 
 	/**
-	 * The privacy-minimal mail keys — organisation name and link ONLY, never
-	 * task or case content (the NotificationDispatchJob posture).
+	 * The privacy-minimal mail keys per delivery kind — organisation name and
+	 * link ONLY, never task or case content (the NotificationDispatchJob
+	 * posture). `ask` and `re-ask` announce a new task; a `reminder` is about
+	 * a task the resident already has, so it must not call it new (#803,
+	 * tasks-reminders-after-the-deadline D4). An unknown kind falls back to
+	 * `ask`, as the inbox subject does.
 	 */
-	private const MAIL_SUBJECT_KEY = 'You have a new task in the portal of %1$s';
-
-	private const MAIL_BODY_KEY = 'You have a new task in the portal of %1$s. Log in to view it: %2$s';
+	private const MAIL_KEYS = [
+		'ask' => [
+			'subject' => 'You have a new task in the portal of %1$s',
+			'body' => 'You have a new task in the portal of %1$s. Log in to view it: %2$s',
+		],
+		're-ask' => [
+			'subject' => 'You have a new task in the portal of %1$s',
+			'body' => 'You have a new task in the portal of %1$s. Log in to view it: %2$s',
+		],
+		'reminder' => [
+			'subject' => 'Reminder: you have an open task in the portal of %1$s',
+			'body' => 'You have an open task in the portal of %1$s. Log in to finish it: %2$s',
+		],
+	];
 
 	/**
 	 * Constructor.
@@ -232,7 +247,7 @@ class PortalTaskDeliveryJob extends TimedJob {
 
 			$error = match ($channel) {
 				'portal-inbox' => $this->deliverInbox(uuid: $uuid, subjectRef: $subjectRef, kind: (string)$row->getKind(), message: $message),
-				'mail' => $this->deliverMail(subjectRef: $subjectRef),
+				'mail' => $this->deliverMail(subjectRef: $subjectRef, kind: (string)$row->getKind()),
 				default => 'unknown delivery channel: ' . $channel,
 			};
 
@@ -306,12 +321,14 @@ class PortalTaskDeliveryJob extends TimedJob {
 	 * Send the privacy-minimal mail for one `mail` row.
 	 *
 	 * @param string $subjectRef The party's subject reference.
+	 * @param string $kind       `ask`, `re-ask` or `reminder`; picks the subject and body.
 	 *
 	 * @return string|null Null on success, else the failure reason.
 	 *
 	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-delivery-worker-settles-every-ledger-row-idempotently-and-in-isolation
+	 * @spec openspec/changes/tasks-reminders-after-the-deadline/specs/portal-task-delivery/spec.md#requirement-the-mail-says-which-kind-of-delivery-it-is-req-trd-002
 	 */
-	private function deliverMail(string $subjectRef): ?string {
+	private function deliverMail(string $subjectRef, string $kind): ?string {
 		$account = ($this->reader->readCollection(
 			register: self::REGISTER,
 			schema: self::ACCOUNT_SCHEMA,
@@ -332,10 +349,12 @@ class PortalTaskDeliveryJob extends TimedJob {
 		$organisationName = (string)($this->orgConfig->resolve(orgSlug: $organisation)['organisationName'] ?? 'Portaliq');
 		$deepLink = $this->deepLink(organisation: $organisation);
 
+		$keys = (self::MAIL_KEYS[$kind] ?? self::MAIL_KEYS['ask']);
+
 		try {
 			$mail = $this->mailer->createMessage();
-			$mail->setSubject($this->bilingual(key: self::MAIL_SUBJECT_KEY, parameters: [$organisationName], glue: ' / '));
-			$mail->setPlainBody($this->bilingual(key: self::MAIL_BODY_KEY, parameters: [$organisationName, $deepLink], glue: "\n\n"));
+			$mail->setSubject($this->bilingual(key: $keys['subject'], parameters: [$organisationName], glue: ' / '));
+			$mail->setPlainBody($this->bilingual(key: $keys['body'], parameters: [$organisationName, $deepLink], glue: "\n\n"));
 			$mail->setTo([$email]);
 			$failedRecipients = $this->mailer->send($mail);
 		} catch (Throwable $failure) {
