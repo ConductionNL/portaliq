@@ -1588,7 +1588,16 @@ OC.L10N.register(
         "This entry sends people to another website, but has no address. Nobody can start it.": "Deze ingang stuurt mensen naar een andere website, maar heeft geen adres. Niemand kan hem starten.",
         "This entry opens no form today. It asks for \"{form}\", and no form of that name is published to its audience.": "Deze ingang opent vandaag geen formulier. Hij vraagt om \"{form}\", en geen formulier met die naam is gepubliceerd voor zijn doelgroep.",
         "This entry opens no form today. No published form matches its case type and audience.": "Deze ingang opent vandaag geen formulier. Geen gepubliceerd formulier past bij het zaaktype en de doelgroep.",
-        "Could not check which form this entry opens. Try again.": "Kon niet controleren welk formulier deze ingang opent. Probeer het opnieuw."
+        "Could not check which form this entry opens. Try again.": "Kon niet controleren welk formulier deze ingang opent. Probeer het opnieuw.",
+        "%1$s has been updated": "%1$s is bijgewerkt",
+        "Open it to see what changed.": "Open het om te zien wat er is veranderd.",
+        "Something changed in the portal of %1$s": "Er is iets veranderd in het portaal van %1$s",
+        "Something changed on your %1$s in the portal of %2$s. Sign in to see it: %3$s": "Er is iets veranderd in uw %1$s in het portaal van %2$s. Log in om het te zien: %3$s",
+        "Record link": "Koppeling naar het dossier",
+        "The record this message is about, as its app, collection and id. The inbox shows an Open button for it, and the portal reads the record through the resident's own scoped read.": "Het dossier waar dit bericht over gaat, als app, verzameling en id. Het postvak toont er een knop Openen voor, en het portaal leest het dossier via de eigen afgeschermde lijst van de inwoner.",
+        "Notification preferences": "Meldingsvoorkeuren",
+        "Per kind of notice, whether the resident wants it by e-mail and by push: `case.updated` for changes on their cases, `message.created` for new messages. A missing choice means on. `notificationChannels.email: false` still switches e-mail off for every kind. Set only through the account's own PATCH /portal/api/identity/notification-preferences.": "Per soort melding of de inwoner die per e-mail en per push wil: `case.updated` voor wijzigingen in hun zaken, `message.created` voor nieuwe berichten. Een ontbrekende keuze betekent aan. `notificationChannels.email: false` zet e-mail nog steeds uit voor elke soort. Alleen in te stellen via PATCH /portal/api/identity/notification-preferences van het eigen account.",
+        "The out-of-band channel used: `email`, or `push` for a web push to the resident's registered devices.": "Het gebruikte kanaal buiten het portaal: `email`, of `push` voor een webpush naar de geregistreerde apparaten van de inwoner."
     },
     "nplurals=2; plural=(n != 1);"
 )

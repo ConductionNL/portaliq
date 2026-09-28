@@ -1530,7 +1530,16 @@ OC.L10N.register(
         "This entry sends people to another website, but has no address. Nobody can start it.": "This entry sends people to another website, but has no address. Nobody can start it.",
         "This entry opens no form today. It asks for \"{form}\", and no form of that name is published to its audience.": "This entry opens no form today. It asks for \"{form}\", and no form of that name is published to its audience.",
         "This entry opens no form today. No published form matches its case type and audience.": "This entry opens no form today. No published form matches its case type and audience.",
-        "Could not check which form this entry opens. Try again.": "Could not check which form this entry opens. Try again."
+        "Could not check which form this entry opens. Try again.": "Could not check which form this entry opens. Try again.",
+        "%1$s has been updated": "%1$s has been updated",
+        "Open it to see what changed.": "Open it to see what changed.",
+        "Something changed in the portal of %1$s": "Something changed in the portal of %1$s",
+        "Something changed on your %1$s in the portal of %2$s. Sign in to see it: %3$s": "Something changed on your %1$s in the portal of %2$s. Sign in to see it: %3$s",
+        "Record link": "Record link",
+        "The record this message is about, as its app, collection and id. The inbox shows an Open button for it, and the portal reads the record through the resident's own scoped read.": "The record this message is about, as its app, collection and id. The inbox shows an Open button for it, and the portal reads the record through the resident's own scoped read.",
+        "Notification preferences": "Notification preferences",
+        "Per kind of notice, whether the resident wants it by e-mail and by push: `case.updated` for changes on their cases, `message.created` for new messages. A missing choice means on. `notificationChannels.email: false` still switches e-mail off for every kind. Set only through the account's own PATCH /portal/api/identity/notification-preferences.": "Per kind of notice, whether the resident wants it by e-mail and by push: `case.updated` for changes on their cases, `message.created` for new messages. A missing choice means on. `notificationChannels.email: false` still switches e-mail off for every kind. Set only through the account's own PATCH /portal/api/identity/notification-preferences.",
+        "The out-of-band channel used: `email`, or `push` for a web push to the resident's registered devices.": "The out-of-band channel used: `email`, or `push` for a web push to the resident's registered devices."
     },
     "nplurals=2; plural=(n != 1);"
 )
