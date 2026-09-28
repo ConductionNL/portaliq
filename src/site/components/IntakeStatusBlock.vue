@@ -92,6 +92,13 @@ export default {
 		}
 	},
 
+	/**
+	 * Look up a reference handed in the page's own query string.
+	 *
+	 * @return {void}
+	 *
+	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-case-is-created-asynchronously-and-the-citizen-gets-a-reference-at-once-req-pifo-005
+	 */
 	mounted() {
 		const given = new URLSearchParams(window.location.search).get('reference')
 		if (given) {

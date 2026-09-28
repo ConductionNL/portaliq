@@ -133,6 +133,13 @@ export default {
 		}
 	},
 
+	/**
+	 * Read the catalogue as it stands now; nothing is kept between visits.
+	 *
+	 * @return {Promise<void>} Resolves when read.
+	 *
+	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
+	 */
 	async mounted() {
 		try {
 			this.topics = await fetchCatalogue(

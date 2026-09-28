@@ -293,10 +293,24 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The binding route this block renders: the author's, else the link's.
+		 *
+		 * @return {string} The binding route, or ''.
+		 *
+		 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
+		 */
 		bindingRoute() {
 			return bindingRouteFrom(this.routeParam, this.route)
 		},
 
+		/**
+		 * The rendered fields that carry a name.
+		 *
+		 * @return {Array<object>} The fields.
+		 *
+		 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
+		 */
 		fields() {
 			return (
 				Array.isArray(this.render.fields) ? this.render.fields : []
@@ -381,10 +395,26 @@ export default {
 			}
 		},
 
+		/**
+		 * The element id of a field's control.
+		 *
+		 * @param {object} field The field.
+		 * @return {string} The id.
+		 *
+		 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
+		 */
 		elementId(field) {
 			return `pq-intake-field-${field.name}`
 		},
 
+		/**
+		 * The input type for a field, text when the declared type is not a known one.
+		 *
+		 * @param {object} field The field.
+		 * @return {string} The input type.
+		 *
+		 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
+		 */
 		inputType(field) {
 			const KNOWN = ['text', 'email', 'tel', 'number', 'date', 'url']
 			return KNOWN.includes(field.type) ? field.type : 'text'
