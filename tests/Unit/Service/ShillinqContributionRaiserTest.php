@@ -84,12 +84,14 @@ class ShillinqContributionRaiserTest extends TestCase {
 		$invalid = $this->service(static fn () => throw new InvalidArgumentException('A contribution needs a description.'));
 		$forbidden = $this->service(static fn () => throw new RuntimeException('403 you may not raise contributions'));
 		$broken = $this->service(static fn () => throw new RuntimeException('database gone'));
+		$typeError = $this->service(static fn () => throw new \TypeError('raise(): Argument #1 must be of type array'));
 		$odd = $this->service(static fn () => ['no' => 'results']);
 		$good = $this->service(static fn (array $payload) => ['batchId' => 'ctb-1', 'results' => [['index' => 0, 'status' => 'raised']]]);
 
 		$this->assertSame('invalid_charge', $this->raiser($invalid)->raise([])['error']);
 		$this->assertSame(['error' => 'forbidden'], $this->raiser($forbidden)->raise([]));
 		$this->assertSame(['error' => 'raise_failed'], $this->raiser($broken)->raise([]));
+		$this->assertSame(['error' => 'raise_failed'], $this->raiser($typeError)->raise([]));
 		$this->assertSame(['error' => 'raise_failed'], $this->raiser($odd)->raise([]));
 		$this->assertSame('ctb-1', $this->raiser($good)->raise(['kind' => 'activity'])['batchId']);
 	}//end testShillinqAnswersAreMapped()

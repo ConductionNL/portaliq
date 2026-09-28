@@ -261,6 +261,33 @@ class ActivityContributionServiceTest extends TestCase {
 	}//end testRefusalsNeverReachShillinqOrWrite()
 
 	/**
+	 * A place shillinq raised but whose reference could not be written keeps
+	 * the id in the answer with `write_failed`, so staff see the next raise
+	 * will heal it; a place shillinq answered nothing for is `failed`.
+	 *
+	 * @return void
+	 */
+	public function testAFailedWriteAndAMissingResultAreReported(): void {
+		$store = $this->store(
+			[
+				$this->signup('s1', 'child-devries-lars', 'guardian-anna'),
+				$this->signup('s2', 'child-bakker-sem', 'guardian-piet'),
+			]
+		);
+		$store->failSaves = true;
+		$raiser = $this->raiser(static fn (array $payload): array => ['results' => [['index' => 0, 'status' => 'raised', 'paymentRequestId' => 'pr-lars']]]);
+
+		$result = $this->service($store, $raiser)->raise('activity-schaakclub-najaar', self::CHARGE);
+
+		$this->assertSame(
+			['signupId' => 's1', 'childRef' => 'child-devries-lars', 'status' => 'raised', 'paymentRequestRef' => 'pr-lars', 'reason' => 'write_failed'],
+			$result['results'][0]
+		);
+		$this->assertSame(['signupId' => 's2', 'childRef' => 'child-bakker-sem', 'status' => 'failed', 'reason' => 'no_result'], $result['results'][1]);
+		$this->assertSame(['raised' => 1, 'skipped' => 0, 'failed' => 1], array_slice($result, 0, 3, true));
+	}//end testAFailedWriteAndAMissingResultAreReported()
+
+	/**
 	 * More than 200 places go in chunks of 200, and results map back by the
 	 * index within their own chunk.
 	 *
