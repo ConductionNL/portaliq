@@ -68,8 +68,10 @@ export function isLabelledTranslation(translation) {
  * @param {string} props.id A stable id for this message, used to wire the button to the original.
  * @param {string} [props.bodyClassName] Class for the shown text.
  * @param {boolean} [props.defaultOpen] Start with the original shown.
+ * @param {string} [props.originalTitle] A title translated with the text (a news
+ *     item's): the original then shows it above the text, under the same notice.
  */
-export default function TranslatedText({ text, translation, t, locale, id, bodyClassName = 'portaliq-message__body', defaultOpen = false }) {
+export default function TranslatedText({ text, translation, t, locale, id, bodyClassName = 'portaliq-message__body', defaultOpen = false, originalTitle }) {
 	const [open, setOpen] = useState(defaultOpen)
 
 	if (!isLabelledTranslation(translation)) {
@@ -101,7 +103,14 @@ export default function TranslatedText({ text, translation, t, locale, id, bodyC
 				</button>
 			</aside>
 			<blockquote id={originalId} className="portaliq-translated__original" lang={source} hidden={!open}>
-				{text}
+				{originalTitle
+					? (
+						<>
+							<p className="portaliq-translated__original-title">{originalTitle}</p>
+							<p>{text}</p>
+						</>
+					)
+					: text}
 			</blockquote>
 		</div>
 	)
