@@ -55,6 +55,9 @@ return [
         // The owner's side of an access request (identity-access-requests):
         // staff holding `portal.answer-access-request` list, grant and refuse.
         ['name' => 'accessRequestAdmin#index', 'url' => '/api/access-requests', 'verb' => 'GET'],
+        // Which form a form binding resolves to today, for the admin's Form
+        // bindings page (portal-intake-form-as-an-object T03). Admin-only.
+        ['name' => 'formBindingAdmin#preview', 'url' => '/api/form-bindings/preview', 'verb' => 'POST'],
         ['name' => 'accessRequestAdmin#grant', 'url' => '/api/access-requests/{id}/grant', 'verb' => 'POST'],
         ['name' => 'accessRequestAdmin#refuse', 'url' => '/api/access-requests/{id}/refuse', 'verb' => 'POST'],
 
