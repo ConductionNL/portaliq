@@ -362,6 +362,17 @@ body .guest-box {
 	text-decoration: underline;
 }
 
+.portaliq-news__item {
+	margin-bottom: var(--portaliq-space-md);
+	padding: var(--portaliq-space-sm) var(--portaliq-space-md);
+	border: 1px solid var(--portaliq-color-border);
+	border-radius: 4px;
+}
+
+.portaliq-news__title {
+	margin: 0 0 var(--portaliq-space-sm);
+}
+
 .portaliq-message {
 	margin-bottom: var(--portaliq-space-sm);
 	padding: var(--portaliq-space-sm) var(--portaliq-space-md);

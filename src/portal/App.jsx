@@ -13,6 +13,7 @@
 
 import InboxPage from '@portal/components/InboxPage.jsx'
 import MessagesPage from '@portal/components/MessagesPage.jsx'
+import NewsPage, { hasNews } from '@portal/components/NewsPage.jsx'
 import PageView from '@portal/components/PageView.jsx'
 import TasksPage from '@portal/components/TasksPage.jsx'
 import { consumeOidcCallbackFragment, createPortalApi, getToken } from '@portal/lib/portalApi.js'
@@ -35,6 +36,10 @@ const TASKS_KEY = '__tasks__'
 // supplier or citizen portal never shows an empty tab.
 const MESSAGES_KEY = '__messages__'
 
+// School news (news-item-translation), shown only when the guardian's feed holds
+// an item, so a portal without news never shows an empty tab.
+const NEWS_KEY = '__news__'
+
 // How often to proactively rotate the bearer while a session is active
 // (portal-session-hardening-v2, T04) — comfortably inside the 2h default TTL
 // so a subject filling in a long form or reading a case is never logged out
@@ -52,8 +57,9 @@ const REFRESH_INTERVAL_MS = 25 * 60 * 1000
  * @param t
  * @param tasksEnabled
  * @param messagesEnabled
+ * @param {boolean} newsEnabled Whether the guardian's feed holds news.
  */
-function buildNav(contributions, t, tasksEnabled, messagesEnabled = false) {
+function buildNav(contributions, t, tasksEnabled, messagesEnabled = false, newsEnabled = false) {
 	const nav = []
 	for (const contribution of (contributions || [])) {
 		for (const page of (contribution.pages || [])) {
@@ -75,6 +81,9 @@ function buildNav(contributions, t, tasksEnabled, messagesEnabled = false) {
 	}
 	if (messagesEnabled) {
 		nav.push({ key: MESSAGES_KEY, label: t('Messages'), icon: 'MessageText', special: 'messages' })
+	}
+	if (newsEnabled) {
+		nav.push({ key: NEWS_KEY, label: t('News'), icon: 'Newspaper', special: 'news' })
 	}
 	// Surface the fixed cross-app inbox only once contributions have loaded.
 	// Appending it on the initial (pre-load) render would make it the sole nav
@@ -109,7 +118,7 @@ export default function App({ config, t: tProp }) {
 		consumeOidcCallbackFragment()
 		return getToken()
 	})
-	const [state, setState] = useState({ loading: true, session: null, contributions: null, threads: [], devError: null })
+	const [state, setState] = useState({ loading: true, session: null, contributions: null, threads: [], news: [], devError: null })
 	const [dataByCollection, setDataByCollection] = useState({})
 	const [activeKey, setActiveKey] = useState(null)
 	const [busyRow, setBusyRow] = useState(null)
@@ -168,8 +177,9 @@ export default function App({ config, t: tProp }) {
 		const session = await api.getSession()
 		const contributions = session ? await api.getContributions() : null
 		const threads = session ? await api.fetchThreads() : []
+		const news = session ? await api.fetchNewsFeed() : []
 		setUnreadOverride(null)
-		setState({ loading: false, session, contributions, threads, devError: null })
+		setState({ loading: false, session, contributions, threads, news, devError: null })
 	}, [api])
 
 	useEffect(() => { refresh() }, [refresh, token])
@@ -196,8 +206,9 @@ export default function App({ config, t: tProp }) {
 			t,
 			state.contributions?.tasks?.enabled === true,
 			(state.threads || []).length > 0,
+			hasNews(state.news),
 		),
-		[state.contributions, state.threads, t],
+		[state.contributions, state.threads, state.news, t],
 	)
 	const unreadCount = unreadOverride ?? (state.contributions?.unreadCount || 0)
 
@@ -435,6 +446,10 @@ export default function App({ config, t: tProp }) {
 								locale={config.locale}
 								subjectRef={state.session.subjectRef}
 							/>
+						)}
+
+						{active && active.special === 'news' && (
+							<NewsPage api={api} t={t} locale={config.locale} />
 						)}
 
 						{active && active.special === 'tasks' && (
