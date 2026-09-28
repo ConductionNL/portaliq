@@ -33,6 +33,7 @@ function idOf(row) {
  *
  * @param {number} status The status, 0 on a network error.
  * @return {string} The English source string.
+ * @spec openspec/changes/identity-access-requests/specs/portal-access-requests/spec.md#requirement-staff-answer-the-requests-of-their-organisation-req-iar-002
  */
 export function failureKey(status) {
 	if (status === 403) {
@@ -60,6 +61,7 @@ export function failureKey(status) {
  * @param {(text: string) => string} deps.translate Translator.
  * @param {() => void} deps.reload Reloads the list after an answer.
  * @return {{grantAccessRequest: (payload: {item: object}) => Promise<boolean>, refuseAccessRequest: (payload: {item: object}) => Promise<boolean>}}
+ * @spec openspec/changes/identity-access-requests/specs/portal-access-requests/spec.md#requirement-staff-answer-the-requests-of-their-organisation-req-iar-002
  */
 export function createAccessRequestHandlers({
 	post,
