@@ -347,6 +347,67 @@ class PortalTaskDeliveryJobTest extends TestCase {
 	}//end testAMailRowSendsThePrivacyMinimalMail()
 
 	/**
+	 * #803: a reminder is about a task the resident already has. Its mail
+	 * must say so and must not announce a new task; an ask keeps the
+	 * new-task wording (tasks-reminders-after-the-deadline REQ-TRD-002).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/tasks-reminders-after-the-deadline/specs/portal-task-delivery/spec.md#requirement-the-mail-says-which-kind-of-delivery-it-is-req-trd-002
+	 */
+	public function testAReminderMailDoesNotAnnounceANewTask(): void {
+		$reminder = $this->sentMail(kind: 'reminder');
+		$this->assertStringNotContainsString('new task', $reminder['subject'] . $reminder['body']);
+		$this->assertStringContainsString('Reminder: you have an open task in the portal of Gemeente Test', $reminder['subject']);
+		$this->assertStringContainsString('You have an open task in the portal of Gemeente Test. Log in to finish it: https://cloud.example/index.php/apps/portaliq/portal?org=org-1', $reminder['body']);
+
+		foreach (['ask', 're-ask'] as $kind) {
+			$mail = $this->sentMail(kind: $kind);
+			$this->assertStringContainsString('You have a new task in the portal of Gemeente Test', $mail['subject'], $kind);
+		}
+
+	}//end testAReminderMailDoesNotAnnounceANewTask()
+
+
+	/**
+	 * Run the job over one `mail` row of the given kind and capture the mail.
+	 *
+	 * @param string $kind The delivery kind.
+	 *
+	 * @return array<string, string> The subject and the body.
+	 */
+	private function sentMail(string $kind): array {
+		$ledger = new FakeLedger(rows: [new FakeDeliveryRow(uuid: 'd-1', party: 'party:s1', channel: 'mail', kind: $kind, message: self::MESSAGE)]);
+
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('readCollection')->willReturn([['id' => 'a-1', 'email' => 'resident@example.org', 'organisation' => 'org-1']]);
+
+		$sent = ['subject' => '', 'body' => ''];
+		$message = $this->createMock(IMessage::class);
+		$message->method('setSubject')->willReturnCallback(function (string $subject) use (&$sent, $message) {
+			$sent['subject'] = $subject;
+
+			return $message;
+		});
+		$message->method('setPlainBody')->willReturnCallback(function (string $body) use (&$sent, $message) {
+			$sent['body'] = $body;
+
+			return $message;
+		});
+
+		$mailer = $this->createMock(IMailer::class);
+		$mailer->method('validateMailAddress')->willReturn(true);
+		$mailer->method('createMessage')->willReturn($message);
+		$mailer->expects($this->once())->method('send')->willReturn([]);
+
+		$this->runJob(ledger: $ledger, reader: $reader, writer: $this->createMock(PortalObjectWriter::class), mailer: $mailer);
+		$this->assertSame(['d-1'], $ledger->delivered);
+
+		return $sent;
+
+	}//end sentMail()
+
+	/**
 	 * A re-ask carries its reason and the due date in the message body; a
 	 * reminder gets the reminder subject; an unknown kind falls back to the
 	 * ask wording rather than failing the row.
