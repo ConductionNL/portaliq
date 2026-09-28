@@ -323,8 +323,10 @@ It MUST resolve the scoping value identically to the list read (a declared
 `scopeClaim` → the server-resolved claim from the subject's own portalAccount,
 else the subjectRef; an absent or malformed claim MUST fail closed to "not
 found" WITHOUT fetching the object). It MUST fetch the object by id, then
-re-check ownership: for a direct collection `row[scopeField]` MUST equal the
-scoping value and the tenant MUST match; for a `via` collection the object MUST
+re-check ownership: for a direct collection `row[scopeField]` MUST match the
+scoping value under the shared direct scope rule (equal for a single value,
+strict membership for a list, never on any other shape) and the tenant MUST
+match; for a `via` collection the object MUST
 pass the one-hop join membership (the identical verified pre-pass, `match`
 mode, and tenant discipline as the list read). Field projection, when declared,
 MUST run before returning. An object owned by a different subject, in a
@@ -336,7 +338,8 @@ OR error, malformed row) to "not found". The controller MUST answer
 after authorising the collection exactly like the list read (manifest
 membership honouring `?collection=`, plus the matched collection's `minTrust`
 re-checked — 403 before any OpenRegister call). Added by the
-`portal-scoped-crud` change (ADR-062 Phase 1).
+`portal-scoped-crud` change (ADR-062 Phase 1); list membership added by
+`portal-scope-list-membership`.
 
 #### Scenario: A subject reads its own object by id
 
@@ -344,6 +347,13 @@ re-checked — 403 before any OpenRegister call). Added by the
 - WHEN the subject requests that object by id
 - THEN the object is returned (200), projected to the collection's `fields` when declared
 - @e2e exclude backend single-read contract — covered by the PHPUnit reader/controller matrices; no distinct portaliq UI flow
+
+#### Scenario: A subject reads an object it shares through a list scope field
+
+- GIVEN a direct collection whose `scopeField` is a list AND an object whose list contains the subject's scoping value
+- WHEN the subject requests that object by id
+- THEN the object is returned (200); an object whose list does not contain the value, or is empty, is 404
+- @e2e exclude backend single-read contract; asserted in tests/Unit/Service/PortalObjectReaderTest.php::testReadObjectMatchesAListScopeFieldByMembership
 
 #### Scenario: A foreign-owned or absent id is an identical 404
 
@@ -356,14 +366,18 @@ re-checked — 403 before any OpenRegister call). Added by the
 
 The writer MUST expose a verified update that patches ONE object by id, and
 MUST re-verify ownership against OpenRegister BEFORE any write: it MUST re-read
-the row by id and confirm `row[scopeField]` equals the subject's reference AND
+the row by id and confirm `row[scopeField]` matches the subject's reference
+under the shared direct scope rule (equal for a single value, strict membership
+for a list, never on any other shape) AND
 the tenant matches (the SAME boundary as the reader's per-row check); if the
 row is not the subject's — foreign owner, wrong tenant, or non-existent id — it
 MUST return "not found" and MUST NOT call the OpenRegister save at all. The
 client-supplied id MUST NEVER be trusted as a capability. On an owned row it
 MUST merge only the already-whitelisted fields onto the existing object,
 re-stamp the scope field (and organisation) AFTER the merge so a patch can
-never move the row out of the subject's scope, and save with the id preserved
+never move the row out of the subject's scope (a verified list is re-stamped
+with the stored list itself, a single value with the subject's reference), and
+save with the id preserved
 so OpenRegister UPDATES rather than creates. The update MUST fail closed (OR
 error, missing OpenRegister) to "not found". The controller MUST answer
 `PATCH .../collections/{register}/{schema}/{id}` after authorising a declared
@@ -372,7 +386,8 @@ none; the matched action's `minTrust` re-checked before any write) and
 whitelisting the request body to the action's `fields` (the scope field is
 never whitelisted, and `claims` is always dropped); a null result is 404, no
 existence oracle. This closes the write-side IDOR concern
-(Conduction/portaliq#16). Added by the `portal-scoped-crud` change.
+(Conduction/portaliq#16). Added by the `portal-scoped-crud` change; list
+membership added by `portal-scope-list-membership`.
 
 #### Scenario: A subject patches its own object
 
@@ -484,30 +499,42 @@ byte-identical, aside from an additive synthesised `pages` array.
 
 ### Requirement: Server-enforced status transitions
 
-A `type: update` action MAY declare `set`, a map of WHITELISTED field to fixed
+A `type: update` action MAY declare `set` — a map of WHITELISTED field → fixed
 value the SERVER applies over the client body (after whitelisting, before the
 write). A collection MAY declare `rowActions`: entries resolving by id to a
-`type: update` action or to an endpoint action in the same contribution,
+`type: update` action or to an endpoint row action in the same contribution,
 rendered as per-row buttons. An entry MAY be a string id or an object with an
-`id`; only the id is read, and an endpoint row action MUST declare a
-`rowField`. The `PATCH` update endpoint accepts `?action=<id>` to select which
-update action to apply. The transition target is tamper-proof (the client can
-never choose an arbitrary value); malformed `set`/`rowActions` are dropped
-fail-closed; ownership re-verification and scope re-stamp still run.
+`id`; only the id is read. A collection MAY also declare the singular
+`rowAction` string, which SHALL be read as one more entry. An endpoint row
+action is an action with a non-empty instance-local `endpoint` that is not a
+`create`, `update` or `propose-change` action and that declares `rowField`, a
+field name matching `^[a-zA-Z][a-zA-Z0-9_]*$`; an endpoint action without a
+well-formed `rowField` SHALL NOT resolve as a row action. The `PATCH` update
+endpoint accepts `?action=<id>` to select which update action to apply. The
+transition target is tamper-proof (the client can never choose an arbitrary
+value); malformed `set`/`rowActions` are dropped fail-closed; ownership
+re-verification and scope re-stamp still run.
 
 #### Scenario: A transition target cannot be tampered with
 
 - GIVEN an update action `close` with `fields: [status]` and `set: {status: closed}`
 - WHEN the subject PATCHes their own row with `?action=close` and body `{status: "hacked"}`
 - THEN the saved `status` is `closed` (server `set` overrides the client) and 200 is returned
-- @e2e exclude API-level tamper assertion on a hand-crafted body; pinned by PortalManifestNormaliserTest::testSetKeepsOnlyWhitelistedScalarTransitionValues and the PATCH-path cases in ContributionControllerTest
+- @e2e exclude The attack is a HAND-CRAFTED body — the portal UI never offers a way to send `status: "hacked"`, so driving this through the browser would prove the UI is well behaved, not that the server is. It is an API-level tamper assertion. Pinned by PortalManifestNormaliserTest::testSetKeepsOnlyWhitelistedScalarTransitionValues and the PATCH-path cases in ContributionControllerTest.
 
 #### Scenario: rowActions and set fail closed
 
 - GIVEN `set: {status: closed, subjectRef: other}` and `rowActions: [close, createTicket, ghost]`
 - WHEN normalised
 - THEN `set` keeps only `{status: closed}` and `rowActions` keeps only `[close]`
-- @e2e exclude Normaliser fail-closed contract on the manifest structure; pinned by PortalManifestNormaliserTest::testRowActionsResolveOnlyToUpdateActionsInContribution and ::testMalformedSetIsDropped
+- @e2e exclude Normaliser fail-closed contract asserted on the manifest structure — the browser-visible consequence is a button that is not rendered and a field that is not written, both absences. Pinned by PortalManifestNormaliserTest::testRowActionsResolveOnlyToUpdateActionsInContribution and ::testMalformedSetIsDropped.
+
+#### Scenario: An endpoint action with a rowField resolves as a row action
+
+- GIVEN an endpoint action `pay` with `rowField: invoiceId`, and a collection declaring `rowAction: pay` and `rowActions: [{id: close}]`
+- WHEN normalised
+- THEN the collection's `rowActions` is `[close, pay]` and carries no `rowAction` key
+- @e2e exclude Normaliser contract on the manifest structure. Pinned by tests/Unit/Contribution/RowActionResolverTest.php::testSingularRowActionAndObjectEntriesResolve.
 
 #### Scenario: An endpoint action resolves as a row action
 
@@ -515,6 +542,13 @@ fail-closed; ownership re-verification and scope re-stamp still run.
 - WHEN normalised
 - THEN `rowActions` keeps `sign` with kind `endpoint`
 - @e2e exclude Normaliser contract; pinned by PortalManifestNormaliserTest
+
+#### Scenario: An endpoint action without a rowField is not a row action
+
+- GIVEN an endpoint action `pay` with no `rowField`, or with `rowField: "invoice id"`, named by a collection's `rowAction`
+- WHEN normalised
+- THEN the collection carries no `rowActions` and no `rowAction`, and `pay` stays in the contribution's `actions`
+- @e2e exclude The browser-visible consequence is a button that is not rendered, an absence. Pinned by tests/Unit/Contribution/RowActionResolverTest.php::testAnEndpointActionWithoutAWellFormedRowFieldIsNotOffered.
 
 ### Requirement: Scoped file attachment on a subject-owned object
 
@@ -575,6 +609,462 @@ OpenRegister's own (`properties` etc.) so the SPA store consumes it unchanged.
 - THEN the response is 401
 - AND `PortalSchemaReader` is never consulted
 - @e2e exclude Fail-closed ordering, not a UI surface — the assertion is that the reader is NEVER CONSULTED, observable only at the seam. Pinned by ContributionControllerTest::testSchemaRefusesAnAnonymousCallerWithoutReadingASchema.
+
+### Requirement: An action MUST be able to declare which of its fields are references
+
+A `type: create` or `type: update` action SHALL be able to declare
+`crossRefs`: a map from a whitelisted field name to the `register`, `schema`
+and `scopeField` the value in that field must resolve inside, with an
+optional `required` flag and an optional `scopeClaim`. A declaration that is
+malformed, that names a field the action does not whitelist, or that omits
+any of the three required keys SHALL remove the ACTION from the manifest
+rather than only the declaration.
+
+#### Scenario: A sound declaration survives normalisation
+@e2e exclude {a manifest shape, asserted in tests/Unit/Contribution/CrossRefConfigNormaliserTest.php::testASoundDeclarationIsKept}
+
+- **GIVEN** a create action whitelisting `tegenZaakId` and declaring it as a
+  reference to `dossiq/case` scoped by `portalSubject`
+- **WHEN** the manifest is normalised
+- **THEN** the action SHALL keep its declaration with `required` resolved
+
+#### Scenario: A guard that could not be read takes its action with it
+@e2e exclude {a manifest shape, asserted in tests/Unit/Contribution/CrossRefConfigNormaliserTest.php::testAMalformedDeclarationDropsTheAction}
+
+- **GIVEN** a create action declaring a reference with no `schema`
+- **WHEN** the manifest is normalised
+- **THEN** the action SHALL be absent from the manifest
+
+#### Scenario: A guarded action is never anonymous
+@e2e exclude {a manifest shape, asserted in tests/Unit/Contribution/CrossRefConfigNormaliserTest.php::testAGuardedActionLosesItsAnonymousFlag}
+
+- **GIVEN** a create action declaring both `crossRefs` and `anonymous: true`
+- **WHEN** the manifest is normalised
+- **THEN** the action SHALL keep its references and lose `anonymous`
+
+### Requirement: A declared cross reference must resolve inside the subject's own scope
+
+Before a create or an update reaches storage, Portaliq SHALL resolve every
+declared reference in the write body through the subject-scoped read. A
+reference that does not resolve SHALL refuse the whole write with HTTP 403,
+`error: cross_ref_refused` and the field that failed. A declared reference
+the client left out SHALL refuse only when it is `required`.
+
+#### Scenario: A citizen names somebody else's case
+@e2e exclude {needs two citizen sessions against a live portal; asserted in tests/Unit/Service/PortalCrossRefGuardTest.php::testAReferenceOutsideTheSubjectsScopeRefuses}
+
+- **GIVEN** a create action declaring `tegenZaakId` as a reference to the
+  citizen's own cases
+- **WHEN** the body names a case that is not theirs
+- **THEN** the write SHALL be refused and nothing SHALL be stored
+
+#### Scenario: A citizen names their own case
+
+- **GIVEN** that same action
+- **WHEN** the body names a case the citizen may already read
+- **THEN** the write SHALL proceed
+- @e2e exclude {the happy path of the above; asserted in tests/Unit/Service/PortalCrossRefGuardTest.php::testAReferenceInsideTheSubjectsScopePasses}
+
+#### Scenario: A required reference that was left out
+
+- **GIVEN** an action declaring `tegenZaakId` as required
+- **WHEN** the body omits it
+- **THEN** the write SHALL be refused naming that field
+- @e2e exclude {asserted in tests/Unit/Service/PortalCrossRefGuardTest.php::testARequiredReferenceThatIsAbsentRefuses}
+
+### Requirement: An action MUST be able to declare a file field
+
+A `type: create` or `type: update` action SHALL be able to mark a whitelisted
+field as a file field with `fieldConfigs.<field>.type: file`, plus optional
+`multiple` (boolean), `accept` (extensions such as `.pdf` or MIME types such as
+`image/*`) and `maxSizeMb` (1 to 50). The normaliser SHALL keep `type` only when
+its value is `file` and the action is a create or update action, SHALL coerce
+`multiple` to a strict boolean, SHALL drop every malformed `accept` entry and
+keep at most 20, and SHALL clamp `maxSizeMb` into 1 to 50. A file config on a
+field outside the whitelist SHALL be dropped with the rest of that config, as
+every field config already is.
+
+#### Scenario: A sound file field survives normalisation
+@e2e exclude {a manifest shape, asserted in tests/Unit/Contribution/ActionConfigNormaliserFileFieldTest.php::testASoundFileFieldIsKept}
+
+- **GIVEN** a create action whitelisting `attachmentRefs` with `fieldConfigs.attachmentRefs = {type: file, multiple: true, accept: [".PDF", "image/*"], maxSizeMb: 20}`
+- **WHEN** the manifest is normalised
+- **THEN** the config SHALL keep `type: file`, `multiple: true`, `accept: [".pdf", "image/*"]` and `maxSizeMb: 20`
+
+#### Scenario: A malformed file config fails closed
+@e2e exclude {a manifest shape, asserted in tests/Unit/Contribution/ActionConfigNormaliserFileFieldTest.php::testMalformedFileKeysAreDroppedOrClamped}
+
+- **GIVEN** a field config `{type: "file", accept: ["pdf", "<script>", 7], maxSizeMb: 900}` and another `{type: "upload"}`
+- **WHEN** the manifest is normalised
+- **THEN** the first SHALL keep `type: file` with no `accept` and `maxSizeMb: 50`
+- **AND** the second SHALL carry no `type` at all
+
+#### Scenario: A file field on an endpoint action is not a file field
+@e2e exclude {a manifest shape, asserted in tests/Unit/Contribution/ActionConfigNormaliserFileFieldTest.php::testAFileTypeOnAnEndpointActionIsDropped}
+
+- **GIVEN** a `type: endpoint` action with a field config `{type: file}`
+- **WHEN** the manifest is normalised
+- **THEN** that config SHALL carry no `type`
+
+### Requirement: A file field MUST never be written from a request body
+
+On every create path (authenticated and anonymous) and on update, Portaliq
+SHALL remove every declared file field from the whitelisted request body before
+the write. Only the scoped field upload SHALL write a file field, with a
+reference Portaliq produced itself.
+
+#### Scenario: A typed reference is removed before the write
+@e2e exclude {the attack is a hand-crafted body the portal form never sends; asserted in tests/Unit/Controller/ContributionControllerFileFieldTest.php::testCreateDropsATypedFileFieldValue and ::testUpdateDropsATypedFileFieldValue}
+
+- **GIVEN** a create action whose `attachmentRefs` is a file field
+- **WHEN** the client posts `{assignmentId: "a1", attachmentRefs: ["/admin/files/secret.pdf"]}`
+- **THEN** the object SHALL be written with `assignmentId` only
+
+### Requirement: A subject MUST be able to upload into a declared file field of an object they own
+
+`POST /portal/api/collections/{register}/{schema}/{id}/fields/{field}?action=<id>`
+(multipart part `file`) SHALL attach one file to the object and write its
+reference into the field. The request SHALL name the action; it SHALL be one of
+the subject's own create or update actions for this register and schema, and
+the field SHALL be a declared file field of it, else 403 before any read.
+The action's `minTrust` SHALL be re-checked (403). Ownership SHALL be proven
+the way the action writes it: for a create action the stored scope field SHALL
+equal the subject reference that create stamps, for an update action the value
+SHALL resolve through the action's `scopeClaim`. A foreign or absent object
+SHALL be one 404 with nothing attached. For a create action the object SHALL
+have been created within the last 30 minutes (403 `upload_window_closed`).
+The file SHALL be checked against `accept` (415) and `maxSizeMb` (413, default
+20) before it is attached. After the attach, the Nextcloud file id SHALL be
+written as a string: appended when the field is `multiple` and the schema
+property is an array, else as the only value. A field already holding 20
+references SHALL refuse with 409.
+
+#### Scenario: A pupil attaches work to the submission they just created
+@e2e exclude {the attach reaches OpenRegister's FileService, which fails on a fresh CI instance (portaliq#29, the same reason tests/e2e/portal-document-download.spec.ts is grep-inverted); asserted in tests/Unit/Controller/PortalFieldFileControllerTest.php::testUploadAttachesAndAppendsTheReference}
+
+- **GIVEN** a create action `createSubmission` with file field `attachmentRefs` (`multiple: true`) and a submission the subject created a minute ago holding `["4702"]`
+- **WHEN** the subject uploads `essay.pdf` naming `action=createSubmission`
+- **THEN** the file SHALL be attached to that submission through `PortalFileWriter`
+- **AND** `attachmentRefs` SHALL be `["4702", "<new file id>"]`
+
+#### Scenario: Every refusal happens before any attach
+@e2e exclude {fail-closed ordering observable only at the seam (the writer is never called); asserted in tests/Unit/Controller/PortalFieldFileControllerTest.php::testForeignObjectIs404BeforeAnyAttach, ::testUndeclaredFieldIs403BeforeAnyRead and ::testCreateWindowClosedRefusesBeforeAnyAttach}
+
+- **GIVEN** a field that is not a declared file field, a foreign object id, and an object the create action made an hour ago
+- **WHEN** an upload is attempted against each
+- **THEN** the answers SHALL be 403, 404 and 403 `upload_window_closed`
+- **AND** `PortalFileWriter::attachFile()` SHALL never be reached
+
+#### Scenario: Type and size are checked before the attach
+@e2e exclude {needs crafted file bodies; asserted in tests/Unit/Service/PortalFileFieldPolicyTest.php::testAcceptMatchesExtensionOrMime and ::testSizeAboveTheLimitIsRefused}
+
+- **GIVEN** a file field with `accept: [".pdf"]` and `maxSizeMb: 1`
+- **WHEN** the subject uploads `run.exe`, then a 2 MB `essay.pdf`
+- **THEN** the answers SHALL be 415 and 413, with nothing attached
+
+### Requirement: The generic portal form MUST render a file field as a file picker
+
+`SchemaForm` SHALL render a declared file field as a labelled file input
+(honouring `multiple` and `accept`), SHALL leave it out of the create body,
+SHALL refuse a picked file above `maxSizeMb` before anything is saved, and after
+a successful create SHALL upload the picked files one at a time to the field
+upload endpoint. When a file does not attach, the form SHALL keep the created
+record and SHALL name the files that did not attach.
+
+#### Scenario: The form renders a picker, not a text box
+@e2e exclude {rendered with react-dom/server in tests/schema-form-file-field.spec.mjs::renders a file input for a file field; a live portal run needs a working attach (portaliq#29)}
+
+- **GIVEN** an action whose `attachmentRefs` is a file field with `multiple: true` and `accept: [".pdf"]`
+- **WHEN** the form renders
+- **THEN** `attachmentRefs` SHALL be an `<input type="file" multiple accept=".pdf">` with its label
+
+#### Scenario: Create first, then upload each file
+@e2e exclude {the submit flow is driven against a fake api in tests/schema-form-file-field.spec.mjs::creates then uploads each file and names a failed one}
+
+- **GIVEN** two picked files and a create that succeeds
+- **WHEN** the second upload fails
+- **THEN** the create body SHALL not contain the file field
+- **AND** both uploads SHALL target the created object's id
+- **AND** the form SHALL name the second file as not attached
+
+### Requirement: A direct scope field MUST match a single value or strict list membership
+
+Wherever portaliq checks a row's own `scopeField` against the subject's scoping
+value on a direct (non-`via`) path, the check SHALL be one shared rule: the
+list read, the single-object read, the portalAccount lookup behind
+`scopeClaim`, and the ownership re-read of the verified update. A stored single
+value SHALL match when it is a string or an integer equal to the scoping value.
+A stored list SHALL match when at least one element is a string or an integer
+equal to the scoping value. The rule SHALL NOT match, and the row SHALL be
+dropped as not the subject's, when the scoping value is empty, the stored value
+is absent or null, the list is empty, the value is an associative array, or the
+value is any other shape. Matching SHALL be strict: no loose comparison, no
+substring, no nested list. The tenant check SHALL still apply after a match.
+
+#### Scenario: A list that contains the subject's ref is returned
+@e2e exclude {backend scope rule with no UI flow of its own; asserted in tests/Unit/Service/PortalObjectReaderTest.php::testListScopeFieldContainingTheRefIsReturned}
+
+- **GIVEN** a direct collection with `scopeField: "learnerRefs"` AND a row with `learnerRefs: ["other", "learner-1"]`
+- **WHEN** the subject whose scoping value is `learner-1` reads the collection
+- **THEN** the row SHALL be returned
+
+#### Scenario: A list without the subject's ref is dropped
+@e2e exclude {isolation invariant with no UI surface; asserted in tests/Unit/Service/PortalObjectReaderTest.php::testListScopeFieldWithoutTheRefIsDropped}
+
+- **GIVEN** a row with `learnerRefs: ["other", "someone-else"]`
+- **WHEN** the subject whose scoping value is `learner-1` reads the collection
+- **THEN** the row SHALL NOT be returned
+
+#### Scenario: An empty list is dropped
+@e2e exclude {fail-closed invariant with no UI surface; asserted in tests/Unit/Service/PortalObjectReaderTest.php::testEmptyListScopeFieldIsDropped}
+
+- **GIVEN** a row with `learnerRefs: []`
+- **WHEN** any subject reads the collection
+- **THEN** the row SHALL NOT be returned
+
+#### Scenario: A single value still matches as before
+@e2e exclude {unchanged single-value contract; asserted in tests/Unit/Service/PortalObjectReaderTest.php::testSingleValueScopeFieldStillMatches}
+
+- **GIVEN** a direct collection with `scopeField: "subjectRef"` AND rows with `subjectRef: "s1"` and `subjectRef: "s2"`
+- **WHEN** subject `s1` reads the collection
+- **THEN** only the `s1` row SHALL be returned
+
+#### Scenario: Any other shape fails closed
+@e2e exclude {fail-closed invariant with no UI surface; asserted in tests/Unit/Service/PortalObjectReaderTest.php::testOtherScopeShapesFailClosed}
+
+- **GIVEN** rows whose scope field is an associative array containing the ref as a value, a nested list containing the ref, null, or absent
+- **WHEN** the subject reads the collection, OR a subject with an empty scoping value reads it
+- **THEN** no row SHALL be returned
+
+### Requirement: A write MUST keep a verified list and stamp a list for an array scope field
+
+On the verified update, when the row's stored scope value is a list that the
+shared rule matched, the writer SHALL re-stamp the scope field with that stored
+list after the merge, so a patch can neither drop the other members nor add
+any; a client value for the scope field SHALL never win. On a single stored
+value the writer SHALL re-stamp the subject's scoping value exactly as before.
+On create, the writer SHALL stamp `[subjectRef]` when the target schema
+declares the scope field as `type: array`, and the single `subjectRef`
+otherwise, including when the schema cannot be read. Every path that writes
+through the verified update (the contribution update, mark-read, status
+transitions and the scoped file upload) SHALL inherit this rule.
+
+#### Scenario: An update on a list that contains the ref keeps the list
+@e2e exclude {backend write contract with no UI flow of its own; asserted in tests/Unit/Service/PortalObjectWriterTest.php::testUpdateOnAListScopeFieldContainingTheRefKeepsTheList}
+
+- **GIVEN** a row with `learnerRefs: ["learner-1", "learner-2"]`
+- **WHEN** subject `learner-1` patches a whitelisted field, and the body also carries `learnerRefs: ["intruder"]`
+- **THEN** the save SHALL happen with `learnerRefs: ["learner-1", "learner-2"]`
+
+#### Scenario: An update on a list without the ref is refused before any write
+@e2e exclude {write-IDOR invariant with no UI surface; asserted in tests/Unit/Service/PortalObjectWriterTest.php::testUpdateRefusesAListScopeFieldWithoutTheRef}
+
+- **GIVEN** a row with `learnerRefs: ["learner-2"]` or `learnerRefs: []`
+- **WHEN** subject `learner-1` patches it
+- **THEN** the result SHALL be "not found" AND the OpenRegister save SHALL NOT be called
+
+#### Scenario: A create on an array scope field stamps a one-element list
+@e2e exclude {backend write contract with no UI flow of its own; asserted in tests/Unit/Service/PortalObjectWriterTest.php::testCreateStampsAOneElementListForAnArrayScopeField}
+
+- **GIVEN** a create action with `scopeField: "learnerRefs"` on a schema that declares `learnerRefs` as `type: array`
+- **WHEN** subject `learner-1` creates an object, and the body also carries `learnerRefs: ["intruder"]`
+- **THEN** the object SHALL be saved with `learnerRefs: ["learner-1"]`
+
+#### Scenario: A create on any other scope field stamps the single value
+@e2e exclude {unchanged single-value contract; asserted in tests/Unit/Service/PortalObjectWriterTest.php::testCreateStampsTheSingleValueWhenTheSchemaIsNotAnArray}
+
+- **GIVEN** a create action whose schema declares the scope field as `type: string`, or whose schema cannot be read
+- **WHEN** subject `s1` creates an object
+- **THEN** the object SHALL be saved with the scope field set to `s1`
+
+### Requirement: A collection MUST be able to declare a timed task driven by five endpoint actions
+
+A collection with `kind: timedTask` SHALL carry a `timedTask` block naming the
+ids of five actions in the same contribution: `available`, `start`, `answer`,
+`submit` and `result`. Each named action SHALL be an endpoint action (an
+instance-local `endpoint`). When any of the five is missing, names an action
+that does not exist in the contribution after trust filtering, or names an
+action without an endpoint, the normaliser SHALL remove the `timedTask` block
+and the `kind`, so the collection renders as an ordinary list.
+
+#### Scenario: A sound timed task survives normalisation
+@e2e exclude {a manifest shape; asserted in tests/Unit/Contribution/TimedTaskConfigNormaliserTest.php::testASoundTimedTaskIsKept}
+
+- **GIVEN** a collection `studentTests` with `kind: timedTask` and a block naming five endpoint actions of the same contribution
+- **WHEN** the manifest is normalised
+- **THEN** the collection SHALL keep `kind: timedTask` and the five action ids
+
+#### Scenario: A block naming a missing or non-endpoint action is dropped
+@e2e exclude {a manifest shape; asserted in tests/Unit/Contribution/TimedTaskConfigNormaliserTest.php::testABrokenTimedTaskFallsBackToAList}
+
+- **GIVEN** a `timedTask` block whose `submit` names a trust-dropped action, and another whose `answer` names a `type: create` action without an endpoint
+- **WHEN** the manifest is normalised
+- **THEN** neither collection SHALL carry `kind` or `timedTask`
+
+### Requirement: An endpoint action MUST be able to receive the subject's scope from the server
+
+An endpoint action SHALL be able to declare `subjectField` (a field name
+matching `^[a-zA-Z][a-zA-Z0-9_]*$`). When it does, the forward SHALL resolve the
+action's scope value the way reads do (its `scopeClaim` from the subject's own
+portal account, else the subject reference) and SHALL set that value in the
+forwarded JSON body under `subjectField`, over any value the client sent, with
+the body built from the action's `fields` whitelist (none declared means an
+empty whitelist). When the value does not resolve, the forward SHALL answer 403
+and SHALL NOT call the endpoint. A malformed `subjectField` SHALL remove the
+action from the manifest.
+
+#### Scenario: The learner reference comes from the server, not the browser
+@e2e exclude {the attack is a hand-crafted body; asserted in tests/Unit/Controller/ContributionControllerSubjectFieldTest.php::testTheResolvedScopeOverridesAClientValue}
+
+- **GIVEN** an endpoint action with `subjectField: learnerRef` and `scopeClaim: learnerRef`
+- **WHEN** a pupil forwards it with `learnerRef: "someone-else"` in the body
+- **THEN** the domain app SHALL receive the learnerRef resolved from the pupil's own account
+
+#### Scenario: An unresolvable scope never reaches the domain app
+@e2e exclude {an absence of an outbound call; asserted in tests/Unit/Controller/ContributionControllerSubjectFieldTest.php::testAnUnresolvableScopeIs403WithoutForwarding}
+
+- **GIVEN** that action and a subject whose account has no `learnerRef` claim
+- **WHEN** the subject forwards it
+- **THEN** the answer SHALL be 403 and no request SHALL be made
+
+### Requirement: The portal MUST let a subject take a timed task
+
+For a `timedTask` collection the portal SHALL list the tasks `available`
+returns and the subject's attempts, SHALL start an attempt through `start`
+(asking for an access code when a task says it needs one), SHALL show one
+question at a time with its renderer (choice, inline choice, text entry,
+extended text, order, match, and a text answer for any other type), SHALL save
+each answer through `answer` when it changes and when the subject navigates,
+SHALL show which answers are not yet saved, SHALL count down to the attempt's
+`deadlineAt` corrected by `serverNow`, SHALL submit through `submit` when the
+subject confirms or the countdown reaches zero, and SHALL show the `result`
+response read-only, or that the result is not released yet.
+
+#### Scenario: A timed attempt from start to submit
+@e2e exclude {learniq does not ship the endpoints yet, so no live contribution declares a timed task; the flow is driven against a fake api in tests/timed-task.spec.mjs::runs an attempt from start to submit}
+
+- **GIVEN** a task with a 20 minute deadline and three questions
+- **WHEN** the pupil starts it, answers two questions and submits
+- **THEN** each answer SHALL be sent once per change with the attempt id and item id
+- **AND** submit SHALL flush any unsaved answer before it is sent
+
+#### Scenario: The countdown follows the server's deadline
+@e2e exclude {a clock computation; asserted in tests/timed-task.spec.mjs::counts down from the server deadline, not the client clock}
+
+- **GIVEN** a server that says it is 09:00:00 with a deadline of 09:37:30, and a client clock five minutes ahead
+- **WHEN** the countdown is computed
+- **THEN** it SHALL read 37:30
+
+#### Scenario: Every item type renders its own control
+@e2e exclude {rendered with react-dom/server in tests/timed-task.spec.mjs::renders a control per item type}
+
+- **GIVEN** one item of each supported type and one hotspot item
+- **WHEN** the question screen renders each
+- **THEN** choice SHALL be radio buttons, inline choice a select, text entry an input, extended text a textarea, order a list with move buttons, match a select per source, and hotspot a text answer
+
+### Requirement: A row-scoped forward MUST prove the row before it forwards
+
+The portal SHALL serve `POST /portal/api/collections/{register}/{schema}/{id}/actions/{actionId}`
+(optional `?collection=` to pick one of several collections on one schema). It
+SHALL answer 401 without a subject. It SHALL answer 403, with no read and no
+forward, when the collection is not in the subject's own aggregate, when its
+normalised `rowActions` does not name `actionId`, when `actionId` is not an
+endpoint row action of the same contribution, when the collection's or the
+action's `minTrust` is not met, or when the endpoint is not an instance-local
+path with an allowed method. It SHALL then read the row with the collection's
+own scope (`scopeField`, `scopeClaim`, `via`) and answer a single 404, with no
+forward, when the row is not the subject's or does not exist. The forwarded
+body SHALL be built from the action's `fields` whitelist only (none declared
+means an empty body), SHALL carry the proven row's id under the action's
+`rowField` over any client value, and SHALL carry the resolved scope under a
+declared `subjectField` (403 with no forward when it does not resolve). The
+portal SHALL record one audit entry with verb `forward`, SHALL relay the domain
+app's status and JSON body, and SHALL answer 502 on a transport failure.
+
+#### Scenario: The row id reaching the domain app is the row the subject owns
+
+- GIVEN the parent collection `salesInvoices` scoped by `customerId` on the claim `customerMasterId`, and the endpoint row action `pay` with `rowField: invoiceId`
+- WHEN a guardian posts to the row-scoped forward for their own invoice with body `{invoiceId: "someone-elses", amount: 1}`
+- THEN shillinq receives exactly `{invoiceId: "<the proven row id>"}` and the portal relays shillinq's `{checkoutUrl}`
+- @e2e exclude The attack is a hand-crafted body; the portal UI sends no body at all. Pinned by tests/Unit/Controller/PortalRowActionControllerTest.php::testTheProvenRowIdIsStampedAndTheClientBodyIsIgnored.
+
+#### Scenario: A row the subject does not own is never forwarded
+
+- GIVEN the same collection and action
+- WHEN a guardian posts to the row-scoped forward for an invoice id their scope does not read
+- THEN the answer is 404 and no request reaches shillinq
+- @e2e exclude An absence of an outbound call for another person's row, which needs a second subject's data to exist; pinned by tests/Unit/Controller/PortalRowActionControllerTest.php::testARowOutsideTheScopeIs404WithoutForwarding.
+
+#### Scenario: An action the collection does not offer on rows is refused
+
+- GIVEN a collection whose `rowActions` does not name `pay`, or a subject below the action's `minTrust`
+- WHEN the subject posts to the row-scoped forward for `pay`
+- THEN the answer is 403 and no row is read
+- @e2e exclude An API-level refusal the UI never triggers; pinned by tests/Unit/Controller/PortalRowActionControllerTest.php::testAnActionTheCollectionDoesNotOfferIs403 and ::testTrustBelowTheActionIs403.
+
+### Requirement: An endpoint row action MUST be offered only on the rows its rowWhen names
+
+An endpoint row action MAY declare `rowWhen`: `{field, in}` with `field` a
+field name and `in` a non-empty list of scalar values. A malformed `rowWhen`
+SHALL keep the action from resolving as a row action. The portal SHALL show
+the row button only on a row whose `field` holds one of the listed values, and
+the row-scoped forward SHALL answer 409 `not_offered`, with no forward, for a
+row that does not match, read after the scope check.
+
+#### Scenario: A paid contribution offers no pay button and cannot be paid again
+
+- GIVEN `pay` with `rowWhen: {field: state, in: [issued, partially-paid, overdue]}`
+- WHEN the guardian's list holds one `issued` and one `paid` contribution, and the guardian posts to the row-scoped forward for the paid one
+- THEN only the issued row shows the button, and the forward answers 409 with no request to shillinq
+- @e2e exclude The UI half is asserted by tests/row-action.spec.mjs (offersRowAction and the rendered table); the API half by tests/Unit/Controller/PortalRowActionControllerTest.php::testARowOutsideRowWhenIs409WithoutForwarding. No leaf app declares rowWhen until shillinq's follow-up lands.
+
+### Requirement: A collection MUST be able to name a notice field
+
+A collection MAY declare `noticeField`, a field name. A malformed value SHALL
+be dropped. When the selected row carries non-empty text in that field, the
+portal SHALL show it as a notice above the detail fields and in the confirm
+step of a row action; a row without it SHALL show no notice.
+
+#### Scenario: A voluntary contribution says so before the guardian pays
+
+- GIVEN the parent `salesInvoices` collection with `noticeField: invoiceNote`, and a voluntary contribution whose `invoiceNote` reads "This contribution is voluntary. Your child takes part whether you pay or not."
+- WHEN the guardian opens it, and when the guardian presses its pay button
+- THEN the sentence is shown as a notice in the detail card and in the confirm step
+- AND a contribution that is not voluntary shows no notice
+- @e2e exclude Rendered markup asserted by tests/row-action.spec.mjs::the confirm step shows the notice on a voluntary contribution, and none otherwise (the detail card renders the same rowNotice value); the normaliser half by tests/Unit/Contribution/RowActionResolverTest.php::testNoticeFieldIsKeptOnlyWhenWellFormed.
+
+### Requirement: The portal MUST let a guardian pay a school contribution from its row
+
+For an endpoint row action, the portal SHALL ask the subject to confirm first,
+showing the action's label and the row's notice. On confirm it SHALL post to
+the row-scoped forward with no body. When the answer is 2xx and carries a
+`redirectUrl` or `checkoutUrl` that is an absolute `https:` URL, the portal
+SHALL send the browser there; any other URL SHALL NOT be followed and the
+portal SHALL say the next page could not be opened. A 2xx without a URL SHALL
+show that it worked and reload the collection. A 503 or 502 SHALL say the step
+is not available now; a 403, 404 or 409 SHALL say it can no longer be done for
+this item. Portaliq SHALL NOT read, compute or send an amount.
+
+#### Scenario: A guardian goes to the checkout for a contribution
+
+- GIVEN a guardian with audience `parent`, an issued school contribution, and shillinq answering `{checkoutUrl: "https://pay.example.nl/checkout/abc"}`
+- WHEN the guardian presses the row's pay button and confirms
+- THEN the browser goes to `https://pay.example.nl/checkout/abc`
+- @e2e exclude Needs shillinq's rowField follow-up and a bound payment provider; the decision is a pure function asserted by tests/row-action.spec.mjs::redirectTarget follows only an https URL from a 2xx answer.
+
+#### Scenario: A checkout URL that is not https is not followed
+
+- GIVEN a 2xx answer carrying `checkoutUrl: "javascript:alert(1)"` or `"http://pay.example.nl"`
+- WHEN the portal handles the answer
+- THEN the browser stays on the portal and the guardian reads that the next page could not be opened
+- @e2e exclude A hostile answer no real receiver sends; asserted by tests/row-action.spec.mjs::redirectTarget refuses anything but https.
+
+#### Scenario: Online payment is switched off at the school
+
+- GIVEN shillinq answers 503 `{status: "deferred"}` because no payment provider is bound
+- WHEN the guardian confirms
+- THEN the guardian reads that the step is not available now and stays on the list
+- @e2e exclude A provider state the test instance cannot switch; asserted by tests/row-action.spec.mjs::outcome maps each status to one message.
 
 ## Non-Functional Requirements
 
