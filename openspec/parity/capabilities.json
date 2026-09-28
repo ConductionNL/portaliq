@@ -8578,12 +8578,12 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/sites/site-appearance 'Design Libraries Release Feature (LPD-57283) ... A style book or page fragment created in a design library is available to every site connected to that library'; 'Facilitate Sharing Designs Across Sites (Design Library)' under Now on https://www.liferay.com/roadmap."
 			},
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"evidence": "several portals can point at the same thematiq token set: lib/Service/PortalThemeResolver.php:104 and :172 read token-sets.json from the theme app, so one style set serves many portals; page blocks are per portal (widget layouts are stored per page), so no shared block library",
 				"reachedOn": "Portals admin theme field -> PortalThemeResolver at render time",
 				"owner": "ConductionNL/portaliq",
 				"origin": "code",
-				"note": "Owner moved to ConductionNL/portaliq (thematiq lane): the shared token set is built in thematiq; the missing half is a shared library of page blocks, which is portaliq's (thematiq lane, OpenSpec pass 2026-09-27; owner was ConductionNL/thematiq)."
+				"note": "Owner moved to ConductionNL/portaliq (thematiq lane): the shared token set is built in thematiq; the missing half is a shared library of page blocks, which is portaliq's (thematiq lane, OpenSpec pass 2026-09-27; owner was ConductionNL/thematiq). Specified in openspec/changes/site-shared-page-blocks (owner-moves pass 2026-09-28): the missing half, a library of page blocks shared by the portals of one organisation."
 			},
 			"provider": "thematiq",
 			"providerHow": "read-from-code",
