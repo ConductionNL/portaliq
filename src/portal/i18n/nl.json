@@ -130,5 +130,22 @@
 	"No news yet.": "Nog geen nieuws.",
 	"News from school is translated by AI into your language. You can always see the original text.": "Nieuws van school wordt door AI naar uw taal vertaald. U kunt altijd de oorspronkelijke tekst bekijken.",
 	"Newsletters": "Nieuwsbrieven",
-	"This newsletter has no items for you.": "Deze nieuwsbrief heeft geen berichten voor u."
+	"This newsletter has no items for you.": "Deze nieuwsbrief heeft geen berichten voor u.",
+	"Access to cases": "Toegang tot zaken",
+	"Ask for access": "Toegang aanvragen",
+	"Whose cases do you need access to?": "Voor wiens zaken wilt u toegang?",
+	"Why do you need access?": "Waarom hebt u toegang nodig?",
+	"Your requests": "Uw aanvragen",
+	"Waiting for an answer": "Wacht op antwoord",
+	"Granted": "Toegekend",
+	"Refused": "Afgewezen",
+	"Reason: {reason}": "Reden: {reason}",
+	"You have not asked for access yet.": "U hebt nog geen toegang aangevraagd.",
+	"Say whose cases you need access to.": "Vul in voor wiens zaken u toegang wilt.",
+	"Give a reason for your request.": "Geef een reden voor uw aanvraag.",
+	"Your request has been sent.": "Uw aanvraag is verstuurd.",
+	"Your request could not be sent. Try again later.": "Uw aanvraag kon niet worden verstuurd. Probeer het later opnieuw.",
+	"Ask for access to the cases of a company or person you act for. The organisation answers your request.": "Vraag toegang aan tot de zaken van een bedrijf of persoon namens wie u handelt. De organisatie beantwoordt uw aanvraag.",
+	"For {party}": "Voor {party}",
+	"Asked on {date}": "Aangevraagd op {date}"
 }
