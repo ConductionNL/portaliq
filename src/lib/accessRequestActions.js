@@ -15,7 +15,7 @@
  * in by `src/customComponents.js`, so `tests/access-requests.spec.mjs` runs it
  * as a plain node script, the same shape as `openPortalSite.js`.
  *
- * @spec openspec/changes/identity-access-requests/specs/portal-access-requests/spec.md#requirement-staff-answer-the-requests-of-their-organisation-req-iar-002
+ * @spec openspec/specs/portal-access-requests/spec.md#requirement-staff-answer-the-requests-of-their-organisation-req-iar-002
  */
 
 /**
@@ -33,7 +33,7 @@ function idOf(row) {
  *
  * @param {number} status The status, 0 on a network error.
  * @return {string} The English source string.
- * @spec openspec/changes/identity-access-requests/specs/portal-access-requests/spec.md#requirement-staff-answer-the-requests-of-their-organisation-req-iar-002
+ * @spec openspec/specs/portal-access-requests/spec.md#requirement-staff-answer-the-requests-of-their-organisation-req-iar-002
  */
 export function failureKey(status) {
 	if (status === 403) {
@@ -61,7 +61,7 @@ export function failureKey(status) {
  * @param {(text: string) => string} deps.translate Translator.
  * @param {() => void} deps.reload Reloads the list after an answer.
  * @return {{grantAccessRequest: (payload: {item: object}) => Promise<boolean>, refuseAccessRequest: (payload: {item: object}) => Promise<boolean>}}
- * @spec openspec/changes/identity-access-requests/specs/portal-access-requests/spec.md#requirement-staff-answer-the-requests-of-their-organisation-req-iar-002
+ * @spec openspec/specs/portal-access-requests/spec.md#requirement-staff-answer-the-requests-of-their-organisation-req-iar-002
  */
 export function createAccessRequestHandlers({
 	post,
@@ -111,7 +111,7 @@ export function createAccessRequestHandlers({
 		 *
 		 * @param {{item: object}} payload The row action payload.
 		 * @return {Promise<boolean>}
-		 * @spec openspec/changes/identity-access-requests/specs/portal-access-requests/spec.md#requirement-a-granted-request-opens-the-cases-req-iar-003
+		 * @spec openspec/specs/portal-access-requests/spec.md#requirement-a-granted-request-opens-the-cases-req-iar-003
 		 */
 		async grantAccessRequest({ item }) {
 			if ((await confirmGrant(item)) !== true) {
@@ -125,7 +125,7 @@ export function createAccessRequestHandlers({
 		 *
 		 * @param {{item: object}} payload The row action payload.
 		 * @return {Promise<boolean>}
-		 * @spec openspec/changes/identity-access-requests/specs/portal-access-requests/spec.md#requirement-staff-answer-the-requests-of-their-organisation-req-iar-002
+		 * @spec openspec/specs/portal-access-requests/spec.md#requirement-staff-answer-the-requests-of-their-organisation-req-iar-002
 		 */
 		async refuseAccessRequest({ item }) {
 			const reason = await askReason()

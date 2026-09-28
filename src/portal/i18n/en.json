@@ -130,5 +130,22 @@
 	"No news yet.": "No news yet.",
 	"News from school is translated by AI into your language. You can always see the original text.": "News from school is translated by AI into your language. You can always see the original text.",
 	"Newsletters": "Newsletters",
-	"This newsletter has no items for you.": "This newsletter has no items for you."
+	"This newsletter has no items for you.": "This newsletter has no items for you.",
+	"Access to cases": "Access to cases",
+	"Ask for access": "Ask for access",
+	"Whose cases do you need access to?": "Whose cases do you need access to?",
+	"Why do you need access?": "Why do you need access?",
+	"Your requests": "Your requests",
+	"Waiting for an answer": "Waiting for an answer",
+	"Granted": "Granted",
+	"Refused": "Refused",
+	"Reason: {reason}": "Reason: {reason}",
+	"You have not asked for access yet.": "You have not asked for access yet.",
+	"Say whose cases you need access to.": "Say whose cases you need access to.",
+	"Give a reason for your request.": "Give a reason for your request.",
+	"Your request has been sent.": "Your request has been sent.",
+	"Your request could not be sent. Try again later.": "Your request could not be sent. Try again later.",
+	"Ask for access to the cases of a company or person you act for. The organisation answers your request.": "Ask for access to the cases of a company or person you act for. The organisation answers your request.",
+	"For {party}": "For {party}",
+	"Asked on {date}": "Asked on {date}"
 }

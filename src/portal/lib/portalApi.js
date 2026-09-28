@@ -287,6 +287,56 @@ export function createPortalApi(config) {
 		},
 
 		/**
+		 * Ask for access to a party's cases (identity-access-requests,
+		 * REQ-IAR-001). The server refuses a request without a reason, and
+		 * that refusal comes back as its error code rather than as a throw.
+		 *
+		 * @param {string} onBehalfOf The party whose cases are asked for.
+		 * @param {string} reason What the asker needs the access for.
+		 * @return {Promise<{ok: boolean, error: string}>} The outcome.
+		 *
+		 * @spec openspec/specs/portal-access-requests/spec.md#requirement-you-ask-for-access-and-follow-your-request-req-iar-001
+		 */
+		async requestAccess(onBehalfOf, reason) {
+			try {
+				const res = await fetch(`${base}/identity/access-requests`, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						Accept: 'application/json',
+						...authHeaders(),
+					},
+					body: JSON.stringify({ onBehalfOf, reason }),
+				})
+				if (res.ok) {
+					return { ok: true, error: '' }
+				}
+				const json = await res.json().catch(() => ({}))
+				return { ok: false, error: String(json?.error || res.status) }
+			} catch {
+				return { ok: false, error: 'network' }
+			}
+		},
+
+		/**
+		 * The access requests this user made, with the answers they were
+		 * given (identity-access-requests, REQ-IAR-001). A refused answer
+		 * reads as none, never as an error.
+		 *
+		 * @return {Promise<Array<object>>} The requests, or `[]`.
+		 *
+		 * @spec openspec/specs/portal-access-requests/spec.md#requirement-you-ask-for-access-and-follow-your-request-req-iar-001
+		 */
+		async fetchMyAccessRequests() {
+			try {
+				const json = await get('/identity/access-requests')
+				return Array.isArray(json?.requests) ? json.requests : []
+			} catch {
+				return []
+			}
+		},
+
+		/**
 		 * The guardian's news feed (news-and-newsletter-authoring), each body in
 		 * the reader's `messageLanguage` when the server translated it: such a row
 		 * carries `translation` (news-item-translation). A refused answer reads as

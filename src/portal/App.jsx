@@ -11,6 +11,7 @@
 // flows through the subject-scoped /portal/api adapter — the portal never reads
 // OpenRegister directly.
 
+import AccessRequestsPage from '@portal/components/AccessRequestsPage.jsx'
 import InboxPage from '@portal/components/InboxPage.jsx'
 import MessagesPage from '@portal/components/MessagesPage.jsx'
 import NewsPage, { hasNews } from '@portal/components/NewsPage.jsx'
@@ -40,6 +41,9 @@ const MESSAGES_KEY = '__messages__'
 // an item, so a portal without news never shows an empty tab.
 const NEWS_KEY = '__news__'
 
+// The asker's side of an access request (identity-access-requests).
+const ACCESS_KEY = '__access__'
+
 // How often to proactively rotate the bearer while a session is active
 // (portal-session-hardening-v2, T04) — comfortably inside the 2h default TTL
 // so a subject filling in a long form or reading a case is never logged out
@@ -58,8 +62,9 @@ const REFRESH_INTERVAL_MS = 25 * 60 * 1000
  * @param tasksEnabled
  * @param messagesEnabled
  * @param {boolean} newsEnabled Whether the guardian's feed holds news.
+ * @param {boolean} accessEnabled Whether the signed-in user's contributions have loaded.
  */
-function buildNav(contributions, t, tasksEnabled, messagesEnabled = false, newsEnabled = false) {
+function buildNav(contributions, t, tasksEnabled, messagesEnabled = false, newsEnabled = false, accessEnabled = false) {
 	const nav = []
 	for (const contribution of (contributions || [])) {
 		for (const page of (contribution.pages || [])) {
@@ -91,6 +96,14 @@ function buildNav(contributions, t, tasksEnabled, messagesEnabled = false, newsE
 	// subject's first content page.
 	if (nav.length > 0) {
 		nav.push({ key: INBOX_KEY, label: t('Inbox'), icon: 'Email', special: 'inbox' })
+	}
+	// Asking for access to a party's cases (identity-access-requests, T05).
+	// Offered to every signed-in user once the contributions have loaded, for
+	// the same reason as the inbox; last, so it never becomes the default.
+	// "My cases" and "My account" do not exist in the portal yet, which is
+	// why this is its own entry rather than a link on one of them.
+	if (accessEnabled) {
+		nav.push({ key: ACCESS_KEY, label: t('Access to cases'), icon: 'AccountKey', special: 'access' })
 	}
 	return nav
 }
@@ -207,8 +220,9 @@ export default function App({ config, t: tProp }) {
 			state.contributions?.tasks?.enabled === true,
 			(state.threads || []).length > 0,
 			hasNews(state.news),
+			Boolean(state.session && state.contributions),
 		),
-		[state.contributions, state.threads, state.news, t],
+		[state.session, state.contributions, state.threads, state.news, t],
 	)
 	const unreadCount = unreadOverride ?? (state.contributions?.unreadCount || 0)
 
@@ -217,7 +231,7 @@ export default function App({ config, t: tProp }) {
 	// message list instead of the subject's actual records.
 	useEffect(() => {
 		if (nav.length > 0 && (activeKey === null || !nav.some((n) => n.key === activeKey))) {
-			const firstContent = nav.find((n) => n.special !== 'inbox') || nav[0]
+			const firstContent = nav.find((n) => n.special !== 'inbox' && n.special !== 'access') || nav[0]
 			setActiveKey(firstContent.key)
 		}
 	}, [nav, activeKey])
@@ -450,6 +464,10 @@ export default function App({ config, t: tProp }) {
 
 						{active && active.special === 'news' && (
 							<NewsPage api={api} t={t} locale={config.locale} />
+						)}
+
+						{active && active.special === 'access' && (
+							<AccessRequestsPage api={api} t={t} locale={config.locale} />
 						)}
 
 						{active && active.special === 'tasks' && (

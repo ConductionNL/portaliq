@@ -9,7 +9,7 @@
   closes with the reason, or with nothing when cancelled. A refusal is never
   sent without a reason, because the asker reads it in their request list.
 
-  @spec openspec/changes/identity-access-requests/specs/portal-access-requests/spec.md#requirement-staff-answer-the-requests-of-their-organisation-req-iar-002
+  @spec openspec/specs/portal-access-requests/spec.md#requirement-staff-answer-the-requests-of-their-organisation-req-iar-002
 -->
 <template>
 	<NcDialog
@@ -70,7 +70,7 @@ export default {
 		 *
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/identity-access-requests/specs/portal-access-requests/spec.md#requirement-staff-answer-the-requests-of-their-organisation-req-iar-002
+		 * @spec openspec/specs/portal-access-requests/spec.md#requirement-staff-answer-the-requests-of-their-organisation-req-iar-002
 		 */
 		confirm() {
 			const reason = this.reason.trim()
