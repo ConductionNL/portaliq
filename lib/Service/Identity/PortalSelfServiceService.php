@@ -63,6 +63,12 @@ class PortalSelfServiceService {
 	private const TTL = 'P1D';
 
 	/**
+	 * A BCP-47 shaped language tag (translated-message-notice): a 2 or 3
+	 * letter primary subtag, then optional 1 to 8 character subtags.
+	 */
+	private const LANGUAGE_TAG = '/^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$/';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param PortalAccountService $accounts Finds the account by subjectRef.
@@ -92,26 +98,38 @@ class PortalSelfServiceService {
 	 *                                      for the email channel
 	 *                                      (notification-preferences-per-role),
 	 *                                      or null to leave it unchanged.
+	 * @param string|null $messageLanguage The language school messages are
+	 *                                     shown in, '' to show them as
+	 *                                     written, or null to leave it
+	 *                                     (translated-message-notice).
 	 *
 	 * @return array{updated: bool, confirmationToken: string}|null Null when
 	 *         there is no such account or nothing usable was asked.
 	 *
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
 	 * @spec openspec/changes/notification-preferences-per-role/specs/supplier-portal/spec.md#requirement-an-accounts-own-channel-opt-out-gates-dispatch
+	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-a-guardian-chooses-the-language-messages-are-shown-in
 	 */
-	public function updateDetails(string $subjectRef, string $displayName = '', string $email = '', ?bool $emailNotifications = null): ?array {
+	public function updateDetails(
+		string $subjectRef,
+		string $displayName = '',
+		string $email = '',
+		?bool $emailNotifications = null,
+		?string $messageLanguage = null,
+	): ?array {
 		$account = $this->ownAccount(subjectRef: $subjectRef);
-		if ($account === null || $this->nothingAsked(displayName: $displayName, email: $email, emailNotifications: $emailNotifications) === true) {
+		$asked   = ['displayName' => $displayName, 'email' => $email, 'emailNotifications' => $emailNotifications, 'messageLanguage' => $messageLanguage];
+		if ($account === null || $this->nothingAsked(asked: $asked) === true) {
 			return null;
 		}
 
-		$data = [];
-		if ($displayName !== '') {
-			$data['displayName'] = $displayName;
+		$data = $this->preferenceData(account: $account, emailNotifications: $emailNotifications, messageLanguage: $messageLanguage);
+		if ($data === null) {
+			return null;
 		}
 
-		if ($emailNotifications !== null) {
-			$data['notificationChannels'] = $this->withEmailChannel(account: $account, emailNotifications: $emailNotifications);
+		if ($displayName !== '') {
+			$data['displayName'] = $displayName;
 		}
 
 		$token = '';
@@ -135,18 +153,85 @@ class PortalSelfServiceService {
 	}//end updateDetails()
 
 	/**
+	 * The holder's own details, as the details page shows them.
+	 *
+	 * @param string $subjectRef The account.
+	 *
+	 * @return array{displayName: string, email: string, emailNotifications: bool, messageLanguage: string}|null
+	 *         Null when there is no such account.
+	 *
+	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-a-guardian-chooses-the-language-messages-are-shown-in
+	 */
+	public function details(string $subjectRef): ?array {
+		$account = $this->ownAccount(subjectRef: $subjectRef);
+		if ($account === null) {
+			return null;
+		}
+
+		$channels = (array)($account['notificationChannels'] ?? []);
+		return [
+			'displayName'        => (string)($account['displayName'] ?? ''),
+			'email'              => (string)($account['email'] ?? ''),
+			'emailNotifications' => (($channels['email'] ?? true) !== false),
+			'messageLanguage'    => (string)($account['messageLanguage'] ?? ''),
+		];
+	}//end details()
+
+	/**
+	 * The language a holder reads school messages in, '' when they read them
+	 * as written (translated-message-notice).
+	 *
+	 * @param string $subjectRef The account.
+	 *
+	 * @return string The language tag, or ''.
+	 *
+	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-a-guardian-chooses-the-language-messages-are-shown-in
+	 */
+	public function messageLanguage(string $subjectRef): string {
+		return ($this->details(subjectRef: $subjectRef)['messageLanguage'] ?? '');
+	}//end messageLanguage()
+
+	/**
 	 * Whether an `updateDetails()` call asked for nothing at all.
 	 *
-	 * @param string $displayName A new name, or '' to leave it.
-	 * @param string $email A new address, or '' to leave it.
-	 * @param bool|null $emailNotifications The channel opt-in/opt-out, or
-	 *                                      null to leave it.
+	 * @param array{displayName: string, email: string, emailNotifications: bool|null, messageLanguage: string|null} $asked What the call carried.
 	 *
 	 * @return bool
 	 */
-	private function nothingAsked(string $displayName, string $email, ?bool $emailNotifications): bool {
-		return $displayName === '' && $email === '' && $emailNotifications === null;
+	private function nothingAsked(array $asked): bool {
+		return $asked['displayName'] === '' && $asked['email'] === ''
+			&& $asked['emailNotifications'] === null && $asked['messageLanguage'] === null;
 	}//end nothingAsked()
+
+	/**
+	 * The delivery preferences an `updateDetails()` call changes, or null when
+	 * the language it asked for is not a language tag.
+	 *
+	 * @param array<string, mixed> $account The account as it stands.
+	 * @param bool|null $emailNotifications The email channel, or null to leave it.
+	 * @param string|null $messageLanguage The message language, '' for none, or null to leave it.
+	 *
+	 * @return array<string, mixed>|null The fields to write, or null to refuse.
+	 *
+	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-a-guardian-chooses-the-language-messages-are-shown-in
+	 */
+	private function preferenceData(array $account, ?bool $emailNotifications, ?string $messageLanguage): ?array {
+		$data = [];
+		if ($emailNotifications !== null) {
+			$data['notificationChannels'] = $this->withEmailChannel(account: $account, emailNotifications: $emailNotifications);
+		}
+
+		if ($messageLanguage === null) {
+			return $data;
+		}
+
+		if ($messageLanguage !== '' && preg_match(self::LANGUAGE_TAG, $messageLanguage) !== 1) {
+			return null;
+		}
+
+		$data['messageLanguage'] = $messageLanguage;
+		return $data;
+	}//end preferenceData()
 
 	/**
 	 * The account's `notificationChannels` with the email key set, its other

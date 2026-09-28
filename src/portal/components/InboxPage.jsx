@@ -10,6 +10,7 @@
 // never an empty placeholder.
 
 import React, { useCallback, useEffect, useState } from 'react'
+import TranslatedText from './TranslatedText.jsx'
 
 /**
  *
@@ -98,7 +99,16 @@ export default function InboxPage({ api, t, locale, onRead, onOpenTask }) {
 							<span className="portaliq-inbox-row__date">{formatDateTime(message.receivedAt, locale)}</span>
 						</div>
 
-						{message.body && <p className="portaliq-inbox-row__body">{message.body}</p>}
+						{message.body && (
+							<TranslatedText
+								text={message.body}
+								translation={message.translation}
+								t={t}
+								locale={locale}
+								id={id}
+								bodyClassName="portaliq-inbox-row__body"
+							/>
+						)}
 
 						{(message.nature || message.rechtsgevolg || message.term) && (
 							<dl className="portaliq-inbox-row__meta">

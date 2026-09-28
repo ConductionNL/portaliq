@@ -103,5 +103,21 @@
 	"Move up": "Omhoog",
 	"Move down": "Omlaag",
 	"Type your answer": "Typ je antwoord",
-	"Your teacher marks this question.": "Je docent kijkt deze vraag na."
+	"Your teacher marks this question.": "Je docent kijkt deze vraag na.",
+	"Messages": "Berichten",
+	"AI translation": "AI-vertaling",
+	"Translated by AI": "Door AI vertaald",
+	"Translated by AI from {language}": "Door AI vertaald uit het {language}",
+	"Show the original text": "Toon de oorspronkelijke tekst",
+	"Hide the original text": "Verberg de oorspronkelijke tekst",
+	"Show messages in": "Berichten tonen in",
+	"As written": "Zoals geschreven",
+	"Messages from school are translated by AI into this language. You can always see the original text.": "Berichten van school worden door AI naar deze taal vertaald. U kunt altijd de oorspronkelijke tekst bekijken.",
+	"Your language choice could not be saved.": "Uw taalkeuze kon niet worden opgeslagen.",
+	"No conversations yet.": "Nog geen gesprekken.",
+	"Conversations": "Gesprekken",
+	"Group conversation": "Groepsgesprek",
+	"Conversation with school": "Gesprek met school",
+	"You": "U",
+	"School": "School"
 }

@@ -274,3 +274,107 @@ body .guest-box {
 	white-space: nowrap;
 	border: 0;
 }
+
+/*
+ * AI translation notice (translated-message-notice, decision D24). The notice
+ * carries a mark and a sentence, so it reads without colour; the border and
+ * tint only repeat what the text already says.
+ */
+.portaliq-translated {
+	margin: var(--portaliq-space-sm) 0;
+}
+
+.portaliq-ai-notice {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--portaliq-space-sm);
+	margin: var(--portaliq-space-sm) 0;
+	padding: var(--portaliq-space-sm) var(--portaliq-space-md);
+	border: 1px solid var(--portaliq-color-border);
+	border-inline-start: 4px solid var(--portaliq-color-accent);
+	border-radius: 4px;
+	color: var(--portaliq-color-text);
+}
+
+.portaliq-ai-notice__mark {
+	padding: 0 0.35em;
+	border: 1px solid var(--portaliq-color-text);
+	border-radius: 3px;
+	font-size: 0.8em;
+	font-weight: 700;
+	letter-spacing: 0.05em;
+}
+
+.portaliq-ai-notice__text {
+	font-weight: 600;
+}
+
+.portaliq-ai-notice__disclosure {
+	flex-basis: 100%;
+	color: var(--portaliq-color-text-muted);
+	font-size: 0.9em;
+}
+
+.portaliq-ai-notice__toggle {
+	padding: 0;
+	border: 0;
+	background: none;
+	color: var(--portaliq-color-accent);
+	font: inherit;
+	text-decoration: underline;
+	cursor: pointer;
+}
+
+.portaliq-ai-notice__toggle:focus-visible {
+	outline: 2px solid var(--portaliq-color-accent);
+	outline-offset: 2px;
+}
+
+.portaliq-translated__original {
+	margin: var(--portaliq-space-sm) 0 0;
+	padding: var(--portaliq-space-sm) var(--portaliq-space-md);
+	border-inline-start: 4px solid var(--portaliq-color-border);
+}
+
+/* The guardian's conversations with school (translated-message-notice). */
+.portaliq-messages__language {
+	margin-bottom: var(--portaliq-space-md);
+}
+
+.portaliq-messages__language select {
+	margin-inline-start: var(--portaliq-space-sm);
+}
+
+.portaliq-messages__hint {
+	color: var(--portaliq-color-text-muted);
+}
+
+.portaliq-messages__threads ul,
+.portaliq-messages__list {
+	list-style: none;
+	margin: 0 0 var(--portaliq-space-md);
+	padding: 0;
+}
+
+.portaliq-messages__threads button[aria-current='true'] {
+	font-weight: 700;
+	text-decoration: underline;
+}
+
+.portaliq-message {
+	margin-bottom: var(--portaliq-space-sm);
+	padding: var(--portaliq-space-sm) var(--portaliq-space-md);
+	border: 1px solid var(--portaliq-color-border);
+	border-radius: 4px;
+}
+
+.portaliq-message__header {
+	display: flex;
+	gap: var(--portaliq-space-sm);
+	color: var(--portaliq-color-text-muted);
+}
+
+.portaliq-message__sender {
+	font-weight: 600;
+}

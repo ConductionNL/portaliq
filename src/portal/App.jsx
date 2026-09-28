@@ -12,6 +12,7 @@
 // OpenRegister directly.
 
 import InboxPage from '@portal/components/InboxPage.jsx'
+import MessagesPage from '@portal/components/MessagesPage.jsx'
 import PageView from '@portal/components/PageView.jsx'
 import TasksPage from '@portal/components/TasksPage.jsx'
 import { consumeOidcCallbackFragment, createPortalApi, getToken } from '@portal/lib/portalApi.js'
@@ -27,6 +28,11 @@ const INBOX_KEY = '__inbox__'
 // contribution collection. Shown only when the backend announces
 // `tasks: {enabled: true}` on the contributions aggregate.
 const TASKS_KEY = '__tasks__'
+
+// The guardian's conversations with school (translated-message-notice), shown
+// only when the subject takes part in at least one message thread, so a
+// supplier or citizen portal never shows an empty tab.
+const MESSAGES_KEY = '__messages__'
 
 // How often to proactively rotate the bearer while a session is active
 // (portal-session-hardening-v2, T04) — comfortably inside the 2h default TTL
@@ -44,8 +50,9 @@ const REFRESH_INTERVAL_MS = 25 * 60 * 1000
  * @param contributions
  * @param t
  * @param tasksEnabled
+ * @param messagesEnabled
  */
-function buildNav(contributions, t, tasksEnabled) {
+function buildNav(contributions, t, tasksEnabled, messagesEnabled = false) {
 	const nav = []
 	for (const contribution of (contributions || [])) {
 		for (const page of (contribution.pages || [])) {
@@ -64,6 +71,9 @@ function buildNav(contributions, t, tasksEnabled) {
 	// without any other portal content.
 	if (tasksEnabled) {
 		nav.push({ key: TASKS_KEY, label: t('My tasks'), icon: 'CheckboxMarkedOutline', special: 'tasks' })
+	}
+	if (messagesEnabled) {
+		nav.push({ key: MESSAGES_KEY, label: t('Messages'), icon: 'MessageText', special: 'messages' })
 	}
 	// Surface the fixed cross-app inbox only once contributions have loaded.
 	// Appending it on the initial (pre-load) render would make it the sole nav
@@ -98,7 +108,7 @@ export default function App({ config, t: tProp }) {
 		consumeOidcCallbackFragment()
 		return getToken()
 	})
-	const [state, setState] = useState({ loading: true, session: null, contributions: null, devError: null })
+	const [state, setState] = useState({ loading: true, session: null, contributions: null, threads: [], devError: null })
 	const [dataByCollection, setDataByCollection] = useState({})
 	const [activeKey, setActiveKey] = useState(null)
 	const [busyRow, setBusyRow] = useState(null)
@@ -155,8 +165,9 @@ export default function App({ config, t: tProp }) {
 		setState((s) => ({ ...s, loading: true }))
 		const session = await api.getSession()
 		const contributions = session ? await api.getContributions() : null
+		const threads = session ? await api.fetchThreads() : []
 		setUnreadOverride(null)
-		setState({ loading: false, session, contributions, devError: null })
+		setState({ loading: false, session, contributions, threads, devError: null })
 	}, [api])
 
 	useEffect(() => { refresh() }, [refresh, token])
@@ -178,8 +189,13 @@ export default function App({ config, t: tProp }) {
 	const [pendingTaskUuid, setPendingTaskUuid] = useState(null)
 
 	const nav = useMemo(
-		() => buildNav(state.contributions?.contributions, t, state.contributions?.tasks?.enabled === true),
-		[state.contributions, t],
+		() => buildNav(
+			state.contributions?.contributions,
+			t,
+			state.contributions?.tasks?.enabled === true,
+			(state.threads || []).length > 0,
+		),
+		[state.contributions, state.threads, t],
 	)
 	const unreadCount = unreadOverride ?? (state.contributions?.unreadCount || 0)
 
@@ -405,6 +421,15 @@ export default function App({ config, t: tProp }) {
 									setPendingTaskUuid(taskUuid)
 									setActiveKey(TASKS_KEY)
 								}}
+							/>
+						)}
+
+						{active && active.special === 'messages' && (
+							<MessagesPage
+								api={api}
+								t={t}
+								locale={config.locale}
+								subjectRef={state.session.subjectRef}
 							/>
 						)}
 

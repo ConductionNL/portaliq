@@ -100,6 +100,10 @@ export function createPortalApi(config) {
 		return { ok: true, status: res.status, object: json.object || json }
 	}
 
+	// The guardian message routes live beside the portal API, not under it
+	// (guardian-direct-messages): `/apps/portaliq/api/messages/...`.
+	const appRoot = String(base).replace(/\/portal\/api\/?$/, '')
+
 	const col = (register, schema) =>
 		`/collections/${encodeURIComponent(register)}/${encodeURIComponent(schema)}`
 
@@ -234,6 +238,68 @@ export function createPortalApi(config) {
 			}
 			const path = `/inbox/${encodeURIComponent(source.register)}/${encodeURIComponent(source.schema)}/${encodeURIComponent(id)}/read?collection=${encodeURIComponent(source.collection || '')}`
 			return send('PATCH', path, {})
+		},
+
+		/**
+		 * The guardian's own message threads (guardian-direct-messages). An
+		 * answer the server refuses reads as no threads, never as an error.
+		 *
+		 * @return {Promise<Array<object>>} The threads, or `[]`.
+		 */
+		async fetchThreads() {
+			try {
+				const res = await fetch(`${appRoot}/api/messages/threads`, {
+					headers: { Accept: 'application/json', ...authHeaders() },
+				})
+				if (!res.ok) {
+					return []
+				}
+				const json = await res.json()
+				return Array.isArray(json) ? json : []
+			} catch {
+				return []
+			}
+		},
+
+		/**
+		 * One thread's messages, each carrying `translation` when the server
+		 * translated it into the reader's language (translated-message-notice).
+		 *
+		 * @param {string} threadId The thread id.
+		 * @return {Promise<Array<object>|null>} The messages, or null when refused.
+		 */
+		async fetchThreadMessages(threadId) {
+			try {
+				const res = await fetch(`${appRoot}/api/messages/threads/${encodeURIComponent(threadId)}/messages`, {
+					headers: { Accept: 'application/json', ...authHeaders() },
+				})
+				if (!res.ok) {
+					return null
+				}
+				const json = await res.json()
+				return Array.isArray(json) ? json : null
+			} catch {
+				return null
+			}
+		},
+
+		/**
+		 * The account holder's own details, including `messageLanguage`.
+		 *
+		 * @return {Promise<object|null>}
+		 */
+		async getDetails() {
+			return get('/identity/details')
+		},
+
+		/**
+		 * Set the language school messages are shown in; '' shows them as written.
+		 *
+		 * @param {string} language A language tag, or ''.
+		 * @return {Promise<object>} `{ ok, status }` result envelope.
+		 */
+		async setMessageLanguage(language) {
+			return send('PATCH', '/identity/details', { messageLanguage: language })
 		},
 
 		/**

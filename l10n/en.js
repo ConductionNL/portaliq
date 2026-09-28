@@ -1467,7 +1467,11 @@ OC.L10N.register(
         "Agreed by": "Agreed by",
         "The guardian who agreed.": "The guardian who agreed.",
         "Agreed at": "Agreed at",
-        "When the guardian agreed.": "When the guardian agreed."
+        "When the guardian agreed.": "When the guardian agreed.",
+        "Message language": "Message language",
+        "The language this person reads school messages in, as a language tag such as ar or tr. Messages from school are translated by AI into it and marked as such. Empty shows messages as written. Only the person themselves sets it.": "The language this person reads school messages in, as a language tag such as ar or tr. Messages from school are translated by AI into it and marked as such. Empty shows messages as written. Only the person themselves sets it.",
+        "Translations": "Translations",
+        "Server-managed. One entry per language this message was translated into by AI: the translated text, the source language, the model, a reference to this message and the disclosure sentence. The body stays as written.": "Server-managed. One entry per language this message was translated into by AI: the translated text, the source language, the model, a reference to this message and the disclosure sentence. The body stays as written."
     },
     "nplurals=2; plural=(n != 1);"
 )

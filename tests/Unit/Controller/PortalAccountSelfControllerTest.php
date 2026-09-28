@@ -80,6 +80,51 @@ class PortalAccountSelfControllerTest extends TestCase {
 	}//end testTheChannelPreferenceIsForwardedToTheService()
 
 	/**
+	 * The message language reaches the service as given (translated-message-notice).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-a-guardian-chooses-the-language-messages-are-shown-in
+	 */
+	public function testTheMessageLanguageIsForwardedToTheService(): void {
+		$controller = $this->controller(subject: ['subjectRef' => 'subject-1', 'organisation' => 'school-x']);
+		$this->doubles['selfService']->expects($this->once())
+			->method('updateDetails')
+			->with('subject-1', '', '', null, 'tr')
+			->willReturn(['updated' => true, 'confirmationToken' => '']);
+
+		$this->assertSame(Http::STATUS_OK, $controller->updateDetails(messageLanguage: 'tr')->getStatus());
+
+	}//end testTheMessageLanguageIsForwardedToTheService()
+
+	/**
+	 * The details come from the bearer's own subject only; no subject is 401,
+	 * no account is 404.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-a-guardian-chooses-the-language-messages-are-shown-in
+	 */
+	public function testDetailsAreTheBearersOwn(): void {
+		$details = ['displayName' => 'Ans', 'email' => 'a@example.org', 'emailNotifications' => true, 'messageLanguage' => 'ar'];
+
+		$controller = $this->controller(subject: ['subjectRef' => 'subject-1', 'organisation' => 'school-x']);
+		$this->doubles['selfService']->expects($this->once())->method('details')->with('subject-1')->willReturn($details);
+		$response = $controller->details();
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame($details, $response->getData());
+
+		$missing = $this->controller(subject: ['subjectRef' => 'subject-2', 'organisation' => 'school-x']);
+		$this->doubles['selfService']->method('details')->willReturn(null);
+		$this->assertSame(Http::STATUS_NOT_FOUND, $missing->details()->getStatus());
+
+		$anonymous = $this->controller(subject: null);
+		$this->doubles['selfService']->expects($this->never())->method('details');
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $anonymous->details()->getStatus());
+
+	}//end testDetailsAreTheBearersOwn()
+
+	/**
 	 * The controller over doubles, all of which can only answer methods the
 	 * real classes have.
 	 *
@@ -95,7 +140,7 @@ class PortalAccountSelfControllerTest extends TestCase {
 		$session->method('resolveFromBearer')->willReturn($subject);
 
 		$this->doubles = [
-			'selfService' => $this->double(PortalSelfServiceService::class, ['updateDetails', 'confirmEmail', 'removeAccount']),
+			'selfService' => $this->double(PortalSelfServiceService::class, ['updateDetails', 'confirmEmail', 'removeAccount', 'details']),
 			'accessRequests' => $this->double(PortalAccessRequestService::class, ['request', 'madeBy']),
 		];
 

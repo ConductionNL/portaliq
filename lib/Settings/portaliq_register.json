@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.35.1"
+        "version": "0.36.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.35.1",
+                "version": "0.36.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -734,7 +734,7 @@
                     ]
                 },
                 "icon": "AccountKey",
-                "version": "0.9.0",
+                "version": "0.10.0",
                 "configuration": {
                     "linkedTypes": [
                         "calendar"
@@ -805,6 +805,12 @@
                         "example": {
                             "email": true
                         }
+                    },
+                    "messageLanguage": {
+                        "title": "Message language",
+                        "type": "string",
+                        "description": "The language this person reads school messages in, as a language tag such as ar or tr. Messages from school are translated by AI into it and marked as such. Empty shows messages as written. Only the person themselves sets it.",
+                        "example": "ar"
                     },
                     "status": {
                         "title": "Status",
@@ -6990,7 +6996,7 @@
             "guardianMessage": {
                 "slug": "guardianMessage",
                 "icon": "Email",
-                "version": "0.1.0",
+                "version": "0.2.0",
                 "title": "Message",
                 "authorization": {
                     "read": [
@@ -7035,6 +7041,15 @@
                         "description": "Server-managed. One entry per subject who has read this message.",
                         "items": {
                             "type": "string"
+                        },
+                        "example": []
+                    },
+                    "translations": {
+                        "title": "Translations",
+                        "type": "array",
+                        "description": "Server-managed. One entry per language this message was translated into by AI: the translated text, the source language, the model, a reference to this message and the disclosure sentence. The body stays as written.",
+                        "items": {
+                            "type": "object"
                         },
                         "example": []
                     }
