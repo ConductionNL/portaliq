@@ -1566,7 +1566,18 @@ OC.L10N.register(
         "Grant this request?": "Deze aanvraag toekennen?",
         "{name} can then see the cases of {party}.": "{name} kan dan de zaken van {party} zien.",
         "Access granted.": "Toegang toegekend.",
-        "Request refused.": "Aanvraag geweigerd."
+        "Request refused.": "Aanvraag geweigerd.",
+        "Clicks on this link from this route.": "Klikken op deze link vanaf deze route.",
+        "Distinct visitors that viewed this route, by daily hash or client id. Absent on a row written before per-page counts existed.": "Unieke bezoekers die deze route bekeken, op dagelijkse hash of client-id. Ontbreekt op een rij van voor de tellingen per pagina.",
+        "Engaged sessions that viewed this route, by the same definition as the day's engaged sessions. Absent on a row written before per-page counts existed.": "Betrokken sessies die deze route bekeken, volgens dezelfde definitie als de betrokken sessies van de dag. Ontbreekt op een rij van voor de tellingen per pagina.",
+        "Outbound links clicked on this route, top ten. Absent on a row written before per-page counts existed.": "Uitgaande links waarop op deze route is geklikt, top tien. Ontbreekt op een rij van voor de tellingen per pagina.",
+        "Per-route views, entrances, exits and engagement, and per route the sessions, visitors, engaged sessions, referrers and outbound links. A page is keyed by its in-site route: the `route` query parameter of the built-in site, else the URL path, without a trailing slash. A row written before portal-page-traffic has no sessions, visitors, engagedSessions, referrers or outbound; read their absence as not counted, never as zero.": "Weergaven, binnenkomsten, vertrekken en betrokkenheid per route, en per route de sessies, bezoekers, betrokken sessies, verwijzers en uitgaande links. Een pagina wordt herkend aan haar route binnen de site: de `route`-parameter van de ingebouwde site, anders het URL-pad, zonder slash aan het eind. Een rij van voor portal-page-traffic heeft geen sessions, visitors, engagedSessions, referrers of outbound; lees hun afwezigheid als niet geteld, nooit als nul.",
+        "Sessions that entered here from this source.": "Sessies die hier binnenkwamen via deze bron.",
+        "Sessions that entered the portal on this route, by referrer host and channel, top ten. Absent on a row written before per-page counts existed.": "Sessies die het portaal op deze route binnenkwamen, per verwijzende host en kanaal, top tien. Ontbreekt op een rij van voor de tellingen per pagina.",
+        "Sessions that viewed this route. Absent on a row written before per-page counts existed.": "Sessies die deze route bekeken. Ontbreekt op een rij van voor de tellingen per pagina.",
+        "The acquisition channel.": "Het acquisitiekanaal.",
+        "The in-site route: the built-in site's `route` parameter, else the URL path. Query stripped, no trailing slash.": "De route binnen de site: de `route`-parameter van de ingebouwde site, anders het URL-pad. Zonder querystring en zonder slash aan het eind.",
+        "The link clicked.": "De aangeklikte link."
     },
     "nplurals=2; plural=(n != 1);"
 )

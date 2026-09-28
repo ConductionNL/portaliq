@@ -1508,7 +1508,18 @@ OC.L10N.register(
         "Grant this request?": "Grant this request?",
         "{name} can then see the cases of {party}.": "{name} can then see the cases of {party}.",
         "Access granted.": "Access granted.",
-        "Request refused.": "Request refused."
+        "Request refused.": "Request refused.",
+        "Clicks on this link from this route.": "Clicks on this link from this route.",
+        "Distinct visitors that viewed this route, by daily hash or client id. Absent on a row written before per-page counts existed.": "Distinct visitors that viewed this route, by daily hash or client id. Absent on a row written before per-page counts existed.",
+        "Engaged sessions that viewed this route, by the same definition as the day's engaged sessions. Absent on a row written before per-page counts existed.": "Engaged sessions that viewed this route, by the same definition as the day's engaged sessions. Absent on a row written before per-page counts existed.",
+        "Outbound links clicked on this route, top ten. Absent on a row written before per-page counts existed.": "Outbound links clicked on this route, top ten. Absent on a row written before per-page counts existed.",
+        "Per-route views, entrances, exits and engagement, and per route the sessions, visitors, engaged sessions, referrers and outbound links. A page is keyed by its in-site route: the `route` query parameter of the built-in site, else the URL path, without a trailing slash. A row written before portal-page-traffic has no sessions, visitors, engagedSessions, referrers or outbound; read their absence as not counted, never as zero.": "Per-route views, entrances, exits and engagement, and per route the sessions, visitors, engaged sessions, referrers and outbound links. A page is keyed by its in-site route: the `route` query parameter of the built-in site, else the URL path, without a trailing slash. A row written before portal-page-traffic has no sessions, visitors, engagedSessions, referrers or outbound; read their absence as not counted, never as zero.",
+        "Sessions that entered here from this source.": "Sessions that entered here from this source.",
+        "Sessions that entered the portal on this route, by referrer host and channel, top ten. Absent on a row written before per-page counts existed.": "Sessions that entered the portal on this route, by referrer host and channel, top ten. Absent on a row written before per-page counts existed.",
+        "Sessions that viewed this route. Absent on a row written before per-page counts existed.": "Sessions that viewed this route. Absent on a row written before per-page counts existed.",
+        "The acquisition channel.": "The acquisition channel.",
+        "The in-site route: the built-in site's `route` parameter, else the URL path. Query stripped, no trailing slash.": "The in-site route: the built-in site's `route` parameter, else the URL path. Query stripped, no trailing slash.",
+        "The link clicked.": "The link clicked."
     },
     "nplurals=2; plural=(n != 1);"
 )
