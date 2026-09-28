@@ -32,6 +32,36 @@ export function pickerLabel(tag, locale) {
 }
 
 /**
+ * The language picker a guardian uses on the messages and the news page. It
+ * writes the account's own `messageLanguage`, so both pages follow one choice.
+ *
+ * @param {object} props The props.
+ * @param {string} props.id The select's id, unique on the page.
+ * @param {string} props.label The label text.
+ * @param {string} props.hint The sentence under the picker.
+ * @param {string} props.language The current language, '' for as written.
+ * @param {(event: Event) => void} props.onChange Change handler.
+ * @param {string} [props.error] An error to announce.
+ * @param {(key: string, vars?: object) => string} props.t The portal translator.
+ * @param {string} props.locale The portal's locale.
+ */
+export function MessageLanguagePicker({ id, label, hint, language, onChange, error = '', t, locale }) {
+	return (
+		<div className="portaliq-messages__language">
+			<label htmlFor={id}>{label}</label>
+			<select id={id} value={language} onChange={onChange}>
+				<option value="">{t('As written')}</option>
+				{MESSAGE_LANGUAGES.map((tag) => (
+					<option key={tag} value={tag}>{pickerLabel(tag, locale)}</option>
+				))}
+			</select>
+			<p className="portaliq-messages__hint">{hint}</p>
+			{error && <p className="portaliq-error" role="alert">{error}</p>}
+		</div>
+	)
+}
+
+/**
  * @param {string} value An ISO date-time.
  * @param {string} locale The portal's locale.
  * @return {string}
@@ -108,19 +138,16 @@ export default function MessagesPage({ api, t, locale, subjectRef }) {
 
 	return (
 		<section className="portaliq-messages">
-			<div className="portaliq-messages__language">
-				<label htmlFor="portaliq-message-language">{t('Show messages in')}</label>
-				<select id="portaliq-message-language" value={language} onChange={onLanguageChange}>
-					<option value="">{t('As written')}</option>
-					{MESSAGE_LANGUAGES.map((tag) => (
-						<option key={tag} value={tag}>{pickerLabel(tag, locale)}</option>
-					))}
-				</select>
-				<p className="portaliq-messages__hint">
-					{t('Messages from school are translated by AI into this language. You can always see the original text.')}
-				</p>
-				{error && <p className="portaliq-error" role="alert">{error}</p>}
-			</div>
+			<MessageLanguagePicker
+				id="portaliq-message-language"
+				label={t('Show messages in')}
+				hint={t('Messages from school are translated by AI into this language. You can always see the original text.')}
+				language={language}
+				onChange={onLanguageChange}
+				error={error}
+				t={t}
+				locale={locale}
+			/>
 
 			{threads.length === 0 && <p className="portaliq-empty"><em>{t('No conversations yet.')}</em></p>}
 

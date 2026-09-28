@@ -249,11 +249,16 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.36.2 (portalReporterContact 0.2.0): what a reporter gave is readable
 		// by `admin` only, not by every signed-in user; portaliq reads it only
 		// inside an allowed reveal, with RBAC off (portaliq#800).
+		// 0.37.0 (newsItem 0.2.0): a news item keeps its AI translations with
+		// their provenance next to the original body (`translations`), the
+		// same shape a guardianMessage keeps (news-item-translation, D24). Additive.
 		// Every new schema is listed in
 		// `components.registers.portaliq.schemas` (ImportHandler binds only
 		// what is listed there) and declares a non-empty `read` rule.
-		$this->assertSame('0.36.2', self::$register['info']['version']);
-		$this->assertSame('0.36.2', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.37.0', self::$register['info']['version']);
+		$this->assertSame('0.37.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.2.0', self::$register['components']['schemas']['newsItem']['version']);
+		$this->assertArrayHasKey('translations', self::$register['components']['schemas']['newsItem']['properties']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalReporterContact']['version']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalCaseType']['version']);
 		$this->assertArrayHasKey('handlerGroup', self::$register['components']['schemas']['portalCaseType']['properties']['portalReportDeclaration']['properties']);

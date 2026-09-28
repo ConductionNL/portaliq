@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.36.2"
+        "version": "0.37.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.36.2",
+                "version": "0.37.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -6466,7 +6466,7 @@
             "newsItem": {
                 "slug": "newsItem",
                 "icon": "FileDocument",
-                "version": "0.1.0",
+                "version": "0.2.0",
                 "title": "News item",
                 "authorization": {
                     "read": [
@@ -6495,7 +6495,7 @@
                     "body": {
                         "title": "Body",
                         "type": "string",
-                        "description": "Plain text / markdown body. Not translated by this change (see hermiq's message-translation-delegate).",
+                        "description": "Plain text / markdown body, as written. An AI translation for a reader's language is kept in translations, never here.",
                         "example": "De herfstvakantie loopt van 19 tot 23 oktober."
                     },
                     "target": {
@@ -6577,6 +6577,15 @@
                                     "description": "When this guardian read the item, in ISO 8601."
                                 }
                             }
+                        },
+                        "example": []
+                    },
+                    "translations": {
+                        "title": "Translations",
+                        "type": "array",
+                        "description": "Server-managed. One entry per language this news item was translated into by AI: the translated text, the source language, the model, a reference to this item and the disclosure sentence. The body stays as written.",
+                        "items": {
+                            "type": "object"
                         },
                         "example": []
                     }

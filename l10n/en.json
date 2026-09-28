@@ -1520,6 +1520,8 @@
         "{name} can then see the cases of {party}.": "{name} can then see the cases of {party}.",
         "Access granted.": "Access granted.",
         "Request refused.": "Request refused.",
+        "Plain text / markdown body, as written. An AI translation for a reader's language is kept in translations, never here.": "Plain text / markdown body, as written. An AI translation for a reader's language is kept in translations, never here.",
+        "Server-managed. One entry per language this news item was translated into by AI: the translated text, the source language, the model, a reference to this item and the disclosure sentence. The body stays as written.": "Server-managed. One entry per language this news item was translated into by AI: the translated text, the source language, the model, a reference to this item and the disclosure sentence. The body stays as written.",
         "Clicks on this link from this route.": "Clicks on this link from this route.",
         "Distinct visitors that viewed this route, by daily hash or client id. Absent on a row written before per-page counts existed.": "Distinct visitors that viewed this route, by daily hash or client id. Absent on a row written before per-page counts existed.",
         "Engaged sessions that viewed this route, by the same definition as the day's engaged sessions. Absent on a row written before per-page counts existed.": "Engaged sessions that viewed this route, by the same definition as the day's engaged sessions. Absent on a row written before per-page counts existed.",
