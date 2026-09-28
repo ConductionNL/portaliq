@@ -4,18 +4,19 @@
 <!--
   RefuseAccessRequestDialog: the reason a refusal needs.
 
-  Its own file per ADR-004's modal-isolation rule. A refusal is never saved
-  without a reason, because the asker reads it in their request list.
+  Its own file per ADR-004's modal-isolation rule. Spawned by the Refuse row
+  action on the Access requests page (src/lib/accessRequestActions.js); it
+  closes with the reason, or with nothing when cancelled. A refusal is never
+  sent without a reason, because the asker reads it in their request list.
 
   @spec openspec/changes/identity-access-requests/specs/portal-access-requests/spec.md#requirement-staff-answer-the-requests-of-their-organisation-req-iar-002
 -->
 <template>
 	<NcDialog
 		:name="t('portaliq', 'Refuse this request')"
-		:open="open"
 		size="normal"
 		data-testid="refuse-access-request"
-		@update:open="$emit('update:open', $event)">
+		@closing="$emit('close', null)">
 		<NcTextArea
 			v-model="reason"
 			:label="t('portaliq', 'Reason for the refusal')"
@@ -26,7 +27,7 @@
 		</p>
 
 		<template #actions>
-			<NcButton @click="$emit('update:open', false)">
+			<NcButton @click="$emit('close', null)">
 				{{ t('portaliq', 'Cancel') }}
 			</NcButton>
 			<NcButton
@@ -40,6 +41,7 @@
 </template>
 
 <script>
+import { translate as t } from '@nextcloud/l10n'
 import { NcButton, NcDialog, NcTextArea } from '@nextcloud/vue'
 
 export default {
@@ -51,15 +53,7 @@ export default {
 		NcTextArea,
 	},
 
-	props: {
-		/** Whether the dialog is open. */
-		open: {
-			type: Boolean,
-			default: false,
-		},
-	},
-
-	emits: ['update:open', 'refuse'],
+	emits: ['close'],
 
 	data() {
 		return {
@@ -68,24 +62,11 @@ export default {
 		}
 	},
 
-	watch: {
-		/**
-		 * Start empty every time the dialog opens.
-		 *
-		 * @param {boolean} isOpen Whether it is open now.
-		 * @return {void}
-		 */
-		open(isOpen) {
-			if (isOpen) {
-				this.reason = ''
-				this.missing = false
-			}
-		},
-	},
-
 	methods: {
+		t,
+
 		/**
-		 * Hand the reason to the page, or say that one is needed.
+		 * Close with the reason, or say that one is needed.
 		 *
 		 * @return {void}
 		 *
@@ -98,8 +79,7 @@ export default {
 				return
 			}
 
-			this.$emit('refuse', reason)
-			this.$emit('update:open', false)
+			this.$emit('close', reason)
 		},
 	},
 }

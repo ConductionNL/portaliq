@@ -30,10 +30,19 @@
 //
 // See hydra ADR-036 for the v2 registry design.
 
-import { showInfo } from '@nextcloud/dialogs'
+import axios from '@nextcloud/axios'
+import {
+	showConfirmation,
+	showError,
+	showInfo,
+	showSuccess,
+} from '@nextcloud/dialogs'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
+import { spawnDialog } from '@nextcloud/vue/functions/dialog'
+import RefuseAccessRequestDialog from './dialogs/RefuseAccessRequestDialog.vue'
 import CustomExample from './views/CustomExample.vue'
+import { createAccessRequestHandlers } from './lib/accessRequestActions.js'
 import { createConnectionHandlers } from './lib/connectionRegistry.js'
 import { createOpenPortalSite } from './lib/openPortalSite.js'
 
@@ -46,6 +55,34 @@ const openPortalSite = createOpenPortalSite({
 	generateUrl,
 	notify: showInfo,
 	translate: (text) => t('portaliq', text),
+})
+
+/**
+ * The Grant and Refuse row actions on the Access requests page (#797), wired
+ * to the POST, the confirmation, the refusal dialog and the toasts. The
+ * factory imports none of them so `tests/access-requests.spec.mjs` can run it
+ * as a plain node script; see src/lib/accessRequestActions.js.
+ */
+const accessRequestHandlers = createAccessRequestHandlers({
+	post: (url, body) => axios.post(url, body),
+	generateUrl,
+	confirmGrant: (row) =>
+		showConfirmation({
+			name: t('portaliq', 'Grant this request?'),
+			text: t('portaliq', '{name} can then see the cases of {party}.', {
+				name: row?.displayName || row?.subjectRef || '',
+				party: row?.onBehalfOf || '',
+			}),
+			labelConfirm: t('portaliq', 'Grant'),
+			labelReject: t('portaliq', 'Cancel'),
+		}),
+	askReason: () => spawnDialog(RefuseAccessRequestDialog),
+	notify: showSuccess,
+	notifyError: showError,
+	translate: (text) => t('portaliq', text),
+	// A row handler gets no handle on the list, so the page reloads to show
+	// the answered request in its new state.
+	reload: () => window.location.reload(),
 })
 // Features & Roadmap page — thin wrapper around the lib's
 // CnFeaturesAndRoadmapView (in-product roadmap surface powered by
@@ -79,6 +116,12 @@ export default {
 	 * `navigate` target.
 	 */
 	openPortalSite,
+	/**
+	 * `Grant` and `Refuse` row actions on the Access requests index page
+	 * (#797). Handlers, not object edits: an answer goes through
+	 * AccessRequestAdminController, and a grant also records the mandate.
+	 */
+	...accessRequestHandlers,
 	// Features & Roadmap page (lib's CnFeaturesAndRoadmapView) — wired up
 	// in src/manifest.json (the `FeaturesRoadmap` custom page + the
 	// `FeaturesRoadmapMenu` settings entry).

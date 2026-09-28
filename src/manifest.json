@@ -1836,10 +1836,37 @@
     {
       "id": "AccessRequests",
       "route": "/access-requests",
-      "type": "custom",
+      "type": "index",
       "title": "Access requests",
-      "component": "AccessRequests",
-      "_note": "Grant and refuse are server-side actions behind portal.answer-access-request, and a grant also records the mandate that opens the cases, so no built-in page type can answer a request. This page lists the pending requests and posts the answer."
+      "config": {
+        "register": "portaliq",
+        "schema": "portalAccessRequest",
+        "_note": "The owner's side of an access request (identity-access-requests, #797). Grant and Refuse are handlers, not object-op patches: an answer goes through AccessRequestAdminController behind portal.answer-access-request, a grant also records the portalMandate that opens the cases, and a refusal asks for the reason the asker reads. See src/lib/accessRequestActions.js.",
+        "columns": [
+          "displayName",
+          "onBehalfOf",
+          "organisation",
+          "reason",
+          "state",
+          "requestedAt"
+        ],
+        "actions": [
+          {
+            "id": "grant",
+            "label": "Grant",
+            "icon": "Check",
+            "type": "handler",
+            "handler": "grantAccessRequest"
+          },
+          {
+            "id": "refuse",
+            "label": "Refuse",
+            "icon": "Close",
+            "type": "handler",
+            "handler": "refuseAccessRequest"
+          }
+        ]
+      }
     },
     {
       "id": "Glossary",

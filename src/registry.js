@@ -40,7 +40,6 @@
 import StatusBadge from './cellRenderers/StatusBadge.vue'
 import EmailField from './formFields/EmailField.vue'
 import ExampleModal from './modals/ExampleModal.vue'
-import AccessRequests from './views/AccessRequests.vue'
 import CustomExample from './views/CustomExample.vue'
 import FlowDetailSidebar from './views/flows/FlowDetailSidebar.vue'
 import PageLayoutDesigner from './views/PageLayoutDesigner.vue'
@@ -257,17 +256,6 @@ export default {
 	PageLayoutDesigner: {
 		kind: 'page',
 		component: PageLayoutDesigner,
-	},
-
-	/**
-	 * The owner's side of an access request (identity-access-requests): staff
-	 * holding `portal.answer-access-request` list the pending requests and
-	 * grant or refuse each one. Custom because grant and refuse are guarded
-	 * server-side actions, not field edits on the request row.
-	 */
-	AccessRequests: {
-		kind: 'page',
-		component: AccessRequests,
 	},
 
 	// -------------------------------------------------------------------------
