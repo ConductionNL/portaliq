@@ -1142,5 +1142,69 @@
 		"reason": "Partial, built, no demand: no demand row and fewer than two competitors rated yes on the missing half. The missing half (a live payment adapter behind PortalPaymentSessionService) is shillinq's.",
 		"change": null,
 		"decidedOn": "2026-09-27"
+	},
+	{
+		"row": "portal-menu-choice",
+		"matrix": "pipelinq",
+		"decision": "build",
+		"reason": "Pipelinq matrix row, decided no for pipelinq by the pipelinq lane (one shared external portal is portaliq, hydra ADR-046; pipelinq change portal-contribution retires the bespoke portal that holds today's per tenant choice) with the owner moved to ConductionNL/portaliq. Build: a feature request (https://github.com/odoo/odoo/issues/192439) plus one competitor rated yes (espocrm: a tab list per portal, and portal roles that set which records a client sees). No portaliq change covers it: PortalContributionRegistry::aggregateFor() filters contributions by audience and trust only.",
+		"change": "operate-pages-per-portal-and-client",
+		"decidedOn": "2026-09-28"
+	},
+	{
+		"row": "portal-digid",
+		"matrix": "pipelinq",
+		"decision": "existing",
+		"reason": "Pipelinq matrix row (tender demand, https://www.tenderned.nl/aankondigingen/overzicht/414691), decided no for pipelinq by the pipelinq lane with the owner moved to ConductionNL/portaliq. Open portaliq change signin-integriq-broker-login covers it: DigiD and eHerkenning sign-in through integriq's broker envelope for an organisation without its own OIDC broker, closing portaliq rows sig-digid and sig-eherkenning, which already carry the broker-fronted login.",
+		"change": "signin-integriq-broker-login",
+		"decidedOn": "2026-09-28"
+	},
+	{
+		"row": "dem-rm-shared-design-library",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Partial and built, owner moved from thematiq: the thematiq lane decided no for thematiq because the shared styles half is built (several portals point at one thematiq token set through PortalThemeResolver) and the missing half, a shared library of page blocks, is portaliq's. Build: a roadmap demand row (https://www.liferay.com/roadmap) plus one competitor rated yes (liferay-dxp design libraries), and the demand names the missing half, page fragments shared across sites. No portaliq change shares page blocks across portals.",
+		"change": "site-shared-page-blocks",
+		"decidedOn": "2026-09-28"
+	},
+	{
+		"row": "signing-accept-only-recipient",
+		"matrix": "filinq",
+		"decision": "existing",
+		"reason": "Keep non-string rowActions and mint the signerEmail claim, one decision for both halves. Filinq change signing-accept-only-recipient (after portal-signing-actions) asks portaliq to keep its inline sign, decline and accept row action objects, which CollectionConfigNormaliser::resolveRowActions() drops today, and to pass the verified signer e-mail in the assertion. Open portaliq change case-actions-sign-a-document covers both: its D1 resolves object row action entries by id as endpoint row actions, and its D3 adds a declared scopeClaim such as signerEmail as one claim inside the signed assertion, the option filinq's design prefers.",
+		"change": "case-actions-sign-a-document",
+		"decidedOn": "2026-09-28"
+	},
+	{
+		"row": "signing-field-validation",
+		"matrix": "filinq",
+		"decision": "build",
+		"reason": "Row action input fields. Filinq change signing-field-validation (merged) depends on the portal sign row action collecting the field values filinq declares for the signer; its design says an external signer cannot sign a request with required fields until then. No portaliq change covers it: case-actions-sign-a-document forwards consent and a decline reason only, and onAction posts an empty body. Build: a half a merged sibling change depends on.",
+		"change": "case-actions-row-inputs-and-conditions",
+		"decidedOn": "2026-09-28"
+	},
+	{
+		"row": "sales-cancellation",
+		"matrix": "shillinq",
+		"decision": "build",
+		"reason": "Cancel-subscription and withdraw actions. Shillinq change sales-cancellation (merged) depends on portaliq rendering its cancel-subscription action with an optional reason from a fixed list (REQ-SCX-003) and its withdraw action with the article 11a label, a confirmation step and the reason shown when a booking can no longer be withdrawn (REQ-SCX-004, REQ-SCX-005). case-actions-sign-a-document gives endpoint row actions a plain confirmation only. Build: a half a merged sibling change depends on.",
+		"change": "case-actions-row-inputs-and-conditions",
+		"decidedOn": "2026-09-28"
+	},
+	{
+		"row": "sales-cancellation",
+		"matrix": "shillinq",
+		"decision": "build",
+		"reason": "Guest page for a signed link. Shillinq change sales-cancellation (merged) depends on a portaliq guest page for a signed withdrawal link, so a consumer without a portal account can withdraw (design D4, REQ-SCX-004); every portaliq action needs a signed-in subject today. Build: a half a merged sibling change depends on.",
+		"change": "identity-guest-page-for-signed-links",
+		"decidedOn": "2026-09-28"
+	},
+	{
+		"row": "receivables-payment-links",
+		"matrix": "shillinq",
+		"decision": "build",
+		"reason": "Guest page for a signed pay link. Shillinq change receivables-payment-links (merged) depends on a portaliq guest page that forwards the pay action for a signed link (REQ-RPL-006), the same guest mechanism sales-cancellation asks for. No portaliq change offers an act without a portal session. Build: a half a merged sibling change depends on.",
+		"change": "identity-guest-page-for-signed-links",
+		"decidedOn": "2026-09-28"
 	}
 ]
