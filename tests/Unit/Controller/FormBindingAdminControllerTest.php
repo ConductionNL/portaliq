@@ -18,7 +18,7 @@ use PHPUnit\Framework\TestCase;
  * administrator reads is what the citizen-facing render decides. Only the
  * OpenRegister read under the resolver is stubbed.
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+ * @spec openspec/specs/portal-intake-form/spec.md
  */
 class FormBindingAdminControllerTest extends TestCase {
 

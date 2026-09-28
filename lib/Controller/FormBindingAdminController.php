@@ -24,7 +24,7 @@
  *
  * @link https://Portaliq.app
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+ * @spec openspec/specs/portal-intake-form/spec.md
  */
 
 declare(strict_types=1);
@@ -69,7 +69,7 @@ class FormBindingAdminController extends Controller {
 	 *       expresses admin-only as the ABSENCE of an opt-out attribute, so this
 	 *       tag is the declaration.
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	public function preview(array $binding = []): JSONResponse {
 		if ($binding === []) {

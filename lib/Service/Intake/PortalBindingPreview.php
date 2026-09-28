@@ -32,7 +32,7 @@
  *
  * @link https://Portaliq.app
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+ * @spec openspec/specs/portal-intake-form/spec.md
  */
 
 declare(strict_types=1);
@@ -107,7 +107,7 @@ class PortalBindingPreview {
 	 *
 	 * @return array<string, mixed> The preview.
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	public function describe(array $binding): array {
 		$render = $this->resolver->render(binding: $binding);
@@ -215,7 +215,7 @@ class PortalBindingPreview {
 	 *
 	 * @return bool True when it resolves to nothing.
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	public function needsAttention(array $binding): bool {
 		return ((string)$this->describe(binding: $binding)['state'] === self::RESOLVES_TO_NONE);
