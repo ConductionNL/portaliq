@@ -7,8 +7,8 @@
 - **files**: `lib/Settings/portaliq_register.json`, `lib/Settings/portaliq_mock_register.json`, `l10n/en.json`, `l10n/nl.json`, `tests/Unit/Settings/PortaliqRegisterConfigTest.php`
 - **acceptance_criteria**:
   - GIVEN the register WHEN read THEN info and registers.portaliq are 0.36.0, portalAccount 0.10.0 has messageLanguage, guardianMessage 0.2.0 has translations, every new string has a catalogue key, demo rows carry the fields
-- [ ] Implement
-- [ ] Test
+- [x] Implement
+- [x] Test
 
 ### Task 2: The language preference
 - **spec_ref**: `openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-a-guardian-chooses-the-language-messages-are-shown-in`
@@ -16,16 +16,16 @@
 - **acceptance_criteria**:
   - GIVEN the holder WHEN PATCH messageLanguage "ar" / "" / "Arabic please" THEN stored / cleared / 400
   - GIVEN the holder WHEN GET details THEN own fields only
-- [ ] Implement
-- [ ] Test
+- [x] Implement
+- [x] Test
 
 ### Task 3: The duck-typed hermiq client
 - **spec_ref**: `openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-messages-are-translated-through-hermiq-only-when-hermiq-is-there-and-labels-its-answer`
 - **files**: `lib/Service/Messaging/MessageTranslationClient.php`, `tests/Unit/Service/Messaging/MessageTranslationClientTest.php`
 - **acceptance_criteria**:
   - GIVEN no hermiq, a throwing engine or an unlabelled answer THEN null; GIVEN a labelled answer THEN a normalised entry
-- [ ] Implement
-- [ ] Test
+- [x] Implement
+- [x] Test
 
 ### Task 4: The translator and the endpoint
 - **spec_ref**: `openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-translation-work-per-request-is-bounded-and-skips-what-needs-none`
@@ -33,8 +33,8 @@
 - **acceptance_criteria**:
   - GIVEN five untranslated staff messages THEN three calls; cached entries reused; the reader's own messages skipped; same-language results not attached; body kept
   - GIVEN no preference THEN the translator is not called
-- [ ] Implement
-- [ ] Test
+- [x] Implement
+- [x] Test
 
 ### Task 5: The notice, the Messages page and the inbox
 - **spec_ref**: `openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-the-reader-sees-a-notice-that-ai-translated-the-text-with-the-original-one-step-away`
@@ -42,8 +42,8 @@
 - **acceptance_criteria**:
   - GIVEN a translated message THEN an aside landmark reads "Translated by AI from Dutch", the button toggles the original with aria-expanded, both texts carry lang
   - GIVEN no translation THEN no notice
-- [ ] Implement
-- [ ] Test
+- [x] Implement
+- [x] Test
 
 ## Quality checklist
 

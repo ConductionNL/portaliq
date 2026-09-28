@@ -270,9 +270,12 @@ export function createPortalApi(config) {
 		 */
 		async fetchThreadMessages(threadId) {
 			try {
-				const res = await fetch(`${appRoot}/api/messages/threads/${encodeURIComponent(threadId)}/messages`, {
-					headers: { Accept: 'application/json', ...authHeaders() },
-				})
+				const res = await fetch(
+					`${appRoot}/api/messages/threads/${encodeURIComponent(threadId)}/messages`,
+					{
+						headers: { Accept: 'application/json', ...authHeaders() },
+					},
+				)
 				if (!res.ok) {
 					return null
 				}
