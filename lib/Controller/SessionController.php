@@ -69,6 +69,11 @@ use OCP\IUserSession;
  * mapping, state storage, account resolution) — see PortalSessionService's
  * identical rationale; collapsing them would hide the fail-closed seams this
  * edge depends on.
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- every sign-in route
+ * the portal offers (dev, OIDC start and callback, Nextcloud, refresh,
+ * logout) is one public entry with its own fail-closed guards, and the site's
+ * `?portal=` start (#802) added the last branch. Splitting the routes over
+ * controllers would scatter one auth edge without removing a single guard.
  * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- the constructor mirrors
  * that coupling 1:1; folding services into a facade would only relocate the
  * same count behind one more layer.
