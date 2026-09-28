@@ -1184,6 +1184,8 @@
         "What governs a report of this type: the group that may reveal who filed it, the acknowledgement and feedback terms in days, and whether the reporting surface stays out of visitor analytics. The portal holds no term of its own.": "Wat voor dit type melding geldt: de groep die mag onthullen wie de melding deed, de termijnen voor ontvangstbevestiging en terugkoppeling in dagen, en of de meldpagina buiten de bezoekersstatistieken blijft. Het portaal hanteert geen eigen termijn.",
         "Custodian group": "Groep vertrouwenspersonen",
         "The Nextcloud group whose members may allow a reveal. An instance administrator who is not in it may not.": "De Nextcloud-groep waarvan de leden een onthulling mogen toestaan. Een beheerder die er niet in zit, mag dat niet.",
+        "Handler group": "Groep behandelaars",
+        "The Nextcloud group whose members may read a report, write on its thread and ask for a reveal. When it is not set, only the custodian group may.": "De Nextcloud-groep waarvan de leden een melding mogen lezen, erop mogen reageren en om een onthulling mogen vragen. Is die niet ingesteld, dan mag alleen de groep vertrouwenspersonen dat.",
         "Acknowledgement term": "Termijn voor ontvangstbevestiging",
         "Days within which the report must be acknowledged.": "Het aantal dagen waarbinnen de ontvangst van de melding bevestigd moet zijn.",
         "Feedback term": "Termijn voor terugkoppeling",

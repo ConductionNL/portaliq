@@ -8,6 +8,7 @@ use OCA\Portaliq\Controller\ReportController;
 use OCA\Portaliq\Service\CaseTypeReader;
 use OCA\Portaliq\Service\Identity\PortalChallengeService;
 use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\Reports\ReportIntakeService;
 use OCA\Portaliq\Service\Reports\ReportProjection;
@@ -15,6 +16,8 @@ use OCA\Portaliq\Service\Reports\ReportTermsService;
 use OCA\Portaliq\Service\Reports\ReportThreadService;
 use OCA\Portaliq\Service\Reports\RevealService;
 use OCP\AppFramework\Http;
+use OCP\EventDispatcher\IEventDispatcher;
+use OCP\IGroupManager;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -153,7 +156,7 @@ class ReportControllerTest extends TestCase {
 
 	public function testTheStaffReadStillCarriesNoContactDetail(): void {
 		$controller = $this->controller();
-		$this->doubles['reader']->method('readObject')->willReturn($this->storedReport());
+		$this->doubles['reader']->method('readObjectAsUser')->willReturn($this->storedReport());
 		$this->doubles['threads']->method('allMessages')->willReturn([]);
 
 		$serialised = json_encode($controller->show(id: 'report-1')->getData(), JSON_THROW_ON_ERROR);
@@ -166,7 +169,7 @@ class ReportControllerTest extends TestCase {
 
 	public function testAHandlerNoteIsInternalUnlessTheHandlerSaysOtherwise(): void {
 		$controller = $this->controller();
-		$this->doubles['reader']->method('readObject')->willReturn($this->storedReport());
+		$this->doubles['reader']->method('readObjectAsUser')->willReturn($this->storedReport());
 		$this->doubles['threads']
 			->expects($this->once())
 			->method('write')
@@ -179,7 +182,7 @@ class ReportControllerTest extends TestCase {
 
 	public function testARevealRequestWithoutAMotivationRecordsNothing(): void {
 		$controller = $this->controller();
-		$this->doubles['reader']->method('readObject')->willReturn($this->storedReport());
+		$this->doubles['reader']->method('readObjectAsUser')->willReturn($this->storedReport());
 		$this->doubles['reveals']->method('request')->willReturn(null);
 
 		$response = $controller->requestReveal(id: 'report-1');
@@ -191,7 +194,7 @@ class ReportControllerTest extends TestCase {
 
 	public function testARecordedRevealRequestIsPending(): void {
 		$controller = $this->controller();
-		$this->doubles['reader']->method('readObject')->willReturn($this->storedReport());
+		$this->doubles['reader']->method('readObjectAsUser')->willReturn($this->storedReport());
 		$this->doubles['reveals']->method('request')->willReturn(['id' => 'request-1']);
 
 		$response = $controller->requestReveal(id: 'report-1', motivation: 'Nodig voor de aangifte.');
@@ -204,6 +207,7 @@ class ReportControllerTest extends TestCase {
 	public function testACallerWhoIsNotTheCustodianIsRefusedAndShownNothing(): void {
 		$controller = $this->controller();
 		$this->doubles['reader']->method('readObject')->willReturn(['reportRef' => 'report-1'] + $this->storedReport());
+		$this->doubles['reader']->method('readObjectAsUser')->willReturn($this->storedReport());
 		$this->doubles['reveals']->method('decide')->willReturn(['error' => 'not_custodian']);
 
 		$response = $controller->decideReveal(id: 'request-1', allow: true);
@@ -216,6 +220,7 @@ class ReportControllerTest extends TestCase {
 	public function testADecisionOnAnAlreadyAnsweredRequestConflicts(): void {
 		$controller = $this->controller();
 		$this->doubles['reader']->method('readObject')->willReturn(['reportRef' => 'report-1'] + $this->storedReport());
+		$this->doubles['reader']->method('readObjectAsUser')->willReturn($this->storedReport());
 		$this->doubles['reveals']->method('decide')->willReturn(['error' => 'already_decided']);
 
 		$this->assertSame(Http::STATUS_CONFLICT, $controller->decideReveal(id: 'request-1')->getStatus());
@@ -230,6 +235,78 @@ class ReportControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->decideReveal(id: 'request-bestaatniet')->getStatus());
 
 	}//end testAnUnknownRevealRequestIsNotFound()
+
+	/**
+	 * A signed-in colleague in neither the handler nor the custodian group
+	 * gets the same 404 an unknown report gets, on all three staff routes, and
+	 * nothing is written (portaliq#799, REQ-IRP-005).
+	 */
+	public function testAColleagueOutsideTheGroupsCannotReadAnswerOrAskAboutAReport(): void {
+		$controller = $this->controller(groups: $this->groupManager(member: []));
+		$this->doubles['reader']->method('readObject')->willReturn($this->storedReport());
+		$this->doubles['reader']->method('readObjectAsUser')->willReturn($this->storedReport());
+		$this->doubles['threads']->method('allMessages')->willReturn([['body' => 'Interne notitie.']]);
+		$this->doubles['threads']->expects($this->never())->method('write');
+		$this->doubles['writer']->expects($this->never())->method('createObject');
+
+		$show = $controller->show(id: 'report-1');
+		$reply = $controller->reply(id: 'report-1', body: 'Ik ben geen behandelaar.', visibleToReporter: true);
+		$reveal = $controller->requestReveal(id: 'report-1', motivation: 'Nieuwsgierig.');
+
+		foreach ([$show, $reply, $reveal] as $response) {
+			$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+			$this->assertSame(['error' => 'report_not_found'], $response->getData());
+		}
+
+		$this->assertStringNotContainsString('Interne notitie.', json_encode($show->getData(), JSON_THROW_ON_ERROR));
+
+	}//end testAColleagueOutsideTheGroupsCannotReadAnswerOrAskAboutAReport()
+
+	/**
+	 * A member of the declared handler group reads the report.
+	 */
+	public function testAMemberOfTheHandlerGroupReadsTheReport(): void {
+		$controller = $this->controller(groups: $this->groupManager(member: ['meldpunt']));
+		$this->doubles['reader']->method('readObjectAsUser')->willReturn($this->storedReport());
+		$this->doubles['threads']->method('allMessages')->willReturn([]);
+
+		$this->assertSame(Http::STATUS_OK, $controller->show(id: 'report-1')->getStatus());
+
+	}//end testAMemberOfTheHandlerGroupReadsTheReport()
+
+	/**
+	 * Without a declared handler group the custodian group handles, and a
+	 * member of a group the declaration does not name does not.
+	 */
+	public function testTheCustodianHandlesWhenNoHandlerGroupIsDeclared(): void {
+		$declaration = [ReportTermsService::DECLARATION => ['custodianGroup' => 'vertrouwenspersonen']];
+
+		$custodian = $this->controller(groups: $this->groupManager(member: ['vertrouwenspersonen']), caseType: $declaration);
+		$this->doubles['reader']->method('readObjectAsUser')->willReturn($this->storedReport());
+		$this->doubles['threads']->method('allMessages')->willReturn([]);
+		$this->assertSame(Http::STATUS_OK, $custodian->show(id: 'report-1')->getStatus());
+
+		$handler = $this->controller(groups: $this->groupManager(member: ['meldpunt']), caseType: $declaration);
+		$this->doubles['reader']->method('readObjectAsUser')->willReturn($this->storedReport());
+		$this->assertSame(Http::STATUS_NOT_FOUND, $handler->show(id: 'report-1')->getStatus());
+
+	}//end testTheCustodianHandlesWhenNoHandlerGroupIsDeclared()
+
+	/**
+	 * A group manager in which the staff user is a member of the named groups.
+	 *
+	 * @param array<int, string> $member The groups behandelaar-b is in.
+	 *
+	 * @return IGroupManager
+	 */
+	private function groupManager(array $member): IGroupManager {
+		$groups = $this->createMock(IGroupManager::class);
+		$groups->method('isInGroup')->willReturnCallback(
+			static fn (string $uid, string $group): bool => ($uid === 'behandelaar-b' && in_array($group, $member, true) === true)
+		);
+
+		return $groups;
+	}//end groupManager()
 
 	/**
 	 * A stored report row, carrying the two things that must never be served.
@@ -254,10 +331,19 @@ class ReportControllerTest extends TestCase {
 	 *
 	 * @param array<string, mixed>|null $site The portal the request lands on.
 	 * @param bool                      $user Whether a staff user is signed in.
+	 * @param IGroupManager|null        $groups When given, the REAL reveal service
+	 *                                          decides who may handle, over these groups;
+	 *                                          otherwise a double lets every handler through.
+	 * @param array<string, mixed>|null $caseType The case type the declaration is read from.
 	 *
 	 * @return ReportController
 	 */
-	private function controller(?array $site = ['slug' => 'gemeente-x'], bool $user = true): ReportController {
+	private function controller(
+		?array $site = ['slug' => 'gemeente-x'],
+		bool $user = true,
+		?IGroupManager $groups = null,
+		?array $caseType = null,
+	): ReportController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getRemoteAddress')->willReturn('203.0.113.9');
 
@@ -275,16 +361,28 @@ class ReportControllerTest extends TestCase {
 		}
 
 		$caseTypes = $this->double(CaseTypeReader::class, ['readCaseType']);
-		$caseTypes->method('readCaseType')->willReturn(['custodianGroup' => 'vertrouwenspersonen']);
+		$caseTypes->method('readCaseType')->willReturn(
+			$caseType ?? [ReportTermsService::DECLARATION => ['custodianGroup' => 'vertrouwenspersonen', 'handlerGroup' => 'meldpunt']]
+		);
 
 		$this->doubles = [
 			'challenge' => $this->double(PortalChallengeService::class, ['accepts']),
 			'intake' => $this->double(ReportIntakeService::class, ['accept']),
 			'threads' => $this->double(ReportThreadService::class, ['openByCode', 'messagesForReporter', 'allMessages', 'write']),
 			'terms' => $this->double(ReportTermsService::class, ['forReport']),
-			'reveals' => $this->double(RevealService::class, ['request', 'decide']),
-			'reader' => $this->double(PortalObjectReader::class, ['readObject']),
+			'reveals' => $this->double(RevealService::class, ['request', 'decide', 'mayHandle']),
+			'reader' => $this->double(PortalObjectReader::class, ['readObject', 'readObjectAsUser']),
+			'writer' => $this->double(PortalObjectWriter::class, ['createObject', 'updateObject']),
 		];
+		$this->doubles['reveals']->method('mayHandle')->willReturn(true);
+		if ($groups !== null) {
+			$this->doubles['reveals'] = new RevealService(
+				$this->doubles['reader'],
+				$this->doubles['writer'],
+				$groups,
+				$this->createMock(IEventDispatcher::class)
+			);
+		}
 
 		return new ReportController(
 			$request,

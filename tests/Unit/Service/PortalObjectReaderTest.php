@@ -1074,6 +1074,23 @@ class PortalObjectReaderTest extends TestCase {
 	 * even though OpenRegister returned it for the requested id — the per-row
 	 * ownership check drops it → null (→ 404, no oracle).
 	 */
+	public function testAStaffReadAsksOpenRegisterWithRbacOn(): void {
+		$objectService = $this->objectService(
+			['portalReport' => [['id' => 'r-1', 'uuid' => 'r-1', 'subject' => 'Melding', 'body' => 'Er klopt iets niet.']]]
+		);
+
+		$reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
+		$row = $reader->readObjectAsUser(register: 'portaliq', schema: 'portalReport', id: 'r-1');
+
+		// The staff caller is a Nextcloud user, so OpenRegister judges the
+		// read against their rights (portaliq#799); the portal reads stay off.
+		$this->assertSame('Melding', $row['subject']);
+		$this->assertTrue($objectService->calls[0]['rbac']);
+		$this->assertFalse($objectService->calls[0]['multitenancy']);
+		$this->assertNull($reader->readObjectAsUser(register: 'portaliq', schema: 'portalReport', id: ''));
+
+	}//end testAStaffReadAsksOpenRegisterWithRbacOn()
+
 	public function testReadObjectReturnsNullForAForeignOwnedObject(): void {
 		$objectService = $this->objectService(
 			[

@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.36.0"
+        "version": "0.36.1"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.36.0",
+                "version": "0.36.1",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -5010,7 +5010,7 @@
                     ]
                 },
                 "icon": "FileTreeOutline",
-                "version": "0.1.0",
+                "version": "0.2.0",
                 "title": "Portal Case Type",
                 "description": "What a citizen may change on a case of this type, and until when. The flag lives on the field, so `portalWritable` carries one entry per field; the two windows say in which statuses an amendment and a document are still accepted; `portalStatusLabels` carries the words the citizen reads. A case app owns all four and the portal renders them without adding a vocabulary of its own.",
                 "type": "object",
@@ -5189,6 +5189,12 @@
                                 "type": "string",
                                 "description": "The Nextcloud group whose members may allow a reveal. An instance administrator who is not in it may not.",
                                 "example": "vertrouwenspersonen"
+                            },
+                            "handlerGroup": {
+                                "title": "Handler group",
+                                "type": "string",
+                                "description": "The Nextcloud group whose members may read a report, write on its thread and ask for a reveal. When it is not set, only the custodian group may.",
+                                "example": "meldpunt-integriteit"
                             },
                             "acknowledgementDays": {
                                 "title": "Acknowledgement term",
