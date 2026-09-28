@@ -122,6 +122,16 @@ assertEqual(
 	['/x/session/nextcloud?portal=la-franken', '/x/session/oidc/start?provider=digid&portal=la-franken'],
 )
 
+// #802: `oidc` is a portal MODE (Google, Microsoft, Keycloak through one
+// integration), not a provider the auth edge knows. The edge's providers are
+// digid, eherkenning, eidas and generic, so a link carrying `provider=oidc`
+// was refused whatever the organisation had configured.
+assertEqual(
+	'the oidc mode starts the generic provider, which is the one the edge knows',
+	signInRoutes({ slug: 'la-franken', authentication: { modes: ['oidc'] } }, '/x').map((r) => r.href),
+	['/x/session/oidc/start?provider=generic&portal=la-franken'],
+)
+
 console.log('adoptSessionToken')
 
 /**

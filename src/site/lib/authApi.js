@@ -181,6 +181,13 @@ export function signInRoutes(site, authBase) {
 			: ''
 	const query = [scope, returnTo].filter(Boolean).join('&')
 
+	// A MODE IS NOT A PROVIDER. The auth edge knows the providers digid,
+	// eherkenning, eidas and generic. `local` and `oidc` are portal modes that
+	// both sign in through the organisation's generic OIDC broker, so a link
+	// carrying `provider=oidc` was refused whatever the organisation had
+	// configured (#802).
+	const providers = { local: 'generic', oidc: 'generic' }
+
 	return modes
 		.filter((mode) => mode !== 'public' && Object.hasOwn(labels, mode))
 		.map((mode) => ({
@@ -190,7 +197,7 @@ export function signInRoutes(site, authBase) {
 				mode === 'nextcloud'
 					? `${authBase}/session/nextcloud${query ? `?${query}` : ''}`
 					: `${authBase}/session/oidc/start?provider=${encodeURIComponent(
-							mode === 'local' ? 'generic' : mode,
+							providers[mode] || mode,
 						)}${query ? `&${query}` : ''}`,
 		}))
 }

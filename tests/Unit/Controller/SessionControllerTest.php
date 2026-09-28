@@ -369,6 +369,123 @@ class SessionControllerTest extends TestCase {
 
 	}//end testOidcStartRedirectsToTheBrokerWithStateNonceAndPkce()
 
+
+	/**
+	 * #802: the public site starts a sign-in with `?provider=&portal=<slug>`,
+	 * never `?org=`. Dispatched the way Nextcloud's dispatcher does it (each
+	 * method parameter filled from the request by name, anything else
+	 * dropped), that link used to reach `oidcStart()` with an empty
+	 * organisation and answer the generic error for every configured
+	 * provider. The portal's own `organisation` field names the tenant.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/signin-integriq-broker-login/design.md#d2-two-new-routes-and-the-spas-follow-the-route-field
+	 */
+	public function testOidcStartFromTheSiteResolvesTheOrganisationFromThePortalSlug(): void {
+		$portals = $this->createMock(originalClassName: PortalResolver::class);
+		$portals->expects($this->once())->method('resolve')
+			->with($this->anything(), 'la-franken')
+			->willReturn(['slug' => 'la-franken', 'organisation' => 'gemeente-x']);
+
+		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
+		$orgConfig->expects($this->once())->method('isLoginProviderAllowed')->with('gemeente-x', 'eherkenning')->willReturn(true);
+		$orgConfig->method('resolveOidcConfig')->with('gemeente-x', 'eherkenning')->willReturn($this->oidcConfigFixture());
+
+		$oidc = $this->createMock(OidcClientService::class);
+		$oidc->method('discover')->willReturn($this->discoveryFixture());
+		$oidc->method('generateToken')->willReturnOnConsecutiveCalls('state-1', 'nonce-1');
+		$oidc->method('generatePkce')->willReturn(['verifier' => 'verifier-1', 'challenge' => 'challenge-1']);
+		$oidc->method('buildAuthorizationUrl')->willReturn('https://broker.example/authorize?state=state-1');
+
+		// The state row must carry the ORGANISATION, not the portal slug: the
+		// callback resolves the broker config from what was stored here.
+		$stateStore = $this->createMock(OidcStateStoreService::class);
+		$stateStore->expects($this->once())->method('create')->with('state-1', 'nonce-1', 'verifier-1', 'gemeente-x', 'eherkenning', $this->anything())->willReturn(true);
+
+		$controller = $this->controller(session: $this->createMock(PortalSessionService::class), orgConfig: $orgConfig, oidc: $oidc, stateStore: $stateStore, portals: $portals);
+		$response = $this->dispatch(controller: $controller, method: 'oidcStart', params: ['provider' => 'eherkenning', 'portal' => 'la-franken']);
+
+		$this->assertSame(Http::STATUS_FOUND, $response->getStatus());
+
+	}//end testOidcStartFromTheSiteResolvesTheOrganisationFromThePortalSlug()
+
+
+	/**
+	 * An explicit `org` still wins: the portal SPA sends it, and a slug the
+	 * caller did not name must not be looked up on its behalf.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/signin-integriq-broker-login/design.md#d2-two-new-routes-and-the-spas-follow-the-route-field
+	 */
+	public function testOidcStartWithAnExplicitOrgDoesNotConsultThePortal(): void {
+		$portals = $this->createMock(originalClassName: PortalResolver::class);
+		$portals->expects($this->never())->method('resolve');
+
+		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
+		$orgConfig->expects($this->once())->method('isLoginProviderAllowed')->with('gemeente-x', 'digid')->willReturn(false);
+
+		$controller = $this->controller(session: $this->createMock(PortalSessionService::class), orgConfig: $orgConfig, portals: $portals);
+		$response = $this->dispatch(controller: $controller, method: 'oidcStart', params: ['org' => 'gemeente-x', 'provider' => 'digid']);
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+
+	}//end testOidcStartWithAnExplicitOrgDoesNotConsultThePortal()
+
+
+	/**
+	 * A portal slug that names no published portal, or a portal with no
+	 * organisation, is the same generic error as every other refusal here:
+	 * the start must not become an oracle for which portals exist.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/supplier-portal/spec.md#every-validation-failure-is-an-identical-generic-error
+	 */
+	public function testOidcStartWithAnUnknownPortalIsTheGenericError(): void {
+		foreach ([null, ['slug' => 'la-franken']] as $resolved) {
+			$portals = $this->createMock(originalClassName: PortalResolver::class);
+			$portals->method('resolve')->willReturn($resolved);
+
+			$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
+			$orgConfig->expects($this->never())->method('resolveOidcConfig');
+
+			$controller = $this->controller(session: $this->createMock(PortalSessionService::class), orgConfig: $orgConfig, portals: $portals);
+			$response = $this->dispatch(controller: $controller, method: 'oidcStart', params: ['provider' => 'digid', 'portal' => 'la-franken']);
+
+			$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+			$this->assertSame(['error' => 'oidc_failed'], $response->getData());
+		}
+
+	}//end testOidcStartWithAnUnknownPortalIsTheGenericError()
+
+
+	/**
+	 * Call a controller method the way Nextcloud's dispatcher does: every
+	 * declared parameter is taken from the request by NAME and falls back to
+	 * its default, and a request parameter the method does not declare is
+	 * silently dropped. Calling with PHP named arguments instead would turn
+	 * an undeclared parameter into an Error the live request never sees.
+	 *
+	 * @param SessionController    $controller The controller.
+	 * @param string               $method     The action.
+	 * @param array<string, mixed> $params     The request parameters.
+	 *
+	 * @return \OCP\AppFramework\Http\Response The response.
+	 */
+	private function dispatch(SessionController $controller, string $method, array $params): \OCP\AppFramework\Http\Response {
+		$reflection = new \ReflectionMethod($controller, $method);
+		$arguments = [];
+		foreach ($reflection->getParameters() as $parameter) {
+			$name = $parameter->getName();
+			$arguments[] = array_key_exists($name, $params) === true ? $params[$name] : $parameter->getDefaultValue();
+		}
+
+		return $reflection->invokeArgs($controller, $arguments);
+
+	}//end dispatch()
+
 	/**
 	 * @return array<string, array{0: callable}>
 	 */
