@@ -255,11 +255,18 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.37.1 (newsItem 0.2.1): a translation entry also carries the title,
 		// translated with the body under the same notice
 		// (news-title-and-newsletter-translation). Description only.
+		// 0.38.0 (newsletter 0.2.0): a newsletter keeps the AI translations of
+		// its own title (`translations`), in the shape a newsItem keeps
+		// (newsletter-title-translation). Additive.
 		// Every new schema is listed in
 		// `components.registers.portaliq.schemas` (ImportHandler binds only
 		// what is listed there) and declares a non-empty `read` rule.
-		$this->assertSame('0.37.1', self::$register['info']['version']);
-		$this->assertSame('0.37.1', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.38.0', self::$register['info']['version']);
+		$this->assertSame('0.38.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.2.0', self::$register['components']['schemas']['newsletter']['version']);
+		$this->assertArrayHasKey('translations', self::$register['components']['schemas']['newsletter']['properties']);
+		$this->assertSame('array', self::$register['components']['schemas']['newsletter']['properties']['translations']['type']);
+		$this->assertStringContainsString('title', self::$register['components']['schemas']['newsletter']['properties']['translations']['description']);
 		$this->assertSame('0.2.1', self::$register['components']['schemas']['newsItem']['version']);
 		$this->assertStringContainsString('title', self::$register['components']['schemas']['newsItem']['properties']['translations']['description']);
 		$this->assertArrayHasKey('translations', self::$register['components']['schemas']['newsItem']['properties']);

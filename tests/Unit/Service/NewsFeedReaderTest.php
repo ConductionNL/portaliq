@@ -315,7 +315,8 @@ class NewsFeedReaderTest extends TestCase {
 		$this->assertSame('[ar] Dicht.', $archive[0]['items'][0]['translation']['text']);
 		$this->assertSame('[ar] Studiedag', $archive[0]['items'][0]['translation']['title']);
 		$this->assertSame([], $archive[0]['items'][0]['photoRefs']);
-		$this->assertSame(['foto-1'], $saved[0]['object']['photoRefs']);
+		$itemSaves = array_values(array_filter($saved, static fn (array $save): bool => $save['schema'] === 'newsItem'));
+		$this->assertSame(['foto-1'], $itemSaves[0]['object']['photoRefs']);
 		$this->assertSame('September', $archive[0]['title']);
 	}//end testArchiveCarriesItsItemsTranslatedLikeTheFeed()
 
@@ -336,4 +337,90 @@ class NewsFeedReaderTest extends TestCase {
 		$this->assertArrayNotHasKey('translation', $archive[0]['items'][0]);
 		$this->assertSame([], $saved);
 	}//end testArchiveWithoutALanguageCarriesItsItemsAsWritten()
+
+	/**
+	 * A sent newsletter's own title is translated into its own `translations`
+	 * entry, in the shape a news item keeps, with one hermiq call and one save
+	 * on the newsletter row.
+	 *
+	 * @spec openspec/changes/newsletter-title-translation/specs/guardian-message-translation/spec.md#requirement-a-newsletter-keeps-its-title-translations-next-to-the-original
+	 */
+	public function testArchiveTranslatesTheNewslettersOwnTitle(): void {
+		$newsletters = [['id' => 'nl1', 'sentAt' => '2026-09-15T00:00:00+00:00', 'target' => ['schoolRef' => 'school-1'], 'title' => 'Nieuwsbrief september', 'itemRefs' => []]];
+		$saved = [];
+		$reader = new NewsFeedReader($this->container([], $newsletters), $this->schoolOneAudience(), $this->passThroughGate(), $this->createMock(LoggerInterface::class), $this->translator($saved));
+
+		$archive = $reader->archiveFor('guardian-anna-devries', 'ar');
+
+		$this->assertSame('Nieuwsbrief september', $archive[0]['title']);
+		$this->assertSame('[ar] Nieuwsbrief september', $archive[0]['translation']['title']);
+		$this->assertSame('[ar] Nieuwsbrief september', $archive[0]['translation']['text']);
+		$this->assertTrue($archive[0]['translation']['translatedByAi']);
+		$this->assertCount(1, $saved);
+		$this->assertSame('newsletter', $saved[0]['schema']);
+		$this->assertSame('nl1', $saved[0]['uuid']);
+		$this->assertSame('Nieuwsbrief september', $saved[0]['object']['title']);
+		$this->assertArrayNotHasKey('items', $saved[0]['object']);
+		$this->assertArrayNotHasKey('translation', $saved[0]['object']);
+		$this->assertCount(1, $saved[0]['object']['translations']);
+		$this->assertSame('[ar] Nieuwsbrief september', $saved[0]['object']['translations'][0]['title']);
+		$this->assertSame('portaliq:newsletter:nl1', $saved[0]['object']['translations'][0]['originalRef']);
+	}//end testArchiveTranslatesTheNewslettersOwnTitle()
+
+	/**
+	 * A stored newsletter title translation is reused: nothing is saved again.
+	 *
+	 * @spec openspec/changes/newsletter-title-translation/specs/guardian-message-translation/spec.md#requirement-a-newsletter-keeps-its-title-translations-next-to-the-original
+	 */
+	public function testArchiveReusesAStoredNewsletterTitleTranslation(): void {
+		$entry = ['targetLanguage' => 'ar', 'text' => 'نشرة سبتمبر', 'title' => 'نشرة سبتمبر', 'translatedByAi' => true, 'sourceLanguage' => 'nl', 'originalRef' => 'portaliq:newsletter:nl1'];
+		$newsletters = [['id' => 'nl1', 'sentAt' => '2026-09-15T00:00:00+00:00', 'target' => ['schoolRef' => 'school-1'], 'title' => 'Nieuwsbrief september', 'itemRefs' => [], 'translations' => [$entry]]];
+		$saved = [];
+		$reader = new NewsFeedReader($this->container([], $newsletters), $this->schoolOneAudience(), $this->passThroughGate(), $this->createMock(LoggerInterface::class), $this->translator($saved));
+
+		$archive = $reader->archiveFor('guardian-anna-devries', 'ar');
+
+		$this->assertSame('نشرة سبتمبر', $archive[0]['translation']['title']);
+		$this->assertSame([], $saved);
+	}//end testArchiveReusesAStoredNewsletterTitleTranslation()
+
+	/**
+	 * Newsletter titles and archive items share the one per-request bound of
+	 * new translations.
+	 *
+	 * @spec openspec/changes/newsletter-title-translation/specs/guardian-message-translation/spec.md#requirement-a-newsletter-keeps-its-title-translations-next-to-the-original
+	 */
+	public function testNewsletterTitlesAndItemsShareThePerRequestBound(): void {
+		$items = [
+			['id' => 'n1', 'status' => 'published', 'target' => ['schoolRef' => 'school-1'], 'title' => 'Een', 'body' => 'Eerste.'],
+			['id' => 'n2', 'status' => 'published', 'target' => ['schoolRef' => 'school-1'], 'title' => 'Twee', 'body' => 'Tweede.'],
+		];
+		$newsletters = [
+			['id' => 'nl1', 'sentAt' => '2026-09-15T00:00:00+00:00', 'target' => ['schoolRef' => 'school-1'], 'title' => 'September', 'itemRefs' => ['n1']],
+			['id' => 'nl2', 'sentAt' => '2026-06-15T00:00:00+00:00', 'target' => ['schoolRef' => 'school-1'], 'title' => 'Juni', 'itemRefs' => ['n2']],
+		];
+		$saved = [];
+		$reader = new NewsFeedReader($this->container($items, $newsletters), $this->schoolOneAudience(), $this->passThroughGate(), $this->createMock(LoggerInterface::class), $this->translator($saved));
+
+		$reader->archiveFor('guardian-anna-devries', 'ar');
+
+		$this->assertCount(GuardianMessageTranslator::NEW_PER_REQUEST, $saved);
+		$this->assertSame(['newsletter', 'newsletter', 'newsItem'], array_column($saved, 'schema'));
+	}//end testNewsletterTitlesAndItemsShareThePerRequestBound()
+
+	/**
+	 * Without a language the newsletter title stays as written, with no notice.
+	 *
+	 * @spec openspec/changes/newsletter-title-translation/specs/guardian-message-translation/spec.md#requirement-a-newsletter-keeps-its-title-translations-next-to-the-original
+	 */
+	public function testArchiveWithoutALanguageLeavesTheNewsletterTitleAsWritten(): void {
+		$newsletters = [['id' => 'nl1', 'sentAt' => '2026-09-15T00:00:00+00:00', 'target' => ['schoolRef' => 'school-1'], 'title' => 'September', 'itemRefs' => []]];
+		$saved = [];
+		$reader = new NewsFeedReader($this->container([], $newsletters), $this->schoolOneAudience(), $this->passThroughGate(), $this->createMock(LoggerInterface::class), $this->translator($saved));
+
+		$archive = $reader->archiveFor('guardian-anna-devries');
+
+		$this->assertArrayNotHasKey('translation', $archive[0]);
+		$this->assertSame([], $saved);
+	}//end testArchiveWithoutALanguageLeavesTheNewsletterTitleAsWritten()
 }//end class
