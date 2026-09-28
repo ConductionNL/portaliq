@@ -38,6 +38,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use Psr\Log\LoggerInterface;
+
 /**
  * Keeps the plain rule keys and the change rules the listener can act on.
  *
@@ -51,6 +53,34 @@ class NotificationRuleNormaliser {
 	 * @var string
 	 */
 	public const OPERATOR_CHANGED = 'changed';
+
+	/**
+	 * Normalise a whole contribution's `notifications`, logging each dropped
+	 * rule with the app that declared it. A contribution without the key is
+	 * returned as it is.
+	 *
+	 * @param array<string, mixed> $contribution The normalised contribution.
+	 * @param string               $appId        The app that contributed it.
+	 * @param LoggerInterface      $logger       Where a dropped rule is reported.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-case-app-declares-which-change-a-resident-hears-about-req-nap-001
+	 */
+	public function normaliseContribution(array $contribution, string $appId, LoggerInterface $logger): array {
+		if (array_key_exists('notifications', $contribution) === false) {
+			return $contribution;
+		}
+
+		$result = $this->normalise(notifications: $contribution['notifications'], collections: (array)($contribution['collections'] ?? []));
+		foreach ($result['dropped'] as $reason) {
+			$logger->warning('Portaliq: notification rule dropped', ['app' => $appId, 'rule' => $reason]);
+		}
+
+		$contribution['notifications'] = $result['kept'];
+
+		return $contribution;
+	}//end normaliseContribution()
 
 	/**
 	 * Normalise a contribution's `notifications` list.
@@ -119,24 +149,31 @@ class NotificationRuleNormaliser {
 			return $label.': the collection is not scoped by the subject reference on the record';
 		}
 
-		$on = ($rule['on'] ?? null);
-		$field = '';
-		$operator = '';
-		if (is_array($on) === true) {
-			$field = (string)($on['field'] ?? '');
-			$operator = (string)($on['operator'] ?? '');
-		}
+		return $this->conditionRefusal(rule: $rule, collection: $collection, label: $label);
+	}//end refusal()
 
-		if ($operator !== self::OPERATOR_CHANGED) {
+	/**
+	 * Why a rule's `on` condition cannot be kept, or null when it can.
+	 *
+	 * @param array<string, mixed> $rule       The rule.
+	 * @param array<string, mixed> $collection Its collection.
+	 * @param string               $label      The rule, named for the log.
+	 *
+	 * @return string|null The reason.
+	 */
+	private function conditionRefusal(array $rule, array $collection, string $label): ?string {
+		$condition = ($rule['on'] ?? null);
+		if (is_array($condition) === false || (string)($condition['operator'] ?? '') !== self::OPERATOR_CHANGED) {
 			return $label.': the only operator is "changed"';
 		}
 
+		$field = (string)($condition['field'] ?? '');
 		if ($this->projects(collection: $collection, field: $field) === false) {
 			return $label.': the field "'.$field.'" is not projected to the resident';
 		}
 
 		return null;
-	}//end refusal()
+	}//end conditionRefusal()
 
 	/**
 	 * The kept rule, reduced to the keys the listener reads.

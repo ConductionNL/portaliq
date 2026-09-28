@@ -258,11 +258,18 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.38.0 (newsletter 0.2.0): a newsletter keeps the AI translations of
 		// its own title (`translations`), in the shape a newsItem keeps
 		// (newsletter-title-translation). Additive.
+		// 0.39.0 (portalMessage 0.5.0, portalNotification 0.2.0, portalAccount
+		// 0.11.0): a message names the record it is about (`recordLink`), a
+		// notification attempt can be a `push`, and an account keeps its
+		// per-kind notice choices (`notificationPreferences`)
+		// (inbox-notifications-and-preferences). Additive.
 		// Every new schema is listed in
 		// `components.registers.portaliq.schemas` (ImportHandler binds only
 		// what is listed there) and declares a non-empty `read` rule.
-		$this->assertSame('0.38.0', self::$register['info']['version']);
-		$this->assertSame('0.38.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.39.0', self::$register['info']['version']);
+		$this->assertSame('0.39.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('object', self::$register['components']['schemas']['portalMessage']['properties']['recordLink']['type']);
+		$this->assertSame('object', self::$register['components']['schemas']['portalAccount']['properties']['notificationPreferences']['type']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['newsletter']['version']);
 		$this->assertArrayHasKey('translations', self::$register['components']['schemas']['newsletter']['properties']);
 		$this->assertSame('array', self::$register['components']['schemas']['newsletter']['properties']['translations']['type']);
@@ -296,7 +303,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['page']['version']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['portal']['version']);
-		$this->assertSame('0.10.0', self::$register['components']['schemas']['portalAccount']['version']);
+		$this->assertSame('0.11.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalSession']['version']);
 
@@ -438,7 +445,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 			['accountRef', 'ruleKey', 'channel', 'status', 'attempts', 'lastAttemptAt'],
 			$notification['required']
 		);
-		$this->assertSame(['email'], $notification['properties']['channel']['enum']);
+		$this->assertSame(['email', 'push'], $notification['properties']['channel']['enum']);
 		$this->assertSame(['sent', 'failed'], $notification['properties']['status']['enum']);
 
 		$account = $schemas['portalAccount'];

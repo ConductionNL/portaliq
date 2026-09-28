@@ -30,7 +30,10 @@ const STAFF_HEADERS = {
  * @param stamp A unique suffix.
  * @return The bearer.
  */
-async function signedInResident(request: APIRequestContext, stamp: number): Promise<string> {
+async function signedInResident(
+	request: APIRequestContext,
+	stamp: number,
+): Promise<string> {
 	const provisioned = await request.post('/apps/portaliq/api/accounts/provision', {
 		headers: STAFF_HEADERS,
 		data: {
@@ -47,34 +50,58 @@ async function signedInResident(request: APIRequestContext, stamp: number): Prom
 	const login = await request.post(`${API_BASE}/session/dev-login`, {
 		data: { subjectRef, audience: 'client', organisation: 'dev-org' },
 	})
-	expect(login.ok(), 'dev-login must be enabled (see tests/e2e/ci-seed.sh)').toBeTruthy()
+	expect(
+		login.ok(),
+		'dev-login must be enabled (see tests/e2e/ci-seed.sh)',
+	).toBeTruthy()
 	const { token } = await login.json()
 	return token
 }
 
-test('switching e-mail off for case changes survives a reload', async ({ request }) => {
+test('switching e-mail off for case changes survives a reload', async ({
+	request,
+}) => {
 	const token = await signedInResident(request, Date.now())
 	const auth = { Authorization: `Bearer ${token}` }
 
-	const before = await request.get(`${API_BASE}/identity/notification-preferences`, { headers: auth })
+	const before = await request.get(
+		`${API_BASE}/identity/notification-preferences`,
+		{ headers: auth },
+	)
 	expect(before.ok()).toBeTruthy()
 	expect((await before.json()).preferences['case.updated'].email).toBe(true)
 
-	const saved = await request.patch(`${API_BASE}/identity/notification-preferences`, {
-		headers: auth,
-		data: { preferences: { 'case.updated': { email: false } } },
-	})
+	const saved = await request.patch(
+		`${API_BASE}/identity/notification-preferences`,
+		{
+			headers: auth,
+			data: { preferences: { 'case.updated': { email: false } } },
+		},
+	)
 	expect(saved.ok()).toBeTruthy()
 
-	const after = await request.get(`${API_BASE}/identity/notification-preferences`, { headers: auth })
+	const after = await request.get(
+		`${API_BASE}/identity/notification-preferences`,
+		{ headers: auth },
+	)
 	const body = await after.json()
 	expect(body.preferences['case.updated'].email).toBe(false)
 	expect(body.preferences['message.created'].email).toBe(true)
 })
 
-test('a record link keeps its target through the sign-in and leaves the address bar', async ({ page }) => {
-	await page.goto('/apps/portaliq/portal?org=dev-org#open=portaliq/berichten/some-record')
+test('a record link keeps its target through the sign-in and leaves the address bar', async ({
+	page,
+}) => {
+	await page.goto(
+		'/apps/portaliq/portal?org=dev-org#open=portaliq/berichten/some-record',
+	)
 	await expect(page).not.toHaveURL(/#open=/)
-	const kept = await page.evaluate(() => window.sessionStorage.getItem('portaliq.openRecord'))
-	expect(JSON.parse(kept || 'null')).toEqual({ app: 'portaliq', collection: 'berichten', id: 'some-record' })
+	const kept = await page.evaluate(() =>
+		window.sessionStorage.getItem('portaliq.openRecord'),
+	)
+	expect(JSON.parse(kept || 'null')).toEqual({
+		app: 'portaliq',
+		collection: 'berichten',
+		id: 'some-record',
+	})
 })

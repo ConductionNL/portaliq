@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\BackgroundJob;
 
 use OCA\Portaliq\BackgroundJob\NotificationDispatchJob;
+use OCA\Portaliq\Service\Notifications\NotificationChannels;
 use OCA\Portaliq\Service\Notifications\PushDeliveryService;
 use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCA\Portaliq\Service\PortalObjectReader;
@@ -579,7 +580,7 @@ class NotificationDispatchJobTest extends TestCase {
 			$this->deepLinks(),
 			$this->config(),
 			$this->createMock(LoggerInterface::class),
-			$push
+			new NotificationChannels(push: $push, reader: $this->reader(account: $account, subscriptions: $subscriptions))
 		);
 	}//end jobWithPush()
 

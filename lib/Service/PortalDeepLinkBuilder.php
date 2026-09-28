@@ -140,4 +140,24 @@ class PortalDeepLinkBuilder {
 
 		return $base.'#open='.rawurlencode($app).'/'.rawurlencode($collection).'/'.rawurlencode($id);
 	}//end forRecord()
+
+	/**
+	 * The link a notice carries: the record when the notice is about one,
+	 * else the portal of the tenant.
+	 *
+	 * @param string                $organisation The tenant slug.
+	 * @param array<string, string> $record       The record ({app, collection, id}), or [].
+	 *
+	 * @return string The absolute URL.
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-notification-leads-to-the-record-req-nap-005
+	 */
+	public function forNotice(string $organisation, array $record): string {
+		return $this->forRecord(
+			organisation: $organisation,
+			app: (string)($record['app'] ?? ''),
+			collection: (string)($record['collection'] ?? ''),
+			id: (string)($record['id'] ?? '')
+		);
+	}//end forNotice()
 }//end class

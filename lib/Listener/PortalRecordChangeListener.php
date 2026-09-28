@@ -279,8 +279,8 @@ class PortalRecordChangeListener implements IEventListener {
 	 * @return void
 	 */
 	private function writeMessage(array $account, string $title, array $recordLink): void {
-		$nl = $this->l10nFactory->get('portaliq', 'nl');
-		$en = $this->l10nFactory->get('portaliq', 'en');
+		$dutch = $this->l10nFactory->get('portaliq', 'nl');
+		$english = $this->l10nFactory->get('portaliq', 'en');
 		$written = $this->writer->createObject(
 			register: 'portaliq',
 			schema: 'portalMessage',
@@ -288,8 +288,8 @@ class PortalRecordChangeListener implements IEventListener {
 			subjectRef: (string)($account['subjectRef'] ?? ''),
 			organisation: (string)($account['organisation'] ?? ''),
 			data: [
-				'subject' => $nl->t(self::SUBJECT_KEY, [$title]).' / '.$en->t(self::SUBJECT_KEY, [$title]),
-				'body' => $nl->t(self::BODY_KEY)."\n\n".$en->t(self::BODY_KEY),
+				'subject' => $dutch->t(self::SUBJECT_KEY, [$title]).' / '.$english->t(self::SUBJECT_KEY, [$title]),
+				'body' => $dutch->t(self::BODY_KEY)."\n\n".$english->t(self::BODY_KEY),
 				'read' => false,
 				'receivedAt' => gmdate('c'),
 				'recordLink' => $recordLink,

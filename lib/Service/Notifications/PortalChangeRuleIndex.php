@@ -130,6 +130,8 @@ class PortalChangeRuleIndex {
 	 * @param string $schema   The object's schema id or slug.
 	 *
 	 * @return bool
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-case-apps-message-triggers-an-e-mail-req-nap-004
 	 */
 	public function isPortalMessage(string $register, string $schema): bool {
 		return in_array('portaliq', $this->names(map: 'register', value: $register), true)
@@ -219,7 +221,7 @@ class PortalChangeRuleIndex {
 		}
 
 		$entries = [];
-		foreach ($this->registry->contributionsForEveryAudience() as $contribution) {
+		foreach ($this->contributions() as $contribution) {
 			foreach ($this->entriesOf(contribution: $contribution) as $entry) {
 				// Two audiences served by the same collection give the same
 				// entry; keep one, so a change is reported once.
@@ -231,6 +233,29 @@ class PortalChangeRuleIndex {
 
 		return $this->entries;
 	}//end entries()
+
+	/**
+	 * Every app's contribution for every audience it serves, asked with the
+	 * highest trust so no rule is lost to a trust filter. The resident's own
+	 * read still applies their trust when they open the record.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function contributions(): array {
+		$contributions = [];
+		foreach ($this->registry->servedAudiences() as $audience) {
+			$aggregate = $this->registry->aggregateFor(
+				subject: ['audience' => $audience, 'trust' => 'high', 'subjectRef' => '', 'organisation' => '']
+			);
+			foreach ((array)($aggregate['contributions'] ?? []) as $contribution) {
+				if (is_array($contribution) === true) {
+					$contributions[] = $contribution;
+				}
+			}
+		}
+
+		return $contributions;
+	}//end contributions()
 
 	/**
 	 * The entries one contribution declares.
@@ -253,28 +278,61 @@ class PortalChangeRuleIndex {
 			}
 		}
 
+		return array_merge(
+			$this->changeEntries(app: $app, notifications: $notifications, collections: $collections),
+			$this->inboxEntries(app: $app, notifications: $notifications, collections: $collections)
+		);
+	}//end entriesOf()
+
+	/**
+	 * The change rules of one contribution.
+	 *
+	 * @param string                              $app           The contributing app.
+	 * @param array<int, mixed>                   $notifications The normalised notifications.
+	 * @param array<string, array<string, mixed>> $collections   The collections by id.
+	 *
+	 * @return array<int, array<string, string>>
+	 */
+	private function changeEntries(string $app, array $notifications, array $collections): array {
 		$entries = [];
 		foreach ($notifications as $rule) {
-			if (is_array($rule) === true && isset($collections[(string)($rule['collection'] ?? '')]) === true) {
-				$collection = $collections[(string)$rule['collection']];
-				$entries[] = $this->entry(kind: 'change', app: $app, collection: $collection) + [
-					'ruleKey' => (string)$rule['ruleKey'],
-					'field' => (string)($rule['on']['field'] ?? ''),
-					'titleField' => (string)($rule['titleField'] ?? ''),
-				];
+			if (is_array($rule) === false || isset($collections[(string)($rule['collection'] ?? '')]) === false) {
+				continue;
 			}
+
+			$entries[] = $this->entry(kind: 'change', app: $app, collection: $collections[(string)$rule['collection']]) + [
+				'ruleKey' => (string)$rule['ruleKey'],
+				'field' => (string)($rule['on']['field'] ?? ''),
+				'titleField' => (string)($rule['titleField'] ?? ''),
+			];
 		}
 
-		if (in_array(NotificationDispatchService::RULE_MESSAGE_CREATED, $notifications, true) === true) {
-			foreach ($collections as $collection) {
-				if ((string)($collection['kind'] ?? '') === 'inbox') {
-					$entries[] = $this->entry(kind: 'inbox', app: $app, collection: $collection);
-				}
+		return $entries;
+	}//end changeEntries()
+
+	/**
+	 * The inbox collections of one contribution that declares `message.created`.
+	 *
+	 * @param string                              $app           The contributing app.
+	 * @param array<int, mixed>                   $notifications The normalised notifications.
+	 * @param array<string, array<string, mixed>> $collections   The collections by id.
+	 *
+	 * @return array<int, array<string, string>>
+	 */
+	private function inboxEntries(string $app, array $notifications, array $collections): array {
+		if (in_array(NotificationDispatchService::RULE_MESSAGE_CREATED, $notifications, true) === false) {
+			return [];
+		}
+
+		$entries = [];
+		foreach ($collections as $collection) {
+			if ((string)($collection['kind'] ?? '') === 'inbox') {
+				$entries[] = $this->entry(kind: 'inbox', app: $app, collection: $collection);
 			}
 		}
 
 		return $entries;
-	}//end entriesOf()
+	}//end inboxEntries()
 
 	/**
 	 * The fields every entry carries.

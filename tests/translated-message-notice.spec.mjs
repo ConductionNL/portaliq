@@ -49,6 +49,9 @@ async function load(relative) {
 
 const translated = await load('components/TranslatedText.jsx')
 const { default: TranslatedText, languageLabel, noticeText, isLabelledTranslation } = translated
+// InboxPage imports NotificationSettings (inbox-notifications-and-preferences),
+// so it is compiled first, as TranslatedText is.
+await load('components/NotificationSettings.jsx')
 const { default: InboxPage } = await load('components/InboxPage.jsx')
 const { pickerLabel, MESSAGE_LANGUAGES } = await load('components/MessagesPage.jsx')
 

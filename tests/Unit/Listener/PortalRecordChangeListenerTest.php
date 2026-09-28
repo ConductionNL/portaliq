@@ -81,7 +81,8 @@ class PortalRecordChangeListenerTest extends TestCase {
 	 */
 	private function listener(bool $dispatchThrows = false): PortalRecordChangeListener {
 		$registry = $this->createMock(PortalContributionRegistry::class);
-		$registry->method('contributionsForEveryAudience')->willReturn([
+		$registry->method('servedAudiences')->willReturn(['client', 'guardian']);
+		$registry->method('aggregateFor')->willReturn(['contributions' => [
 			[
 				'app' => 'dossiq',
 				'audience' => 'client',
@@ -94,7 +95,7 @@ class PortalRecordChangeListenerTest extends TestCase {
 					['ruleKey' => 'case.updated', 'collection' => 'mijnZaken', 'on' => ['field' => 'status', 'operator' => 'changed'], 'titleField' => 'identifier'],
 				],
 			],
-		]);
+		]]);
 
 		$mapper = new class {
 			/**

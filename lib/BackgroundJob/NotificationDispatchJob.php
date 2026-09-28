@@ -45,8 +45,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\BackgroundJob;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\Notifications\PushDeliveryService;
+use OCA\Portaliq\Service\Notifications\NotificationChannels;
 use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
@@ -92,25 +91,11 @@ class NotificationDispatchJob extends QueuedJob {
 	private const CHANNEL_EMAIL = 'email';
 
 	/**
-	 * The push channel (inbox-notifications-and-preferences).
+	 * This app's id, for its own configuration.
 	 *
 	 * @var string
 	 */
-	private const CHANNEL_PUSH = 'push';
-
-	/**
-	 * The kind every change rule counts as in the resident's preferences.
-	 *
-	 * @var string
-	 */
-	public const KIND_CASE_UPDATED = 'case.updated';
-
-	/**
-	 * The kind a new message counts as in the resident's preferences.
-	 *
-	 * @var string
-	 */
-	public const KIND_MESSAGE_CREATED = 'message.created';
+	private const APP_ID = 'portaliq';
 
 	/**
 	 * A change rule's subject line, `%1$s` the organisation.
@@ -164,7 +149,7 @@ class NotificationDispatchJob extends QueuedJob {
 	 * @param PortalDeepLinkBuilder $deepLinks Builds the portal deep link from the route table (WOO-570).
 	 * @param IConfig $config Reads the configurable failure threshold.
 	 * @param LoggerInterface $logger The logger.
-	 * @param PushDeliveryService|null $push Sends a web push when the kind's push choice is on.
+	 * @param NotificationChannels|null $channels The resident's per-kind choices and the push.
 	 */
 	public function __construct(
 		ITimeFactory $time,
@@ -176,7 +161,7 @@ class NotificationDispatchJob extends QueuedJob {
 		private readonly PortalDeepLinkBuilder $deepLinks,
 		private readonly IConfig $config,
 		private readonly LoggerInterface $logger,
-		private readonly ?PushDeliveryService $push = null,
+		private readonly ?NotificationChannels $channels = null,
 	) {
 		parent::__construct(time: $time);
 	}//end __construct()
@@ -239,55 +224,61 @@ class NotificationDispatchJob extends QueuedJob {
 			return;
 		}
 
-		$record = $this->record(argument: $argument);
-		$kind = self::KIND_MESSAGE_CREATED;
-		if ($record !== []) {
-			$kind = self::KIND_CASE_UPDATED;
-		}
+		$channels = ($this->channels ?? new NotificationChannels());
+		$record = $channels->record(argument: $argument);
+		$kind = $channels->kindOf(record: $record);
 
-		// Notification-preferences-per-role: the account-wide e-mail opt-out
-		// still switches e-mail off for every kind; the kind's own choice
-		// (inbox-notifications-and-preferences) can only switch it off further.
-		$wantsEmail = ($this->optedOutOfEmail(account: $account) === false && $this->prefers(account: $account, kind: $kind, channel: self::CHANNEL_EMAIL) === true);
-		$wantsPush = ($this->push !== null && $this->prefers(account: $account, kind: $kind, channel: self::CHANNEL_PUSH) === true);
-
-		if ($wantsEmail === false && $wantsPush === false) {
-			// The subject chose this. It is neither a missing declaration nor a
-			// delivery failure, so it gets the SAME no-op shape as "no matching
-			// rule key" (nothing sent, nothing logged), never the "no email
-			// address" shape below (which counts toward
-			// needsAlternativeContact). Judged before anything about
-			// deliverability, on purpose.
-			$this->logger->debug('Portaliq: NotificationDispatchJob — account chose no channel for this kind, skipping', ['subjectRef' => $subjectRef]);
-			return;
-		}
+		// A channel the subject switched off is neither a missing declaration
+		// nor a delivery failure: nothing is sent and nothing is logged for it,
+		// never the "no email address" shape (which counts toward
+		// needsAlternativeContact). The account-wide e-mail opt-out
+		// (notification-preferences-per-role) still wins over a kind's choice.
+		$wantsEmail = $channels->wants(account: $account, kind: $kind, channel: NotificationChannels::CHANNEL_EMAIL);
+		$wantsPush = $channels->wants(account: $account, kind: $kind, channel: NotificationChannels::CHANNEL_PUSH);
 
 		$accountId = $this->rowId(row: $account);
 		if ($accountId === null) {
 			return;
 		}
 
+		$attempt = [
+			'accountId' => $accountId,
+			'organisation' => $organisation,
+			'ruleKey' => $ruleKey,
+			'appId' => (string)($argument['appId'] ?? ''),
+			'subjectRef' => $subjectRef,
+		];
+
 		if ($wantsPush === true) {
-			$this->sendPush(
-				subjectRef: $subjectRef,
-				organisation: $organisation,
-				accountId: $accountId,
-				ruleKey: $ruleKey,
-				appId: (string)($argument['appId'] ?? ''),
-				record: $record
-			);
+			$this->sendPush(channels: $channels, attempt: $attempt, record: $record);
 		}
 
-		if ($wantsEmail === false) {
-			return;
+		if ($wantsEmail === true) {
+			$this->emailAndRecord(account: $account, attempt: $attempt, record: $record);
 		}
+	}//end doRun()
 
+	/**
+	 * Send the e-mail, log the attempt, and keep the needsAlternativeContact
+	 * flag in step with the failure streak.
+	 *
+	 * @param array<string, mixed>  $account The account.
+	 * @param array<string, string> $attempt accountId, organisation, ruleKey, appId, subjectRef.
+	 * @param array<string, string> $record  The record a change rule is about, or [].
+	 *
+	 * @return void
+	 */
+	private function emailAndRecord(array $account, array $attempt, array $record): void {
 		$email = (string)($account['email'] ?? '');
-		$previousStreak = $this->previousFailureStreak(accountId: $accountId, organisation: $organisation, ruleKey: $ruleKey);
+		$previousStreak = $this->previousFailureStreak(
+			accountId: $attempt['accountId'],
+			organisation: $attempt['organisation'],
+			ruleKey: $attempt['ruleKey']
+		);
 
 		$sent = false;
 		if ($email !== '' && $this->mailer->validateMailAddress($email) === true) {
-			$sent = $this->sendEmail(email: $email, organisation: $organisation, record: $record);
+			$sent = $this->sendEmail(email: $email, organisation: $attempt['organisation'], record: $record);
 		}
 
 		$status = 'failed';
@@ -298,25 +289,75 @@ class NotificationDispatchJob extends QueuedJob {
 		}
 
 		$this->recordAttempt(
-			accountId: $accountId,
-			organisation: $organisation,
-			ruleKey: $ruleKey,
-			appId: (string)($argument['appId'] ?? ''),
-			subjectRef: $subjectRef,
+			accountId: $attempt['accountId'],
+			organisation: $attempt['organisation'],
+			ruleKey: $attempt['ruleKey'],
+			appId: $attempt['appId'],
+			subjectRef: $attempt['subjectRef'],
 			status: $status,
 			attempts: $attempts
 		);
 
 		$threshold = $this->failureThreshold();
 		if ($sent === false && $attempts >= $threshold) {
-			$this->flagNeedsAlternativeContact(subjectRef: $subjectRef, organisation: $organisation, accountId: $accountId, flag: true);
+			$this->flagNeedsAlternativeContact(
+				subjectRef: $attempt['subjectRef'],
+				organisation: $attempt['organisation'],
+				accountId: $attempt['accountId'],
+				flag: true
+			);
 		} elseif ($sent === true && ($account['needsAlternativeContact'] ?? false) === true) {
 			// A working notification just went through — the fallback signal
 			// is no longer current; clear it so an operator's backlog reflects
 			// reality.
-			$this->flagNeedsAlternativeContact(subjectRef: $subjectRef, organisation: $organisation, accountId: $accountId, flag: false);
+			$this->flagNeedsAlternativeContact(
+				subjectRef: $attempt['subjectRef'],
+				organisation: $attempt['organisation'],
+				accountId: $attempt['accountId'],
+				flag: false
+			);
 		}
-	}//end doRun()
+	}//end emailAndRecord()
+
+	/**
+	 * Send the push when the resident registered a device, and log it with
+	 * channel `push`. A push that did not arrive is not an address problem, so
+	 * it never counts toward needsAlternativeContact.
+	 *
+	 * @param NotificationChannels  $channels The channels.
+	 * @param array<string, string> $attempt  accountId, organisation, ruleKey, appId, subjectRef.
+	 * @param array<string, string> $record   The record a change rule is about, or [].
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-resident-chooses-per-kind-and-per-channel-req-nap-007
+	 */
+	private function sendPush(NotificationChannels $channels, array $attempt, array $record): void {
+		$organisationName = $this->organisationName(organisation: $attempt['organisation']);
+		$status = $channels->push(
+			subjectRef: $attempt['subjectRef'],
+			title: $this->subjectLine(organisationName: $organisationName, record: $record),
+			body: $this->bodyText(
+				organisationName: $organisationName,
+				deepLink: $this->deepLink(organisation: $attempt['organisation'], record: $record),
+				record: $record
+			)
+		);
+		if ($status === null) {
+			return;
+		}
+
+		$this->recordAttempt(
+			accountId: $attempt['accountId'],
+			organisation: $attempt['organisation'],
+			ruleKey: $attempt['ruleKey'],
+			appId: $attempt['appId'],
+			subjectRef: $attempt['subjectRef'],
+			status: $status,
+			attempts: 0,
+			channel: NotificationChannels::CHANNEL_PUSH
+		);
+	}//end sendPush()
 
 	/**
 	 * Send the privacy-minimal, bilingual (NL first, EN second) email.
@@ -361,10 +402,7 @@ class NotificationDispatchJob extends QueuedJob {
 	 * @return string
 	 */
 	private function subjectLine(string $organisationName, array $record = []): string {
-		$key = self::SUBJECT_KEY;
-		if ($record !== []) {
-			$key = self::CHANGE_SUBJECT_KEY;
-		}
+		$key = [self::SUBJECT_KEY, self::CHANGE_SUBJECT_KEY][(int)($record !== [])];
 
 		$nlText = $this->l10nFactory->get('portaliq', 'nl')->t($key, [$organisationName]);
 		$enText = $this->l10nFactory->get('portaliq', 'en')->t($key, [$organisationName]);
@@ -415,16 +453,7 @@ class NotificationDispatchJob extends QueuedJob {
 	 * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
 	 */
 	private function deepLink(string $organisation, array $record = []): string {
-		if ($record !== []) {
-			return $this->deepLinks->forRecord(
-				organisation: $organisation,
-				app: (string)($record['app'] ?? ''),
-				collection: (string)($record['collection'] ?? ''),
-				id: (string)($record['id'] ?? '')
-			);
-		}
-
-		return $this->deepLinks->forOrganisation(organisation: $organisation);
+		return $this->deepLinks->forNotice(organisation: $organisation, record: $record);
 	}//end deepLink()
 
 	/**
@@ -437,121 +466,6 @@ class NotificationDispatchJob extends QueuedJob {
 	private function organisationName(string $organisation): string {
 		return (string)($this->orgConfig->resolve(orgSlug: $organisation)['organisationName'] ?? 'Portaliq');
 	}//end organisationName()
-
-	/**
-	 * The record a change rule is about, from the job argument, or [].
-	 *
-	 * @param array<string, mixed> $argument The job argument.
-	 *
-	 * @return array<string, string>
-	 */
-	private function record(array $argument): array {
-		$record = ($argument['record'] ?? null);
-		if (is_array($record) === false || (string)($record['id'] ?? '') === '') {
-			return [];
-		}
-
-		return [
-			'app' => (string)($record['app'] ?? ''),
-			'collection' => (string)($record['collection'] ?? ''),
-			'id' => (string)$record['id'],
-			'label' => (string)($record['label'] ?? ''),
-		];
-	}//end record()
-
-	/**
-	 * Whether the account wants this kind on this channel. A missing choice
-	 * means on (REQ-NAP-007).
-	 *
-	 * @param array<string, mixed> $account The account.
-	 * @param string               $kind    `case.updated` or `message.created`.
-	 * @param string               $channel `email` or `push`.
-	 *
-	 * @return bool
-	 *
-	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-resident-chooses-per-kind-and-per-channel-req-nap-007
-	 */
-	private function prefers(array $account, string $kind, string $channel): bool {
-		$preferences = ($account['notificationPreferences'] ?? null);
-		if (is_array($preferences) === false || is_array(($preferences[$kind] ?? null)) === false) {
-			return true;
-		}
-
-		return ($preferences[$kind][$channel] ?? true) !== false;
-	}//end prefers()
-
-	/**
-	 * Send a push when the account has a registered device, and log it with
-	 * channel `push`. Quiet hours are PushDeliveryService's to honour.
-	 *
-	 * @param string                $subjectRef   The subject.
-	 * @param string                $organisation The tenant.
-	 * @param string                $accountId    The account id.
-	 * @param string                $ruleKey      The rule key.
-	 * @param string                $appId        The contributing app.
-	 * @param array<string, string> $record       The record, or [].
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-resident-chooses-per-kind-and-per-channel-req-nap-007
-	 */
-	private function sendPush(string $subjectRef, string $organisation, string $accountId, string $ruleKey, string $appId, array $record): void {
-		if ($this->push === null || $this->hasPushDevice(subjectRef: $subjectRef) === false) {
-			return;
-		}
-
-		$organisationName = $this->organisationName(organisation: $organisation);
-		$delivered = false;
-		try {
-			$delivered = $this->push->deliver(
-				subjectRef: $subjectRef,
-				title: $this->subjectLine(organisationName: $organisationName, record: $record),
-				body: $this->bodyText(
-					organisationName: $organisationName,
-					deepLink: $this->deepLink(organisation: $organisation, record: $record),
-					record: $record
-				)
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: notification push failed', ['reason' => $e->getMessage()]);
-		}
-
-		$status = 'failed';
-		if ($delivered === true) {
-			$status = 'sent';
-		}
-
-		$this->recordAttempt(
-			accountId: $accountId,
-			organisation: $organisation,
-			ruleKey: $ruleKey,
-			appId: $appId,
-			subjectRef: $subjectRef,
-			status: $status,
-			attempts: 0,
-			channel: self::CHANNEL_PUSH
-		);
-	}//end sendPush()
-
-	/**
-	 * Whether the subject registered a device for push.
-	 *
-	 * @param string $subjectRef The subject.
-	 *
-	 * @return bool
-	 */
-	private function hasPushDevice(string $subjectRef): bool {
-		$rows = $this->reader->readCollection(
-			register: self::REGISTER,
-			schema: 'pushSubscription',
-			scopeField: 'subjectRef',
-			subjectRef: $subjectRef,
-			organisation: '',
-			limit: 1
-		);
-
-		return $rows !== [];
-	}//end hasPushDevice()
 
 	/**
 	 * Resolve the subject's OWN portalAccount, scoped exactly like every other
@@ -576,25 +490,6 @@ class NotificationDispatchJob extends QueuedJob {
 
 		return ($rows[0] ?? null);
 	}//end findAccount()
-
-	/**
-	 * Whether this account has opted out of the email channel
-	 * (notification-preferences-per-role). Fail-OPEN, the deliberate
-	 * exception to this file's usual fail-closed posture (design.md D-2): a
-	 * missing `notificationChannels` key — every account that existed before
-	 * this property did — reads as opted IN, so a change that adds the
-	 * property never silently stops notifying an account that never set it.
-	 *
-	 * @param array<string, mixed> $account The resolved account.
-	 *
-	 * @return bool True only when the channel is explicitly `false`.
-	 *
-	 * @spec openspec/changes/notification-preferences-per-role/specs/supplier-portal/spec.md#requirement-an-accounts-own-channel-opt-out-gates-dispatch
-	 */
-	private function optedOutOfEmail(array $account): bool {
-		$channels = (array)($account['notificationChannels'] ?? []);
-		return ($channels[self::CHANNEL_EMAIL] ?? true) === false;
-	}//end optedOutOfEmail()
 
 	/**
 	 * The consecutive-failure streak going into THIS attempt: the `attempts`
@@ -703,7 +598,7 @@ class NotificationDispatchJob extends QueuedJob {
 	 * @return int
 	 */
 	private function failureThreshold(): int {
-		$raw = (int)$this->config->getAppValue(Application::APP_ID, self::THRESHOLD_CONFIG_KEY, (string)self::DEFAULT_THRESHOLD);
+		$raw = (int)$this->config->getAppValue(self::APP_ID, self::THRESHOLD_CONFIG_KEY, (string)self::DEFAULT_THRESHOLD);
 		if ($raw < 1) {
 			return self::DEFAULT_THRESHOLD;
 		}

@@ -36,6 +36,7 @@ namespace OCA\Portaliq\Service\Identity;
 
 use DateInterval;
 use DateTimeImmutable;
+use OCA\Portaliq\Service\Notifications\NotificationChannels;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
@@ -192,20 +193,6 @@ class PortalSelfServiceService {
 	}//end messageLanguage()
 
 	/**
-	 * The kinds a resident chooses notices for (REQ-NAP-007).
-	 *
-	 * @var array<int, string>
-	 */
-	public const NOTIFICATION_KINDS = ['case.updated', 'message.created'];
-
-	/**
-	 * The channels a resident chooses per kind.
-	 *
-	 * @var array<int, string>
-	 */
-	public const NOTIFICATION_CHANNELS = ['email', 'push'];
-
-	/**
 	 * The bearer's own notification choices, with whether they registered a
 	 * device for push. A missing choice reads as on.
 	 *
@@ -222,28 +209,10 @@ class PortalSelfServiceService {
 		}
 
 		return [
-			'preferences' => $this->completePreferences(stored: ($account['notificationPreferences'] ?? null)),
-			'pushAvailable' => $this->hasPushDevice(subjectRef: $subjectRef),
+			'preferences' => $this->channels()->preferences(stored: ($account['notificationPreferences'] ?? null)),
+			'pushAvailable' => $this->channels()->hasDevice(subjectRef: $subjectRef),
 		];
 	}//end notificationPreferences()
-
-	/**
-	 * Whether the subject registered a device for push.
-	 *
-	 * @param string $subjectRef The subject.
-	 *
-	 * @return bool
-	 */
-	private function hasPushDevice(string $subjectRef): bool {
-		return $this->reader->readCollection(
-			register: self::REGISTER,
-			schema: 'pushSubscription',
-			scopeField: 'subjectRef',
-			subjectRef: $subjectRef,
-			organisation: '',
-			limit: 1
-		) !== [];
-	}//end hasPushDevice()
 
 	/**
 	 * Change the bearer's own notification choices. Only the known kinds and
@@ -263,51 +232,24 @@ class PortalSelfServiceService {
 			return null;
 		}
 
-		$preferences = $this->completePreferences(stored: ($account['notificationPreferences'] ?? null));
-		foreach (self::NOTIFICATION_KINDS as $kind) {
-			$choices = ($asked[$kind] ?? null);
-			if (is_array($choices) === false) {
-				continue;
-			}
-
-			foreach (self::NOTIFICATION_CHANNELS as $channel) {
-				if (is_bool(($choices[$channel] ?? null)) === true) {
-					$preferences[$kind][$channel] = $choices[$channel];
-				}
-			}
-		}
-
+		$preferences = $this->channels()->merged(stored: ($account['notificationPreferences'] ?? null), asked: $asked);
 		if ($this->write(account: $account, data: ['notificationPreferences' => $preferences]) === false) {
 			return null;
 		}
 
 		// Answer with what was written, not a re-read: a read straight after
 		// a write can still see the old row.
-		return ['preferences' => $preferences, 'pushAvailable' => $this->hasPushDevice(subjectRef: $subjectRef)];
+		return ['preferences' => $preferences, 'pushAvailable' => $this->channels()->hasDevice(subjectRef: $subjectRef)];
 	}//end updateNotificationPreferences()
 
 	/**
-	 * Every kind and channel, with a stored `false` kept and anything else on.
+	 * The notice choices and device check, over this service's reader.
 	 *
-	 * @param mixed $stored The stored choices.
-	 *
-	 * @return array<string, array<string, bool>>
+	 * @return NotificationChannels
 	 */
-	private function completePreferences(mixed $stored): array {
-		$complete = [];
-		foreach (self::NOTIFICATION_KINDS as $kind) {
-			foreach (self::NOTIFICATION_CHANNELS as $channel) {
-				$value = true;
-				if (is_array($stored) === true && is_array(($stored[$kind] ?? null)) === true && ($stored[$kind][$channel] ?? true) === false) {
-					$value = false;
-				}
-
-				$complete[$kind][$channel] = $value;
-			}
-		}
-
-		return $complete;
-	}//end completePreferences()
+	private function channels(): NotificationChannels {
+		return new NotificationChannels(reader: $this->reader);
+	}//end channels()
 
 	/**
 	 * Whether an `updateDetails()` call asked for nothing at all.
