@@ -479,6 +479,38 @@ export function createPortalApi(config) {
 		},
 
 		/**
+		 * Run an endpoint row action for one row the subject owns
+		 * (contribution-pay-screen): a guardian pays one contribution. The row
+		 * is named only in the path; the server reads it under the collection's
+		 * scope and stamps its id itself, so nothing else is sent.
+		 *
+		 * @param {object} collection Manifest collection: `{ id, register, schema }`.
+		 * @param {string} rowId The row's id.
+		 * @param {string} actionId The endpoint row action's id.
+		 * @return {Promise<object>} `{ ok, status, body }`; `status` 0 on a network error.
+		 */
+		async forwardRowAction(collection, rowId, actionId) {
+			try {
+				const res = await fetch(
+					`${base}${col(collection.register, collection.schema)}/${encodeURIComponent(rowId)}/actions/${encodeURIComponent(actionId)}?collection=${encodeURIComponent(collection.id)}`,
+					{
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+							Accept: 'application/json',
+							...authHeaders(),
+						},
+						body: '{}',
+					},
+				)
+				const json = await res.json().catch(() => ({}))
+				return { ok: res.ok, status: res.status, body: json }
+			} catch {
+				return { ok: false, status: 0, body: {} }
+			}
+		},
+
+		/**
 		 * Attach a file to an object the subject owns (the file-upload block).
 		 * Ownership is re-verified server-side; the collection must declare
 		 * `filesUpload`. Sends multipart with field name `file`.

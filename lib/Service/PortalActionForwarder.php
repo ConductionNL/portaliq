@@ -52,6 +52,11 @@ class PortalActionForwarder {
 	private const FORWARD_TIMEOUT = 10;
 
 	/**
+	 * HTTP methods an endpoint action may declare (contract v2, A6).
+	 */
+	private const ALLOWED_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request (source of the raw relayed body).
@@ -124,6 +129,33 @@ class PortalActionForwarder {
 			return null;
 		}//end try
 	}//end forward()
+
+	/**
+	 * Whether an action may be forwarded at all: a non-empty INSTANCE-LOCAL
+	 * endpoint path (SSRF guard: a leading slash, no protocol-relative `//`,
+	 * no scheme) and an allowed method. Trust is the caller's check.
+	 *
+	 * The same rule `ContributionController::isForwardableAction()` applies to
+	 * the id-addressed forward; the row-scoped forward reads it from here.
+	 *
+	 * @param array<string, mixed> $action The matched action declaration.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/contribution-pay-screen/specs/portal-contribution-contract/spec.md#requirement-a-row-scoped-forward-must-prove-the-row-before-it-forwards
+	 */
+	public function isForwardable(array $action): bool {
+		$endpoint = ($action['endpoint'] ?? null);
+		if (is_string($endpoint) === false
+			|| str_starts_with($endpoint, '/') === false
+			|| str_starts_with($endpoint, '//') === true
+			|| str_contains($endpoint, '://') === true
+		) {
+			return false;
+		}
+
+		return in_array(strtoupper((string)($action['method'] ?? 'POST')), self::ALLOWED_METHODS, true);
+	}//end isForwardable()
 
 	/**
 	 * Decode a relayed domain response body to an array, degrading to `[]` for

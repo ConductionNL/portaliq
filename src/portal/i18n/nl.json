@@ -103,5 +103,11 @@
 	"Move up": "Omhoog",
 	"Move down": "Omlaag",
 	"Type your answer": "Typ je antwoord",
-	"Your teacher marks this question.": "Je docent kijkt deze vraag na."
+	"Your teacher marks this question.": "Je docent kijkt deze vraag na.",
+	"Please wait…": "Even geduld…",
+	"Close": "Sluiten",
+	"Done.": "Gelukt.",
+	"The next page could not be opened.": "De volgende pagina kon niet worden geopend.",
+	"This can no longer be done for this item.": "Dit kan voor dit item niet meer.",
+	"This is not available right now. Try again later.": "Dit is nu niet beschikbaar. Probeer het later opnieuw."
 }

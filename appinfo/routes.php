@@ -307,6 +307,11 @@ return [
         // writes the file reference into the field. The {field} segment keeps
         // it apart from the files routes around it.
         ['name' => 'portalFieldFile#upload', 'url' => '/portal/api/collections/{register}/{schema}/{id}/fields/{field}', 'verb' => 'POST'],
+        // Run an endpoint row action for one owned row (contribution-pay-screen):
+        // a guardian pays one contribution. The row is read under the
+        // collection's scope first; the proven id is stamped under the
+        // action's rowField and forwarded. Before the /portal/{path} catch-all.
+        ['name' => 'portalRowAction#forward', 'url' => '/portal/api/collections/{register}/{schema}/{id}/actions/{actionId}', 'verb' => 'POST'],
         // Stream a file attached to an owned object (portal-document-download,
         // the read-side counterpart of uploadFile). Ownership re-verified via
         // the scoped reader BEFORE the file is resolved; the collection must
