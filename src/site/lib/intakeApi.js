@@ -63,8 +63,8 @@ function headersFor(token, json = false) {
 /**
  * The fetch to use: the one passed in, or the browser's.
  *
- * @param {Function|null} fetchImpl A fetch, or null.
- * @return {Function} The fetch.
+ * @param {((url: string, init?: object) => Promise<object>)|null} fetchImpl A fetch, or null.
+ * @return {(url: string, init?: object) => Promise<object>} The fetch.
  */
 function fetcher(fetchImpl) {
 	return fetchImpl || ((...args) => window.fetch(...args))
@@ -79,15 +79,18 @@ function fetcher(fetchImpl) {
  *
  * @param {string} base The portal API base.
  * @param {string} portal The portal slug, or ''.
- * @param {Function|null} fetchImpl The fetch to use.
+ * @param {((url: string, init?: object) => Promise<object>)|null} fetchImpl The fetch to use.
  * @return {Promise<Array<{topic: string, entries: Array<object>}>>} The topics.
  *
  * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
  */
 export async function fetchCatalogue(base, portal, fetchImpl = null) {
-	const response = await fetcher(fetchImpl)(intakeUrl(base, '/intake/catalogue', { portal }), {
-		headers: headersFor(''),
-	})
+	const response = await fetcher(fetchImpl)(
+		intakeUrl(base, '/intake/catalogue', { portal }),
+		{
+			headers: headersFor(''),
+		},
+	)
 	if (!response.ok) {
 		const error = new Error(`intake catalogue ${response.status}`)
 		error.status = response.status
@@ -100,8 +103,9 @@ export async function fetchCatalogue(base, portal, fetchImpl = null) {
 	return topics
 		.map((topic) => ({
 			topic: String(topic?.topic || ''),
-			entries: (Array.isArray(topic?.entries) ? topic.entries : [])
-				.filter((entry) => typeof entry?.route === 'string' && entry.route !== ''),
+			entries: (Array.isArray(topic?.entries) ? topic.entries : []).filter(
+				(entry) => typeof entry?.route === 'string' && entry.route !== '',
+			),
 		}))
 		.filter((topic) => topic.entries.length > 0)
 }
@@ -162,15 +166,18 @@ export function bindingRouteFrom(routeParam, fixedRoute) {
  * @param {string} route The binding route.
  * @param {string} portal The portal slug, or ''.
  * @param {string} token The portal bearer, or ''.
- * @param {Function|null} fetchImpl The fetch to use.
+ * @param {((url: string, init?: object) => Promise<object>)|null} fetchImpl The fetch to use.
  * @return {Promise<{state: string, render: object}>} The view.
  *
  * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-applicant-block-is-prefilled-from-the-signed-in-identity-only-req-pifo-003
  */
 export async function loadForm(base, route, portal, token, fetchImpl = null) {
-	const response = await fetcher(fetchImpl)(intakeUrl(base, '/intake/form', { route, portal }), {
-		headers: headersFor(token),
-	})
+	const response = await fetcher(fetchImpl)(
+		intakeUrl(base, '/intake/form', { route, portal }),
+		{
+			headers: headersFor(token),
+		},
+	)
 	const body = await response.json().catch(() => ({}))
 
 	if (response.status === 401 || response.status === 403) {
@@ -207,13 +214,14 @@ export async function loadForm(base, route, portal, token, fetchImpl = null) {
  */
 export function initialValues(fields, prefill) {
 	const values = {}
-	for (const field of (Array.isArray(fields) ? fields : [])) {
+	for (const field of Array.isArray(fields) ? fields : []) {
 		const name = String(field?.name || '')
 		if (name === '') {
 			continue
 		}
 
-		const own = prefill && Object.hasOwn(prefill, name) ? prefill[name] : undefined
+		const own =
+			prefill && Object.hasOwn(prefill, name) ? prefill[name] : undefined
 		if (own !== undefined && own !== null && own !== '') {
 			values[name] = String(own)
 		} else if (field.preset !== undefined && field.preset !== null) {
@@ -238,12 +246,19 @@ export function initialValues(fields, prefill) {
  * @param {object} answers The answers, keyed by field name.
  * @param {string} portal The portal slug, or ''.
  * @param {string} token The portal bearer, or ''.
- * @param {Function|null} fetchImpl The fetch to use.
+ * @param {((url: string, init?: object) => Promise<object>)|null} fetchImpl The fetch to use.
  * @return {Promise<{reference: string, confirmationText: string, errors: object}>} The outcome.
  *
  * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-case-is-created-asynchronously-and-the-citizen-gets-a-reference-at-once-req-pifo-005
  */
-export async function submitIntake(base, route, answers, portal, token, fetchImpl = null) {
+export async function submitIntake(
+	base,
+	route,
+	answers,
+	portal,
+	token,
+	fetchImpl = null,
+) {
 	const body = { route, answers: answers || {} }
 	if (portal) {
 		body.portal = portal
@@ -279,7 +294,7 @@ export async function submitIntake(base, route, answers, portal, token, fetchImp
  * @param {string} base The portal API base.
  * @param {string} reference The reference the visitor was given.
  * @param {string} portal The portal slug, or ''.
- * @param {Function|null} fetchImpl The fetch to use.
+ * @param {((url: string, init?: object) => Promise<object>)|null} fetchImpl The fetch to use.
  * @return {Promise<object|null>} The status, or null.
  *
  * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-case-is-created-asynchronously-and-the-citizen-gets-a-reference-at-once-req-pifo-005
@@ -290,9 +305,12 @@ export async function lookUpStatus(base, reference, portal, fetchImpl = null) {
 		return null
 	}
 
-	const response = await fetcher(fetchImpl)(intakeUrl(base, '/intake/status', { reference: trimmed, portal }), {
-		headers: headersFor(''),
-	})
+	const response = await fetcher(fetchImpl)(
+		intakeUrl(base, '/intake/status', { reference: trimmed, portal }),
+		{
+			headers: headersFor(''),
+		},
+	)
 	if (!response.ok) {
 		return null
 	}
@@ -316,7 +334,8 @@ export function statusView(status) {
 	if (!status) {
 		return {
 			tone: 'error',
-			sentence: 'We kunnen geen aanvraag vinden met dit kenmerk. Controleer het kenmerk en probeer het opnieuw.',
+			sentence:
+				'We kunnen geen aanvraag vinden met dit kenmerk. Controleer het kenmerk en probeer het opnieuw.',
 		}
 	}
 
