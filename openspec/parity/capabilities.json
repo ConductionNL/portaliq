@@ -3708,7 +3708,7 @@
 			"id": "int-dedicated-catalogue-unreached",
 			"area": "intake",
 			"name": "Browse a published catalogue of requestable products and services and start the matching form.",
-			"portaliq": "no",
+			"portaliq": "yes",
 			"open-inwoner": "yes",
 			"nl-portal": "no",
 			"xxllnc-pip": "partial",
@@ -3722,12 +3722,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/commerce/starting-a-store/introduction-to-liferay-commerce describes product catalogs with prices on a storefront; a catalogue of municipal products whose entries open the matching request form is custom. [was unknown]"
 			},
 			"built": {
-				"state": "building",
-				"evidence": "lib/Controller/PortalIntakeController.php:99 catalogue(), :120 form(), :161 submit(), :239 status() are all #[PublicPage] and fully implemented (PortalCatalogueReader, PortalFormBindingResolver, PortalFormValidator, PortalIntakeQueue); appinfo/routes.php:185-188 registers all four; grep of src/ (portal SPA, site, admin manifest) for 'intake/catalogue', 'intake/form', 'intake/submit', 'intake/status' or any literal '/portal/api/intake' returns 0 hits anywhere; openspec/changes/portal-intake-form-as-an-object/tasks.md explicitly leaves T09 unchecked: 'Pages, topics and layouts for the entry point as portaliq-cms content', the entry point itself was never built; the feature's own Playwright spec (tests/e2e/portal-intake-form-as-an-object.spec.ts) only ever uses the `request` fixture, never `page.*`, i.e. it drives the raw HTTP API and never a browser",
-				"reachedOn": "nothing reaches it: no portal SPA route, no site block, no admin manifest page calls any of the four endpoints; the only caller in the whole repo is an API-level Playwright test",
+				"state": "built",
+				"evidence": "src/site/components/IntakeCatalogueBlock.vue lists GET /portal/api/intake/catalogue by topic and links each entry to the form page; src/site/components/IntakeFormBlock.vue renders GET /portal/api/intake/form and posts /portal/api/intake/submit (src/site/lib/intakeApi.js); both are on the public allow-list in src/site/components/WidgetGrid.vue and offered by the page designer (src/lib/pageWidgetCatalogue.js); tests/intake-entry.spec.mjs",
+				"reachedOn": "a public site page on which an editor placed the intakeCatalogue block, linking to a page with the intakeForm block",
 				"owner": "ConductionNL/portaliq",
-				"note": "This is the feature the 'intake' capability is named after in its own openspec change, and its entry point is unbuilt. The WORKING way a citizen actually submits a request today is the generic type:create action path (int-generic-create-action) or the embedded form (int-embedded-form), both of which reuse pieces of this backend (PortalIntakeQueue, PortalFormValidator) but bypass its own catalogue/form/status controller entirely.",
-				"origin": "code"
+				"note": "This is the feature the 'intake' capability is named after in its own openspec change, and its entry point is unbuilt. The WORKING way a citizen actually submits a request today is the generic type:create action path (int-generic-create-action) or the embedded form (int-embedded-form), both of which reuse pieces of this backend (PortalIntakeQueue, PortalFormValidator) but bypass its own catalogue/form/status controller entirely. Moved building to built on 2026-09-28: the public site now reaches the intake endpoints (portal-intake-form-as-an-object T09). T03, the admin view of which form a binding resolves to, is still open.",
+				"origin": "code",
+				"change": "portal-intake-form-as-an-object"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3738,7 +3739,7 @@
 			"id": "int-status-lookup",
 			"area": "intake",
 			"name": "Look up the status of a request you already submitted, by its reference.",
-			"portaliq": "no",
+			"portaliq": "yes",
 			"open-inwoner": "partial",
 			"nl-portal": "yes",
 			"xxllnc-pip": "no",
@@ -3752,12 +3753,13 @@
 				"liferay-dxp": "not settled from docs: no lookup of a submission's status by reference without signing in was found in the forms, objects or guest entry pages read today."
 			},
 			"built": {
-				"state": "building",
-				"evidence": "lib/Controller/PortalIntakeController.php:239 status(string $reference) is implemented and routed (routes.php:188) but has 0 frontend callers (see int-dedicated-catalogue-unreached); the embedded form's own followUrl (PortalEmbedController.php submit()) links to a site page with '?reference=...' that nothing reads",
-				"reachedOn": "nothing reaches it from either path",
+				"state": "built",
+				"evidence": "src/site/components/IntakeStatusBlock.vue posts the reference to GET /portal/api/intake/status and reads queued, registered or failed as a sentence (statusView in src/site/lib/intakeApi.js), and looks up a ?reference= parameter on mount; tests/intake-entry.spec.mjs",
+				"reachedOn": "a public site page with the intakeStatus block; the embedded form's followUrl lands on it when it sits on the home page",
 				"owner": "ConductionNL/portaliq",
-				"note": "A citizen who submits through the embedded form is shown the reference once, inline, on the same page (EmbeddedForm.jsx confirmation state) but has no way to come back later and check it.",
-				"origin": "code"
+				"note": "A citizen who submits through the embedded form is shown the reference once, inline, on the same page (EmbeddedForm.jsx confirmation state) but has no way to come back later and check it. Moved building to built on 2026-09-28: the public site now reaches the intake endpoints (portal-intake-form-as-an-object T09). T03, the admin view of which form a binding resolves to, is still open.",
+				"origin": "code",
+				"change": "portal-intake-form-as-an-object"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3768,7 +3770,7 @@
 			"id": "int-applicant-prefill-unreached",
 			"area": "intake",
 			"name": "Start a form with your known applicant details already filled in when you are signed in.",
-			"portaliq": "no",
+			"portaliq": "yes",
 			"open-inwoner": "unknown",
 			"nl-portal": "partial",
 			"xxllnc-pip": "yes",
@@ -3782,12 +3784,13 @@
 				"liferay-dxp": "not settled from docs: https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/fields/setting-default-field-values (2026.Q1+) supports static defaults and date expressions; filling fields from the signed-in user's profile was not found in the forms or form fragment pages read today. [was partial: the earlier partial was not backed by a page]"
 			},
 			"built": {
-				"state": "building",
-				"evidence": "lib/Service/Intake/PortalApplicantPrefill.php implements a whitelisted map of applicant fields taken from the signed-in account; its only caller anywhere in lib/ is lib/Controller/PortalIntakeController.php:80 (constructor), which is itself unreached (see int-dedicated-catalogue-unreached)",
-				"reachedOn": "nothing reaches it",
+				"state": "built",
+				"evidence": "src/site/components/IntakeFormBlock.vue loads the form with the site's portal bearer (adoptSessionToken), so PortalIntakeController::form() answers PortalApplicantPrefill::forSubject() for a signed-in visitor and initialValues() fills the fields; an anonymous visitor sends no bearer and gets presets only; tests/intake-entry.spec.mjs",
+				"reachedOn": "the intakeForm block on a public site page, signed in through the site's sign-in routes",
 				"owner": "ConductionNL/portaliq",
-				"note": "Built and unit-tested per the change's own task list, but stranded behind the same unreached controller.",
-				"origin": "code"
+				"note": "Built and unit-tested per the change's own task list, but stranded behind the same unreached controller. Moved building to built on 2026-09-28: the public site now reaches the intake endpoints (portal-intake-form-as-an-object T09). T03, the admin view of which form a binding resolves to, is still open.",
+				"origin": "code",
+				"change": "portal-intake-form-as-an-object"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3979,7 +3982,7 @@
 			"id": "cmp-int-prefill",
 			"area": "intake",
 			"name": "Start a form with your known personal details already filled in.",
-			"portaliq": "no",
+			"portaliq": "yes",
 			"open-inwoner": "unknown",
 			"nl-portal": "partial",
 			"xxllnc-pip": "yes",
@@ -3993,12 +3996,13 @@
 				"liferay-dxp": "not settled from docs: object default values are static or date expressions (https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/fields/setting-default-field-values); prefill from personal details was not found. [was partial: the earlier partial was not backed by a page]"
 			},
 			"built": {
-				"state": "building",
-				"evidence": "see int-applicant-prefill-unreached: PortalApplicantPrefill.php exists but is only wired into the unreached PortalIntakeController",
-				"reachedOn": "nothing reaches it",
+				"state": "built",
+				"evidence": "see int-applicant-prefill-unreached: src/site/components/IntakeFormBlock.vue sends the bearer and fills the fields from the prefill the endpoint answers",
+				"reachedOn": "the intakeForm block on a public site page, signed in",
 				"owner": "ConductionNL/portaliq",
-				"note": "Duplicate of int-applicant-prefill-unreached, kept as its own row because it is a named competitor capability.",
-				"origin": "competitor"
+				"note": "Duplicate of int-applicant-prefill-unreached, kept as its own row because it is a named competitor capability. Moved building to built on 2026-09-28: the public site now reaches the intake endpoints (portal-intake-form-as-an-object T09). T03, the admin view of which form a binding resolves to, is still open.",
+				"origin": "competitor",
+				"change": "portal-intake-form-as-an-object"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4160,7 +4164,7 @@
 			"id": "cmp-int-product-catalogue",
 			"area": "intake",
 			"name": "Browse the products and services you can request, with conditions and costs.",
-			"portaliq": "no",
+			"portaliq": "partial",
 			"open-inwoner": "yes",
 			"nl-portal": "no",
 			"xxllnc-pip": "partial",
@@ -4174,12 +4178,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/commerce/starting-a-store/introduction-to-liferay-commerce: product catalogs with prices shown on a storefront. A catalogue of municipal services with conditions that starts a request is custom. [was unknown]"
 			},
 			"built": {
-				"state": "building",
-				"evidence": "duplicate framing of int-dedicated-catalogue-unreached: lib/Controller/PortalIntakeController.php:99 catalogue() reads opencatalogi's published catalogue and is fully implemented, but has 0 frontend callers anywhere in this repo",
-				"reachedOn": "nothing reaches it",
+				"state": "built",
+				"evidence": "src/site/components/IntakeCatalogueBlock.vue lists the published catalogue by topic with each entry's title and summary; conditions and costs show only as far as an editor writes them into the summary, the catalogue entry carries no structured conditions or cost fields",
+				"reachedOn": "a public site page with the intakeCatalogue block",
 				"owner": "ConductionNL/portaliq",
-				"note": "Kept as its own row because it is a named competitor capability distinct from starting one specific form.",
-				"origin": "competitor"
+				"note": "Kept as its own row because it is a named competitor capability distinct from starting one specific form. Moved building to built on 2026-09-28: the public site now reaches the intake endpoints (portal-intake-form-as-an-object T09). T03, the admin view of which form a binding resolves to, is still open.",
+				"origin": "competitor",
+				"change": "portal-intake-form-as-an-object"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
