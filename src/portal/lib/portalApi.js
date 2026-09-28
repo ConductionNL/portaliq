@@ -319,6 +319,51 @@ export function createPortalApi(config) {
 		},
 
 		/**
+		 * The resident's own notice choices per kind and channel, with
+		 * whether a device is registered for push
+		 * (inbox-notifications-and-preferences, REQ-NAP-007).
+		 *
+		 * @return {Promise<{preferences: object, pushAvailable: boolean}|null>} Null when refused.
+		 */
+		async fetchNotificationPreferences() {
+			try {
+				const json = await get('/identity/notification-preferences')
+				return json && json.preferences ? json : null
+			} catch {
+				return null
+			}
+		},
+
+		/**
+		 * Save the resident's own notice choices.
+		 *
+		 * @param {object} preferences Kind to `{email, push}` booleans.
+		 * @return {Promise<{preferences: object, pushAvailable: boolean}|null>} The saved choices, or null.
+		 */
+		async saveNotificationPreferences(preferences) {
+			try {
+				const res = await fetch(
+					`${base}/identity/notification-preferences`,
+					{
+						method: 'PATCH',
+						headers: {
+							'Content-Type': 'application/json',
+							Accept: 'application/json',
+							...authHeaders(),
+						},
+						body: JSON.stringify({ preferences }),
+					},
+				)
+				if (!res.ok) {
+					return null
+				}
+				return await res.json()
+			} catch {
+				return null
+			}
+		},
+
+		/**
 		 * The access requests this user made, with the answers they were
 		 * given (identity-access-requests, REQ-IAR-001). A refused answer
 		 * reads as none, never as an error.

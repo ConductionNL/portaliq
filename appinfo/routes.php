@@ -292,6 +292,10 @@ return [
         ['name' => 'portalIdentity#acceptInvitation', 'url' => '/portal/api/identity/invitation/accept', 'verb' => 'POST'],
         ['name' => 'portalAccountSelf#updateDetails', 'url' => '/portal/api/identity/details', 'verb' => 'PATCH'],
         ['name' => 'portalAccountSelf#details', 'url' => '/portal/api/identity/details', 'verb' => 'GET'],
+        // The resident's own notice choices per kind and channel
+        // (inbox-notifications-and-preferences).
+        ['name' => 'portalAccountSelf#notificationPreferences', 'url' => '/portal/api/identity/notification-preferences', 'verb' => 'GET'],
+        ['name' => 'portalAccountSelf#updateNotificationPreferences', 'url' => '/portal/api/identity/notification-preferences', 'verb' => 'PATCH'],
         ['name' => 'portalAccountSelf#confirmEmail', 'url' => '/portal/api/identity/email/confirm', 'verb' => 'POST'],
         ['name' => 'portalAccountSelf#removeAccount', 'url' => '/portal/api/identity/remove', 'verb' => 'POST'],
         ['name' => 'portalAccountSelf#requestAccess', 'url' => '/portal/api/identity/access-requests', 'verb' => 'POST'],

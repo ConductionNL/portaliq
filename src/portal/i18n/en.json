@@ -158,5 +158,15 @@
 	"Download {documentName}": "Download {documentName}",
 	"This document is too large to show here. Download it to read it.": "This document is too large to show here. Download it to read it.",
 	"Give a reason.": "Give a reason.",
-	"Loading the document…": "Loading the document…"
+	"Loading the document…": "Loading the document…",
+	"Open": "Open",
+	"Notification settings": "Notification settings",
+	"Changes on your cases": "Changes on your cases",
+	"New messages": "New messages",
+	"E-mail": "E-mail",
+	"Push": "Push",
+	"Save": "Save",
+	"Your choices are saved.": "Your choices are saved.",
+	"Your choices could not be saved. Try again.": "Your choices could not be saved. Try again.",
+	"This record is not in your list, so nothing of it is shown.": "This record is not in your list, so nothing of it is shown."
 }

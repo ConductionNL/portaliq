@@ -142,7 +142,11 @@ class PortalContributionRegistry {
 				$this->logger->error('Portaliq: manifest normalisation failed', ['app' => $appId, 'reason' => $e->getMessage()]);
 			}
 
-			$contributions[] = $filtered;
+			$contributions[] = (new NotificationRuleNormaliser())->normaliseContribution(
+				contribution: $filtered,
+				appId: (string)$appId,
+				logger: $this->logger
+			);
 		}//end foreach
 
 		return [
@@ -408,6 +412,29 @@ class PortalContributionRegistry {
 
 		return $contribution;
 	}//end filterByTrust()
+
+	/**
+	 * Every audience an installed app's provider serves.
+	 *
+	 * The change-rule index asks each of these for its contributions without
+	 * a signed-in subject: an OpenRegister save can come from a handler or a
+	 * job, and the question is whether any app wants a resident told.
+	 *
+	 * @return array<int, string>
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-declared-change-reaches-the-residents-inbox-req-nap-002
+	 */
+	public function servedAudiences(): array {
+		$audiences = [];
+		foreach ($this->appManager->getInstalledApps() as $appId) {
+			$provider = $this->resolveProvider(appId: (string)$appId);
+			if ($provider !== null) {
+				$audiences = array_merge($audiences, $this->providerAudiences(provider: $provider));
+			}
+		}
+
+		return array_values(array_unique($audiences));
+	}//end servedAudiences()
 
 	/**
 	 * Resolve one app's contribution provider, or null when it ships none.

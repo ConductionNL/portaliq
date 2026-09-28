@@ -113,4 +113,51 @@ class PortalDeepLinkBuilder {
 
 		return $this->urlGenerator->getAbsoluteURL($this->urlGenerator->linkToRoute(self::PORTAL_ROUTE, [self::PORTAL_PARAMETER => $portalSlug]));
 	}//end forPortal()
+
+	/**
+	 * The portal address that opens one record (REQ-NAP-005).
+	 *
+	 * The record rides in the fragment, `#open=<app>/<collection>/<id>`, which
+	 * the portal reads and strips on load and keeps through a sign-in. A
+	 * fragment never reaches the server, so a record id stays out of access
+	 * logs, and the portal still reads the record through the resident's own
+	 * scoped read: a forwarded link opens nothing of someone else's record.
+	 *
+	 * @param string $organisation The tenant slug.
+	 * @param string $app          The contributing app.
+	 * @param string $collection   The collection id.
+	 * @param string $id           The record id.
+	 *
+	 * @return string The absolute URL.
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-notification-leads-to-the-record-req-nap-005
+	 */
+	public function forRecord(string $organisation, string $app, string $collection, string $id): string {
+		$base = $this->forOrganisation(organisation: $organisation);
+		if ($app === '' || $collection === '' || $id === '') {
+			return $base;
+		}
+
+		return $base.'#open='.rawurlencode($app).'/'.rawurlencode($collection).'/'.rawurlencode($id);
+	}//end forRecord()
+
+	/**
+	 * The link a notice carries: the record when the notice is about one,
+	 * else the portal of the tenant.
+	 *
+	 * @param string                $organisation The tenant slug.
+	 * @param array<string, string> $record       The record ({app, collection, id}), or [].
+	 *
+	 * @return string The absolute URL.
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-notification-leads-to-the-record-req-nap-005
+	 */
+	public function forNotice(string $organisation, array $record): string {
+		return $this->forRecord(
+			organisation: $organisation,
+			app: (string)($record['app'] ?? ''),
+			collection: (string)($record['collection'] ?? ''),
+			id: (string)($record['id'] ?? '')
+		);
+	}//end forNotice()
 }//end class

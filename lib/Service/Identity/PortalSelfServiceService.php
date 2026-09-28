@@ -36,6 +36,7 @@ namespace OCA\Portaliq\Service\Identity;
 
 use DateInterval;
 use DateTimeImmutable;
+use OCA\Portaliq\Service\Notifications\NotificationChannels;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
@@ -190,6 +191,65 @@ class PortalSelfServiceService {
 	public function messageLanguage(string $subjectRef): string {
 		return ($this->details(subjectRef: $subjectRef)['messageLanguage'] ?? '');
 	}//end messageLanguage()
+
+	/**
+	 * The bearer's own notification choices, with whether they registered a
+	 * device for push. A missing choice reads as on.
+	 *
+	 * @param string $subjectRef The bearer's own subject reference.
+	 *
+	 * @return array{preferences: array<string, array<string, bool>>, pushAvailable: bool}|null Null without an account.
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-resident-chooses-per-kind-and-per-channel-req-nap-007
+	 */
+	public function notificationPreferences(string $subjectRef): ?array {
+		$account = $this->ownAccount(subjectRef: $subjectRef);
+		if ($account === null) {
+			return null;
+		}
+
+		return [
+			'preferences' => $this->channels()->preferences(stored: ($account['notificationPreferences'] ?? null)),
+			'pushAvailable' => $this->channels()->hasDevice(subjectRef: $subjectRef),
+		];
+	}//end notificationPreferences()
+
+	/**
+	 * Change the bearer's own notification choices. Only the known kinds and
+	 * channels with a boolean value are taken; the rest of the body is ignored,
+	 * and the account written is always the bearer's own.
+	 *
+	 * @param string               $subjectRef The bearer's own subject reference.
+	 * @param array<string, mixed> $asked      The choices sent.
+	 *
+	 * @return array{preferences: array<string, array<string, bool>>, pushAvailable: bool}|null Null when refused.
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-resident-chooses-per-kind-and-per-channel-req-nap-007
+	 */
+	public function updateNotificationPreferences(string $subjectRef, array $asked): ?array {
+		$account = $this->ownAccount(subjectRef: $subjectRef);
+		if ($account === null) {
+			return null;
+		}
+
+		$preferences = $this->channels()->merged(stored: ($account['notificationPreferences'] ?? null), asked: $asked);
+		if ($this->write(account: $account, data: ['notificationPreferences' => $preferences]) === false) {
+			return null;
+		}
+
+		// Answer with what was written, not a re-read: a read straight after
+		// a write can still see the old row.
+		return ['preferences' => $preferences, 'pushAvailable' => $this->channels()->hasDevice(subjectRef: $subjectRef)];
+	}//end updateNotificationPreferences()
+
+	/**
+	 * The notice choices and device check, over this service's reader.
+	 *
+	 * @return NotificationChannels
+	 */
+	private function channels(): NotificationChannels {
+		return new NotificationChannels(reader: $this->reader);
+	}//end channels()
 
 	/**
 	 * Whether an `updateDetails()` call asked for nothing at all.

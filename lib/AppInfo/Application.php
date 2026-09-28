@@ -49,6 +49,7 @@ use OCA\Portaliq\Listener\LandingPageRequestedEventListener;
 use OCA\Portaliq\Listener\LandingPageSubmissionDispatchListener;
 use OCA\Portaliq\Listener\PortalAccountClaimListener;
 use OCA\Portaliq\Listener\PortalAccountProvisionListener;
+use OCA\Portaliq\Listener\PortalRecordChangeListener;
 use OCA\Portaliq\Middleware\PortalAuthMiddleware;
 use OCA\Portaliq\Middleware\PublicApiCorsMiddleware;
 use OCA\Portaliq\Notification\Notifier;
@@ -144,6 +145,8 @@ class Application extends App implements IBootstrap {
 			$context->registerEventListener($event, CmsCacheInvalidationListener::class);
 		}
 
+		$this->registerRecordChangeListener(context: $context);
+
 		// Landing-page-provisioning (ADR-041, contribution-landing-page-action):
 		// a same-instance cross-app command letting a contributing app ask
 		// Portaliq to provision a draft landing page + form, and the fail-safe
@@ -195,6 +198,24 @@ class Application extends App implements IBootstrap {
 		// catch-all answered the store page's JSON call with HTML 200.
 		(new StorePlaneRegistrar())->register($context);
 	}//end register()
+
+	/**
+	 * Tell a resident when a record they follow changes, or when a case app
+	 * writes to their inbox (inbox-notifications-and-preferences). The
+	 * listener's first check is a lookup built once per request, and it never
+	 * fails the save it listens to.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-declared-change-reaches-the-residents-inbox-req-nap-002
+	 */
+	private function registerRecordChangeListener(IRegistrationContext $context): void {
+		foreach ([ObjectCreatedEvent::class, ObjectUpdatedEvent::class] as $event) {
+			$context->registerEventListener($event, PortalRecordChangeListener::class);
+		}
+	}//end registerRecordChangeListener()
 
 	/**
 	 * Boot the application.

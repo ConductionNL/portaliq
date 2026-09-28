@@ -17,6 +17,7 @@ import MessagesPage from '@portal/components/MessagesPage.jsx'
 import NewsPage, { hasNews } from '@portal/components/NewsPage.jsx'
 import PageView from '@portal/components/PageView.jsx'
 import TasksPage from '@portal/components/TasksPage.jsx'
+import { consumeOpenTarget, forgetOpenTarget, navKeyFor } from '@portal/lib/openRecord.js'
 import { consumeOidcCallbackFragment, createPortalApi, getToken } from '@portal/lib/portalApi.js'
 import { runAction } from '@portal/lib/rowAction.js'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
@@ -43,6 +44,20 @@ const NEWS_KEY = '__news__'
 
 // The asker's side of an access request (identity-access-requests).
 const ACCESS_KEY = '__access__'
+
+/**
+ * sessionStorage, or null where the browser refuses it (private mode, a
+ * sandboxed frame): the record link then lives as long as the page.
+ *
+ * @return {Storage|null} The storage, or null.
+ */
+function sessionStore() {
+	try {
+		return window.sessionStorage
+	} catch {
+		return null
+	}
+}
 
 // How often to proactively rotate the bearer while a session is active
 // (portal-session-hardening-v2, T04) — comfortably inside the 2h default TTL
@@ -124,6 +139,10 @@ export default function App({ config, t: tProp }) {
 	// memoises nothing.
 	const t = useMemo(() => tProp || ((key) => key), [tProp])
 	const api = useMemo(() => createPortalApi(config), [config])
+	// A notification's link to one record (inbox-notifications-and-
+	// preferences, REQ-NAP-005): read and stripped BEFORE the OIDC fragment
+	// check, and kept in sessionStorage so it survives the sign-in.
+	const [openTarget, setOpenTarget] = useState(() => consumeOpenTarget(window.location, window.history, sessionStore()))
 	// Pick up an OIDC callback's bearer BEFORE the initial token read (portal-
 	// oidc-broker-login) — the fragment is consumed/stripped exactly once, on
 	// mount, so a later re-render never re-parses a stale hash.
@@ -237,6 +256,23 @@ export default function App({ config, t: tProp }) {
 	}, [nav, activeKey])
 
 	const active = useMemo(() => nav.find((n) => n.key === activeKey) || null, [nav, activeKey])
+
+	// Signed in with a record to open: make its page active. Declared after
+	// the default-page effect, so it wins on the same render. A link whose
+	// collection no page shows is dropped rather than kept for ever.
+	useEffect(() => {
+		if (!openTarget || !state.session || nav.length === 0) {
+			return
+		}
+		forgetOpenTarget(sessionStore())
+		const key = navKeyFor(nav, openTarget)
+		if (key) {
+			setActiveKey(key)
+		} else {
+			setOpenTarget(null)
+		}
+	}, [openTarget, state.session, nav])
+	const onRecordOpened = useCallback(() => setOpenTarget(null), [])
 
 	// Load a collection's objects, subject-scoped, keyed by the collection id.
 	const loadCollection = useCallback(async (collection) => {
@@ -444,6 +480,15 @@ export default function App({ config, t: tProp }) {
 									const current = prev ?? (state.contributions?.unreadCount || 0)
 									return Math.max(0, current - 1)
 								})}
+								onOpenRecord={(link) => {
+									// The message's "Open" button: the same path as
+									// a link from the e-mail, without a reload.
+									const key = navKeyFor(nav, link)
+									if (key) {
+										setOpenTarget(link)
+										setActiveKey(key)
+									}
+								}}
 								onOpenTask={(taskUuid) => {
 									// The message's "Bekijk taak" deep link: hand the
 									// uuid to "Mijn taken" and switch to it.
@@ -494,6 +539,8 @@ export default function App({ config, t: tProp }) {
 								onRowAction={onRowAction}
 								busyRow={busyRow}
 								t={t}
+								openRecord={openTarget && openTarget.app === active.contribution?.app ? openTarget : null}
+								onRecordOpened={onRecordOpened}
 							/>
 						)}
 					</section>

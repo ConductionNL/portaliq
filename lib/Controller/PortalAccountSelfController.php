@@ -141,6 +141,57 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 	}//end updateDetails()
 
 	/**
+	 * The bearer's own notification choices (REQ-NAP-007, REQ-NAP-008).
+	 *
+	 * @return JSONResponse `{preferences, pushAvailable}`, 401 without a session, 404 without an account.
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-resident-chooses-per-kind-and-per-channel-req-nap-007
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 60, period: 60)]
+	public function notificationPreferences(): JSONResponse {
+		$subject = $this->subject();
+		if ($subject === null) {
+			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$preferences = $this->selfService->notificationPreferences(subjectRef: (string)($subject['subjectRef'] ?? ''));
+		if ($preferences === null) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		return new JSONResponse($preferences);
+	}//end notificationPreferences()
+
+	/**
+	 * Change the bearer's own notification choices. The account is the
+	 * session's, never one the body names.
+	 *
+	 * @param array<string, mixed> $preferences Kind to `{email, push}` booleans.
+	 *
+	 * @return JSONResponse The saved choices, 401 without a session, 400 when refused.
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-resident-chooses-per-kind-and-per-channel-req-nap-007
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 20, period: 60)]
+	public function updateNotificationPreferences(array $preferences = []): JSONResponse {
+		$subject = $this->subject();
+		if ($subject === null) {
+			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$saved = $this->selfService->updateNotificationPreferences(subjectRef: (string)($subject['subjectRef'] ?? ''), asked: $preferences);
+		if ($saved === null) {
+			return new JSONResponse(['error' => 'refused'], Http::STATUS_BAD_REQUEST);
+		}
+
+		return new JSONResponse($saved);
+	}//end updateNotificationPreferences()
+
+	/**
 	 * The bearer's own details: name, address, email channel and message
 	 * language. Never another account's; the subject comes from the bearer.
 	 *

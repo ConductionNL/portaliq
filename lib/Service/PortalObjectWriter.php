@@ -64,11 +64,15 @@ class PortalObjectWriter {
 	 *                                              controllers that build the
 	 *                                              writer by hand) means the
 	 *                                              single-value stamp.
+	 * @param PortalWriteContext|null $writeContext Marks this writer's saves as
+	 *                                              portaliq's own, so the change
+	 *                                              listener does not report them.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
 		private readonly ?PortalSchemaReader $schemaReader = null,
+		private readonly ?PortalWriteContext $writeContext = null,
 	) {
 	}//end __construct()
 
@@ -111,13 +115,13 @@ class PortalObjectWriter {
 		}
 
 		try {
-			$saved = $objectService->saveObject(
+			$saved = $this->insideWriteContext(write: static fn () => $objectService->saveObject(
 				object: $data,
 				register: $register,
 				schema: $schema,
 				_rbac: false,
 				_multitenancy: false
-			);
+			));
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: OR write failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
 			return null;
@@ -152,13 +156,13 @@ class PortalObjectWriter {
 		}
 
 		try {
-			$saved = $objectService->saveObject(
+			$saved = $this->insideWriteContext(write: static fn () => $objectService->saveObject(
 				object: $data,
 				register: $register,
 				schema: $schema,
 				_rbac: false,
 				_multitenancy: false
-			);
+			));
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: OR anonymous write failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
 			return null;
@@ -285,14 +289,14 @@ class PortalObjectWriter {
 
 		// (4) Save with the id preserved (`uuid`) so OR UPDATES this row.
 		try {
-			$saved = $objectService->saveObject(
+			$saved = $this->insideWriteContext(write: static fn () => $objectService->saveObject(
 				object: $merged,
 				register: $register,
 				schema: $schema,
 				uuid: $id,
 				_rbac: false,
 				_multitenancy: false
-			);
+			));
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: OR update failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
 			return null;
@@ -485,4 +489,22 @@ class PortalObjectWriter {
 
 		return null;
 	}//end objectService()
+
+	/**
+	 * Run an OpenRegister write inside the write context, so the change
+	 * listener knows portaliq itself made it.
+	 *
+	 * @param callable $write The write.
+	 *
+	 * @return mixed What the write returned.
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-is-not-told-about-their-own-change-req-nap-003
+	 */
+	private function insideWriteContext(callable $write): mixed {
+		if ($this->writeContext === null) {
+			return $write();
+		}
+
+		return $this->writeContext->run(write: $write);
+	}//end insideWriteContext()
 }//end class
