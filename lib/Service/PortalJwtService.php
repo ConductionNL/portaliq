@@ -188,7 +188,7 @@ class PortalJwtService {
 	 * @return string Compact JWT string.
 	 *
 	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T7
-	 * @spec openspec/changes/case-actions-sign-a-document/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
 	 */
 	public function createAssertion(
 		string $subjectRef,
@@ -238,7 +238,7 @@ class PortalJwtService {
 	 *
 	 * @return string|null The claim name, or null when none may be added.
 	 *
-	 * @spec openspec/changes/case-actions-sign-a-document/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
 	 */
 	public static function scopeClaimName(string $scopeClaim): ?string {
 		$name = self::bareClaimName(scopeClaim: $scopeClaim);
@@ -262,7 +262,7 @@ class PortalJwtService {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/case-actions-sign-a-document/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-09-28-case-actions-sign-a-document/tasks.md#T03
 	 */
 	public static function isReservedScopeClaim(mixed $scopeClaim): bool {
 		if (is_string($scopeClaim) === false || $scopeClaim === '') {

@@ -642,7 +642,7 @@ class PortalManifestNormaliserTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-actions-sign-a-document/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-09-28-case-actions-sign-a-document/tasks.md#T03
 	 */
 	public function testReservedScopeClaimNameIsDropped(): void {
 		$action = static fn (string $id, string $claim): array => [
