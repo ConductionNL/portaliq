@@ -51,6 +51,13 @@ class PortalDeepLinkBuilder {
 	private const PORTAL_ROUTE = 'portaliq.portalPage.index';
 
 	/**
+	 * The query parameter the portal shell reads a named portal from
+	 * (PortalRuntimeConfigResolver::resolvePortal(), `?portal=`). It wins over
+	 * `?org=`, and a slug that names no portal is a miss, never a fallback.
+	 */
+	private const PORTAL_PARAMETER = 'portal';
+
+	/**
 	 * The query parameter the portal shell reads the tenant from
 	 * (PortalPageController::index(), `?org=`). See WOO-566 before changing it.
 	 */
@@ -84,4 +91,26 @@ class PortalDeepLinkBuilder {
 
 		return $this->urlGenerator->getAbsoluteURL($this->urlGenerator->linkToRoute(self::PORTAL_ROUTE, $parameters));
 	}//end forOrganisation()
+
+	/**
+	 * The absolute URL of one named portal (`?portal=<slug>`).
+	 *
+	 * For a mail that belongs to a portal rather than to a tenant: one
+	 * organisation may run several portals, and `?org=` names none of them
+	 * when it does (WOO-566). An empty slug falls back to the tenant link.
+	 *
+	 * @param string $portalSlug The portal's slug.
+	 * @param string $organisation The tenant, used only when the slug is ''.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/identity-ways-in-screens/design.md
+	 */
+	public function forPortal(string $portalSlug, string $organisation = ''): string {
+		if ($portalSlug === '') {
+			return $this->forOrganisation(organisation: $organisation);
+		}
+
+		return $this->urlGenerator->getAbsoluteURL($this->urlGenerator->linkToRoute(self::PORTAL_ROUTE, [self::PORTAL_PARAMETER => $portalSlug]));
+	}//end forPortal()
 }//end class
