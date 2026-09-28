@@ -7,6 +7,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Controller\PortalIdentityController;
 use OCA\Portaliq\Service\CaseTypeReader;
 use OCA\Portaliq\Service\Identity\PortalChallengeService;
+use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
 use OCA\Portaliq\Service\Identity\PortalInvitationService;
 use OCA\Portaliq\Service\Identity\PortalReferenceLinkService;
 use OCA\Portaliq\Service\Identity\PortalRegistrationPolicyService;
@@ -180,6 +181,58 @@ class PortalIdentityControllerTest extends TestCase {
 
 	}//end testOutOfScopeAndAccountOnlyAnswerTheSame()
 
+	/**
+	 * portaliq#795. The link used to be issued and then dropped: the answer
+	 * said `sent: true` and no mail left. The secret now goes to the address
+	 * it was asked for, inside the mailed link, and never into the answer.
+	 *
+	 * @return void
+	 */
+	public function testTheReferenceLinkIsMailedToTheAddressAndNeverAnswered(): void {
+		$site = ['organisation' => 'gemeente-x', 'slug' => 'gemeente-x', 'title' => 'Gemeente X'];
+		$controller = $this->controller(site: $site);
+		$this->doubles['caseTypes']->method('readCaseType')->willReturn(['portalIdentityKind' => ['reference']]);
+		$this->doubles['references']->method('admitsReference')->willReturn(true);
+		$this->doubles['references']->method('issue')->willReturn(['token' => 'secret-1', 'expiresAt' => '2026-09-19T09:00:00+00:00']);
+		$this->doubles['mailer']->expects($this->once())
+			->method('send')
+			->with(
+				$this->equalTo(PortalIdentityMailer::TEMPLATE_REFERENCE_LINK),
+				$this->equalTo('ans@example.org'),
+				$this->equalTo('secret-1'),
+				$this->equalTo('gemeente-x'),
+				$this->equalTo($site)
+			)
+			->willReturn(true);
+
+		$data = $controller->requestReferenceLink(register: 'portaliq', schema: 'portalCaseType', caseType: 'melding', caseReference: 'ZAAK-1', email: 'ans@example.org')->getData();
+
+		$this->assertTrue($data['sent']);
+		$this->assertStringNotContainsString('secret-1', (string)json_encode($data));
+
+	}//end testTheReferenceLinkIsMailedToTheAddressAndNeverAnswered()
+
+	/**
+	 * portaliq#795. A mail that did not leave answers exactly like one that
+	 * did: a different answer would tell an anonymous caller something about
+	 * the case, and the secret never falls back into the answer.
+	 *
+	 * @return void
+	 */
+	public function testAFailedReferenceMailAnswersTheSameAndStillHidesTheSecret(): void {
+		$controller = $this->controller(site: ['organisation' => 'gemeente-x']);
+		$this->doubles['caseTypes']->method('readCaseType')->willReturn(['portalIdentityKind' => ['reference']]);
+		$this->doubles['references']->method('admitsReference')->willReturn(true);
+		$this->doubles['references']->method('issue')->willReturn(['token' => 'secret-1', 'expiresAt' => '2026-09-19T09:00:00+00:00']);
+		$this->doubles['mailer']->method('send')->willReturn(false);
+
+		$response = $controller->requestReferenceLink(register: 'portaliq', schema: 'portalCaseType', caseType: 'melding', caseReference: 'ZAAK-1', email: 'ans@example.org');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['sent' => true, 'expiresAt' => '2026-09-19T09:00:00+00:00'], $response->getData());
+
+	}//end testAFailedReferenceMailAnswersTheSameAndStillHidesTheSecret()
+
 	public function testTheIssuedSecretNeverTravelsInTheAnswer(): void {
 		$controller = $this->controller(site: ['organisation' => 'gemeente-x']);
 		$this->doubles['caseTypes']->method('readCaseType')->willReturn(['portalIdentityKind' => ['reference']]);
@@ -343,6 +396,7 @@ class PortalIdentityControllerTest extends TestCase {
 			'accounts' => $this->double(PortalAccountService::class, ['provision']),
 			'caseTypes' => $this->double(CaseTypeReader::class, ['readCaseType']),
 			'bindings' => $this->double(PortalFormBindingResolver::class, ['caseTypeIsInPortalScope']),
+			'mailer' => $this->double(PortalIdentityMailer::class, ['send']),
 		];
 
 		$this->doubles['bindings']->method('caseTypeIsInPortalScope')->willReturn($inScope);
@@ -356,7 +410,8 @@ class PortalIdentityControllerTest extends TestCase {
 			$this->doubles['invitations'],
 			$this->doubles['accounts'],
 			$this->doubles['caseTypes'],
-			$this->doubles['bindings']
+			$this->doubles['bindings'],
+			$this->doubles['mailer']
 		);
 	}//end controller()
 

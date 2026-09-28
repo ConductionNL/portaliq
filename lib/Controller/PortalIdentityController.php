@@ -34,6 +34,7 @@ use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Service\CaseTypeReader;
 use OCA\Portaliq\Service\Identity\PortalChallengeService;
+use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
 use OCA\Portaliq\Service\Identity\PortalInvitationService;
 use OCA\Portaliq\Service\Identity\PortalReferenceLinkService;
 use OCA\Portaliq\Service\Identity\PortalRegistrationPolicyService;
@@ -71,6 +72,7 @@ class PortalIdentityController extends Controller implements PortalProtected {
 	 * @param PortalAccountService $accounts Provisions a registration.
 	 * @param CaseTypeReader $caseTypes Reads the case type's identity kinds.
 	 * @param PortalFormBindingResolver $bindings The case types this portal declares.
+	 * @param PortalIdentityMailer $mailer Mails the reference link to its address.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -82,6 +84,7 @@ class PortalIdentityController extends Controller implements PortalProtected {
 		private readonly PortalAccountService $accounts,
 		private readonly CaseTypeReader $caseTypes,
 		private readonly PortalFormBindingResolver $bindings,
+		private readonly PortalIdentityMailer $mailer,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -119,6 +122,7 @@ class PortalIdentityController extends Controller implements PortalProtected {
 	 * @return JSONResponse Whether a link was issued, or a refusal.
 	 *
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/changes/identity-ways-in-screens/specs/portal-ways-in/spec.md#requirement-every-way-in-sends-its-secret-by-mail-req-iwi-001
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -163,7 +167,17 @@ class PortalIdentityController extends Controller implements PortalProtected {
 		}
 
 		// The secret goes out by mail, never in this answer: the address is
-		// what proves the asker is the person the case belongs to.
+		// what proves the asker is the person the case belongs to. A mail
+		// that did not leave answers the same, so the answer tells an
+		// anonymous caller nothing; the mailer logs the failure.
+		$this->mailer->send(
+			template: PortalIdentityMailer::TEMPLATE_REFERENCE_LINK,
+			email: $email,
+			secret: $issued['token'],
+			organisation: (string)($site['organisation'] ?? ''),
+			portal: $site
+		);
+
 		return new JSONResponse(['sent' => true, 'expiresAt' => $issued['expiresAt']]);
 	}//end requestReferenceLink()
 
