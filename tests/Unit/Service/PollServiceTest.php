@@ -6,6 +6,11 @@ namespace OCA\Portaliq\Tests\Unit\Service;
 
 use DateTimeImmutable;
 use OCA\Portaliq\Service\PollService;
+use OCA\Portaliq\Service\PortalFieldProjector;
+use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\PortalObjectWriter;
+use Psr\Container\ContainerInterface;
+use Psr\Log\LoggerInterface;
 use OCA\Portaliq\Tests\Unit\Service\Identity\PortalIdentityStoreTrait;
 use PHPUnit\Framework\TestCase;
 
@@ -168,6 +173,66 @@ class PollServiceTest extends TestCase {
 			'createdBy' => 'clerk-anna',
 		]);
 	}//end seedPoll()
+
+	/**
+	 * The poll list has no subject scope, so the tenant is its only boundary.
+	 * Over the REAL reader, a poll stored without an organisation for the
+	 * guardian's audience reaches no guardian, of this organisation or
+	 * another (portaliq#801).
+	 */
+	public function testAPollWithoutAnOrganisationReachesNoGuardian(): void {
+		$polls = [
+			['id' => 'poll-a', 'uuid' => 'poll-a', 'question' => 'Van ons', 'audience' => 'parent', 'organisation' => 'gemeente-x', 'options' => []],
+			['id' => 'poll-leeg', 'uuid' => 'poll-leeg', 'question' => 'Van niemand', 'audience' => 'parent', 'organisation' => '', 'options' => []],
+		];
+		$objectService = new class($polls) {
+			private string $schema = '';
+
+			/**
+			 * @param array<int, array<string, mixed>> $polls The stored polls.
+			 */
+			public function __construct(
+				private readonly array $polls,
+			) {
+			}//end __construct()
+
+			public function setRegister(string $register): self {
+				return $this;
+			}//end setRegister()
+
+			public function setSchema(string $schema): self {
+				$this->schema = $schema;
+				return $this;
+			}//end setSchema()
+
+			/**
+			 * @param array<string, mixed> $config The query.
+			 *
+			 * @return array<int, array<string, mixed>>
+			 */
+			public function findAll(array $config, bool $_rbac = true, bool $_multitenancy = true): array {
+				if ($this->schema !== 'portalPoll') {
+					return [];
+				}
+
+				return $this->polls;
+			}//end findAll()
+		};
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willReturn($objectService);
+		$logger = $this->createMock(LoggerInterface::class);
+		$service = new PollService(
+			new PortalObjectReader($container, $logger, new PortalFieldProjector($logger)),
+			$this->createMock(PortalObjectWriter::class)
+		);
+
+		$ours = $service->forSubject(subject: ['audience' => 'parent', 'organisation' => 'gemeente-x', 'subjectRef' => 'guardian-1']);
+		$theirs = $service->forSubject(subject: ['audience' => 'parent', 'organisation' => 'gemeente-y', 'subjectRef' => 'guardian-2']);
+
+		$this->assertSame(['Van ons'], array_column($ours, 'question'));
+		$this->assertSame([], $theirs);
+
+	}//end testAPollWithoutAnOrganisationReachesNoGuardian()
 
 	/**
 	 * The service over the fake store.
