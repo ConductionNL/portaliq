@@ -7255,7 +7255,7 @@
             "activityOffer": {
                 "slug": "activityOffer",
                 "icon": "Pulse",
-                "version": "0.2.0",
+                "version": "0.2.1",
                 "title": "Activity",
                 "authorization": {
                     "read": [
@@ -7424,7 +7424,7 @@
                         "title": "Payment requested",
                         "type": "boolean",
                         "example": false,
-                        "description": "A contribution is asked per place. Shillinq raises the payment request and holds the amount."
+                        "description": "A contribution is asked per place. Staff raise it through shillinq, which holds the amount."
                     },
                     "consentRequired": {
                         "title": "Consent required",
@@ -7472,7 +7472,7 @@
             "activitySignup": {
                 "slug": "activitySignup",
                 "icon": "Account",
-                "version": "0.2.0",
+                "version": "0.2.1",
                 "title": "Activity sign-up",
                 "authorization": {
                     "read": [
@@ -7546,7 +7546,7 @@
                     "paymentRequestRef": {
                         "title": "Payment request",
                         "type": "string",
-                        "description": "The shillinq payment request for this place, when the activity asks a contribution. Written by shillinq."
+                        "description": "The shillinq payment request for this place, when the activity asks a contribution. Portaliq writes it from shillinq's answer when staff raise the contribution."
                     },
                     "consent": {
                         "title": "Consent",

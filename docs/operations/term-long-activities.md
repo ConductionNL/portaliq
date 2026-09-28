@@ -21,7 +21,7 @@ the portal, and the school sees who has a place and who is waiting.
 | `supervisorRefs`, `childrenPerSupervisor` | Who supervises, and how many children one supervisor may take. |
 | `waitlistEnabled` | When full, new sign-ups wait instead of being refused. |
 | `sessions` | The meetings. Attendance is marked per session. |
-| `paymentRequested` | A contribution is asked per place. Shillinq raises the payment request and holds the amount; portaliq stores only its reference. |
+| `paymentRequested` | A contribution is asked per place. Staff raise it through shillinq, which holds the amount; portaliq stores only the reference per place. |
 
 | `consentRequired`, `consentStatement` | Parents must agree to this text before their child can be signed up. |
 | `photosTaken` | Photos are taken, so the roster shows who has photo consent. |
@@ -40,6 +40,7 @@ does not open.
 | PUT | `/apps/portaliq/api/activities/{id}/supervisors` | Change supervisors; new places go to the waiting list |
 | GET | `/apps/portaliq/api/activities/{id}/roster` | Places, children with a place, the waiting list in order |
 | PUT | `/apps/portaliq/api/activities/{id}/attendance` | Mark a child present, absent or excused for a session |
+| POST | `/apps/portaliq/api/activities/{id}/contributions` | Bill every confirmed place that has no payment request yet (see below) |
 
 ## Guardian endpoints (portal session)
 
@@ -48,6 +49,28 @@ does not open.
 | GET | `/apps/portaliq/api/activities/feed` | Activities in reach, with places left and your own children's sign-ups |
 | POST | `/apps/portaliq/api/activities/{id}/signup` | Sign up one of your children: a place, a spot on the waiting list, or `activity_full` |
 | POST | `/apps/portaliq/api/activities/{id}/withdraw` | Withdraw; a freed place goes to the child who waited longest |
+
+## Asking a contribution for a place
+
+When an activity has `paymentRequested`, staff bill its confirmed places from
+portaliq. Send the amount, whether it is voluntary, and the school's shillinq
+administration:
+
+```json
+{ "amount": 25.0, "voluntary": true, "administrationId": "adm-school-1", "dueDate": "2026-11-01" }
+```
+
+Portaliq sends one invoice per place to shillinq: the activity is what is
+charged, the child is who it is for, and the guardian who signed up pays. Each
+place gets the payment request's reference; the amount stays in shillinq. The
+guardian pays from their contributions in the portal.
+
+- Run it again after the waiting list moves: only places without a reference
+  are billed, and nobody is billed twice.
+- A guardian whose portal account has no name or email is reported as
+  `no_contact_details`. Fix the account and run it again.
+- You need shillinq's `payment.request` action (`paymentActionGroups`).
+  Without shillinq the answer is 503 `shillinq_unavailable`.
 
 ## Permission slips and photo consent
 

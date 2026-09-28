@@ -122,6 +122,9 @@ return [
         ['name' => 'activity#supervisors', 'url' => '/api/activities/{id}/supervisors', 'verb' => 'PUT'],
         ['name' => 'activity#roster', 'url' => '/api/activities/{id}/roster', 'verb' => 'GET'],
         ['name' => 'activity#attendance', 'url' => '/api/activities/{id}/attendance', 'verb' => 'PUT'],
+        // Raise the contribution per confirmed place through shillinq and write
+        // each reference into its sign-up (activity-offer-contract-fix).
+        ['name' => 'activity#contributions', 'url' => '/api/activities/{id}/contributions', 'verb' => 'POST'],
         ['name' => 'activityGuardian#signup', 'url' => '/api/activities/{id}/signup', 'verb' => 'POST'],
         ['name' => 'activityGuardian#withdraw', 'url' => '/api/activities/{id}/withdraw', 'verb' => 'POST'],
         // Guardian direct messages (guardian-direct-messages, finding 9.3).
@@ -308,6 +311,11 @@ return [
         // writes the file reference into the field. The {field} segment keeps
         // it apart from the files routes around it.
         ['name' => 'portalFieldFile#upload', 'url' => '/portal/api/collections/{register}/{schema}/{id}/fields/{field}', 'verb' => 'POST'],
+        // Run an endpoint row action for one owned row (contribution-pay-screen):
+        // a guardian pays one contribution. The row is read under the
+        // collection's scope first; the proven id is stamped under the
+        // action's rowField and forwarded. Before the /portal/{path} catch-all.
+        ['name' => 'portalRowAction#forward', 'url' => '/portal/api/collections/{register}/{schema}/{id}/actions/{actionId}', 'verb' => 'POST'],
         // Stream a file attached to an owned object (portal-document-download,
         // the read-side counterpart of uploadFile). Ownership re-verified via
         // the scoped reader BEFORE the file is resolved; the collection must

@@ -7,6 +7,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Controller\ActivityGuardianController;
 use OCA\Portaliq\Controller\ContributionController;
 use OCA\Portaliq\Controller\PortalFieldFileController;
+use OCA\Portaliq\Controller\PortalRowActionController;
 use OCA\Portaliq\Controller\SessionController;
 use OCA\Portaliq\Controller\TrafficController;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -53,6 +54,8 @@ class RateLimitAttributesTest extends TestCase {
 			'activityGuardian withdraw' => [ActivityGuardianController::class, 'withdraw'],
 			// assignment-portal-file-upload: the upload into a declared file field.
 			'portalFieldFile upload' => [PortalFieldFileController::class, 'upload'],
+			// contribution-pay-screen: the row-scoped endpoint action forward.
+			'portalRowAction forward' => [PortalRowActionController::class, 'forward'],
 			// portal-traffic-analytics: the public collector, its pixel and the
 			// served client (CONTRACT section 7, BUG-RATE-1).
 			'traffic collect' => [TrafficController::class, 'collect'],

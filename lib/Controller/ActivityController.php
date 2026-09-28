@@ -29,6 +29,7 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\ActivityAttendanceService;
+use OCA\Portaliq\Service\ActivityContributionService;
 use OCA\Portaliq\Service\ActivityDraft;
 use OCA\Portaliq\Service\ActivityPlaces;
 use OCA\Portaliq\Service\ActivityRoster;
@@ -43,9 +44,15 @@ use OCP\IRequest;
 use OCP\IUserSession;
 
 /**
- * Staff authoring, roster and attendance for activities.
+ * Staff authoring, roster, attendance and contribution raise for activities.
  *
  * @spec openspec/changes/extracurricular-activity-offer/contract.md
+ * @spec openspec/changes/activity-offer-contract-fix/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-raise-the-contribution-for-an-activitys-confirmed-places-and-portaliq-must-write-the-reference
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- one small service per
+ * staff task on an activity (draft, places, sign-ups, roster, attendance,
+ * contribution raise) plus the framework types every controller carries;
+ * one facade over them would hide which task each endpoint runs.
  */
 class ActivityController extends Controller {
 	/**
@@ -60,6 +67,19 @@ class ActivityController extends Controller {
 	];
 
 	/**
+	 * HTTP status per contribution raise refusal (activity-offer-contract-fix).
+	 */
+	private const CONTRIBUTION_STATUS = [
+		ActivityContributionService::REASON_NOT_FOUND => Http::STATUS_NOT_FOUND,
+		ActivityContributionService::REASON_NOT_REQUESTED => Http::STATUS_UNPROCESSABLE_ENTITY,
+		ActivityContributionService::REASON_UNAVAILABLE => Http::STATUS_BAD_GATEWAY,
+		ActivityContributionService::ERROR_INVALID => Http::STATUS_BAD_REQUEST,
+		ActivityContributionService::ERROR_FORBIDDEN => Http::STATUS_FORBIDDEN,
+		ActivityContributionService::ERROR_SHILLINQ_UNAVAILABLE => Http::STATUS_SERVICE_UNAVAILABLE,
+		ActivityContributionService::ERROR_FAILED => Http::STATUS_BAD_GATEWAY,
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
@@ -70,6 +90,8 @@ class ActivityController extends Controller {
 	 * @param ActivityAttendanceService $attendance Attendance marks.
 	 * @param ActivityDraft $drafts Validates and sanitises a new activity.
 	 * @param ActivityRoster $rosters The staff roster.
+	 * @param ActivityContributionService $contributions Raises the contribution per confirmed
+	 *                                                   place through shillinq (activity-offer-contract-fix).
 	 */
 	public function __construct(
 		IRequest $request,
@@ -80,6 +102,7 @@ class ActivityController extends Controller {
 		private readonly ActivityAttendanceService $attendance,
 		private readonly ActivityDraft $drafts,
 		private readonly ActivityRoster $rosters,
+		private readonly ActivityContributionService $contributions,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -256,6 +279,32 @@ class ActivityController extends Controller {
 
 		return new JSONResponse($result['attendance'] ?? []);
 	}//end attendance()
+
+	/**
+	 * Raise the activity's contribution for every confirmed place that has no
+	 * payment request yet, and write each returned reference into its sign-up.
+	 * The body carries `amount`, `voluntary` and `administrationId`, and may
+	 * carry `description`, `invoiceDate`, `dueDate`, `revenueAccount`,
+	 * `language` and `currency`. Portaliq keeps none of it; shillinq holds the
+	 * amount and checks its own `payment.request` action for this user.
+	 *
+	 * @param string $id The activity id or slug.
+	 *
+	 * @return JSONResponse `{raised, skipped, failed, results}`, or 400 / 403 / 404 / 422 / 502 / 503.
+	 *
+	 * @spec openspec/changes/activity-offer-contract-fix/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-raise-the-contribution-for-an-activitys-confirmed-places-and-portaliq-must-write-the-reference
+	 */
+	#[NoAdminRequired]
+	public function contributions(string $id): JSONResponse {
+		$this->requireAuthenticatedStaff();
+
+		$result = $this->contributions->raise(activityId: $id, params: $this->request->getParams());
+		if (isset($result['error']) === true) {
+			return new JSONResponse(['error' => $result['error']], (self::CONTRIBUTION_STATUS[$result['error']] ?? Http::STATUS_BAD_GATEWAY));
+		}
+
+		return new JSONResponse($result);
+	}//end contributions()
 
 	/**
 	 * Save a new status on an activity.

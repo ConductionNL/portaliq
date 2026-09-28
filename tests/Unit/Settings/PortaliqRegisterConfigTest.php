@@ -234,6 +234,11 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// require a guardian's consent to a stated text, kept on the sign-up as
 		// agreed, and say photos are taken (activity-parental-consent). Additive.
 		// 0.35.1: no schema change; bumped past development's 0.35.0 when the portal-take-assessment branch landed.
+		// 0.35.2: no schema change; bumped past development's 0.35.1 when the contribution-pay-screen branch landed.
+		// 0.35.3 (activityOffer 0.2.1, activitySignup 0.2.1): descriptions only;
+		// portaliq, not shillinq, writes `paymentRequestRef` from the raise
+		// answer (activity-offer-contract-fix). The branch read 0.35.2, which
+		// development had already taken; bumped past it at merge time.
 		// 0.36.0 (portalAccount 0.10.0, guardianMessage 0.2.0): a guardian picks
 		// the language school messages are shown in (`messageLanguage`), and a
 		// message keeps its AI translations with their provenance next to the
@@ -246,8 +251,8 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['guardianMessage']['version']);
 		$this->assertArrayHasKey('translations', self::$register['components']['schemas']['guardianMessage']['properties']);
 		$this->assertArrayHasKey('messageLanguage', self::$register['components']['schemas']['portalAccount']['properties']);
-		$this->assertSame('0.2.0', self::$register['components']['schemas']['activityOffer']['version']);
-		$this->assertSame('0.2.0', self::$register['components']['schemas']['activitySignup']['version']);
+		$this->assertSame('0.2.1', self::$register['components']['schemas']['activityOffer']['version']);
+		$this->assertSame('0.2.1', self::$register['components']['schemas']['activitySignup']['version']);
 		$this->assertSame('0.1.0', self::$register['components']['schemas']['activityAttendance']['version']);
 		$this->assertArrayHasKey('consent', self::$register['components']['schemas']['activitySignup']['properties']);
 

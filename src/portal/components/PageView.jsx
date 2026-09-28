@@ -10,10 +10,12 @@
 // blocks, so a ref that does not resolve here is a defensive skip, not expected.
 
 import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { isEndpointRowAction, offersRowAction, rowNotice } from '../lib/rowAction.js'
 import CitizenCase from './CitizenCase.jsx'
 import CollectionTable from './CollectionTable.jsx'
 import ProposeChangeForm from './ProposeChangeForm.jsx'
 import RichText from './RichText.jsx'
+import RowActionConfirm from './RowActionConfirm.jsx'
 import SchemaForm from './SchemaForm.jsx'
 import TimedTaskView from './TimedTaskView.jsx'
 import TimelineList from './TimelineList.jsx'
@@ -264,11 +266,15 @@ function DetailCard({ collection, row, api, proposeAction }) {
 		return <p className="portaliq-empty"><em>Selecteer een item.</em></p>
 	}
 	const detailRow = full || row
+	// The row's notice (contribution-pay-screen `noticeField`): a voluntary
+	// school contribution says so above everything else on the card.
+	const notice = rowNotice(collection, detailRow)
 	const fields = (collection.detail && Array.isArray(collection.detail.fields) && collection.detail.fields.length > 0)
 		? collection.detail.fields
 		: Object.keys(detailRow).filter((k) => k !== '@self' && k !== '_files')
 	return (
 		<>
+			{notice && <p className="portaliq-notice">{notice}</p>}
 			<dl className={`portaliq-detail portaliq-detail-${collection.detail?.layout || 'card'}`}>
 				{fields.map((f) => (
 					<div key={f} className="portaliq-detail-row">
@@ -307,6 +313,9 @@ export default function PageView({ page, contribution, api, dataByCollection, on
 	// The row selected in a table on this page, keyed by collection id — feeds
 	// any `detail` block for the same collection.
 	const [selected, setSelected] = useState({})
+	// The endpoint row action waiting for its confirm step (contribution-pay-
+	// screen): `{ collectionId, action, row }`, or null.
+	const [pending, setPending] = useState(null)
 
 	return (
 		<section className="portaliq-page">
@@ -375,12 +384,36 @@ export default function PageView({ page, contribution, api, dataByCollection, on
 								// `onRowAction` (App.jsx) invokes `type: update`'s server-
 								// enforced `set` transition with no field data — a
 								// `propose-change` rowAction would misfire the same way, so
-								// only update actions reach the table's row buttons; a
-								// propose-change action belongs on the `detail` block above.
-								rowActions={rowActions.filter((a) => a.type === 'update')}
+								// it never reaches the table's row buttons; it belongs on
+								// the `detail` block above. Endpoint row actions
+								// (contribution-pay-screen) do reach them: they open a
+								// confirm step below the table instead of firing at once,
+								// and show only on the rows their `rowWhen` names.
+								rowActions={rowActions.filter((a) => a.type === 'update' || isEndpointRowAction(a))}
+								offers={offersRowAction}
 								busyRow={busyRow}
-								onRowAction={(action, row) => onRowAction && onRowAction(action, row, collection)}
+								onRowAction={(action, row) => {
+									if (isEndpointRowAction(action)) {
+										setPending({ collectionId: collection.id, action, row })
+										return
+									}
+									if (onRowAction) {
+										onRowAction(action, row, collection)
+									}
+								}}
 							/>
+							{pending && pending.collectionId === collection.id && (
+								<RowActionConfirm
+									key={`${pending.action.id}:${pending.row.id || pending.row['@self']?.id || ''}`}
+									action={pending.action}
+									collection={collection}
+									row={pending.row}
+									api={api}
+									t={translate}
+									onDone={() => onCreated && onCreated(null, { register: collection.register, schema: collection.schema })}
+									onClose={() => setPending(null)}
+								/>
+							)}
 						</div>
 					)
 				}
