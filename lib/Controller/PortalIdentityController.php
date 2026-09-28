@@ -9,7 +9,9 @@
  *
  * Everything here is anonymous by design. What the bearer may then do to
  * their OWN account lives next door in PortalAccountSelfController, because
- * getting in and running an account you already have are two jobs.
+ * getting in and running an account you already have are two jobs. So this
+ * controller does NOT carry the PortalProtected marker: behind the bearer
+ * gate every way in answered 401 to the visitor it exists for (portaliq#795).
  *
  * @category Controller
  * @package  OCA\Portaliq\Controller
@@ -31,7 +33,6 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Service\CaseTypeReader;
 use OCA\Portaliq\Service\Identity\PortalChallengeService;
 use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
@@ -58,7 +59,7 @@ use OCP\IRequest;
  * distinct act; a facade would hide which boundary each one crosses.
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)  -- see above.
  */
-class PortalIdentityController extends Controller implements PortalProtected {
+class PortalIdentityController extends Controller {
 
 	/**
 	 * Constructor.
