@@ -31,6 +31,8 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
+use OCA\Portaliq\Service\Identity\PortalSelfServiceService;
+use OCA\Portaliq\Service\Messaging\GuardianMessageTranslator;
 use OCA\Portaliq\Service\Messaging\GuardianMessagingLeafInterface;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
@@ -53,11 +55,19 @@ class MessageGuardianController extends Controller implements PortalProtected {
 	 * @param IRequest $request The request.
 	 * @param PortalSessionService $session Resolves the subject from the bearer.
 	 * @param GuardianMessagingLeafInterface $messaging The messaging leaf.
+	 * @param GuardianMessageTranslator|null $translator Shows messages in the reader's
+	 *                                                   language (translated-message-notice).
+	 *                                                   Nullable and trailing so a
+	 *                                                   controller built by hand keeps
+	 *                                                   its old shape.
+	 * @param PortalSelfServiceService|null $selfService Reads the reader's own `messageLanguage`.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PortalSessionService $session,
 		private readonly GuardianMessagingLeafInterface $messaging,
+		private readonly ?GuardianMessageTranslator $translator = null,
+		private readonly ?PortalSelfServiceService $selfService = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -114,9 +124,11 @@ class MessageGuardianController extends Controller implements PortalProtected {
 	 *
 	 * @param string $id The thread id.
 	 *
-	 * @return JSONResponse The messages, or 404.
+	 * @return JSONResponse The messages, or 404. A message translated into the
+	 *                      reader's `messageLanguage` carries `translation`.
 	 *
 	 * @spec openspec/changes/guardian-direct-messages/specs/guardian-direct-messaging/spec.md#requirement-every-readpostmark-read-re-verifies-participation-server-side
+	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-the-stored-message-keeps-both-texts-and-the-provenance
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -127,13 +139,38 @@ class MessageGuardianController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'unauthorized'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$messages = $this->messaging->listMessages(threadId: $id, subjectRef: (string)($subject['subjectRef'] ?? ''), isStaff: false);
+		$subjectRef = (string)($subject['subjectRef'] ?? '');
+		$messages   = $this->messaging->listMessages(threadId: $id, subjectRef: $subjectRef, isStaff: false);
 		if ($messages === null) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		return new JSONResponse($messages);
+		return new JSONResponse($this->inReadersLanguage(messages: $messages, subjectRef: $subjectRef));
 	}//end messages()
+
+	/**
+	 * The messages in the reader's own language, when they picked one. Runs
+	 * only after participation was verified, on messages already authorised.
+	 *
+	 * @param array<int, array<string, mixed>> $messages The authorised messages.
+	 * @param string $subjectRef The reader.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-translation-work-per-request-is-bounded-and-skips-what-needs-none
+	 */
+	private function inReadersLanguage(array $messages, string $subjectRef): array {
+		if ($this->translator === null || $this->selfService === null || $subjectRef === '') {
+			return $messages;
+		}
+
+		$language = $this->selfService->messageLanguage(subjectRef: $subjectRef);
+		if ($language === '') {
+			return $messages;
+		}
+
+		return $this->translator->forReader(messages: $messages, readerRef: $subjectRef, language: $language);
+	}//end inReadersLanguage()
 
 	/**
 	 * Post a message into a thread the guardian participates in.

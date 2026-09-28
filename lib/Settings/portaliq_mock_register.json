@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "portaliq demo data",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "description": "Demo data covering every schema this app supplies, offered as the first step of the app's setup walkthrough. Generated from the schemas themselves, so every object satisfies the schema that will validate it."
   },
   "x-openregister": {
@@ -837,7 +837,8 @@
         "status": "active",
         "needsAlternativeContact": true,
         "lastLoginAt": "2026-03-01T09:00:00+00:00",
-        "claims": {}
+        "claims": {},
+        "messageLanguage": "ar"
       },
       {
         "@self": {
@@ -855,7 +856,8 @@
         "status": "suspended",
         "needsAlternativeContact": false,
         "lastLoginAt": "2026-03-02T09:00:00+00:00",
-        "claims": {}
+        "claims": {},
+        "messageLanguage": ""
       },
       {
         "@self": {
@@ -873,7 +875,8 @@
         "status": "active",
         "needsAlternativeContact": true,
         "lastLoginAt": "2026-03-03T09:00:00+00:00",
-        "claims": {}
+        "claims": {},
+        "messageLanguage": ""
       },
       {
         "@self": {
@@ -2834,10 +2837,24 @@
         },
         "threadRef": "Voorbeeld Threadref 1",
         "senderRef": "Voorbeeld Senderref 1",
-        "body": "Voorbeeld Body 1",
+        "body": "De school is morgen gesloten vanwege een studiedag.",
         "sentAt": "2026-03-01T09:00:00+00:00",
         "readBy": [
           "Voorbeeld Readby 1"
+        ],
+        "translations": [
+          {
+            "targetLanguage": "ar",
+            "text": "المدرسة مغلقة غدًا بسبب يوم دراسي للمعلمين.",
+            "translatedByAi": true,
+            "sourceLanguage": "nl",
+            "sourceLanguageDetected": true,
+            "model": "nextcloud",
+            "originalRef": "portaliq:guardianMessage:demo-1",
+            "disclosure": "تُرجم بواسطة الذكاء الاصطناعي. اللغة الأصلية: الهولندية. قد تحتوي هذه الترجمة على أخطاء.",
+            "disclosureLanguage": "ar",
+            "translatedAt": "2026-09-27T09:00:00+00:00"
+          }
         ]
       },
       {
@@ -2852,7 +2869,8 @@
         "sentAt": "2026-03-02T09:00:00+00:00",
         "readBy": [
           "Voorbeeld Readby 2"
-        ]
+        ],
+        "translations": []
       },
       {
         "@self": {
@@ -2866,7 +2884,8 @@
         "sentAt": "2026-03-03T09:00:00+00:00",
         "readBy": [
           "Voorbeeld Readby 3"
-        ]
+        ],
+        "translations": []
       },
       {
         "@self": {

@@ -109,5 +109,21 @@
 	"Done.": "Done.",
 	"The next page could not be opened.": "The next page could not be opened.",
 	"This can no longer be done for this item.": "This can no longer be done for this item.",
-	"This is not available right now. Try again later.": "This is not available right now. Try again later."
+	"This is not available right now. Try again later.": "This is not available right now. Try again later.",
+	"Messages": "Messages",
+	"AI translation": "AI translation",
+	"Translated by AI": "Translated by AI",
+	"Translated by AI from {language}": "Translated by AI from {language}",
+	"Show the original text": "Show the original text",
+	"Hide the original text": "Hide the original text",
+	"Show messages in": "Show messages in",
+	"As written": "As written",
+	"Messages from school are translated by AI into this language. You can always see the original text.": "Messages from school are translated by AI into this language. You can always see the original text.",
+	"Your language choice could not be saved.": "Your language choice could not be saved.",
+	"No conversations yet.": "No conversations yet.",
+	"Conversations": "Conversations",
+	"Group conversation": "Group conversation",
+	"Conversation with school": "Conversation with school",
+	"You": "You",
+	"School": "School"
 }

@@ -156,6 +156,64 @@ class PortalSelfServiceServiceTest extends TestCase {
 	}//end testTheChannelPreferenceAloneIsEnoughToAsk()
 
 	/**
+	 * translated-message-notice: a guardian picks, reads back and clears the
+	 * language school messages are shown in; only that field changes.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-a-guardian-chooses-the-language-messages-are-shown-in
+	 */
+	public function testTheMessageLanguageIsSetReadBackAndCleared(): void {
+		$this->seedAccount();
+		$service = $this->service();
+
+		$this->assertNotNull($service->updateDetails(subjectRef: 'subject-1', messageLanguage: 'ar'));
+		$this->assertSame('ar', $this->account()['messageLanguage']);
+		$this->assertSame('oud@example.org', $this->account()['email']);
+		$this->assertArrayNotHasKey('notificationChannels', $this->account());
+		$this->assertSame('ar', $service->messageLanguage(subjectRef: 'subject-1'));
+		$this->assertSame(
+			['displayName' => 'Ans de Vries', 'email' => 'oud@example.org', 'emailNotifications' => true, 'messageLanguage' => 'ar'],
+			$service->details(subjectRef: 'subject-1')
+		);
+
+		$this->assertNotNull($service->updateDetails(subjectRef: 'subject-1', messageLanguage: ''));
+		$this->assertSame('', $service->messageLanguage(subjectRef: 'subject-1'));
+
+	}//end testTheMessageLanguageIsSetReadBackAndCleared()
+
+	/**
+	 * A value that is not a language tag is refused and changes nothing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-a-guardian-chooses-the-language-messages-are-shown-in
+	 */
+	public function testAMessageLanguageThatIsNotATagIsRefused(): void {
+		$this->seedAccount();
+		$service = $this->service();
+
+		$this->assertNull($service->updateDetails(subjectRef: 'subject-1', displayName: 'Nieuw', messageLanguage: 'Arabic please'));
+		$this->assertArrayNotHasKey('messageLanguage', $this->account());
+		$this->assertSame('Ans de Vries', $this->account()['displayName']);
+
+	}//end testAMessageLanguageThatIsNotATagIsRefused()
+
+	/**
+	 * An unknown subject has no details and no language.
+	 *
+	 * @return void
+	 */
+	public function testAnUnknownSubjectHasNoDetails(): void {
+		$this->seedAccount();
+		$service = $this->service();
+
+		$this->assertNull($service->details(subjectRef: 'someone-else'));
+		$this->assertSame('', $service->messageLanguage(subjectRef: 'someone-else'));
+
+	}//end testAnUnknownSubjectHasNoDetails()
+
+	/**
 	 * The account row as it now stands.
 	 *
 	 * @return array<string, mixed>

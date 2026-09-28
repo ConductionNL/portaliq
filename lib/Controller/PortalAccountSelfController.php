@@ -79,17 +79,27 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 	 *                                      for the email channel, or null
 	 *                                      to leave it unchanged
 	 *                                      (notification-preferences-per-role).
+	 * @param string|null $messageLanguage The language school messages are
+	 *                                     shown in, '' for as written, or
+	 *                                     null to leave it
+	 *                                     (translated-message-notice).
 	 *
 	 * @return JSONResponse Whether the change landed, and whether a
 	 *                      confirmation is now waiting.
 	 *
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
 	 * @spec openspec/changes/notification-preferences-per-role/specs/supplier-portal/spec.md#requirement-an-accounts-own-channel-opt-out-gates-dispatch
+	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-a-guardian-chooses-the-language-messages-are-shown-in
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 20, period: 60)]
-	public function updateDetails(string $displayName = '', string $email = '', ?bool $emailNotifications = null): JSONResponse {
+	public function updateDetails(
+		string $displayName = '',
+		string $email = '',
+		?bool $emailNotifications = null,
+		?string $messageLanguage = null,
+	): JSONResponse {
 		$subject = $this->subject();
 		if ($subject === null) {
 			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
@@ -99,7 +109,8 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 			subjectRef: (string)($subject['subjectRef'] ?? ''),
 			displayName: $displayName,
 			email: $email,
-			emailNotifications: $emailNotifications
+			emailNotifications: $emailNotifications,
+			messageLanguage: $messageLanguage
 		);
 		if ($updated === null) {
 			return new JSONResponse(['error' => 'refused'], Http::STATUS_BAD_REQUEST);
@@ -109,6 +120,31 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 		// only says one is waiting, so the old session cannot read it.
 		return new JSONResponse(['updated' => true, 'confirmationPending' => ($updated['confirmationToken'] !== '')]);
 	}//end updateDetails()
+
+	/**
+	 * The bearer's own details: name, address, email channel and message
+	 * language. Never another account's; the subject comes from the bearer.
+	 *
+	 * @return JSONResponse The details, 401 without a subject, 404 without an account.
+	 *
+	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-a-guardian-chooses-the-language-messages-are-shown-in
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 60, period: 60)]
+	public function details(): JSONResponse {
+		$subject = $this->subject();
+		if ($subject === null) {
+			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$details = $this->selfService->details(subjectRef: (string)($subject['subjectRef'] ?? ''));
+		if ($details === null) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		return new JSONResponse($details);
+	}//end details()
 
 	/**
 	 * Confirm a new address through its link.

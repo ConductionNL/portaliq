@@ -1525,7 +1525,11 @@ OC.L10N.register(
         "Agreed by": "Akkoord gegeven door",
         "The guardian who agreed.": "De ouder of verzorger die akkoord gaf.",
         "Agreed at": "Akkoord gegeven op",
-        "When the guardian agreed.": "Wanneer de ouder of verzorger akkoord gaf."
+        "When the guardian agreed.": "Wanneer de ouder of verzorger akkoord gaf.",
+        "Message language": "Taal voor berichten",
+        "The language this person reads school messages in, as a language tag such as ar or tr. Messages from school are translated by AI into it and marked as such. Empty shows messages as written. Only the person themselves sets it.": "De taal waarin deze persoon berichten van school leest, als taalcode zoals ar of tr. Berichten van school worden door AI naar deze taal vertaald en zo gemarkeerd. Leeg toont berichten zoals ze geschreven zijn. Alleen de persoon zelf stelt dit in.",
+        "Translations": "Vertalingen",
+        "Server-managed. One entry per language this message was translated into by AI: the translated text, the source language, the model, a reference to this message and the disclosure sentence. The body stays as written.": "Wordt door de server bijgehouden. Eén item per taal waarnaar AI dit bericht heeft vertaald: de vertaalde tekst, de brontaal, het model, een verwijzing naar dit bericht en de melding voor de lezer. De berichttekst blijft zoals hij geschreven is."
     },
     "nplurals=2; plural=(n != 1);"
 )
