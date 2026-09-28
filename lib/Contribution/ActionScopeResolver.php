@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-actions-sign-a-document/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
  */
 
 declare(strict_types=1);
@@ -61,7 +61,7 @@ class ActionScopeResolver {
 	 *
 	 * @return array{body: array<string, mixed>|null, scopeValue: string}|null
 	 *
-	 * @spec openspec/changes/case-actions-sign-a-document/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
 	 */
 	public function prepare(array $action, array $subject, string $appId, ?array $body): ?array {
 		if (is_string($action['subjectField'] ?? null) === true) {

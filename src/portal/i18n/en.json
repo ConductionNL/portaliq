@@ -147,5 +147,16 @@
 	"Your request could not be sent. Try again later.": "Your request could not be sent. Try again later.",
 	"Ask for access to the cases of a company or person you act for. The organisation answers your request.": "Ask for access to the cases of a company or person you act for. The organisation answers your request.",
 	"For {party}": "For {party}",
-	"Asked on {date}": "Asked on {date}"
+	"Asked on {date}": "Asked on {date}",
+	"Sign": "Sign",
+	"Decline to sign": "Decline to sign",
+	"I have read this document and I sign it.": "I have read this document and I sign it.",
+	"Why do you decline?": "Why do you decline?",
+	"You signed {documentName}.": "You signed {documentName}.",
+	"You declined to sign {documentName}.": "You declined to sign {documentName}.",
+	"This document cannot be shown here.": "This document cannot be shown here.",
+	"Download {documentName}": "Download {documentName}",
+	"This document is too large to show here. Download it to read it.": "This document is too large to show here. Download it to read it.",
+	"Give a reason.": "Give a reason.",
+	"Loading the document…": "Loading the document…"
 }

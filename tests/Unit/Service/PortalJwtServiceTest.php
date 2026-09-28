@@ -166,7 +166,7 @@ class PortalJwtServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-actions-sign-a-document/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
 	 */
 	public function testAssertionWithScopeClaimHasExactlyTenClaims(): void {
 		$jwt = new PortalJwtService(self::SECRET);
@@ -199,7 +199,7 @@ class PortalJwtServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-actions-sign-a-document/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
 	 */
 	public function testAReservedOrEmptyScopeClaimLeavesTheNineClaims(): void {
 		$jwt = new PortalJwtService(self::SECRET);

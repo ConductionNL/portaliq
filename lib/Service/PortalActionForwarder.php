@@ -92,7 +92,7 @@ class PortalActionForwarder {
 	 * @return IResponse|null The domain app's response, or null on transport failure.
 	 *
 	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T8
-	 * @spec openspec/changes/case-actions-sign-a-document/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
 	 */
 	public function forward(array $action, array $subject, ?array $whitelisted = null, string $scopeValue = ''): ?IResponse {
 		$scopeClaim = '';

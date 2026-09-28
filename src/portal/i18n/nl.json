@@ -147,5 +147,16 @@
 	"Your request could not be sent. Try again later.": "Uw aanvraag kon niet worden verstuurd. Probeer het later opnieuw.",
 	"Ask for access to the cases of a company or person you act for. The organisation answers your request.": "Vraag toegang aan tot de zaken van een bedrijf of persoon namens wie u handelt. De organisatie beantwoordt uw aanvraag.",
 	"For {party}": "Voor {party}",
-	"Asked on {date}": "Aangevraagd op {date}"
+	"Asked on {date}": "Aangevraagd op {date}",
+	"Sign": "Ondertekenen",
+	"Decline to sign": "Ondertekenen weigeren",
+	"I have read this document and I sign it.": "Ik heb dit document gelezen en ik onderteken het.",
+	"Why do you decline?": "Waarom weigert u?",
+	"You signed {documentName}.": "U hebt {documentName} ondertekend.",
+	"You declined to sign {documentName}.": "U hebt geweigerd {documentName} te ondertekenen.",
+	"This document cannot be shown here.": "Dit document kan hier niet worden getoond.",
+	"Download {documentName}": "{documentName} downloaden",
+	"This document is too large to show here. Download it to read it.": "Dit document is te groot om hier te tonen. Download het om het te lezen.",
+	"Give a reason.": "Geef een reden.",
+	"Loading the document…": "Document laden…"
 }

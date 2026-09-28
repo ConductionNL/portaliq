@@ -128,7 +128,7 @@ class ContributionControllerSubjectFieldTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-actions-sign-a-document/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
 	 */
 	public function testADeclaredScopeClaimRidesInTheAssertion(): void {
 		$session = $this->createMock(PortalSessionService::class);

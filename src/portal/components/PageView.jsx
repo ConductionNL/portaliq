@@ -11,12 +11,15 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { isEndpointRowAction, offersRowAction, rowNotice } from '../lib/rowAction.js'
+import { dialogFor, tableRowActions } from '../lib/signing.js'
 import CitizenCase from './CitizenCase.jsx'
 import CollectionTable from './CollectionTable.jsx'
+import DeclineDialog from './DeclineDialog.jsx'
 import ProposeChangeForm from './ProposeChangeForm.jsx'
 import RichText from './RichText.jsx'
 import RowActionConfirm from './RowActionConfirm.jsx'
 import SchemaForm from './SchemaForm.jsx'
+import SigningDialog from './SigningDialog.jsx'
 import TimedTaskView from './TimedTaskView.jsx'
 import TimelineList from './TimelineList.jsx'
 
@@ -389,7 +392,9 @@ export default function PageView({ page, contribution, api, dataByCollection, on
 								// (contribution-pay-screen) do reach them: they open a
 								// confirm step below the table instead of firing at once,
 								// and show only on the rows their `rowWhen` names.
-								rowActions={rowActions.filter((a) => a.type === 'update' || isEndpointRowAction(a))}
+								// Viewing the document belongs to the sign dialog, not to a
+								// button of its own (case-actions-sign-a-document).
+								rowActions={tableRowActions(rowActions.filter((a) => a.type === 'update' || isEndpointRowAction(a)))}
 								offers={offersRowAction}
 								busyRow={busyRow}
 								onRowAction={(action, row) => {
@@ -402,7 +407,34 @@ export default function PageView({ page, contribution, api, dataByCollection, on
 									}
 								}}
 							/>
-							{pending && pending.collectionId === collection.id && (
+							{/* Sign and decline get their own dialogs (case-actions-sign-a-document,
+							    D4); every other endpoint row action the plain confirm step. */}
+							{pending && pending.collectionId === collection.id && dialogFor(pending.action) === 'sign' && (
+								<SigningDialog
+									key={`${pending.action.id}:${pending.row.id || pending.row['@self']?.id || ''}`}
+									action={pending.action}
+									viewAction={rowActions.find((a) => a.id === 'viewDocument' && isEndpointRowAction(a)) || null}
+									collection={collection}
+									row={pending.row}
+									api={api}
+									t={translate}
+									onDone={() => onCreated && onCreated(null, { register: collection.register, schema: collection.schema })}
+									onClose={() => setPending(null)}
+								/>
+							)}
+							{pending && pending.collectionId === collection.id && dialogFor(pending.action) === 'decline' && (
+								<DeclineDialog
+									key={`${pending.action.id}:${pending.row.id || pending.row['@self']?.id || ''}`}
+									action={pending.action}
+									collection={collection}
+									row={pending.row}
+									api={api}
+									t={translate}
+									onDone={() => onCreated && onCreated(null, { register: collection.register, schema: collection.schema })}
+									onClose={() => setPending(null)}
+								/>
+							)}
+							{pending && pending.collectionId === collection.id && dialogFor(pending.action) === 'confirm' && (
 								<RowActionConfirm
 									key={`${pending.action.id}:${pending.row.id || pending.row['@self']?.id || ''}`}
 									action={pending.action}

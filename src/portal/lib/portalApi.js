@@ -647,14 +647,17 @@ export function createPortalApi(config) {
 		 * Run an endpoint row action for one row the subject owns
 		 * (contribution-pay-screen): a guardian pays one contribution. The row
 		 * is named only in the path; the server reads it under the collection's
-		 * scope and stamps its id itself, so nothing else is sent.
+		 * scope and stamps its id itself. `answers` carries what a dialog
+		 * collected (a signing consent, a decline reason); the server keeps only
+		 * the fields the action declares (case-actions-sign-a-document).
 		 *
 		 * @param {object} collection Manifest collection: `{ id, register, schema }`.
 		 * @param {string} rowId The row's id.
 		 * @param {string} actionId The endpoint row action's id.
+		 * @param {object} [answers] The answers to send, `{}` by default.
 		 * @return {Promise<object>} `{ ok, status, body }`; `status` 0 on a network error.
 		 */
-		async forwardRowAction(collection, rowId, actionId) {
+		async forwardRowAction(collection, rowId, actionId, answers = {}) {
 			try {
 				const res = await fetch(
 					`${base}${col(collection.register, collection.schema)}/${encodeURIComponent(rowId)}/actions/${encodeURIComponent(actionId)}?collection=${encodeURIComponent(collection.id)}`,
@@ -665,7 +668,7 @@ export function createPortalApi(config) {
 							Accept: 'application/json',
 							...authHeaders(),
 						},
-						body: '{}',
+						body: JSON.stringify(answers || {}),
 					},
 				)
 				const json = await res.json().catch(() => ({}))
