@@ -93,7 +93,7 @@ class NewsRowSource {
 		}
 
 		return $normalised;
-	}//end findAllPublished()
+	}//end findAll()
 
 	/**
 	 * The row's id/uuid, from a flat property or its `@self` envelope.
