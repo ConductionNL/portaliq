@@ -70,6 +70,13 @@
       "order": 30
     },
     {
+      "id": "AccessRequestsMenu",
+      "label": "Access requests",
+      "icon": "AccountKey",
+      "route": "AccessRequests",
+      "order": 32
+    },
+    {
       "id": "PortalSubmissionsMenu",
       "label": "Submissions",
       "icon": "FileCheckOutline",
@@ -1583,7 +1590,7 @@
       "route": "/pages/:id",
       "type": "detail",
       "title": "Page",
-      "_note": "A page's BODY is a widget grid, and this detail page cannot edit one \u2014 it renders the object's scalars, so `body.widgets` shows up as an array of grid integers in a textarea. `PageLayout` is the surface that edits it, and until the `edit-layout` header action below existed nothing in the UI linked there: the designer was reachable only by typing `/pages/<id>/layout` into the address bar. The action carries NO `params`: vue-router fills a named target's missing REQUIRED params from the current route (`pickParams(currentLocation.params, \u2026)` in its matcher), and `:id` is the same param on both routes, so `PageLayout` resolves to `/pages/<this id>/layout` on its own. That is also why the library's `open-page` dispatch does not pass params.",
+      "_note": "A page's BODY is a widget grid, and this detail page cannot edit one — it renders the object's scalars, so `body.widgets` shows up as an array of grid integers in a textarea. `PageLayout` is the surface that edits it, and until the `edit-layout` header action below existed nothing in the UI linked there: the designer was reachable only by typing `/pages/<id>/layout` into the address bar. The action carries NO `params`: vue-router fills a named target's missing REQUIRED params from the current route (`pickParams(currentLocation.params, …)` in its matcher), and `:id` is the same param on both routes, so `PageLayout` resolves to `/pages/<this id>/layout` on its own. That is also why the library's `open-page` dispatch does not pass params.",
       "config": {
         "register": "portaliq",
         "schema": "page",
@@ -1825,6 +1832,14 @@
       "title": "Page layout",
       "component": "PageLayoutDesigner",
       "_note": "A page body is a widget grid on the shared 12-column geometry, and no built-in page type edits one: the detail page renders the object as fields, which for body.widgets means an array of grid integers in a textarea. This custom page places, moves and resizes those widgets directly, and is what the floating editing control on the site links to."
+    },
+    {
+      "id": "AccessRequests",
+      "route": "/access-requests",
+      "type": "custom",
+      "title": "Access requests",
+      "component": "AccessRequests",
+      "_note": "Grant and refuse are server-side actions behind portal.answer-access-request, and a grant also records the mandate that opens the cases, so no built-in page type can answer a request. This page lists the pending requests and posts the answer."
     },
     {
       "id": "Glossary",

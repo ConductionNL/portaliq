@@ -9,6 +9,9 @@
     ],
     "portal.review-proposal": [
       "admin"
+    ],
+    "portal.answer-access-request": [
+      "admin"
     ]
   }
 }

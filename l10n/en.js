@@ -1491,7 +1491,24 @@ OC.L10N.register(
         "The link works once and for a limited time.": "The link works once and for a limited time.",
         "Did you not ask for this? Then you can ignore this mail.": "Did you not ask for this? Then you can ignore this mail.",
         "The register of the case collection the link opens. The session a followed link starts reads only this collection.": "The register of the case collection the link opens. The session a followed link starts reads only this collection.",
-        "The schema of the case collection the link opens.": "The schema of the case collection the link opens."
+        "The schema of the case collection the link opens.": "The schema of the case collection the link opens.",
+        "A new request shows up here as soon as someone asks.": "A new request shows up here as soon as someone asks.",
+        "Access requests": "Access requests",
+        "Asks for the cases of {party}": "Asks for the cases of {party}",
+        "Cancel": "Cancel",
+        "Give a reason for the refusal.": "Give a reason for the refusal.",
+        "Grant": "Grant",
+        "No requests waiting": "No requests waiting",
+        "People who ask to see the cases of a company or person. Grant a request to open those cases to them.": "People who ask to see the cases of a company or person. Grant a request to open those cases to them.",
+        "Reason for the refusal": "Reason for the refusal",
+        "Refuse": "Refuse",
+        "Refuse this request": "Refuse this request",
+        "Someone already answered this request.": "Someone already answered this request.",
+        "The access could not be recorded, so the request is still waiting. Try again.": "The access could not be recorded, so the request is still waiting. Try again.",
+        "The access requests could not be loaded or saved. Try again.": "The access requests could not be loaded or saved. Try again.",
+        "The person who asked reads this reason.": "The person who asked reads this reason.",
+        "Why the request was refused. The person who asked reads it.": "Why the request was refused. The person who asked reads it.",
+        "You may not answer access requests. Ask an administrator for this right.": "You may not answer access requests. Ask an administrator for this right."
     },
     "nplurals=2; plural=(n != 1);"
 )
