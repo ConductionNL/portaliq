@@ -182,7 +182,11 @@ class NotificationChannels {
 			$delivered = false;
 		}
 
-		return ($delivered === true) ? 'sent' : 'failed';
+		if ($delivered === true) {
+			return 'sent';
+		}
+
+		return 'failed';
 	}//end push()
 
 	/**
