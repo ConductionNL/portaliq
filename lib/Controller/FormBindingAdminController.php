@@ -24,7 +24,7 @@
  *
  * @link https://Portaliq.app
  *
- * @spec openspec/specs/portal-intake-form/spec.md
+ * @spec openspec/specs/portal-intake-form/spec.md#requirement-a-portal-page-binds-to-a-published-form-not-to-a-field-list-req-pifo-001
  */
 
 declare(strict_types=1);
@@ -40,6 +40,8 @@ use OCP\IRequest;
 
 /**
  * Previews what a form binding resolves to, for an administrator.
+ *
+ * @spec openspec/specs/portal-intake-form/spec.md#requirement-a-portal-page-binds-to-a-published-form-not-to-a-field-list-req-pifo-001
  */
 class FormBindingAdminController extends Controller {
 
@@ -69,7 +71,7 @@ class FormBindingAdminController extends Controller {
 	 *       expresses admin-only as the ABSENCE of an opt-out attribute, so this
 	 *       tag is the declaration.
 	 *
-	 * @spec openspec/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md#requirement-a-portal-page-binds-to-a-published-form-not-to-a-field-list-req-pifo-001
 	 */
 	public function preview(array $binding = []): JSONResponse {
 		if ($binding === []) {

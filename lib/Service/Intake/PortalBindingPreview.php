@@ -32,7 +32,7 @@
  *
  * @link https://Portaliq.app
  *
- * @spec openspec/specs/portal-intake-form/spec.md
+ * @spec openspec/specs/portal-intake-form/spec.md#requirement-a-portal-page-binds-to-a-published-form-not-to-a-field-list-req-pifo-001
  */
 
 declare(strict_types=1);
@@ -41,6 +41,8 @@ namespace OCA\Portaliq\Service\Intake;
 
 /**
  * Describes one binding's current resolution for an administrator.
+ *
+ * @spec openspec/specs/portal-intake-form/spec.md#requirement-a-portal-page-binds-to-a-published-form-not-to-a-field-list-req-pifo-001
  */
 class PortalBindingPreview {
 
@@ -107,7 +109,7 @@ class PortalBindingPreview {
 	 *
 	 * @return array<string, mixed> The preview.
 	 *
-	 * @spec openspec/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md#requirement-a-portal-page-binds-to-a-published-form-not-to-a-field-list-req-pifo-001
 	 */
 	public function describe(array $binding): array {
 		$render = $this->resolver->render(binding: $binding);
@@ -147,12 +149,17 @@ class PortalBindingPreview {
 		// The reason travels as a code as well as a sentence, so the admin
 		// screen can say it in the administrator's own language.
 		$askedFor = trim((string)($binding['formName'] ?? ''));
+		$reason = $this->reasonCodeFor(render: $render, askedFor: $askedFor);
+		if ($askedFor === '') {
+			$askedFor = null;
+		}
+
 
 		return [
 			'state' => self::RESOLVES_TO_NONE,
 			'formName' => null,
-			'reason' => $this->reasonCodeFor(render: $render, askedFor: $askedFor),
-			'askedFor' => ($askedFor === '' ? null : $askedFor),
+			'reason' => $reason,
+			'askedFor' => $askedFor,
 			'destination' => null,
 			'message' => $this->reasonFor(render: $render, binding: $binding),
 		];
@@ -215,7 +222,7 @@ class PortalBindingPreview {
 	 *
 	 * @return bool True when it resolves to nothing.
 	 *
-	 * @spec openspec/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md#requirement-a-portal-page-binds-to-a-published-form-not-to-a-field-list-req-pifo-001
 	 */
 	public function needsAttention(array $binding): bool {
 		return ((string)$this->describe(binding: $binding)['state'] === self::RESOLVES_TO_NONE);

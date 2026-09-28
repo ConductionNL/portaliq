@@ -15,7 +15,7 @@
  * the translator are handed in by `src/customComponents.js`, so
  * `tests/form-binding-preview.spec.mjs` runs it as a plain node script.
  *
- * @spec openspec/specs/portal-intake-form/spec.md
+ * @spec openspec/specs/portal-intake-form/spec.md#requirement-a-portal-page-binds-to-a-published-form-not-to-a-field-list-req-pifo-001
  */
 
 /**
@@ -40,11 +40,13 @@ function bindingOf(row) {
  * @param {object} answer The preview.
  * @param {(text: string, vars?: object) => string} translate Translator.
  * @return {string}
- * @spec openspec/specs/portal-intake-form/spec.md
+ * @spec openspec/specs/portal-intake-form/spec.md#requirement-a-portal-page-binds-to-a-published-form-not-to-a-field-list-req-pifo-001
  */
 export function noFormSentence(answer, translate) {
 	if (answer?.reason === 'external_without_address') {
-		return translate('This entry sends people to another website, but has no address. Nobody can start it.')
+		return translate(
+			'This entry sends people to another website, but has no address. Nobody can start it.',
+		)
 	}
 	if (answer?.reason === 'named_form_not_published') {
 		return translate(
@@ -52,7 +54,9 @@ export function noFormSentence(answer, translate) {
 			{ form: answer?.askedFor || '' },
 		)
 	}
-	return translate('This entry opens no form today. No published form matches its case type and audience.')
+	return translate(
+		'This entry opens no form today. No published form matches its case type and audience.',
+	)
 }
 
 /**
@@ -66,29 +70,57 @@ export function noFormSentence(answer, translate) {
  * @param {(text: string) => void} deps.notifyError Error toast.
  * @param {(text: string, vars?: object) => string} deps.translate Translator.
  * @return {{previewFormBinding: (payload: {item: object}) => Promise<boolean>}}
- * @spec openspec/specs/portal-intake-form/spec.md
+ * @spec openspec/specs/portal-intake-form/spec.md#requirement-a-portal-page-binds-to-a-published-form-not-to-a-field-list-req-pifo-001
  */
-export function createFormBindingPreview({ post, generateUrl, notify, notifyWarning, notifyError, translate }) {
+export function createFormBindingPreview({
+	post,
+	generateUrl,
+	notify,
+	notifyWarning,
+	notifyError,
+	translate,
+}) {
 	return {
+		/**
+		 * Say which form the row's binding opens today.
+		 *
+		 * @param {{item: object}} payload The row action payload.
+		 * @return {Promise<boolean>} False when the check itself failed.
+		 * @spec openspec/specs/portal-intake-form/spec.md#requirement-a-portal-page-binds-to-a-published-form-not-to-a-field-list-req-pifo-001
+		 */
 		async previewFormBinding({ item }) {
 			let answer
 			try {
-				const response = await post(generateUrl('/apps/portaliq/api/form-bindings/preview'), {
-					binding: bindingOf(item),
-				})
+				const response = await post(
+					generateUrl('/apps/portaliq/api/form-bindings/preview'),
+					{
+						binding: bindingOf(item),
+					},
+				)
 				answer = response?.data || {}
-			} catch (error) {
-				notifyError(translate('Could not check which form this entry opens. Try again.'))
+			} catch {
+				notifyError(
+					translate(
+						'Could not check which form this entry opens. Try again.',
+					),
+				)
 				return false
 			}
 
 			if (answer.state === 'resolved') {
-				notify(translate('This entry opens "{form}" today.', { form: answer.formName || '' }))
+				notify(
+					translate('This entry opens "{form}" today.', {
+						form: answer.formName || '',
+					}),
+				)
 			} else if (answer.state === 'external') {
 				notify(
-					translate('This entry sends people to {destination}. Nothing arrives here.', {
-						destination: answer.destination || '',
-					}),
+					translate(
+						'This entry sends people to {destination}. Nothing arrives here.',
+						{
+							destination: answer.destination || '',
+						},
+					),
 				)
 			} else {
 				notifyWarning(noFormSentence(answer, translate))
