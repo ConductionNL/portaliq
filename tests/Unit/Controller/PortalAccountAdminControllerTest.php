@@ -6,6 +6,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\PortalAccountAdminController;
 use OCA\Portaliq\Service\ActionAuthService;
+use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
 use OCA\Portaliq\Service\Identity\PortalInvitationService;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCP\AppFramework\Http;
@@ -115,7 +116,7 @@ class PortalAccountAdminControllerTest extends TestCase {
 	 *
 	 * @return PortalAccountAdminController
 	 */
-	private function controller(PortalAccountService $accounts, bool $allowed, ?IUser $user): PortalAccountAdminController {
+	private function controller(PortalAccountService $accounts, bool $allowed, ?IUser $user, ?PortalIdentityMailer $mailer = null): PortalAccountAdminController {
 		$actionAuth = $this->getMockBuilder(ActionAuthService::class)
 			->disableOriginalConstructor()
 			->onlyMethods(['requireAction'])
@@ -134,7 +135,12 @@ class PortalAccountAdminControllerTest extends TestCase {
 		$invitations->method('invite')->willReturn(['token' => 'secret-1', 'expiresAt' => '2026-09-25T09:00:00+00:00']);
 		$invitations->method('sentBy')->willReturn([['email' => 'ans@example.org', 'state' => 'sent', 'sentAt' => '', 'expiresAt' => '']]);
 
-		return new PortalAccountAdminController($this->createMock(IRequest::class), $accounts, $actionAuth, $session, $invitations);
+		if ($mailer === null) {
+			$mailer = $this->mailer();
+			$mailer->method('send')->willReturn(true);
+		}
+
+		return new PortalAccountAdminController($this->createMock(IRequest::class), $accounts, $actionAuth, $session, $invitations, $mailer);
 	}//end controller()
 
 	public function testAnInvitationIsOnlySentByAClerkWithTheAction(): void {
@@ -142,9 +148,66 @@ class PortalAccountAdminControllerTest extends TestCase {
 		$allowed = $this->controller(accounts: $this->accounts(), allowed: true, user: $this->user('clerk-anna'));
 
 		$this->assertSame(Http::STATUS_FORBIDDEN, $refused->invite(email: 'ans@example.org', organisation: 'gemeente-x')->getStatus());
-		$this->assertSame('secret-1', $allowed->invite(email: 'ans@example.org', organisation: 'gemeente-x')->getData()['token']);
+		$this->assertSame(Http::STATUS_OK, $allowed->invite(email: 'ans@example.org', organisation: 'gemeente-x')->getStatus());
 
 	}//end testAnInvitationIsOnlySentByAClerkWithTheAction()
+
+	/**
+	 * portaliq#795, identity-staff-account-screens T01. The invitation's
+	 * secret used to be answered to the clerk and mailed to nobody. It now
+	 * goes to the invited address, and the clerk sees only that it was sent.
+	 *
+	 * @return void
+	 */
+	public function testTheInvitationIsMailedAndTheClerkNeverSeesItsSecret(): void {
+		$mailer = $this->mailer();
+		$mailer->expects($this->once())
+			->method('send')
+			->with(
+				$this->equalTo(PortalIdentityMailer::TEMPLATE_INVITATION),
+				$this->equalTo('ans@example.org'),
+				$this->equalTo('secret-1'),
+				$this->equalTo('gemeente-x')
+			)
+			->willReturn(true);
+		$controller = $this->controller(accounts: $this->accounts(), allowed: true, user: $this->user('clerk-anna'), mailer: $mailer);
+
+		$data = $controller->invite(email: 'ans@example.org', organisation: 'gemeente-x')->getData();
+
+		$this->assertSame(['state' => 'sent', 'expiresAt' => '2026-09-25T09:00:00+00:00'], $data);
+		$this->assertStringNotContainsString('secret-1', (string)json_encode($data));
+
+	}//end testTheInvitationIsMailedAndTheClerkNeverSeesItsSecret()
+
+	/**
+	 * portaliq#795. An invitation whose mail did not leave admits nobody, so
+	 * the clerk is told to send it again, and still never sees the secret.
+	 *
+	 * @return void
+	 */
+	public function testAnInvitationWhoseMailFailedSaysSoWithoutTheSecret(): void {
+		$mailer = $this->mailer();
+		$mailer->method('send')->willReturn(false);
+		$controller = $this->controller(accounts: $this->accounts(), allowed: true, user: $this->user('clerk-anna'), mailer: $mailer);
+
+		$response = $controller->invite(email: 'ans@example.org', organisation: 'gemeente-x');
+
+		$this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $response->getStatus());
+		$this->assertSame(['error' => 'mail_not_sent'], $response->getData());
+
+	}//end testAnInvitationWhoseMailFailedSaysSoWithoutTheSecret()
+
+	/**
+	 * A mailer double limited to the method the real one has.
+	 *
+	 * @return PortalIdentityMailer&\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private function mailer(): PortalIdentityMailer {
+		return $this->getMockBuilder(PortalIdentityMailer::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['send'])
+			->getMock();
+	}//end mailer()
 
 	public function testTheSenderSeesTheStateOfTheirOwnInvitations(): void {
 		$controller = $this->controller(accounts: $this->accounts(), allowed: true, user: $this->user('clerk-anna'));

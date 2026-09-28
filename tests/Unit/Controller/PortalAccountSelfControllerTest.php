@@ -6,6 +6,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\PortalAccountSelfController;
 use OCA\Portaliq\Service\Identity\PortalAccessRequestService;
+use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
 use OCA\Portaliq\Service\Identity\PortalSelfServiceService;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Http;
@@ -54,6 +55,66 @@ class PortalAccountSelfControllerTest extends TestCase {
 		$this->assertArrayNotHasKey('confirmationToken', $data);
 
 	}//end testTheConfirmationSecretIsNotReadableFromTheOldSession()
+
+	/**
+	 * portaliq#795. The confirmation secret used to be minted and dropped, so
+	 * a new address could never be confirmed. It now goes to the NEW address,
+	 * inside the mailed link, and the answer says only that it went.
+	 *
+	 * @return void
+	 */
+	public function testTheConfirmationSecretIsMailedToTheNewAddress(): void {
+		$controller = $this->controller(subject: ['subjectRef' => 'subject-1', 'organisation' => 'gemeente-x']);
+		$this->doubles['selfService']->method('updateDetails')->willReturn(['updated' => true, 'confirmationToken' => 'secret-1']);
+		$this->doubles['mailer']->expects($this->once())
+			->method('send')
+			->with(
+				$this->equalTo(PortalIdentityMailer::TEMPLATE_EMAIL_CONFIRMATION),
+				$this->equalTo('nieuw@example.org'),
+				$this->equalTo('secret-1'),
+				$this->equalTo('gemeente-x')
+			)
+			->willReturn(true);
+
+		$data = $controller->updateDetails(email: 'nieuw@example.org')->getData();
+
+		$this->assertSame(['updated' => true, 'confirmationPending' => true, 'confirmationSent' => true], $data);
+		$this->assertStringNotContainsString('secret-1', (string)json_encode($data));
+
+	}//end testTheConfirmationSecretIsMailedToTheNewAddress()
+
+	/**
+	 * portaliq#795. A confirmation mail that did not leave is said so, so the
+	 * page can ask to try again; the secret never falls back into the answer.
+	 *
+	 * @return void
+	 */
+	public function testAFailedConfirmationMailIsReportedWithoutTheSecret(): void {
+		$controller = $this->controller(subject: ['subjectRef' => 'subject-1', 'organisation' => 'gemeente-x']);
+		$this->doubles['selfService']->method('updateDetails')->willReturn(['updated' => true, 'confirmationToken' => 'secret-1']);
+		$this->doubles['mailer']->method('send')->willReturn(false);
+
+		$data = $controller->updateDetails(email: 'nieuw@example.org')->getData();
+
+		$this->assertSame(['updated' => true, 'confirmationPending' => true, 'confirmationSent' => false], $data);
+
+	}//end testAFailedConfirmationMailIsReportedWithoutTheSecret()
+
+	/**
+	 * A change that parks no new address mails nothing.
+	 *
+	 * @return void
+	 */
+	public function testANameChangeSendsNoMail(): void {
+		$controller = $this->controller(subject: ['subjectRef' => 'subject-1', 'organisation' => 'gemeente-x']);
+		$this->doubles['selfService']->method('updateDetails')->willReturn(['updated' => true, 'confirmationToken' => '']);
+		$this->doubles['mailer']->expects($this->never())->method('send');
+
+		$data = $controller->updateDetails(displayName: 'Anna')->getData();
+
+		$this->assertFalse($data['confirmationPending']);
+
+	}//end testANameChangeSendsNoMail()
 
 	/**
 	 * notification-preferences-per-role: the channel opt-out is forwarded
@@ -142,13 +203,15 @@ class PortalAccountSelfControllerTest extends TestCase {
 		$this->doubles = [
 			'selfService' => $this->double(PortalSelfServiceService::class, ['updateDetails', 'confirmEmail', 'removeAccount', 'details']),
 			'accessRequests' => $this->double(PortalAccessRequestService::class, ['request', 'madeBy']),
+			'mailer' => $this->double(PortalIdentityMailer::class, ['send']),
 		];
 
 		return new PortalAccountSelfController(
 			$request,
 			$session,
 			$this->doubles['selfService'],
-			$this->doubles['accessRequests']
+			$this->doubles['accessRequests'],
+			$this->doubles['mailer']
 		);
 	}//end controller()
 
