@@ -7,21 +7,18 @@
   `content.scope: 'page'` (portal-page-traffic).
 
   A thin wrapper around nc-vue's CnStatWidget, which already draws the
-  canonical KPI card and its per-card period picker. The wrapper adds
-  three things a manifest `stat` widget cannot do on its own:
+  canonical KPI card, its per-card period picker and its link. The
+  wrapper adds what a manifest `stat` widget cannot do on its own:
+  "Not measured" for a portal with measurement off, never a zero. On a
+  portal's page the card then gets no endpoint at all, so it asks for
+  nothing. A page does not carry its portal's `traffic` block, so on a
+  page the endpoint answers `measured` and every figure null, and the
+  card reads its answer.
 
-  - "Not measured" for a portal with measurement off, never a zero. On a
-    portal's page the card then gets no endpoint at all, so it asks for
-    nothing. A page does not carry its portal's `traffic` block, so on a
-    page the endpoint answers `measured` and every figure null, and the
-    card reads its answer.
-  - The link to the Traffic page with THIS portal selected. A card's
-    route tokens resolve only global values, never `@object.*`, so the
-    slug is written into the link here.
-  - The period. CnStatWidget draws the picker and documents `@range.*`
-    tokens for its endpoint, but nc-vue 2.56.0 never resolves them: the
-    literal token stays in the params and blocks the request. So the
-    wrapper watches the card's chosen preset and sends it as `days`.
+  The card sends the picked period as `days` through the `@range.preset`
+  token; the manifest's `dateRange.default` opens the picker on 30 days.
+  It links to the Traffic page with THIS portal selected: the portal's
+  own slug, or on a page the page's `portal`.
 
   On a page, a figure that no day of the period counted (days older than
   the back-filled retention window) reads "Not available for this
@@ -73,16 +70,13 @@ export default {
 	},
 
 	/**
-	 * The picked period and, on a page, the endpoint's answer.
+	 * On a page, the endpoint's answer.
 	 *
 	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-open-with-four-traffic-kpi-cards
 	 * @return {object} The state.
 	 */
 	data() {
 		return {
-			// The preset id the card's period picker holds; '' is the
-			// default preset, 30 days.
-			days: '',
 			// The page endpoint's answer, read off the card (page scope).
 			answer: null,
 		}
@@ -154,7 +148,7 @@ export default {
 				dateRange: this.content.dateRange,
 				endpointSource: {
 					url: '/apps/portaliq/api/traffic/summary',
-					params: { portal: this.slug, days: this.days },
+					params: { portal: this.slug, days: '@range.preset?' },
 				},
 
 				valueField: this.content.metric,
@@ -163,22 +157,13 @@ export default {
 	},
 
 	/**
-	 * Follow the card's period picker: its choice lives in the card's
-	 * own setup state, which the endpoint params cannot read. On a page,
-	 * follow the card's answer too: it says whether the portal is
+	 * On a page, follow the card's answer: it says whether the portal is
 	 * measured and on how many days a figure was counted.
 	 *
-	 * @spec openspec/changes/portal-traffic-kpi-cards/specs/portal-traffic-kpi-cards/spec.md#requirement-the-portal-page-must-open-with-four-traffic-kpi-cards
 	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-open-with-four-traffic-kpi-cards
 	 * @return {void}
 	 */
 	mounted() {
-		this.$watch(
-			() => (this.$refs.card && this.$refs.card.tileRange) || null,
-			(range) => {
-				this.days = (range && range.preset) || ''
-			},
-		)
 		this.$watch(
 			() => (this.$refs.card && this.$refs.card.epData) || null,
 			(answer) => {
@@ -230,7 +215,7 @@ export default {
 				dateRange: this.content.dateRange,
 				endpointSource: {
 					url: '/apps/portaliq/api/traffic/page',
-					params: { portal: this.slug, route, days: this.days },
+					params: { portal: this.slug, route, days: '@range.preset?' },
 				},
 
 				valueField: this.content.metric,
