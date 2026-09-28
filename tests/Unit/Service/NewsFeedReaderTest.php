@@ -229,4 +229,111 @@ class NewsFeedReaderTest extends TestCase {
 		$this->assertSame('Newer', $archive[0]['title']);
 		$this->assertSame('Older', $archive[1]['title']);
 	}//end testArchiveReturnsOnlySentInAudienceNewslettersMostRecentFirst()
+
+	/**
+	 * The audience of school 1 for the translation tests.
+	 *
+	 * @return GuardianAudienceFixtureReader
+	 */
+	private function schoolOneAudience(): GuardianAudienceFixtureReader {
+		$audienceReader = $this->createMock(GuardianAudienceFixtureReader::class);
+		$audienceReader->method('resolveAudience')->willReturn(['schoolRef' => 'school-1', 'groupRefs' => [], 'childRefs' => [], 'photoConsent' => []]);
+		return $audienceReader;
+	}//end schoolOneAudience()
+
+	/**
+	 * The title is translated with the body into the same entry: one save, one
+	 * provenance, one notice.
+	 *
+	 * @spec openspec/changes/news-title-and-newsletter-translation/specs/guardian-message-translation/spec.md#requirement-a-news-title-is-translated-with-its-body
+	 */
+	public function testFeedTranslatesTheTitleWithTheBody(): void {
+		$rows = [['id' => 'n1', 'status' => 'published', 'target' => ['schoolRef' => 'school-1'], 'title' => 'Studiedag', 'body' => 'De school is morgen dicht.']];
+		$saved = [];
+		$reader = new NewsFeedReader($this->container($rows), $this->schoolOneAudience(), $this->passThroughGate(), $this->createMock(LoggerInterface::class), $this->translator($saved));
+
+		$feed = $reader->feedFor('guardian-anna-devries', 'ar');
+
+		$this->assertSame('[ar] Studiedag', $feed[0]['translation']['title']);
+		$this->assertSame('[ar] De school is morgen dicht.', $feed[0]['translation']['text']);
+		$this->assertSame('Studiedag', $feed[0]['title']);
+		$this->assertCount(1, $saved);
+		$this->assertCount(1, $saved[0]['object']['translations']);
+		$this->assertSame('[ar] Studiedag', $saved[0]['object']['translations'][0]['title']);
+		$this->assertSame('portaliq:newsItem:n1', $saved[0]['object']['translations'][0]['originalRef']);
+	}//end testFeedTranslatesTheTitleWithTheBody()
+
+	/**
+	 * A news item translated before titles were gets its title added to the
+	 * stored entry, not a second entry.
+	 *
+	 * @spec openspec/changes/news-title-and-newsletter-translation/specs/guardian-message-translation/spec.md#requirement-a-news-title-is-translated-with-its-body
+	 */
+	public function testAStoredTranslationWithoutATitleGetsItsTitle(): void {
+		$entry = ['targetLanguage' => 'ar', 'text' => 'نص', 'translatedByAi' => true, 'sourceLanguage' => 'nl', 'originalRef' => 'portaliq:newsItem:n1'];
+		$rows = [['id' => 'n1', 'status' => 'published', 'target' => ['schoolRef' => 'school-1'], 'title' => 'Studiedag', 'body' => 'Tekst', 'translations' => [$entry]]];
+		$saved = [];
+		$reader = new NewsFeedReader($this->container($rows), $this->schoolOneAudience(), $this->passThroughGate(), $this->createMock(LoggerInterface::class), $this->translator($saved));
+
+		$feed = $reader->feedFor('guardian-anna-devries', 'ar');
+
+		$this->assertSame('نص', $feed[0]['translation']['text']);
+		$this->assertSame('[ar] Studiedag', $feed[0]['translation']['title']);
+		$this->assertCount(1, $saved);
+		$this->assertCount(1, $saved[0]['object']['translations']);
+		$this->assertSame('[ar] Studiedag', $saved[0]['object']['translations'][0]['title']);
+
+		// Read again with the stored title: nothing more to save.
+		$saved2 = [];
+		$again = new NewsFeedReader($this->container([$saved[0]['object'] + ['id' => 'n1']]), $this->schoolOneAudience(), $this->passThroughGate(), $this->createMock(LoggerInterface::class), $this->translator($saved2));
+		$this->assertSame('[ar] Studiedag', $again->feedFor('guardian-anna-devries', 'ar')[0]['translation']['title']);
+		$this->assertSame([], $saved2);
+	}//end testAStoredTranslationWithoutATitleGetsItsTitle()
+
+	/**
+	 * The archive carries each newsletter's items, only published and in the
+	 * reader's audience, translated and photo-gated exactly like the feed.
+	 *
+	 * @spec openspec/changes/news-title-and-newsletter-translation/specs/guardian-message-translation/spec.md#requirement-the-newsletter-archive-shows-its-items-as-the-news-page-does
+	 */
+	public function testArchiveCarriesItsItemsTranslatedLikeTheFeed(): void {
+		$gate = $this->createMock(NewsPhotoConsentGate::class);
+		$gate->method('apply')->willReturnCallback(static fn (array $item): array => array_merge($item, ['photoRefs' => []]));
+		$items = [
+			['id' => 'n1', 'status' => 'published', 'target' => ['schoolRef' => 'school-1'], 'title' => 'Studiedag', 'body' => 'Dicht.', 'photoRefs' => ['foto-1']],
+			['id' => 'n2', 'status' => 'draft', 'target' => ['schoolRef' => 'school-1'], 'title' => 'Concept', 'body' => 'Nog niet.'],
+			['id' => 'n3', 'status' => 'published', 'target' => ['schoolRef' => 'school-9'], 'title' => 'Andere school', 'body' => 'Niet voor jou.'],
+		];
+		$newsletters = [['id' => 'nl1', 'sentAt' => '2026-09-15T00:00:00+00:00', 'target' => ['schoolRef' => 'school-1'], 'title' => 'September', 'itemRefs' => ['n1', 'n2', 'n3', 'missing']]];
+		$saved = [];
+		$reader = new NewsFeedReader($this->container($items, $newsletters), $this->schoolOneAudience(), $gate, $this->createMock(LoggerInterface::class), $this->translator($saved));
+
+		$archive = $reader->archiveFor('guardian-anna-devries', 'ar');
+
+		$this->assertCount(1, $archive[0]['items']);
+		$this->assertSame('n1', $archive[0]['items'][0]['id']);
+		$this->assertSame('[ar] Dicht.', $archive[0]['items'][0]['translation']['text']);
+		$this->assertSame('[ar] Studiedag', $archive[0]['items'][0]['translation']['title']);
+		$this->assertSame([], $archive[0]['items'][0]['photoRefs']);
+		$this->assertSame(['foto-1'], $saved[0]['object']['photoRefs']);
+		$this->assertSame('September', $archive[0]['title']);
+	}//end testArchiveCarriesItsItemsTranslatedLikeTheFeed()
+
+	/**
+	 * Without a language the archive still carries its items, as written.
+	 *
+	 * @spec openspec/changes/news-title-and-newsletter-translation/specs/guardian-message-translation/spec.md#requirement-the-newsletter-archive-shows-its-items-as-the-news-page-does
+	 */
+	public function testArchiveWithoutALanguageCarriesItsItemsAsWritten(): void {
+		$items = [['id' => 'n1', 'status' => 'published', 'target' => ['schoolRef' => 'school-1'], 'title' => 'Studiedag', 'body' => 'Dicht.']];
+		$newsletters = [['id' => 'nl1', 'sentAt' => '2026-09-15T00:00:00+00:00', 'target' => ['schoolRef' => 'school-1'], 'title' => 'September', 'itemRefs' => ['n1']]];
+		$saved = [];
+		$reader = new NewsFeedReader($this->container($items, $newsletters), $this->schoolOneAudience(), $this->passThroughGate(), $this->createMock(LoggerInterface::class), $this->translator($saved));
+
+		$archive = $reader->archiveFor('guardian-anna-devries');
+
+		$this->assertSame('Studiedag', $archive[0]['items'][0]['title']);
+		$this->assertArrayNotHasKey('translation', $archive[0]['items'][0]);
+		$this->assertSame([], $saved);
+	}//end testArchiveWithoutALanguageCarriesItsItemsAsWritten()
 }//end class

@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "portaliq demo data",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "description": "Demo data covering every schema this app supplies, offered as the first step of the app's setup walkthrough. Generated from the schemas themselves, so every object satisfies the schema that will validate it."
   },
   "x-openregister": {
@@ -2540,6 +2540,7 @@
           {
             "targetLanguage": "ar",
             "text": "المدرسة مغلقة يوم الجمعة بسبب يوم دراسي للمعلمين.",
+            "title": "عنوان تجريبي 2",
             "translatedByAi": true,
             "sourceLanguage": "nl",
             "sourceLanguageDetected": true,

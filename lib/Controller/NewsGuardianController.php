@@ -89,12 +89,8 @@ class NewsGuardianController extends Controller implements PortalProtected {
 		}
 
 		$subjectRef = (string)($subject['subjectRef'] ?? '');
-		$language   = '';
-		if ($this->selfService !== null && $subjectRef !== '') {
-			$language = $this->selfService->messageLanguage(subjectRef: $subjectRef);
-		}
 
-		return new JSONResponse($this->feedReader->feedFor(subjectRef: $subjectRef, language: $language));
+		return new JSONResponse($this->feedReader->feedFor(subjectRef: $subjectRef, language: $this->languageOf(subjectRef: $subjectRef)));
 	}//end feed()
 
 	/**
@@ -131,6 +127,7 @@ class NewsGuardianController extends Controller implements PortalProtected {
 	 * @return JSONResponse
 	 *
 	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsletter-composes-existing-news-items-with-an-archive
+	 * @spec openspec/changes/news-title-and-newsletter-translation/specs/guardian-message-translation/spec.md#requirement-the-newsletter-archive-shows-its-items-as-the-news-page-does
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -141,8 +138,25 @@ class NewsGuardianController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'unauthorized'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		return new JSONResponse($this->feedReader->archiveFor(subjectRef: (string)($subject['subjectRef'] ?? '')));
+		$subjectRef = (string)($subject['subjectRef'] ?? '');
+
+		return new JSONResponse($this->feedReader->archiveFor(subjectRef: $subjectRef, language: $this->languageOf(subjectRef: $subjectRef)));
 	}//end archive()
+
+	/**
+	 * The reader's `messageLanguage`, '' when none is set or known.
+	 *
+	 * @param string $subjectRef The reader.
+	 *
+	 * @return string
+	 */
+	private function languageOf(string $subjectRef): string {
+		if ($this->selfService === null || $subjectRef === '') {
+			return '';
+		}
+
+		return $this->selfService->messageLanguage(subjectRef: $subjectRef);
+	}//end languageOf()
 
 	/**
 	 * Resolve the subject from the bearer (fail-closed).

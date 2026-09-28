@@ -1510,7 +1510,7 @@ OC.L10N.register(
         "Access granted.": "Access granted.",
         "Request refused.": "Request refused.",
         "Plain text / markdown body, as written. An AI translation for a reader's language is kept in translations, never here.": "Plain text / markdown body, as written. An AI translation for a reader's language is kept in translations, never here.",
-        "Server-managed. One entry per language this news item was translated into by AI: the translated text, the source language, the model, a reference to this item and the disclosure sentence. The body stays as written.": "Server-managed. One entry per language this news item was translated into by AI: the translated text, the source language, the model, a reference to this item and the disclosure sentence. The body stays as written."
+        "Server-managed. One entry per language this news item was translated into by AI: the translated text, the translated title, the source language, the model, a reference to this item and the disclosure sentence. The title and body stay as written.": "Server-managed. One entry per language this news item was translated into by AI: the translated text, the translated title, the source language, the model, a reference to this item and the disclosure sentence. The title and body stay as written."
     },
     "nplurals=2; plural=(n != 1);"
 )
