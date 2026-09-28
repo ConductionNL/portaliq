@@ -8,9 +8,13 @@ use OCA\Portaliq\Controller\PortalAccountSelfController;
 use OCA\Portaliq\Service\Identity\PortalAccessRequestService;
 use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
 use OCA\Portaliq\Service\Identity\PortalSelfServiceService;
+use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
+use OCP\Security\ISecureRandom;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -230,4 +234,124 @@ class PortalAccountSelfControllerTest extends TestCase {
 			->getMock();
 	}//end double()
 
+
+	/**
+	 * A controller over the REAL self-service service, whose account store is
+	 * the given account and whose push store holds the given subscriptions.
+	 *
+	 * @param array<string, mixed>             $account       The caller's account.
+	 * @param array<int, array<string, mixed>> $written       Captured updates.
+	 * @param array<int, array<string, mixed>> $subscriptions Push subscriptions.
+	 *
+	 * @return PortalAccountSelfController
+	 */
+	private function preferencesController(array $account, array &$written, array $subscriptions = []): PortalAccountSelfController {
+		$request = $this->createMock(IRequest::class);
+		$session = $this->double(PortalSessionService::class, ['resolveFromBearer']);
+		$session->method('resolveFromBearer')->willReturn(['subjectRef' => 'subject-1', 'organisation' => 'gemeente-x']);
+
+		$accounts = $this->double(PortalAccountService::class, ['findBySubjectRef']);
+		$accounts->method('findBySubjectRef')->willReturnCallback(
+			static fn (string $subjectRef): ?array => ($subjectRef === 'subject-1' ? $account : ['uuid' => 'account-other', 'subjectRef' => $subjectRef])
+		);
+		$reader = $this->double(PortalObjectReader::class, ['readCollection']);
+		$reader->method('readCollection')->willReturnCallback(
+			static fn (string $register, string $schema, string $scopeField, string $subjectRef): array => ($schema === 'pushSubscription' && $subjectRef === 'subject-1' ? $subscriptions : [])
+		);
+		$writer = $this->double(PortalObjectWriter::class, ['updateObject']);
+		$writer->method('updateObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id, array $data) use (&$written): array {
+				$written[] = ['schema' => $schema, 'id' => $id, 'data' => $data];
+				return $data;
+			}
+		);
+
+		$selfService = new PortalSelfServiceService(
+			accounts: $accounts,
+			reader: $reader,
+			writer: $writer,
+			random: $this->createMock(ISecureRandom::class)
+		);
+
+		return new PortalAccountSelfController(
+			$request,
+			$session,
+			$selfService,
+			$this->double(PortalAccessRequestService::class, ['request', 'madeBy']),
+			$this->double(PortalIdentityMailer::class, ['send'])
+		);
+	}//end preferencesController()
+
+	/**
+	 * The preferences read and written are the caller's own, whatever the
+	 * body names (REQ-NAP-007).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-resident-chooses-per-kind-and-per-channel-req-nap-007
+	 */
+	public function testPreferencesAreTheCallersOwn(): void {
+		$written = [];
+		$controller = $this->preferencesController(
+			account: ['uuid' => 'account-1', 'subjectRef' => 'subject-1', 'notificationPreferences' => ['message.created' => ['push' => false]]],
+			written: $written
+		);
+
+		$read = $controller->notificationPreferences()->getData();
+		$this->assertSame(['email' => true, 'push' => true], $read['preferences']['case.updated'], 'a missing choice means on');
+		$this->assertSame(['email' => true, 'push' => false], $read['preferences']['message.created']);
+
+		$saved = $controller->updateNotificationPreferences(preferences: ['case.updated' => ['email' => false], 'subjectRef' => 'subject-2', 'accountRef' => 'account-other'])->getData();
+
+		$this->assertCount(1, $written);
+		$this->assertSame('account-1', $written[0]['id'], 'only the caller\'s account is written');
+		$this->assertSame('portalAccount', $written[0]['schema']);
+		$this->assertSame(
+			['case.updated' => ['email' => false, 'push' => true], 'message.created' => ['email' => true, 'push' => false]],
+			$written[0]['data']['notificationPreferences']
+		);
+		$this->assertSame(false, $saved['preferences']['case.updated']['email']);
+	}//end testPreferencesAreTheCallersOwn()
+
+	/**
+	 * Unknown kinds, unknown channels and non-boolean values are ignored.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-resident-chooses-per-kind-and-per-channel-req-nap-007
+	 */
+	public function testUnknownKindIsIgnored(): void {
+		$written = [];
+		$controller = $this->preferencesController(account: ['uuid' => 'account-1', 'subjectRef' => 'subject-1'], written: $written);
+
+		$controller->updateNotificationPreferences(
+			preferences: ['task.due' => ['email' => false], 'message.created' => ['sms' => true, 'email' => 'no', 'push' => false]]
+		);
+
+		$this->assertSame(
+			['case.updated' => ['email' => true, 'push' => true], 'message.created' => ['email' => true, 'push' => false]],
+			$written[0]['data']['notificationPreferences']
+		);
+		$this->assertSame(['notificationPreferences'], array_keys($written[0]['data']), 'nothing but the preferences is written');
+	}//end testUnknownKindIsIgnored()
+
+	/**
+	 * The push column shows only when the account registered a device.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-choices-live-on-the-inbox-page-req-nap-008
+	 */
+	public function testPushAvailableFollowsTheSubscription(): void {
+		$written = [];
+		$without = $this->preferencesController(account: ['uuid' => 'account-1', 'subjectRef' => 'subject-1'], written: $written);
+		$this->assertFalse($without->notificationPreferences()->getData()['pushAvailable']);
+
+		$with = $this->preferencesController(account: ['uuid' => 'account-1', 'subjectRef' => 'subject-1'], written: $written, subscriptions: [['endpoint' => 'https://push.example/1']]);
+		$this->assertTrue($with->notificationPreferences()->getData()['pushAvailable']);
+
+		$anonymous = $this->controller(subject: null);
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $anonymous->notificationPreferences()->getStatus());
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $anonymous->updateNotificationPreferences(preferences: [])->getStatus());
+	}//end testPushAvailableFollowsTheSubscription()
 }//end class
