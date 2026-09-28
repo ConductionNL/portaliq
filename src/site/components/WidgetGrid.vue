@@ -117,6 +117,18 @@ const ContributionsBlock = defineAsyncComponent(
 )
 
 /**
+ * On demand as well: the three intake blocks live on the request pages only
+ * (portal-intake-form-as-an-object, T09), and the first-load budget applies.
+ */
+const IntakeCatalogueBlock = defineAsyncComponent(
+	() => import('./IntakeCatalogueBlock.vue'),
+)
+const IntakeFormBlock = defineAsyncComponent(() => import('./IntakeFormBlock.vue'))
+const IntakeStatusBlock = defineAsyncComponent(
+	() => import('./IntakeStatusBlock.vue'),
+)
+
+/**
  * The widget keys this renderer will mount at a PUBLIC origin, mapped to the
  * component that renders each.
  *
@@ -176,6 +188,12 @@ const PUBLIC_WIDGETS = {
 	// fields/submitLabel/consentText arrive as authored props rather than a
 	// second fetch.
 	form: FormBlock,
+	// portal-intake-form-as-an-object: the citizen's entry point. They call
+	// this app's own intake endpoints, which apply the binding's sign-in level
+	// and validate before anything is recorded; nothing here decides access.
+	intakeCatalogue: IntakeCatalogueBlock,
+	intakeForm: IntakeFormBlock,
+	intakeStatus: IntakeStatusBlock,
 	...siteBlockRegistry,
 }
 
@@ -400,6 +418,21 @@ export default {
 			// (fields/submitLabel/consentText, embedded at creation time —
 			// see LandingPageProvisioningService::buildBody()).
 			if (widget.widgetKey === 'form') {
+				return { ...props, portal: this.portal }
+			}
+
+			// SAME RULE, FIFTH SUBJECT. The intake blocks ask this portal's
+			// endpoints, so the host names the portal; the form block also
+			// takes the catalogue link's segment from the route. Both come
+			// after the authored props so a placement cannot point elsewhere.
+			if (widget.widgetKey === 'intakeForm') {
+				return { ...props, portal: this.portal, routeParam: this.routeParam }
+			}
+
+			if (
+				widget.widgetKey === 'intakeCatalogue'
+				|| widget.widgetKey === 'intakeStatus'
+			) {
 				return { ...props, portal: this.portal }
 			}
 

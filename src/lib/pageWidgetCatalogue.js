@@ -25,6 +25,9 @@ import {
 	registerBuiltinDashboardWidgets,
 } from '@conduction/nextcloud-vue'
 import FederatedSearchBlock from '../site/components/FederatedSearchBlock.vue'
+import IntakeCatalogueBlock from '../site/components/IntakeCatalogueBlock.vue'
+import IntakeFormBlock from '../site/components/IntakeFormBlock.vue'
+import IntakeStatusBlock from '../site/components/IntakeStatusBlock.vue'
 import PublicationDetailBlock from '../site/components/PublicationDetailBlock.vue'
 import { publicWidgetFor, publicWidgetKeys } from '../site/components/WidgetGrid.vue'
 
@@ -62,6 +65,9 @@ const PUBLIC_LABELS = {
 	contributions: 'Bijdragen',
 	federatedSearch: 'Federatief zoeken',
 	publicationDetail: 'Publicatiedetail',
+	intakeCatalogue: 'Aanvragen per onderwerp',
+	intakeForm: 'Aanvraagformulier',
+	intakeStatus: 'Status van een aanvraag',
 }
 
 /**
@@ -82,6 +88,9 @@ const DEFAULT_SIZES = {
 	federatedSearch: { gridWidth: 12, gridHeight: 6 },
 	publicationDetail: { gridWidth: 12, gridHeight: 6 },
 	contributions: { gridWidth: 12, gridHeight: 4 },
+	intakeCatalogue: { gridWidth: 12, gridHeight: 5 },
+	intakeForm: { gridWidth: 8, gridHeight: 6 },
+	intakeStatus: { gridWidth: 6, gridHeight: 3 },
 	card: { gridWidth: 4, gridHeight: 3 },
 	emptyState: { gridWidth: 6, gridHeight: 3 },
 	markdown: { gridWidth: 6, gridHeight: 4 },
@@ -102,6 +111,9 @@ const HOST_SUPPLIED = {
 	glossary: ['terms'],
 	contributions: ['contributions'],
 	publicationDetail: ['subjectId'],
+	intakeCatalogue: ['portal'],
+	intakeForm: ['portal', 'routeParam'],
+	intakeStatus: ['portal'],
 }
 
 /**
@@ -138,6 +150,9 @@ const FIELD_OVERRIDES = {
 const LAZY_ON_THE_SITE = {
 	federatedSearch: FederatedSearchBlock,
 	publicationDetail: PublicationDetailBlock,
+	intakeCatalogue: IntakeCatalogueBlock,
+	intakeForm: IntakeFormBlock,
+	intakeStatus: IntakeStatusBlock,
 }
 
 /**

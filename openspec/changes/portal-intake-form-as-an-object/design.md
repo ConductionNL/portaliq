@@ -85,3 +85,36 @@ not have.
 - **Async hides a failing create.** Failed submissions are listed for the
   administrator with their reference and their reason, and the citizen's
   reference page reads the same state.
+
+## The entry point on the public site (T09, added 2026-09-28)
+
+The four endpoints shipped with no caller, so the design is completed here
+rather than in a new change.
+
+- **Three public blocks, placed by an editor.** `intakeCatalogue` lists the
+  published catalogue by topic and links each entry to a form page;
+  `intakeForm` renders the bound form, sends it and shows the reference;
+  `intakeStatus` reads the state behind a reference. They sit on the public
+  allow-list in `src/site/components/WidgetGrid.vue`, so the page designer
+  offers them (`src/lib/pageWidgetCatalogue.js`) and an editor arranges the
+  pages without a code change. Topics are the catalogue's own `topic` field.
+- **The binding route travels as one route segment.** A binding route
+  carries slashes (`aanvragen/verhuizing`) and the site hands a page one
+  trailing segment when a route falls back to its parent, so the catalogue
+  link encodes the binding route into that segment
+  (`/aanvragen/formulier/aanvragen%2Fverhuizing`). An author can instead pin
+  one form to its own page with the block's `route`, which the URL cannot
+  override.
+- **The site names its portal.** Inside Nextcloud the site is served for a
+  named portal, not a verified host, so every intake endpoint now takes an
+  optional `portal` slug, as the content API and the session edge already
+  do. Without one the portal is resolved from the host, as before.
+- **Prefill needs the bearer.** The form block sends the site's portal
+  bearer when the visitor is signed in, which is what makes
+  `PortalApplicantPrefill` answer; an anonymous visitor sends none and gets
+  only the form's presets.
+- **The embedded form's follow link can land.** `intakeStatus` looks up a
+  `reference` query parameter on mount. `PortalEmbedController::submit()`
+  sends its `followUrl` to the site root with that parameter, so the link
+  lands when an editor places the block on the home page.
+

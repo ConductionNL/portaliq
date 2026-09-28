@@ -19,7 +19,7 @@
 
 ## The entry point
 
-- [ ] **T09**: Pages, topics and layouts for the entry point as `portaliq-cms` content, arranged by an editor (REQ-PIFO-006)
+- [x] **T09**: Pages, topics and layouts for the entry point as `portaliq-cms` content, arranged by an editor (REQ-PIFO-006). Built 2026-09-28 as three public site blocks an editor places with the page designer: `intakeCatalogue`, `intakeForm` and `intakeStatus` (`src/site/components/Intake*Block.vue` over `src/site/lib/intakeApi.js`); verified by `tests/intake-entry.spec.mjs` (`npm run check:intake-entry`) and `PortalIntakeControllerTest`
 - [x] **T10**: List opencatalogi's published catalogue entries and start the form behind an entry (REQ-PIFO-006)
 
 ## Quality
@@ -38,7 +38,7 @@ signed-in identity only, per-field validation before any create
 the job that creates the case afterwards, and the entry point over
 opencatalogi's published catalogue (`PortalCatalogueReader`).
 
-Left open, and marked so: **T03** and **T09**. T03 is the CMS admin surface
+T09 landed on 2026-09-28 (see the design's "The entry point on the public site"). Left open, and marked so: **T03**. T03 is the CMS admin surface
 that prints which form a binding resolves to today; the resolver already
 answers `resolvesToNoForm` with its reason, so the admin screen is the
 remaining piece. T09 arranges the entry point's pages and layouts as
