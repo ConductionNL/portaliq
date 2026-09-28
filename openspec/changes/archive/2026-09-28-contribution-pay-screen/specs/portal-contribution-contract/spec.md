@@ -45,6 +45,13 @@ re-verification and scope re-stamp still run.
 - THEN the collection's `rowActions` is `[close, pay]` and carries no `rowAction` key
 - @e2e exclude Normaliser contract on the manifest structure. Pinned by tests/Unit/Contribution/RowActionResolverTest.php::testSingularRowActionAndObjectEntriesResolve.
 
+#### Scenario: An endpoint action resolves as a row action
+
+- GIVEN an endpoint action `sign` with `rowField: signingRequestId` and `rowActions: [{id: sign}]`
+- WHEN normalised
+- THEN `rowActions` keeps `sign` with kind `endpoint`
+- @e2e exclude Normaliser contract; pinned by PortalManifestNormaliserTest
+
 #### Scenario: An endpoint action without a rowField is not a row action
 
 - GIVEN an endpoint action `pay` with no `rowField`, or with `rowField: "invoice id"`, named by a collection's `rowAction`

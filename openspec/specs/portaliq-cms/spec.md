@@ -452,6 +452,270 @@ itself shows does go through the app's translator.
 - THEN "Open portal" is offered alongside the built-in view, edit, copy and delete entries rather than in place of them
 - @e2e portals-open-site.spec.ts — "the pre-existing row actions still work alongside it"
 
+### Requirement: An activity MUST be able to require a guardian's consent, recorded on the sign-up
+
+`activityOffer` SHALL carry `consentRequired` (boolean) and `consentStatement`
+(the text a guardian agrees to). Staff SHALL NOT be able to open an activity
+whose `consentRequired` is true and whose `consentStatement` is empty (422
+`no_consent_statement`). When `consentRequired` is true, a sign-up SHALL carry
+`acceptedStatement` equal to the current `consentStatement`; a missing or
+different text SHALL be refused with 422 `consent_required` before anything is
+written. An accepted sign-up SHALL store `consent: {statement, grantedByRef,
+grantedAt}` with the statement as agreed, the signing guardian and the time.
+When `consentRequired` is false, no consent record SHALL be written.
+
+#### Scenario: A sign-up without the consent text is refused
+@e2e exclude {an API refusal with no screen in this change; asserted in tests/Unit/Service/ActivitySignupServiceTest.php::testConsentIsRequiredAndRecorded}
+
+- **GIVEN** an open activity with `consentRequired: true` and a consent text
+- **WHEN** a guardian signs up their child without `acceptedStatement`, or with an older text
+- **THEN** the answer SHALL be 422 `consent_required` and no sign-up SHALL exist
+
+#### Scenario: The agreed text is kept on the sign-up
+@e2e exclude {a stored-record assertion; asserted in tests/Unit/Service/ActivitySignupServiceTest.php::testConsentIsRequiredAndRecorded}
+
+- **GIVEN** that activity
+- **WHEN** the guardian sends back the exact consent text
+- **THEN** the sign-up SHALL store the text, the guardian and the time of agreement
+
+#### Scenario: An activity needing consent does not open without a text
+@e2e exclude {staff API refusal; asserted in tests/Unit/Controller/ActivityControllerTest.php::testOpenRefusesConsentWithoutAStatement}
+
+- **GIVEN** a draft with `consentRequired: true` and no `consentStatement`
+- **WHEN** staff open it
+- **THEN** the answer SHALL be 422 `no_consent_statement`
+
+### Requirement: Where photos are taken, the roster MUST show each child's photo consent
+
+`activityOffer` SHALL carry `photosTaken` (boolean). When it is true, every
+entry in the staff roster and in the guardian's own `mySignups` SHALL carry
+`photoConsent`, read through `GuardianAudienceFixtureReader::photoConsentGranted()`
+for the signing guardian and child (purpose `news`, the channel school photos
+are shared through). An absent consent entry SHALL read as false. When
+`photosTaken` is false, `photoConsent` SHALL be absent.
+
+#### Scenario: The supervisor sees who may not be photographed
+@e2e exclude {needs guardian consent fixtures on a live instance; asserted in tests/Unit/Service/ActivityRosterTest.php::testTheRosterShowsPhotoConsentWherePhotosAreTaken}
+
+- **GIVEN** an activity with `photosTaken: true` and two confirmed children, one with photo consent on file and one without
+- **WHEN** staff read the roster
+- **THEN** the first SHALL carry `photoConsent: true` and the second `photoConsent: false`
+
+### Requirement: An event is authored per school, group or child, with guardian RSVP
+
+An `event` OpenRegister schema (register `portaliq`) MUST carry `title`,
+`description`, `start`/`end` (date-time), the same `target` shape as
+`newsItem` (`schoolRef?`/`groupRefs[]?`/`childRefs[]?`, at least one
+present), `status` (`draft`|`published`), `rsvpEnabled` (bool), and an
+optional `signupRoles[]` (`{id, label, capacity}`). A guardian MUST be able
+to RSVP (`yes`|`no`|`maybe`) for one of their own children to a published,
+in-audience event with `rsvpEnabled: true`; a second RSVP by the same
+guardian for the same child on the same event MUST update the existing
+response rather than create a second one (upsert, not append).
+
+#### Scenario: A group-targeted event reaches only that group's guardians
+
+- GIVEN a published `event` targeting one group with `rsvpEnabled: true`
+- WHEN a guardian whose audience includes that group reads the feed
+- THEN the event appears
+- AND a guardian outside that group, school and every targeted child never
+  sees it
+- @e2e exclude backend audience-scoping contract — identical matcher to
+  `news-and-newsletter-authoring`'s `NewsAudienceMatcher`; covered by
+  PHPUnit, no distinct portaliq UI ships a group picker in this change
+
+#### Scenario: A second RSVP updates, it does not duplicate
+
+- GIVEN a guardian who already RSVP'd `maybe` for their child on an event
+- WHEN they RSVP `yes` for the same child on the same event
+- THEN exactly one RSVP record exists for that guardian+child+event, now
+  reading `yes`
+- @e2e exclude idempotency invariant — pinned by
+  `EventRsvpServiceTest::testASecondRsvpUpdatesRatherThanDuplicates`; no UI
+  surface distinguishes a first RSVP from a change of mind
+
+### Requirement: A sign-up role enforces its capacity server-side
+
+A `signupRoles` entry (`{id, label, capacity}`) accepts guardian sign-ups
+(activiteitenplanner/ouderhulp — findings 9.8) up to its `capacity`. A
+sign-up attempt against a role already at capacity MUST be refused with a
+machine-readable reason and MUST NOT be recorded — the check happens
+server-side before any write, not only as a disabled button in the UI (the
+gap several corpus competitors leave implicit, e.g. Kwieb's "participation
+limits").
+
+#### Scenario: A sign-up is accepted while capacity remains
+
+- GIVEN a role with `capacity: 2` and zero current sign-ups
+- WHEN a guardian signs up
+- THEN the sign-up is recorded and the role shows 1 of 2 taken
+- @e2e exclude backend capacity contract — covered by PHPUnit; no distinct
+  UI ships a live capacity counter in this change
+
+#### Scenario: A sign-up is refused once the role is full
+
+- GIVEN a role with `capacity: 1` and one existing sign-up
+- WHEN a second guardian attempts to sign up for the same role
+- THEN the attempt is refused before any write, with a reason naming the
+  role is full
+- @e2e exclude fail-closed capacity invariant — pinned by
+  `EventSignupServiceTest::testASignupIsRefusedOnceTheRoleIsFull`, asserting
+  the write is never attempted; no UI surface
+
+### Requirement: A term-long activity MUST be offered with places set by capacity and supervision
+
+An `activityOffer` schema (register `portaliq`) SHALL carry `title`, `kind`
+(`club`, `sport`, `culture`, `trip`, `course`, `other`), the `target` shape
+`schoolEvent` uses, `termStart`, optional `termEnd` and `signupDeadline`,
+`capacity` (at least 1), `waitlistEnabled`, `sessions[]` (`{id, start, end?,
+location?}`), `supervisorRefs[]`, `childrenPerSupervisor`, `paymentRequested`
+and `status` (`draft`, `open`, `closed`). It SHALL NOT carry an amount; a place
+that costs money SHALL be paid through a shillinq payment request (D19). The
+places of an activity SHALL be the lower of `capacity` and the number of
+distinct supervisors times `childrenPerSupervisor` (capacity alone when
+`childrenPerSupervisor` is 0 or absent). Staff SHALL NOT be able to open an
+activity that has no place.
+
+#### Scenario: Supervision caps the places
+@e2e exclude {a derived number on the server; asserted in tests/Unit/Service/ActivitySignupServiceTest.php::testPlacesAreTheLowerOfCapacityAndSupervision}
+
+- **GIVEN** an activity with `capacity: 20`, two supervisors and `childrenPerSupervisor: 8`
+- **WHEN** its places are computed
+- **THEN** the activity SHALL have 16 places
+
+#### Scenario: An activity without enough supervision does not open
+@e2e exclude {staff API refusal with no screen in this change; asserted in tests/Unit/Controller/ActivityControllerTest.php::testOpenRefusesAnActivityWithNoPlace}
+
+- **GIVEN** a draft activity with `childrenPerSupervisor: 8` and no supervisors
+- **WHEN** staff open it
+- **THEN** the answer SHALL be 422 `no_places` and the activity SHALL stay a draft
+
+### Requirement: A guardian MUST be able to sign up one of their own children, with a waiting list when full
+
+A guardian SHALL see every non-draft activity in their audience, each with the
+places left and their own children's sign-ups (never another guardian's). A
+guardian SHALL be able to sign up one of their own children for an open
+activity before its `signupDeadline`. The child SHALL get a confirmed place
+while places remain, a waiting-list position when the activity is full and
+`waitlistEnabled` is true, and a 422 `activity_full` otherwise. A child with a
+sign-up that is not withdrawn SHALL NOT be signed up twice (409). An activity
+outside the guardian's audience and a child who is not the guardian's own
+SHALL both answer the same 404, with nothing written. A closed activity or a
+passed deadline SHALL answer 422 `signup_closed`.
+
+#### Scenario: The last place, then the waiting list
+@e2e exclude {needs two guardian sessions against a live portal; asserted in tests/Unit/Service/ActivitySignupServiceTest.php::testAFullActivityWaitlistsInOrder}
+
+- **GIVEN** an open activity with one place left and `waitlistEnabled: true`
+- **WHEN** two guardians each sign up a child, one after the other
+- **THEN** the first child SHALL be confirmed
+- **AND** the second SHALL be waitlisted at position 1
+
+#### Scenario: Another guardian's child is refused like an unknown activity
+@e2e exclude {an absence of access, observable only at the seam; asserted in tests/Unit/Service/ActivitySignupServiceTest.php::testAChildWhoIsNotTheGuardiansOwnIsRefused}
+
+- **GIVEN** an open activity in the guardian's audience
+- **WHEN** the guardian signs up a child who is not in their own children
+- **THEN** the refusal SHALL be the same as for an activity that does not exist
+- **AND** no sign-up SHALL be written
+
+### Requirement: A freed place MUST go to the child who waited longest
+
+When a confirmed sign-up is withdrawn, or staff add supervisors so the places
+grow, the service SHALL confirm waitlisted children in the order they signed
+up until the places are full. Withdrawing a waitlisted sign-up SHALL promote
+nobody. A guardian SHALL be able to withdraw only a sign-up of one of their own
+children.
+
+#### Scenario: A withdrawal promotes the first child on the list
+@e2e exclude {an ordering rule on stored rows; asserted in tests/Unit/Service/ActivitySignupServiceTest.php::testAWithdrawalPromotesTheLongestWaitingChild}
+
+- **GIVEN** a full activity with two waitlisted children, the older sign-up first
+- **WHEN** a guardian withdraws a confirmed child
+- **THEN** the older waitlisted child SHALL be confirmed and the other SHALL stay waitlisted
+
+#### Scenario: More supervisors make more places
+@e2e exclude {staff API with no screen in this change; asserted in tests/Unit/Service/ActivitySignupServiceTest.php::testMoreSupervisorsPromoteFromTheWaitingList}
+
+- **GIVEN** a full activity with one supervisor, `childrenPerSupervisor: 2` and three waitlisted children
+- **WHEN** staff set two supervisors
+- **THEN** two waitlisted children SHALL be confirmed in sign-up order
+
+### Requirement: Staff MUST be able to mark attendance per session
+
+Staff SHALL be able to mark a child `present`, `absent` or `excused` for one of
+the activity's declared sessions, only for a child with a confirmed place. A
+second mark for the same session and child SHALL update the first. An unknown
+session, a child without a confirmed place and an unknown status SHALL each be
+refused with 422 and nothing written.
+
+#### Scenario: A second mark corrects the first
+@e2e exclude {an upsert invariant on stored rows; asserted in tests/Unit/Service/ActivityAttendanceServiceTest.php::testASecondMarkUpdatesTheFirst}
+
+- **GIVEN** a child marked `absent` for session `week-3`
+- **WHEN** staff mark the same child `present` for `week-3`
+- **THEN** exactly one attendance row SHALL exist for that child and session, reading `present`
+
+#### Scenario: A waitlisted child cannot be marked present
+@e2e exclude {a refusal on the staff API; asserted in tests/Unit/Service/ActivityAttendanceServiceTest.php::testOnlyAConfirmedChildInADeclaredSessionIsMarked}
+
+- **GIVEN** a waitlisted child
+- **WHEN** staff mark that child present
+- **THEN** the answer SHALL be 422 `not_confirmed` and nothing SHALL be written
+
+### Requirement: Staff MUST be able to raise the contribution for an activity's confirmed places, and portaliq MUST write the reference
+
+`POST /apps/portaliq/api/activities/{id}/contributions` SHALL need a Nextcloud
+session (403 without one). It SHALL answer 404 for an unknown activity and 422
+`payment_not_requested` when the activity's `paymentRequested` is not true. The
+body SHALL carry `amount` (above zero), `voluntary` (boolean) and
+`administrationId`, and MAY carry `description` (default: the activity title),
+`invoiceDate`, `dueDate`, `revenueAccount` and `language`; a body without the
+three SHALL answer 400 `invalid_charge` with no call to shillinq. Portaliq
+SHALL raise through shillinq's `ContributionRaiseService::raise()` one recipient
+per `confirmed` sign-up of the activity that has no `paymentRequestRef`, in
+chunks of at most 200, with the chargeable `{app: portaliq, type:
+activity-offer, register: portaliq, schema: activityOffer, id: <activity id>}`,
+`kind: activity`, the debtor `{portalSubjectRef: guardianRef, name, email}` read
+from the guardian's `portalAccount`, and the beneficiary `{type: learner, id:
+childRef}`. A sign-up whose guardian account has no name or email SHALL be
+reported `failed` with `no_contact_details` and SHALL NOT be sent. For every
+result that is `raised` or `skipped` with a `paymentRequestId`, portaliq SHALL
+write that id into the sign-up's `paymentRequestRef`. Portaliq SHALL NOT store
+the amount. Without shillinq the answer SHALL be 503 `shillinq_unavailable`;
+shillinq's refusal of the staff member SHALL be 403 `forbidden`; shillinq's
+refusal of the charge SHALL be 400 `invalid_charge`; any other failure SHALL be
+502 `raise_failed`.
+
+#### Scenario: Staff raise the club fee and each place gets its reference
+@e2e exclude {needs shillinq installed with a payment action for the staff member; asserted in tests/Unit/Service/ActivityContributionServiceTest.php::testConfirmedPlacesAreRaisedAndReferenced}
+
+- **GIVEN** an activity with `paymentRequested: true`, two confirmed places, one waitlisted place and one confirmed place that already has a reference
+- **WHEN** staff raise it with `amount: 25`, `voluntary: true` and `administrationId: adm-school-1`
+- **THEN** shillinq SHALL receive two recipients, each with the activity as chargeable, the child as beneficiary and the guardian as debtor
+- **AND** both sign-ups SHALL carry the returned `paymentRequestId` in `paymentRequestRef`
+
+#### Scenario: A repeated raise bills nobody twice
+@e2e exclude {shillinq's idempotency answer; asserted in tests/Unit/Service/ActivityContributionServiceTest.php::testASkippedResultStillWritesTheStandingReference}
+
+- **GIVEN** a place shillinq already billed, whose reference write failed last time
+- **WHEN** staff raise again
+- **THEN** shillinq SHALL answer `skipped` with the standing request, and portaliq SHALL write that id into the sign-up
+
+#### Scenario: A guardian without contact details is reported, the rest are raised
+@e2e exclude {a data-quality branch; asserted in tests/Unit/Service/ActivityContributionServiceTest.php::testAGuardianWithoutContactDetailsIsReportedAndNotSent}
+
+- **GIVEN** two confirmed places, one guardian account without an email
+- **WHEN** staff raise
+- **THEN** only the other place SHALL be sent, and the answer SHALL report the first as `failed` with `no_contact_details`
+
+#### Scenario: No contribution is asked, or shillinq is missing
+@e2e exclude {refusals before any call; asserted in tests/Unit/Controller/ActivityControllerTest.php::testContributionsMapsEachRefusal}
+
+- **GIVEN** an activity with `paymentRequested: false`, or an instance without shillinq
+- **WHEN** staff raise
+- **THEN** the answer SHALL be 422 `payment_not_requested`, or 503 `shillinq_unavailable`, and no sign-up SHALL change
+
 ## Notes
 
 - The "A page may carry a hero image reference" and "A public page may embed
