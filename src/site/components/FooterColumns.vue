@@ -1,0 +1,217 @@
+<!--
+  - SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+  - SPDX-License-Identifier: EUPL-1.2
+  -->
+
+<template>
+	<!--
+		The footer as a block (`footerColumns`). The markup is the footer
+		`App.vue` hard-coded before this change, plus two things.
+
+		Every band names its role: `pq-footer__band--content` and
+		`pq-footer__band--legal`. `nlds-app.css` styles the bands by POSITION
+		(`section:first-of-type`, `section:last-of-type:not(:only-of-type)`),
+		so a third band used to restyle the other two. `css/site-theme.css`
+		restates those rules against the role classes (REQ-PTB-005).
+
+		The legal band always names someone: the portal's colophon, or its
+		title when it has none.
+	-->
+	<footer class="ac-footer pq-site__footer" data-testid="site-footer">
+		<h2 class="sr-only">{{ landmarkLabel }}</h2>
+
+		<section class="pq-footer__band pq-footer__band--content">
+			<div class="container ac-footer__container">
+				<nav
+					v-for="menu in menus"
+					:key="menu.title"
+					class="ac-footer__links"
+					:aria-label="menu.title"
+					data-testid="site-footer-menu">
+					<h3 class="ac-footer__menu-title">{{ menu.title }}</h3>
+					<ul>
+						<li v-for="item in menu.items" :key="item.name">
+							<!-- The glyph is decorative: the link has its own text. -->
+							<a
+								class="ac-footer__link"
+								:href="item.link"
+								:target="
+									isExternal(item.link) ? '_blank' : undefined
+								"
+								:rel="
+									isExternal(item.link)
+										? 'noopener noreferrer'
+										: undefined
+								"
+								@click="onLink($event, item.link)">
+								<CnSiteIcon
+									v-if="isExternal(item.link)"
+									name="external-link"
+									:size="18" />
+								<span>{{ item.name }}</span>
+							</a>
+						</li>
+					</ul>
+				</nav>
+
+				<div class="ac-footer__logo">
+					<div class="con-logo-container footer" />
+					<span>
+						<span>{{ title }}</span>
+						<span v-if="tagline" data-testid="site-footer-tagline">
+							{{ tagline }}
+						</span>
+					</span>
+					<p
+						v-if="content.description"
+						class="pq-footer__description"
+						data-testid="site-footer-description">
+						{{ content.description }}
+					</p>
+					<!-- An icon link has no text of its own, so each carries its
+					     label for screen readers. -->
+					<ul
+						v-if="content.socials.length"
+						class="pq-footer__socials"
+						data-testid="site-footer-socials">
+						<li v-for="social in content.socials" :key="social.href">
+							<a
+								:href="social.href"
+								target="_blank"
+								rel="noopener noreferrer">
+								<CnSiteIcon
+									:name="social.icon || 'external-link'"
+									:size="18" />
+								<span class="sr-only">{{ social.label }}</span>
+							</a>
+						</li>
+					</ul>
+				</div>
+			</div>
+		</section>
+
+		<section
+			class="ac-footer__sub-footer pq-footer__band pq-footer__band--legal">
+			<div class="container">
+				<p data-testid="site-footer-colophon">
+					{{ content.colophon || title }}
+				</p>
+
+				<nav
+					v-if="legalLinks.length"
+					class="ac-footer__sub-footer-links"
+					:aria-label="legalLabel"
+					data-testid="site-subfooter-menu">
+					<ul class="ac-footer__sub-footer-horizontal">
+						<li v-for="item in legalLinks" :key="item.href">
+							<a
+								:href="item.href"
+								@click="onLink($event, item.href)"
+								>{{ item.label }}</a
+							>
+						</li>
+					</ul>
+				</nav>
+
+				<!-- A badge links to the evidence behind it; the content API drops
+				     a badge without one. -->
+				<ul
+					v-if="content.badges.length"
+					class="pq-footer__badges"
+					data-testid="site-footer-badges">
+					<li v-for="badge in content.badges" :key="badge.href">
+						<a
+							:href="badge.href"
+							target="_blank"
+							rel="noopener noreferrer"
+							>{{ badge.label }}</a
+						>
+					</li>
+				</ul>
+			</div>
+		</section>
+	</footer>
+</template>
+
+<script>
+import { CnSiteIcon } from '@conduction/nextcloud-vue/public'
+import { footerContentOf } from '../lib/shellData.js'
+
+/**
+ * The portal's footer block (`footerColumns`).
+ *
+ * Takes its data as props and emits `navigate` for in-site links, so it
+ * mounts at a public origin and in an editor canvas alike.
+ *
+ * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-footer-must-be-a-block-whose-bands-are-styled-by-role-req-ptb-005
+ */
+export default {
+	name: 'FooterColumns',
+
+	components: { CnSiteIcon },
+
+	props: {
+		/** The portal's name: the brand column and the fallback colophon. */
+		title: { type: String, default: '' },
+		/** The line under the name. */
+		tagline: { type: String, default: '' },
+		/** The footer's link columns. */
+		menus: { type: Array, default: () => [] },
+		/** `{label, href}` legal links. */
+		legalLinks: { type: Array, default: () => [] },
+		/** The portal's `footer` content: description, colophon, socials, badges. */
+		footer: { type: Object, default: () => ({}) },
+		/** The footer landmark's heading, for screen readers. */
+		landmarkLabel: { type: String, default: 'Footer' },
+		/** The legal links' accessible name. */
+		legalLabel: { type: String, default: 'Juridische informatie' },
+	},
+
+	emits: ['navigate'],
+
+	computed: {
+		/**
+		 * The footer content in a fixed shape.
+		 *
+		 * @return {object} `{description, colophon, socials, legalLinks, badges}`.
+		 *
+		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-footer-must-be-a-block-whose-bands-are-styled-by-role-req-ptb-005
+		 */
+		content() {
+			return footerContentOf({ footer: this.footer })
+		},
+	},
+
+	methods: {
+		/**
+		 * Whether a link leaves this portal.
+		 *
+		 * @param {string} link The href.
+		 * @return {boolean} True for an absolute http(s) address.
+		 *
+		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-footer-must-be-a-block-whose-bands-are-styled-by-role-req-ptb-005
+		 */
+		isExternal(link) {
+			return /^https?:\/\//i.test(String(link || ''))
+		},
+
+		/**
+		 * Follow an in-site link without leaving the document.
+		 *
+		 * @param {MouseEvent} event The click.
+		 * @param {string}     link  The href.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-blocks-must-take-their-data-as-props-and-nothing-else-req-ptb-007
+		 */
+		onLink(event, link) {
+			if (String(link || '').startsWith('/') === false) {
+				return
+			}
+
+			event.preventDefault()
+			this.$emit('navigate', link)
+		},
+	},
+}
+</script>

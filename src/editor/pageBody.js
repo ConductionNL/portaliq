@@ -14,9 +14,18 @@
  * whole stored page: a save that rebuilt the object from the fields this module
  * knows would drop every property it does not.
  *
+ * THE EDITOR EDITS ONLY THE `main` REGION, AND KEEPS THE OTHERS. A widget whose
+ * slot names `header`, `hero`, `aside` or `footer` (or no known region) is not
+ * shown in the grid, and every write puts it back exactly as it was stored,
+ * together with the body's `clearedRegions` and any other body key. The source
+ * of those is re-read from the page at write time, so the admin designer and the
+ * portal edit mode, which both go through this module, cannot drop a hero.
+ *
  * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-designer-must-keep-a-markdown-pages-markdown-req-pie-001
+ * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-page-designer-must-preserve-regions-it-does-not-edit-req-ptb-010
  */
 
+import { regionOf } from '../site/lib/regions.js'
 import { normaliseWidgets, storedWidget } from './gridModel.js'
 
 /**
@@ -44,18 +53,44 @@ export function versionOf(object) {
 }
 
 /**
+ * The body the editor opened: the draft when there is one, else the published body.
+ *
+ * @param {object} page The page.
+ * @return {object} The stored body, or an empty object.
+ * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-page-designer-must-preserve-regions-it-does-not-edit-req-ptb-010
+ */
+export function sourceBodyOf(page) {
+	return page?.draftBody || page?.body || {}
+}
+
+/**
+ * Whether a stored widget belongs to the `main` region, the one the editor edits.
+ *
+ * @param {object} widget A stored widget.
+ * @return {boolean} True for `main`, `body` or no slot.
+ * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-page-designer-must-preserve-regions-it-does-not-edit-req-ptb-010
+ */
+export function isMainWidget(widget) {
+	return regionOf(widget?.slot) === 'main'
+}
+
+/**
  * What the editor opens: the draft when there is one, else the published body.
  *
  * The draft wins: an editor who saved a draft and came back to the published
  * layout would conclude their work was lost.
  *
+ * Only the `main` widgets reach the grid; the other regions stay on the page
+ * and `bodyFor()` writes them back.
+ *
  * @param {object} page The page.
  * @return {{kind: string, widgets: Array<object>, markdown: string, fromDraft: boolean}} The body.
  * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-designer-must-keep-a-markdown-pages-markdown-req-pie-001
+ * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-page-designer-must-preserve-regions-it-does-not-edit-req-ptb-010
  */
 export function readBody(page) {
 	const fromDraft = Boolean(page?.draftBody)
-	const body = page?.draftBody || page?.body || {}
+	const body = sourceBodyOf(page)
 	if (body.type === 'markdown') {
 		return {
 			kind: 'markdown',
@@ -66,7 +101,7 @@ export function readBody(page) {
 	}
 	return {
 		kind: 'grid',
-		widgets: normaliseWidgets(body.widgets),
+		widgets: normaliseWidgets(body.widgets).filter(isMainWidget),
 		markdown: '',
 		fromDraft,
 	}
@@ -75,15 +110,33 @@ export function readBody(page) {
 /**
  * The body to store for what the editor holds.
  *
- * @param {{kind: string, widgets: Array<object>, markdown: string}} state The editor's body.
+ * A grid body starts from the body the editor opened (`state.page`), so every
+ * key it does not edit, `clearedRegions` among them, survives. Its widgets are
+ * the stored widgets outside `main`, untouched, then the edited `main` widgets.
+ *
+ * @param {{kind: string, widgets: Array<object>, markdown: string, page?: object}} state The editor's state.
  * @return {object} The body.
  * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-designer-must-keep-a-markdown-pages-markdown-req-pie-001
+ * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-page-designer-must-preserve-regions-it-does-not-edit-req-ptb-010
  */
 export function bodyFor(state) {
 	if (state.kind === 'markdown') {
 		return { type: 'markdown', markdown: String(state.markdown || '') }
 	}
-	return { type: 'grid', widgets: (state.widgets || []).map(storedWidget) }
+	const source = sourceBodyOf(state.page)
+	const kept =
+		source.type === 'markdown' || !Array.isArray(source.widgets)
+			? []
+			: source.widgets
+					.filter((widget) => !isMainWidget(widget))
+					.map((widget) => JSON.parse(JSON.stringify(widget)))
+	const rest = source.type === 'markdown' ? {} : { ...source }
+	delete rest.markdown
+	return {
+		...rest,
+		type: 'grid',
+		widgets: [...kept, ...(state.widgets || []).map(storedWidget)],
+	}
 }
 
 /**
