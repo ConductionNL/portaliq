@@ -3518,7 +3518,7 @@
             },
             "media": {
                 "slug": "media",
-                "icon": "ImageMultiple",
+                "icon": "FolderOutline",
                 "version": "0.1.0",
                 "title": "Media item",
                 "authorization": {

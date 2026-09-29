@@ -65,7 +65,7 @@
     {
       "id": "MediaMenu",
       "label": "Media",
-      "icon": "ImageMultiple",
+      "icon": "FolderOutline",
       "route": "Media",
       "order": 25
     },
