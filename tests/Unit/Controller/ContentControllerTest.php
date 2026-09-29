@@ -25,6 +25,7 @@ use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\ContentController;
 use OCA\Portaliq\Service\Cms\PortalShell;
 use OCA\Portaliq\Service\CmsReader;
+use OCA\Portaliq\Service\PortalNoticeReader;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\TrafficConfigResolver;
@@ -72,6 +73,13 @@ class ContentControllerTest extends TestCase {
 
 	/** Set by the gate tests; null means the gate is never consulted. */
 	private ?PortalSessionService $session = null;
+
+	/**
+	 * The notice reader, when a test sets one.
+	 *
+	 * @var PortalNoticeReader|null
+	 */
+	private ?PortalNoticeReader $notices = null;
 
 	/**
 	 * The incoming request.
@@ -132,7 +140,8 @@ class ContentControllerTest extends TestCase {
 			// gate must not change what a public portal serves.
 			session: ($this->session ?? $this->createMock(PortalSessionService::class)),
 			traffic: new TrafficConfigResolver(),
-			urlGenerator: $this->urlGenerator()
+			urlGenerator: $this->urlGenerator(),
+			notices: ($this->notices ?? $this->createMock(PortalNoticeReader::class))
 		);
 	}//end controller()
 
@@ -204,6 +213,26 @@ class ContentControllerTest extends TestCase {
 			$this->assertSame($bodies[0], $body);
 		}
 	}//end testEveryMissReturnsAnIdenticalBody()
+
+
+	/**
+	 * operate-maintenance-notice T03 (REQ-OMN-001): the site record carries
+	 * the notices active on the site surface of the resolved portal.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-notices/spec.md#requirement-a-notice-shows-on-every-page-during-its-window-req-omn-001
+	 */
+	public function testSiteCarriesActiveNotices(): void {
+		$this->resolver->method('resolve')->willReturn($this->portal());
+		$notice        = ['id' => 'n-1', 'message' => 'Onderhoud', 'level' => 'warning', 'linkLabel' => '', 'linkUrl' => '', 'endsAt' => '2026-10-04T02:00:00+00:00'];
+		$this->notices = $this->createMock(PortalNoticeReader::class);
+		$this->notices->expects($this->once())->method('active')->with('open-tilburg', 'site')->willReturn([$notice]);
+
+		$data = $this->controller()->site()->getData();
+
+		$this->assertSame([$notice], $data['notices']);
+	}//end testSiteCarriesActiveNotices()
 
 
 	/**

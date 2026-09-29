@@ -49,6 +49,7 @@ use OCA\Portaliq\Event\PortalAccountClaimRequestedEvent;
 use OCA\Portaliq\Event\PortalAccountProvisionRequestedEvent;
 use OCA\Portaliq\Listener\CmsCacheInvalidationListener;
 use OCA\Portaliq\Listener\MediaWriteGuardListener;
+use OCA\Portaliq\Listener\NoticeWriteGuardListener;
 use OCA\Portaliq\Listener\LandingPageRequestedEventListener;
 use OCA\Portaliq\Listener\LandingPageSubmissionDispatchListener;
 use OCA\Portaliq\Listener\PortalAccountClaimListener;
@@ -224,6 +225,11 @@ class Application extends App implements IBootstrap {
 
 		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class, ObjectDeletingEvent::class] as $event) {
 			$context->registerEventListener($event, MediaWriteGuardListener::class);
+		}
+
+		// A notice ends after it starts (operate-maintenance-notice REQ-OMN-003).
+		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class] as $event) {
+			$context->registerEventListener($event, NoticeWriteGuardListener::class);
 		}
 	}//end registerCmsListeners()
 

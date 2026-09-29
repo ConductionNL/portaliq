@@ -81,3 +81,24 @@ before `startsAt`.
 - It does not stop anyone from submitting a form during maintenance.
 - It does not translate the message; an editor writes one notice per locale
   if the portal serves more than one.
+
+## Changes made while building (2026-09-29, at development 19a7019)
+
+- **D1 read rule.** `portalNotice` read is `authenticated`, not public with
+  `status: published`. The public never read the schema through
+  OpenRegister: the site and the portal receive only the active notices,
+  from `ContentController::site()` and the runtime config, read with
+  `_rbac: false`. This keeps the public surface pinned in
+  `PortaliqRegisterConfigTest` unchanged, as the media library does.
+- **D1 titles.** The window fields read "Shows from" and "Shows until"
+  ("Starts" already carries another translation in this app).
+- **D4 end before start.** The schema form cannot compare two fields, so
+  `lib/Listener/NoticeWriteGuardListener.php` refuses the write on
+  OpenRegister's creating and updating events with "The end must be after
+  the start.", which the form shows. It also covers a write through the API.
+- **D2 cache.** `PortalNoticeReader` caches a portal's published rows for 60
+  seconds and checks the window on every call, so the cache never extends a
+  notice.
+- **D3 shared helper.** Both components use `src/portal/lib/notices.js`
+  (end check, closed ids in `sessionStorage` under
+  `portaliq.closedNotices`).

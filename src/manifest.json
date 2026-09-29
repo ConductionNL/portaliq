@@ -70,6 +70,13 @@
       "order": 25
     },
     {
+      "id": "NoticesMenu",
+      "label": "Notices",
+      "icon": "AlertCircleOutline",
+      "route": "Notices",
+      "order": 26
+    },
+    {
       "id": "PortalAccounts",
       "label": "Accounts",
       "icon": "Account",
@@ -2076,6 +2083,52 @@
       "config": {
         "register": "portaliq",
         "schema": "media",
+        "sidebar": {
+          "enabled": true,
+          "showMetadata": true
+        }
+      }
+    },
+    {
+      "id": "Notices",
+      "route": "/notices",
+      "type": "index",
+      "title": "Notices",
+      "config": {
+        "register": "portaliq",
+        "schema": "portalNotice",
+        "_note": "Maintenance and warning notices shown above every page of a portal (operate-maintenance-notice). A notice shows while it is published and its window runs, on the public site, the signed-in portal or both. Written by the page editor groups; NoticeWriteGuardListener refuses an end that is not after the start.",
+        "columns": [
+          "message",
+          "portal",
+          "startsAt",
+          "endsAt",
+          {
+            "key": "status",
+            "label": "Status",
+            "widget": "badge",
+            "widgetProps": {
+              "colorMap": {
+                "published": "success",
+                "draft": "warning"
+              }
+            }
+          }
+        ],
+        "sidebar": {
+          "enabled": true,
+          "showMetadata": true
+        }
+      }
+    },
+    {
+      "id": "NoticeDetail",
+      "route": "/notices/:id",
+      "type": "detail",
+      "title": "Portal notice",
+      "config": {
+        "register": "portaliq",
+        "schema": "portalNotice",
         "sidebar": {
           "enabled": true,
           "showMetadata": true
