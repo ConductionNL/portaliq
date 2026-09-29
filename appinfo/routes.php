@@ -66,6 +66,11 @@ return [
         // contrast verdict per set (nldesign-theme-integration). Admin-only.
         ['name' => 'portalTheme#index', 'url' => '/api/portals/{slug}/theme', 'verb' => 'GET'],
         ['name' => 'portalTheme#update', 'url' => '/api/portals/{slug}/theme', 'verb' => 'PUT'],
+        // How residents sign in to a portal's organisation: per provider the
+        // route, and the integriq broker settings (signin-integriq-broker-login
+        // T11). Admin-only.
+        ['name' => 'portalSignin#index', 'url' => '/api/portals/{slug}/signin', 'verb' => 'GET'],
+        ['name' => 'portalSignin#update', 'url' => '/api/portals/{slug}/signin', 'verb' => 'PUT'],
         ['name' => 'accessRequestAdmin#grant', 'url' => '/api/access-requests/{id}/grant', 'verb' => 'POST'],
         ['name' => 'accessRequestAdmin#refuse', 'url' => '/api/access-requests/{id}/refuse', 'verb' => 'POST'],
 

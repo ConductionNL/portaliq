@@ -412,6 +412,58 @@ class PortalOrganisationConfigService {
 	}//end setBrokerSecret()
 
 	/**
+	 * An organisation's uuid and its presentation override, for the admin
+	 * sign-in settings (signin-integriq-broker-login T11), or null when the
+	 * slug names no organisation. Secret-free: no secret lives in the override.
+	 *
+	 * @param string $orgSlug The organisation slug.
+	 *
+	 * @return array{uuid: string, overrides: array<string, mixed>, hasBrokerSecret: bool}|null
+	 *
+	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+	 */
+	public function presentationFor(string $orgSlug): ?array {
+		$organisation = null;
+		if ($orgSlug !== '') {
+			$organisation = $this->findOrganisationBySlug(slug: $orgSlug);
+		}
+
+		if ($organisation === null) {
+			return null;
+		}
+
+		$secret = $this->appConfig->getValueString(Application::APP_ID, $this->brokerSecretKey(organisationUuid: $organisation['uuid']), '');
+
+		return [
+			'uuid' => $organisation['uuid'],
+			'overrides' => $this->presentationOverrides(organisationUuid: $organisation['uuid']),
+			'hasBrokerSecret' => ($secret !== ''),
+		];
+	}//end presentationFor()
+
+	/**
+	 * Replace an organisation's presentation override.
+	 *
+	 * @param string               $organisationUuid The organisation's uuid.
+	 * @param array<string, mixed> $overrides        The whole override.
+	 *
+	 * @return bool Whether it was written.
+	 *
+	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+	 */
+	public function writePresentation(string $organisationUuid, array $overrides): bool {
+		if ($organisationUuid === '') {
+			return false;
+		}
+
+		return $this->appConfig->setValueString(
+			Application::APP_ID,
+			self::CONFIG_KEY_PREFIX . $organisationUuid,
+			(string)json_encode($overrides, JSON_UNESCAPED_SLASHES)
+		);
+	}//end writePresentation()
+
+	/**
 	 * The sensitive `IAppConfig` key of an organisation's broker secret.
 	 *
 	 * @param string $organisationUuid The organisation's uuid.
