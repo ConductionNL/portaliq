@@ -5,7 +5,7 @@
 // can be withdrawn: it renders the `withdrawal` answer the server returns
 // with the case (CitizenWritableSetResolver::withdrawal()).
 //
-// @spec openspec/changes/case-actions-withdraw-screen/specs/citizen-case-withdraw-screen/spec.md#requirement-the-case-screen-offers-withdrawal-exactly-as-the-server-declares-it-req-wds-001
+// @spec openspec/specs/citizen-case-withdraw-screen/spec.md#requirement-the-case-screen-offers-withdrawal-exactly-as-the-server-declares-it-req-wds-001
 
 /**
  * The fields a withdrawal writes, shown as the withdrawn state and never as

@@ -642,7 +642,7 @@ export function createPortalApi(config) {
 		 * @param {string} id The case id.
 		 * @param {string} reason Why, or ''.
 		 * @return {Promise<object>} `{ ok, status, case, withdrawal }` or `{ ok: false, status, message, error }`.
-		 * @spec openspec/changes/case-actions-withdraw-screen/specs/citizen-case-withdraw-screen/spec.md#requirement-withdrawing-takes-a-confirmation-with-an-optional-reason-req-wds-002
+		 * @spec openspec/specs/citizen-case-withdraw-screen/spec.md#requirement-withdrawing-takes-a-confirmation-with-an-optional-reason-req-wds-002
 		 */
 		async withdrawCitizenCase(collection, id, reason) {
 			const res = await fetch(

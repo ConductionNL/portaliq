@@ -2360,7 +2360,7 @@
 			"id": "act-withdraw-case",
 			"area": "case-actions",
 			"name": "Withdraw your own case from the portal.",
-			"portaliq": "no",
+			"portaliq": "yes",
 			"open-inwoner": "no",
 			"nl-portal": "no",
 			"xxllnc-pip": "no",
@@ -2374,13 +2374,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/understanding-object-integrations/permissions-framework-integration: the entry owner holds Delete; a withdraw step can also be a standalone button action (https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/actions/using-manual-actions 'Buttons in pages'). Custom case object. [was unknown]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "lib/Controller/CitizenCaseController.php:304-331 withdraw(), fully implemented (guardWrite, writableSet.withdrawal, applyWithdrawal, PortalClientWithdrawalEvent); routes.php:384 POST /portal/api/citizen/cases/{register}/{schema}/{id}/withdraw",
-				"reachedOn": "nothing reaches it: src/portal/lib/portalApi.js has no withdraw method, and src/portal/components/CitizenCase.jsx has no withdraw button; grep 'withdraw' across all of src/ finds only an unrelated traffic-consent comment",
+				"state": "built",
+				"evidence": "src/portal/components/CitizenCase.jsx renders the withdrawal the server returns with the case (src/portal/lib/withdrawal.js withdrawalView: nothing, 'Withdraw this request', or the closed reason); src/portal/components/WithdrawCaseConfirm.jsx confirms with an optional reason; src/portal/lib/portalApi.js withdrawCitizenCase posts only {reason} to POST /portal/api/citizen/cases/{register}/{schema}/{id}/withdraw (CitizenCaseController::withdraw); the withdrawn request shows 'Withdrawn on {date}.' and the reason, with no undo; tests/case-withdraw-screen.spec.mjs",
+				"reachedOn": "resident: portal page with a cases collection and a citizenCase block -> open a case -> 'Withdraw this request' -> confirm",
 				"owner": "ConductionNL/portaliq",
-				"note": "A complete server-side withdrawal path with its own event and openspec (withdrawing-your-own-case-from-the-portal) has no UI trigger anywhere in this repo. Specified in openspec/changes/case-actions-withdraw-screen (OpenSpec pass 2026-09-27).",
+				"note": "Built 2026-09-29 (case-actions-withdraw-screen) on the existing withdraw route. Works for any case type that declares portalWithdrawal on a collection with a citizenWrite update action.",
 				"origin": "code",
-				"defectCandidate": "src/portal/components/CitizenCase.jsx has no withdraw control; the working backend at lib/Controller/CitizenCaseController.php:304 is unreachable from the portal SPA (code reading, needs a live check)"
+				"change": "2026-09-29-case-actions-withdraw-screen"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2405,13 +2405,14 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/understanding-object-integrations/permissions-framework-integration: the entry owner holds Delete; a withdraw action can be a standalone action button (https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/actions/using-manual-actions). Custom case object. [was unknown]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "same finding as act-withdraw-case: lib/Controller/CitizenCaseController.php:304 withdraw() is implemented but has no frontend caller",
-				"reachedOn": "nothing reaches it",
+				"state": "building",
+				"evidence": "src/portal/components/CitizenCase.jsx renders the withdrawal the server returns with the case (src/portal/lib/withdrawal.js withdrawalView: nothing, 'Withdraw this request', or the closed reason); src/portal/components/WithdrawCaseConfirm.jsx confirms with an optional reason; src/portal/lib/portalApi.js withdrawCitizenCase posts only {reason} to POST /portal/api/citizen/cases/{register}/{schema}/{id}/withdraw (CitizenCaseController::withdraw); the withdrawn request shows 'Withdrawn on {date}.' and the reason, with no undo; tests/case-withdraw-screen.spec.mjs",
+				"reachedOn": "a portal cases collection with a citizenWrite update action; dossiq's has none yet",
 				"owner": "ConductionNL/portaliq",
-				"note": "dossiq matrix rated this 'partial' with no evidence given; from portaliq's code the honest rating is no, since the whole path is unreached (see the defect on act-withdraw-case). Specified in openspec/changes/case-actions-withdraw-screen (OpenSpec pass 2026-09-27).",
+				"note": "The portaliq half is built (archived change 2026-09-29-case-actions-withdraw-screen). Owed by ConductionNL/dossiq: a citizenWrite update action on its case collection and portalCaseType records with portalWithdrawal; without them CitizenCaseController::context() refuses a dossiq case. Tracked in ConductionNL/dossiq#3152.",
 				"sourceId": "sib-2.47",
-				"origin": "sibling"
+				"origin": "sibling",
+				"change": "2026-09-29-case-actions-withdraw-screen"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",

@@ -6,7 +6,7 @@
 // and sends nothing until the resident presses "Withdraw request". Focus
 // moves to the heading when the step opens.
 //
-// @spec openspec/changes/case-actions-withdraw-screen/specs/citizen-case-withdraw-screen/spec.md#requirement-withdrawing-takes-a-confirmation-with-an-optional-reason-req-wds-002
+// @spec openspec/specs/citizen-case-withdraw-screen/spec.md#requirement-withdrawing-takes-a-confirmation-with-an-optional-reason-req-wds-002
 
 import { useEffect, useRef, useState } from 'react'
 
