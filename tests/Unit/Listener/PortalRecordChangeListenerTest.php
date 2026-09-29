@@ -9,13 +9,17 @@ use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Listener\PortalRecordChangeListener;
+use OCA\Portaliq\BackgroundJob\NotificationDispatchJob;
 use OCA\Portaliq\Service\NotificationDispatchService;
+use OCA\Portaliq\Service\Notifications\MessageBoxChannel;
 use OCA\Portaliq\Service\Notifications\PortalChangeRuleIndex;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCA\Portaliq\Service\PortalWriteContext;
 use OCP\IL10N;
 use OCP\L10N\IFactory;
+use OCP\BackgroundJob\IJobList;
 use Opis\JsonSchema\Validator;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -52,6 +56,13 @@ class PortalRecordChangeListenerTest extends TestCase {
 	private array $dispatched = [];
 
 	/**
+	 * The jobs queued.
+	 *
+	 * @var array<int, array<string, mixed>>
+	 */
+	private array $jobs = [];
+
+	/**
 	 * The write context the listener shares with the writers.
 	 *
 	 * @var PortalWriteContext
@@ -79,7 +90,17 @@ class PortalRecordChangeListenerTest extends TestCase {
 	 *
 	 * @return PortalRecordChangeListener
 	 */
-	private function listener(bool $dispatchThrows = false): PortalRecordChangeListener {
+	private function listener(bool $dispatchThrows = false, array $messageBox = []): PortalRecordChangeListener {
+		$inbox = ['id' => 'berichten', 'register' => 'zaken', 'schema' => 'bericht', 'scopeField' => 'ontvanger', 'kind' => 'inbox', 'label' => 'Berichten'];
+		if (($messageBox['declared'] ?? false) === true) {
+			$inbox['messageBox'] = ['recipientProvider' => 'messageBoxRecipient'];
+		}
+
+		$notifications = ['message.created', ['ruleKey' => 'case.updated', 'collection' => 'mijnZaken', 'on' => ['field' => 'status', 'operator' => 'changed'], 'titleField' => 'identifier']];
+		if (($messageBox['nudge'] ?? true) === false) {
+			$notifications = [$notifications[1]];
+		}
+
 		$registry = $this->createMock(PortalContributionRegistry::class);
 		$registry->method('servedAudiences')->willReturn(['client', 'guardian']);
 		$registry->method('aggregateFor')->willReturn(['contributions' => [
@@ -88,12 +109,9 @@ class PortalRecordChangeListenerTest extends TestCase {
 				'audience' => 'client',
 				'collections' => [
 					['id' => 'mijnZaken', 'register' => 'zaken', 'schema' => 'zaak', 'scopeField' => 'initiator', 'label' => 'Mijn zaken', 'fields' => ['identifier', 'status']],
-					['id' => 'berichten', 'register' => 'zaken', 'schema' => 'bericht', 'scopeField' => 'ontvanger', 'kind' => 'inbox', 'label' => 'Berichten'],
+					$inbox,
 				],
-				'notifications' => [
-					'message.created',
-					['ruleKey' => 'case.updated', 'collection' => 'mijnZaken', 'on' => ['field' => 'status', 'operator' => 'changed'], 'titleField' => 'identifier'],
-				],
+				'notifications' => $notifications,
 			],
 		]]);
 
@@ -114,7 +132,7 @@ class PortalRecordChangeListenerTest extends TestCase {
 
 		$accounts = $this->createMock(PortalAccountService::class);
 		$accounts->method('findBySubjectRef')->willReturnCallback(
-			static fn (string $subjectRef): ?array => ($subjectRef === 'bsn-1' ? ['subjectRef' => 'bsn-1', 'organisation' => 'venray', 'audience' => 'client'] : null)
+			static fn (string $subjectRef): ?array => ($subjectRef === 'bsn-1' ? ['subjectRef' => 'bsn-1', 'organisation' => 'venray', 'audience' => 'client', 'notificationPreferences' => ($messageBox['preferences'] ?? null)] : null)
 		);
 
 		$writer = $this->createMock(PortalObjectWriter::class);
@@ -149,8 +167,32 @@ class PortalRecordChangeListenerTest extends TestCase {
 			dispatch: $dispatch,
 			l10nFactory: $factory,
 			logger: $this->createMock(LoggerInterface::class),
+			messageBox: $this->messageBoxChannel(offered: ($messageBox['offered'] ?? false)),
 		);
 	}//end listener()
+
+	/**
+	 * The REAL message box channel over an organisation that offers it or not,
+	 * and a job list that records what was queued.
+	 *
+	 * @param bool $offered Whether the organisation offers the channel.
+	 *
+	 * @return MessageBoxChannel
+	 */
+	private function messageBoxChannel(bool $offered): MessageBoxChannel {
+		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
+		$orgConfig->method('messageBox')->willReturnCallback(
+			static fn (string $orgSlug): ?array => ($offered === true && $orgSlug === 'venray' ? ['sourceId' => 'berichtenbox-venray', 'label' => 'MijnOverheid Berichtenbox'] : null)
+		);
+		$jobs = $this->createMock(IJobList::class);
+		$jobs->method('add')->willReturnCallback(
+			function (string $job, mixed $argument = null): void {
+				$this->jobs[] = ['job' => $job, 'argument' => $argument];
+			}
+		);
+
+		return new MessageBoxChannel(orgConfig: $orgConfig, jobList: $jobs, logger: $this->createMock(LoggerInterface::class));
+	}//end messageBoxChannel()
 
 	/**
 	 * A real OpenRegister object.
@@ -307,4 +349,49 @@ class PortalRecordChangeListenerTest extends TestCase {
 
 		$this->assertSame([], $this->dispatched);
 	}//end testPortalMessageIsNotDispatchedTwice()
+
+	/**
+	 * A new message in an inbox collection that names a recipient method gets
+	 * a message box job only when the organisation offers the channel and the
+	 * resident did not switch it off (inbox-berichtenbox-channel, REQ-MBC-003,
+	 * REQ-MBC-005). The job names the message and the method; it carries no
+	 * recipient, because portaliq has none until the job asks the case app.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/inbox-berichtenbox-channel/specs/portal-message-box-channel/spec.md#requirement-portaliq-asks-integriq-to-send-and-records-the-answer-req-mbc-003
+	 */
+	public function testMessageBoxJobOnlyWhenAllowed(): void {
+		$message = $this->object(schema: '13', data: ['ontvanger' => 'bsn-1', 'onderwerp' => 'Besluit op uw aanvraag']);
+
+		$this->listener(messageBox: ['declared' => true, 'offered' => true])->handle(new ObjectCreatedEvent($message));
+		$this->assertCount(1, $this->jobs, 'offered, declared and not switched off: one job');
+		$this->assertSame(NotificationDispatchJob::class, $this->jobs[0]['job']);
+		$argument = $this->jobs[0]['argument'];
+		$this->assertSame('messageBox', $argument['channel']);
+		$this->assertSame('messageBoxRecipient', $argument['recipientProvider']);
+		$this->assertSame(['app' => 'dossiq', 'collection' => 'berichten', 'id' => 'zaak-uuid-1', 'label' => 'Berichten'], $argument['record']);
+		$this->assertSame(['register' => 'zaken', 'schema' => 'bericht', 'scopeField' => 'ontvanger'], $argument['source']);
+		$this->assertSame('bsn-1', $argument['subjectRef']);
+		$this->assertSame('venray', $argument['organisation']);
+		$this->assertCount(1, $this->dispatched, 'the e-mail nudge still goes as before');
+
+		foreach ([
+			'the organisation does not offer it' => ['declared' => true, 'offered' => false],
+			'the resident switched it off' => ['declared' => true, 'offered' => true, 'preferences' => ['messageBox' => ['enabled' => false]]],
+			'the collection names no recipient method' => ['declared' => false, 'offered' => true],
+		] as $why => $case) {
+			$this->jobs = [];
+			$this->listener(messageBox: $case)->handle(new ObjectCreatedEvent($message));
+			$this->assertSame([], $this->jobs, 'no job when '.$why);
+		}
+
+		// The channel does not depend on the e-mail rule: an app that declares
+		// no `message.created` still gets its letters to the message box.
+		$this->jobs = [];
+		$this->dispatched = [];
+		$this->listener(messageBox: ['declared' => true, 'offered' => true, 'nudge' => false])->handle(new ObjectCreatedEvent($message));
+		$this->assertCount(1, $this->jobs, 'the message box job without the e-mail rule');
+		$this->assertSame([], $this->dispatched, 'and no e-mail nudge the app did not ask for');
+	}//end testMessageBoxJobOnlyWhenAllowed()
 }//end class

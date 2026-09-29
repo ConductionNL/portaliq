@@ -115,7 +115,7 @@ class PortalChangeRuleIndex {
 	 * @param string $register The object's register id or slug.
 	 * @param string $schema   The object's schema id or slug.
 	 *
-	 * @return array<int, array<string, string>> Entries with app, collection and scopeField.
+	 * @return array<int, array<string, string>> Entries with app, collection, register, schema, scopeField, nudge and recipientProvider.
 	 *
 	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-case-apps-message-triggers-an-e-mail-req-nap-004
 	 */
@@ -266,9 +266,15 @@ class PortalChangeRuleIndex {
 	 */
 	private function entriesOf(array $contribution): array {
 		$app = (string)($contribution['app'] ?? '');
-		$notifications = ($contribution['notifications'] ?? null);
-		if ($app === '' || is_array($notifications) === false) {
+		if ($app === '') {
 			return [];
+		}
+
+		// An app with no notification rules can still send its letters to
+		// the message box: its inbox collection declares that on its own.
+		$notifications = ($contribution['notifications'] ?? []);
+		if (is_array($notifications) === false) {
+			$notifications = [];
 		}
 
 		$collections = [];
@@ -311,7 +317,9 @@ class PortalChangeRuleIndex {
 	}//end changeEntries()
 
 	/**
-	 * The inbox collections of one contribution that declares `message.created`.
+	 * The inbox collections of one contribution that declares `message.created`
+	 * (the e-mail nudge, `nudge` 1) or names a message box recipient method
+	 * (`recipientProvider`, inbox-berichtenbox-channel), or both.
 	 *
 	 * @param string                              $app           The contributing app.
 	 * @param array<int, mixed>                   $notifications The normalised notifications.
@@ -320,15 +328,23 @@ class PortalChangeRuleIndex {
 	 * @return array<int, array<string, string>>
 	 */
 	private function inboxEntries(string $app, array $notifications, array $collections): array {
-		if (in_array(NotificationDispatchService::RULE_MESSAGE_CREATED, $notifications, true) === false) {
-			return [];
-		}
+		$nudge = in_array(NotificationDispatchService::RULE_MESSAGE_CREATED, $notifications, true);
 
 		$entries = [];
 		foreach ($collections as $collection) {
-			if ((string)($collection['kind'] ?? '') === 'inbox') {
-				$entries[] = $this->entry(kind: 'inbox', app: $app, collection: $collection);
+			if ((string)($collection['kind'] ?? '') !== 'inbox') {
+				continue;
 			}
+
+			$recipientProvider = (string)($collection['messageBox']['recipientProvider'] ?? '');
+			if ($nudge === false && $recipientProvider === '') {
+				continue;
+			}
+
+			$entries[] = $this->entry(kind: 'inbox', app: $app, collection: $collection) + [
+				'nudge' => (string)(int)$nudge,
+				'recipientProvider' => $recipientProvider,
+			];
 		}
 
 		return $entries;
