@@ -46,12 +46,24 @@
 					<NcCheckboxRadioSwitch
 						:modelValue="chosen"
 						:value="set.id"
+						:disabled="!isSelectable(set)"
 						type="radio"
 						name="portal-theme"
 						@update:modelValue="choose">
 						{{ set.name }}
 					</NcCheckboxRadioSwitch>
 					<span
+						v-if="!isSelectable(set)"
+						class="portal-theme__verdict portal-theme__verdict--fails"
+						:data-testid="`portal-theme-refusal-${set.id}`">
+						{{
+							t('portaliq', 'Refused by the theme app: {reason}', {
+								reason: set.refusal,
+							})
+						}}
+					</span>
+					<span
+						v-else
 						class="portal-theme__verdict"
 						:class="`portal-theme__verdict--${verdictState(set.verdict)}`">
 						{{ verdictText(set.verdict) }}
@@ -105,7 +117,11 @@ import {
 	NcLoadingIcon,
 	NcNoteCard,
 } from '@nextcloud/vue'
-import { createPortalThemeChoice, verdictState } from '../lib/portalThemeChoice.js'
+import {
+	createPortalThemeChoice,
+	isSelectable,
+	verdictState,
+} from '../lib/portalThemeChoice.js'
 
 export default {
 	name: 'PortalTheme',
@@ -164,6 +180,7 @@ export default {
 	},
 
 	methods: {
+		isSelectable,
 		verdictState,
 
 		/**
@@ -255,12 +272,20 @@ export default {
 			if (result.outcome !== 'saved') {
 				this.noticeType = 'error'
 				this.notice =
-					result.outcome === 'unknown'
+					result.outcome === 'refused'
 						? t(
 								'portaliq',
-								'The theme app no longer offers this house style.',
+								'The theme app refused this house style: {reason}',
+								{
+									reason: result.refusal,
+								},
 							)
-						: t('portaliq', 'The house style could not be saved.')
+						: result.outcome === 'unknown'
+							? t(
+									'portaliq',
+									'The theme app no longer offers this house style.',
+								)
+							: t('portaliq', 'The house style could not be saved.')
 				return
 			}
 			this.noticeType = 'success'

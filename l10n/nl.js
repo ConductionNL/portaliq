@@ -1720,6 +1720,8 @@ OC.L10N.register(
         "The PKCE `code_verifier` presented to the token endpoint on callback, matching the `code_challenge` sent at start. Only an `oidc` row has one, and the OIDC callback refuses a row without it.": "De PKCE-`code_verifier` die bij de callback aan het token-endpoint wordt aangeboden, passend bij de `code_challenge` van de start. Alleen een `oidc`-regel heeft er een, en de OIDC-callback weigert een regel zonder.",
         "Login route": "Inlogroute",
         "Which login this row belongs to: `oidc` (the organisation's own OIDC broker) or `broker` (integriq). Absent means `oidc`. Each callback refuses a row of the other route.": "Bij welke inlog deze regel hoort: `oidc` (de eigen OIDC-broker van de organisatie) of `broker` (integriq). Ontbreekt de waarde, dan is het `oidc`. Elke callback weigert een regel van de andere route.",
+        "Refused by the theme app: {reason}": "Geweigerd door de thema-app: {reason}",
+        "The theme app refused this house style: {reason}": "De thema-app heeft deze huisstijl geweigerd: {reason}",
         "The theme app no longer offers this house style.": "De thema-app biedt deze huisstijl niet meer aan.",
         "The house style could not be saved.": "De huisstijl kon niet worden opgeslagen.",
         "The house style is saved.": "De huisstijl is opgeslagen.",
