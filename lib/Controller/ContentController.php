@@ -238,6 +238,9 @@ class ContentController extends Controller {
 				// The header's shape (REQ-PTB-004); `double` unless the
 				// portal chose another known one.
 				'headerVariant' => $this->shell->headerVariant(portal: $portal),
+				// The footer's authored content on named keys only; entries a
+				// visitor cannot follow are dropped (REQ-PTB-005).
+				'footer'        => $this->shell->footer(portal: $portal),
 				// The resolved measurement configuration, defaults filled in,
 				// so the client sends only what the portal asked for; and the
 				// absolute collector URL, so a statically built site on its

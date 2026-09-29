@@ -72,8 +72,8 @@ that touches the shell ends with `node tests/shell-snapshot.mjs compare <dir>`.
   - GIVEN footer entries without a label or href WHEN served THEN they are absent
   - GIVEN no colophon WHEN rendered THEN the legal bar shows the portal title
 - Reference: 34cde3e, 423d7df, fd37778
-- [ ] Implement
-- [ ] Test
+- [x] Implement
+- [x] Test
 
 ### Task 6: The hero block and grid runs
 

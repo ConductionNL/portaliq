@@ -642,6 +642,28 @@ class PortaliqRegisterConfigTest extends TestCase {
 	}//end testThePortalDeclaresItsHeaderShapeAndRegisterPage()
 
 	/**
+	 * portal-theme-blocks-and-contributed-pages REQ-PTB-005: the footer the
+	 * content API projects is a schema property, validated with the real
+	 * fragment.
+	 *
+	 * @return void
+	 */
+	public function testThePortalDeclaresItsFooter(): void {
+		$schema = self::$register['components']['schemas']['portal'];
+		$valid  = $this->portalValidator(schema: $schema);
+
+		$this->assertTrue($valid(['title' => 'Docs', 'footer' => [
+			'description' => 'Eén loket',
+			'colophon'    => 'Gemeente Voorbeeld',
+			'socials'     => [['label' => 'Mastodon', 'href' => 'https://social.example', 'icon' => 'mastodon']],
+			'legalLinks'  => [['label' => 'Privacy', 'href' => '/privacy']],
+			'badges'      => [['label' => 'ISO 27001', 'href' => 'https://cert.example']],
+		]]));
+		$this->assertFalse($valid(['title' => 'Docs', 'footer' => ['socials' => 'https://social.example']]), 'socials is a list');
+		$this->assertSame(['description', 'colophon', 'socials', 'legalLinks', 'badges'], array_keys($schema['properties']['footer']['properties']));
+	}//end testThePortalDeclaresItsFooter()
+
+	/**
 	 * A validator for portal records against the real schema fragment.
 	 *
 	 * @param array $schema The portal schema.

@@ -1751,7 +1751,22 @@ OC.L10N.register(
         "Register page": "Registratiepagina",
         "Where a visitor without an account goes to make one. When empty, the header shows no register button.": "Waar een bezoeker zonder account er een aanmaakt. Is dit leeg, dan toont de kop geen registratieknop.",
         "Register button text": "Tekst van de registratieknop",
-        "The text on the register button. Empty shows Registreren.": "De tekst op de registratieknop. Leeg toont Registreren."
+        "The text on the register button. Empty shows Registreren.": "De tekst op de registratieknop. Leeg toont Registreren.",
+        "Footer": "Voettekst",
+        "What the footer shows besides the menus. Every part is optional. A link without a label or a destination is left out.": "Wat de voettekst naast de menu's toont. Elk onderdeel is optioneel. Een link zonder tekst of bestemming wordt weggelaten.",
+        "Footer text": "Tekst in de voettekst",
+        "A short line under the portal name in the footer.": "Een korte regel onder de portaalnaam in de voettekst.",
+        "Colophon": "Colofon",
+        "Who is responsible for this portal, shown in the bottom bar. Empty shows the portal name.": "Wie verantwoordelijk is voor dit portaal, getoond in de onderste balk. Leeg toont de portaalnaam.",
+        "Social media": "Sociale media",
+        "Links to the organisation's social media accounts, shown as icons.": "Links naar de sociale media van de organisatie, getoond als iconen.",
+        "The text a visitor reads or a screen reader announces.": "De tekst die een bezoeker leest of een schermlezer voorleest.",
+        "Where the link goes: a page of this portal such as /privacy, or a full web, mail or phone address.": "Waar de link heen gaat: een pagina van dit portaal zoals /privacy, of een volledig web-, mail- of telefoonadres.",
+        "The name of the icon to show. Empty shows a plain link icon.": "De naam van het pictogram. Leeg toont een gewoon linkpictogram.",
+        "Legal links": "Juridische links",
+        "Links in the bottom bar, such as privacy and accessibility. Empty uses the menu at position 2 or higher.": "Links in de onderste balk, zoals privacy en toegankelijkheid. Leeg gebruikt het menu op positie 2 of hoger.",
+        "Certificates": "Certificaten",
+        "Certificates the organisation holds, each linking to its proof.": "Certificaten van de organisatie, elk met een link naar het bewijs."
     },
     "nplurals=2; plural=(n != 1);"
 )

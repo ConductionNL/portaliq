@@ -228,122 +228,14 @@
 			</div>
 		</main>
 
-		<!--
-			TWO SECTIONS, AND THE COUNT IS LOAD-BEARING.
-
-			`nlds-app.css` styles this footer by POSITION, not by class:
-
-			  .ac-footer section:first-of-type              { 96px band, blue-600 }
-			  .ac-footer section:first-of-type .container   { display: grid, 4 cols }
-			  .ac-footer section:last-of-type:not(:only-of-type)
-			                                               { 28px band, blue-500 }
-
-			`.ac-footer__sub-footer` appears in NO rule. This markup used to be a
-			single `<section class="ac-footer__sub-footer">`, which looked right
-			and rendered wrong: being the only section it was `:only-of-type`, so
-			it picked up the FIRST band's 96px padding and dark blue, and the
-			`:not(:only-of-type)` guard deliberately excluded it from the strip
-			rule it was named after. Measured against the reference: 211px against
-			368px, one band where there are two.
-
-			So the sub-footer strip exists only when a second section does. Both
-			are emitted unconditionally.
-		-->
-		<footer class="ac-footer pq-site__footer" data-testid="site-footer">
-			<!-- The reference labels its footer for assistive tech and hides the
-			     heading visually; a landmark with no name is announced as just
-			     "footer". -->
-			<h2 class="sr-only">Footer</h2>
-
-			<section>
-				<div class="container ac-footer__container">
-					<nav
-						v-for="menu in footerMenus"
-						:key="menu.title"
-						class="ac-footer__links"
-						:aria-label="menu.title"
-						data-testid="site-footer-menu">
-						<h3 class="ac-footer__menu-title">{{ menu.title }}</h3>
-						<ul>
-							<li v-for="item in menu.items" :key="item.name">
-								<!--
-									The reference marks every footer link with an
-									external-link glyph. It is DECORATIVE here —
-									`aria-hidden` — because the link already has
-									its own text; announcing "external link"
-									twice per item helps nobody.
-								-->
-								<a
-									class="ac-footer__link"
-									:href="item.link"
-									:target="
-										isExternal(item.link) ? '_blank' : undefined
-									"
-									:rel="
-										isExternal(item.link)
-											? 'noopener noreferrer'
-											: undefined
-									"
-									@click="onFooterLink($event, item.link)">
-									<CnSiteIcon
-										v-if="isExternal(item.link)"
-										name="external-link"
-										:size="18" />
-									<span>{{ item.name }}</span>
-								</a>
-							</li>
-						</ul>
-					</nav>
-
-					<div class="ac-footer__logo">
-						<div class="con-logo-container footer" />
-						<span>
-							<span>{{ site.title }}</span>
-							<!-- The reference's footer logo carries a tagline under
-							     the name. It is portal CONTENT, so it comes from the
-							     portal record rather than a constant. -->
-							<span
-								v-if="site.tagline"
-								data-testid="site-footer-tagline">
-								{{ site.tagline }}
-							</span>
-						</span>
-					</div>
-				</div>
-			</section>
-
-			<section class="ac-footer__sub-footer">
-				<div class="container">
-					<!--
-						The reference's strip is a HORIZONTAL NAV of legal links
-						(Privacy, Algemene voorwaarden, Disclaimer, FAQ), not a
-						colophon line. `.ac-footer__sub-footer-horizontal` is the
-						class its CSS separates with a pipe between items.
-
-						Driven by a menu so it is configurable per portal — the
-						colophon it replaces was the portal title and nothing
-						else, which no portal could change.
-					-->
-					<nav
-						v-if="subFooterMenu"
-						class="ac-footer__sub-footer-links"
-						:aria-label="subFooterMenu.title"
-						data-testid="site-subfooter-menu">
-						<ul class="ac-footer__sub-footer-horizontal">
-							<li v-for="item in subFooterMenu.items" :key="item.name">
-								<a
-									:href="item.link"
-									@click.prevent="go(item.link)"
-									>{{ item.name }}</a
-								>
-							</li>
-						</ul>
-					</nav>
-
-					<p v-else data-testid="site-footer-colophon">{{ site.title }}</p>
-				</div>
-			</section>
-		</footer>
+		<!-- The footer is the `footerColumns` block (REQ-PTB-005). -->
+		<FooterColumns
+			:title="site.title || ''"
+			:tagline="site.tagline || ''"
+			:menus="footerMenus"
+			:legalLinks="legalLinks"
+			:footer="site.footer || {}"
+			@navigate="go" />
 
 		<!--
 			THE EDITING DOOR, and it is last in the document on purpose: it is
@@ -356,9 +248,9 @@
 </template>
 
 <script>
-import { CnSiteIcon } from '@conduction/nextcloud-vue/public'
 import { defineAsyncComponent } from 'vue'
 import BrandHeader from './components/BrandHeader.vue'
+import FooterColumns from './components/FooterColumns.vue'
 import MarkdownBlock from './components/MarkdownBlock.vue'
 import WidgetGrid from './components/WidgetGrid.vue'
 import {
@@ -411,7 +303,7 @@ export default {
 
 	components: {
 		BrandHeader,
-		CnSiteIcon,
+		FooterColumns,
 		MarkdownBlock,
 		SiteEditButton,
 		WidgetGrid,
@@ -620,66 +512,26 @@ export default {
 		},
 
 		/**
-		 * The menus shown as columns in the footer's first band.
-		 *
-		 * The counterpart of `headerMenus`: every menu the header does not
-		 * claim. Before this split, EVERY menu rendered in the header bar and
-		 * the footer had no links at all — a portal could not express a footer
-		 * column even though its data model already had the field to do it.
-		 *
-		 * The band is a four-column grid, so a portal declaring more than three
-		 * footer menus wraps rather than overflowing; the logo occupies the
-		 * fourth cell.
+		 * The footer's link columns: position 1, and any position the legal
+		 * strip does not claim.
 		 *
 		 * @return {Array} The footer menus.
 		 *
-		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-content-api-must-be-sufficient-without-the-built-in-renderer
+		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-footer-must-be-a-block-whose-bands-are-styled-by-role-req-ptb-005
 		 */
 		footerMenus() {
-			return this.menus.filter(
-				(menu) => (menu.position || 0) !== 0 && menu !== this.subFooterMenu,
-			)
+			return footerMenusOf(this.menus)
 		},
 
 		/**
-		 * The legal strip at the very bottom, if the portal declares one.
+		 * The legal strip's links: the portal's own, else its strip menu's.
 		 *
-		 * CONVENTION, read off the existing `position` field rather than added
-		 * to the schema: the HIGHEST position is the sub-footer. The reference
-		 * puts Privacy / Algemene voorwaarden / Disclaimer / FAQ there, visually
-		 * separate from the link columns above, and a portal needs some way to
-		 * say which menu that is.
+		 * @return {Array} `{label, href}` entries.
 		 *
-		 * Requires at least two footer menus, so a portal with a single footer
-		 * menu keeps it as a COLUMN rather than having it silently demoted to
-		 * the strip — one menu is far more likely to be links than legalese.
-		 *
-		 * @return {object|null} The sub-footer menu, or null.
-		 *
-		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-content-api-must-be-sufficient-without-the-built-in-renderer
+		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-footer-must-be-a-block-whose-bands-are-styled-by-role-req-ptb-005
 		 */
-		subFooterMenu() {
-			// POSITION IS NOW A CONTRACT, not a comparison: 0 is the header, 1
-			// is a footer column, 2 or higher is the legal strip.
-			//
-			// It used to be "the highest position, when there are at least
-			// two" — which meant a portal could not have a legal strip WITHOUT
-			// also having a footer column. The reference has exactly that
-			// shape: one nav, in the strip, and a band above carrying only the
-			// title and tagline. Reproducing it required inventing a footer
-			// column the reference does not have.
-			//
-			// A portal with menus at 1 and 2 is unaffected; only a portal
-			// whose single menu sits at 2 or above moves, and moving it is the
-			// point.
-			const strip = this.menus.filter((menu) => (menu.position || 0) >= 2)
-			if (strip.length === 0) {
-				return null
-			}
-
-			return strip.reduce((highest, menu) =>
-				(menu.position || 0) > (highest.position || 0) ? menu : highest,
-			)
+		legalLinks() {
+			return legalLinksOf(this.site, this.menus)
 		},
 
 		/**
@@ -1012,42 +864,6 @@ export default {
 		 *
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
 		 */
-		/**
-		 * Whether a link leaves this portal.
-		 *
-		 * An absolute URL to another origin is external; everything else is an
-		 * in-site route this renderer handles itself. The distinction decides
-		 * both the icon and whether the click is intercepted — calling
-		 * `preventDefault` on an outbound link would strand the visitor on a
-		 * dead control.
-		 *
-		 * @param {string} link The href.
-		 * @return {boolean} True when it points off-site.
-		 *
-		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-content-api-must-be-sufficient-without-the-built-in-renderer
-		 */
-		isExternal(link) {
-			return /^https?:\/\//i.test(String(link || ''))
-		},
-
-		/**
-		 * Follow a footer link, in-site or out.
-		 *
-		 * @param {MouseEvent} event The click.
-		 * @param {string} link The href.
-		 * @return {void}
-		 *
-		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-content-api-must-be-sufficient-without-the-built-in-renderer
-		 */
-		onFooterLink(event, link) {
-			if (this.isExternal(link)) {
-				return
-			}
-
-			event.preventDefault()
-			this.go(link)
-		},
-
 		/**
 		 * Navigate to an in-site route without leaving the document.
 		 *

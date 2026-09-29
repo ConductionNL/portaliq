@@ -236,6 +236,24 @@ class ContentControllerTest extends TestCase {
 
 
 	/**
+	 * A social link with a label and no destination is absent from the served
+	 * site (portal-theme-blocks-and-contributed-pages REQ-PTB-005).
+	 *
+	 * @return void
+	 */
+	public function testASocialLinkWithoutADestinationIsNotServed(): void {
+		$portal           = $this->portal();
+		$portal['footer'] = ['socials' => [['label' => 'LinkedIn'], ['label' => 'Mastodon', 'href' => 'https://social.example']]];
+		$this->resolver->method('resolve')->willReturn($portal);
+
+		$data = $this->controller()->site()->getData();
+
+		$this->assertSame([['label' => 'Mastodon', 'href' => 'https://social.example']], $data['footer']['socials']);
+		$this->assertSame('', $data['footer']['colophon']);
+	}//end testASocialLinkWithoutADestinationIsNotServed()
+
+
+	/**
 	 * Only the authentication MODES are exposed.
 	 *
 	 * Provider configuration belongs in the credential broker; a public

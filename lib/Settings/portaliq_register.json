@@ -1993,6 +1993,90 @@
                         "description": "One supporting line shown under the portal name in the footer's logo block. The NL Design System reference carries one; without this field every portal's footer showed a bare title.",
                         "example": "Één plek voor alle publicaties van de gemeente"
                     },
+                    "footer": {
+                        "title": "Footer",
+                        "type": "object",
+                        "description": "What the footer shows besides the menus. Every part is optional. A link without a label or a destination is left out.",
+                        "properties": {
+                            "description": {
+                                "title": "Footer text",
+                                "type": "string",
+                                "description": "A short line under the portal name in the footer.",
+                                "example": "Eén loket voor inwoners en ondernemers"
+                            },
+                            "colophon": {
+                                "title": "Colophon",
+                                "type": "string",
+                                "description": "Who is responsible for this portal, shown in the bottom bar. Empty shows the portal name.",
+                                "example": "Gemeente Voorbeeld, KvK 12345678"
+                            },
+                            "socials": {
+                                "title": "Social media",
+                                "type": "array",
+                                "description": "Links to the organisation's social media accounts, shown as icons.",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "label": {
+                                            "title": "Label",
+                                            "type": "string",
+                                            "description": "The text a visitor reads or a screen reader announces."
+                                        },
+                                        "href": {
+                                            "title": "Link",
+                                            "type": "string",
+                                            "description": "Where the link goes: a page of this portal such as /privacy, or a full web, mail or phone address."
+                                        },
+                                        "icon": {
+                                            "title": "Icon",
+                                            "type": "string",
+                                            "description": "The name of the icon to show. Empty shows a plain link icon."
+                                        }
+                                    }
+                                }
+                            },
+                            "legalLinks": {
+                                "title": "Legal links",
+                                "type": "array",
+                                "description": "Links in the bottom bar, such as privacy and accessibility. Empty uses the menu at position 2 or higher.",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "label": {
+                                            "title": "Label",
+                                            "type": "string",
+                                            "description": "The text a visitor reads or a screen reader announces."
+                                        },
+                                        "href": {
+                                            "title": "Link",
+                                            "type": "string",
+                                            "description": "Where the link goes: a page of this portal such as /privacy, or a full web, mail or phone address."
+                                        }
+                                    }
+                                }
+                            },
+                            "badges": {
+                                "title": "Certificates",
+                                "type": "array",
+                                "description": "Certificates the organisation holds, each linking to its proof.",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "label": {
+                                            "title": "Label",
+                                            "type": "string",
+                                            "description": "The text a visitor reads or a screen reader announces."
+                                        },
+                                        "href": {
+                                            "title": "Link",
+                                            "type": "string",
+                                            "description": "Where the link goes: a page of this portal such as /privacy, or a full web, mail or phone address."
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
                     "slug": {
                         "title": "Slug",
                         "type": "string",

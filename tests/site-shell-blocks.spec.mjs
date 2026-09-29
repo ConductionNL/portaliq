@@ -12,7 +12,10 @@
 //   node --test tests/site-shell-blocks.spec.mjs
 
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import { test } from 'node:test'
+import { fileURLToPath } from 'node:url'
 import { withoutStyling } from '../src/site/lib/blockProps.js'
 import {
 	footerContentOf,
@@ -24,6 +27,15 @@ import {
 	subFooterMenuOf,
 } from '../src/site/lib/shellData.js'
 import { renderSfc } from './support/render-sfc.mjs'
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
+
+// The library's public entry imports `.vue` files node cannot load; the
+// footer only needs the icon, which renders an aria-hidden svg.
+const LIBRARY = {
+	'@conduction/nextcloud-vue/public':
+		"import { h } from 'vue'\nexport const CnSiteIcon = { props: ['name', 'size'], render() { return h('svg', { 'aria-hidden': 'true', 'data-icon': this.name }) } }\n",
+}
 
 const MENUS = [
 	{
@@ -191,4 +203,140 @@ test('menus split by position: 0 header, 1 footer column, 2 or higher the legal 
 		legalLinks: [],
 		badges: [],
 	})
+})
+
+test('the legal bar always names someone: the colophon, else the portal title', async () => {
+	const fallback = await renderSfc(
+		'src/site/components/FooterColumns.vue',
+		{
+			title: 'Open Tilburg',
+			legalLinks: legalLinksOf({}, MENUS),
+			menus: footerMenusOf(MENUS),
+		},
+		LIBRARY,
+	)
+	assert.match(fallback, /data-testid="site-footer-colophon">\s*Open Tilburg\s*</)
+	assert.match(fallback, /href="\/privacy">Privacy</)
+
+	const named = await renderSfc(
+		'src/site/components/FooterColumns.vue',
+		{ title: 'Open Tilburg', footer: { colophon: 'Gemeente Tilburg, KvK 123' } },
+		LIBRARY,
+	)
+	assert.match(
+		named,
+		/data-testid="site-footer-colophon">\s*Gemeente Tilburg, KvK 123\s*</,
+	)
+	assert.equal(count(named, 'site-subfooter-menu'), 0)
+})
+
+test('every footer band names its role, and socials carry a screen-reader label', async () => {
+	const html = await renderSfc(
+		'src/site/components/FooterColumns.vue',
+		{
+			title: 'Open Tilburg',
+			footer: {
+				socials: [
+					{
+						label: 'Mastodon',
+						href: 'https://social.example',
+						icon: 'mastodon',
+					},
+				],
+				badges: [{ label: 'ISO 27001', href: 'https://cert.example' }],
+			},
+		},
+		LIBRARY,
+	)
+	assert.equal(count(html, '<section'), 2)
+	assert.match(html, /<section class="pq-footer__band pq-footer__band--content">/)
+	assert.match(
+		html,
+		/<section class="ac-footer__sub-footer pq-footer__band pq-footer__band--legal">/,
+	)
+	assert.match(html, /<span class="sr-only">Mastodon<\/span>/)
+	assert.match(html, /href="https:\/\/cert.example"[^>]*>ISO 27001</)
+})
+
+/**
+ * The declarations of every rule whose selector contains `needle`, keyed by
+ * the rule's media context and the selector's tail after the band.
+ *
+ * @param {string} css    A stylesheet.
+ * @param {string} needle The band selector, e.g. `section:first-of-type`.
+ * @return {Map<string, string>} `media | tail` to the sorted declarations.
+ */
+function bandRules(css, needle) {
+	const rules = new Map()
+	const pattern = /(@media[^{]*)\{|([^{}@]+)\{([^{}]*)\}|\}/g
+	let media = ''
+	let depth = 0
+	const source = css.replace(/\/\*[\s\S]*?\*\//g, '')
+	let match
+	while ((match = pattern.exec(source)) !== null) {
+		if (match[1] !== undefined) {
+			media = match[1].replace(/\s+/g, '')
+			depth = 1
+			continue
+		}
+		if (match[2] === undefined) {
+			if (depth === 1) {
+				media = ''
+				depth = 0
+			}
+			continue
+		}
+		for (const selector of match[2].split(',')) {
+			const at = selector.indexOf(needle)
+			if (at === -1) {
+				continue
+			}
+			const tail = selector.slice(at + needle.length).trim()
+			const declarations = match[3]
+				.split(';')
+				.map((d) => d.replace(/\s+/g, '').trim())
+				// `grid-gap` is the deprecated alias of `gap`; the vendored
+				// rule declares both with one value.
+				.map((d) => d.replace(/^grid-gap:/, 'gap:'))
+				.filter((d, i, all) => d !== '' && all.indexOf(d) === i)
+				.sort()
+				.join(';')
+			rules.set(`${media}|${tail}`, declarations)
+		}
+	}
+	return rules
+}
+
+test('a third band changes nothing about the first two: every positional footer rule is restated by role', () => {
+	const vendored = readFileSync(join(ROOT, 'css/nlds/nlds-app.css'), 'utf8')
+	const site = readFileSync(join(ROOT, 'css/site-theme.css'), 'utf8')
+
+	for (const [position, role] of [
+		[
+			'section:first-of-type',
+			'section.pq-footer__band.pq-footer__band--content',
+		],
+		[
+			'section:last-of-type:not(:only-of-type)',
+			'section.pq-footer__band.pq-footer__band--legal',
+		],
+	]) {
+		const expected = bandRules(vendored, position)
+		const actual = bandRules(site, role)
+		assert.ok(expected.size > 0, `the vendored sheet still styles ${position}`)
+		for (const [key, declarations] of expected) {
+			assert.equal(
+				actual.get(key),
+				declarations,
+				`${role} restates ${position} ${key}`,
+			)
+		}
+	}
+	const rulesOnly = site.replace(/\/\*[\s\S]*?\*\//g, '')
+	assert.doesNotMatch(rulesOnly, /#[0-9a-f]{3,8}\b/i, 'no colour literal')
+	assert.doesNotMatch(
+		rulesOnly,
+		/of-type/,
+		'no rule in site-theme.css selects a band by position',
+	)
 })

@@ -79,4 +79,93 @@ class PortalShell {
 
 		return $public;
 	}//end authentication()
+
+	/**
+	 * The portal's footer content, on named keys only.
+	 *
+	 * A social link, legal link or badge without a label or a followable
+	 * destination is dropped: a link that leads nowhere, or names nothing, is
+	 * worse than no link.
+	 *
+	 * @param array<string, mixed> $portal The portal record.
+	 *
+	 * @return array{description: string, colophon: string, socials: list<array<string, string>>, legalLinks: list<array<string, string>>, badges: list<array<string, string>>}
+	 *
+	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-footer-must-be-a-block-whose-bands-are-styled-by-role-req-ptb-005
+	 */
+	public function footer(array $portal): array {
+		$footer = $portal['footer'] ?? [];
+		if (is_array($footer) === false) {
+			$footer = [];
+		}
+
+		return [
+			'description' => $this->text(value: ($footer['description'] ?? '')),
+			'colophon'    => $this->text(value: ($footer['colophon'] ?? '')),
+			'socials'     => $this->links(entries: ($footer['socials'] ?? []), extra: 'icon'),
+			'legalLinks'  => $this->links(entries: ($footer['legalLinks'] ?? []), extra: null),
+			'badges'      => $this->links(entries: ($footer['badges'] ?? []), extra: null),
+		];
+	}//end footer()
+
+	/**
+	 * The entries that carry both a label and a followable destination.
+	 *
+	 * @param mixed       $entries The authored list.
+	 * @param string|null $extra   One more text key an entry may carry.
+	 *
+	 * @return list<array<string, string>> `{label, href}` entries, plus `$extra` when set.
+	 *
+	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-footer-must-be-a-block-whose-bands-are-styled-by-role-req-ptb-005
+	 */
+	private function links(mixed $entries, ?string $extra): array {
+		$kept = [];
+		foreach ((is_array($entries) === true ? $entries : []) as $entry) {
+			if (is_array($entry) === false) {
+				continue;
+			}
+
+			$label = $this->text(value: ($entry['label'] ?? ''));
+			$href  = $this->text(value: ($entry['href'] ?? ''));
+			if ($label === '' || $this->followable(href: $href) === false) {
+				continue;
+			}
+
+			$link = ['label' => $label, 'href' => $href];
+			if ($extra !== null && $this->text(value: ($entry[$extra] ?? '')) !== '') {
+				$link[$extra] = $this->text(value: $entry[$extra]);
+			}
+
+			$kept[] = $link;
+		}
+
+		return $kept;
+	}//end links()
+
+	/**
+	 * Whether a visitor can follow this destination: an in-site route or a
+	 * web, mail or phone address. A `javascript:` or `data:` target is not.
+	 *
+	 * @param string $href The destination.
+	 *
+	 * @return bool True when it may be rendered as a link.
+	 *
+	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-footer-must-be-a-block-whose-bands-are-styled-by-role-req-ptb-005
+	 */
+	private function followable(string $href): bool {
+		return preg_match('#^(/(?!/)|https?://|mailto:|tel:)#i', $href) === 1;
+	}//end followable()
+
+	/**
+	 * A scalar as trimmed text; anything else as empty.
+	 *
+	 * @param mixed $value The authored value.
+	 *
+	 * @return string The text.
+	 *
+	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-footer-must-be-a-block-whose-bands-are-styled-by-role-req-ptb-005
+	 */
+	private function text(mixed $value): string {
+		return is_scalar($value) === true ? trim((string)$value) : '';
+	}//end text()
 }//end class

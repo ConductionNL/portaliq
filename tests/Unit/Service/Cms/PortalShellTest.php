@@ -38,4 +38,38 @@ class PortalShellTest extends TestCase {
 		);
 		$this->assertSame(['modes' => ['public']], $shell->authentication(portal: []));
 	}//end testTheRegisterDestinationIsServedOnlyWhenDeclared()
+
+	public function testAFooterLinkWithoutADestinationOrLabelIsDropped(): void {
+		$footer = (new PortalShell())->footer(portal: ['footer' => [
+			'description' => ' Eén loket voor de gemeente ',
+			'socials'     => [
+				['label' => 'Mastodon', 'href' => 'https://social.example/@gemeente', 'icon' => 'mastodon', 'style' => 'x'],
+				['label' => 'LinkedIn'],
+				['href' => 'https://linkedin.example'],
+				['label' => 'Script', 'href' => 'javascript:alert(1)'],
+				'not an entry',
+			],
+			'legalLinks'  => [['label' => 'Privacy', 'href' => '/privacy'], ['label' => 'Elders', 'href' => '//evil.example']],
+			'badges'      => [['label' => 'ISO 27001', 'href' => 'https://cert.example/27001'], ['label' => 'ISO 9001', 'href' => '']],
+			'secret'      => 'not served',
+		]]);
+
+		$this->assertSame(
+			[
+				'description' => 'Eén loket voor de gemeente',
+				'colophon'    => '',
+				'socials'     => [['label' => 'Mastodon', 'href' => 'https://social.example/@gemeente', 'icon' => 'mastodon']],
+				'legalLinks'  => [['label' => 'Privacy', 'href' => '/privacy']],
+				'badges'      => [['label' => 'ISO 27001', 'href' => 'https://cert.example/27001']],
+			],
+			$footer
+		);
+	}//end testAFooterLinkWithoutADestinationOrLabelIsDropped()
+
+	public function testAPortalWithoutAFooterServesTheEmptyShape(): void {
+		$this->assertSame(
+			['description' => '', 'colophon' => '', 'socials' => [], 'legalLinks' => [], 'badges' => []],
+			(new PortalShell())->footer(portal: ['footer' => 'broken'])
+		);
+	}//end testAPortalWithoutAFooterServesTheEmptyShape()
 }//end class
