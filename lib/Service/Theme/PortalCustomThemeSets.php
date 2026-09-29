@@ -51,6 +51,13 @@ class PortalCustomThemeSets {
 	public const ID_PREFIX = 'custom-';
 
 	/**
+	 * How a character changes the bracket depth.
+	 *
+	 * @var array<string, int>
+	 */
+	private const NESTING = ['(' => 1, ')' => -1];
+
+	/**
 	 * The theme app's custom-set store, under its current and former name.
 	 *
 	 * @var string[]
@@ -105,7 +112,11 @@ class PortalCustomThemeSets {
 
 		$sets = [];
 		foreach ($listed as $entry) {
-			$id = (string)(is_array($entry) === true ? ($entry['id'] ?? '') : '');
+			if (is_array($entry) === false) {
+				continue;
+			}
+
+			$id = (string)($entry['id'] ?? '');
 			if ($this->isCustomId(id: $id) === false) {
 				continue;
 			}
@@ -123,6 +134,8 @@ class PortalCustomThemeSets {
 	 * @param string $id The set id.
 	 *
 	 * @return bool
+	 *
+	 * @spec openspec/changes/nldesign-theme-integration/tasks.md
 	 */
 	public function isCustomId(string $id): bool {
 		return preg_match('/^custom-[a-z0-9][a-z0-9-]{0,56}$/', $id) === 1;
@@ -150,33 +163,49 @@ class PortalCustomThemeSets {
 		}
 
 		try {
-			if (method_exists($validator, 'hasDisallowedSelector') === true
-				&& $validator->hasDisallowedSelector($css) === true
-			) {
-				return 'the file holds more than one :root block of tokens';
-			}
-
-			$declarations = $this->declarations(css: $css);
-			if ($declarations === []) {
-				return 'the file declares no tokens';
-			}
-
-			$split = $validator->validateDeclarations($declarations, substr($id, strlen(self::ID_PREFIX)));
-		} catch (Throwable $e) {
+			return $this->judge(validator: $validator, id: $id, css: $css);
+		} catch (Throwable) {
 			return 'the theme app could not check this house style';
 		}
+	}//end refusal()
 
-		if ($split !== null) {
+
+	/**
+	 * The validator's verdict on one file: null when it passes.
+	 *
+	 * @param object $validator The theme app's CustomTokenSetValidator.
+	 * @param string $id        The set id.
+	 * @param string $css       The file.
+	 *
+	 * @return string|null The reason.
+	 */
+	private function judge(object $validator, string $id, string $css): ?string {
+		if (method_exists($validator, 'hasDisallowedSelector') === true
+			&& $validator->hasDisallowedSelector($css) === true
+		) {
+			return 'the file holds more than one :root block of tokens';
+		}
+
+		$declarations = $this->declarations(css: $css);
+		if ($declarations === []) {
+			return 'the file declares no tokens';
+		}
+
+		if ($validator->validateDeclarations($declarations, substr($id, strlen(self::ID_PREFIX))) !== null) {
 			return null;
 		}
 
-		$last = method_exists($validator, 'getLastError') === true ? $validator->getLastError() : null;
+		$last = null;
+		if (method_exists($validator, 'getLastError') === true) {
+			$last = $validator->getLastError();
+		}
+
 		if (is_array($last) === true && is_string($last['message'] ?? null) === true) {
 			return $last['message'];
 		}
 
 		return 'a declaration was refused';
-	}//end refusal()
+	}//end judge()
 
 
 	/**
@@ -223,31 +252,48 @@ class PortalCustomThemeSets {
 	 * @return array<int, string>
 	 */
 	private function statements(string $body): array {
-		$statements = [];
-		$current = '';
+		$statements = [''];
 		$depth = 0;
 		$quote = '';
 		foreach (str_split($body) as $char) {
-			if ($quote !== '') {
-				$quote = ($char === $quote) ? '' : $quote;
-			} else if ($char === '"' || $char === "'") {
-				$quote = $char;
-			} else if ($char === '(') {
-				$depth++;
-			} else if ($char === ')') {
-				$depth = max(0, ($depth - 1));
+			if ($quote !== '' || $char === '"' || $char === "'") {
+				$quote = $this->quoteAfter(quote: $quote, char: $char);
 			} else if ($char === ';' && $depth === 0) {
-				$statements[] = $current;
-				$current = '';
+				$statements[] = '';
 				continue;
 			}
 
-			$current .= $char;
+			if ($quote === '') {
+				$depth = max(0, ($depth + (self::NESTING[$char] ?? 0)));
+			}
+
+			$statements[(count($statements) - 1)] .= $char;
 		}
 
-		$statements[] = $current;
 		return $statements;
 	}//end statements()
+
+
+	/**
+	 * The open quote after one character: a quote opens, the same quote closes.
+	 *
+	 * @param string $quote The quote open before it, or ''.
+	 * @param string $char  The character.
+	 *
+	 * @return string
+	 */
+	private function quoteAfter(string $quote, string $char): string {
+		if ($quote === '') {
+			return $char;
+		}
+
+		if ($char === $quote) {
+			return '';
+		}
+
+		return $quote;
+	}//end quoteAfter()
+
 
 
 	/**
