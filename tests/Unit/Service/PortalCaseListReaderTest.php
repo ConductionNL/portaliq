@@ -150,7 +150,7 @@ class PortalCaseListReaderTest extends TestCase {
 	 * declared closed field holds a value; a collection that declares none
 	 * marks every row open. The mandated rows carry the same marker.
 	 *
-	 * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md#requirement-open-and-closed-cases-are-told-apart-by-a-declared-field-req-cmc-002
+	 * @spec openspec/specs/portal-my-cases/spec.md#requirement-open-and-closed-cases-are-told-apart-by-a-declared-field-req-cmc-002
 	 */
 	public function testEachRowSaysWhetherItIsClosedByTheDeclaredField(): void {
 		$reader = $this->readerReturning([
@@ -184,7 +184,7 @@ class PortalCaseListReaderTest extends TestCase {
 	 * cases-my-cases-page REQ-CMC-001: newest first also when the row carries
 	 * no `created` of its own, by the record's own creation date.
 	 *
-	 * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md#requirement-your-cases-from-every-app-in-one-list-req-cmc-001
+	 * @spec openspec/specs/portal-my-cases/spec.md#requirement-your-cases-from-every-app-in-one-list-req-cmc-001
 	 */
 	public function testTheNewestCaseComesFirstByTheRecordDate(): void {
 		$reader = $this->readerReturning([

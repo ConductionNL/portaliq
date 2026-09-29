@@ -455,6 +455,7 @@ OC.L10N.register(
         "This answer cannot be changed from the portal.": "Dit antwoord kunt u niet vanuit het portaal wijzigen.",
         "This case cannot be changed from the portal.": "Deze zaak kunt u niet vanuit het portaal wijzigen.",
         "This case is not open for changes from the portal.": "Deze zaak staat niet open voor wijzigingen vanuit het portaal.",
+        "You are viewing this case on behalf of %s. It cannot be changed here.": "U bekijkt deze zaak namens %s. Wijzigen kan hier niet.",
         "This case is not yours.": "Deze zaak is niet van u.",
         "This portal has no slug yet, so it has no public address.": "Dit portaal heeft nog geen slug en dus geen publiek adres.",
         "Portals": "Portalen",

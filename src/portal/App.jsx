@@ -12,12 +12,14 @@
 // OpenRegister directly.
 
 import AccessRequestsPage from '@portal/components/AccessRequestsPage.jsx'
+import ActingForSwitcher from '@portal/components/ActingForSwitcher.jsx'
 import InboxPage from '@portal/components/InboxPage.jsx'
 import MessagesPage from '@portal/components/MessagesPage.jsx'
 import MyCasesPage from '@portal/components/MyCasesPage.jsx'
 import NewsPage, { hasNews } from '@portal/components/NewsPage.jsx'
 import PageView from '@portal/components/PageView.jsx'
 import TasksPage from '@portal/components/TasksPage.jsx'
+import { actingForHeld, keepActingFor, readActingFor } from '@portal/lib/myCases.js'
 import { consumeOpenTarget, forgetOpenTarget, navKeyFor } from '@portal/lib/openRecord.js'
 import { consumeOidcCallbackFragment, createPortalApi, getToken } from '@portal/lib/portalApi.js'
 import { runAction } from '@portal/lib/rowAction.js'
@@ -241,6 +243,23 @@ export default function App({ config, t: tProp }) {
 		return () => clearInterval(id)
 	}, [state.session, api])
 
+	// Whom the person acts for (cases-my-cases-page REQ-CMC-004): yourself or
+	// a mandate, kept for the session. The mandates held are learned from the
+	// "My cases" answer; a refusal never forgets them.
+	const [actingFor, setActingFor] = useState(() => readActingFor(sessionStore()))
+	const [mandates, setMandates] = useState([])
+	const onCasesLoaded = useCallback((answer) => {
+		if (!answer || !answer.ok) {
+			return
+		}
+		setMandates(answer.mandates || [])
+		setActingFor((current) => actingForHeld(current, answer.mandates))
+	}, [])
+	const chooseActingFor = useCallback((id) => {
+		keepActingFor(sessionStore(), id)
+		setActingFor(id)
+	}, [])
+
 	// The inbox deep link into "Mijn taken" (portal-task-delivery): the task
 	// uuid a "Bekijk taak" click hands over, opened once TasksPage mounts.
 	const [pendingTaskUuid, setPendingTaskUuid] = useState(null)
@@ -414,6 +433,9 @@ export default function App({ config, t: tProp }) {
 			<header className="portaliq-header">
 				<span className="portaliq-org">{config.organisationName}</span>
 				{state.session && (
+					<ActingForSwitcher t={t} mandates={mandates} value={actingFor} onChange={chooseActingFor} />
+				)}
+				{state.session && (
 					<button type="button" className="portaliq-logout" onClick={logout}>Uitloggen</button>
 				)}
 			</header>
@@ -518,11 +540,16 @@ export default function App({ config, t: tProp }) {
 								t={t}
 								locale={config.locale}
 								closedMarker={state.contributions?.cases?.closedMarker === true}
+								mandateId={actingFor}
+								onLoaded={onCasesLoaded}
 								canOpen={(target) => navKeyFor(nav, target) !== null}
-								onOpenCase={(target) => {
+								onOpenCase={(target, row) => {
 									// The same path as a notification's link: the
-									// app's page opens with the case selected.
-									setOpenTarget(target)
+									// app's page opens with the case selected. The
+									// row travels along, so a case read under a
+									// mandate opens although it is not in the
+									// person's own rows.
+									setOpenTarget({ ...target, row })
 									setActiveKey(navKeyFor(nav, target))
 								}}
 							/>

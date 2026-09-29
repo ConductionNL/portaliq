@@ -39,21 +39,23 @@ function formatDate(value, locale) {
  * @param {(key: string, vars?: object) => string} props.t The translator.
  * @param {string} [props.locale] The reader's locale.
  * @param {boolean} [props.closedMarker] Whether any case collection tells closed from open.
- * @param {string} [props.mandateId] The mandate the person acts under, or ''.
+ * @param {string} [props.mandateId] The mandate the person acts under, or `self`.
+ * @param {(answer: object) => void} [props.onLoaded] Told every answer, so the header learns the mandates held.
  * @param {(target: object) => boolean} props.canOpen Whether a page shows this case.
- * @param {(target: object) => void} props.onOpenCase Open the case on its page.
+ * @param {(target: object, row: object) => void} props.onOpenCase Open the case on its page.
  * @param {object|null} [props.initialData] The list to show without fetching (test seam).
  * @param {string} [props.initialTab] 'open' or 'closed' (test seam).
  * @return {object} The element.
  *
- * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md
+ * @spec openspec/specs/portal-my-cases/spec.md
  */
 export default function MyCasesPage({
 	api,
 	t,
 	locale = 'nl',
 	closedMarker = false,
-	mandateId = '',
+	mandateId = 'self',
+	onLoaded = null,
 	canOpen,
 	onOpenCase,
 	initialData = null,
@@ -71,12 +73,15 @@ export default function MyCasesPage({
 		api.fetchMyCases(mandateId).then((answer) => {
 			if (live) {
 				setData(answer)
+				if (onLoaded) {
+					onLoaded(answer)
+				}
 			}
 		})
 		return () => {
 			live = false
 		}
-	}, [api, mandateId, initialData])
+	}, [api, mandateId, initialData, onLoaded])
 
 	const { open, closed } = splitCases(data?.cases)
 	const shown = closedMarker && tab === 'closed' ? closed : open
@@ -89,7 +94,9 @@ export default function MyCasesPage({
 
 			{data !== null && data.ok === false && (
 				<p className="portaliq-error" role="alert" data-testid="my-cases-error">
-					{t('Your cases could not be loaded. Try again later.')}
+					{t(data.error === 'group_too_large'
+						? 'This organisation has too many cases to list here. Choose a narrower mandate.'
+						: 'Your cases could not be loaded. Try again later.')}
 				</p>
 			)}
 
@@ -133,7 +140,7 @@ export default function MyCasesPage({
 								return (
 									<li key={target ? `${target.app}:${target.collection}:${target.id}` : index} className="portaliq-cases__row" data-testid="my-cases-row">
 										{target && canOpen(target)
-											? <button type="button" className="portaliq-cases__open" onClick={() => onOpenCase(target)}>{title}</button>
+											? <button type="button" className="portaliq-cases__open" onClick={() => onOpenCase(target, row)}>{title}</button>
 											: <span className="portaliq-cases__title">{title}</span>}
 										<span className="portaliq-cases__source">{row._source?.label || row._source?.appId || ''}</span>
 										{row._mandate?.label && (

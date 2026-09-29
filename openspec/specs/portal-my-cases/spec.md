@@ -1,22 +1,13 @@
----
-status: proposed
----
-
-# Spec: portal-my-cases
-
-**Status:** proposed
-**Scope:** portaliq (owner); each case app declares `kind: cases` and its closed marker on its collection
-**Depends on:** `portal-identity-space`, `portal-identity-and-the-organisations-cases`, `portal-visibility-follows-the-party-tree`
+# portal-my-cases Specification
 
 ## Purpose
-
 A signed-in person sees all their cases in one list, open and closed, including
 the cases of the organisations they act for, and can switch whom they act for.
 Requested by the portaliq parity matrix rows `cas-mycases-unified`,
 `cas-mandate-org-cases`, `cmp-cas-all-gov`, `cmp-cas-closed` and
 `cmp-sig-machtiging`.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Your cases from every app in one list (REQ-CMC-001)
 
@@ -59,14 +50,21 @@ A case the person may read because of a mandate SHALL show that mandate's label.
 
 When the person holds one or more mandates, the portal header SHALL offer
 "Acting for" with themself and each mandate. The choice SHALL apply to the case
-list and to every case screen for the rest of the session. A mandate that
-reaches more cases than the portal lists SHALL be refused with a message, never
-shown as a partial list.
+list and to every case screen for the rest of the session. Acting for themself
+SHALL list only their own cases. A case opened under a mandate SHALL be shown
+read-only, naming the mandate, and no write SHALL be accepted under it. A
+mandate that reaches more cases than the portal lists SHALL be refused with a
+message, never shown as a partial list.
 
 #### Scenario: Switching to a mandate
 - **GIVEN** a resident who holds a mandate for their father
 - **WHEN** they choose their father's mandate under "Acting for"
 - **THEN** "My cases" lists the father's cases with the mandate's label, and opening one shows it under that mandate
+
+#### Scenario: A mandated case is read, not changed
+- **GIVEN** a business user who opened a company case under the mandate "Bakkerij Jansen BV"
+- **WHEN** the case screen shows it
+- **THEN** they read "You are viewing this case on behalf of Bakkerij Jansen BV. It cannot be changed here." and no change, document or withdrawal is offered
 
 #### Scenario: Too large to list
 - **GIVEN** a mandate whose party tree is larger than the portal's bound

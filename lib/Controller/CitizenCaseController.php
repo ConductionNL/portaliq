@@ -49,6 +49,7 @@ use OCA\Portaliq\Service\CitizenWriteRecorder;
 use OCA\Portaliq\Service\CitizenWriteThrottle;
 use OCA\Portaliq\Service\Identity\PortalMandateService;
 use OCA\Portaliq\Service\Identity\PortalPartyTreeResolver;
+use OCA\Portaliq\Service\MandatedCaseReader;
 use OCA\Portaliq\Service\PortalFileReader;
 use OCA\Portaliq\Service\PortalFileWriter;
 use OCA\Portaliq\Service\PortalObjectReader;
@@ -105,6 +106,9 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 * @param IL10N $l10n The sentences a refusal is given with.
 	 * @param LoggerInterface $logger Records the cause of a translated failure.
 	 * @param CitizenCaseDocuments $documents Lists and opens the documents on the case.
+	 * @param MandatedCaseReader|null $mandatedCases Reads a case listed under a
+	 *                                               mandate (cases-my-cases-page).
+	 *                                               Absent opens only own cases.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -123,6 +127,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 		private readonly CitizenCaseDocuments $documents,
+		private readonly ?MandatedCaseReader $mandatedCases = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -144,7 +149,18 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	public function show(string $register, string $schema, string $id): JSONResponse {
 		$context = $this->context(register: $register, schema: $schema, id: $id);
 		if ($context instanceof JSONResponse) {
-			return $context;
+			// Not their own case: it may be one they see under the mandate
+			// they chose (cases-my-cases-page REQ-CMC-004), read-only.
+			// The case comes from the same reader that lists the mandated
+			// cases on "My cases", so this screen never opens a case the list
+			// would not show; every write still checks ownership.
+			return ($this->mandatedCases?->screenOr(
+				refusal: $context,
+				subject: $this->session->resolveFromBearer($this->request->getHeader('Authorization')),
+				mandateId: (string)$this->request->getParam('mandate', ''),
+				target: ['register' => $register, 'schema' => $schema, 'id' => $id],
+				l10n: $this->l10n
+			) ?? $context);
 		}
 
 		return new JSONResponse([

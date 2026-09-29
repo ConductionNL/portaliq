@@ -334,7 +334,10 @@ export default function PageView({ page, contribution, api, dataByCollection, on
 		if (!loaded || loaded.loading) {
 			return
 		}
-		const row = rowFor(loaded.objects, openRecord.id)
+		// A case opened from "My cases" under a mandate is not in the
+		// person's own rows; the list handed over the row it read under that
+		// mandate (cases-my-cases-page REQ-CMC-005).
+		const row = rowFor(loaded.objects, openRecord.id) || openRecord.row || null
 		if (row) {
 			setSelected((s) => ({ ...s, [openRecord.collection]: row }))
 		}

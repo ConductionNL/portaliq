@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md
+ * @spec openspec/specs/portal-my-cases/spec.md
  */
 
 declare(strict_types=1);
@@ -30,7 +30,7 @@ namespace OCA\Portaliq\Service;
 /**
  * Marks case rows closed or open and announces the "My cases" page.
  *
- * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md
+ * @spec openspec/specs/portal-my-cases/spec.md
  */
 class CaseRowMarker {
 	/**
@@ -42,7 +42,7 @@ class CaseRowMarker {
 	 *
 	 * @return array{enabled: bool, closedMarker: bool}
 	 *
-	 * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md#requirement-your-cases-from-every-app-in-one-list-req-cmc-001
+	 * @spec openspec/specs/portal-my-cases/spec.md#requirement-your-cases-from-every-app-in-one-list-req-cmc-001
 	 */
 	public function announce(array $aggregate): array {
 		$announced = ['enabled' => false, 'closedMarker' => false];
@@ -76,7 +76,7 @@ class CaseRowMarker {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md#requirement-open-and-closed-cases-are-told-apart-by-a-declared-field-req-cmc-002
+	 * @spec openspec/specs/portal-my-cases/spec.md#requirement-open-and-closed-cases-are-told-apart-by-a-declared-field-req-cmc-002
 	 */
 	public function isClosed(array $row, array $collection): bool {
 		$field = (string)($collection['closedField'] ?? '');
@@ -97,7 +97,7 @@ class CaseRowMarker {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md#requirement-your-cases-from-every-app-in-one-list-req-cmc-001
+	 * @spec openspec/specs/portal-my-cases/spec.md#requirement-your-cases-from-every-app-in-one-list-req-cmc-001
 	 */
 	public function dateOf(array $row): string {
 		$own = ($row['created'] ?? $row['startedAt'] ?? null);

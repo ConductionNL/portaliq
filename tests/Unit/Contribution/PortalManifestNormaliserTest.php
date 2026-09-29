@@ -405,7 +405,7 @@ class PortalManifestNormaliserTest extends TestCase {
 	 * only when it names a field the collection projects; an unprojected or
 	 * malformed one is dropped, so the portal never guesses what "closed" means.
 	 *
-	 * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md#requirement-open-and-closed-cases-are-told-apart-by-a-declared-field-req-cmc-002
+	 * @spec openspec/specs/portal-my-cases/spec.md#requirement-open-and-closed-cases-are-told-apart-by-a-declared-field-req-cmc-002
 	 */
 	public function testAClosedFieldIsKeptOnlyWhenItNamesAProjectedField(): void {
 		$out = $this->normaliser()->normalise(

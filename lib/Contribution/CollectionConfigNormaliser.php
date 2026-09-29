@@ -157,7 +157,7 @@ class CollectionConfigNormaliser {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md#requirement-open-and-closed-cases-are-told-apart-by-a-declared-field-req-cmc-002
+	 * @spec openspec/specs/portal-my-cases/spec.md#requirement-open-and-closed-cases-are-told-apart-by-a-declared-field-req-cmc-002
 	 */
 	private function normaliseClosedField(array $collection): array {
 		if (array_key_exists('closedField', $collection) === false) {

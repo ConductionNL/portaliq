@@ -171,3 +171,164 @@ test.describe('cases-my-cases-page', () => {
 		await expect(page.getByText('Kapvergunning').first()).toBeVisible()
 	})
 })
+
+/**
+ * A company case collection read by a party field, one case of the company,
+ * a colleague's own case, and a signed-in employee who holds (or not) a
+ * mandate for the company. portalCase has no company field, so the fixture
+ * lets `toelichting` carry the company number as the party field.
+ *
+ * @param request The request fixture.
+ * @param page The page.
+ * @param withMandate Whether the employee holds the mandate.
+ * @return Nothing.
+ */
+async function signInAsEmployee(
+	request: APIRequestContext,
+	page: Page,
+	withMandate: boolean,
+): Promise<void> {
+	const stamp = Date.now()
+	const company = `kvk-${stamp}`
+	await seed(request, 'portalPage', {
+		label: 'Bedrijfszaken',
+		audience: 'client',
+		status: 'active',
+		collections: [
+			{
+				id: `bedrijf-${stamp}`,
+				kind: 'cases',
+				label: 'Bedrijfszaken',
+				register: 'portaliq',
+				schema: 'portalCase',
+				scopeField: 'subjectRef',
+				mandateField: 'toelichting',
+			},
+		],
+		actions: [
+			{
+				id: 'amend-case',
+				type: 'update',
+				register: 'portaliq',
+				schema: 'portalCase',
+				scopeField: 'subjectRef',
+				fields: ['omschrijving'],
+				citizenWrite: {
+					typeField: 'caseType',
+					typeRegister: 'portaliq',
+					typeSchema: 'portalCaseType',
+					statusField: 'status',
+					recordField: 'portalWrites',
+				},
+			},
+		],
+		pages: [
+			{
+				id: 'bedrijfszaken',
+				label: 'Bedrijfszaken',
+				blocks: [
+					{ type: 'collection', collection: `bedrijf-${stamp}` },
+					{ type: 'citizenCase', collection: `bedrijf-${stamp}` },
+				],
+			},
+		],
+	})
+	const employee = `employee-${stamp}-${Math.floor(Math.random() * 10000)}`
+	await seed(request, 'portalCase', {
+		subjectRef: `founder-${stamp}`,
+		organisation: ORGANISATION,
+		reference: 'Terrasvergunning',
+		toelichting: company,
+		status: 'ontvangen',
+	})
+	if (withMandate) {
+		await seed(request, 'portalMandate', {
+			subjectRef: employee,
+			organisation: ORGANISATION,
+			onBehalfOf: company,
+			label: 'Bakkerij Jansen BV',
+			status: 'active',
+		})
+	}
+	const login = await request.post(`${API_BASE}/session/dev-login`, {
+		data: {
+			subjectRef: employee,
+			audience: 'client',
+			organisation: ORGANISATION,
+		},
+	})
+	expect(login.ok(), 'dev-login must be enabled').toBeTruthy()
+	const { token } = await login.json()
+	await page.addInitScript((t) => {
+		window.localStorage.setItem('portaliq_token', t)
+	}, token)
+	await page.goto(PORTAL_PATH)
+	await expect(page.getByTestId('my-cases')).toBeVisible()
+}
+
+test.describe('cases-my-cases-page acting for', () => {
+	// @e2e portal-my-cases::switching-to-a-mandate
+	// @e2e portal-my-cases::a-mandated-case-carries-its-label
+	// @e2e portal-my-cases::a-mandated-case-is-read-not-changed
+	test('an employee acts for the company, sees its case with the label, and reads it without changing it', async ({
+		page,
+		request,
+	}) => {
+		await signInAsEmployee(request, page, true)
+		await expect(page.getByTestId('my-cases-empty')).toBeVisible()
+
+		await page.getByLabel('Namens').selectOption({ label: 'Bakkerij Jansen BV' })
+		const row = page.getByTestId('my-cases-row')
+		await expect(row).toContainText('Terrasvergunning')
+		await expect(page.getByTestId('my-cases-mandate')).toHaveText(
+			'Bakkerij Jansen BV',
+		)
+
+		await page.reload()
+		await expect(page.getByLabel('Namens')).toHaveValue(/.+/)
+		await expect(page.getByTestId('my-cases-row')).toContainText(
+			'Terrasvergunning',
+		)
+
+		await page.getByRole('button', { name: 'Terrasvergunning' }).click()
+		await expect(page.getByTestId('case-window-closed')).toContainText(
+			'Bakkerij Jansen BV',
+		)
+		await expect(page.getByTestId('case-withdraw')).toHaveCount(0)
+	})
+
+	// @e2e portal-my-cases::switching-to-a-mandate
+	test('a colleague without the mandate sees neither the switcher nor the case', async ({
+		page,
+		request,
+	}) => {
+		await signInAsEmployee(request, page, false)
+		await expect(page.getByTestId('acting-for')).toHaveCount(0)
+		await expect(page.getByTestId('my-cases-empty')).toBeVisible()
+	})
+
+	// @e2e portal-my-cases::too-large-to-list
+	test('a group past the bound is refused with its sentence', async ({
+		page,
+		request,
+	}) => {
+		await page.route('**/portal/api/my-cases?mandate=mandate-big', (route) =>
+			route.fulfill({
+				status: 409,
+				contentType: 'application/json',
+				body: JSON.stringify({
+					error: 'group_too_large',
+					bound: { maxDepth: 4, pageSize: 100 },
+				}),
+			}),
+		)
+		await page.addInitScript(() => {
+			window.sessionStorage.setItem('portaliq.actingFor', 'mandate-big')
+		})
+		await signInAsEmployee(request, page, true)
+		await expect(page.getByTestId('my-cases-error')).toContainText(
+			'Deze organisatie heeft te veel zaken om hier te tonen.',
+		)
+		await expect(page.getByTestId('my-cases-list')).toHaveCount(0)
+	})
+})

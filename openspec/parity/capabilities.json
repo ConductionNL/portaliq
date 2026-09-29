@@ -928,13 +928,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/commerce/users-and-accounts/account-management/inviting-users-to-an-account 'Corporate accounts can have more than one user assigned'; the Account Selector fragment lets a user switch the account they act for. This is a generic act-for-an-account mechanism; DigiD Machtigen and eHerkenning mandate registers are not documented and would be custom. [was no: the earlier no rested on silence]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "lib/Service/Identity/PortalMandateService.php:90-241 mandatesFor()/activeMandate()/describe()/covers()/reachOf(); lib/Controller/CitizenCaseController.php:118,682,695 and lib/Controller/MyCasesController.php:67,100,109 wire the mandate into a case read",
-				"reachedOn": "CitizenCaseController is reached from the portal SPA (src/portal/lib/portalApi.js:314,331,368 fetchCitizenCase/amendCitizenCase/addCitizenDocument), which passes through activeMandate(); but no request from the SPA ever sends a `mandate` query parameter",
+				"state": "built",
+				"evidence": "src/portal/components/ActingForSwitcher.jsx names every mandate the identity holds (portalMandate) and switches between yourself and each, kept for the session (sessionStorage portaliq.actingFor); MyCasesController takes mandate=self|<id>; CitizenCaseController::show reads a mandated case read-only under the chosen mandate (MandatedCaseReader)",
+				"reachedOn": "portal header 'Namens'",
 				"owner": "ConductionNL/portaliq",
-				"note": "The mandate engine is real and reached on every citizen case call, but the portal SPA has no UI to name or switch between mandates (grep for 'mandate' in src/portal/*.jsx and portalApi.js is empty), so a person holding two mandates cannot choose which to act under even though openspec/changes/portal-identity-and-the-organisations-cases/tasks.md T04/T05 mark 'name the mandate on the view' and 'switch the organisation or role acted under' as done. See defect. Specified in openspec/changes/cases-my-cases-page (OpenSpec pass 2026-09-27).",
+				"note": "Built 2026-09-29 (cases-my-cases-page): the person names and switches the mandate they act under. Rating stays partial: turning a DigiD Machtigen or eHerkenning claim into a portalMandate at sign-in is not built, and nothing can be changed under a mandate.",
 				"origin": "competitor",
-				"defectCandidate": "src/portal/App.jsx and src/portal/lib/portalApi.js never reference 'mandate'; MyCasesController.php:100 and CitizenCaseController.php:682 read a `mandate` request param the SPA never sends, so activeMandate() always falls back to its default. tasks.md T04/T05 claim this UI exists; needs a live check. (code reading, needs a live check)"
+				"change": "2026-09-29-cases-my-cases-page"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1773,13 +1773,13 @@
 				"liferay-dxp": "not settled from docs: no merged cross-application case list was found in the objects, data sets or proxy object pages read today; each object or proxy object is listed on its own. [was no: the earlier no rested on silence]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "lib/Controller/MyCasesController.php (index(), full mandate-aware merge, ~200 lines); lib/Service/PortalCaseListReader.php (KIND='cases' fan-out); routes.php:208 GET /portal/api/my-cases",
-				"reachedOn": "nothing reaches it: grep for 'my-cases'/'myCases'/'MyCases' across src/portal, src/site, src/, and sibling repos (procest, scholiq, decidesk, docudesk, openconnector, openbuild, shillinq, stackiq) returns zero hits; src/portal/lib/portalApi.js has no fetchMyCases method",
+				"state": "building",
+				"evidence": "src/portal/components/MyCasesPage.jsx (the 'My cases' / 'Mijn zaken' page, first in the portal menu when GET /portal/api/contributions announces cases.enabled) over portalApi.fetchMyCases -> GET /portal/api/my-cases (MyCasesController, PortalCaseListReader): every kind: cases collection merged, newest first, each row naming its app (_source) and, when read under a mandate, the mandate's label (_mandate)",
+				"reachedOn": "resident: portal menu 'Mijn zaken'",
 				"owner": "ConductionNL/portaliq",
-				"note": "A fully built, mandate-aware unified case list (with organisation/party-tree merging) that no frontend anywhere calls. The portal SPA instead shows cases per-contribution via separate nav pages (see cas-contrib-list). Specified in openspec/changes/cases-my-cases-page (OpenSpec pass 2026-09-27).",
+				"note": "The portaliq half is built (archived change 2026-09-29-cases-my-cases-page): one merged list over every collection a case app declares as kind: cases. Owed by ConductionNL/dossiq: kind: 'cases' on its mijnZaken collection, ConductionNL/dossiq#3152; until then the page lists no dossiq case.",
 				"origin": "code",
-				"defectCandidate": "lib/Controller/MyCasesController.php:1 whole controller is dead code from the frontend's perspective; routes.php:208 (code reading, needs a live check)"
+				"change": "2026-09-29-cases-my-cases-page"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1925,12 +1925,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/using-system-objects-with-custom-objects/restricting-access-to-object-data-by-account: users of a business account see that account's entries and 'Customer success managers (CSMs) must review claims made by the accounts they manage'. A generic act-for-an-account model; mandate registers are not documented. [was no: the earlier no rested on silence]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "lib/Controller/MyCasesController.php:96-133 mandate resolution, party-tree scope, 'group_too_large' refusal; lib/Service/Identity/PortalMandateService.php; lib/Service/Identity/PortalPartyTreeResolver.php",
-				"reachedOn": "nothing reaches it: this logic lives entirely inside MyCasesController::index(), which has no frontend caller (see cas-mycases-unified)",
+				"state": "building",
+				"evidence": "src/portal/components/ActingForSwitcher.jsx ('Namens' in the portal header) sends the chosen mandate as mandate=<id> on GET /portal/api/my-cases (MyCasesController: party tree, group_too_large refusal shown as a sentence); lib/Service/MandatedCaseReader.php opens a case listed under that mandate read-only on the case screen (CitizenCaseController::show)",
+				"reachedOn": "resident or business user: portal header 'Namens' -> 'Mijn zaken'",
 				"owner": "ConductionNL/portaliq",
-				"note": "Substantial mandate/party-tree machinery (machtiging, 'a parent sees its subsidiaries') exists server-side but is stranded behind the same unreached /portal/api/my-cases endpoint. Specified in openspec/changes/cases-my-cases-page (OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"note": "The portaliq half is built (archived change 2026-09-29-cases-my-cases-page). A case app opens its cases to mandates by declaring mandateField on its kind: cases collection; dossiq declares neither yet (ConductionNL/dossiq#3152).",
+				"origin": "code",
+				"change": "2026-09-29-cases-my-cases-page"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1986,12 +1987,13 @@
 				"liferay-dxp": "not settled from docs: one virtual instance holds one organisation's data ('completely separate data', virtual instances page); no cross-organisation case overview was found. [was no: the earlier no rested on silence]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "the only cross-app/cross-org merge is lib/Controller/MyCasesController.php, unreached (see cas-mycases-unified/cas-mandate-org-cases)",
-				"reachedOn": "nothing reaches it",
+				"state": "building",
+				"evidence": "src/portal/components/MyCasesPage.jsx (the 'My cases' / 'Mijn zaken' page, first in the portal menu when GET /portal/api/contributions announces cases.enabled) over portalApi.fetchMyCases -> GET /portal/api/my-cases (MyCasesController, PortalCaseListReader): every kind: cases collection merged, newest first, each row naming its app (_source) and, when read under a mandate, the mandate's label (_mandate)",
+				"reachedOn": "resident: portal menu 'Mijn zaken'",
 				"owner": "ConductionNL/portaliq",
-				"note": "The per-contribution nav shows one app's cases per page, not a merged cross-organisation overview. Specified in openspec/changes/cases-my-cases-page (OpenSpec pass 2026-09-27).",
-				"origin": "competitor"
+				"note": "The portaliq half is built (archived change 2026-09-29-cases-my-cases-page): cases from every contributing app and every organisation the person acts for, in one list. Owed by ConductionNL/dossiq: kind: 'cases' on mijnZaken, ConductionNL/dossiq#3152.",
+				"origin": "competitor",
+				"change": "2026-09-29-cases-my-cases-page"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2015,12 +2017,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/fields/adding-and-managing-custom-states: entries carry a state field and object views can filter on it (https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/views/adding-filters-to-views), so open and closed entries can be listed together. Custom case object. [was unknown]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "src/portal/components/CollectionTable.jsx has no open/closed filter or tab; a collection lists whatever objects the subject-scoped read returns, so a closed case appears in the same table as an open one if the contributing app includes it",
-				"reachedOn": "CollectionTable.jsx (all rows of a collection, undifferentiated)",
+				"state": "building",
+				"evidence": "lib/Contribution/CollectionConfigNormaliser.php keeps a collection's closedField only when it is projected; lib/Service/CaseRowMarker.php marks each case row _closed when that field holds a value; src/portal/components/MyCasesPage.jsx shows 'Lopend (n)' and 'Afgerond (n)' tabs, the closed tab only when a collection declares closedField",
+				"reachedOn": "resident: portal menu 'Mijn zaken' -> 'Afgerond' tab",
 				"owner": "ConductionNL/portaliq",
-				"note": "Closed and open cases can appear together in one table if the collection includes both, but there is no distinct open/closed grouping, filter or tab; whether a closed case is even included depends on the contributing app's collection query. Specified in openspec/changes/cases-my-cases-page (OpenSpec pass 2026-09-27).",
-				"origin": "competitor"
+				"note": "The portaliq half is built (archived change 2026-09-29-cases-my-cases-page): a case app names the field that makes a case closed. Owed by ConductionNL/dossiq: closedField: 'endDate' on mijnZaken (commented on ConductionNL/dossiq#3152).",
+				"origin": "competitor",
+				"change": "2026-09-29-cases-my-cases-page"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",

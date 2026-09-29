@@ -66,6 +66,8 @@ const CaseField = React.memo(function CaseField({ field, state, value, onChange,
  */
 export default function CitizenCase({ collection, row, api, t }) {
 	const caseId = row && (row.id || row['@self']?.id)
+	// A case listed under a mandate is read under it (cases-my-cases-page).
+	const mandateId = row?._mandate?.id || ''
 	const [state, setState] = useState({ loading: true, data: null })
 	const [draft, setDraft] = useState({})
 	const [notice, setNotice] = useState(null)
@@ -77,10 +79,10 @@ export default function CitizenCase({ collection, row, api, t }) {
 			return
 		}
 		setState({ loading: true, data: null })
-		const data = await api.fetchCitizenCase(collection, caseId)
+		const data = await api.fetchCitizenCase(collection, caseId, mandateId)
 		setState({ loading: false, data })
 		setDraft({})
-	}, [api, collection, caseId])
+	}, [api, collection, caseId, mandateId])
 
 	useEffect(() => { load() }, [load])
 
