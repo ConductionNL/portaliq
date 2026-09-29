@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.42.0"
+        "version": "0.43.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.42.0",
+                "version": "0.43.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -3172,7 +3172,7 @@
             "page": {
                 "slug": "page",
                 "icon": "FileDocument",
-                "version": "0.3.0",
+                "version": "0.4.0",
                 "title": "Page",
                 "authorization": {
                     "read": [
@@ -3236,6 +3236,29 @@
                         "type": "string",
                         "description": "Reference/URL to an image shown by a hero-keyed widget when present. Optional — a page with no heroImage renders exactly as before this property existed.",
                         "example": "https://example.org/images/webinar-hero.jpg"
+                    },
+                    "seoTitle": {
+                        "title": "Search title",
+                        "type": "string",
+                        "maxLength": 70,
+                        "description": "The title search engines show for this page. Keep it under 60 characters. Empty uses the page title."
+                    },
+                    "seoDescription": {
+                        "title": "Search description",
+                        "type": "string",
+                        "maxLength": 160,
+                        "description": "The text search engines show under the title. Keep it under 155 characters. Empty uses the summary."
+                    },
+                    "seoNoindex": {
+                        "title": "Keep this page out of search engines",
+                        "type": "boolean",
+                        "default": false,
+                        "description": "When on, the page asks search engines not to list it."
+                    },
+                    "seoImage": {
+                        "title": "Share image",
+                        "type": "string",
+                        "description": "The http or https address of the image shown when the page is shared."
                     },
                     "body": {
                         "title": "Body",

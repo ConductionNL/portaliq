@@ -428,6 +428,25 @@ class CmsReader {
 
 
 	/**
+	 * A page's search-engine fields, stored flat as `seo*` so the page form
+	 * shows them, served as one `seo` object to the API and the head
+	 * (site-page-seo-history-and-media). Missing fields are empty, never absent.
+	 *
+	 * @param array $row The stored page.
+	 *
+	 * @return array{title: string, description: string, noindex: bool, image: string}
+	 */
+	private function shapeSeo(array $row): array {
+		return [
+			'title'       => (string)($row['seoTitle'] ?? ''),
+			'description' => (string)($row['seoDescription'] ?? ''),
+			'noindex'     => (($row['seoNoindex'] ?? false) === true),
+			'image'       => (string)($row['seoImage'] ?? ''),
+		];
+	}//end shapeSeo()
+
+
+	/**
 	 * Shape a stored page row for the API.
 	 *
 	 * @param array $row The stored page.
@@ -443,6 +462,7 @@ class CmsReader {
 			'route'   => (string)($row['route'] ?? ''),
 			'summary' => (string)($row['summary'] ?? ''),
 			'locale'  => (string)($row['locale'] ?? ''),
+			'seo'     => $this->shapeSeo(row: $row),
 			'body'    => ['type' => $type],
 		];
 

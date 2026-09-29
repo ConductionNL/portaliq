@@ -2,11 +2,11 @@
 
 ## Search-engine metadata
 
-- [ ] **T01**: `page.seo` (title, description, noindex, image) in the register, projected by `CmsReader` and the content API (REQ-SPH-001)
+- [x] **T01**: `page.seo` (title, description, noindex, image) in the register, projected by `CmsReader` and the content API (REQ-SPH-001). Stored flat as `seoTitle`, `seoDescription`, `seoNoindex`, `seoImage` (page 0.4.0, register 0.43.0; see design D2), served as `seo` by `CmsReader::shapeSeo()`.
   - Verify: PHPUnit on `CmsReader` projection; register import on a clean instance
-- [ ] **T02**: `PortalPageController::site()` resolves the page for `route` through `CmsReader::page()` with the anonymous audience and passes `head`; `templates/site.php` prints title, description, robots, canonical and Open Graph tags (REQ-SPH-001, REQ-SPH-002)
+- [x] **T02**: `PortalPageController::site()` resolves the page for `route` through `CmsReader::page()` with the anonymous audience and passes `head`; `templates/site.php` prints title, description, robots, canonical and Open Graph tags (REQ-SPH-001, REQ-SPH-002)
   - Verify: PHPUnit controller test for a public page, a draft (no leak), a gated page (no leak) and an unknown route (`noindex`); a curl of `/site?route=/contact` without JavaScript shows the tags
-- [ ] **T03**: The SEO section in the page editor, with the length hints (REQ-SPH-001)
+- [x] **T03**: The SEO section in the page editor, with the length hints (REQ-SPH-001). The four flat fields render in the schema-driven page form with `maxLength` and the hints in their descriptions; no custom editor section.
   - Verify: Playwright `tests/e2e/site-page-seo-history-and-media.spec.ts`: set a description, publish, read it in the served HTML
 
 ## History

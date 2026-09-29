@@ -111,7 +111,15 @@ OC.L10N.register(
         "The house style could not be saved.": "The house style could not be saved.",
         "The house style is saved.": "The house style is saved.",
         "footer": "footer",
-        "page background": "page background"
+        "page background": "page background",
+        "Search title": "Search title",
+        "The title search engines show for this page. Keep it under 60 characters. Empty uses the page title.": "The title search engines show for this page. Keep it under 60 characters. Empty uses the page title.",
+        "Search description": "Search description",
+        "The text search engines show under the title. Keep it under 155 characters. Empty uses the summary.": "The text search engines show under the title. Keep it under 155 characters. Empty uses the summary.",
+        "Keep this page out of search engines": "Keep this page out of search engines",
+        "When on, the page asks search engines not to list it.": "When on, the page asks search engines not to list it.",
+        "Share image": "Share image",
+        "The http or https address of the image shown when the page is shared.": "The http or https address of the image shown when the page is shared."
     },
     "nplurals=2; plural=(n != 1);"
 )

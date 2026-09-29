@@ -890,7 +890,9 @@ export default {
 				return
 			}
 
-			const pageName = this.page?.title
+			// The page's search title first (site-page-seo-history-and-media),
+			// so the tab reads what the server already put in the head.
+			const pageName = this.page?.seo?.title || this.page?.title
 			document.title =
 				pageName && pageName !== portalName
 					? `${pageName} - ${portalName}`

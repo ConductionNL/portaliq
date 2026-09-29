@@ -468,6 +468,48 @@ class CmsReaderTest extends TestCase {
 
 
 	/**
+	 * site-page-seo-history-and-media REQ-SPH-001: the flat seo fields are
+	 * served as one `seo` object, and a page without them serves empty ones.
+	 *
+	 * @return void
+	 */
+	public function testThePagesSearchFieldsAreServedAsOneObject(): void {
+		$this->withRows(
+			[
+				[
+					'title' => 'Afval',
+					'route' => '/afval',
+					'seoTitle' => 'Afval en recycling',
+					'seoDescription' => 'Wanneer de container wordt geleegd.',
+					'seoNoindex' => true,
+					'seoImage' => 'https://example.nl/afval.jpg',
+					'body' => ['type' => 'markdown', 'markdown' => ''],
+				],
+			]
+		);
+
+		$page = $this->reader->page(portal: 'open-tilburg', route: '/afval', locale: 'nl', audience: 'anonymous');
+
+		$this->assertSame(
+			['title' => 'Afval en recycling', 'description' => 'Wanneer de container wordt geleegd.', 'noindex' => true, 'image' => 'https://example.nl/afval.jpg'],
+			$page['seo']
+		);
+	}//end testThePagesSearchFieldsAreServedAsOneObject()
+
+	/**
+	 * A page without search fields serves empty ones, never absent ones.
+	 *
+	 * @return void
+	 */
+	public function testAPageWithoutSearchFieldsServesEmptyOnes(): void {
+		$this->withRows([['title' => 'Kaal', 'route' => '/kaal', 'body' => ['type' => 'markdown', 'markdown' => '']]]);
+
+		$page = $this->reader->page(portal: 'open-tilburg', route: '/kaal', locale: 'nl', audience: 'anonymous');
+
+		$this->assertSame(['title' => '', 'description' => '', 'noindex' => false, 'image' => ''], $page['seo']);
+	}//end testAPageWithoutSearchFieldsServesEmptyOnes()
+
+	/**
 	 * A markdown page is returned as source, not converted.
 	 *
 	 * @return void

@@ -36,14 +36,22 @@ anonymous audience, and passes a `head` array to the template: `title`,
 signed-in visitors never leaks its title into the head.
 
 `applyDocumentTitle()` keeps setting `document.title` on client-side
-navigation, now preferring `page.seo.title`.
+navigation, now preferring `page.seo.title` from the content API.
 
 ## D2. SEO fields live on the page
 
-`page.seo` is an optional object: `title` (up to 70 characters), `description`
-(up to 160), `noindex` (boolean), `image` (a media id, see D4). The
-description falls back to `summary`, the title to `title`. `CmsReader` projects
-`seo` in the content API so a headless front end gets the same fields.
+The page carries four optional flat properties: `seoTitle` (up to 70
+characters), `seoDescription` (up to 160), `seoNoindex` (boolean) and
+`seoImage` (an http(s) address; a media id once D4 lands). The description
+falls back to `summary`, the title to `title`. `CmsReader` projects them as one
+`seo` object (`title`, `description`, `noindex`, `image`) in the content API so
+a headless front end gets the same fields.
+
+Fixed while building (2026-09-29): the first version made `page.seo` a nested
+object. The schema-driven page form skips object-typed properties
+(`fieldsFromSchema()` in nextcloud-vue), so an editor could never have filled
+it in. Flat properties appear in the page form with their length hints, which
+is task T03.
 
 ## D3. History reads OpenRegister, restore writes the draft
 
