@@ -10,9 +10,11 @@ namespace OCA\Portaliq\Tests\Unit\Service\Theme;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalThemeResolver;
+use OCA\Portaliq\Service\Theme\PortalCustomThemeSets;
 use OCA\Portaliq\Service\Theme\PortalThemeChoice;
 use OCA\Portaliq\Service\Theme\PortalThemeContrast;
 use OCA\Thematiq\Service\ContrastService;
+use OCA\Thematiq\Service\CustomTokenSetValidator;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -63,6 +65,14 @@ class PortalThemeChoiceTest extends TestCase {
 		);
 		file_put_contents($this->themeRoot . '/css/tokens/bare.css', ":root {\n  --c-brand: #01689b;\n}\n");
 		file_put_contents(
+			$this->themeRoot . '/css/tokens/custom-gemeente-noord.css',
+			(new CustomTokenSetValidator())->serialize(declarations: ['--nldesign-color-background' => '#ffffff', '--nldesign-color-text' => '#1a1a1a'])
+		);
+		file_put_contents(
+			$this->themeRoot . '/css/tokens/custom-shared-hostile.css',
+			":root {\n  --nldesign-color-background: #ffffff;\n  --nldesign-color-text: expression(alert(1));\n}\n"
+		);
+		file_put_contents(
 			$this->themeRoot . '/token-sets.json',
 			(string)json_encode([
 				['id' => 'readable', 'name' => 'Readable'],
@@ -104,6 +114,33 @@ class PortalThemeChoiceTest extends TestCase {
 		$this->assertSame(0, $verdicts['bare']['measured']);
 		$this->assertFalse($verdicts['bare']['passes']);
 	}//end testEveryAdoptableSetIsListedWithItsVerdict()
+
+	/**
+	 * Tasks 4.1 and 4.4: a house style made in the theme app is offered with
+	 * its verdict; a shared one with a hostile declaration is listed with the
+	 * refusal and cannot be chosen, not even by confirming.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/nldesign-theme-integration/tasks.md
+	 */
+	public function testCustomSetsAreOfferedAndAHostileOneIsRefusedVisibly(): void {
+		$choice = $this->choice(customSets: true);
+		$list = $choice->listFor(portal: ['slug' => 'gemeente', 'theme' => 'readable']);
+
+		$byId = array_column($list['sets'], null, 'id');
+		$this->assertTrue($byId['custom-gemeente-noord']['custom']);
+		$this->assertTrue($byId['custom-gemeente-noord']['verdict']['passes']);
+		$this->assertArrayNotHasKey('refusal', $byId['custom-gemeente-noord']);
+		$this->assertStringContainsString('--nldesign-color-text', $byId['custom-shared-hostile']['refusal']);
+		$this->assertArrayNotHasKey('verdict', $byId['custom-shared-hostile']);
+		$this->assertFalse($byId['readable']['custom']);
+
+		$this->writer->expects($this->never())->method('updateObject');
+		$portal = ['slug' => 'gemeente', 'id' => 'p-1'];
+		$this->assertSame('refused', $choice->choose(portal: $portal, theme: 'custom-shared-hostile')['error']);
+		$this->assertSame('refused', $choice->chooseConfirmingFindings(portal: $portal, theme: 'custom-shared-hostile')['error']);
+	}//end testCustomSetsAreOfferedAndAHostileOneIsRefusedVisibly()
 
 	public function testATypedThemeTheAppDoesNotOfferIsNamedAsNotResolving(): void {
 		$list = $this->choice()->listFor(portal: ['slug' => 'gemeente', 'theme' => 'rotterdam']);
@@ -162,13 +199,36 @@ class PortalThemeChoiceTest extends TestCase {
 	 *
 	 * @return PortalThemeChoice
 	 */
-	private function choice(): PortalThemeChoice {
+	private function choice(bool $customSets = false): PortalThemeChoice {
 		$appManager = $this->createMock(IAppManager::class);
 		$appManager->method('isInstalled')->willReturn(true);
 		$appManager->method('getAppPath')->willReturn($this->themeRoot);
 
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->willReturn(new ContrastService());
+
+		$custom = null;
+		if ($customSets === true) {
+			$store = new class {
+				/**
+				 * The theme app's answer: id plus manifest metadata.
+				 *
+				 * @return array<int, array<string, mixed>>
+				 */
+				public function list(): array {
+					return [['id' => 'custom-gemeente-noord', 'name' => 'Gemeente Noord'], ['id' => 'custom-shared-hostile', 'name' => 'Gedeeld']];
+				}
+			};
+			$themeApp = $this->createMock(ContainerInterface::class);
+			$themeApp->method('get')->willReturnCallback(
+				static fn (string $id): object => match ($id) {
+					'OCA\\Thematiq\\Service\\CustomTokenSetService' => $store,
+					'OCA\\Thematiq\\Service\\CustomTokenSetValidator' => new CustomTokenSetValidator(),
+					default => throw new \RuntimeException('not registered'),
+				}
+			);
+			$custom = new PortalCustomThemeSets(container: $themeApp);
+		}
 
 		$reader = $this->getMockBuilder(PortalObjectReader::class)
 			->disableOriginalConstructor()
@@ -183,7 +243,7 @@ class PortalThemeChoiceTest extends TestCase {
 		return new PortalThemeChoice(
 			$reader,
 			$this->writer,
-			new PortalThemeResolver(appManager: $appManager),
+			new PortalThemeResolver(appManager: $appManager, customSets: $custom),
 			new PortalThemeContrast($container, $this->createMock(LoggerInterface::class))
 		);
 	}//end choice()

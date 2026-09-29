@@ -1646,6 +1646,8 @@ OC.L10N.register(
         "Readable": "Readable",
         "Hard to read": "Hard to read",
         "Not checked": "Not checked",
+        "Refused by the theme app: {reason}": "Refused by the theme app: {reason}",
+        "The theme app refused this house style: {reason}": "The theme app refused this house style: {reason}",
         "The theme app no longer offers this house style.": "The theme app no longer offers this house style.",
         "The house style could not be saved.": "The house style could not be saved.",
         "The house style is saved.": "The house style is saved.",
