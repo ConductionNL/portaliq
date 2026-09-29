@@ -308,7 +308,7 @@ class PortalFileReaderTest extends TestCase {
 	 * never a staff note in the same folder (cases-documents-on-the-case,
 	 * REQ-CDC-004). Tags come from OpenRegister's FileService::getFileTags().
 	 *
-	 * @spec openspec/changes/cases-documents-on-the-case/specs/citizen-case-documents/spec.md#requirement-the-residents-own-uploads-stay-visible-and-nothing-else-from-the-folder-req-cdc-004
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-the-residents-own-uploads-stay-visible-and-nothing-else-from-the-folder-req-cdc-004
 	 */
 	public function testTheTaggedListingKeepsOnlyTaggedFiles(): void {
 		$node = static fn (int $id, string $name): object => new class ($id, $name) {

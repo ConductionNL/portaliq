@@ -643,7 +643,7 @@ export function createPortalApi(config) {
 		 * @param {string} caseId The case id.
 		 * @param {object} entry The listed entry: `{ id, title }`.
 		 * @return {Promise<object>} `{ ok }`, or `{ ok: false, status }`.
-		 * @spec openspec/changes/cases-documents-on-the-case/specs/citizen-case-documents/spec.md#requirement-every-listed-document-opens-from-the-case-screen-req-cdc-002
+		 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-every-listed-document-opens-from-the-case-screen-req-cdc-002
 		 */
 		async downloadCitizenDocument(collection, caseId, entry) {
 			const url = `${base}${citizenCase(collection.register, collection.schema)}/${encodeURIComponent(caseId)}/documents/${encodeURIComponent(entry.id)}`

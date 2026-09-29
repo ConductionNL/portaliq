@@ -124,7 +124,7 @@ class PortalFileReader {
 	 *
 	 * @return array<int, array<string, mixed>> The released files' safe metadata.
 	 *
-	 * @spec openspec/changes/cases-documents-on-the-case/design.md
+	 * @spec openspec/specs/citizen-case-documents/spec.md
 	 */
 	public function listReleasedFiles(string $register, string $schema, string $id): array {
 		return $this->listing(register: $register, schema: $schema, id: $id, sharedFilesOnly: true);
@@ -144,7 +144,7 @@ class PortalFileReader {
 	 *
 	 * @return array<int, array<string, mixed>> The tagged files' safe metadata.
 	 *
-	 * @spec openspec/changes/cases-documents-on-the-case/specs/citizen-case-documents/spec.md#requirement-the-residents-own-uploads-stay-visible-and-nothing-else-from-the-folder-req-cdc-004
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-the-residents-own-uploads-stay-visible-and-nothing-else-from-the-folder-req-cdc-004
 	 */
 	public function listTaggedFiles(string $register, string $schema, string $id, string $tag): array {
 		$fileService = $this->fileService();

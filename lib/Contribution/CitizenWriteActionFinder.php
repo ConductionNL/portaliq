@@ -126,7 +126,7 @@ class CitizenWriteActionFinder {
 	 *
 	 * @return array{label: string, provider: string}|null
 	 *
-	 * @spec openspec/changes/cases-documents-on-the-case/specs/citizen-case-documents/spec.md#requirement-the-case-app-declares-which-documents-a-resident-may-see-req-cdc-001
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-the-case-app-declares-which-documents-a-resident-may-see-req-cdc-001
 	 */
 	private function documents(array $contribution, string $register, string $schema): ?array {
 		foreach (($contribution['collections'] ?? []) as $collection) {

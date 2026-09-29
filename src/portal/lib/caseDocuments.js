@@ -5,7 +5,7 @@
 // documents the organisation published, then what the resident sent. The
 // server already put decisions first and newest first; this only splits.
 //
-// @spec openspec/changes/cases-documents-on-the-case/specs/citizen-case-documents/spec.md#requirement-the-decision-is-shown-first-req-cdc-003
+// @spec openspec/specs/citizen-case-documents/spec.md#requirement-the-decision-is-shown-first-req-cdc-003
 
 /**
  * @param {Array<object>|undefined} listed The server's `documents`.

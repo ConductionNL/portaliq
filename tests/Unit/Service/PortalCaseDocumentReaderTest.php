@@ -15,7 +15,7 @@ use RuntimeException;
  * returns them (cases-documents-on-the-case, REQ-CDC-001). Only well-formed
  * entries are kept; a provider that fails gives none.
  *
- * @spec openspec/changes/cases-documents-on-the-case/specs/citizen-case-documents/spec.md#requirement-the-case-app-declares-which-documents-a-resident-may-see-req-cdc-001
+ * @spec openspec/specs/citizen-case-documents/spec.md#requirement-the-case-app-declares-which-documents-a-resident-may-see-req-cdc-001
  */
 class PortalCaseDocumentReaderTest extends TestCase {
 

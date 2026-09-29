@@ -14,7 +14,7 @@ use PHPUnit\Framework\TestCase;
  * returns the documents a resident may see on a case (cases-documents-on-the-
  * case, REQ-CDC-001). The name is held to the timeline method rule.
  *
- * @spec openspec/changes/cases-documents-on-the-case/specs/citizen-case-documents/spec.md#requirement-the-case-app-declares-which-documents-a-resident-may-see-req-cdc-001
+ * @spec openspec/specs/citizen-case-documents/spec.md#requirement-the-case-app-declares-which-documents-a-resident-may-see-req-cdc-001
  */
 class DocumentsProviderMethodTest extends TestCase {
 

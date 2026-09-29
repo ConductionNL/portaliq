@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/cases-documents-on-the-case/specs/citizen-case-documents/spec.md#requirement-the-case-app-declares-which-documents-a-resident-may-see-req-cdc-001
+ * @spec openspec/specs/citizen-case-documents/spec.md#requirement-the-case-app-declares-which-documents-a-resident-may-see-req-cdc-001
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ namespace OCA\Portaliq\Contribution;
 /**
  * Keeps a well-formed `documents` declaration on a collection.
  *
- * @spec openspec/changes/cases-documents-on-the-case/specs/citizen-case-documents/spec.md#requirement-the-case-app-declares-which-documents-a-resident-may-see-req-cdc-001
+ * @spec openspec/specs/citizen-case-documents/spec.md#requirement-the-case-app-declares-which-documents-a-resident-may-see-req-cdc-001
  */
 class DocumentsProviderMethod {
 	/**
@@ -43,7 +43,7 @@ class DocumentsProviderMethod {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/cases-documents-on-the-case/specs/citizen-case-documents/spec.md#requirement-the-case-app-declares-which-documents-a-resident-may-see-req-cdc-001
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-the-case-app-declares-which-documents-a-resident-may-see-req-cdc-001
 	 */
 	public function normalise(array $collection): array {
 		if (array_key_exists('documents', $collection) === false) {

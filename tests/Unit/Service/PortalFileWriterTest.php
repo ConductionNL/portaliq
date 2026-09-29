@@ -15,7 +15,7 @@ use stdClass;
  * everything else in the case folder (cases-documents-on-the-case, REQ-CDC-004).
  * The fake file service mirrors OpenRegister's FileService::addFile() signature.
  *
- * @spec openspec/changes/cases-documents-on-the-case/specs/citizen-case-documents/spec.md#requirement-the-residents-own-uploads-stay-visible-and-nothing-else-from-the-folder-req-cdc-004
+ * @spec openspec/specs/citizen-case-documents/spec.md#requirement-the-residents-own-uploads-stay-visible-and-nothing-else-from-the-folder-req-cdc-004
  */
 class PortalFileWriterTest extends TestCase {
 

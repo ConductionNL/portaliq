@@ -172,7 +172,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 *
 	 * @return Response The file, or 401 / 404.
 	 *
-	 * @spec openspec/changes/cases-documents-on-the-case/specs/citizen-case-documents/spec.md#requirement-every-listed-document-opens-from-the-case-screen-req-cdc-002
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-every-listed-document-opens-from-the-case-screen-req-cdc-002
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]

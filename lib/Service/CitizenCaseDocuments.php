@@ -29,7 +29,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/cases-documents-on-the-case/specs/citizen-case-documents/spec.md#requirement-every-listed-document-opens-from-the-case-screen-req-cdc-002
+ * @spec openspec/specs/citizen-case-documents/spec.md#requirement-every-listed-document-opens-from-the-case-screen-req-cdc-002
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use OCP\AppFramework\Http\StreamResponse;
 /**
  * Lists and opens the documents on a resident's own case.
  *
- * @spec openspec/changes/cases-documents-on-the-case/specs/citizen-case-documents/spec.md#requirement-every-listed-document-opens-from-the-case-screen-req-cdc-002
+ * @spec openspec/specs/citizen-case-documents/spec.md#requirement-every-listed-document-opens-from-the-case-screen-req-cdc-002
  */
 class CitizenCaseDocuments {
 
@@ -85,7 +85,7 @@ class CitizenCaseDocuments {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/cases-documents-on-the-case/specs/citizen-case-documents/spec.md#requirement-the-decision-is-shown-first-req-cdc-003
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-the-decision-is-shown-first-req-cdc-003
 	 */
 	public function listFor(array $context, string $register, string $schema, string $id): array {
 		$entries = $this->organisationEntries(context: $context, register: $register, schema: $schema, id: $id);
@@ -116,7 +116,7 @@ class CitizenCaseDocuments {
 	 *
 	 * @return StreamResponse|null
 	 *
-	 * @spec openspec/changes/cases-documents-on-the-case/specs/citizen-case-documents/spec.md#requirement-every-listed-document-opens-from-the-case-screen-req-cdc-002
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-every-listed-document-opens-from-the-case-screen-req-cdc-002
 	 */
 	public function stream(array $context, string $register, string $schema, string $id, string $documentId): ?StreamResponse {
 		$file = $this->fileFor(context: $context, register: $register, schema: $schema, id: $id, documentId: $documentId);

@@ -927,7 +927,7 @@ class CitizenCaseControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/cases-documents-on-the-case/specs/citizen-case-documents/spec.md#requirement-the-case-app-declares-which-documents-a-resident-may-see-req-cdc-001
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-the-case-app-declares-which-documents-a-resident-may-see-req-cdc-001
 	 */
 	public function testShowNeverReturnsAFileReference(): void {
 		$response = $this->controller(collections: self::WITH_DOCUMENTS, published: self::PUBLISHED)->show('zaken', 'zaak', self::CASE_ID);
@@ -952,7 +952,7 @@ class CitizenCaseControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/cases-documents-on-the-case/specs/citizen-case-documents/spec.md#requirement-the-residents-own-uploads-stay-visible-and-nothing-else-from-the-folder-req-cdc-004
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-the-residents-own-uploads-stay-visible-and-nothing-else-from-the-folder-req-cdc-004
 	 */
 	public function testShowListsTaggedUploadsOnly(): void {
 		$upload = ['id' => 5, 'name' => 'bewijs.pdf', 'size' => 100];
@@ -974,7 +974,7 @@ class CitizenCaseControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/cases-documents-on-the-case/specs/citizen-case-documents/spec.md#requirement-a-case-with-nothing-published-says-so-req-cdc-005
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-a-case-with-nothing-published-says-so-req-cdc-005
 	 */
 	public function testShowWithoutProviderListsOnlyUploads(): void {
 		$upload = ['id' => 5, 'name' => 'bewijs.pdf', 'size' => 100];
@@ -994,7 +994,7 @@ class CitizenCaseControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/cases-documents-on-the-case/specs/citizen-case-documents/spec.md#requirement-every-listed-document-opens-from-the-case-screen-req-cdc-002
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-every-listed-document-opens-from-the-case-screen-req-cdc-002
 	 */
 	public function testStreamsAPublishedDocument(): void {
 		$response = $this->controller(collections: self::WITH_DOCUMENTS, published: self::PUBLISHED)->document('zaken', 'zaak', self::CASE_ID, 'besluit-1');
@@ -1008,7 +1008,7 @@ class CitizenCaseControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/cases-documents-on-the-case/specs/citizen-case-documents/spec.md#requirement-every-listed-document-opens-from-the-case-screen-req-cdc-002
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-every-listed-document-opens-from-the-case-screen-req-cdc-002
 	 */
 	public function testForeignCaseIs404(): void {
 		$response = $this->controller(collections: self::WITH_DOCUMENTS, published: self::PUBLISHED)->document('zaken', 'zaak', self::OTHER_CASE_ID, 'besluit-1');
@@ -1022,7 +1022,7 @@ class CitizenCaseControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/cases-documents-on-the-case/specs/citizen-case-documents/spec.md#requirement-every-listed-document-opens-from-the-case-screen-req-cdc-002
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-every-listed-document-opens-from-the-case-screen-req-cdc-002
 	 */
 	public function testUnlistedIdIs404(): void {
 		$controller = $this->controller(collections: self::WITH_DOCUMENTS, published: self::PUBLISHED);
@@ -1038,7 +1038,7 @@ class CitizenCaseControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/cases-documents-on-the-case/specs/citizen-case-documents/spec.md#requirement-every-listed-document-opens-from-the-case-screen-req-cdc-002
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-every-listed-document-opens-from-the-case-screen-req-cdc-002
 	 */
 	public function testDownloadIsAudited(): void {
 		$this->controller(collections: self::WITH_DOCUMENTS, published: self::PUBLISHED)->document('zaken', 'zaak', self::CASE_ID, 'besluit-1');
@@ -1052,7 +1052,7 @@ class CitizenCaseControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/cases-documents-on-the-case/specs/citizen-case-documents/spec.md#requirement-the-residents-own-uploads-stay-visible-and-nothing-else-from-the-folder-req-cdc-004
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-the-residents-own-uploads-stay-visible-and-nothing-else-from-the-folder-req-cdc-004
 	 */
 	public function testUntaggedFolderFileIs404(): void {
 		$upload = ['id' => 5, 'name' => 'bewijs.pdf', 'size' => 100];
@@ -1072,7 +1072,7 @@ class CitizenCaseControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/cases-documents-on-the-case/specs/citizen-case-documents/spec.md#requirement-the-residents-own-uploads-stay-visible-and-nothing-else-from-the-folder-req-cdc-004
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-the-residents-own-uploads-stay-visible-and-nothing-else-from-the-folder-req-cdc-004
 	 */
 	public function testAnUploadIsTaggedAsTheResidents(): void {
 		$this->controller(upload: ['name' => 'bewijs.pdf', 'content' => 'data'])->addDocument('zaken', 'zaak', self::CASE_ID);

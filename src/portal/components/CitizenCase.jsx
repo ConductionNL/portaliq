@@ -109,7 +109,7 @@ export default function CitizenCase({ collection, row, api, t }) {
 	 * Open one listed document; a failure says so.
 	 *
 	 * @param {object} entry The listed entry.
-	 * @spec openspec/changes/cases-documents-on-the-case/specs/citizen-case-documents/spec.md#requirement-every-listed-document-opens-from-the-case-screen-req-cdc-002
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-every-listed-document-opens-from-the-case-screen-req-cdc-002
 	 */
 	async function onOpenDocument(entry) {
 		const result = await api.downloadCitizenDocument(collection, caseId, entry)
