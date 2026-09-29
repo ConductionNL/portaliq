@@ -1556,7 +1556,12 @@
         "Record id": "Record id",
         "The app that holds the record.": "The app that holds the record.",
         "The collection of that app the record belongs to.": "The collection of that app the record belongs to.",
-        "The id of the record.": "The id of the record."
+        "The id of the record.": "The id of the record.",
+        "Your task is overdue: %1$s": "Your task is overdue: %1$s",
+        "This task was due on %1$s.": "This task was due on %1$s.",
+        "If you do not respond: %1$s": "If you do not respond: %1$s",
+        "Your task in the portal of %1$s is overdue": "Your task in the portal of %1$s is overdue",
+        "A task in the portal of %1$s is past its deadline. Log in to finish it: %2$s": "A task in the portal of %1$s is past its deadline. Log in to finish it: %2$s"
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"
