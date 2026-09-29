@@ -1685,7 +1685,9 @@ OC.L10N.register(
         "Use as hero image": "Use as hero image",
         "Use as share image": "Use as share image",
         "Copy for a text": "Copy for a text",
-        "Copied. Paste it into a text widget.": "Copied. Paste it into a text widget."
+        "Copied. Paste it into a text widget.": "Copied. Paste it into a text widget.",
+        "This item is used on published pages: %s. Remove it there first.": "This item is used on published pages: %s. Remove it there first.",
+        "An image in the media library needs alternative text.": "An image in the media library needs alternative text."
     },
     "nplurals=2; plural=(n != 1);"
 )

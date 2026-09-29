@@ -75,6 +75,18 @@ class CmsReaderMediaTest extends TestCase {
 		$this->assertSame(['portal' => 'gemeente', 'status' => 'published'], $this->queried['media']);
 	}//end testOnlyThePortalsPublishedItemsAreRead()
 
+	public function testThePublishedPagesUsingAnItemAreNamed(): void {
+		$reader = $this->reader(pages: [
+			$this->page(['route' => '/contact', 'heroImage' => 'media:'.self::IMAGE]),
+			$this->page(['route' => '/about', 'body' => ['type' => 'markdown', 'markdown' => '![x](media:'.self::IMAGE.')']]),
+			$this->page(['route' => '/share', 'seoImage' => 'media:'.self::IMAGE]),
+			$this->page(['route' => '/other', 'heroImage' => 'media:'.self::IMAGE.'0']),
+		]);
+
+		$this->assertSame(['/about', '/contact', '/share'], $reader->pagesUsingMedia(portal: 'gemeente', id: self::IMAGE));
+		$this->assertSame(['portal' => 'gemeente', 'status' => 'published'], $this->queried['page']);
+	}//end testThePublishedPagesUsingAnItemAreNamed()
+
 	/**
 	 * The filters each schema was last queried with.
 	 *

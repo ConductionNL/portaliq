@@ -95,6 +95,24 @@ The Media page (`src/manifest.json`, index over `media`, scoped to the portal)
 uploads and edits items. The page editor gets a picker dialog in `src/dialogs/`
 that lists the portal's published media.
 
+Fixed while building (2026-09-29):
+
+- The `media` schema's read rule is `authenticated` only, not public. The
+  public reach a published item through `GET /api/content/media/{id}`
+  (`ContentMediaController` over `MediaFile`), which reads in process, so
+  OpenRegister's anonymous surface stays the three schemas it was
+  (`page`, `menu`, `glossaryTerm`). The editor groups get the media write rules
+  with the page's (`PageEditorService`).
+- OpenRegister drops an `if`/`then` rule on import, so "alternative text for an
+  image" is portaliq's own: `MediaWriteGuardListener` stops the pre-write event,
+  and OpenRegister refuses the write with its message.
+- `heroImage` was stored but rendered nowhere. The content API now serves
+  `hero {url, alt}` and the site shows it above the body.
+- A portal behind sign-in serves no item: an image tag sends no bearer token,
+  so the route cannot tell who is asking.
+- The file is uploaded on the item's page (the sidebar's Files tab); the newest
+  attached file is served.
+
 ## D5. Replacing a file keeps the id
 
 Replacing the file of a media item keeps its id, so every page that references

@@ -24,9 +24,9 @@
   - Verify: PHPUnit for a draft item, another portal's item and an unknown id; `hydra-gate-route-auth` green
 - [x] **T08**: The Media manifest page and the picker dialog in `src/dialogs/`; `heroImage`, `seo.image` and `media:<id>` in markdown resolve to the item (REQ-SPH-004, REQ-SPH-005). Manifest `Media` (index) + `MediaDetail` (detail; the file is uploaded in the sidebar's Files tab) + menu entry; `src/dialogs/MediaPickerDialog.vue` from the designer's Media button (hero image, share image, a markdown reference to paste); `CmsReader` serves `hero {url, alt}`, the share image and markdown targets resolved (`lib/Service/Cms/MediaReferences.php`); the site renders the hero with its alternative text.
   - Verify: Playwright: upload once, use on two pages, replace the file, both pages show the new one
-- [ ] **T09**: Refuse deleting a media item a published page references, naming the pages; invalidate the portal cache on every media write (REQ-SPH-005)
+- [x] **T09**: Refuse deleting a media item a published page references, naming the pages; invalidate the portal cache on every media write (REQ-SPH-005). `lib/Listener/MediaWriteGuardListener.php` on OpenRegister's pre-write events (also the image alternative-text rule) over `CmsReader::pagesUsingMedia()`; `media` joins `CmsCacheInvalidationListener::cmsSchemas()`.
   - Verify: PHPUnit for the refusal and the invalidation
 
 ## Close
 
-- [ ] **T10**: Dutch and English strings; editor docs; `openspec validate site-page-seo-history-and-media --strict`
+- [x] **T10**: Dutch and English strings; editor docs; `openspec validate site-page-seo-history-and-media --strict`. Docs `docs/operations/page-history-and-media-library.md`.

@@ -39,12 +39,16 @@ declare(strict_types=1);
 namespace OCA\Portaliq\AppInfo;
 
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
+use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectDeletedEvent;
+use OCA\OpenRegister\Event\ObjectDeletingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
+use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCA\Portaliq\Event\LandingPageRequestedEvent;
 use OCA\Portaliq\Event\PortalAccountClaimRequestedEvent;
 use OCA\Portaliq\Event\PortalAccountProvisionRequestedEvent;
 use OCA\Portaliq\Listener\CmsCacheInvalidationListener;
+use OCA\Portaliq\Listener\MediaWriteGuardListener;
 use OCA\Portaliq\Listener\LandingPageRequestedEventListener;
 use OCA\Portaliq\Listener\LandingPageSubmissionDispatchListener;
 use OCA\Portaliq\Listener\PortalAccountClaimListener;
@@ -145,6 +149,14 @@ class Application extends App implements IBootstrap {
 		// editor sees a broken site and is right.
 		foreach ([ObjectCreatedEvent::class, ObjectUpdatedEvent::class, ObjectDeletedEvent::class] as $event) {
 			$context->registerEventListener($event, CmsCacheInvalidationListener::class);
+		}
+
+		// The media library's write rules (site-page-seo-history-and-media
+		// T06, T09): an image needs alternative text, and an item a published
+		// page uses is not deleted. OpenRegister honours a stopped pre-write
+		// event by refusing the write with its message.
+		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class, ObjectDeletingEvent::class] as $event) {
+			$context->registerEventListener($event, MediaWriteGuardListener::class);
 		}
 
 		$this->registerRecordChangeListener(context: $context);

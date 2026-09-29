@@ -367,6 +367,40 @@ class CmsReader {
 
 
 	/**
+	 * The routes of the published pages of a portal that use a media item, as
+	 * hero image, share image or anywhere in the body.
+	 *
+	 * Uncached: it guards a delete, and a stale answer there removes an image
+	 * from a live page.
+	 *
+	 * @param string $portal The portal slug.
+	 * @param string $id     The item id.
+	 *
+	 * @return list<string> The routes, sorted.
+	 *
+	 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+	 */
+	public function pagesUsingMedia(string $portal, string $id): array {
+		if ($portal === '' || $id === '') {
+			return [];
+		}
+
+		$pattern = '/'.preg_quote(MediaReferences::PREFIX.$id, '/').'(?![A-Za-z0-9-])/';
+		$routes  = [];
+		foreach ($this->query(schema: 'page', filters: ['portal' => $portal, 'status' => 'published']) as $row) {
+			$used = json_encode([$row['heroImage'] ?? null, $row['seoImage'] ?? null, $row['body'] ?? null]);
+			if (is_string($used) === true && preg_match($pattern, $used) === 1) {
+				$routes[] = (string)($row['route'] ?? '');
+			}
+		}
+
+		sort($routes);
+
+		return $routes;
+	}//end pagesUsingMedia()
+
+
+	/**
 	 * Read the glossary of a portal.
 	 *
 	 * @param string $portal  The portal slug.

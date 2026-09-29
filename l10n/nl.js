@@ -1743,7 +1743,9 @@ OC.L10N.register(
         "Use as hero image": "Gebruiken als hoofdafbeelding",
         "Use as share image": "Gebruiken als deelafbeelding",
         "Copy for a text": "Kopiëren voor een tekst",
-        "Copied. Paste it into a text widget.": "Gekopieerd. Plak het in een tekstwidget."
+        "Copied. Paste it into a text widget.": "Gekopieerd. Plak het in een tekstwidget.",
+        "This item is used on published pages: %s. Remove it there first.": "Dit item staat op gepubliceerde pagina's: %s. Haal het daar eerst weg.",
+        "An image in the media library needs alternative text.": "Een afbeelding in de mediabibliotheek heeft een alternatieve tekst nodig."
     },
     "nplurals=2; plural=(n != 1);"
 )
