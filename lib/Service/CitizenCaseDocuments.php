@@ -36,6 +36,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\JSONResponse;
+use OCP\AppFramework\Http\Response;
 use OCP\AppFramework\Http\StreamResponse;
 
 /**
@@ -105,6 +108,38 @@ class CitizenCaseDocuments {
 	}//end listFor()
 
 	/**
+	 * The download route's answer: the file, 401 without a session, or one
+	 * identical 404 for a foreign case, a missing one and an unlisted id, so
+	 * a document id gives no existence oracle (REQ-CDC-002).
+	 *
+	 * @param array<string, mixed>|JSONResponse $context    The resolved case context, or its refusal.
+	 * @param string                            $register   The case's register.
+	 * @param string                            $schema     The case's schema.
+	 * @param string                            $id         The case id.
+	 * @param string                            $documentId The entry id the screen listed.
+	 *
+	 * @return Response
+	 *
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-every-listed-document-opens-from-the-case-screen-req-cdc-002
+	 */
+	public function open(array|JSONResponse $context, string $register, string $schema, string $id, string $documentId): Response {
+		if ($context instanceof JSONResponse && $context->getStatus() === Http::STATUS_UNAUTHORIZED) {
+			return $context;
+		}
+
+		$stream = null;
+		if (is_array($context) === true) {
+			$stream = $this->stream(context: $context, register: $register, schema: $schema, id: $id, documentId: $documentId);
+		}
+
+		if ($stream === null) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		return $stream;
+	}//end open()
+
+	/**
 	 * Stream one listed document, audited, or null when this case lists no
 	 * entry with that id now.
 	 *
@@ -158,10 +193,9 @@ class CitizenCaseDocuments {
 			return null;
 		}
 
+		$listed = $this->organisationEntries(context: $context, register: $register, schema: $schema, id: $id);
 		if (str_starts_with($documentId, self::UPLOAD) === true) {
 			$listed = $this->uploads(register: $register, schema: $schema, id: $id);
-		} else {
-			$listed = $this->organisationEntries(context: $context, register: $register, schema: $schema, id: $id);
 		}
 
 		foreach ($listed as $entry) {

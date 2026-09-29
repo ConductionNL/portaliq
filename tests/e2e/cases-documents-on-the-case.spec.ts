@@ -135,13 +135,11 @@ test.describe('cases-documents-on-the-case', () => {
 		await openCase(request, page)
 		await expect(page.getByTestId('case-documents-empty')).toBeVisible()
 
-		await page
-			.getByTestId('case-add-document')
-			.setInputFiles({
-				name: 'foto-schade.jpg',
-				mimeType: 'image/jpeg',
-				buffer: Buffer.from('jpeg'),
-			})
+		await page.getByTestId('case-add-document').setInputFiles({
+			name: 'foto-schade.jpg',
+			mimeType: 'image/jpeg',
+			buffer: Buffer.from('jpeg'),
+		})
 		await expect(page.getByTestId('case-notice')).toBeVisible()
 		const sent = page.locator('.portaliq-case-documents-yours')
 		await expect(sent).toContainText('foto-schade.jpg')

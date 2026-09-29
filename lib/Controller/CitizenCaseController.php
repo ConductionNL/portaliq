@@ -178,21 +178,13 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 60, period: 60)]
 	public function document(string $register, string $schema, string $id, string $documentId): Response {
-		$context = $this->context(register: $register, schema: $schema, id: $id);
-		if ($context instanceof JSONResponse) {
-			if ($context->getStatus() === Http::STATUS_UNAUTHORIZED) {
-				return $context;
-			}
-
-			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
-		}
-
-		$stream = $this->documents->stream(context: $context, register: $register, schema: $schema, id: $id, documentId: $documentId);
-		if ($stream === null) {
-			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
-		}
-
-		return $stream;
+		return $this->documents->open(
+			context: $this->context(register: $register, schema: $schema, id: $id),
+			register: $register,
+			schema: $schema,
+			id: $id,
+			documentId: $documentId
+		);
 	}//end document()
 
 	/**

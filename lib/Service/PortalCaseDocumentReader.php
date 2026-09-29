@@ -118,10 +118,16 @@ class PortalCaseDocumentReader {
 			return null;
 		}
 
+		// Anything but a decision is a document.
+		$kind = 'document';
+		if (($entry['kind'] ?? null) === 'decision') {
+			$kind = 'decision';
+		}
+
 		$kept = [
 			'id' => $this->text(value: $entry['id']),
 			'title' => $this->text(value: $entry['title']),
-			'kind' => (($entry['kind'] ?? null) === 'decision') ? 'decision' : 'document',
+			'kind' => $kind,
 			'date' => $this->text(value: ($entry['date'] ?? null)),
 			'file' => $file,
 		];
