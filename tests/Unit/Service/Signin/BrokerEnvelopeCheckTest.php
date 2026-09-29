@@ -25,7 +25,7 @@ use PHPUnit\Framework\TestCase;
  * plus the jti, iat and exp SubjectEnvelopeService::sign() adds, integriq
  * development 21e747d).
  *
- * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-every-claim-portaliq-acts-on-is-checked-req-bel-004
+ * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-every-claim-portaliq-acts-on-is-checked-req-bel-004
  */
 class BrokerEnvelopeCheckTest extends TestCase {
 

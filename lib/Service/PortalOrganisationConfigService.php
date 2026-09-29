@@ -326,7 +326,7 @@ class PortalOrganisationConfigService {
 	 *
 	 * @return array{uuid: string, overrides: array<string, mixed>}|null
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
 	 */
 	public function presentationFor(string $orgSlug): ?array {
 		$organisation = $this->findOrganisationBySlug(slug: $orgSlug);
@@ -346,7 +346,7 @@ class PortalOrganisationConfigService {
 	 *
 	 * @return bool Whether it was written.
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
 	 */
 	public function writePresentation(string $organisationUuid, array $overrides): bool {
 		return $this->appConfig->setValueString(

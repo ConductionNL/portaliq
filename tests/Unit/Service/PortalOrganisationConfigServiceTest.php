@@ -457,7 +457,7 @@ class PortalOrganisationConfigServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
 	 */
 	public function testBrokerRouteNeedsEveryField(): void {
 		$config = $this->loginConfig(overrides: $this->brokerOverrides())->resolveBrokerConfig('gemeente-x', 'digid');
@@ -490,7 +490,7 @@ class PortalOrganisationConfigServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
 	 */
 	public function testBrokerSecretIsNeverInResolve(): void {
 		$resolved = $this->routedService(overrides: $this->brokerOverrides())->resolve('gemeente-x');
@@ -515,7 +515,7 @@ class PortalOrganisationConfigServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
 	 */
 	public function testProviderListCarriesRoute(): void {
 		$overrides = $this->brokerOverrides() + ['oidc' => ['eherkenning' => ['issuer' => 'https://idp.example', 'clientId' => 'c1']]];
@@ -536,7 +536,7 @@ class PortalOrganisationConfigServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
 	 */
 	public function testUnconfiguredBrokerRouteHidesTheProvider(): void {
 		$overrides = $this->brokerOverrides() + ['oidc' => ['digid' => ['issuer' => 'https://idp.example', 'clientId' => 'c1']]];

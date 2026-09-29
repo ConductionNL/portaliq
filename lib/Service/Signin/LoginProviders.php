@@ -32,7 +32,7 @@ use OCA\Portaliq\Service\OidcClaimMapperService;
  *
  * Pure: the caller hands in the override, the secret and the OIDC resolver.
  *
- * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+ * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
  */
 class LoginProviders {
 
@@ -67,7 +67,7 @@ class LoginProviders {
 	 *
 	 * @return array<int, array{provider: string, label: string, route: string}>
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
 	 */
 	public function list(array $overrides, string $brokerSecret, callable $oidcConfig): array {
 		$providers = [];
@@ -92,7 +92,7 @@ class LoginProviders {
 	 *
 	 * @return array{startUrl: string, exchangeUrl: string, consumerId: string, secret: string, label: string, audience: string}|null
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
 	 */
 	public function brokerSettings(array $overrides, string $brokerSecret, string $provider): ?array {
 		if ($this->route->routeFor(overrides: $overrides, provider: $provider) !== BrokerLoginRoute::ROUTE_BROKER) {

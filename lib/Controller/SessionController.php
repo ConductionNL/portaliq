@@ -279,7 +279,7 @@ class SessionController extends Controller {
 	 *
 	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T06
 	 * @spec openspec/specs/supplier-portal/spec.md#oidc-start-builds-a-state-nonce-pkce-authorization-request
-	 * @spec openspec/changes/signin-integriq-broker-login/design.md#d2-two-new-routes-and-the-spas-follow-the-route-field
+	 * @spec openspec/changes/archive/2026-09-29-signin-integriq-broker-login/design.md#d2-two-new-routes-and-the-spas-follow-the-route-field
 	 *
 	 * @no-admin-idor-exempt the lookup is unscoped because it MUST be: this is
 	 * the anonymous entry point to a portal's login, so a caller with no
@@ -374,7 +374,7 @@ class SessionController extends Controller {
 	 *
 	 * @return string The organisation slug, or ''.
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/design.md#d2-two-new-routes-and-the-spas-follow-the-route-field
+	 * @spec openspec/changes/archive/2026-09-29-signin-integriq-broker-login/design.md#d2-two-new-routes-and-the-spas-follow-the-route-field
 	 */
 	private function organisationOfPortal(string $slug): string {
 		$organisation = ($this->portalFor(slug: $slug)['organisation'] ?? null);

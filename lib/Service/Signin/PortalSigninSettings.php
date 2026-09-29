@@ -31,7 +31,7 @@ use OCA\Portaliq\Service\PortalObjectReader;
  * settings are complete: a route nobody can finish would show residents no
  * button, silently. The secret is write-only.
  *
- * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+ * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
  */
 class PortalSigninSettings {
 
@@ -67,7 +67,7 @@ class PortalSigninSettings {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
 	 */
 	public function portalBySlug(string $slug): ?array {
 		if ($slug === '') {
@@ -93,7 +93,7 @@ class PortalSigninSettings {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
 	 */
 	public function view(array $portal): ?array {
 		$organisation = trim((string)($portal['organisation'] ?? ''));
@@ -134,7 +134,7 @@ class PortalSigninSettings {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
 	 */
 	public function save(array $portal, array $routes, array $broker, string $secret): array {
 		$presentation = $this->orgConfig->presentationFor(orgSlug: trim((string)($portal['organisation'] ?? '')));

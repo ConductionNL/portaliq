@@ -31,7 +31,7 @@ use Throwable;
  * broker can run on another instance. Not a command on shared data, which is
  * what ADR-041's events are for.
  *
- * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-callback-redeems-the-code-once-over-the-authenticated-exchange-req-bel-003
+ * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-callback-redeems-the-code-once-over-the-authenticated-exchange-req-bel-003
  */
 class BrokerExchangeClient {
 
@@ -67,7 +67,7 @@ class BrokerExchangeClient {
 	 *
 	 * @return string|null
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-callback-redeems-the-code-once-over-the-authenticated-exchange-req-bel-003
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-callback-redeems-the-code-once-over-the-authenticated-exchange-req-bel-003
 	 */
 	public function redeem(string $exchangeUrl, string $consumerId, string $secret, string $code): ?string {
 		try {

@@ -39,7 +39,7 @@ use Psr\Log\LoggerInterface;
  * the HTTP answer, OpenRegister's rows, the account store and the session
  * minter are doubled.
  *
- * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md
+ * @spec openspec/specs/portal-broker-envelope-login/spec.md
  */
 class BrokerLoginTest extends TestCase {
 
@@ -253,7 +253,7 @@ class BrokerLoginTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-broker-start-binds-the-login-to-one-organisation-and-one-provider-req-bel-002
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-broker-start-binds-the-login-to-one-organisation-and-one-provider-req-bel-002
 	 */
 	public function testStartRedirectsWithRelayState(): void {
 		$url = $this->login($this->routed())->start(org: 'gemeente-x', provider: 'digid', returnTo: '/apps/portaliq/portal', callbackUrl: 'https://portal.example/callback');
@@ -280,7 +280,7 @@ class BrokerLoginTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-broker-start-binds-the-login-to-one-organisation-and-one-provider-req-bel-002
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-broker-start-binds-the-login-to-one-organisation-and-one-provider-req-bel-002
 	 */
 	public function testStartRefusesAnOidcRoutedProvider(): void {
 		$login = $this->login($this->routed());
@@ -297,7 +297,7 @@ class BrokerLoginTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-envelope-becomes-an-ordinary-portal-session-req-bel-005
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-envelope-becomes-an-ordinary-portal-session-req-bel-005
 	 */
 	public function testEnvelopeMintsASessionWithItsTrust(): void {
 		$login = $this->login($this->routed(), 200, $this->exchangeBody());
@@ -321,7 +321,7 @@ class BrokerLoginTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-envelope-becomes-an-ordinary-portal-session-req-bel-005
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-envelope-becomes-an-ordinary-portal-session-req-bel-005
 	 */
 	public function testUnknownTrustBecomesLow(): void {
 		$login = $this->login($this->routed(), 200, $this->exchangeBody(['trust' => 'eidas-high']));
@@ -338,7 +338,7 @@ class BrokerLoginTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-callback-redeems-the-code-once-over-the-authenticated-exchange-req-bel-003
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-callback-redeems-the-code-once-over-the-authenticated-exchange-req-bel-003
 	 */
 	public function testCallbackRefusesAnOidcState(): void {
 		$this->rows['row-1'] = [
@@ -358,7 +358,7 @@ class BrokerLoginTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-callback-redeems-the-code-once-over-the-authenticated-exchange-req-bel-003
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-callback-redeems-the-code-once-over-the-authenticated-exchange-req-bel-003
 	 */
 	public function testCallbackRefusesANon200Exchange(): void {
 		foreach ([[401, '{"error":"unauthorized"}'], [200, '{"envelope":""}'], [200, 'not json'], [500, '']] as [$status, $body]) {
@@ -386,7 +386,7 @@ class BrokerLoginTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-every-claim-portaliq-acts-on-is-checked-req-bel-004
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-every-claim-portaliq-acts-on-is-checked-req-bel-004
 	 */
 	public function testAnEnvelopeForAnotherOrganisationIsRefused(): void {
 		$login = $this->login($this->routed(), 200, $this->exchangeBody(['organisation' => 'gemeente-y']));

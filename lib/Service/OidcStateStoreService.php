@@ -136,7 +136,7 @@ class OidcStateStoreService {
 	 *
 	 * @return bool True when the row was written.
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-broker-start-binds-the-login-to-one-organisation-and-one-provider-req-bel-002
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-broker-start-binds-the-login-to-one-organisation-and-one-provider-req-bel-002
 	 */
 	public function createBroker(string $state, string $org, string $provider, string $returnTo): bool {
 		if ($state === '') {

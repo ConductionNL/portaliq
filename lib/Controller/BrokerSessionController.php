@@ -41,7 +41,7 @@ use OCP\IURLGenerator;
  * and no reason (REQ-BEL-006): the page tells a prober nothing, and a visitor
  * sees one message on the login screen instead of raw JSON.
  *
- * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md
+ * @spec openspec/specs/portal-broker-envelope-login/spec.md
  */
 class BrokerSessionController extends Controller {
 
@@ -81,7 +81,7 @@ class BrokerSessionController extends Controller {
 	 *
 	 * @return RedirectResponse
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-broker-start-binds-the-login-to-one-organisation-and-one-provider-req-bel-002
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-broker-start-binds-the-login-to-one-organisation-and-one-provider-req-bel-002
 	 *
 	 * @no-admin-idor-exempt The anonymous entry point to a portal's login: a
 	 * caller with no session names the organisation and provider it wants.
@@ -120,7 +120,7 @@ class BrokerSessionController extends Controller {
 	 *
 	 * @return RedirectResponse
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-a-failed-login-returns-to-the-login-screen-without-a-reason-req-bel-006
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-a-failed-login-returns-to-the-login-screen-without-a-reason-req-bel-006
 	 *
 	 * @no-admin-idor-exempt The anonymous return leg of a login. What it acts
 	 * on is bound by the single-use state row written at the start and by the

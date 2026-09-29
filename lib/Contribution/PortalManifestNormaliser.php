@@ -40,7 +40,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/contribution-manifest-v3/tasks.md#T1
+ * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T1
  * @spec openspec/specs/supplier-portal/spec.md#form-data-minimisation-no-non-mandatory-field-may-be-required
  * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-and-elevated-trust-must-not-combine-on-one-entry
  */
@@ -54,7 +54,7 @@ use OCA\Portaliq\Service\PortalSchemaReader;
 /**
  * Validates and sanitises the v3 UI-configuration vocabulary, fail-closed.
  *
- * @spec openspec/changes/contribution-manifest-v3/tasks.md#T1
+ * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T1
  * @spec openspec/specs/supplier-portal/spec.md#form-data-minimisation-no-non-mandatory-field-may-be-required
  */
 class PortalManifestNormaliser {
@@ -118,7 +118,7 @@ class PortalManifestNormaliser {
 	 * @return array<string, mixed> The contribution with sanitised v3 config and
 	 *                              a resolved/synthesised `pages` array.
 	 *
-	 * @spec openspec/changes/contribution-manifest-v3/tasks.md#T3
+	 * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T3
 	 * @spec openspec/changes/portal-take-assessment/specs/portal-contribution-contract/spec.md#requirement-a-collection-must-be-able-to-declare-a-timed-task-driven-by-five-endpoint-actions
 	 */
 	public function normalise(array $contribution): array {
