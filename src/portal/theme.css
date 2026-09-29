@@ -201,6 +201,12 @@
 	font-size: 0.85em;
 }
 
+.portaliq-inbox-row__delivery {
+	margin: 0.25rem 0;
+	color: var(--portaliq-color-text-muted);
+	font-size: 0.85em;
+}
+
 .portaliq-inbox-row__date {
 	margin-inline-start: auto;
 	color: var(--portaliq-color-text-muted);

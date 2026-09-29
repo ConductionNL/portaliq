@@ -4,11 +4,14 @@
 // (inbox-notifications-and-preferences, REQ-NAP-008): per kind, e-mail and
 // push, each a checkbox with its own label. Collapsed by default. The push
 // column shows only when the account registered a device. The inbox message
-// itself is not a choice: it is the record of what happened.
+// itself is not a choice: it is the record of what happened. When the
+// organisation offers the government message box, one more row lets the
+// resident switch letters to it off (inbox-berichtenbox-channel, REQ-MBC-005).
 //
 // @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-choices-live-on-the-inbox-page-req-nap-008
 
 import { useEffect, useState } from 'react'
+import { messageBoxChoice, withMessageBoxChoice } from '../lib/messageBox.js'
 
 const KINDS = [
 	{ key: 'case.updated', label: 'Changes on your cases' },
@@ -45,6 +48,7 @@ export default function NotificationSettings({ api, t }) {
 	}
 
 	const channels = loaded.pushAvailable ? ['email', 'push'] : ['email']
+	const messageBox = messageBoxChoice(loaded)
 
 	/**
 	 * @param {string} kind The kind.
@@ -133,6 +137,26 @@ export default function NotificationSettings({ api, t }) {
 						))}
 					</tbody>
 				</table>
+				{messageBox && (
+					<p className="portaliq-notification-settings__message-box">
+						<input
+							id="portaliq-notify-message-box"
+							type="checkbox"
+							checked={choices.messageBox?.enabled !== false}
+							onChange={(e) => {
+								setStatus('')
+								setChoices((c) =>
+									withMessageBoxChoice(c, e.target.checked),
+								)
+							}}
+						/>
+						<label htmlFor="portaliq-notify-message-box">
+							{t('Also send letters to {label}', {
+								label: messageBox.label,
+							})}
+						</label>
+					</p>
+				)}
 				<button type="submit" disabled={busy}>
 					{t('Save')}
 				</button>

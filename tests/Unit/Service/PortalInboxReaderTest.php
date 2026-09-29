@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\Portaliq\Service\Notifications\MessageBoxDeliveries;
 use OCA\Portaliq\Service\PortalInboxReader;
 use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -329,4 +331,76 @@ class PortalInboxReaderTest extends TestCase {
 
 	}//end testScopeClaimAndViaAreStillReadWithoutAScopeField()
 
+
+	/**
+	 * A message whose message box send was delivered or read says so; a
+	 * pending, failed or simulated send shows nothing, and an organisation
+	 * without the channel reads no log at all (inbox-berichtenbox-channel,
+	 * REQ-MBC-004).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/inbox-berichtenbox-channel/specs/portal-message-box-channel/spec.md#requirement-the-resident-sees-only-a-real-delivery-req-mbc-004
+	 */
+	public function testOnlyADeliveredMessageBoxSendIsShown(): void {
+		$aggregate = ['contributions' => [[
+			'app' => 'dossiq',
+			'label' => 'Dossiq',
+			'collections' => [['id' => 'berichten', 'kind' => 'inbox', 'register' => 'zaken', 'schema' => 'bericht', 'scopeField' => 'ontvanger', 'messageBox' => ['recipientProvider' => 'messageBoxRecipient']]],
+		]]];
+
+		$logReads = 0;
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('readCollection')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef) use (&$logReads): array {
+				if ($schema === 'bericht') {
+					return [
+						['id' => 'b1', 'subject' => 'Besluit', 'receivedAt' => '2026-09-04'],
+						['@self' => ['id' => 'b2'], 'subject' => 'Gesimuleerd', 'receivedAt' => '2026-09-03'],
+						['id' => 'b3', 'subject' => 'Mislukt', 'receivedAt' => '2026-09-02'],
+						['uuid' => 'b4', 'subject' => 'Gelezen', 'receivedAt' => '2026-09-01'],
+					];
+				}
+
+				if ($schema === 'portalAccount') {
+					return ($scopeField === 'subjectRef' && $subjectRef === 's1') ? [['@self' => ['id' => 'account-1'], 'subjectRef' => 's1']] : [];
+				}
+
+				if ($schema === 'portalNotification') {
+					++$logReads;
+					$this->assertSame(['accountRef', 'account-1'], [$scopeField, $subjectRef], 'only the resident\'s own log');
+					$link = static fn (string $id): array => ['app' => 'dossiq', 'collection' => 'berichten', 'id' => $id];
+					return [
+						['channel' => 'messageBox', 'status' => 'delivered', 'recordLink' => $link('b1')],
+						['channel' => 'messageBox', 'status' => 'simulated', 'recordLink' => $link('b2')],
+						['channel' => 'messageBox', 'status' => 'failed', 'recordLink' => $link('b3')],
+						['channel' => 'email', 'status' => 'sent', 'recordLink' => $link('b3')],
+						['channel' => 'messageBox', 'status' => 'read', 'recordLink' => $link('b4')],
+						['channel' => 'messageBox', 'status' => 'delivered', 'recordLink' => ['app' => 'other', 'collection' => 'berichten', 'id' => 'b3']],
+					];
+				}
+
+				return [];
+			}
+		);
+
+		$offered = $this->createMock(PortalOrganisationConfigService::class);
+		$offered->method('messageBox')->willReturn(['sourceId' => 'src', 'label' => 'MijnOverheid Berichtenbox']);
+		$rows = (new PortalInboxReader($reader, null, new MessageBoxDeliveries(reader: $reader, orgConfig: $offered)))->aggregateInbox(self::SUBJECT, $aggregate);
+
+		$shown = [];
+		foreach ($rows as $row) {
+			$shown[(string)$row['subject']] = ($row['_deliveries'] ?? []);
+		}
+
+		$line = [['channel' => 'messageBox', 'label' => 'MijnOverheid Berichtenbox']];
+		$this->assertSame(['Besluit' => $line, 'Gesimuleerd' => [], 'Mislukt' => [], 'Gelezen' => $line], $shown);
+
+		$logReads = 0;
+		$notOffered = $this->createMock(PortalOrganisationConfigService::class);
+		$notOffered->method('messageBox')->willReturn(null);
+		$rows = (new PortalInboxReader($reader, null, new MessageBoxDeliveries(reader: $reader, orgConfig: $notOffered)))->aggregateInbox(self::SUBJECT, $aggregate);
+		$this->assertSame(0, $logReads, 'no channel, no log read');
+		$this->assertArrayNotHasKey('_deliveries', $rows[0]);
+	}//end testOnlyADeliveredMessageBoxSendIsShown()
 }//end class

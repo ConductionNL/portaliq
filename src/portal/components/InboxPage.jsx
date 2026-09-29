@@ -11,6 +11,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react'
 import NotificationSettings from './NotificationSettings.jsx'
+import { deliveryLine } from '../lib/messageBox.js'
 import TranslatedText from './TranslatedText.jsx'
 
 /**
@@ -144,6 +145,10 @@ export default function InboxPage({ api, t, locale, onRead, onOpenTask, onOpenRe
 									</div>
 								)}
 							</dl>
+						)}
+
+						{deliveryLine(message, t) && (
+							<p className="portaliq-inbox-row__delivery">{deliveryLine(message, t)}</p>
 						)}
 
 						{message.recordLink?.id && onOpenRecord && (

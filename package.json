@@ -52,6 +52,7 @@
     "check:page-traffic": "node --test tests/page-traffic.spec.mjs",
     "check:shared-instance": "node --test tests/shared-instance.spec.mjs",
     "check:connection-registry": "node --test tests/connection-registry.spec.mjs",
+    "check:message-box-channel": "node --test tests/message-box-channel.spec.mjs",
     "check:leaf-integrations": "node --test tests/leaf-integrations.spec.mjs",
     "check:page-layout-entry": "node --test tests/page-layout-entry.spec.mjs",
     "check:case-timeline": "node --test tests/case-timeline.spec.mjs",

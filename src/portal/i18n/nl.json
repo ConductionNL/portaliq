@@ -168,5 +168,7 @@
 	"Save": "Opslaan",
 	"Your choices are saved.": "Uw keuzes zijn opgeslagen.",
 	"Your choices could not be saved. Try again.": "Uw keuzes zijn niet opgeslagen. Probeer het opnieuw.",
-	"This record is not in your list, so nothing of it is shown.": "Dit staat niet in uw lijst, dus we tonen er niets van."
+	"This record is not in your list, so nothing of it is shown.": "Dit staat niet in uw lijst, dus we tonen er niets van.",
+	"Also sent to {label}.": "Ook verstuurd naar {label}.",
+	"Also send letters to {label}": "Brieven ook naar {label} sturen"
 }
