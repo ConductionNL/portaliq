@@ -114,13 +114,13 @@ class MediaWriteGuardListener implements IEventListener {
 	/**
 	 * Why this write is refused, or null.
 	 *
-	 * @param Event                $event The event.
-	 * @param array<string, mixed> $item  The item's fields.
-	 * @param string               $id    The item id.
+	 * @param ObjectCreatingEvent|ObjectUpdatingEvent|ObjectDeletingEvent $event The pre-write event.
+	 * @param array<string, mixed>                                        $item  The item's fields.
+	 * @param string                                                      $id    The item id.
 	 *
 	 * @return string|null
 	 */
-	private function refusal(Event $event, array $item, string $id): ?string {
+	private function refusal(ObjectCreatingEvent|ObjectUpdatingEvent|ObjectDeletingEvent $event, array $item, string $id): ?string {
 		if ($event instanceof ObjectDeletingEvent) {
 			$pages = $this->library->pagesUsing(portal: (string)($item['portal'] ?? ''), id: $id);
 			if ($pages === []) {

@@ -189,9 +189,15 @@ class MediaLibraryReader {
 			return [];
 		}
 
-		return array_map(
-			static fn ($row): array => is_array($row) === true ? $row : (array)$row->jsonSerialize(),
-			$rows
-		);
+		$out = [];
+		foreach ($rows as $row) {
+			if (is_array($row) === false) {
+				$row = (array)$row->jsonSerialize();
+			}
+
+			$out[] = $row;
+		}
+
+		return $out;
 	}//end query()
 }//end class

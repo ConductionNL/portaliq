@@ -143,15 +143,7 @@ class Application extends App implements IBootstrap {
 		// PortalContributionRegistry — so no per-provider registration is needed
 		// here; the DI container constructs each app's provider by reflection.
 
-		// Drop cached public content when a CMS object is written (ADR-086 §9).
-		// The read cache holds NEGATIVE results too, so without this a route
-		// keeps 404ing for the rest of the TTL after its page is created — the
-		// editor sees a broken site and is right.
-		foreach ([ObjectCreatedEvent::class, ObjectUpdatedEvent::class, ObjectDeletedEvent::class] as $event) {
-			$context->registerEventListener($event, CmsCacheInvalidationListener::class);
-		}
-
-		$this->registerMediaGuard(context: $context);
+		$this->registerCmsListeners(context: $context);
 		$this->registerRecordChangeListener(context: $context);
 
 		// Landing-page-provisioning (ADR-041, contribution-landing-page-action):
@@ -207,6 +199,13 @@ class Application extends App implements IBootstrap {
 	}//end register()
 
 	/**
+	 * The CMS content listeners.
+	 *
+	 * Drop cached public content when a CMS object is written (ADR-086 §9).
+	 * The read cache holds NEGATIVE results too, so without this a route keeps
+	 * 404ing for the rest of the TTL after its page is created: the editor
+	 * sees a broken site and is right.
+	 *
 	 * The media library's write rules (site-page-seo-history-and-media T06,
 	 * T09): an image needs alternative text, and an item a published page uses
 	 * is not deleted. OpenRegister honours a stopped pre-write event by
@@ -218,11 +217,15 @@ class Application extends App implements IBootstrap {
 	 *
 	 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
 	 */
-	private function registerMediaGuard(IRegistrationContext $context): void {
+	private function registerCmsListeners(IRegistrationContext $context): void {
+		foreach ([ObjectCreatedEvent::class, ObjectUpdatedEvent::class, ObjectDeletedEvent::class] as $event) {
+			$context->registerEventListener($event, CmsCacheInvalidationListener::class);
+		}
+
 		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class, ObjectDeletingEvent::class] as $event) {
 			$context->registerEventListener($event, MediaWriteGuardListener::class);
 		}
-	}//end registerMediaGuard()
+	}//end registerCmsListeners()
 
 
 	/**
