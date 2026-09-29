@@ -12,7 +12,9 @@
  *
  * The same listener hears new records in a case app's own `kind: inbox`
  * collection and dispatches `message.created` for them, so a handler's
- * message gets the same e-mail nudge portaliq's own messages get (REQ-NAP-004).
+ * message gets the same e-mail nudge portaliq's own messages get (REQ-NAP-004),
+ * and hands them to the message box channel, which queues a send to the
+ * resident's government message box when that may go (inbox-berichtenbox-channel).
  *
  * 🔴 IT NEVER FAILS A SAVE. It runs inside OpenRegister's save of somebody
  * else's record; every failure is caught and logged. A missed notice is a
@@ -47,6 +49,7 @@ namespace OCA\Portaliq\Listener;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\Portaliq\Service\NotificationDispatchService;
+use OCA\Portaliq\Service\Notifications\MessageBoxChannel;
 use OCA\Portaliq\Service\Notifications\PortalChangeRuleIndex;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalObjectWriter;
@@ -90,6 +93,7 @@ class PortalRecordChangeListener implements IEventListener {
 	 * @param NotificationDispatchService $dispatch     Dispatches the rule's key.
 	 * @param IFactory                    $l10nFactory  The message text, Dutch and English.
 	 * @param LoggerInterface             $logger       The logger.
+	 * @param MessageBoxChannel|null      $messageBox   Queues the government message box send.
 	 */
 	public function __construct(
 		private readonly PortalChangeRuleIndex $rules,
@@ -99,6 +103,7 @@ class PortalRecordChangeListener implements IEventListener {
 		private readonly NotificationDispatchService $dispatch,
 		private readonly IFactory $l10nFactory,
 		private readonly LoggerInterface $logger,
+		private readonly ?MessageBoxChannel $messageBox = null,
 	) {
 	}//end __construct()
 
@@ -210,12 +215,18 @@ class PortalRecordChangeListener implements IEventListener {
 			}
 
 			$told[$key] = true;
-			$this->dispatch->dispatch(
-				ruleKey: NotificationDispatchService::RULE_MESSAGE_CREATED,
-				appId: $inbox['app'],
-				subject: $this->subject(account: $account)
-			);
-		}
+			if ($inbox['nudge'] === '1') {
+				$this->dispatch->dispatch(
+					ruleKey: NotificationDispatchService::RULE_MESSAGE_CREATED,
+					appId: $inbox['app'],
+					subject: $this->subject(account: $account)
+				);
+			}
+
+			// The same message may also go to the government message box
+			// (inbox-berichtenbox-channel); the channel decides whether it may.
+			$this->messageBox?->enqueue(account: $account, inbox: $inbox, recordId: (string)($object->getUuid() ?? ''));
+		}//end foreach
 	}//end onCreated()
 
 	/**

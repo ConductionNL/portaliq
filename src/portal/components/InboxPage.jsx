@@ -10,6 +10,7 @@
 // never an empty placeholder.
 
 import React, { useCallback, useEffect, useState } from 'react'
+import { deliveryLine } from '../lib/messageBox.js'
 import NotificationSettings from './NotificationSettings.jsx'
 import TranslatedText from './TranslatedText.jsx'
 
@@ -144,6 +145,10 @@ export default function InboxPage({ api, t, locale, onRead, onOpenTask, onOpenRe
 									</div>
 								)}
 							</dl>
+						)}
+
+						{deliveryLine(message, t) && (
+							<p className="portaliq-inbox-row__delivery">{deliveryLine(message, t)}</p>
 						)}
 
 						{message.recordLink?.id && onOpenRecord && (

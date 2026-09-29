@@ -39,6 +39,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Service\Notifications\MessageBoxOffer;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -187,6 +188,30 @@ class PortalOrganisationConfigService {
 			'oidcProviders' => $this->configuredOidcProviders(orgSlug: $orgSlug),
 		];
 	}//end resolve()
+
+	/**
+	 * The organisation's government message box channel: the integriq digital
+	 * post source to send over and the label residents read, or null when the
+	 * organisation does not offer the channel.
+	 *
+	 * Both values must be non-empty text. Half a configuration is no channel,
+	 * so an organisation that set only one of them sends nothing and shows its
+	 * residents no choice (REQ-MBC-001).
+	 *
+	 * @param string $orgSlug The organisation slug.
+	 *
+	 * @return array{sourceId: string, label: string}|null
+	 *
+	 * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-the-organisation-turns-the-channel-on-req-mbc-001
+	 */
+	public function messageBox(string $orgSlug): ?array {
+		$uuid = '';
+		if ($orgSlug !== '') {
+			$uuid = (string)($this->findOrganisationBySlug(slug: $orgSlug)['uuid'] ?? '');
+		}
+
+		return (new MessageBoxOffer())->from(raw: ($this->presentationOverrides(organisationUuid: $uuid)['messageBox'] ?? null));
+	}//end messageBox()
 
 	/**
 	 * Resolve the FULL per-organisation OIDC broker config for one provider —
@@ -425,14 +450,8 @@ class PortalOrganisationConfigService {
 			return [];
 		}
 
-		$origins = [];
-		foreach ($raw as $origin) {
-			if (is_string($origin) === true && $origin !== '') {
-				$origins[] = $origin;
-			}
-		}
-
-		return $origins;
+		// Only non-empty text: anything else is dropped, never coerced.
+		return array_values(array_diff(array_filter($raw, 'is_string'), ['']));
 	}//end allowedEmbedOrigins()
 
 	/**

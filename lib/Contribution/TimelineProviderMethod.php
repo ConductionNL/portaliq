@@ -30,6 +30,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use ReflectionMethod;
+
 /**
  * Decides whether a declared timeline provider name may be called.
  *
@@ -93,4 +95,29 @@ class TimelineProviderMethod {
 
 		return in_array($name, self::RESERVED, true) === false;
 	}//end accepts()
+
+	/**
+	 * Whether a provider has a public instance method of that name that
+	 * portaliq may call with one id and nothing else. The message box
+	 * recipient method (inbox-berichtenbox-channel) is held to the same rule
+	 * as a timeline method.
+	 *
+	 * @param object $provider The contributing app's provider.
+	 * @param string $method   The declared name.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md
+	 */
+	public function callableOn(object $provider, string $method): bool {
+		if ($this->accepts(name: $method) === false || method_exists($provider, $method) === false) {
+			return false;
+		}
+
+		$reflection = new ReflectionMethod($provider, $method);
+
+		return $reflection->isPublic() === true
+			&& $reflection->isStatic() === false
+			&& $reflection->getNumberOfRequiredParameters() <= 1;
+	}//end callableOn()
 }//end class

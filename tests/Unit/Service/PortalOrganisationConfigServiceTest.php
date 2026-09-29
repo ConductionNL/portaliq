@@ -336,6 +336,60 @@ class PortalOrganisationConfigServiceTest extends TestCase {
 
 	}//end oidcService()
 
+	/**
+	 * The message box channel exists only when the organisation names both an
+	 * integriq digital post source and the label residents read
+	 * (inbox-berichtenbox-channel, REQ-MBC-001). Half a configuration is no
+	 * channel: a source without a label would show residents an empty choice,
+	 * a label without a source would promise a send nothing can make.
+	 *
+	 * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-the-organisation-turns-the-channel-on-req-mbc-001
+	 */
+	public function testMessageBoxNeedsSourceAndLabel(): void {
+		$mapper = $this->oneOrganisation();
+
+		$both = $this->service(mapper: $mapper, overridesJson: json_encode(['messageBox' => ['sourceId' => 'berichtenbox-venray', 'label' => 'MijnOverheid Berichtenbox']]));
+		$this->assertSame(['sourceId' => 'berichtenbox-venray', 'label' => 'MijnOverheid Berichtenbox'], $both->messageBox('gemeente-x'));
+
+		foreach ([
+			['sourceId' => 'berichtenbox-venray'],
+			['label' => 'MijnOverheid Berichtenbox'],
+			['sourceId' => '', 'label' => 'MijnOverheid Berichtenbox'],
+			['sourceId' => ['x'], 'label' => 'MijnOverheid Berichtenbox'],
+			'on',
+		] as $half) {
+			$service = $this->service(mapper: $mapper, overridesJson: json_encode(['messageBox' => $half]));
+			$this->assertNull($service->messageBox('gemeente-x'), 'half a configuration is no channel: '.json_encode($half));
+		}
+
+		$this->assertNull($this->service(mapper: $mapper, overridesJson: '{}')->messageBox('gemeente-x'));
+		$this->assertNull($both->messageBox(''), 'no organisation, no channel');
+		$this->assertNull($this->service(overridesJson: json_encode(['messageBox' => ['sourceId' => 'a', 'label' => 'b']]))->messageBox('gemeente-x'), 'an organisation that does not resolve has no channel');
+
+	}//end testMessageBoxNeedsSourceAndLabel()
+
+	/**
+	 * An organisation mapper that resolves every slug to one organisation.
+	 *
+	 * @return object
+	 */
+	private function oneOrganisation(): object {
+		return new class {
+			public function findBySlug(string $slug) {
+				return new class {
+					public function getUuid() {
+						return 'org-uuid-1';
+					}
+
+					public function getName() {
+						return 'Gemeente X';
+					}
+				};
+			}
+		};
+
+	}//end oneOrganisation()
+
 	private function service(?object $mapper = null, ?string $overridesJson = null): PortalOrganisationConfigService {
 		$container = $this->createMock(ContainerInterface::class);
 		if ($mapper !== null) {

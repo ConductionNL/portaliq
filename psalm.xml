@@ -31,6 +31,10 @@
              psalm sees the constructor the reporter builds. -->
         <file name="tests/Stubs/Integriq/Event/ConnectionStatusReportedEvent.php" />
         <file name="tests/Stubs/Integriq/Event/ConnectionRefreshRequestedEvent.php" />
+        <!-- Integriq's digital post events (inbox-berichtenbox-channel): the
+             message box sender and the delivered listener name them by string. -->
+        <file name="tests/Stubs/Integriq/Event/DigitalPostSendRequestedEvent.php" />
+        <file name="tests/Stubs/Integriq/Event/DigitalPostDeliveredEvent.php" />
     </stubs>
     <issueHandlers>
         <UndefinedDocblockClass errorLevel="suppress"/>

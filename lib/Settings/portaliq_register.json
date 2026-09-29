@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.41.0"
+        "version": "0.42.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.41.0",
+                "version": "0.42.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -736,7 +736,7 @@
                     ]
                 },
                 "icon": "AccountKey",
-                "version": "0.11.0",
+                "version": "0.12.0",
                 "configuration": {
                     "linkedTypes": [
                         "calendar"
@@ -811,7 +811,7 @@
                     "notificationPreferences": {
                         "title": "Notification preferences",
                         "type": "object",
-                        "description": "Per kind of notice, whether the resident wants it by e-mail and by push: `case.updated` for changes on their cases, `message.created` for new messages. A missing choice means on. `notificationChannels.email: false` still switches e-mail off for every kind. Set only through the account's own PATCH /portal/api/identity/notification-preferences.",
+                        "description": "Per kind of notice, whether the resident wants it by e-mail and by push: `case.updated` for changes on their cases, `message.created` for new messages. `messageBox.enabled` is whether letters also go to the government message box, when the organisation offers it (inbox-berichtenbox-channel). A missing choice means on. `notificationChannels.email: false` still switches e-mail off for every kind. Set only through the account's own PATCH /portal/api/identity/notification-preferences.",
                         "example": {
                             "case.updated": {
                                 "email": true,
@@ -820,6 +820,9 @@
                             "message.created": {
                                 "email": true,
                                 "push": true
+                            },
+                            "messageBox": {
+                                "enabled": true
                             }
                         }
                     },
@@ -1353,9 +1356,9 @@
                     ]
                 },
                 "icon": "BellOutline",
-                "version": "0.2.0",
+                "version": "0.3.0",
                 "title": "Portal Notification",
-                "description": "Append-only per-attempt log of an out-of-band (email) nudge dispatched by NotificationDispatchJob when a contributing app's manifest `notifications` rule key matches a portalMessage create or a successful status transition (portal-notifications-dispatch). One row per attempt — never updated in place — so the burden-of-proof/audit trail is complete. Never publicly readable; recipients are never exposed via metrics.",
+                "description": "Append-only per-attempt log of an out-of-band (email) nudge dispatched by NotificationDispatchJob when a contributing app's manifest `notifications` rule key matches a portalMessage create or a successful status transition (portal-notifications-dispatch). One row per attempt, so the burden-of-proof/audit trail is complete. The one exception is a `messageBox` row: integriq reports what became of the letter later, and that status is written onto the row the send created (inbox-berichtenbox-channel). Never publicly readable; recipients are never exposed via metrics.",
                 "type": "object",
                 "required": [
                     "accountRef",
@@ -1393,20 +1396,24 @@
                     "channel": {
                         "title": "Channel",
                         "type": "string",
-                        "description": "The out-of-band channel used: `email`, or `push` for a web push to the resident's registered devices.",
+                        "description": "The out-of-band channel used: `email`, `push` for a web push to the resident's registered devices, or `messageBox` for the government message box an organisation offers through integriq's digital post adapter.",
                         "enum": [
                             "email",
-                            "push"
+                            "push",
+                            "messageBox"
                         ],
                         "example": "email"
                     },
                     "status": {
                         "title": "Status",
                         "type": "string",
-                        "description": "The outcome of this single attempt.",
+                        "description": "The outcome of this attempt. `sent` and `failed` for every channel. A `messageBox` row moves on as integriq reports it: `delivered`, `read`, or `simulated` when integriq's binding sends nothing, which is never shown to the resident as delivered.",
                         "enum": [
                             "sent",
-                            "failed"
+                            "failed",
+                            "delivered",
+                            "read",
+                            "simulated"
                         ],
                         "example": "sent"
                     },
@@ -1421,6 +1428,50 @@
                         "type": "string",
                         "format": "date-time",
                         "description": "When this attempt was made (ISO-8601)."
+                    },
+                    "externalMessageId": {
+                        "title": "External message id",
+                        "type": "string",
+                        "description": "For a `messageBox` row: the message id integriq's digital post adapter answered with. Integriq's status reports find the row by it.",
+                        "example": "b1e2c3d4-0000-4000-8000-000000000001"
+                    },
+                    "recordLink": {
+                        "title": "Record link",
+                        "type": "object",
+                        "description": "For a `messageBox` row: the inbox message this send is about, so the inbox can show where it went.",
+                        "required": [
+                            "app",
+                            "collection",
+                            "id"
+                        ],
+                        "properties": {
+                            "app": {
+                                "title": "App",
+                                "type": "string",
+                                "description": "The contributing app."
+                            },
+                            "collection": {
+                                "title": "Collection",
+                                "type": "string",
+                                "description": "The app's inbox collection id."
+                            },
+                            "id": {
+                                "title": "Message id",
+                                "type": "string",
+                                "description": "The message's id."
+                            }
+                        },
+                        "example": {
+                            "app": "dossiq",
+                            "collection": "berichten",
+                            "id": "b1e2c3d4-0000-4000-8000-000000000002"
+                        }
+                    },
+                    "refusalCode": {
+                        "title": "Refusal code",
+                        "type": "string",
+                        "description": "For a failed `messageBox` row: why no letter left. `not_installed` when integriq is absent, `unhandled` when nothing answered, or the code integriq's refusal carried.",
+                        "example": "not_installed"
                     }
                 }
             },

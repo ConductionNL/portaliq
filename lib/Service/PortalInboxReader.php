@@ -33,6 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Service\Notifications\MessageBoxDeliveries;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -60,10 +61,13 @@ class PortalInboxReader {
 	 *                                     container autowires it in production.
 	 *                                     Only used to record a REFUSED
 	 *                                     unscoped read, never on a normal path.
+	 * @param MessageBoxDeliveries|null $deliveries Marks the messages that also reached the
+	 *                                             government message box (inbox-berichtenbox-channel).
 	 */
 	public function __construct(
 		private readonly PortalObjectReader $reader,
 		private readonly ?LoggerInterface $logger = null,
+		private readonly ?MessageBoxDeliveries $deliveries = null,
 	) {
 	}//end __construct()
 
@@ -123,6 +127,10 @@ class PortalInboxReader {
 				}
 			}//end foreach
 		}//end foreach
+
+		if ($this->deliveries !== null) {
+			$rows = $this->deliveries->annotate(subject: $subject, rows: $rows);
+		}
 
 		usort(
 			$rows,

@@ -1,14 +1,9 @@
----
-status: proposed
----
-
-# Spec: portal-message-box-channel
+# portal-message-box-channel Specification
 
 ## Purpose
-
 A decision or message a case app sends to a resident's portal inbox can also go to the resident's government message box, through integriq's digital post adapter. The case app decides which message and supplies the recipient; portaliq sends, records and shows the result, and never keeps the recipient's identity. Requested by TenderNed 407031; closes portaliq matrix row `dem-tnd-berichtenbox`.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: The organisation turns the channel on (REQ-MBC-001)
 
@@ -27,11 +22,13 @@ A `kind: inbox` collection MAY declare a recipient method on its app's portal pr
 - **GIVEN** a recipient method that returns nothing for an informal message
 - **WHEN** that message arrives in the resident's inbox
 - **THEN** nothing is sent to the message box
+- @e2e exclude Needs a case app naming a recipient method; pinned by MessageBoxDispatchJobTest::testNullRecipientSendsNothing
 
 #### Scenario: The identity leaves no trace in portaliq
 - **GIVEN** a message the case app wants delivered to the message box
 - **WHEN** portaliq sends it
 - **THEN** the portal notification log, the portal logs and every portal response hold no citizen service number
+- @e2e exclude A negative over logs and rows; pinned by MessageBoxDispatchJobTest::testRecipientIsInNoLogAndNoRow
 
 ### Requirement: Portaliq asks integriq to send, and records the answer (REQ-MBC-003)
 
@@ -41,11 +38,13 @@ For a message whose collection declares the channel, in an organisation that off
 - **GIVEN** an organisation offering the channel and a case app returning a recipient for a decision letter
 - **WHEN** the letter arrives in the resident's portal inbox
 - **THEN** a send is requested from integriq and the notification log records it as sent, with integriq's message id
+- @e2e exclude Needs integriq and a declaring case app; pinned by MessageBoxDispatchJobTest::testMessageIdIsRecorded and PortalRecordChangeListenerTest::testMessageBoxJobOnlyWhenAllowed
 
 #### Scenario: Integriq is not installed
 - **GIVEN** an instance without integriq
 - **WHEN** a message for the channel arrives
 - **THEN** the attempt is recorded as failed and the resident sees no delivery line
+- @e2e exclude Integriq's absence cannot be staged on the shared instance; pinned by MessageBoxDispatchJobTest::testUnhandledEventIsARefusal
 
 ### Requirement: The resident sees only a real delivery (REQ-MBC-004)
 
@@ -55,11 +54,13 @@ Portaliq SHALL update the attempt when integriq reports a status for a message p
 - **GIVEN** a message box send for a resident's message
 - **WHEN** integriq reports it delivered
 - **THEN** the resident's inbox shows "Also sent to {label}." under that message
+- @e2e exclude Needs integriq's live binding; pinned by PortalInboxReaderTest::testOnlyADeliveredMessageBoxSendIsShown and tests/message-box-channel.spec.mjs
 
 #### Scenario: A simulated send stays quiet
 - **GIVEN** an integriq instance whose digital post binding is simulated
 - **WHEN** it reports the send
 - **THEN** the attempt is recorded as simulated and the inbox shows no delivery line
+- @e2e exclude Needs integriq's simulated binding; pinned by PortalDigitalPostDeliveredListenerTest::testSimulatedStaysSimulated and MessageBoxDispatchJobTest::testAStatusAnnouncedDuringTheSendLandsOnTheRow
 
 ### Requirement: The resident can switch the channel off (REQ-MBC-005)
 

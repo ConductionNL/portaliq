@@ -212,6 +212,12 @@ class NotificationChannels {
 			}
 		}
 
+		// The government message box (inbox-berichtenbox-channel) is one
+		// choice, not a kind: kept only once the resident made it.
+		if (is_array(($stored[MessageBoxChannel::CHANNEL] ?? null)) === true) {
+			$complete[MessageBoxChannel::CHANNEL] = ['enabled' => ($stored[MessageBoxChannel::CHANNEL]['enabled'] ?? true) !== false];
+		}
+
 		return $complete;
 	}//end preferences()
 
@@ -235,6 +241,11 @@ class NotificationChannels {
 					$preferences[$kind][$channel] = $value;
 				}
 			}
+		}
+
+		$enabled = ($asked[MessageBoxChannel::CHANNEL]['enabled'] ?? null);
+		if (is_bool($enabled) === true) {
+			$preferences[MessageBoxChannel::CHANNEL] = ['enabled' => $enabled];
 		}
 
 		return $preferences;

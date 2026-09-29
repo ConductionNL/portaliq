@@ -7454,12 +7454,13 @@
 				"liferay-dxp": "not settled from docs: MijnOverheid and Berichtenbox are not named in any learn.liferay.com page read today; notifications go by e-mail and website only (https://learn.liferay.com/w/dxp/low-code/notifications). A webhook object action (defining-object-actions) could call an outside service, but no Berichtenbox delivery is described."
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "grep -riE 'berichtenbox|mijnoverheid' lib src: 0 hits; lib/Settings/portaliq_register.json portalNotification.channel: 'Only email is implemented'",
-				"reachedOn": "nothing reaches it",
+				"state": "building",
+				"evidence": "lib/Service/Notifications/MessageBoxChannel.php queues lib/BackgroundJob/MessageBoxDispatchJob.php for a new message in an inbox collection declaring messageBox.recipientProvider, when the organisation's presentation settings carry messageBox {sourceId, label} and the resident did not switch it off; lib/Service/Notifications/MessageBoxSender.php asks the case app's provider for the recipient and dispatches integriq's DigitalPostSendRequestedEvent, logging a portalNotification row (channel messageBox) without the recipient; lib/Listener/PortalDigitalPostDeliveredListener.php records integriq's DigitalPostDeliveredEvent (simulated stays simulated); lib/Service/Notifications/MessageBoxDeliveries.php + src/portal/components/InboxPage.jsx show 'Also sent to {label}.' once delivered; NotificationSettings.jsx 'Also send letters to {label}'",
+				"reachedOn": "resident: Inbox, the delivery line under a message and the settings row, in an organisation that offers the channel",
 				"owner": "ConductionNL/portaliq",
-				"note": "No outbound channel to the MijnOverheid Berichtenbox exists; portal messages stay in the portaliq inbox and the only out-of-band channel is e-mail. Specified in openspec/changes/inbox-berichtenbox-channel (OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"note": "The portaliq half is done (archived change 2026-09-29-inbox-berichtenbox-channel). Not built end to end: no case app names a recipient yet, owed by ConductionNL/dossiq (messageBox on its berichten inbox collection and a messageBoxRecipient method, ConductionNL/dossiq#3192), and integriq's live binding to the message box is its open change berichtenbox-digital-post-adapter, so every send is simulated or refused today and the resident sees no delivery line.",
+				"origin": "code",
+				"change": "2026-09-29-inbox-berichtenbox-channel"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",

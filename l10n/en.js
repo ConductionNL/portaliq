@@ -1602,7 +1602,19 @@ OC.L10N.register(
         "Less than a minute": "Less than a minute",
         "{minutes} minutes": "{minutes} minutes",
         "How available each portal was, month by month, with every outage.": "How available each portal was, month by month, with every outage.",
-        "How available each portal was over the last twelve full months, measured by the portal itself every five minutes, with every outage. For a service level review.": "How available each portal was over the last twelve full months, measured by the portal itself every five minutes, with every outage. For a service level review."
+        "How available each portal was over the last twelve full months, measured by the portal itself every five minutes, with every outage. For a service level review.": "How available each portal was over the last twelve full months, measured by the portal itself every five minutes, with every outage. For a service level review.",
+        "External message id": "External message id",
+        "For a `messageBox` row: the message id integriq's digital post adapter answered with. Integriq's status reports find the row by it.": "For a `messageBox` row: the message id integriq's digital post adapter answered with. Integriq's status reports find the row by it.",
+        "For a `messageBox` row: the inbox message this send is about, so the inbox can show where it went.": "For a `messageBox` row: the inbox message this send is about, so the inbox can show where it went.",
+        "Refusal code": "Refusal code",
+        "For a failed `messageBox` row: why no letter left. `not_installed` when integriq is absent, `unhandled` when nothing answered, or the code integriq's refusal carried.": "For a failed `messageBox` row: why no letter left. `not_installed` when integriq is absent, `unhandled` when nothing answered, or the code integriq's refusal carried.",
+        "The app's inbox collection id.": "The app's inbox collection id.",
+        "The contributing app.": "The contributing app.",
+        "The message's id.": "The message's id.",
+        "The out-of-band channel used: `email`, `push` for a web push to the resident's registered devices, or `messageBox` for the government message box an organisation offers through integriq's digital post adapter.": "The out-of-band channel used: `email`, `push` for a web push to the resident's registered devices, or `messageBox` for the government message box an organisation offers through integriq's digital post adapter.",
+        "The outcome of this attempt. `sent` and `failed` for every channel. A `messageBox` row moves on as integriq reports it: `delivered`, `read`, or `simulated` when integriq's binding sends nothing, which is never shown to the resident as delivered.": "The outcome of this attempt. `sent` and `failed` for every channel. A `messageBox` row moves on as integriq reports it: `delivered`, `read`, or `simulated` when integriq's binding sends nothing, which is never shown to the resident as delivered.",
+        "Per kind of notice, whether the resident wants it by e-mail and by push: `case.updated` for changes on their cases, `message.created` for new messages. `messageBox.enabled` is whether letters also go to the government message box, when the organisation offers it (inbox-berichtenbox-channel). A missing choice means on. `notificationChannels.email: false` still switches e-mail off for every kind. Set only through the account's own PATCH /portal/api/identity/notification-preferences.": "Per kind of notice, whether the resident wants it by e-mail and by push: `case.updated` for changes on their cases, `message.created` for new messages. `messageBox.enabled` is whether letters also go to the government message box, when the organisation offers it (inbox-berichtenbox-channel). A missing choice means on. `notificationChannels.email: false` still switches e-mail off for every kind. Set only through the account's own PATCH /portal/api/identity/notification-preferences.",
+        "Message id": "Message id"
     },
     "nplurals=2; plural=(n != 1);"
 )

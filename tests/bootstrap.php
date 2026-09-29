@@ -140,6 +140,26 @@ if (is_string($portaliqOrLib) === true && $portaliqOrLib !== '' && is_dir($porta
 	);
 }
 
+// Integriq outside the container, the same way. The message box channel
+// dispatches integriq's REAL DigitalPostSendRequestedEvent and hears its REAL
+// DigitalPostDeliveredEvent; point PORTALIQ_INTEGRIQ_LIB at an integriq
+// checkout's lib/ and they autoload from there.
+$portaliqIntegriqLib = getenv('PORTALIQ_INTEGRIQ_LIB');
+if (is_string($portaliqIntegriqLib) === true && $portaliqIntegriqLib !== '' && is_dir($portaliqIntegriqLib) === true) {
+	spl_autoload_register(
+		static function (string $class) use ($portaliqIntegriqLib): void {
+			if (str_starts_with($class, 'OCA\\Integriq\\') === false) {
+				return;
+			}
+
+			$file = rtrim($portaliqIntegriqLib, '/') . '/' . str_replace('\\', '/', substr($class, strlen('OCA\\Integriq\\'))) . '.php';
+			if (is_file($file) === true) {
+				require_once $file;
+			}
+		}
+	);
+}
+
 // OCP outside the container. `nextcloud/ocp` ships the public API as plain
 // PSR-4 files but declares no `autoload` block of its own, so Composer never
 // maps `OCP\` and every test that doubles an OCP interface dies with "Class or
@@ -173,7 +193,7 @@ if (interface_exists(\OCA\OpenRegister\Mcp\IMcpToolProvider::class) === false) {
 // hydra connection-registry design D6 and integriq's own classes on
 // `development`, and load only when the real classes are absent. Without OCP on
 // the autoload path their parent class is missing, so they are skipped then.
-foreach (['ConnectionStatusReportedEvent', 'ConnectionRefreshRequestedEvent'] as $integriqStubEvent) {
+foreach (['ConnectionStatusReportedEvent', 'ConnectionRefreshRequestedEvent', 'DigitalPostSendRequestedEvent', 'DigitalPostDeliveredEvent'] as $integriqStubEvent) {
 	if (class_exists('\\OCP\\EventDispatcher\\Event') === true
 		&& class_exists('\\OCA\\Integriq\\Event\\' . $integriqStubEvent) === false
 	) {
