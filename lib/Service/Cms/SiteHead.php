@@ -71,28 +71,68 @@ class SiteHead {
 		}
 
 		$seo = (array)($page['seo'] ?? []);
-		$title = trim((string)($seo['title'] ?? ''));
-		if ($title === '') {
-			$title = trim((string)($page['title'] ?? ''));
-		}
-
-		if ($title !== '' && $portalTitle !== '' && $title !== $portalTitle) {
-			$title = $title . ' - ' . $portalTitle;
-		}
-
-		$description = trim((string)($seo['description'] ?? ''));
-		if ($description === '') {
-			$description = trim((string)($page['summary'] ?? ''));
-		}
 
 		return [
-			'title' => ($title !== '' ? $title : $portalTitle),
-			'description' => $description,
-			'robots' => (($seo['noindex'] ?? false) === true ? 'noindex' : 'index, follow'),
+			'title' => $this->titleOf(page: $page, portalTitle: $portalTitle),
+			'description' => $this->firstFilled(first: $seo['description'] ?? '', second: $page['summary'] ?? ''),
+			'robots' => $this->robotsOf(seo: $seo),
 			'canonical' => $canonical,
-			'ogImage' => $this->imageUrl(value: (string)($seo['image'] ?? ($page['heroImage'] ?? ''))),
+			'ogImage' => $this->imageUrl(value: (string)($seo['image'] ?? '')),
 		];
 	}//end for()
+
+	/**
+	 * The page's search title, or its title, followed by the portal's name.
+	 *
+	 * @param array<string, mixed> $page        The published page.
+	 * @param string               $portalTitle The portal's name.
+	 *
+	 * @return string
+	 */
+	private function titleOf(array $page, string $portalTitle): string {
+		$title = $this->firstFilled(first: ($page['seo']['title'] ?? ''), second: $page['title'] ?? '');
+		if ($title === '' || $title === $portalTitle) {
+			return $portalTitle;
+		}
+
+		if ($portalTitle === '') {
+			return $title;
+		}
+
+		return $title . ' - ' . $portalTitle;
+	}//end titleOf()
+
+	/**
+	 * The robots value a page asks for.
+	 *
+	 * @param array<string, mixed> $seo The page's search fields.
+	 *
+	 * @return string
+	 */
+	private function robotsOf(array $seo): string {
+		if (($seo['noindex'] ?? false) === true) {
+			return 'noindex';
+		}
+
+		return 'index, follow';
+	}//end robotsOf()
+
+	/**
+	 * The first of two values that is not blank, trimmed.
+	 *
+	 * @param mixed $first  The preferred value.
+	 * @param mixed $second The fallback.
+	 *
+	 * @return string
+	 */
+	private function firstFilled(mixed $first, mixed $second): string {
+		$first = trim((string)$first);
+		if ($first !== '') {
+			return $first;
+		}
+
+		return trim((string)$second);
+	}//end firstFilled()
 
 	/**
 	 * A route as pages store it: leading slash, no trailing one, `/` for home.

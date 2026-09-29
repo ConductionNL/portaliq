@@ -86,6 +86,7 @@ class PortalPageController extends Controller {
 	 * @param PortalThemeResolver $themeResolver Maps that portal's theme
 	 *                                           reference to a real themiq
 	 *                                           token stylesheet.
+	 * @param SiteHead $siteHead The head of the page a site request asks for.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -263,8 +264,7 @@ class PortalPageController extends Controller {
 				// its brand a moment later. A consumer that is NOT this
 				// renderer gets the same information — `theme` is on
 				// `/api/content/site` — so this resolves no content the
-				// contract withholds; it only decides which stylesheet tag to
-				// emit.
+				// contract withholds; it only decides which stylesheet tag to emit.
 				'themeStylesheet' => $this->siteThemeStylesheet(),
 				'themeLogoUrl' => $this->siteThemeLogoUrl(),
 				// The NLDS token set this app ships for the serving portal's
@@ -282,7 +282,6 @@ class PortalPageController extends Controller {
 				// which is a WCAG failure and is exactly the shape a request
 				// carrying no Accept-Language would otherwise produce.
 				'locale'          => $this->siteLocale(),
-				// The page's head, from the public read (see siteHead()).
 				'head'            => $this->siteHead(),
 			],
 			// BASE, NOT PUBLIC — a white-label site may not wear Nextcloud's
