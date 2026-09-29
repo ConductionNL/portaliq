@@ -99,3 +99,44 @@
 	list-style: none;
 	row-gap: var(--tilburg-space-row-rat);
 }
+
+/*
+ * THE HERO'S EYEBROW AND ACTIONS (REQ-PTB-006).
+ *
+ * They sit on the hero band, which paints itself, so they name their own
+ * foreground rather than inherit the page's: a hero title inheriting black on
+ * cobalt measured 2.31:1 on the reference branch (93a0ecd). The actions are
+ * outlined in the text colour, so they read on any band colour the theme sets.
+ */
+.ac-hero .pq-hero__eyebrow {
+	color: var(--nldesign-hero-body-color, var(--utrecht-document-inverse-color));
+	font-weight: 600;
+	margin-block-end: var(--tilburg-space-block-snail);
+}
+
+.ac-hero .pq-hero__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--tilburg-space-column-dog);
+	margin-block-start: var(--tilburg-space-row-dog);
+}
+
+.ac-hero .pq-hero__action {
+	border: 2px solid currentcolor;
+	color: var(--nldesign-hero-title-color, var(--utrecht-document-inverse-color));
+	font-weight: 600;
+	padding-block: var(--tilburg-space-block-snail);
+	padding-inline: var(--tilburg-space-column-dog);
+	text-decoration: none;
+}
+
+.ac-hero .pq-hero__action:focus-visible {
+	outline: 3px solid currentcolor;
+	outline-offset: 2px;
+}
+
+.ac-hero .pq-hero__title-icon {
+	display: inline-flex;
+	margin-inline-end: var(--tilburg-space-column-snail);
+	vertical-align: middle;
+}

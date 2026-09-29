@@ -84,8 +84,8 @@ that touches the shell ends with `node tests/shell-snapshot.mjs compare <dir>`.
   - GIVEN `HeroBlock` registered under `hero` WHEN `siteBlockIsBand('hero')` is asked THEN it answers true
   - GIVEN a band splitting the grid WHEN placed THEN the run below starts at its own first row; the grid test fails without `rowOffset`
 - Reference: eed4c3b, 498dede, 4d7140a, 46d7e9f
-- [ ] Implement
-- [ ] Test
+- [x] Implement
+- [x] Test
 
 ### Task 7: Regions in the contract and the renderer
 

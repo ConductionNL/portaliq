@@ -40,3 +40,40 @@ export function withoutStyling(props) {
 
 	return safe
 }
+
+/**
+ * Whether a visitor can follow a destination: an in-site route or a web, mail
+ * or phone address. The same rule the content API applies to footer links.
+ *
+ * @param {string} href The destination.
+ * @return {boolean} True when it may be rendered as a link.
+ *
+ * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-hero-must-cap-its-calls-to-action-and-keep-one-outline-entry-req-ptb-006
+ */
+export function followable(href) {
+	return /^(\/(?!\/)|https?:\/\/|mailto:|tel:)/i.test(String(href || ''))
+}
+
+/**
+ * The hero's calls to action that render: each with a label and a followable
+ * destination, the first two only.
+ *
+ * @param {Array} actions The authored actions.
+ * @return {Array} `{label, href}` entries, two at most.
+ *
+ * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-hero-must-cap-its-calls-to-action-and-keep-one-outline-entry-req-ptb-006
+ */
+export function heroActions(actions) {
+	return (Array.isArray(actions) ? actions : [])
+		.filter(
+			(action) =>
+				action
+				&& String(action.label || '').trim() !== ''
+				&& followable(action.href),
+		)
+		.map((action) => ({
+			label: String(action.label),
+			href: String(action.href),
+		}))
+		.slice(0, 2)
+}
