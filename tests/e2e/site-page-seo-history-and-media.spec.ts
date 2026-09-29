@@ -127,4 +127,44 @@ test.describe('site-page-seo-history-and-media', () => {
 		expect(live).toContain('Friday')
 		expect(live).not.toContain('Monday')
 	})
+
+	test('a draft library item stays private, and a used image is not deleted', async ({
+		request,
+	}) => {
+		const slug = `media-${Date.now()}`
+		await seed(request, 'portal', { slug, title: 'Gemeente Voorbeeld', status: 'published' })
+		const draft = await (await request.post(`${OR_OBJECTS_BASE}/portaliq/media`, {
+			headers: HEADERS,
+			data: { portal: slug, title: 'Concept', kind: 'file', status: 'draft' },
+		})).json()
+		const hidden = await request.get(`/index.php/apps/portaliq/api/content/media/${draft.id}?portal=${slug}`)
+		expect(hidden.status()).toBe(404)
+
+		const noAlt = await request.post(`${OR_OBJECTS_BASE}/portaliq/media`, {
+			headers: HEADERS,
+			data: { portal: slug, title: 'Zonder tekst', kind: 'image', status: 'published' },
+		})
+		expect(noAlt.ok()).toBeFalsy()
+
+		const image = await (await request.post(`${OR_OBJECTS_BASE}/portaliq/media`, {
+			headers: HEADERS,
+			data: { portal: slug, title: 'Stadhuis', kind: 'image', status: 'published', alt: 'Het stadhuis aan de Markt' },
+		})).json()
+		await seed(request, 'page', {
+			portal: slug,
+			route: '/contact',
+			title: 'Contact',
+			status: 'published',
+			heroImage: `media:${image.id}`,
+			body: { type: 'markdown', markdown: 'Tekst' },
+		})
+		const page = await (
+			await request.get(`/index.php/apps/portaliq/api/content/page?portal=${slug}&route=/contact`)
+		).json()
+		expect(page.hero.alt).toBe('Het stadhuis aan de Markt')
+
+		const refused = await request.delete(`${OR_OBJECTS_BASE}/portaliq/media/${image.id}`, { headers: HEADERS })
+		expect(refused.ok()).toBeFalsy()
+		expect(await refused.text()).toContain('/contact')
+	})
 })
