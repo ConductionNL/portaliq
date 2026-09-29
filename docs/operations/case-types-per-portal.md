@@ -11,7 +11,7 @@ A case app can hold case types residents apply for and case types that stay inte
 ## Hide a case type
 
 1. Open **Portals** and open the portal.
-2. Choose **Case types** at the top of the page.
+2. Scroll to **Case types** on the portal's page.
 3. Switch off **Show in this portal** for the case type.
 4. Read the warning: "Residents with a case of this type will no longer see it here."
 5. Choose **Save**.
@@ -30,7 +30,7 @@ Nothing is deleted. The case stays in the case app, and messages already sent st
 
 On the **Request forms** page, **Check form** on an entry for a hidden type says "this portal does not show its case type".
 
-## Which case types the page lists
+## Which case types are listed
 
 - The case types of the portal's published request forms.
 - The case types a case app declares, see below.

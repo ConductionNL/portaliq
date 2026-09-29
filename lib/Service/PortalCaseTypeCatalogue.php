@@ -120,8 +120,9 @@ class PortalCaseTypeCatalogue {
 	public function listFor(array $portal): array {
 		$listed = [];
 		foreach ($this->bindings->declaredCaseTypes(portal: (string)($portal['slug'] ?? '')) as [$register, $schema, $typeId]) {
-			$type = $this->caseTypes->readCaseType(register: $register, schema: $schema, id: $typeId);
-			$listed[$typeId] = $this->entry(register: $register, schema: $schema, typeId: $typeId, label: $this->labelOf(type: ($type ?? []), labelField: ''));
+			$type = ($this->caseTypes->readCaseType(register: $register, schema: $schema, id: $typeId) ?? []);
+			$label = $this->labelOf(type: $type, labelField: '');
+			$listed[$typeId] = $this->entry(register: $register, schema: $schema, typeId: $typeId, label: $label);
 		}
 
 		foreach ($this->declaredSources() as $source) {
@@ -131,18 +132,20 @@ class PortalCaseTypeCatalogue {
 					continue;
 				}
 
-				$listed[$typeId] = $this->entry(register: $source['register'], schema: $source['schema'], typeId: $typeId, label: $this->labelOf(type: $type, labelField: $source['labelField']));
+				$label = $this->labelOf(type: $type, labelField: $source['labelField']);
+				$listed[$typeId] = $this->entry(register: $source['register'], schema: $source['schema'], typeId: $typeId, label: $label);
 			}
 		}
 
 		foreach ($this->normalise(hidden: (array)($portal['hiddenCaseTypes'] ?? [])) as $hidden) {
-			if (isset($listed[$hidden['typeId']]) === false) {
-				$listed[$hidden['typeId']] = $this->entry(register: $hidden['register'], schema: $hidden['schema'], typeId: $hidden['typeId'], label: $hidden['label']);
+			$typeId = $hidden['typeId'];
+			if (isset($listed[$typeId]) === false) {
+				$listed[$typeId] = $this->entry(register: $hidden['register'], schema: $hidden['schema'], typeId: $typeId, label: $hidden['label']);
 			}
 		}
 
 		$hiddenIds = $this->visibility->hiddenTypeIds(portal: $portal);
-		foreach ($listed as $typeId => $entry) {
+		foreach (array_keys($listed) as $typeId) {
 			$listed[$typeId]['shown'] = (in_array((string)$typeId, $hiddenIds, true) === false);
 		}
 
@@ -217,7 +220,11 @@ class PortalCaseTypeCatalogue {
 				subject: ['audience' => $audience, 'trust' => 'high', 'subjectRef' => '', 'organisation' => '']
 			);
 			foreach ((array)($aggregate['contributions'] ?? []) as $contribution) {
-				foreach ((array)(is_array($contribution) === true ? ($contribution['collections'] ?? []) : []) as $collection) {
+				if (is_array($contribution) === false) {
+					continue;
+				}
+
+				foreach ((array)($contribution['collections'] ?? []) as $collection) {
 					$source = $this->sourceOf(collection: $collection);
 					if ($source !== null) {
 						$sources[$source['register'] . '/' . $source['schema']] = $source;

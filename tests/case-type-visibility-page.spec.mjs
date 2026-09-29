@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: EUPL-1.2
 // Copyright (C) 2026 Conduction B.V.
 //
-// case-type-visibility-page.spec.mjs: the portal's "Case types" page
-// (operate-show-per-case-type T06) sends the case types switched off, warns
-// before a type is hidden, and is reachable from the portal's own page.
+// case-type-visibility-page.spec.mjs: the "Case types" widget on a portal's
+// page (operate-show-per-case-type T06) sends the case types switched off,
+// and warns before a type is hidden.
 //
 // Usage:
 //   node --test tests/case-type-visibility-page.spec.mjs
@@ -63,24 +63,20 @@ test('the route names the portal by slug', () => {
 	)
 })
 
-test('the portal page links to the page, and the app registers it', () => {
+test('the portal page carries the widget, and the app registers it', () => {
 	const manifest = JSON.parse(
 		readFileSync(new URL('../src/manifest.json', import.meta.url), 'utf8'),
 	)
-	const page = manifest.pages.find(
-		(candidate) => candidate.id === 'PortalCaseTypes',
-	)
-	assert.equal(page.type, 'custom')
-	assert.equal(page.route, '/portals/:id/case-types')
-	assert.equal(page.component, 'PortalCaseTypeVisibility')
 	const detail = manifest.pages.find(
 		(candidate) => candidate.id === 'PortalDetail',
 	)
+	const widget = detail.config.widgets.find(
+		(candidate) => candidate.type === 'PortalCaseTypes',
+	)
+	assert.equal(widget.title, 'Case types')
 	assert.ok(
-		(detail.config.headerActions || []).some(
-			(action) =>
-				action.type === 'open-page' && action.target === 'PortalCaseTypes',
-		),
+		detail.config.layout.some((item) => item.widgetId === widget.id),
+		'the widget has a place in the layout',
 	)
 	const registry = readFileSync(
 		new URL('../src/registry.js', import.meta.url),
@@ -88,6 +84,6 @@ test('the portal page links to the page, and the app registers it', () => {
 	)
 	assert.match(
 		registry,
-		/PortalCaseTypeVisibility: \{\s*kind: 'page',\s*component: PortalCaseTypeVisibility,/,
+		/PortalCaseTypes: \{[^}]*kind: 'widget',\s*component: PortalCaseTypes,/,
 	)
 })

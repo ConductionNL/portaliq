@@ -276,9 +276,7 @@ class PortalFormBindingResolverTest extends TestCase {
 		$shown = $resolver->render(binding: $this->binding(['portal' => 'gemeente-y']));
 		$this->assertFalse($shown['resolvesToNoForm']);
 
-		$this->assertSame(['aanvragen/verhuizing'], $resolver->hiddenRoutes(portal: 'gemeente-x'));
-		$this->assertSame([], $resolver->hiddenRoutes(portal: 'gemeente-y'));
-		$this->assertSame([], $this->resolver()->hiddenRoutes(portal: 'gemeente-x'));
+		$this->assertSame(['aanvragen/verhuizing', 'aanvragen/kap'], array_column($resolver->publishedBindings(portal: 'gemeente-x'), 'route'));
 	}//end testHiddenCaseTypeResolvesToNoForm()
 
 	/**

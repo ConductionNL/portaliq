@@ -1444,6 +1444,13 @@
               "viewAllRoute": "Glossary",
               "emptyText": "This portal has no glossary terms yet"
             }
+          },
+          {
+            "id": "portal-case-types",
+            "type": "PortalCaseTypes",
+            "title": "Case types",
+            "icon": "ClipboardText",
+            "content": {}
           }
         ],
         "layout": [
@@ -1510,15 +1517,14 @@
             "gridY": 12,
             "gridWidth": 6,
             "gridHeight": 4
-          }
-        ],
-        "headerActions": [
+          },
           {
-            "id": "case-types",
-            "label": "Case types",
-            "icon": "ClipboardText",
-            "type": "open-page",
-            "target": "PortalCaseTypes"
+            "id": "5",
+            "widgetId": "portal-case-types",
+            "gridX": 0,
+            "gridY": 16,
+            "gridWidth": 12,
+            "gridHeight": 5
           }
         ],
         "sidebar": {
@@ -1526,14 +1532,6 @@
           "showMetadata": true
         }
       }
-    },
-    {
-      "id": "PortalCaseTypes",
-      "route": "/portals/:id/case-types",
-      "type": "custom",
-      "title": "Case types",
-      "component": "PortalCaseTypeVisibility",
-      "_note": "Which case types residents see in this portal (operate-show-per-case-type). Lists the case types the portal can name: its published request forms, a case app's declared caseTypeSource, and whatever it already hides. Each has a 'Show in this portal' switch; saving writes portal.hiddenCaseTypes through PortalCaseTypesController (admin-only). Reached from the portal page's 'Case types' header action; `:id` is filled from the current route, as for PageLayout."
     },
     {
       "id": "Menus",

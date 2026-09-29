@@ -43,8 +43,8 @@ import ExampleModal from './modals/ExampleModal.vue'
 import CustomExample from './views/CustomExample.vue'
 import FlowDetailSidebar from './views/flows/FlowDetailSidebar.vue'
 import PageLayoutDesigner from './views/PageLayoutDesigner.vue'
-import PortalCaseTypeVisibility from './views/PortalCaseTypeVisibility.vue'
 import PageTrafficFlow from './widgets/PageTrafficFlow.vue'
+import PortalCaseTypes from './widgets/PortalCaseTypes.vue'
 import PortalTrafficKpi from './widgets/PortalTrafficKpi.vue'
 import TrafficDaily from './widgets/TrafficDaily.vue'
 import TrafficDimensions from './widgets/TrafficDimensions.vue'
@@ -200,6 +200,17 @@ export default {
 		...TRAFFIC_WIDGET_META,
 		_note: 'A page picker, the click grid on a canvas over a plain rectangle, and the scroll deciles as bars (portal-traffic-experiments). Custom because no built-in widget draws a grid, and because a portal with the switch off must read "off" rather than "no clicks".',
 	},
+	PortalCaseTypes: {
+		// @custom-widget-ratchet exclude the switches write the portal's hiddenCaseTypes through an admin controller that lists case types from three sources, which no built-in widget reads or writes
+		kind: 'widget',
+		component: PortalCaseTypes,
+		defaultSize: { w: 12, h: 5 },
+		minSize: { w: 6, h: 3 },
+		maxSize: { w: 12, h: 10 },
+		allowedSlots: ['body'],
+		propsSchema: null,
+		_note: 'The portal\'s case types, each with a "Show in this portal" switch (operate-show-per-case-type). Custom because the list is the union of the portal\'s published forms, the case apps\' caseTypeSource and its own hidden list, read and saved through PortalCaseTypesController, and because hiding must warn before it saves.',
+	},
 	TrafficRecordings: {
 		kind: 'widget',
 		component: TrafficRecordings,
@@ -257,16 +268,6 @@ export default {
 	PageLayoutDesigner: {
 		kind: 'page',
 		component: PageLayoutDesigner,
-	},
-
-	/**
-	 * A portal's "Case types" page (operate-show-per-case-type): one switch
-	 * per case type the portal can name, saved as the portal's hidden list.
-	 * Reached from the portal page's `case-types` header action.
-	 */
-	PortalCaseTypeVisibility: {
-		kind: 'page',
-		component: PortalCaseTypeVisibility,
 	},
 
 	// -------------------------------------------------------------------------

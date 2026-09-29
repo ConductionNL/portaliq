@@ -162,40 +162,15 @@ class PortalFormBindingResolver {
 	}//end declaredCaseTypes()
 
 	/**
-	 * The routes of a portal whose published binding names a case type the
-	 * portal hides, so the catalogue can leave their entries out
-	 * (operate-show-per-case-type REQ-OSC-002).
-	 *
-	 * @param string $portal The portal slug.
-	 *
-	 * @return array<int, string>
-	 *
-	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
-	 */
-	public function hiddenRoutes(string $portal): array {
-		$hidden = ($this->caseTypes?->hiddenInPortal(slug: $portal) ?? []);
-		if ($hidden === []) {
-			return [];
-		}
-
-		$routes = [];
-		foreach ($this->publishedBindings(portal: $portal) as $row) {
-			if (in_array((string)($row['typeId'] ?? ''), $hidden, true) === true) {
-				$routes[] = (string)($row['route'] ?? '');
-			}
-		}
-
-		return array_values(array_unique($routes));
-	}//end hiddenRoutes()
-
-	/**
 	 * A portal's published bindings.
 	 *
 	 * @param string $portal The portal slug.
 	 *
 	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
 	 */
-	private function publishedBindings(string $portal): array {
+	public function publishedBindings(string $portal): array {
 		if ($portal === '') {
 			return [];
 		}
@@ -274,8 +249,7 @@ class PortalFormBindingResolver {
 			'confirmationText' => (string)($binding['confirmationText'] ?? ''),
 		];
 
-		$typeId = (string)($binding['typeId'] ?? '');
-		if ($typeId !== '' && in_array($typeId, ($this->caseTypes?->hiddenInPortal(slug: (string)($binding['portal'] ?? '')) ?? []), true) === true) {
+		if ($this->caseTypes?->hidesBinding(binding: $binding) === true) {
 			// The portal does not show this case type, so its form does not
 			// open (operate-show-per-case-type REQ-OSC-002).
 			return [

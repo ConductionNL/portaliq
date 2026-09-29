@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use OCA\Portaliq\Service\CaseTypeVisibility;
 use OCA\Portaliq\Service\PortalObjectReader;
 
 /**
@@ -56,15 +57,17 @@ class PortalCatalogueReader {
 	 * Constructor.
 	 *
 	 * @param PortalObjectReader $reader Reads the published catalogue.
-	 * @param PortalFormBindingResolver|null $bindings Names the routes whose
-	 *                                                 case type the portal
-	 *                                                 hides
-	 *                                                 (operate-show-per-case-type).
-	 *                                                 Absent hides nothing.
+	 * @param PortalFormBindingResolver|null $bindings The portal's published
+	 *                                                 bindings, to find the
+	 *                                                 routes of hidden types.
+	 * @param CaseTypeVisibility|null $caseTypes The case types a portal hides
+	 *                                           (operate-show-per-case-type).
+	 *                                           Either absent hides nothing.
 	 */
 	public function __construct(
 		private readonly PortalObjectReader $reader,
 		private readonly ?PortalFormBindingResolver $bindings = null,
+		private readonly ?CaseTypeVisibility $caseTypes = null,
 	) {
 	}//end __construct()
 
@@ -95,7 +98,7 @@ class PortalCatalogueReader {
 
 		// An entry that starts a form for a case type this portal hides is
 		// left out (operate-show-per-case-type REQ-OSC-002).
-		$hiddenRoutes = ($this->bindings?->hiddenRoutes(portal: $portal) ?? []);
+		$hiddenRoutes = $this->hiddenRoutes(portal: $portal);
 
 		$topics = [];
 		foreach ($rows as $row) {
@@ -129,4 +132,29 @@ class PortalCatalogueReader {
 
 		return array_values($topics);
 	}//end topicsFor()
+
+	/**
+	 * The routes of a portal whose published binding names a case type the
+	 * portal hides.
+	 *
+	 * @param string $portal The portal slug.
+	 *
+	 * @return array<int, string>
+	 *
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 */
+	private function hiddenRoutes(string $portal): array {
+		if ($this->bindings === null || $this->caseTypes === null) {
+			return [];
+		}
+
+		$routes = [];
+		foreach ($this->bindings->publishedBindings(portal: $portal) as $binding) {
+			if ($this->caseTypes->hidesBinding(binding: $binding) === true) {
+				$routes[] = (string)($binding['route'] ?? '');
+			}
+		}
+
+		return $routes;
+	}//end hiddenRoutes()
 }//end class

@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * operate-show-per-case-type: an administrator hides a case type in one
- * portal from its "Case types" page, and it comes back when shown again.
+ * portal from the "Case types" widget on the portal's page, and it comes
+ * back when shown again.
  *
  * Runs on the seed of seed-cms.sh (the portals open-tilburg and
  * open-venray). The resident half needs a case app whose `cases` collection
@@ -17,14 +18,7 @@
 import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
-import {
-	ADMIN_HEADERS,
-	APP,
-	BASE,
-	ENABLED,
-	login,
-	portalRecord,
-} from './lib/traffic.ts'
+import { ADMIN_HEADERS, APP, ENABLED, login, portalRecord } from './lib/traffic.ts'
 
 const OTHER = 'open-venray'
 const HIDDEN = process.env.E2E_CASE_TYPE_HIDDEN ?? ''
@@ -116,7 +110,7 @@ test.describe('operate-show-per-case-type', () => {
 		)
 
 		await login(page)
-		await page.goto(`${BASE}/index.php/apps/portaliq/portals/${id}/case-types`)
+		await page.goto(`${APP}/portals/${id}`)
 		const toggle = page
 			.getByTestId('case-type-e2e-internal')
 			.getByRole('switch', { name: 'Show in this portal' })

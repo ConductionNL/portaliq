@@ -1627,9 +1627,11 @@
         "Your choices are saved.": "Uw keuzes zijn opgeslagen.",
         "The case types of this portal could not be loaded.": "De zaaktypen van dit portaal konden niet worden geladen.",
         "Your choices could not be saved. Try again.": "Uw keuzes konden niet worden opgeslagen. Probeer het opnieuw.",
-        "This entry opens no form: this portal does not show its case type. Show it again on the portal's case types page.": "Dit item opent geen formulier: dit portaal toont het zaaktype niet. Zet het weer aan op de pagina Zaaktypen van het portaal.",
+        "This entry opens no form: this portal does not show its case type. Show it again under Case types on the portal's page.": "Dit item opent geen formulier: dit portaal toont het zaaktype niet. Zet het weer aan onder Zaaktypen op de pagina van het portaal.",
         "Hidden case types": "Verborgen zaaktypen",
-        "Case types this portal does not show to residents. A case of such a type leaves the case list, its page answers as not found, and its request form does not open. Nothing is deleted. Empty shows every case type.": "Zaaktypen die dit portaal niet aan inwoners toont. Een zaak van zo'n type verdwijnt uit de zakenlijst, de pagina ervan geeft 'niet gevonden' en het aanvraagformulier opent niet. Er wordt niets verwijderd. Leeg toont alle zaaktypen."
+        "Case types this portal does not show to residents. A case of such a type leaves the case list, its page answers as not found, and its request form does not open. Nothing is deleted. Empty shows every case type.": "Zaaktypen die dit portaal niet aan inwoners toont. Een zaak van zo'n type verdwijnt uit de zakenlijst, de pagina ervan geeft 'niet gevonden' en het aanvraagformulier opent niet. Er wordt niets verwijderd. Leeg toont alle zaaktypen.",
+        "The id of the case type, as a case carries it.": "Het id van het zaaktype, zoals een zaak het draagt.",
+        "The case type's name, shown on the portal's Case types list.": "De naam van het zaaktype, zoals die in de lijst Zaaktypen van het portaal staat."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

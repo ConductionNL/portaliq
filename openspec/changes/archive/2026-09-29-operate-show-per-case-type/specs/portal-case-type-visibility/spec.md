@@ -14,14 +14,14 @@ row `dem-tnd-show-per-casetype` (TenderNed 402189).
 
 ### Requirement: An administrator hides a case type in one portal (REQ-OSC-001)
 
-The admin app SHALL offer a "Case types" page per portal listing the case
+The admin app SHALL offer a "Case types" section on each portal's page listing the case
 types the portal can name, each with a "Show in this portal" switch. Turning
 it off SHALL store the case type in the portal's `hiddenCaseTypes`. Only an
-administrator SHALL reach the page and its routes.
+administrator SHALL reach the section and its routes.
 
 #### Scenario: An administrator hides an internal case type
 - **GIVEN** an administrator and a portal whose case app serves "Omgevingsvergunning" and "Handhavingsdossier"
-- **WHEN** they open the portal's "Case types" page and switch off "Show in this portal" for "Handhavingsdossier"
+- **WHEN** they open the portal's page and, under "Case types", switch off "Show in this portal" for "Handhavingsdossier"
 - **THEN** the switch stays off after a reload, and the warning "Residents with a case of this type will no longer see it here." was shown before saving
 - e2e: `tests/e2e/operate-show-per-case-type.spec.ts`
 

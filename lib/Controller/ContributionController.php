@@ -519,7 +519,7 @@ class ContributionController extends Controller implements PortalProtected {
 			filter: (array)($collection['filter'] ?? [])
 		);
 
-		$hidden = $this->hiddenCaseTypesFor(subject: $subject, collection: $collection);
+		$hidden = ($this->caseTypes?->hiddenForCollection(request: $this->request, subject: $subject, collection: $collection) ?? []);
 		if ($hidden !== []) {
 			// A case of a type this portal does not show leaves the list
 			// (operate-show-per-case-type REQ-OSC-002).
@@ -534,24 +534,6 @@ class ContributionController extends Controller implements PortalProtected {
 		return new JSONResponse(['register' => $register, 'schema' => $schema, 'objects' => $objects]);
 	}//end collection()
 
-	/**
-	 * The case types the serving portal hides, for a `cases` collection; empty
-	 * for any other kind, or when no visibility service is wired.
-	 *
-	 * @param array<string, mixed> $subject The resolved subject.
-	 * @param array<string, mixed> $collection The matched collection.
-	 *
-	 * @return array<int, string>
-	 *
-	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
-	 */
-	private function hiddenCaseTypesFor(array $subject, array $collection): array {
-		if ($this->caseTypes === null || ($collection['kind'] ?? '') !== 'cases') {
-			return [];
-		}
-
-		return $this->caseTypes->hiddenForRequest(request: $this->request, subject: $subject);
-	}//end hiddenCaseTypesFor()
 
 	/**
 	 * Find the collection matching (register, schema) in the subject's
@@ -658,7 +640,7 @@ class ContributionController extends Controller implements PortalProtected {
 		// Null = not the subject's OR does not exist — a single 404, no oracle.
 		// A case of a type the serving portal hides answers the same 404
 		// (operate-show-per-case-type REQ-OSC-002).
-		$hidden = $this->hiddenCaseTypesFor(subject: $subject, collection: $collection);
+		$hidden = ($this->caseTypes?->hiddenForCollection(request: $this->request, subject: $subject, collection: $collection) ?? []);
 		if ($object === null || $this->caseTypes?->rowIsHidden(row: $object, collection: $collection, hidden: $hidden) === true) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}

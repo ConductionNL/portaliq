@@ -50,7 +50,7 @@ export function noFormSentence(answer, translate) {
 	}
 	if (answer?.reason === 'hidden_case_type') {
 		return translate(
-			"This entry opens no form: this portal does not show its case type. Show it again on the portal's case types page.",
+			"This entry opens no form: this portal does not show its case type. Show it again under Case types on the portal's page.",
 		)
 	}
 	if (answer?.reason === 'named_form_not_published') {

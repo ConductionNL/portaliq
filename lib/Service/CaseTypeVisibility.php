@@ -144,6 +144,41 @@ class CaseTypeVisibility {
 	}//end hiddenForRequest()
 
 	/**
+	 * The case types the serving portal hides, for a `cases` collection;
+	 * empty for a collection of any other kind.
+	 *
+	 * @param IRequest $request The request.
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param array<string, mixed> $collection The matched collection.
+	 *
+	 * @return array<int, string>
+	 *
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 */
+	public function hiddenForCollection(IRequest $request, array $subject, array $collection): array {
+		if (($collection['kind'] ?? '') !== 'cases') {
+			return [];
+		}
+
+		return $this->hiddenForRequest(request: $request, subject: $subject);
+	}//end hiddenForCollection()
+
+	/**
+	 * Whether a form binding names a case type its own portal hides.
+	 *
+	 * @param array<string, mixed> $binding The binding (`portal` slug, `typeId`).
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 */
+	public function hidesBinding(array $binding): bool {
+		$typeId = (string)($binding['typeId'] ?? '');
+
+		return in_array($typeId, $this->hiddenInPortal(slug: (string)($binding['portal'] ?? '')), true);
+	}//end hidesBinding()
+
+	/**
 	 * The portal a signed-in request is served from: the one it names (header,
 	 * then `?portal=`, then the host), when it belongs to the subject's
 	 * organisation; otherwise the organisation's single portal, or none.

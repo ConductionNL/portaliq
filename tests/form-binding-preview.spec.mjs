@@ -94,7 +94,7 @@ test('a binding that resolves to no form says so as a warning, with its reason',
 		],
 		[
 			{ state: 'resolves_to_none', reason: 'hidden_case_type' },
-			"This entry opens no form: this portal does not show its case type. Show it again on the portal's case types page.",
+			"This entry opens no form: this portal does not show its case type. Show it again under Case types on the portal's page.",
 		],
 	]) {
 		const { previewFormBinding, calls } = build(answer)

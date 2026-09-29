@@ -107,7 +107,7 @@ class PortalCaseListReader {
 				}
 
 				foreach ($this->readCases(subject: $subject, collection: $collection, contributingApp: $appId) as $row) {
-					if ($this->isHiddenType(row: $row, collection: $collection, hidden: $hiddenCaseTypes) === true) {
+					if (in_array($this->typeOf(row: $row, collection: $collection), $hiddenCaseTypes, true) === true) {
 						continue;
 					}
 
@@ -180,29 +180,6 @@ class PortalCaseListReader {
 	}//end listMandatedCases()
 
 	/**
-	 * Whether a case row's type is one the serving portal hides
-	 * (operate-show-per-case-type). The type is read from the collection's
-	 * `caseTypeField`, as a plain id or a reference object carrying one.
-	 *
-	 * @param array<string, mixed> $row The case row.
-	 * @param array<string, mixed> $collection The declared `cases` collection.
-	 * @param array<int, string> $hidden The hidden case type ids.
-	 *
-	 * @return bool
-	 *
-	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
-	 */
-	private function isHiddenType(array $row, array $collection, array $hidden): bool {
-		if ($hidden === []) {
-			return false;
-		}
-
-		$typeId = $this->typeOf(row: $row, collection: $collection);
-
-		return ($typeId !== '' && in_array($typeId, $hidden, true) === true);
-	}//end isHiddenType()
-
-	/**
 	 * The case type id of a row, from the collection's `caseTypeField`: a
 	 * plain id, or a reference object carrying `id` or `uuid`.
 	 *
@@ -269,7 +246,7 @@ class PortalCaseListReader {
 					mandate: $mandate
 				);
 				foreach ($mandated as $row) {
-					if ($this->isHiddenType(row: $row, collection: $collection, hidden: $hidden) === false) {
+					if (in_array($this->typeOf(row: $row, collection: $collection), $hidden, true) === false) {
 						$rows[] = $row;
 					}
 				}

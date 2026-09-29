@@ -211,7 +211,7 @@ class PortalBindingPreview {
 	private function reasonFor(array $render, array $binding): string {
 		if ((string)($render['reason'] ?? '') === 'hiddenCaseType') {
 			return 'This entry opens no form: this portal does not show its case type. '
-				."Show it again on the portal's case types page.";
+				."Show it again under Case types on the portal's page.";
 		}
 
 		if ((string)($render['kind'] ?? '') === PortalFormBindingResolver::KIND_EXTERNAL) {
