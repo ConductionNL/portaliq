@@ -52,6 +52,27 @@ and sent as `mandate` on `fetchMyCases()` and on every case screen read
 group_too_large` shows "This organisation has too many cases to list here.
 Choose a narrower mandate."
 
+**Fixed in the second PR of this change, read at `21d2951`.** The case screen did not read a
+case under a mandate at all: `CitizenCaseController::context()` reads by the
+person's own scope field, and the `mandate` parameter only stamped the entity
+onto a write (`actingAs()`). Sending `mandate` on `fetchCitizenCase()` alone
+would have opened nothing. So `show()` now falls back, only on
+`case-not-yours`, to `MandatedCaseReader`, which asks
+`PortalCaseListReader::listMandatedCases()` for the one named mandate and
+picks the case out of that list. The screen can therefore never open a case
+the list would not show. It is read-only: the window and documents are
+closed with "You are viewing this case on behalf of {label}. It cannot be
+changed here.", no documents are listed, and every write still goes through
+the person's own ownership check. `mandate=self` means "yourself": without it
+`PortalMandateService::activeMandate()` spends the first mandate held, which
+would make "yourself" impossible to choose.
+
+The mandates held are learned from the `GET /portal/api/my-cases` answer
+("My cases" is the page the portal opens on), and a refusal never forgets
+them. A row opened from "My cases" hands its row to the case app's page, so a
+mandated case, which is not in the person's own rows, still opens there; the
+case screen reads it under `row._mandate.id`.
+
 ## D4. A row opens where the case lives
 
 A row carries `_source.collection`. Choosing it switches to the nav page of

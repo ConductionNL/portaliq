@@ -36,8 +36,19 @@ With at least one collection declaring `closedField`, the page shows two tabs, *
 
 A row opens the page of its own app that shows the collection, with the case selected. When no page of the app shows the collection, the row is plain text, not a link.
 
+## Acting for someone else
+
+A person who holds a mandate sees **Acting for** ("Namens") in the portal header, with **Yourself** ("Uzelf") and every mandate by its label. The choice holds for the rest of the session.
+
+- **Yourself** lists only the person's own cases.
+- A mandate lists the person's own cases plus the cases that mandate reaches. Each of those shows the mandate's label, so the person sees why they may read it.
+- A mandate whose party tree is larger than the portal's bound lists nothing and says "This organisation has too many cases to list here. Choose a narrower mandate."
+- A case opened under a mandate shows read-only: "You are viewing this case on behalf of {label}. It cannot be changed here." Nothing can be changed, added or withdrawn, and no documents are listed.
+
+A case app opens its cases to mandates by declaring `mandateField` on the collection: the field that holds the party the case belongs to. A collection without it is never read through a mandate. Mandates are recorded on `portalMandate` by staff, or by a granted access request.
+
 ## What it reads
 
-`GET /portal/api/my-cases` with the portal bearer answers `{cases, mandates, activeMandate}`. Each case carries `_source` (`appId`, `label`, `register`, `schema`, `collection`) and `_closed`. `GET /portal/api/contributions` announces the page as `cases: {enabled, closedMarker}`.
+`GET /portal/api/my-cases` with the portal bearer answers `{cases, mandates, activeMandate}`. It takes `mandate=<id>` to act under a mandate, and `mandate=self` for yourself. The case screen takes the same `mandate` on `GET /portal/api/citizen/cases/{register}/{schema}/{id}`. Each case carries `_source` (`appId`, `label`, `register`, `schema`, `collection`) and `_closed`. `GET /portal/api/contributions` announces the page as `cases: {enabled, closedMarker}`.
 
 To check it: declare `kind: cases` and `closedField` on a test collection, give a test resident one case with an end date and one without, and sign in. **My cases** lists the open case under **Open (1)** and the other under **Closed (1)**.
