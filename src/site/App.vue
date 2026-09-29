@@ -1003,18 +1003,6 @@ export default {
 		},
 
 		/**
-		 * A real, shareable href for an in-site route.
-		 *
-		 * The breadcrumb intercepts the click, but the anchor still carries a
-		 * working URL so middle-click, "open in new tab" and a page whose
-		 * bundle failed to load all behave.
-		 *
-		 * @param {string} route The in-site route.
-		 * @return {string} The href.
-		 *
-		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
-		 */
-		/**
 		 * A shell block's authored props, without `style` and `class`. The
 		 * shell's own data is bound after them, so it wins.
 		 *
@@ -1027,6 +1015,18 @@ export default {
 			return withoutStyling(block.props)
 		},
 
+		/**
+		 * A real, shareable href for an in-site route.
+		 *
+		 * The breadcrumb intercepts the click, but the anchor still carries a
+		 * working URL so middle-click, "open in new tab" and a page whose
+		 * bundle failed to load all behave.
+		 *
+		 * @param {string} route The in-site route.
+		 * @return {string} The href.
+		 *
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
+		 */
 		hrefForRoute(route) {
 			const url = new URL(window.location.href)
 			url.search = ''
