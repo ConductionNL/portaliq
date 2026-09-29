@@ -116,17 +116,7 @@ class MessageBoxSender {
 		}
 
 		$letter = $this->letter(message: $message, fields: (array)($argument['letterFields'] ?? []));
-		if ($letter['body'] === '') {
-			// Never an empty letter: the resident would receive a blank
-			// message in their government message box. Refused and recorded.
-			$this->logger->warning(
-				'Portaliq: message box send refused, the message has no text',
-				['app' => $record['app'], 'collection' => $record['collection'], 'id' => $record['id']]
-			);
-			$outcome = ['status' => 'failed', 'refusalCode' => 'empty_body'];
-		} else {
-			$outcome = $this->request(sourceId: $offer['sourceId'], recipient: $recipient, letter: $letter, record: $record);
-		}
+		$outcome = $this->request(sourceId: $offer['sourceId'], recipient: $recipient, letter: $letter, record: $record);
 
 		unset($recipient);
 
@@ -163,6 +153,16 @@ class MessageBoxSender {
 	 * @return array<string, string> `status`, and `externalMessageId` or `refusalCode`.
 	 */
 	private function request(string $sourceId, string $recipient, array $letter, array $record): array {
+		if ($letter['body'] === '') {
+			// Never an empty letter: the resident would receive a blank
+			// message in their government message box. Refused and recorded.
+			$this->logger->warning(
+				'Portaliq: message box send refused, the message has no text',
+				['app' => $record['app'], 'collection' => $record['collection'], 'id' => $record['id']]
+			);
+			return ['status' => 'failed', 'refusalCode' => 'empty_body'];
+		}
+
 		if (class_exists($this->sendEvent) === false) {
 			return ['status' => 'failed', 'refusalCode' => 'not_installed'];
 		}
@@ -317,7 +317,7 @@ class MessageBoxSender {
 	 * The letter from the message: the text and subject from the fields the
 	 * collection declares, else the first usual name that holds text.
 	 *
-	 * dossiq keeps a portal letter's text in `content`; reading `body` alone
+	 * Dossiq keeps a portal letter's text in `content`; reading `body` alone
 	 * sent it with an empty body.
 	 *
 	 * @param array<string, mixed> $message The message.
