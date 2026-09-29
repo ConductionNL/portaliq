@@ -69,7 +69,7 @@
     "check:intake-entry": "node --test tests/intake-entry.spec.mjs",
     "check:access-request-asker": "node --test tests/access-request-asker.spec.mjs",
     "check:signing-dialog": "node --test tests/signing-dialog.spec.mjs",
-    "check:case-type-visibility": "node --test tests/case-type-portal-header.spec.mjs"
+    "check:case-type-visibility": "node --test tests/case-type-portal-header.spec.mjs tests/case-type-visibility-page.spec.mjs"
   },
   "browserslist": [
     "extends @nextcloud/browserslist-config"

@@ -1619,7 +1619,17 @@
         "This task was due on %1$s.": "Deze taak moest af zijn op %1$s.",
         "If you do not respond: %1$s": "Als u niet reageert: %1$s",
         "Your task in the portal of %1$s is overdue": "Uw taak in het portaal van %1$s is over de termijn",
-        "A task in the portal of %1$s is past its deadline. Log in to finish it: %2$s": "Een taak in het portaal van %1$s is over de termijn. Log in om de taak af te ronden: %2$s"
+        "A task in the portal of %1$s is past its deadline. Log in to finish it: %2$s": "Een taak in het portaal van %1$s is over de termijn. Log in om de taak af te ronden: %2$s",
+        "Choose which case types residents see in {portal}.": "Kies welke zaaktypen inwoners zien in {portal}.",
+        "This portal names no case types yet. Publish a request form, or ask the case app to declare its case types.": "Dit portaal kent nog geen zaaktypen. Publiceer een aanvraagformulier, of vraag de zaakapp om zijn zaaktypen op te geven.",
+        "Show in this portal": "Tonen in dit portaal",
+        "Residents with a case of this type will no longer see it here.": "Inwoners met een zaak van dit type zien die hier niet meer.",
+        "Your choices are saved.": "Uw keuzes zijn opgeslagen.",
+        "The case types of this portal could not be loaded.": "De zaaktypen van dit portaal konden niet worden geladen.",
+        "Your choices could not be saved. Try again.": "Uw keuzes konden niet worden opgeslagen. Probeer het opnieuw.",
+        "This entry opens no form: this portal does not show its case type. Show it again on the portal's case types page.": "Dit item opent geen formulier: dit portaal toont het zaaktype niet. Zet het weer aan op de pagina Zaaktypen van het portaal.",
+        "Hidden case types": "Verborgen zaaktypen",
+        "Case types this portal does not show to residents. A case of such a type leaves the case list, its page answers as not found, and its request form does not open. Nothing is deleted. Empty shows every case type.": "Zaaktypen die dit portaal niet aan inwoners toont. Een zaak van zo'n type verdwijnt uit de zakenlijst, de pagina ervan geeft 'niet gevonden' en het aanvraagformulier opent niet. Er wordt niets verwijderd. Leeg toont alle zaaktypen."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

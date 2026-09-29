@@ -43,6 +43,7 @@ import ExampleModal from './modals/ExampleModal.vue'
 import CustomExample from './views/CustomExample.vue'
 import FlowDetailSidebar from './views/flows/FlowDetailSidebar.vue'
 import PageLayoutDesigner from './views/PageLayoutDesigner.vue'
+import PortalCaseTypeVisibility from './views/PortalCaseTypeVisibility.vue'
 import PageTrafficFlow from './widgets/PageTrafficFlow.vue'
 import PortalTrafficKpi from './widgets/PortalTrafficKpi.vue'
 import TrafficDaily from './widgets/TrafficDaily.vue'
@@ -256,6 +257,16 @@ export default {
 	PageLayoutDesigner: {
 		kind: 'page',
 		component: PageLayoutDesigner,
+	},
+
+	/**
+	 * A portal's "Case types" page (operate-show-per-case-type): one switch
+	 * per case type the portal can name, saved as the portal's hidden list.
+	 * Reached from the portal page's `case-types` header action.
+	 */
+	PortalCaseTypeVisibility: {
+		kind: 'page',
+		component: PortalCaseTypeVisibility,
 	},
 
 	// -------------------------------------------------------------------------
