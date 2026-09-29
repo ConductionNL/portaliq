@@ -43,6 +43,7 @@ use OCA\Portaliq\Contribution\CitizenWriteActionFinder;
 use OCA\Portaliq\Contribution\CitizenWriteConfigNormaliser;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Event\PortalClientWriteEvent;
+use OCA\Portaliq\Service\CitizenCaseDocuments;
 use OCA\Portaliq\Service\CitizenWritableSetResolver;
 use OCA\Portaliq\Service\CitizenWriteRecorder;
 use OCA\Portaliq\Service\CitizenWriteThrottle;
@@ -59,6 +60,7 @@ use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\AppFramework\Http\Response;
 use OCP\IL10N;
 use OCP\IRequest;
 use Psr\Log\LoggerInterface;
@@ -102,6 +104,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 * @param PortalPartyTreeResolver $tree How far a mandate reaches.
 	 * @param IL10N $l10n The sentences a refusal is given with.
 	 * @param LoggerInterface $logger Records the cause of a translated failure.
+	 * @param CitizenCaseDocuments $documents Lists and opens the documents on the case.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -119,6 +122,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 		private readonly PortalPartyTreeResolver $tree,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
+		private readonly CitizenCaseDocuments $documents,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -150,32 +154,38 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			// from the case type rather than from any list the portal keeps
 			// (withdrawing-your-own-case REQ-WOC-001).
 			'withdrawal' => $this->writableSet->withdrawal(action: $context['action'], case: $context['case']),
-			'documents' => $this->releasedDocuments(context: $context, register: $register, schema: $schema, id: $id),
+			'documents' => $this->documents->listFor(context: $context, register: $register, schema: $schema, id: $id),
+			'documentsLabel' => (string)($context['documents']['label'] ?? ''),
 		]);
 	}//end show()
 
 	/**
-	 * The files a resident may see on their own case. The case folder also
-	 * holds what staff added and never released, so the list is empty unless
-	 * the app opted the case's collection into downloads, and even then holds
-	 * only the files the organisation released (portaliq#798).
+	 * Open one document the case screen listed. The id picks among what this
+	 * case lists now; nothing in the request says where a file lives. A
+	 * foreign case, a missing one and an unlisted id answer the same 404
+	 * (cases-documents-on-the-case, REQ-CDC-002).
 	 *
-	 * @param array<string, mixed> $context The resolved context.
 	 * @param string $register The register the case lives in.
 	 * @param string $schema The schema the case lives in.
 	 * @param string $id The case id.
+	 * @param string $documentId The listed entry's id.
 	 *
-	 * @return array<int, array<string, mixed>>
+	 * @return Response The file, or 401 / 404.
 	 *
-	 * @spec openspec/changes/cases-documents-on-the-case/design.md
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-every-listed-document-opens-from-the-case-screen-req-cdc-002
 	 */
-	private function releasedDocuments(array $context, string $register, string $schema, string $id): array {
-		if (($context['filesDownload'] ?? false) !== true) {
-			return [];
-		}
-
-		return $this->fileReader->listReleasedFiles(register: $register, schema: $schema, id: $id);
-	}//end releasedDocuments()
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 60, period: 60)]
+	public function document(string $register, string $schema, string $id, string $documentId): Response {
+		return $this->documents->open(
+			context: $this->context(register: $register, schema: $schema, id: $id),
+			register: $register,
+			schema: $schema,
+			id: $id,
+			documentId: $documentId
+		);
+	}//end document()
 
 	/**
 	 * Amend the answers the citizen already gave, inside the declared window.
@@ -281,7 +291,10 @@ class CitizenCaseController extends Controller implements PortalProtected {
 				existing: $this->fileReader->listFiles(register: $register, schema: $schema, id: $id),
 				fileName: $upload['name']
 			),
-			content: $upload['content']
+			content: $upload['content'],
+			// Tagged, so the case screen lists it under "Sent by you" and
+			// nothing else from the folder (cases-documents-on-the-case).
+			tags: [PortalFileWriter::TAG_FROM_APPLICANT]
 		);
 		if ($attached === null) {
 			return $this->refuse(
@@ -515,6 +528,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			'action' => $action,
 			'app' => $match['app'],
 			'filesDownload' => $match['filesDownload'],
+			'documents' => ($match['documents'] ?? null),
 			'case' => $case,
 			'set' => $this->writableSet->resolve(
 				action: $action,
@@ -663,7 +677,6 @@ class CitizenCaseController extends Controller implements PortalProtected {
 
 		return new JSONResponse(['case' => $updated]);
 	}//end applyAmendment()
-
 
 	/**
 	 * A refusal the citizen can read: one sentence, plus a slug the portal

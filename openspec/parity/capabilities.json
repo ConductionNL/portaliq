@@ -1850,7 +1850,7 @@
 			"id": "cas-documents-view",
 			"area": "cases",
 			"name": "See the documents already attached to your case.",
-			"portaliq": "partial",
+			"portaliq": "yes",
 			"open-inwoner": "yes",
 			"nl-portal": "yes",
 			"xxllnc-pip": "yes",
@@ -1864,13 +1864,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/fields/attachment-fields 'Once attached, you can view an object entry to download the file'; each attachment field holds one file ('Each field can only be linked to one file at a time'). Documents on a custom case object only. [was unknown]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "src/portal/components/CitizenCase.jsx:181-186 lists state.data.documents as plain <li>{file.name}</li>, no download control; the generic FileList in PageView.jsx:96-127 (a different block, for filesDownload collections) DOES render a download button",
-				"reachedOn": "PageView.jsx 'citizenCase' block for the list; the generic 'detail' block's FileList for download",
+				"state": "built",
+				"evidence": "lib/Service/CitizenCaseDocuments.php lists a case's documents for the case screen (the case app's documents.provider entries, decision first, else the files released in OpenRegister where filesDownload is on, plus the resident's uploads tagged portal:from-applicant), never with the file reference; CitizenCaseController::document (GET /portal/api/citizen/cases/{register}/{schema}/{id}/documents/{documentId}) streams only an entry listed for that case now, audited; src/portal/components/CitizenCase.jsx shows 'Besluit', 'Documenten', 'Door u gestuurd', each a download (portalApi.downloadCitizenDocument)",
+				"reachedOn": "resident: portal case screen (citizenCase block) -> Documents section",
 				"owner": "ConductionNL/portaliq",
-				"note": "On the citizen-case view itself the citizen can see a document's name but has no way to download it from that screen; downloading only works through the separate generic detail/FileList block. Specified in openspec/changes/cases-documents-on-the-case (OpenSpec pass 2026-09-27).",
+				"note": "Built 2026-09-29 (cases-documents-on-the-case). A resident opens every listed document from the case screen: their own uploads always, the organisation's released files where the collection opted into downloads, and what a case app publishes through its documents method.",
 				"origin": "code",
-				"defectCandidate": "src/portal/components/CitizenCase.jsx:181-186 the case's own document list has no download link/button, even though portalApi.js:452 downloadFile() exists and PortalFileReader backs it; a live check should confirm the citizen truly cannot fetch a case document from this screen (code reading, needs a live check)"
+				"change": "2026-09-29-cases-documents-on-the-case"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2080,12 +2080,13 @@
 				"liferay-dxp": "not settled from docs: no per-document publish-to-requester control on object attachments was found in the attachment field or permissions pages read today."
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "same mechanism as cas-documents-view/cas-download-generic: server-side ownership re-verification (PortalFileReader) scopes files to the subject, but the citizen-case screen's own list has no download action",
-				"reachedOn": "PageView.jsx citizenCase block (list only) / detail block (list + download)",
+				"state": "building",
+				"evidence": "lib/Service/CitizenCaseDocuments.php lists a case's documents for the case screen (the case app's documents.provider entries, decision first, else the files released in OpenRegister where filesDownload is on, plus the resident's uploads tagged portal:from-applicant), never with the file reference; CitizenCaseController::document (GET /portal/api/citizen/cases/{register}/{schema}/{id}/documents/{documentId}) streams only an entry listed for that case now, audited; src/portal/components/CitizenCase.jsx shows 'Besluit', 'Documenten', 'Door u gestuurd', each a download (portalApi.downloadCitizenDocument)",
+				"reachedOn": "resident: portal case screen (citizenCase block) -> Documents section",
 				"owner": "ConductionNL/portaliq",
-				"note": "See cas-documents-view for the split between viewing and downloading. Specified in openspec/changes/cases-documents-on-the-case (OpenSpec pass 2026-09-27).",
-				"origin": "competitor"
+				"note": "The portaliq half is built (archived change 2026-09-29-cases-documents-on-the-case): the case app decides what is published through its documents method, and nothing else from the case folder is listed but the resident's own tagged uploads. Owed by ConductionNL/dossiq: the caseDocuments method with its publication rule, ConductionNL/dossiq#3205.",
+				"origin": "competitor",
+				"change": "2026-09-29-cases-documents-on-the-case"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2109,12 +2110,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/fields/attachment-fields: a file on an object entry can be downloaded by users with view permission; a decision letter would be an attachment on a custom case object. [was unknown]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "no dedicated 'decision letter' concept anywhere in lib/ or src/; a decision letter would have to arrive as an ordinary file on a filesDownload-enabled collection, reachable only through the generic detail block (see cas-download-generic), not the citizen-case screen",
-				"reachedOn": "PageView.jsx detail block's FileList, if the contributing app attaches the decision as a file there",
+				"state": "building",
+				"evidence": "lib/Service/CitizenCaseDocuments.php lists a case's documents for the case screen (the case app's documents.provider entries, decision first, else the files released in OpenRegister where filesDownload is on, plus the resident's uploads tagged portal:from-applicant), never with the file reference; CitizenCaseController::document (GET /portal/api/citizen/cases/{register}/{schema}/{id}/documents/{documentId}) streams only an entry listed for that case now, audited; src/portal/components/CitizenCase.jsx shows 'Besluit', 'Documenten', 'Door u gestuurd', each a download (portalApi.downloadCitizenDocument)",
+				"reachedOn": "resident: portal case screen (citizenCase block) -> Documents section",
 				"owner": "ConductionNL/portaliq",
-				"note": "No decision-specific affordance exists; it rides on the generic file-download mechanism, which the case's own screen does not expose (cas-documents-view defect). Specified in openspec/changes/cases-documents-on-the-case (OpenSpec pass 2026-09-27).",
-				"origin": "competitor"
+				"note": "The portaliq half is built (archived change 2026-09-29-cases-documents-on-the-case): a case app's kind decision entry is shown first under 'Besluit' and downloads. Owed by ConductionNL/dossiq: the caseDocuments method returning decisionDocument links as kind decision, ConductionNL/dossiq#3205 (and dossiq#3152 for the case screen itself).",
+				"origin": "competitor",
+				"change": "2026-09-29-cases-documents-on-the-case"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",

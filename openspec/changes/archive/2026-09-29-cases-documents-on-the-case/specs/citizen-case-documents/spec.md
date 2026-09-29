@@ -18,11 +18,13 @@ A case collection MAY declare `documents: {label, provider}`, where `provider` n
 - **GIVEN** a case app whose documents method returns a decision letter and an information letter for a case
 - **WHEN** the resident opens that case in the portal
 - **THEN** the case screen lists both, and no other file from the case folder
+- @e2e exclude needs a case app with a documents method; pinned by CitizenCaseControllerTest::testShowListsTaggedUploadsOnly and ::testShowNeverReturnsAFileReference
 
 #### Scenario: A file reference never reaches the browser
 - **GIVEN** a published document stored in an OpenRegister object folder
 - **WHEN** the portal SPA calls `GET /portal/api/citizen/cases/{register}/{schema}/{id}`
 - **THEN** the answer names the document's id, title, kind and date, and no register, schema or file id
+- @e2e exclude a negative over the response; pinned by CitizenCaseControllerTest::testShowNeverReturnsAFileReference
 
 ### Requirement: Every listed document opens from the case screen (REQ-CDC-002)
 
@@ -32,16 +34,19 @@ A case collection MAY declare `documents: {label, provider}`, where `provider` n
 - **GIVEN** a resident whose case lists an information letter
 - **WHEN** they press it on the case screen
 - **THEN** the file downloads and the portal audit trail records a download
+- @e2e exclude needs a case app with a documents method; pinned by CitizenCaseControllerTest::testStreamsAPublishedDocument and ::testDownloadIsAudited
 
 #### Scenario: Another resident's document stays closed
 - **GIVEN** a document published on someone else's case
 - **WHEN** a resident requests it through their own session
 - **THEN** the portal answers 404, as for a document that does not exist
+- @e2e exclude pinned by CitizenCaseControllerTest::testForeignCaseIs404
 
 #### Scenario: A guessed id is refused
 - **GIVEN** a resident's own case
 - **WHEN** they request a document id the case app did not return for that case
 - **THEN** the portal answers 404
+- @e2e exclude pinned by CitizenCaseControllerTest::testUnlistedIdIs404
 
 ### Requirement: The decision is shown first (REQ-CDC-003)
 
@@ -51,6 +56,7 @@ Entries the case app marks with `kind` `decision` SHALL be listed first on the c
 - **GIVEN** a decided case with a decision letter and three other documents
 - **WHEN** the resident opens the case
 - **THEN** the decision letter is first, under "Decision", with the decision date
+- @e2e exclude needs a case app with a documents method; pinned by CitizenCaseControllerTest::testShowNeverReturnsAFileReference (order) and tests/case-documents-screen.spec.mjs (groups)
 
 ### Requirement: The resident's own uploads stay visible, and nothing else from the folder (REQ-CDC-004)
 
@@ -65,6 +71,7 @@ A document the resident adds through the portal SHALL be tagged `portal:from-app
 - **GIVEN** a handler's working note stored in the case object's folder without the tag
 - **WHEN** the resident opens the case
 - **THEN** the note is not listed, and a request for it answers 404
+- @e2e exclude placing a staff file in the case folder needs OpenRegister's file API as staff; pinned by CitizenCaseControllerTest::testUntaggedFolderFileIs404 and PortalFileReaderTest::testTheTaggedListingKeepsOnlyTaggedFiles
 
 ### Requirement: A case with nothing published says so (REQ-CDC-005)
 

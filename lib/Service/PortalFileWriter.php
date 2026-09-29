@@ -59,6 +59,15 @@ class PortalFileWriter {
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
 	/**
+	 * The tag on a file a resident sent through the portal, so the case screen
+	 * can list it apart from what staff put in the same folder
+	 * (cases-documents-on-the-case, REQ-CDC-004).
+	 *
+	 * @var string
+	 */
+	public const TAG_FROM_APPLICANT = 'portal:from-applicant';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param ContainerInterface $container For resolving OpenRegister's FileService.
@@ -86,6 +95,7 @@ class PortalFileWriter {
 	 * @param string $id The owned object's id (ownership already verified).
 	 * @param string $fileName The sanitised upload filename.
 	 * @param string $content The raw file bytes.
+	 * @param array<int, string> $tags Tags OpenRegister puts on the file, such as TAG_FROM_APPLICANT.
 	 *
 	 * @return array<string, mixed>|null The attached file's metadata, or null on failure.
 	 *
@@ -97,6 +107,7 @@ class PortalFileWriter {
 		string $id,
 		string $fileName,
 		string $content,
+		array $tags = [],
 	): ?array {
 		$fileService = $this->fileService();
 		if ($fileService === null) {
@@ -120,6 +131,7 @@ class PortalFileWriter {
 				objectEntity: $entity,
 				fileName: $fileName,
 				content: $content,
+				tags: $tags,
 				_schema: $schema,
 				_register: $register
 			));

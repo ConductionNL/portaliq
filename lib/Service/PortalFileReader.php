@@ -124,11 +124,49 @@ class PortalFileReader {
 	 *
 	 * @return array<int, array<string, mixed>> The released files' safe metadata.
 	 *
-	 * @spec openspec/changes/cases-documents-on-the-case/design.md
+	 * @spec openspec/specs/citizen-case-documents/spec.md
 	 */
 	public function listReleasedFiles(string $register, string $schema, string $id): array {
 		return $this->listing(register: $register, schema: $schema, id: $id, sharedFilesOnly: true);
 	}//end listReleasedFiles()
+
+	/**
+	 * List only the files carrying a tag on an object the subject already
+	 * owns: the resident's own uploads (PortalFileWriter::TAG_FROM_APPLICANT),
+	 * never what staff put in the same folder (cases-documents-on-the-case,
+	 * REQ-CDC-004). Tags are OpenRegister's (`FileService::getFileTags()`).
+	 * The caller MUST have re-verified ownership before calling this.
+	 *
+	 * @param string $register The register slug/id.
+	 * @param string $schema The schema slug/id.
+	 * @param string $id The owned object's id (ownership already verified).
+	 * @param string $tag The tag a file must carry.
+	 *
+	 * @return array<int, array<string, mixed>> The tagged files' safe metadata.
+	 *
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-the-residents-own-uploads-stay-visible-and-nothing-else-from-the-folder-req-cdc-004
+	 */
+	public function listTaggedFiles(string $register, string $schema, string $id, string $tag): array {
+		$fileService = $this->fileService();
+		if ($fileService === null) {
+			return [];
+		}
+
+		$tagged = [];
+		foreach ($this->listFiles(register: $register, schema: $schema, id: $id) as $file) {
+			try {
+				$tags = $fileService->getFileTags((string)($file['id'] ?? ''));
+			} catch (Throwable $e) {
+				continue;
+			}
+
+			if (is_array($tags) === true && in_array($tag, $tags, true) === true) {
+				$tagged[] = $file;
+			}
+		}
+
+		return $tagged;
+	}//end listTaggedFiles()
 
 	/**
 	 * The listing both public readers share.

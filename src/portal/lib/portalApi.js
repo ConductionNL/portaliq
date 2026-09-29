@@ -634,6 +634,42 @@ export function createPortalApi(config) {
 		},
 
 		/**
+		 * Open one document the case screen listed. Only the entry id travels:
+		 * the server looks it up again among what this case lists, so the
+		 * browser never learns where a file lives (cases-documents-on-the-case,
+		 * REQ-CDC-002). Saved client-side through a Blob URL, as downloadFile().
+		 *
+		 * @param {object} collection Manifest collection: `{ register, schema }`.
+		 * @param {string} caseId The case id.
+		 * @param {object} entry The listed entry: `{ id, title }`.
+		 * @return {Promise<object>} `{ ok }`, or `{ ok: false, status }`.
+		 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-every-listed-document-opens-from-the-case-screen-req-cdc-002
+		 */
+		async downloadCitizenDocument(collection, caseId, entry) {
+			const url = `${base}${citizenCase(collection.register, collection.schema)}/${encodeURIComponent(caseId)}/documents/${encodeURIComponent(entry.id)}`
+			try {
+				const res = await fetch(url, { headers: { ...authHeaders() } })
+				if (!res.ok) {
+					return { ok: false, status: res.status }
+				}
+				const blob = await res.blob()
+				const objectUrl = window.URL.createObjectURL(blob)
+				const link = document.createElement('a')
+				link.href = objectUrl
+				link.download = entry.title || 'download'
+				document.body.appendChild(link)
+				link.click()
+				setTimeout(() => {
+					link.remove()
+					window.URL.revokeObjectURL(objectUrl)
+				}, 10000)
+				return { ok: true }
+			} catch {
+				return { ok: false, status: 0 }
+			}
+		},
+
+		/**
 		 * Withdraw the citizen's own request. Only the reason travels; the
 		 * server decides whether the window is open and which status follows
 		 * (case-actions-withdraw-screen, REQ-WDS-002).

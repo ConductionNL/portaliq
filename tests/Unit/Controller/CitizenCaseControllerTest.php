@@ -19,7 +19,12 @@ use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\CaseTypeReader;
 use OCA\Portaliq\Service\CitizenWritableSetResolver;
 use OCA\Portaliq\Service\CitizenWriteRecorder;
+use OCA\Portaliq\Service\CitizenCaseDocuments;
 use OCA\Portaliq\Service\CitizenWriteThrottle;
+use OCA\Portaliq\Contribution\PortalProviderLocator;
+use OCA\Portaliq\Service\PortalAuditHook;
+use OCA\Portaliq\Service\PortalCaseDocumentReader;
+use OCP\AppFramework\Http\StreamResponse;
 use OCA\Portaliq\Service\PortalFileReader;
 use OCA\Portaliq\Service\PortalFileWriter;
 use OCA\Portaliq\Service\PortalObjectReader;
@@ -68,6 +73,45 @@ class CitizenCaseControllerTest extends TestCase {
 	private const OTHER_CASE_ID = 'zaak-2';
 
 	private const CASE_ID = 'zaak-1';
+
+	/**
+	 * What the case app publishes on zaak-1: a decision and a letter, with
+	 * the file references only the server may see.
+	 *
+	 * @var array<int, array<string, mixed>>
+	 */
+	private const PUBLISHED = [
+		['id' => 'brief-1', 'title' => 'Ontvangstbevestiging', 'kind' => 'document', 'date' => '2026-08-01', 'file' => ['register' => 'zaken', 'schema' => 'document', 'id' => 'doc-obj-1', 'fileId' => '71']],
+		['id' => 'besluit-1', 'title' => 'Besluit op uw aanvraag', 'kind' => 'decision', 'date' => '2026-09-01', 'file' => ['register' => 'zaken', 'schema' => 'document', 'id' => 'doc-obj-2', 'fileId' => '72'], 'mimeType' => 'application/pdf', 'size' => 2048],
+	];
+
+	/**
+	 * The case collection, declaring the documents method.
+	 *
+	 * @var array<int, array<string, mixed>>
+	 */
+	private const WITH_DOCUMENTS = [['id' => 'mijn-zaken', 'register' => 'zaken', 'schema' => 'zaak', 'documents' => ['label' => 'Stukken', 'provider' => 'caseDocuments']]];
+
+	/**
+	 * Files streamed: [register, schema, id, fileId].
+	 *
+	 * @var array<int, array<int, string>>
+	 */
+	private array $streamed = [];
+
+	/**
+	 * Downloads audited: [subjectRef, register, schema, id].
+	 *
+	 * @var array<int, array<int, string>>
+	 */
+	private array $downloads = [];
+
+	/**
+	 * The tags each attached file got.
+	 *
+	 * @var array<int, array<int, string>>
+	 */
+	private array $attachedTags = [];
 
 	/**
 	 * Calls the fake writer recorded, so a refusal can be shown to have
@@ -359,7 +403,7 @@ class CitizenCaseControllerTest extends TestCase {
 		$response = $controller->show('zaken', 'zaak', self::CASE_ID);
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
-		$this->assertSame([$released], $response->getData()['documents']);
+		$this->assertSame([['id' => 'released:7', 'title' => 'besluit.pdf', 'kind' => 'document', 'date' => '', 'size' => 2048]], $response->getData()['documents']);
 	}//end testTheCaseScreenListsOnlyReleasedFilesWhenTheCollectionOptsIn()
 
 	/**
@@ -492,6 +536,8 @@ class CitizenCaseControllerTest extends TestCase {
 		array $params = [],
 		array $collections = [],
 		?array $releasedFiles = null,
+		array $taggedFiles = [],
+		array $published = [],
 	): CitizenCaseController {
 		$action = ($action ?? $this->action());
 		$cases = $this->cases();
@@ -554,11 +600,21 @@ class CitizenCaseControllerTest extends TestCase {
 		$fileReader = $this->createMock(PortalFileReader::class);
 		$fileReader->method('listFiles')->willReturn($existingFiles);
 		$fileReader->method('listReleasedFiles')->willReturn($releasedFiles ?? $existingFiles);
+		$fileReader->method('listTaggedFiles')->willReturnCallback(
+			static fn (string $register, string $schema, string $id, string $tag): array => ($tag === 'portal:from-applicant' ? $taggedFiles : [])
+		);
+		$fileReader->method('streamFile')->willReturnCallback(
+			function (string $register, string $schema, string $id, string $fileId): ?StreamResponse {
+				$this->streamed[] = [$register, $schema, $id, $fileId];
+				return $this->createMock(StreamResponse::class);
+			}
+		);
 
 		$fileWriter = $this->createMock(PortalFileWriter::class);
 		$fileWriter->method('attachFile')->willReturnCallback(
-			function (string $register, string $schema, string $id, string $fileName) {
+			function (string $register, string $schema, string $id, string $fileName, string $content = '', array $tags = []) {
 				$this->attached[] = $fileName;
+				$this->attachedTags[] = $tags;
 
 				return ['id' => 1, 'name' => $fileName, 'size' => 4];
 			}
@@ -592,9 +648,56 @@ class CitizenCaseControllerTest extends TestCase {
 			$this->mandateService(),
 			$this->treeResolver(),
 			$l10n,
-			$this->createMock(LoggerInterface::class)
+			$this->createMock(LoggerInterface::class),
+			$this->documents(fileReader: $fileReader, published: $published)
 		);
 	}//end controller()
+
+	/**
+	 * The REAL documents service over the file reader double, a case app
+	 * provider whose `caseDocuments` answers `$published` for this case, and an
+	 * audit hook that records each download.
+	 *
+	 * @param PortalFileReader                 $fileReader The file reader double.
+	 * @param array<int, array<string, mixed>> $published  What the case app publishes.
+	 *
+	 * @return CitizenCaseDocuments
+	 */
+	private function documents(PortalFileReader $fileReader, array $published): CitizenCaseDocuments {
+		$provider = new class ($published) {
+			/**
+			 * @param array<int, array<string, mixed>> $published The documents.
+			 */
+			public function __construct(private array $published) {
+			}
+
+			/**
+			 * The documents on one case.
+			 *
+			 * @param string $caseId The case.
+			 *
+			 * @return array<int, array<string, mixed>>
+			 */
+			public function caseDocuments(string $caseId): array {
+				return ($caseId === 'zaak-1' ? $this->published : []);
+			}
+		};
+		$locator = $this->createMock(PortalProviderLocator::class);
+		$locator->method('locate')->willReturn($provider);
+
+		$audit = $this->createMock(PortalAuditHook::class);
+		$audit->method('download')->willReturnCallback(
+			function (string $subjectRef, string $organisation, string $register, string $schema, string $id): void {
+				$this->downloads[] = [$subjectRef, $register, $schema, $id];
+			}
+		);
+
+		return new CitizenCaseDocuments(
+			files: $fileReader,
+			published: new PortalCaseDocumentReader(locator: $locator, logger: $this->createMock(LoggerInterface::class)),
+			audit: $audit
+		);
+	}//end documents()
 
 	/**
 	 * A real readable upload on disk, so the controller's own multipart read
@@ -816,4 +919,164 @@ class CitizenCaseControllerTest extends TestCase {
 			'confirmText' => 'Als u intrekt, stopt de behandeling.',
 		];
 	}//end withdrawalDeclaration()
+
+	/**
+	 * The case app's documents reach the screen without their file
+	 * reference; a decision comes first (cases-documents-on-the-case,
+	 * REQ-CDC-001, REQ-CDC-003).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-the-case-app-declares-which-documents-a-resident-may-see-req-cdc-001
+	 */
+	public function testShowNeverReturnsAFileReference(): void {
+		$response = $this->controller(collections: self::WITH_DOCUMENTS, published: self::PUBLISHED)->show('zaken', 'zaak', self::CASE_ID);
+
+		$documents = $response->getData()['documents'];
+		$this->assertSame(
+			[
+				['id' => 'besluit-1', 'title' => 'Besluit op uw aanvraag', 'kind' => 'decision', 'date' => '2026-09-01', 'mimeType' => 'application/pdf', 'size' => 2048],
+				['id' => 'brief-1', 'title' => 'Ontvangstbevestiging', 'kind' => 'document', 'date' => '2026-08-01'],
+			],
+			$documents
+		);
+		$json = (string)json_encode($response->getData());
+		$this->assertStringNotContainsString('doc-obj-', $json);
+		$this->assertStringNotContainsString('fileId', $json);
+		$this->assertSame('Stukken', $response->getData()['documentsLabel']);
+	}//end testShowNeverReturnsAFileReference()
+
+	/**
+	 * The resident's own uploads are listed under "Sent by you", and a file in
+	 * the case folder without the tag is not (REQ-CDC-004).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-the-residents-own-uploads-stay-visible-and-nothing-else-from-the-folder-req-cdc-004
+	 */
+	public function testShowListsTaggedUploadsOnly(): void {
+		$upload = ['id' => 5, 'name' => 'bewijs.pdf', 'size' => 100];
+		$response = $this->controller(
+			existingFiles: [$upload, ['id' => 8, 'name' => 'intern-advies.pdf', 'size' => 512]],
+			collections: self::WITH_DOCUMENTS,
+			taggedFiles: [$upload],
+			published: self::PUBLISHED
+		)->show('zaken', 'zaak', self::CASE_ID);
+
+		$documents = $response->getData()['documents'];
+		$this->assertSame(['id' => 'upload:5', 'title' => 'bewijs.pdf', 'kind' => 'yours', 'date' => '', 'size' => 100], end($documents));
+		$this->assertStringNotContainsString('intern-advies', (string)json_encode($documents));
+	}//end testShowListsTaggedUploadsOnly()
+
+	/**
+	 * Without a documents method the resident sees only their own uploads
+	 * (REQ-CDC-005 empty state otherwise).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-a-case-with-nothing-published-says-so-req-cdc-005
+	 */
+	public function testShowWithoutProviderListsOnlyUploads(): void {
+		$upload = ['id' => 5, 'name' => 'bewijs.pdf', 'size' => 100];
+		$response = $this->controller(
+			existingFiles: [$upload, ['id' => 8, 'name' => 'intern-advies.pdf', 'size' => 512]],
+			collections: [['id' => 'mijn-zaken', 'register' => 'zaken', 'schema' => 'zaak']],
+			taggedFiles: [$upload],
+			published: self::PUBLISHED
+		)->show('zaken', 'zaak', self::CASE_ID);
+
+		$this->assertSame([['id' => 'upload:5', 'title' => 'bewijs.pdf', 'kind' => 'yours', 'date' => '', 'size' => 100]], $response->getData()['documents']);
+	}//end testShowWithoutProviderListsOnlyUploads()
+
+	/**
+	 * A published document streams from where the app said it lives
+	 * (REQ-CDC-002).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-every-listed-document-opens-from-the-case-screen-req-cdc-002
+	 */
+	public function testStreamsAPublishedDocument(): void {
+		$response = $this->controller(collections: self::WITH_DOCUMENTS, published: self::PUBLISHED)->document('zaken', 'zaak', self::CASE_ID, 'besluit-1');
+
+		$this->assertInstanceOf(StreamResponse::class, $response);
+		$this->assertSame([['zaken', 'document', 'doc-obj-2', '72']], $this->streamed);
+	}//end testStreamsAPublishedDocument()
+
+	/**
+	 * Another resident's case answers 404 and streams nothing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-every-listed-document-opens-from-the-case-screen-req-cdc-002
+	 */
+	public function testForeignCaseIs404(): void {
+		$response = $this->controller(collections: self::WITH_DOCUMENTS, published: self::PUBLISHED)->document('zaken', 'zaak', self::OTHER_CASE_ID, 'besluit-1');
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+		$this->assertSame([], $this->streamed);
+	}//end testForeignCaseIs404()
+
+	/**
+	 * An id the app did not publish on this case answers the same 404.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-every-listed-document-opens-from-the-case-screen-req-cdc-002
+	 */
+	public function testUnlistedIdIs404(): void {
+		$controller = $this->controller(collections: self::WITH_DOCUMENTS, published: self::PUBLISHED);
+		foreach (['besluit-9', '72', 'released:72', ''] as $guess) {
+			$this->assertSame(Http::STATUS_NOT_FOUND, $controller->document('zaken', 'zaak', self::CASE_ID, $guess)->getStatus(), $guess);
+		}
+
+		$this->assertSame([], $this->streamed);
+	}//end testUnlistedIdIs404()
+
+	/**
+	 * A download is audited with the case it was made from.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-every-listed-document-opens-from-the-case-screen-req-cdc-002
+	 */
+	public function testDownloadIsAudited(): void {
+		$this->controller(collections: self::WITH_DOCUMENTS, published: self::PUBLISHED)->document('zaken', 'zaak', self::CASE_ID, 'besluit-1');
+
+		$this->assertSame([['bsn-hash-1', 'zaken', 'zaak', self::CASE_ID]], $this->downloads);
+	}//end testDownloadIsAudited()
+
+	/**
+	 * `upload:<fileId>` streams a tagged upload from the case folder, and
+	 * nothing for a file in the folder without the tag (REQ-CDC-004).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-the-residents-own-uploads-stay-visible-and-nothing-else-from-the-folder-req-cdc-004
+	 */
+	public function testUntaggedFolderFileIs404(): void {
+		$upload = ['id' => 5, 'name' => 'bewijs.pdf', 'size' => 100];
+		$controller = $this->controller(
+			existingFiles: [$upload, ['id' => 8, 'name' => 'intern-advies.pdf', 'size' => 512]],
+			taggedFiles: [$upload]
+		);
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->document('zaken', 'zaak', self::CASE_ID, 'upload:8')->getStatus());
+		$this->assertSame([], $this->streamed);
+		$this->assertInstanceOf(StreamResponse::class, $controller->document('zaken', 'zaak', self::CASE_ID, 'upload:5'));
+		$this->assertSame([['zaken', 'zaak', self::CASE_ID, '5']], $this->streamed);
+	}//end testUntaggedFolderFileIs404()
+
+	/**
+	 * An upload through the portal carries the resident's tag.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-the-residents-own-uploads-stay-visible-and-nothing-else-from-the-folder-req-cdc-004
+	 */
+	public function testAnUploadIsTaggedAsTheResidents(): void {
+		$this->controller(upload: ['name' => 'bewijs.pdf', 'content' => 'data'])->addDocument('zaken', 'zaak', self::CASE_ID);
+
+		$this->assertSame([['portal:from-applicant']], $this->attachedTags);
+	}//end testAnUploadIsTaggedAsTheResidents()
 }//end class
