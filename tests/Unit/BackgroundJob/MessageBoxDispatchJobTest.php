@@ -147,15 +147,17 @@ class MessageBoxDispatchJobTest extends TestCase {
 	 * @param string|null       $recipient What the case app answers.
 	 * @param callable|null     $integriq  What integriq does with the event.
 	 * @param string            $sendEvent The event class the sender looks for.
+	 * @param array|null        $message   The message the resident's inbox reads, or the default.
 	 *
 	 * @return MessageBoxDispatchJob
 	 */
-	private function messageBoxJob(array &$created, array &$updated, ?string $recipient, ?callable $integriq = null, string $sendEvent = DigitalPostSendRequestedEvent::class): MessageBoxDispatchJob {
+	private function messageBoxJob(array &$created, array &$updated, ?string $recipient, ?callable $integriq = null, string $sendEvent = DigitalPostSendRequestedEvent::class, ?array $message = null): MessageBoxDispatchJob {
+		$message ??= ['subject' => 'Besluit op uw aanvraag', 'body' => 'Uw aanvraag is toegekend.', 'attachments' => [['documentId' => 'doc-7']], 'ontvanger' => 's1'];
 		$reader = $this->reader(account: ['@self' => ['id' => 'account-1'], 'subjectRef' => 's1']);
 		$reader->method('readObject')->willReturnCallback(
 			static fn (string $register, string $schema, string $scopeField, string $subjectRef, string $id): ?array => (
 				$register === 'zaken' && $schema === 'bericht' && $scopeField === 'ontvanger' && $subjectRef === 's1' && $id === 'bericht-1'
-				? ['subject' => 'Besluit op uw aanvraag', 'body' => 'Uw aanvraag is toegekend.', 'attachments' => [['documentId' => 'doc-7']], 'ontvanger' => 's1']
+				? $message
 				: null
 			)
 		);
@@ -288,6 +290,94 @@ class MessageBoxDispatchJobTest extends TestCase {
 		$this->assertSame('failed', $absent[0]['data']['status']);
 		$this->assertSame('not_installed', $absent[0]['data']['refusalCode']);
 	}//end testUnhandledEventIsARefusal()
+
+	/**
+	 * dossiq keeps a portal letter's text in `content`, not `body` (dossiq
+	 * portaalBericht 1.0.0, lib/Settings/register.d/50-zaakportaal.json on
+	 * development: required caseId, senderRef, content). The letter that
+	 * reaches integriq carries that text and its subject. Before this fix it
+	 * went out with an empty body.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-portaliq-asks-integriq-to-send-and-records-the-answer-req-mbc-003
+	 */
+	public function testDossiqsPortaalBerichtTextIsTheLetter(): void {
+		if (class_exists(DigitalPostSendRequestedEvent::class) === false) {
+			$this->markTestSkipped('Integriq is not loadable: run inside Nextcloud or set PORTALIQ_INTEGRIQ_LIB.');
+		}
+
+		// dossiq's own portaalBericht shape, every property its schema declares.
+		$portaalBericht = [
+			'caseId' => 'zaak-uuid-1',
+			'caseReference' => 'Z-2026-0042',
+			'senderType' => 'burger',
+			'senderRef' => 'medewerker-7',
+			'senderName' => 'Gemeente Venray',
+			'recipientRef' => 's1',
+			'subject' => 'Besluit op uw aanvraag',
+			'content' => 'Uw aanvraag voor een dakkapel is toegekend.',
+			'attachments' => [],
+			'direction' => 'handler_to_citizen',
+			'sentAt' => '2026-09-29T10:00:00+00:00',
+		];
+
+		$created = [];
+		$updated = [];
+		$this->invokeRun($this->messageBoxJob(created: $created, updated: $updated, recipient: self::BSN, message: $portaalBericht), self::MESSAGE_BOX_ARGUMENT);
+
+		$this->assertCount(1, $this->events);
+		$this->assertSame('Uw aanvraag voor een dakkapel is toegekend.', $this->events[0]->getBody());
+		$this->assertSame('Besluit op uw aanvraag', $this->events[0]->getSubject());
+	}//end testDossiqsPortaalBerichtTextIsTheLetter()
+
+	/**
+	 * A field the collection declares for the letter's text wins over the
+	 * usual names.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-portaliq-asks-integriq-to-send-and-records-the-answer-req-mbc-003
+	 */
+	public function testTheDeclaredLetterFieldsAreRead(): void {
+		if (class_exists(DigitalPostSendRequestedEvent::class) === false) {
+			$this->markTestSkipped('Integriq is not loadable: run inside Nextcloud or set PORTALIQ_INTEGRIQ_LIB.');
+		}
+
+		$created = [];
+		$updated = [];
+		$argument = ['letterFields' => ['body' => 'tekst', 'subject' => 'kop']] + self::MESSAGE_BOX_ARGUMENT;
+		$message = ['kop' => 'Uw vergunning', 'tekst' => 'De vergunning is verleend.', 'subject' => 'niet dit', 'body' => 'en niet dit', 'ontvanger' => 's1'];
+		$this->invokeRun($this->messageBoxJob(created: $created, updated: $updated, recipient: self::BSN, message: $message), $argument);
+
+		$this->assertSame('De vergunning is verleend.', $this->events[0]->getBody());
+		$this->assertSame('Uw vergunning', $this->events[0]->getSubject());
+	}//end testTheDeclaredLetterFieldsAreRead()
+
+	/**
+	 * A message with no text is never sent as an empty letter: nothing is
+	 * dispatched, the attempt is recorded as refused with `empty_body`, and a
+	 * warning names the message, not the resident.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-portaliq-asks-integriq-to-send-and-records-the-answer-req-mbc-003
+	 */
+	public function testAnEmptyLetterIsNotSent(): void {
+		$created = [];
+		$updated = [];
+		$this->invokeRun(
+			$this->messageBoxJob(created: $created, updated: $updated, recipient: self::BSN, message: ['subject' => 'Besluit', 'content' => '   ', 'ontvanger' => 's1']),
+			self::MESSAGE_BOX_ARGUMENT
+		);
+
+		$this->assertSame([], $this->events, 'no letter was asked for');
+		$this->assertCount(1, $created);
+		$this->assertSame('failed', $created[0]['data']['status']);
+		$this->assertSame('empty_body', $created[0]['data']['refusalCode']);
+		$this->assertStringContainsString('no text', (string)json_encode($this->logged));
+		$this->assertStringNotContainsString(self::BSN, (string)json_encode([$created, $this->logged]));
+	}//end testAnEmptyLetterIsNotSent()
 
 	/**
 	 * The recipient reaches integriq's event and nothing else: not the

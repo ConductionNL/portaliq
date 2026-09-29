@@ -1608,7 +1608,7 @@ OC.L10N.register(
         "For a `messageBox` row: the message id integriq's digital post adapter answered with. Integriq's status reports find the row by it.": "For a `messageBox` row: the message id integriq's digital post adapter answered with. Integriq's status reports find the row by it.",
         "For a `messageBox` row: the inbox message this send is about, so the inbox can show where it went.": "For a `messageBox` row: the inbox message this send is about, so the inbox can show where it went.",
         "Refusal code": "Refusal code",
-        "For a failed `messageBox` row: why no letter left. `not_installed` when integriq is absent, `unhandled` when nothing answered, or the code integriq's refusal carried.": "For a failed `messageBox` row: why no letter left. `not_installed` when integriq is absent, `unhandled` when nothing answered, or the code integriq's refusal carried.",
+        "For a failed `messageBox` row: why no letter left. `not_installed` when integriq is absent, `unhandled` when nothing answered, `empty_body` when the message held no text, or the code integriq's refusal carried.": "For a failed `messageBox` row: why no letter left. `not_installed` when integriq is absent, `unhandled` when nothing answered, `empty_body` when the message held no text, or the code integriq's refusal carried.",
         "The app's inbox collection id.": "The app's inbox collection id.",
         "The contributing app.": "The contributing app.",
         "The message's id.": "The message's id.",

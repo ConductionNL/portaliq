@@ -1471,7 +1471,7 @@
                     "refusalCode": {
                         "title": "Refusal code",
                         "type": "string",
-                        "description": "For a failed `messageBox` row: why no letter left. `not_installed` when integriq is absent, `unhandled` when nothing answered, or the code integriq's refusal carried.",
+                        "description": "For a failed `messageBox` row: why no letter left. `not_installed` when integriq is absent, `unhandled` when nothing answered, `empty_body` when the message held no text, or the code integriq's refusal carried.",
                         "example": "not_installed"
                     }
                 }

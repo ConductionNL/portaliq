@@ -119,6 +119,7 @@ class MessageBoxChannel {
 					'recipientProvider' => $inbox['recipientProvider'],
 					'record' => ['app' => $inbox['app'], 'collection' => $inbox['collection'], 'id' => $recordId, 'label' => $inbox['label']],
 					'source' => ['register' => $inbox['register'], 'schema' => $inbox['schema'], 'scopeField' => $inbox['scopeField']],
+					'letterFields' => ['body' => (string)($inbox['bodyField'] ?? ''), 'subject' => (string)($inbox['subjectField'] ?? '')],
 				]
 			);
 		} catch (Throwable $e) {

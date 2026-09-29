@@ -38,6 +38,27 @@ class MessageBoxConfigNormaliserTest extends TestCase {
 	}//end testKeepsAWellFormedDeclaration()
 
 	/**
+	 * The collection may name the fields that hold the letter's subject and
+	 * text; a name that is not a plain field name is dropped, the rest stands.
+	 *
+	 * @return void
+	 */
+	public function testKeepsTheDeclaredLetterFields(): void {
+		$normaliser = new MessageBoxConfigNormaliser();
+		$collection = $normaliser->normalise(collection: [
+			'kind' => 'inbox',
+			'messageBox' => ['recipientProvider' => 'messageBoxRecipient', 'bodyField' => 'content', 'subjectField' => 'subject'],
+		]);
+		$this->assertSame(['recipientProvider' => 'messageBoxRecipient', 'bodyField' => 'content', 'subjectField' => 'subject'], $collection['messageBox']);
+
+		$unsafe = $normaliser->normalise(collection: [
+			'kind' => 'inbox',
+			'messageBox' => ['recipientProvider' => 'messageBoxRecipient', 'bodyField' => 'a.b', 'subjectField' => ['x']],
+		]);
+		$this->assertSame(['recipientProvider' => 'messageBoxRecipient'], $unsafe['messageBox']);
+	}//end testKeepsTheDeclaredLetterFields()
+
+	/**
 	 * A contract method, a non-identifier, a missing name, a non-array value
 	 * and a collection that is not an inbox all drop the key.
 	 *
