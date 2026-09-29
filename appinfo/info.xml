@@ -92,6 +92,10 @@
         <!-- push-notifications-quiet-hours: every 5 minutes, delivers every
              deferred push whose quiet-hours window has ended. -->
         <job>OCA\Portaliq\BackgroundJob\PendingPushDeliveryJob</job>
+        <!-- operate-availability-report: every 5 minutes, checks each published
+             portal through the instance's own URL and keeps its availability
+             per day and its outages for thirteen months. -->
+        <job>OCA\Portaliq\BackgroundJob\AvailabilityProbeJob</job>
     </background-jobs>
 
     <!-- @spec openspec/architecture/adr-023-action-authorization.md -->
