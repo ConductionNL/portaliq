@@ -46,6 +46,7 @@ import PageLayoutDesigner from './views/PageLayoutDesigner.vue'
 import AvailabilityReport from './widgets/AvailabilityReport.vue'
 import PageTrafficFlow from './widgets/PageTrafficFlow.vue'
 import PortalCaseTypes from './widgets/PortalCaseTypes.vue'
+import PortalTheme from './widgets/PortalTheme.vue'
 import PortalTrafficKpi from './widgets/PortalTrafficKpi.vue'
 import TrafficDaily from './widgets/TrafficDaily.vue'
 import TrafficDimensions from './widgets/TrafficDimensions.vue'
@@ -222,6 +223,17 @@ export default {
 		allowedSlots: ['body'],
 		propsSchema: null,
 		_note: "The portal's case types, each with a \"Show in this portal\" switch (operate-show-per-case-type). Custom because the list is the union of the portal's published forms, the case apps' caseTypeSource and its own hidden list, read and saved through PortalCaseTypesController, and because hiding must warn before it saves.",
+	},
+	// @custom-widget-ratchet exclude the radio list reads the theme app's catalogue and a contrast verdict per set through an admin controller, and a failing set must show its findings and ask again before it saves, which no built-in widget does
+	PortalTheme: {
+		kind: 'widget',
+		component: PortalTheme,
+		defaultSize: { w: 12, h: 5 },
+		minSize: { w: 6, h: 3 },
+		maxSize: { w: 12, h: 10 },
+		allowedSlots: ['body'],
+		propsSchema: null,
+		_note: "The portal's house style, picked from the sets the theme app offers, each with its contrast verdict (nldesign-theme-integration). Custom because the sets and verdicts come from PortalThemeController, and a hard-to-read set must list its findings and be confirmed before it saves.",
 	},
 	TrafficRecordings: {
 		kind: 'widget',

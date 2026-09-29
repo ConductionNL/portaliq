@@ -109,6 +109,49 @@ class PortalThemeResolverTest extends TestCase {
 	 *
 	 * @return void
 	 */
+	/**
+	 * nldesign-theme-integration 1.4: the picker lists what the catalogue
+	 * offers, entries without an id left out.
+	 *
+	 * @return void
+	 */
+	public function testTheCatalogueListsEverySetWithAnId(): void {
+		file_put_contents(
+			$this->themeRoot . '/token-sets.json',
+			(string)json_encode([['id' => 'vng', 'name' => 'VNG'], ['name' => 'no id'], ['id' => 'venray', 'name' => 'Venray']])
+		);
+
+		$this->assertSame(['vng', 'venray'], array_column($this->resolver()->catalogue(), 'id'));
+	}//end testTheCatalogueListsEverySetWithAnId()
+
+	/**
+	 * nldesign-theme-integration 3.1: the contrast check reads a set's token
+	 * values, with a palette alias resolved one hop.
+	 *
+	 * @return void
+	 */
+	public function testTokenValuesResolveAPaletteAlias(): void {
+		file_put_contents(
+			$this->themeRoot . '/css/tokens/vng.css',
+			":root {\n  --c-white: #ffffff;\n  --nldesign-color-background: var(--c-white);\n  --nldesign-color-text: #1a1a1a;\n}\n"
+		);
+
+		$values = $this->resolver()->tokenValuesFor(theme: 'vng');
+
+		$this->assertSame('#ffffff', $values['--nldesign-color-background']);
+		$this->assertSame('#1a1a1a', $values['--nldesign-color-text']);
+	}//end testTokenValuesResolveAPaletteAlias()
+
+	/**
+	 * A set that does not resolve has no token values to judge.
+	 *
+	 * @return void
+	 */
+	public function testAnUnresolvableSetHasNoTokenValues(): void {
+		$this->assertSame([], $this->resolver()->tokenValuesFor(theme: 'orphan'));
+		$this->assertSame([], $this->resolver()->tokenValuesFor(theme: '../../etc/passwd'));
+	}//end testAnUnresolvableSetHasNoTokenValues()
+
 	public function testAShippedThemeResolvesToItsStylesheet(): void {
 		$this->assertSame('tokens/vng', $this->resolver()->stylesheetFor(theme: 'vng'));
 		$this->assertSame('tokens/venray', $this->resolver()->stylesheetFor(theme: 'venray'));

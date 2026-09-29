@@ -1486,6 +1486,13 @@
             "title": "Case types",
             "icon": "ClipboardText",
             "content": {}
+          },
+          {
+            "id": "portal-theme",
+            "type": "PortalTheme",
+            "title": "House style",
+            "icon": "Palette",
+            "content": {}
           }
         ],
         "layout": [
@@ -1558,6 +1565,14 @@
             "widgetId": "portal-case-types",
             "gridX": 0,
             "gridY": 16,
+            "gridWidth": 12,
+            "gridHeight": 5
+          },
+          {
+            "id": "portal-theme",
+            "widgetId": "portal-theme",
+            "gridX": 0,
+            "gridY": 21,
             "gridWidth": 12,
             "gridHeight": 5
           }

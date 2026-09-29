@@ -5,7 +5,7 @@
 - [x] 1.1 Read the catalogue rather than probing the filesystem for `css/tokens/<theme>.css`. Resolved server-side from the theme app's `token-sets.json` — the same file `CatalogController` serves — because the renderer runs for ANONYMOUS visitors and the endpoint is deliberately not public (see 1.2).
 - [x] 1.2 Establish that the catalogue endpoint is safe for an ANONYMOUS caller, not merely a non-admin one. **It is not, by design.** `CatalogController::tokenSets()` is `#[NoAdminRequired]` and deliberately not `#[PublicPage]`: its docblock states that exposing admin-uploaded custom sets to anonymous traffic "would be a new information-disclosure surface with no consumer need". The route was left alone; the public renderer reads the catalogue from disk, and the authenticated admin UI remains the endpoint's consumer.
 - [x] 1.3 `PortalThemeResolver` resolves `portal.theme` against the catalogue and returns null when the id is unknown. A file present on disk but absent from the catalogue — a generated variant, a leftover — is no longer adoptable.
-- [ ] 1.4 Surface the resolvable set to the admin UI so `portal.theme` becomes a chosen id rather than free text.
+- [x] 1.4 Surface the resolvable set to the admin UI so `portal.theme` becomes a chosen id rather than free text. Built 2026-09-29 as the House style widget on the portal page (`src/widgets/PortalTheme.vue` over `src/lib/portalThemeChoice.js`), served by `PortalThemeController` GET/PUT `/api/portals/{slug}/theme` and `lib/Service/Theme/PortalThemeChoice.php`; only sets `PortalThemeResolver::stylesheetFor()` renders are offered, from the new `catalogue()`.
 - [x] 1.5 Test: an unknown id renders UNSTYLED and does not fall back. Covered per branch: uncatalogued file, catalogued-but-missing file, and an unreadable catalogue (fails closed).
 
 ## 2. Generation — dark variants and fonts
@@ -19,10 +19,10 @@
 
 ## 3. Contrast and compliance — at adoption time, not after a review
 
-- [ ] 3.1 Call `ContrastController` for the adopted theme and record the verdict against the portal.
-- [ ] 3.2 Refuse — or loudly warn on — a theme whose own tokens fail AA for the surfaces a portal actually paints (bands, cards, footer).
+- [x] 3.1 Call `ContrastController` for the adopted theme and record the verdict against the portal. Built as `lib/Service/Theme/PortalThemeContrast.php`, which calls thematiq's `ContrastService` in process (the controller needs a session) over `PortalThemeResolver::tokenValuesFor()`; the verdict is shown per set and returned with every save rather than stored.
+- [x] 3.2 Refuse — or loudly warn on — a theme whose own tokens fail AA for the surfaces a portal actually paints (bands, cards, footer). The save is refused with the failing tokens until the administrator confirms ("Use it anyway"). Surfaces judged: page and footer, the two painted from a token; bands and cards have no token of their own until task 2.6.
 - [ ] 3.3 Add the portal's own rendered surfaces to the check, walking to the first ancestor that PAINTS a background. Comparing against the nearest NAMED band produced a false failure in this codebase once already, and the "fix" for it made a working form invisible.
-- [ ] 3.4 Test: a deliberately low-contrast token set is rejected/flagged; a compliant one passes.
+- [x] 3.4 Test: a deliberately low-contrast token set is rejected/flagged; a compliant one passes. `tests/Unit/Service/Theme/PortalThemeContrastTest.php` and `PortalThemeChoiceTest.php` over thematiq's real `ContrastService` (verbatim copy in `tests/Stubs/Thematiq`), `tests/portal-theme-choice.spec.mjs`.
 
 ## 4. Sharing — adopt a theme that came from elsewhere
 

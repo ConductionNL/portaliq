@@ -188,36 +188,94 @@ class PortalThemeResolver {
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
 	 */
 	private function catalogueHas(string $theme): bool {
-		$root = $this->themeAppPath();
-		if ($root === null) {
-			return false;
-		}
-
-		$path = $root . '/token-sets.json';
-		if (is_file($path) === false) {
-			return false;
-		}
-
-		$decoded = json_decode((string)file_get_contents($path), true);
-		if (is_array($decoded) === false) {
-			return false;
-		}
-
-		// The file ships as a LIST of set objects; tolerate a keyed map too,
-		// because which of the two it is has changed upstream before.
-		$entries = $decoded;
-		if (array_is_list($decoded) === false) {
-			$entries = array_values($decoded);
-		}
-
-		foreach ($entries as $entry) {
-			if (is_array($entry) === true && ($entry['id'] ?? null) === $theme) {
+		foreach ($this->catalogue() as $entry) {
+			if ($entry['id'] === $theme) {
 				return true;
 			}
 		}
 
 		return false;
 	}//end catalogueHas()
+
+	/**
+	 * Every set the theme app's catalogue offers, read from its
+	 * `token-sets.json` on disk (see `catalogueHas()` for why not the
+	 * endpoint). An unreadable or malformed catalogue answers an empty list, so
+	 * a picker shows nothing rather than a default.
+	 *
+	 * @return array<int, array<string, mixed>> Each entry has at least a string `id`.
+	 *
+	 * @spec openspec/changes/nldesign-theme-integration/specs/nldesign-theme-integration/spec.md
+	 */
+	public function catalogue(): array {
+		$root = $this->themeAppPath();
+		if ($root === null) {
+			return [];
+		}
+
+		$path = $root . '/token-sets.json';
+		if (is_file($path) === false) {
+			return [];
+		}
+
+		$decoded = json_decode((string)file_get_contents($path), true);
+		if (is_array($decoded) === false) {
+			return [];
+		}
+
+		$sets = [];
+		foreach (array_values($decoded) as $entry) {
+			if (is_array($entry) === true && is_string($entry['id'] ?? null) === true) {
+				$sets[] = $entry;
+			}
+		}
+
+		return $sets;
+	}//end catalogue()
+
+	/**
+	 * The token values a resolvable set declares, for the contrast check.
+	 *
+	 * Read from the set's token file, the only place that says what colour
+	 * anything is. Declarations are matched on the custom-property syntax: a
+	 * generated token file has one per line. A `var()` alias is resolved one
+	 * hop against the same file, because a set's roles alias its own palette;
+	 * a value still unresolved stays as it is and the contrast service reports
+	 * it as unevaluated rather than guessing.
+	 *
+	 * @param string $theme The set id.
+	 *
+	 * @return array<string, string> Token name to value; empty when the set does not resolve.
+	 *
+	 * @spec openspec/changes/nldesign-theme-integration/specs/nldesign-theme-integration/spec.md
+	 */
+	public function tokenValuesFor(string $theme): array {
+		$sheet = $this->stylesheetFor(theme: $theme);
+		$root = $this->themeAppPath();
+		if ($sheet === null || $root === null) {
+			return [];
+		}
+
+		preg_match_all(
+			'/(--[a-z0-9-]+)\s*:\s*([^;}]+)[;}]/i',
+			(string)file_get_contents($root . '/css/' . $sheet . '.css'),
+			$matches,
+			PREG_SET_ORDER
+		);
+
+		$values = [];
+		foreach ($matches as $match) {
+			$values[trim($match[1])] = trim($match[2]);
+		}
+
+		foreach ($values as $name => $value) {
+			if (preg_match('/^var\(\s*(--[a-z0-9-]+)/i', $value, $alias) === 1) {
+				$values[$name] = ($values[$alias[1]] ?? $value);
+			}
+		}
+
+		return $values;
+	}//end tokenValuesFor()
 
 
 	/**

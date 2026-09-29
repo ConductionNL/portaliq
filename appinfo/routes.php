@@ -62,6 +62,10 @@ return [
         // (operate-show-per-case-type). Admin-only.
         ['name' => 'portalCaseTypes#index', 'url' => '/api/portals/{slug}/case-types', 'verb' => 'GET'],
         ['name' => 'portalCaseTypes#update', 'url' => '/api/portals/{slug}/case-types', 'verb' => 'PUT'],
+        // A portal's house style, picked from the theme app's catalogue with a
+        // contrast verdict per set (nldesign-theme-integration). Admin-only.
+        ['name' => 'portalTheme#index', 'url' => '/api/portals/{slug}/theme', 'verb' => 'GET'],
+        ['name' => 'portalTheme#update', 'url' => '/api/portals/{slug}/theme', 'verb' => 'PUT'],
         ['name' => 'accessRequestAdmin#grant', 'url' => '/api/access-requests/{id}/grant', 'verb' => 'POST'],
         ['name' => 'accessRequestAdmin#refuse', 'url' => '/api/access-requests/{id}/refuse', 'verb' => 'POST'],
 
