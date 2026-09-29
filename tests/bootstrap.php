@@ -212,6 +212,12 @@ foreach ([
 
 unset($orStubClass, $orStubFile);
 
+// Thematiq's contrast arithmetic (nldesign-theme-integration): a verbatim copy,
+// used only when thematiq itself is not loadable.
+if (class_exists('\\OCA\\Thematiq\\Service\\ContrastService') === false) {
+	require_once __DIR__ . '/Stubs/Thematiq/Service/ContrastService.php';
+}
+
 foreach (['ConnectionStatusReportedEvent', 'ConnectionRefreshRequestedEvent', 'DigitalPostSendRequestedEvent', 'DigitalPostDeliveredEvent'] as $integriqStubEvent) {
 	if (class_exists('\\OCP\\EventDispatcher\\Event') === true
 		&& class_exists('\\OCA\\Integriq\\Event\\' . $integriqStubEvent) === false
