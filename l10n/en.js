@@ -1615,7 +1615,27 @@ OC.L10N.register(
         "The out-of-band channel used: `email`, `push` for a web push to the resident's registered devices, or `messageBox` for the government message box an organisation offers through integriq's digital post adapter.": "The out-of-band channel used: `email`, `push` for a web push to the resident's registered devices, or `messageBox` for the government message box an organisation offers through integriq's digital post adapter.",
         "The outcome of this attempt. `sent` and `failed` for every channel. A `messageBox` row moves on as integriq reports it: `delivered`, `read`, or `simulated` when integriq's binding sends nothing, which is never shown to the resident as delivered.": "The outcome of this attempt. `sent` and `failed` for every channel. A `messageBox` row moves on as integriq reports it: `delivered`, `read`, or `simulated` when integriq's binding sends nothing, which is never shown to the resident as delivered.",
         "Per kind of notice, whether the resident wants it by e-mail and by push: `case.updated` for changes on their cases, `message.created` for new messages. `messageBox.enabled` is whether letters also go to the government message box, when the organisation offers it (inbox-berichtenbox-channel). A missing choice means on. `notificationChannels.email: false` still switches e-mail off for every kind. Set only through the account's own PATCH /portal/api/identity/notification-preferences.": "Per kind of notice, whether the resident wants it by e-mail and by push: `case.updated` for changes on their cases, `message.created` for new messages. `messageBox.enabled` is whether letters also go to the government message box, when the organisation offers it (inbox-berichtenbox-channel). A missing choice means on. `notificationChannels.email: false` still switches e-mail off for every kind. Set only through the account's own PATCH /portal/api/identity/notification-preferences.",
-        "Message id": "Message id"
+        "Message id": "Message id",
+        "Change proposals": "Change proposals",
+        "Loading proposals…": "Loading proposals…",
+        "You cannot review proposals on this record.": "You cannot review proposals on this record.",
+        "The proposals could not be loaded.": "The proposals could not be loaded.",
+        "No proposals are waiting on this record.": "No proposals are waiting on this record.",
+        "From the portal": "From the portal",
+        "From a colleague": "From a colleague",
+        "Now": "Now",
+        "Proposed": "Proposed",
+        "This record changed after the proposal was made.": "This record changed after the proposal was made.",
+        "{field} was {snapshot} and is now {current}.": "{field} was {snapshot} and is now {current}.",
+        "Accept anyway": "Accept anyway",
+        "Reason for rejecting": "Reason for rejecting",
+        "Reject with this reason": "Reject with this reason",
+        "Accept": "Accept",
+        "Reject": "Reject",
+        "Give a reason to reject.": "Give a reason to reject.",
+        "This decision was refused.": "This decision was refused.",
+        "The change is saved on the record.": "The change is saved on the record.",
+        "The proposal is rejected.": "The proposal is rejected."
     },
     "nplurals=2; plural=(n != 1);"
 )

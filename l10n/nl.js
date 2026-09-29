@@ -1673,7 +1673,27 @@ OC.L10N.register(
         "The out-of-band channel used: `email`, `push` for a web push to the resident's registered devices, or `messageBox` for the government message box an organisation offers through integriq's digital post adapter.": "Het gebruikte kanaal buiten de portal om: `email`, `push` voor een webpush naar de geregistreerde apparaten van de inwoner, of `messageBox` voor de berichtenbox van de overheid die een organisatie via de digitale-postkoppeling van integriq aanbiedt.",
         "The outcome of this attempt. `sent` and `failed` for every channel. A `messageBox` row moves on as integriq reports it: `delivered`, `read`, or `simulated` when integriq's binding sends nothing, which is never shown to the resident as delivered.": "De uitkomst van deze poging. `sent` en `failed` voor elk kanaal. Een `messageBox`-regel verandert mee met wat integriq meldt: `delivered`, `read`, of `simulated` als de koppeling van integriq niets verstuurt; dat wordt de inwoner nooit als bezorgd getoond.",
         "Per kind of notice, whether the resident wants it by e-mail and by push: `case.updated` for changes on their cases, `message.created` for new messages. `messageBox.enabled` is whether letters also go to the government message box, when the organisation offers it (inbox-berichtenbox-channel). A missing choice means on. `notificationChannels.email: false` still switches e-mail off for every kind. Set only through the account's own PATCH /portal/api/identity/notification-preferences.": "Per soort melding of de inwoner die per e-mail en per push wil: `case.updated` voor wijzigingen in hun zaken, `message.created` voor nieuwe berichten. `messageBox.enabled` geeft aan of brieven ook naar de berichtenbox van de overheid gaan, als de organisatie die aanbiedt (inbox-berichtenbox-channel). Een ontbrekende keuze betekent aan. `notificationChannels.email: false` zet e-mail nog steeds uit voor elke soort. Alleen in te stellen via de eigen PATCH /portal/api/identity/notification-preferences van het account.",
-        "Message id": "Bericht-id"
+        "Message id": "Bericht-id",
+        "Change proposals": "Wijzigingsvoorstellen",
+        "Loading proposals…": "Voorstellen laden…",
+        "You cannot review proposals on this record.": "U kunt de voorstellen op dit record niet beoordelen.",
+        "The proposals could not be loaded.": "De voorstellen konden niet worden geladen.",
+        "No proposals are waiting on this record.": "Er wachten geen voorstellen op dit record.",
+        "From the portal": "Via het portaal",
+        "From a colleague": "Van een collega",
+        "Now": "Nu",
+        "Proposed": "Voorgesteld",
+        "This record changed after the proposal was made.": "Dit record is gewijzigd nadat het voorstel werd gedaan.",
+        "{field} was {snapshot} and is now {current}.": "{field} was {snapshot} en is nu {current}.",
+        "Accept anyway": "Toch accepteren",
+        "Reason for rejecting": "Reden van afwijzen",
+        "Reject with this reason": "Afwijzen met deze reden",
+        "Accept": "Accepteren",
+        "Reject": "Afwijzen",
+        "Give a reason to reject.": "Geef een reden om af te wijzen.",
+        "This decision was refused.": "Deze beslissing is geweigerd.",
+        "The change is saved on the record.": "De wijziging is opgeslagen op het record.",
+        "The proposal is rejected.": "Het voorstel is afgewezen."
     },
     "nplurals=2; plural=(n != 1);"
 )

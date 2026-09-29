@@ -29,6 +29,16 @@ webpackConfig.entry = {
 		import: path.join(__dirname, 'src', 'settings.js'),
 		filename: appId + '-settings.js',
 	},
+	// The CLIENT half of portaliq's OpenRegister leaves (change-proposal-queue).
+	// OpenRegister's LeafScriptListener enqueues `portaliq-leaves` on the pages
+	// of other apps that consume OpenRegister, and SKIPS the app in silence when
+	// `js/portaliq-leaves.js` is absent. Never fold it into `main`: that bundle
+	// is the whole admin SPA. It is also kept out of the shared chunks below,
+	// because nothing loads those on another app's page.
+	leaves: {
+		import: path.join(__dirname, 'src', 'leaves.js'),
+		filename: appId + '-leaves.js',
+	},
 }
 
 // Use local source when explicitly opted in, otherwise the npm package.
@@ -209,7 +219,8 @@ webpackConfig.optimization = {
 	...(webpackConfig.optimization || {}),
 	splitChunks: {
 		...(webpackConfig.optimization?.splitChunks || {}),
-		chunks: 'all',
+		// Every entry but `leaves`, which must run alone on a foreign page.
+		chunks: (chunk) => chunk.name !== 'leaves',
 		cacheGroups: {
 			default: false,
 			defaultVendors: false,

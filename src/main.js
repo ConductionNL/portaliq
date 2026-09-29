@@ -53,6 +53,7 @@ import App from './App.vue'
 import enTranslations from '../l10n/en.json'
 import customComponents from './customComponents.js'
 import appIcons from './icons.js'
+import { registerProposalQueueLeaf } from './integrations/registerProposalQueueLeaf.js'
 import bundledManifest from './manifest.json'
 import pinia from './pinia.js'
 // v2 five-kind registry — the replacement for customComponents.
@@ -97,6 +98,9 @@ import './assets/app.css'
 installIntegrationRegistry()
 registerBuiltinIntegrations()
 registerLeafIntegrations()
+// Portaliq's own leaf (change-proposal-queue), so its review surface renders
+// on portaliq's pages too; other apps' pages get it from `portaliq-leaves`.
+registerProposalQueueLeaf()
 
 // Register library-side icon set + lib translations once at bootstrap.
 registerIcons(appIcons)
