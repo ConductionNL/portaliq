@@ -171,5 +171,14 @@
 	"This record is not in your list, so nothing of it is shown.": "This record is not in your list, so nothing of it is shown.",
 	"Also sent to {label}.": "Also sent to {label}.",
 	"Also send letters to {label}": "Also send letters to {label}",
-	"Loading…": "Loading…"
+	"Loading…": "Loading…",
+	"Withdraw this request": "Withdraw this request",
+	"Withdraw this request?": "Withdraw this request?",
+	"If you withdraw, we stop handling your request. You cannot undo this.": "If you withdraw, we stop handling your request. You cannot undo this.",
+	"Why are you withdrawing? (optional)": "Why are you withdrawing? (optional)",
+	"Withdraw request": "Withdraw request",
+	"Keep my request": "Keep my request",
+	"Your request has been withdrawn.": "Your request has been withdrawn.",
+	"Withdrawn on {date}.": "Withdrawn on {date}.",
+	"Your reason: {reason}": "Your reason: {reason}"
 }

@@ -9,7 +9,9 @@
 // says why. A disabled control with no explanation is the thing this replaces.
 
 import React, { useCallback, useEffect, useState } from 'react'
+import { caseFieldNames, withdrawalView } from '../lib/withdrawal.js'
 import Loading from './Loading.jsx'
+import WithdrawCaseConfirm from './WithdrawCaseConfirm.jsx'
 
 /**
  * One field, open or closed, always with its reason when closed.
@@ -67,6 +69,7 @@ export default function CitizenCase({ collection, row, api, t }) {
 	const [draft, setDraft] = useState({})
 	const [notice, setNotice] = useState(null)
 	const [busy, setBusy] = useState(false)
+	const [confirming, setConfirming] = useState(false)
 
 	const load = useCallback(async () => {
 		if (!caseId) {
@@ -95,8 +98,10 @@ export default function CitizenCase({ collection, row, api, t }) {
 	const fieldStates = writableSet?.fields || {}
 	const windowOpen = writableSet?.window?.open === true
 	const documentsOpen = writableSet?.documents?.open === true
-	// Every field the case carries is shown; the set decides which are open.
-	const fields = Object.keys(caseRow).filter((key) => key !== '@self' && key !== '_files')
+	// Every answer the case carries is shown; the set decides which are open.
+	// The withdrawal fields are the withdrawn state, not answers.
+	const fields = caseFieldNames(caseRow)
+	const withdrawal = withdrawalView(state.data.withdrawal, caseRow)
 
 	/**
 	 * Hold one corrected answer until the citizen saves.
@@ -146,6 +151,26 @@ export default function CitizenCase({ collection, row, api, t }) {
 		setNotice(result.ok
 			? t('{name} has been added to your case.', { name: result.document?.name || file.name })
 			: (result.message || t('The document could not be added. Please try again.')))
+		if (result.ok) {
+			load()
+		}
+	}
+
+	/**
+	 * Withdraw the request, once the resident confirmed. A refusal is the
+	 * server's sentence, as for a save.
+	 *
+	 * @param {string} reason Why, or ''.
+	 * @spec openspec/specs/citizen-case-withdraw-screen/spec.md#requirement-withdrawing-takes-a-confirmation-with-an-optional-reason-req-wds-002
+	 */
+	async function onWithdraw(reason) {
+		setBusy(true)
+		const result = await api.withdrawCitizenCase(collection, caseId, reason)
+		setBusy(false)
+		setConfirming(false)
+		setNotice(result.ok
+			? t('Your request has been withdrawn.')
+			: (result.message || t('The change could not be saved. Please try again.')))
 		if (result.ok) {
 			load()
 		}
@@ -209,6 +234,39 @@ export default function CitizenCase({ collection, row, api, t }) {
 						</p>
 					)}
 			</div>
+
+			{withdrawal.kind === 'withdrawn' && (
+				<div className="portaliq-case-withdrawn" data-testid="case-withdrawn">
+					<p>{t('Withdrawn on {date}.', { date: new Date(withdrawal.withdrawnAt).toLocaleDateString() })}</p>
+					{withdrawal.reason && <p>{t('Your reason: {reason}', { reason: withdrawal.reason })}</p>}
+				</div>
+			)}
+
+			{withdrawal.kind === 'closed' && (
+				<p className="portaliq-case-reason" data-testid="case-withdraw-closed">{withdrawal.reason}</p>
+			)}
+
+			{withdrawal.kind === 'button' && !confirming && (
+				<button
+					type="button"
+					className="portaliq-case-withdraw"
+					data-testid="case-withdraw"
+					disabled={busy}
+					onClick={() => { setNotice(null); setConfirming(true) }}
+				>
+					{t('Withdraw this request')}
+				</button>
+			)}
+
+			{withdrawal.kind === 'button' && confirming && (
+				<WithdrawCaseConfirm
+					t={t}
+					confirmText={withdrawal.confirmText}
+					busy={busy}
+					onConfirm={onWithdraw}
+					onCancel={() => setConfirming(false)}
+				/>
+			)}
 
 			{notice && <p className="portaliq-case-notice" data-testid="case-notice" role="status">{notice}</p>}
 		</section>

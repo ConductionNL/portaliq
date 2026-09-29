@@ -47,6 +47,7 @@ Pressing "Withdraw this request" SHALL open a confirmation step that states what
 - **GIVEN** a window that closed while the resident had the screen open
 - **WHEN** they confirm the withdrawal
 - **THEN** the screen shows the server's sentence and the request is unchanged
+- @e2e exclude a window closing mid-screen cannot be staged reliably in a browser; the refusal shape is pinned by tests/case-withdraw-screen.spec.mjs and the controller's 409 by the API spec withdrawing-your-own-case-from-the-portal.spec.ts
 
 ### Requirement: A withdrawn request stays readable and cannot be undone from the portal (REQ-WDS-003)
 
