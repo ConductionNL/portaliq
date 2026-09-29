@@ -237,6 +237,13 @@
 	font-weight: 600;
 }
 
+.portaliq-acting-for {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--portaliq-space-sm);
+	margin-inline-start: auto;
+}
+
 .portaliq-cases__tabs {
 	display: flex;
 	gap: var(--portaliq-space-sm);

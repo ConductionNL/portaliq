@@ -66,3 +66,75 @@ export function caseTitle(row) {
 	}
 	return String(row?.id || row?.uuid || row?.['@self']?.id || '')
 }
+
+// Whom the person acts for (REQ-CMC-004). "Yourself" is sent as `mandate=self`
+// so the server lists only the person's own cases even while they hold a
+// mandate; without any value it would spend the first mandate held.
+export const ACTING_FOR_SELF = 'self'
+export const ACTING_FOR_KEY = 'portaliq.actingFor'
+
+/**
+ * The choices under "Acting for": yourself, then every mandate held by its label.
+ *
+ * @param {Array<{id: string, label: string}>} mandates The mandates held.
+ * @param {(key: string) => string} t The translator.
+ * @return {Array<{id: string, label: string}>} The choices.
+ *
+ * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md#requirement-you-choose-whom-you-act-for-req-cmc-004
+ */
+export function actingForOptions(mandates, t) {
+	const held = (Array.isArray(mandates) ? mandates : [])
+		.filter((mandate) => mandate && mandate.id)
+		.map((mandate) => ({
+			id: String(mandate.id),
+			label: String(mandate.label || mandate.id),
+		}))
+	return [{ id: ACTING_FOR_SELF, label: t('Yourself') }, ...held]
+}
+
+/**
+ * The choice kept for this session, or yourself.
+ *
+ * @param {{getItem: (key: string) => string|null}|null} storage sessionStorage.
+ * @return {string} The mandate id, or `self`.
+ */
+export function readActingFor(storage) {
+	try {
+		return storage?.getItem(ACTING_FOR_KEY) || ACTING_FOR_SELF
+	} catch {
+		return ACTING_FOR_SELF
+	}
+}
+
+/**
+ * Keep the choice for the rest of the session.
+ *
+ * @param {{setItem: (key: string, value: string) => void}|null} storage sessionStorage.
+ * @param {string} id The mandate id, or `self`.
+ * @return {void}
+ */
+export function keepActingFor(storage, id) {
+	try {
+		storage?.setItem(ACTING_FOR_KEY, id)
+	} catch {
+		// Without storage the choice lasts as long as the page.
+	}
+}
+
+/**
+ * The choice when it is still held, else yourself.
+ *
+ * @param {string} id The kept choice.
+ * @param {Array<{id: string}>} mandates The mandates held.
+ * @return {string} The choice to act under.
+ */
+export function actingForHeld(id, mandates) {
+	if (id === ACTING_FOR_SELF) {
+		return id
+	}
+	return (Array.isArray(mandates) ? mandates : []).some(
+		(mandate) => mandate?.id === id,
+	)
+		? id
+		: ACTING_FOR_SELF
+}

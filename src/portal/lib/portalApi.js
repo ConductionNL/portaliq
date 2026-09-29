@@ -632,12 +632,18 @@ export function createPortalApi(config) {
 		 *
 		 * @param {object} collection Manifest collection: `{ register, schema }`.
 		 * @param {string} id The case id.
+		 * @param {string} [mandateId] The mandate the case was listed under, if any.
 		 * @return {Promise<object|null>} `{ case, writableSet, documents }` or null.
 		 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
 		 */
-		async fetchCitizenCase(collection, id) {
+		async fetchCitizenCase(collection, id, mandateId = '') {
+			// A case listed under a mandate is read under that mandate
+			// (cases-my-cases-page REQ-CMC-004); the server shows it read-only.
+			const query = mandateId
+				? `?mandate=${encodeURIComponent(mandateId)}`
+				: ''
 			return get(
-				`${citizenCase(collection.register, collection.schema)}/${encodeURIComponent(id)}`,
+				`${citizenCase(collection.register, collection.schema)}/${encodeURIComponent(id)}${query}`,
 			)
 		},
 
