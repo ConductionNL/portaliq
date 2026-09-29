@@ -76,12 +76,15 @@ class PortalCaseListReader {
 	 *
 	 * @param array<string, mixed> $subject The resolved subject.
 	 * @param array<string, mixed> $aggregate The subject's aggregated manifest.
+	 * @param array<int, string> $hiddenCaseTypes The case type ids the serving
+	 *                                            portal does not show.
 	 *
 	 * @return array<int, array<string, mixed>> The merged case rows.
 	 *
 	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+	 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
 	 */
-	public function listCases(array $subject, array $aggregate): array {
+	public function listCases(array $subject, array $aggregate, array $hiddenCaseTypes = []): array {
 		$rows = [];
 		foreach (($aggregate['contributions'] ?? []) as $contribution) {
 			if (is_array($contribution) === false) {
@@ -104,6 +107,10 @@ class PortalCaseListReader {
 				}
 
 				foreach ($this->readCases(subject: $subject, collection: $collection, contributingApp: $appId) as $row) {
+					if ($this->isHiddenType(row: $row, collection: $collection, hidden: $hiddenCaseTypes) === true) {
+						continue;
+					}
+
 					$row['_source'] = [
 						'appId' => $appId,
 						'label' => $label,
@@ -140,12 +147,15 @@ class PortalCaseListReader {
 	 * @param array<string, mixed> $subject The resolved subject.
 	 * @param array<string, mixed> $aggregate The subject's aggregated manifest.
 	 * @param array<int, array<string, mixed>> $mandates The live mandates.
+	 * @param array<int, string> $hiddenCaseTypes The case type ids the serving
+	 *                                            portal does not show.
 	 *
 	 * @return array<int, array<string, mixed>> The mandated case rows.
 	 *
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
 	 */
-	public function listMandatedCases(array $subject, array $aggregate, array $mandates): array {
+	public function listMandatedCases(array $subject, array $aggregate, array $mandates, array $hiddenCaseTypes = []): array {
 		if ($this->mandates === null || $mandates === []) {
 			// No mandate recorded is the closed default: none of the
 			// organisation's cases, not all of them.
@@ -161,12 +171,60 @@ class PortalCaseListReader {
 			$rows = array_merge($rows, $this->mandatedRowsOfContribution(
 				subject: $subject,
 				contribution: $contribution,
-				mandates: $mandates
+				mandates: $mandates,
+				hidden: $hiddenCaseTypes
 			));
 		}
 
 		return $rows;
 	}//end listMandatedCases()
+
+	/**
+	 * Whether a case row's type is one the serving portal hides
+	 * (operate-show-per-case-type). The type is read from the collection's
+	 * `caseTypeField`, as a plain id or a reference object carrying one.
+	 *
+	 * @param array<string, mixed> $row The case row.
+	 * @param array<string, mixed> $collection The declared `cases` collection.
+	 * @param array<int, string> $hidden The hidden case type ids.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 */
+	private function isHiddenType(array $row, array $collection, array $hidden): bool {
+		if ($hidden === []) {
+			return false;
+		}
+
+		$typeId = $this->typeOf(row: $row, collection: $collection);
+
+		return ($typeId !== '' && in_array($typeId, $hidden, true) === true);
+	}//end isHiddenType()
+
+	/**
+	 * The case type id of a row, from the collection's `caseTypeField`: a
+	 * plain id, or a reference object carrying `id` or `uuid`.
+	 *
+	 * @param array<string, mixed> $row The case row.
+	 * @param array<string, mixed> $collection The declared `cases` collection.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 */
+	private function typeOf(array $row, array $collection): string {
+		$value = ($row[(string)($collection['caseTypeField'] ?? 'caseType')] ?? '');
+		if (is_array($value) === true) {
+			$value = ($value['id'] ?? $value['uuid'] ?? '');
+		}
+
+		if (is_scalar($value) === false) {
+			return '';
+		}
+
+		return (string)$value;
+	}//end typeOf()
 
 	/**
 	 * The mandated rows one contributing app's case collections yield.
@@ -178,12 +236,13 @@ class PortalCaseListReader {
 	 * @param array<string, mixed> $subject The resolved subject.
 	 * @param array<string, mixed> $contribution One app's contribution.
 	 * @param array<int, array<string, mixed>> $mandates The live mandates.
+	 * @param array<int, string> $hidden The case type ids the serving portal hides.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
-	private function mandatedRowsOfContribution(array $subject, array $contribution, array $mandates): array {
+	private function mandatedRowsOfContribution(array $subject, array $contribution, array $mandates, array $hidden): array {
 		$appId = (string)($contribution['app'] ?? '');
 		$label = (string)($contribution['label'] ?? $appId);
 
@@ -202,13 +261,18 @@ class PortalCaseListReader {
 			}
 
 			foreach ($mandates as $mandate) {
-				$rows = array_merge($rows, $this->mandatedRowsOfMandate(
+				$mandated = $this->mandatedRowsOfMandate(
 					subject: $subject,
 					collection: $collection,
 					appId: $appId,
 					label: $label,
 					mandate: $mandate
-				));
+				);
+				foreach ($mandated as $row) {
+					if ($this->isHiddenType(row: $row, collection: $collection, hidden: $hidden) === false) {
+						$rows[] = $row;
+					}
+				}
 			}
 		}
 
@@ -308,7 +372,7 @@ class PortalCaseListReader {
 	): array {
 		$rows = [];
 		foreach ($partyRows as $row) {
-			$caseType = (string)($row[(string)($collection['caseTypeField'] ?? 'caseType')] ?? '');
+			$caseType = $this->typeOf(row: $row, collection: $collection);
 			if ($this->mandates?->covers(mandate: $mandate, caseType: $caseType) !== true) {
 				// A mandate narrower than the organisation lists only what it
 				// names.
