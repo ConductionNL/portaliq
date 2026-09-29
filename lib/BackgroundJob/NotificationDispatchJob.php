@@ -45,6 +45,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\BackgroundJob;
 
+use OCA\Portaliq\Service\Notifications\MessageBoxChannel;
+use OCA\Portaliq\Service\Notifications\MessageBoxSender;
 use OCA\Portaliq\Service\Notifications\NotificationChannels;
 use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCA\Portaliq\Service\PortalObjectReader;
@@ -86,7 +88,7 @@ class NotificationDispatchJob extends QueuedJob {
 	private const NOTIFICATION_SCHEMA = 'portalNotification';
 
 	/**
-	 * The only channel implemented — future-proofed field, single value today.
+	 * The e-mail channel. Push and the message box log their own channel.
 	 */
 	private const CHANNEL_EMAIL = 'email';
 
@@ -150,6 +152,7 @@ class NotificationDispatchJob extends QueuedJob {
 	 * @param IConfig $config Reads the configurable failure threshold.
 	 * @param LoggerInterface $logger The logger.
 	 * @param NotificationChannels|null $channels The resident's per-kind choices and the push.
+	 * @param MessageBoxSender|null $messageBox Sends a `messageBox` job to integriq (inbox-berichtenbox-channel).
 	 */
 	public function __construct(
 		ITimeFactory $time,
@@ -162,6 +165,7 @@ class NotificationDispatchJob extends QueuedJob {
 		private readonly IConfig $config,
 		private readonly LoggerInterface $logger,
 		private readonly ?NotificationChannels $channels = null,
+		private readonly ?MessageBoxSender $messageBox = null,
 	) {
 		parent::__construct(time: $time);
 	}//end __construct()
@@ -221,6 +225,17 @@ class NotificationDispatchJob extends QueuedJob {
 			// log against; a normal state when the account has since been
 			// removed, never an error.
 			$this->logger->debug('Portaliq: NotificationDispatchJob found no portalAccount — skipping', ['subjectRef' => $subjectRef]);
+			return;
+		}
+
+		// A message box job is one send to one channel: the listener already
+		// checked the organisation and the resident's choice when it queued it.
+		if (($argument['channel'] ?? '') === MessageBoxChannel::CHANNEL) {
+			$accountId = $this->rowId(row: $account);
+			if ($accountId !== null && $this->messageBox !== null) {
+				$this->messageBox->send(argument: $argument, accountId: $accountId);
+			}
+
 			return;
 		}
 
