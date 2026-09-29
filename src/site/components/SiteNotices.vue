@@ -55,6 +55,8 @@ import {
 	visibleNotices,
 } from '../../portal/lib/notices.js'
 
+import '@utrecht/alert-css/dist/index.css'
+
 const LABELS = {
 	en: { notice: 'Notice', close: 'Close this notice', more: 'More information' },
 	nl: {

@@ -227,7 +227,7 @@ class Application extends App implements IBootstrap {
 			$context->registerEventListener($event, MediaWriteGuardListener::class);
 		}
 
-		// operate-maintenance-notice REQ-OMN-003: a notice ends after it starts.
+		// A notice ends after it starts (operate-maintenance-notice REQ-OMN-003).
 		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class] as $event) {
 			$context->registerEventListener($event, NoticeWriteGuardListener::class);
 		}
