@@ -14,7 +14,7 @@ use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Db\Schema;
 use OCA\OpenRegister\Db\SchemaMapper;
 use OCA\Portaliq\Listener\MediaWriteGuardListener;
-use OCA\Portaliq\Service\CmsReader;
+use OCA\Portaliq\Service\Cms\MediaLibraryReader;
 use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -111,8 +111,8 @@ class MediaWriteGuardListenerTest extends TestCase {
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->willReturn($schemas);
 
-		$reader = $this->getMockBuilder(CmsReader::class)->disableOriginalConstructor()->onlyMethods(['pagesUsingMedia'])->getMock();
-		$reader->method('pagesUsingMedia')->willReturnCallback(
+		$reader = $this->getMockBuilder(MediaLibraryReader::class)->disableOriginalConstructor()->onlyMethods(['pagesUsing'])->getMock();
+		$reader->method('pagesUsing')->willReturnCallback(
 			static fn (string $portal, string $id) => ($portal === 'gemeente' && $id === 'm1') ? $pages : []
 		);
 

@@ -93,36 +93,92 @@ test.describe('site-page-seo-history-and-media', () => {
 		request,
 	}) => {
 		const slug = `hist-${Date.now()}`
-		await seed(request, 'portal', { slug, title: 'Gemeente Voorbeeld', status: 'published' })
-		const monday = { type: 'grid', widgets: [{ id: 'w1', widgetKey: 'text', gridX: 0, gridY: 0, gridWidth: 12, gridHeight: 2, props: { text: 'Monday' } }] }
-		const friday = { type: 'grid', widgets: [{ id: 'w1', widgetKey: 'text', gridX: 0, gridY: 0, gridWidth: 12, gridHeight: 2, props: { text: 'Friday' } }] }
+		await seed(request, 'portal', {
+			slug,
+			title: 'Gemeente Voorbeeld',
+			status: 'published',
+		})
+		const monday = {
+			type: 'grid',
+			widgets: [
+				{
+					id: 'w1',
+					widgetKey: 'text',
+					gridX: 0,
+					gridY: 0,
+					gridWidth: 12,
+					gridHeight: 2,
+					props: { text: 'Monday' },
+				},
+			],
+		}
+		const friday = {
+			type: 'grid',
+			widgets: [
+				{
+					id: 'w1',
+					widgetKey: 'text',
+					gridX: 0,
+					gridY: 0,
+					gridWidth: 12,
+					gridHeight: 2,
+					props: { text: 'Friday' },
+				},
+			],
+		}
 		const created = await request.post(`${OR_OBJECTS_BASE}/portaliq/page`, {
 			headers: HEADERS,
-			data: { portal: slug, route: '/contact', title: 'Contact', status: 'published', body: monday },
+			data: {
+				portal: slug,
+				route: '/contact',
+				title: 'Contact',
+				status: 'published',
+				body: monday,
+			},
 		})
 		const page = await created.json()
 		const id = page.id ?? page['@self']?.id
 		await request.put(`${OR_OBJECTS_BASE}/portaliq/page/${id}`, {
 			headers: HEADERS,
-			data: { portal: slug, route: '/contact', title: 'Contact', status: 'published', body: friday },
+			data: {
+				portal: slug,
+				route: '/contact',
+				title: 'Contact',
+				status: 'published',
+				body: friday,
+			},
 		})
 
 		const history = await (
-			await request.get(`/index.php/apps/portaliq/api/pages/${id}/history`, { headers: HEADERS })
+			await request.get(`/index.php/apps/portaliq/api/pages/${id}/history`, {
+				headers: HEADERS,
+			})
 		).json()
 		expect(history.versions.length).toBeGreaterThanOrEqual(2)
 		expect(history.versions[0].body.widgets[0].props.text).toBe('Friday')
-		const mondayVersion = history.versions.find((v: { body?: { widgets: Array<{ props: { text: string } }> } }) => v.body?.widgets[0].props.text === 'Monday')
+		const mondayVersion = history.versions.find(
+			(v: { body?: { widgets: Array<{ props: { text: string } }> } }) =>
+				v.body?.widgets[0].props.text === 'Monday',
+		)
 		expect(mondayVersion?.restorable).toBe(true)
 		expect(mondayVersion?.by).not.toBe('')
 
 		// What the designer's restore writes: the version as the draft.
 		await request.put(`${OR_OBJECTS_BASE}/portaliq/page/${id}`, {
 			headers: HEADERS,
-			data: { portal: slug, route: '/contact', title: 'Contact', status: 'published', body: friday, draftBody: mondayVersion.body },
+			data: {
+				portal: slug,
+				route: '/contact',
+				title: 'Contact',
+				status: 'published',
+				body: friday,
+				draftBody: mondayVersion.body,
+			},
 		})
 		const live = await (
-			await request.get(`/index.php/apps/portaliq/api/content/page?portal=${slug}&route=/contact`)
+			await request.get(
+				`/index.php/apps/portaliq/api/content/page?portal=${slug}&route=/contact`,
+			)
 		).text()
 		expect(live).toContain('Friday')
 		expect(live).not.toContain('Monday')
@@ -132,24 +188,50 @@ test.describe('site-page-seo-history-and-media', () => {
 		request,
 	}) => {
 		const slug = `media-${Date.now()}`
-		await seed(request, 'portal', { slug, title: 'Gemeente Voorbeeld', status: 'published' })
-		const draft = await (await request.post(`${OR_OBJECTS_BASE}/portaliq/media`, {
-			headers: HEADERS,
-			data: { portal: slug, title: 'Concept', kind: 'file', status: 'draft' },
-		})).json()
-		const hidden = await request.get(`/index.php/apps/portaliq/api/content/media/${draft.id}?portal=${slug}`)
+		await seed(request, 'portal', {
+			slug,
+			title: 'Gemeente Voorbeeld',
+			status: 'published',
+		})
+		const draft = await (
+			await request.post(`${OR_OBJECTS_BASE}/portaliq/media`, {
+				headers: HEADERS,
+				data: {
+					portal: slug,
+					title: 'Concept',
+					kind: 'file',
+					status: 'draft',
+				},
+			})
+		).json()
+		const hidden = await request.get(
+			`/index.php/apps/portaliq/api/content/media/${draft.id}?portal=${slug}`,
+		)
 		expect(hidden.status()).toBe(404)
 
 		const noAlt = await request.post(`${OR_OBJECTS_BASE}/portaliq/media`, {
 			headers: HEADERS,
-			data: { portal: slug, title: 'Zonder tekst', kind: 'image', status: 'published' },
+			data: {
+				portal: slug,
+				title: 'Zonder tekst',
+				kind: 'image',
+				status: 'published',
+			},
 		})
 		expect(noAlt.ok()).toBeFalsy()
 
-		const image = await (await request.post(`${OR_OBJECTS_BASE}/portaliq/media`, {
-			headers: HEADERS,
-			data: { portal: slug, title: 'Stadhuis', kind: 'image', status: 'published', alt: 'Het stadhuis aan de Markt' },
-		})).json()
+		const image = await (
+			await request.post(`${OR_OBJECTS_BASE}/portaliq/media`, {
+				headers: HEADERS,
+				data: {
+					portal: slug,
+					title: 'Stadhuis',
+					kind: 'image',
+					status: 'published',
+					alt: 'Het stadhuis aan de Markt',
+				},
+			})
+		).json()
 		await seed(request, 'page', {
 			portal: slug,
 			route: '/contact',
@@ -159,11 +241,16 @@ test.describe('site-page-seo-history-and-media', () => {
 			body: { type: 'markdown', markdown: 'Tekst' },
 		})
 		const page = await (
-			await request.get(`/index.php/apps/portaliq/api/content/page?portal=${slug}&route=/contact`)
+			await request.get(
+				`/index.php/apps/portaliq/api/content/page?portal=${slug}&route=/contact`,
+			)
 		).json()
 		expect(page.hero.alt).toBe('Het stadhuis aan de Markt')
 
-		const refused = await request.delete(`${OR_OBJECTS_BASE}/portaliq/media/${image.id}`, { headers: HEADERS })
+		const refused = await request.delete(
+			`${OR_OBJECTS_BASE}/portaliq/media/${image.id}`,
+			{ headers: HEADERS },
+		)
 		expect(refused.ok()).toBeFalsy()
 		expect(await refused.text()).toContain('/contact')
 	})

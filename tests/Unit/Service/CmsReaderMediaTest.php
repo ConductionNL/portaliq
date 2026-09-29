@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\Portaliq\Service\Cms\MediaLibraryReader;
 use OCA\Portaliq\Service\Cms\MediaReferences;
 use OCA\Portaliq\Service\CmsReader;
 use OCA\Portaliq\Service\PortalRegisterContext;
@@ -68,24 +69,31 @@ class CmsReaderMediaTest extends TestCase {
 	}//end testTheShareImageAndMarkdownReferencesResolve()
 
 	public function testOnlyThePortalsPublishedItemsAreRead(): void {
-		$reader = $this->reader(pages: []);
+		$this->reader(pages: []);
 
-		$this->assertSame(['id' => self::IMAGE, 'title' => 'Stadhuis', 'alt' => 'Het stadhuis aan de Markt', 'kind' => 'image'], $reader->mediaItem(portal: 'gemeente', id: self::IMAGE));
-		$this->assertNull($reader->mediaItem(portal: 'gemeente', id: self::DRAFT));
+		$this->assertSame(['id' => self::IMAGE, 'title' => 'Stadhuis', 'alt' => 'Het stadhuis aan de Markt', 'kind' => 'image'], $this->library->item(portal: 'gemeente', id: self::IMAGE));
+		$this->assertNull($this->library->item(portal: 'gemeente', id: self::DRAFT));
 		$this->assertSame(['portal' => 'gemeente', 'status' => 'published'], $this->queried['media']);
 	}//end testOnlyThePortalsPublishedItemsAreRead()
 
 	public function testThePublishedPagesUsingAnItemAreNamed(): void {
-		$reader = $this->reader(pages: [
+		$this->reader(pages: [
 			$this->page(['route' => '/contact', 'heroImage' => 'media:'.self::IMAGE]),
 			$this->page(['route' => '/about', 'body' => ['type' => 'markdown', 'markdown' => '![x](media:'.self::IMAGE.')']]),
 			$this->page(['route' => '/share', 'seoImage' => 'media:'.self::IMAGE]),
 			$this->page(['route' => '/other', 'heroImage' => 'media:'.self::IMAGE.'0']),
 		]);
 
-		$this->assertSame(['/about', '/contact', '/share'], $reader->pagesUsingMedia(portal: 'gemeente', id: self::IMAGE));
+		$this->assertSame(['/about', '/contact', '/share'], $this->library->pagesUsing(portal: 'gemeente', id: self::IMAGE));
 		$this->assertSame(['portal' => 'gemeente', 'status' => 'published'], $this->queried['page']);
 	}//end testThePublishedPagesUsingAnItemAreNamed()
+
+	/**
+	 * The library reader the last reader() built.
+	 *
+	 * @var MediaLibraryReader
+	 */
+	private MediaLibraryReader $library;
 
 	/**
 	 * The filters each schema was last queried with.
@@ -163,6 +171,8 @@ class CmsReaderMediaTest extends TestCase {
 			static fn (string $route, array $params) => 'https://gemeente.example/media/'.$params['id'].'?portal='.$params['portal']
 		);
 
-		return new CmsReader($container, $factory, new NullLogger(), $context, new MediaReferences($urls));
+		$this->library = new MediaLibraryReader($container, $factory, new NullLogger(), $context);
+
+		return new CmsReader($container, $factory, new NullLogger(), $context, new MediaReferences($urls, $this->library));
 	}//end reader()
 }//end class

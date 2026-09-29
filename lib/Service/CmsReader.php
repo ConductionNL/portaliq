@@ -308,99 +308,6 @@ class CmsReader {
 
 
 	/**
-	 * The published media items of a portal, by id.
-	 *
-	 * Status and portal are filtered in the QUERY, like a page: a draft item
-	 * never reaches this process, so it resolves exactly like an unknown id.
-	 *
-	 * @param string $portal The portal slug.
-	 *
-	 * @return array<string, array{id: string, title: string, alt: string, kind: string}>
-	 *
-	 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
-	 */
-	public function mediaItems(string $portal): array {
-		$key = $this->cacheKey(portal: $portal, kind: 'media', selector: '', locale: '', audience: 'anonymous');
-		$hit = $this->cache->get($key);
-		if ($hit !== null) {
-			return json_decode($hit, true) ?? [];
-		}
-
-		$items = [];
-		foreach ($this->query(schema: 'media', filters: ['portal' => $portal, 'status' => 'published']) as $row) {
-			$id = $this->rowId(row: $row);
-			if ($id === null || (string)($row['portal'] ?? '') !== $portal || ($row['status'] ?? '') !== 'published') {
-				continue;
-			}
-
-			$items[$id] = [
-				'id'    => $id,
-				'title' => (string)($row['title'] ?? ''),
-				'alt'   => (string)($row['alt'] ?? ''),
-				'kind'  => (string)($row['kind'] ?? 'file'),
-			];
-		}
-
-		$this->cache->set($key, json_encode($items), self::TTL);
-
-		return $items;
-	}//end mediaItems()
-
-
-	/**
-	 * One published media item of a portal, or null.
-	 *
-	 * @param string $portal The portal slug.
-	 * @param string $id     The item id.
-	 *
-	 * @return array{id: string, title: string, alt: string, kind: string}|null
-	 *
-	 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
-	 */
-	public function mediaItem(string $portal, string $id): ?array {
-		if ($portal === '' || $id === '') {
-			return null;
-		}
-
-		return ($this->mediaItems(portal: $portal)[$id] ?? null);
-	}//end mediaItem()
-
-
-	/**
-	 * The routes of the published pages of a portal that use a media item, as
-	 * hero image, share image or anywhere in the body.
-	 *
-	 * Uncached: it guards a delete, and a stale answer there removes an image
-	 * from a live page.
-	 *
-	 * @param string $portal The portal slug.
-	 * @param string $id     The item id.
-	 *
-	 * @return list<string> The routes, sorted.
-	 *
-	 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
-	 */
-	public function pagesUsingMedia(string $portal, string $id): array {
-		if ($portal === '' || $id === '') {
-			return [];
-		}
-
-		$pattern = '/'.preg_quote(MediaReferences::PREFIX.$id, '/').'(?![A-Za-z0-9-])/';
-		$routes  = [];
-		foreach ($this->query(schema: 'page', filters: ['portal' => $portal, 'status' => 'published']) as $row) {
-			$used = json_encode([$row['heroImage'] ?? null, $row['seoImage'] ?? null, $row['body'] ?? null]);
-			if (is_string($used) === true && preg_match($pattern, $used) === 1) {
-				$routes[] = (string)($row['route'] ?? '');
-			}
-		}
-
-		sort($routes);
-
-		return $routes;
-	}//end pagesUsingMedia()
-
-
-	/**
 	 * Read the glossary of a portal.
 	 *
 	 * @param string $portal  The portal slug.
@@ -539,7 +446,7 @@ class CmsReader {
 			'title'       => (string)($row['seoTitle'] ?? ''),
 			'description' => (string)($row['seoDescription'] ?? ''),
 			'noindex'     => (($row['seoNoindex'] ?? false) === true),
-			'image'       => $this->media->image(portal: $portal, value: (string)($row['seoImage'] ?? ''), items: fn () => $this->mediaItems(portal: $portal)),
+			'image'       => $this->media->image(portal: $portal, value: (string)($row['seoImage'] ?? '')),
 		];
 	}//end shapeSeo()
 
@@ -555,7 +462,6 @@ class CmsReader {
 		$body   = (array)($row['body'] ?? []);
 		$type   = (string)($body['type'] ?? 'markdown');
 		$portal = (string)($row['portal'] ?? '');
-		$items  = fn (): array => $this->mediaItems(portal: $portal);
 
 		$shaped = [
 			'title'   => (string)($row['title'] ?? ''),
@@ -563,7 +469,7 @@ class CmsReader {
 			'summary' => (string)($row['summary'] ?? ''),
 			'locale'  => (string)($row['locale'] ?? ''),
 			'seo'     => $this->shapeSeo(row: $row),
-			'hero'    => $this->media->hero(portal: $portal, value: ($row['heroImage'] ?? null), items: $items),
+			'hero'    => $this->media->hero(portal: $portal, value: ($row['heroImage'] ?? null)),
 			'body'    => ['type' => $type],
 		];
 
@@ -572,7 +478,7 @@ class CmsReader {
 			// consumer that wants markdown — a Docusaurus build, most
 			// obviously — to parse it back out, losing fidelity for nothing.
 			// Only a media:<id> link target is rewritten to the item's address.
-			$shaped['body']['markdown'] = $this->media->markdown(portal: $portal, markdown: (string)($body['markdown'] ?? ''), items: $items);
+			$shaped['body']['markdown'] = $this->media->markdown(portal: $portal, markdown: (string)($body['markdown'] ?? ''));
 			return $shaped;
 		}
 

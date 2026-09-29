@@ -40,10 +40,20 @@ export function createMediaLibrary({ get }) {
 				return { state: 'empty', items: [] }
 			}
 			try {
-				const query = new URLSearchParams({ portal, status: 'published', _limit: '200' })
-				const { data } = await get('/apps/openregister/api/objects/portaliq/media?' + query.toString())
+				const query = new URLSearchParams({
+					portal,
+					status: 'published',
+					_limit: '200',
+				})
+				const { data } = await get(
+					'/apps/openregister/api/objects/portaliq/media?'
+						+ query.toString(),
+				)
 				const items = (Array.isArray(data?.results) ? data.results : [])
-					.filter((item) => item.portal === portal && item.status === 'published')
+					.filter(
+						(item) =>
+							item.portal === portal && item.status === 'published',
+					)
 					.map((item) => ({
 						id: String(item.id ?? item['@self']?.id ?? ''),
 						title: item.title || '',
@@ -52,7 +62,7 @@ export function createMediaLibrary({ get }) {
 					}))
 					.filter((item) => item.id !== '')
 				return { state: items.length ? 'ready' : 'empty', items }
-			} catch (error) {
+			} catch {
 				return { state: 'error', items: [] }
 			}
 		},

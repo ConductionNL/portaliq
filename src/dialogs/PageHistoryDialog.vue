@@ -29,7 +29,10 @@
 		</p>
 
 		<NcLoadingIcon v-if="state === 'loading'" :size="32" />
-		<NcNoteCard v-else-if="state === 'error'" type="error" data-testid="page-history-error">
+		<NcNoteCard
+			v-else-if="state === 'error'"
+			type="error"
+			data-testid="page-history-error">
 			{{ t('portaliq', 'The history could not be loaded.') }}
 		</NcNoteCard>
 		<p v-else-if="state === 'empty'" data-testid="page-history-empty">
@@ -57,13 +60,20 @@
 					{{ t('portaliq', 'Restore this version') }}
 				</NcButton>
 				<span v-else class="history__note">
-					{{ t('portaliq', 'This version was recorded without its content, so it cannot be restored.') }}
+					{{
+						t(
+							'portaliq',
+							'This version was recorded without its content, so it cannot be restored.',
+						)
+					}}
 				</span>
 			</li>
 		</ol>
 
 		<template #actions>
-			<NcButton data-testid="page-history-close" @click="$emit('update:open', false)">
+			<NcButton
+				data-testid="page-history-close"
+				@click="$emit('update:open', false)">
 				{{ t('portaliq', 'Close') }}
 			</NcButton>
 		</template>
@@ -92,11 +102,13 @@ export default {
 			type: Boolean,
 			default: false,
 		},
+
 		/** The page object's id. */
 		pageId: {
 			type: String,
 			default: '',
 		},
+
 		/** Whether the designer is writing, which disables restoring. */
 		busy: {
 			type: Boolean,
@@ -131,7 +143,8 @@ export default {
 				this.state = 'loading'
 				const history = createPageHistory({
 					get: (url) => axios.get(url),
-					url: (path, params) => generateUrl('/apps/portaliq' + path, params),
+					url: (path, params) =>
+						generateUrl('/apps/portaliq' + path, params),
 				})
 				const result = await history.load(this.pageId)
 				this.state = result.state

@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\Portaliq\Service\Cms\MediaLibraryReader;
 use OCA\Portaliq\Service\Cms\MediaReferences;
 use OCA\Portaliq\Service\CmsReader;
 use OCA\Portaliq\Service\PortalRegisterContext;
@@ -86,7 +87,7 @@ class CmsReaderTest extends TestCase {
 			$factory,
 			$this->createMock(LoggerInterface::class),
 			$context,
-			new MediaReferences($this->createMock(IURLGenerator::class))
+			new MediaReferences($this->createMock(IURLGenerator::class), $this->createMock(MediaLibraryReader::class))
 		);
 	}//end setUp()
 

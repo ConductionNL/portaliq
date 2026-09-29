@@ -151,14 +151,7 @@ class Application extends App implements IBootstrap {
 			$context->registerEventListener($event, CmsCacheInvalidationListener::class);
 		}
 
-		// The media library's write rules (site-page-seo-history-and-media
-		// T06, T09): an image needs alternative text, and an item a published
-		// page uses is not deleted. OpenRegister honours a stopped pre-write
-		// event by refusing the write with its message.
-		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class, ObjectDeletingEvent::class] as $event) {
-			$context->registerEventListener($event, MediaWriteGuardListener::class);
-		}
-
+		$this->registerMediaGuard(context: $context);
 		$this->registerRecordChangeListener(context: $context);
 
 		// Landing-page-provisioning (ADR-041, contribution-landing-page-action):
@@ -212,6 +205,25 @@ class Application extends App implements IBootstrap {
 		// catch-all answered the store page's JSON call with HTML 200.
 		(new StorePlaneRegistrar())->register($context);
 	}//end register()
+
+	/**
+	 * The media library's write rules (site-page-seo-history-and-media T06,
+	 * T09): an image needs alternative text, and an item a published page uses
+	 * is not deleted. OpenRegister honours a stopped pre-write event by
+	 * refusing the write with its message.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+	 */
+	private function registerMediaGuard(IRegistrationContext $context): void {
+		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class, ObjectDeletingEvent::class] as $event) {
+			$context->registerEventListener($event, MediaWriteGuardListener::class);
+		}
+	}//end registerMediaGuard()
+
 
 	/**
 	 * Tell a resident when a record they follow changes, or when a case app

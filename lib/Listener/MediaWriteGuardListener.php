@@ -31,7 +31,7 @@ use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectDeletingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\CmsReader;
+use OCA\Portaliq\Service\Cms\MediaLibraryReader;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use OCP\IL10N;
@@ -58,13 +58,13 @@ class MediaWriteGuardListener implements IEventListener {
 	 * Constructor.
 	 *
 	 * @param ContainerInterface $container Resolves OpenRegister's schema mapper.
-	 * @param CmsReader          $reader    Names the pages that use an item.
+	 * @param MediaLibraryReader $library   Names the pages that use an item.
 	 * @param IL10N              $l10n      Translates the refusal.
 	 * @param LoggerInterface    $logger    Logs a failed check.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
-		private readonly CmsReader $reader,
+		private readonly MediaLibraryReader $library,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 	) {
@@ -80,22 +80,36 @@ class MediaWriteGuardListener implements IEventListener {
 	 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
 	 */
 	public function handle(Event $event): void {
-		$entity = match (true) {
-			$event instanceof ObjectCreatingEvent, $event instanceof ObjectDeletingEvent => $event->getObject(),
-			$event instanceof ObjectUpdatingEvent => $event->getNewObject(),
-			default => null,
-		};
-		if ($entity === null || $this->isMedia(schema: (string)$entity->getSchema()) === false) {
+		if ($event instanceof ObjectCreatingEvent || $event instanceof ObjectDeletingEvent) {
+			$this->check(event: $event, entity: $event->getObject());
 			return;
 		}
 
-		$item = (array)($entity->getObject() ?? []);
+		if ($event instanceof ObjectUpdatingEvent) {
+			$this->check(event: $event, entity: $event->getNewObject());
+		}
+	}//end handle()
+
+	/**
+	 * Refuse the write when a rule says so.
+	 *
+	 * @param ObjectCreatingEvent|ObjectUpdatingEvent|ObjectDeletingEvent $event  The pre-write event.
+	 * @param object                                                      $entity The object being written.
+	 *
+	 * @return void
+	 */
+	private function check(ObjectCreatingEvent|ObjectUpdatingEvent|ObjectDeletingEvent $event, object $entity): void {
+		if ($this->isMedia(schema: (string)$entity->getSchema()) === false) {
+			return;
+		}
+
+		$item    = (array)($entity->getObject() ?? []);
 		$refusal = $this->refusal(event: $event, item: $item, id: (string)$entity->getUuid());
 		if ($refusal !== null) {
 			$event->stopPropagation();
 			$event->setErrors(['message' => $refusal]);
 		}
-	}//end handle()
+	}//end check()
 
 	/**
 	 * Why this write is refused, or null.
@@ -108,7 +122,7 @@ class MediaWriteGuardListener implements IEventListener {
 	 */
 	private function refusal(Event $event, array $item, string $id): ?string {
 		if ($event instanceof ObjectDeletingEvent) {
-			$pages = $this->reader->pagesUsingMedia(portal: (string)($item['portal'] ?? ''), id: $id);
+			$pages = $this->library->pagesUsing(portal: (string)($item['portal'] ?? ''), id: $id);
 			if ($pages === []) {
 				return null;
 			}

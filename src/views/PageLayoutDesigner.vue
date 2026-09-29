@@ -277,7 +277,7 @@
 			@choose="useMedia" />
 		<PageHistoryDialog
 			v-model:open="historyOpen"
-			:page-id="pageId"
+			:pageId="pageId"
 			:busy="saving"
 			@restore="restoreVersion" />
 	</div>
@@ -790,7 +790,10 @@ export default {
 			this.historyOpen = false
 			await this.write(
 				restoredDraft(this.page, version),
-				t('portaliq', 'The version is in the draft. The live page changes when you publish.'),
+				t(
+					'portaliq',
+					'The version is in the draft. The live page changes when you publish.',
+				),
 			)
 		},
 

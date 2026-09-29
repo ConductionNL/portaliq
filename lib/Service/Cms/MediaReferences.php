@@ -27,7 +27,6 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Cms;
 
-use Closure;
 use OCP\IURLGenerator;
 
 /**
@@ -35,8 +34,8 @@ use OCP\IURLGenerator;
  *
  * A page stores the reference, never a copy, so replacing an item's file
  * updates every page using it. Only an item the caller hands in resolves: the
- * caller reads the published items of the page's OWN portal, so a draft item
- * or another portal's item resolves to nothing.
+ * library reader reads the published items of the page's OWN portal, so a
+ * draft item or another portal's item resolves to nothing.
  */
 class MediaReferences {
 
@@ -48,10 +47,12 @@ class MediaReferences {
 	/**
 	 * Constructor.
 	 *
-	 * @param IURLGenerator $urls Builds the item's public address.
+	 * @param IURLGenerator      $urls    Builds the item's public address.
+	 * @param MediaLibraryReader $library The portal's published items; read only for a reference.
 	 */
 	public function __construct(
 		private readonly IURLGenerator $urls,
+		private readonly MediaLibraryReader $library,
 	) {
 	}//end __construct()
 
@@ -61,6 +62,8 @@ class MediaReferences {
 	 * @param mixed $value The stored value.
 	 *
 	 * @return bool
+	 *
+	 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
 	 */
 	public static function isReference(mixed $value): bool {
 		return is_string($value) === true && str_starts_with($value, self::PREFIX) === true;
@@ -73,6 +76,8 @@ class MediaReferences {
 	 * @param string $id     The item id.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
 	 */
 	public function address(string $portal, string $id): string {
 		return $this->urls->linkToRouteAbsolute('portaliq.contentMedia.show', ['id' => $id, 'portal' => $portal]);
@@ -81,15 +86,16 @@ class MediaReferences {
 	/**
 	 * The hero image of a page: `{url, alt}`, or null when there is none.
 	 *
-	 * @param string  $portal The page's portal.
-	 * @param mixed   $value  The stored heroImage.
-	 * @param Closure $items  Returns the portal's published items by id; called only for a reference.
+	 * @param string $portal The page's portal.
+	 * @param mixed  $value  The stored heroImage.
 	 *
 	 * @return array{url: string, alt: string}|null
+	 *
+	 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
 	 */
-	public function hero(string $portal, mixed $value, Closure $items): ?array {
-		if (self::isReference($value) === true) {
-			$item = ($items()[substr((string) $value, strlen(self::PREFIX))] ?? null);
+	public function hero(string $portal, mixed $value): ?array {
+		if (self::isReference(value: $value) === true) {
+			$item = $this->library->item(portal: $portal, id: substr((string) $value, strlen(self::PREFIX)));
 			if ($item === null) {
 				return null;
 			}
@@ -108,18 +114,19 @@ class MediaReferences {
 	 * A single image field: the item's address for a reference, '' for an
 	 * unresolved one, the value itself otherwise.
 	 *
-	 * @param string  $portal The page's portal.
-	 * @param string  $value  The stored value.
-	 * @param Closure $items  Returns the portal's published items by id.
+	 * @param string $portal The page's portal.
+	 * @param string $value  The stored value.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
 	 */
-	public function image(string $portal, string $value, Closure $items): string {
-		if (self::isReference($value) === false) {
+	public function image(string $portal, string $value): string {
+		if (self::isReference(value: $value) === false) {
 			return $value;
 		}
 
-		$hero = $this->hero(portal: $portal, value: $value, items: $items);
+		$hero = $this->hero(portal: $portal, value: $value);
 
 		return ($hero['url'] ?? '');
 	}//end image()
@@ -128,20 +135,21 @@ class MediaReferences {
 	 * Markdown with every `](media:<id>)` link target resolved; an unresolved
 	 * one becomes an empty target.
 	 *
-	 * @param string  $portal   The page's portal.
-	 * @param string  $markdown The markdown source.
-	 * @param Closure $items    Returns the portal's published items by id.
+	 * @param string $portal   The page's portal.
+	 * @param string $markdown The markdown source.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
 	 */
-	public function markdown(string $portal, string $markdown, Closure $items): string {
+	public function markdown(string $portal, string $markdown): string {
 		if (str_contains($markdown, '](' . self::PREFIX) === false) {
 			return $markdown;
 		}
 
 		return (string) preg_replace_callback(
 			'/\]\(media:([A-Za-z0-9-]+)\)/',
-			fn (array $match): string => '](' . $this->image(portal: $portal, value: self::PREFIX . $match[1], items: $items) . ')',
+			fn (array $match): string => '](' . $this->image(portal: $portal, value: self::PREFIX . $match[1]) . ')',
 			$markdown
 		);
 	}//end markdown()

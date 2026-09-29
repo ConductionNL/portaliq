@@ -22,13 +22,16 @@
 			{{
 				t(
 					'portaliq',
-					'Published items of this portal\'s media library. Add or replace items on the Media page.',
+					"Published items of this portal's media library. Add or replace items on the Media page.",
 				)
 			}}
 		</p>
 
 		<NcLoadingIcon v-if="state === 'loading'" :size="32" />
-		<NcNoteCard v-else-if="state === 'error'" type="error" data-testid="media-picker-error">
+		<NcNoteCard
+			v-else-if="state === 'error'"
+			type="error"
+			data-testid="media-picker-error">
 			{{ t('portaliq', 'The media library could not be loaded.') }}
 		</NcNoteCard>
 		<p v-else-if="state === 'empty'" data-testid="media-picker-empty">
@@ -43,14 +46,20 @@
 				<span class="media__title">{{ item.title }}</span>
 				<span class="media__actions">
 					<template v-if="item.kind === 'image'">
-						<NcButton data-testid="media-picker-hero" @click="choose(item, 'hero')">
+						<NcButton
+							data-testid="media-picker-hero"
+							@click="choose(item, 'hero')">
 							{{ t('portaliq', 'Use as hero image') }}
 						</NcButton>
-						<NcButton data-testid="media-picker-share" @click="choose(item, 'share')">
+						<NcButton
+							data-testid="media-picker-share"
+							@click="choose(item, 'share')">
 							{{ t('portaliq', 'Use as share image') }}
 						</NcButton>
 					</template>
-					<NcButton data-testid="media-picker-reference" @click="copyReference(item)">
+					<NcButton
+						data-testid="media-picker-reference"
+						@click="copyReference(item)">
 						{{ t('portaliq', 'Copy for a text') }}
 					</NcButton>
 				</span>
@@ -61,7 +70,9 @@
 		</p>
 
 		<template #actions>
-			<NcButton data-testid="media-picker-close" @click="$emit('update:open', false)">
+			<NcButton
+				data-testid="media-picker-close"
+				@click="$emit('update:open', false)">
 				{{ t('portaliq', 'Close') }}
 			</NcButton>
 		</template>
@@ -90,6 +101,7 @@ export default {
 			type: Boolean,
 			default: false,
 		},
+
 		/** The page's portal slug. */
 		portal: {
 			type: String,
@@ -123,7 +135,9 @@ export default {
 				}
 				this.state = 'loading'
 				this.copied = false
-				const library = createMediaLibrary({ get: (path) => axios.get(generateUrl(path)) })
+				const library = createMediaLibrary({
+					get: (path) => axios.get(generateUrl(path)),
+				})
 				const result = await library.load(this.portal)
 				this.state = result.state
 				this.items = result.items
@@ -155,7 +169,7 @@ export default {
 			try {
 				await navigator.clipboard.writeText(markdownReference(item))
 				this.copied = true
-			} catch (error) {
+			} catch {
 				this.copied = false
 			}
 		},

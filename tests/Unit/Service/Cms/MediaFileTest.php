@@ -8,7 +8,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service\Cms;
 
 use OCA\Portaliq\Service\Cms\MediaFile;
-use OCA\Portaliq\Service\CmsReader;
+use OCA\Portaliq\Service\Cms\MediaLibraryReader;
 use OCA\Portaliq\Service\PortalFileReader;
 use OCP\AppFramework\Http\StreamResponse;
 use PHPUnit\Framework\TestCase;
@@ -61,11 +61,11 @@ class MediaFileTest extends TestCase {
 	 *
 	 * @param array|null $item The item, or null.
 	 *
-	 * @return CmsReader
+	 * @return MediaLibraryReader
 	 */
-	private function reader(?array $item): CmsReader {
-		$reader = $this->getMockBuilder(CmsReader::class)->disableOriginalConstructor()->onlyMethods(['mediaItem'])->getMock();
-		$reader->method('mediaItem')->willReturnCallback(
+	private function reader(?array $item): MediaLibraryReader {
+		$reader = $this->getMockBuilder(MediaLibraryReader::class)->disableOriginalConstructor()->onlyMethods(['item'])->getMock();
+		$reader->method('item')->willReturnCallback(
 			static fn (string $portal, string $id) => ($portal === 'gemeente' && $id === 'm1') ? $item : null
 		);
 

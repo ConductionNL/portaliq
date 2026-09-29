@@ -37,7 +37,9 @@ export function createPageHistory({ get, url }) {
 		 */
 		async load(pageId) {
 			try {
-				const { data } = await get(url('/api/pages/{id}/history', { id: pageId }))
+				const { data } = await get(
+					url('/api/pages/{id}/history', { id: pageId }),
+				)
 				const versions = Array.isArray(data?.versions) ? data.versions : []
 				return { state: versions.length ? 'ready' : 'empty', versions }
 			} catch (error) {

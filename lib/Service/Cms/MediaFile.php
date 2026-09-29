@@ -26,7 +26,6 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Cms;
 
-use OCA\Portaliq\Service\CmsReader;
 use OCA\Portaliq\Service\PortalFileReader;
 use OCP\AppFramework\Http\StreamResponse;
 
@@ -34,7 +33,7 @@ use OCP\AppFramework\Http\StreamResponse;
  * The file behind a media:<id> reference.
  *
  * The item must be a published item of the serving portal
- * ({@see CmsReader::mediaItem()} filters both in the query), so a draft item,
+ * ({@see MediaLibraryReader::item()} filters both in the query), so a draft item,
  * another portal's item and an unknown id answer the same: nothing. The newest
  * attached file is served, which is what makes replacing an item's file keep
  * its id and update every page that uses it.
@@ -48,11 +47,11 @@ class MediaFile {
 	/**
 	 * Constructor.
 	 *
-	 * @param CmsReader        $reader Reads the portal's published items.
-	 * @param PortalFileReader $files  Lists and streams an object's files.
+	 * @param MediaLibraryReader $library Reads the portal's published items.
+	 * @param PortalFileReader   $files   Lists and streams an object's files.
 	 */
 	public function __construct(
-		private readonly CmsReader $reader,
+		private readonly MediaLibraryReader $library,
 		private readonly PortalFileReader $files,
 	) {
 	}//end __construct()
@@ -72,7 +71,7 @@ class MediaFile {
 			return null;
 		}
 
-		$item = $this->reader->mediaItem(portal: (string)($portal['slug'] ?? ''), id: $id);
+		$item = $this->library->item(portal: (string)($portal['slug'] ?? ''), id: $id);
 		if ($item === null) {
 			return null;
 		}

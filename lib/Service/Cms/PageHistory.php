@@ -140,15 +140,15 @@ class PageHistory {
 			$when = $created->format(DATE_ATOM);
 		}
 
-		$by = (string) ($row->getUserName() ?? '');
-		if ($by === '') {
-			$by = (string) ($row->getUser() ?? '');
+		$author = (string) ($row->getUserName() ?? '');
+		if ($author === '') {
+			$author = (string) ($row->getUser() ?? '');
 		}
 
 		return [
 			'id'          => $row->getId(),
 			'publishedAt' => $when,
-			'by'          => $by,
+			'by'          => $author,
 			'restorable'  => ($body !== null),
 			'body'        => $body,
 		];

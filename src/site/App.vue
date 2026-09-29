@@ -271,7 +271,7 @@
 							class="pq-site-hero"
 							data-testid="page-hero"
 							:src="page.hero.url"
-							:alt="page.hero.alt">
+							:alt="page.hero.alt" />
 					</div>
 
 					<WidgetGrid
