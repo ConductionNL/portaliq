@@ -157,7 +157,7 @@ class PageEditorServiceTest extends TestCase {
 			 * @return object|null The schema double.
 			 */
 			public function findByApplicationAndSlug(string $slug, string $application): ?object {
-				if (in_array($slug, ['page', 'media'], true) === false || $application !== 'portaliq') {
+				if (in_array($slug, ['page', 'media', 'menu'], true) === false || $application !== 'portaliq') {
 					return null;
 				}
 
@@ -354,6 +354,31 @@ class PageEditorServiceTest extends TestCase {
 		$this->assertSame(['redacteuren'], $this->writtenBySlug['media']['update'] ?? null);
 		$this->assertSame(['redacteuren'], $this->writtenBySlug['media']['delete'] ?? null);
 	}//end testTheEditorGroupsAlsoWriteTheMediaLibrary()
+
+
+	/**
+	 * The editor groups also govern the portal's menus, so an editor may
+	 * edit the menu from the portal and nobody else may, and the menu's read
+	 * rules are left as they were.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-writes-to-the-menu-must-be-governed-by-the-editor-groups-req-pie-012
+	 */
+	public function testTheEditorGroupsAlsoWriteTheMenu(): void {
+		$this->service(isAdmin: true)->setEditorGroups(['redactie']);
+
+		$this->assertSame(['redactie'], $this->writtenBySlug['menu']['create'] ?? null);
+		$this->assertSame(['redactie'], $this->writtenBySlug['menu']['update'] ?? null);
+		$this->assertSame(['redactie'], $this->writtenBySlug['menu']['delete'] ?? null);
+		$this->assertSame(
+			[
+				['group' => 'public', 'match' => ['status' => 'published']],
+				'authenticated',
+			],
+			$this->writtenBySlug['menu']['read'] ?? null
+		);
+	}//end testTheEditorGroupsAlsoWriteTheMenu()
 
 
 	/**

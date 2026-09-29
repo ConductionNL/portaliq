@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.44.0"
+        "version": "0.45.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.44.0",
+                "version": "0.45.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -3173,7 +3173,7 @@
             "page": {
                 "slug": "page",
                 "icon": "FileDocument",
-                "version": "0.4.0",
+                "version": "0.5.0",
                 "title": "Page",
                 "authorization": {
                     "read": [
@@ -3448,6 +3448,18 @@
                         "type": "string",
                         "description": "The portal this page belongs to. REQUIRED — content is always resolved within a site.",
                         "example": "open-tilburg"
+                    },
+                    "parent": {
+                        "title": "Parent page",
+                        "type": "string",
+                        "description": "The page this page sits under in the portal's page tree. Empty for a page at the top. Only the tree changes: the route stays the page's address.",
+                        "example": "8f14e45f-ceea-467a-9575-6f2d6f9e4b21"
+                    },
+                    "order": {
+                        "title": "Order",
+                        "type": "integer",
+                        "description": "Position among the pages under the same parent, lowest first.",
+                        "example": 0
                     }
                 }
             },

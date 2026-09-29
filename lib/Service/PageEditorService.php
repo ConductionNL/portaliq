@@ -84,6 +84,15 @@ class PageEditorService {
 	private const MEDIA_SLUG = 'media';
 
 	/**
+	 * The portal menus, written by the same editor groups
+	 * (portal-in-place-editing REQ-PIE-012): whoever may edit pages from the
+	 * portal may edit the menu that links them, and nobody else may.
+	 *
+	 * @var string
+	 */
+	private const MENU_SLUG = 'menu';
+
+	/**
 	 * The actions the editor groups are granted on that schema.
 	 *
 	 * `read` is deliberately absent: it carries the public rule that serves
@@ -248,6 +257,7 @@ class PageEditorService {
 	 * @return bool True when the schema was updated.
 	 *
 	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
+	 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-writes-to-the-menu-must-be-governed-by-the-editor-groups-req-pie-012
 	 */
 	public function applyToSchema(array $groups): bool {
 		$mapper = $this->schemaMapper();
@@ -265,11 +275,14 @@ class PageEditorService {
 
 			$this->grantWrites(mapper: $mapper, schema: $schema, groups: $groups);
 
-			// The media library follows the pages. It is absent on an instance
-			// whose register predates it, which leaves the pages governed.
-			$media = $mapper->findByApplicationAndSlug(slug: self::MEDIA_SLUG, application: Application::APP_ID);
-			if ($media !== null) {
-				$this->grantWrites(mapper: $mapper, schema: $media, groups: $groups);
+			// The media library and the menus follow the pages. Either is absent
+			// on an instance whose register predates it, which leaves the pages
+			// governed.
+			foreach ([self::MEDIA_SLUG, self::MENU_SLUG] as $slug) {
+				$follower = $mapper->findByApplicationAndSlug(slug: $slug, application: Application::APP_ID);
+				if ($follower !== null) {
+					$this->grantWrites(mapper: $mapper, schema: $follower, groups: $groups);
+				}
 			}
 		} catch (Throwable $e) {
 			$this->logger->error(

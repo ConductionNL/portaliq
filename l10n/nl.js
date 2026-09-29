@@ -1783,7 +1783,10 @@ OC.L10N.register(
         "You have unsaved changes. Save the draft first, or stop editing and lose them.": "Je hebt wijzigingen die niet zijn opgeslagen. Sla eerst het concept op, of stop met bewerken en raak ze kwijt.",
         "Stop editing and lose the changes": "Stoppen en wijzigingen kwijtraken",
         "Add a widget": "Een widget toevoegen",
-        "Pick a widget to place on this page. You can move and resize it afterwards.": "Kies een widget om op deze pagina te plaatsen. Daarna kun je hem verplaatsen en van formaat veranderen."
+        "Pick a widget to place on this page. You can move and resize it afterwards.": "Kies een widget om op deze pagina te plaatsen. Daarna kun je hem verplaatsen en van formaat veranderen.",
+        "Parent page": "Bovenliggende pagina",
+        "The page this page sits under in the portal's page tree. Empty for a page at the top. Only the tree changes: the route stays the page's address.": "De pagina waar deze pagina onder valt in de paginaboom van het portaal. Leeg voor een pagina bovenaan. Alleen de boom verandert: de route blijft het adres van de pagina.",
+        "Position among the pages under the same parent, lowest first.": "Plaats tussen de pagina's onder dezelfde bovenliggende pagina, laagste eerst."
     },
     "nplurals=2; plural=(n != 1);"
 )

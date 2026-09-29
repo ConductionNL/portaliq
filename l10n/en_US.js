@@ -187,7 +187,11 @@ OC.L10N.register(
         "You have unsaved changes. Save the draft first, or stop editing and lose them.": "You have unsaved changes. Save the draft first, or stop editing and lose them.",
         "Stop editing and lose the changes": "Stop editing and lose the changes",
         "Add a widget": "Add a widget",
-        "Pick a widget to place on this page. You can move and resize it afterwards.": "Pick a widget to place on this page. You can move and resize it afterwards."
+        "Pick a widget to place on this page. You can move and resize it afterwards.": "Pick a widget to place on this page. You can move and resize it afterwards.",
+        "Parent page": "Parent page",
+        "The page this page sits under in the portal's page tree. Empty for a page at the top. Only the tree changes: the route stays the page's address.": "The page this page sits under in the portal's page tree. Empty for a page at the top. Only the tree changes: the route stays the page's address.",
+        "Order": "Order",
+        "Position among the pages under the same parent, lowest first.": "Position among the pages under the same parent, lowest first."
     },
     "nplurals=2; plural=(n != 1);"
 )
