@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/contribution-manifest-v3/tasks.md#T2
+ * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T2
  */
 
 declare(strict_types=1);
@@ -34,7 +34,7 @@ namespace OCA\Portaliq\Contribution;
 /**
  * Resolves and synthesises a contribution's pages, fail-closed.
  *
- * @spec openspec/changes/contribution-manifest-v3/tasks.md#T2
+ * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T2
  */
 class PortalPageResolver {
 	/**
@@ -57,7 +57,7 @@ class PortalPageResolver {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/contribution-manifest-v3/tasks.md#T2
+	 * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T2
 	 */
 	public function normalisePages(mixed $pages, array $collections, array $actions): array {
 		$out = [];

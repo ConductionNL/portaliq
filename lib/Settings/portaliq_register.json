@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.44.0"
+        "version": "0.45.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.44.0",
+                "version": "0.45.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -1471,7 +1471,7 @@
                     "refusalCode": {
                         "title": "Refusal code",
                         "type": "string",
-                        "description": "For a failed `messageBox` row: why no letter left. `not_installed` when integriq is absent, `unhandled` when nothing answered, or the code integriq's refusal carried.",
+                        "description": "For a failed `messageBox` row: why no letter left. `not_installed` when integriq is absent, `unhandled` when nothing answered, `empty_body` when the message held no text, or the code integriq's refusal carried.",
                         "example": "not_installed"
                     }
                 }
@@ -1484,14 +1484,13 @@
                     ]
                 },
                 "icon": "ShieldLock",
-                "version": "0.1.0",
+                "version": "0.2.0",
                 "title": "Portal OIDC State",
                 "description": "Short-lived, single-use server-side storage for one OIDC authorization-code + PKCE round trip (portal-oidc-broker-login). Written by SessionController::oidcStart(), consumed exactly once by SessionController::oidcCallback(); a reused or expired row fails the callback closed. Never publicly readable — it briefly carries the PKCE code_verifier.",
                 "type": "object",
                 "required": [
                     "state",
                     "nonce",
-                    "codeVerifier",
                     "org",
                     "provider",
                     "expiresAt"
@@ -1512,7 +1511,7 @@
                     "codeVerifier": {
                         "title": "PKCE code verifier",
                         "type": "string",
-                        "description": "The PKCE `code_verifier` presented to the token endpoint on callback, matching the `code_challenge` sent at start.",
+                        "description": "The PKCE `code_verifier` presented to the token endpoint on callback, matching the `code_challenge` sent at start. Only an `oidc` row has one, and the OIDC callback refuses a row without it.",
                         "example": "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
                     },
                     "org": {
@@ -1532,6 +1531,16 @@
                             "generic"
                         ],
                         "example": "eherkenning"
+                    },
+                    "route": {
+                        "title": "Login route",
+                        "type": "string",
+                        "description": "Which login this row belongs to: `oidc` (the organisation's own OIDC broker) or `broker` (integriq). Absent means `oidc`. Each callback refuses a row of the other route.",
+                        "enum": [
+                            "oidc",
+                            "broker"
+                        ],
+                        "example": "broker"
                     },
                     "returnTo": {
                         "title": "Return to",

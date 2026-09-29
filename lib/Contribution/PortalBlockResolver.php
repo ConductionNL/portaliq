@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/contribution-manifest-v3/tasks.md#T2
+ * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T2
  */
 
 declare(strict_types=1);
@@ -34,7 +34,7 @@ namespace OCA\Portaliq\Contribution;
 /**
  * Filters a page's blocks to the registry with resolvable references.
  *
- * @spec openspec/changes/contribution-manifest-v3/tasks.md#T2
+ * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T2
  */
 class PortalBlockResolver {
 	/**
@@ -60,7 +60,7 @@ class PortalBlockResolver {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/contribution-manifest-v3/tasks.md#T2
+	 * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T2
 	 */
 	public function normaliseBlocks(mixed $blocks, array $collectionIds, array $actionIds): array {
 		if (is_array($blocks) === false) {

@@ -1500,6 +1500,13 @@
             "title": "House style",
             "icon": "Palette",
             "content": {}
+          },
+          {
+            "id": "portal-signin",
+            "type": "PortalSignin",
+            "title": "Sign-in",
+            "icon": "Login",
+            "content": {}
           }
         ],
         "layout": [
@@ -1582,6 +1589,14 @@
             "gridY": 21,
             "gridWidth": 12,
             "gridHeight": 5
+          },
+          {
+            "id": "portal-signin",
+            "widgetId": "portal-signin",
+            "gridX": 0,
+            "gridY": 26,
+            "gridWidth": 12,
+            "gridHeight": 6
           }
         ],
         "sidebar": {

@@ -17,6 +17,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Service\Theme\PortalCustomThemeSets;
 use OCP\App\IAppManager;
 
 /**
@@ -70,12 +71,14 @@ class PortalThemeResolver {
 	/**
 	 * Constructor.
 	 *
-	 * @param IAppManager $appManager Tells us whether the theme app is present.
+	 * @param IAppManager                $appManager Tells us whether the theme app is present.
+	 * @param PortalCustomThemeSets|null $customSets The theme app's custom sets; null offers none.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly IAppManager $appManager,
+		private readonly ?PortalCustomThemeSets $customSets = null,
 	) {
 	}//end __construct()
 
@@ -119,6 +122,13 @@ class PortalThemeResolver {
 		// it moves the failure from somewhere we can check to somewhere only
 		// the browser sees.
 		if (is_file($root . '/css/tokens/' . $theme . '.css') === false) {
+			return null;
+		}
+
+		// A CUSTOM SET IS CHECKED AGAIN BEFORE IT IS LINKED (task 4.2): it came
+		// from an upload or from another instance, and the theme app's own
+		// validator decides whether its file may reach a public page.
+		if ($this->refusalFor(theme: $theme) !== null) {
 			return null;
 		}
 
@@ -224,14 +234,72 @@ class PortalThemeResolver {
 		}
 
 		$sets = [];
+		$ids = [];
 		foreach (array_values($decoded) as $entry) {
 			if (is_array($entry) === true && is_string($entry['id'] ?? null) === true) {
+				$sets[] = $entry;
+				$ids[$entry['id']] = true;
+			}
+		}
+
+		// The sets an administrator made or received in the theme app
+		// (task 4.1): an upload, or a theme shared through OpenRegister that
+		// the theme app imported as a custom set.
+		foreach (($this->customSets?->all() ?? []) as $entry) {
+			if (isset($ids[$entry['id']]) === false) {
 				$sets[] = $entry;
 			}
 		}
 
 		return $sets;
 	}//end catalogue()
+
+	/**
+	 * Why a custom set may not be linked, in the theme app's words, or null
+	 * when it may (or when the set is not a custom one).
+	 *
+	 * @param string $theme The set id.
+	 *
+	 * @return string|null The refusal.
+	 *
+	 * @spec openspec/changes/nldesign-theme-integration/tasks.md
+	 */
+	public function refusalFor(string $theme): ?string {
+		if ($this->customSets === null || $this->customSets->isCustomId(id: $theme) === false) {
+			return null;
+		}
+
+		$root = $this->themeAppPath();
+		$file = ($root ?? '') . '/css/tokens/' . $theme . '.css';
+		if ($root === null || is_file($file) === false) {
+			return null;
+		}
+
+		return $this->customSets->refusal(id: $theme, css: (string)file_get_contents($file));
+	}//end refusalFor()
+
+	/**
+	 * The theme app's public stylesheet of administrator-uploaded font faces,
+	 * as a route name, or null when the installed theme app has none.
+	 *
+	 * The route is public on purpose in the theme app (a CSS font load carries
+	 * no session), so an anonymous portal visitor can load it. Asked of the
+	 * installed build, because a build without font uploads has no such route
+	 * and linking one would name a URL nothing answers.
+	 *
+	 * @return string|null E.g. `thematiq.font.css`.
+	 *
+	 * @spec openspec/changes/nldesign-theme-integration/tasks.md
+	 */
+	public function fontStylesheetRoute(): ?string {
+		$root = $this->themeAppPath();
+		$id = $this->themeAppId();
+		if ($root === null || $id === null || is_file($root . '/lib/Controller/FontController.php') === false) {
+			return null;
+		}
+
+		return $id . '.font.css';
+	}//end fontStylesheetRoute()
 
 	/**
 	 * The token values a resolvable set declares, for the contrast check.
