@@ -401,6 +401,37 @@ class PortalManifestNormaliserTest extends TestCase {
 	}//end testATimelineIsKeptOnlyWhenItNamesAProviderMethod()
 
 	/**
+	 * cases-my-cases-page REQ-CMC-002: a collection's closed marker is kept
+	 * only when it names a field the collection projects; an unprojected or
+	 * malformed one is dropped, so the portal never guesses what "closed" means.
+	 *
+	 * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md#requirement-open-and-closed-cases-are-told-apart-by-a-declared-field-req-cmc-002
+	 */
+	public function testAClosedFieldIsKeptOnlyWhenItNamesAProjectedField(): void {
+		$out = $this->normaliser()->normalise(
+			[
+				'collections' => [
+					['id' => 'c1', 'schema' => 's', 'kind' => 'cases', 'fields' => ['title', 'endDate'], 'closedField' => 'endDate'],
+					['id' => 'c2', 'schema' => 's', 'kind' => 'cases', 'fields' => ['title'], 'closedField' => 'endDate'],
+					['id' => 'c3', 'schema' => 's', 'kind' => 'cases', 'fields' => ['title']],
+					['id' => 'c4', 'schema' => 's', 'kind' => 'cases', 'closedField' => 'endDate'],
+					['id' => 'c5', 'schema' => 's', 'kind' => 'cases', 'closedField' => ['endDate']],
+					['id' => 'c6', 'schema' => 's', 'kind' => 'cases', 'closedField' => ''],
+				],
+			]
+		);
+
+		$byId = array_column($out['collections'], null, 'id');
+		$this->assertSame('endDate', $byId['c1']['closedField']);
+		// Without a projection every field reaches the row, so the name stands.
+		$this->assertSame('endDate', $byId['c4']['closedField']);
+		foreach (['c2', 'c3', 'c5', 'c6'] as $id) {
+			$this->assertArrayNotHasKey('closedField', $byId[$id], $id);
+		}
+
+	}//end testAClosedFieldIsKeptOnlyWhenItNamesAProjectedField()
+
+	/**
 	 * ADDITIVE-COMPAT: a pure v2 manifest round-trips with collections + actions
 	 * byte-identical; only an additive synthesised `pages` array appears.
 	 */

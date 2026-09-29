@@ -107,9 +107,32 @@ class ContributionControllerTest extends TestCase {
 		// (portal-inbox-v2 T04) — the default inbox reader stub yields 0 —
 		// and the tasks announcement (portal-task-delivery): with no gateway
 		// wired (this fixture's default), the surface reads disabled.
-		$this->assertSame(($aggregate + ['unreadCount' => 0, 'tasks' => ['enabled' => false]]), $response->getData());
+		$this->assertSame(($aggregate + ['unreadCount' => 0, 'tasks' => ['enabled' => false], 'cases' => ['enabled' => false, 'closedMarker' => false]]), $response->getData());
 
 	}//end testIndexReturnsTheRegistrysAggregateForAnAuthenticatedSubject()
+
+	/**
+	 * cases-my-cases-page REQ-CMC-001: the contributions answer announces the
+	 * "My cases" page when any contribution declares a `kind: cases`
+	 * collection, and whether any of those declares a closed marker (the
+	 * "Closed" tab shows only then).
+	 *
+	 * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md#requirement-your-cases-from-every-app-in-one-list-req-cmc-001
+	 */
+	public function testIndexAnnouncesTheCasesPageAndItsClosedMarker(): void {
+		$plain = $this->aggregate(collections: [['id' => 'zaken', 'kind' => 'cases', 'register' => 'r', 'schema' => 'zaak']]);
+		$this->assertSame(['enabled' => true, 'closedMarker' => false], $this->controller(aggregate: $plain)->index()->getData()['cases']);
+
+		$marked = $this->aggregate(collections: [
+			['id' => 'zaken', 'kind' => 'cases', 'register' => 'r', 'schema' => 'zaak', 'closedField' => 'endDate'],
+		]);
+		$this->assertSame(['enabled' => true, 'closedMarker' => true], $this->controller(aggregate: $marked)->index()->getData()['cases']);
+
+		// A closed marker on a collection of another kind announces nothing.
+		$other = $this->aggregate(collections: [['id' => 'berichten', 'kind' => 'inbox', 'register' => 'r', 'schema' => 'm', 'closedField' => 'endDate']]);
+		$this->assertSame(['enabled' => false, 'closedMarker' => false], $this->controller(aggregate: $other)->index()->getData()['cases']);
+
+	}//end testIndexAnnouncesTheCasesPageAndItsClosedMarker()
 
 	/**
 	 * The contributions response carries the subject's own unread count,

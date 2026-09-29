@@ -118,6 +118,7 @@ class PortalCaseListReader {
 						'schema' => (string)($collection['schema'] ?? ''),
 						'collection' => (string)($collection['id'] ?? ''),
 					];
+					$row['_closed'] = self::isClosed(row: $row, collection: $collection);
 
 					$rows[] = $row;
 				}
@@ -133,6 +134,58 @@ class PortalCaseListReader {
 
 		return $rows;
 	}//end listCases()
+
+	/**
+	 * Whether any contribution declares a case collection, and whether any of
+	 * those declares a closed marker: what the portal needs to know to show
+	 * "My cases" and its "Closed" tab.
+	 *
+	 * @param array<string, mixed> $aggregate The subject's aggregated manifest.
+	 *
+	 * @return array{enabled: bool, closedMarker: bool}
+	 *
+	 * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md#requirement-your-cases-from-every-app-in-one-list-req-cmc-001
+	 */
+	public static function announce(array $aggregate): array {
+		$announced = ['enabled' => false, 'closedMarker' => false];
+		foreach (($aggregate['contributions'] ?? []) as $contribution) {
+			foreach ((is_array($contribution) === true ? ($contribution['collections'] ?? []) : []) as $collection) {
+				if (is_array($collection) === false || ($collection['kind'] ?? '') !== self::KIND) {
+					continue;
+				}
+
+				$announced['enabled'] = true;
+				if ((string)($collection['closedField'] ?? '') !== '') {
+					$announced['closedMarker'] = true;
+				}
+			}
+		}
+
+		return $announced;
+	}//end announce()
+
+	/**
+	 * A case is closed when the collection's declared closed field holds a
+	 * value. A collection that declares none has no closed cases: nothing is
+	 * filed away on a guess (REQ-CMC-002).
+	 *
+	 * @param array<string, mixed> $row The case row.
+	 * @param array<string, mixed> $collection The declared case collection.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md#requirement-open-and-closed-cases-are-told-apart-by-a-declared-field-req-cmc-002
+	 */
+	private static function isClosed(array $row, array $collection): bool {
+		$field = (string)($collection['closedField'] ?? '');
+		if ($field === '') {
+			return false;
+		}
+
+		$value = ($row[$field] ?? null);
+
+		return $value !== null && $value !== '' && $value !== [] && $value !== false;
+	}//end isClosed()
 
 	/**
 	 * The cases a mandate opens, on top of the subject's own.
@@ -369,6 +422,7 @@ class PortalCaseListReader {
 				'schema' => (string)($collection['schema'] ?? ''),
 				'collection' => (string)($collection['id'] ?? ''),
 			];
+			$row['_closed'] = self::isClosed(row: $row, collection: $collection);
 			$row['_mandate'] = $described;
 			// The case is the subsidiary's, and says so: it is never presented
 			// as the parent's own (REQ-PTV-005).

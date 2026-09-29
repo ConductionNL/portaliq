@@ -87,6 +87,7 @@ class CollectionConfigNormaliser {
 			$collection = $this->normaliseDefaults(collection: $collection);
 			$collection = $this->normaliseFileFlags(collection: $collection);
 			$collection = $this->normaliseKind(collection: $collection);
+			$collection = $this->normaliseClosedField(collection: $collection);
 			$collection = (new MessageBoxConfigNormaliser())->normalise(collection: $collection);
 			$collection = (new RowActionResolver())->normaliseNoticeField(collection: $collection);
 			$collection = $this->values->normaliseAnonymousFlag(entry: $collection);
@@ -142,6 +143,36 @@ class CollectionConfigNormaliser {
 
 		return $collection;
 	}//end normaliseKind()
+
+	/**
+	 * Keep `closedField` only when it names a field the collection projects.
+	 *
+	 * The closed marker tells "My cases" which field, once it holds a value,
+	 * makes a case closed. It is kept only as a non-empty string naming one of
+	 * the projected `fields` (or any field, when the collection projects none),
+	 * because a marker on a field the row never carries would file every case
+	 * as open without anyone noticing.
+	 *
+	 * @param array<string, mixed> $collection The collection.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md#requirement-open-and-closed-cases-are-told-apart-by-a-declared-field-req-cmc-002
+	 */
+	private function normaliseClosedField(array $collection): array {
+		if (array_key_exists('closedField', $collection) === false) {
+			return $collection;
+		}
+
+		$field = $collection['closedField'];
+		$fields = ($collection['fields'] ?? null);
+		$named = (is_string($field) === true && $field !== '');
+		if ($named === false || (is_array($fields) === true && in_array($field, $fields, true) === false)) {
+			unset($collection['closedField']);
+		}
+
+		return $collection;
+	}//end normaliseClosedField()
 
 	/**
 	 * Coerce the opt-in file flags to strict booleans.
