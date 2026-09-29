@@ -38,6 +38,7 @@ use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Service\Identity\PortalAccessRequestService;
 use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
 use OCA\Portaliq\Service\Identity\PortalSelfServiceService;
+use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -62,6 +63,7 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 	 * @param PortalSelfServiceService $selfService The account's own details.
 	 * @param PortalAccessRequestService $accessRequests Asking for access.
 	 * @param PortalIdentityMailer $mailer Mails the confirmation to the new address.
+	 * @param PortalOrganisationConfigService|null $orgConfig Whether the organisation offers the message box.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -69,6 +71,7 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 		private readonly PortalSelfServiceService $selfService,
 		private readonly PortalAccessRequestService $accessRequests,
 		private readonly PortalIdentityMailer $mailer,
+		private readonly ?PortalOrganisationConfigService $orgConfig = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -143,7 +146,7 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 	/**
 	 * The bearer's own notification choices (REQ-NAP-007, REQ-NAP-008).
 	 *
-	 * @return JSONResponse `{preferences, pushAvailable}`, 401 without a session, 404 without an account.
+	 * @return JSONResponse `{preferences, pushAvailable, messageBox}`, 401 without a session, 404 without an account.
 	 *
 	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-resident-chooses-per-kind-and-per-channel-req-nap-007
 	 */
@@ -161,7 +164,7 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		return new JSONResponse($preferences);
+		return new JSONResponse($preferences + ['messageBox' => $this->messageBoxOffer(subject: $subject)]);
 	}//end notificationPreferences()
 
 	/**
@@ -188,8 +191,28 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 			return new JSONResponse(['error' => 'refused'], Http::STATUS_BAD_REQUEST);
 		}
 
-		return new JSONResponse($saved);
+		return new JSONResponse($saved + ['messageBox' => $this->messageBoxOffer(subject: $subject)]);
 	}//end updateNotificationPreferences()
+
+	/**
+	 * The government message box the caller's organisation offers, as the
+	 * label residents read, or null (inbox-berichtenbox-channel, REQ-MBC-001).
+	 * The integriq source it sends over stays on the server.
+	 *
+	 * @param array<string, mixed> $subject The caller.
+	 *
+	 * @return array{label: string}|null
+	 *
+	 * @spec openspec/changes/inbox-berichtenbox-channel/specs/portal-message-box-channel/spec.md#requirement-the-organisation-turns-the-channel-on-req-mbc-001
+	 */
+	private function messageBoxOffer(array $subject): ?array {
+		$offer = $this->orgConfig?->messageBox(orgSlug: (string)($subject['organisation'] ?? ''));
+		if ($offer === null) {
+			return null;
+		}
+
+		return ['label' => $offer['label']];
+	}//end messageBoxOffer()
 
 	/**
 	 * The bearer's own details: name, address, email channel and message

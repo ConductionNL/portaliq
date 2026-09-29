@@ -15,6 +15,10 @@ use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\Security\ISecureRandom;
+use OCA\Portaliq\Service\Notifications\MessageBoxChannel;
+use OCA\Portaliq\Service\PortalOrganisationConfigService;
+use OCP\BackgroundJob\IJobList;
+use Psr\Log\LoggerInterface;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -245,7 +249,7 @@ class PortalAccountSelfControllerTest extends TestCase {
 	 *
 	 * @return PortalAccountSelfController
 	 */
-	private function preferencesController(array $account, array &$written, array $subscriptions = []): PortalAccountSelfController {
+	private function preferencesController(array $account, array &$written, array $subscriptions = [], ?array $messageBox = null): PortalAccountSelfController {
 		$request = $this->createMock(IRequest::class);
 		$session = $this->double(PortalSessionService::class, ['resolveFromBearer']);
 		$session->method('resolveFromBearer')->willReturn(['subjectRef' => 'subject-1', 'organisation' => 'gemeente-x']);
@@ -278,9 +282,27 @@ class PortalAccountSelfControllerTest extends TestCase {
 			$session,
 			$selfService,
 			$this->double(PortalAccessRequestService::class, ['request', 'madeBy']),
-			$this->double(PortalIdentityMailer::class, ['send'])
+			$this->double(PortalIdentityMailer::class, ['send']),
+			$this->messageBoxOffer(offer: $messageBox)
 		);
 	}//end preferencesController()
+
+	/**
+	 * An organisation configuration that offers the message box to
+	 * `gemeente-x` with the given offer, or not at all.
+	 *
+	 * @param array<string, string>|null $offer The offer.
+	 *
+	 * @return PortalOrganisationConfigService
+	 */
+	private function messageBoxOffer(?array $offer): PortalOrganisationConfigService {
+		$orgConfig = $this->double(PortalOrganisationConfigService::class, ['messageBox']);
+		$orgConfig->method('messageBox')->willReturnCallback(
+			static fn (string $orgSlug): ?array => ($orgSlug === 'gemeente-x' ? $offer : null)
+		);
+
+		return $orgConfig;
+	}//end messageBoxOffer()
 
 	/**
 	 * The preferences read and written are the caller's own, whatever the
@@ -354,4 +376,40 @@ class PortalAccountSelfControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_UNAUTHORIZED, $anonymous->notificationPreferences()->getStatus());
 		$this->assertSame(Http::STATUS_UNAUTHORIZED, $anonymous->updateNotificationPreferences(preferences: [])->getStatus());
 	}//end testPushAvailableFollowsTheSubscription()
+
+	/**
+	 * The message box choice exists only when the organisation offers the
+	 * channel; switching it off is stored as `messageBox.enabled` false on
+	 * the caller's own account, and the channel then queues nothing for them
+	 * (inbox-berichtenbox-channel, REQ-MBC-001, REQ-MBC-005).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/inbox-berichtenbox-channel/specs/portal-message-box-channel/spec.md#requirement-the-resident-can-switch-the-channel-off-req-mbc-005
+	 */
+	public function testTheMessageBoxChoiceOnlyWhenOffered(): void {
+		$written = [];
+		$notOffered = $this->preferencesController(account: ['uuid' => 'account-1', 'subjectRef' => 'subject-1'], written: $written);
+		$this->assertNull($notOffered->notificationPreferences()->getData()['messageBox'], 'no channel, no choice');
+
+		$offer = ['sourceId' => 'berichtenbox-x', 'label' => 'MijnOverheid Berichtenbox'];
+		$offered = $this->preferencesController(account: ['uuid' => 'account-1', 'subjectRef' => 'subject-1'], written: $written, messageBox: $offer);
+		$read = $offered->notificationPreferences()->getData();
+		$this->assertSame(['label' => 'MijnOverheid Berichtenbox'], $read['messageBox'], 'the label only, never the source');
+
+		$saved = $offered->updateNotificationPreferences(preferences: ['messageBox' => ['enabled' => false]])->getData();
+		$this->assertSame(['enabled' => false], $written[0]['data']['notificationPreferences']['messageBox']);
+		$this->assertSame(['enabled' => false], $saved['preferences']['messageBox']);
+		$this->assertSame(['label' => 'MijnOverheid Berichtenbox'], $saved['messageBox']);
+
+		$stored = ['uuid' => 'account-1', 'subjectRef' => 'subject-1', 'organisation' => 'gemeente-x', 'notificationPreferences' => $written[0]['data']['notificationPreferences']];
+		$channel = new MessageBoxChannel(orgConfig: $this->messageBoxOffer(offer: $offer), jobList: $this->createMock(IJobList::class), logger: $this->createMock(LoggerInterface::class));
+		$this->assertFalse($channel->wants(account: $stored), 'switched off: the channel queues nothing');
+
+		$written = [];
+		$again = $this->preferencesController(account: $stored, written: $written, messageBox: $offer);
+		$this->assertSame(['enabled' => false], $again->notificationPreferences()->getData()['preferences']['messageBox']);
+		$again->updateNotificationPreferences(preferences: ['messageBox' => ['enabled' => 'yes']]);
+		$this->assertSame(['enabled' => false], $written[0]['data']['notificationPreferences']['messageBox'], 'a non-boolean changes nothing');
+	}//end testTheMessageBoxChoiceOnlyWhenOffered()
 }//end class
