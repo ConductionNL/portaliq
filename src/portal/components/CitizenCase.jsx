@@ -9,6 +9,7 @@
 // says why. A disabled control with no explanation is the thing this replaces.
 
 import React, { useCallback, useEffect, useState } from 'react'
+import { groupDocuments } from '../lib/caseDocuments.js'
 import { caseFieldNames, withdrawalView } from '../lib/withdrawal.js'
 import Loading from './Loading.jsx'
 import WithdrawCaseConfirm from './WithdrawCaseConfirm.jsx'
@@ -102,6 +103,20 @@ export default function CitizenCase({ collection, row, api, t }) {
 	// The withdrawal fields are the withdrawn state, not answers.
 	const fields = caseFieldNames(caseRow)
 	const withdrawal = withdrawalView(state.data.withdrawal, caseRow)
+	const groups = groupDocuments(state.data.documents)
+
+	/**
+	 * Open one listed document; a failure says so.
+	 *
+	 * @param {object} entry The listed entry.
+	 * @spec openspec/changes/cases-documents-on-the-case/specs/citizen-case-documents/spec.md#requirement-every-listed-document-opens-from-the-case-screen-req-cdc-002
+	 */
+	async function onOpenDocument(entry) {
+		const result = await api.downloadCitizenDocument(collection, caseId, entry)
+		if (!result.ok) {
+			setNotice(t('The document could not be opened. Try again later.'))
+		}
+	}
 
 	/**
 	 * Hold one corrected answer until the citizen saves.
@@ -215,12 +230,29 @@ export default function CitizenCase({ collection, row, api, t }) {
 			)}
 
 			<div className="portaliq-case-documents" data-testid="case-documents">
-				<h4>{t('Documents')}</h4>
-				<ul>
-					{(state.data.documents || []).map((file) => (
-						<li key={file.id || file.name} data-testid="case-document">{file.name}</li>
-					))}
-				</ul>
+				<h4>{state.data.documentsLabel || t('Documents')}</h4>
+				{groups.empty && (
+					<p className="portaliq-empty" data-testid="case-documents-empty">{t('There are no documents on this case yet.')}</p>
+				)}
+				{[
+					['decisions', t('Decision')],
+					['documents', t('Documents')],
+					['yours', t('Sent by you')],
+				].filter(([key]) => groups[key].length > 0).map(([key, heading]) => (
+					<div key={key} className={`portaliq-case-documents-${key}`}>
+						<h5>{heading}</h5>
+						<ul>
+							{groups[key].map((entry) => (
+								<li key={entry.id} data-testid="case-document">
+									<button type="button" className="portaliq-case-document" onClick={() => onOpenDocument(entry)}>
+										{entry.title}
+									</button>
+									{entry.date && <span className="portaliq-case-document-date"> {new Date(entry.date).toLocaleDateString()}</span>}
+								</li>
+							))}
+						</ul>
+					</div>
+				))}
 				{documentsOpen
 					? (
 						<label>

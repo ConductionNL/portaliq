@@ -180,5 +180,9 @@
 	"Keep my request": "Keep my request",
 	"Your request has been withdrawn.": "Your request has been withdrawn.",
 	"Withdrawn on {date}.": "Withdrawn on {date}.",
-	"Your reason: {reason}": "Your reason: {reason}"
+	"Your reason: {reason}": "Your reason: {reason}",
+	"Decision": "Decision",
+	"Sent by you": "Sent by you",
+	"There are no documents on this case yet.": "There are no documents on this case yet.",
+	"The document could not be opened. Try again later.": "The document could not be opened. Try again later."
 }

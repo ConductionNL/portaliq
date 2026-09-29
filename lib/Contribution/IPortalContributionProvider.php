@@ -48,7 +48,13 @@
  *   the government message box, or null to keep the message in the portal;
  *   return null for a letter the app sends there itself. Held to the timeline
  *   rule; portaliq passes the value to integriq and keeps it nowhere;
- *   inbox-berichtenbox-channel).
+ *   inbox-berichtenbox-channel), and on a case collection `documents`
+ *   (`{label?, provider}`: a public method on this provider taking one case
+ *   id and returning the documents a resident may see on it, each
+ *   `{id, title, kind: decision|document, date, file: {register, schema, id,
+ *   fileId}, mimeType?, size?}`; the file reference never leaves the server,
+ *   and a download is looked up again in the method's answer; held to the
+ *   timeline rule; cases-documents-on-the-case).
  * - Actions: `fieldConfigs` (per-whitelisted-field `{label?, visible?, required?,
  *   disabled?, size?, placeholder?, help?}` — a config for a non-whitelisted field
  *   is dropped), `optionsProviders` (per-field `{type: static, options[]}` or

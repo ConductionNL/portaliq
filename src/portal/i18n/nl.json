@@ -180,5 +180,9 @@
 	"Keep my request": "Aanvraag houden",
 	"Your request has been withdrawn.": "Uw aanvraag is ingetrokken.",
 	"Withdrawn on {date}.": "Ingetrokken op {date}.",
-	"Your reason: {reason}": "Uw reden: {reason}"
+	"Your reason: {reason}": "Uw reden: {reason}",
+	"Decision": "Besluit",
+	"Sent by you": "Door u gestuurd",
+	"There are no documents on this case yet.": "Er staan nog geen documenten bij deze zaak.",
+	"The document could not be opened. Try again later.": "Het document kon niet worden geopend. Probeer het later opnieuw."
 }
