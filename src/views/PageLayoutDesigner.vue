@@ -765,7 +765,7 @@ export default {
 		 * @param {{item: object, target: string}} choice The item and where it goes.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+		 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
 		 */
 		useMedia({ item, target }) {
 			this.mediaOpen = false
@@ -784,7 +784,7 @@ export default {
 		 * @param {object} version A version from the page history.
 		 * @return {Promise<void>} Resolves when written.
 		 *
-		 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+		 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
 		 */
 		async restoreVersion(version) {
 			this.historyOpen = false

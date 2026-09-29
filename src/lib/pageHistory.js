@@ -14,7 +14,7 @@
  * `src/dialogs/PageHistoryDialog.vue`, so `tests/page-history.spec.mjs` runs
  * this as a plain node script.
  *
- * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+ * @spec openspec/specs/site-page-seo-history-and-media/spec.md
  */
 
 /**
@@ -24,7 +24,7 @@
  * @param {Function} deps.get url => Promise<{data}>
  * @param {Function} deps.url (path, params) => string, path relative to the app
  * @return {object}
- * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+ * @spec openspec/specs/site-page-seo-history-and-media/spec.md
  */
 export function createPageHistory({ get, url }) {
 	return {
@@ -33,7 +33,7 @@ export function createPageHistory({ get, url }) {
 		 *
 		 * @param {string} pageId The page object's id.
 		 * @return {Promise<{state: string, versions: Array, reason?: string}>}
-		 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+		 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
 		 */
 		async load(pageId) {
 			try {
@@ -60,7 +60,7 @@ export function createPageHistory({ get, url }) {
  * @param {object} page The page as the designer loaded it.
  * @param {object} version A version from the history.
  * @return {object} The page to write.
- * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+ * @spec openspec/specs/site-page-seo-history-and-media/spec.md
  */
 export function restoredDraft(page, version) {
 	if (!version || version.restorable !== true || !version.body) {

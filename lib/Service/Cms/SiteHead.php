@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+ * @spec openspec/specs/site-page-seo-history-and-media/spec.md
  */
 
 declare(strict_types=1);
@@ -54,7 +54,7 @@ class SiteHead {
 	 *
 	 * @return array{title: string, description: string, robots: string, canonical: string, ogImage: string}
 	 *
-	 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+	 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
 	 */
 	public function for(?array $portal, string $route, string $locale, string $canonical): array {
 		$portalTitle = (string)($portal['title'] ?? '');

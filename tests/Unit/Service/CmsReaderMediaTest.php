@@ -24,7 +24,7 @@ use Psr\Log\NullLogger;
  * item's public address with its alternative text. Only a published item of
  * the page's own portal resolves.
  *
- * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+ * @spec openspec/specs/site-page-seo-history-and-media/spec.md
  */
 class CmsReaderMediaTest extends TestCase {
 

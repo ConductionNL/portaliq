@@ -10,7 +10,7 @@
   the live page changes only when the editor publishes. See
   src/lib/pageHistory.js.
 
-  @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+  @spec openspec/specs/site-page-seo-history-and-media/spec.md
 -->
 <template>
 	<NcDialog
@@ -134,7 +134,7 @@ export default {
 			 *
 			 * @param {boolean} isOpen Whether the dialog is open.
 			 * @return {Promise<void>}
-			 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+			 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
 			 */
 			async handler(isOpen) {
 				if (!isOpen || !this.pageId) {
@@ -159,7 +159,7 @@ export default {
 		 *
 		 * @param {string} iso The ISO timestamp.
 		 * @return {string} The date and time.
-		 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+		 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
 		 */
 		formatDate(iso) {
 			const date = new Date(iso)
@@ -171,7 +171,7 @@ export default {
 		 *
 		 * @param {object} version The version.
 		 * @return {void}
-		 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+		 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
 		 */
 		restore(version) {
 			this.$emit('restore', version)

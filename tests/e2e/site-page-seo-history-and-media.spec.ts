@@ -9,7 +9,7 @@
  *
  *     NEXTCLOUD_URL=http://localhost:8080 npx playwright test site-page-seo
  *
- * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+ * @spec openspec/specs/site-page-seo-history-and-media/spec.md
  */
 
 import type { APIRequestContext } from '@playwright/test'

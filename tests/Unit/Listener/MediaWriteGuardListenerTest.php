@@ -27,7 +27,7 @@ use Psr\Log\NullLogger;
  * OpenRegister's REAL events and entities, so the veto is the one its mapper
  * honours (stopPropagation plus a message).
  *
- * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+ * @spec openspec/specs/site-page-seo-history-and-media/spec.md
  */
 class MediaWriteGuardListenerTest extends TestCase {
 

@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+ * @spec openspec/specs/site-page-seo-history-and-media/spec.md
  */
 
 declare(strict_types=1);
@@ -64,7 +64,7 @@ class MediaFile {
 	 *
 	 * @return StreamResponse|null
 	 *
-	 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+	 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
 	 */
 	public function stream(array $portal, string $id): ?StreamResponse {
 		if ($this->isPublic(portal: $portal) === false) {

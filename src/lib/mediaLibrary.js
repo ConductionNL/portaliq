@@ -13,7 +13,7 @@
  * The GET is handed in by `src/dialogs/MediaPickerDialog.vue`, so
  * `tests/media-library.spec.mjs` runs this as a plain node script.
  *
- * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+ * @spec openspec/specs/site-page-seo-history-and-media/spec.md
  */
 
 const PREFIX = 'media:'
@@ -24,7 +24,7 @@ const PREFIX = 'media:'
  * @param {object} deps The collaborators.
  * @param {Function} deps.get path => Promise<{data}>, the path relative to the Nextcloud root
  * @return {object}
- * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+ * @spec openspec/specs/site-page-seo-history-and-media/spec.md
  */
 export function createMediaLibrary({ get }) {
 	return {
@@ -33,7 +33,7 @@ export function createMediaLibrary({ get }) {
 		 *
 		 * @param {string} portal The portal slug.
 		 * @return {Promise<{state: string, items: Array}>}
-		 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+		 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
 		 */
 		async load(portal) {
 			if (!portal) {
@@ -76,7 +76,7 @@ export function createMediaLibrary({ get }) {
  * @param {object} item A library item.
  * @param {'hero'|'share'} target Which image.
  * @return {object} The page to write.
- * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+ * @spec openspec/specs/site-page-seo-history-and-media/spec.md
  */
 export function withMedia(page, item, target) {
 	if (!item || item.kind !== 'image') {
@@ -92,7 +92,7 @@ export function withMedia(page, item, target) {
  *
  * @param {object} item A library item.
  * @return {string}
- * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+ * @spec openspec/specs/site-page-seo-history-and-media/spec.md
  */
 export function markdownReference(item) {
 	if (item.kind === 'image') {

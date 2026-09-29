@@ -405,7 +405,7 @@ class PortalPageControllerTest extends TestCase {
 	 * site-page-seo-history-and-media REQ-SPH-002: the served head carries the
 	 * page's search title, description and robots, without JavaScript.
 	 *
-	 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+	 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
 	 */
 	public function testSiteServesThePagesHead(): void {
 		$controller = $this->controller(
@@ -428,7 +428,7 @@ class PortalPageControllerTest extends TestCase {
 	/**
 	 * A draft or an unknown route lends nothing: the portal's name and noindex.
 	 *
-	 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+	 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
 	 */
 	public function testSiteServesNoindexWhenNoPageIsPublishedThere(): void {
 		$controller = $this->controller(orgSlug: '', portal: ['slug' => 'gemeente', 'title' => 'Gemeente Voorbeeld'], page: null, route: '/concept');

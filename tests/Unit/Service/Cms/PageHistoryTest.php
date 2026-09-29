@@ -23,7 +23,7 @@ use Psr\Log\NullLogger;
  * of the page object. Built on the REAL AuditTrail entity, so the `changed`
  * shape is OpenRegister's own ({field: {old, new}}).
  *
- * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+ * @spec openspec/specs/site-page-seo-history-and-media/spec.md
  */
 class PageHistoryTest extends TestCase {
 

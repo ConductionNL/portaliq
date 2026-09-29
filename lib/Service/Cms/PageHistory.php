@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+ * @spec openspec/specs/site-page-seo-history-and-media/spec.md
  */
 
 declare(strict_types=1);
@@ -79,7 +79,7 @@ class PageHistory {
 	 *
 	 * @return list<array{id: int|null, publishedAt: string, by: string, restorable: bool, body: array<mixed>|null}>
 	 *
-	 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+	 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
 	 */
 	public function versions(string $pageId): array {
 		try {

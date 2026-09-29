@@ -9,7 +9,7 @@
   a media:<id> reference, so replacing the item's file later updates the page.
   See src/lib/mediaLibrary.js.
 
-  @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+  @spec openspec/specs/site-page-seo-history-and-media/spec.md
 -->
 <template>
 	<NcDialog
@@ -127,7 +127,7 @@ export default {
 			 *
 			 * @param {boolean} isOpen Whether the dialog is open.
 			 * @return {Promise<void>}
-			 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+			 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
 			 */
 			async handler(isOpen) {
 				if (!isOpen) {
@@ -152,7 +152,7 @@ export default {
 		 * @param {object} item The item.
 		 * @param {'hero'|'share'} target Which image.
 		 * @return {void}
-		 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+		 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
 		 */
 		choose(item, target) {
 			this.$emit('choose', { item, target })
@@ -163,7 +163,7 @@ export default {
 		 *
 		 * @param {object} item The item.
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+		 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
 		 */
 		async copyReference(item) {
 			try {

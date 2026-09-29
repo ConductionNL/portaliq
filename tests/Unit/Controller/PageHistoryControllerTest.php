@@ -17,7 +17,7 @@ use PHPUnit\Framework\TestCase;
  * site-page-seo-history-and-media REQ-SPH-003: only a page editor reads a
  * page's history.
  *
- * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+ * @spec openspec/specs/site-page-seo-history-and-media/spec.md
  */
 class PageHistoryControllerTest extends TestCase {
 

@@ -17,7 +17,7 @@ use PHPUnit\Framework\TestCase;
  * and summary, honours noindex, and a route with no published page lends
  * nothing to the head.
  *
- * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+ * @spec openspec/specs/site-page-seo-history-and-media/spec.md
  */
 class SiteHeadTest extends TestCase {
 

@@ -4961,7 +4961,7 @@
 			"id": "cmp-site-versions",
 			"area": "site",
 			"name": "Go back to an earlier version of a page.",
-			"portaliq": "no",
+			"portaliq": "yes",
 			"open-inwoner": "yes",
 			"nl-portal": "no",
 			"xxllnc-pip": "no",
@@ -4975,12 +4975,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/sites/publishing-tools/publications/reverting-changes 'Liferay Publications maintains a history of all published changes. You can use this publishing history to easily create publications that revert earlier changes'. Publications is in maintenance mode as of 2026.Q1 and published changes cannot be reverted after an upgrade."
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "No revision/version-history class or schema anywhere in lib/ (grep -in \"revision|version.*history\" lib/Settings/portaliq_register.json: 0 hits; find lib -iname '*Revision*' -o -iname '*History*': 0 hits). `page.draftBody` exists but is a single working copy, not a history",
-				"reachedOn": "nothing reaches it: no code exists",
+				"state": "built",
+				"evidence": "src/dialogs/PageHistoryDialog.vue (the page designer's History button) over src/lib/pageHistory.js -> GET /api/pages/{id}/history (PageHistoryController, page editors only via PageEditorService::mayEdit) -> lib/Service/Cms/PageHistory.php reads OpenRegister's audit trail of the page in process (AuditTrailMapper::findForObjectByAction, portaliq's page schema only): every row whose body changed is a published version with who and when; 'Restore this version' writes that body to draftBody through the designer's own draft save (restoredDraft), so the live page changes only on Publish. Tests: PageHistoryTest (real AuditTrail entity), PageHistoryControllerTest, tests/page-history.spec.mjs",
+				"reachedOn": "editor: Pages -> a page -> Edit layout -> History -> Restore this version -> Publish",
 				"owner": "ConductionNL/portaliq",
-				"note": "Specified in openspec/changes/site-page-seo-history-and-media (OpenSpec pass 2026-09-27).",
-				"origin": "competitor"
+				"note": "Built 2026-09-29. OpenRegister's own per-object audit-trail endpoint is admin-only, hence portaliq's editor-gated route. A version recorded without its body is listed without a restore.",
+				"origin": "competitor",
+				"change": "2026-09-29-site-page-seo-history-and-media"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -5021,7 +5022,7 @@
 			"id": "cmp-site-media",
 			"area": "site",
 			"name": "Keep images and files in a media library and reuse them on pages.",
-			"portaliq": "no",
+			"portaliq": "yes",
 			"open-inwoner": "yes",
 			"nl-portal": "no",
 			"xxllnc-pip": "no",
@@ -5035,12 +5036,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/digital-asset-management/documents-and-media: a Documents and Media library per site, and asset libraries share files across connected sites (https://learn.liferay.com/w/dxp/content-management-system/asset-libraries)."
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "No media-library controller, schema or component (grep -rln \"media.*librar|MediaLibrary\" lib/ src/: 0 hits). `page.heroImage` is a single per-page reference field, not a reusable library",
-				"reachedOn": "nothing reaches it: no code exists",
+				"state": "built",
+				"evidence": "media schema 0.1.0 (lib/Settings/portaliq_register.json, register 0.44.0; editor groups get its write rules with the page's); manifest Media + MediaDetail (file uploaded in the sidebar's Files tab, OpenRegister object files); src/dialogs/MediaPickerDialog.vue in the page designer stores media:<id> as heroImage or seoImage, or copies a markdown reference; lib/Service/Cms/MediaReferences.php + MediaLibraryReader resolve media:<id> in the content API (hero {url, alt}, share image, markdown targets) for published items of the page's own portal; GET /api/content/media/{id} (ContentMediaController -> MediaFile) streams the newest file of a published item of the serving portal, 404 otherwise; lib/Listener/MediaWriteGuardListener.php refuses an image without alternative text and the delete of an item a published page uses, naming the pages; src/site/App.vue shows the hero with its alternative text",
+				"reachedOn": "editor: Media (menu) -> Add -> upload in Files; Pages -> a page -> Edit layout -> Media -> Use as hero image; visitor: the page shows the image",
 				"owner": "ConductionNL/portaliq",
-				"note": "Specified in openspec/changes/site-page-seo-history-and-media (OpenSpec pass 2026-09-27).",
-				"origin": "competitor"
+				"note": "Built 2026-09-29. A portal behind sign-in serves no library item yet (an image tag carries no bearer token).",
+				"origin": "competitor",
+				"change": "2026-09-29-site-page-seo-history-and-media"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -5071,7 +5073,7 @@
 				"owner": "ConductionNL/portaliq",
 				"note": "Built in site-page-seo-history-and-media part 1 (T01-T03); history (cmp-site-versions) and media (cmp-site-media) are part 2. The defect (summary documented as the meta description, never emitted) is closed.",
 				"origin": "competitor",
-				"change": "site-page-seo-history-and-media"
+				"change": "2026-09-29-site-page-seo-history-and-media"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",

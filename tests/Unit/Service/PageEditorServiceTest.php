@@ -345,7 +345,7 @@ class PageEditorServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+	 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
 	 */
 	public function testTheEditorGroupsAlsoWriteTheMediaLibrary(): void {
 		$this->service(isAdmin: true)->setEditorGroups(['redacteuren']);

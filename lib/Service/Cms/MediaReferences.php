@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+ * @spec openspec/specs/site-page-seo-history-and-media/spec.md
  */
 
 declare(strict_types=1);
@@ -63,7 +63,7 @@ class MediaReferences {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+	 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
 	 */
 	public static function isReference(mixed $value): bool {
 		return is_string($value) === true && str_starts_with($value, self::PREFIX) === true;
@@ -77,7 +77,7 @@ class MediaReferences {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+	 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
 	 */
 	public function address(string $portal, string $id): string {
 		return $this->urls->linkToRouteAbsolute('portaliq.contentMedia.show', ['id' => $id, 'portal' => $portal]);
@@ -91,7 +91,7 @@ class MediaReferences {
 	 *
 	 * @return array{url: string, alt: string}|null
 	 *
-	 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+	 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
 	 */
 	public function hero(string $portal, mixed $value): ?array {
 		if (self::isReference(value: $value) === true) {
@@ -119,7 +119,7 @@ class MediaReferences {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+	 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
 	 */
 	public function image(string $portal, string $value): string {
 		if (self::isReference(value: $value) === false) {
@@ -140,7 +140,7 @@ class MediaReferences {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+	 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
 	 */
 	public function markdown(string $portal, string $markdown): string {
 		if (str_contains($markdown, '](' . self::PREFIX) === false) {

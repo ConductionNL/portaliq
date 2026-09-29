@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+ * @spec openspec/specs/site-page-seo-history-and-media/spec.md
  */
 
 declare(strict_types=1);
@@ -79,7 +79,7 @@ class MediaLibraryReader {
 	 *
 	 * @return array<string, array{id: string, title: string, alt: string, kind: string}>
 	 *
-	 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+	 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
 	 */
 	public function items(string $portal): array {
 		$key = $portal.'|media|||anonymous';
@@ -116,7 +116,7 @@ class MediaLibraryReader {
 	 *
 	 * @return array{id: string, title: string, alt: string, kind: string}|null
 	 *
-	 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+	 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
 	 */
 	public function item(string $portal, string $id): ?array {
 		if ($portal === '' || $id === '') {
@@ -138,7 +138,7 @@ class MediaLibraryReader {
 	 *
 	 * @return list<string> The routes, sorted.
 	 *
-	 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+	 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
 	 */
 	public function pagesUsing(string $portal, string $id): array {
 		if ($portal === '' || $id === '') {

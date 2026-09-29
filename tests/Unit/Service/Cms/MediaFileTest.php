@@ -18,7 +18,7 @@ use PHPUnit\Framework\TestCase;
  * reach a published item of the serving portal and nothing else, and the
  * newest attached file is the one served, so a replaced file keeps the id.
  *
- * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+ * @spec openspec/specs/site-page-seo-history-and-media/spec.md
  */
 class MediaFileTest extends TestCase {
 

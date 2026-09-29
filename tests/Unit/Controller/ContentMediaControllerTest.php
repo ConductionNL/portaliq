@@ -20,7 +20,7 @@ use PHPUnit\Framework\TestCase;
  * /api/content/media/{id} streams a published item of the resolved portal and
  * answers not found otherwise, with one answer for every kind of miss.
  *
- * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+ * @spec openspec/specs/site-page-seo-history-and-media/spec.md
  */
 class ContentMediaControllerTest extends TestCase {
 
