@@ -11,9 +11,9 @@
 
 ## History
 
-- [ ] **T04**: The History panel over OpenRegister's page audit trail, published versions newest first (REQ-SPH-003)
+- [x] **T04**: The History panel over OpenRegister's page audit trail, published versions newest first (REQ-SPH-003). Built as the designer's History dialog (`src/dialogs/PageHistoryDialog.vue`) over `GET /api/pages/{id}/history` (`PageHistoryController`, page editors only) and `lib/Service/Cms/PageHistory.php`, which reads the trail in process (design D3, fixed).
   - Verify: Playwright: publish twice, see two versions with who and when
-- [ ] **T05**: "Restore this version" copies the version's `body` into `draftBody`; the live page does not change until published (REQ-SPH-003)
+- [x] **T05**: "Restore this version" copies the version's `body` into `draftBody`; the live page does not change until published (REQ-SPH-003). `restoredDraft()` in `src/lib/pageHistory.js`, written by the designer's own draft write.
   - Verify: Playwright: restore, confirm the public page still shows the newer text, publish, confirm the older text
 
 ## Media

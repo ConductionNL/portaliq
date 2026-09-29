@@ -62,6 +62,12 @@
 					{{ t('portaliq', 'Publish') }}
 				</NcButton>
 				<NcButton
+					data-testid="designer-history"
+					:disabled="loading"
+					@click="historyOpen = true">
+					{{ t('portaliq', 'History') }}
+				</NcButton>
+				<NcButton
 					v-if="hasDraft"
 					data-testid="designer-discard-draft"
 					:disabled="loading || saving"
@@ -259,6 +265,11 @@
 		</div>
 
 		<WidgetPaletteDialog v-model:open="paletteOpen" @choose="addWidget" />
+		<PageHistoryDialog
+			v-model:open="historyOpen"
+			:page-id="pageId"
+			:busy="saving"
+			@restore="restoreVersion" />
 	</div>
 </template>
 
@@ -267,7 +278,9 @@ import { CnDashboardGrid } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 import { NcButton, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
+import PageHistoryDialog from '../dialogs/PageHistoryDialog.vue'
 import WidgetPaletteDialog from '../dialogs/WidgetPaletteDialog.vue'
+import { restoredDraft } from '../lib/pageHistory.js'
 import { pageSiteUrl } from '../lib/pageSiteUrl.js'
 import {
 	defaultSizeFor,
@@ -284,6 +297,7 @@ export default {
 		NcButton,
 		NcLoadingIcon,
 		NcNoteCard,
+		PageHistoryDialog,
 		WidgetPaletteDialog,
 	},
 
@@ -298,6 +312,7 @@ export default {
 			widgets: [],
 			selectedId: '',
 			paletteOpen: false,
+			historyOpen: false,
 			loading: true,
 			saving: false,
 			dirty: false,
@@ -724,6 +739,26 @@ export default {
 			delete payload.draftBody
 
 			await this.write(payload, t('portaliq', 'Published.'))
+		},
+
+		/**
+		 * Put an earlier published version in the draft.
+		 *
+		 * A draft write like saveDraft(): the live page keeps its body until
+		 * the editor publishes, and an unsaved layout in the canvas gives way
+		 * to the restored one, which the reload shows.
+		 *
+		 * @param {object} version A version from the page history.
+		 * @return {Promise<void>} Resolves when written.
+		 *
+		 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+		 */
+		async restoreVersion(version) {
+			this.historyOpen = false
+			await this.write(
+				restoredDraft(this.page, version),
+				t('portaliq', 'The version is in the draft. The live page changes when you publish.'),
+			)
 		},
 
 		/**

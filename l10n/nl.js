@@ -1716,7 +1716,17 @@ OC.L10N.register(
         "Keep this page out of search engines": "Deze pagina buiten zoekmachines houden",
         "When on, the page asks search engines not to list it.": "Als dit aan staat, vraagt de pagina zoekmachines haar niet op te nemen.",
         "Share image": "Deelafbeelding",
-        "The http or https address of the image shown when the page is shared.": "Het http- of https-adres van de afbeelding die wordt getoond als de pagina wordt gedeeld."
+        "The http or https address of the image shown when the page is shared.": "Het http- of https-adres van de afbeelding die wordt getoond als de pagina wordt gedeeld.",
+        "Page history": "Paginageschiedenis",
+        "The published versions of this page, newest first. Restoring a version puts it in the draft. The live page changes only when you publish.": "De gepubliceerde versies van deze pagina, de nieuwste eerst. Een versie terugzetten zet die in het concept. De live pagina verandert pas als u publiceert.",
+        "The history could not be loaded.": "De geschiedenis kon niet worden geladen.",
+        "This page has no published versions yet.": "Deze pagina heeft nog geen gepubliceerde versies.",
+        "Published on {date} by {name}": "Gepubliceerd op {date} door {name}",
+        "an unknown editor": "een onbekende redacteur",
+        "Restore this version": "Deze versie terugzetten",
+        "This version was recorded without its content, so it cannot be restored.": "Deze versie is zonder inhoud vastgelegd en kan daarom niet worden teruggezet.",
+        "The version is in the draft. The live page changes when you publish.": "De versie staat in het concept. De live pagina verandert als u publiceert.",
+        "Close": "Sluiten"
     },
     "nplurals=2; plural=(n != 1);"
 )

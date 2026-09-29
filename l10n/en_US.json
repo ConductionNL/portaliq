@@ -118,7 +118,18 @@
         "Keep this page out of search engines": "Keep this page out of search engines",
         "When on, the page asks search engines not to list it.": "When on, the page asks search engines not to list it.",
         "Share image": "Share image",
-        "The http or https address of the image shown when the page is shared.": "The http or https address of the image shown when the page is shared."
+        "The http or https address of the image shown when the page is shared.": "The http or https address of the image shown when the page is shared.",
+        "History": "History",
+        "Page history": "Page history",
+        "The published versions of this page, newest first. Restoring a version puts it in the draft. The live page changes only when you publish.": "The published versions of this page, newest first. Restoring a version puts it in the draft. The live page changes only when you publish.",
+        "The history could not be loaded.": "The history could not be loaded.",
+        "This page has no published versions yet.": "This page has no published versions yet.",
+        "Published on {date} by {name}": "Published on {date} by {name}",
+        "an unknown editor": "an unknown editor",
+        "Restore this version": "Restore this version",
+        "This version was recorded without its content, so it cannot be restored.": "This version was recorded without its content, so it cannot be restored.",
+        "The version is in the draft. The live page changes when you publish.": "The version is in the draft. The live page changes when you publish.",
+        "Close": "Close"
     },
     "pluralForm": "nplurals=2; plural=(n != 1);"
 }
