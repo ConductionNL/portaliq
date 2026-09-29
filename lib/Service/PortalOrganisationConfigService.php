@@ -40,6 +40,7 @@ namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\Notifications\MessageBoxOffer;
+use OCA\Portaliq\Service\Signin\BrokerLoginRoute;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -115,12 +116,15 @@ class PortalOrganisationConfigService {
 	 * @param OidcClaimMapperService $claimMapper Merges a provider preset with the
 	 *                                            org's raw OIDC override
 	 *                                            (portal-oidc-broker-login).
+	 * @param BrokerLoginRoute $brokerRoute Reads the integriq broker route
+	 *                                      (signin-integriq-broker-login).
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
 		private readonly IAppConfig $appConfig,
 		private readonly LoggerInterface $logger,
 		private readonly OidcClaimMapperService $claimMapper,
+		private readonly BrokerLoginRoute $brokerRoute = new BrokerLoginRoute(),
 	) {
 	}//end __construct()
 
@@ -314,6 +318,111 @@ class PortalOrganisationConfigService {
 	}//end isLoginProviderAllowed()
 
 	/**
+	 * The login route an organisation chose for a provider: `oidc` unless its
+	 * `loginRoutes` map says `broker` (design D1).
+	 *
+	 * @param string $orgSlug  The organisation slug.
+	 * @param string $provider The provider.
+	 *
+	 * @return string `oidc` or `broker`.
+	 *
+	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+	 */
+	public function loginRouteFor(string $orgSlug, string $provider): string {
+		$organisation = null;
+		if ($orgSlug !== '' && in_array($provider, self::OIDC_PROVIDERS, true) === true) {
+			$organisation = $this->findOrganisationBySlug(slug: $orgSlug);
+		}
+
+		if ($organisation === null) {
+			return BrokerLoginRoute::ROUTE_OIDC;
+		}
+
+		return $this->brokerRoute->routeFor(
+			overrides: $this->presentationOverrides(organisationUuid: $organisation['uuid']),
+			provider: $provider
+		);
+	}//end loginRouteFor()
+
+	/**
+	 * The integriq broker settings for one provider, with the consumer
+	 * secret, the organisation's uuid and the provider preset's label and
+	 * audience, or null when the provider is not broker-routed or the route
+	 * is incomplete. Server-side only: it carries the secret.
+	 *
+	 * @param string $orgSlug  The organisation slug.
+	 * @param string $provider The provider.
+	 *
+	 * @return array{startUrl: string, exchangeUrl: string, consumerId: string, secret: string, organisationUuid: string, label: string, audience: string}|null
+	 *
+	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+	 */
+	public function resolveBrokerConfig(string $orgSlug, string $provider): ?array {
+		if ($orgSlug === '' || in_array($provider, BrokerLoginRoute::BROKERED_PROVIDERS, true) === false) {
+			return null;
+		}
+
+		$organisation = $this->findOrganisationBySlug(slug: $orgSlug);
+		if ($organisation === null) {
+			return null;
+		}
+
+		$overrides = $this->presentationOverrides(organisationUuid: $organisation['uuid']);
+		if ($this->brokerRoute->routeFor(overrides: $overrides, provider: $provider) !== BrokerLoginRoute::ROUTE_BROKER) {
+			return null;
+		}
+
+		$secret = $this->appConfig->getValueString(Application::APP_ID, $this->brokerSecretKey(organisationUuid: $organisation['uuid']), '');
+		$settings = $this->brokerRoute->settings(overrides: $overrides, secret: $secret);
+		$preset = $this->claimMapper->applyPreset(provider: $provider, rawConfig: []);
+		if ($settings === null || $preset === null) {
+			return null;
+		}
+
+		return $settings + [
+			'organisationUuid' => $organisation['uuid'],
+			'label' => (string)($preset['label'] ?? $provider),
+			'audience' => (string)($preset['audience'] ?? 'client'),
+		];
+	}//end resolveBrokerConfig()
+
+	/**
+	 * Store an organisation's integriq consumer secret in its own sensitive
+	 * `IAppConfig` entry, never in the presentation override (design D8).
+	 *
+	 * @param string $organisationUuid The organisation's uuid.
+	 * @param string $secret           The consumer secret.
+	 *
+	 * @return bool Whether the value was written.
+	 *
+	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+	 */
+	public function setBrokerSecret(string $organisationUuid, string $secret): bool {
+		if ($organisationUuid === '') {
+			return false;
+		}
+
+		return $this->appConfig->setValueString(
+			Application::APP_ID,
+			$this->brokerSecretKey(organisationUuid: $organisationUuid),
+			$secret,
+			false,
+			true
+		);
+	}//end setBrokerSecret()
+
+	/**
+	 * The sensitive `IAppConfig` key of an organisation's broker secret.
+	 *
+	 * @param string $organisationUuid The organisation's uuid.
+	 *
+	 * @return string
+	 */
+	private function brokerSecretKey(string $organisationUuid): string {
+		return 'broker_secret_' . $organisationUuid;
+	}//end brokerSecretKey()
+
+	/**
 	 * Store an organisation's OIDC client secret for one provider, via a
 	 * DEDICATED `sensitive`-flagged `IAppConfig` entry — NEVER inside the
 	 * (non-sensitive) presentation-override JSON blob, and NEVER in the
@@ -397,17 +506,29 @@ class PortalOrganisationConfigService {
 	 *
 	 * @param string $orgSlug The `?org=` slug.
 	 *
-	 * @return array<int, array{provider: string, label: string}>
+	 * @return array<int, array{provider: string, label: string, route: string}>
 	 */
 	private function configuredOidcProviders(string $orgSlug): array {
 		$providers = [];
 		foreach (self::OIDC_PROVIDERS as $provider) {
+			if ($this->loginRouteFor(orgSlug: $orgSlug, provider: $provider) === BrokerLoginRoute::ROUTE_BROKER) {
+				// A broker-routed provider is listed only when the broker
+				// route is fully configured (REQ-BEL-001): no button rather
+				// than a button that fails.
+				$broker = $this->resolveBrokerConfig(orgSlug: $orgSlug, provider: $provider);
+				if ($broker !== null) {
+					$providers[] = ['provider' => $provider, 'label' => $broker['label'], 'route' => BrokerLoginRoute::ROUTE_BROKER];
+				}
+
+				continue;
+			}
+
 			$merged = $this->resolveOidcConfig(orgSlug: $orgSlug, provider: $provider);
 			if ($merged === null) {
 				continue;
 			}
 
-			$providers[] = ['provider' => $provider, 'label' => (string)($merged['label'] ?? $provider)];
+			$providers[] = ['provider' => $provider, 'label' => (string)($merged['label'] ?? $provider), 'route' => BrokerLoginRoute::ROUTE_OIDC];
 		}
 
 		return $providers;
