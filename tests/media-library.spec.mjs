@@ -64,7 +64,7 @@ test('the designer opens the Media dialog, the site shows the hero with its alte
 	const designer = readFileSync(join(ROOT, 'src/views/PageLayoutDesigner.vue'), 'utf8')
 	assert.match(designer, /import MediaPickerDialog from '\.\.\/dialogs\/MediaPickerDialog\.vue'/)
 	assert.match(designer, /data-testid="designer-media"/)
-	assert.match(designer, /withMedia\(this\.page, item, target\)/)
+	assert.match(designer, /withMedia\(page, item, target\)/)
 
 	const site = readFileSync(join(ROOT, 'src/site/App.vue'), 'utf8')
 	assert.match(site, /:src="page\.hero\.url"\s+:alt="page\.hero\.alt"/)
