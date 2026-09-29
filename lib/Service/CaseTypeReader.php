@@ -111,7 +111,7 @@ class CaseTypeReader {
 	 *
 	 * @return array<int, array<string, mixed>> The case types, or [] on any failure.
 	 *
-	 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
 	 */
 	public function listCaseTypes(string $register, string $schema, int $limit = 200): array {
 		if ($register === '' || $schema === '') {

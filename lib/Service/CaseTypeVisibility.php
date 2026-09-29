@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+ * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
  */
 
 declare(strict_types=1);
@@ -39,7 +39,7 @@ use OCP\IRequest;
  * named by the request, as long as it belongs to the resident's own
  * organisation.
  *
- * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+ * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
  */
 class CaseTypeVisibility {
 	/**
@@ -70,7 +70,7 @@ class CaseTypeVisibility {
 	 *
 	 * @return array<int, string>
 	 *
-	 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
 	 */
 	public function hiddenTypeIds(?array $portal): array {
 		$hidden = [];
@@ -96,7 +96,7 @@ class CaseTypeVisibility {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
 	 */
 	public function isHidden(array $portal, string $typeId): bool {
 		if ($typeId === '') {
@@ -113,7 +113,7 @@ class CaseTypeVisibility {
 	 *
 	 * @return array<int, string>
 	 *
-	 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
 	 */
 	public function hiddenInPortal(string $slug): array {
 		if ($slug === '') {
@@ -137,7 +137,7 @@ class CaseTypeVisibility {
 	 *
 	 * @return array<int, string>
 	 *
-	 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
 	 */
 	public function hiddenForRequest(IRequest $request, array $subject): array {
 		return $this->hiddenTypeIds(portal: $this->servingPortal(request: $request, subject: $subject));
@@ -153,7 +153,7 @@ class CaseTypeVisibility {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
 	 */
 	public function servingPortal(IRequest $request, array $subject): ?array {
 		$slug = trim($request->getHeader(self::HEADER));
@@ -190,7 +190,7 @@ class CaseTypeVisibility {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
 	 */
 	public function caseTypeOf(array $row, array $collection): string {
 		$field = (string)($collection['caseTypeField'] ?? self::DEFAULT_TYPE_FIELD);
@@ -219,7 +219,7 @@ class CaseTypeVisibility {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
 	 */
 	public function rowIsHidden(array $row, array $collection, array $hidden): bool {
 		if ($hidden === []) {

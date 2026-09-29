@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
+ * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
  */
 
 declare(strict_types=1);
@@ -39,7 +39,7 @@ use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
  * `cases` collection), or the portal's own hidden list. The last one keeps a
  * hidden type on the page even when nothing else names it any more.
  *
- * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
+ * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
  */
 class PortalCaseTypeCatalogue {
 	/**
@@ -84,7 +84,7 @@ class PortalCaseTypeCatalogue {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
 	 */
 	public function portalBySlug(string $slug): ?array {
 		if ($slug === '') {
@@ -115,7 +115,7 @@ class PortalCaseTypeCatalogue {
 	 *
 	 * @return array<int, array{register: string, schema: string, typeId: string, label: string, shown: bool}>
 	 *
-	 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
 	 */
 	public function listFor(array $portal): array {
 		$listed = [];
@@ -157,7 +157,7 @@ class PortalCaseTypeCatalogue {
 	 *
 	 * @return array<string, mixed>|null The saved portal, or null when the write failed.
 	 *
-	 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-nothing-is-deleted-by-hiding-req-osc-003
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-nothing-is-deleted-by-hiding-req-osc-003
 	 */
 	public function save(array $portal, array $hidden): ?array {
 		$id = (string)($portal['id'] ?? $portal['uuid'] ?? ($portal['@self']['id'] ?? ''));

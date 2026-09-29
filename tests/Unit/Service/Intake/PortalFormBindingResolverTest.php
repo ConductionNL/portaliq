@@ -260,7 +260,7 @@ class PortalFormBindingResolverTest extends TestCase {
 	 * portal hides resolves to no form, and says why; the same binding on a
 	 * portal that shows the type still renders.
 	 *
-	 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
 	 */
 	public function testHiddenCaseTypeResolvesToNoForm(): void {
 		$this->seedForm(audience: 'client', fields: [['name' => 'postcode', 'order' => 1]]);

@@ -25,7 +25,7 @@ use PHPUnit\Framework\TestCase;
  * declared case type source, and whatever it already hides), and saving
  * writes only the portal's list.
  *
- * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
+ * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
  */
 class PortalCaseTypeCatalogueTest extends TestCase {
 	use PortalIdentityStoreTrait;
@@ -63,7 +63,7 @@ class PortalCaseTypeCatalogueTest extends TestCase {
 	 * register schema; showing a type again removes it, and nothing else on
 	 * the portal changes (REQ-OSC-003).
 	 *
-	 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-nothing-is-deleted-by-hiding-req-osc-003
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-nothing-is-deleted-by-hiding-req-osc-003
 	 */
 	public function testSavingWritesOnlyThePortalsList(): void {
 		$uuid = $this->seedPortal(hidden: []);

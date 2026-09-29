@@ -68,7 +68,7 @@ class PortalCatalogueReaderTest extends TestCase {
 	 * operate-show-per-case-type REQ-OSC-002: an entry whose form is bound to
 	 * a case type the portal hides is left out of the catalogue.
 	 *
-	 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
 	 */
 	public function testAnEntryForAHiddenCaseTypeIsLeftOut(): void {
 		$this->seedEntry(topic: 'Wonen', title: 'Verhuizing doorgeven', route: 'aanvragen/verhuizing');

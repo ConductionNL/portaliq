@@ -24,7 +24,7 @@ use ReflectionClass;
  * "Case types" routes; the list keeps a hidden type, and a save answers the
  * list as stored.
  *
- * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
+ * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
  */
 class PortalCaseTypesControllerTest extends TestCase {
 	private const PORTAL = ['uuid' => 'p-1', 'slug' => 'mijn-alkmaar', 'title' => 'Mijn Alkmaar', 'status' => 'published'];

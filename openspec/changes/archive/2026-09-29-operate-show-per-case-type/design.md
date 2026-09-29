@@ -74,3 +74,23 @@ admin-only, like `SettingsController::update()`.
 
 - No per-resident exception.
 - No change to the case app's own filter or declarations.
+
+## As built (2026-09-29)
+
+- **Which portal a signed-in request is served from.** The resident SPA is
+  served at `?org=`, so a request did not name its portal. It now sends the
+  header `X-Portaliq-Portal` with its portal slug on every read.
+  `CaseTypeVisibility::servingPortal()` takes the named portal (header, then
+  `?portal=`, then the host) when it belongs to the subject's organisation,
+  and otherwise the organisation's single portal. Hiding is what a portal
+  offers, not an access boundary, so naming another portal of the same
+  organisation can only show what that portal shows.
+- The list and save logic lives in `PortalCaseTypeCatalogue`; the controller
+  is `PortalCaseTypesController`. Case types from `caseTypeSource` are read
+  by `CaseTypeReader::listCaseTypes()`.
+- `PortalCatalogueReader` leaves out entries whose route is bound to a hidden
+  type (`PortalFormBindingResolver::hiddenRoutes()`), and the admin "Check
+  form" names the reason `hidden_case_type`.
+- The e2e file seeds a published form binding so the page names a type; the
+  resident half runs when a case app's seed provides two case types
+  (`E2E_CASE_TYPE_HIDDEN`, `E2E_CASE_TYPE_SHOWN`, `E2E_CASE_RESIDENT_TOKEN`).

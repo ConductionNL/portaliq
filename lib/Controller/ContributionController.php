@@ -543,7 +543,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return array<int, string>
 	 *
-	 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
 	 */
 	private function hiddenCaseTypesFor(array $subject, array $collection): array {
 		if ($this->caseTypes === null || ($collection['kind'] ?? '') !== 'cases') {

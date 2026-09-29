@@ -76,7 +76,7 @@ class PortalCatalogueReader {
 	 * @return array<int, array<string, mixed>> Topics, each with its entries.
 	 *
 	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
-	 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
 	 */
 	public function topicsFor(string $portal): array {
 		if ($portal === '') {

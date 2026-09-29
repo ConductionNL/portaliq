@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
+ * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ use OCP\IRequest;
 /**
  * Lists and saves the case types one portal shows.
  *
- * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
+ * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
  */
 class PortalCaseTypesController extends Controller {
 	/**
@@ -64,7 +64,7 @@ class PortalCaseTypesController extends Controller {
 	 *       choice. Nextcloud expresses admin-only as the ABSENCE of an opt-out
 	 *       attribute, so this tag is the declaration.
 	 *
-	 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
 	 */
 	public function index(string $slug): JSONResponse {
 		$portal = $this->catalogue->portalBySlug(slug: $slug);
@@ -88,8 +88,8 @@ class PortalCaseTypesController extends Controller {
 	 *       choice. Nextcloud expresses admin-only as the ABSENCE of an opt-out
 	 *       attribute, so this tag is the declaration.
 	 *
-	 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
-	 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-nothing-is-deleted-by-hiding-req-osc-003
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-nothing-is-deleted-by-hiding-req-osc-003
 	 */
 	public function update(string $slug, array $hiddenCaseTypes = []): JSONResponse {
 		$portal = $this->catalogue->portalBySlug(slug: $slug);

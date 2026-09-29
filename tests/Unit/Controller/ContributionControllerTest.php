@@ -988,7 +988,7 @@ class ContributionControllerTest extends TestCase {
 	 * portal hides answers the same 404 as a case that does not exist, and
 	 * leaves the list; a collection of another kind is untouched.
 	 *
-	 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
 	 */
 	public function testHiddenCaseTypeIs404(): void {
 		$aggregate = $this->aggregate(

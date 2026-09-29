@@ -36,7 +36,7 @@ class PortalCaseListReaderTest extends TestCase {
 	 * hides leaves "My cases"; the other types stay, and so does a case whose
 	 * type is held as a reference object.
 	 *
-	 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
 	 */
 	public function testHiddenCaseTypeIsNotListed(): void {
 		$reader = $this->readerReturning([
@@ -62,7 +62,7 @@ class PortalCaseListReaderTest extends TestCase {
 	 * A portal that hides nothing lists both cases, whatever another portal
 	 * of the same organisation hides.
 	 *
-	 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
 	 */
 	public function testOtherPortalUnaffected(): void {
 		$reader = $this->readerReturning([

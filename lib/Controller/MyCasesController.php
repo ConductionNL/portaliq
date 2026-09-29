@@ -82,7 +82,7 @@ class MyCasesController extends Controller implements PortalProtected {
 	 * @return JSONResponse The case list, or 401 without a session.
 	 *
 	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
-	 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]

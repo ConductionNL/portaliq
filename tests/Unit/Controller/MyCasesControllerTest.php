@@ -55,7 +55,7 @@ class MyCasesControllerTest extends TestCase {
 	 * operate-show-per-case-type REQ-OSC-002: "My cases" asks both case
 	 * lists to leave out what the serving portal hides.
 	 *
-	 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
 	 */
 	public function testThePortalsHiddenCaseTypesAreLeftOut(): void {
 		$portals = $this->createMock(PortalResolver::class);

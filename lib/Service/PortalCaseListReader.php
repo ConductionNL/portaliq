@@ -82,7 +82,7 @@ class PortalCaseListReader {
 	 * @return array<int, array<string, mixed>> The merged case rows.
 	 *
 	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
-	 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
 	 */
 	public function listCases(array $subject, array $aggregate, array $hiddenCaseTypes = []): array {
 		$rows = [];
@@ -153,7 +153,7 @@ class PortalCaseListReader {
 	 * @return array<int, array<string, mixed>> The mandated case rows.
 	 *
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
-	 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
 	 */
 	public function listMandatedCases(array $subject, array $aggregate, array $mandates, array $hiddenCaseTypes = []): array {
 		if ($this->mandates === null || $mandates === []) {
@@ -190,7 +190,7 @@ class PortalCaseListReader {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
 	 */
 	private function isHiddenType(array $row, array $collection, array $hidden): bool {
 		if ($hidden === []) {
@@ -211,7 +211,7 @@ class PortalCaseListReader {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
 	 */
 	private function typeOf(array $row, array $collection): string {
 		$value = ($row[(string)($collection['caseTypeField'] ?? 'caseType')] ?? '');

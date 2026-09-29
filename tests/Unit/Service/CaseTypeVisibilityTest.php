@@ -20,7 +20,7 @@ use PHPUnit\Framework\TestCase;
  * asks, and the portal a signed-in request is served from is the one whose
  * list applies.
  *
- * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+ * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
  */
 class CaseTypeVisibilityTest extends TestCase {
 	private const HIDING = [

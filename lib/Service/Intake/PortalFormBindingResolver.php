@@ -170,7 +170,7 @@ class PortalFormBindingResolver {
 	 *
 	 * @return array<int, string>
 	 *
-	 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
 	 */
 	public function hiddenRoutes(string $portal): array {
 		$hidden = ($this->caseTypes?->hiddenInPortal(slug: $portal) ?? []);
@@ -264,7 +264,7 @@ class PortalFormBindingResolver {
 	 *         surface prints.
 	 *
 	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
-	 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
 	 */
 	public function render(array $binding): array {
 		$settings = [

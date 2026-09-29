@@ -11,7 +11,7 @@
  * @param {string} slug The portal slug.
  * @param {(path: string) => string} generateUrl Nextcloud's URL generator.
  * @return {string} The URL.
- * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
+ * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
  */
 export function caseTypesUrl(slug, generateUrl) {
 	return generateUrl(
@@ -24,7 +24,7 @@ export function caseTypesUrl(slug, generateUrl) {
  *
  * @param {Array<object>} rows The listed case types with `shown`.
  * @return {Array<object>} The hidden list.
- * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
+ * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
  */
 export function hiddenFrom(rows) {
 	return (rows || [])
@@ -44,7 +44,7 @@ export function hiddenFrom(rows) {
  * @param {Array<object>} saved The list as stored.
  * @param {Array<object>} edited The list as switched now.
  * @return {boolean}
- * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
+ * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
  */
 export function hidesMore(saved, edited) {
 	const shownBefore = new Set(

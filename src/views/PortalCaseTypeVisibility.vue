@@ -11,7 +11,7 @@
   Nothing about a case changes: a hidden type's cases leave the resident's
   list in this portal and come back when the type is shown again.
 
-  @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
+  @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
 -->
 <template>
 	<div class="case-types" data-testid="portal-case-types">
@@ -153,7 +153,7 @@ export default {
 		 * Read the portal from the route, then its case types.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
+		 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
 		 */
 		async load() {
 			this.loading = true
@@ -208,7 +208,7 @@ export default {
 		 * Save the hidden list.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
+		 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
 		 */
 		async save() {
 			this.saving = true
