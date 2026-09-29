@@ -66,6 +66,8 @@ class PortalSigninSettings {
 	 * @param string $slug The portal slug.
 	 *
 	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
 	 */
 	public function portalBySlug(string $slug): ?array {
 		if ($slug === '') {

@@ -22,8 +22,8 @@ import {
 	adoptSessionToken,
 	authBaseFrom,
 	clearSessionToken,
-	signInRoutes,
 	SIGNIN_FAILED_MESSAGE,
+	signInRoutes,
 	takeSigninFailed,
 } from '../src/site/lib/authApi.js'
 
