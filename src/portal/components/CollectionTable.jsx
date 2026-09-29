@@ -8,6 +8,7 @@
 // renders blank (never leaks).
 
 import React from 'react'
+import Loading from './Loading.jsx'
 
 /**
  *
@@ -74,9 +75,9 @@ function deriveColumns(collection, objects) {
  * @param {object} [root0.selectedRow] The row open in the detail, marked with aria-current.
  * @param {(action: object, row: object) => boolean} [root0.offers] `(action, row) => boolean`: whether a row offers an action.
  */
-export default function CollectionTable({ collection, objects, loading, onSelect, rowActions, onRowAction, busyRow, selectedRow, offers }) {
+export default function CollectionTable({ collection, objects, loading, onSelect, rowActions, onRowAction, busyRow, selectedRow, offers, t }) {
 	if (loading) {
-		return <p className="portaliq-loading">…</p>
+		return <Loading t={t} />
 	}
 	if (!objects || objects.length === 0) {
 		return <p className="portaliq-empty"><em>{collection.kind === 'inbox' ? 'Geen berichten.' : 'Geen items.'}</em></p>

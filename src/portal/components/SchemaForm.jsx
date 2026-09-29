@@ -306,7 +306,7 @@ export default function SchemaForm({ action, api, onSubmitted, t }) {
 					{submitting ? '…' : (action.submitLabel || action.label || 'Opslaan')}
 				</button>
 			</div>
-			{error && <p className="portaliq-error">{error}</p>}
+			{error && <p className="portaliq-error" role="alert">{error}</p>}
 			{pending && (
 				<button type="button" disabled={submitting} onClick={retryFailed}>
 					{translate('Try these files again')}

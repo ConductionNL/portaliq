@@ -21,6 +21,7 @@ import { consumeOpenTarget, forgetOpenTarget, navKeyFor } from '@portal/lib/open
 import { consumeOidcCallbackFragment, createPortalApi, getToken } from '@portal/lib/portalApi.js'
 import { runAction } from '@portal/lib/rowAction.js'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import Loading from './components/Loading.jsx'
 
 // The fixed cross-app inbox nav entry's key (portal-inbox-v2 T05) — distinct
 // from any `${contribution.app}:${page.id}` key a real contribution could mint.
@@ -436,7 +437,7 @@ export default function App({ config, t: tProp }) {
 			)}
 
 			<main className="portaliq-main">
-				{state.loading && <p>…</p>}
+				{state.loading && <Loading t={t} />}
 
 				{!state.loading && !state.session && (
 					<section className="portaliq-login">
@@ -458,7 +459,7 @@ export default function App({ config, t: tProp }) {
 						<button type="button" className="portaliq-devlogin" onClick={devLogin}>
 							Dev-login (test)
 						</button>
-						{state.devError && <p className="portaliq-error">{state.devError}</p>}
+						{state.devError && <p className="portaliq-error" role="alert">{state.devError}</p>}
 					</section>
 				)}
 

@@ -6,6 +6,8 @@
 // app decided what is public, so nothing here filters or adds. This only
 // orders them newest first and says so when there are none.
 
+import Loading from './Loading.jsx'
+
 /**
  * The moment of an entry, for sorting; entries without one sort last.
  *
@@ -48,13 +50,13 @@ function textOf(entry) {
  * @param {Array<object>|null} root0.entries The entries, or null while loading.
  * @return {object} The rendered history.
  */
-export default function TimelineList({ label, entries }) {
+export default function TimelineList({ label, entries, t }) {
 	const heading = label || 'Wat er is gebeurd'
 	if (entries === null || entries === undefined) {
 		return (
 			<section className="portaliq-timeline" aria-busy="true">
 				<h4>{heading}</h4>
-				<p className="portaliq-loading">…</p>
+				<Loading t={t} />
 			</section>
 		)
 	}

@@ -16,6 +16,7 @@ import { dialogFor, tableRowActions } from '../lib/signing.js'
 import CitizenCase from './CitizenCase.jsx'
 import CollectionTable from './CollectionTable.jsx'
 import DeclineDialog from './DeclineDialog.jsx'
+import Loading from './Loading.jsx'
 import ProposeChangeForm from './ProposeChangeForm.jsx'
 import RichText from './RichText.jsx'
 import RowActionConfirm from './RowActionConfirm.jsx'
@@ -48,7 +49,7 @@ function findAction(contribution, id) {
 // The scoped file-upload control (the file-upload block). Shown in a detail card
 // only when the collection declares `filesUpload` — the server re-verifies
 // ownership and requires the opt-in, so this is a convenience, not the authority.
-const FileUpload = React.memo(function FileUpload({ collection, row, api, onUploaded }) {
+const FileUpload = React.memo(function FileUpload({ collection, row, api, onUploaded, t }) {
 	const [state, setState] = useState({ busy: false, message: null })
 	const inputRef = useRef(null)
 
@@ -84,7 +85,7 @@ const FileUpload = React.memo(function FileUpload({ collection, row, api, onUplo
 				Bijlage toevoegen
 				<input ref={inputRef} type="file" disabled={state.busy} onChange={onChange} />
 			</label>
-			{state.busy && <span> …</span>}
+			{state.busy && <Loading t={t} />}
 			{state.message && <p className="portaliq-fileupload-msg">{state.message}</p>}
 		</div>
 	)
@@ -230,7 +231,7 @@ function ProposalQueue({ action, row, api }) {
  * @param root0.api
  * @param root0.proposeAction
  */
-function DetailCard({ collection, row, api, proposeAction }) {
+function DetailCard({ collection, row, api, proposeAction, t }) {
 	const rowId = row && (row.id || row['@self']?.id)
 	// The FULL single-object read carries the server-attached `_files` listing
 	// the file-download block needs — the collection list projection omits it.
@@ -278,7 +279,7 @@ function DetailCard({ collection, row, api, proposeAction }) {
 		: Object.keys(detailRow).filter((k) => k !== '@self' && k !== '_files')
 	return (
 		<>
-			{notice && <p className="portaliq-notice">{notice}</p>}
+			{notice && <p className="portaliq-notice" role="status">{notice}</p>}
 			<dl className={`portaliq-detail portaliq-detail-${collection.detail?.layout || 'card'}`}>
 				{fields.map((f) => (
 					<div key={f} className="portaliq-detail-row">
@@ -287,11 +288,11 @@ function DetailCard({ collection, row, api, proposeAction }) {
 					</div>
 				))}
 			</dl>
-			{collection.filesUpload === true && api && <FileUpload collection={collection} row={row} api={api} onUploaded={refresh} />}
+			{collection.filesUpload === true && api && <FileUpload collection={collection} row={row} api={api} onUploaded={refresh} t={t} />}
 			{collection.filesDownload === true && api && <FileList collection={collection} row={detailRow} api={api} />}
 			{proposeAction && api && <ProposalQueue action={proposeAction} row={detailRow} api={api} />}
 			{collection.timeline && timeline !== false && (
-				<TimelineList label={collection.timeline.label} entries={timeline ? timeline.entries : null} />
+				<TimelineList label={collection.timeline.label} entries={timeline ? timeline.entries : null} t={t} />
 			)}
 		</>
 	)
@@ -372,7 +373,7 @@ export default function PageView({ page, contribution, api, dataByCollection, on
 						// single-record view, so they are deliberately not rendered
 						// here yet.
 						const proposeAction = rowActions.find((a) => a.type === 'propose-change') || null
-						return <DetailCard key={i} collection={collection} row={selected[collection.id]} api={api} proposeAction={proposeAction} />
+						return <DetailCard key={i} collection={collection} row={selected[collection.id]} api={api} proposeAction={proposeAction} t={translate} />
 					}
 					if (block.type === 'citizenCase') {
 						return (
@@ -406,6 +407,7 @@ export default function PageView({ page, contribution, api, dataByCollection, on
 							{collection.label && <h3>{collection.label}</h3>}
 							<CollectionTable
 								collection={collection}
+								t={translate}
 								objects={loaded?.objects || []}
 								loading={loaded?.loading}
 								onSelect={(row) => setSelected((s) => ({ ...s, [collection.id]: row }))}

@@ -27,25 +27,44 @@ any user input or confirmation.
 - **WHEN** the collection's objects are being fetched
 - **THEN** the loading state is exposed via an `aria-live="polite"` /
   `role="status"` region, not only visual `…` text
-
-#### Scenario: Disabled login buttons explain themselves
-- **GIVEN** eHerkenning/DigiD login is not yet wired for this tenant
-- **WHEN** a screen-reader user reaches the disabled login button
-- **THEN** an `aria-describedby`-linked explanation is read alongside the
-  button label
+- @e2e exclude a loading state lasts too briefly to catch reliably in a browser; pinned by tests/portal-live-regions.spec.mjs (every loading indicator is the Loading status region)
 
 #### Scenario: Create-action input never uses a native prompt
 - **GIVEN** a subject clicks a `type: create` action button
 - **WHEN** the portal collects the action's declared fields
-- **THEN** it renders a labelled, keyboard-operable inline form — never
+- **THEN** it renders a labelled, keyboard-operable inline form, never
   `window.prompt()`
+- @e2e exclude a negative over the whole portal; pinned by tests/portal-live-regions.spec.mjs (no native prompt, alert or confirm anywhere in src/portal)
+
+### Requirement: The signed-in portal MUST meet WCAG 2.2 AA
+
+Every page a signed-in resident reaches from the portal navigation SHALL
+pass an automated WCAG 2.2 AA check with no serious or critical violation,
+and SHALL be operable by keyboard alone. A message the portal shows after an
+action, a save or an error, SHALL be announced: an error as an alert, any
+other message as a status.
+
+#### Scenario: The signed-in portal has no serious WCAG 2.2 AA violation
+- **GIVEN** a signed-in resident
+- **WHEN** axe-core checks each page in the portal navigation against WCAG 2.2 AA
+- **THEN** it reports no serious or critical violation
+
+#### Scenario: A keyboard user reaches the inbox and its settings
+- **GIVEN** a signed-in resident who uses no mouse
+- **WHEN** they press Tab through the portal
+- **THEN** they reach the inbox, open it with Enter, and open its notification settings with Enter
+
+#### Scenario: A save or an error is announced
+- **GIVEN** a resident who saves a change on their case
+- **WHEN** the portal says it was saved, or that it could not be
+- **THEN** the message sits in a status region, or an alert region for an error, so a screen reader reads it without the resident looking for it
+- @e2e exclude pinned by tests/portal-live-regions.spec.mjs over every portal component
 
 ## Notes
 
-- **@e2e**: automated axe-core scan on login + dashboard views covers the
-  "theme actually renders" and "disabled login buttons explain themselves"
-  scenarios (tasks.md 4.1).
-- The keyboard-only walkthrough (tasks.md 4.2) is a manual pass, not a CI
-  assertion.
-  @e2e exclude manual keyboard walkthrough is not a single automatable assertion
+- The axe-core scan (tasks.md 4.1) and the keyboard walk (tasks.md 4.2) are
+  tests/e2e/portal-accessibility.spec.ts.
+- The disabled DigiD/eHerkenning button this change first described no longer
+  exists: portal-oidc-broker-login lists only the sign-in routes an
+  organisation configured, so there is no disabled sign-in button to explain.
 

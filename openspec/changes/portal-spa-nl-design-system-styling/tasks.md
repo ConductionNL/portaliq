@@ -44,17 +44,30 @@
 
 ## 4. Tests + gates
 
-- [ ] 4.1 axe-core a11y check in a Playwright spec — DEFERRED: needs a
-      running instance + the Playwright portal spec (itself deferred in
-      portal-controller-http-test-coverage); not run as part of this apply
-      pass. Static a11y work (aria-live, aria-describedby, programmatic
-      labels, focus-visible outline) is in place for it to pass against.
-- [ ] 4.2 Manual keyboard-only pass — DEFERRED: needs a running instance to
-      click through; not performed in this headless apply pass.
+- [x] 4.1 axe-core WCAG 2.2 AA check on the signed-in portal:
+      `tests/e2e/portal-accessibility.spec.ts` signs a resident in and runs
+      axe (wcag2a/aa, wcag21a/aa, wcag22aa) inside `.portaliq-shell` on every
+      page of the navigation; no serious or critical violation (2026-09-29).
+- [x] 4.2 Keyboard pass, automated: the same file walks Tab to the inbox,
+      opens it with Enter and opens its notification settings with Enter.
 - [x] 4.3 Gates: `eslint src/portal/` clean, `npm run build:portal` succeeds
       (theme.css + Utrecht components bundled). Hydra gates (spdx-headers,
       forbidden-patterns) not run standalone — flag for the PR review stage;
       every new file carries the `SPDX-License-Identifier: EUPL-1.2` header.
+
+## 5. Status messages (2026-09-29, tender dem-tnd-wcag22-portal)
+
+- [x] 5.1 `src/portal/components/Loading.jsx`: the one loading indicator, a
+      `role="status"` `aria-live="polite"` region that shows "…" and speaks
+      "Loading…"/"Laden…"; the fourteen bare "…" indicators across the portal
+      use it. Red first: `tests/portal-live-regions.spec.mjs`.
+- [x] 5.2 Every error paragraph is `role="alert"` (App dev-login error,
+      SchemaForm, ProposeChangeForm) and every notice `role="status"`
+      (CitizenCase save notice, the row notice on a detail card and in a row
+      action confirm). Same test, over every portal component.
+- [x] 5.3 Task 2.3 is superseded: portal-oidc-broker-login offers only the
+      sign-in routes an organisation configured, so no disabled sign-in button
+      remains; the scenario left the spec.
 
 ## Notes on scope taken
 

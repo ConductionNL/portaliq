@@ -170,5 +170,6 @@
 	"Your choices could not be saved. Try again.": "Your choices could not be saved. Try again.",
 	"This record is not in your list, so nothing of it is shown.": "This record is not in your list, so nothing of it is shown.",
 	"Also sent to {label}.": "Also sent to {label}.",
-	"Also send letters to {label}": "Also send letters to {label}"
+	"Also send letters to {label}": "Also send letters to {label}",
+	"Loading…": "Loading…"
 }

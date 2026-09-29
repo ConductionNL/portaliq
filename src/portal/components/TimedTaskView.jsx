@@ -16,6 +16,7 @@ import {
 	startAttempt,
 	submitAttempt,
 } from '../lib/timedTask.js'
+import Loading from './Loading.jsx'
 import TimedTaskItem from './TimedTaskItem.jsx'
 
 /**
@@ -43,7 +44,7 @@ function untranslated(key, vars) {
  */
 function ResultView({ result, t }) {
 	if (!result) {
-		return <p>…</p>
+		return <Loading t={t} />
 	}
 	if (result.released !== true) {
 		return <p>{t('Your result is not available yet.')}</p>
@@ -259,7 +260,7 @@ export default function TimedTaskView({ collection, app, attempts = [], api, t, 
 				</>
 			)}
 			<h4>{translate('Tests you can take')}</h4>
-			{tasks === null && <p>…</p>}
+			{tasks === null && <Loading t={translate} />}
 			{tasks !== null && tasks.length === 0 && <p>{translate('No tests are open for you right now.')}</p>}
 			<ul className="portaliq-timedtask-tasks">
 				{(tasks || []).map((task) => (

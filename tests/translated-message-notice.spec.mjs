@@ -55,6 +55,7 @@ const { default: TranslatedText, languageLabel, noticeText, isLabelledTranslatio
 // so it is compiled first, as TranslatedText is.
 // Both import the message box helpers (inbox-berichtenbox-channel).
 await load('lib/messageBox.js')
+await load('components/Loading.jsx')
 await load('components/NotificationSettings.jsx')
 const { default: InboxPage } = await load('components/InboxPage.jsx')
 const { pickerLabel, MESSAGE_LANGUAGES } = await load('components/MessagesPage.jsx')

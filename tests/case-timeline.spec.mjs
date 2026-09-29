@@ -20,6 +20,7 @@ import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { compileLoading, LOADING_MODULE } from './support/compile-loading.mjs'
 
 const require = createRequire(import.meta.url)
 const babel = require('@babel/core')
@@ -46,7 +47,8 @@ async function load(relative) {
 	})
 	mkdirSync(OUT_DIR, { recursive: true })
 	const out = join(OUT_DIR, relative.replace(/[\\/]/g, '_').replace(/\.jsx?$/, '.mjs'))
-	writeFileSync(out, compiled.code)
+	compileLoading(OUT_DIR)
+	writeFileSync(out, compiled.code.replace("'./Loading.jsx'", `'${LOADING_MODULE}'`))
 	return import(pathToFileURL(out).href)
 }
 

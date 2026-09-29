@@ -11,6 +11,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react'
 import { deliveryLine } from '../lib/messageBox.js'
+import Loading from './Loading.jsx'
 import NotificationSettings from './NotificationSettings.jsx'
 import TranslatedText from './TranslatedText.jsx'
 
@@ -80,7 +81,7 @@ export default function InboxPage({ api, t, locale, onRead, onOpenTask, onOpenRe
 	}
 
 	if (state.loading) {
-		return <p className="portaliq-loading">…</p>
+		return <Loading t={t} />
 	}
 
 	// The resident's notice choices sit at the top of the inbox
