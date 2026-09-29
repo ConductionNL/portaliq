@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Settings;
 
+use Opis\JsonSchema\Validator;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -273,8 +274,14 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// Every new schema is listed in
 		// `components.registers.portaliq.schemas` (ImportHandler binds only
 		// what is listed there) and declares a non-empty `read` rule.
-		$this->assertSame('0.41.0', self::$register['info']['version']);
-		$this->assertSame('0.41.0', self::$register['components']['registers']['portaliq']['version']);
+		// 0.42.0 (portalNotification 0.3.0, portalAccount 0.12.0): the
+		// government message box channel (inbox-berichtenbox-channel). The
+		// channel enum gains `messageBox`, the status enum `delivered`, `read`
+		// and `simulated`; `externalMessageId`, `recordLink` and `refusalCode`
+		// are new; the account's preferences describe `messageBox.enabled`.
+		// Additive.
+		$this->assertSame('0.42.0', self::$register['info']['version']);
+		$this->assertSame('0.42.0', self::$register['components']['registers']['portaliq']['version']);
 		foreach (['portalAvailabilityDaily', 'portalAvailabilityOutage'] as $availability) {
 			$this->assertSame('0.1.0', self::$register['components']['schemas'][$availability]['version']);
 			$this->assertSame(['admin'], self::$register['components']['schemas'][$availability]['authorization']['read']);
@@ -318,7 +325,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['page']['version']);
 		$this->assertSame('0.7.0', self::$register['components']['schemas']['portal']['version']);
-		$this->assertSame('0.11.0', self::$register['components']['schemas']['portalAccount']['version']);
+		$this->assertSame('0.12.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalSession']['version']);
 
@@ -460,8 +467,8 @@ class PortaliqRegisterConfigTest extends TestCase {
 			['accountRef', 'ruleKey', 'channel', 'status', 'attempts', 'lastAttemptAt'],
 			$notification['required']
 		);
-		$this->assertSame(['email', 'push'], $notification['properties']['channel']['enum']);
-		$this->assertSame(['sent', 'failed'], $notification['properties']['status']['enum']);
+		$this->assertSame(['email', 'push', 'messageBox'], $notification['properties']['channel']['enum']);
+		$this->assertSame(['sent', 'failed', 'delivered', 'read', 'simulated'], $notification['properties']['status']['enum']);
 
 		$account = $schemas['portalAccount'];
 		$this->assertSame('boolean', $account['properties']['needsAlternativeContact']['type']);
@@ -528,6 +535,54 @@ class PortaliqRegisterConfigTest extends TestCase {
 		}
 
 	}//end testSeedAccountsUsePlaceholdersAndProveBothClaimStates()
+
+	/**
+	 * Every value the message box channel writes into a `portalNotification`
+	 * fits the schema, checked with a JSON Schema validator against the real
+	 * fragment (inbox-berichtenbox-channel, REQ-MBC-003): the row a send
+	 * writes, and each status integriq can report back. And the schema holds
+	 * no property that could carry the recipient.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/inbox-berichtenbox-channel/specs/portal-message-box-channel/spec.md#requirement-portaliq-asks-integriq-to-send-and-records-the-answer-req-mbc-003
+	 */
+	public function testTheMessageBoxRowsFitThePortalNotificationSchema(): void {
+		$schema = self::$register['components']['schemas']['portalNotification'];
+		$this->assertSame('0.3.0', $schema['version']);
+		$this->assertSame('0.12.0', self::$register['components']['schemas']['portalAccount']['version']);
+		$jsonSchema = json_decode((string)json_encode(['type' => 'object', 'required' => $schema['required'], 'properties' => $schema['properties']]), false);
+
+		$row = [
+			'accountRef' => 'account-1',
+			'organisation' => 'venray',
+			'ruleKey' => 'message.created',
+			'appId' => 'dossiq',
+			'channel' => 'messageBox',
+			'status' => 'sent',
+			'attempts' => 0,
+			'lastAttemptAt' => '2026-09-29T10:00:00+00:00',
+			'externalMessageId' => 'b1e2c3d4-0000-4000-8000-000000000001',
+			'recordLink' => ['app' => 'dossiq', 'collection' => 'berichten', 'id' => 'bericht-1'],
+		];
+		foreach (['sent', 'failed', 'delivered', 'read', 'simulated'] as $status) {
+			$result = (new Validator())->validate(json_decode((string)json_encode(['status' => $status] + $row), false), $jsonSchema);
+			$this->assertTrue($result->isValid(), "status {$status} fits the schema");
+		}
+
+		$refused = ['status' => 'failed', 'refusalCode' => 'not_installed'] + $row;
+		unset($refused['externalMessageId']);
+		$result = (new Validator())->validate(json_decode((string)json_encode($refused), false), $jsonSchema);
+		$this->assertTrue($result->isValid(), 'a refusal fits the schema');
+
+		$result = (new Validator())->validate(json_decode((string)json_encode(['channel' => 'postcard'] + $row), false), $jsonSchema);
+		$this->assertFalse($result->isValid(), 'the channel enum still refuses an unknown channel');
+
+		foreach (array_keys($schema['properties']) as $property) {
+			$this->assertDoesNotMatchRegularExpression('/recipient|bsn|identity/i', $property, 'no property can carry the recipient');
+		}
+
+	}//end testTheMessageBoxRowsFitThePortalNotificationSchema()
 
 	/**
 	 * The public surface, pinned BY NAME.
