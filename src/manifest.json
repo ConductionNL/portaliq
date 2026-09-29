@@ -343,6 +343,13 @@
             "description": "How much your portals are used, and by whom.",
             "icon": "ChartLine",
             "route": "Traffic"
+          },
+          {
+            "id": "Availability",
+            "label": "Availability",
+            "description": "How available each portal was, month by month, with every outage.",
+            "icon": "ShieldCheckOutline",
+            "route": "Availability"
           }
         ]
       },
@@ -621,6 +628,34 @@
         ]
       },
       "_note": "portal-traffic-analytics. The three stats-blocks this page used to carry counted portalSession, revoked portalSession and portalMessage rows: authenticated-session bookkeeping that said nothing about visitors (task 0.1). The six widgets here read portalTrafficDaily through the object API and say 'not measured' for a portal with measurement off instead of drawing a zero. portal-traffic-visitors-and-geo added the period selector (on the overview, read by every widget through the report store) and the Visitors widget. portal-traffic-outcomes added Goals, Funnels, Forms and Custom dimensions, the missing pages under Pages and the searches under Sources. portal-traffic-reporting added the segment selector and the Export button on the overview, the roll-up note, and the Script errors widget. The Export is a button on the overview widget rather than a manifest headerAction: nc-vue's dashboard header actions cannot read the portal, period and segment the page has selected, and a download of the wrong selection is worse than none. portal-traffic-experiments added Experiments, Heatmap and Session recordings; the last two say \"off for this portal\" unless the operator accepted the switch's warning. portal-traffic-kpi-cards moved the four headline numbers out of the overview into four TrafficKpi cards below it. They follow the overview's portal, period and segment and carry no picker of their own: the page has one period. The page selects the portal named in ?portal=, which is how a portal page's KPI cards link here."
+    },
+    {
+      "id": "Availability",
+      "route": "/availability",
+      "type": "dashboard",
+      "title": "Availability",
+      "config": {
+        "description": "How available each portal was over the last twelve full months, measured by the portal itself every five minutes, with every outage. For a service level review.",
+        "widgets": [
+          {
+            "id": "availability-report",
+            "type": "AvailabilityReport",
+            "title": "Availability"
+          }
+        ],
+        "layout": [
+          {
+            "id": 1,
+            "widgetId": "availability-report",
+            "gridX": 0,
+            "gridY": 0,
+            "gridWidth": 12,
+            "gridHeight": 10,
+            "showTitle": false
+          }
+        ]
+      },
+      "_note": "operate-availability-report. One widget: a portal picker, the twelve monthly percentages, the outages, 'How this is measured' and 'Download as CSV', read from AvailabilityController (admin-only). Reached from the Reports hub's Availability card; not in the main navigation (ADR-114 Decision 3)."
     },
     {
       "id": "PortalAccounts",

@@ -1583,7 +1583,26 @@ OC.L10N.register(
         "The five-minute intervals counted so far this day.": "The five-minute intervals counted so far this day.",
         "The start of the first interval that was not available.": "The start of the first interval that was not available.",
         "When the last check of this portal ran, so the next one can count the intervals missed in between.": "When the last check of this portal ran, so the next one can count the intervals missed in between.",
-        "Why the first interval was not available.": "Why the first interval was not available."
+        "Why the first interval was not available.": "Why the first interval was not available.",
+        "Download as CSV": "Download as CSV",
+        "Availability per month, {from} to {until}": "Availability per month, {from} to {until}",
+        "Month": "Month",
+        "Availability": "Availability",
+        "Outages": "Outages",
+        "No outages in this period.": "No outages in this period.",
+        "Still going on": "Still going on",
+        "How this is measured": "How this is measured",
+        "Every five minutes the portal opens its own public site, through this installation's web address, the way a visitor would. It counts as available when the site answers within five seconds and its health check says ok. An interval in which no check ran counts as down. The check runs inside the installation, so it does not see an outage of the network in front of it. The hosting party's own monitor stays the reference for that.": "Every five minutes the portal opens its own public site, through this installation's web address, the way a visitor would. It counts as available when the site answers within five seconds and its health check says ok. An interval in which no check ran counts as down. The check runs inside the installation, so it does not see an outage of the network in front of it. The hosting party's own monitor stays the reference for that.",
+        "The portals could not be loaded.": "The portals could not be loaded.",
+        "The availability of this portal could not be loaded.": "The availability of this portal could not be loaded.",
+        "The portal answered with an error": "The portal answered with an error",
+        "The portal did not answer within five seconds": "The portal did not answer within five seconds",
+        "The portal answered, but its health check did not say ok": "The portal answered, but its health check did not say ok",
+        "No check ran": "No check ran",
+        "Less than a minute": "Less than a minute",
+        "{minutes} minutes": "{minutes} minutes",
+        "How available each portal was, month by month, with every outage.": "How available each portal was, month by month, with every outage.",
+        "How available each portal was over the last twelve full months, measured by the portal itself every five minutes, with every outage. For a service level review.": "How available each portal was over the last twelve full months, measured by the portal itself every five minutes, with every outage. For a service level review."
     },
     "nplurals=2; plural=(n != 1);"
 )

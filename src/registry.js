@@ -43,6 +43,7 @@ import ExampleModal from './modals/ExampleModal.vue'
 import CustomExample from './views/CustomExample.vue'
 import FlowDetailSidebar from './views/flows/FlowDetailSidebar.vue'
 import PageLayoutDesigner from './views/PageLayoutDesigner.vue'
+import AvailabilityReport from './widgets/AvailabilityReport.vue'
 import PageTrafficFlow from './widgets/PageTrafficFlow.vue'
 import PortalCaseTypes from './widgets/PortalCaseTypes.vue'
 import PortalTrafficKpi from './widgets/PortalTrafficKpi.vue'
@@ -200,8 +201,19 @@ export default {
 		...TRAFFIC_WIDGET_META,
 		_note: 'A page picker, the click grid on a canvas over a plain rectangle, and the scroll deciles as bars (portal-traffic-experiments). Custom because no built-in widget draws a grid, and because a portal with the switch off must read "off" rather than "no clicks".',
 	},
+	// @custom-widget-ratchet exclude the report reads an admin controller that folds the portal's own availability records into twelve months, which no built-in widget reads
+	AvailabilityReport: {
+		kind: 'widget',
+		component: AvailabilityReport,
+		defaultSize: { w: 12, h: 10 },
+		minSize: { w: 6, h: 6 },
+		maxSize: { w: 12, h: 16 },
+		allowedSlots: ['body'],
+		propsSchema: null,
+		_note: "A portal picker, the twelve monthly availability percentages, the outages and a CSV download (operate-availability-report). Custom because a month without intervals must read 'Not measured' rather than 0 or 100, and because the page must say how the figure is measured.",
+	},
+	// @custom-widget-ratchet exclude the switches write the portal's hiddenCaseTypes through an admin controller that lists case types from three sources, which no built-in widget reads or writes
 	PortalCaseTypes: {
-		// @custom-widget-ratchet exclude the switches write the portal's hiddenCaseTypes through an admin controller that lists case types from three sources, which no built-in widget reads or writes
 		kind: 'widget',
 		component: PortalCaseTypes,
 		defaultSize: { w: 12, h: 5 },
