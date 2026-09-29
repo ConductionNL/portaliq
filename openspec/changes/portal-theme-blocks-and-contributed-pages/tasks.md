@@ -106,8 +106,13 @@ that touches the shell ends with `node tests/shell-snapshot.mjs compare <dir>`.
 - **acceptance_criteria**:
   - GIVEN a page with a hero, three `main` widgets and `clearedRegions: ["aside"]` WHEN a `main` widget is moved and saved as draft, then published THEN the hero and `clearedRegions` are unchanged in `draftBody` and in `body`
   - GIVEN the designer grid WHEN it loads THEN only `main` widgets are shown
-- [ ] Implement
-- [ ] Test
+- Built in `src/editor/pageBody.js` (`readBody`, `bodyFor`), the editor core that
+  `PageLayoutDesigner.vue` and the portal edit mode (portal-in-place-editing)
+  share, so both keep the regions. Proven by `tests/page-editor-regions.spec.mjs`
+  (`npm run check:page-editor-regions`). The Playwright spec is still owed
+  before sync.
+- [x] Implement
+- [x] Test
 
 ### Task 9: The contributed page route
 

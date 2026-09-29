@@ -24,7 +24,8 @@
  * - Grid model: `GRID_COLUMNS, normaliseWidgets, storedWidget, nextWidgetId,
  *   addWidget, removeWidget, applyLayout, setWidgetProp, replaceWidgetProps,
  *   cloneWidgets`.
- * - Bodies and payloads: `readBody, bodyFor, draftPayload, publishPayload,
+ * - Bodies and payloads: `readBody, bodyFor, isMainWidget, sourceBodyOf,
+ *   draftPayload, publishPayload,
  *   discardPayload, versionOf, withoutEnvelope`.
  * - Shared forms: `sharedFormFor, inspectorModeFor, formWidgetFor,
  *   propsFromFormContent`.
@@ -49,8 +50,10 @@ export {
 	bodyFor,
 	discardPayload,
 	draftPayload,
+	isMainWidget,
 	publishPayload,
 	readBody,
+	sourceBodyOf,
 	versionOf,
 	withoutEnvelope,
 } from './pageBody.js'
