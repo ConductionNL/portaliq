@@ -42,6 +42,7 @@ use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Signin\OrganisationLoginConfig;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -123,6 +124,8 @@ class SessionController extends Controller {
 	 * @param PortalResolver $portals Resolves which portal is being signed
 	 *                                into, so a mode it does not declare
 	 *                                cannot be used against it.
+	 * @param OrganisationLoginConfig|null $loginConfig The route per provider
+	 *                                                  (signin-integriq-broker-login).
 	 */
 	public function __construct(
 		IRequest $request,
@@ -136,6 +139,7 @@ class SessionController extends Controller {
 		private readonly IURLGenerator $urlGenerator,
 		private readonly IUserSession $userSession,
 		private readonly PortalResolver $portals,
+		private readonly ?OrganisationLoginConfig $loginConfig = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -275,7 +279,7 @@ class SessionController extends Controller {
 	 *
 	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T06
 	 * @spec openspec/specs/supplier-portal/spec.md#oidc-start-builds-a-state-nonce-pkce-authorization-request
-	 * @spec openspec/changes/signin-integriq-broker-login/design.md#d2-two-new-routes-and-the-spas-follow-the-route-field
+	 * @spec openspec/changes/archive/2026-09-29-signin-integriq-broker-login/design.md#d2-two-new-routes-and-the-spas-follow-the-route-field
 	 *
 	 * @no-admin-idor-exempt the lookup is unscoped because it MUST be: this is
 	 * the anonymous entry point to a portal's login, so a caller with no
@@ -297,6 +301,16 @@ class SessionController extends Controller {
 	public function oidcStart(string $org = '', string $provider = '', string $portal = ''): Response {
 		if ($org === '' && $portal !== '') {
 			$org = $this->organisationOfPortal(slug: $portal);
+		}
+
+		// A provider the organisation routes to integriq's broker goes there
+		// (signin-integriq-broker-login D2), so every sign-in link, the public
+		// site's included, reaches the route the organisation chose.
+		if ($this->loginConfig?->loginRouteFor(orgSlug: $org, provider: $provider) === 'broker') {
+			return new RedirectResponse(
+				$this->urlGenerator->linkToRoute(Application::APP_ID . '.brokerSession.start', ['org' => $org, 'provider' => $provider]),
+				Http::STATUS_FOUND
+			);
 		}
 
 		// THE AUTHORISATION DECISION, MADE EXPLICITLY AND BEFORE ANY SECRET IS
@@ -360,7 +374,7 @@ class SessionController extends Controller {
 	 *
 	 * @return string The organisation slug, or ''.
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/design.md#d2-two-new-routes-and-the-spas-follow-the-route-field
+	 * @spec openspec/changes/archive/2026-09-29-signin-integriq-broker-login/design.md#d2-two-new-routes-and-the-spas-follow-the-route-field
 	 */
 	private function organisationOfPortal(string $slug): string {
 		$organisation = ($this->portalFor(slug: $slug)['organisation'] ?? null);
@@ -411,7 +425,9 @@ class SessionController extends Controller {
 		}
 
 		$pending = $this->stateStore->consume(state: $state);
-		if ($pending === null) {
+		// A row written for the integriq broker route cannot complete an OIDC
+		// login (signin-integriq-broker-login, design D3).
+		if ($pending === null || $pending['route'] !== 'oidc' || $pending['codeVerifier'] === '') {
 			return $this->oidcGenericError();
 		}
 

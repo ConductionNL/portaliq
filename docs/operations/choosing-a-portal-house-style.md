@@ -27,3 +27,15 @@ A hard-to-read set is not saved at first. The widget lists each failing token wi
 ## Who may do this
 
 Administrators only. The widget reads and saves through `GET` and `PUT /apps/portaliq/api/portals/{slug}/theme`, which carry no opt-out attribute, so Nextcloud refuses anyone else. The catalogue is never served to anonymous visitors.
+
+## A house style you made or received
+
+A house style does not have to come from the theme app's catalogue. When an administrator uploads a token set in the theme app, or imports a theme another instance shared through OpenRegister, the theme app keeps it as a custom set, and the widget lists it next to the catalogued ones. Nothing has to be changed in code.
+
+Before a portal links a custom set, portaliq has the theme app's own validator read the file again: one `:root` block, and every value judged by the rule the upload used (no `@import`, no `expression(`, no `javascript:`, no url to another host). A set that fails is still listed, with the reason, for example "Refused by the theme app: Property --nldesign-color-text contains a forbidden value (external resource, @import, expression, or markup)." It cannot be chosen, and **Use it anyway** does not overrule it. A portal that already wears it shows without a house style, and the widget says so.
+
+When a custom set is deleted in the theme app while a portal wears it, the portal shows without a house style, and its widget says that the theme app no longer offers the set. Nothing is copied, so the portal never keeps a style nobody can see or change any more.
+
+## Uploaded fonts
+
+Font faces uploaded in the theme app reach every portal: the site links the theme app's public font stylesheet when the installed theme app has font uploads. The design system's own faces stay as they are.

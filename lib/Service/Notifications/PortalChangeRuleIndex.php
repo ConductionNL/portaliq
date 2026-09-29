@@ -344,6 +344,8 @@ class PortalChangeRuleIndex {
 			$entries[] = $this->entry(kind: 'inbox', app: $app, collection: $collection) + [
 				'nudge' => (string)(int)$nudge,
 				'recipientProvider' => $recipientProvider,
+				'bodyField' => (string)($collection['messageBox']['bodyField'] ?? ''),
+				'subjectField' => (string)($collection['messageBox']['subjectField'] ?? ''),
 			];
 		}
 

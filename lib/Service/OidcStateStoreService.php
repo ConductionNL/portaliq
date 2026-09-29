@@ -123,6 +123,48 @@ class OidcStateStoreService {
 	}//end create()
 
 	/**
+	 * Store one pending integriq broker login, keyed by `$state`
+	 * (signin-integriq-broker-login, design D3). The state is also the relay
+	 * state integriq hands back, so `nonce` holds it; a broker row has no PKCE
+	 * verifier. `route` marks the row, so the OIDC callback cannot complete it
+	 * and the broker callback cannot complete an OIDC row.
+	 *
+	 * @param string $state    The single-use key and relay state.
+	 * @param string $org      The organisation slug the login was started for.
+	 * @param string $provider The provider.
+	 * @param string $returnTo The SPA path to return to once minted.
+	 *
+	 * @return bool True when the row was written.
+	 *
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-broker-start-binds-the-login-to-one-organisation-and-one-provider-req-bel-002
+	 */
+	public function createBroker(string $state, string $org, string $provider, string $returnTo): bool {
+		if ($state === '') {
+			return false;
+		}
+
+		$created = $this->writer->createObject(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: '',
+			subjectRef: '',
+			organisation: '',
+			data: [
+				'state' => $state,
+				'nonce' => $state,
+				'route' => 'broker',
+				'org' => $org,
+				'provider' => $provider,
+				'returnTo' => $returnTo,
+				'expiresAt' => (new DateTimeImmutable())->add(new DateInterval('PT' . self::TTL_SECONDS . 'S'))->format(DATE_ATOM),
+				'used' => false,
+			]
+		);
+
+		return $created !== null;
+	}//end createBroker()
+
+	/**
 	 * Consume a `state` EXACTLY ONCE. Fails closed to null on: unknown state,
 	 * an already-used row (replay), an expired row, or an OpenRegister read/
 	 * write failure — all indistinguishable to the caller (no oracle).
@@ -132,7 +174,7 @@ class OidcStateStoreService {
 	 *
 	 * @param string $state The OIDC `state` parameter to consume.
 	 *
-	 * @return array{nonce: string, codeVerifier: string, org: string, provider: string, returnTo: string}|null
+	 * @return array{nonce: string, codeVerifier: string, org: string, provider: string, returnTo: string, route: string}|null
 	 *
 	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T02
 	 * @spec openspec/specs/supplier-portal/spec.md#every-validation-failure-is-an-identical-generic-error
@@ -182,6 +224,8 @@ class OidcStateStoreService {
 			'org' => (string)($row['org'] ?? ''),
 			'provider' => (string)($row['provider'] ?? ''),
 			'returnTo' => (string)($row['returnTo'] ?? ''),
+			// Absent on every row written before the broker route existed.
+			'route' => (string)($row['route'] ?? 'oidc'),
 		];
 	}//end consume()
 

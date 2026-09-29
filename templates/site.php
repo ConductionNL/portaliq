@@ -161,6 +161,12 @@ foreach (['nlds/nlds-components', 'nlds/nlds-vendor-a', 'nlds/nlds-vendor-b', 'n
     $stylesheets[] = $asset($appId, 'css/' . $sheet . '.css');
 }
 
+// The site's own rules, after the vendored sheets so a rule that ties on
+// specificity wins on order: the footer bands restate the vendored positional
+// rules against role classes (portal-theme-blocks-and-contributed-pages
+// REQ-PTB-005). Token references only.
+$stylesheets[] = $asset($appId, 'css/site-theme.css');
+
 // LAST, AND THE POSITION IS THE WHOLE MECHANISM.
 //
 // The vendored sheets above were captured from the reference application,
@@ -194,6 +200,20 @@ $stylesheets[] = $asset($appId, 'css/nlds/nlds-fonts.css');
 // comes after it, so a licensed deployment still gets the real face.
 if (is_file($appRoot . '/css/fonts/licensed/avenir-lt-55-roman.woff2') === true) {
     $stylesheets[] = $asset($appId, 'css/nlds/nlds-fonts-licensed.css');
+}
+
+// THE FACES AN ADMINISTRATOR UPLOADED IN THE THEME APP (nldesign-theme-integration
+// 2.3), from its own public stylesheet: `FontController::css()` is public on
+// purpose, because a CSS font load carries no session. It is empty until a
+// face is uploaded, so a portal without custom fonts pays one cached request.
+//
+// It does not replace `nlds-fonts.css`: that file re-declares the vendored
+// design system's own faces (root-relative urls, see above), a different set
+// of fonts solving a different problem. Linked only when the installed theme
+// app has font uploads at all.
+$fontRoute = \OCP\Server::get(PortalThemeResolver::class)->fontStylesheetRoute();
+if ($fontRoute !== null) {
+    $stylesheets[] = $url->linkToRoute($fontRoute);
 }
 
 // The token layer, last, so a theme's value beats the component CSS's own

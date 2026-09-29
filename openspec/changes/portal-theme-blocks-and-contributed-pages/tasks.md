@@ -60,8 +60,8 @@ that touches the shell ends with `node tests/shell-snapshot.mjs compare <dir>`.
   - GIVEN `headerVariant: "single"` WHEN rendered THEN one "Home" link exists; GIVEN `"x"` THEN `double` renders
   - GIVEN #559's sign-in states on `development` WHEN the header moves into the block THEN every state still renders
 - Reference: 7974e5a, 045b168, fd37778, a485fad
-- [ ] Implement
-- [ ] Test
+- [x] Implement
+- [x] Test
 
 ### Task 5: The footer block
 
@@ -72,8 +72,8 @@ that touches the shell ends with `node tests/shell-snapshot.mjs compare <dir>`.
   - GIVEN footer entries without a label or href WHEN served THEN they are absent
   - GIVEN no colophon WHEN rendered THEN the legal bar shows the portal title
 - Reference: 34cde3e, 423d7df, fd37778
-- [ ] Implement
-- [ ] Test
+- [x] Implement
+- [x] Test
 
 ### Task 6: The hero block and grid runs
 
@@ -84,8 +84,8 @@ that touches the shell ends with `node tests/shell-snapshot.mjs compare <dir>`.
   - GIVEN `HeroBlock` registered under `hero` WHEN `siteBlockIsBand('hero')` is asked THEN it answers true
   - GIVEN a band splitting the grid WHEN placed THEN the run below starts at its own first row; the grid test fails without `rowOffset`
 - Reference: eed4c3b, 498dede, 4d7140a, 46d7e9f
-- [ ] Implement
-- [ ] Test
+- [x] Implement
+- [x] Test
 
 ### Task 7: Regions in the contract and the renderer
 
@@ -96,8 +96,8 @@ that touches the shell ends with `node tests/shell-snapshot.mjs compare <dir>`.
   - GIVEN a page that fills `hero` WHEN rendered THEN exactly one hero and one `h1` appear
   - GIVEN `CmsReader` WHEN it shapes a page THEN `draftBody` is still never projected
 - Reference: a5657c6, 7974e5a, 79fdb2c
-- [ ] Implement
-- [ ] Test
+- [x] Implement
+- [x] Test
 
 ### Task 8: The designer keeps the regions it does not edit
 
@@ -106,8 +106,13 @@ that touches the shell ends with `node tests/shell-snapshot.mjs compare <dir>`.
 - **acceptance_criteria**:
   - GIVEN a page with a hero, three `main` widgets and `clearedRegions: ["aside"]` WHEN a `main` widget is moved and saved as draft, then published THEN the hero and `clearedRegions` are unchanged in `draftBody` and in `body`
   - GIVEN the designer grid WHEN it loads THEN only `main` widgets are shown
-- [ ] Implement
-- [ ] Test
+- Built in `src/editor/pageBody.js` (`readBody`, `bodyFor`), the editor core that
+  `PageLayoutDesigner.vue` and the portal edit mode (portal-in-place-editing)
+  share, so both keep the regions. Proven by `tests/page-editor-regions.spec.mjs`
+  (`npm run check:page-editor-regions`). The Playwright spec is still owed
+  before sync.
+- [x] Implement
+- [x] Test
 
 ### Task 9: The contributed page route
 

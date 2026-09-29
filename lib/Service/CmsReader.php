@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Service\Cms\MediaReferences;
+use OCA\Portaliq\Service\Cms\PortalShell;
 use OCP\ICache;
 use OCP\ICacheFactory;
 use Psr\Container\ContainerInterface;
@@ -86,6 +87,8 @@ class CmsReader {
 	 * @param LoggerInterface       $logger       The logger.
 	 * @param PortalRegisterContext $context      Points the shared ObjectService at this app's schemas.
 	 * @param MediaReferences       $media        Resolves a page's media:<id> references.
+	 * @param PortalRegionResolver  $regions      Groups a page's widgets by region.
+	 * @param PortalShell           $shell        Projects the portal's header, footer and regions.
 	 *
 	 * @return void
 	 */
@@ -95,6 +98,8 @@ class CmsReader {
 		private readonly LoggerInterface $logger,
 		private readonly PortalRegisterContext $context,
 		private readonly MediaReferences $media,
+		private readonly PortalRegionResolver $regions=new PortalRegionResolver(),
+		private readonly PortalShell $shell=new PortalShell(),
 	) {
 		$this->cache = $cacheFactory->createDistributed('portaliq_cms');
 	}//end __construct()
@@ -452,6 +457,20 @@ class CmsReader {
 
 
 	/**
+	 * The portal's shell as the public site contract serves it.
+	 *
+	 * @param array<string, mixed> $portal The portal record.
+	 *
+	 * @return array<string, mixed> `authentication`, `headerVariant`, `footer` and `regions`.
+	 *
+	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-header-must-be-a-block-whose-shape-the-portal-chooses-req-ptb-004
+	 */
+	public function shell(array $portal): array {
+		return $this->shell->project(portal: $portal);
+	}//end shell()
+
+
+	/**
 	 * Shape a stored page row for the API.
 	 *
 	 * @param array $row The stored page.
@@ -472,6 +491,10 @@ class CmsReader {
 			'hero'    => $this->media->hero(portal: $portal, value: ($row['heroImage'] ?? null)),
 			'body'    => ['type' => $type],
 		];
+
+		// The regions this page empties on purpose (REQ-PTB-009). Served for
+		// both body types: a markdown page can clear the portal's hero too.
+		$shaped['body']['clearedRegions'] = $this->regions->cleared(cleared: ($body['clearedRegions'] ?? []));
 
 		if ($type === 'markdown') {
 			// Served as SOURCE. Rendering to HTML here would force every
@@ -506,6 +529,13 @@ class CmsReader {
 		);
 
 		$shaped['body']['widgets'] = $widgets;
+
+		// The same widgets grouped by region, beside the flat list the
+		// Docusaurus plugin reads (REQ-PTB-008). A slot that names no region
+		// is reported, not dropped silently. An empty map stays an object.
+		$grouped = $this->regions->group(widgets: $widgets);
+		$shaped['body']['regions']        = $this->regions->forJson(regions: $grouped['regions']);
+		$shaped['body']['unknownRegions'] = $grouped['unknownRegions'];
 
 		return $shaped;
 	}//end shapePage()

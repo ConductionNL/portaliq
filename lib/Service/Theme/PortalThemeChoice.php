@@ -106,6 +106,14 @@ class PortalThemeChoice {
 		$sets = [];
 		foreach ($this->resolver->catalogue() as $entry) {
 			$id = (string)$entry['id'];
+			$refusal = $this->resolver->refusalFor(theme: $id);
+			if ($refusal !== null) {
+				// Refused VISIBLY (task 4.4): listed with the reason and not
+				// selectable, rather than missing without a word.
+				$sets[] = ['id' => $id, 'name' => (string)($entry['name'] ?? $id), 'custom' => true, 'refusal' => $refusal];
+				continue;
+			}
+
 			if ($this->resolver->stylesheetFor(theme: $id) === null) {
 				continue;
 			}
@@ -113,6 +121,7 @@ class PortalThemeChoice {
 			$sets[] = [
 				'id' => $id,
 				'name' => (string)($entry['name'] ?? $id),
+				'custom' => (($entry['custom'] ?? false) === true),
 				'verdict' => $this->contrast->evaluate(tokens: $this->resolver->tokenValuesFor(theme: $id)),
 			];
 		}
@@ -139,6 +148,11 @@ class PortalThemeChoice {
 	 * @spec openspec/changes/nldesign-theme-integration/specs/nldesign-theme-integration/spec.md
 	 */
 	public function choose(array $portal, string $theme): array {
+		$refusal = $this->resolver->refusalFor(theme: $theme);
+		if ($refusal !== null) {
+			return ['error' => 'refused', 'refusal' => $refusal];
+		}
+
 		if ($this->resolver->stylesheetFor(theme: $theme) === null) {
 			return ['error' => 'unknown_theme'];
 		}
@@ -163,6 +177,12 @@ class PortalThemeChoice {
 	 * @spec openspec/changes/nldesign-theme-integration/specs/nldesign-theme-integration/spec.md
 	 */
 	public function chooseConfirmingFindings(array $portal, string $theme): array {
+		$refusal = $this->resolver->refusalFor(theme: $theme);
+		if ($refusal !== null) {
+			// A refusal is not a contrast finding: confirming cannot overrule it.
+			return ['error' => 'refused', 'refusal' => $refusal];
+		}
+
 		if ($this->resolver->stylesheetFor(theme: $theme) === null) {
 			return ['error' => 'unknown_theme'];
 		}
