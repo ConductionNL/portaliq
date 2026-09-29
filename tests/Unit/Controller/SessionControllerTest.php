@@ -318,6 +318,37 @@ class SessionControllerTest extends TestCase {
 	 * `resolveOidcConfig` is asserted NEVER called: a caller the policy has
 	 * already refused must not reach the method that reads the client secret.
 	 */
+	/**
+	 * signin-integriq-broker-login D2: a provider the organisation routes to
+	 * integriq's broker is forwarded to the broker start, with no OIDC secret
+	 * read; the public site's sign-in links reach it this way.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-broker-start-binds-the-login-to-one-organisation-and-one-provider-req-bel-002
+	 */
+	public function testOidcStartForwardsABrokerRoutedProvider(): void {
+		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
+		$orgConfig->method('loginRouteFor')->willReturnMap([['gemeente-x', 'digid', 'broker']]);
+		$orgConfig->expects($this->never())->method('resolveOidcConfig');
+		$urls = $this->createMock(IURLGenerator::class);
+		$urls->method('linkToRoute')->willReturnCallback(
+			static fn (string $route, array $parameters = []): string => '/'.$route.'?'.http_build_query($parameters)
+		);
+		$portals = $this->createMock(PortalResolver::class);
+		$portals->method('resolve')->willReturn(['slug' => 'venray', 'organisation' => 'gemeente-x']);
+
+		$response = $this->controller(
+			session: $this->createMock(PortalSessionService::class),
+			orgConfig: $orgConfig,
+			urlGenerator: $urls,
+			portals: $portals
+		)->oidcStart(provider: 'digid', portal: 'venray');
+
+		$this->assertSame(Http::STATUS_FOUND, $response->getStatus());
+		$this->assertSame('/portaliq.brokerSession.start?org=gemeente-x&provider=digid', $response->getRedirectURL());
+	}//end testOidcStartForwardsABrokerRoutedProvider()
+
 	public function testOidcStartRefusesBeforeResolvingAnySecretWhenThePolicyDeclines(): void {
 		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
 		$orgConfig->method('isLoginProviderAllowed')->willReturn(false);

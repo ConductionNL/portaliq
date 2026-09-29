@@ -299,6 +299,16 @@ class SessionController extends Controller {
 			$org = $this->organisationOfPortal(slug: $portal);
 		}
 
+		// A provider the organisation routes to integriq's broker goes there
+		// (signin-integriq-broker-login D2), so every sign-in link, the public
+		// site's included, reaches the route the organisation chose.
+		if ($this->orgConfig->loginRouteFor(orgSlug: $org, provider: $provider) === 'broker') {
+			return new RedirectResponse(
+				$this->urlGenerator->linkToRoute(Application::APP_ID . '.brokerSession.start', ['org' => $org, 'provider' => $provider]),
+				Http::STATUS_FOUND
+			);
+		}
+
 		// THE AUTHORISATION DECISION, MADE EXPLICITLY AND BEFORE ANY SECRET IS
 		// TOUCHED. `resolveOidcConfig()` answers two different questions at
 		// once — "may this org+provider start a login" and "give me the client
