@@ -128,8 +128,8 @@ export function bodyFor(state) {
 		source.type === 'markdown' || !Array.isArray(source.widgets)
 			? []
 			: source.widgets
-				.filter((widget) => !isMainWidget(widget))
-				.map((widget) => JSON.parse(JSON.stringify(widget)))
+					.filter((widget) => !isMainWidget(widget))
+					.map((widget) => JSON.parse(JSON.stringify(widget)))
 	const rest = source.type === 'markdown' ? {} : { ...source }
 	delete rest.markdown
 	return {

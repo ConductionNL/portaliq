@@ -207,7 +207,10 @@ test('a draft with its own regions is the source the save keeps them from', asyn
 		},
 	}
 	const { editor, store } = await editorFor(withDraft)
-	assert.deepEqual(editor.state.widgets.map((w) => w.id), ['main-a'])
+	assert.deepEqual(
+		editor.state.widgets.map((w) => w.id),
+		['main-a'],
+	)
 	editor.removeWidget('main-a')
 	await editor.publish()
 
