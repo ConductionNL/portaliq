@@ -323,9 +323,9 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 
 	/**
 	 * Audit and acknowledge a CONFIRMED completion — the
-	 * ContributionController::create() pattern: one append-only
-	 * `portalAuditEntry` (verb `complete`, target the task; a fact, never
-	 * payload) and the WMEBV ontvangstbevestiging + proof log through
+	 * ContributionController::create() pattern: one proof record in
+	 * OpenRegister's audit trail (verb `complete`, target the task; a fact,
+	 * never payload) and the WMEBV ontvangstbevestiging + proof log through
 	 * SubmissionReceiptService. Fired only after the seam answered 2xx, so
 	 * the audited/acknowledged deed has already happened.
 	 *

@@ -104,6 +104,7 @@
             <step>OCA\Portaliq\Repair\InitializeSettings</step>
             <step>OCA\Portaliq\Repair\InitializeActions</step>
             <step>OCA\Portaliq\Repair\RenameDutchColumns</step>
+            <step>OCA\Portaliq\Repair\MovePortalAuditEntries</step>
         </post-migration>
         <install>
             <step>OCA\Portaliq\Repair\InitializeSettings</step>
