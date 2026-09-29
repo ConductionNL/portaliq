@@ -151,11 +151,16 @@ class CitizenCaseController extends Controller implements PortalProtected {
 		if ($context instanceof JSONResponse) {
 			// Not their own case: it may be one they see under the mandate
 			// they chose (cases-my-cases-page REQ-CMC-004), read-only.
-			if (($context->getData()['error'] ?? '') === 'case-not-yours') {
-				return ($this->showUnderMandate(register: $register, schema: $schema, id: $id) ?? $context);
-			}
-
-			return $context;
+			// The case comes from the same reader that lists the mandated
+			// cases on "My cases", so this screen never opens a case the list
+			// would not show; every write still checks ownership.
+			return ($this->mandatedCases?->screenOr(
+				refusal: $context,
+				subject: $this->session->resolveFromBearer($this->request->getHeader('Authorization')),
+				mandateId: (string)$this->request->getParam('mandate', ''),
+				target: ['register' => $register, 'schema' => $schema, 'id' => $id],
+				l10n: $this->l10n
+			) ?? $context);
 		}
 
 		return new JSONResponse([
@@ -169,57 +174,6 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			'documentsLabel' => (string)($context['documents']['label'] ?? ''),
 		]);
 	}//end show()
-
-	/**
-	 * A case the person sees because of the mandate the request names, shown
-	 * read-only, or null when that mandate does not list it.
-	 *
-	 * The case comes from the same reader that lists the mandated cases on "My
-	 * cases", so the screen never opens a case the list would not show. Nothing
-	 * can be changed or added under a mandate here, and no documents are
-	 * listed: every write and download still goes through the person's own
-	 * ownership check.
-	 *
-	 * @param string $register The register the case lives in.
-	 * @param string $schema The schema the case lives in.
-	 * @param string $id The case id.
-	 *
-	 * @return JSONResponse|null
-	 *
-	 * @spec openspec/specs/portal-my-cases/spec.md#requirement-you-choose-whom-you-act-for-req-cmc-004
-	 */
-	private function showUnderMandate(string $register, string $schema, string $id): ?JSONResponse {
-		$subject = $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
-		if ($subject === null || $this->mandatedCases === null) {
-			return null;
-		}
-
-		$case = $this->mandatedCases->read(
-			subject: $subject,
-			mandateId: (string)$this->request->getParam('mandate', ''),
-			register: $register,
-			schema: $schema,
-			id: $id
-		);
-		if ($case === null) {
-			return null;
-		}
-
-		$mandate = (array)($case['_mandate'] ?? []);
-		$closed = [
-			'open' => false,
-			'reason' => $this->l10n->t('You are viewing this case on behalf of %s. It cannot be changed here.', [(string)($mandate['label'] ?? '')]),
-		];
-
-		return new JSONResponse([
-			'case' => $case,
-			'mandate' => $mandate,
-			'writableSet' => ['fields' => [], 'writable' => [], 'window' => $closed, 'documents' => $closed, 'status' => null],
-			'withdrawal' => ['declared' => false, 'open' => false],
-			'documents' => [],
-			'documentsLabel' => '',
-		]);
-	}//end showUnderMandate()
 
 	/**
 	 * Open one document the case screen listed. The id picks among what this

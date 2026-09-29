@@ -33,6 +33,8 @@ namespace OCA\Portaliq\Service;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\Identity\PortalMandateService;
 use OCA\Portaliq\Service\Identity\PortalPartyTreeResolver;
+use OCP\AppFramework\Http\JSONResponse;
+use OCP\IL10N;
 
 /**
  * Reads one case under a named mandate, or nothing.
@@ -113,6 +115,49 @@ class MandatedCaseReader {
 
 		return null;
 	}//end read()
+
+	/**
+	 * The refusal, or the read-only screen of the case the person sees under
+	 * the named mandate when the refusal is only that the case is not theirs.
+	 *
+	 * Only a signed-in person is looked up. Nothing can be changed or added
+	 * under a mandate on this screen, and no documents are listed.
+	 *
+	 * @param JSONResponse $refusal Why the case is not opened as their own.
+	 * @param array<string, mixed>|null $subject The resolved subject, or null.
+	 * @param string $mandateId The mandate the person acts under.
+	 * @param array{register: string, schema: string, id: string} $target The case asked for.
+	 * @param IL10N $l10n The sentence the read-only screen is explained with.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/specs/portal-my-cases/spec.md#requirement-you-choose-whom-you-act-for-req-cmc-004
+	 */
+	public function screenOr(JSONResponse $refusal, ?array $subject, string $mandateId, array $target, IL10N $l10n): JSONResponse {
+		$case = null;
+		if ($subject !== null && (((array)$refusal->getData())['error'] ?? '') === 'case-not-yours') {
+			$case = $this->read(subject: $subject, mandateId: $mandateId, register: $target['register'], schema: $target['schema'], id: $target['id']);
+		}
+
+		if ($case === null) {
+			return $refusal;
+		}
+
+		$mandate = (array)($case['_mandate'] ?? []);
+		$closed = [
+			'open' => false,
+			'reason' => $l10n->t('You are viewing this case on behalf of %s. It cannot be changed here.', [(string)($mandate['label'] ?? '')]),
+		];
+
+		return new JSONResponse([
+			'case' => $case,
+			'mandate' => $mandate,
+			'writableSet' => ['fields' => [], 'writable' => [], 'window' => $closed, 'documents' => $closed, 'status' => null],
+			'withdrawal' => ['declared' => false, 'open' => false],
+			'documents' => [],
+			'documentsLabel' => '',
+		]);
+	}//end screenOr()
 
 	/**
 	 * The mandate the identity holds under this id, or null.

@@ -10,6 +10,9 @@ use OCA\Portaliq\Service\Identity\PortalPartyTreeResolver;
 use OCA\Portaliq\Service\MandatedCaseReader;
 use OCA\Portaliq\Service\PortalCaseListReader;
 use OCA\Portaliq\Service\PortalObjectReader;
+use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\JSONResponse;
+use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -66,6 +69,31 @@ class MandatedCaseReaderTest extends TestCase {
 		$this->assertNull($reader->read(subject: self::SUBJECT, mandateId: 'mandate-1', register: 'dossiq', schema: 'case', id: 'zaak-9'));
 		$this->assertSame([], $this->readBy);
 	}//end testAGroupPastTheBoundOpensNothing()
+
+	/**
+	 * Only a "not yours" refusal, for a signed-in person, turns into the
+	 * read-only screen; any other refusal comes back unchanged.
+	 *
+	 * @spec openspec/specs/portal-my-cases/spec.md#requirement-you-choose-whom-you-act-for-req-cmc-004
+	 */
+	public function testOnlyANotYoursRefusalBecomesTheReadOnlyScreen(): void {
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnCallback(static fn (string $text, array $params = []): string => vsprintf($text, $params));
+		$target = ['register' => 'dossiq', 'schema' => 'case', 'id' => 'zaak-9'];
+		$notYours = new JSONResponse(['error' => 'case-not-yours'], Http::STATUS_FORBIDDEN);
+		$signedOut = new JSONResponse(['error' => 'not-signed-in'], Http::STATUS_UNAUTHORIZED);
+		$reader = $this->reader();
+
+		$screen = $reader->screenOr(refusal: $notYours, subject: self::SUBJECT, mandateId: 'mandate-1', target: $target, l10n: $l10n);
+		$this->assertSame(Http::STATUS_OK, $screen->getStatus());
+		$this->assertSame('You are viewing this case on behalf of Bakkerij Jansen BV. It cannot be changed here.', $screen->getData()['writableSet']['window']['reason']);
+		$this->assertFalse($screen->getData()['writableSet']['documents']['open']);
+		$this->assertSame([], $screen->getData()['documents']);
+
+		$this->assertSame($signedOut, $reader->screenOr(refusal: $signedOut, subject: self::SUBJECT, mandateId: 'mandate-1', target: $target, l10n: $l10n));
+		$this->assertSame($notYours, $reader->screenOr(refusal: $notYours, subject: null, mandateId: 'mandate-1', target: $target, l10n: $l10n));
+		$this->assertSame($notYours, $reader->screenOr(refusal: $notYours, subject: self::SUBJECT, mandateId: 'self', target: $target, l10n: $l10n));
+	}//end testOnlyANotYoursRefusalBecomesTheReadOnlyScreen()
 
 	/**
 	 * The reader over one dossiq case collection that declares its party
