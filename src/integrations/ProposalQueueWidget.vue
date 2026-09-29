@@ -191,6 +191,9 @@ export default {
 		}
 	},
 
+	/**
+	 * @spec openspec/specs/change-proposal-queue/spec.md#requirement-the-queue-is-a-leaf-on-the-subject-req-cpq-004
+	 */
 	created() {
 		this.queue = createProposalQueue({
 			get: (url, config) => axios.get(url, config),
@@ -207,6 +210,8 @@ export default {
 		/**
 		 * @param {object} proposal The proposal.
 		 * @return {string}
+		 *
+		 * @spec openspec/specs/change-proposal-queue/spec.md#requirement-the-queue-is-a-leaf-on-the-subject-req-cpq-004
 		 */
 		idOf(proposal) {
 			return String(proposal?.uuid || proposal?.id || '')
@@ -215,6 +220,8 @@ export default {
 		/**
 		 * @param {string} value An ISO date.
 		 * @return {string}
+		 *
+		 * @spec openspec/specs/change-proposal-queue/spec.md#requirement-the-queue-is-a-leaf-on-the-subject-req-cpq-004
 		 */
 		dateOf(value) {
 			const date = new Date(value)
@@ -226,12 +233,18 @@ export default {
 		/**
 		 * @param {object} proposal The proposal.
 		 * @return {Array}
+		 *
+		 * @spec openspec/specs/change-proposal-queue/spec.md#requirement-the-queue-is-a-leaf-on-the-subject-req-cpq-004
 		 */
 		driftFor(proposal) {
 			return this.drift[this.idOf(proposal)] || []
 		},
 
-		/** Read the queue for the host record. */
+		/**
+		 * Read the queue for the host record.
+		 *
+		 * @spec openspec/specs/change-proposal-queue/spec.md#requirement-the-queue-is-a-leaf-on-the-subject-req-cpq-004
+		 */
 		async load() {
 			const result = await this.queue.load({
 				register: this.register,
@@ -244,6 +257,8 @@ export default {
 
 		/**
 		 * @param {object} proposal The proposal.
+		 *
+		 * @spec openspec/specs/change-proposal-queue/spec.md#requirement-the-queue-is-a-leaf-on-the-subject-req-cpq-004
 		 */
 		startRejecting(proposal) {
 			this.rejecting = this.idOf(proposal)
@@ -253,6 +268,8 @@ export default {
 
 		/**
 		 * @param {object} proposal The proposal.
+		 *
+		 * @spec openspec/specs/change-proposal-queue/spec.md#requirement-the-queue-is-a-leaf-on-the-subject-req-cpq-004
 		 */
 		async accept(proposal) {
 			await this.settle(proposal, () => this.queue.accept(proposal))
@@ -260,6 +277,8 @@ export default {
 
 		/**
 		 * @param {object} proposal The proposal.
+		 *
+		 * @spec openspec/specs/change-proposal-queue/spec.md#requirement-the-queue-is-a-leaf-on-the-subject-req-cpq-004
 		 */
 		async acceptAnyway(proposal) {
 			await this.settle(proposal, () => this.queue.acceptAnyway(proposal))
@@ -267,6 +286,8 @@ export default {
 
 		/**
 		 * @param {object} proposal The proposal.
+		 *
+		 * @spec openspec/specs/change-proposal-queue/spec.md#requirement-the-queue-is-a-leaf-on-the-subject-req-cpq-004
 		 */
 		async reject(proposal) {
 			await this.settle(proposal, () =>
@@ -279,6 +300,8 @@ export default {
 		 *
 		 * @param {object} proposal The proposal.
 		 * @param {Function} decision The decision to run.
+		 *
+		 * @spec openspec/specs/change-proposal-queue/spec.md#requirement-the-queue-is-a-leaf-on-the-subject-req-cpq-004
 		 */
 		async settle(proposal, decision) {
 			this.busy = true

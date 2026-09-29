@@ -117,14 +117,14 @@ class PortalCaseAccessGuard {
 			return false;
 		}
 
-		return $this->mayRead(user: $user, register: $register, schema: $schema, id: $id);
+		return $this->mayRead(register: $register, schema: $schema, id: $id);
 	}//end mayAct()
 
 	/**
-	 * Whether this user may read one record, judged by OpenRegister as that
-	 * user. Proposing a change needs this and no gated action.
+	 * Whether the signed-in user may read one record. OpenRegister judges the
+	 * read with RBAC and multitenancy on, as the session's user, which is why
+	 * no user is passed. Proposing a change needs this and no gated action.
 	 *
-	 * @param IUser  $user     The staff user.
 	 * @param string $register The register the record lives in.
 	 * @param string $schema   The schema the record lives in.
 	 * @param string $id       The record.
@@ -133,7 +133,7 @@ class PortalCaseAccessGuard {
 	 *
 	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
-	public function mayRead(IUser $user, string $register, string $schema, string $id): bool {
+	public function mayRead(string $register, string $schema, string $id): bool {
 		if ($register === '' || $schema === '' || $id === '') {
 			return false;
 		}

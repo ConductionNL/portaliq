@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * OpenRegister test stub: a verbatim copy of openregister's class on
+ * `development`, loaded only when OpenRegister is absent (tests/bootstrap.php)
+ * and read by psalm and phpstan. Only the @spec tags differ: they point at
+ * portaliq's spec, where OpenRegister's own changes do not exist.
+ *
  * Dispatched so sibling apps can contribute their leaves to OpenRegister.
  *
  * A leaf is how an app hooks itself onto OpenRegister objects: it contributes a
@@ -42,7 +47,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/app-leaf-provider-registration/specs/leaf-provider-registration/spec.md
+ * @spec openspec/specs/change-proposal-queue/spec.md
  */
 
 declare(strict_types=1);
@@ -86,7 +91,7 @@ class RegisterLeafProvidersEvent extends Event {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/app-leaf-provider-registration/specs/leaf-provider-registration/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	public function registerLeaf(LeafDescriptor $descriptor, ?IntegrationProvider $provider = null): void {
 		$this->leaves[] = [
@@ -101,7 +106,7 @@ class RegisterLeafProvidersEvent extends Event {
 	 *
 	 * @return array<int, array{descriptor: LeafDescriptor, provider: ?IntegrationProvider}> The leaves.
 	 *
-	 * @spec openspec/changes/app-leaf-provider-registration/specs/leaf-provider-registration/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	public function getLeaves(): array {
 		return $this->leaves;

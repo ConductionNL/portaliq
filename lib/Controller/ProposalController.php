@@ -167,7 +167,7 @@ class ProposalController extends Controller {
 
 		// A colleague proposes on a record they can see. Without this any
 		// account could queue a proposal on whatever id it named.
-		if ($this->guard->mayRead(user: $user, register: $register, schema: $schema, id: $id) === false) {
+		if ($this->guard->mayRead(register: $register, schema: $schema, id: $id) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 

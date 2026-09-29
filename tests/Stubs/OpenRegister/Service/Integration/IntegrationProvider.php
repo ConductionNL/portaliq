@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * OpenRegister test stub: a verbatim copy of openregister's class on
+ * `development`, loaded only when OpenRegister is absent (tests/bootstrap.php)
+ * and read by psalm and phpstan. Only the @spec tags differ: they point at
+ * portaliq's spec, where OpenRegister's own changes do not exist.
+ *
  * Pluggable Integration Provider contract.
  *
  * Provider for an integration that exposes a "linked thing" against an OR
@@ -22,7 +27,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/pluggable-integration-registry/tasks.md#task-1
+ * @spec openspec/specs/change-proposal-queue/spec.md
  */
 
 declare(strict_types=1);

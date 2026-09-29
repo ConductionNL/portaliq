@@ -35,13 +35,6 @@
              message box sender and the delivered listener name them by string. -->
         <file name="tests/Stubs/Integriq/Event/DigitalPostSendRequestedEvent.php" />
         <file name="tests/Stubs/Integriq/Event/DigitalPostDeliveredEvent.php" />
-        <!-- OpenRegister's leaf contract (change-proposal-queue): verbatim
-             copies of openregister/lib on development. The leaf listener and the
-             data provider implement and construct them. -->
-        <file name="tests/Stubs/OpenRegister/Exception/NotImplementedException.php" />
-        <file name="tests/Stubs/OpenRegister/Service/Integration/IntegrationProvider.php" />
-        <file name="tests/Stubs/OpenRegister/Service/Integration/LeafDescriptor.php" />
-        <file name="tests/Stubs/OpenRegister/Event/RegisterLeafProvidersEvent.php" />
     </stubs>
     <issueHandlers>
         <UndefinedDocblockClass errorLevel="suppress"/>
@@ -152,5 +145,11 @@
     </issueHandlers>
     <extraFiles>
         <directory name="vendor/nextcloud/ocp" />
+        <!-- OpenRegister's leaf contract (change-proposal-queue): verbatim
+             copies of openregister/lib on development, read as code rather
+             than as stubs, because a stub's docblock types become signature
+             types and every implementation of IntegrationProvider would then
+             mismatch its native `array` parameters. -->
+        <directory name="tests/Stubs/OpenRegister" />
     </extraFiles>
 </psalm>

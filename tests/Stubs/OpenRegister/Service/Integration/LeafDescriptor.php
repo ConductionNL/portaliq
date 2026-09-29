@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * OpenRegister test stub: a verbatim copy of openregister's class on
+ * `development`, loaded only when OpenRegister is absent (tests/bootstrap.php)
+ * and read by psalm and phpstan. Only the @spec tags differ: they point at
+ * portaliq's spec, where OpenRegister's own changes do not exist.
+ *
  * LeafDescriptor — the server-side declaration a sibling app contributes when
  * it registers a leaf on OpenRegister objects through
  * `RegisterLeafProvidersEvent`.
@@ -27,7 +32,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/app-leaf-provider-registration/specs/leaf-provider-registration/spec.md
+ * @spec openspec/specs/change-proposal-queue/spec.md
  */
 
 declare(strict_types=1);
@@ -235,7 +240,7 @@ final class LeafDescriptor {
 	 *
 	 * @return bool Whether it declares the shared entry.
 	 *
-	 * @spec openspec/changes/app-leaf-provider-registration/specs/leaf-provider-registration/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	public function claimsSharedEntry(): bool {
 		return ($this->loadStrategy === self::LOADS_VIA_SHARED_ENTRY);

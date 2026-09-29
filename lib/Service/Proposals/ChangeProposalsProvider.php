@@ -167,6 +167,8 @@ class ChangeProposalsProvider implements IntegrationProvider {
 	 *
 	 * @return string|null
 	 *
+	 * @orphan-auth exclude OpenRegister's IntegrationRegistry calls this through the IntegrationProvider interface; no caller lives in this repo.
+	 *
 	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	public function requiresPermission(): ?string {
@@ -197,6 +199,9 @@ class ChangeProposalsProvider implements IntegrationProvider {
 	 * @param array<string, mixed> $filters  Ignored.
 	 *
 	 * @return array<int, array<string, mixed>>
+	 *
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) -- the IntegrationProvider
+	 * interface dictates `$filters`; the queue is short and needs none.
 	 *
 	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
@@ -231,6 +236,8 @@ class ChangeProposalsProvider implements IntegrationProvider {
 	 * @return array<string, mixed>
 	 *
 	 * @throws NotImplementedException Always.
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) -- the IntegrationProvider
+	 * interface dictates the signature; this method offers nothing with it.
 	 *
 	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
@@ -262,7 +269,7 @@ class ChangeProposalsProvider implements IntegrationProvider {
 			throw new InvalidArgumentException('not_authenticated');
 		}
 
-		if ($this->guard->mayRead(user: $user, register: $register, schema: $schema, id: $objectId) === false) {
+		if ($this->guard->mayRead(register: $register, schema: $schema, id: $objectId) === false) {
 			throw new InvalidArgumentException('not_readable');
 		}
 
@@ -294,6 +301,8 @@ class ChangeProposalsProvider implements IntegrationProvider {
 	 * @return array<string, mixed>
 	 *
 	 * @throws NotImplementedException Always.
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) -- the IntegrationProvider
+	 * interface dictates the signature; this method offers nothing with it.
 	 *
 	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
@@ -312,6 +321,8 @@ class ChangeProposalsProvider implements IntegrationProvider {
 	 * @return void
 	 *
 	 * @throws NotImplementedException Always.
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) -- the IntegrationProvider
+	 * interface dictates the signature; this method offers nothing with it.
 	 *
 	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */

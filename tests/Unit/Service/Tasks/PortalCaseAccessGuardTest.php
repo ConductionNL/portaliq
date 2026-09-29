@@ -42,7 +42,7 @@ class PortalCaseAccessGuardTest extends TestCase {
 	public function testReadingNeedsTheRecordButNoAction(): void {
 		$guard = $this->guard(allowed: false, rows: [['id' => 'zaak-1']]);
 
-		$this->assertTrue($guard->mayRead(user: $this->user(), register: 'dossiq', schema: 'zaak', id: 'zaak-1'));
+		$this->assertTrue($guard->mayRead(register: 'dossiq', schema: 'zaak', id: 'zaak-1'));
 		$this->assertTrue($this->readFlags['_rbac']);
 
 	}//end testReadingNeedsTheRecordButNoAction()
@@ -56,8 +56,8 @@ class PortalCaseAccessGuardTest extends TestCase {
 	public function testARecordTheUserCannotSeeIsNotReadable(): void {
 		$guard = $this->guard(allowed: true, rows: []);
 
-		$this->assertFalse($guard->mayRead(user: $this->user(), register: 'dossiq', schema: 'zaak', id: 'zaak-1'));
-		$this->assertFalse($guard->mayRead(user: $this->user(), register: 'dossiq', schema: 'zaak', id: ''));
+		$this->assertFalse($guard->mayRead(register: 'dossiq', schema: 'zaak', id: 'zaak-1'));
+		$this->assertFalse($guard->mayRead(register: 'dossiq', schema: 'zaak', id: ''));
 
 	}//end testARecordTheUserCannotSeeIsNotReadable()
 
