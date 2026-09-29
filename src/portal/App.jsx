@@ -14,6 +14,7 @@
 import AccessRequestsPage from '@portal/components/AccessRequestsPage.jsx'
 import InboxPage from '@portal/components/InboxPage.jsx'
 import MessagesPage from '@portal/components/MessagesPage.jsx'
+import MyCasesPage from '@portal/components/MyCasesPage.jsx'
 import NewsPage, { hasNews } from '@portal/components/NewsPage.jsx'
 import PageView from '@portal/components/PageView.jsx'
 import TasksPage from '@portal/components/TasksPage.jsx'
@@ -45,6 +46,11 @@ const NEWS_KEY = '__news__'
 
 // The asker's side of an access request (identity-access-requests).
 const ACCESS_KEY = '__access__'
+
+// "My cases" (cases-my-cases-page): every app's cases in one list, shown when
+// the backend announces `cases: {enabled: true}` on the contributions
+// aggregate, that is when some contribution declares a `kind: cases` collection.
+const CASES_KEY = '__cases__'
 
 /**
  * sessionStorage, or null where the browser refuses it (private mode, a
@@ -79,8 +85,9 @@ const REFRESH_INTERVAL_MS = 25 * 60 * 1000
  * @param messagesEnabled
  * @param {boolean} newsEnabled Whether the guardian's feed holds news.
  * @param {boolean} accessEnabled Whether the signed-in user's contributions have loaded.
+ * @param {boolean} casesEnabled Whether a contribution declares a case collection.
  */
-function buildNav(contributions, t, tasksEnabled, messagesEnabled = false, newsEnabled = false, accessEnabled = false) {
+function buildNav(contributions, t, tasksEnabled, messagesEnabled = false, newsEnabled = false, accessEnabled = false, casesEnabled = false) {
 	const nav = []
 	for (const contribution of (contributions || [])) {
 		for (const page of (contribution.pages || [])) {
@@ -97,6 +104,11 @@ function buildNav(contributions, t, tasksEnabled, messagesEnabled = false, newsE
 	// backend only when the task seam is actually reachable, and appended
 	// even when no contribution pages exist — a party can have an open task
 	// without any other portal content.
+	// "My cases" first (cases-my-cases-page): the one place a person sees
+	// every case from every app, so it is where the portal opens.
+	if (casesEnabled) {
+		nav.unshift({ key: CASES_KEY, label: t('My cases'), icon: 'FolderAccount', special: 'cases' })
+	}
 	if (tasksEnabled) {
 		nav.push({ key: TASKS_KEY, label: t('My tasks'), icon: 'CheckboxMarkedOutline', special: 'tasks' })
 	}
@@ -116,8 +128,8 @@ function buildNav(contributions, t, tasksEnabled, messagesEnabled = false, newsE
 	// Asking for access to a party's cases (identity-access-requests, T05).
 	// Offered to every signed-in user once the contributions have loaded, for
 	// the same reason as the inbox; last, so it never becomes the default.
-	// "My cases" and "My account" do not exist in the portal yet, which is
-	// why this is its own entry rather than a link on one of them.
+	// Its own entry, because a person without any case yet has no "My
+	// cases" page to find it on.
 	if (accessEnabled) {
 		nav.push({ key: ACCESS_KEY, label: t('Access to cases'), icon: 'AccountKey', special: 'access' })
 	}
@@ -241,6 +253,7 @@ export default function App({ config, t: tProp }) {
 			(state.threads || []).length > 0,
 			hasNews(state.news),
 			Boolean(state.session && state.contributions),
+			state.contributions?.cases?.enabled === true,
 		),
 		[state.session, state.contributions, state.threads, state.news, t],
 	)
@@ -495,6 +508,22 @@ export default function App({ config, t: tProp }) {
 									// uuid to "Mijn taken" and switch to it.
 									setPendingTaskUuid(taskUuid)
 									setActiveKey(TASKS_KEY)
+								}}
+							/>
+						)}
+
+						{active && active.special === 'cases' && (
+							<MyCasesPage
+								api={api}
+								t={t}
+								locale={config.locale}
+								closedMarker={state.contributions?.cases?.closedMarker === true}
+								canOpen={(target) => navKeyFor(nav, target) !== null}
+								onOpenCase={(target) => {
+									// The same path as a notification's link: the
+									// app's page opens with the case selected.
+									setOpenTarget(target)
+									setActiveKey(navKeyFor(nav, target))
 								}}
 							/>
 						)}

@@ -184,5 +184,11 @@
 	"Decision": "Decision",
 	"Sent by you": "Sent by you",
 	"There are no documents on this case yet.": "There are no documents on this case yet.",
-	"The document could not be opened. Try again later.": "The document could not be opened. Try again later."
+	"The document could not be opened. Try again later.": "The document could not be opened. Try again later.",
+	"My cases": "My cases",
+	"Open ({count})": "Open ({count})",
+	"Closed ({count})": "Closed ({count})",
+	"No cases yet.": "No cases yet.",
+	"No closed cases.": "No closed cases.",
+	"Your cases could not be loaded. Try again later.": "Your cases could not be loaded. Try again later."
 }
