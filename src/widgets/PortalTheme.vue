@@ -56,7 +56,11 @@
 						v-if="!isSelectable(set)"
 						class="portal-theme__verdict portal-theme__verdict--fails"
 						:data-testid="`portal-theme-refusal-${set.id}`">
-						{{ t('portaliq', 'Refused by the theme app: {reason}', { reason: set.refusal }) }}
+						{{
+							t('portaliq', 'Refused by the theme app: {reason}', {
+								reason: set.refusal,
+							})
+						}}
 					</span>
 					<span
 						v-else
@@ -269,15 +273,19 @@ export default {
 				this.noticeType = 'error'
 				this.notice =
 					result.outcome === 'refused'
-						? t('portaliq', 'The theme app refused this house style: {reason}', {
-								reason: result.refusal,
-							})
-						: result.outcome === 'unknown'
 						? t(
 								'portaliq',
-								'The theme app no longer offers this house style.',
+								'The theme app refused this house style: {reason}',
+								{
+									reason: result.refusal,
+								},
 							)
-						: t('portaliq', 'The house style could not be saved.')
+						: result.outcome === 'unknown'
+							? t(
+									'portaliq',
+									'The theme app no longer offers this house style.',
+								)
+							: t('portaliq', 'The house style could not be saved.')
 				return
 			}
 			this.noticeType = 'success'

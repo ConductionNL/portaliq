@@ -125,7 +125,10 @@ export function createPortalThemeChoice({ get, put, url }) {
 					return { outcome: 'unknown' }
 				}
 				if (data.error === 'refused') {
-					return { outcome: 'refused', refusal: String(data.refusal || '') }
+					return {
+						outcome: 'refused',
+						refusal: String(data.refusal || ''),
+					}
 				}
 				return { outcome: 'failed' }
 			}
