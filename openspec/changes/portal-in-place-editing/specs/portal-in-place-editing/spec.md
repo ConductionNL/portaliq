@@ -25,19 +25,19 @@ the page history, undo and redo, and a way to leave edit mode.
 - **GIVEN** an editor on the published page `/over-ons`
 - **WHEN** the editor chooses "Deze pagina bewerken", adds a markdown widget and saves a draft
 - **THEN** the page's `draftBody` holds the new widget and the public page is unchanged
-- @e2e exclude proven by tests/site-edit-mode.spec.mjs; live-checked on :8080 by the coordinator
+- Covered by tests/e2e/site-page-editing.spec.ts (S5, S6) and tests/site-edit-mode.spec.mjs
 
 #### Scenario: The palette offers public widgets only
 - **GIVEN** the portal edit mode
 - **WHEN** the editor opens the palette
 - **THEN** every entry offered is a widget the public renderer mounts
-- @e2e exclude proven by tests/site-edit-mode.spec.mjs
+- Covered by tests/e2e/site-page-editing.spec.ts (S5, S6) and tests/site-edit-mode.spec.mjs
 
 #### Scenario: Leaving edit mode shows the page again
 - **GIVEN** the portal edit mode with no unsaved change
 - **WHEN** the editor leaves edit mode
 - **THEN** the rendered page is shown as a visitor sees it
-- @e2e exclude proven by tests/site-edit-mode.spec.mjs; live-checked on :8080 by the coordinator
+- Covered by tests/e2e/site-page-editing.spec.ts (S5, S6) and tests/site-edit-mode.spec.mjs
 
 ### Requirement: The portal editor MUST NOT weigh on a visitor's first load (REQ-PIE-007)
 
@@ -49,7 +49,7 @@ the edit control and the loader.
 - **GIVEN** the production site build
 - **WHEN** it is built
 - **THEN** `portaliq-site.js` stays under the 410 KiB limit and the editor is in its own bundle
-- @e2e exclude proven by the webpack.site.js budget and tests/site-edit-mode.spec.mjs
+- Covered by tests/e2e/site-page-editing.spec.ts (S5, S6) and tests/site-edit-mode.spec.mjs
 
 ### Requirement: The editor and the public page MUST place widgets identically (REQ-PIE-008)
 

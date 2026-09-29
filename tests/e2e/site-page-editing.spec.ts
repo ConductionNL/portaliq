@@ -282,7 +282,10 @@ test.describe('portal page editing', () => {
 			'menu',
 		)
 
-		await page.getByTestId('site-edit-page').click()
+		// "Deze pagina bewerken" now edits in place (portal-in-place-editing);
+		// the admin designer is the menu's second entry.
+		await expect(page.getByTestId('site-edit-page')).toBeVisible()
+		await page.getByTestId('site-edit-designer').click()
 		await expect(page).toHaveURL(new RegExp(`/pages/${pageId}/layout$`))
 		await expect(page.getByTestId('designer-title')).toHaveText(
 			'E2E designer fixture',
@@ -396,5 +399,199 @@ test.describe('portal page editing', () => {
 
 		// Left as an unsaved draft on purpose: nothing here was saved, so the
 		// published page this file created is still the one S3 left behind.
+	})
+})
+
+/*
+ * EDITING IN PLACE ON THE PORTAL (portal-in-place-editing A2, REQ-PIE-006,
+ * REQ-PIE-007; regions from portal-theme-blocks-and-contributed-pages task 8).
+ *
+ * Its own fixture page, so the designer scenarios above keep theirs: this one
+ * carries a widget in the `hero` region and a cleared `footer`, which a save
+ * from the portal edit mode must write back untouched.
+ */
+const IN_PLACE_ROUTE = '/e2e-in-place'
+let inPlaceId = ''
+
+/**
+ * The stored page object, read through the object API as admin.
+ *
+ * @param api the request context
+ * @return the object
+ */
+async function storedPage(api: APIRequestContext): Promise<Record<string, any>> {
+	const response = await api.get(`${OBJECTS}/${inPlaceId}`)
+	expect(response.ok(), 'the in-place fixture must be readable').toBe(true)
+	return await response.json()
+}
+
+test.describe('portal page editing in place', () => {
+	test.beforeAll(async () => {
+		const api = await adminApi()
+		const existing = await api.get(`${OBJECTS}?_limit=500`)
+		if (existing.ok()) {
+			for (const row of (await existing.json()).results ?? []) {
+				if (row.route === IN_PLACE_ROUTE) {
+					await api.delete(`${OBJECTS}/${row['@self']?.id ?? row.id}`)
+				}
+			}
+		}
+
+		const created = await api.post(OBJECTS, {
+			data: {
+				title: 'E2E in-place fixture',
+				route: IN_PLACE_ROUTE,
+				portal: 'open-tilburg',
+				status: 'published',
+				locale: 'nl',
+				body: {
+					type: 'grid',
+					clearedRegions: ['footer'],
+					widgets: [
+						{
+							id: 'fixture-hero',
+							widgetKey: 'hero',
+							slot: 'hero',
+							gridX: 0,
+							gridY: 0,
+							gridWidth: 12,
+							gridHeight: 5,
+							props: { title: 'Held van de fixture' },
+						},
+						{
+							id: 'fixture-text',
+							widgetKey: 'markdown',
+							slot: 'body',
+							gridX: 0,
+							gridY: 0,
+							gridWidth: 6,
+							gridHeight: 3,
+							props: { markdown: '## In place\n\nEen testpagina.' },
+						},
+					],
+				},
+			},
+		})
+		expect(
+			created.ok(),
+			`creating the in-place fixture failed: ${created.status()}`,
+		).toBe(true)
+		const row = await created.json()
+		inPlaceId = row['@self']?.id ?? row.id
+		await api.dispose()
+	})
+
+	test.afterAll(async () => {
+		if (inPlaceId === '') {
+			return
+		}
+		const api = await adminApi()
+		await api.delete(`${OBJECTS}/${inPlaceId}`)
+		await api.dispose()
+	})
+
+	// @e2e portal-in-place-editing::an-editor-edits-the-page-they-are-reading
+	// @e2e portal-in-place-editing::leaving-edit-mode-shows-the-page-again
+	// @e2e portal-in-place-editing::the-entry-stays-under-budget
+	test('S5: an editor moves a widget on the portal, saves a draft, publishes, and the hero region and the cleared footer survive', async ({
+		page,
+	}) => {
+		const api = await adminApi()
+		await loginToNextcloud(page, ADMIN_USER, ADMIN_PASS)
+
+		// The editor bundle is fetched only now, never with the page.
+		const editorRequests: string[] = []
+		page.on('request', (r) => {
+			if (r.url().includes('portaliq-site-editor')) {
+				editorRequests.push(r.url())
+			}
+		})
+
+		await page.goto(`${SITE}?route=${encodeURIComponent(IN_PLACE_ROUTE)}`)
+		const button = page.getByTestId('site-edit-button')
+		await expect(button).toBeVisible({ timeout: 30_000 })
+		expect(editorRequests, 'a page view must not load the editor').toEqual([])
+
+		await button.click()
+		await page.getByTestId('site-edit-page').click()
+		await expect(page.getByTestId('site-edit-mode')).toBeVisible({
+			timeout: 60_000,
+		})
+		expect(
+			editorRequests.length,
+			'choosing to edit loads the editor bundle',
+		).toBeGreaterThan(0)
+
+		// The grid shows the main region only; the hero stays out of it.
+		await expect(page.getByTestId('designer-widget-fixture-text')).toBeVisible()
+		await expect(page.getByTestId('designer-widget-fixture-hero')).toHaveCount(0)
+
+		const item = page.locator('.grid-stack-item', {
+			has: page.getByTestId('designer-widget-fixture-text'),
+		})
+		await item.focus()
+		await page.keyboard.press('ArrowRight')
+		await expect(item).toHaveAttribute('gs-x', '1')
+
+		await page.getByTestId('site-edit-save').click()
+		await expect(page.getByTestId('site-edit-notice')).toBeVisible()
+
+		const drafted = await storedPage(api)
+		const draftText = drafted.draftBody.widgets.find(
+			(w: any) => w.id === 'fixture-text',
+		)
+		expect(draftText.gridX, 'the draft holds the move').toBe(1)
+		expect(
+			drafted.body.widgets.find((w: any) => w.id === 'fixture-text').gridX,
+			'the live body is untouched',
+		).toBe(0)
+		expect(
+			drafted.draftBody.widgets.some(
+				(w: any) => w.id === 'fixture-hero' && w.slot === 'hero',
+			),
+		).toBe(true)
+		expect(drafted.draftBody.clearedRegions).toEqual(['footer'])
+
+		await page.getByTestId('site-edit-publish').click()
+		await expect(page.getByTestId('site-edit-notice')).toBeVisible()
+
+		const published = await storedPage(api)
+		expect(published.draftBody ?? null, 'publishing clears the draft').toBeNull()
+		expect(
+			published.body.widgets.find((w: any) => w.id === 'fixture-text').gridX,
+		).toBe(1)
+		const hero = published.body.widgets.find((w: any) => w.id === 'fixture-hero')
+		expect(hero?.slot, 'the hero region survives a save from the portal').toBe(
+			'hero',
+		)
+		expect(hero?.props?.title).toBe('Held van de fixture')
+		expect(published.body.clearedRegions, 'the cleared footer survives').toEqual(
+			['footer'],
+		)
+
+		await page.getByTestId('site-edit-leave').click()
+		await expect(page.getByTestId('site-edit-mode')).toHaveCount(0)
+		await expect(page.getByTestId('site-page')).toBeVisible()
+
+		await api.dispose()
+	})
+
+	// @e2e portal-in-place-editing::the-palette-offers-public-widgets-only
+	test('S6: the portal palette offers only widgets the public page renders', async ({
+		page,
+	}) => {
+		await loginToNextcloud(page, ADMIN_USER, ADMIN_PASS)
+		await page.goto(`${SITE}?route=${encodeURIComponent(IN_PLACE_ROUTE)}`)
+		await page.getByTestId('site-edit-button').click()
+		await page.getByTestId('site-edit-page').click()
+		await expect(page.getByTestId('site-edit-mode')).toBeVisible({
+			timeout: 60_000,
+		})
+
+		await page.getByTestId('site-edit-add').click()
+		const palette = page.getByTestId('widget-palette')
+		await expect(palette).toBeVisible()
+		await expect(palette.locator('[data-public="false"]')).toHaveCount(0)
+		await expect(palette.locator('[data-public="true"]').first()).toBeVisible()
 	})
 })
