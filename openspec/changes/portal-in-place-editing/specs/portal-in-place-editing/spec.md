@@ -41,14 +41,14 @@ the page history, undo and redo, and a way to leave edit mode.
 
 ### Requirement: The portal editor MUST NOT weigh on a visitor's first load (REQ-PIE-007)
 
-The editor, the grid library and the widget forms SHALL load as a separate chunk
+The editor, the grid library and the widget forms SHALL load as a separate bundle
 only when an editor enters edit mode. The site entry SHALL grow by no more than
-the edit control and the import.
+the edit control and the loader.
 
 #### Scenario: The entry stays under budget
 - **GIVEN** the production site build
 - **WHEN** it is built
-- **THEN** `portaliq-site.js` stays under the 410 KiB limit and the editor is in its own chunk
+- **THEN** `portaliq-site.js` stays under the 410 KiB limit and the editor is in its own bundle
 - @e2e exclude proven by the webpack.site.js budget and tests/site-edit-mode.spec.mjs
 
 ### Requirement: The editor and the public page MUST place widgets identically (REQ-PIE-008)

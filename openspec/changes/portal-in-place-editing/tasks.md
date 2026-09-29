@@ -14,7 +14,7 @@
 
 - [x] **T08**: The editing context answers the page id for an editor (it already did: `CmsEditorController::context()`); the editor reads the `updated` marker itself when it loads the page, which is the moment the version check needs. Verification: `CmsEditorControllerTest::testAnEditorGetsTheDesignerLink`, `::testARefusalNamesNoPage`.
 - [x] **T09**: `src/editor/geometry.js` used by `WidgetGrid.vue` and the editor (REQ-PIE-008). Verification: `tests/site-edit-mode.spec.mjs`.
-- [x] **T10**: "Deze pagina bewerken" in `SiteEditButton.vue` loads the lazily imported `SiteEditMode.vue`, which mounts `PageGridEditor.vue` over the page in the portal theme with the public palette, save draft, publish, discard, history, undo, redo and leave (REQ-PIE-006, REQ-PIE-007). Verification: `tests/site-edit-mode.spec.mjs` and the site build size.
+- [x] **T10**: "Deze pagina bewerken" in `SiteEditButton.vue` loads the editor bundle (`siteEditorMain.js`, root `SiteEditMode.vue`), which mounts `PageGridEditor.vue` over the page in the portal theme with the public palette, save draft, publish, discard, history, undo, redo and leave (REQ-PIE-006, REQ-PIE-007). Verification: `tests/site-edit-mode.spec.mjs` and the site build size.
 
 ## A3: the rest of the portal from the portal
 

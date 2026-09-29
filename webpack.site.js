@@ -20,64 +20,7 @@ const webpack = require('webpack')
 
 const isDev = process.env.NODE_ENV === 'development'
 
-/**
- * The files of every chunk only an EDITOR can load.
- *
- * The editor (`src/editor/SiteEditMode.vue`, portal-in-place-editing) is a
- * dynamic import in the site entry, and everything it pulls in (the grid
- * engine, the shared widget forms, their own lazy chunks, the Dutch catalogue)
- * hangs below the `site-editor` chunk group. None of it reaches a visitor, so
- * the per-asset budget below, which exists for a first-time visitor on a phone,
- * does not apply to it. Worked out from the chunk graph rather than from file
- * names, because webpack numbers the chunks it splits off.
- *
- * @type {Set<string>}
- */
-const editorOnlyFiles = new Set()
-
-/**
- * Whether a chunk group can only be reached through the editor.
- *
- * @param {object} group A webpack chunk group.
- * @param {Set<object>} seen Groups already on this path.
- * @return {boolean} True when every way to it passes `site-editor`.
- */
-function underEditor(group, seen = new Set()) {
-	if (group.name === 'site-editor') {
-		return true
-	}
-	if (group.isInitial() || seen.has(group)) {
-		return false
-	}
-	seen.add(group)
-	const parents = group.getParents()
-	return parents.length > 0 && parents.every((parent) => underEditor(parent, seen))
-}
-
-/** Collects `editorOnlyFiles` before the size limits are checked. */
-class EditorOnlyChunksPlugin {
-
-	/**
-	 * @param {object} compiler The webpack compiler.
-	 * @return {void}
-	 */
-	apply(compiler) {
-		compiler.hooks.emit.tap('EditorOnlyChunksPlugin', (compilation) => {
-			editorOnlyFiles.clear()
-			for (const chunk of compilation.chunks) {
-				const groups = [...chunk.groupsIterable]
-				if (groups.length > 0 && groups.every((group) => underEditor(group))) {
-					for (const file of chunk.files) {
-						editorOnlyFiles.add(file)
-					}
-				}
-			}
-		})
-	}
-
-}
-
-module.exports = {
+const site = {
 	mode: isDev ? 'development' : 'production',
 	devtool: isDev ? 'cheap-source-map' : 'source-map',
 	entry: {
@@ -112,7 +55,6 @@ module.exports = {
 	},
 	plugins: [
 		new VueLoaderPlugin(),
-		new EditorOnlyChunksPlugin(),
 		// Vue 3 reads these at build time; without them the runtime logs a
 		// warning on every boot about an undefined feature flag.
 		new webpack.DefinePlugin({
@@ -137,11 +79,43 @@ module.exports = {
 		hints: isDev ? false : 'error',
 		maxAssetSize: 410 * 1024,
 		maxEntrypointSize: 410 * 1024,
-		// THE EDITOR CHUNKS ARE NOT A VISITOR'S BYTES. They load only when an
-		// editor chooses "Deze pagina bewerken" (portal-in-place-editing,
-		// REQ-PIE-007), so the asset limit, which exists for a first-time
-		// visitor on a phone, does not apply to them (EditorOnlyChunksPlugin). The entrypoint limit still does, which is what keeps the editor
-		// out of the entry: an eager import of it fails this build.
-		assetFilter: (file) => !editorOnlyFiles.has(file) && !file.endsWith('.map'),
 	},
 }
+
+/**
+ * THE EDITOR IS ITS OWN BUNDLE, not a chunk of the site (portal-in-place-editing,
+ * REQ-PIE-007).
+ *
+ * A dynamic import inside the site bundle was tried first and measured: the
+ * editor uses nearly all of Vue, and a module shared with a lazy chunk can no
+ * longer be tree-shaken or scope-hoisted in the entry, so the ENTRY grew from
+ * 408.5 KiB to 428.6 KiB with none of the editor in it. A separate bundle with
+ * its own Vue leaves the visitor's entry exactly as it was. The site loads this
+ * file with a script tag only when an editor chooses "Deze pagina bewerken"
+ * (`src/site/lib/loadSiteEditor.js`) and mounts it in place of the page.
+ *
+ * No size budget: an editor on the Nextcloud origin loads it, never a visitor.
+ * Its chunk files carry their own prefix and its runtime its own global, so the
+ * two builds that share js/ can never overwrite or adopt each other's chunks.
+ */
+const editor = {
+	...site,
+	entry: {
+		'portaliq-site-editor': path.join(
+			__dirname,
+			'src',
+			'editor',
+			'siteEditorMain.js',
+		),
+	},
+	output: {
+		...site.output,
+		chunkFilename: 'portaliq-site-editor-[name].js',
+		uniqueName: 'portaliqSiteEditor',
+	},
+	performance: {
+		hints: false,
+	},
+}
+
+module.exports = [site, editor]

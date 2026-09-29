@@ -4,12 +4,14 @@
 <!--
   SiteEditMode: edit the page on screen, on the portal itself.
 
-  LOADED ONLY FOR AN EDITOR. The site imports this file with a dynamic
-  `import()` when an editor chooses "Deze pagina bewerken", so the grid engine,
-  the widget forms and this toolbar never reach a visitor's first load
-  (REQ-PIE-007). It is the second host of the shared editor: the grid, the
-  inspector, undo, the payloads and the version-checked save are the SAME
-  createPageEditor() and PageGridEditor.vue the admin designer uses.
+  LOADED ONLY FOR AN EDITOR. This is the root of the editor bundle
+  (`js/portaliq-site-editor.js`, entry `siteEditorMain.js`), which the site
+  loads with a script tag when an editor chooses "Deze pagina bewerken" and
+  mounts where the page was. So the grid engine, the widget forms and this
+  toolbar never reach a visitor's first load (REQ-PIE-007). It is the second
+  host of the shared editor: the grid, the inspector, undo, the payloads and
+  the version-checked save are the SAME createPageEditor() and
+  PageGridEditor.vue the admin designer uses.
 
   IN THE PORTAL'S THEME. It renders inside the site's own root, so the portal's
   design tokens apply; the Nextcloud tokens the shared components read are
