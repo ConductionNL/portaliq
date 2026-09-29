@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.39.0"
+        "version": "0.40.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.39.0",
+                "version": "0.40.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -1912,7 +1912,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.6.0",
+                "version": "0.7.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -2920,6 +2920,35 @@
                                 "example": ""
                             }
                         }
+                    },
+                    "hiddenCaseTypes": {
+                        "title": "Hidden case types",
+                        "type": "array",
+                        "widget": "json",
+                        "description": "Case types this portal does not show to residents. A case of such a type leaves the case list, its page answers as not found, and its request form does not open. Nothing is deleted. Empty shows every case type.",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "typeId"
+                            ],
+                            "properties": {
+                                "register": {
+                                    "type": "string"
+                                },
+                                "schema": {
+                                    "type": "string"
+                                },
+                                "typeId": {
+                                    "type": "string",
+                                    "minLength": 1
+                                },
+                                "label": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "default": [],
+                        "example": []
                     }
                 }
             },
