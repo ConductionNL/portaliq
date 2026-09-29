@@ -263,11 +263,16 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// notification attempt can be a `push`, and an account keeps its
 		// per-kind notice choices (`notificationPreferences`)
 		// (inbox-notifications-and-preferences). Additive.
+		// 0.40.0 (portal 0.7.0): a portal lists the case types it does not
+		// show to residents (`hiddenCaseTypes`) (operate-show-per-case-type).
+		// Additive; empty shows every case type, as before.
 		// Every new schema is listed in
 		// `components.registers.portaliq.schemas` (ImportHandler binds only
 		// what is listed there) and declares a non-empty `read` rule.
-		$this->assertSame('0.39.0', self::$register['info']['version']);
-		$this->assertSame('0.39.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.40.0', self::$register['info']['version']);
+		$this->assertSame('0.40.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('array', self::$register['components']['schemas']['portal']['properties']['hiddenCaseTypes']['type']);
+		$this->assertSame(['typeId'], self::$register['components']['schemas']['portal']['properties']['hiddenCaseTypes']['items']['required']);
 		$this->assertSame('object', self::$register['components']['schemas']['portalMessage']['properties']['recordLink']['type']);
 		$this->assertSame('object', self::$register['components']['schemas']['portalAccount']['properties']['notificationPreferences']['type']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['newsletter']['version']);
@@ -302,7 +307,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalTrafficRecording']['authorization']['read']);
 		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['page']['version']);
-		$this->assertSame('0.6.0', self::$register['components']['schemas']['portal']['version']);
+		$this->assertSame('0.7.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('0.11.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalSession']['version']);

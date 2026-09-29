@@ -1561,7 +1561,19 @@
         "This task was due on %1$s.": "This task was due on %1$s.",
         "If you do not respond: %1$s": "If you do not respond: %1$s",
         "Your task in the portal of %1$s is overdue": "Your task in the portal of %1$s is overdue",
-        "A task in the portal of %1$s is past its deadline. Log in to finish it: %2$s": "A task in the portal of %1$s is past its deadline. Log in to finish it: %2$s"
+        "A task in the portal of %1$s is past its deadline. Log in to finish it: %2$s": "A task in the portal of %1$s is past its deadline. Log in to finish it: %2$s",
+        "Choose which case types residents see in {portal}.": "Choose which case types residents see in {portal}.",
+        "This portal names no case types yet. Publish a request form, or ask the case app to declare its case types.": "This portal names no case types yet. Publish a request form, or ask the case app to declare its case types.",
+        "Show in this portal": "Show in this portal",
+        "Residents with a case of this type will no longer see it here.": "Residents with a case of this type will no longer see it here.",
+        "Your choices are saved.": "Your choices are saved.",
+        "The case types of this portal could not be loaded.": "The case types of this portal could not be loaded.",
+        "Your choices could not be saved. Try again.": "Your choices could not be saved. Try again.",
+        "This entry opens no form: this portal does not show its case type. Show it again under Case types on the portal's page.": "This entry opens no form: this portal does not show its case type. Show it again on the portal's case types page.",
+        "Hidden case types": "Hidden case types",
+        "Case types this portal does not show to residents. A case of such a type leaves the case list, its page answers as not found, and its request form does not open. Nothing is deleted. Empty shows every case type.": "Case types this portal does not show to residents. A case of such a type leaves the case list, its page answers as not found, and its request form does not open. Nothing is deleted. Empty shows every case type.",
+        "The id of the case type, as a case carries it.": "The id of the case type, as a case carries it.",
+        "The case type's name, shown on the portal's Case types list.": "The case type's name, shown on the portal's Case types list."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

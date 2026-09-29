@@ -8,7 +8,9 @@ use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\MyCasesController;
 use OCA\Portaliq\Service\Identity\PortalMandateService;
 use OCA\Portaliq\Service\Identity\PortalPartyTreeResolver;
+use OCA\Portaliq\Service\CaseTypeVisibility;
 use OCA\Portaliq\Service\PortalCaseListReader;
+use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
@@ -48,6 +50,38 @@ class MyCasesControllerTest extends TestCase {
 		$this->assertSame([['reference' => 'ZAAK-1']], $response->getData()['cases']);
 
 	}//end testTheSubjectGetsItsOwnCases()
+
+	/**
+	 * operate-show-per-case-type REQ-OSC-002: "My cases" asks both case
+	 * lists to leave out what the serving portal hides.
+	 *
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 */
+	public function testThePortalsHiddenCaseTypesAreLeftOut(): void {
+		$portals = $this->createMock(PortalResolver::class);
+		$portals->method('resolve')->willReturn(null);
+		$portals->method('resolveByOrganisation')->willReturn(
+			['slug' => 'mijn-x', 'organisation' => 'gemeente-x', 'hiddenCaseTypes' => [['typeId' => 'handhaving']]]
+		);
+
+		$cases = $this->cases();
+		$cases->expects($this->once())->method('listCases')
+			->with($this->anything(), $this->anything(), ['handhaving'])
+			->willReturn([]);
+		$cases->expects($this->once())->method('listMandatedCases')
+			->with($this->anything(), $this->anything(), $this->anything(), ['handhaving'])
+			->willReturn([]);
+
+		$controller = $this->controller(
+			subject: ['subjectRef' => 'employee-1', 'organisation' => 'gemeente-x', 'audience' => 'client', 'trust' => 'substantial'],
+			cases: $cases,
+			rows: [],
+			mandates: [['label' => 'Voorbeeld B.V.']],
+			caseTypes: new CaseTypeVisibility($portals)
+		);
+
+		$this->assertSame(Http::STATUS_OK, $controller->index()->getStatus());
+	}//end testThePortalsHiddenCaseTypesAreLeftOut()
 
 	public function testAColleagueWithNoMandateSeesNoOrganisationCases(): void {
 		$cases = $this->cases();
@@ -146,7 +180,7 @@ class MyCasesControllerTest extends TestCase {
 	 *
 	 * @return MyCasesController
 	 */
-	private function controller(?array $subject, PortalCaseListReader $cases, array $rows, array $mandates = [], array $mandatedRows = [], ?array $scope = null): MyCasesController {
+	private function controller(?array $subject, PortalCaseListReader $cases, array $rows, array $mandates = [], array $mandatedRows = [], ?array $scope = null, ?CaseTypeVisibility $caseTypes = null): MyCasesController {
 		$session = $this->getMockBuilder(PortalSessionService::class)
 			->disableOriginalConstructor()
 			->onlyMethods(['resolveFromBearer'])
@@ -191,7 +225,7 @@ class MyCasesControllerTest extends TestCase {
 			->getMock();
 		$tree->method('entitiesFor')->willReturn(($scope ?? ['entities' => ['kvk-1'], 'refused' => false, 'bound' => ['maxDepth' => 4, 'pageSize' => 100]]));
 
-		return new MyCasesController($this->createMock(IRequest::class), $registry, $session, $cases, $mandateService, $tree);
+		return new MyCasesController($this->createMock(IRequest::class), $registry, $session, $cases, $mandateService, $tree, $caseTypes);
 	}//end controller()
 
 	/**

@@ -18,6 +18,8 @@ use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\SubmissionReceiptService;
+use OCA\Portaliq\Service\CaseTypeVisibility;
+use OCA\Portaliq\Service\PortalResolver;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\StreamResponse;
 use OCP\Http\Client\IClient;
@@ -981,6 +983,54 @@ class ContributionControllerTest extends TestCase {
 
 	}//end testObjectNullFromReaderIs404NoOracle()
 
+	/**
+	 * operate-show-per-case-type REQ-OSC-002: a case of a type the serving
+	 * portal hides answers the same 404 as a case that does not exist, and
+	 * leaves the list; a collection of another kind is untouched.
+	 *
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 */
+	public function testHiddenCaseTypeIs404(): void {
+		$aggregate = $this->aggregate(
+			collections: [
+				['register' => 'dossiq', 'schema' => 'case', 'scopeField' => 'subjectRef', 'kind' => 'cases', 'caseTypeField' => 'zaaktype'],
+				['register' => 'dossiq', 'schema' => 'note', 'scopeField' => 'subjectRef'],
+			]
+		);
+
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('readObject')->willReturnCallback(
+			static fn (string $register, string $schema, string $scopeField, string $subjectRef, string $id): array => match ($id) {
+				'hidden-1' => ['id' => 'hidden-1', 'zaaktype' => 'handhaving'],
+				default => ['id' => $id, 'zaaktype' => 'omgevingsvergunning'],
+			}
+		);
+		$reader->method('readCollection')->willReturn([
+			['id' => 'shown-1', 'zaaktype' => 'omgevingsvergunning'],
+			['id' => 'hidden-1', 'zaaktype' => 'handhaving'],
+		]);
+
+		$portals = $this->createMock(PortalResolver::class);
+		$portals->method('resolve')->willReturn(null);
+		$portals->method('resolveByOrganisation')->willReturn(
+			['slug' => 'mijn-org', 'organisation' => 'org-1', 'hiddenCaseTypes' => [['typeId' => 'handhaving']]]
+		);
+		$controller = $this->controller(aggregate: $aggregate, reader: $reader, caseTypes: new CaseTypeVisibility($portals));
+
+		$hidden = $controller->object('dossiq', 'case', 'hidden-1');
+		$this->assertSame(Http::STATUS_NOT_FOUND, $hidden->getStatus());
+		$this->assertSame(['error' => 'not_found'], $hidden->getData());
+
+		$this->assertSame(Http::STATUS_OK, $controller->object('dossiq', 'case', 'shown-1')->getStatus());
+
+		$list = $controller->collection('dossiq', 'case');
+		$this->assertSame(['shown-1'], array_column($list->getData()['objects'], 'id'));
+
+		// Not a case collection: the type field means nothing there.
+		$notes = $controller->collection('dossiq', 'note');
+		$this->assertSame(['shown-1', 'hidden-1'], array_column($notes->getData()['objects'], 'id'));
+	}//end testHiddenCaseTypeIs404()
+
 	public function testObjectReturnsTheSubjectsObjectAndPassesScopeParams(): void {
 		$aggregate = $this->aggregate(
 			collections: [
@@ -1882,9 +1932,10 @@ class ContributionControllerTest extends TestCase {
 		?NotificationDispatchService $notificationDispatch = null,
 		?array $anonymousAggregate = null,
 		?PortalSchemaReader $schemaReader = null,
+		?CaseTypeVisibility $caseTypes = null,
 	): ContributionController {
 		$request = $this->createMock(IRequest::class);
-		$request->method('getHeader')->willReturnMap([['Authorization', 'Bearer client-session-token']]);
+		$request->method('getHeader')->willReturnMap([['Authorization', 'Bearer client-session-token'], ['X-Portaliq-Portal', '']]);
 		$request->method('getParam')->willReturnCallback(
 			function (string $key) {
 				$params = [
@@ -1936,7 +1987,10 @@ class ContributionControllerTest extends TestCase {
 			($auditor ?? $this->createMock(AuditTrailService::class)),
 			($receiptService ?? $this->createMock(SubmissionReceiptService::class)),
 			($notificationDispatch ?? $this->createMock(NotificationDispatchService::class)),
-			$this->createMock(LoggerInterface::class)
+			$this->createMock(LoggerInterface::class),
+			null,
+			null,
+			$caseTypes
 		);
 
 	}//end controller()

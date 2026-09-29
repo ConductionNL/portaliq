@@ -7607,7 +7607,7 @@
 			"id": "dem-tnd-show-per-casetype",
 			"area": "operate",
 			"name": "Choose per case type or service whether it is shown in the portal at all.",
-			"portaliq": "no",
+			"portaliq": "yes",
 			"open-inwoner": "partial",
 			"nl-portal": "yes",
 			"xxllnc-pip": "yes",
@@ -7618,15 +7618,17 @@
 				"nl-portal": "backend/zgw/zaken-api/src/main/kotlin/nl/nlportal/zakenapi/service/ZakenApiService.kt:91 zaakTypesIdsExcluded removes case types from the list [reached on API only (config property, no admin screen); set in configuration, not a UI]",
 				"xxllnc-pip": "backend/perl-api/lib/Zaaksysteem/Controller/Plugins/PIP.pm:152 prevent_pip per case type; backend/zaken/src/zsnl_domains/case_management/repositories/pip_acl.py:49 [reached on case type editor; was unknown from docs]",
 				"mijnoverheid": "not settled from docs: https://www.logius.nl/onze-dienstverlening/interactie/voorzieningen/mijnoverheid/mijnoverheid-berichtenbox mentions 'message type creation and management' for organisations, but whether a case type can be hidden from Lopende zaken is not described; pages read on 2026-09-26 (mijn.overheid.nl /, /vragen/, /vragen/Algemeen, /inloggen-bij-mijnoverheid/; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken) are silent",
-				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/understanding-object-integrations/permissions-framework-integration 'By default, custom object permissions are not assigned to user roles automatically ... To grant access, manually assign object permissions to the desired roles', so each object (case type) is shown or hidden per role. Case types as separate objects are custom. [was unknown]"
+				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/understanding-object-integrations/permissions-framework-integration 'By default, custom object permissions are not assigned to user roles automatically ... To grant access, manually assign object permissions to the desired roles', so each object (case type) is shown or hidden per role. Case types as separate objects are custom. [was unknown]",
+				"portaliq": "lib/Service/CaseTypeVisibility.php + src/views/PortalCaseTypeVisibility.vue: an administrator switches a case type off per portal (portal.hiddenCaseTypes); its cases leave My cases, their pages answer not found, and its request form does not open [reached on Portals -> portal -> Case types]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "lib/Settings/portaliq_register.json portalCaseType properties: portalWritable, windows, portalStatusLabels, portalIdentityKind, portalWithdrawal, portalReportDeclaration, no show/hide flag; lib/Service/PortalObjectReader.php:273 collection 'filter' is declared in the contributing app's code",
-				"reachedOn": "nothing reaches it",
+				"state": "built",
+				"evidence": "lib/Service/CaseTypeVisibility.php (portal.hiddenCaseTypes, the serving portal from X-Portaliq-Portal / ?portal= / host / the organisation's portal); enforced in lib/Service/PortalCaseListReader.php (My cases, own and mandated), lib/Controller/ContributionController.php collection()/object() for kind cases (404 as not found), lib/Service/Intake/PortalFormBindingResolver.php render() (reason hiddenCaseType) and PortalCatalogueReader; admin page src/views/PortalCaseTypeVisibility.vue (manifest PortalCaseTypes, header action on PortalDetail) over lib/Controller/PortalCaseTypesController.php (admin-only) and lib/Service/PortalCaseTypeCatalogue.php",
+				"reachedOn": "admin: Portals -> portal -> Case types -> 'Show in this portal' switch -> Save; resident: My cases, a case page, the request form and catalogue of that portal",
 				"owner": "ConductionNL/portaliq",
-				"note": "Which case types appear is decided by the contributing app's manifest code (collections and an optional narrowing filter), not by an admin choice per case type or service. portalIdentityKind limits WHO may reach a type, not whether it is shown. Specified in openspec/changes/operate-show-per-case-type (OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"note": "Built 2026-09-29 (operate-show-per-case-type). The page names case types from the portal's published request forms, from a case app's caseTypeSource on a cases collection, and the hidden list itself; a case type known only from cases is not listed until its case app declares caseTypeSource (none does yet).",
+				"origin": "code",
+				"change": "2026-09-29-operate-show-per-case-type"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",

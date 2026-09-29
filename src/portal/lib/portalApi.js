@@ -63,13 +63,24 @@ function authHeaders() {
 export function createPortalApi(config) {
 	const base = config.apiBase
 
+	// The portal this page is served as. The server applies that portal's
+	// hidden case types, not another portal's of the same organisation
+	// (operate-show-per-case-type).
+	const portalHeader = config.organisationSlug
+		? { 'X-Portaliq-Portal': config.organisationSlug }
+		: {}
+
 	/**
 	 *
 	 * @param path
 	 */
 	async function get(path) {
 		const res = await fetch(`${base}${path}`, {
-			headers: { Accept: 'application/json', ...authHeaders() },
+			headers: {
+				Accept: 'application/json',
+				...portalHeader,
+				...authHeaders(),
+			},
 		})
 		if (!res.ok) {
 			return null

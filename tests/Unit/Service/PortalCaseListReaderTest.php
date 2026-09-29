@@ -31,6 +31,51 @@ class PortalCaseListReaderTest extends TestCase {
 
 	}//end testACaseAttachedByClaimIsListed()
 
+	/**
+	 * operate-show-per-case-type REQ-OSC-002: a case of a type the portal
+	 * hides leaves "My cases"; the other types stay, and so does a case whose
+	 * type is held as a reference object.
+	 *
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 */
+	public function testHiddenCaseTypeIsNotListed(): void {
+		$reader = $this->readerReturning([
+			['reference' => 'VERGUNNING-1', 'caseType' => 'omgevingsvergunning'],
+			['reference' => 'HANDHAVING-1', 'caseType' => 'handhaving'],
+			['reference' => 'HANDHAVING-2', 'caseType' => ['id' => 'handhaving']],
+		]);
+		$cases = new PortalCaseListReader($reader, $this->mandateService());
+
+		$own = $cases->listCases(subject: $this->subject(), aggregate: $this->aggregate(collection: $this->mandatedCollection()), hiddenCaseTypes: ['handhaving']);
+		$this->assertSame(['VERGUNNING-1'], array_column($own, 'reference'));
+
+		$mandated = $cases->listMandatedCases(
+			subject: $this->subject(),
+			aggregate: $this->aggregate(collection: $this->mandatedCollection()),
+			mandates: [$this->mandate()],
+			hiddenCaseTypes: ['handhaving']
+		);
+		$this->assertSame(['VERGUNNING-1'], array_column($mandated, 'reference'));
+	}//end testHiddenCaseTypeIsNotListed()
+
+	/**
+	 * A portal that hides nothing lists both cases, whatever another portal
+	 * of the same organisation hides.
+	 *
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 */
+	public function testOtherPortalUnaffected(): void {
+		$reader = $this->readerReturning([
+			['reference' => 'VERGUNNING-1', 'caseType' => 'omgevingsvergunning'],
+			['reference' => 'HANDHAVING-1', 'caseType' => 'handhaving'],
+		]);
+		$cases = new PortalCaseListReader($reader);
+
+		$rows = $cases->listCases(subject: $this->subject(), aggregate: $this->aggregate(collection: $this->casesCollection()), hiddenCaseTypes: []);
+
+		$this->assertSame(['VERGUNNING-1', 'HANDHAVING-1'], array_column($rows, 'reference'));
+	}//end testOtherPortalUnaffected()
+
 	public function testTheClaimScopingIsPassedToTheReader(): void {
 		$seen = [];
 		$reader = $this->getMockBuilder(PortalObjectReader::class)

@@ -92,6 +92,10 @@ test('a binding that resolves to no form says so as a warning, with its reason',
 			{ state: 'resolves_to_none', reason: 'external_without_address' },
 			'This entry sends people to another website, but has no address. Nobody can start it.',
 		],
+		[
+			{ state: 'resolves_to_none', reason: 'hidden_case_type' },
+			"This entry opens no form: this portal does not show its case type. Show it again under Case types on the portal's page.",
+		],
 	]) {
 		const { previewFormBinding, calls } = build(answer)
 		assert.equal(await previewFormBinding({ item: ROW }), true)
