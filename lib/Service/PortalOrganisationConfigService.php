@@ -39,6 +39,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Service\Notifications\MessageBoxOffer;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -204,27 +205,12 @@ class PortalOrganisationConfigService {
 	 * @spec openspec/changes/inbox-berichtenbox-channel/specs/portal-message-box-channel/spec.md#requirement-the-organisation-turns-the-channel-on-req-mbc-001
 	 */
 	public function messageBox(string $orgSlug): ?array {
-		if ($orgSlug === '') {
-			return null;
+		$uuid = '';
+		if ($orgSlug !== '') {
+			$uuid = (string)($this->findOrganisationBySlug(slug: $orgSlug)['uuid'] ?? '');
 		}
 
-		$organisation = $this->findOrganisationBySlug(slug: $orgSlug);
-		if ($organisation === null) {
-			return null;
-		}
-
-		$raw = ($this->presentationOverrides(organisationUuid: $organisation['uuid'])['messageBox'] ?? null);
-		if (is_array($raw) === false) {
-			return null;
-		}
-
-		$sourceId = ($raw['sourceId'] ?? null);
-		$label = ($raw['label'] ?? null);
-		if (is_string($sourceId) === false || is_string($label) === false || trim($sourceId) === '' || trim($label) === '') {
-			return null;
-		}
-
-		return ['sourceId' => trim($sourceId), 'label' => trim($label)];
+		return (new MessageBoxOffer())->from(raw: ($this->presentationOverrides(organisationUuid: $uuid)['messageBox'] ?? null));
 	}//end messageBox()
 
 	/**
@@ -464,14 +450,8 @@ class PortalOrganisationConfigService {
 			return [];
 		}
 
-		$origins = [];
-		foreach ($raw as $origin) {
-			if (is_string($origin) === true && $origin !== '') {
-				$origins[] = $origin;
-			}
-		}
-
-		return $origins;
+		// Only non-empty text: anything else is dropped, never coerced.
+		return array_values(array_diff(array_filter($raw, 'is_string'), ['']));
 	}//end allowedEmbedOrigins()
 
 	/**

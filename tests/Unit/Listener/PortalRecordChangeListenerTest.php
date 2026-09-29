@@ -9,7 +9,7 @@ use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Listener\PortalRecordChangeListener;
-use OCA\Portaliq\BackgroundJob\NotificationDispatchJob;
+use OCA\Portaliq\BackgroundJob\MessageBoxDispatchJob;
 use OCA\Portaliq\Service\NotificationDispatchService;
 use OCA\Portaliq\Service\Notifications\MessageBoxChannel;
 use OCA\Portaliq\Service\Notifications\PortalChangeRuleIndex;
@@ -366,7 +366,7 @@ class PortalRecordChangeListenerTest extends TestCase {
 
 		$this->listener(messageBox: ['declared' => true, 'offered' => true])->handle(new ObjectCreatedEvent($message));
 		$this->assertCount(1, $this->jobs, 'offered, declared and not switched off: one job');
-		$this->assertSame(NotificationDispatchJob::class, $this->jobs[0]['job']);
+		$this->assertSame(MessageBoxDispatchJob::class, $this->jobs[0]['job']);
 		$argument = $this->jobs[0]['argument'];
 		$this->assertSame('messageBox', $argument['channel']);
 		$this->assertSame('messageBoxRecipient', $argument['recipientProvider']);

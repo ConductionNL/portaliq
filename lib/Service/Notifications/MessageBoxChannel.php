@@ -30,7 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Notifications;
 
-use OCA\Portaliq\BackgroundJob\NotificationDispatchJob;
+use OCA\Portaliq\BackgroundJob\MessageBoxDispatchJob;
 use OCA\Portaliq\Service\NotificationDispatchService;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCP\BackgroundJob\IJobList;
@@ -108,7 +108,7 @@ class MessageBoxChannel {
 
 		try {
 			$this->jobList->add(
-				NotificationDispatchJob::class,
+				MessageBoxDispatchJob::class,
 				[
 					'subjectRef' => $subjectRef,
 					'organisation' => $organisation,

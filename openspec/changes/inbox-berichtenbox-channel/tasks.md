@@ -13,8 +13,8 @@
   - Manual check: import the register and write a `portalNotification` with each new value through OpenRegister
 - [x] **T04**: Enqueue a `messageBox` job for a new message of a declaring collection when the organisation and the resident allow it (REQ-MBC-003)
   - PHPUnit `PortalRecordChangeListenerTest::testMessageBoxJobOnlyWhenAllowed`
-- [x] **T05**: In `NotificationDispatchJob`: call the recipient method, guard with `class_exists`, dispatch `DigitalPostSendRequestedEvent`, log `sent` or `failed`, never keep the recipient (REQ-MBC-002, REQ-MBC-003)
-  - PHPUnit `NotificationDispatchJobTest::testNullRecipientSendsNothing`, `::testUnhandledEventIsARefusal`, `::testRecipientIsInNoLogAndNoRow`, `::testMessageIdIsRecorded`
+- [x] **T05**: In `MessageBoxDispatchJob` (its own job, see design notes): call the recipient method, guard with `class_exists`, dispatch `DigitalPostSendRequestedEvent`, log `sent` or `failed`, never keep the recipient (REQ-MBC-002, REQ-MBC-003)
+  - PHPUnit `MessageBoxDispatchJobTest::testNullRecipientSendsNothing`, `::testUnhandledEventIsARefusal`, `::testRecipientIsInNoLogAndNoRow`, `::testMessageIdIsRecorded`
 
 ## Status
 

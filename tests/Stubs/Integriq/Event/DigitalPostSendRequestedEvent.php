@@ -3,7 +3,9 @@
 /**
  * Integriq DigitalPostSendRequestedEvent test stub: a verbatim copy of integriq's class on
  * `development` (lib/Event/DigitalPostSendRequestedEvent.php), loaded only when the real class is
- * absent. Portaliq names it by string behind class_exists (ADR-041).
+ * absent. Portaliq names it by string behind class_exists (ADR-041). Only
+ * the @spec tags differ: they point at portaliq's spec, where integriq's
+ * own change does not exist in this repo.
  *
  * Integriq DigitalPostSendRequested Event.
  *
@@ -39,7 +41,7 @@ use OCP\EventDispatcher\Event;
  * refusal. It never carries both, and it is never left empty on a handled
  * event: a consumer that reads neither knows the request was not handled.
  *
- * @spec openspec/changes/berichtenbox-digital-post-adapter/specs/digital-post-adapter/spec.md#requirement-a-send-is-a-typed-command-with-a-tracked-message-req-dpa-002
+ * @spec openspec/changes/inbox-berichtenbox-channel/specs/portal-message-box-channel/spec.md#requirement-portaliq-asks-integriq-to-send-and-records-the-answer-req-mbc-003
  *
  * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- the ADR-041 event contract is a flat
  * readonly envelope the consumer stubs mirror verbatim.

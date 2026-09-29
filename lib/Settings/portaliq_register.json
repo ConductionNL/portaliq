@@ -1446,14 +1446,17 @@
                         ],
                         "properties": {
                             "app": {
+                                "title": "App",
                                 "type": "string",
                                 "description": "The contributing app."
                             },
                             "collection": {
+                                "title": "Collection",
                                 "type": "string",
                                 "description": "The app's inbox collection id."
                             },
                             "id": {
+                                "title": "Message id",
                                 "type": "string",
                                 "description": "The message's id."
                             }

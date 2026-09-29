@@ -104,17 +104,32 @@ class MessageBoxDeliveries {
 			return [];
 		}
 
-		$accounts = $this->reader->readCollection(register: 'portaliq', schema: 'portalAccount', scopeField: 'subjectRef', subjectRef: $subjectRef, organisation: $organisation, limit: 2);
+		$accounts = $this->reader->readCollection(
+			register: 'portaliq',
+			schema: 'portalAccount',
+			scopeField: 'subjectRef',
+			subjectRef: $subjectRef,
+			organisation: $organisation,
+			limit: 2
+		);
 		$accountId = $this->idOf(row: ($accounts[0] ?? []))[0] ?? '';
 		if ($accountId === '') {
 			return [];
 		}
 
-		$rows = $this->reader->readCollection(register: 'portaliq', schema: 'portalNotification', scopeField: 'accountRef', subjectRef: $accountId, organisation: $organisation, limit: self::LOG_LIMIT);
+		$rows = $this->reader->readCollection(
+			register: 'portaliq',
+			schema: 'portalNotification',
+			scopeField: 'accountRef',
+			subjectRef: $accountId,
+			organisation: $organisation,
+			limit: self::LOG_LIMIT
+		);
 		$delivered = [];
 		foreach ($rows as $row) {
 			$link = ($row['recordLink'] ?? null);
-			if (($row['channel'] ?? null) !== MessageBoxChannel::CHANNEL || in_array(($row['status'] ?? null), MessageBoxStatus::SHOWN, true) === false || is_array($link) === false) {
+			$shown = in_array(($row['status'] ?? null), MessageBoxStatus::SHOWN, true);
+			if (($row['channel'] ?? null) !== MessageBoxChannel::CHANNEL || $shown === false || is_array($link) === false) {
 				continue;
 			}
 

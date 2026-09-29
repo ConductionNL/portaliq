@@ -34,14 +34,9 @@ function t(key, params = {}) {
 
 test('a delivered message box send gives the delivery line', () => {
 	const message = {
-		_deliveries: [
-			{ channel: 'messageBox', label: 'MijnOverheid Berichtenbox' },
-		],
+		_deliveries: [{ channel: 'messageBox', label: 'MijnOverheid Berichtenbox' }],
 	}
-	assert.equal(
-		deliveryLine(message, t),
-		'Also sent to MijnOverheid Berichtenbox.',
-	)
+	assert.equal(deliveryLine(message, t), 'Also sent to MijnOverheid Berichtenbox.')
 })
 
 test('no delivery, another channel or no label gives no line', () => {

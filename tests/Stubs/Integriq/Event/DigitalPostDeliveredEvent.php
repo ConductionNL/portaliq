@@ -3,7 +3,9 @@
 /**
  * Integriq DigitalPostDeliveredEvent test stub: a verbatim copy of integriq's class on
  * `development` (lib/Event/DigitalPostDeliveredEvent.php), loaded only when the real class is
- * absent. Portaliq names it by string behind class_exists (ADR-041).
+ * absent. Portaliq names it by string behind class_exists (ADR-041). Only
+ * the @spec tags differ: they point at portaliq's spec, where integriq's
+ * own change does not exist in this repo.
  *
  * Integriq DigitalPostDelivered Event.
  *
@@ -36,7 +38,7 @@ use OCP\EventDispatcher\Event;
  * listens for the happy path will hear about the unhappy one too, which is
  * the point.
  *
- * @spec openspec/changes/berichtenbox-digital-post-adapter/specs/digital-post-adapter/spec.md#requirement-a-send-is-a-typed-command-with-a-tracked-message-req-dpa-002
+ * @spec openspec/changes/inbox-berichtenbox-channel/specs/portal-message-box-channel/spec.md#requirement-portaliq-asks-integriq-to-send-and-records-the-answer-req-mbc-003
  */
 class DigitalPostDeliveredEvent extends Event {
 	/**

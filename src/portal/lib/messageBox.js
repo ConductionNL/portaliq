@@ -17,11 +17,13 @@
  * @return {string|null}
  */
 export function deliveryLine(message, t) {
-	const deliveries = Array.isArray(message?._deliveries)
-		? message._deliveries
-		: []
+	const deliveries = Array.isArray(message?._deliveries) ? message._deliveries : []
 	const delivery = deliveries.find(
-		(d) => d && d.channel === 'messageBox' && typeof d.label === 'string' && d.label !== '',
+		(d) =>
+			d
+			&& d.channel === 'messageBox'
+			&& typeof d.label === 'string'
+			&& d.label !== '',
 	)
 	return delivery ? t('Also sent to {label}.', { label: delivery.label }) : null
 }

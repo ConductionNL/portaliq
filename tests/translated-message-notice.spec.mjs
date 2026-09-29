@@ -41,7 +41,9 @@ async function load(relative) {
 	})
 	mkdirSync(OUT_DIR, { recursive: true })
 	const flat = (path) => path.replace(/[\\/]/g, '_').replace(/\.jsx?$/, '.mjs')
-	const code = compiled.code.replace(/from '\.\/([A-Za-z]+)\.jsx'/g, (whole, name) => `from './${flat('components/' + name + '.jsx')}'`)
+	const code = compiled.code
+		.replace(/from '\.\/([A-Za-z]+)\.jsx'/g, (whole, name) => `from './${flat('components/' + name + '.jsx')}'`)
+		.replace(/from '\.\.\/lib\/([A-Za-z]+)\.js'/g, (whole, name) => `from './${flat('lib/' + name + '.js')}'`)
 	const out = join(OUT_DIR, flat(relative))
 	writeFileSync(out, code)
 	return import(pathToFileURL(out).href)
@@ -51,6 +53,8 @@ const translated = await load('components/TranslatedText.jsx')
 const { default: TranslatedText, languageLabel, noticeText, isLabelledTranslation } = translated
 // InboxPage imports NotificationSettings (inbox-notifications-and-preferences),
 // so it is compiled first, as TranslatedText is.
+// Both import the message box helpers (inbox-berichtenbox-channel).
+await load('lib/messageBox.js')
 await load('components/NotificationSettings.jsx')
 const { default: InboxPage } = await load('components/InboxPage.jsx')
 const { pickerLabel, MESSAGE_LANGUAGES } = await load('components/MessagesPage.jsx')

@@ -6,7 +6,7 @@
  * where the organisation offers it, and a resident's choice to switch it off
  * survives a reload. The send itself needs integriq and a case app that names
  * a recipient method, which portaliq's own seed has neither of; that path is
- * pinned by NotificationDispatchJobTest and PortalDigitalPostDeliveredListenerTest
+ * pinned by MessageBoxDispatchJobTest and PortalDigitalPostDeliveredListenerTest
  * with integriq's real events.
  */
 

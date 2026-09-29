@@ -90,6 +90,8 @@ class MessageBoxStatus {
 	 * @param string $status    The mapped status.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/inbox-berichtenbox-channel/specs/portal-message-box-channel/spec.md#requirement-the-resident-sees-only-a-real-delivery-req-mbc-004
 	 */
 	public function remember(string $messageId, string $status): void {
 		// Bounded: a long cron run never grows this past a handful of letters.
@@ -106,6 +108,8 @@ class MessageBoxStatus {
 	 * @param string $messageId The integriq message id.
 	 *
 	 * @return string|null
+	 *
+	 * @spec openspec/changes/inbox-berichtenbox-channel/specs/portal-message-box-channel/spec.md#requirement-the-resident-sees-only-a-real-delivery-req-mbc-004
 	 */
 	public function take(string $messageId): ?string {
 		$status = (self::$early[$messageId] ?? null);

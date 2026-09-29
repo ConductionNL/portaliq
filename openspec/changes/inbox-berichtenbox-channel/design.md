@@ -62,3 +62,4 @@ The settings section from `inbox-notifications-and-preferences` gains one row wh
 - **The job reads the message, the queue does not carry it.** A job argument is capped in size, so the job carries the message's reference and its collection's register, schema and scope field, and reads the message scoped to the resident when it runs.
 - **The channel does not depend on `message.created`.** An app that declares `messageBox` on an inbox collection gets its letters sent even without the e-mail rule.
 - **A choice, not a kind.** `notificationPreferences.messageBox` is written only once the resident makes the choice; before that it reads as on.
+- **Its own job.** D3 said the send runs in `NotificationDispatchJob`. It runs in `MessageBoxDispatchJob` instead: the e-mail job was already at the class complexity limit, and a message box send shares nothing with the e-mail path (no address, no failure streak, no fallback flag).

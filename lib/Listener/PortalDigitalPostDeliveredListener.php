@@ -87,13 +87,10 @@ class PortalDigitalPostDeliveredListener implements IEventListener {
 	 * @spec openspec/changes/inbox-berichtenbox-channel/specs/portal-message-box-channel/spec.md#requirement-the-resident-sees-only-a-real-delivery-req-mbc-004
 	 */
 	public function handle(Event $event): void {
-		if (is_a($event, self::EVENT) === false) {
+		// Without integriq the class does not exist and nothing is an instance of it.
+		if (($event instanceof DigitalPostDeliveredEvent) === false) {
 			return;
 		}
-
-		/*
-		 * @var DigitalPostDeliveredEvent $event
-		 */
 
 		if ($event->getRequestedBy() !== MessageBoxSender::REQUESTED_BY || $event->getMessageId() === '') {
 			return;

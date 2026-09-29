@@ -85,24 +85,27 @@ class MessageBoxSender {
 	/**
 	 * Send one message box job and record the attempt.
 	 *
-	 * @param array<string, mixed> $argument  The job argument MessageBoxChannel queued.
-	 * @param string               $accountId The resident's account id, the row's scope.
+	 * @param array<string, mixed> $argument The job argument MessageBoxChannel queued.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/inbox-berichtenbox-channel/specs/portal-message-box-channel/spec.md#requirement-portaliq-asks-integriq-to-send-and-records-the-answer-req-mbc-003
 	 */
-	public function send(array $argument, string $accountId): void {
+	public function send(array $argument): void {
 		$organisation = (string)($argument['organisation'] ?? '');
 		$record = $this->record(argument: $argument);
 		$offer = $this->orgConfig->messageBox(orgSlug: $organisation);
-		if ($offer === null || $record === null) {
+		$accountId = $this->accountId(subjectRef: (string)($argument['subjectRef'] ?? ''), organisation: $organisation);
+		if ($offer === null || $record === null || $accountId === null) {
 			return;
 		}
 
 		$message = $this->message(argument: $argument, record: $record);
 		if ($message === null) {
-			$this->logger->warning('Portaliq: message box send skipped, the message could not be read', ['app' => $record['app'], 'collection' => $record['collection']]);
+			$this->logger->warning(
+				'Portaliq: message box send skipped, the message could not be read',
+				['app' => $record['app'], 'collection' => $record['collection']]
+			);
 			return;
 		}
 
@@ -187,6 +190,37 @@ class MessageBoxSender {
 	}//end request()
 
 	/**
+	 * The resident's account id, the notification row's scope, or null when
+	 * the account is gone.
+	 *
+	 * @param string $subjectRef   The resident.
+	 * @param string $organisation The organisation.
+	 *
+	 * @return string|null
+	 */
+	private function accountId(string $subjectRef, string $organisation): ?string {
+		if ($subjectRef === '') {
+			return null;
+		}
+
+		$accounts = $this->reader->readCollection(
+			register: 'portaliq',
+			schema: 'portalAccount',
+			scopeField: 'subjectRef',
+			subjectRef: $subjectRef,
+			organisation: $organisation,
+			limit: 2
+		);
+		$account = ($accounts[0] ?? []);
+		$id = ($account['@self']['id'] ?? $account['id'] ?? $account['uuid'] ?? null);
+		if (is_string($id) === false && is_int($id) === false) {
+			return null;
+		}
+
+		return (string)$id;
+	}//end accountId()
+
+	/**
 	 * The message's reference from the job, or null when it is incomplete.
 	 *
 	 * @param array<string, mixed> $argument The job argument.
@@ -253,7 +287,10 @@ class MessageBoxSender {
 		try {
 			$recipient = $provider->{$method}($record['id']);
 		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: message box recipient method failed', ['app' => $record['app'], 'method' => $method, 'exception' => get_class($e)]);
+			$this->logger->warning(
+				'Portaliq: message box recipient method failed',
+				['app' => $record['app'], 'method' => $method, 'exception' => get_class($e)]
+			);
 			return null;
 		}
 

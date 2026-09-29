@@ -10,8 +10,8 @@
 // never an empty placeholder.
 
 import React, { useCallback, useEffect, useState } from 'react'
-import NotificationSettings from './NotificationSettings.jsx'
 import { deliveryLine } from '../lib/messageBox.js'
+import NotificationSettings from './NotificationSettings.jsx'
 import TranslatedText from './TranslatedText.jsx'
 
 /**
