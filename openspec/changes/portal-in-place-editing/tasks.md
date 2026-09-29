@@ -2,13 +2,13 @@
 
 ## A1: the designer, the editor core, forms, undo and the version check
 
-- [ ] **T01**: The change artifacts (proposal, design, specs, tasks); `openspec validate portal-in-place-editing --strict`.
-- [ ] **T02**: A markdown page keeps its markdown: `src/editor/pageBody.js` reads a body as `grid` or `markdown` and builds the draft, publish and discard payloads keeping `body.type`; the designer shows the markdown state (REQ-PIE-001). Verification: `tests/page-editor.spec.mjs`, payloads validated against the real `page` schema fragment.
-- [ ] **T03**: The editor core in `src/editor/` (`gridModel.js`, `pageEditor.js`, `PageGridEditor.vue`, `index.js`), and `PageLayoutDesigner.vue` delegates to it (REQ-PIE-002). Verification: `tests/page-editor.spec.mjs`.
-- [ ] **T04**: Shared widget forms (`widgetForms.js`, the inspector in `PageGridEditor.vue`) (REQ-PIE-003). Verification: `tests/page-editor.spec.mjs`.
-- [ ] **T05**: Undo and redo (`editHistory.js`, toolbar buttons, Ctrl+Z, Ctrl+Shift+Z, Ctrl+Y) (REQ-PIE-004). Verification: `tests/page-editor.spec.mjs`.
-- [ ] **T06**: The version check (`pageSaver.js`: re-read, `If-Match`, 409) and the conflict notice with a reload (REQ-PIE-005). Verification: `tests/page-editor.spec.mjs`.
-- [ ] **T07**: Dutch and English strings, `npm run lint`, `npm run check:specs`.
+- [x] **T01**: The change artifacts (proposal, design, specs, tasks); `openspec validate portal-in-place-editing --strict`.
+- [x] **T02**: A markdown page keeps its markdown: `src/editor/pageBody.js` reads a body as `grid` or `markdown` and builds the draft, publish and discard payloads keeping `body.type`; the designer shows the markdown state (REQ-PIE-001). Verification: `tests/page-editor.spec.mjs`, payloads validated against the real `page` schema fragment.
+- [x] **T03**: The editor core in `src/editor/` (`gridModel.js`, `pageEditor.js`, `PageGridEditor.vue`, `index.js`), and `PageLayoutDesigner.vue` delegates to it (REQ-PIE-002). Verification: `tests/page-editor.spec.mjs`.
+- [x] **T04**: Shared widget forms (`widgetForms.js`, the inspector in `PageGridEditor.vue`) (REQ-PIE-003). Verification: `tests/page-editor.spec.mjs`.
+- [x] **T05**: Undo and redo (`editHistory.js`, toolbar buttons, Ctrl+Z, Ctrl+Shift+Z, Ctrl+Y) (REQ-PIE-004). Verification: `tests/page-editor.spec.mjs`.
+- [x] **T06**: The version check (`pageSaver.js`: re-read, `If-Match`, 409) and the conflict notice with a reload (REQ-PIE-005). Verification: `tests/page-editor.spec.mjs`.
+- [x] **T07**: Dutch and English strings, `npm run lint`, `npm run check:specs`.
 
 ## A2: edit mode on the portal
 
