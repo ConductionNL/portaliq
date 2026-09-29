@@ -131,7 +131,7 @@ class PortalCaseAccessGuard {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	public function mayRead(IUser $user, string $register, string $schema, string $id): bool {
 		if ($register === '' || $schema === '' || $id === '') {

@@ -2509,12 +2509,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/enabling-workflows-for-objects plus https://learn.liferay.com/w/dxp/low-code/workflow/designing-and-managing-workflows/workflow-designer/assigning-task-nodes: a workflow review task on an object entry is approved or rejected by an assigned role. A read-only colleague proposing a change to a record is a custom flow."
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "lib/Controller/ProposalController.php proposeAsColleague(); routes.php:243 POST /api/proposals",
-				"reachedOn": "nothing reaches it: no manifest page, no admin view, no widget calls this route (see sib-2.21)",
+				"state": "building",
+				"evidence": "lib/Service/Proposals/ChangeProposalsProvider.php::create (data leaf portaliq-change-proposals via OR /api/objects/{r}/{s}/{id}/integrations/portaliq-change-proposals) and ProposalController::proposeAsColleague, both refusing a user without read on the record (PortalCaseAccessGuard::mayRead) and recording the signed-in uid on channel staff",
+				"reachedOn": "OR integrations route of the data leaf; a host UI that posts to it",
 				"owner": "ConductionNL/portaliq",
-				"note": "Specified in openspec/changes/change-proposal-queue (existing change, OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"note": "The portaliq half is built (archived change 2026-09-29-change-proposal-queue). Owed by ConductionNL/dossiq: place portaliq-change-proposal-queue on the case page and declare propose-change with a proposable list, ConductionNL/dossiq#3215; until then no page shows the queue.",
+				"origin": "code",
+				"change": "2026-09-29-change-proposal-queue"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2576,13 +2577,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/workflow/designing-and-managing-workflows/workflow-designer/assigning-task-nodes 'users see the tasks in their My Workflow Tasks application under the tab Assigned to My Roles'; tasks are approved or rejected there. A queue for field-change proposals specifically is custom."
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "lib/Controller/ProposalController.php index()/accept()/acceptConfirmingDrift()/reject(); lib/Service/Proposals/ReviewerObjectWriter.php applies an accepted proposal with the REVIEWER's own rights; routes.php:242-249; gated by lib/actions.seed.json:11 'portal.review-proposal': ['admin']",
-				"reachedOn": "nothing reaches it: no manifest page or admin view lists src/manifest.json 'proposal'; grep across src/views and src/widgets for 'proposal' or 'Proposal': zero hits",
+				"state": "building",
+				"evidence": "lib/Listener/RegisterProposalLeavesListener.php contributes portaliq-change-proposal-queue (render surface, mount mode) on RegisterLeafProvidersEvent; src/integrations/ProposalQueueWidget.vue over src/integrations/proposalQueue.js lists the queued proposals with value now and proposed, Accept (409 drift -> both values + 'Accept anyway' -> /accept-confirming-drift), Reject with a required reason; registered from src/main.js and the portaliq-leaves bundle (src/leaves.js)",
+				"reachedOn": "a case app's detail page that places {type: integration, integrationId: portaliq-change-proposal-queue}",
 				"owner": "ConductionNL/portaliq",
-				"note": "A queue with drift detection (acceptConfirmingDrift, for when the record changed since the proposal was made) exists server-side with no staff screen to use it from. Specified in openspec/changes/change-proposal-queue (existing change, OpenSpec pass 2026-09-27).",
+				"note": "The portaliq half is built (archived change 2026-09-29-change-proposal-queue). Owed by ConductionNL/dossiq: place portaliq-change-proposal-queue on the case page and declare propose-change with a proposable list, ConductionNL/dossiq#3215; until then no page shows the queue.",
 				"origin": "code",
-				"defectCandidate": "no manifest page or admin view anywhere exposes /api/proposals; a reviewer can only act through raw API calls (code reading, needs a live check)"
+				"change": "2026-09-29-change-proposal-queue"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2727,14 +2728,14 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/enabling-workflows-for-objects with https://learn.liferay.com/w/dxp/low-code/workflow/designing-and-managing-workflows/workflow-designer/assigning-task-nodes: changes submitted on object entries can queue as workflow tasks in My Workflow Tasks for staff approval. Proposal-per-field handling is custom. [was unknown]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "lib/Controller/ProposalController.php (498 lines: proposeAsColleague, proposeFromPortal, accept, acceptConfirmingDrift, reject, withdraw), lib/Service/Proposals/ProposalService.php, lib/Service/Proposals/ReviewerObjectWriter.php; routes.php:242-251 the full route set; lib/actions.seed.json 'portal.review-proposal': ['admin']",
-				"reachedOn": "nothing reaches it: grep 'proposal'/'Proposal' across src/portal, src/site, src/views, src/manifest.json returns zero hits (only unrelated OpenSpec-tooling mentions); grep across every sibling app repo (procest, scholiq, decidesk, docudesk, openconnector, openbuild, shillinq, stackiq) for '/api/proposals' or 'ProposalController' also returns zero code hits, only a proposal-doc mention in openconnector's competitor-parity table",
+				"state": "building",
+				"evidence": "the whole queue is now reachable through two OpenRegister leaves: portaliq-change-proposals (data provider) and portaliq-change-proposal-queue (review widget and tab), lib/Listener/RegisterProposalLeavesListener.php, src/integrations/",
+				"reachedOn": "dossiq's case detail page once it places the leaf",
 				"owner": "ConductionNL/portaliq",
-				"note": "dossiq's own evidence for this row (register.d/50-zaakportaal.json#portaalVerzoek) is dossiq's register entry, not a caller of portaliq's queue; the actual queue mechanism in portaliq has no admin page, no portal-SPA propose button, and no accept/reject UI anywhere. Specified in openspec/changes/change-proposal-queue (existing change, OpenSpec pass 2026-09-27).",
+				"note": "The portaliq half is built (archived change 2026-09-29-change-proposal-queue). Owed by ConductionNL/dossiq: place portaliq-change-proposal-queue on the case page and declare propose-change with a proposable list, ConductionNL/dossiq#3215; until then no page shows the queue.",
 				"sourceId": "sib-2.21",
 				"origin": "sibling",
-				"defectCandidate": "lib/Controller/ProposalController.php:1 the whole change-proposal-queue feature (proposing, listing, accepting, rejecting, withdrawing) is unreachable from any UI in this repo (code reading, needs a live check)"
+				"change": "2026-09-29-change-proposal-queue"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",

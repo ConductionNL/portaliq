@@ -12,7 +12,7 @@
  * registration and nothing else. No router, no pinia, no manifest, no
  * component library.
  *
- * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+ * @spec openspec/specs/change-proposal-queue/spec.md
  */
 import { loadTranslations } from '@nextcloud/l10n'
 import { registerProposalQueueLeaf } from './integrations/registerProposalQueueLeaf.js'

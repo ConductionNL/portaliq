@@ -36,7 +36,7 @@
  *
  *     NEXTCLOUD_URL=http://localhost:8080 npx playwright test change-proposal-queue
  *
- * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+ * @spec openspec/specs/change-proposal-queue/spec.md
  */
 
 import type { APIRequestContext } from '@playwright/test'

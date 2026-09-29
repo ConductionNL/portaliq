@@ -23,7 +23,7 @@ use PHPUnit\Framework\TestCase;
  * reviewer, records a colleague's proposal as that colleague, and offers no
  * way to edit or delete a proposal through a host app.
  *
- * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+ * @spec openspec/specs/change-proposal-queue/spec.md
  */
 class ChangeProposalsProviderTest extends TestCase {
 

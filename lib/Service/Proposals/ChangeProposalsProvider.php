@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+ * @spec openspec/specs/change-proposal-queue/spec.md
  */
 
 declare(strict_types=1);
@@ -79,7 +79,7 @@ class ChangeProposalsProvider implements IntegrationProvider {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	public function getId(): string {
 		return self::ID;
@@ -90,7 +90,7 @@ class ChangeProposalsProvider implements IntegrationProvider {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	public function getLabel(): string {
 		return $this->l10n->t('Change proposals');
@@ -101,7 +101,7 @@ class ChangeProposalsProvider implements IntegrationProvider {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	public function getIcon(): string {
 		return self::ICON;
@@ -112,7 +112,7 @@ class ChangeProposalsProvider implements IntegrationProvider {
 	 *
 	 * @return string|null
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	public function getGroup(): ?string {
 		return self::GROUP;
@@ -123,7 +123,7 @@ class ChangeProposalsProvider implements IntegrationProvider {
 	 *
 	 * @return string|null
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	public function getRequiredApp(): ?string {
 		return Application::APP_ID;
@@ -134,7 +134,7 @@ class ChangeProposalsProvider implements IntegrationProvider {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	public function getStorageStrategy(): string {
 		return 'app-local';
@@ -145,7 +145,7 @@ class ChangeProposalsProvider implements IntegrationProvider {
 	 *
 	 * @return string|null
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	public function getOpenConnectorSource(): ?string {
 		return null;
@@ -156,7 +156,7 @@ class ChangeProposalsProvider implements IntegrationProvider {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	public function isEnabled(): bool {
 		return true;
@@ -167,7 +167,7 @@ class ChangeProposalsProvider implements IntegrationProvider {
 	 *
 	 * @return string|null
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	public function requiresPermission(): ?string {
 		return null;
@@ -178,7 +178,7 @@ class ChangeProposalsProvider implements IntegrationProvider {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	public function authRequirements(): array {
 		return ['type' => 'none'];
@@ -198,7 +198,7 @@ class ChangeProposalsProvider implements IntegrationProvider {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	public function list(string $register, string $schema, string $objectId, array $filters = []): array {
 		$user = $this->userSession->getUser();
@@ -232,7 +232,7 @@ class ChangeProposalsProvider implements IntegrationProvider {
 	 *
 	 * @throws NotImplementedException Always.
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	public function get(string $register, string $schema, string $objectId, string $entityId): array {
 		throw new NotImplementedException('A change proposal is read on the review routes.');
@@ -254,7 +254,7 @@ class ChangeProposalsProvider implements IntegrationProvider {
 	 *
 	 * @throws InvalidArgumentException When the proposal is refused; OpenRegister answers 400.
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	public function create(string $register, string $schema, string $objectId, array $payload): array {
 		$user = $this->userSession->getUser();
@@ -295,7 +295,7 @@ class ChangeProposalsProvider implements IntegrationProvider {
 	 *
 	 * @throws NotImplementedException Always.
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	public function update(string $register, string $schema, string $objectId, string $entityId, array $payload): array {
 		throw new NotImplementedException('A change proposal is decided on the review routes.');
@@ -313,7 +313,7 @@ class ChangeProposalsProvider implements IntegrationProvider {
 	 *
 	 * @throws NotImplementedException Always.
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	public function delete(string $register, string $schema, string $objectId, string $entityId): void {
 		throw new NotImplementedException('A change proposal is rejected or withdrawn, never deleted.');
@@ -324,7 +324,7 @@ class ChangeProposalsProvider implements IntegrationProvider {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	public function health(): array {
 		return ['status' => 'ok', 'authStatus' => 'configured', 'message' => null];

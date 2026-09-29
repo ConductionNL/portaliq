@@ -9,7 +9,7 @@
  * same id, the same surfaces and the same render mode; a difference between
  * them is a leaf whose behaviour depends on which half the consumer read.
  *
- * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+ * @spec openspec/specs/change-proposal-queue/spec.md
  */
 import { translate as t } from '@nextcloud/l10n'
 import { createApp } from 'vue'

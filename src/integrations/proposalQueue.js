@@ -15,7 +15,7 @@
  * handed in by `ProposalQueueWidget.vue`, so `tests/proposal-queue-leaf.spec.mjs`
  * runs it as a plain node script.
  *
- * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+ * @spec openspec/specs/change-proposal-queue/spec.md
  */
 
 /**

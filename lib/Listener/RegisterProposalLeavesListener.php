@@ -27,7 +27,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+ * @spec openspec/specs/change-proposal-queue/spec.md
  */
 
 declare(strict_types=1);
@@ -93,7 +93,7 @@ class RegisterProposalLeavesListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	public function handle(Event $event): void {
 		if ($event instanceof RegisterLeafProvidersEvent === false) {

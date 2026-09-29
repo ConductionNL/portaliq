@@ -21,7 +21,7 @@ use Psr\Log\LoggerInterface;
  * its provider and the review surface as a mount-mode render leaf, on
  * OpenRegister's real collection event.
  *
- * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+ * @spec openspec/specs/change-proposal-queue/spec.md
  */
 class RegisterProposalLeavesListenerTest extends TestCase {
 
