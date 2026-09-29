@@ -135,20 +135,34 @@ pairs compared (09e6ffe). A pass and an absent measurement looked identical.
 
 ### Requirement: The theme catalogue MUST be a choice, and never public
 
-The admin settings MUST list the adoptable token sets with their ids and
-verdicts, so `portal.theme` is picked rather than typed. The catalogue endpoint
-MUST require a signed-in user and MUST NOT be a public page.
+The portal's own page MUST list the adoptable token sets with their names and
+verdicts, so `portal.theme` is picked rather than typed. The list is served by
+`GET /api/portals/{slug}/theme` and saved by `PUT` on the same route; both
+MUST be admin-only and MUST NOT be a public page. A set the resolver would not
+render MUST be refused on save, and a set whose verdict has findings MUST be
+saved only after the administrator confirms, with the findings shown.
+
+Design fixed while building (2026-09-29): the picker is a widget on the
+portal's page rather than a section in the admin settings, next to the other
+per-portal choices (case types), and its route names the portal. The earlier
+`GET /api/themes` in admin settings was the unmerged branch's shape (09e6ffe).
 
 #### Scenario: An administrator picks a theme
 
-- **GIVEN** an administrator on the portaliq admin settings
-- **WHEN** they open the theme choice for a portal
-- **THEN** every adoptable set is listed by id with its verdict
+- **GIVEN** an administrator on a portal's page
+- **WHEN** they open the House style widget
+- **THEN** every adoptable set is listed with its verdict: Readable, Hard to read, or Not checked
+
+#### Scenario: A hard-to-read set asks before it saves
+
+- **GIVEN** a set whose text token fails AA on the page or footer surface
+- **WHEN** the administrator saves it
+- **THEN** the save is refused with the failing tokens and their ratios, and "Use it anyway" saves it
 
 #### Scenario: An anonymous caller asks for the catalogue
 
-- **GIVEN** no session
-- **WHEN** `GET /api/themes` is called
+- **GIVEN** no session, or a signed-in user who is not an administrator
+- **WHEN** `GET /api/portals/{slug}/theme` is called
 - **THEN** the response is refused
 
 The catalogue includes admin-uploaded custom sets. thematiq's own

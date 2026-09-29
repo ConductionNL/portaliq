@@ -1704,7 +1704,22 @@
         "Give a reason to reject.": "Geef een reden om af te wijzen.",
         "This decision was refused.": "Deze beslissing is geweigerd.",
         "The change is saved on the record.": "De wijziging is opgeslagen op het record.",
-        "The proposal is rejected.": "Het voorstel is afgewezen."
+        "The proposal is rejected.": "Het voorstel is afgewezen.",
+        "The house styles could not be loaded.": "De huisstijlen konden niet worden geladen.",
+        "This portal names {theme}, which the theme app does not offer, so it shows without a house style.": "Dit portaal noemt {theme}, maar de thema-app biedt die niet aan, dus het wordt zonder huisstijl getoond.",
+        "The theme app offers no house styles. Install and enable it to choose one.": "De thema-app biedt geen huisstijlen aan. Installeer en activeer die om er een te kiezen.",
+        "House style": "Huisstijl",
+        "This house style has text that is hard to read on this portal:": "Deze huisstijl heeft tekst die op dit portaal slecht leesbaar is:",
+        "{token} on the {surface} is {ratio}:1, and needs {threshold}:1.": "{token} op de {surface} is {ratio}:1, en moet {threshold}:1 zijn.",
+        "Use it anyway": "Toch gebruiken",
+        "Readable": "Leesbaar",
+        "Hard to read": "Slecht leesbaar",
+        "Not checked": "Niet gecontroleerd",
+        "The theme app no longer offers this house style.": "De thema-app biedt deze huisstijl niet meer aan.",
+        "The house style could not be saved.": "De huisstijl kon niet worden opgeslagen.",
+        "The house style is saved.": "De huisstijl is opgeslagen.",
+        "footer": "voettekst",
+        "page background": "paginaachtergrond"
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

@@ -1635,7 +1635,22 @@ OC.L10N.register(
         "Give a reason to reject.": "Give a reason to reject.",
         "This decision was refused.": "This decision was refused.",
         "The change is saved on the record.": "The change is saved on the record.",
-        "The proposal is rejected.": "The proposal is rejected."
+        "The proposal is rejected.": "The proposal is rejected.",
+        "The house styles could not be loaded.": "The house styles could not be loaded.",
+        "This portal names {theme}, which the theme app does not offer, so it shows without a house style.": "This portal names {theme}, which the theme app does not offer, so it shows without a house style.",
+        "The theme app offers no house styles. Install and enable it to choose one.": "The theme app offers no house styles. Install and enable it to choose one.",
+        "House style": "House style",
+        "This house style has text that is hard to read on this portal:": "This house style has text that is hard to read on this portal:",
+        "{token} on the {surface} is {ratio}:1, and needs {threshold}:1.": "{token} on the {surface} is {ratio}:1, and needs {threshold}:1.",
+        "Use it anyway": "Use it anyway",
+        "Readable": "Readable",
+        "Hard to read": "Hard to read",
+        "Not checked": "Not checked",
+        "The theme app no longer offers this house style.": "The theme app no longer offers this house style.",
+        "The house style could not be saved.": "The house style could not be saved.",
+        "The house style is saved.": "The house style is saved.",
+        "footer": "footer",
+        "page background": "page background"
     },
     "nplurals=2; plural=(n != 1);"
 )
