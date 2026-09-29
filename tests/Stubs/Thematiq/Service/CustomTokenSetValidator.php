@@ -4,7 +4,8 @@
  * Thematiq test stub: a verbatim copy of thematiq's class on `development`
  * (b938e4a, lib/Service/CustomTokenSetValidator.php), loaded only when thematiq
  * is absent (tests/bootstrap.php). Portaliq resolves it from the container by
- * name. Nothing differs.
+ * name. Only the @spec tags differ: they point at the portaliq change that
+ * reads it.
  *
  * NL Design Custom Token Set Validator.
  *
@@ -18,7 +19,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://github.com/ConductionNL/thematiq
  *
- * @spec openspec/changes/custom-token-set-upload/tasks.md#task-1.1
+ * @spec openspec/changes/nldesign-theme-integration/tasks.md
  */
 
 declare(strict_types=1);
@@ -37,7 +38,7 @@ namespace OCA\Thematiq\Service;
  * expressed in the published `--nldesign-*` vocabulary. Arbitrary CSS, external
  * resources, and selectors other than `:root` are rejected.
  *
- * @spec openspec/changes/custom-token-set-upload/tasks.md#task-1.1
+ * @spec openspec/changes/nldesign-theme-integration/tasks.md
  */
 class CustomTokenSetValidator {
 
@@ -78,7 +79,7 @@ class CustomTokenSetValidator {
 	 * @return array{accepted: array<string, string>, skipped: string[]}|null
 	 *                                                                        The split, or null on hard failure (see getLastError()).
 	 *
-	 * @spec openspec/changes/custom-token-set-upload/tasks.md#task-1.1
+	 * @spec openspec/changes/nldesign-theme-integration/tasks.md
 	 */
 	public function validateDeclarations(array $declarations, string $slug): ?array {
 		$this->lastError = null;
@@ -172,7 +173,7 @@ class CustomTokenSetValidator {
 	 *
 	 * @return bool True when a disallowed selector or at-rule is present.
 	 *
-	 * @spec openspec/changes/custom-token-set-upload/tasks.md#task-1.1
+	 * @spec openspec/changes/nldesign-theme-integration/tasks.md
 	 */
 	public function hasDisallowedSelector(string $css): bool {
 		// Strip comments so a commented-out selector does not trip the guard.
@@ -219,8 +220,8 @@ class CustomTokenSetValidator {
 	 *
 	 * @return bool True when the value must be rejected.
 	 *
-	 * @spec openspec/changes/custom-token-set-upload/tasks.md#task-1.1
-	 * @spec openspec/changes/harden-custom-token-set-value-validation/tasks.md#task-1
+	 * @spec openspec/changes/nldesign-theme-integration/tasks.md
+	 * @spec openspec/changes/nldesign-theme-integration/tasks.md
 	 */
 	public function isForbiddenValue(string $value): bool {
 		if ($this->containsDangerousKeyword(value: $value) === true) {
@@ -248,7 +249,7 @@ class CustomTokenSetValidator {
 	 *
 	 * @return bool True when a dangerous keyword is present.
 	 *
-	 * @spec openspec/changes/harden-custom-token-set-value-validation/tasks.md#task-1
+	 * @spec openspec/changes/nldesign-theme-integration/tasks.md
 	 */
 	private function containsDangerousKeyword(string $value): bool {
 		$lower = strtolower($value);
@@ -267,7 +268,7 @@ class CustomTokenSetValidator {
 	 *
 	 * @return bool True when an injection character is present.
 	 *
-	 * @spec openspec/changes/harden-custom-token-set-value-validation/tasks.md#task-1
+	 * @spec openspec/changes/nldesign-theme-integration/tasks.md
 	 */
 	private function containsInjectionCharacter(string $value): bool {
 		return str_contains($value, '{') === true
@@ -286,7 +287,7 @@ class CustomTokenSetValidator {
 	 *
 	 * @return bool True when a url(...) target is disallowed.
 	 *
-	 * @spec openspec/changes/custom-token-set-upload/tasks.md#task-1.1
+	 * @spec openspec/changes/nldesign-theme-integration/tasks.md
 	 */
 	private function hasDisallowedUrlTarget(string $value): bool {
 		if (preg_match_all('/url\(\s*([\'"]?)(.*?)\1\s*\)/i', $value, $urls, PREG_SET_ORDER) === 0) {
@@ -322,7 +323,7 @@ class CustomTokenSetValidator {
 	 *
 	 * @return string The canonical CSS file content.
 	 *
-	 * @spec openspec/changes/custom-token-set-upload/tasks.md#task-1.1
+	 * @spec openspec/changes/nldesign-theme-integration/tasks.md
 	 */
 	public function serialize(array $declarations): string {
 		$lines = [];
@@ -338,7 +339,7 @@ class CustomTokenSetValidator {
 	 *
 	 * @return array<string, mixed>|null The error with a `status` and `message`.
 	 *
-	 * @spec openspec/changes/custom-token-set-upload/tasks.md#task-1.1
+	 * @spec openspec/changes/nldesign-theme-integration/tasks.md
 	 */
 	public function getLastError(): ?array {
 		return $this->lastError;

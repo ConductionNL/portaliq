@@ -36,16 +36,6 @@ export function verdictState(verdict) {
 }
 
 /**
- * The widget's actions over an injected transport.
- *
- * @param {object} deps The collaborators.
- * @param {Function} deps.get url => Promise<{data}>
- * @param {Function} deps.put (url, body) => Promise<{data}>
- * @param {Function} deps.url (path, params) => string, path relative to the app
- * @return {object}
- * @spec openspec/changes/nldesign-theme-integration/specs/nldesign-theme-integration/spec.md
- */
-/**
  * Whether a listed set can be chosen. A set the theme app's validator refused
  * (a shared or uploaded house style with a declaration it does not allow) is
  * listed with its reason and cannot be picked.
@@ -58,6 +48,16 @@ export function isSelectable(set) {
 	return !set?.refusal
 }
 
+/**
+ * The widget's actions over an injected transport.
+ *
+ * @param {object} deps The collaborators.
+ * @param {Function} deps.get url => Promise<{data}>
+ * @param {Function} deps.put (url, body) => Promise<{data}>
+ * @param {Function} deps.url (path, params) => string, path relative to the app
+ * @return {object}
+ * @spec openspec/changes/nldesign-theme-integration/specs/nldesign-theme-integration/spec.md
+ */
 export function createPortalThemeChoice({ get, put, url }) {
 	return {
 		/**
