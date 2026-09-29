@@ -145,5 +145,11 @@
     </issueHandlers>
     <extraFiles>
         <directory name="vendor/nextcloud/ocp" />
+        <!-- OpenRegister's leaf contract (change-proposal-queue): verbatim
+             copies of openregister/lib on development, read as code rather
+             than as stubs, because a stub's docblock types become signature
+             types and every implementation of IntegrationProvider would then
+             mismatch its native `array` parameters. -->
+        <directory name="tests/Stubs/OpenRegister" />
     </extraFiles>
 </psalm>

@@ -51,6 +51,7 @@ use OCA\Portaliq\Listener\PortalAccountClaimListener;
 use OCA\Portaliq\Listener\PortalAccountProvisionListener;
 use OCA\Portaliq\Listener\PortalDigitalPostDeliveredListener;
 use OCA\Portaliq\Listener\PortalRecordChangeListener;
+use OCA\Portaliq\Listener\RegisterProposalLeavesListener;
 use OCA\Portaliq\Middleware\PortalAuthMiddleware;
 use OCA\Portaliq\Middleware\PublicApiCorsMiddleware;
 use OCA\Portaliq\Notification\Notifier;
@@ -220,6 +221,11 @@ class Application extends App implements IBootstrap {
 		// Integriq's report on a message box letter (inbox-berichtenbox-channel).
 		// Named by string: without integriq nothing dispatches it.
 		$context->registerEventListener(PortalDigitalPostDeliveredListener::EVENT, PortalDigitalPostDeliveredListener::class);
+
+		// The change-proposal queue as two OpenRegister leaves
+		// (change-proposal-queue). Named by string: without OpenRegister
+		// nothing collects leaves.
+		$context->registerEventListener(RegisterProposalLeavesListener::EVENT, RegisterProposalLeavesListener::class);
 	}//end registerRecordChangeListener()
 
 	/**

@@ -1,22 +1,13 @@
----
-status: proposed
----
-
-# Spec: change-proposal-queue
-
-**Status:** proposed
-**Scope:** portaliq (owner); any app with a contribution places the leaf
-**Depends on:** `portal-contribution-contract` (endpoint actions, field projection); OpenRegister leaf registration (ADR-066)
+# change-proposal-queue Specification
 
 ## Purpose
-
 A citizen or a colleague proposes a field change on a record. The proposal
 queues on the record until a reviewer with write rights accepts or rejects
 it. Portaliq owns the queue and the review surface. The owning app places
 the leaf and sees an ordinary object update when a proposal is accepted.
 Requested by the dossiq competitor analysis, finding B24.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: A change proposal is a queued object on its subject (REQ-CPQ-001)
 
@@ -46,6 +37,12 @@ as proposable SHALL be refused.
 - **WHEN** the citizen submits `propose-change` for `applicantPhone`
 - **THEN** a `queued` proposal exists with `channel = portal` and `proposedBy` from the session
 - e2e: `tests/e2e/change-proposal-queue.spec.ts`
+
+#### Scenario: A colleague who cannot read the record proposes nothing
+- **GIVEN** a logged-in user without read on the case
+- **WHEN** they propose a change on it through `POST /apps/portaliq/api/proposals` or the `portaliq-change-proposals` leaf
+- **THEN** the request is refused and no proposal exists
+- @e2e exclude authorization guard; covered by PHPUnit on `ProposalController::proposeAsColleague()` and `ChangeProposalsProvider::create()`
 
 #### Scenario: A status field cannot be proposed
 - **GIVEN** the contribution does not list `status` as proposable

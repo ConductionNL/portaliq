@@ -14,8 +14,9 @@ portal account. This capability owns which leaves are adopted, how an adoption i
 declared, and the one rule that governs all of them: a leaf is a Nextcloud surface for
 a Nextcloud user, and a portal visitor is neither (ADR-046).
 
-Portaliq provides no leaf of its own to other apps, so nothing here needs a `leaves`
-webpack entry or a `RegisterLeafProvidersEvent` listener. It is a consumer.
+This capability covers portaliq as a consumer. The leaves portaliq provides to other
+apps (the change-proposal queue, with its `leaves` webpack entry and its
+`RegisterLeafProvidersEvent` listener) are specified in `change-proposal-queue`.
 
 ## Requirements
 
