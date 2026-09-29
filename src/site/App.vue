@@ -169,6 +169,9 @@
 			</div>
 		</header>
 
+		<!-- Maintenance and warning notices running now (operate-maintenance-notice). -->
+		<SiteNotices :notices="site.notices || []" :locale="site.locale || 'nl'" />
+
 		<!--
 			`.container` IS THE CONTENT COLUMN, AND IT IS NOT OPTIONAL.
 
@@ -460,6 +463,7 @@ import { CnSiteIcon } from '@conduction/nextcloud-vue/public'
 import { defineAsyncComponent } from 'vue'
 import MarkdownBlock from './components/MarkdownBlock.vue'
 import SiteMenu from './components/SiteMenu.vue'
+import SiteNotices from './components/SiteNotices.vue'
 import WidgetGrid from './components/WidgetGrid.vue'
 import {
 	adoptSessionToken,
@@ -510,7 +514,14 @@ const SiteEditButton = defineAsyncComponent(
 export default {
 	name: 'App',
 
-	components: { CnSiteIcon, MarkdownBlock, SiteEditButton, SiteMenu, WidgetGrid },
+	components: {
+		CnSiteIcon,
+		MarkdownBlock,
+		SiteEditButton,
+		SiteMenu,
+		SiteNotices,
+		WidgetGrid,
+	},
 
 	props: {
 		/** Explicit site slug, when not resolving by host. */

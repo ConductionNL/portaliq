@@ -8102,14 +8102,14 @@
                         "example": "https://www.example.nl/onderhoud"
                     },
                     "startsAt": {
-                        "title": "Starts",
+                        "title": "Shows from",
                         "type": "string",
                         "format": "date-time",
                         "description": "From when the notice shows.",
                         "example": "2026-10-03T10:00:00+02:00"
                     },
                     "endsAt": {
-                        "title": "Ends",
+                        "title": "Shows until",
                         "type": "string",
                         "format": "date-time",
                         "description": "When the notice stops showing. Required, so no notice stays up by accident.",
