@@ -33,6 +33,7 @@ use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\Identity\PortalMandateService;
 use OCA\Portaliq\Service\Identity\PortalPartyTreeResolver;
 use OCA\Portaliq\Service\CaseTypeVisibility;
+use OCA\Portaliq\Service\MandatedCaseReader;
 use OCA\Portaliq\Service\PortalCaseListReader;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
@@ -49,6 +50,13 @@ use OCP\IRequest;
  * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
  */
 class MyCasesController extends Controller implements PortalProtected {
+	/**
+	 * The `mandate` value that means "acting for yourself": your own cases,
+	 * no mandate spent, while the mandates you hold are still named
+	 * (cases-my-cases-page REQ-CMC-004). Without any value the first mandate
+	 * held is the active one, as before.
+	 */
+	public const ACTING_FOR_SELF = MandatedCaseReader::ACTING_FOR_SELF;
 
 	/**
 	 * Constructor.
@@ -83,6 +91,7 @@ class MyCasesController extends Controller implements PortalProtected {
 	 *
 	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
 	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md#requirement-you-choose-whom-you-act-for-req-cmc-004
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -107,7 +116,10 @@ class MyCasesController extends Controller implements PortalProtected {
 		// falling back to one that is.
 		$held = $this->mandates->mandatesFor(subjectRef: (string)($subject['subjectRef'] ?? ''), organisation: (string)($subject['organisation'] ?? ''));
 		$requested = (string)$this->request->getParam('mandate', '');
-		$active = $this->mandates->activeMandate(mandates: $held, mandateId: $requested);
+		$active = null;
+		if ($requested !== self::ACTING_FOR_SELF) {
+			$active = $this->mandates->activeMandate(mandates: $held, mandateId: $requested);
+		}
 
 		$describedActive = null;
 		if ($active !== null) {

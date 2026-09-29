@@ -21,6 +21,7 @@ use OCA\Portaliq\Service\CitizenWritableSetResolver;
 use OCA\Portaliq\Service\CitizenWriteRecorder;
 use OCA\Portaliq\Service\CitizenCaseDocuments;
 use OCA\Portaliq\Service\CitizenWriteThrottle;
+use OCA\Portaliq\Service\MandatedCaseReader;
 use OCA\Portaliq\Contribution\PortalProviderLocator;
 use OCA\Portaliq\Service\PortalAuditHook;
 use OCA\Portaliq\Service\PortalCaseDocumentReader;
@@ -162,6 +163,49 @@ class CitizenCaseControllerTest extends TestCase {
 		$this->assertSame([], $this->writes);
 		$this->assertSame([], $this->events);
 	}//end testWithoutASessionEveryActIsRefusedAndNothingIsWritten()
+
+	/**
+	 * cases-my-cases-page REQ-CMC-004: a case listed under a mandate opens on
+	 * the case screen under that mandate, read-only, naming the mandate. The
+	 * same case without the mandate, and any write under it, stays "not
+	 * yours", and nothing is written.
+	 *
+	 * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md#requirement-you-choose-whom-you-act-for-req-cmc-004
+	 */
+	public function testACaseListedUnderAMandateOpensReadOnlyUnderIt(): void {
+		$company = ['id' => 'zaak-9', 'omschrijving' => 'een bedrijfspand', 'status' => 'ontvangen', '_mandate' => ['id' => 'mandate-1', 'label' => 'Bakkerij Jansen BV']];
+		$mandated = $this->getMockBuilder(MandatedCaseReader::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['read'])
+			->getMock();
+		$mandated->method('read')->willReturnCallback(
+			static fn (array $subject, string $mandateId, string $register, string $schema, string $id): ?array => (
+				$mandateId === 'mandate-1' && $register === 'zaken' && $schema === 'zaak' && $id === 'zaak-9' ? $company : null
+			)
+		);
+
+		$under = $this->controller(params: ['mandate' => 'mandate-1'], mandatedCases: $mandated);
+		$response = $under->show('zaken', 'zaak', 'zaak-9');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$data = $response->getData();
+		$this->assertSame('een bedrijfspand', $data['case']['omschrijving']);
+		$this->assertSame('Bakkerij Jansen BV', $data['mandate']['label']);
+		$this->assertFalse($data['writableSet']['window']['open']);
+		$this->assertFalse($data['writableSet']['documents']['open']);
+		$this->assertSame('You are viewing this case on behalf of %s. It cannot be changed here.', $data['writableSet']['window']['reason']);
+		$this->assertFalse($data['withdrawal']['declared']);
+		$this->assertSame([], $data['documents']);
+
+		// Without naming the mandate, the company's case is not theirs.
+		$own = $this->controller(mandatedCases: $mandated);
+		$this->assertSame('case-not-yours', $own->show('zaken', 'zaak', 'zaak-9')->getData()['error']);
+
+		// A write under the mandate is refused the same way, and writes nothing.
+		$write = $this->controller(fields: ['omschrijving' => 'iets anders'], params: ['mandate' => 'mandate-1'], mandatedCases: $mandated);
+		$this->assertSame('case-not-yours', $write->amend('zaken', 'zaak', 'zaak-9')->getData()['error']);
+		$this->assertSame([], $this->writes);
+	}//end testACaseListedUnderAMandateOpensReadOnlyUnderIt()
 
 	/**
 	 * A correction lands without a phone call: the case carries the new answer
@@ -538,6 +582,7 @@ class CitizenCaseControllerTest extends TestCase {
 		?array $releasedFiles = null,
 		array $taggedFiles = [],
 		array $published = [],
+		?MandatedCaseReader $mandatedCases = null,
 	): CitizenCaseController {
 		$action = ($action ?? $this->action());
 		$cases = $this->cases();
@@ -649,7 +694,8 @@ class CitizenCaseControllerTest extends TestCase {
 			$this->treeResolver(),
 			$l10n,
 			$this->createMock(LoggerInterface::class),
-			$this->documents(fileReader: $fileReader, published: $published)
+			$this->documents(fileReader: $fileReader, published: $published),
+			$mandatedCases
 		);
 	}//end controller()
 

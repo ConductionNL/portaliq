@@ -49,6 +49,7 @@ use OCA\Portaliq\Service\CitizenWriteRecorder;
 use OCA\Portaliq\Service\CitizenWriteThrottle;
 use OCA\Portaliq\Service\Identity\PortalMandateService;
 use OCA\Portaliq\Service\Identity\PortalPartyTreeResolver;
+use OCA\Portaliq\Service\MandatedCaseReader;
 use OCA\Portaliq\Service\PortalFileReader;
 use OCA\Portaliq\Service\PortalFileWriter;
 use OCA\Portaliq\Service\PortalObjectReader;
@@ -105,6 +106,9 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 * @param IL10N $l10n The sentences a refusal is given with.
 	 * @param LoggerInterface $logger Records the cause of a translated failure.
 	 * @param CitizenCaseDocuments $documents Lists and opens the documents on the case.
+	 * @param MandatedCaseReader|null $mandatedCases Reads a case listed under a
+	 *                                               mandate (cases-my-cases-page).
+	 *                                               Absent opens only own cases.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -123,6 +127,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 		private readonly CitizenCaseDocuments $documents,
+		private readonly ?MandatedCaseReader $mandatedCases = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -144,6 +149,12 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	public function show(string $register, string $schema, string $id): JSONResponse {
 		$context = $this->context(register: $register, schema: $schema, id: $id);
 		if ($context instanceof JSONResponse) {
+			// Not their own case: it may be one they see under the mandate
+			// they chose (cases-my-cases-page REQ-CMC-004), read-only.
+			if (($context->getData()['error'] ?? '') === 'case-not-yours') {
+				return ($this->showUnderMandate(register: $register, schema: $schema, id: $id) ?? $context);
+			}
+
 			return $context;
 		}
 
@@ -158,6 +169,57 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			'documentsLabel' => (string)($context['documents']['label'] ?? ''),
 		]);
 	}//end show()
+
+	/**
+	 * A case the person sees because of the mandate the request names, shown
+	 * read-only, or null when that mandate does not list it.
+	 *
+	 * The case comes from the same reader that lists the mandated cases on "My
+	 * cases", so the screen never opens a case the list would not show. Nothing
+	 * can be changed or added under a mandate here, and no documents are
+	 * listed: every write and download still goes through the person's own
+	 * ownership check.
+	 *
+	 * @param string $register The register the case lives in.
+	 * @param string $schema The schema the case lives in.
+	 * @param string $id The case id.
+	 *
+	 * @return JSONResponse|null
+	 *
+	 * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md#requirement-you-choose-whom-you-act-for-req-cmc-004
+	 */
+	private function showUnderMandate(string $register, string $schema, string $id): ?JSONResponse {
+		$subject = $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
+		if ($subject === null || $this->mandatedCases === null) {
+			return null;
+		}
+
+		$case = $this->mandatedCases->read(
+			subject: $subject,
+			mandateId: (string)$this->request->getParam('mandate', ''),
+			register: $register,
+			schema: $schema,
+			id: $id
+		);
+		if ($case === null) {
+			return null;
+		}
+
+		$mandate = (array)($case['_mandate'] ?? []);
+		$closed = [
+			'open' => false,
+			'reason' => $this->l10n->t('You are viewing this case on behalf of %s. It cannot be changed here.', [(string)($mandate['label'] ?? '')]),
+		];
+
+		return new JSONResponse([
+			'case' => $case,
+			'mandate' => $mandate,
+			'writableSet' => ['fields' => [], 'writable' => [], 'window' => $closed, 'documents' => $closed, 'status' => null],
+			'withdrawal' => ['declared' => false, 'open' => false],
+			'documents' => [],
+			'documentsLabel' => '',
+		]);
+	}//end showUnderMandate()
 
 	/**
 	 * Open one document the case screen listed. The id picks among what this

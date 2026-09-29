@@ -421,6 +421,7 @@ OC.L10N.register(
         "This answer cannot be changed from the portal.": "This answer cannot be changed from the portal.",
         "This case cannot be changed from the portal.": "This case cannot be changed from the portal.",
         "This case is not open for changes from the portal.": "This case is not open for changes from the portal.",
+        "You are viewing this case on behalf of %s. It cannot be changed here.": "You are viewing this case on behalf of %s. It cannot be changed here.",
         "This case is not yours.": "This case is not yours.",
         "This portal has no slug yet, so it has no public address.": "This portal has no slug yet, so it has no public address.",
         "Portals": "Portals",

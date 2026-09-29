@@ -11,6 +11,7 @@ OC.L10N.register(
         "This answer cannot be changed from the portal.": "This answer cannot be changed from the portal.",
         "This case cannot be changed from the portal.": "This case cannot be changed from the portal.",
         "This case is not open for changes from the portal.": "This case is not open for changes from the portal.",
+        "You are viewing this case on behalf of %s. It cannot be changed here.": "You are viewing this case on behalf of %s. It cannot be changed here.",
         "This case is not yours.": "This case is not yours.",
         "What visitors looked at over the last 30 days, and where they came from. Pick a portal at the top; the numbers come from the daily figures the aggregation job writes every fifteen minutes.": "What visitors looked at over the last 30 days, and where they came from. Pick a portal at the top; the numbers come from the daily figures the aggregation job writes every fifteen minutes.",
         "You have already answered this task.": "You have already answered this task.",
