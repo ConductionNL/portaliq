@@ -55,7 +55,7 @@ test('a failed login is read once from the fragment and stripped', () => {
 
 test('the login screen starts each button by its route and shows the failure', () => {
 	const app = readFileSync(join(ROOT, 'src', 'portal', 'App.jsx'), 'utf8')
-	assert.match(app, /api\.loginStartUrl\(p\.provider, p\.route\)/)
+	assert.match(app, /loginStartUrl\(config\.apiBase, config\.organisationSlug, p\.provider, p\.route\)/)
 	assert.match(app, /consumeSigninFailed\(window\.location, window\.history\)/)
 	assert.match(
 		app,

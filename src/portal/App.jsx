@@ -23,7 +23,7 @@ import { actingForHeld, keepActingFor, readActingFor } from '@portal/lib/myCases
 import { consumeOpenTarget, forgetOpenTarget, navKeyFor } from '@portal/lib/openRecord.js'
 import { consumeOidcCallbackFragment, createPortalApi, getToken } from '@portal/lib/portalApi.js'
 import { runAction } from '@portal/lib/rowAction.js'
-import { consumeSigninFailed } from '@portal/lib/signinRoute.js'
+import { consumeSigninFailed, loginStartUrl } from '@portal/lib/signinRoute.js'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import Loading from './components/Loading.jsx'
 
@@ -432,7 +432,7 @@ export default function App({ config, t: tProp }) {
 	function oidcLogin(p) {
 		// The route the organisation chose for this provider: its own OIDC
 		// broker or integriq's (signin-integriq-broker-login T09).
-		window.location.href = api.loginStartUrl(p.provider, p.route)
+		window.location.href = loginStartUrl(config.apiBase, config.organisationSlug, p.provider, p.route)
 	}
 
 	return (
