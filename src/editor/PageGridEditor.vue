@@ -252,7 +252,11 @@ export default {
 	},
 
 	computed: {
-		/** @return {object} The editor's reactive state. */
+		/**
+		 * @return {object} The editor's reactive state.
+		 *
+		 * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
+		 */
 		state() {
 			return this.editor.state
 		},
