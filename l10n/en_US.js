@@ -130,7 +130,24 @@ OC.L10N.register(
         "Restore this version": "Restore this version",
         "This version was recorded without its content, so it cannot be restored.": "This version was recorded without its content, so it cannot be restored.",
         "The version is in the draft. The live page changes when you publish.": "The version is in the draft. The live page changes when you publish.",
-        "Close": "Close"
+        "Close": "Close",
+        "Alternative text": "Alternative text",
+        "Media item": "Media item",
+        "Media": "Media",
+        "Only a published item is served to the public.": "Only a published item is served to the public.",
+        "The address of an image shown by a hero widget, or media:<id> for an item of this portal's media library. Optional: a page without one renders as before.": "The address of an image shown by a hero widget, or media:<id> for an item of this portal's media library. Optional: a page without one renders as before.",
+        "The http or https address of the image shown when the page is shared, or media:<id> for an item of this portal's media library.": "The http or https address of the image shown when the page is shared, or media:<id> for an item of this portal's media library.",
+        "The name editors find the item by in the library.": "The name editors find the item by in the library.",
+        "The portal this item belongs to. The public reach it only on this portal.": "The portal this item belongs to. The public reach it only on this portal.",
+        "What the image shows, read aloud to someone who cannot see it. Required for an image.": "What the image shows, read aloud to someone who cannot see it. Required for an image.",
+        "Whether this is an image shown on a page or a file offered for download.": "Whether this is an image shown on a page or a file offered for download.",
+        "Published items of this portal's media library. Add or replace items on the Media page.": "Published items of this portal's media library. Add or replace items on the Media page.",
+        "The media library could not be loaded.": "The media library could not be loaded.",
+        "This portal has no published media yet.": "This portal has no published media yet.",
+        "Use as hero image": "Use as hero image",
+        "Use as share image": "Use as share image",
+        "Copy for a text": "Copy for a text",
+        "Copied. Paste it into a text widget.": "Copied. Paste it into a text widget."
     },
     "nplurals=2; plural=(n != 1);"
 )

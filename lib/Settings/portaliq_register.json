@@ -3235,7 +3235,7 @@
                     "heroImage": {
                         "title": "Hero image",
                         "type": "string",
-                        "description": "Reference/URL to an image shown by a hero-keyed widget when present, or media:<id> for an item of this portal's media library. Optional — a page with no heroImage renders exactly as before this property existed.",
+                        "description": "The address of an image shown by a hero widget, or media:<id> for an item of this portal's media library. Optional: a page without one renders as before.",
                         "example": "https://example.org/images/webinar-hero.jpg"
                     },
                     "seoTitle": {

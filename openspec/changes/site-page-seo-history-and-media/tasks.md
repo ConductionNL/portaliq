@@ -22,7 +22,7 @@
   - Verify: register import; PHPUnit on the alt text rule for images
 - [x] **T07**: `GET /api/content/media/{id}` streams a published item of the resolved portal, 404 otherwise (REQ-SPH-004). `ContentMediaController` over `lib/Service/Cms/MediaFile.php` (the newest attached file; a portal behind sign-in serves no item, since an image tag carries no bearer token) and `CmsReader::mediaItem()` (published + portal in the query, cached per portal).
   - Verify: PHPUnit for a draft item, another portal's item and an unknown id; `hydra-gate-route-auth` green
-- [ ] **T08**: The Media manifest page and the picker dialog in `src/dialogs/`; `heroImage`, `seo.image` and `media:<id>` in markdown resolve to the item (REQ-SPH-004, REQ-SPH-005)
+- [x] **T08**: The Media manifest page and the picker dialog in `src/dialogs/`; `heroImage`, `seo.image` and `media:<id>` in markdown resolve to the item (REQ-SPH-004, REQ-SPH-005). Manifest `Media` (index) + `MediaDetail` (detail; the file is uploaded in the sidebar's Files tab) + menu entry; `src/dialogs/MediaPickerDialog.vue` from the designer's Media button (hero image, share image, a markdown reference to paste); `CmsReader` serves `hero {url, alt}`, the share image and markdown targets resolved (`lib/Service/Cms/MediaReferences.php`); the site renders the hero with its alternative text.
   - Verify: Playwright: upload once, use on two pages, replace the file, both pages show the new one
 - [ ] **T09**: Refuse deleting a media item a published page references, naming the pages; invalidate the portal cache on every media write (REQ-SPH-005)
   - Verify: PHPUnit for the refusal and the invalidation
