@@ -18,6 +18,7 @@ import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import {
 	createPortalThemeChoice,
+	isSelectable,
 	verdictState,
 } from '../src/lib/portalThemeChoice.js'
 
@@ -142,6 +143,19 @@ test('a set the theme app no longer offers, and a failed save, are told apart', 
 		).outcome,
 		'failed',
 	)
+})
+
+test('a refused house style says why, and cannot be picked', async () => {
+	const refusal =
+		'Property --nldesign-color-text contains a forbidden value (external resource, @import, expression, or markup).'
+	const result = await build(() => ({
+		status: 422,
+		data: { error: 'refused', refusal },
+	})).api.save('g', 'custom-gedeeld')
+	assert.deepEqual(result, { outcome: 'refused', refusal })
+
+	assert.equal(isSelectable({ id: 'custom-gedeeld', refusal }), false)
+	assert.equal(isSelectable({ id: 'custom-noord', custom: true }), true)
 })
 
 test('the Theme widget sits on the portal page', () => {

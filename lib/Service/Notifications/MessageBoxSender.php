@@ -115,7 +115,9 @@ class MessageBoxSender {
 			return;
 		}
 
-		$outcome = $this->request(sourceId: $offer['sourceId'], recipient: $recipient, message: $message, record: $record);
+		$letter = $this->letter(message: $message, fields: (array)($argument['letterFields'] ?? []));
+		$outcome = $this->request(sourceId: $offer['sourceId'], recipient: $recipient, letter: $letter, record: $record);
+
 		unset($recipient);
 
 		$data = [
@@ -145,12 +147,22 @@ class MessageBoxSender {
 	 *
 	 * @param string                $sourceId  The organisation's digital post source.
 	 * @param string                $recipient The recipient identity; it goes into the event only.
-	 * @param array<string, mixed>  $message   The message.
+	 * @param array<string, mixed>  $letter    The letter: subject, body, attachments.
 	 * @param array<string, string> $record    The message's reference.
 	 *
 	 * @return array<string, string> `status`, and `externalMessageId` or `refusalCode`.
 	 */
-	private function request(string $sourceId, string $recipient, array $message, array $record): array {
+	private function request(string $sourceId, string $recipient, array $letter, array $record): array {
+		if ($letter['body'] === '') {
+			// Never an empty letter: the resident would receive a blank
+			// message in their government message box. Refused and recorded.
+			$this->logger->warning(
+				'Portaliq: message box send refused, the message has no text',
+				['app' => $record['app'], 'collection' => $record['collection'], 'id' => $record['id']]
+			);
+			return ['status' => 'failed', 'refusalCode' => 'empty_body'];
+		}
+
 		if (class_exists($this->sendEvent) === false) {
 			return ['status' => 'failed', 'refusalCode' => 'not_installed'];
 		}
@@ -159,9 +171,9 @@ class MessageBoxSender {
 			sourceApp: self::REQUESTED_BY,
 			sourceId: $sourceId,
 			recipient: $recipient,
-			subject: $this->text(value: ($message['subject'] ?? null)),
-			body: $this->text(value: ($message['body'] ?? null)),
-			attachments: $this->attachments(value: ($message['attachments'] ?? null)),
+			subject: $letter['subject'],
+			body: $letter['body'],
+			attachments: $letter['attachments'],
 			requestedBy: self::REQUESTED_BY,
 			correlationId: $record['app'].'/'.$record['collection'].'/'.$record['id']
 		);
@@ -300,6 +312,45 @@ class MessageBoxSender {
 
 		return trim($recipient);
 	}//end recipient()
+
+	/**
+	 * The letter from the message: the text and subject from the fields the
+	 * collection declares, else the first usual name that holds text.
+	 *
+	 * Dossiq keeps a portal letter's text in `content`; reading `body` alone
+	 * sent it with an empty body.
+	 *
+	 * @param array<string, mixed> $message The message.
+	 * @param array<string, mixed> $fields  The declared `body` and `subject` field names.
+	 *
+	 * @return array{subject: string, body: string, attachments: array<int, array<string, mixed>>}
+	 */
+	private function letter(array $message, array $fields): array {
+		return [
+			'subject'     => $this->firstText(message: $message, names: [(string)($fields['subject'] ?? ''), 'subject', 'title']),
+			'body'        => $this->firstText(message: $message, names: [(string)($fields['body'] ?? ''), 'body', 'content', 'text']),
+			'attachments' => $this->attachments(value: ($message['attachments'] ?? null)),
+		];
+	}//end letter()
+
+	/**
+	 * The first of the named fields that holds non-blank text, or ''.
+	 *
+	 * @param array<string, mixed> $message The message.
+	 * @param array<int, string>   $names   The field names, in order.
+	 *
+	 * @return string
+	 */
+	private function firstText(array $message, array $names): string {
+		foreach ($names as $name) {
+			$value = $this->text(value: ($message[$name] ?? null));
+			if ($name !== '' && trim($value) !== '') {
+				return $value;
+			}
+		}
+
+		return '';
+	}//end firstText()
 
 	/**
 	 * A text value, or ''.

@@ -51,117 +51,35 @@
 			shell owns the SC 2.4.1 affordance; a second one at this level would
 			be a duplicate tab stop announcing the same target twice.
 		-->
-		<header class="ac-header pq-site__header" data-testid="site-header">
-			<div class="ac-header__navigation-main">
-				<div class="ac-header__logo">
-					<div>
-						<div class="con-logo-container header" />
-						<span class="sr-only">Logo</span>
-						<h1 class="logo-text" data-testid="site-title">
-							{{ site.title || '…' }}
-						</h1>
-					</div>
-				</div>
-
-				<!--
-					The sign-in affordance appears ONLY when the portal declares
-					a mode other than `public`. A portal with no accounts must
-					show no login button: an inert one is a support ticket from
-					every visitor who presses it.
-
-					It sits in the reference's `__right-section` / `ac-navigation`
-					slot, which is where that implementation puts
-					Aanmelden/Inloggen.
-				-->
-				<div class="ac-header__right-section">
-					<div
-						v-if="session || signInRoutes.length"
-						class="ac-navigation pq-site__auth"
-						data-testid="site-auth">
-						<template v-if="session">
-							<span data-testid="site-auth-subject">{{
-								sessionLabel
-							}}</span>
-							<button
-								type="button"
-								data-testid="site-signout"
-								@click="signOut">
-								Uitloggen
-							</button>
-						</template>
-						<nav v-else aria-label="Gebruikersmenu">
-							<ul>
-								<li v-for="entry in signInRoutes" :key="entry.mode">
-									<a
-										:href="entry.href"
-										:data-mode="entry.mode"
-										data-testid="site-signin">
-										{{ entry.label }}
-									</a>
-								</li>
-							</ul>
-						</nav>
-					</div>
-				</div>
-			</div>
-
-			<div class="ac-header__navigation-secondary">
-				<div class="container">
-					<div class="ac-c-navigation__container">
-						<SiteMenu
-							v-for="menu in headerMenus"
-							:key="menu.title"
-							:menu="menu"
-							:currentRoute="route"
-							@navigate="go" />
-					</div>
-				</div>
-			</div>
-
-			<!--
-				THE BREADCRUMB, matching the reference's `Kruimelpad` landmark.
-
-				It renders only BELOW the home route: a trail whose only entry
-				is the page you are on tells the visitor nothing and adds a
-				landmark for a screen reader to step through.
-
-				The last crumb is the current page and is NOT a link — an
-				anchor to where you already are is a control that does nothing.
-			-->
-			<div class="ac-header__navigation-breadcrumb">
-				<div class="container">
-					<nav
-						v-if="breadcrumbs.length > 1"
-						class="ac-breadcrumb"
-						aria-label="Kruimelpad"
-						data-testid="site-breadcrumb">
-						<ul class="ac-breadcrumb__list">
-							<li
-								v-for="(crumb, index) in breadcrumbs"
-								:key="crumb.route"
-								class="ac-breadcrumb__item">
-								<a
-									v-if="index < breadcrumbs.length - 1"
-									class="utrecht-link"
-									:href="hrefForRoute(crumb.route)"
-									@click.prevent="go(crumb.route)">
-									{{ crumb.label }}
-								</a>
-								<span v-else aria-current="page">{{
-									crumb.label
-								}}</span>
-								<span
-									v-if="index < breadcrumbs.length - 1"
-									class="ac-breadcrumb__separator"
-									aria-hidden="true">
-									›
-								</span>
-							</li>
-						</ul>
-					</nav>
-				</div>
-			</div>
-		</header>
+		<!--
+			THE HEADER REGION (REQ-PTB-008, REQ-PTB-009). Its default is one
+			`brandHeader` block, which reproduces the header this shell used to
+			hard-code; a portal or page can replace it or leave it empty. The
+			shell owns the data, the block owns the markup (REQ-PTB-004).
+		-->
+		<template v-for="block in regions.header" :key="block.id || block.widgetKey">
+			<BrandHeader
+				v-if="block.widgetKey === 'brandHeader'"
+				v-bind="authoredProps(block)"
+				:title="site.title || ''"
+				:variant="headerVariant"
+				:menus="headerMenus"
+				:currentRoute="route"
+				:breadcrumbs="breadcrumbs"
+				:session="session"
+				:sessionLabel="sessionLabel"
+				:signInRoutes="signInRoutes"
+				:registerRoute="registerRoute"
+				:signinFailedMessage="signinFailed ? signinFailedMessage : ''"
+				@navigate="go"
+				@signout="signOut" />
+			<WidgetGrid
+				v-else
+				:widgets="[block]"
+				v-bind="gridContext"
+				@navigate="go"
+				@search="goSearch" />
+		</template>
 
 		<!--
 			`.container` IS THE CONTENT COLUMN, AND IT IS NOT OPTIONAL.
@@ -193,6 +111,16 @@
 				takes one, and `WidgetGrid` decides per block whether to.
 			-->
 			<div>
+				<!-- THE HERO REGION: the page's own hero band, else the
+				     portal's, unless the page clears it (REQ-PTB-009). -->
+				<WidgetGrid
+					v-if="!loading && !error && page && regions.hero.length"
+					data-testid="site-region-hero"
+					:widgets="regions.hero"
+					v-bind="gridContext"
+					@navigate="go"
+					@search="goSearch" />
+
 				<p v-if="loading" class="container" data-testid="site-loading">
 					Bezig met laden…
 				</p>
@@ -266,9 +194,12 @@
 						renders, not of what an author remembered to tick.
 					-->
 					<div v-if="!bodyProvidesHeading" class="container">
-						<h2 class="utrecht-heading-2" data-testid="page-title">
+						<!-- The page's own heading is the h1: the site name in the
+						     header is not a heading (REQ-PTB-004). The class keeps
+						     the size it had as an h2. -->
+						<h1 class="utrecht-heading-2" data-testid="page-title">
 							{{ page.title }}
-						</h2>
+						</h1>
 					</div>
 
 					<!-- The page's hero image, from the portal's media library or
@@ -283,13 +214,12 @@
 							:alt="page.hero.alt" />
 					</div>
 
+					<!-- The main region: the page's own widgets outside the other
+					     four regions (REQ-PTB-008). -->
 					<WidgetGrid
 						v-if="page.body && page.body.type === 'grid'"
-						:widgets="page.body.widgets || []"
-						:glossary="glossary"
-						:contributions="contributions"
-						:routeParam="routeParam"
-						:portal="site.slug || ''"
+						:widgets="regions.main"
+						v-bind="gridContext"
 						@navigate="go"
 						@search="goSearch" />
 
@@ -299,6 +229,17 @@
 							:source="(page.body && page.body.markdown) || ''" />
 					</div>
 				</article>
+
+				<aside
+					v-if="!loading && !error && page && regions.aside.length"
+					class="pq-site__aside"
+					data-testid="site-region-aside">
+					<WidgetGrid
+						:widgets="regions.aside"
+						v-bind="gridContext"
+						@navigate="go"
+						@search="goSearch" />
+				</aside>
 
 				<!--
 					NEITHER THE GLOSSARY NOR THE CONTRIBUTED SURFACES ARE
@@ -331,122 +272,25 @@
 			</div>
 		</main>
 
-		<!--
-			TWO SECTIONS, AND THE COUNT IS LOAD-BEARING.
-
-			`nlds-app.css` styles this footer by POSITION, not by class:
-
-			  .ac-footer section:first-of-type              { 96px band, blue-600 }
-			  .ac-footer section:first-of-type .container   { display: grid, 4 cols }
-			  .ac-footer section:last-of-type:not(:only-of-type)
-			                                               { 28px band, blue-500 }
-
-			`.ac-footer__sub-footer` appears in NO rule. This markup used to be a
-			single `<section class="ac-footer__sub-footer">`, which looked right
-			and rendered wrong: being the only section it was `:only-of-type`, so
-			it picked up the FIRST band's 96px padding and dark blue, and the
-			`:not(:only-of-type)` guard deliberately excluded it from the strip
-			rule it was named after. Measured against the reference: 211px against
-			368px, one band where there are two.
-
-			So the sub-footer strip exists only when a second section does. Both
-			are emitted unconditionally.
-		-->
-		<footer class="ac-footer pq-site__footer" data-testid="site-footer">
-			<!-- The reference labels its footer for assistive tech and hides the
-			     heading visually; a landmark with no name is announced as just
-			     "footer". -->
-			<h2 class="sr-only">Footer</h2>
-
-			<section>
-				<div class="container ac-footer__container">
-					<nav
-						v-for="menu in footerMenus"
-						:key="menu.title"
-						class="ac-footer__links"
-						:aria-label="menu.title"
-						data-testid="site-footer-menu">
-						<h3 class="ac-footer__menu-title">{{ menu.title }}</h3>
-						<ul>
-							<li v-for="item in menu.items" :key="item.name">
-								<!--
-									The reference marks every footer link with an
-									external-link glyph. It is DECORATIVE here —
-									`aria-hidden` — because the link already has
-									its own text; announcing "external link"
-									twice per item helps nobody.
-								-->
-								<a
-									class="ac-footer__link"
-									:href="item.link"
-									:target="
-										isExternal(item.link) ? '_blank' : undefined
-									"
-									:rel="
-										isExternal(item.link)
-											? 'noopener noreferrer'
-											: undefined
-									"
-									@click="onFooterLink($event, item.link)">
-									<CnSiteIcon
-										v-if="isExternal(item.link)"
-										name="external-link"
-										:size="18" />
-									<span>{{ item.name }}</span>
-								</a>
-							</li>
-						</ul>
-					</nav>
-
-					<div class="ac-footer__logo">
-						<div class="con-logo-container footer" />
-						<span>
-							<span>{{ site.title }}</span>
-							<!-- The reference's footer logo carries a tagline under
-							     the name. It is portal CONTENT, so it comes from the
-							     portal record rather than a constant. -->
-							<span
-								v-if="site.tagline"
-								data-testid="site-footer-tagline">
-								{{ site.tagline }}
-							</span>
-						</span>
-					</div>
-				</div>
-			</section>
-
-			<section class="ac-footer__sub-footer">
-				<div class="container">
-					<!--
-						The reference's strip is a HORIZONTAL NAV of legal links
-						(Privacy, Algemene voorwaarden, Disclaimer, FAQ), not a
-						colophon line. `.ac-footer__sub-footer-horizontal` is the
-						class its CSS separates with a pipe between items.
-
-						Driven by a menu so it is configurable per portal — the
-						colophon it replaces was the portal title and nothing
-						else, which no portal could change.
-					-->
-					<nav
-						v-if="subFooterMenu"
-						class="ac-footer__sub-footer-links"
-						:aria-label="subFooterMenu.title"
-						data-testid="site-subfooter-menu">
-						<ul class="ac-footer__sub-footer-horizontal">
-							<li v-for="item in subFooterMenu.items" :key="item.name">
-								<a
-									:href="item.link"
-									@click.prevent="go(item.link)"
-									>{{ item.name }}</a
-								>
-							</li>
-						</ul>
-					</nav>
-
-					<p v-else data-testid="site-footer-colophon">{{ site.title }}</p>
-				</div>
-			</section>
-		</footer>
+		<!-- THE FOOTER REGION. Its default is one `footerColumns` block
+		     (REQ-PTB-005); a portal or page can replace it or leave it empty. -->
+		<template v-for="block in regions.footer" :key="block.id || block.widgetKey">
+			<FooterColumns
+				v-if="block.widgetKey === 'footerColumns'"
+				v-bind="authoredProps(block)"
+				:title="site.title || ''"
+				:tagline="site.tagline || ''"
+				:menus="footerMenus"
+				:legalLinks="legalLinks"
+				:footer="site.footer || {}"
+				@navigate="go" />
+			<WidgetGrid
+				v-else
+				:widgets="[block]"
+				v-bind="gridContext"
+				@navigate="go"
+				@search="goSearch" />
+		</template>
 
 		<!--
 			THE EDITING DOOR, and it is last in the document on purpose: it is
@@ -462,18 +306,21 @@
 </template>
 
 <script>
-import { CnSiteIcon } from '@conduction/nextcloud-vue/public'
 import { defineAsyncComponent } from 'vue'
+import BrandHeader from './components/BrandHeader.vue'
+import FooterColumns from './components/FooterColumns.vue'
 import MarkdownBlock from './components/MarkdownBlock.vue'
-import SiteMenu from './components/SiteMenu.vue'
 import WidgetGrid from './components/WidgetGrid.vue'
 import {
 	adoptSessionToken,
 	authBaseFrom,
 	clearSessionToken,
 	fetchSession,
+	SIGNIN_FAILED_MESSAGE,
 	signInRoutes,
+	takeSigninFailed,
 } from './lib/authApi.js'
+import { withoutStyling } from './lib/blockProps.js'
 import { captureLanding } from './lib/campaignTracking.js'
 import { runtimeConfig } from './lib/contentApi.js'
 import {
@@ -486,6 +333,14 @@ import {
 } from './lib/contentApi.js'
 import { editorBaseFrom, fetchEditingContext } from './lib/editorApi.js'
 import { loadSiteEditor } from './lib/loadSiteEditor.js'
+import { pageRegionsOf, resolveRegions } from './lib/regions.js'
+import {
+	footerMenusOf,
+	headerMenusOf,
+	headerVariantOf,
+	legalLinksOf,
+	registerRouteOf,
+} from './lib/shellData.js'
 
 /**
  * LOADED ON DEMAND, and the budget is why — the same reason the detail and
@@ -515,7 +370,13 @@ const SiteEditButton = defineAsyncComponent(
 export default {
 	name: 'App',
 
-	components: { CnSiteIcon, MarkdownBlock, SiteEditButton, SiteMenu, WidgetGrid },
+	components: {
+		BrandHeader,
+		FooterColumns,
+		MarkdownBlock,
+		SiteEditButton,
+		WidgetGrid,
+	},
 
 	props: {
 		/** Explicit site slug, when not resolving by host. */
@@ -527,6 +388,9 @@ export default {
 
 	data() {
 		return {
+			// A failed sign-in the edge sent back (REQ-BEL-006), read once.
+			signinFailed: takeSigninFailed(),
+			signinFailedMessage: SIGNIN_FAILED_MESSAGE,
 			site: {},
 			menus: [],
 			glossary: [],
@@ -615,7 +479,9 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
 		 */
 		breadcrumbs() {
-			const crumbs = [{ route: '/', label: 'Home' }]
+			const crumbs = [
+				{ route: '/', label: 'Home', href: this.hrefForRoute('/') },
+			]
 			const segments = String(this.route || '/')
 				.split('/')
 				.filter(Boolean)
@@ -631,7 +497,7 @@ export default {
 					label = this.page.title
 				}
 
-				crumbs.push({ route, label })
+				crumbs.push({ route, label, href: this.hrefForRoute(route) })
 			})
 
 			return crumbs
@@ -663,9 +529,7 @@ export default {
 		 */
 		bodyProvidesHeading() {
 			const body = this.page.body || {}
-			if (body.type !== 'grid') {
-				return false
-			}
+			const main = body.type === 'grid' ? this.regions.main : []
 
 			// A block that renders its SUBJECT's name owns the page heading.
 			//
@@ -674,9 +538,43 @@ export default {
 			// one — so a detail page printed "Publicatie" as an h1 and then
 			// "Subsidieregister Rotterdam" as another, two page titles where
 			// the reference has one, and the generic one first.
-			return (body.widgets || []).some(
+			//
+			// A hero in the hero region counts too, the portal's included: the
+			// page then keeps one h1 (REQ-PTB-009).
+			return [...this.regions.hero, ...main].some(
 				(w) => w.widgetKey === 'hero' || w.widgetKey === 'publicationDetail',
 			)
+		},
+
+		/**
+		 * Every region's blocks for the page on screen: the page's own, else
+		 * the portal's, else the default shell.
+		 *
+		 * @return {object} Region name to widgets, all five present.
+		 *
+		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-regions-must-resolve-page-first-then-portal-then-default-req-ptb-009
+		 */
+		regions() {
+			return resolveRegions(
+				pageRegionsOf(this.page && this.page.body),
+				this.site.regions,
+			)
+		},
+
+		/**
+		 * What every widget grid on the page is handed by the host.
+		 *
+		 * @return {object} The WidgetGrid props besides `widgets`.
+		 *
+		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-blocks-must-take-their-data-as-props-and-nothing-else-req-ptb-007
+		 */
+		gridContext() {
+			return {
+				glossary: this.glossary,
+				contributions: this.contributions,
+				routeParam: this.routeParam,
+				portal: this.site.slug || '',
+			}
 		},
 
 		/**
@@ -696,70 +594,52 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-content-api-must-be-sufficient-without-the-built-in-renderer
 		 */
 		headerMenus() {
-			return this.menus.filter((menu) => (menu.position || 0) === 0)
+			return headerMenusOf(this.menus)
 		},
 
 		/**
-		 * The menus shown as columns in the footer's first band.
+		 * The portal's header shape, `double` unless it chose `single`.
 		 *
-		 * The counterpart of `headerMenus`: every menu the header does not
-		 * claim. Before this split, EVERY menu rendered in the header bar and
-		 * the footer had no links at all — a portal could not express a footer
-		 * column even though its data model already had the field to do it.
+		 * @return {string} The variant.
 		 *
-		 * The band is a four-column grid, so a portal declaring more than three
-		 * footer menus wraps rather than overflowing; the logo occupies the
-		 * fourth cell.
+		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-header-must-be-a-block-whose-shape-the-portal-chooses-req-ptb-004
+		 */
+		headerVariant() {
+			return headerVariantOf(this.site)
+		},
+
+		/**
+		 * The register destination the portal declares, or null.
+		 *
+		 * @return {object|null} `{href, label}`.
+		 *
+		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-header-must-be-a-block-whose-shape-the-portal-chooses-req-ptb-004
+		 */
+		registerRoute() {
+			return registerRouteOf(this.site)
+		},
+
+		/**
+		 * The footer's link columns: position 1, and any position the legal
+		 * strip does not claim.
 		 *
 		 * @return {Array} The footer menus.
 		 *
-		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-content-api-must-be-sufficient-without-the-built-in-renderer
+		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-footer-must-be-a-block-whose-bands-are-styled-by-role-req-ptb-005
 		 */
 		footerMenus() {
-			return this.menus.filter(
-				(menu) => (menu.position || 0) !== 0 && menu !== this.subFooterMenu,
-			)
+			return footerMenusOf(this.menus)
 		},
 
 		/**
-		 * The legal strip at the very bottom, if the portal declares one.
+		 * The legal strip's links: the portal's own, else its strip menu's.
 		 *
-		 * CONVENTION, read off the existing `position` field rather than added
-		 * to the schema: the HIGHEST position is the sub-footer. The reference
-		 * puts Privacy / Algemene voorwaarden / Disclaimer / FAQ there, visually
-		 * separate from the link columns above, and a portal needs some way to
-		 * say which menu that is.
+		 * @return {Array} `{label, href}` entries.
 		 *
-		 * Requires at least two footer menus, so a portal with a single footer
-		 * menu keeps it as a COLUMN rather than having it silently demoted to
-		 * the strip — one menu is far more likely to be links than legalese.
-		 *
-		 * @return {object|null} The sub-footer menu, or null.
-		 *
-		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-content-api-must-be-sufficient-without-the-built-in-renderer
+		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-footer-must-be-a-block-whose-bands-are-styled-by-role-req-ptb-005
 		 */
-		subFooterMenu() {
-			// POSITION IS NOW A CONTRACT, not a comparison: 0 is the header, 1
-			// is a footer column, 2 or higher is the legal strip.
-			//
-			// It used to be "the highest position, when there are at least
-			// two" — which meant a portal could not have a legal strip WITHOUT
-			// also having a footer column. The reference has exactly that
-			// shape: one nav, in the strip, and a band above carrying only the
-			// title and tagline. Reproducing it required inventing a footer
-			// column the reference does not have.
-			//
-			// A portal with menus at 1 and 2 is unaffected; only a portal
-			// whose single menu sits at 2 or above moves, and moving it is the
-			// point.
-			const strip = this.menus.filter((menu) => (menu.position || 0) >= 2)
-			if (strip.length === 0) {
-				return null
-			}
-
-			return strip.reduce((highest, menu) =>
-				(menu.position || 0) > (highest.position || 0) ? menu : highest,
-			)
+		legalLinks() {
+			return legalLinksOf(this.site, this.menus)
 		},
 
 		/**
@@ -1137,42 +1017,6 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
 		 */
 		/**
-		 * Whether a link leaves this portal.
-		 *
-		 * An absolute URL to another origin is external; everything else is an
-		 * in-site route this renderer handles itself. The distinction decides
-		 * both the icon and whether the click is intercepted — calling
-		 * `preventDefault` on an outbound link would strand the visitor on a
-		 * dead control.
-		 *
-		 * @param {string} link The href.
-		 * @return {boolean} True when it points off-site.
-		 *
-		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-content-api-must-be-sufficient-without-the-built-in-renderer
-		 */
-		isExternal(link) {
-			return /^https?:\/\//i.test(String(link || ''))
-		},
-
-		/**
-		 * Follow a footer link, in-site or out.
-		 *
-		 * @param {MouseEvent} event The click.
-		 * @param {string} link The href.
-		 * @return {void}
-		 *
-		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-content-api-must-be-sufficient-without-the-built-in-renderer
-		 */
-		onFooterLink(event, link) {
-			if (this.isExternal(link)) {
-				return
-			}
-
-			event.preventDefault()
-			this.go(link)
-		},
-
-		/**
 		 * Navigate to an in-site route without leaving the document.
 		 *
 		 * The counterpart to `onPopState`: this one pushes the entry, that one
@@ -1223,6 +1067,19 @@ export default {
 			this.route = this.searchRoute
 			window.history.pushState({}, '', url)
 			this.loadRoute(this.searchRoute)
+		},
+
+		/**
+		 * A shell block's authored props, without `style` and `class`. The
+		 * shell's own data is bound after them, so it wins.
+		 *
+		 * @param {object} block The region's block.
+		 * @return {object} The authored props.
+		 *
+		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-blocks-must-take-their-data-as-props-and-nothing-else-req-ptb-007
+		 */
+		authoredProps(block) {
+			return withoutStyling(block.props)
 		},
 
 		/**

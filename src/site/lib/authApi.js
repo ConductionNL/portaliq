@@ -92,6 +92,38 @@ export function adoptSessionToken() {
 }
 
 /**
+ * The one sentence a failed sign-in shows, whatever the reason
+ * (signin-integriq-broker-login REQ-BEL-006). The edge sends no reason, so the
+ * page cannot tell a prober which check failed.
+ */
+export const SIGNIN_FAILED_MESSAGE =
+	'Inloggen is niet gelukt. Probeer het opnieuw of kies een andere manier.'
+
+/**
+ * Whether the edge sent the browser back from a failed sign-in, read from the
+ * `#signin=failed` fragment and removed from the URL, like `#token=`.
+ *
+ * @return {boolean}
+ * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-a-failed-login-returns-to-the-login-screen-without-a-reason-req-bel-006
+ */
+export function takeSigninFailed() {
+	if (typeof window === 'undefined') {
+		return false
+	}
+
+	if (String(window.location.hash || '') !== '#signin=failed') {
+		return false
+	}
+
+	window.history.replaceState(
+		null,
+		'',
+		window.location.pathname + window.location.search,
+	)
+	return true
+}
+
+/**
  * Forget the stored bearer.
  *
  * @return {void}

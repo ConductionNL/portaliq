@@ -215,8 +215,6 @@ class ContentController extends Controller {
 			return $this->notFound();
 		}
 
-		$auth = (array)($portal['authentication'] ?? []);
-
 		return $this->publicJson(
 			payload: [
 				'title'   => (string)($portal['title'] ?? ''),
@@ -233,7 +231,13 @@ class ContentController extends Controller {
 				// The MODES are public — a visitor has to know how to sign in.
 				// Provider secrets are not here and never will be; they live in
 				// the credential broker.
-				'authentication' => ['modes' => array_values((array)($auth['modes'] ?? ['public']))],
+				// The shell: the public part of `authentication` (modes, and a
+				// declared register destination), the header's shape, the
+				// footer on named keys and the portal's regions
+				// (portal-theme-blocks-and-contributed-pages REQ-PTB-004,
+				// REQ-PTB-005, REQ-PTB-009). Provider secrets never leave the
+				// record; they live in the credential broker.
+				...$this->reader->shell(portal: $portal),
 				// The resolved measurement configuration, defaults filled in,
 				// so the client sends only what the portal asked for; and the
 				// absolute collector URL, so a statically built site on its

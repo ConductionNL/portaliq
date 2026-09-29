@@ -44,8 +44,17 @@ test('renderer and editor agree on geometry', () => {
 
 test('the public renderer places cells with the shared function', () => {
 	const grid = read('src/site/components/WidgetGrid.vue')
-	assert.match(grid, /from '\.\.\/\.\.\/editor\/geometry\.js'/)
-	assert.match(grid, /cellStyleOf\(widget\)/)
+	assert.match(grid, /from '\.\.\/lib\/gridPlacement\.js'/)
+	const placement = read('src/site/lib/gridPlacement.js')
+	assert.match(placement, /from '\.\.\/\.\.\/editor\/geometry\.js'/)
+	assert.match(placement, /cellOf\(widget\)/)
+})
+
+test('the renderer\'s own cell style equals the shared one on an absolute row', async () => {
+	const { cellStyle } = await import('../src/site/lib/gridPlacement.js')
+	for (const widget of WIDGETS) {
+		assert.deepEqual(cellStyle(widget, 0), cellStyleOf(widget), widget.id)
+	}
 })
 
 test('the site loads the editor as its own bundle, never in its entry', () => {

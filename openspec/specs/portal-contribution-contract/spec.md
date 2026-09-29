@@ -8,8 +8,8 @@
 - [field-projection](../../changes/field-projection/)
 - [reverse-scope-join](../../changes/reverse-scope-join/)
 - [portal-scoped-crud](../../changes/portal-scoped-crud/)
-- [contribution-manifest-v3](../../changes/contribution-manifest-v3/)
-- [portal-status-transitions](../../changes/portal-status-transitions/)
+- [contribution-manifest-v3](../../changes/archive/2026-09-29-contribution-manifest-v3/)
+- [portal-status-transitions](../../changes/archive/2026-09-29-portal-status-transitions/)
 - [assignment-portal-file-upload](../../changes/assignment-portal-file-upload/)
 - [portal-take-assessment](../../changes/portal-take-assessment/)
 - [portal-scope-list-membership](../../changes/portal-scope-list-membership/)
@@ -1127,7 +1127,7 @@ this item. Portaliq SHALL NOT read, compute or send an amount.
   providers", "Page composition with resolvable, same-contribution blocks", and
   "v2 manifests are unchanged by normalisation" requirements were added by the
   `contribution-manifest-v3` change (delta:
-  `openspec/changes/contribution-manifest-v3/specs/portal-contribution-contract/spec.md`);
+  `openspec/changes/archive/2026-09-29-contribution-manifest-v3/specs/portal-contribution-contract/spec.md`);
   enforced by `PortalManifestNormaliser` and frozen in hydra ADR-063; same sync
   discipline until it archives.
 - The "Scoped single-object read" and "Scoped verified update" requirements

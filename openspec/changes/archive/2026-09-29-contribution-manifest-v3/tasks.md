@@ -7,7 +7,7 @@
 ## Implementation Tasks
 
 ### Task 1: PortalManifestNormaliser — collections + actions
-- **spec_ref**: `openspec/changes/contribution-manifest-v3/specs/portal-contribution-contract/spec.md#requirement-manifest-ui-configuration-is-presentation-only`
+- **spec_ref**: `openspec/changes/archive/2026-09-29-contribution-manifest-v3/specs/portal-contribution-contract/spec.md#requirement-manifest-ui-configuration-is-presentation-only`
 - **files**: `lib/Contribution/PortalManifestNormaliser.php`, `tests/Unit/Contribution/PortalManifestNormaliserTest.php`
 - **acceptance_criteria**:
   - GIVEN a collection WHEN normalised THEN `columns` keeps entries with a non-empty string `field` and a `render` normalised to `{text,date,datetime,badge,currency,boolean,link}` (unknown → `text`); `detail.layout` → `{card,timeline}`; `defaultSort.direction` → `{asc,desc}`; malformed keys are dropped, never fatal
@@ -16,7 +16,7 @@
   - Fail-closed: any non-array/malformed input for a v3 key drops that key and normalisation returns the safe subset
 
 ### Task 2: PortalManifestNormaliser — pages + block reference resolution
-- **spec_ref**: `openspec/changes/contribution-manifest-v3/specs/portal-contribution-contract/spec.md#requirement-page-composition-with-resolvable-same-contribution-blocks`
+- **spec_ref**: `openspec/changes/archive/2026-09-29-contribution-manifest-v3/specs/portal-contribution-contract/spec.md#requirement-page-composition-with-resolvable-same-contribution-blocks`
 - **files**: `lib/Contribution/PortalManifestNormaliser.php`, `tests/Unit/Contribution/PortalManifestNormaliserTest.php`
 - **acceptance_criteria**:
   - GIVEN `pages` THEN each block is kept only when its `type` is in `{collection,action,detail,richText,cta}` AND its `collection`/`action` reference resolves within the SAME (already trust-filtered) contribution; unknown types and unresolved/cross-contribution refs are dropped
@@ -25,7 +25,7 @@
   - `richText` blocks require a string `markdown`; `cta` blocks require a string `label` + a resolvable `action`
 
 ### Task 3: Wire the normaliser into the aggregate
-- **spec_ref**: `openspec/changes/contribution-manifest-v3/specs/portal-contribution-contract/spec.md#requirement-v2-manifests-are-unchanged-by-normalisation`
+- **spec_ref**: `openspec/changes/archive/2026-09-29-contribution-manifest-v3/specs/portal-contribution-contract/spec.md#requirement-v2-manifests-are-unchanged-by-normalisation`
 - **files**: `lib/Contribution/PortalContributionRegistry.php`, `tests/Unit/Contribution/PortalContributionRegistryTest.php`
 - **acceptance_criteria**:
   - `aggregateFor()` runs `normaliseManifest()` per contribution AFTER `filterByTrust()` so trust-dropped entries can never be referenced by a surviving page
@@ -33,7 +33,7 @@
   - The normaliser is injected/constructed once; failure inside it degrades to the un-normalised-but-trust-filtered manifest, never a 500
 
 ### Task 4: Provider interface + demo provider document the vocabulary
-- **spec_ref**: `openspec/changes/contribution-manifest-v3/specs/portal-contribution-contract/spec.md#requirement-scoped-option-providers`
+- **spec_ref**: `openspec/changes/archive/2026-09-29-contribution-manifest-v3/specs/portal-contribution-contract/spec.md#requirement-scoped-option-providers`
 - **files**: `lib/Contribution/IPortalContributionProvider.php`, `lib/Portal/PortalContributionProvider.php`
 - **acceptance_criteria**:
   - The interface docblock documents the v3 keys as optional/duck-typed with v2-equivalent defaults (no signature change — providers never hard-depend)
@@ -41,7 +41,7 @@
   - A `collection` optionsProvider example is documented (commented) pointing at a subject-scoped collection
 
 ### Task 5: ADR-063 addendum + README vocabulary reference
-- **spec_ref**: `openspec/changes/contribution-manifest-v3/specs/portal-contribution-contract/spec.md#requirement-manifest-ui-configuration-is-presentation-only`
+- **spec_ref**: `openspec/changes/archive/2026-09-29-contribution-manifest-v3/specs/portal-contribution-contract/spec.md#requirement-manifest-ui-configuration-is-presentation-only`
 - **files**: `README.md`, `openspec/specs/portal-contribution-contract/spec.md`
 - **acceptance_criteria**:
   - README documents the v3 UI-config vocabulary table + the presentation-only invariant + the scoped-dropdown guarantee
@@ -50,7 +50,7 @@
 
 ## Quality checklist
 
-- [ ] `composer check` green (lint, phpcs, psalm, unit)
-- [ ] Normaliser is pure + fail-closed (no throws escape; every reject path returns the safe subset)
-- [ ] Additive-compat: v2 manifests unchanged aside from additive `pages` synthesis
-- [ ] Security invariant covered by a dedicated test (fieldConfig/column never widen access)
+- [x] `composer check` green (lint, phpcs, psalm, unit)
+- [x] Normaliser is pure + fail-closed (no throws escape; every reject path returns the safe subset)
+- [x] Additive-compat: v2 manifests unchanged aside from additive `pages` synthesis
+- [x] Security invariant covered by a dedicated test (fieldConfig/column never widen access)

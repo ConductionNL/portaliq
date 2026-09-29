@@ -12,6 +12,7 @@ use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Signin\OrganisationLoginConfig;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\RedirectResponse;
 use OCP\IConfig;
@@ -318,6 +319,39 @@ class SessionControllerTest extends TestCase {
 	 * `resolveOidcConfig` is asserted NEVER called: a caller the policy has
 	 * already refused must not reach the method that reads the client secret.
 	 */
+	/**
+	 * signin-integriq-broker-login D2: a provider the organisation routes to
+	 * integriq's broker is forwarded to the broker start, with no OIDC secret
+	 * read; the public site's sign-in links reach it this way.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-broker-start-binds-the-login-to-one-organisation-and-one-provider-req-bel-002
+	 */
+	public function testOidcStartForwardsABrokerRoutedProvider(): void {
+		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
+		$orgConfig->expects($this->never())->method('resolveOidcConfig');
+		$loginConfig = $this->createMock(OrganisationLoginConfig::class);
+		$loginConfig->method('loginRouteFor')->willReturnMap([['gemeente-x', 'digid', 'broker']]);
+		$urls = $this->createMock(IURLGenerator::class);
+		$urls->method('linkToRoute')->willReturnCallback(
+			static fn (string $route, array $parameters = []): string => '/'.$route.'?'.http_build_query($parameters)
+		);
+		$portals = $this->createMock(PortalResolver::class);
+		$portals->method('resolve')->willReturn(['slug' => 'venray', 'organisation' => 'gemeente-x']);
+
+		$response = $this->controller(
+			session: $this->createMock(PortalSessionService::class),
+			orgConfig: $orgConfig,
+			urlGenerator: $urls,
+			portals: $portals,
+			loginConfig: $loginConfig
+		)->oidcStart(provider: 'digid', portal: 'venray');
+
+		$this->assertSame(Http::STATUS_FOUND, $response->getStatus());
+		$this->assertSame('/portaliq.brokerSession.start?org=gemeente-x&provider=digid', $response->getRedirectURL());
+	}//end testOidcStartForwardsABrokerRoutedProvider()
+
 	public function testOidcStartRefusesBeforeResolvingAnySecretWhenThePolicyDeclines(): void {
 		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
 		$orgConfig->method('isLoginProviderAllowed')->willReturn(false);
@@ -380,7 +414,7 @@ class SessionControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/design.md#d2-two-new-routes-and-the-spas-follow-the-route-field
+	 * @spec openspec/changes/archive/2026-09-29-signin-integriq-broker-login/design.md#d2-two-new-routes-and-the-spas-follow-the-route-field
 	 */
 	public function testOidcStartFromTheSiteResolvesTheOrganisationFromThePortalSlug(): void {
 		$portals = $this->createMock(originalClassName: PortalResolver::class);
@@ -417,7 +451,7 @@ class SessionControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/design.md#d2-two-new-routes-and-the-spas-follow-the-route-field
+	 * @spec openspec/changes/archive/2026-09-29-signin-integriq-broker-login/design.md#d2-two-new-routes-and-the-spas-follow-the-route-field
 	 */
 	public function testOidcStartWithAnExplicitOrgDoesNotConsultThePortal(): void {
 		$portals = $this->createMock(originalClassName: PortalResolver::class);
@@ -495,6 +529,7 @@ class SessionControllerTest extends TestCase {
 			'missing code' => [static fn (SessionControllerTest $t) => ['args' => ['state' => 's', 'code' => '']]],
 			'broker reported error' => [static fn (SessionControllerTest $t) => ['args' => ['state' => 's', 'code' => 'c', 'error' => 'access_denied']]],
 			'unknown/reused state' => [static fn (SessionControllerTest $t) => ['args' => ['state' => 's', 'code' => 'c'], 'stateConsume' => null]],
+			'a state written for the integriq broker route (signin-integriq-broker-login D3)' => [static fn (SessionControllerTest $t) => ['args' => ['state' => 's', 'code' => 'c'], 'stateConsume' => ['route' => 'broker', 'codeVerifier' => ''] + $t->pendingFixture(), 'orgConfig' => $t->oidcConfigFixture(), 'discover' => $t->discoveryFixture(), 'exchangeCode' => ['id_token' => 'x.y.z'], 'verifyIdToken' => ['sub' => 'abc'], 'mapClaims' => $t->mappedFixture(), 'findOrCreate' => ['subjectRef' => 'sub-1', 'isNew' => true]]],
 			'unconfigured provider' => [static fn (SessionControllerTest $t) => ['args' => ['state' => 's', 'code' => 'c'], 'stateConsume' => $t->pendingFixture(), 'orgConfig' => null]],
 			'discovery unreachable' => [static fn (SessionControllerTest $t) => ['args' => ['state' => 's', 'code' => 'c'], 'stateConsume' => $t->pendingFixture(), 'orgConfig' => $t->oidcConfigFixture(), 'discover' => null]],
 			'token exchange failed' => [static fn (SessionControllerTest $t) => ['args' => ['state' => 's', 'code' => 'c'], 'stateConsume' => $t->pendingFixture(), 'orgConfig' => $t->oidcConfigFixture(), 'discover' => $t->discoveryFixture(), 'exchangeCode' => null]],
@@ -656,6 +691,7 @@ class SessionControllerTest extends TestCase {
 			'org' => 'gemeente-x',
 			'provider' => 'eherkenning',
 			'returnTo' => '/portal',
+			'route' => 'oidc',
 		];
 
 	}//end pendingFixture()
@@ -679,6 +715,7 @@ class SessionControllerTest extends TestCase {
 		string $authorization = 'Bearer some-token',
 		?IUserSession $userSession = null,
 		?PortalResolver $portals = null,
+		?OrganisationLoginConfig $loginConfig = null,
 	): SessionController {
 		$request = $this->createMock(IRequest::class);
 		// Defaults to a bearer being PRESENT, which is what every pre-existing
@@ -697,7 +734,8 @@ class SessionControllerTest extends TestCase {
 			($accounts ?? $this->createMock(PortalAccountService::class)),
 			($urlGenerator ?? $this->createMock(originalClassName: IURLGenerator::class)),
 			($userSession ?? $this->createMock(originalClassName: IUserSession::class)),
-			($portals ?? $this->createMock(originalClassName: PortalResolver::class))
+			($portals ?? $this->createMock(originalClassName: PortalResolver::class)),
+			$loginConfig
 		);
 
 	}//end controller()
