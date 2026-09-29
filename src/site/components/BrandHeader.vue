@@ -57,6 +57,13 @@
 						</button>
 					</template>
 					<nav v-else :aria-label="userMenuLabel">
+						<!-- A failed sign-in the edge sent back (REQ-BEL-006). -->
+						<p
+							v-if="signinFailedMessage"
+							role="alert"
+							data-testid="site-signin-failed">
+							{{ signinFailedMessage }}
+						</p>
 						<ul>
 							<li v-if="registerRoute">
 								<a
@@ -163,6 +170,8 @@ export default {
 		sessionLabel: { type: String, default: '' },
 		/** The sign-in routes the portal declares. */
 		signInRoutes: { type: Array, default: () => [] },
+		/** The message for a sign-in the edge refused; empty shows nothing. */
+		signinFailedMessage: { type: String, default: '' },
 		/** `{href, label}` when the portal declares a register destination. */
 		registerRoute: { type: Object, default: null },
 		/** The register control's label when the portal names none. */

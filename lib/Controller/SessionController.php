@@ -42,6 +42,7 @@ use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Signin\OrganisationLoginConfig;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -123,6 +124,8 @@ class SessionController extends Controller {
 	 * @param PortalResolver $portals Resolves which portal is being signed
 	 *                                into, so a mode it does not declare
 	 *                                cannot be used against it.
+	 * @param OrganisationLoginConfig|null $loginConfig The route per provider
+	 *                                                  (signin-integriq-broker-login).
 	 */
 	public function __construct(
 		IRequest $request,
@@ -136,6 +139,7 @@ class SessionController extends Controller {
 		private readonly IURLGenerator $urlGenerator,
 		private readonly IUserSession $userSession,
 		private readonly PortalResolver $portals,
+		private readonly ?OrganisationLoginConfig $loginConfig = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -299,6 +303,16 @@ class SessionController extends Controller {
 			$org = $this->organisationOfPortal(slug: $portal);
 		}
 
+		// A provider the organisation routes to integriq's broker goes there
+		// (signin-integriq-broker-login D2), so every sign-in link, the public
+		// site's included, reaches the route the organisation chose.
+		if ($this->loginConfig?->loginRouteFor(orgSlug: $org, provider: $provider) === 'broker') {
+			return new RedirectResponse(
+				$this->urlGenerator->linkToRoute(Application::APP_ID . '.brokerSession.start', ['org' => $org, 'provider' => $provider]),
+				Http::STATUS_FOUND
+			);
+		}
+
 		// THE AUTHORISATION DECISION, MADE EXPLICITLY AND BEFORE ANY SECRET IS
 		// TOUCHED. `resolveOidcConfig()` answers two different questions at
 		// once — "may this org+provider start a login" and "give me the client
@@ -411,7 +425,9 @@ class SessionController extends Controller {
 		}
 
 		$pending = $this->stateStore->consume(state: $state);
-		if ($pending === null) {
+		// A row written for the integriq broker route cannot complete an OIDC
+		// login (signin-integriq-broker-login, design D3).
+		if ($pending === null || $pending['route'] !== 'oidc' || $pending['codeVerifier'] === '') {
 			return $this->oidcGenericError();
 		}
 

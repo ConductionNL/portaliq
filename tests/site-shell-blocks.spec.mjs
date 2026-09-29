@@ -83,6 +83,8 @@ test('an existing portal keeps its header: same markup as the hard-coded header,
 		route: '/zoeken',
 		breadcrumbs: CRUMBS,
 		signInRoutes: SIGN_IN,
+		signinFailed: true,
+		signinFailedMessage: 'Inloggen is niet gelukt.',
 	})
 	const block = await renderSfc('src/site/components/BrandHeader.vue', {
 		title: 'Open Tilburg',
@@ -91,6 +93,7 @@ test('an existing portal keeps its header: same markup as the hard-coded header,
 		currentRoute: '/zoeken',
 		breadcrumbs: CRUMBS,
 		signInRoutes: SIGN_IN,
+		signinFailedMessage: 'Inloggen is niet gelukt.',
 	})
 
 	// The one intended difference (REQ-PTB-004: the site name is not a heading).

@@ -70,6 +70,7 @@
 				:sessionLabel="sessionLabel"
 				:signInRoutes="signInRoutes"
 				:registerRoute="registerRoute"
+				:signinFailedMessage="signinFailed ? signinFailedMessage : ''"
 				@navigate="go"
 				@signout="signOut" />
 			<WidgetGrid
@@ -303,7 +304,9 @@ import {
 	authBaseFrom,
 	clearSessionToken,
 	fetchSession,
+	SIGNIN_FAILED_MESSAGE,
 	signInRoutes,
+	takeSigninFailed,
 } from './lib/authApi.js'
 import { withoutStyling } from './lib/blockProps.js'
 import { captureLanding } from './lib/campaignTracking.js'
@@ -366,6 +369,9 @@ export default {
 
 	data() {
 		return {
+			// A failed sign-in the edge sent back (REQ-BEL-006), read once.
+			signinFailed: takeSigninFailed(),
+			signinFailedMessage: SIGNIN_FAILED_MESSAGE,
 			site: {},
 			menus: [],
 			glossary: [],

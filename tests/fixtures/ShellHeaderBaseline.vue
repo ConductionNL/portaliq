@@ -4,7 +4,7 @@
   -->
 
 <!--
-	The header `src/site/App.vue` hard-coded on development fc17d3fb, before the
+	The header `src/site/App.vue` hard-coded on development 3411adcc (#946 added the sign-in failure alert), before the
 	header became the `brandHeader` block. Copied verbatim (lines 54-164) so
 	tests/site-shell-blocks.spec.mjs can render both and compare. Only the
 	bindings that reached into App.vue are replaced by props of the same name.
@@ -49,6 +49,12 @@
 						</button>
 					</template>
 					<nav v-else aria-label="Gebruikersmenu">
+						<p
+							v-if="signinFailed"
+							role="alert"
+							data-testid="site-signin-failed">
+							{{ signinFailedMessage }}
+						</p>
 						<ul>
 							<li v-for="entry in signInRoutes" :key="entry.mode">
 								<a
@@ -135,6 +141,8 @@ export default {
 		session: { type: Object, default: null },
 		sessionLabel: { type: String, default: '' },
 		signInRoutes: { type: Array, default: () => [] },
+		signinFailed: { type: Boolean, default: false },
+		signinFailedMessage: { type: String, default: '' },
 	},
 
 	emits: ['navigate', 'signout'],

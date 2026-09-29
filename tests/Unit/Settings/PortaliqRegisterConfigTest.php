@@ -285,13 +285,16 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// (site-page-seo-history-and-media). Additive.
 		// 0.44.0 (media 0.1.0): a portal's media library
 		// (site-page-seo-history-and-media T06). New schema, additive.
-		// 0.45.0 (portal 0.8.0): the portal's shell, `headerVariant`,
+		// 0.45.0 (portalOidcState 0.2.0): a state row names its login `route`,
+		// and `codeVerifier` is no longer required, because an integriq broker
+		// row has none (signin-integriq-broker-login T03). Additive.
+		// 0.46.0 (portal 0.8.0): the portal's shell, `headerVariant`,
 		// `authentication.register` and `registerLabel`, `footer` and
 		// `regions` (portal-theme-blocks-and-contributed-pages tasks 4-7);
 		// page 0.5.0: `body.clearedRegions` and `draftBody.clearedRegions`.
 		// Additive.
-		$this->assertSame('0.45.0', self::$register['info']['version']);
-		$this->assertSame('0.45.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.46.0', self::$register['info']['version']);
+		$this->assertSame('0.46.0', self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame('0.5.0', self::$register['components']['schemas']['page']['version']);
 		$this->assertSame(70, self::$register['components']['schemas']['page']['properties']['seoTitle']['maxLength']);
 		$this->assertSame(160, self::$register['components']['schemas']['page']['properties']['seoDescription']['maxLength']);
@@ -507,9 +510,11 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$state = $schemas['portalOidcState'];
 		$this->assertNeverPublic('portalOidcState');
 		$this->assertSame(
-			['state', 'nonce', 'codeVerifier', 'org', 'provider', 'expiresAt'],
+			['state', 'nonce', 'org', 'provider', 'expiresAt'],
 			$state['required']
 		);
+		$this->assertSame('0.2.0', $state['version']);
+		$this->assertSame(['oidc', 'broker'], $state['properties']['route']['enum']);
 
 		$account = $schemas['portalAccount'];
 		$this->assertSame(

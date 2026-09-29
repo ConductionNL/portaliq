@@ -305,7 +305,7 @@ says so here.
 - **Existing hero widgets stay in `main`.** Seeded pages place `hero` with
   `slot: "body"`. They keep rendering as a band at the top of the main grid,
   exactly as before; nothing moves them to the `hero` region.
-- **Register 0.45.0.** `portal` 0.8.0 gains `headerVariant`,
+- **Register 0.46.0.** `portal` 0.8.0 gains `headerVariant`,
   `authentication.register`, `authentication.registerLabel`, `footer` and
   `regions`. `page` 0.5.0 gains `clearedRegions` on `body` and `draftBody`.
   Each has a description, Dutch and English labels, and a PHPUnit test that
