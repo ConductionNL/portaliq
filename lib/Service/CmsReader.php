@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Service\Cms\MediaReferences;
 use OCP\ICache;
 use OCP\ICacheFactory;
 use Psr\Container\ContainerInterface;
@@ -84,6 +85,7 @@ class CmsReader {
 	 * @param ICacheFactory         $cacheFactory Creates the distributed cache.
 	 * @param LoggerInterface       $logger       The logger.
 	 * @param PortalRegisterContext $context      Points the shared ObjectService at this app's schemas.
+	 * @param MediaReferences       $media        Resolves a page's media:<id> references.
 	 *
 	 * @return void
 	 */
@@ -92,6 +94,7 @@ class CmsReader {
 		ICacheFactory $cacheFactory,
 		private readonly LoggerInterface $logger,
 		private readonly PortalRegisterContext $context,
+		private readonly MediaReferences $media,
 	) {
 		$this->cache = $cacheFactory->createDistributed('portaliq_cms');
 	}//end __construct()
@@ -305,6 +308,65 @@ class CmsReader {
 
 
 	/**
+	 * The published media items of a portal, by id.
+	 *
+	 * Status and portal are filtered in the QUERY, like a page: a draft item
+	 * never reaches this process, so it resolves exactly like an unknown id.
+	 *
+	 * @param string $portal The portal slug.
+	 *
+	 * @return array<string, array{id: string, title: string, alt: string, kind: string}>
+	 *
+	 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+	 */
+	public function mediaItems(string $portal): array {
+		$key = $this->cacheKey(portal: $portal, kind: 'media', selector: '', locale: '', audience: 'anonymous');
+		$hit = $this->cache->get($key);
+		if ($hit !== null) {
+			return json_decode($hit, true) ?? [];
+		}
+
+		$items = [];
+		foreach ($this->query(schema: 'media', filters: ['portal' => $portal, 'status' => 'published']) as $row) {
+			$id = $this->rowId(row: $row);
+			if ($id === null || (string)($row['portal'] ?? '') !== $portal || ($row['status'] ?? '') !== 'published') {
+				continue;
+			}
+
+			$items[$id] = [
+				'id'    => $id,
+				'title' => (string)($row['title'] ?? ''),
+				'alt'   => (string)($row['alt'] ?? ''),
+				'kind'  => (string)($row['kind'] ?? 'file'),
+			];
+		}
+
+		$this->cache->set($key, json_encode($items), self::TTL);
+
+		return $items;
+	}//end mediaItems()
+
+
+	/**
+	 * One published media item of a portal, or null.
+	 *
+	 * @param string $portal The portal slug.
+	 * @param string $id     The item id.
+	 *
+	 * @return array{id: string, title: string, alt: string, kind: string}|null
+	 *
+	 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+	 */
+	public function mediaItem(string $portal, string $id): ?array {
+		if ($portal === '' || $id === '') {
+			return null;
+		}
+
+		return ($this->mediaItems(portal: $portal)[$id] ?? null);
+	}//end mediaItem()
+
+
+	/**
 	 * Read the glossary of a portal.
 	 *
 	 * @param string $portal  The portal slug.
@@ -437,11 +499,13 @@ class CmsReader {
 	 * @return array{title: string, description: string, noindex: bool, image: string}
 	 */
 	private function shapeSeo(array $row): array {
+		$portal = (string)($row['portal'] ?? '');
+
 		return [
 			'title'       => (string)($row['seoTitle'] ?? ''),
 			'description' => (string)($row['seoDescription'] ?? ''),
 			'noindex'     => (($row['seoNoindex'] ?? false) === true),
-			'image'       => (string)($row['seoImage'] ?? ''),
+			'image'       => $this->media->image(portal: $portal, value: (string)($row['seoImage'] ?? ''), items: fn () => $this->mediaItems(portal: $portal)),
 		];
 	}//end shapeSeo()
 
@@ -454,8 +518,10 @@ class CmsReader {
 	 * @return array The API shape.
 	 */
 	private function shapePage(array $row): array {
-		$body = (array)($row['body'] ?? []);
-		$type = (string)($body['type'] ?? 'markdown');
+		$body   = (array)($row['body'] ?? []);
+		$type   = (string)($body['type'] ?? 'markdown');
+		$portal = (string)($row['portal'] ?? '');
+		$items  = fn (): array => $this->mediaItems(portal: $portal);
 
 		$shaped = [
 			'title'   => (string)($row['title'] ?? ''),
@@ -463,6 +529,7 @@ class CmsReader {
 			'summary' => (string)($row['summary'] ?? ''),
 			'locale'  => (string)($row['locale'] ?? ''),
 			'seo'     => $this->shapeSeo(row: $row),
+			'hero'    => $this->media->hero(portal: $portal, value: ($row['heroImage'] ?? null), items: $items),
 			'body'    => ['type' => $type],
 		];
 
@@ -470,7 +537,8 @@ class CmsReader {
 			// Served as SOURCE. Rendering to HTML here would force every
 			// consumer that wants markdown — a Docusaurus build, most
 			// obviously — to parse it back out, losing fidelity for nothing.
-			$shaped['body']['markdown'] = (string)($body['markdown'] ?? '');
+			// Only a media:<id> link target is rewritten to the item's address.
+			$shaped['body']['markdown'] = $this->media->markdown(portal: $portal, markdown: (string)($body['markdown'] ?? ''), items: $items);
 			return $shaped;
 		}
 

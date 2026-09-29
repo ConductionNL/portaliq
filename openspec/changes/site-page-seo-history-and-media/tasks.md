@@ -20,7 +20,7 @@
 
 - [x] **T06**: `media` schema in `lib/Settings/portaliq_register.json` with file attachment through OpenRegister object files (REQ-SPH-004). media 0.1.0, register 0.44.0; read `authenticated` only (the public reach an item through the content API); the editor groups get its write rules with the page's (`PageEditorService`); the alternative-text rule is portaliq's own (T09 listener), because OpenRegister keeps no `if`/`then`.
   - Verify: register import; PHPUnit on the alt text rule for images
-- [ ] **T07**: `GET /api/content/media/{id}` streams a published item of the resolved portal, 404 otherwise (REQ-SPH-004)
+- [x] **T07**: `GET /api/content/media/{id}` streams a published item of the resolved portal, 404 otherwise (REQ-SPH-004). `ContentMediaController` over `lib/Service/Cms/MediaFile.php` (the newest attached file; a portal behind sign-in serves no item, since an image tag carries no bearer token) and `CmsReader::mediaItem()` (published + portal in the query, cached per portal).
   - Verify: PHPUnit for a draft item, another portal's item and an unknown id; `hydra-gate-route-auth` green
 - [ ] **T08**: The Media manifest page and the picker dialog in `src/dialogs/`; `heroImage`, `seo.image` and `media:<id>` in markdown resolve to the item (REQ-SPH-004, REQ-SPH-005)
   - Verify: Playwright: upload once, use on two pages, replace the file, both pages show the new one

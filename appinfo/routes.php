@@ -101,6 +101,9 @@ return [
         // `/api/contributions`, which is subject-scoped and never cacheable.
         ['name' => 'content#contributions', 'url' => '/api/content/contributions', 'verb' => 'GET'],
         ['name' => 'content#page', 'url' => '/api/content/page', 'verb' => 'GET'],
+        // A published media library item of the serving portal
+        // (site-page-seo-history-and-media T07); pages refer to it as media:<id>.
+        ['name' => 'contentMedia#show', 'url' => '/api/content/media/{id}', 'verb' => 'GET'],
         [
             'name' => 'content#page',
             'url' => '/api/content/page/{route}',
