@@ -56,6 +56,7 @@ use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalRuntimeConfigResolver;
 use OCA\Portaliq\Service\PortalThemeResolver;
 use OCA\Portaliq\Service\Cms\SiteHead;
+use OCA\Portaliq\Service\PortalNoticeReader;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -87,6 +88,7 @@ class PortalPageController extends Controller {
 	 *                                           reference to a real themiq
 	 *                                           token stylesheet.
 	 * @param SiteHead $siteHead The head of the page a site request asks for.
+	 * @param PortalNoticeReader $notices The notices running on the signed-in portal now.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -95,6 +97,7 @@ class PortalPageController extends Controller {
 		private readonly PortalResolver $portalResolver,
 		private readonly PortalThemeResolver $themeResolver,
 		private readonly SiteHead $siteHead,
+		private readonly PortalNoticeReader $notices,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -121,6 +124,7 @@ class PortalPageController extends Controller {
 	 * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.1
 	 * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#2.1
 	 * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#2.4
+	 * @spec openspec/changes/operate-maintenance-notice/specs/portal-notices/spec.md#requirement-a-notice-shows-on-every-page-during-its-window-req-omn-001
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -146,6 +150,12 @@ class PortalPageController extends Controller {
 			orgValue: $orgValue,
 			locale: $locale
 		);
+		// Maintenance and warning notices running now on the signed-in
+		// portal (operate-maintenance-notice). No portal, no notices.
+		$runtimeConfig['notices'] = [];
+		if ($portal !== null) {
+			$runtimeConfig['notices'] = $this->notices->active(portal: (string)($portal['slug'] ?? ''), surface: 'portal');
+		}
 
 		$response = new TemplateResponse(
 			Application::APP_ID,

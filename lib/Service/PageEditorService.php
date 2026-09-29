@@ -84,6 +84,15 @@ class PageEditorService {
 	private const MEDIA_SLUG = 'media';
 
 	/**
+	 * The portal notices' schema, written by the same editor groups
+	 * (operate-maintenance-notice T01): whoever may edit pages may announce
+	 * maintenance above them.
+	 *
+	 * @var string
+	 */
+	private const NOTICE_SLUG = 'portalNotice';
+
+	/**
 	 * The actions the editor groups are granted on that schema.
 	 *
 	 * `read` is deliberately absent: it carries the public rule that serves
@@ -265,11 +274,14 @@ class PageEditorService {
 
 			$this->grantWrites(mapper: $mapper, schema: $schema, groups: $groups);
 
-			// The media library follows the pages. It is absent on an instance
-			// whose register predates it, which leaves the pages governed.
-			$media = $mapper->findByApplicationAndSlug(slug: self::MEDIA_SLUG, application: Application::APP_ID);
-			if ($media !== null) {
-				$this->grantWrites(mapper: $mapper, schema: $media, groups: $groups);
+			// The media library and the notices follow the pages. Either is
+			// absent on an instance whose register predates it, which leaves
+			// the pages governed.
+			foreach ([self::MEDIA_SLUG, self::NOTICE_SLUG] as $slug) {
+				$follower = $mapper->findByApplicationAndSlug(slug: $slug, application: Application::APP_ID);
+				if ($follower !== null) {
+					$this->grantWrites(mapper: $mapper, schema: $follower, groups: $groups);
+				}
 			}
 		} catch (Throwable $e) {
 			$this->logger->error(

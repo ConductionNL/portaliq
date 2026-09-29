@@ -157,7 +157,7 @@ class PageEditorServiceTest extends TestCase {
 			 * @return object|null The schema double.
 			 */
 			public function findByApplicationAndSlug(string $slug, string $application): ?object {
-				if (in_array($slug, ['page', 'media'], true) === false || $application !== 'portaliq') {
+				if (in_array($slug, ['page', 'media', 'portalNotice'], true) === false || $application !== 'portaliq') {
 					return null;
 				}
 
@@ -354,6 +354,23 @@ class PageEditorServiceTest extends TestCase {
 		$this->assertSame(['redacteuren'], $this->writtenBySlug['media']['update'] ?? null);
 		$this->assertSame(['redacteuren'], $this->writtenBySlug['media']['delete'] ?? null);
 	}//end testTheEditorGroupsAlsoWriteTheMediaLibrary()
+
+
+	/**
+	 * The editor groups also write portal notices (operate-maintenance-notice
+	 * T01, REQ-OMN-003): whoever may edit pages may announce maintenance.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/operate-maintenance-notice/specs/portal-notices/spec.md#requirement-page-editors-manage-notices-req-omn-003
+	 */
+	public function testEditorGroupsReachNotices(): void {
+		$this->service(isAdmin: true)->setEditorGroups(['redacteuren']);
+
+		$this->assertSame(['redacteuren'], $this->writtenBySlug['portalNotice']['create'] ?? null);
+		$this->assertSame(['redacteuren'], $this->writtenBySlug['portalNotice']['update'] ?? null);
+		$this->assertSame(['redacteuren'], $this->writtenBySlug['portalNotice']['delete'] ?? null);
+	}//end testEditorGroupsReachNotices()
 
 
 	/**
