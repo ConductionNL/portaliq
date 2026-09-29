@@ -93,7 +93,7 @@ class PortalRecordChangeListenerTest extends TestCase {
 	private function listener(bool $dispatchThrows = false, array $messageBox = []): PortalRecordChangeListener {
 		$inbox = ['id' => 'berichten', 'register' => 'zaken', 'schema' => 'bericht', 'scopeField' => 'ontvanger', 'kind' => 'inbox', 'label' => 'Berichten'];
 		if (($messageBox['declared'] ?? false) === true) {
-			$inbox['messageBox'] = ['recipientProvider' => 'messageBoxRecipient'];
+			$inbox['messageBox'] = ['recipientProvider' => 'messageBoxRecipient', 'bodyField' => 'inhoud'];
 		}
 
 		$notifications = ['message.created', ['ruleKey' => 'case.updated', 'collection' => 'mijnZaken', 'on' => ['field' => 'status', 'operator' => 'changed'], 'titleField' => 'identifier']];
@@ -372,6 +372,7 @@ class PortalRecordChangeListenerTest extends TestCase {
 		$this->assertSame('messageBoxRecipient', $argument['recipientProvider']);
 		$this->assertSame(['app' => 'dossiq', 'collection' => 'berichten', 'id' => 'zaak-uuid-1', 'label' => 'Berichten'], $argument['record']);
 		$this->assertSame(['register' => 'zaken', 'schema' => 'bericht', 'scopeField' => 'ontvanger'], $argument['source']);
+		$this->assertSame(['body' => 'inhoud', 'subject' => ''], $argument['letterFields'], 'the declared letter fields travel with the job');
 		$this->assertSame('bsn-1', $argument['subjectRef']);
 		$this->assertSame('venray', $argument['organisation']);
 		$this->assertCount(1, $this->dispatched, 'the e-mail nudge still goes as before');

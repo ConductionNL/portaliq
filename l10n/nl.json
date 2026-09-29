@@ -1677,7 +1677,7 @@
         "For a `messageBox` row: the message id integriq's digital post adapter answered with. Integriq's status reports find the row by it.": "Bij een `messageBox`-regel: het bericht-id waarmee de digitale-postkoppeling van integriq antwoordde. De statusmeldingen van integriq vinden de regel hieraan.",
         "For a `messageBox` row: the inbox message this send is about, so the inbox can show where it went.": "Bij een `messageBox`-regel: het inboxbericht waar deze verzending over gaat, zodat de inbox kan tonen waar het naartoe ging.",
         "Refusal code": "Weigeringscode",
-        "For a failed `messageBox` row: why no letter left. `not_installed` when integriq is absent, `unhandled` when nothing answered, or the code integriq's refusal carried.": "Bij een mislukte `messageBox`-regel: waarom er geen brief vertrok. `not_installed` als integriq ontbreekt, `unhandled` als niets antwoordde, of de code uit de weigering van integriq.",
+        "For a failed `messageBox` row: why no letter left. `not_installed` when integriq is absent, `unhandled` when nothing answered, `empty_body` when the message held no text, or the code integriq's refusal carried.": "Bij een mislukte `messageBox`-regel: waarom er geen brief vertrok. `not_installed` als integriq ontbreekt, `unhandled` als niets antwoordde, `empty_body` als het bericht geen tekst had, of de code uit de weigering van integriq.",
         "The app's inbox collection id.": "De inboxcollectie-id van de app.",
         "The contributing app.": "De app die bijdraagt.",
         "The message's id.": "De id van het bericht.",

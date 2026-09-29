@@ -32,13 +32,25 @@ A `kind: inbox` collection MAY declare a recipient method on its app's portal pr
 
 ### Requirement: Portaliq asks integriq to send, and records the answer (REQ-MBC-003)
 
-For a message whose collection declares the channel, in an organisation that offers it, for a resident who did not switch it off, portaliq SHALL dispatch integriq's `DigitalPostSendRequestedEvent` with the organisation's source, the message's subject, body and attachments, and `requestedBy` `portaliq`. When integriq is not installed, or nobody handles the event, portaliq SHALL record a refusal, never a send. It SHALL record integriq's message id with the attempt.
+For a message whose collection declares the channel, in an organisation that offers it, for a resident who did not switch it off, portaliq SHALL dispatch integriq's `DigitalPostSendRequestedEvent` with the organisation's source, the message's subject, body and attachments, and `requestedBy` `portaliq`. When integriq is not installed, or nobody handles the event, portaliq SHALL record a refusal, never a send. It SHALL record integriq's message id with the attempt. The letter's text and subject SHALL come from the fields the collection declares (`messageBox.bodyField`, `messageBox.subjectField`), else from the first of `body`, `content`, `text` (and `subject`, `title`) that holds text. A message with no text SHALL NOT be sent: portaliq SHALL record the attempt as failed with refusal code `empty_body`.
 
 #### Scenario: A decision goes both ways
 - **GIVEN** an organisation offering the channel and a case app returning a recipient for a decision letter
 - **WHEN** the letter arrives in the resident's portal inbox
 - **THEN** a send is requested from integriq and the notification log records it as sent, with integriq's message id
 - @e2e exclude Needs integriq and a declaring case app; pinned by MessageBoxDispatchJobTest::testMessageIdIsRecorded and PortalRecordChangeListenerTest::testMessageBoxJobOnlyWhenAllowed
+
+#### Scenario: The letter carries the text the case app keeps
+- **GIVEN** a case app whose message keeps its text in `content` (dossiq's portaalBericht)
+- **WHEN** the letter is sent to the message box
+- **THEN** integriq receives that text as the letter's body, and its subject
+- @e2e exclude Needs integriq and a declaring case app; pinned by MessageBoxDispatchJobTest::testDossiqsPortaalBerichtTextIsTheLetter and ::testTheDeclaredLetterFieldsAreRead
+
+#### Scenario: An empty letter is never sent
+- **GIVEN** a message with no text in any of the letter fields
+- **WHEN** it would be sent to the message box
+- **THEN** nothing is asked of integriq, the attempt is recorded as failed with `empty_body`, and a warning names the message, not the resident
+- @e2e exclude A negative over events and rows; pinned by MessageBoxDispatchJobTest::testAnEmptyLetterIsNotSent
 
 #### Scenario: Integriq is not installed
 - **GIVEN** an instance without integriq
