@@ -161,6 +161,12 @@ foreach (['nlds/nlds-components', 'nlds/nlds-vendor-a', 'nlds/nlds-vendor-b', 'n
     $stylesheets[] = $asset($appId, 'css/' . $sheet . '.css');
 }
 
+// The site's own rules, after the vendored sheets so a rule that ties on
+// specificity wins on order: the footer bands restate the vendored positional
+// rules against role classes (portal-theme-blocks-and-contributed-pages
+// REQ-PTB-005). Token references only.
+$stylesheets[] = $asset($appId, 'css/site-theme.css');
+
 // LAST, AND THE POSITION IS THE WHOLE MECHANISM.
 //
 // The vendored sheets above were captured from the reference application,

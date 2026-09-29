@@ -42,7 +42,7 @@
 						class="pq-grid__cell"
 						:data-testid="`widget-${widget.id || widget.widgetKey}`"
 						:data-widget-key="widget.widgetKey"
-						:style="cellStyle(widget)">
+						:style="cellStyle(widget, run.rowOffset)">
 						<component
 							:is="componentFor(widget.widgetKey)"
 							v-if="componentFor(widget.widgetKey)"
@@ -70,7 +70,10 @@
 <script>
 import { siteBlockIsBand, siteBlockRegistry } from '@conduction/nextcloud-vue/public'
 import { defineAsyncComponent } from 'vue'
+import HeroBlock from './HeroBlock.vue'
 import MarkdownBlock from './MarkdownBlock.vue'
+import { withoutStyling } from '../lib/blockProps.js'
+import { cellStyle, runsFor } from '../lib/gridPlacement.js'
 
 /**
  * LOADED ON DEMAND, and that is a budget decision rather than a style one.
@@ -195,6 +198,10 @@ const PUBLIC_WIDGETS = {
 	intakeForm: IntakeFormBlock,
 	intakeStatus: IntakeStatusBlock,
 	...siteBlockRegistry,
+	// After the spread, under the library's own key: `siteBlockIsBand('hero')`
+	// still answers true, and the band keeps CnSiteHero's props while gaining
+	// an eyebrow and capped calls to action (REQ-PTB-006, eed4c3b).
+	hero: HeroBlock,
 }
 
 /**
@@ -305,27 +312,15 @@ export default {
 		 * Order is preserved exactly as authored — a band does not float to the
 		 * top, it splits the page where the author put it.
 		 *
-		 * @return {Array} Alternating `{band: true, widget}` / `{band: false, widgets}` entries.
+		 * Each run carries its `rowOffset`, so a run below a band does not
+		 * reserve rows for it (REQ-PTB-006).
 		 *
-		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
+		 * @return {Array} Alternating `{band: true, widget}` / `{band: false, widgets, rowOffset}` entries.
+		 *
+		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-hero-must-cap-its-calls-to-action-and-keep-one-outline-entry-req-ptb-006
 		 */
 		runs() {
-			const out = []
-			for (const widget of this.widgets) {
-				if (this.isBand(widget.widgetKey)) {
-					out.push({ band: true, widget })
-					continue
-				}
-
-				const last = out[out.length - 1]
-				if (last && last.band === false) {
-					last.widgets.push(widget)
-				} else {
-					out.push({ band: false, widgets: [widget] })
-				}
-			}
-
-			return out
+			return runsFor(this.widgets, (key) => this.isBand(key))
 		},
 	},
 
@@ -369,10 +364,11 @@ export default {
 		 * @param {object} widget The placement.
 		 * @return {object} The component props.
 		 *
-		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-only-explicitly-public-widgets-must-render-at-a-public-origin
+		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-blocks-must-take-their-data-as-props-and-nothing-else-req-ptb-007
 		 */
 		propsFor(widget) {
-			const props = widget.props || {}
+			// `style` and `class` never reach a block (REQ-PTB-007).
+			const props = withoutStyling(widget.props)
 
 			if (widget.widgetKey === 'markdown') {
 				return { source: props.markdown || '' }
@@ -452,35 +448,16 @@ export default {
 		},
 
 		/**
-		 * Place one widget on the 12-column grid.
+		 * Place one widget on the 12-column grid, re-based onto its run.
 		 *
-		 * The geometry is the manifest's, not a portal variant: 12 columns,
-		 * `gridX`/`gridY` zero-based, `gridWidth`/`gridHeight` spans. A page
-		 * authored in OpenBuild's Page Designer therefore lands in the same
-		 * cells here.
-		 *
-		 * `gridX + gridWidth > 12` is clamped rather than thrown on. The
-		 * manifest validator already rejects it at author time with the
-		 * canonical message; at render time on a public page, clamping shows
-		 * the content and a throw shows nothing.
-		 *
-		 * @param {object} widget The placement.
+		 * @param {object} widget    The placement.
+		 * @param {number} rowOffset The run's first authored row.
 		 * @return {object} The style bindings.
 		 *
-		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
+		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-hero-must-cap-its-calls-to-action-and-keep-one-outline-entry-req-ptb-006
 		 */
-		cellStyle(widget) {
-			const x = Math.max(0, Math.min(11, Number(widget.gridX) || 0))
-			const width = Math.max(
-				1,
-				Math.min(12 - x, Number(widget.gridWidth) || 12),
-			)
-			const height = Math.max(1, Number(widget.gridHeight) || 1)
-
-			return {
-				gridColumn: `${x + 1} / span ${width}`,
-				gridRow: `${(Number(widget.gridY) || 0) + 1} / span ${height}`,
-			}
+		cellStyle(widget, rowOffset) {
+			return cellStyle(widget, rowOffset)
 		},
 	},
 }

@@ -249,6 +249,68 @@ For this change only the renderer files matter. How to handle them:
 The traffic, session and admin files in the list belong to work already
 shipped. Leave them as they are on `development`.
 
+## Build notes: tasks 4 to 7 (2026-09-29, development fc17d3fb)
+
+The design was checked against `development` after the theme picker (#934),
+the search-engine head (#936) and page history (#938). None of them touches
+the shell, so D3 and D4 hold. Where the build departs from the text above, it
+says so here.
+
+- **No dependency on task 1.** The site entry was 409 KiB against the 410 KiB
+  budget before this work. Moving the shell into blocks kept it inside: 406
+  KiB after task 7. Tasks 4 to 7 therefore do not wait for the duplicate
+  design system CSS to go, but the headroom stays thin until task 1 lands.
+- **`css/site-theme.css` exists from task 5 on, with only what tasks 5 and 6
+  need**: the footer bands restated by role, and the hero's eyebrow and
+  actions. It is linked straight after the vendored sheets. Task 2 owns the
+  rest of the token layer, the link order of D1 and the stylelint rules, and
+  extends this file.
+- **The baseline is a render, not a browser capture.** The branch's
+  `tests/shell-snapshot.mjs` needs a running instance. The header comparison
+  instead renders `BrandHeader.vue` and a verbatim copy of the header
+  `App.vue` hard-coded (`tests/fixtures/ShellHeaderBaseline.vue`) in plain
+  node, and asserts equal markup. The one intended difference is the site
+  name: a `span`, not an `h1`. The page's fallback title became the `h1` in
+  its place, keeping the `utrecht-heading-2` class so it keeps its size.
+- **The footer keeps `development`'s order**: link columns first, brand column
+  last. The branch moved the brand first to match docs.conduction.nl, which is
+  a pixel-parity goal this change does not have.
+- **The legal bar always names someone.** It shows the colophon, else the
+  portal title, also when legal links are present. On `development` the title
+  showed only when the portal had no legal menu.
+- **The hero has no illustration.** The branch's honeycomb is Conduction's own
+  decoration, out of scope for the same reason as the canal scene.
+  `HeroBlock.vue` composes `CnSiteSection` and `CnSiteSearch` with
+  `CnSiteHero`'s props and markup, so an existing hero renders as before.
+- **Links a visitor cannot follow are dropped.** Footer entries (server side,
+  `PortalShell`) and hero actions (client side, `heroActions()`) keep only an
+  in-site route (`/x`, not `//x`) or an `http(s):`, `mailto:` or `tel:`
+  address. A `javascript:` target is authored data that must not become a
+  link.
+- **Resolution lives in the renderer.** D4 names `PortalRegionResolver::resolve()`.
+  No server consumer paints regions, so the PHP class groups and validates
+  (`regionFor`, `group`, `cleared`, `ordered`) and serves both inputs with
+  their keys intact: `body.regions` (the page's) and `site.regions` (the
+  portal's). `resolveRegions()` in `src/site/lib/regions.js` applies page,
+  then portal, then default. The fifteen cases and the truthiness mutation
+  are pinned in `tests/site-regions.spec.mjs`; a test also pins that the PHP
+  and JS region lists agree. The Docusaurus plugin keeps reading
+  `body.widgets`.
+- **An empty map is a JSON object.** `body.regions` and `site.regions` encode
+  an empty map as `{}`. The renderer also reads `[]` as "nothing stated",
+  because a cached PHP array can come back that way.
+- **One `h1` with an inherited hero.** A hero in the hero region, the
+  portal's included, suppresses the renderer's fallback page title, so every
+  page keeps one `h1`.
+- **Existing hero widgets stay in `main`.** Seeded pages place `hero` with
+  `slot: "body"`. They keep rendering as a band at the top of the main grid,
+  exactly as before; nothing moves them to the `hero` region.
+- **Register 0.46.0.** `portal` 0.8.0 gains `headerVariant`,
+  `authentication.register`, `authentication.registerLabel`, `footer` and
+  `regions`. `page` 0.5.0 gains `clearedRegions` on `body` and `draftBody`.
+  Each has a description, Dutch and English labels, and a PHPUnit test that
+  validates a payload against the real fragment.
+
 ## Risks and trade-offs
 
 - [Linking the bridge changes colours on portals whose set lacks component

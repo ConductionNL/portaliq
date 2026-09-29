@@ -288,9 +288,14 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.45.0 (portalOidcState 0.2.0): a state row names its login `route`,
 		// and `codeVerifier` is no longer required, because an integriq broker
 		// row has none (signin-integriq-broker-login T03). Additive.
-		$this->assertSame('0.45.0', self::$register['info']['version']);
-		$this->assertSame('0.45.0', self::$register['components']['registers']['portaliq']['version']);
-		$this->assertSame('0.4.0', self::$register['components']['schemas']['page']['version']);
+		// 0.46.0 (portal 0.8.0): the portal's shell, `headerVariant`,
+		// `authentication.register` and `registerLabel`, `footer` and
+		// `regions` (portal-theme-blocks-and-contributed-pages tasks 4-7);
+		// page 0.5.0: `body.clearedRegions` and `draftBody.clearedRegions`.
+		// Additive.
+		$this->assertSame('0.46.0', self::$register['info']['version']);
+		$this->assertSame('0.46.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.5.0', self::$register['components']['schemas']['page']['version']);
 		$this->assertSame(70, self::$register['components']['schemas']['page']['properties']['seoTitle']['maxLength']);
 		$this->assertSame(160, self::$register['components']['schemas']['page']['properties']['seoDescription']['maxLength']);
 		$this->assertSame('boolean', self::$register['components']['schemas']['page']['properties']['seoNoindex']['type']);
@@ -335,8 +340,8 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalTrafficRecording']['version']);
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalTrafficRecording']['authorization']['read']);
 		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
-		$this->assertSame('0.4.0', self::$register['components']['schemas']['page']['version']);
-		$this->assertSame('0.7.0', self::$register['components']['schemas']['portal']['version']);
+		$this->assertSame('0.5.0', self::$register['components']['schemas']['page']['version']);
+		$this->assertSame('0.8.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('0.12.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalSession']['version']);
@@ -623,6 +628,82 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$groups = array_map(static fn ($rule) => is_array($rule) ? ($rule['group'] ?? null) : $rule, $schema['authorization']['read']);
 		$this->assertNotContains('public', $groups, 'the public reach an item through the content API, never through OpenRegister');
 	}//end testAMediaItemNamesItsPortalKindAndStatus()
+
+	/**
+	 * portal-theme-blocks-and-contributed-pages REQ-PTB-004: the portal
+	 * declares its header shape and register destination, validated with the
+	 * real schema fragment. An undeclared field would be accepted, echoed and
+	 * not stored (045b168), so each one is a schema property.
+	 *
+	 * @return void
+	 */
+	public function testThePortalDeclaresItsHeaderShapeAndRegisterPage(): void {
+		$schema = self::$register['components']['schemas']['portal'];
+		$valid  = $this->portalValidator(schema: $schema);
+
+		$this->assertTrue($valid(['title' => 'Docs', 'slug' => 'docs', 'headerVariant' => 'single', 'authentication' => ['modes' => ['digid'], 'register' => '/registreren', 'registerLabel' => 'Account maken']]));
+		$this->assertFalse($valid(['title' => 'Docs', 'slug' => 'docs', 'headerVariant' => 'triple']), 'the header shape is double or single');
+		$this->assertNotEmpty($schema['properties']['headerVariant']['description']);
+		$this->assertNotEmpty($schema['properties']['authentication']['properties']['register']['description']);
+	}//end testThePortalDeclaresItsHeaderShapeAndRegisterPage()
+
+	/**
+	 * portal-theme-blocks-and-contributed-pages REQ-PTB-005: the footer the
+	 * content API projects is a schema property, validated with the real
+	 * fragment.
+	 *
+	 * @return void
+	 */
+	public function testThePortalDeclaresItsFooter(): void {
+		$schema = self::$register['components']['schemas']['portal'];
+		$valid  = $this->portalValidator(schema: $schema);
+
+		$this->assertTrue($valid(['title' => 'Docs', 'footer' => [
+			'description' => 'Eén loket',
+			'colophon'    => 'Gemeente Voorbeeld',
+			'socials'     => [['label' => 'Mastodon', 'href' => 'https://social.example', 'icon' => 'mastodon']],
+			'legalLinks'  => [['label' => 'Privacy', 'href' => '/privacy']],
+			'badges'      => [['label' => 'ISO 27001', 'href' => 'https://cert.example']],
+		]]));
+		$this->assertFalse($valid(['title' => 'Docs', 'footer' => ['socials' => 'https://social.example']]), 'socials is a list');
+		$this->assertSame(['description', 'colophon', 'socials', 'legalLinks', 'badges'], array_keys($schema['properties']['footer']['properties']));
+	}//end testThePortalDeclaresItsFooter()
+
+	/**
+	 * portal-theme-blocks-and-contributed-pages REQ-PTB-009: a portal fills
+	 * regions and a page empties them, validated with the real fragments.
+	 *
+	 * @return void
+	 */
+	public function testThePortalFillsRegionsAndAPageEmptiesThem(): void {
+		$portal = self::$register['components']['schemas']['portal'];
+		$valid  = $this->portalValidator(schema: $portal);
+
+		$this->assertTrue($valid(['title' => 'Docs', 'regions' => ['hero' => [['widgetKey' => 'hero', 'props' => ['title' => 'Welkom']]], 'footer' => []]]));
+		$this->assertFalse($valid(['title' => 'Docs', 'regions' => ['hero' => [['props' => ['title' => 'Welkom']]]]]), 'a region widget names its widget key');
+		$this->assertSame(['header', 'hero', 'main', 'aside', 'footer'], array_keys($portal['properties']['regions']['properties']));
+
+		$page = self::$register['components']['schemas']['page'];
+		foreach (['body', 'draftBody'] as $body) {
+			$fragment = json_decode((string)json_encode($page['properties'][$body]), false);
+			$check    = static fn (array $value): bool => (new Validator())->validate(json_decode((string)json_encode($value), false), $fragment)->isValid();
+			$this->assertTrue($check(['type' => 'grid', 'widgets' => [], 'clearedRegions' => ['hero', 'aside']]), $body);
+			$this->assertFalse($check(['type' => 'grid', 'widgets' => [], 'clearedRegions' => ['sidebar']]), $body.' clears known regions only');
+		}
+	}//end testThePortalFillsRegionsAndAPageEmptiesThem()
+
+	/**
+	 * A validator for portal records against the real schema fragment.
+	 *
+	 * @param array $schema The portal schema.
+	 *
+	 * @return \Closure(array): bool
+	 */
+	private function portalValidator(array $schema): \Closure {
+		$jsonSchema = json_decode((string)json_encode(['type' => 'object', 'properties' => $schema['properties']]), false);
+
+		return static fn (array $portal): bool => (new Validator())->validate(json_decode((string)json_encode($portal), false), $jsonSchema)->isValid();
+	}//end portalValidator()
 
 	/**
 	 * The public surface, pinned BY NAME.
