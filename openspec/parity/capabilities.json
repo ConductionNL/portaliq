@@ -7521,12 +7521,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/workflow/designing-and-managing-workflows/workflow-designer/using-task-timers 'When a review task is idle for three days, the timer now reminds task assignees ... The reminder notification repeats daily'. A resident's outstanding request would have to be modelled as a workflow task assigned to them. [was unknown; custom: request-for-information task model]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "openregister development 86a2fb876f lib/Listener/PortalTaskReminderListener.php:161 turns a flow-business-timer preBreach rung into a KIND_REMINDER delivery (FlowTimerFiredEvent emitted at lib/Service/Flow/Timer/FlowTimerService.php:651,720); lib/BackgroundJob/PortalTaskDeliveryJob.php:119,234 delivers it as inbox message + mail; src/portal/components/TasksPage.jsx:250-256,379-387 shows due date and 'Overdue'",
+				"state": "building",
+				"evidence": "lib/BackgroundJob/PortalTaskDeliveryJob.php delivers kind overdue: inbox subject 'Your task is overdue: {title}', body 'This task was due on {date}.' plus the optional consequence line, mail 'Your task in the portal of {organisation} is overdue'; an unknown kind is marked failed; tests/Unit/BackgroundJob/PortalTaskDeliveryJobTest.php over openregister's real PortalTaskDelivery entity. Before the deadline: openregister lib/Listener/PortalTaskReminderListener.php preBreach rung -> KIND_REMINDER.",
 				"reachedOn": "flow timer -> openregister delivery ledger -> PortalTaskDeliveryJob (cron, appinfo/info.xml:81) -> portalMessage in InboxPage.jsx with 'View task' deep link -> TasksPage.jsx; plus a privacy-minimal mail",
 				"owner": "ConductionNL/portaliq",
-				"note": "Automatic reminders exist, but they fire BEFORE the deadline (preBreach); once a task is actually overdue (slaBreached) the listener deliberately sends the party nothing and escalates inward. The resident sees 'Overdue' on the task list. Reminders only happen when a business timer is configured on the task. Specified in openspec/changes/tasks-reminders-after-the-deadline (OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"note": "Portaliq's half built 2026-09-29 (tasks-reminders-after-the-deadline): an overdue row reaches the inbox and the mail worded as overdue. Not reachable yet: openregister records no overdue row (only a preBreach rung becomes a party delivery; slaBreached escalates inward). Owed by openregister: a postBreach rung addressed to the party, KIND_OVERDUE and the listener branch, ConductionNL/openregister#4166.",
+				"origin": "code",
+				"change": "2026-09-29-tasks-reminders-after-the-deadline"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",

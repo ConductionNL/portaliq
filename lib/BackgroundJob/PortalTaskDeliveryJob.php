@@ -241,7 +241,7 @@ class PortalTaskDeliveryJob extends TimedJob {
 	 * @return void
 	 *
 	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-delivery-worker-settles-every-ledger-row-idempotently-and-in-isolation
-	 * @spec openspec/changes/tasks-reminders-after-the-deadline/specs/portal-task-delivery/spec.md#requirement-an-unknown-kind-fails-honestly-req-trd-003
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-an-unknown-kind-fails-honestly-req-trd-003
 	 */
 	private function settleRow(object $ledger, object $row): void {
 		$uuid = '';
@@ -349,7 +349,7 @@ class PortalTaskDeliveryJob extends TimedJob {
 	 * @return string|null Null on success, else the failure reason.
 	 *
 	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-delivery-worker-settles-every-ledger-row-idempotently-and-in-isolation
-	 * @spec openspec/changes/tasks-reminders-after-the-deadline/specs/portal-task-delivery/spec.md#requirement-the-mail-says-which-kind-of-delivery-it-is-req-trd-002
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-mail-says-which-kind-of-delivery-it-is-req-trd-002
 	 */
 	private function deliverMail(string $subjectRef, string $kind): ?string {
 		$account = ($this->reader->readCollection(
@@ -416,7 +416,7 @@ class PortalTaskDeliveryJob extends TimedJob {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/tasks-reminders-after-the-deadline/specs/portal-task-delivery/spec.md#requirement-an-overdue-delivery-reaches-the-resident-as-overdue-req-trd-001
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-an-overdue-delivery-reaches-the-resident-as-overdue-req-trd-001
 	 */
 	private function bodyText(string $kind, array $message): string {
 		$parts = [];

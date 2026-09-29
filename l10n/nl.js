@@ -1603,7 +1603,12 @@ OC.L10N.register(
         "Record id": "Id van het dossier",
         "The app that holds the record.": "De app waarin het dossier staat.",
         "The collection of that app the record belongs to.": "De verzameling van die app waar het dossier bij hoort.",
-        "The id of the record.": "Het id van het dossier."
+        "The id of the record.": "Het id van het dossier.",
+        "Your task is overdue: %1$s": "Uw taak is over de termijn: %1$s",
+        "This task was due on %1$s.": "Deze taak moest af zijn op %1$s.",
+        "If you do not respond: %1$s": "Als u niet reageert: %1$s",
+        "Your task in the portal of %1$s is overdue": "Uw taak in het portaal van %1$s is over de termijn",
+        "A task in the portal of %1$s is past its deadline. Log in to finish it: %2$s": "Een taak in het portaal van %1$s is over de termijn. Log in om de taak af te ronden: %2$s"
     },
     "nplurals=2; plural=(n != 1);"
 )

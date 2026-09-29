@@ -353,7 +353,7 @@ class PortalTaskDeliveryJobTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/tasks-reminders-after-the-deadline/specs/portal-task-delivery/spec.md#requirement-the-mail-says-which-kind-of-delivery-it-is-req-trd-002
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-mail-says-which-kind-of-delivery-it-is-req-trd-002
 	 */
 	public function testAReminderMailDoesNotAnnounceANewTask(): void {
 		$reminder = $this->sentMail(kind: 'reminder');
@@ -432,7 +432,7 @@ class PortalTaskDeliveryJobTest extends TestCase {
 	 * An overdue inbox row is worded as overdue, with the task title and the
 	 * task deep link.
 	 *
-	 * @spec openspec/changes/tasks-reminders-after-the-deadline/specs/portal-task-delivery/spec.md#requirement-an-overdue-delivery-reaches-the-resident-as-overdue-req-trd-001
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-an-overdue-delivery-reaches-the-resident-as-overdue-req-trd-001
 	 */
 	public function testOverdueInboxSubject(): void {
 		[$ledger, $written] = $this->inboxRun($this->deliveryRow(uuid: 'd-1', channel: 'portal-inbox', kind: 'overdue'));
@@ -449,7 +449,7 @@ class PortalTaskDeliveryJobTest extends TestCase {
 	 * Once the date has passed the body says it was due, never "finish
 	 * before", and carries the case type's consequence when there is one.
 	 *
-	 * @spec openspec/changes/tasks-reminders-after-the-deadline/specs/portal-task-delivery/spec.md#requirement-an-overdue-delivery-reaches-the-resident-as-overdue-req-trd-001
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-an-overdue-delivery-reaches-the-resident-as-overdue-req-trd-001
 	 */
 	public function testOverdueBodyStatesThePastDueDate(): void {
 		$message = self::MESSAGE;
@@ -474,7 +474,7 @@ class PortalTaskDeliveryJobTest extends TestCase {
 	 * An overdue mail says it is overdue and carries the organisation name
 	 * and the link only.
 	 *
-	 * @spec openspec/changes/tasks-reminders-after-the-deadline/specs/portal-task-delivery/spec.md#requirement-the-mail-says-which-kind-of-delivery-it-is-req-trd-002
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-mail-says-which-kind-of-delivery-it-is-req-trd-002
 	 */
 	public function testOverdueMailSubject(): void {
 		$overdue = $this->sentMail(kind: 'overdue');
@@ -487,7 +487,7 @@ class PortalTaskDeliveryJobTest extends TestCase {
 	/**
 	 * A reminder mail is a reminder.
 	 *
-	 * @spec openspec/changes/tasks-reminders-after-the-deadline/specs/portal-task-delivery/spec.md#requirement-the-mail-says-which-kind-of-delivery-it-is-req-trd-002
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-mail-says-which-kind-of-delivery-it-is-req-trd-002
 	 */
 	public function testReminderMailSubject(): void {
 		$reminder = $this->sentMail(kind: 'reminder');
@@ -497,7 +497,7 @@ class PortalTaskDeliveryJobTest extends TestCase {
 	/**
 	 * The ask and re-ask mails stay exactly as they were.
 	 *
-	 * @spec openspec/changes/tasks-reminders-after-the-deadline/specs/portal-task-delivery/spec.md#requirement-the-mail-says-which-kind-of-delivery-it-is-req-trd-002
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-mail-says-which-kind-of-delivery-it-is-req-trd-002
 	 */
 	public function testAskMailIsUnchanged(): void {
 		$expected = [
@@ -512,7 +512,7 @@ class PortalTaskDeliveryJobTest extends TestCase {
 	 * A kind the job does not know fails the row with its reason; nothing is
 	 * written and no mail is sent, on either channel.
 	 *
-	 * @spec openspec/changes/tasks-reminders-after-the-deadline/specs/portal-task-delivery/spec.md#requirement-an-unknown-kind-fails-honestly-req-trd-003
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-an-unknown-kind-fails-honestly-req-trd-003
 	 */
 	public function testUnknownKindIsMarkedFailed(): void {
 		$ledger = new FakeLedger(
@@ -542,7 +542,7 @@ class PortalTaskDeliveryJobTest extends TestCase {
 	 * Portaliq keeps no clock: with no ledger row the job sends nothing,
 	 * however far past its deadline a task is.
 	 *
-	 * @spec openspec/changes/tasks-reminders-after-the-deadline/specs/portal-task-delivery/spec.md#requirement-portaliq-keeps-no-reminder-clock-req-trd-004
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-portaliq-keeps-no-reminder-clock-req-trd-004
 	 */
 	public function testNoRowNoNotice(): void {
 		$ledger = new FakeLedger(rows: []);
