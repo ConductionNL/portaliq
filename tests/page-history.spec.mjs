@@ -83,7 +83,11 @@ test('the designer opens the History dialog and restores through a draft write',
 	const designer = readFileSync(join(ROOT, 'src/views/PageLayoutDesigner.vue'), 'utf8')
 	assert.match(designer, /import PageHistoryDialog from '\.\.\/dialogs\/PageHistoryDialog\.vue'/)
 	assert.match(designer, /data-testid="designer-history"/)
-	assert.match(designer, /restoredDraft\(this\.page, version\)/)
+	// The restore runs through the shared editor (portal-in-place-editing),
+	// which writes it as a draft with the version check.
+	assert.match(designer, /this\.editor\.restore\(version\)/)
+	const editor = readFileSync(join(ROOT, 'src/editor/pageEditor.js'), 'utf8')
+	assert.match(editor, /restoredDraft\(state\.page, version\)/)
 
 	const dialog = readFileSync(join(ROOT, 'src/dialogs/PageHistoryDialog.vue'), 'utf8')
 	assert.match(dialog, /Restore this version/)
