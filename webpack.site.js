@@ -20,6 +20,63 @@ const webpack = require('webpack')
 
 const isDev = process.env.NODE_ENV === 'development'
 
+/**
+ * The files of every chunk only an EDITOR can load.
+ *
+ * The editor (`src/editor/SiteEditMode.vue`, portal-in-place-editing) is a
+ * dynamic import in the site entry, and everything it pulls in (the grid
+ * engine, the shared widget forms, their own lazy chunks, the Dutch catalogue)
+ * hangs below the `site-editor` chunk group. None of it reaches a visitor, so
+ * the per-asset budget below, which exists for a first-time visitor on a phone,
+ * does not apply to it. Worked out from the chunk graph rather than from file
+ * names, because webpack numbers the chunks it splits off.
+ *
+ * @type {Set<string>}
+ */
+const editorOnlyFiles = new Set()
+
+/**
+ * Whether a chunk group can only be reached through the editor.
+ *
+ * @param {object} group A webpack chunk group.
+ * @param {Set<object>} seen Groups already on this path.
+ * @return {boolean} True when every way to it passes `site-editor`.
+ */
+function underEditor(group, seen = new Set()) {
+	if (group.name === 'site-editor') {
+		return true
+	}
+	if (group.isInitial() || seen.has(group)) {
+		return false
+	}
+	seen.add(group)
+	const parents = group.getParents()
+	return parents.length > 0 && parents.every((parent) => underEditor(parent, seen))
+}
+
+/** Collects `editorOnlyFiles` before the size limits are checked. */
+class EditorOnlyChunksPlugin {
+
+	/**
+	 * @param {object} compiler The webpack compiler.
+	 * @return {void}
+	 */
+	apply(compiler) {
+		compiler.hooks.emit.tap('EditorOnlyChunksPlugin', (compilation) => {
+			editorOnlyFiles.clear()
+			for (const chunk of compilation.chunks) {
+				const groups = [...chunk.groupsIterable]
+				if (groups.length > 0 && groups.every((group) => underEditor(group))) {
+					for (const file of chunk.files) {
+						editorOnlyFiles.add(file)
+					}
+				}
+			}
+		})
+	}
+
+}
+
 module.exports = {
 	mode: isDev ? 'development' : 'production',
 	devtool: isDev ? 'cheap-source-map' : 'source-map',
@@ -55,6 +112,7 @@ module.exports = {
 	},
 	plugins: [
 		new VueLoaderPlugin(),
+		new EditorOnlyChunksPlugin(),
 		// Vue 3 reads these at build time; without them the runtime logs a
 		// warning on every boot about an undefined feature flag.
 		new webpack.DefinePlugin({
@@ -79,12 +137,11 @@ module.exports = {
 		hints: isDev ? false : 'error',
 		maxAssetSize: 410 * 1024,
 		maxEntrypointSize: 410 * 1024,
-		// THE EDITOR CHUNKS ARE NOT A VISITOR'S BYTES. `site-editor` (and its
-		// Dutch catalogue) load only when an editor chooses "Deze pagina
-		// bewerken" (portal-in-place-editing, REQ-PIE-007), so the asset limit,
-		// which exists for a first-time visitor on a phone, does not apply to
-		// them. The entrypoint limit still does, which is what keeps the editor
+		// THE EDITOR CHUNKS ARE NOT A VISITOR'S BYTES. They load only when an
+		// editor chooses "Deze pagina bewerken" (portal-in-place-editing,
+		// REQ-PIE-007), so the asset limit, which exists for a first-time
+		// visitor on a phone, does not apply to them (EditorOnlyChunksPlugin). The entrypoint limit still does, which is what keeps the editor
 		// out of the entry: an eager import of it fails this build.
-		assetFilter: (file) => !/^site-editor/.test(file) && !file.endsWith('.map'),
+		assetFilter: (file) => !editorOnlyFiles.has(file) && !file.endsWith('.map'),
 	},
 }
