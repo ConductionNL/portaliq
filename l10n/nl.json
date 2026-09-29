@@ -1719,7 +1719,15 @@
         "The house style could not be saved.": "De huisstijl kon niet worden opgeslagen.",
         "The house style is saved.": "De huisstijl is opgeslagen.",
         "footer": "voettekst",
-        "page background": "paginaachtergrond"
+        "page background": "paginaachtergrond",
+        "Search title": "Zoektitel",
+        "The title search engines show for this page. Keep it under 60 characters. Empty uses the page title.": "De titel die zoekmachines voor deze pagina tonen. Houd hem korter dan 60 tekens. Leeg gebruikt de paginatitel.",
+        "Search description": "Zoekomschrijving",
+        "The text search engines show under the title. Keep it under 155 characters. Empty uses the summary.": "De tekst die zoekmachines onder de titel tonen. Houd hem korter dan 155 tekens. Leeg gebruikt de samenvatting.",
+        "Keep this page out of search engines": "Deze pagina buiten zoekmachines houden",
+        "When on, the page asks search engines not to list it.": "Als dit aan staat, vraagt de pagina zoekmachines haar niet op te nemen.",
+        "Share image": "Deelafbeelding",
+        "The http or https address of the image shown when the page is shared.": "Het http- of https-adres van de afbeelding die wordt getoond als de pagina wordt gedeeld."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

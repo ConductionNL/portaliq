@@ -239,7 +239,33 @@ if ($favicon === '') {
     // fallback. Checked for emptiness instead, which covers both "no portal
     // resolved" and "a portal with a blank title".
     ?>
-    <title><?php p(($portalConfig['title'] ?? '') !== '' ? $portalConfig['title'] : 'Portaal'); ?></title>
+    <?php
+    // THE HEAD OF THE PAGE ASKED FOR (site-page-seo-history-and-media), from
+    // SiteHead: the same anonymous read the content API makes, so a draft or
+    // a missing route lends nothing and gets `noindex`. The title prefers the
+    // page's search title; with no head at all the portal's name stands, then
+    // the neutral fallback.
+    $head = (array)($head ?? []);
+    $headTitle = (string)($head['title'] ?? '');
+    if ($headTitle === '') {
+        $headTitle = (($portalConfig['title'] ?? '') !== '' ? (string)$portalConfig['title'] : 'Portaal');
+    }
+    ?>
+    <title><?php p($headTitle); ?></title>
+    <?php if (($head['description'] ?? '') !== '') { ?>
+    <meta name="description" content="<?php p($head['description']); ?>">
+    <meta property="og:description" content="<?php p($head['description']); ?>">
+    <?php } ?>
+    <meta name="robots" content="<?php p(($head['robots'] ?? '') !== '' ? $head['robots'] : 'noindex'); ?>">
+    <meta property="og:title" content="<?php p($headTitle); ?>">
+    <meta property="og:type" content="website">
+    <?php if (($head['canonical'] ?? '') !== '') { ?>
+    <link rel="canonical" href="<?php p($head['canonical']); ?>">
+    <meta property="og:url" content="<?php p($head['canonical']); ?>">
+    <?php } ?>
+    <?php if (($head['ogImage'] ?? '') !== '') { ?>
+    <meta property="og:image" content="<?php p($head['ogImage']); ?>">
+    <?php } ?>
     <?php
     // FAVICON. Without one the browser requests /favicon.ico against the
     // ORIGIN, which on a Nextcloud host is not this app's to answer — measured,

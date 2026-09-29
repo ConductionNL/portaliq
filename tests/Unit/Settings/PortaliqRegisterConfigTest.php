@@ -280,8 +280,15 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// and `simulated`; `externalMessageId`, `recordLink` and `refusalCode`
 		// are new; the account's preferences describe `messageBox.enabled`.
 		// Additive.
-		$this->assertSame('0.42.0', self::$register['info']['version']);
-		$this->assertSame('0.42.0', self::$register['components']['registers']['portaliq']['version']);
+		// 0.43.0 (page 0.4.0): a page's search-engine fields `seoTitle`,
+		// `seoDescription`, `seoNoindex` and `seoImage`
+		// (site-page-seo-history-and-media). Additive.
+		$this->assertSame('0.43.0', self::$register['info']['version']);
+		$this->assertSame('0.43.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.4.0', self::$register['components']['schemas']['page']['version']);
+		$this->assertSame(70, self::$register['components']['schemas']['page']['properties']['seoTitle']['maxLength']);
+		$this->assertSame(160, self::$register['components']['schemas']['page']['properties']['seoDescription']['maxLength']);
+		$this->assertSame('boolean', self::$register['components']['schemas']['page']['properties']['seoNoindex']['type']);
 		foreach (['portalAvailabilityDaily', 'portalAvailabilityOutage'] as $availability) {
 			$this->assertSame('0.1.0', self::$register['components']['schemas'][$availability]['version']);
 			$this->assertSame(['admin'], self::$register['components']['schemas'][$availability]['authorization']['read']);
@@ -323,7 +330,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalTrafficRecording']['version']);
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalTrafficRecording']['authorization']['read']);
 		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
-		$this->assertSame('0.3.0', self::$register['components']['schemas']['page']['version']);
+		$this->assertSame('0.4.0', self::$register['components']['schemas']['page']['version']);
 		$this->assertSame('0.7.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('0.12.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalPage']['version']);

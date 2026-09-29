@@ -55,6 +55,7 @@ use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalRuntimeConfigResolver;
 use OCA\Portaliq\Service\PortalThemeResolver;
+use OCA\Portaliq\Service\Cms\SiteHead;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -85,6 +86,7 @@ class PortalPageController extends Controller {
 	 * @param PortalThemeResolver $themeResolver Maps that portal's theme
 	 *                                           reference to a real themiq
 	 *                                           token stylesheet.
+	 * @param SiteHead $siteHead The head of the page a site request asks for.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -92,6 +94,7 @@ class PortalPageController extends Controller {
 		private readonly IURLGenerator $urlGenerator,
 		private readonly PortalResolver $portalResolver,
 		private readonly PortalThemeResolver $themeResolver,
+		private readonly SiteHead $siteHead,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -261,8 +264,7 @@ class PortalPageController extends Controller {
 				// its brand a moment later. A consumer that is NOT this
 				// renderer gets the same information — `theme` is on
 				// `/api/content/site` — so this resolves no content the
-				// contract withholds; it only decides which stylesheet tag to
-				// emit.
+				// contract withholds; it only decides which stylesheet tag to emit.
 				'themeStylesheet' => $this->siteThemeStylesheet(),
 				'themeLogoUrl' => $this->siteThemeLogoUrl(),
 				// The NLDS token set this app ships for the serving portal's
@@ -280,6 +282,7 @@ class PortalPageController extends Controller {
 				// which is a WCAG failure and is exactly the shape a request
 				// carrying no Accept-Language would otherwise produce.
 				'locale'          => $this->siteLocale(),
+				'head'            => $this->siteHead(),
 			],
 			// BASE, NOT PUBLIC — a white-label site may not wear Nextcloud's
 			// chrome. `layout.public.php` emits `<header id="header">` with
@@ -352,6 +355,39 @@ class PortalPageController extends Controller {
 
 		return $locale;
 	}//end siteLocale()
+
+
+	/**
+	 * The document head for the route this request asks for
+	 * (site-page-seo-history-and-media). Headless is kept: it is the same
+	 * anonymous read the content API makes, so it resolves nothing a consumer
+	 * of the API cannot read, and the renderer still fetches the page itself.
+	 *
+	 * @return array{title: string, description: string, robots: string, canonical: string, ogImage: string}
+	 *
+	 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+	 */
+	private function siteHead(): array {
+		$portalSlug = (string)$this->request->getParam('portal', '');
+		try {
+			$portal = $this->portalResolver->resolve(request: $this->request, portalSlug: $portalSlug);
+		} catch (\Throwable) {
+			$portal = null;
+		}
+
+		$route = (string)$this->request->getParam('route', '/');
+		$params = ['route' => $route];
+		if ($portalSlug !== '') {
+			$params['portal'] = $portalSlug;
+		}
+
+		return $this->siteHead->for(
+			portal: $portal,
+			route: $route,
+			locale: $this->siteLocale(),
+			canonical: $this->urlGenerator->linkToRouteAbsolute('portaliq.portalPage.site', $params)
+		);
+	}//end siteHead()
 
 
 	/**

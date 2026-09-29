@@ -8,6 +8,8 @@ use OCA\Portaliq\Controller\PortalPageController;
 use OCA\Portaliq\Service\PortalRuntimeConfigResolver;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalThemeResolver;
+use OCA\Portaliq\Service\Cms\SiteHead;
+use OCA\Portaliq\Service\CmsReader;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\IRequest;
 use OCP\IURLGenerator;
@@ -111,7 +113,8 @@ class PortalPageControllerTest extends TestCase {
 			$resolver,
 			$this->createMock(IURLGenerator::class),
 			$this->createMock(PortalResolver::class),
-			$this->createMock(PortalThemeResolver::class)
+			$this->createMock(PortalThemeResolver::class),
+			new SiteHead($this->createMock(CmsReader::class))
 		))->index();
 
 		$this->assertSame('en-US', $received);
@@ -157,7 +160,8 @@ class PortalPageControllerTest extends TestCase {
 			$resolver,
 			$this->createMock(IURLGenerator::class),
 			$this->createMock(PortalResolver::class),
-			$this->createMock(PortalThemeResolver::class)
+			$this->createMock(PortalThemeResolver::class),
+			new SiteHead($this->createMock(CmsReader::class))
 		))->index();
 
 		$this->assertSame(['portal' => 'demo', 'org' => 'dev-org'], $seen);
@@ -398,6 +402,47 @@ class PortalPageControllerTest extends TestCase {
 	}//end testSiteAlwaysPassesANonEmptyLocale()
 
 	/**
+	 * site-page-seo-history-and-media REQ-SPH-002: the served head carries the
+	 * page's search title, description and robots, without JavaScript.
+	 *
+	 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+	 */
+	public function testSiteServesThePagesHead(): void {
+		$controller = $this->controller(
+			orgSlug: '',
+			portal: ['slug' => 'gemeente', 'title' => 'Gemeente Voorbeeld'],
+			page: ['title' => 'Afval', 'summary' => 'Samenvatting', 'seo' => ['title' => 'Afval en recycling', 'description' => 'Opening hours of the town hall', 'noindex' => false, 'image' => '']],
+			route: '/afval'
+		);
+
+		$head = $controller->site()->getParams()['head'];
+
+		$this->assertSame('Afval en recycling - Gemeente Voorbeeld', $head['title']);
+		$this->assertSame('Opening hours of the town hall', $head['description']);
+		$this->assertSame('index, follow', $head['robots']);
+		$this->assertStringContainsString('route=%2Fafval', $head['canonical']);
+
+	}//end testSiteServesThePagesHead()
+
+
+	/**
+	 * A draft or an unknown route lends nothing: the portal's name and noindex.
+	 *
+	 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+	 */
+	public function testSiteServesNoindexWhenNoPageIsPublishedThere(): void {
+		$controller = $this->controller(orgSlug: '', portal: ['slug' => 'gemeente', 'title' => 'Gemeente Voorbeeld'], page: null, route: '/concept');
+
+		$head = $controller->site()->getParams()['head'];
+
+		$this->assertSame('Gemeente Voorbeeld', $head['title']);
+		$this->assertSame('noindex', $head['robots']);
+		$this->assertSame('', $head['description']);
+
+	}//end testSiteServesNoindexWhenNoPageIsPublishedThere()
+
+
+	/**
 	 * Build a controller.
 	 *
 	 * @param string      $orgSlug             The `org` request param.
@@ -417,11 +462,17 @@ class PortalPageControllerTest extends TestCase {
 		?string $nldsStylesheet = null,
 		bool $portalResolverThrows = false,
 		?string $logoFile = null,
-		?string $themeAppId = 'thematiq'
+		?string $themeAppId = 'thematiq',
+		?array $page = null,
+		string $route = ''
 	): PortalPageController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getParam')->willReturnCallback(
-			fn (string $key, $default = null) => ($key === 'org' ? $orgSlug : $default)
+			fn (string $key, $default = null) => match ($key) {
+				'org' => $orgSlug,
+				'route' => ($route !== '' ? $route : $default),
+				default => $default,
+			}
 		);
 		$request->method('getHeader')->willReturn('');
 
@@ -471,6 +522,11 @@ class PortalPageControllerTest extends TestCase {
 					: ('/index.php/apps/portaliq/route/' . $name . '?' . http_build_query($params))
 			);
 
+		$urlGenerator->method('linkToRouteAbsolute')
+			->willReturnCallback(
+				static fn (string $name, array $params = []): string => ('https://example.nl/index.php/apps/portaliq/site?' . http_build_query($params))
+			);
+
 		// The portal + theme resolvers decide which token stylesheets `site()`
 		// emits. The DEFAULT is still "resolve nothing", so every pre-existing
 		// assertion keeps measuring what it always did: an unthemed shell. The
@@ -494,12 +550,18 @@ class PortalPageControllerTest extends TestCase {
 		// 404 logo on an otherwise intact page.
 		$themeResolver->method('themeAppId')->willReturn($themeAppId);
 
+		// The head of the page asked for (site-page-seo-history-and-media):
+		// the real SiteHead over a reader that answers the one page given.
+		$reader = $this->getMockBuilder(CmsReader::class)->disableOriginalConstructor()->onlyMethods(['page'])->getMock();
+		$reader->method('page')->willReturn($page);
+
 		return new PortalPageController(
 			$request,
 			$runtimeConfigResolver,
 			$urlGenerator,
 			$portalResolver,
-			$themeResolver
+			$themeResolver,
+			new SiteHead($reader)
 		);
 	}//end controller()
 
