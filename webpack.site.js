@@ -20,7 +20,7 @@ const webpack = require('webpack')
 
 const isDev = process.env.NODE_ENV === 'development'
 
-module.exports = {
+const site = {
 	mode: isDev ? 'development' : 'production',
 	devtool: isDev ? 'cheap-source-map' : 'source-map',
 	entry: {
@@ -45,7 +45,19 @@ module.exports = {
 			},
 			{
 				test: /\.css$/,
-				use: ['style-loader', 'css-loader'],
+				use: [
+					'style-loader',
+					// NO CSS SOURCE MAPS IN PRODUCTION. css-loader follows
+					// `devtool`, and with `source-map` it inlined every scoped
+					// style's map INTO the JavaScript, sources included: each
+					// .vue file's whole source text sat in the visitor's entry,
+					// once per style block (App.vue twice, about 46 KiB in
+					// total). Measured while adding the editor loader
+					// (portal-in-place-editing): a comment added to App.vue
+					// cost the visitor twice its length. The JavaScript keeps
+					// its own external .map.
+					{ loader: 'css-loader', options: { sourceMap: isDev } },
+				],
 			},
 			{
 				test: /\.(png|jpe?g|gif|svg|woff2?)$/,
@@ -79,12 +91,43 @@ module.exports = {
 		hints: isDev ? false : 'error',
 		maxAssetSize: 410 * 1024,
 		maxEntrypointSize: 410 * 1024,
-		// THE EDITOR CHUNKS ARE NOT A VISITOR'S BYTES. `site-editor` (and its
-		// Dutch catalogue) load only when an editor chooses "Deze pagina
-		// bewerken" (portal-in-place-editing, REQ-PIE-007), so the asset limit,
-		// which exists for a first-time visitor on a phone, does not apply to
-		// them. The entrypoint limit still does, which is what keeps the editor
-		// out of the entry: an eager import of it fails this build.
-		assetFilter: (file) => !/^site-editor/.test(file) && !file.endsWith('.map'),
 	},
 }
+
+/**
+ * THE EDITOR IS ITS OWN BUNDLE, not a chunk of the site (portal-in-place-editing,
+ * REQ-PIE-007).
+ *
+ * A dynamic import inside the site bundle was tried first and measured: the
+ * editor uses nearly all of Vue, and a module shared with a lazy chunk can no
+ * longer be tree-shaken or scope-hoisted in the entry, so the ENTRY grew from
+ * 408.5 KiB to 428.6 KiB with none of the editor in it. A separate bundle with
+ * its own Vue leaves the visitor's entry exactly as it was. The site loads this
+ * file with a script tag only when an editor chooses "Deze pagina bewerken"
+ * (`src/site/lib/loadSiteEditor.js`) and mounts it in place of the page.
+ *
+ * No size budget: an editor on the Nextcloud origin loads it, never a visitor.
+ * Its chunk files carry their own prefix and its runtime its own global, so the
+ * two builds that share js/ can never overwrite or adopt each other's chunks.
+ */
+const editor = {
+	...site,
+	entry: {
+		'portaliq-site-editor': path.join(
+			__dirname,
+			'src',
+			'editor',
+			'siteEditorMain.js',
+		),
+	},
+	output: {
+		...site.output,
+		chunkFilename: 'portaliq-site-editor-[name].js',
+		uniqueName: 'portaliqSiteEditor',
+	},
+	performance: {
+		hints: false,
+	},
+}
+
+module.exports = [site, editor]

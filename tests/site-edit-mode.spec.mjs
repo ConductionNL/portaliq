@@ -9,7 +9,7 @@
 //   node --test tests/site-edit-mode.spec.mjs
 
 import assert from 'node:assert/strict'
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
+import { existsSync, readFileSync, statSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
@@ -48,11 +48,19 @@ test('the public renderer places cells with the shared function', () => {
 	assert.match(grid, /cellStyleOf\(widget\)/)
 })
 
-test('the site loads the editor lazily, never in its entry', () => {
+test('the site loads the editor as its own bundle, never in its entry', () => {
 	const app = read('src/site/App.vue')
-	assert.match(app, /import\(\s*\/\* webpackChunkName: "site-editor" \*\/\s*'\.\.\/editor\/SiteEditMode\.vue'\s*\)/)
-	assert.doesNotMatch(app, /^import .*editor\/SiteEditMode/m)
-	assert.doesNotMatch(app, /^import .*editor\/index/m)
+	assert.match(app, /loadSiteEditor\(\)/)
+	assert.doesNotMatch(app, /editor\/SiteEditMode/)
+	assert.doesNotMatch(app, /editor\/index/)
+	const loader = read('src/site/lib/loadSiteEditor.js')
+	assert.match(loader, /portaliq-site-editor\.js/)
+	assert.doesNotMatch(loader, /^import /m, 'the loader in the entry imports nothing')
+	const main = read('src/editor/siteEditorMain.js')
+	assert.match(main, /window\.PortaliqSiteEditor = \{ mount \}/)
+	const config = read('webpack.site.js')
+	assert.match(config, /'portaliq-site-editor': path\.join\(\s*__dirname,\s*'src',\s*'editor',\s*'siteEditorMain\.js',?\s*\)/)
+	assert.match(config, /module\.exports = \[site, editor\]/)
 })
 
 test('the edit control offers editing in place for a page, and the designer as a second way', () => {
@@ -80,9 +88,8 @@ test('the palette limited to public widgets offers only what the renderer mounts
 	assert.match(palette, /entry\.publicSafe/)
 })
 
-test('the site entry stays under its budget and the editor is its own chunk', { skip: !existsSync(join(ROOT, 'js', 'portaliq-site.js')) && 'no site build in js/' }, () => {
+test('the site entry stays under its budget and the editor is its own bundle', { skip: !existsSync(join(ROOT, 'js', 'portaliq-site-editor.js')) && 'no site build in js/' }, () => {
 	const entry = statSync(join(ROOT, 'js', 'portaliq-site.js')).size
 	assert.ok(entry < 410 * 1024, `portaliq-site.js is ${entry} bytes`)
-	const chunks = readdirSync(join(ROOT, 'js')).filter((f) => /site-editor/.test(f) && f.endsWith('.js'))
-	assert.ok(chunks.length > 0, 'no site-editor chunk in js/')
+	assert.doesNotMatch(readFileSync(join(ROOT, 'js', 'portaliq-site.js'), 'utf8'), /PageGridEditor|createPageEditor/)
 })

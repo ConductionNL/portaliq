@@ -241,16 +241,15 @@
 					self-contained document, which is a question about semantics
 					and not about line length.
 				-->
-				<!--
-					EDIT MODE REPLACES THE PAGE, IN PLACE. The editor is its own
-					chunk, loaded only when an editor chooses to edit, so a
-					visitor never downloads it (portal-in-place-editing).
-				-->
-				<SiteEditMode
+				<!-- Edit mode: the editor bundle mounts in place of the page. -->
+				<div
 					v-else-if="editMode && editing && editing.pageId"
-					:pageId="editing.pageId"
-					:portal="(site && site.slug) || portalSlug || ''"
-					@leave="leaveEditMode" />
+					data-testid="site-edit-host">
+					<p v-if="editorStatus" class="container" role="status">
+						{{ editorStatus }}
+					</p>
+					<div ref="editorHost" />
+				</div>
 				<article
 					v-else-if="page"
 					:class="bodyIsGrid ? null : 'utrecht-article'"
@@ -458,7 +457,7 @@
 		<SiteEditButton
 			v-if="editing && !editMode"
 			:context="editing"
-			@edit="editMode = true" />
+			@edit="enterEditMode" />
 	</div>
 </template>
 
@@ -468,6 +467,7 @@ import { defineAsyncComponent } from 'vue'
 import MarkdownBlock from './components/MarkdownBlock.vue'
 import SiteMenu from './components/SiteMenu.vue'
 import WidgetGrid from './components/WidgetGrid.vue'
+import { loadSiteEditor } from './lib/loadSiteEditor.js'
 import {
 	adoptSessionToken,
 	authBaseFrom,
@@ -505,18 +505,6 @@ const SiteEditButton = defineAsyncComponent(
 )
 
 /**
- * The page editor, for an editor who chose "Deze pagina bewerken".
- *
- * Its own chunk: the grid engine, the shared widget forms and the editor
- * weigh more than this whole bundle, and a visitor never needs them.
- *
- * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-the-portal-editor-must-not-weigh-on-a-visitors-first-load-req-pie-007
- */
-const SiteEditMode = defineAsyncComponent(
-	() => import(/* webpackChunkName: "site-editor" */ '../editor/SiteEditMode.vue'),
-)
-
-/**
  * The built-in site renderer.
  *
  * It reads the PUBLIC content API and nothing else — the same endpoints the
@@ -527,14 +515,7 @@ const SiteEditMode = defineAsyncComponent(
 export default {
 	name: 'App',
 
-	components: {
-		CnSiteIcon,
-		MarkdownBlock,
-		SiteEditButton,
-		SiteEditMode,
-		SiteMenu,
-		WidgetGrid,
-	},
+	components: { CnSiteIcon, MarkdownBlock, SiteEditButton, SiteMenu, WidgetGrid },
 
 	props: {
 		/** Explicit site slug, when not resolving by host. */
@@ -568,8 +549,10 @@ export default {
 			// The editing context for the route on screen, or null for every
 			// visitor who may not edit — which is almost all of them.
 			editing: null,
-			// True while an editor edits the page on screen in place.
+			// Edit mode (portal-in-place-editing): on, its status line, its unmount.
 			editMode: false,
+			editorStatus: '',
+			unmountEditor: null,
 			// Set once the probe has refused, and never unset for this page
 			// load. It is what keeps a reader's visit to one extra request in
 			// total rather than one per navigation: whether a session MAY edit
@@ -1035,16 +1018,47 @@ export default {
 		},
 
 		/**
-		 * Leave edit mode and show the page as a visitor sees it, read again
-		 * so a change the editor published is on screen.
+		 * Leave edit mode and read the page again.
 		 *
 		 * @return {Promise<void>} Resolves when the page is shown.
 		 *
 		 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
 		 */
 		async leaveEditMode() {
+			if (this.unmountEditor) {
+				this.unmountEditor()
+				this.unmountEditor = null
+			}
 			this.editMode = false
 			await this.loadRoute(this.route)
+		},
+
+		/**
+		 * Load the editor bundle and mount it where the page was.
+		 *
+		 * @return {Promise<void>} Resolves when the editor is mounted.
+		 *
+		 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
+		 */
+		async enterEditMode() {
+			this.editMode = true
+			this.editorStatus = 'De editor wordt geladen…'
+			try {
+				const editor = await loadSiteEditor()
+				await this.$nextTick()
+				if (!this.$refs.editorHost) {
+					return
+				}
+				this.unmountEditor = editor.mount(this.$refs.editorHost, {
+					pageId: this.editing.pageId,
+					portal: (this.site && this.site.slug) || this.portalSlug || '',
+					onLeave: () => this.leaveEditMode(),
+				})
+				this.editorStatus = ''
+			} catch {
+				this.editorStatus =
+					'De editor kon niet worden geladen. Laad de pagina opnieuw en probeer het nog eens.'
+			}
 		},
 
 		/**
