@@ -12,9 +12,9 @@ The organisation asks a resident for a document by a certain date. The date pass
 
 A message in **Inbox**, for example "Your task is overdue: Send your latest payslip". The message says when the task was due. When the case type sets one, it also says what happens without a response. **Open** goes to the task in "Mijn taken", which shows "Overdue".
 
-The e-mail reads "Your task in the portal of <organisation> is overdue". It carries the organisation name and a link to the portal. It never names the task or the case.
+The e-mail reads `Your task in the portal of <organisation> is overdue`. It carries the organisation name and a link to the portal. It never names the task or the case.
 
-A reminder before the deadline reads differently: "Reminder: you have an open task in the portal of <organisation>".
+A reminder before the deadline reads differently: `Reminder: you have an open task in the portal of <organisation>`.
 
 ## Who decides when a notice goes out
 

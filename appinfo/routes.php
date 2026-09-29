@@ -101,6 +101,9 @@ return [
         // `/api/contributions`, which is subject-scoped and never cacheable.
         ['name' => 'content#contributions', 'url' => '/api/content/contributions', 'verb' => 'GET'],
         ['name' => 'content#page', 'url' => '/api/content/page', 'verb' => 'GET'],
+        // A published media library item of the serving portal
+        // (site-page-seo-history-and-media T07); pages refer to it as media:<id>.
+        ['name' => 'contentMedia#show', 'url' => '/api/content/media/{id}', 'verb' => 'GET'],
         [
             'name' => 'content#page',
             'url' => '/api/content/page/{route}',
@@ -209,6 +212,9 @@ return [
         // front-end has no equivalent of. Registered here so it sits ahead of
         // the SPA catch-all like the content routes above.
         ['name' => 'cmsEditor#editingContext', 'url' => '/api/cms/editing-context', 'verb' => 'GET'],
+        // A page's published versions for the designer's History dialog
+        // (site-page-seo-history-and-media REQ-SPH-003), page editors only.
+        ['name' => 'pageHistory#index', 'url' => '/api/pages/{id}/history', 'verb' => 'GET'],
 
         // Public portal SPA (external clients + suppliers) — served with public
         // chrome via #[PublicPage]. The portalPage#catchAll route handles

@@ -63,6 +63,13 @@
       "order": 20
     },
     {
+      "id": "MediaMenu",
+      "label": "Media",
+      "icon": "FolderOutline",
+      "route": "Media",
+      "order": 25
+    },
+    {
       "id": "PortalAccounts",
       "label": "Accounts",
       "icon": "Account",
@@ -2009,6 +2016,51 @@
       "config": {
         "register": "portaliq",
         "schema": "glossaryTerm",
+        "sidebar": {
+          "enabled": true,
+          "showMetadata": true
+        }
+      }
+    },
+    {
+      "id": "Media",
+      "route": "/media",
+      "type": "index",
+      "title": "Media",
+      "config": {
+        "register": "portaliq",
+        "schema": "media",
+        "_note": "A portal's media library (site-page-seo-history-and-media T06-T09). An editor creates an item here and uploads its file on the item's page (the sidebar's Files tab, OpenRegister's object files); the newest file is the one served, so uploading a new one replaces the image on every page using it. Pages refer to an item as media:<id>, picked in the page designer's Media dialog. Deleting an item a published page uses is refused by MediaWriteGuardListener, which names the pages.",
+        "columns": [
+          "title",
+          "kind",
+          "portal",
+          {
+            "key": "status",
+            "label": "Status",
+            "widget": "badge",
+            "widgetProps": {
+              "colorMap": {
+                "published": "success",
+                "draft": "warning"
+              }
+            }
+          }
+        ],
+        "sidebar": {
+          "enabled": true,
+          "showMetadata": true
+        }
+      }
+    },
+    {
+      "id": "MediaDetail",
+      "route": "/media/:id",
+      "type": "detail",
+      "title": "Media item",
+      "config": {
+        "register": "portaliq",
+        "schema": "media",
         "sidebar": {
           "enabled": true,
           "showMetadata": true

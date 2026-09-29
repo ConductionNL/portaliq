@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Service\Cms\MediaReferences;
 use OCP\ICache;
 use OCP\ICacheFactory;
 use Psr\Container\ContainerInterface;
@@ -84,6 +85,7 @@ class CmsReader {
 	 * @param ICacheFactory         $cacheFactory Creates the distributed cache.
 	 * @param LoggerInterface       $logger       The logger.
 	 * @param PortalRegisterContext $context      Points the shared ObjectService at this app's schemas.
+	 * @param MediaReferences       $media        Resolves a page's media:<id> references.
 	 *
 	 * @return void
 	 */
@@ -92,6 +94,7 @@ class CmsReader {
 		ICacheFactory $cacheFactory,
 		private readonly LoggerInterface $logger,
 		private readonly PortalRegisterContext $context,
+		private readonly MediaReferences $media,
 	) {
 		$this->cache = $cacheFactory->createDistributed('portaliq_cms');
 	}//end __construct()
@@ -437,11 +440,13 @@ class CmsReader {
 	 * @return array{title: string, description: string, noindex: bool, image: string}
 	 */
 	private function shapeSeo(array $row): array {
+		$portal = (string)($row['portal'] ?? '');
+
 		return [
 			'title'       => (string)($row['seoTitle'] ?? ''),
 			'description' => (string)($row['seoDescription'] ?? ''),
 			'noindex'     => (($row['seoNoindex'] ?? false) === true),
-			'image'       => (string)($row['seoImage'] ?? ''),
+			'image'       => $this->media->image(portal: $portal, value: (string)($row['seoImage'] ?? '')),
 		];
 	}//end shapeSeo()
 
@@ -454,8 +459,9 @@ class CmsReader {
 	 * @return array The API shape.
 	 */
 	private function shapePage(array $row): array {
-		$body = (array)($row['body'] ?? []);
-		$type = (string)($body['type'] ?? 'markdown');
+		$body   = (array)($row['body'] ?? []);
+		$type   = (string)($body['type'] ?? 'markdown');
+		$portal = (string)($row['portal'] ?? '');
 
 		$shaped = [
 			'title'   => (string)($row['title'] ?? ''),
@@ -463,6 +469,7 @@ class CmsReader {
 			'summary' => (string)($row['summary'] ?? ''),
 			'locale'  => (string)($row['locale'] ?? ''),
 			'seo'     => $this->shapeSeo(row: $row),
+			'hero'    => $this->media->hero(portal: $portal, value: ($row['heroImage'] ?? null)),
 			'body'    => ['type' => $type],
 		];
 
@@ -470,7 +477,8 @@ class CmsReader {
 			// Served as SOURCE. Rendering to HTML here would force every
 			// consumer that wants markdown — a Docusaurus build, most
 			// obviously — to parse it back out, losing fidelity for nothing.
-			$shaped['body']['markdown'] = (string)($body['markdown'] ?? '');
+			// Only a media:<id> link target is rewritten to the item's address.
+			$shaped['body']['markdown'] = $this->media->markdown(portal: $portal, markdown: (string)($body['markdown'] ?? ''));
 			return $shaped;
 		}
 

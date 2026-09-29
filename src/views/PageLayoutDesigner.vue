@@ -62,6 +62,18 @@
 					{{ t('portaliq', 'Publish') }}
 				</NcButton>
 				<NcButton
+					data-testid="designer-media"
+					:disabled="loading"
+					@click="mediaOpen = true">
+					{{ t('portaliq', 'Media') }}
+				</NcButton>
+				<NcButton
+					data-testid="designer-history"
+					:disabled="loading"
+					@click="historyOpen = true">
+					{{ t('portaliq', 'History') }}
+				</NcButton>
+				<NcButton
 					v-if="hasDraft"
 					data-testid="designer-discard-draft"
 					:disabled="loading || saving"
@@ -259,6 +271,15 @@
 		</div>
 
 		<WidgetPaletteDialog v-model:open="paletteOpen" @choose="addWidget" />
+		<MediaPickerDialog
+			v-model:open="mediaOpen"
+			:portal="page.portal || ''"
+			@choose="useMedia" />
+		<PageHistoryDialog
+			v-model:open="historyOpen"
+			:pageId="pageId"
+			:busy="saving"
+			@restore="restoreVersion" />
 	</div>
 </template>
 
@@ -267,7 +288,11 @@ import { CnDashboardGrid } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 import { NcButton, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
+import MediaPickerDialog from '../dialogs/MediaPickerDialog.vue'
+import PageHistoryDialog from '../dialogs/PageHistoryDialog.vue'
 import WidgetPaletteDialog from '../dialogs/WidgetPaletteDialog.vue'
+import { withMedia } from '../lib/mediaLibrary.js'
+import { restoredDraft } from '../lib/pageHistory.js'
 import { pageSiteUrl } from '../lib/pageSiteUrl.js'
 import {
 	defaultSizeFor,
@@ -283,7 +308,9 @@ export default {
 		CnDashboardGrid,
 		NcButton,
 		NcLoadingIcon,
+		MediaPickerDialog,
 		NcNoteCard,
+		PageHistoryDialog,
 		WidgetPaletteDialog,
 	},
 
@@ -298,6 +325,8 @@ export default {
 			widgets: [],
 			selectedId: '',
 			paletteOpen: false,
+			historyOpen: false,
+			mediaOpen: false,
 			loading: true,
 			saving: false,
 			dirty: false,
@@ -724,6 +753,48 @@ export default {
 			delete payload.draftBody
 
 			await this.write(payload, t('portaliq', 'Published.'))
+		},
+
+		/**
+		 * Store a library image as the page's hero or share image.
+		 *
+		 * The page keeps a media:<id> reference, not a copy. These fields are
+		 * not part of the draft: like the page's other fields, the next save
+		 * writes them to the live page, which the notice says.
+		 *
+		 * @param {{item: object, target: string}} choice The item and where it goes.
+		 * @return {void}
+		 *
+		 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
+		 */
+		useMedia({ item, target }) {
+			this.mediaOpen = false
+			this.page = withMedia(this.page, item, target)
+			this.dirty = true
+			this.notice = ''
+		},
+
+		/**
+		 * Put an earlier published version in the draft.
+		 *
+		 * A draft write like saveDraft(): the live page keeps its body until
+		 * the editor publishes, and an unsaved layout in the canvas gives way
+		 * to the restored one, which the reload shows.
+		 *
+		 * @param {object} version A version from the page history.
+		 * @return {Promise<void>} Resolves when written.
+		 *
+		 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
+		 */
+		async restoreVersion(version) {
+			this.historyOpen = false
+			await this.write(
+				restoredDraft(this.page, version),
+				t(
+					'portaliq',
+					'The version is in the draft. The live page changes when you publish.',
+				),
+			)
 		},
 
 		/**

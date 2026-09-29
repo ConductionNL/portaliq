@@ -3383,6 +3383,41 @@
         "endedAt": "2026-08-20T09:20:00+00:00",
         "durationMinutes": 20,
         "cause": "site-error"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "media",
+          "slug": "demo-media-1"
+        },
+        "portal": "demo-portal",
+        "title": "Stadhuis",
+        "kind": "image",
+        "status": "published",
+        "alt": "Het stadhuis aan de Markt, gezien vanaf het plein"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "media",
+          "slug": "demo-media-2"
+        },
+        "portal": "demo-portal",
+        "title": "Afvalkalender 2026",
+        "kind": "file",
+        "status": "published"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "media",
+          "slug": "demo-media-3"
+        },
+        "portal": "demo-portal",
+        "title": "Nieuwe bibliotheek",
+        "kind": "image",
+        "status": "draft",
+        "alt": "Tekening van de nieuwe bibliotheek aan het water"
       }
     ]
   }

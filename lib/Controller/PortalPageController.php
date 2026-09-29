@@ -365,7 +365,7 @@ class PortalPageController extends Controller {
 	 *
 	 * @return array{title: string, description: string, robots: string, canonical: string, ogImage: string}
 	 *
-	 * @spec openspec/changes/site-page-seo-history-and-media/specs/site-page-seo-history-and-media/spec.md
+	 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
 	 */
 	private function siteHead(): array {
 		$portalSlug = (string)$this->request->getParam('portal', '');

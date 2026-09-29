@@ -64,6 +64,20 @@ OpenRegister's `revert`, which would also roll back `status`, `route` and the
 SEO fields, and would publish at once. The editor sees the restored content in
 the draft and publishes it.
 
+Fixed while building (2026-09-29): OpenRegister's per-object
+`audit-trails` endpoint is admin-only (`AuditTrailController::objects()` calls
+`requireAdmin()`: the trail carries actor ids and per-field diffs), while a
+page editor may be any member of the configured editor groups. So the History
+dialog reads portaliq's own `GET /api/pages/{id}/history`, gated by
+`PageEditorService::mayEdit()`, and `PageHistory` reads the trail in process
+through `AuditTrailMapper::findForObjectByAction()`. It keeps only rows of
+portaliq's own `page` schema, so a uuid of another object lends no trail. A
+version is a row whose `changed.body.new` holds a body (only a publication
+writes `body`; a draft save writes `draftBody`); a row that only moved the
+status to published is listed without a restore. The answer carries the uid or
+display name, never the IP address. The restore stays client side: the designer
+writes `draftBody` through OpenRegister as any draft save does.
+
 ## D4. A media schema beside the other CMS schemas
 
 `media` in `lib/Settings/portaliq_register.json`: `portal` (required), `title`,
@@ -80,6 +94,24 @@ published media item of the resolved portal and 404s otherwise.
 The Media page (`src/manifest.json`, index over `media`, scoped to the portal)
 uploads and edits items. The page editor gets a picker dialog in `src/dialogs/`
 that lists the portal's published media.
+
+Fixed while building (2026-09-29):
+
+- The `media` schema's read rule is `authenticated` only, not public. The
+  public reach a published item through `GET /api/content/media/{id}`
+  (`ContentMediaController` over `MediaFile`), which reads in process, so
+  OpenRegister's anonymous surface stays the three schemas it was
+  (`page`, `menu`, `glossaryTerm`). The editor groups get the media write rules
+  with the page's (`PageEditorService`).
+- OpenRegister drops an `if`/`then` rule on import, so "alternative text for an
+  image" is portaliq's own: `MediaWriteGuardListener` stops the pre-write event,
+  and OpenRegister refuses the write with its message.
+- `heroImage` was stored but rendered nowhere. The content API now serves
+  `hero {url, alt}` and the site shows it above the body.
+- A portal behind sign-in serves no item: an image tag sends no bearer token,
+  so the route cannot tell who is asking.
+- The file is uploaded on the item's page (the sidebar's Files tab); the newest
+  attached file is served.
 
 ## D5. Replacing a file keeps the id
 

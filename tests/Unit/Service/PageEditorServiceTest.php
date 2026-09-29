@@ -53,6 +53,13 @@ class PageEditorServiceTest extends TestCase {
 	 */
 	private ?array $written = null;
 
+	/**
+	 * The write rules each schema was updated with, by slug.
+	 *
+	 * @var array<string, array>
+	 */
+	private array $writtenBySlug = [];
+
 
 	/**
 	 * A service wired to doubles.
@@ -150,11 +157,20 @@ class PageEditorServiceTest extends TestCase {
 			 * @return object|null The schema double.
 			 */
 			public function findByApplicationAndSlug(string $slug, string $application): ?object {
-				if ($slug !== 'page' || $application !== 'portaliq') {
+				if (in_array($slug, ['page', 'media'], true) === false || $application !== 'portaliq') {
 					return null;
 				}
 
-				return new class {
+				return new class($slug) {
+
+					/**
+					 * Constructor.
+					 *
+					 * @param string $slug The schema slug.
+					 */
+					public function __construct(public string $slug) {
+					}
+
 
 					/**
 					 * The block, seeded with the shipped read rules.
@@ -201,7 +217,7 @@ class PageEditorServiceTest extends TestCase {
 			 * @return object The entity.
 			 */
 			public function update(object $entity): object {
-				$this->test->record($entity->getAuthorization());
+				$this->test->record($entity->getAuthorization(), $entity->slug);
 				return $entity;
 			}
 		};
@@ -215,8 +231,11 @@ class PageEditorServiceTest extends TestCase {
 	 *
 	 * @return void
 	 */
-	public function record(array $authorization): void {
-		$this->written = $authorization;
+	public function record(array $authorization, string $slug='page'): void {
+		$this->writtenBySlug[$slug] = $authorization;
+		if ($slug === 'page') {
+			$this->written = $authorization;
+		}
 	}//end record()
 
 
@@ -229,6 +248,7 @@ class PageEditorServiceTest extends TestCase {
 		parent::setUp();
 		$this->stored = '';
 		$this->written = null;
+		$this->writtenBySlug = [];
 	}//end setUp()
 
 
@@ -317,6 +337,23 @@ class PageEditorServiceTest extends TestCase {
 		$this->assertSame(['redacteuren', 'webmasters'], $this->written['update']);
 		$this->assertSame(['redacteuren', 'webmasters'], $this->written['delete']);
 	}//end testSavingWritesTheSchemaWriteRules()
+
+
+	/**
+	 * The editor groups also write the media library (site-page-seo-history-
+	 * and-media T06): whoever may edit pages may upload the images they use.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
+	 */
+	public function testTheEditorGroupsAlsoWriteTheMediaLibrary(): void {
+		$this->service(isAdmin: true)->setEditorGroups(['redacteuren']);
+
+		$this->assertSame(['redacteuren'], $this->writtenBySlug['media']['create'] ?? null);
+		$this->assertSame(['redacteuren'], $this->writtenBySlug['media']['update'] ?? null);
+		$this->assertSame(['redacteuren'], $this->writtenBySlug['media']['delete'] ?? null);
+	}//end testTheEditorGroupsAlsoWriteTheMediaLibrary()
 
 
 	/**

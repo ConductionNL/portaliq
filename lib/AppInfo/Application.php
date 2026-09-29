@@ -39,12 +39,16 @@ declare(strict_types=1);
 namespace OCA\Portaliq\AppInfo;
 
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
+use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectDeletedEvent;
+use OCA\OpenRegister\Event\ObjectDeletingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
+use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCA\Portaliq\Event\LandingPageRequestedEvent;
 use OCA\Portaliq\Event\PortalAccountClaimRequestedEvent;
 use OCA\Portaliq\Event\PortalAccountProvisionRequestedEvent;
 use OCA\Portaliq\Listener\CmsCacheInvalidationListener;
+use OCA\Portaliq\Listener\MediaWriteGuardListener;
 use OCA\Portaliq\Listener\LandingPageRequestedEventListener;
 use OCA\Portaliq\Listener\LandingPageSubmissionDispatchListener;
 use OCA\Portaliq\Listener\PortalAccountClaimListener;
@@ -139,14 +143,7 @@ class Application extends App implements IBootstrap {
 		// PortalContributionRegistry — so no per-provider registration is needed
 		// here; the DI container constructs each app's provider by reflection.
 
-		// Drop cached public content when a CMS object is written (ADR-086 §9).
-		// The read cache holds NEGATIVE results too, so without this a route
-		// keeps 404ing for the rest of the TTL after its page is created — the
-		// editor sees a broken site and is right.
-		foreach ([ObjectCreatedEvent::class, ObjectUpdatedEvent::class, ObjectDeletedEvent::class] as $event) {
-			$context->registerEventListener($event, CmsCacheInvalidationListener::class);
-		}
-
+		$this->registerCmsListeners(context: $context);
 		$this->registerRecordChangeListener(context: $context);
 
 		// Landing-page-provisioning (ADR-041, contribution-landing-page-action):
@@ -200,6 +197,36 @@ class Application extends App implements IBootstrap {
 		// catch-all answered the store page's JSON call with HTML 200.
 		(new StorePlaneRegistrar())->register($context);
 	}//end register()
+
+	/**
+	 * The CMS content listeners.
+	 *
+	 * Drop cached public content when a CMS object is written (ADR-086 §9).
+	 * The read cache holds NEGATIVE results too, so without this a route keeps
+	 * 404ing for the rest of the TTL after its page is created: the editor
+	 * sees a broken site and is right.
+	 *
+	 * The media library's write rules (site-page-seo-history-and-media T06,
+	 * T09): an image needs alternative text, and an item a published page uses
+	 * is not deleted. OpenRegister honours a stopped pre-write event by
+	 * refusing the write with its message.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
+	 */
+	private function registerCmsListeners(IRegistrationContext $context): void {
+		foreach ([ObjectCreatedEvent::class, ObjectUpdatedEvent::class, ObjectDeletedEvent::class] as $event) {
+			$context->registerEventListener($event, CmsCacheInvalidationListener::class);
+		}
+
+		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class, ObjectDeletingEvent::class] as $event) {
+			$context->registerEventListener($event, MediaWriteGuardListener::class);
+		}
+	}//end registerCmsListeners()
+
 
 	/**
 	 * Tell a resident when a record they follow changes, or when a case app

@@ -262,6 +262,18 @@
 						</h2>
 					</div>
 
+					<!-- The page's hero image, from the portal's media library or
+					     an address (site-page-seo-history-and-media T08). The
+					     content API resolves media:<id> and carries the item's
+					     alternative text with it. -->
+					<div v-if="page.hero && page.hero.url" class="container">
+						<img
+							class="pq-site-hero"
+							data-testid="page-hero"
+							:src="page.hero.url"
+							:alt="page.hero.alt" />
+					</div>
+
 					<WidgetGrid
 						v-if="page.body && page.body.type === 'grid'"
 						:widgets="page.body.widgets || []"
@@ -1243,6 +1255,12 @@ body.layout-base .pq-site {
 </style>
 
 <style scoped>
+.pq-site-hero {
+	display: block;
+	max-width: 100%;
+	height: auto;
+}
+
 /*
  * THE THEME BRIDGE. Before this block the renderer read `--pq-*` variables
  * that NOTHING EVER SET, so every portal fell through to the same hardcoded
