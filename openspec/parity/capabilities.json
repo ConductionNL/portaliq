@@ -514,7 +514,7 @@
 				"owner": "ConductionNL/portaliq",
 				"note": "Portaliq's half built (signin-integriq-broker-login, all 13 tasks). Integriq's start address (SAML SP / OIDC RP runtime and envelope minting) is owed: ConductionNL/integriq#1495. Until it exists no organisation can complete the route, so the row stays building.",
 				"origin": "code",
-				"change": "signin-integriq-broker-login"
+				"change": "2026-09-29-signin-integriq-broker-login"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -545,7 +545,7 @@
 				"owner": "ConductionNL/portaliq",
 				"note": "Portaliq's half built (signin-integriq-broker-login, all 13 tasks). Integriq's start address (SAML SP / OIDC RP runtime and envelope minting) is owed: ConductionNL/integriq#1495. Until it exists no organisation can complete the route, so the row stays building.",
 				"origin": "code",
-				"change": "signin-integriq-broker-login"
+				"change": "2026-09-29-signin-integriq-broker-login"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -996,7 +996,7 @@
 				"owner": "ConductionNL/portaliq",
 				"note": "Portaliq's half built (signin-integriq-broker-login, all 13 tasks). Integriq's start address (SAML SP / OIDC RP runtime and envelope minting) is owed: ConductionNL/integriq#1495. Until it exists no organisation can complete the route, so the row stays building.",
 				"origin": "competitor",
-				"change": "signin-integriq-broker-login"
+				"change": "2026-09-29-signin-integriq-broker-login"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1058,7 +1058,7 @@
 				"note": "Portaliq's half built (signin-integriq-broker-login, all 13 tasks). Integriq's start address (SAML SP / OIDC RP runtime and envelope minting) is owed: ConductionNL/integriq#1495. Until it exists no organisation can complete the route, so the row stays building.",
 				"sourceId": "plt-02",
 				"origin": "sibling",
-				"change": "signin-integriq-broker-login"
+				"change": "2026-09-29-signin-integriq-broker-login"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2643,10 +2643,10 @@
 			},
 			"built": {
 				"state": "built",
-				"evidence": "src/portal/components/CollectionTable.jsx rowActions; src/portal/App.jsx:212-224 onRowAction() -> updateObject() with '?action=' id; lib/Controller/ContributionController.php:1137 applies action['set'] server-side over client input, :1298 disambiguates by ?action=; openspec/changes/portal-status-transitions (not archived, but the vocabulary is implemented in code)",
+				"evidence": "src/portal/components/CollectionTable.jsx rowActions; src/portal/App.jsx:212-224 onRowAction() -> updateObject() with '?action=' id; lib/Controller/ContributionController.php:1137 applies action['set'] server-side over client input, :1298 disambiguates by ?action=; openspec/changes/archive/2026-09-29-portal-status-transitions (archived 2026-09-29; the vocabulary is implemented in code)",
 				"reachedOn": "CollectionTable.jsx row action button -> onRowAction -> PATCH /portal/api/collections/{register}/{schema}/{id}?action={id}",
 				"owner": "ConductionNL/portaliq",
-				"note": "The change proposal noted as an OPEN openspec change (openspec/changes/portal-status-transitions) is already implemented in code; the change folder simply was not archived.",
+				"note": "The change portal-status-transitions is implemented in code and was archived on 2026-09-29 (openspec/changes/archive/2026-09-29-portal-status-transitions).",
 				"origin": "code"
 			},
 			"provider": "portaliq",

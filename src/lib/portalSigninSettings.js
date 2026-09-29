@@ -15,7 +15,7 @@
  * handed in by `src/widgets/PortalSignin.vue`, so
  * `tests/portal-signin-settings.spec.mjs` runs it as a plain node script.
  *
- * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+ * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
  */
 
 /**
@@ -35,7 +35,7 @@ export const PROVIDER_LABELS = {
  * @param {object} broker `startUrl`, `exchangeUrl`, `consumerId`.
  * @param {string} secret A newly typed secret, or ''.
  * @return {object}
- * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+ * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
  */
 export function saveBody(providers, broker, secret) {
 	const routes = {}
@@ -64,7 +64,7 @@ export function saveBody(providers, broker, secret) {
  * @param {(url: string, body: object) => Promise<{data: object}>} deps.put PUTs JSON.
  * @param {(path: string, params: object) => string} deps.url Builds an app url.
  * @return {object}
- * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+ * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
  */
 export function createPortalSigninSettings({ get, put, url }) {
 	return {
@@ -73,7 +73,7 @@ export function createPortalSigninSettings({ get, put, url }) {
 		 *
 		 * @param {string} slug The portal slug.
 		 * @return {Promise<object>} `{state, settings}`.
-		 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+		 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
 		 */
 		async load(slug) {
 			if (!slug) {
@@ -96,7 +96,7 @@ export function createPortalSigninSettings({ get, put, url }) {
 		 * @param {string} slug The portal slug.
 		 * @param {object} body The body from `saveBody()`.
 		 * @return {Promise<object>}
-		 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+		 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
 		 */
 		async save(slug, body) {
 			try {

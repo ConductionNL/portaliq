@@ -29,7 +29,7 @@ use Psr\Log\LoggerInterface;
  * T11: the Sign-in widget's settings over the real organisation config, with
  * app config held in memory.
  *
- * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+ * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
  */
 class PortalSigninSettingsTest extends TestCase {
 

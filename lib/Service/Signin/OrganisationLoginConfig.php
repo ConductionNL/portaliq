@@ -29,7 +29,7 @@ use OCP\IAppConfig;
  * which lives in its own sensitive app config entry and never in the
  * presentation override.
  *
- * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+ * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
  */
 class OrganisationLoginConfig {
 
@@ -62,7 +62,7 @@ class OrganisationLoginConfig {
 	 *
 	 * @return string `oidc` or `broker`.
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
 	 */
 	public function loginRouteFor(string $orgSlug, string $provider): string {
 		$presentation = $this->presentation(orgSlug: $orgSlug);
@@ -84,7 +84,7 @@ class OrganisationLoginConfig {
 	 *
 	 * @return array<string, string>|null `startUrl`, `exchangeUrl`, `consumerId`, `secret`, `label`, `audience`, `organisationUuid`.
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
 	 */
 	public function resolveBrokerConfig(string $orgSlug, string $provider): ?array {
 		$presentation = $this->presentation(orgSlug: $orgSlug);
@@ -113,7 +113,7 @@ class OrganisationLoginConfig {
 	 *
 	 * @return array{uuid: string, overrides: array<string, mixed>, hasBrokerSecret: bool}|null
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
 	 */
 	public function presentationFor(string $orgSlug): ?array {
 		$presentation = $this->presentation(orgSlug: $orgSlug);
@@ -133,7 +133,7 @@ class OrganisationLoginConfig {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
 	 */
 	public function writePresentation(string $organisationUuid, array $overrides): bool {
 		if ($organisationUuid === '') {
@@ -152,7 +152,7 @@ class OrganisationLoginConfig {
 	 *
 	 * @return bool Whether it was written.
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
 	 */
 	public function setBrokerSecret(string $organisationUuid, string $secret): bool {
 		if ($organisationUuid === '') {

@@ -12,7 +12,7 @@
  *
  *     NEXTCLOUD_URL=http://localhost:8080 npx playwright test signin-integriq-broker-login
  *
- * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md
+ * @spec openspec/specs/portal-broker-envelope-login/spec.md
  */
 
 import { expect, test } from '@playwright/test'
