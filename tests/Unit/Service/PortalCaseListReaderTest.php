@@ -180,6 +180,24 @@ class PortalCaseListReaderTest extends TestCase {
 
 	}//end testEachRowSaysWhetherItIsClosedByTheDeclaredField()
 
+	/**
+	 * cases-my-cases-page REQ-CMC-001: newest first also when the row carries
+	 * no `created` of its own, by the record's own creation date.
+	 *
+	 * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md#requirement-your-cases-from-every-app-in-one-list-req-cmc-001
+	 */
+	public function testTheNewestCaseComesFirstByTheRecordDate(): void {
+		$reader = $this->readerReturning([
+			['reference' => 'OLD', '@self' => ['created' => '2026-01-01T00:00:00+00:00']],
+			['reference' => 'NEW', '@self' => ['created' => '2026-09-01T00:00:00+00:00']],
+		]);
+
+		$rows = (new PortalCaseListReader($reader))->listCases(subject: $this->subject(), aggregate: $this->aggregate(collection: $this->casesCollection()));
+
+		$this->assertSame(['NEW', 'OLD'], array_column($rows, 'reference'));
+
+	}//end testTheNewestCaseComesFirstByTheRecordDate()
+
 	public function testWithNoMandateNoOrganisationCaseIsRead(): void {
 		$reader = $this->readerReturning([['reference' => 'COLLEGA-1']]);
 		$cases = new PortalCaseListReader($reader, $this->mandateService());

@@ -128,12 +128,28 @@ class PortalCaseListReader {
 		usort(
 			$rows,
 			static function (array $first, array $second): int {
-				return strcmp((string)($second['created'] ?? $second['startedAt'] ?? ''), (string)($first['created'] ?? $first['startedAt'] ?? ''));
+				return strcmp(self::dateOf(row: $second), self::dateOf(row: $first));
 			}
 		);
 
 		return $rows;
 	}//end listCases()
+
+	/**
+	 * The date a case sorts by: its own `created` or `startedAt`, else the
+	 * record's creation date.
+	 *
+	 * @param array<string, mixed> $row The case row.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md#requirement-your-cases-from-every-app-in-one-list-req-cmc-001
+	 */
+	private static function dateOf(array $row): string {
+		$self = ($row['@self'] ?? []);
+
+		return (string)($row['created'] ?? $row['startedAt'] ?? (is_array($self) === true ? ($self['created'] ?? '') : ''));
+	}//end dateOf()
 
 	/**
 	 * Whether any contribution declares a case collection, and whether any of

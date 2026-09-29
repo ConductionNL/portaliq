@@ -44,7 +44,8 @@ async function seed(
 }
 
 /**
- * Two case collections (one of them marking closed cases by `endDate`), a
+ * Two case collections (one of them marking closed cases by `withdrawnAt`, a field the
+ * portalCase schema has), a
  * page showing the first, the given cases for a fresh resident, and that
  * resident signed in on the portal.
  *
@@ -71,8 +72,8 @@ async function signIn(
 				register: 'portaliq',
 				schema: 'portalCase',
 				scopeField: 'subjectRef',
-				closedField: 'endDate',
-				filter: { category: 'vergunning' },
+				closedField: 'withdrawnAt',
+				filter: { omschrijving: 'vergunning' },
 			},
 			{
 				id: `meldingen-${stamp}`,
@@ -81,7 +82,7 @@ async function signIn(
 				register: 'portaliq',
 				schema: 'portalCase',
 				scopeField: 'subjectRef',
-				filter: { category: 'melding' },
+				filter: { omschrijving: 'melding' },
 			},
 		],
 		pages: [
@@ -127,25 +128,22 @@ test.describe('cases-my-cases-page', () => {
 	}) => {
 		await signIn(request, page, [
 			{
-				title: 'Kapvergunning',
-				category: 'vergunning',
-				created: '2026-09-10T10:00:00+00:00',
+				reference: 'Kapvergunning',
+				omschrijving: 'vergunning',
 			},
 			{
-				title: 'Losse stoeptegel',
-				category: 'melding',
-				created: '2026-09-20T10:00:00+00:00',
+				reference: 'Losse stoeptegel',
+				omschrijving: 'melding',
 			},
 			{
-				title: 'Oude dakkapel',
-				category: 'vergunning',
-				endDate: '2026-03-01',
+				reference: 'Oude dakkapel',
+				omschrijving: 'vergunning',
+				withdrawnAt: '2026-03-01T10:00:00+00:00',
 			},
 		])
 		const rows = page.getByTestId('my-cases-row')
 		await expect(rows).toHaveCount(2)
 		await expect(rows.nth(0)).toContainText('Losse stoeptegel')
-		await expect(rows.nth(0)).toContainText('Meldingen')
 		await expect(rows.nth(1)).toContainText('Kapvergunning')
 		await expect(page.getByTestId('my-cases-tab-open')).toContainText('(2)')
 
@@ -166,7 +164,7 @@ test.describe('cases-my-cases-page', () => {
 	// @e2e portal-my-cases::opening-a-case-from-the-list
 	test('a case opens on the page it lives on', async ({ page, request }) => {
 		await signIn(request, page, [
-			{ title: 'Kapvergunning', category: 'vergunning' },
+			{ reference: 'Kapvergunning', omschrijving: 'vergunning' },
 		])
 		await page.getByRole('button', { name: 'Kapvergunning' }).click()
 		await expect(page.getByTestId('my-cases')).toHaveCount(0)

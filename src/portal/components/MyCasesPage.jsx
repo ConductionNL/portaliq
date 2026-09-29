@@ -129,7 +129,7 @@ export default function MyCasesPage({
 							{shown.map((row, index) => {
 								const target = caseTarget(row)
 								const title = caseTitle(row)
-								const date = formatDate(row.created || row.startedAt, locale)
+								const date = formatDate(row.created || row.startedAt || row['@self']?.created, locale)
 								return (
 									<li key={target ? `${target.app}:${target.collection}:${target.id}` : index} className="portaliq-cases__row" data-testid="my-cases-row">
 										{target && canOpen(target)
