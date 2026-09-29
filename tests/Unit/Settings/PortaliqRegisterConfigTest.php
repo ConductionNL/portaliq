@@ -283,8 +283,10 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.43.0 (page 0.4.0): a page's search-engine fields `seoTitle`,
 		// `seoDescription`, `seoNoindex` and `seoImage`
 		// (site-page-seo-history-and-media). Additive.
-		$this->assertSame('0.43.0', self::$register['info']['version']);
-		$this->assertSame('0.43.0', self::$register['components']['registers']['portaliq']['version']);
+		// 0.44.0 (media 0.1.0): a portal's media library
+		// (site-page-seo-history-and-media T06). New schema, additive.
+		$this->assertSame('0.44.0', self::$register['info']['version']);
+		$this->assertSame('0.44.0', self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame('0.4.0', self::$register['components']['schemas']['page']['version']);
 		$this->assertSame(70, self::$register['components']['schemas']['page']['properties']['seoTitle']['maxLength']);
 		$this->assertSame(160, self::$register['components']['schemas']['page']['properties']['seoDescription']['maxLength']);
@@ -590,6 +592,32 @@ class PortaliqRegisterConfigTest extends TestCase {
 		}
 
 	}//end testTheMessageBoxRowsFitThePortalNotificationSchema()
+
+	/**
+	 * site-page-seo-history-and-media T06 (REQ-SPH-004): a media item names its
+	 * portal, kind and status, validated with the real schema fragment. The
+	 * alternative-text rule for an image is portaliq's own
+	 * (MediaRulesTest): OpenRegister keeps no conditional schema rule.
+	 *
+	 * @return void
+	 */
+	public function testAMediaItemNamesItsPortalKindAndStatus(): void {
+		$schema = self::$register['components']['schemas']['media'];
+		$this->assertSame('0.1.0', $schema['version']);
+		$this->assertContains('media', self::$register['components']['registers']['portaliq']['schemas']);
+		$jsonSchema = json_decode((string)json_encode(['type' => 'object', 'required' => $schema['required'], 'properties' => $schema['properties']]), false);
+
+		$valid = static fn (array $item): bool => (new Validator())->validate(json_decode((string)json_encode($item), false), $jsonSchema)->isValid();
+
+		$this->assertTrue($valid(['portal' => 'gemeente', 'title' => 'Stadhuis', 'kind' => 'image', 'status' => 'published', 'alt' => 'Het stadhuis aan de Markt']));
+		$this->assertTrue($valid(['portal' => 'gemeente', 'title' => 'Reglement', 'kind' => 'file', 'status' => 'draft']));
+		$this->assertFalse($valid(['portal' => 'gemeente', 'title' => 'X', 'kind' => 'video', 'status' => 'draft']), 'the kind is image or file');
+		$this->assertFalse($valid(['title' => 'X', 'kind' => 'file', 'status' => 'draft']), 'an item belongs to a portal');
+		$this->assertArrayNotHasKey('if', $schema, 'OpenRegister would drop a conditional rule on import');
+
+		$groups = array_map(static fn ($rule) => is_array($rule) ? ($rule['group'] ?? null) : $rule, $schema['authorization']['read']);
+		$this->assertNotContains('public', $groups, 'the public reach an item through the content API, never through OpenRegister');
+	}//end testAMediaItemNamesItsPortalKindAndStatus()
 
 	/**
 	 * The public surface, pinned BY NAME.

@@ -18,7 +18,7 @@
 
 ## Media
 
-- [ ] **T06**: `media` schema in `lib/Settings/portaliq_register.json` with file attachment through OpenRegister object files (REQ-SPH-004)
+- [x] **T06**: `media` schema in `lib/Settings/portaliq_register.json` with file attachment through OpenRegister object files (REQ-SPH-004). media 0.1.0, register 0.44.0; read `authenticated` only (the public reach an item through the content API); the editor groups get its write rules with the page's (`PageEditorService`); the alternative-text rule is portaliq's own (T09 listener), because OpenRegister keeps no `if`/`then`.
   - Verify: register import; PHPUnit on the alt text rule for images
 - [ ] **T07**: `GET /api/content/media/{id}` streams a published item of the resolved portal, 404 otherwise (REQ-SPH-004)
   - Verify: PHPUnit for a draft item, another portal's item and an unknown id; `hydra-gate-route-auth` green

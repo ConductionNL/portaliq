@@ -75,6 +75,15 @@ class PageEditorService {
 	private const PAGE_SLUG = 'page';
 
 	/**
+	 * The media library's schema, written by the same editor groups
+	 * (site-page-seo-history-and-media T06): whoever may edit pages may upload
+	 * the images they use.
+	 *
+	 * @var string
+	 */
+	private const MEDIA_SLUG = 'media';
+
+	/**
 	 * The actions the editor groups are granted on that schema.
 	 *
 	 * `read` is deliberately absent: it carries the public rule that serves
@@ -254,17 +263,14 @@ class PageEditorService {
 				return false;
 			}
 
-			$authorization = ($schema->getAuthorization() ?? []);
-			if (is_array($authorization) === false) {
-				$authorization = [];
-			}
+			$this->grantWrites(mapper: $mapper, schema: $schema, groups: $groups);
 
-			foreach (self::WRITE_ACTIONS as $action) {
-				$authorization[$action] = array_values($groups);
+			// The media library follows the pages. It is absent on an instance
+			// whose register predates it, which leaves the pages governed.
+			$media = $mapper->findByApplicationAndSlug(slug: self::MEDIA_SLUG, application: Application::APP_ID);
+			if ($media !== null) {
+				$this->grantWrites(mapper: $mapper, schema: $media, groups: $groups);
 			}
-
-			$schema->setAuthorization($authorization);
-			$mapper->update($schema);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Portaliq: failed to write the page schema authorization',
@@ -275,6 +281,30 @@ class PageEditorService {
 
 		return true;
 	}//end applyToSchema()
+
+
+	/**
+	 * Write the editor groups into one schema's write rules, keeping `read`.
+	 *
+	 * @param object        $mapper The schema mapper.
+	 * @param object        $schema The schema entity.
+	 * @param array<string> $groups The normalised group ids.
+	 *
+	 * @return void
+	 */
+	private function grantWrites(object $mapper, object $schema, array $groups): void {
+		$authorization = ($schema->getAuthorization() ?? []);
+		if (is_array($authorization) === false) {
+			$authorization = [];
+		}
+
+		foreach (self::WRITE_ACTIONS as $action) {
+			$authorization[$action] = array_values($groups);
+		}
+
+		$schema->setAuthorization($authorization);
+		$mapper->update($schema);
+	}//end grantWrites()
 
 
 	/**
