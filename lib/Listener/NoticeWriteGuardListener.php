@@ -84,23 +84,36 @@ class NoticeWriteGuardListener implements IEventListener {
 	 * @spec openspec/specs/portal-notices/spec.md#requirement-page-editors-manage-notices-req-omn-003
 	 */
 	public function handle(Event $event): void {
-		$entity = null;
 		if ($event instanceof ObjectCreatingEvent) {
-			$entity = $event->getObject();
-		} else if ($event instanceof ObjectUpdatingEvent) {
-			$entity = $event->getNewObject();
+			$this->check(event: $event, entity: $event->getObject());
+			return;
 		}
 
-		if ($entity === null || $this->isNotice(schema: (string)$entity->getSchema()) === false) {
+		if ($event instanceof ObjectUpdatingEvent) {
+			$this->check(event: $event, entity: $event->getNewObject());
+		}
+	}//end handle()
+
+
+	/**
+	 * Refuse the write when the notice's window is empty or backwards.
+	 *
+	 * @param ObjectCreatingEvent|ObjectUpdatingEvent $event  The pre-write event.
+	 * @param object                                  $entity The object being written.
+	 *
+	 * @return void
+	 */
+	private function check(ObjectCreatingEvent|ObjectUpdatingEvent $event, object $entity): void {
+		if ($this->isNotice(schema: (string)$entity->getSchema()) === false) {
 			return;
 		}
 
 		$notice = (array)($entity->getObject() ?? []);
-		if (self::windowIsValid(startsAt: $notice['startsAt'] ?? null, endsAt: $notice['endsAt'] ?? null) === false) {
+		if (self::windowIsValid(startsAt: ($notice['startsAt'] ?? null), endsAt: ($notice['endsAt'] ?? null)) === false) {
 			$event->stopPropagation();
 			$event->setErrors(['message' => $this->l10n->t('The end must be after the start.')]);
 		}
-	}//end handle()
+	}//end check()
 
 
 	/**

@@ -170,7 +170,10 @@
 		</header>
 
 		<!-- Maintenance and warning notices running now (operate-maintenance-notice). -->
-		<SiteNotices :notices="site.notices || []" :locale="site.locale || 'nl'" />
+		<SiteNotices
+			v-if="(site.notices || []).length > 0"
+			:notices="site.notices"
+			:locale="site.locale || 'nl'" />
 
 		<!--
 			`.container` IS THE CONTENT COLUMN, AND IT IS NOT OPTIONAL.
@@ -463,7 +466,6 @@ import { CnSiteIcon } from '@conduction/nextcloud-vue/public'
 import { defineAsyncComponent } from 'vue'
 import MarkdownBlock from './components/MarkdownBlock.vue'
 import SiteMenu from './components/SiteMenu.vue'
-import SiteNotices from './components/SiteNotices.vue'
 import WidgetGrid from './components/WidgetGrid.vue'
 import {
 	adoptSessionToken,
@@ -501,6 +503,12 @@ import { editorBaseFrom, fetchEditingContext } from './lib/editorApi.js'
  */
 const SiteEditButton = defineAsyncComponent(
 	() => import('./components/SiteEditButton.vue'),
+)
+
+// Loaded only when a notice is running, so a portal without one pays nothing
+// for it in the site bundle (operate-maintenance-notice).
+const SiteNotices = defineAsyncComponent(
+	() => import('./components/SiteNotices.vue'),
 )
 
 /**

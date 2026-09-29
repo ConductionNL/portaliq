@@ -69,6 +69,12 @@ use Psr\Log\LoggerInterface;
  * cannot be dropped or grouped. The class injects nine collaborators of its
  * own, under the threshold; folding them into a parameter object would hide
  * the dependencies from the container rather than remove them.
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)  -- 13, one over the bound,
+ * since the site record carries the portal's running notices
+ * (operate-maintenance-notice). Each collaborator is one read the public
+ * content API answers; moving the notice read behind another collaborator
+ * would hide the coupling, not remove it.
  */
 class ContentController extends Controller {
 

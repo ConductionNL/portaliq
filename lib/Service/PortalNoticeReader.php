@@ -133,29 +133,31 @@ class PortalNoticeReader {
 	 * @param string             $surface `site` or `portal`.
 	 * @param DateTimeImmutable  $now     Now.
 	 *
-	 * @return array<int, array{id: string, message: string, level: string, linkLabel: string, linkUrl: string, endsAt: string}> At most three, newest start first.
+	 * @return array<int, array<string, string>> At most three, newest start first: id, message, level, linkLabel, linkUrl, endsAt.
 	 *
 	 * @spec openspec/specs/portal-notices/spec.md#requirement-a-notice-shows-on-every-page-during-its-window-req-omn-001
 	 */
 	public static function select(array $rows, string $portal, string $surface, DateTimeImmutable $now): array {
 		$active = [];
 		foreach ($rows as $row) {
-			$starts = self::time(value: $row['startsAt'] ?? null);
-			$ends   = self::time(value: $row['endsAt'] ?? null);
+			$starts = self::time(value: ($row['startsAt'] ?? null));
+			$ends   = self::time(value: ($row['endsAt'] ?? null));
 			$id     = (string)($row['@self']['id'] ?? $row['id'] ?? '');
-			if ($id === '' || $ends === null || $starts === null
-				|| (string)($row['portal'] ?? '') !== $portal
-				|| ($row['status'] ?? '') !== 'published'
-				|| in_array($surface, (array)($row['surfaces'] ?? []), true) === false
-				|| $starts > $now || $ends <= $now
+			if ($id === '' || $starts === null || $ends === null || $starts > $now || $ends <= $now
+				|| self::isShown(row: $row, portal: $portal, surface: $surface) === false
 			) {
 				continue;
+			}
+
+			$level = 'info';
+			if (($row['level'] ?? '') === 'warning') {
+				$level = 'warning';
 			}
 
 			$active[] = [
 				'id'        => $id,
 				'message'   => (string)($row['message'] ?? ''),
-				'level'     => (($row['level'] ?? '') === 'warning') ? 'warning' : 'info',
+				'level'     => $level,
 				'linkLabel' => (string)($row['linkLabel'] ?? ''),
 				'linkUrl'   => self::httpsOnly(url: (string)($row['linkUrl'] ?? '')),
 				'endsAt'    => $ends->format(DATE_ATOM),
@@ -173,6 +175,22 @@ class PortalNoticeReader {
 			array_slice($active, 0, self::MAX)
 		);
 	}//end select()
+
+
+	/**
+	 * Whether a row is a published notice of this portal for this surface.
+	 *
+	 * @param array<string, mixed> $row     The row.
+	 * @param string               $portal  The portal slug.
+	 * @param string               $surface `site` or `portal`.
+	 *
+	 * @return bool True when it may show here.
+	 */
+	private static function isShown(array $row, string $portal, string $surface): bool {
+		return (string)($row['portal'] ?? '') === $portal
+			&& ($row['status'] ?? '') === 'published'
+			&& in_array($surface, (array)($row['surfaces'] ?? []), true) === true;
+	}//end isShown()
 
 
 	/**
