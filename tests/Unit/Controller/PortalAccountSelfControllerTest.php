@@ -385,7 +385,7 @@ class PortalAccountSelfControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/inbox-berichtenbox-channel/specs/portal-message-box-channel/spec.md#requirement-the-resident-can-switch-the-channel-off-req-mbc-005
+	 * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-the-resident-can-switch-the-channel-off-req-mbc-005
 	 */
 	public function testTheMessageBoxChoiceOnlyWhenOffered(): void {
 		$written = [];

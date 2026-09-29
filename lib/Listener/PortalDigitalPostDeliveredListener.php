@@ -26,7 +26,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbox-berichtenbox-channel/specs/portal-message-box-channel/spec.md#requirement-the-resident-sees-only-a-real-delivery-req-mbc-004
+ * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-the-resident-sees-only-a-real-delivery-req-mbc-004
  *
  * @template-implements IEventListener<Event>
  */
@@ -49,7 +49,7 @@ use Throwable;
 /**
  * Writes integriq's status onto the message box row.
  *
- * @spec openspec/changes/inbox-berichtenbox-channel/specs/portal-message-box-channel/spec.md#requirement-the-resident-sees-only-a-real-delivery-req-mbc-004
+ * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-the-resident-sees-only-a-real-delivery-req-mbc-004
  *
  * @template-implements IEventListener<Event>
  */
@@ -84,7 +84,7 @@ class PortalDigitalPostDeliveredListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/inbox-berichtenbox-channel/specs/portal-message-box-channel/spec.md#requirement-the-resident-sees-only-a-real-delivery-req-mbc-004
+	 * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-the-resident-sees-only-a-real-delivery-req-mbc-004
 	 */
 	public function handle(Event $event): void {
 		// Without integriq the class does not exist and nothing is an instance of it.

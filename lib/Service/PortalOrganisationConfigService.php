@@ -202,7 +202,7 @@ class PortalOrganisationConfigService {
 	 *
 	 * @return array{sourceId: string, label: string}|null
 	 *
-	 * @spec openspec/changes/inbox-berichtenbox-channel/specs/portal-message-box-channel/spec.md#requirement-the-organisation-turns-the-channel-on-req-mbc-001
+	 * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-the-organisation-turns-the-channel-on-req-mbc-001
 	 */
 	public function messageBox(string $orgSlug): ?array {
 		$uuid = '';

@@ -26,7 +26,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbox-berichtenbox-channel/specs/portal-message-box-channel/spec.md#requirement-the-case-app-names-the-recipient-and-portaliq-does-not-keep-it-req-mbc-002
+ * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-the-case-app-names-the-recipient-and-portaliq-does-not-keep-it-req-mbc-002
  */
 
 declare(strict_types=1);
@@ -36,7 +36,7 @@ namespace OCA\Portaliq\Contribution;
 /**
  * Keeps a well-formed `messageBox` declaration on an inbox collection.
  *
- * @spec openspec/changes/inbox-berichtenbox-channel/specs/portal-message-box-channel/spec.md#requirement-the-case-app-names-the-recipient-and-portaliq-does-not-keep-it-req-mbc-002
+ * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-the-case-app-names-the-recipient-and-portaliq-does-not-keep-it-req-mbc-002
  */
 class MessageBoxConfigNormaliser {
 	/**
@@ -47,7 +47,7 @@ class MessageBoxConfigNormaliser {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/inbox-berichtenbox-channel/specs/portal-message-box-channel/spec.md#requirement-the-case-app-names-the-recipient-and-portaliq-does-not-keep-it-req-mbc-002
+	 * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-the-case-app-names-the-recipient-and-portaliq-does-not-keep-it-req-mbc-002
 	 */
 	public function normalise(array $collection): array {
 		if (array_key_exists('messageBox', $collection) === false) {

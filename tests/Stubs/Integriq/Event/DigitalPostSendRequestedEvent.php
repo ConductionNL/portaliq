@@ -41,7 +41,7 @@ use OCP\EventDispatcher\Event;
  * refusal. It never carries both, and it is never left empty on a handled
  * event: a consumer that reads neither knows the request was not handled.
  *
- * @spec openspec/changes/inbox-berichtenbox-channel/specs/portal-message-box-channel/spec.md#requirement-portaliq-asks-integriq-to-send-and-records-the-answer-req-mbc-003
+ * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-portaliq-asks-integriq-to-send-and-records-the-answer-req-mbc-003
  *
  * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- the ADR-041 event contract is a flat
  * readonly envelope the consumer stubs mirror verbatim.

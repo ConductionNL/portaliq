@@ -7,7 +7,7 @@
 // organisation offers the channel. The label is the organisation's own, for
 // example "MijnOverheid Berichtenbox"; portaliq names no product itself.
 //
-// @spec openspec/changes/inbox-berichtenbox-channel/specs/portal-message-box-channel/spec.md#requirement-the-resident-sees-only-a-real-delivery-req-mbc-004
+// @spec openspec/specs/portal-message-box-channel/spec.md#requirement-the-resident-sees-only-a-real-delivery-req-mbc-004
 
 /**
  * The line under a message that also reached the message box, or null.

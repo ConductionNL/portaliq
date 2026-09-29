@@ -27,7 +27,7 @@ use ReflectionMethod;
  * sender is real; integriq's events are its REAL classes, from
  * PORTALIQ_INTEGRIQ_LIB or the verbatim copies in tests/Stubs.
  *
- * @spec openspec/changes/inbox-berichtenbox-channel/specs/portal-message-box-channel/spec.md#requirement-portaliq-asks-integriq-to-send-and-records-the-answer-req-mbc-003
+ * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-portaliq-asks-integriq-to-send-and-records-the-answer-req-mbc-003
  */
 class MessageBoxDispatchJobTest extends TestCase {
 
@@ -225,7 +225,7 @@ class MessageBoxDispatchJobTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/inbox-berichtenbox-channel/specs/portal-message-box-channel/spec.md#requirement-the-case-app-names-the-recipient-and-portaliq-does-not-keep-it-req-mbc-002
+	 * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-the-case-app-names-the-recipient-and-portaliq-does-not-keep-it-req-mbc-002
 	 */
 	public function testNullRecipientSendsNothing(): void {
 		$created = [];
@@ -245,7 +245,7 @@ class MessageBoxDispatchJobTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/inbox-berichtenbox-channel/specs/portal-message-box-channel/spec.md#requirement-portaliq-asks-integriq-to-send-and-records-the-answer-req-mbc-003
+	 * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-portaliq-asks-integriq-to-send-and-records-the-answer-req-mbc-003
 	 */
 	public function testUnhandledEventIsARefusal(): void {
 		if (class_exists(DigitalPostSendRequestedEvent::class) === false) {
@@ -295,7 +295,7 @@ class MessageBoxDispatchJobTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/inbox-berichtenbox-channel/specs/portal-message-box-channel/spec.md#requirement-the-case-app-names-the-recipient-and-portaliq-does-not-keep-it-req-mbc-002
+	 * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-the-case-app-names-the-recipient-and-portaliq-does-not-keep-it-req-mbc-002
 	 */
 	public function testRecipientIsInNoLogAndNoRow(): void {
 		if (class_exists(DigitalPostSendRequestedEvent::class) === false) {
@@ -338,7 +338,7 @@ class MessageBoxDispatchJobTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/inbox-berichtenbox-channel/specs/portal-message-box-channel/spec.md#requirement-portaliq-asks-integriq-to-send-and-records-the-answer-req-mbc-003
+	 * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-portaliq-asks-integriq-to-send-and-records-the-answer-req-mbc-003
 	 */
 	public function testMessageIdIsRecorded(): void {
 		if (class_exists(DigitalPostSendRequestedEvent::class) === false) {
@@ -389,7 +389,7 @@ class MessageBoxDispatchJobTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/inbox-berichtenbox-channel/specs/portal-message-box-channel/spec.md#requirement-the-resident-sees-only-a-real-delivery-req-mbc-004
+	 * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-the-resident-sees-only-a-real-delivery-req-mbc-004
 	 */
 	public function testAStatusAnnouncedDuringTheSendLandsOnTheRow(): void {
 		if (class_exists(DigitalPostSendRequestedEvent::class) === false) {

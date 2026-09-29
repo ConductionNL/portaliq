@@ -17,7 +17,7 @@ use PHPUnit\Framework\TestCase;
  * never one of the contract's own methods. Anything else drops the key, so a
  * malformed manifest never makes portaliq call a method nobody meant.
  *
- * @spec openspec/changes/inbox-berichtenbox-channel/specs/portal-message-box-channel/spec.md#requirement-the-case-app-names-the-recipient-and-portaliq-does-not-keep-it-req-mbc-002
+ * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-the-case-app-names-the-recipient-and-portaliq-does-not-keep-it-req-mbc-002
  */
 class MessageBoxConfigNormaliserTest extends TestCase {
 

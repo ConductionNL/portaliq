@@ -38,7 +38,7 @@ use OCP\EventDispatcher\Event;
  * listens for the happy path will hear about the unhappy one too, which is
  * the point.
  *
- * @spec openspec/changes/inbox-berichtenbox-channel/specs/portal-message-box-channel/spec.md#requirement-portaliq-asks-integriq-to-send-and-records-the-answer-req-mbc-003
+ * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-portaliq-asks-integriq-to-send-and-records-the-answer-req-mbc-003
  */
 class DigitalPostDeliveredEvent extends Event {
 	/**

@@ -359,7 +359,7 @@ class PortalRecordChangeListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/inbox-berichtenbox-channel/specs/portal-message-box-channel/spec.md#requirement-portaliq-asks-integriq-to-send-and-records-the-answer-req-mbc-003
+	 * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-portaliq-asks-integriq-to-send-and-records-the-answer-req-mbc-003
 	 */
 	public function testMessageBoxJobOnlyWhenAllowed(): void {
 		$message = $this->object(schema: '13', data: ['ontvanger' => 'bsn-1', 'onderwerp' => 'Besluit op uw aanvraag']);

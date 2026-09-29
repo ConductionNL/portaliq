@@ -19,7 +19,7 @@ use Psr\Log\LoggerInterface;
  * with integriq's REAL DigitalPostDeliveredEvent (from PORTALIQ_INTEGRIQ_LIB,
  * or the verbatim copy in tests/Stubs when integriq is absent).
  *
- * @spec openspec/changes/inbox-berichtenbox-channel/specs/portal-message-box-channel/spec.md#requirement-the-resident-sees-only-a-real-delivery-req-mbc-004
+ * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-the-resident-sees-only-a-real-delivery-req-mbc-004
  */
 class PortalDigitalPostDeliveredListenerTest extends TestCase {
 

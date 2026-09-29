@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbox-berichtenbox-channel/specs/portal-message-box-channel/spec.md#requirement-portaliq-asks-integriq-to-send-and-records-the-answer-req-mbc-003
+ * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-portaliq-asks-integriq-to-send-and-records-the-answer-req-mbc-003
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ use Throwable;
 /**
  * Queues a message box send when the organisation and the resident allow it.
  *
- * @spec openspec/changes/inbox-berichtenbox-channel/specs/portal-message-box-channel/spec.md#requirement-portaliq-asks-integriq-to-send-and-records-the-answer-req-mbc-003
+ * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-portaliq-asks-integriq-to-send-and-records-the-answer-req-mbc-003
  */
 class MessageBoxChannel {
 
@@ -73,7 +73,7 @@ class MessageBoxChannel {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/inbox-berichtenbox-channel/specs/portal-message-box-channel/spec.md#requirement-the-resident-can-switch-the-channel-off-req-mbc-005
+	 * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-the-resident-can-switch-the-channel-off-req-mbc-005
 	 */
 	public function wants(array $account): bool {
 		$preferences = ($account['notificationPreferences'] ?? null);
@@ -93,7 +93,7 @@ class MessageBoxChannel {
 	 *
 	 * @return bool Whether a send was queued.
 	 *
-	 * @spec openspec/changes/inbox-berichtenbox-channel/specs/portal-message-box-channel/spec.md#requirement-portaliq-asks-integriq-to-send-and-records-the-answer-req-mbc-003
+	 * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-portaliq-asks-integriq-to-send-and-records-the-answer-req-mbc-003
 	 */
 	public function enqueue(array $account, array $inbox, string $recordId): bool {
 		$organisation = (string)($account['organisation'] ?? '');

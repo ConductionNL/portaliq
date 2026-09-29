@@ -343,7 +343,7 @@ class PortalOrganisationConfigServiceTest extends TestCase {
 	 * channel: a source without a label would show residents an empty choice,
 	 * a label without a source would promise a send nothing can make.
 	 *
-	 * @spec openspec/changes/inbox-berichtenbox-channel/specs/portal-message-box-channel/spec.md#requirement-the-organisation-turns-the-channel-on-req-mbc-001
+	 * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-the-organisation-turns-the-channel-on-req-mbc-001
 	 */
 	public function testMessageBoxNeedsSourceAndLabel(): void {
 		$mapper = $this->oneOrganisation();
