@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\Intake;
 
+use OCA\Portaliq\Service\CaseTypeVisibility;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 use OCA\Portaliq\Service\Intake\PortalFormTrustLevel;
+use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Tests\Unit\Service\Identity\PortalIdentityStoreTrait;
 use PHPUnit\Framework\TestCase;
 
@@ -252,6 +254,47 @@ class PortalFormBindingResolverTest extends TestCase {
 		$this->assertFalse($resolver->caseTypeIsInPortalScope(portal: '', register: 'dossiq', schema: 'zaaktype', typeId: 'verhuizing'));
 
 	}//end testOnlyTheExactDeclaredTripleIsInScope()
+
+	/**
+	 * operate-show-per-case-type REQ-OSC-002: a binding for a case type its
+	 * portal hides resolves to no form, and says why; the same binding on a
+	 * portal that shows the type still renders.
+	 *
+	 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 */
+	public function testHiddenCaseTypeResolvesToNoForm(): void {
+		$this->seedForm(audience: 'client', fields: [['name' => 'postcode', 'order' => 1]]);
+		$this->seedRow('portalFormBinding', $this->binding());
+		$this->seedRow('portalFormBinding', $this->binding(['route' => 'aanvragen/kap', 'typeId' => 'kapvergunning']));
+		$resolver = $this->hidingResolver();
+
+		$render = $resolver->render(binding: $this->binding());
+		$this->assertTrue($render['resolvesToNoForm']);
+		$this->assertSame('hiddenCaseType', $render['reason']);
+		$this->assertSame([], $render['fields']);
+
+		$shown = $resolver->render(binding: $this->binding(['portal' => 'gemeente-y']));
+		$this->assertFalse($shown['resolvesToNoForm']);
+
+		$this->assertSame(['aanvragen/verhuizing'], $resolver->hiddenRoutes(portal: 'gemeente-x'));
+		$this->assertSame([], $resolver->hiddenRoutes(portal: 'gemeente-y'));
+		$this->assertSame([], $this->resolver()->hiddenRoutes(portal: 'gemeente-x'));
+	}//end testHiddenCaseTypeResolvesToNoForm()
+
+	/**
+	 * A resolver whose portal gemeente-x hides the case type verhuizing.
+	 *
+	 * @return PortalFormBindingResolver
+	 */
+	private function hidingResolver(): PortalFormBindingResolver {
+		$portals = $this->createMock(PortalResolver::class);
+		$portals->method('allPublishedPortals')->willReturn([
+			['slug' => 'gemeente-x', 'hiddenCaseTypes' => [['typeId' => 'verhuizing']]],
+			['slug' => 'gemeente-y'],
+		]);
+
+		return new PortalFormBindingResolver($this->fakeReader(), new CaseTypeVisibility($portals));
+	}//end hidingResolver()
 
 	/**
 	 * A binding for the client form of one case type.

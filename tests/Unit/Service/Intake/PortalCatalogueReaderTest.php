@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service\Intake;
 
 use OCA\Portaliq\Service\Intake\PortalCatalogueReader;
+use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 use OCA\Portaliq\Tests\Unit\Service\Identity\PortalIdentityStoreTrait;
 use PHPUnit\Framework\TestCase;
 
@@ -62,6 +63,29 @@ class PortalCatalogueReaderTest extends TestCase {
 		$this->assertSame('aanvragen/verhuizing', $topics[0]['entries'][0]['route']);
 
 	}//end testAnEntryCarriesTheRouteThatStartsItsForm()
+
+	/**
+	 * operate-show-per-case-type REQ-OSC-002: an entry whose form is bound to
+	 * a case type the portal hides is left out of the catalogue.
+	 *
+	 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 */
+	public function testAnEntryForAHiddenCaseTypeIsLeftOut(): void {
+		$this->seedEntry(topic: 'Wonen', title: 'Verhuizing doorgeven', route: 'aanvragen/verhuizing');
+		$this->seedEntry(topic: 'Wonen', title: 'Kapvergunning', route: 'aanvragen/kap');
+
+		$bindings = $this->getMockBuilder(PortalFormBindingResolver::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['hiddenRoutes'])
+			->getMock();
+		$bindings->method('hiddenRoutes')->willReturnCallback(
+			static fn (string $portal): array => ($portal === 'gemeente-x' ? ['aanvragen/verhuizing'] : [])
+		);
+
+		$topics = (new PortalCatalogueReader($this->fakeReader(), $bindings))->topicsFor(portal: 'gemeente-x');
+
+		$this->assertSame(['Kapvergunning'], array_column($topics[0]['entries'], 'title'));
+	}//end testAnEntryForAHiddenCaseTypeIsLeftOut()
 
 	/**
 	 * Put one published catalogue entry in the fake store.

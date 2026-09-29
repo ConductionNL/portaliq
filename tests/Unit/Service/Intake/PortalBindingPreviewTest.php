@@ -76,6 +76,26 @@ class PortalBindingPreviewTest extends TestCase {
 	}//end testABindingThatResolvesToNoneSaysSo()
 
 	/**
+	 * operate-show-per-case-type: a binding for a case type the portal hides
+	 * opens no form, and the administrator is told that is why.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 */
+	public function testAHiddenCaseTypeIsNamedAsTheReason(): void {
+		$preview = $this->previewAnswering(
+			render: ['kind' => 'hosted', 'resolvesToNoForm' => true, 'reason' => 'hiddenCaseType']
+		);
+
+		$described = $preview->describe(binding: ['formName' => 'Handhavingsverzoek']);
+
+		$this->assertSame(PortalBindingPreview::RESOLVES_TO_NONE, $described['state']);
+		$this->assertSame(PortalBindingPreview::REASON_HIDDEN_CASE_TYPE, $described['reason']);
+		$this->assertStringContainsString('does not show its case type', $described['message']);
+	}//end testAHiddenCaseTypeIsNamedAsTheReason()
+
+	/**
 	 * 🔴 AND IT INVENTS NO NAME. A stale or configured-but-unresolved name
 	 * tells an administrator the binding is working.
 	 *

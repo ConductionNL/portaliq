@@ -56,9 +56,15 @@ class PortalCatalogueReader {
 	 * Constructor.
 	 *
 	 * @param PortalObjectReader $reader Reads the published catalogue.
+	 * @param PortalFormBindingResolver|null $bindings Names the routes whose
+	 *                                                 case type the portal
+	 *                                                 hides
+	 *                                                 (operate-show-per-case-type).
+	 *                                                 Absent hides nothing.
 	 */
 	public function __construct(
 		private readonly PortalObjectReader $reader,
+		private readonly ?PortalFormBindingResolver $bindings = null,
 	) {
 	}//end __construct()
 
@@ -70,6 +76,7 @@ class PortalCatalogueReader {
 	 * @return array<int, array<string, mixed>> Topics, each with its entries.
 	 *
 	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
 	 */
 	public function topicsFor(string $portal): array {
 		if ($portal === '') {
@@ -86,9 +93,17 @@ class PortalCatalogueReader {
 			filter: ['status' => 'published']
 		);
 
+		// An entry that starts a form for a case type this portal hides is
+		// left out (operate-show-per-case-type REQ-OSC-002).
+		$hiddenRoutes = ($this->bindings?->hiddenRoutes(portal: $portal) ?? []);
+
 		$topics = [];
 		foreach ($rows as $row) {
 			if (is_array($row) === false || ($row['portal'] ?? '') !== $portal) {
+				continue;
+			}
+
+			if (in_array((string)($row['route'] ?? ''), $hiddenRoutes, true) === true) {
 				continue;
 			}
 

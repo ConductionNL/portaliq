@@ -90,6 +90,14 @@ class PortalBindingPreview {
 	public const REASON_NO_FORM = 'no_form_for_type_and_audience';
 
 	/**
+	 * The portal does not show the binding's case type
+	 * (operate-show-per-case-type), so its form does not open.
+	 *
+	 * @var string
+	 */
+	public const REASON_HIDDEN_CASE_TYPE = 'hidden_case_type';
+
+	/**
 	 * Wire the preview.
 	 *
 	 * @param PortalFormBindingResolver $resolver The resolution the render uses.
@@ -174,6 +182,10 @@ class PortalBindingPreview {
 	 * @return string One of the REASON_ constants.
 	 */
 	private function reasonCodeFor(array $render, string $askedFor): string {
+		if ((string)($render['reason'] ?? '') === 'hiddenCaseType') {
+			return self::REASON_HIDDEN_CASE_TYPE;
+		}
+
 		if ((string)($render['kind'] ?? '') === PortalFormBindingResolver::KIND_EXTERNAL) {
 			return self::REASON_EXTERNAL_WITHOUT_ADDRESS;
 		}
@@ -197,6 +209,11 @@ class PortalBindingPreview {
 	 * @return string The message.
 	 */
 	private function reasonFor(array $render, array $binding): string {
+		if ((string)($render['reason'] ?? '') === 'hiddenCaseType') {
+			return 'This entry opens no form: this portal does not show its case type. '
+				."Show it again on the portal's case types page.";
+		}
+
 		if ((string)($render['kind'] ?? '') === PortalFormBindingResolver::KIND_EXTERNAL) {
 			return 'This entry is set to send people to another website, but no address is filled in, '
 				.'so nobody can start it.';

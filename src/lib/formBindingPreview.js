@@ -48,6 +48,11 @@ export function noFormSentence(answer, translate) {
 			'This entry sends people to another website, but has no address. Nobody can start it.',
 		)
 	}
+	if (answer?.reason === 'hidden_case_type') {
+		return translate(
+			"This entry opens no form: this portal does not show its case type. Show it again on the portal's case types page.",
+		)
+	}
 	if (answer?.reason === 'named_form_not_published') {
 		return translate(
 			'This entry opens no form today. It asks for "{form}", and no form of that name is published to its audience.',
