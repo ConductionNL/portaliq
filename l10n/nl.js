@@ -1745,7 +1745,13 @@ OC.L10N.register(
         "Copy for a text": "Kopiëren voor een tekst",
         "Copied. Paste it into a text widget.": "Gekopieerd. Plak het in een tekstwidget.",
         "This item is used on published pages: %s. Remove it there first.": "Dit item staat op gepubliceerde pagina's: %s. Haal het daar eerst weg.",
-        "An image in the media library needs alternative text.": "Een afbeelding in de mediabibliotheek heeft een alternatieve tekst nodig."
+        "An image in the media library needs alternative text.": "Een afbeelding in de mediabibliotheek heeft een alternatieve tekst nodig.",
+        "Header shape": "Vorm van de kop",
+        "How the header is laid out. `double` puts the menu in a bar under the portal name. `single` puts the name, the menu and sign-in on one bar. Empty or unknown means `double`.": "Hoe de kop is opgebouwd. `double` zet het menu in een balk onder de portaalnaam. `single` zet de naam, het menu en inloggen op één balk. Leeg of onbekend betekent `double`.",
+        "Register page": "Registratiepagina",
+        "Where a visitor without an account goes to make one. When empty, the header shows no register button.": "Waar een bezoeker zonder account er een aanmaakt. Is dit leeg, dan toont de kop geen registratieknop.",
+        "Register button text": "Tekst van de registratieknop",
+        "The text on the register button. Empty shows Registreren.": "De tekst op de registratieknop. Leeg toont Registreren."
     },
     "nplurals=2; plural=(n != 1);"
 )

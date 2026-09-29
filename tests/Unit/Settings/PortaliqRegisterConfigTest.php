@@ -285,8 +285,12 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// (site-page-seo-history-and-media). Additive.
 		// 0.44.0 (media 0.1.0): a portal's media library
 		// (site-page-seo-history-and-media T06). New schema, additive.
-		$this->assertSame('0.44.0', self::$register['info']['version']);
-		$this->assertSame('0.44.0', self::$register['components']['registers']['portaliq']['version']);
+		// 0.45.0 (portal 0.8.0): the portal's shell, `headerVariant`,
+		// `authentication.register` and `registerLabel`, `footer` and
+		// `regions` (portal-theme-blocks-and-contributed-pages tasks 4-7).
+		// Additive.
+		$this->assertSame('0.45.0', self::$register['info']['version']);
+		$this->assertSame('0.45.0', self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame('0.4.0', self::$register['components']['schemas']['page']['version']);
 		$this->assertSame(70, self::$register['components']['schemas']['page']['properties']['seoTitle']['maxLength']);
 		$this->assertSame(160, self::$register['components']['schemas']['page']['properties']['seoDescription']['maxLength']);
@@ -333,7 +337,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalTrafficRecording']['authorization']['read']);
 		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
 		$this->assertSame('0.4.0', self::$register['components']['schemas']['page']['version']);
-		$this->assertSame('0.7.0', self::$register['components']['schemas']['portal']['version']);
+		$this->assertSame('0.8.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('0.12.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalSession']['version']);
@@ -618,6 +622,37 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$groups = array_map(static fn ($rule) => is_array($rule) ? ($rule['group'] ?? null) : $rule, $schema['authorization']['read']);
 		$this->assertNotContains('public', $groups, 'the public reach an item through the content API, never through OpenRegister');
 	}//end testAMediaItemNamesItsPortalKindAndStatus()
+
+	/**
+	 * portal-theme-blocks-and-contributed-pages REQ-PTB-004: the portal
+	 * declares its header shape and register destination, validated with the
+	 * real schema fragment. An undeclared field would be accepted, echoed and
+	 * not stored (045b168), so each one is a schema property.
+	 *
+	 * @return void
+	 */
+	public function testThePortalDeclaresItsHeaderShapeAndRegisterPage(): void {
+		$schema = self::$register['components']['schemas']['portal'];
+		$valid  = $this->portalValidator(schema: $schema);
+
+		$this->assertTrue($valid(['title' => 'Docs', 'slug' => 'docs', 'headerVariant' => 'single', 'authentication' => ['modes' => ['digid'], 'register' => '/registreren', 'registerLabel' => 'Account maken']]));
+		$this->assertFalse($valid(['title' => 'Docs', 'slug' => 'docs', 'headerVariant' => 'triple']), 'the header shape is double or single');
+		$this->assertNotEmpty($schema['properties']['headerVariant']['description']);
+		$this->assertNotEmpty($schema['properties']['authentication']['properties']['register']['description']);
+	}//end testThePortalDeclaresItsHeaderShapeAndRegisterPage()
+
+	/**
+	 * A validator for portal records against the real schema fragment.
+	 *
+	 * @param array $schema The portal schema.
+	 *
+	 * @return \Closure(array): bool
+	 */
+	private function portalValidator(array $schema): \Closure {
+		$jsonSchema = json_decode((string)json_encode(['type' => 'object', 'properties' => $schema['properties']]), false);
+
+		return static fn (array $portal): bool => (new Validator())->validate(json_decode((string)json_encode($portal), false), $jsonSchema)->isValid();
+	}//end portalValidator()
 
 	/**
 	 * The public surface, pinned BY NAME.

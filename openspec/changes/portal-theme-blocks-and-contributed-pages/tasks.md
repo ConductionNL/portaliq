@@ -60,8 +60,8 @@ that touches the shell ends with `node tests/shell-snapshot.mjs compare <dir>`.
   - GIVEN `headerVariant: "single"` WHEN rendered THEN one "Home" link exists; GIVEN `"x"` THEN `double` renders
   - GIVEN #559's sign-in states on `development` WHEN the header moves into the block THEN every state still renders
 - Reference: 7974e5a, 045b168, fd37778, a485fad
-- [ ] Implement
-- [ ] Test
+- [x] Implement
+- [x] Test
 
 ### Task 5: The footer block
 

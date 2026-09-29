@@ -29,6 +29,7 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Contribution\PortalContributionFilter;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Service\Cms\PortalShell;
 use OCA\Portaliq\Service\CmsReader;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
@@ -85,6 +86,7 @@ class ContentController extends Controller {
 	 * @param PortalSessionService       $session      Resolves the caller's portal session for the content gate.
 	 * @param TrafficConfigResolver      $traffic      Resolves the portal's measurement configuration.
 	 * @param IURLGenerator              $urlGenerator Builds the absolute collector URL.
+	 * @param PortalShell                $shell        Projects the portal's header, footer and regions.
 	 *
 	 * @return void
 	 */
@@ -99,6 +101,7 @@ class ContentController extends Controller {
 		private readonly PortalSessionService $session,
 		private readonly TrafficConfigResolver $traffic,
 		private readonly IURLGenerator $urlGenerator,
+		private readonly PortalShell $shell=new PortalShell(),
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -215,8 +218,6 @@ class ContentController extends Controller {
 			return $this->notFound();
 		}
 
-		$auth = (array)($portal['authentication'] ?? []);
-
 		return $this->publicJson(
 			payload: [
 				'title'   => (string)($portal['title'] ?? ''),
@@ -233,7 +234,10 @@ class ContentController extends Controller {
 				// The MODES are public — a visitor has to know how to sign in.
 				// Provider secrets are not here and never will be; they live in
 				// the credential broker.
-				'authentication' => ['modes' => array_values((array)($auth['modes'] ?? ['public']))],
+				'authentication' => $this->shell->authentication(portal: $portal),
+				// The header's shape (REQ-PTB-004); `double` unless the
+				// portal chose another known one.
+				'headerVariant' => $this->shell->headerVariant(portal: $portal),
 				// The resolved measurement configuration, defaults filled in,
 				// so the client sends only what the portal asked for; and the
 				// absolute collector URL, so a statically built site on its

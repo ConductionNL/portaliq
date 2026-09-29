@@ -217,6 +217,25 @@ class ContentControllerTest extends TestCase {
 
 
 	/**
+	 * The site carries the header's shape and a declared register destination
+	 * (portal-theme-blocks-and-contributed-pages REQ-PTB-004).
+	 *
+	 * @return void
+	 */
+	public function testTheSiteCarriesTheHeaderShapeAndTheRegisterDestination(): void {
+		$portal = $this->portal();
+		$portal['headerVariant'] = 'single';
+		$portal['authentication']['register'] = '/registreren';
+		$this->resolver->method('resolve')->willReturn($portal);
+
+		$data = $this->controller()->site()->getData();
+
+		$this->assertSame('single', $data['headerVariant']);
+		$this->assertSame('/registreren', $data['authentication']['register']);
+	}//end testTheSiteCarriesTheHeaderShapeAndTheRegisterDestination()
+
+
+	/**
 	 * Only the authentication MODES are exposed.
 	 *
 	 * Provider configuration belongs in the credential broker; a public

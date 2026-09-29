@@ -51,117 +51,20 @@
 			shell owns the SC 2.4.1 affordance; a second one at this level would
 			be a duplicate tab stop announcing the same target twice.
 		-->
-		<header class="ac-header pq-site__header" data-testid="site-header">
-			<div class="ac-header__navigation-main">
-				<div class="ac-header__logo">
-					<div>
-						<div class="con-logo-container header" />
-						<span class="sr-only">Logo</span>
-						<h1 class="logo-text" data-testid="site-title">
-							{{ site.title || '…' }}
-						</h1>
-					</div>
-				</div>
-
-				<!--
-					The sign-in affordance appears ONLY when the portal declares
-					a mode other than `public`. A portal with no accounts must
-					show no login button: an inert one is a support ticket from
-					every visitor who presses it.
-
-					It sits in the reference's `__right-section` / `ac-navigation`
-					slot, which is where that implementation puts
-					Aanmelden/Inloggen.
-				-->
-				<div class="ac-header__right-section">
-					<div
-						v-if="session || signInRoutes.length"
-						class="ac-navigation pq-site__auth"
-						data-testid="site-auth">
-						<template v-if="session">
-							<span data-testid="site-auth-subject">{{
-								sessionLabel
-							}}</span>
-							<button
-								type="button"
-								data-testid="site-signout"
-								@click="signOut">
-								Uitloggen
-							</button>
-						</template>
-						<nav v-else aria-label="Gebruikersmenu">
-							<ul>
-								<li v-for="entry in signInRoutes" :key="entry.mode">
-									<a
-										:href="entry.href"
-										:data-mode="entry.mode"
-										data-testid="site-signin">
-										{{ entry.label }}
-									</a>
-								</li>
-							</ul>
-						</nav>
-					</div>
-				</div>
-			</div>
-
-			<div class="ac-header__navigation-secondary">
-				<div class="container">
-					<div class="ac-c-navigation__container">
-						<SiteMenu
-							v-for="menu in headerMenus"
-							:key="menu.title"
-							:menu="menu"
-							:currentRoute="route"
-							@navigate="go" />
-					</div>
-				</div>
-			</div>
-
-			<!--
-				THE BREADCRUMB, matching the reference's `Kruimelpad` landmark.
-
-				It renders only BELOW the home route: a trail whose only entry
-				is the page you are on tells the visitor nothing and adds a
-				landmark for a screen reader to step through.
-
-				The last crumb is the current page and is NOT a link — an
-				anchor to where you already are is a control that does nothing.
-			-->
-			<div class="ac-header__navigation-breadcrumb">
-				<div class="container">
-					<nav
-						v-if="breadcrumbs.length > 1"
-						class="ac-breadcrumb"
-						aria-label="Kruimelpad"
-						data-testid="site-breadcrumb">
-						<ul class="ac-breadcrumb__list">
-							<li
-								v-for="(crumb, index) in breadcrumbs"
-								:key="crumb.route"
-								class="ac-breadcrumb__item">
-								<a
-									v-if="index < breadcrumbs.length - 1"
-									class="utrecht-link"
-									:href="hrefForRoute(crumb.route)"
-									@click.prevent="go(crumb.route)">
-									{{ crumb.label }}
-								</a>
-								<span v-else aria-current="page">{{
-									crumb.label
-								}}</span>
-								<span
-									v-if="index < breadcrumbs.length - 1"
-									class="ac-breadcrumb__separator"
-									aria-hidden="true">
-									›
-								</span>
-							</li>
-						</ul>
-					</nav>
-				</div>
-			</div>
-		</header>
+		<!-- The header is the `brandHeader` block (REQ-PTB-004): the shell owns
+		     the data, the block owns the markup. -->
+		<BrandHeader
+			:title="site.title || ''"
+			:variant="headerVariant"
+			:menus="headerMenus"
+			:currentRoute="route"
+			:breadcrumbs="breadcrumbs"
+			:session="session"
+			:sessionLabel="sessionLabel"
+			:signInRoutes="signInRoutes"
+			:registerRoute="registerRoute"
+			@navigate="go"
+			@signout="signOut" />
 
 		<!--
 			`.container` IS THE CONTENT COLUMN, AND IT IS NOT OPTIONAL.
@@ -257,9 +160,12 @@
 						renders, not of what an author remembered to tick.
 					-->
 					<div v-if="!bodyProvidesHeading" class="container">
-						<h2 class="utrecht-heading-2" data-testid="page-title">
+						<!-- The page's own heading is the h1: the site name in the
+						     header is not a heading (REQ-PTB-004). The class keeps
+						     the size it had as an h2. -->
+						<h1 class="utrecht-heading-2" data-testid="page-title">
 							{{ page.title }}
-						</h2>
+						</h1>
 					</div>
 
 					<!-- The page's hero image, from the portal's media library or
@@ -452,8 +358,8 @@
 <script>
 import { CnSiteIcon } from '@conduction/nextcloud-vue/public'
 import { defineAsyncComponent } from 'vue'
+import BrandHeader from './components/BrandHeader.vue'
 import MarkdownBlock from './components/MarkdownBlock.vue'
-import SiteMenu from './components/SiteMenu.vue'
 import WidgetGrid from './components/WidgetGrid.vue'
 import {
 	adoptSessionToken,
@@ -473,6 +379,7 @@ import {
 	resolveApiBase,
 } from './lib/contentApi.js'
 import { editorBaseFrom, fetchEditingContext } from './lib/editorApi.js'
+import { headerMenusOf, headerVariantOf, registerRouteOf } from './lib/shellData.js'
 
 /**
  * LOADED ON DEMAND, and the budget is why — the same reason the detail and
@@ -502,7 +409,13 @@ const SiteEditButton = defineAsyncComponent(
 export default {
 	name: 'App',
 
-	components: { CnSiteIcon, MarkdownBlock, SiteEditButton, SiteMenu, WidgetGrid },
+	components: {
+		BrandHeader,
+		CnSiteIcon,
+		MarkdownBlock,
+		SiteEditButton,
+		WidgetGrid,
+	},
 
 	props: {
 		/** Explicit site slug, when not resolving by host. */
@@ -598,7 +511,9 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
 		 */
 		breadcrumbs() {
-			const crumbs = [{ route: '/', label: 'Home' }]
+			const crumbs = [
+				{ route: '/', label: 'Home', href: this.hrefForRoute('/') },
+			]
 			const segments = String(this.route || '/')
 				.split('/')
 				.filter(Boolean)
@@ -614,7 +529,7 @@ export default {
 					label = this.page.title
 				}
 
-				crumbs.push({ route, label })
+				crumbs.push({ route, label, href: this.hrefForRoute(route) })
 			})
 
 			return crumbs
@@ -679,7 +594,29 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-content-api-must-be-sufficient-without-the-built-in-renderer
 		 */
 		headerMenus() {
-			return this.menus.filter((menu) => (menu.position || 0) === 0)
+			return headerMenusOf(this.menus)
+		},
+
+		/**
+		 * The portal's header shape, `double` unless it chose `single`.
+		 *
+		 * @return {string} The variant.
+		 *
+		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-header-must-be-a-block-whose-shape-the-portal-chooses-req-ptb-004
+		 */
+		headerVariant() {
+			return headerVariantOf(this.site)
+		},
+
+		/**
+		 * The register destination the portal declares, or null.
+		 *
+		 * @return {object|null} `{href, label}`.
+		 *
+		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-header-must-be-a-block-whose-shape-the-portal-chooses-req-ptb-004
+		 */
+		registerRoute() {
+			return registerRouteOf(this.site)
 		},
 
 		/**

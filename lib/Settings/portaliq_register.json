@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.44.0"
+        "version": "0.45.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.44.0",
+                "version": "0.45.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -1966,7 +1966,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.7.0",
+                "version": "0.8.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -2069,6 +2069,16 @@
                         "type": "string",
                         "description": "URL or object reference for the site logo shown in the portal header.",
                         "example": "/apps/portaliq/logo/open-tilburg.svg"
+                    },
+                    "headerVariant": {
+                        "title": "Header shape",
+                        "type": "string",
+                        "description": "How the header is laid out. `double` puts the menu in a bar under the portal name. `single` puts the name, the menu and sign-in on one bar. Empty or unknown means `double`.",
+                        "enum": [
+                            "double",
+                            "single"
+                        ],
+                        "example": "double"
                     },
                     "locales": {
                         "title": "Locales",
@@ -2193,6 +2203,18 @@
                                         "example": "faxnummer"
                                     }
                                 }
+                            },
+                            "register": {
+                                "title": "Register page",
+                                "type": "string",
+                                "description": "Where a visitor without an account goes to make one. When empty, the header shows no register button.",
+                                "example": "/registreren"
+                            },
+                            "registerLabel": {
+                                "title": "Register button text",
+                                "type": "string",
+                                "description": "The text on the register button. Empty shows Registreren.",
+                                "example": "Account aanmaken"
                             }
                         }
                     },

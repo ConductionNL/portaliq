@@ -1687,7 +1687,13 @@ OC.L10N.register(
         "Copy for a text": "Copy for a text",
         "Copied. Paste it into a text widget.": "Copied. Paste it into a text widget.",
         "This item is used on published pages: %s. Remove it there first.": "This item is used on published pages: %s. Remove it there first.",
-        "An image in the media library needs alternative text.": "An image in the media library needs alternative text."
+        "An image in the media library needs alternative text.": "An image in the media library needs alternative text.",
+        "Header shape": "Header shape",
+        "How the header is laid out. `double` puts the menu in a bar under the portal name. `single` puts the name, the menu and sign-in on one bar. Empty or unknown means `double`.": "How the header is laid out. `double` puts the menu in a bar under the portal name. `single` puts the name, the menu and sign-in on one bar. Empty or unknown means `double`.",
+        "Register page": "Register page",
+        "Where a visitor without an account goes to make one. When empty, the header shows no register button.": "Where a visitor without an account goes to make one. When empty, the header shows no register button.",
+        "Register button text": "Register button text",
+        "The text on the register button. Empty shows Registreren.": "The text on the register button. Empty shows Registreren."
     },
     "nplurals=2; plural=(n != 1);"
 )
