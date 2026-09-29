@@ -370,6 +370,197 @@ class PortalTaskDeliveryJobTest extends TestCase {
 
 
 	/**
+	 * One REAL openregister PortalTaskDelivery row (the entity the seam hands
+	 * the job), built the way the ledger builds it. The kind is free text on
+	 * the entity, so `overdue` rows can be written before openregister names
+	 * a constant for it.
+	 *
+	 * @param string $uuid The delivery uuid.
+	 * @param string $channel `portal-inbox` or `mail`.
+	 * @param string $kind The delivery kind.
+	 * @param array<string, mixed> $message The engine's payload.
+	 *
+	 * @return object
+	 */
+	private function deliveryRow(string $uuid, string $channel, string $kind, array $message = self::MESSAGE): object {
+		$class = 'OCA\\OpenRegister\\Db\\PortalTaskDelivery';
+		if (class_exists($class) === false) {
+			$this->markTestSkipped('openregister PortalTaskDelivery not loadable: set PORTALIQ_OPENREGISTER_LIB');
+		}
+
+		$row = new $class();
+		$row->setUuid($uuid);
+		$row->setTaskUuid((string)($message['taskUuid'] ?? 'task-1'));
+		$row->setPartyReference('party:s1');
+		$row->setChannel($channel);
+		$row->setKind($kind);
+		$row->setState('pending');
+		$row->setMessage($message);
+
+		return $row;
+	}//end deliveryRow()
+
+	/**
+	 * Run the job over one `portal-inbox` row and capture what it wrote.
+	 *
+	 * @param object $row The delivery row.
+	 *
+	 * @return array{0: FakeLedger, 1: array<int, array<string, mixed>>}
+	 */
+	private function inboxRun(object $row): array {
+		$ledger = new FakeLedger(rows: [$row]);
+
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('readCollection')->willReturn([]);
+
+		$written = [];
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('createObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, array $data) use (&$written) {
+				$written[] = $data;
+
+				return ['id' => 'm'];
+			}
+		);
+
+		$this->runJob(ledger: $ledger, reader: $reader, writer: $writer);
+
+		return [$ledger, $written];
+	}//end inboxRun()
+
+	/**
+	 * An overdue inbox row is worded as overdue, with the task title and the
+	 * task deep link.
+	 *
+	 * @spec openspec/changes/tasks-reminders-after-the-deadline/specs/portal-task-delivery/spec.md#requirement-an-overdue-delivery-reaches-the-resident-as-overdue-req-trd-001
+	 */
+	public function testOverdueInboxSubject(): void {
+		[$ledger, $written] = $this->inboxRun($this->deliveryRow(uuid: 'd-1', channel: 'portal-inbox', kind: 'overdue'));
+
+		$this->assertSame(['d-1'], $ledger->delivered);
+		$this->assertCount(1, $written);
+		$this->assertStringContainsString('Your task is overdue: Stuur uw bewijsstuk', $written[0]['subject']);
+		$this->assertStringNotContainsString('new task', $written[0]['subject']);
+		$this->assertSame('task-1', $written[0]['taskUuid']);
+		$this->assertSame('d-1', $written[0]['deliveryUuid']);
+	}//end testOverdueInboxSubject()
+
+	/**
+	 * Once the date has passed the body says it was due, never "finish
+	 * before", and carries the case type's consequence when there is one.
+	 *
+	 * @spec openspec/changes/tasks-reminders-after-the-deadline/specs/portal-task-delivery/spec.md#requirement-an-overdue-delivery-reaches-the-resident-as-overdue-req-trd-001
+	 */
+	public function testOverdueBodyStatesThePastDueDate(): void {
+		$message = self::MESSAGE;
+		$message['consequence'] = 'We nemen een besluit zonder dit document.';
+		[, $written] = $this->inboxRun($this->deliveryRow(uuid: 'd-1', channel: 'portal-inbox', kind: 'overdue', message: $message));
+
+		$body = $written[0]['body'];
+		$this->assertStringContainsString('This task was due on 15-09-2026.', $body);
+		$this->assertStringNotContainsString('Please finish this task before', $body);
+		$this->assertStringContainsString('If you do not respond: We nemen een besluit zonder dit document.', $body);
+
+		// Without a consequence there is no consequence line, and a reminder
+		// keeps the "finish before" line.
+		[, $plain] = $this->inboxRun($this->deliveryRow(uuid: 'd-2', channel: 'portal-inbox', kind: 'overdue'));
+		$this->assertStringNotContainsString('If you do not respond', $plain[0]['body']);
+		[, $reminder] = $this->inboxRun($this->deliveryRow(uuid: 'd-3', channel: 'portal-inbox', kind: 'reminder', message: $message));
+		$this->assertStringContainsString('Please finish this task before 15-09-2026.', $reminder[0]['body']);
+		$this->assertStringNotContainsString('If you do not respond', $reminder[0]['body']);
+	}//end testOverdueBodyStatesThePastDueDate()
+
+	/**
+	 * An overdue mail says it is overdue and carries the organisation name
+	 * and the link only.
+	 *
+	 * @spec openspec/changes/tasks-reminders-after-the-deadline/specs/portal-task-delivery/spec.md#requirement-the-mail-says-which-kind-of-delivery-it-is-req-trd-002
+	 */
+	public function testOverdueMailSubject(): void {
+		$overdue = $this->sentMail(kind: 'overdue');
+		$this->assertStringContainsString('Your task in the portal of Gemeente Test is overdue', $overdue['subject']);
+		$this->assertStringContainsString('A task in the portal of Gemeente Test is past its deadline. Log in to finish it: https://cloud.example/index.php/apps/portaliq/portal?org=org-1', $overdue['body']);
+		$this->assertStringNotContainsString('new task', $overdue['subject'] . $overdue['body']);
+		$this->assertStringNotContainsString('Stuur uw bewijsstuk', $overdue['subject'] . $overdue['body']);
+	}//end testOverdueMailSubject()
+
+	/**
+	 * A reminder mail is a reminder.
+	 *
+	 * @spec openspec/changes/tasks-reminders-after-the-deadline/specs/portal-task-delivery/spec.md#requirement-the-mail-says-which-kind-of-delivery-it-is-req-trd-002
+	 */
+	public function testReminderMailSubject(): void {
+		$reminder = $this->sentMail(kind: 'reminder');
+		$this->assertStringContainsString('Reminder: you have an open task in the portal of Gemeente Test', $reminder['subject']);
+	}//end testReminderMailSubject()
+
+	/**
+	 * The ask and re-ask mails stay exactly as they were.
+	 *
+	 * @spec openspec/changes/tasks-reminders-after-the-deadline/specs/portal-task-delivery/spec.md#requirement-the-mail-says-which-kind-of-delivery-it-is-req-trd-002
+	 */
+	public function testAskMailIsUnchanged(): void {
+		$expected = [
+			'subject' => '[nl] You have a new task in the portal of Gemeente Test / [en] You have a new task in the portal of Gemeente Test',
+			'body' => "[nl] You have a new task in the portal of Gemeente Test. Log in to view it: https://cloud.example/index.php/apps/portaliq/portal?org=org-1\n\n[en] You have a new task in the portal of Gemeente Test. Log in to view it: https://cloud.example/index.php/apps/portaliq/portal?org=org-1",
+		];
+		$this->assertSame($expected, $this->sentMail(kind: 'ask'));
+		$this->assertSame($expected, $this->sentMail(kind: 're-ask'));
+	}//end testAskMailIsUnchanged()
+
+	/**
+	 * A kind the job does not know fails the row with its reason; nothing is
+	 * written and no mail is sent, on either channel.
+	 *
+	 * @spec openspec/changes/tasks-reminders-after-the-deadline/specs/portal-task-delivery/spec.md#requirement-an-unknown-kind-fails-honestly-req-trd-003
+	 */
+	public function testUnknownKindIsMarkedFailed(): void {
+		$ledger = new FakeLedger(
+			rows: [
+				$this->deliveryRow(uuid: 'd-1', channel: 'portal-inbox', kind: 'summons'),
+				$this->deliveryRow(uuid: 'd-2', channel: 'mail', kind: 'summons'),
+			]
+		);
+
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->expects($this->never())->method('readCollection');
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->never())->method('createObject');
+		$mailer = $this->createMock(IMailer::class);
+		$mailer->expects($this->never())->method('send');
+
+		$this->runJob(ledger: $ledger, reader: $reader, writer: $writer, mailer: $mailer);
+
+		$this->assertSame([], $ledger->delivered);
+		$this->assertSame(
+			['d-1' => 'unknown delivery kind: summons', 'd-2' => 'unknown delivery kind: summons'],
+			$ledger->failed
+		);
+	}//end testUnknownKindIsMarkedFailed()
+
+	/**
+	 * Portaliq keeps no clock: with no ledger row the job sends nothing,
+	 * however far past its deadline a task is.
+	 *
+	 * @spec openspec/changes/tasks-reminders-after-the-deadline/specs/portal-task-delivery/spec.md#requirement-portaliq-keeps-no-reminder-clock-req-trd-004
+	 */
+	public function testNoRowNoNotice(): void {
+		$ledger = new FakeLedger(rows: []);
+
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->expects($this->never())->method('readCollection');
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->never())->method('createObject');
+		$mailer = $this->createMock(IMailer::class);
+		$mailer->expects($this->never())->method('send');
+
+		$this->runJob(ledger: $ledger, reader: $reader, writer: $writer, mailer: $mailer);
+
+		$this->assertSame([], $ledger->delivered);
+		$this->assertSame([], $ledger->failed);
+	}//end testNoRowNoNotice()
+
+	/**
 	 * Run the job over one `mail` row of the given kind and capture the mail.
 	 *
 	 * @param string $kind The delivery kind.
@@ -377,7 +568,7 @@ class PortalTaskDeliveryJobTest extends TestCase {
 	 * @return array<string, string> The subject and the body.
 	 */
 	private function sentMail(string $kind): array {
-		$ledger = new FakeLedger(rows: [new FakeDeliveryRow(uuid: 'd-1', party: 'party:s1', channel: 'mail', kind: $kind, message: self::MESSAGE)]);
+		$ledger = new FakeLedger(rows: [$this->deliveryRow(uuid: 'd-1', channel: 'mail', kind: $kind)]);
 
 		$reader = $this->createMock(PortalObjectReader::class);
 		$reader->method('readCollection')->willReturn([['id' => 'a-1', 'email' => 'resident@example.org', 'organisation' => 'org-1']]);
@@ -409,8 +600,8 @@ class PortalTaskDeliveryJobTest extends TestCase {
 
 	/**
 	 * A re-ask carries its reason and the due date in the message body; a
-	 * reminder gets the reminder subject; an unknown kind falls back to the
-	 * ask wording rather than failing the row.
+	 * reminder gets the reminder subject; an unparseable due date renders no
+	 * due line. (An unknown kind fails the row: testUnknownKindIsMarkedFailed.)
 	 */
 	public function testKindsReasonsAndDueDatesShapeTheMessage(): void {
 		$message = self::MESSAGE;
@@ -419,7 +610,7 @@ class PortalTaskDeliveryJobTest extends TestCase {
 			rows: [
 				new FakeDeliveryRow(uuid: 'd-1', party: 'party:s1', channel: 'portal-inbox', kind: 're-ask', message: $message),
 				new FakeDeliveryRow(uuid: 'd-2', party: 'party:s2', channel: 'portal-inbox', kind: 'reminder', message: self::MESSAGE),
-				new FakeDeliveryRow(uuid: 'd-3', party: 'party:s3', channel: 'portal-inbox', kind: 'escalation', message: ['taskUuid' => 't', 'title' => 'X', 'dueAt' => 'not-a-date']),
+				new FakeDeliveryRow(uuid: 'd-3', party: 'party:s3', channel: 'portal-inbox', kind: 'ask', message: ['taskUuid' => 't', 'title' => 'X', 'dueAt' => 'not-a-date']),
 			]
 		);
 
@@ -443,8 +634,7 @@ class PortalTaskDeliveryJobTest extends TestCase {
 		$this->assertStringContainsString('De foto was onleesbaar.', $written[0]['body']);
 		$this->assertStringContainsString('15-09-2026', $written[0]['body']);
 		$this->assertStringContainsString('Reminder', $written[1]['subject']);
-		// The unknown kind fell back to the ask wording, and the unparseable
-		// due date simply renders no due line.
+		// The unparseable due date simply renders no due line.
 		$this->assertStringContainsString('new task', $written[2]['subject']);
 		$this->assertStringNotContainsString('not-a-date', $written[2]['body']);
 	}//end testKindsReasonsAndDueDatesShapeTheMessage()

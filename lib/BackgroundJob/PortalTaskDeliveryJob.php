@@ -117,12 +117,21 @@ class PortalTaskDeliveryJob extends TimedJob {
 		'ask' => 'You have a new task: %1$s',
 		're-ask' => 'Your task needs another look: %1$s',
 		'reminder' => 'Reminder about your task: %1$s',
+		'overdue' => 'Your task is overdue: %1$s',
 	];
 
 	/**
 	 * Body-part translation keys (B1).
 	 */
 	private const BODY_DUE_KEY = 'Please finish this task before %1$s.';
+
+	/**
+	 * The due line once the date has passed: "finish before" would ask for
+	 * the impossible (tasks-reminders-after-the-deadline D3).
+	 */
+	private const BODY_WAS_DUE_KEY = 'This task was due on %1$s.';
+
+	private const BODY_CONSEQUENCE_KEY = 'If you do not respond: %1$s';
 
 	private const BODY_REASON_KEY = 'The reason: %1$s';
 
@@ -133,8 +142,9 @@ class PortalTaskDeliveryJob extends TimedJob {
 	 * link ONLY, never task or case content (the NotificationDispatchJob
 	 * posture). `ask` and `re-ask` announce a new task; a `reminder` is about
 	 * a task the resident already has, so it must not call it new (#803,
-	 * tasks-reminders-after-the-deadline D4). An unknown kind falls back to
-	 * `ask`, as the inbox subject does.
+	 * tasks-reminders-after-the-deadline D4), and an `overdue` notice says
+	 * it is late. There is no fallback: settleRow() fails a row whose kind is
+	 * not a key here (D2).
 	 */
 	private const MAIL_KEYS = [
 		'ask' => [
@@ -148,6 +158,10 @@ class PortalTaskDeliveryJob extends TimedJob {
 		'reminder' => [
 			'subject' => 'Reminder: you have an open task in the portal of %1$s',
 			'body' => 'You have an open task in the portal of %1$s. Log in to finish it: %2$s',
+		],
+		'overdue' => [
+			'subject' => 'Your task in the portal of %1$s is overdue',
+			'body' => 'A task in the portal of %1$s is past its deadline. Log in to finish it: %2$s',
 		],
 	];
 
@@ -227,6 +241,7 @@ class PortalTaskDeliveryJob extends TimedJob {
 	 * @return void
 	 *
 	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-delivery-worker-settles-every-ledger-row-idempotently-and-in-isolation
+	 * @spec openspec/changes/tasks-reminders-after-the-deadline/specs/portal-task-delivery/spec.md#requirement-an-unknown-kind-fails-honestly-req-trd-003
 	 */
 	private function settleRow(object $ledger, object $row): void {
 		$uuid = '';
@@ -238,6 +253,14 @@ class PortalTaskDeliveryJob extends TimedJob {
 				return;
 			}
 
+			// A kind this job does not know would otherwise reach the
+			// resident as a new task (tasks-reminders-after-the-deadline D2).
+			$kind = (string)$row->getKind();
+			if (isset(self::SUBJECT_KEYS[$kind], self::MAIL_KEYS[$kind]) === false) {
+				$this->markFailed(ledger: $ledger, uuid: $uuid, reason: 'unknown delivery kind: ' . $kind);
+				return;
+			}
+
 			$subjectRef = substr($party, strlen(self::PARTY_PREFIX));
 			$channel = (string)$row->getChannel();
 			$message = ($row->getMessage() ?? []);
@@ -246,8 +269,8 @@ class PortalTaskDeliveryJob extends TimedJob {
 			}
 
 			$error = match ($channel) {
-				'portal-inbox' => $this->deliverInbox(uuid: $uuid, subjectRef: $subjectRef, kind: (string)$row->getKind(), message: $message),
-				'mail' => $this->deliverMail(subjectRef: $subjectRef, kind: (string)$row->getKind()),
+				'portal-inbox' => $this->deliverInbox(uuid: $uuid, subjectRef: $subjectRef, kind: $kind, message: $message),
+				'mail' => $this->deliverMail(subjectRef: $subjectRef, kind: $kind),
 				default => 'unknown delivery channel: ' . $channel,
 			};
 
@@ -271,7 +294,7 @@ class PortalTaskDeliveryJob extends TimedJob {
 	 *
 	 * @param string $uuid The ledger row uuid (stamped as `deliveryUuid`).
 	 * @param string $subjectRef The party's subject reference.
-	 * @param string $kind `ask`, `re-ask` or `reminder`.
+	 * @param string $kind `ask`, `re-ask`, `reminder` or `overdue`.
 	 * @param array<string, mixed> $message The engine's rendered payload
 	 *                                      (title, description, reason, dueAt,
 	 *                                      taskUuid — descriptors, never case data).
@@ -303,7 +326,7 @@ class PortalTaskDeliveryJob extends TimedJob {
 			organisation: '',
 			data: [
 				'subject' => $this->subjectLine(kind: $kind, title: (string)($message['title'] ?? '')),
-				'body' => $this->bodyText(message: $message),
+				'body' => $this->bodyText(kind: $kind, message: $message),
 				'read' => false,
 				'receivedAt' => $this->time->getDateTime()->format(DateTimeInterface::ATOM),
 				'taskUuid' => (string)($message['taskUuid'] ?? ''),
@@ -321,7 +344,7 @@ class PortalTaskDeliveryJob extends TimedJob {
 	 * Send the privacy-minimal mail for one `mail` row.
 	 *
 	 * @param string $subjectRef The party's subject reference.
-	 * @param string $kind       `ask`, `re-ask` or `reminder`; picks the subject and body.
+	 * @param string $kind       `ask`, `re-ask`, `reminder` or `overdue`; picks the subject and body.
 	 *
 	 * @return string|null Null on success, else the failure reason.
 	 *
@@ -349,7 +372,7 @@ class PortalTaskDeliveryJob extends TimedJob {
 		$organisationName = (string)($this->orgConfig->resolve(orgSlug: $organisation)['organisationName'] ?? 'Portaliq');
 		$deepLink = $this->deepLink(organisation: $organisation);
 
-		$keys = (self::MAIL_KEYS[$kind] ?? self::MAIL_KEYS['ask']);
+		$keys = self::MAIL_KEYS[$kind];
 
 		try {
 			$mail = $this->mailer->createMessage();
@@ -371,26 +394,31 @@ class PortalTaskDeliveryJob extends TimedJob {
 	/**
 	 * The bilingual (NL first, EN second) inbox subject line for a kind.
 	 *
-	 * @param string $kind `ask`, `re-ask` or `reminder`.
+	 * @param string $kind `ask`, `re-ask`, `reminder` or `overdue`.
 	 * @param string $title The task title (shown INSIDE the authenticated portal only).
 	 *
 	 * @return string
 	 */
 	private function subjectLine(string $kind, string $title): string {
-		$key = (self::SUBJECT_KEYS[$kind] ?? self::SUBJECT_KEYS['ask']);
+		$key = self::SUBJECT_KEYS[$kind];
 
 		return $this->bilingual(key: $key, parameters: [$title], glue: ' / ');
 	}//end subjectLine()
 
 	/**
 	 * The B1 inbox body: the engine's description, the due date, the re-ask
-	 * reason when present, and where to act. NL first, EN second.
+	 * reason when present, and where to act. NL first, EN second. An
+	 * `overdue` notice says when the task was due and, when the engine sends
+	 * one, what happens without a response.
 	 *
+	 * @param string $kind The delivery kind.
 	 * @param array<string, mixed> $message The engine's payload.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/changes/tasks-reminders-after-the-deadline/specs/portal-task-delivery/spec.md#requirement-an-overdue-delivery-reaches-the-resident-as-overdue-req-trd-001
 	 */
-	private function bodyText(array $message): string {
+	private function bodyText(string $kind, array $message): string {
 		$parts = [];
 
 		$description = trim((string)($message['description'] ?? ''));
@@ -404,8 +432,19 @@ class PortalTaskDeliveryJob extends TimedJob {
 		}
 
 		$due = $this->dueDate(raw: (string)($message['dueAt'] ?? ''));
+		$overdue = ($kind === 'overdue');
 		if ($due !== '') {
-			$parts[] = $this->bilingual(key: self::BODY_DUE_KEY, parameters: [$due], glue: ' / ');
+			$dueKey = self::BODY_DUE_KEY;
+			if ($overdue === true) {
+				$dueKey = self::BODY_WAS_DUE_KEY;
+			}
+
+			$parts[] = $this->bilingual(key: $dueKey, parameters: [$due], glue: ' / ');
+		}
+
+		$consequence = trim((string)($message['consequence'] ?? ''));
+		if ($overdue === true && $consequence !== '') {
+			$parts[] = $this->bilingual(key: self::BODY_CONSEQUENCE_KEY, parameters: [$consequence], glue: ' / ');
 		}
 
 		$parts[] = $this->bilingual(key: self::BODY_OPEN_KEY, parameters: [], glue: ' / ');
