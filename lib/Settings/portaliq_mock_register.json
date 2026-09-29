@@ -3302,6 +3302,87 @@
         "status": "present",
         "markedByRef": "staff-leerkracht-3b",
         "markedAt": "2026-10-07T14:10:00+02:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalAvailabilityDaily",
+          "slug": "demo-availability-2026-08-01"
+        },
+        "portal": "demo-portal",
+        "date": "2026-08-01",
+        "intervals": 288,
+        "available": 276,
+        "degraded": 0,
+        "down": 12,
+        "noCheck": 12,
+        "lastCheckAt": "2026-08-01T23:55:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalAvailabilityDaily",
+          "slug": "demo-availability-2026-08-02"
+        },
+        "portal": "demo-portal",
+        "date": "2026-08-02",
+        "intervals": 288,
+        "available": 288,
+        "degraded": 0,
+        "down": 0,
+        "noCheck": 0,
+        "lastCheckAt": "2026-08-02T23:55:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalAvailabilityDaily",
+          "slug": "demo-availability-2026-08-03"
+        },
+        "portal": "demo-portal",
+        "date": "2026-08-03",
+        "intervals": 288,
+        "available": 287,
+        "degraded": 0,
+        "down": 1,
+        "noCheck": 0,
+        "lastCheckAt": "2026-08-03T23:55:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalAvailabilityOutage",
+          "slug": "demo-outage-1"
+        },
+        "portal": "demo-portal",
+        "startedAt": "2026-08-01T03:00:00+00:00",
+        "endedAt": "2026-08-01T04:00:00+00:00",
+        "durationMinutes": 60,
+        "cause": "no-check"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalAvailabilityOutage",
+          "slug": "demo-outage-2"
+        },
+        "portal": "demo-portal",
+        "startedAt": "2026-08-03T14:10:00+00:00",
+        "endedAt": "2026-08-03T14:15:00+00:00",
+        "durationMinutes": 5,
+        "cause": "timeout"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalAvailabilityOutage",
+          "slug": "demo-outage-3"
+        },
+        "portal": "demo-portal",
+        "startedAt": "2026-08-20T09:00:00+00:00",
+        "endedAt": "2026-08-20T09:20:00+00:00",
+        "durationMinutes": 20,
+        "cause": "site-error"
       }
     ]
   }

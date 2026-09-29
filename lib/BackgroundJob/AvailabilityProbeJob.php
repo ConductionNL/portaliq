@@ -83,9 +83,12 @@ class AvailabilityProbeJob extends TimedJob {
 	 *
 	 * @spec openspec/specs/portal-availability/spec.md#requirement-each-published-portal-is-checked-every-five-minutes-req-oar-001
 	 * @spec openspec/specs/portal-availability/spec.md#requirement-thirteen-months-are-kept-and-no-more-req-oar-003
+	 *
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) -- the base class dictates
+	 * the signature; this job takes no argument.
 	 */
 	protected function run($argument): void {
-		$now = DateTimeImmutable::createFromInterface($this->time->getDateTime())->setTimezone(new DateTimeZone('UTC'));
+		$now = (new DateTimeImmutable($this->time->getDateTime()->format(DATE_ATOM)))->setTimezone(new DateTimeZone('UTC'));
 
 		foreach ($this->portals->allPublishedPortals() as $portal) {
 			$slug = (string)($portal['slug'] ?? '');
@@ -125,7 +128,7 @@ class AvailabilityProbeJob extends TimedJob {
 
 		$result = $this->rollup->record(
 			portal: $slug,
-			at: $now,
+			checkedAt: $now,
 			status: $check['status'],
 			cause: $check['cause'],
 			days: $days,

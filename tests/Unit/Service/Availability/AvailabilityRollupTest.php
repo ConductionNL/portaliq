@@ -28,7 +28,7 @@ class AvailabilityRollupTest extends TestCase {
 
 		$result = $rollup->record(
 			portal: 'open-tilburg',
-			at: new DateTimeImmutable('2026-09-29T04:00:00+00:00'),
+			checkedAt: new DateTimeImmutable('2026-09-29T04:00:00+00:00'),
 			status: AvailabilityRollup::AVAILABLE,
 			cause: '',
 			days: ['2026-09-29' => $day],
@@ -59,7 +59,7 @@ class AvailabilityRollupTest extends TestCase {
 
 		$first = $rollup->record(
 			portal: 'open-tilburg',
-			at: new DateTimeImmutable('2026-09-29T10:00:00+00:00'),
+			checkedAt: new DateTimeImmutable('2026-09-29T10:00:00+00:00'),
 			status: AvailabilityRollup::DOWN,
 			cause: 'site-error',
 			days: [],
@@ -71,7 +71,7 @@ class AvailabilityRollupTest extends TestCase {
 
 		$second = $rollup->record(
 			portal: 'open-tilburg',
-			at: new DateTimeImmutable('2026-09-29T10:05:00+00:00'),
+			checkedAt: new DateTimeImmutable('2026-09-29T10:05:00+00:00'),
 			status: AvailabilityRollup::DEGRADED,
 			cause: 'health-degraded',
 			days: $first['days'],
@@ -90,7 +90,7 @@ class AvailabilityRollupTest extends TestCase {
 
 		$result = $rollup->record(
 			portal: 'open-tilburg',
-			at: new DateTimeImmutable('2026-09-30T00:10:00+00:00'),
+			checkedAt: new DateTimeImmutable('2026-09-30T00:10:00+00:00'),
 			status: AvailabilityRollup::AVAILABLE,
 			cause: '',
 			days: ['2026-09-29' => ['portal' => 'open-tilburg', 'date' => '2026-09-29', 'intervals' => 1, 'available' => 1, 'degraded' => 0, 'down' => 0, 'noCheck' => 0, 'lastCheckAt' => '2026-09-29T23:45:00+00:00']],

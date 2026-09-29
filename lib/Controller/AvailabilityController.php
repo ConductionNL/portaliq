@@ -71,7 +71,9 @@ class AvailabilityController extends Controller {
 	 *
 	 * @return JSONResponse The report, or 404 for a portal that is not published.
 	 *
-	 * @auth admin-only availability is an operator's surface, the same posture as /api/metrics. Nextcloud expresses admin-only as the ABSENCE of an opt-out attribute.
+	 * @auth admin-only availability is an operator's surface, the same posture
+	 *       as /api/metrics. Nextcloud expresses admin-only as the ABSENCE of an
+	 *       opt-out attribute.
 	 *
 	 * @spec openspec/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
 	 */
@@ -91,7 +93,9 @@ class AvailabilityController extends Controller {
 	 *
 	 * @return Response The file, or 404 for a portal that is not published.
 	 *
-	 * @auth admin-only availability is an operator's surface. The CSRF exemption is what a navigated download needs; the admin check still applies.
+	 * @auth admin-only availability is an operator's surface. The CSRF
+	 *       exemption is what a navigated download needs; the admin check
+	 *       still applies.
 	 *
 	 * @spec openspec/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
 	 */
@@ -103,7 +107,8 @@ class AvailabilityController extends Controller {
 
 		$report = $this->build(portal: $portal, months: $months);
 		$response = new DataDisplayResponse($this->report->csv(report: $report), Http::STATUS_OK, ['Content-Type' => 'text/csv; charset=utf-8']);
-		$response->addHeader('Content-Disposition', 'attachment; filename="availability-' . $portal . '-' . $report['from'] . '-' . $report['until'] . '.csv"');
+		$fileName = 'availability-' . $portal . '-' . $report['from'] . '-' . $report['until'] . '.csv';
+		$response->addHeader('Content-Disposition', 'attachment; filename="' . $fileName . '"');
 		$response->addHeader('Cache-Control', 'private, no-store');
 
 		return $response;
@@ -120,7 +125,7 @@ class AvailabilityController extends Controller {
 	private function build(string $portal, int $months): array {
 		return $this->report->forPortal(
 			portal: $portal,
-			now: DateTimeImmutable::createFromInterface($this->time->getDateTime()),
+			now: new DateTimeImmutable($this->time->getDateTime()->format(DATE_ATOM)),
 			months: $months
 		);
 	}//end build()

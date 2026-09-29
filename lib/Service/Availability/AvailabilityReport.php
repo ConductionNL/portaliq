@@ -68,7 +68,8 @@ class AvailabilityReport {
 
 		$totals = [];
 		for ($month = $from; $month < $firstOfThisMonth; $month = $month->modify('+1 month')) {
-			$totals[$month->format('Y-m')] = ['month' => $month->format('Y-m'), 'intervals' => 0, 'available' => 0, 'degraded' => 0, 'down' => 0, 'noCheck' => 0];
+			$key = $month->format('Y-m');
+			$totals[$key] = ['month' => $key, 'intervals' => 0, 'available' => 0, 'degraded' => 0, 'down' => 0, 'noCheck' => 0];
 		}
 
 		foreach ($this->store->dailyBetween(portal: $portal, from: $from->format('Y-m-d'), until: $until->format('Y-m-d')) as $date => $day) {
@@ -90,7 +91,8 @@ class AvailabilityReport {
 		}
 
 		$outages = [];
-		foreach ($this->store->outagesBetween(portal: $portal, from: $from->format(DATE_ATOM), until: $until->setTime(23, 59, 59)->format(DATE_ATOM)) as $outage) {
+		$lastMoment = $until->setTime(23, 59, 59)->format(DATE_ATOM);
+		foreach ($this->store->outagesBetween(portal: $portal, from: $from->format(DATE_ATOM), until: $lastMoment) as $outage) {
 			$outages[] = [
 				'startedAt' => (string)($outage['startedAt'] ?? ''),
 				'endedAt' => (string)($outage['endedAt'] ?? ''),

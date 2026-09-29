@@ -64,7 +64,7 @@ class AvailabilityRollup {
 	 * Fold one check into the portal's days and outage.
 	 *
 	 * @param string $portal The portal slug.
-	 * @param DateTimeImmutable $at When the check ran.
+	 * @param DateTimeImmutable $checkedAt When the check ran.
 	 * @param string $status AVAILABLE, DEGRADED or DOWN.
 	 * @param string $cause Why it was not available ('' when it was).
 	 * @param array<string, array<string, mixed>> $days The stored daily
@@ -77,19 +77,19 @@ class AvailabilityRollup {
 	 *
 	 * @spec openspec/specs/portal-availability/spec.md#requirement-an-interval-without-a-check-counts-as-down-req-oar-002
 	 */
-	public function record(string $portal, DateTimeImmutable $at, string $status, string $cause, array $days, ?array $openOutage): array {
-		$at = $at->setTimezone(new DateTimeZone('UTC'));
+	public function record(string $portal, DateTimeImmutable $checkedAt, string $status, string $cause, array $days, ?array $openOutage): array {
+		$checkedAt = $checkedAt->setTimezone(new DateTimeZone('UTC'));
 		$state = ['days' => $days, 'open' => $openOutage, 'closed' => []];
 
-		foreach ($this->missedIntervals(at: $at, last: $this->lastCheckAt(days: $days)) as $start) {
+		foreach ($this->missedIntervals(checkedAt: $checkedAt, last: $this->lastCheckAt(days: $days)) as $start) {
 			$state = $this->fold(state: $state, portal: $portal, start: $start, status: self::DOWN, cause: 'no-check');
 		}
 
-		$state = $this->fold(state: $state, portal: $portal, start: $at, status: $status, cause: $cause);
-		$state['days'][$at->format('Y-m-d')]['lastCheckAt'] = $at->format(DATE_ATOM);
+		$state = $this->fold(state: $state, portal: $portal, start: $checkedAt, status: $status, cause: $cause);
+		$state['days'][$checkedAt->format('Y-m-d')]['lastCheckAt'] = $checkedAt->format(DATE_ATOM);
 
 		if ($state['open'] !== null) {
-			$state['open']['durationMinutes'] = $this->minutesBetween(from: (string)$state['open']['startedAt'], to: $at);
+			$state['open']['durationMinutes'] = $this->minutesBetween(from: (string)$state['open']['startedAt'], to: $checkedAt);
 		}
 
 		return $state;
@@ -130,18 +130,18 @@ class AvailabilityRollup {
 	 * The start of every interval between the previous check and this one in
 	 * which no check ran.
 	 *
-	 * @param DateTimeImmutable $at This check.
+	 * @param DateTimeImmutable $checkedAt This check.
 	 * @param DateTimeImmutable|null $last The previous check, or null for the first.
 	 *
 	 * @return array<int, DateTimeImmutable>
 	 */
-	private function missedIntervals(DateTimeImmutable $at, ?DateTimeImmutable $last): array {
+	private function missedIntervals(DateTimeImmutable $checkedAt, ?DateTimeImmutable $last): array {
 		if ($last === null) {
 			return [];
 		}
 
-		$missed = (intdiv($at->getTimestamp() - $last->getTimestamp(), self::INTERVAL) - 1);
-		$floor = ($at->getTimestamp() - (self::MAX_GAP_DAYS * 86400));
+		$missed = (intdiv($checkedAt->getTimestamp() - $last->getTimestamp(), self::INTERVAL) - 1);
+		$floor = ($checkedAt->getTimestamp() - (self::MAX_GAP_DAYS * 86400));
 
 		$starts = [];
 		for ($index = 1; $index <= $missed; $index++) {
@@ -157,7 +157,7 @@ class AvailabilityRollup {
 	/**
 	 * Count one interval on its day and move the outage along.
 	 *
-	 * @param array{days: array<string, array<string, mixed>>, open: array<string, mixed>|null, closed: array<int, array<string, mixed>>} $state The state so far.
+	 * @param array<string, mixed> $state The state so far: `days`, `open`, `closed`.
 	 * @param string $portal The portal slug.
 	 * @param DateTimeImmutable $start The interval's start.
 	 * @param string $status AVAILABLE, DEGRADED or DOWN.

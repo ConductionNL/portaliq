@@ -146,6 +146,10 @@ class AvailabilityStore {
 		}
 
 		$uuid = $this->uuidOf(row: $row);
+		if ($uuid === '') {
+			$uuid = null;
+		}
+
 		unset($row['@self'], $row['uuid'], $row['id']);
 
 		try {
@@ -157,7 +161,7 @@ class AvailabilityStore {
 				object: $row,
 				register: self::REGISTER,
 				schema: $schema,
-				uuid: ($uuid === '' ? null : $uuid),
+				uuid: $uuid,
 				_rbac: false,
 				_multitenancy: false
 			);

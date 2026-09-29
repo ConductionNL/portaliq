@@ -78,7 +78,9 @@ class AvailabilityProbe {
 		$said = '';
 		if ($health['body'] !== '') {
 			$decoded = json_decode($health['body'], true);
-			$said = (string)(is_array($decoded) === true ? ($decoded['status'] ?? '') : '');
+			if (is_array($decoded) === true) {
+				$said = (string)($decoded['status'] ?? '');
+			}
 		}
 
 		if ($said === 'ok') {
@@ -118,7 +120,10 @@ class AvailabilityProbe {
 		}
 
 		$body = $response->getBody();
+		if (is_string($body) === false) {
+			$body = '';
+		}
 
-		return ['status' => $response->getStatusCode(), 'body' => (is_string($body) === true ? $body : ''), 'cause' => 'site-error'];
+		return ['status' => $response->getStatusCode(), 'body' => $body, 'cause' => 'site-error'];
 	}//end get()
 }//end class
