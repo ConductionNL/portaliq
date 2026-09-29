@@ -34,7 +34,6 @@ namespace OCA\Portaliq\Service;
 use OCA\Portaliq\Contribution\PortalProviderLocator;
 use OCA\Portaliq\Contribution\TimelineProviderMethod;
 use Psr\Log\LoggerInterface;
-use ReflectionMethod;
 use Throwable;
 
 /**
@@ -70,7 +69,7 @@ class PortalTimelineReader {
 	 */
 	public function entries(string $appId, string $method, string $id): ?array {
 		$provider = $this->locator->locate(appId: $appId);
-		if ($provider === null || $this->callable(provider: $provider, method: $method) === false) {
+		if ($provider === null || (new TimelineProviderMethod())->callableOn(provider: $provider, method: $method) === false) {
 			return null;
 		}
 
@@ -87,25 +86,4 @@ class PortalTimelineReader {
 
 		return array_values($entries);
 	}//end entries()
-
-	/**
-	 * Whether the provider has a public instance method of that name that
-	 * takes the object id and nothing else.
-	 *
-	 * @param object $provider The provider.
-	 * @param string $method The declared name.
-	 *
-	 * @return bool
-	 */
-	private function callable(object $provider, string $method): bool {
-		if ((new TimelineProviderMethod())->accepts(name: $method) === false || method_exists($provider, $method) === false) {
-			return false;
-		}
-
-		$reflection = new ReflectionMethod($provider, $method);
-
-		return $reflection->isPublic() === true
-			&& $reflection->isStatic() === false
-			&& $reflection->getNumberOfRequiredParameters() <= 1;
-	}//end callable()
 }//end class

@@ -86,6 +86,7 @@ class CollectionConfigNormaliser {
 			$collection = $this->normaliseDefaults(collection: $collection);
 			$collection = $this->normaliseFileFlags(collection: $collection);
 			$collection = $this->normaliseKind(collection: $collection);
+			$collection = (new MessageBoxConfigNormaliser())->normalise(collection: $collection);
 			$collection = (new RowActionResolver())->normaliseNoticeField(collection: $collection);
 			$collection = $this->values->normaliseAnonymousFlag(entry: $collection);
 
