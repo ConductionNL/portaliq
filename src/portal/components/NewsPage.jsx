@@ -13,6 +13,7 @@
 // away (newsletter-title-translation).
 
 import { useCallback, useEffect, useState } from 'react'
+import Loading from './Loading.jsx'
 import { MessageLanguagePicker } from './MessagesPage.jsx'
 import TranslatedText, { isLabelledTranslation } from './TranslatedText.jsx'
 
@@ -179,7 +180,7 @@ export default function NewsPage({ api, t, locale }) {
 				t={t}
 				locale={locale}
 			/>
-			{feed === null && <p className="portaliq-loading">…</p>}
+			{feed === null && <Loading t={t} />}
 			{feed !== null && feed.length === 0 && <p className="portaliq-empty"><em>{t('No news yet.')}</em></p>}
 			{hasNews(feed) && feed.map((item, i) => (
 				<NewsItem key={item.id || item['@self']?.id || i} item={item} t={t} locale={locale} />

@@ -16,6 +16,7 @@ import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { compileLoading } from './support/compile-loading.mjs'
 
 const require = createRequire(import.meta.url)
 const babel = require('@babel/core')
@@ -48,6 +49,7 @@ async function load(relative) {
 	return import(pathToFileURL(out).href)
 }
 
+compileLoading(OUT_DIR)
 await load('components/TranslatedText.jsx')
 await load('components/MessagesPage.jsx')
 const { NewsItem, NewsletterArchive, hasArchive } = await load('components/NewsPage.jsx')

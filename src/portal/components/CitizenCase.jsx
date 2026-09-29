@@ -9,6 +9,7 @@
 // says why. A disabled control with no explanation is the thing this replaces.
 
 import React, { useCallback, useEffect, useState } from 'react'
+import Loading from './Loading.jsx'
 
 /**
  * One field, open or closed, always with its reason when closed.
@@ -83,7 +84,7 @@ export default function CitizenCase({ collection, row, api, t }) {
 		return <p className="portaliq-empty"><em>{t('Select a case.')}</em></p>
 	}
 	if (state.loading) {
-		return <p className="portaliq-case-loading">…</p>
+		return <Loading t={t} className="portaliq-case-loading" />
 	}
 	if (!state.data) {
 		return <p className="portaliq-error" data-testid="case-unavailable">{t('This case is not yours.')}</p>
@@ -209,7 +210,7 @@ export default function CitizenCase({ collection, row, api, t }) {
 					)}
 			</div>
 
-			{notice && <p className="portaliq-case-notice" data-testid="case-notice">{notice}</p>}
+			{notice && <p className="portaliq-case-notice" data-testid="case-notice" role="status">{notice}</p>}
 		</section>
 	)
 }

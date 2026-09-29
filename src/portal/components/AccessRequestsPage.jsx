@@ -9,6 +9,7 @@
 // the mandate that opens the cases.
 
 import { useEffect, useState } from 'react'
+import Loading from './Loading.jsx'
 
 /**
  * What is missing before a request can be sent, as an English source key, or
@@ -237,7 +238,7 @@ export default function AccessRequestsPage({
 			</form>
 
 			<h3>{t('Your requests')}</h3>
-			{loading && <p>…</p>}
+			{loading && <Loading t={t} />}
 			{!loading && sorted.length === 0 && (
 				<p data-testid="access-requests-empty">
 					{t('You have not asked for access yet.')}

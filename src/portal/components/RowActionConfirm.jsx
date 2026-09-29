@@ -71,7 +71,7 @@ export default function RowActionConfirm({ action, collection, row, api, t, onDo
 	return (
 		<section className="portaliq-rowaction-confirm" aria-label={label}>
 			<h4 ref={headingRef} tabIndex={-1}>{label}</h4>
-			{notice && <p className="portaliq-notice">{notice}</p>}
+			{notice && <p className="portaliq-notice" role="status">{notice}</p>}
 			<div className="portaliq-rowaction-buttons">
 				{message === '' && (
 					<button type="button" className="portaliq-cta" disabled={busy} onClick={onConfirm}>

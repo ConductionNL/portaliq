@@ -21,6 +21,7 @@ import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { compileLoading, LOADING_MODULE } from './support/compile-loading.mjs'
 
 const require = createRequire(import.meta.url)
 const babel = require('@babel/core')
@@ -46,12 +47,15 @@ function compile(name) {
 		babelrc: false,
 		configFile: false,
 		presets: [['@babel/preset-react', { runtime: 'automatic' }]],
-	}).code.replace("'../lib/rowAction.js'", "'./rowAction.mjs'")
+	}).code
+		.replace("'../lib/rowAction.js'", "'./rowAction.mjs'")
+		.replace("'./Loading.jsx'", `'${LOADING_MODULE}'`)
 	const out = join(OUT_DIR, `${name}.mjs`)
 	writeFileSync(out, code)
 	return out
 }
 
+compileLoading(OUT_DIR)
 const { default: CollectionTable } = await import(pathToFileURL(compile('CollectionTable')).href)
 const { default: RowActionConfirm } = await import(pathToFileURL(compile('RowActionConfirm')).href)
 const rowAction = await import(pathToFileURL(join(OUT_DIR, 'rowAction.mjs')).href)

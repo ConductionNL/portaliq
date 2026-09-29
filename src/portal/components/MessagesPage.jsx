@@ -8,6 +8,7 @@
 // the AI notice and the original one click away.
 
 import { useCallback, useEffect, useState } from 'react'
+import Loading from './Loading.jsx'
 import TranslatedText, { languageLabel } from './TranslatedText.jsx'
 
 /**
@@ -133,7 +134,7 @@ export default function MessagesPage({ api, t, locale, subjectRef }) {
 	}
 
 	if (threads === null) {
-		return <p className="portaliq-loading">…</p>
+		return <Loading t={t} />
 	}
 
 	return (
@@ -174,7 +175,7 @@ export default function MessagesPage({ api, t, locale, subjectRef }) {
 				</nav>
 			)}
 
-			{activeId && messages === null && <p className="portaliq-loading">…</p>}
+			{activeId && messages === null && <Loading t={t} />}
 
 			{messages && (
 				<ol className="portaliq-messages__list">

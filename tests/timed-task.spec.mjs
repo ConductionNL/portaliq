@@ -21,6 +21,7 @@ import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { compileLoading, LOADING_MODULE } from './support/compile-loading.mjs'
 
 const require = createRequire(import.meta.url)
 const babel = require('@babel/core')
@@ -49,11 +50,13 @@ function compile(name) {
 	}).code
 		.replace("'../lib/timedTask.js'", "'./timedTask.mjs'")
 		.replace("'./TimedTaskItem.jsx'", "'./TimedTaskItem.mjs'")
+		.replace("'./Loading.jsx'", `'${LOADING_MODULE}'`)
 	const out = join(OUT_DIR, `${name}.mjs`)
 	writeFileSync(out, code)
 	return out
 }
 
+compileLoading(OUT_DIR)
 const { default: TimedTaskItem } = await import(pathToFileURL(compile('TimedTaskItem')).href)
 const { default: TimedTaskView } = await import(pathToFileURL(compile('TimedTaskView')).href)
 const task = await import(pathToFileURL(join(OUT_DIR, 'timedTask.mjs')).href)

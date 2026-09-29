@@ -101,7 +101,7 @@ export default function ProposeChangeForm({ action, row, onSubmit, onCancel }) {
 					Annuleren
 				</Button>
 			</div>
-			{error && <p className="portaliq-error">{error}</p>}
+			{error && <p className="portaliq-error" role="alert">{error}</p>}
 		</form>
 	)
 }

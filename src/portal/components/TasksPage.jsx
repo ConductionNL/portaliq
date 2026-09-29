@@ -9,6 +9,7 @@
 // server re-checks everything (defense in depth).
 
 import { useCallback, useEffect, useState } from 'react'
+import Loading from './Loading.jsx'
 
 /**
  * Format an ISO timestamp as a local date, or '' when absent/invalid.
@@ -213,7 +214,7 @@ export default function TasksPage({
 
 	if (detail) {
 		if (detail.loading) {
-			return <p className="portaliq-loading">…</p>
+			return <Loading t={t} />
 		}
 
 		const back = (
@@ -354,7 +355,7 @@ export default function TasksPage({
 	}
 
 	if (list.loading) {
-		return <p className="portaliq-loading">…</p>
+		return <Loading t={t} />
 	}
 
 	if (list.results.length === 0) {

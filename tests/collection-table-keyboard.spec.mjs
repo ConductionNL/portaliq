@@ -25,6 +25,7 @@ import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { compileLoading, LOADING_MODULE } from './support/compile-loading.mjs'
 
 const require = createRequire(import.meta.url)
 const babel = require('@babel/core')
@@ -42,7 +43,8 @@ const compiled = babel.transformSync(readFileSync(SOURCE, 'utf8'), {
 	presets: [['@babel/preset-react', { runtime: 'automatic' }]],
 })
 mkdirSync(OUT_DIR, { recursive: true })
-writeFileSync(OUT, compiled.code)
+compileLoading(OUT_DIR)
+writeFileSync(OUT, compiled.code.replace("'./Loading.jsx'", `'${LOADING_MODULE}'`))
 const { default: CollectionTable } = await import(pathToFileURL(OUT).href)
 
 const collection = { id: 'mijnZaken', columns: [{ field: 'identifier', label: 'Zaaknummer' }, { field: 'title', label: 'Onderwerp' }] }

@@ -7692,12 +7692,13 @@
 				"liferay-dxp": "https://www.liferay.com/documents/d/guest/vpat2-5rev_int_february2025_liferay_dxp_sites_experience (DXP 2025.Q4.0) evaluates 'sites created with Liferay DXP' against WCAG 2.2 incl. 2.4.11, 2.5.8 and 3.3.8, all 'Supports', but 'does not guarantee compliance in all deployment scenarios'. The signed-in case pages are custom fragments and need their own audit. [was unknown]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "tests/e2e/site-accessibility.spec.ts:30,87-241 runs axe (wcag22aa) only against /site; no axe test navigates /portal; src/portal/components/CollectionTable.jsx:101 row selection is an onClick on <tr> with no tabindex or key handler; TasksPage.jsx:263,340 role=status/alert; CitizenCase.jsx notice has no live region",
-				"reachedOn": "/portal SPA (App.jsx) signed-in pages: nav, collection tables, CitizenCase, InboxPage, TasksPage",
+				"state": "built",
+				"evidence": "tests/e2e/portal-accessibility.spec.ts runs axe-core (wcag2a/aa, wcag21a/aa, wcag22aa) inside .portaliq-shell on every page of the signed-in navigation and walks the inbox and its settings by keyboard; src/portal/components/Loading.jsx is the one loading indicator (role=status, spoken 'Loading…'); errors are role=alert and notices role=status across src/portal (tests/portal-live-regions.spec.mjs); CollectionTable.jsx rows open from a button in the first cell (keyboard, portaliq#722)",
+				"reachedOn": "/portal SPA signed-in pages: nav, collection tables, CitizenCase, InboxPage, TasksPage, MessagesPage, NewsPage, AccessRequestsPage",
 				"owner": "ConductionNL/portaliq",
-				"note": "Some accessibility work on the signed-in SPA (labelled inputs, status roles on tasks) but no automated WCAG check covers it, and opening a case or detail from a table row is mouse-only, a WCAG 2.1.1 keyboard failure on the main signed-in path (code reading, needs a live check). Specified in openspec/changes/portal-spa-nl-design-system-styling (existing change, OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"note": "Built 2026-09-29 (portal-spa-nl-design-system-styling). The axe run and the keyboard walk were written, not run in the build session; the nightly Playwright run is their first run, and a violation it names reopens this row. Rating stays partial until that run is green.",
+				"origin": "code",
+				"change": "2026-09-29-portal-spa-nl-design-system-styling"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
