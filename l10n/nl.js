@@ -1704,6 +1704,8 @@ OC.L10N.register(
         "Readable": "Leesbaar",
         "Hard to read": "Slecht leesbaar",
         "Not checked": "Niet gecontroleerd",
+        "Refused by the theme app: {reason}": "Geweigerd door de thema-app: {reason}",
+        "The theme app refused this house style: {reason}": "De thema-app heeft deze huisstijl geweigerd: {reason}",
         "The theme app no longer offers this house style.": "De thema-app biedt deze huisstijl niet meer aan.",
         "The house style could not be saved.": "De huisstijl kon niet worden opgeslagen.",
         "The house style is saved.": "De huisstijl is opgeslagen.",

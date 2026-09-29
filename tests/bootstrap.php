@@ -218,6 +218,16 @@ if (class_exists('\\OCA\\Thematiq\\Service\\ContrastService') === false) {
 	require_once __DIR__ . '/Stubs/Thematiq/Service/ContrastService.php';
 }
 
+// And its custom token set validator (nldesign-theme-integration 4.2): a
+// verbatim copy, plus the one converter constant it reads.
+if (class_exists('\\OCA\\Thematiq\\Service\\TokenSetConverterService') === false) {
+	require_once __DIR__ . '/Stubs/Thematiq/Service/TokenSetConverterService.php';
+}
+
+if (class_exists('\\OCA\\Thematiq\\Service\\CustomTokenSetValidator') === false) {
+	require_once __DIR__ . '/Stubs/Thematiq/Service/CustomTokenSetValidator.php';
+}
+
 foreach (['ConnectionStatusReportedEvent', 'ConnectionRefreshRequestedEvent', 'DigitalPostSendRequestedEvent', 'DigitalPostDeliveredEvent'] as $integriqStubEvent) {
 	if (class_exists('\\OCP\\EventDispatcher\\Event') === true
 		&& class_exists('\\OCA\\Integriq\\Event\\' . $integriqStubEvent) === false
