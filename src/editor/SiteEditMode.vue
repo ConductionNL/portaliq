@@ -269,7 +269,7 @@ export default {
 	 *
 	 * @return {Promise<void>} Resolves when the page is loaded.
 	 *
-	 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
+	 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
 	 */
 	async mounted() {
 		try {
