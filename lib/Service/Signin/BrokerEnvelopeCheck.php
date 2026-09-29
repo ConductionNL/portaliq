@@ -48,14 +48,21 @@ class BrokerEnvelopeCheck {
 	 */
 	public const MAX_TTL_SECONDS = 60;
 
+	/**
+	 * The trust levels a portal session knows, as PortalSessionService orders them.
+	 *
+	 * @var string[]
+	 */
+	private const TRUST_LEVELS = ['low', 'substantial', 'high'];
+
 
 	/**
 	 * The envelope's claims when every one portaliq acts on matches, else null.
 	 *
-	 * @param string    The compact JWS integriq returned.
-	 * @param string  Portaliq's consumer id: the envelope's audience.
-	 * @param string         The organisation the login was started for.
-	 * @param string    The provider the login was started for.
+	 * @param string $envelope   The compact JWS integriq returned.
+	 * @param string $consumerId Portaliq's consumer id: the envelope's audience.
+	 * @param string $org        The organisation the login was started for.
+	 * @param string $provider   The provider the login was started for.
 	 * @param int    $now        The current unix time.
 	 *
 	 * @return array{sub: string, provider: string, trust: string}|null
@@ -90,10 +97,10 @@ class BrokerEnvelopeCheck {
 			return null;
 		}
 
-		// An unknown or missing trust passes through as text and becomes `low`
-		// in PortalSessionService::normaliseTrust(), as integriq's spec asks.
-		$trust = '';
-		if (is_string($claims['trust'] ?? null) === true) {
+		// An unknown or missing trust is under-privileged to `low`, as
+		// integriq's spec asks of consumers (REQ-BEL-005).
+		$trust = 'low';
+		if (in_array(($claims['trust'] ?? null), self::TRUST_LEVELS, true) === true) {
 			$trust = $claims['trust'];
 		}
 

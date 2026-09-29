@@ -20,7 +20,6 @@ namespace OCA\Portaliq\Service\Signin;
 
 use OCA\Portaliq\Service\OidcStateStoreService;
 use OCA\Portaliq\Service\PortalAccountService;
-use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCA\Portaliq\Service\PortalSessionService;
 
 /**
@@ -48,7 +47,7 @@ class BrokerLogin {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalOrganisationConfigService $orgConfig  The organisation's route and broker settings.
+	 * @param OrganisationLoginConfig $orgConfig  The organisation's route and broker settings.
 	 * @param OidcStateStoreService           $stateStore The single-use state rows.
 	 * @param BrokerExchangeClient            $exchange   Redeems the code.
 	 * @param PortalAccountService            $accounts   Finds or creates the portal account.
@@ -58,7 +57,7 @@ class BrokerLogin {
 	 * @return void
 	 */
 	public function __construct(
-		private readonly PortalOrganisationConfigService $orgConfig,
+		private readonly OrganisationLoginConfig $orgConfig,
 		private readonly OidcStateStoreService $stateStore,
 		private readonly BrokerExchangeClient $exchange,
 		private readonly PortalAccountService $accounts,
@@ -223,7 +222,7 @@ class BrokerLogin {
 			subjectRef: (string)$account['subjectRef'],
 			audience: $claims['audience'],
 			organisation: $pending['org'],
-			trust: PortalSessionService::normaliseTrust(trust: $claims['trust']),
+			trust: $claims['trust'],
 			roles: [$claims['audience'] . ':read']
 		);
 		if ($issued === null) {

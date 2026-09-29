@@ -146,12 +146,13 @@ class BrokerEnvelopeCheckTest extends TestCase {
 
 
 	/**
-	 * An unknown trust passes through as text; the session makes it `low`.
+	 * An unknown or non-text trust is under-privileged to low.
 	 *
 	 * @return void
 	 */
-	public function testAnUnknownTrustIsPassedOnForTheSessionToLower(): void {
-		$this->assertSame('eidas-high', $this->check(self::envelope(array_merge(self::claims(), ['trust' => 'eidas-high'])))['trust']);
-		$this->assertSame('', $this->check(self::envelope(array_merge(self::claims(), ['trust' => 3])))['trust']);
-	}//end testAnUnknownTrustIsPassedOnForTheSessionToLower()
+	public function testAnUnknownTrustIsLow(): void {
+		$this->assertSame('low', $this->check(self::envelope(array_merge(self::claims(), ['trust' => 'eidas-high'])))['trust']);
+		$this->assertSame('low', $this->check(self::envelope(array_merge(self::claims(), ['trust' => 3])))['trust']);
+		$this->assertSame('high', $this->check(self::envelope(array_merge(self::claims(), ['trust' => 'high'])))['trust']);
+	}//end testAnUnknownTrustIsLow()
 }//end class

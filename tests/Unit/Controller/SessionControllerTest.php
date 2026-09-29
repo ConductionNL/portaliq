@@ -12,6 +12,7 @@ use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Signin\OrganisationLoginConfig;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\RedirectResponse;
 use OCP\IConfig;
@@ -329,8 +330,9 @@ class SessionControllerTest extends TestCase {
 	 */
 	public function testOidcStartForwardsABrokerRoutedProvider(): void {
 		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
-		$orgConfig->method('loginRouteFor')->willReturnMap([['gemeente-x', 'digid', 'broker']]);
 		$orgConfig->expects($this->never())->method('resolveOidcConfig');
+		$loginConfig = $this->createMock(OrganisationLoginConfig::class);
+		$loginConfig->method('loginRouteFor')->willReturnMap([['gemeente-x', 'digid', 'broker']]);
 		$urls = $this->createMock(IURLGenerator::class);
 		$urls->method('linkToRoute')->willReturnCallback(
 			static fn (string $route, array $parameters = []): string => '/'.$route.'?'.http_build_query($parameters)
@@ -342,7 +344,8 @@ class SessionControllerTest extends TestCase {
 			session: $this->createMock(PortalSessionService::class),
 			orgConfig: $orgConfig,
 			urlGenerator: $urls,
-			portals: $portals
+			portals: $portals,
+			loginConfig: $loginConfig
 		)->oidcStart(provider: 'digid', portal: 'venray');
 
 		$this->assertSame(Http::STATUS_FOUND, $response->getStatus());
@@ -712,6 +715,7 @@ class SessionControllerTest extends TestCase {
 		string $authorization = 'Bearer some-token',
 		?IUserSession $userSession = null,
 		?PortalResolver $portals = null,
+		?OrganisationLoginConfig $loginConfig = null,
 	): SessionController {
 		$request = $this->createMock(IRequest::class);
 		// Defaults to a bearer being PRESENT, which is what every pre-existing
@@ -730,7 +734,8 @@ class SessionControllerTest extends TestCase {
 			($accounts ?? $this->createMock(PortalAccountService::class)),
 			($urlGenerator ?? $this->createMock(originalClassName: IURLGenerator::class)),
 			($userSession ?? $this->createMock(originalClassName: IUserSession::class)),
-			($portals ?? $this->createMock(originalClassName: PortalResolver::class))
+			($portals ?? $this->createMock(originalClassName: PortalResolver::class)),
+			$loginConfig
 		);
 
 	}//end controller()

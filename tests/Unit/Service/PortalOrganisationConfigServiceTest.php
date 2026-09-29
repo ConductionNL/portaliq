@@ -6,6 +6,7 @@ namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\Service\OidcClaimMapperService;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
+use OCA\Portaliq\Service\Signin\OrganisationLoginConfig;
 use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -382,6 +383,39 @@ class PortalOrganisationConfigServiceTest extends TestCase {
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->willReturn($this->oneOrganisation());
 
+		return new PortalOrganisationConfigService(
+			$container,
+			$this->routedConfig(overrides: $overrides, brokerSecret: $brokerSecret, oidcSecret: $oidcSecret),
+			$this->createMock(LoggerInterface::class),
+			new OidcClaimMapperService()
+		);
+	}//end routedService()
+
+	/**
+	 * The organisation login config over the same answers.
+	 *
+	 * @param array<string, mixed> $overrides    The organisation's override.
+	 * @param string               $brokerSecret The broker secret.
+	 *
+	 * @return OrganisationLoginConfig
+	 */
+	private function loginConfig(array $overrides, string $brokerSecret = 'consumer-secret-1'): OrganisationLoginConfig {
+		return new OrganisationLoginConfig(
+			$this->routedService(overrides: $overrides, brokerSecret: $brokerSecret),
+			$this->routedConfig(overrides: $overrides, brokerSecret: $brokerSecret, oidcSecret: '')
+		);
+	}//end loginConfig()
+
+	/**
+	 * App config answering per key.
+	 *
+	 * @param array<string, mixed> $overrides    The override blob.
+	 * @param string               $brokerSecret The broker secret.
+	 * @param string               $oidcSecret   The OIDC client secret.
+	 *
+	 * @return IAppConfig
+	 */
+	private function routedConfig(array $overrides, string $brokerSecret, string $oidcSecret): IAppConfig {
 		$appConfig = $this->createMock(IAppConfig::class);
 		$appConfig->method('getValueString')->willReturnCallback(
 			static function (string $app, string $key, string $default = '') use ($overrides, $brokerSecret, $oidcSecret): string {
@@ -397,13 +431,8 @@ class PortalOrganisationConfigServiceTest extends TestCase {
 			}
 		);
 
-		return new PortalOrganisationConfigService(
-			$container,
-			$appConfig,
-			$this->createMock(LoggerInterface::class),
-			new OidcClaimMapperService()
-		);
-	}//end routedService()
+		return $appConfig;
+	}//end routedConfig()
 
 	/**
 	 * A complete broker route: both addresses, the consumer id, and DigiD
@@ -431,7 +460,7 @@ class PortalOrganisationConfigServiceTest extends TestCase {
 	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
 	 */
 	public function testBrokerRouteNeedsEveryField(): void {
-		$config = $this->routedService(overrides: $this->brokerOverrides())->resolveBrokerConfig('gemeente-x', 'digid');
+		$config = $this->loginConfig(overrides: $this->brokerOverrides())->resolveBrokerConfig('gemeente-x', 'digid');
 		$this->assertSame('https://integriq.example/apps/integriq/idp/start', $config['startUrl']);
 		$this->assertSame('portaliq-venray', $config['consumerId']);
 		$this->assertSame('consumer-secret-1', $config['secret']);
@@ -441,18 +470,18 @@ class PortalOrganisationConfigServiceTest extends TestCase {
 		foreach (['startUrl', 'exchangeUrl', 'consumerId'] as $field) {
 			$overrides = $this->brokerOverrides();
 			unset($overrides['broker'][$field]);
-			$this->assertNull($this->routedService(overrides: $overrides)->resolveBrokerConfig('gemeente-x', 'digid'), 'missing '.$field);
+			$this->assertNull($this->loginConfig(overrides: $overrides)->resolveBrokerConfig('gemeente-x', 'digid'), 'missing '.$field);
 		}
 
 		$overrides = $this->brokerOverrides();
 		$overrides['broker']['startUrl'] = 'javascript:alert(1)';
-		$this->assertNull($this->routedService(overrides: $overrides)->resolveBrokerConfig('gemeente-x', 'digid'), 'not an http(s) address');
-		$this->assertNull($this->routedService(overrides: $this->brokerOverrides(), brokerSecret: '')->resolveBrokerConfig('gemeente-x', 'digid'), 'no secret');
-		$this->assertNull($this->routedService(overrides: $this->brokerOverrides())->resolveBrokerConfig('gemeente-x', 'eherkenning'), 'eHerkenning is not routed to the broker');
+		$this->assertNull($this->loginConfig(overrides: $overrides)->resolveBrokerConfig('gemeente-x', 'digid'), 'not an http(s) address');
+		$this->assertNull($this->loginConfig(overrides: $this->brokerOverrides(), brokerSecret: '')->resolveBrokerConfig('gemeente-x', 'digid'), 'no secret');
+		$this->assertNull($this->loginConfig(overrides: $this->brokerOverrides())->resolveBrokerConfig('gemeente-x', 'eherkenning'), 'eHerkenning is not routed to the broker');
 
 		$generic = $this->brokerOverrides();
 		$generic['loginRoutes'] = ['generic' => 'broker'];
-		$this->assertSame('oidc', $this->routedService(overrides: $generic)->loginRouteFor('gemeente-x', 'generic'), 'integriq brokers no generic login');
+		$this->assertSame('oidc', $this->loginConfig(overrides: $generic)->loginRouteFor('gemeente-x', 'generic'), 'integriq brokers no generic login');
 	}//end testBrokerRouteNeedsEveryField()
 
 	/**
@@ -472,11 +501,9 @@ class PortalOrganisationConfigServiceTest extends TestCase {
 		$appConfig->expects($this->once())->method('setValueString')
 			->with('portaliq', 'broker_secret_org-uuid-1', 's3cret', false, true)
 			->willReturn(true);
-		$service = new PortalOrganisationConfigService(
-			$this->createMock(ContainerInterface::class),
-			$appConfig,
-			$this->createMock(LoggerInterface::class),
-			new OidcClaimMapperService()
+		$service = new OrganisationLoginConfig(
+			$this->createMock(PortalOrganisationConfigService::class),
+			$appConfig
 		);
 		$this->assertTrue($service->setBrokerSecret('org-uuid-1', 's3cret'));
 		$this->assertFalse($service->setBrokerSecret('', 's3cret'));

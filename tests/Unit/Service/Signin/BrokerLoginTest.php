@@ -23,6 +23,7 @@ use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\Signin\BrokerExchangeClient;
+use OCA\Portaliq\Service\Signin\OrganisationLoginConfig;
 use OCA\Portaliq\Service\Signin\BrokerLogin;
 use OCP\Http\Client\IClient;
 use OCP\Http\Client\IClientService;
@@ -114,7 +115,10 @@ class BrokerLoginTest extends TestCase {
 				default => $default,
 			}
 		);
-		$orgConfig = new PortalOrganisationConfigService($container, $appConfig, $this->createMock(LoggerInterface::class), new OidcClaimMapperService());
+		$orgConfig = new OrganisationLoginConfig(
+			new PortalOrganisationConfigService($container, $appConfig, $this->createMock(LoggerInterface::class), new OidcClaimMapperService()),
+			$appConfig
+		);
 
 		$response = $this->createMock(IResponse::class);
 		$response->method('getStatusCode')->willReturn($status);

@@ -19,7 +19,6 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Signin;
 
 use OCA\Portaliq\Service\PortalObjectReader;
-use OCA\Portaliq\Service\PortalOrganisationConfigService;
 
 /**
  * The sign-in settings an administrator edits on a portal's page: per
@@ -48,14 +47,14 @@ class PortalSigninSettings {
 	 * Constructor.
 	 *
 	 * @param PortalObjectReader              $reader    Reads the portal.
-	 * @param PortalOrganisationConfigService $orgConfig The organisation's override and secret.
+	 * @param OrganisationLoginConfig $orgConfig The organisation's override and secret.
 	 * @param BrokerLoginRoute                $route     Reads routes and broker settings.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly PortalObjectReader $reader,
-		private readonly PortalOrganisationConfigService $orgConfig,
+		private readonly OrganisationLoginConfig $orgConfig,
 		private readonly BrokerLoginRoute $route = new BrokerLoginRoute(),
 	) {
 	}//end __construct()

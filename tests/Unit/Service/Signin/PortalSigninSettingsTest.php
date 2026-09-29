@@ -18,6 +18,7 @@ namespace OCA\Portaliq\Tests\Unit\Service\Signin;
 use OCA\Portaliq\Service\OidcClaimMapperService;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
+use OCA\Portaliq\Service\Signin\OrganisationLoginConfig;
 use OCA\Portaliq\Service\Signin\PortalSigninSettings;
 use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
@@ -86,7 +87,10 @@ class PortalSigninSettingsTest extends TestCase {
 
 		return new PortalSigninSettings(
 			$this->createMock(PortalObjectReader::class),
-			new PortalOrganisationConfigService($container, $appConfig, $this->createMock(LoggerInterface::class), new OidcClaimMapperService())
+			new OrganisationLoginConfig(
+				new PortalOrganisationConfigService($container, $appConfig, $this->createMock(LoggerInterface::class), new OidcClaimMapperService()),
+				$appConfig
+			)
 		);
 	}//end settings()
 
