@@ -74,6 +74,9 @@ return [
         ['name' => 'metrics#index', 'url' => '/api/metrics', 'verb' => 'GET'],
         // Health check endpoint.
         ['name' => 'health#index', 'url' => '/api/health', 'verb' => 'GET'],
+        // operate-availability-report: a portal's last twelve months, admin-only.
+        ['name' => 'availability#index', 'url' => '/api/availability/{portal}', 'verb' => 'GET'],
+        ['name' => 'availability#export', 'url' => '/api/availability/{portal}/export', 'verb' => 'GET'],
 
         // Headless content API (ADR-086 §1) — the CMS contract. Public and
         // read-only: a Docusaurus build or any third-party front-end reads
