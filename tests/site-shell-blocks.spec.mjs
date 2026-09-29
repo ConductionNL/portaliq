@@ -343,3 +343,46 @@ test('a third band changes nothing about the first two: every positional footer 
 		'no rule in site-theme.css selects a band by position',
 	)
 })
+
+// A shell helper App.vue calls without importing it throws a ReferenceError
+// in the browser the moment the footer computes, and the node renders above
+// never mount App.vue, so they cannot see it. Found live on 29 Sep 2026: a
+// merge of development kept the calls and dropped two names from the import.
+test('App.vue imports every shell and block-prop helper it calls', () => {
+	const app = readFileSync(join(ROOT, 'src/site/App.vue'), 'utf8')
+	const script = app.slice(app.indexOf('<script'))
+	const helpers = {
+		'./lib/shellData.js': readFileSync(
+			join(ROOT, 'src/site/lib/shellData.js'),
+			'utf8',
+		),
+		'./lib/blockProps.js': readFileSync(
+			join(ROOT, 'src/site/lib/blockProps.js'),
+			'utf8',
+		),
+	}
+	for (const [path, source] of Object.entries(helpers)) {
+		const exported = [...source.matchAll(/^export function (\w+)/gm)].map(
+			(m) => m[1],
+		)
+		const importLine = script.match(
+			new RegExp(
+				`import\\s*\\{([^}]*)\\}\\s*from\\s*'${path.replace(/\./g, '\\.')}'`,
+			),
+		)
+		const imported = importLine
+			? importLine[1]
+					.split(',')
+					.map((s) => s.trim())
+					.filter(Boolean)
+			: []
+		for (const name of exported) {
+			if (new RegExp(`\\b${name}\\(`).test(script)) {
+				assert.ok(
+					imported.includes(name),
+					`App.vue calls ${name}() but does not import it from ${path}`,
+				)
+			}
+		}
+	}
+})

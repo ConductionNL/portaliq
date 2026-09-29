@@ -321,7 +321,13 @@ import {
 } from './lib/contentApi.js'
 import { editorBaseFrom, fetchEditingContext } from './lib/editorApi.js'
 import { pageRegionsOf, resolveRegions } from './lib/regions.js'
-import { headerMenusOf, headerVariantOf, registerRouteOf } from './lib/shellData.js'
+import {
+	footerMenusOf,
+	headerMenusOf,
+	headerVariantOf,
+	legalLinksOf,
+	registerRouteOf,
+} from './lib/shellData.js'
 
 /**
  * LOADED ON DEMAND, and the budget is why — the same reason the detail and
