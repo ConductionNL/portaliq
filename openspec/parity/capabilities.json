@@ -508,12 +508,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/security/configuring-sso/authenticating-with-saml 'All MUST of Web Browser SSO and Single Logout Profiles are implemented'; same page: 'Authentication Context ... Not supported' and vendor-specific features are left to 'external solutions'. DigiD is a SAML broker, so a generic SP connection is documented; requesting a DigiD assurance level and the DigiD-specific profile would be custom or external. [custom: DigiD connection profile, AuthnContext level request, BSN attribute mapping]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "lib/Service/OidcClaimMapperService.php:75-81 digid preset (identityType digid, acr LoA claim); lib/Controller/SessionController.php:284,370 oidcStart/oidcCallback; src/portal/App.jsx:270-321 renders a login button per config.oidcProviders",
-				"reachedOn": "portal SPA login screen (src/portal/App.jsx:313-321) -> GET /portal/api/session/oidc/start?provider=digid -> broker -> /portal/api/session/oidc/callback",
+				"state": "building",
+				"evidence": "lib/Service/Signin/{BrokerLogin,BrokerExchangeClient,BrokerEnvelopeCheck,LoginProviders,OrganisationLoginConfig}.php; lib/Controller/BrokerSessionController.php GET /portal/api/session/broker/start|callback; SessionController::oidcStart forwards a broker-routed provider; src/portal/lib/signinRoute.js (buttons follow `route`, #signin=failed); src/widgets/PortalSignin.vue + PortalSigninController GET/PUT /api/portals/{slug}/signin (admin: route per provider, integriq start/exchange address, consumer id, write-only secret)",
+				"reachedOn": "admin: Portals -> a portal -> Sign-in widget -> DigiD/eHerkenning/eIDAS: Integriq; resident: portal login screen -> Log in with <provider> -> /portal/api/session/broker/start -> integriq start -> /portal/api/session/broker/callback -> signed in",
 				"owner": "ConductionNL/portaliq",
-				"note": "Real generic-OIDC broker login with a digid preset, not a direct Logius/SAML connector: it works only when the organisation fronts DigiD with its own OIDC-compliant broker and supplies issuer/clientId/clientSecret. No broker means no button (App.jsx:323-325 shows a hint instead). Specified in openspec/changes/signin-integriq-broker-login (OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"note": "Portaliq's half built (signin-integriq-broker-login, all 13 tasks). Integriq's start address (SAML SP / OIDC RP runtime and envelope minting) is owed: ConductionNL/integriq#1495. Until it exists no organisation can complete the route, so the row stays building.",
+				"origin": "code",
+				"change": "signin-integriq-broker-login"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -538,12 +539,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/security/configuring-sso/authenticating-with-saml 'All MUST of Web Browser SSO and Single Logout Profiles are implemented'; 'Authentication Context ... Not supported'. An eHerkenning broker can be federated as a generic SAML IdP; the eHerkenning level (EH3/EH4) request and KvK attribute handling are not documented and would be custom. [custom: eHerkenning broker profile, level request, KvK and service attributes]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "lib/Service/OidcClaimMapperService.php:82-88 eherkenning preset (audience supplier); lib/Controller/SessionController.php:284,370",
-				"reachedOn": "portal SPA login screen (src/portal/App.jsx:313-321) -> /portal/api/session/oidc/start?provider=eherkenning",
+				"state": "building",
+				"evidence": "lib/Service/Signin/{BrokerLogin,BrokerExchangeClient,BrokerEnvelopeCheck,LoginProviders,OrganisationLoginConfig}.php; lib/Controller/BrokerSessionController.php GET /portal/api/session/broker/start|callback; SessionController::oidcStart forwards a broker-routed provider; src/portal/lib/signinRoute.js (buttons follow `route`, #signin=failed); src/widgets/PortalSignin.vue + PortalSigninController GET/PUT /api/portals/{slug}/signin (admin: route per provider, integriq start/exchange address, consumer id, write-only secret)",
+				"reachedOn": "admin: Portals -> a portal -> Sign-in widget -> DigiD/eHerkenning/eIDAS: Integriq; resident: portal login screen -> Log in with <provider> -> /portal/api/session/broker/start -> integriq start -> /portal/api/session/broker/callback -> signed in",
 				"owner": "ConductionNL/portaliq",
-				"note": "Same broker-fronted model as DigiD: works when the organisation configures a real eHerkenning-fronting OIDC broker. No ketenmachtiging-specific claim handling beyond the generic mandate service (see cmp-sig-machtiging). Specified in openspec/changes/signin-integriq-broker-login (OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"note": "Portaliq's half built (signin-integriq-broker-login, all 13 tasks). Integriq's start address (SAML SP / OIDC RP runtime and envelope minting) is owed: ConductionNL/integriq#1495. Until it exists no organisation can complete the route, so the row stays building.",
+				"origin": "code",
+				"change": "signin-integriq-broker-login"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -988,12 +990,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/security/configuring-sso/authenticating-with-saml implements the SAML Web Browser SSO profile, so an eIDAS node or broker can be connected as a SAML IdP; eIDAS itself is not named and the level of assurance request needs Authentication Context, which the same page lists as 'Not supported'. Custom or external. [was no: the earlier no rested on silence]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "lib/Service/OidcClaimMapperService.php:89-95 eidas preset (identityType eidas, audience client)",
-				"reachedOn": "portal SPA login screen -> /portal/api/session/oidc/start?provider=eidas, same path as sig-digid",
+				"state": "building",
+				"evidence": "lib/Service/Signin/{BrokerLogin,BrokerExchangeClient,BrokerEnvelopeCheck,LoginProviders,OrganisationLoginConfig}.php; lib/Controller/BrokerSessionController.php GET /portal/api/session/broker/start|callback; SessionController::oidcStart forwards a broker-routed provider; src/portal/lib/signinRoute.js (buttons follow `route`, #signin=failed); src/widgets/PortalSignin.vue + PortalSigninController GET/PUT /api/portals/{slug}/signin (admin: route per provider, integriq start/exchange address, consumer id, write-only secret)",
+				"reachedOn": "admin: Portals -> a portal -> Sign-in widget -> DigiD/eHerkenning/eIDAS: Integriq; resident: portal login screen -> Log in with <provider> -> /portal/api/session/broker/start -> integriq start -> /portal/api/session/broker/callback -> signed in",
 				"owner": "ConductionNL/portaliq",
-				"note": "Same broker-fronted OIDC model as DigiD/eHerkenning: works only if the organisation configures a real eIDAS-node-fronting OIDC broker; no built-in eIDAS node connector. Specified in openspec/changes/signin-integriq-broker-login (OpenSpec pass 2026-09-27).",
-				"origin": "competitor"
+				"note": "Portaliq's half built (signin-integriq-broker-login, all 13 tasks). Integriq's start address (SAML SP / OIDC RP runtime and envelope minting) is owed: ConductionNL/integriq#1495. Until it exists no organisation can complete the route, so the row stays building.",
+				"origin": "competitor",
+				"change": "signin-integriq-broker-login"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1048,13 +1051,14 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/sites/creating-pages/page-settings/updating-page-permissions 'configure permissions for individual pages to restrict access based on user roles'; DigiD or eHerkenning sign-in itself is a generic SAML connection that is custom (see sig-digid). [was unknown]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "lib/Service/OidcClaimMapperService.php:75-88 digid/eherkenning presets; lib/Controller/ContentController.php:106-163 minTrust gate. Decidiq's own matrix rated this 'no' citing lib/Portal/PortalContributionProvider.php:18 in decidesk's OWN repo, which says 'DigiD/eHerkenning is DEFERRED', and portaliq's SessionController.php:1-10 class docblock which still says the DigiD/eHerkenning broker is 'dormant, awaiting OpenConnector'",
-				"reachedOn": "same OIDC broker path as sig-digid/sig-eherkenning; whether decidiq's own contribution actually GATES its confidential papers by minTrust is decidesk's question to answer, not portaliq's",
+				"state": "building",
+				"evidence": "lib/Service/Signin/{BrokerLogin,BrokerExchangeClient,BrokerEnvelopeCheck,LoginProviders,OrganisationLoginConfig}.php; lib/Controller/BrokerSessionController.php GET /portal/api/session/broker/start|callback; SessionController::oidcStart forwards a broker-routed provider; src/portal/lib/signinRoute.js (buttons follow `route`, #signin=failed); src/widgets/PortalSignin.vue + PortalSigninController GET/PUT /api/portals/{slug}/signin (admin: route per provider, integriq start/exchange address, consumer id, write-only secret); the session carries integriq's trust, which ContentController's minTrust gate reads",
+				"reachedOn": "admin: Portals -> a portal -> Sign-in widget -> DigiD/eHerkenning/eIDAS: Integriq; resident: portal login screen -> Log in with <provider> -> /portal/api/session/broker/start -> integriq start -> /portal/api/session/broker/callback -> signed in",
 				"owner": "ConductionNL/portaliq",
-				"note": "Re-rated from decidiq's original 'no': portaliq's DigiD/eHerkenning OIDC broker login (portal-oidc-broker-login, commit eb85956) is real and reached, contradicting the stale docblock decidiq's evidence quoted. See overlayClaimsFalse: SessionController.php's own class comment says the broker is dormant while its @spec tags cite the very change (portal-oidc-broker-login T06/T07) that wired it, and the code below fully implements it. Specified in openspec/changes/signin-integriq-broker-login (OpenSpec pass 2026-09-27).",
+				"note": "Portaliq's half built (signin-integriq-broker-login, all 13 tasks). Integriq's start address (SAML SP / OIDC RP runtime and envelope minting) is owed: ConductionNL/integriq#1495. Until it exists no organisation can complete the route, so the row stays building.",
 				"sourceId": "plt-02",
-				"origin": "sibling"
+				"origin": "sibling",
+				"change": "signin-integriq-broker-login"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
