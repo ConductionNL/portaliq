@@ -209,7 +209,7 @@ export default {
 		maxSize: { w: 12, h: 10 },
 		allowedSlots: ['body'],
 		propsSchema: null,
-		_note: 'The portal\'s case types, each with a "Show in this portal" switch (operate-show-per-case-type). Custom because the list is the union of the portal\'s published forms, the case apps\' caseTypeSource and its own hidden list, read and saved through PortalCaseTypesController, and because hiding must warn before it saves.',
+		_note: "The portal's case types, each with a \"Show in this portal\" switch (operate-show-per-case-type). Custom because the list is the union of the portal's published forms, the case apps' caseTypeSource and its own hidden list, read and saved through PortalCaseTypesController, and because hiding must warn before it saves.",
 	},
 	TrafficRecordings: {
 		kind: 'widget',
