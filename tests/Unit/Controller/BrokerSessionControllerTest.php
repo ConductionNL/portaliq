@@ -26,7 +26,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * T04 and T08: the broker start and callback endpoints.
  *
- * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md
+ * @spec openspec/specs/portal-broker-envelope-login/spec.md
  */
 class BrokerSessionControllerTest extends TestCase {
 
@@ -76,7 +76,7 @@ class BrokerSessionControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-broker-start-binds-the-login-to-one-organisation-and-one-provider-req-bel-002
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-broker-start-binds-the-login-to-one-organisation-and-one-provider-req-bel-002
 	 */
 	public function testStartResolvesOrganisationFromPortal(): void {
 		$portals = $this->createMock(PortalResolver::class);
@@ -99,7 +99,7 @@ class BrokerSessionControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-a-failed-login-returns-to-the-login-screen-without-a-reason-req-bel-006
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-a-failed-login-returns-to-the-login-screen-without-a-reason-req-bel-006
 	 */
 	public function testEveryFailureLandsOnTheSameFragment(): void {
 		$controller = $this->controller(login: $this->login());
@@ -123,7 +123,7 @@ class BrokerSessionControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-envelope-becomes-an-ordinary-portal-session-req-bel-005
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-envelope-becomes-an-ordinary-portal-session-req-bel-005
 	 */
 	public function testACompletedLoginCarriesTheBearerInTheFragment(): void {
 		$response = $this->controller(login: $this->login(complete: ['token' => 'a.b c', 'returnTo' => '/apps/portaliq/portal']))->callback(state: 's', code: 'c');

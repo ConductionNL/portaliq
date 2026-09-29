@@ -326,7 +326,7 @@ class SessionControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-broker-start-binds-the-login-to-one-organisation-and-one-provider-req-bel-002
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-broker-start-binds-the-login-to-one-organisation-and-one-provider-req-bel-002
 	 */
 	public function testOidcStartForwardsABrokerRoutedProvider(): void {
 		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
@@ -414,7 +414,7 @@ class SessionControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/design.md#d2-two-new-routes-and-the-spas-follow-the-route-field
+	 * @spec openspec/changes/archive/2026-09-29-signin-integriq-broker-login/design.md#d2-two-new-routes-and-the-spas-follow-the-route-field
 	 */
 	public function testOidcStartFromTheSiteResolvesTheOrganisationFromThePortalSlug(): void {
 		$portals = $this->createMock(originalClassName: PortalResolver::class);
@@ -451,7 +451,7 @@ class SessionControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/design.md#d2-two-new-routes-and-the-spas-follow-the-route-field
+	 * @spec openspec/changes/archive/2026-09-29-signin-integriq-broker-login/design.md#d2-two-new-routes-and-the-spas-follow-the-route-field
 	 */
 	public function testOidcStartWithAnExplicitOrgDoesNotConsultThePortal(): void {
 		$portals = $this->createMock(originalClassName: PortalResolver::class);

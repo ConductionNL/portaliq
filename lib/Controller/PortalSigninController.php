@@ -29,7 +29,7 @@ use OCP\IRequest;
  * The Sign-in widget on a portal's page: per provider the login route, and
  * the integriq broker settings (signin-integriq-broker-login T11).
  *
- * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+ * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
  */
 class PortalSigninController extends Controller {
 
@@ -61,7 +61,7 @@ class PortalSigninController extends Controller {
 	 *       Nextcloud expresses admin-only as the ABSENCE of an opt-out
 	 *       attribute, so this tag is the declaration.
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
 	 */
 	public function index(string $slug): JSONResponse {
 		$portal = $this->settings->portalBySlug(slug: $slug);
@@ -91,7 +91,7 @@ class PortalSigninController extends Controller {
 	 *
 	 * @auth admin-only How residents sign in is an administrator's choice.
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
 	 */
 	public function update(string $slug, array $routes = [], array $broker = [], string $secret = ''): JSONResponse {
 		$portal = $this->settings->portalBySlug(slug: $slug);

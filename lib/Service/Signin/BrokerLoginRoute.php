@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md
+ * @spec openspec/specs/portal-broker-envelope-login/spec.md
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ namespace OCA\Portaliq\Service\Signin;
  * Pure: no container, no config reads. The caller hands in the override and
  * the secret.
  *
- * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md
+ * @spec openspec/specs/portal-broker-envelope-login/spec.md
  */
 class BrokerLoginRoute {
 
@@ -68,7 +68,7 @@ class BrokerLoginRoute {
 	 *
 	 * @return string `oidc` or `broker`.
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md
 	 */
 	public function routeFor(array $overrides, string $provider): string {
 		$routes = ($overrides['loginRoutes'] ?? null);
@@ -94,7 +94,7 @@ class BrokerLoginRoute {
 	 *
 	 * @return array{startUrl: string, exchangeUrl: string, consumerId: string, secret: string}|null
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md
 	 */
 	public function settings(array $overrides, string $secret): ?array {
 		$broker = ($overrides['broker'] ?? null);

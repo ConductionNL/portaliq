@@ -11,7 +11,7 @@
 //
 // Imports nothing, so tests/broker-login.spec.mjs runs it as plain node.
 //
-// @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md
+// @spec openspec/specs/portal-broker-envelope-login/spec.md
 
 /**
  * The start address for one provider on the route the organisation chose.
@@ -21,7 +21,7 @@
  * @param {string} provider `digid`, `eherkenning`, `eidas` or `generic`.
  * @param {string} route `oidc` or `broker`; anything else is `oidc`.
  * @return {string}
- * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+ * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
  */
 export function loginStartUrl(base, org, provider, route) {
 	const path = route === 'broker' ? 'broker' : 'oidc'
@@ -35,7 +35,7 @@ export function loginStartUrl(base, org, provider, route) {
  * @param {Location} location The window location.
  * @param {History} history The window history.
  * @return {boolean}
- * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-a-failed-login-returns-to-the-login-screen-without-a-reason-req-bel-006
+ * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-a-failed-login-returns-to-the-login-screen-without-a-reason-req-bel-006
  */
 export function consumeSigninFailed(location, history) {
 	if (String(location?.hash || '') !== '#signin=failed') {

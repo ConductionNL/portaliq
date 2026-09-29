@@ -10,7 +10,7 @@
   without every setting is refused. Saves through PortalSigninController,
   which is admin-only.
 
-  @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+  @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
 -->
 <template>
 	<div class="portal-signin" data-testid="portal-signin">
@@ -166,7 +166,7 @@ export default {
 		 * The portal's slug.
 		 *
 		 * @return {string}
-		 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+		 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
 		 */
 		slug() {
 			return String(this.objectData?.slug || '')
@@ -174,7 +174,7 @@ export default {
 	},
 
 	/**
-	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
 	 */
 	created() {
 		this.api = createPortalSigninSettings({
@@ -189,7 +189,7 @@ export default {
 		/**
 		 * @param {string} provider The provider.
 		 * @return {string}
-		 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+		 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
 		 */
 		label(provider) {
 			return PROVIDER_LABELS[provider] || provider
@@ -197,7 +197,7 @@ export default {
 
 		/**
 		 * @param {object|null} settings The settings the server answered.
-		 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+		 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
 		 */
 		apply(settings) {
 			this.organisation = String(settings?.organisation || '')
@@ -213,7 +213,7 @@ export default {
 		},
 
 		/**
-		 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+		 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
 		 */
 		async load() {
 			const result = await this.api.load(this.slug)
@@ -222,7 +222,7 @@ export default {
 		},
 
 		/**
-		 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+		 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
 		 */
 		async save() {
 			this.saving = true
