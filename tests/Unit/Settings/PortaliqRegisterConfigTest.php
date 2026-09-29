@@ -285,8 +285,11 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// (site-page-seo-history-and-media). Additive.
 		// 0.44.0 (media 0.1.0): a portal's media library
 		// (site-page-seo-history-and-media T06). New schema, additive.
-		$this->assertSame('0.44.0', self::$register['info']['version']);
-		$this->assertSame('0.44.0', self::$register['components']['registers']['portaliq']['version']);
+		// 0.45.0 (portalOidcState 0.2.0): a state row names its login `route`,
+		// and `codeVerifier` is no longer required, because an integriq broker
+		// row has none (signin-integriq-broker-login T03). Additive.
+		$this->assertSame('0.45.0', self::$register['info']['version']);
+		$this->assertSame('0.45.0', self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame('0.4.0', self::$register['components']['schemas']['page']['version']);
 		$this->assertSame(70, self::$register['components']['schemas']['page']['properties']['seoTitle']['maxLength']);
 		$this->assertSame(160, self::$register['components']['schemas']['page']['properties']['seoDescription']['maxLength']);
@@ -502,9 +505,11 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$state = $schemas['portalOidcState'];
 		$this->assertNeverPublic('portalOidcState');
 		$this->assertSame(
-			['state', 'nonce', 'codeVerifier', 'org', 'provider', 'expiresAt'],
+			['state', 'nonce', 'org', 'provider', 'expiresAt'],
 			$state['required']
 		);
+		$this->assertSame('0.2.0', $state['version']);
+		$this->assertSame(['oidc', 'broker'], $state['properties']['route']['enum']);
 
 		$account = $schemas['portalAccount'];
 		$this->assertSame(

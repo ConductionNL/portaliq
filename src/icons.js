@@ -46,6 +46,7 @@ import FileTreeOutline from 'vue-material-design-icons/FileTreeOutline.vue'
 import FolderOutline from 'vue-material-design-icons/FolderOutline.vue'
 import FormSelect from 'vue-material-design-icons/FormSelect.vue'
 import History from 'vue-material-design-icons/History.vue'
+import Login from 'vue-material-design-icons/Login.vue'
 import MapMarkerPath from 'vue-material-design-icons/MapMarkerPath.vue'
 import Menu from 'vue-material-design-icons/Menu.vue'
 import MessageText from 'vue-material-design-icons/MessageText.vue'
@@ -100,6 +101,8 @@ export default {
 	FolderOutline,
 	FormSelect,
 	History,
+	// The Sign-in widget on a portal's page (signin-integriq-broker-login).
+	Login,
 	MapMarkerPath,
 	Menu,
 	MotionPlayOutline,

@@ -90,6 +90,12 @@
 							</button>
 						</template>
 						<nav v-else aria-label="Gebruikersmenu">
+							<p
+								v-if="signinFailed"
+								role="alert"
+								data-testid="site-signin-failed">
+								{{ signinFailedMessage }}
+							</p>
 							<ul>
 								<li v-for="entry in signInRoutes" :key="entry.mode">
 									<a
@@ -460,7 +466,9 @@ import {
 	authBaseFrom,
 	clearSessionToken,
 	fetchSession,
+	SIGNIN_FAILED_MESSAGE,
 	signInRoutes,
+	takeSigninFailed,
 } from './lib/authApi.js'
 import { captureLanding } from './lib/campaignTracking.js'
 import { runtimeConfig } from './lib/contentApi.js'
@@ -514,6 +522,9 @@ export default {
 
 	data() {
 		return {
+			// A failed sign-in the edge sent back (REQ-BEL-006), read once.
+			signinFailed: takeSigninFailed(),
+			signinFailedMessage: SIGNIN_FAILED_MESSAGE,
 			site: {},
 			menus: [],
 			glossary: [],

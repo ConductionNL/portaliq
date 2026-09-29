@@ -79,6 +79,7 @@ A token set shared through OpenRegister MUST pass `CustomTokenSetValidator` befo
 - **WHEN** a token set shared through OpenRegister is adopted by a portal
 - **THEN** it passes `CustomTokenSetValidator` first
 - **AND** a set that fails is refused with a visible reason
+- @e2e exclude pinned by PortalCustomThemeSetsTest::testAHostileDeclarationIsRefusedByName and PortalThemeChoiceTest::testCustomSetsAreOfferedAndAHostileOneIsRefusedVisibly
 
 ### Requirement: Portaliq MUST NOT ship design tokens or a theming mechanism
 
@@ -96,28 +97,42 @@ once already, with ZERO tokens in common between the halves.
      They record decisions built and measured on branch feat/portal-nextcloud-signin,
      which never merged. The requirements above are unchanged in substance. -->
 
-### Requirement: A shared theme MUST be copied into the portal, not linked
+### Requirement: A shared theme MUST be a copy on this instance, not a link to its source
 
-Adopting a shared token set MUST copy its accepted declarations into the
-portal's own record. A portal MUST keep rendering what it adopted when the
-source instance changes or withdraws the set.
+A token set shared from another instance MUST reach a portal as the theme
+app's own custom set on this instance: the theme app's shareable config type
+imports it as one, and the portal lists it with every other custom set. A
+portal MUST keep rendering what it adopted when the source instance changes or
+withdraws the set. Only a deletion on this instance ends it, and the portal's
+House style widget then says so.
 
 #### Scenario: The source withdraws the set
 
-- **GIVEN** a portal that adopted a set shared from another instance
+- **GIVEN** a portal wearing a set the theme app imported from another instance
 - **WHEN** that instance withdraws the set
 - **THEN** the portal renders exactly as before
-- **AND** an administrator can see that the source is gone
+- @e2e exclude Needs two instances sharing through OpenRegister; the copy is the theme app's custom set file, which the source cannot reach
 
-A link would let another instance change or remove what a live government
-portal looks like, at a moment nobody at that portal chose. Decided and built
-on the branch in 19fbcd6 (`PortalSharedTheme::adopt()`).
+#### Scenario: The set is deleted on this instance
+
+- **GIVEN** a portal wearing a custom set
+- **WHEN** an administrator deletes the set in the theme app
+- **THEN** the portal shows without a house style
+- **AND** its House style widget says the theme app no longer offers the set
+- @e2e exclude pinned by PortalThemeChoiceTest::testATypedThemeTheAppDoesNotOfferIsNamedAsNotResolving
+
+A link to the source would let another instance change or remove what a live
+government portal looks like, at a moment nobody at that portal chose. The
+branch design (19fbcd6, `PortalSharedTheme::adopt()`) copied the bundle into
+the portal record; built 2026-09-29 the copy is the theme app's own, so a set
+is made, edited, shared and checked in one place.
 
 #### Scenario: The validator is unavailable
 
-- **GIVEN** a shared set and no reachable `CustomTokenSetValidator`
-- **WHEN** a portal tries to adopt the set
-- **THEN** nothing is adopted and the refusal says why
+- **GIVEN** a custom set and no reachable `CustomTokenSetValidator`
+- **WHEN** a portal would link the set
+- **THEN** nothing is linked and the House style widget lists the set with the reason
+- @e2e exclude pinned by PortalCustomThemeSetsTest::testWithoutTheValidatorNothingIsLinked
 
 ### Requirement: A contrast verdict MUST say when nothing was measured
 

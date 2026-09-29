@@ -46,6 +46,7 @@ import PageLayoutDesigner from './views/PageLayoutDesigner.vue'
 import AvailabilityReport from './widgets/AvailabilityReport.vue'
 import PageTrafficFlow from './widgets/PageTrafficFlow.vue'
 import PortalCaseTypes from './widgets/PortalCaseTypes.vue'
+import PortalSignin from './widgets/PortalSignin.vue'
 import PortalTheme from './widgets/PortalTheme.vue'
 import PortalTrafficKpi from './widgets/PortalTrafficKpi.vue'
 import TrafficDaily from './widgets/TrafficDaily.vue'
@@ -223,6 +224,17 @@ export default {
 		allowedSlots: ['body'],
 		propsSchema: null,
 		_note: "The portal's case types, each with a \"Show in this portal\" switch (operate-show-per-case-type). Custom because the list is the union of the portal's published forms, the case apps' caseTypeSource and its own hidden list, read and saved through PortalCaseTypesController, and because hiding must warn before it saves.",
+	},
+	// @custom-widget-ratchet exclude per provider a route choice, the broker settings and a write-only secret, saved through an admin controller that refuses a broker route whose settings are incomplete, which no built-in widget does
+	PortalSignin: {
+		kind: 'widget',
+		component: PortalSignin,
+		defaultSize: { w: 12, h: 6 },
+		minSize: { w: 6, h: 4 },
+		maxSize: { w: 12, h: 12 },
+		allowedSlots: ['body'],
+		propsSchema: null,
+		_note: "How residents sign in to the portal's organisation: per provider its own OIDC broker or integriq, and the integriq broker settings (signin-integriq-broker-login T11). Custom because the secret is write-only and the server refuses a broker route whose settings are incomplete.",
 	},
 	// @custom-widget-ratchet exclude the radio list reads the theme app's catalogue and a contrast verdict per set through an admin controller, and a failing set must show its findings and ask again before it saves, which no built-in widget does
 	PortalTheme: {
