@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/operate-maintenance-notice/specs/portal-notices/spec.md#requirement-page-editors-manage-notices-req-omn-003
+ * @spec openspec/specs/portal-notices/spec.md#requirement-page-editors-manage-notices-req-omn-003
  */
 
 declare(strict_types=1);
@@ -45,7 +45,7 @@ use Throwable;
  *
  * @template-implements IEventListener<Event>
  *
- * @spec openspec/changes/operate-maintenance-notice/specs/portal-notices/spec.md#requirement-page-editors-manage-notices-req-omn-003
+ * @spec openspec/specs/portal-notices/spec.md#requirement-page-editors-manage-notices-req-omn-003
  */
 class NoticeWriteGuardListener implements IEventListener {
 
@@ -81,7 +81,7 @@ class NoticeWriteGuardListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/operate-maintenance-notice/specs/portal-notices/spec.md#requirement-page-editors-manage-notices-req-omn-003
+	 * @spec openspec/specs/portal-notices/spec.md#requirement-page-editors-manage-notices-req-omn-003
 	 */
 	public function handle(Event $event): void {
 		$entity = null;

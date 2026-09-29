@@ -124,7 +124,7 @@ class PortalPageController extends Controller {
 	 * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.1
 	 * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#2.1
 	 * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#2.4
-	 * @spec openspec/changes/operate-maintenance-notice/specs/portal-notices/spec.md#requirement-a-notice-shows-on-every-page-during-its-window-req-omn-001
+	 * @spec openspec/specs/portal-notices/spec.md#requirement-a-notice-shows-on-every-page-during-its-window-req-omn-001
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]

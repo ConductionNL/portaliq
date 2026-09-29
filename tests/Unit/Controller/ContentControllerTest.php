@@ -215,7 +215,7 @@ class ContentControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/operate-maintenance-notice/specs/portal-notices/spec.md#requirement-a-notice-shows-on-every-page-during-its-window-req-omn-001
+	 * @spec openspec/specs/portal-notices/spec.md#requirement-a-notice-shows-on-every-page-during-its-window-req-omn-001
 	 */
 	public function testSiteCarriesActiveNotices(): void {
 		$this->resolver->method('resolve')->willReturn($this->portal());

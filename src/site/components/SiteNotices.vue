@@ -65,7 +65,7 @@ const LABELS = {
 }
 
 /**
- * @spec openspec/changes/operate-maintenance-notice/specs/portal-notices/spec.md#requirement-a-visitor-can-close-a-notice-for-the-visit-req-omn-002
+ * @spec openspec/specs/portal-notices/spec.md#requirement-a-visitor-can-close-a-notice-for-the-visit-req-omn-002
  */
 export default {
 	name: 'SiteNotices',
@@ -90,7 +90,7 @@ export default {
 		/**
 		 * @return {Array<object>} The notices to render now.
 		 *
-		 * @spec openspec/changes/operate-maintenance-notice/specs/portal-notices/spec.md#requirement-a-notice-shows-on-every-page-during-its-window-req-omn-001
+		 * @spec openspec/specs/portal-notices/spec.md#requirement-a-notice-shows-on-every-page-during-its-window-req-omn-001
 		 */
 		shown() {
 			return visibleNotices(this.notices, this.closed, Date.now())
@@ -99,7 +99,7 @@ export default {
 		/**
 		 * @return {{notice: string, close: string, more: string}} The labels in the site's language.
 		 *
-		 * @spec openspec/changes/operate-maintenance-notice/specs/portal-notices/spec.md#requirement-a-visitor-can-close-a-notice-for-the-visit-req-omn-002
+		 * @spec openspec/specs/portal-notices/spec.md#requirement-a-visitor-can-close-a-notice-for-the-visit-req-omn-002
 		 */
 		label() {
 			return LABELS[this.locale] || LABELS.nl
@@ -113,7 +113,7 @@ export default {
 		 * @param {string} id The notice id.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/operate-maintenance-notice/specs/portal-notices/spec.md#requirement-a-visitor-can-close-a-notice-for-the-visit-req-omn-002
+		 * @spec openspec/specs/portal-notices/spec.md#requirement-a-visitor-can-close-a-notice-for-the-visit-req-omn-002
 		 */
 		close(id) {
 			closeNotice(sessionStore(), id)

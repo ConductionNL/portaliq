@@ -22,7 +22,7 @@ use Psr\Log\NullLogger;
  * operate-maintenance-notice T05 (REQ-OMN-003): a notice's end is after its
  * start, checked on the write with the real OpenRegister event classes.
  *
- * @spec openspec/changes/operate-maintenance-notice/specs/portal-notices/spec.md#requirement-page-editors-manage-notices-req-omn-003
+ * @spec openspec/specs/portal-notices/spec.md#requirement-page-editors-manage-notices-req-omn-003
  */
 class NoticeWriteGuardListenerTest extends TestCase {
 

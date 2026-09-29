@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/operate-maintenance-notice/specs/portal-notices/spec.md#requirement-a-notice-shows-on-every-page-during-its-window-req-omn-001
+ * @spec openspec/specs/portal-notices/spec.md#requirement-a-notice-shows-on-every-page-during-its-window-req-omn-001
  */
 
 declare(strict_types=1);
@@ -44,7 +44,7 @@ use Throwable;
  * whole of what the public may see. The rows are cached for a minute; the
  * window is checked on every call, so the cache can never extend a notice.
  *
- * @spec openspec/changes/operate-maintenance-notice/specs/portal-notices/spec.md#requirement-a-notice-shows-on-every-page-during-its-window-req-omn-001
+ * @spec openspec/specs/portal-notices/spec.md#requirement-a-notice-shows-on-every-page-during-its-window-req-omn-001
  */
 class PortalNoticeReader {
 
@@ -114,7 +114,7 @@ class PortalNoticeReader {
 	 *
 	 * @return array<int, array{id: string, message: string, level: string, linkLabel: string, linkUrl: string, endsAt: string}> At most three.
 	 *
-	 * @spec openspec/changes/operate-maintenance-notice/specs/portal-notices/spec.md#requirement-a-notice-shows-on-every-page-during-its-window-req-omn-001
+	 * @spec openspec/specs/portal-notices/spec.md#requirement-a-notice-shows-on-every-page-during-its-window-req-omn-001
 	 */
 	public function active(string $portal, string $surface): array {
 		if ($portal === '') {
@@ -135,7 +135,7 @@ class PortalNoticeReader {
 	 *
 	 * @return array<int, array{id: string, message: string, level: string, linkLabel: string, linkUrl: string, endsAt: string}> At most three, newest start first.
 	 *
-	 * @spec openspec/changes/operate-maintenance-notice/specs/portal-notices/spec.md#requirement-a-notice-shows-on-every-page-during-its-window-req-omn-001
+	 * @spec openspec/specs/portal-notices/spec.md#requirement-a-notice-shows-on-every-page-during-its-window-req-omn-001
 	 */
 	public static function select(array $rows, string $portal, string $surface, DateTimeImmutable $now): array {
 		$active = [];

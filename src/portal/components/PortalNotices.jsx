@@ -4,7 +4,7 @@
 // (operate-maintenance-notice). Deliberately not an alert role: a notice that
 // is there on every page load must not interrupt a screen reader each time.
 //
-// @spec openspec/changes/operate-maintenance-notice/specs/portal-notices/spec.md#requirement-a-notice-shows-on-every-page-during-its-window-req-omn-001
+// @spec openspec/specs/portal-notices/spec.md#requirement-a-notice-shows-on-every-page-during-its-window-req-omn-001
 
 import { useState } from 'react'
 import { closedNotices, closeNotice, sessionStore, visibleNotices } from '../lib/notices.js'

@@ -362,7 +362,7 @@ class PageEditorServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/operate-maintenance-notice/specs/portal-notices/spec.md#requirement-page-editors-manage-notices-req-omn-003
+	 * @spec openspec/specs/portal-notices/spec.md#requirement-page-editors-manage-notices-req-omn-003
 	 */
 	public function testEditorGroupsReachNotices(): void {
 		$this->service(isAdmin: true)->setEditorGroups(['redacteuren']);

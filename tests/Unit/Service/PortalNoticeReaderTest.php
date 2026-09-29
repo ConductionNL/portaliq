@@ -36,7 +36,7 @@ use Psr\Log\LoggerInterface;
  * operate-maintenance-notice T02 (REQ-OMN-001): the server decides which
  * notices are active.
  *
- * @spec openspec/changes/operate-maintenance-notice/specs/portal-notices/spec.md#requirement-a-notice-shows-on-every-page-during-its-window-req-omn-001
+ * @spec openspec/specs/portal-notices/spec.md#requirement-a-notice-shows-on-every-page-during-its-window-req-omn-001
  */
 class PortalNoticeReaderTest extends TestCase {
 

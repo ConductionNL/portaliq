@@ -8,7 +8,7 @@
 // may be cached for up to five minutes: the end time is checked here again,
 // so a notice can show late but never outstays its window.
 //
-// @spec openspec/changes/operate-maintenance-notice/specs/portal-notices/spec.md#requirement-a-visitor-can-close-a-notice-for-the-visit-req-omn-002
+// @spec openspec/specs/portal-notices/spec.md#requirement-a-visitor-can-close-a-notice-for-the-visit-req-omn-002
 
 export const CLOSED_KEY = 'portaliq.closedNotices'
 
