@@ -35,6 +35,16 @@ Return `null` for a letter your app already sends to the message box itself, for
 
 The name must be a plain method name and may not be one of the contract's own methods, the same rule as a timeline method. Portaliq drops a declaration that breaks it.
 
+### The letter's text and subject
+
+Portaliq reads the letter from the message the resident's own inbox shows. The text comes from `bodyField` when the collection names one, else from the first of `body`, `content` or `text` that holds text. The subject comes from `subjectField`, else `subject` or `title`:
+
+```json
+{"id": "berichten", "kind": "inbox", "messageBox": {"recipientProvider": "messageBoxRecipient", "bodyField": "content", "subjectField": "subject"}}
+```
+
+A message without text is never sent as an empty letter. Portaliq asks integriq for nothing, records the attempt as failed with the code `empty_body`, and logs a warning that names the message, not the resident.
+
 ## What the resident sees
 
 Under a message that reached the message box, the inbox shows "Also sent to MijnOverheid Berichtenbox." It shows only once integriq reports the letter delivered or read. A letter that is on its way, failed, or was sent through a simulated binding shows nothing to the resident.

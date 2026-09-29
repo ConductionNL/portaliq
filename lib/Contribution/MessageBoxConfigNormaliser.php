@@ -66,6 +66,17 @@ class MessageBoxConfigNormaliser {
 		}
 
 		$collection['messageBox'] = ['recipientProvider' => $method];
+
+		// The fields that hold the letter's text and subject, when the
+		// collection names them (dossiq keeps the text in `content`). Only a
+		// plain field name travels on.
+		foreach (['bodyField', 'subjectField'] as $key) {
+			$field = ($declared[$key] ?? null);
+			if (is_string($field) === true && preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $field) === 1) {
+				$collection['messageBox'][$key] = $field;
+			}
+		}
+
 		return $collection;
 	}//end normalise()
 }//end class
