@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.46.0"
+        "version": "0.47.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.46.0",
+                "version": "0.47.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -72,7 +72,8 @@
                     "activityAttendance",
                     "portalAvailabilityDaily",
                     "portalAvailabilityOutage",
-                    "media"
+                    "media",
+                    "portalNotice"
                 ]
             }
         },
@@ -8458,6 +8459,112 @@
                             "health-degraded",
                             "no-check"
                         ]
+                    }
+                }
+            },
+            "portalNotice": {
+                "slug": "portalNotice",
+                "icon": "AlertCircleOutline",
+                "version": "0.1.0",
+                "title": "Portal notice",
+                "authorization": {
+                    "read": [
+                        "authenticated"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": []
+                },
+                "description": "A maintenance or warning notice shown above every page of a portal for a set period (operate-maintenance-notice). Written by the page editor groups (PageEditorService). The public never read this schema through OpenRegister: the site and the signed-in portal receive only the notices that are published and running now, from portaliq's own endpoints. portaliq refuses a notice whose end is not after its start (NoticeWriteGuardListener).",
+                "type": "object",
+                "required": [
+                    "portal",
+                    "message",
+                    "level",
+                    "startsAt",
+                    "endsAt",
+                    "surfaces",
+                    "status"
+                ],
+                "properties": {
+                    "portal": {
+                        "title": "Portal",
+                        "type": "string",
+                        "description": "The portal this notice shows on.",
+                        "example": "open-tilburg"
+                    },
+                    "message": {
+                        "title": "Message",
+                        "type": "string",
+                        "maxLength": 280,
+                        "description": "What visitors read, in plain text.",
+                        "example": "Saturday from 22:00 to 02:00 you cannot submit requests."
+                    },
+                    "level": {
+                        "title": "Level",
+                        "type": "string",
+                        "enum": [
+                            "info",
+                            "warning"
+                        ],
+                        "description": "Information or a warning; a warning stands out more.",
+                        "example": "warning"
+                    },
+                    "linkLabel": {
+                        "title": "Link text",
+                        "type": "string",
+                        "maxLength": 80,
+                        "description": "The text of the optional link. Without it the link reads \"More information\".",
+                        "example": "Read more about the maintenance"
+                    },
+                    "linkUrl": {
+                        "title": "Link",
+                        "type": "string",
+                        "format": "uri",
+                        "pattern": "^https://",
+                        "description": "An optional page with more information. Only an https address is shown.",
+                        "example": "https://www.example.nl/onderhoud"
+                    },
+                    "startsAt": {
+                        "title": "Shows from",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "From when the notice shows.",
+                        "example": "2026-10-03T10:00:00+02:00"
+                    },
+                    "endsAt": {
+                        "title": "Shows until",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the notice stops showing. Required, so no notice stays up by accident.",
+                        "example": "2026-10-04T02:00:00+02:00"
+                    },
+                    "surfaces": {
+                        "title": "Shows on",
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "site",
+                                "portal"
+                            ]
+                        },
+                        "description": "The public site, the signed-in portal, or both.",
+                        "example": [
+                            "site",
+                            "portal"
+                        ]
+                    },
+                    "status": {
+                        "title": "Status",
+                        "type": "string",
+                        "enum": [
+                            "draft",
+                            "published"
+                        ],
+                        "description": "Only a published notice is shown.",
+                        "example": "published"
                     }
                 }
             }

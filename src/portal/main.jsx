@@ -17,6 +17,7 @@ import { createTranslator } from './i18n/index.js'
 // The Utrecht components inject their own per-component CSS at runtime; this
 // supplies the surrounding shell tokens/layout. Fed through webpack.portal.js's
 // (previously unused) css-loader rule.
+import '@utrecht/alert-css/dist/index.css'
 import './theme.css'
 
 // White-label runtime config (portal-white-label-runtime-config), resolved
