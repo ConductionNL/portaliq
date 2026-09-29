@@ -14,8 +14,9 @@
  * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
  */
 
-/** The number of columns every page grid has. */
-export const GRID_COLUMNS = 12
+import { cellOf, GRID_COLUMNS } from './geometry.js'
+
+export { GRID_COLUMNS }
 
 /**
  * A deep copy of placements, detached from whatever held them.
@@ -46,6 +47,9 @@ export function normaliseWidgets(widgets) {
 		gridWidth: GRID_COLUMNS,
 		gridHeight: 4,
 		...widget,
+		// The cell the public page will draw (REQ-PIE-008): the editor shows
+		// and stores exactly that, never a geometry the site reads otherwise.
+		...cellOf({ gridY: index, gridHeight: 4, ...widget }),
 		id: widget.id || `widget-${index + 1}`,
 		props: { ...(widget.props || {}) },
 	}))
@@ -63,10 +67,7 @@ export function storedWidget(widget) {
 		id: widget.id,
 		widgetKey: widget.widgetKey,
 		slot: widget.slot || 'body',
-		gridX: Number(widget.gridX) || 0,
-		gridY: Number(widget.gridY) || 0,
-		gridWidth: Number(widget.gridWidth) || GRID_COLUMNS,
-		gridHeight: Number(widget.gridHeight) || 1,
+		...cellOf(widget),
 		props: JSON.parse(JSON.stringify(widget.props || {})),
 	}
 }

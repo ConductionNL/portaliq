@@ -115,7 +115,16 @@ Nothing is overwritten silently.
 `SiteEditButton` gains "Deze pagina bewerken". It calls
 `import(/* webpackChunkName: "site-editor" */ ...)` so the editor, the grid
 library and the forms arrive only when an editor asks for them; the entry grows
-by the button and the import. The editing context adds `pageId` and `updated`.
+by the button and the import. The editing context already answers `pageId`; the version marker is read by
+the editor when it loads the page, not from the probe, because the probe's
+answer is older than the load and the check compares against what the editor
+actually shows. The site is a standalone document with no Nextcloud CSS and
+no Nextcloud translations, so the editor chunk registers the Dutch catalogue
+(a chunk of its own) and gives the Nextcloud tokens the shared components read
+portal-neutral values, using the portal's NL Design System tokens where one
+exists. `webpack.site.js` exempts the `site-editor` chunks from the per-asset
+limit (they are an editor's bytes, not a visitor's) and keeps the entrypoint
+limit, which is what fails the build if the editor ever lands in the entry.
 The palette is the public half of the catalogue. `WidgetGrid.vue` and the editor
 compute a widget's column and row from the same function
 (`src/editor/geometry.js`), and a test feeds both the same widgets.

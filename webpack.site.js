@@ -79,5 +79,12 @@ module.exports = {
 		hints: isDev ? false : 'error',
 		maxAssetSize: 410 * 1024,
 		maxEntrypointSize: 410 * 1024,
+		// THE EDITOR CHUNKS ARE NOT A VISITOR'S BYTES. `site-editor` (and its
+		// Dutch catalogue) load only when an editor chooses "Deze pagina
+		// bewerken" (portal-in-place-editing, REQ-PIE-007), so the asset limit,
+		// which exists for a first-time visitor on a phone, does not apply to
+		// them. The entrypoint limit still does, which is what keeps the editor
+		// out of the entry: an eager import of it fails this build.
+		assetFilter: (file) => !/^site-editor/.test(file) && !file.endsWith('.map'),
 	},
 }

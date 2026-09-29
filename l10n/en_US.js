@@ -180,7 +180,14 @@ OC.L10N.register(
         "Discard draft": "Discard draft",
         "View on the site": "View on the site",
         "Reload the page": "Reload the page",
-        "Unsaved changes. Save the draft to keep them.": "Unsaved changes. Save the draft to keep them."
+        "Unsaved changes. Save the draft to keep them.": "Unsaved changes. Save the draft to keep them.",
+        "Edit this page": "Edit this page",
+        "Editing": "Editing",
+        "Stop editing": "Stop editing",
+        "You have unsaved changes. Save the draft first, or stop editing and lose them.": "You have unsaved changes. Save the draft first, or stop editing and lose them.",
+        "Stop editing and lose the changes": "Stop editing and lose the changes",
+        "Add a widget": "Add a widget",
+        "Pick a widget to place on this page. You can move and resize it afterwards.": "Pick a widget to place on this page. You can move and resize it afterwards."
     },
     "nplurals=2; plural=(n != 1);"
 )

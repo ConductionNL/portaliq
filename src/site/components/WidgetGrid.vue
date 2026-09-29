@@ -71,6 +71,7 @@
 import { siteBlockIsBand, siteBlockRegistry } from '@conduction/nextcloud-vue/public'
 import { defineAsyncComponent } from 'vue'
 import MarkdownBlock from './MarkdownBlock.vue'
+import { cellStyleOf } from '../../editor/geometry.js'
 
 /**
  * LOADED ON DEMAND, and that is a budget decision rather than a style one.
@@ -468,19 +469,12 @@ export default {
 		 * @return {object} The style bindings.
 		 *
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
+		 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-the-editor-and-the-public-page-must-place-widgets-identically-req-pie-008
 		 */
 		cellStyle(widget) {
-			const x = Math.max(0, Math.min(11, Number(widget.gridX) || 0))
-			const width = Math.max(
-				1,
-				Math.min(12 - x, Number(widget.gridWidth) || 12),
-			)
-			const height = Math.max(1, Number(widget.gridHeight) || 1)
-
-			return {
-				gridColumn: `${x + 1} / span ${width}`,
-				gridRow: `${(Number(widget.gridY) || 0) + 1} / span ${height}`,
-			}
+			// The same function the editor stores its geometry with, so the
+			// editor and this page cannot place a widget differently (REQ-PIE-008).
+			return cellStyleOf(widget)
 		},
 	},
 }

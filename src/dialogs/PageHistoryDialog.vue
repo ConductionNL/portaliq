@@ -82,6 +82,7 @@
 
 <script>
 import axios from '@nextcloud/axios'
+import { translate } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import { NcButton, NcDialog, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 import { createPageHistory } from '../lib/pageHistory.js'
@@ -154,6 +155,21 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * Translate. Local rather than the admin app's global mixin, because
+		 * the portal edit mode mounts this dialog on the public site too.
+		 *
+		 * @param {string} app The app id.
+		 * @param {string} text The source text.
+		 * @param {object} vars The placeholders.
+		 * @return {string} The translation.
+		 *
+		 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
+		 */
+		t(app, text, vars) {
+			return translate(app, text, vars)
+		},
+
 		/**
 		 * A publication moment in the reader's locale.
 		 *

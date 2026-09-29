@@ -73,7 +73,7 @@ is no Nextcloud session, the editing context SHALL answer `canEdit: false`.
 - **GIVEN** a visitor signed in with DigiD
 - **WHEN** the site asks the editing context
 - **THEN** it answers `canEdit: false` and no edit control is shown
-- @e2e exclude proven by tests/Unit/Controller/CmsEditorControllerTest.php
+- @e2e exclude proven by tests/Unit/Controller/CmsEditorControllerTest.php testARefusalNamesNoPage (a visitor who fails mayEdit(), which every portal account does, gets canEdit false and no page)
 
 ### Requirement: Pages MUST form a tree an editor manages from the portal (REQ-PIE-010)
 

@@ -241,6 +241,15 @@
 					self-contained document, which is a question about semantics
 					and not about line length.
 				-->
+				<!--
+					EDIT MODE REPLACES THE PAGE, IN PLACE. The editor is its own
+					chunk, loaded only when an editor chooses to edit, so a
+					visitor never downloads it (portal-in-place-editing).
+				-->
+				<SiteEditMode
+					v-else-if="editMode && editing && editing.pageId"
+					:pageId="editing.pageId"
+					@leave="leaveEditMode" />
 				<article
 					v-else-if="page"
 					:class="bodyIsGrid ? null : 'utrecht-article'"
@@ -445,7 +454,10 @@
 			everything every visitor came for. It renders nothing at all until
 			the probe has said yes — see `refreshEditingContext`.
 		-->
-		<SiteEditButton v-if="editing" :context="editing" />
+		<SiteEditButton
+			v-if="editing && !editMode"
+			:context="editing"
+			@edit="editMode = true" />
 	</div>
 </template>
 
@@ -492,6 +504,18 @@ const SiteEditButton = defineAsyncComponent(
 )
 
 /**
+ * The page editor, for an editor who chose "Deze pagina bewerken".
+ *
+ * Its own chunk: the grid engine, the shared widget forms and the editor
+ * weigh more than this whole bundle, and a visitor never needs them.
+ *
+ * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-the-portal-editor-must-not-weigh-on-a-visitors-first-load-req-pie-007
+ */
+const SiteEditMode = defineAsyncComponent(
+	() => import(/* webpackChunkName: "site-editor" */ '../editor/SiteEditMode.vue'),
+)
+
+/**
  * The built-in site renderer.
  *
  * It reads the PUBLIC content API and nothing else — the same endpoints the
@@ -502,7 +526,14 @@ const SiteEditButton = defineAsyncComponent(
 export default {
 	name: 'App',
 
-	components: { CnSiteIcon, MarkdownBlock, SiteEditButton, SiteMenu, WidgetGrid },
+	components: {
+		CnSiteIcon,
+		MarkdownBlock,
+		SiteEditButton,
+		SiteEditMode,
+		SiteMenu,
+		WidgetGrid,
+	},
 
 	props: {
 		/** Explicit site slug, when not resolving by host. */
@@ -536,6 +567,8 @@ export default {
 			// The editing context for the route on screen, or null for every
 			// visitor who may not edit — which is almost all of them.
 			editing: null,
+			// True while an editor edits the page on screen in place.
+			editMode: false,
 			// Set once the probe has refused, and never unset for this page
 			// load. It is what keeps a reader's visit to one extra request in
 			// total rather than one per navigation: whether a session MAY edit
@@ -998,6 +1031,19 @@ export default {
 			// editors and must not be able to delay — or fail — the content
 			// every other visitor came for.
 			await this.refreshEditingContext()
+		},
+
+		/**
+		 * Leave edit mode and show the page as a visitor sees it, read again
+		 * so a change the editor published is on screen.
+		 *
+		 * @return {Promise<void>} Resolves when the page is shown.
+		 *
+		 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
+		 */
+		async leaveEditMode() {
+			this.editMode = false
+			await this.loadRoute(this.route)
 		},
 
 		/**
