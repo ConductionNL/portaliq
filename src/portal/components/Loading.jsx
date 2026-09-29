@@ -5,7 +5,7 @@
 // sees "…"; a screen reader hears "Loading…" in the resident's language, in a
 // polite status region, instead of "dot dot dot" or nothing at all.
 //
-// @spec openspec/changes/portal-spa-nl-design-system-styling/specs/supplier-portal/spec.md#requirement-the-portal-shell-must-use-the-nl-design-system-component-set-and-meet-wcag-21-aa
+// @spec openspec/specs/supplier-portal/spec.md#requirement-the-signed-in-portal-must-meet-wcag-22-aa
 
 /**
  * @param {object} root0 Props.
