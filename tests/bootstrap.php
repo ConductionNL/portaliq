@@ -193,6 +193,25 @@ if (interface_exists(\OCA\OpenRegister\Mcp\IMcpToolProvider::class) === false) {
 // hydra connection-registry design D6 and integriq's own classes on
 // `development`, and load only when the real classes are absent. Without OCP on
 // the autoload path their parent class is missing, so they are skipped then.
+// OpenRegister's leaf contract (change-proposal-queue): verbatim copies under
+// tests/Stubs/OpenRegister, used only when OpenRegister itself is not loadable,
+// so the leaf tests run in CI where no sibling checkout exists.
+foreach ([
+	'Exception\\NotImplementedException' => 'Exception/NotImplementedException.php',
+	'Service\\Integration\\IntegrationProvider' => 'Service/Integration/IntegrationProvider.php',
+	'Service\\Integration\\LeafDescriptor' => 'Service/Integration/LeafDescriptor.php',
+	'Event\\RegisterLeafProvidersEvent' => 'Event/RegisterLeafProvidersEvent.php',
+] as $orStubClass => $orStubFile) {
+	if (class_exists('\\OCP\\EventDispatcher\\Event') === true
+		&& class_exists('\\OCA\\OpenRegister\\' . $orStubClass) === false
+		&& interface_exists('\\OCA\\OpenRegister\\' . $orStubClass) === false
+	) {
+		require_once __DIR__ . '/Stubs/OpenRegister/' . $orStubFile;
+	}
+}
+
+unset($orStubClass, $orStubFile);
+
 foreach (['ConnectionStatusReportedEvent', 'ConnectionRefreshRequestedEvent', 'DigitalPostSendRequestedEvent', 'DigitalPostDeliveredEvent'] as $integriqStubEvent) {
 	if (class_exists('\\OCP\\EventDispatcher\\Event') === true
 		&& class_exists('\\OCA\\Integriq\\Event\\' . $integriqStubEvent) === false

@@ -164,6 +164,29 @@ class ProposalControllerTest extends TestCase {
 	}//end testAColleagueProposesAsThemselvesOnTheStaffChannel()
 
 	/**
+	 * REQ-CPQ-002: a colleague proposes on a record they can read. The
+	 * route asked only whether anybody was logged in, so any account could
+	 * queue a proposal on any record id it named.
+	 *
+	 * @return void
+	 */
+	public function testAColleagueWhoCannotReadTheRecordProposesNothing(): void {
+		$controller = $this->controller(subject: null, user: $this->user('colleague-bob'), mayReview: false, mayRead: false);
+		$this->doubles['proposals']->expects($this->never())->method('propose');
+
+		$response = $controller->proposeAsColleague(
+			register: 'dossiq',
+			schema: 'zaak',
+			id: 'zaak-1',
+			changes: [['property' => 'applicantPhone', 'proposedValue' => '0687654321']],
+			proposable: ['applicantPhone']
+		);
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+
+	}//end testAColleagueWhoCannotReadTheRecordProposesNothing()
+
+	/**
 	 * REQ-CPQ-003, on the read side. The staff routes are gated by
 	 * `portal.review-proposal`, and this one was not: it asked only whether
 	 * anybody was logged in, then listed the proposals on whatever register,
@@ -270,6 +293,7 @@ class ProposalControllerTest extends TestCase {
 		bool $mayReview = true,
 		?array $aggregate = null,
 		?array $subjectRow = ['applicantPhone' => '0612345678'],
+		bool $mayRead = true,
 	): ProposalController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('Bearer token');
@@ -316,9 +340,10 @@ class ProposalControllerTest extends TestCase {
 
 		$guard = $this->getMockBuilder(PortalCaseAccessGuard::class)
 			->disableOriginalConstructor()
-			->onlyMethods(['mayAct'])
+			->onlyMethods(['mayAct', 'mayRead'])
 			->getMock();
 		$guard->method('mayAct')->willReturn($mayReview);
+		$guard->method('mayRead')->willReturn($mayRead);
 
 		$userSession = $this->createMock(IUserSession::class);
 		$userSession->method('getUser')->willReturn($user);

@@ -165,6 +165,12 @@ class ProposalController extends Controller {
 			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
+		// A colleague proposes on a record they can see. Without this any
+		// account could queue a proposal on whatever id it named.
+		if ($this->guard->mayRead(user: $user, register: $register, schema: $schema, id: $id) === false) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
 		return $this->answer(
 			result: $this->proposals->propose(
 				subject: ['register' => $register, 'schema' => $schema, 'id' => $id],
