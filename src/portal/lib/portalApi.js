@@ -15,7 +15,6 @@
 // closed: a non-2xx or a network error yields an empty/`null` result, never a
 // throw the UI has to guard.
 
-
 const TOKEN_KEY = 'portaliq_token'
 
 /**
