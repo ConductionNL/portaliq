@@ -237,6 +237,54 @@
 	font-weight: 600;
 }
 
+.portaliq-cases__tabs {
+	display: flex;
+	gap: var(--portaliq-space-sm);
+	margin-block-end: var(--portaliq-space-md);
+}
+
+.portaliq-cases__tabs [role='tab'][aria-selected='true'] {
+	border-block-end: 3px solid var(--portaliq-color-accent);
+	font-weight: 700;
+}
+
+.portaliq-cases__list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: var(--portaliq-space-sm);
+}
+
+.portaliq-cases__row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: var(--portaliq-space-sm);
+	border: 1px solid var(--portaliq-color-border);
+	border-radius: 4px;
+	padding: var(--portaliq-space-sm) var(--portaliq-space-md);
+}
+
+.portaliq-cases__open,
+.portaliq-cases__title {
+	font-weight: 700;
+}
+
+.portaliq-cases__source,
+.portaliq-cases__mandate,
+.portaliq-cases__status {
+	color: var(--portaliq-color-text-muted);
+	font-size: 0.85em;
+}
+
+.portaliq-cases__date {
+	margin-inline-start: auto;
+	color: var(--portaliq-color-text-muted);
+	font-size: 0.85em;
+}
+
 .portaliq-badge-unread {
 	color: var(--portaliq-color-accent);
 }

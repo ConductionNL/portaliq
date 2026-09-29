@@ -184,5 +184,11 @@
 	"Decision": "Besluit",
 	"Sent by you": "Door u gestuurd",
 	"There are no documents on this case yet.": "Er staan nog geen documenten bij deze zaak.",
-	"The document could not be opened. Try again later.": "Het document kon niet worden geopend. Probeer het later opnieuw."
+	"The document could not be opened. Try again later.": "Het document kon niet worden geopend. Probeer het later opnieuw.",
+	"My cases": "Mijn zaken",
+	"Open ({count})": "Lopend ({count})",
+	"Closed ({count})": "Afgerond ({count})",
+	"No cases yet.": "Nog geen zaken.",
+	"No closed cases.": "Geen afgeronde zaken.",
+	"Your cases could not be loaded. Try again later.": "Uw zaken konden niet worden geladen. Probeer het later opnieuw."
 }

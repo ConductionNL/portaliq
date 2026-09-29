@@ -51,6 +51,7 @@ use OCA\Portaliq\Contribution\ActionScopeResolver;
 use OCA\Portaliq\Contribution\FileFieldConfigNormaliser;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\AuditTrailService;
+use OCA\Portaliq\Service\CaseRowMarker;
 use OCA\Portaliq\Service\CaseTypeVisibility;
 use OCA\Portaliq\Service\NotificationDispatchService;
 use OCA\Portaliq\Service\PortalActionForwarder;
@@ -294,6 +295,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @spec openspec/changes/portal-inbox-v2/tasks.md#T04
 	 * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
 	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-mijn-taken-lists-details-and-completes-the-partys-open-tasks
+	 * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md#requirement-your-cases-from-every-app-in-one-list-req-cmc-001
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -318,6 +320,9 @@ class ContributionController extends Controller implements PortalProtected {
 		// (openregister installed + signing secret configured), so the SPA
 		// never shows a task entry that can only answer unavailable.
 		$aggregate['tasks'] = ['enabled' => ($this->taskGateway?->isAvailable() === true)];
+		// Announce "My cases" (cases-my-cases-page REQ-CMC-001) and whether
+		// any case collection can tell a closed case from an open one.
+		$aggregate['cases'] = (new CaseRowMarker())->announce(aggregate: $aggregate);
 
 		return new JSONResponse($aggregate);
 	}//end index()

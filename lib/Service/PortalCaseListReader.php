@@ -118,16 +118,18 @@ class PortalCaseListReader {
 						'schema' => (string)($collection['schema'] ?? ''),
 						'collection' => (string)($collection['id'] ?? ''),
 					];
+					$row['_closed'] = (new CaseRowMarker())->isClosed(row: $row, collection: $collection);
 
 					$rows[] = $row;
 				}
 			}//end foreach
 		}//end foreach
 
+		$marker = new CaseRowMarker();
 		usort(
 			$rows,
-			static function (array $first, array $second): int {
-				return strcmp((string)($second['created'] ?? $second['startedAt'] ?? ''), (string)($first['created'] ?? $first['startedAt'] ?? ''));
+			static function (array $first, array $second) use ($marker): int {
+				return strcmp($marker->dateOf(row: $second), $marker->dateOf(row: $first));
 			}
 		);
 
@@ -369,6 +371,7 @@ class PortalCaseListReader {
 				'schema' => (string)($collection['schema'] ?? ''),
 				'collection' => (string)($collection['id'] ?? ''),
 			];
+			$row['_closed'] = (new CaseRowMarker())->isClosed(row: $row, collection: $collection);
 			$row['_mandate'] = $described;
 			// The case is the subsidiary's, and says so: it is never presented
 			// as the parent's own (REQ-PTV-005).

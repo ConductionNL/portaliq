@@ -148,6 +148,50 @@ export function createPortalApi(config) {
 		},
 
 		/**
+		 * "My cases" (cases-my-cases-page): every `kind: cases` collection
+		 * merged by the server, newest first, each row carrying `_source` and
+		 * `_closed`, plus the mandates held. A chosen mandate is sent as
+		 * `mandate`; a refusal (409 `group_too_large`) comes back as one, never
+		 * as an empty list.
+		 *
+		 * @param {string} [mandateId] The mandate acted under, or none.
+		 * @return {Promise<{ok: boolean, status: number, cases: Array, mandates: Array, activeMandate: object|null, error: string}>}
+		 * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md#requirement-your-cases-from-every-app-in-one-list-req-cmc-001
+		 */
+		async fetchMyCases(mandateId = '') {
+			const query = mandateId
+				? `?mandate=${encodeURIComponent(mandateId)}`
+				: ''
+			try {
+				const res = await fetch(`${base}/my-cases${query}`, {
+					headers: {
+						Accept: 'application/json',
+						...portalHeader,
+						...authHeaders(),
+					},
+				})
+				const json = await res.json().catch(() => ({}))
+				return {
+					ok: res.ok,
+					status: res.status,
+					cases: res.ok && Array.isArray(json?.cases) ? json.cases : [],
+					mandates: Array.isArray(json?.mandates) ? json.mandates : [],
+					activeMandate: json?.activeMandate || null,
+					error: res.ok ? '' : String(json?.error || ''),
+				}
+			} catch {
+				return {
+					ok: false,
+					status: 0,
+					cases: [],
+					mandates: [],
+					activeMandate: null,
+					error: '',
+				}
+			}
+		},
+
+		/**
 		 * The unified inbox (portal-inbox-v2 T02): every `kind: inbox`
 		 * collection across the subject's contributions, merged, sorted by
 		 * `receivedAt` descending, each row carrying a `_source` provenance

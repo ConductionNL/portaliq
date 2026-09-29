@@ -145,6 +145,59 @@ class PortalCaseListReaderTest extends TestCase {
 
 	}//end testTheNewestCaseComesFirst()
 
+	/**
+	 * cases-my-cases-page REQ-CMC-002: a row is closed when the collection's
+	 * declared closed field holds a value; a collection that declares none
+	 * marks every row open. The mandated rows carry the same marker.
+	 *
+	 * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md#requirement-open-and-closed-cases-are-told-apart-by-a-declared-field-req-cmc-002
+	 */
+	public function testEachRowSaysWhetherItIsClosedByTheDeclaredField(): void {
+		$reader = $this->readerReturning([
+			['reference' => 'OPEN-1', 'caseType' => 'vergunning', 'endDate' => null],
+			['reference' => 'OPEN-2', 'caseType' => 'vergunning', 'endDate' => ''],
+			['reference' => 'CLOSED-1', 'caseType' => 'vergunning', 'endDate' => '2026-09-01'],
+		]);
+		$collection = $this->mandatedCollection();
+		$collection['closedField'] = 'endDate';
+		$cases = new PortalCaseListReader($reader, $this->mandateService());
+
+		$own = $cases->listCases(subject: $this->subject(), aggregate: $this->aggregate(collection: $collection));
+		$this->assertSame(
+			['OPEN-1' => false, 'OPEN-2' => false, 'CLOSED-1' => true],
+			array_column($own, '_closed', 'reference')
+		);
+
+		$mandated = $cases->listMandatedCases(subject: $this->subject(), aggregate: $this->aggregate(collection: $collection), mandates: [$this->mandate()]);
+		$this->assertSame(
+			['OPEN-1' => false, 'OPEN-2' => false, 'CLOSED-1' => true],
+			array_column($mandated, '_closed', 'reference')
+		);
+
+		unset($collection['closedField']);
+		$silent = $cases->listCases(subject: $this->subject(), aggregate: $this->aggregate(collection: $collection));
+		$this->assertSame([false, false, false], array_column($silent, '_closed'));
+
+	}//end testEachRowSaysWhetherItIsClosedByTheDeclaredField()
+
+	/**
+	 * cases-my-cases-page REQ-CMC-001: newest first also when the row carries
+	 * no `created` of its own, by the record's own creation date.
+	 *
+	 * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md#requirement-your-cases-from-every-app-in-one-list-req-cmc-001
+	 */
+	public function testTheNewestCaseComesFirstByTheRecordDate(): void {
+		$reader = $this->readerReturning([
+			['reference' => 'OLD', '@self' => ['created' => '2026-01-01T00:00:00+00:00']],
+			['reference' => 'NEW', '@self' => ['created' => '2026-09-01T00:00:00+00:00']],
+		]);
+
+		$rows = (new PortalCaseListReader($reader))->listCases(subject: $this->subject(), aggregate: $this->aggregate(collection: $this->casesCollection()));
+
+		$this->assertSame(['NEW', 'OLD'], array_column($rows, 'reference'));
+
+	}//end testTheNewestCaseComesFirstByTheRecordDate()
+
 	public function testWithNoMandateNoOrganisationCaseIsRead(): void {
 		$reader = $this->readerReturning([['reference' => 'COLLEGA-1']]);
 		$cases = new PortalCaseListReader($reader, $this->mandateService());
