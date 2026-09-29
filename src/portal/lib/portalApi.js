@@ -15,6 +15,8 @@
 // closed: a non-2xx or a network error yields an empty/`null` result, never a
 // throw the UI has to guard.
 
+import { loginStartUrl } from './signinRoute.js'
+
 const TOKEN_KEY = 'portaliq_token'
 
 /**
@@ -1082,6 +1084,24 @@ export function createPortalApi(config) {
 		oidcStartUrl(provider) {
 			const org = config.organisationSlug || ''
 			return `${base}/session/oidc/start?org=${encodeURIComponent(org)}&provider=${encodeURIComponent(provider)}`
+		},
+
+		/**
+		 * The start address for a login button on the route the
+		 * organisation chose for its provider (signin-integriq-broker-login).
+		 *
+		 * @param {string} provider The provider.
+		 * @param {string} route `oidc` or `broker`.
+		 * @return {string}
+		 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+		 */
+		loginStartUrl(provider, route) {
+			return loginStartUrl(
+				base,
+				config.organisationSlug || '',
+				provider,
+				route,
+			)
 		},
 	}
 }

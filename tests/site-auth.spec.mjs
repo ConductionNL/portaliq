@@ -23,6 +23,8 @@ import {
 	authBaseFrom,
 	clearSessionToken,
 	signInRoutes,
+	SIGNIN_FAILED_MESSAGE,
+	takeSigninFailed,
 } from '../src/site/lib/authApi.js'
 
 let failures = 0
@@ -165,6 +167,14 @@ assertEqual('signing out forgets it', adoptSessionToken(), '')
 
 fakeWindow('#section-2')
 assertEqual('a fragment without a token adopts nothing', adoptSessionToken(), '')
+assertEqual('and is no failed sign-in', takeSigninFailed(), false)
+
+// signin-integriq-broker-login REQ-BEL-006: a failed sign-in comes back as
+// `#signin=failed`, read once and stripped; the message names no reason.
+const failed = fakeWindow('#signin=failed')
+assertEqual('a failed sign-in is read from the fragment', takeSigninFailed(), true)
+assertEqual('and the fragment is stripped', failed.replaced, ['/apps/portaliq/site?portal=demo'])
+assertEqual('the message names no reason', SIGNIN_FAILED_MESSAGE, 'Inloggen is niet gelukt. Probeer het opnieuw of kies een andere manier.')
 delete globalThis.window
 
 if (failures > 0) {

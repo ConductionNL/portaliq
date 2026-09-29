@@ -23,6 +23,7 @@ import { actingForHeld, keepActingFor, readActingFor } from '@portal/lib/myCases
 import { consumeOpenTarget, forgetOpenTarget, navKeyFor } from '@portal/lib/openRecord.js'
 import { consumeOidcCallbackFragment, createPortalApi, getToken } from '@portal/lib/portalApi.js'
 import { runAction } from '@portal/lib/rowAction.js'
+import { consumeSigninFailed } from '@portal/lib/signinRoute.js'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import Loading from './components/Loading.jsx'
 
@@ -161,6 +162,9 @@ export default function App({ config, t: tProp }) {
 	// Pick up an OIDC callback's bearer BEFORE the initial token read (portal-
 	// oidc-broker-login) — the fragment is consumed/stripped exactly once, on
 	// mount, so a later re-render never re-parses a stale hash.
+	// A failed broker login comes back as `#signin=failed`, with no reason
+	// (signin-integriq-broker-login T10): read and stripped once, on mount.
+	const [signinFailed] = useState(() => consumeSigninFailed(window.location, window.history))
 	const [token, setTokenState] = useState(() => {
 		consumeOidcCallbackFragment()
 		return getToken()
@@ -421,11 +425,14 @@ export default function App({ config, t: tProp }) {
 	// login) — a full-page redirect, never a fetch(), so the broker's own
 	// login page renders in place of the portal.
 	/**
+	 * Start the login for one provider entry.
 	 *
-	 * @param provider
+	 * @param {object} p The provider entry: `provider`, `label`, `route`.
 	 */
-	function oidcLogin(provider) {
-		window.location.href = api.oidcStartUrl(provider)
+	function oidcLogin(p) {
+		// The route the organisation chose for this provider: its own OIDC
+		// broker or integriq's (signin-integriq-broker-login T09).
+		window.location.href = api.loginStartUrl(p.provider, p.route)
 	}
 
 	return (
@@ -483,11 +490,14 @@ export default function App({ config, t: tProp }) {
 								key={p.provider}
 								type="button"
 								className="portaliq-oidc-login"
-								onClick={() => oidcLogin(p.provider)}
+								onClick={() => oidcLogin(p)}
 							>
 								{t('Log in with {provider}', { provider: p.label })}
 							</button>
 						))}
+						{signinFailed && (
+							<p className="portaliq-error" role="alert">{t('Signing in did not work. Try again or choose another way in.')}</p>
+						)}
 						{(config.oidcProviders || []).length === 0 && (
 							<p className="portaliq-idp-hint">{t('No login method is configured for this organisation yet.')}</p>
 						)}
