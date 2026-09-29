@@ -410,6 +410,8 @@ return [
         ['name' => 'citizenCase#show', 'url' => '/portal/api/citizen/cases/{register}/{schema}/{id}', 'verb' => 'GET'],
         ['name' => 'citizenCase#amend', 'url' => '/portal/api/citizen/cases/{register}/{schema}/{id}', 'verb' => 'PATCH'],
         ['name' => 'citizenCase#addDocument', 'url' => '/portal/api/citizen/cases/{register}/{schema}/{id}/documents', 'verb' => 'POST'],
+        // cases-documents-on-the-case: open one document the case screen listed.
+        ['name' => 'citizenCase#document', 'url' => '/portal/api/citizen/cases/{register}/{schema}/{id}/documents/{documentId}', 'verb' => 'GET'],
         // Ending your own request (withdrawing-your-own-case-from-the-portal).
         // Its own act, its own event: a withdrawal is not an amendment that
         // happens to change the status.

@@ -55,10 +55,12 @@ class CitizenWriteActionFinder {
 	 * @param string $register The register the case lives in.
 	 * @param string $schema The schema the case lives in.
 	 *
-	 * @return array{action: array<string, mixed>, app: string, filesDownload: bool}|null
+	 * @return array{action: array<string, mixed>, app: string, filesDownload: bool, documents: array{label: string, provider: string}|null}|null
 	 *         Null when no contributed action admits a citizen write here.
 	 *         `filesDownload` says whether the same app opted a collection on
-	 *         this register and schema into downloads (portaliq#798).
+	 *         this register and schema into downloads (portaliq#798);
+	 *         `documents` is the documents method a collection there declares
+	 *         (cases-documents-on-the-case), or null.
 	 *
 	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
 	 */
@@ -78,6 +80,7 @@ class CitizenWriteActionFinder {
 					'action' => $action,
 					'app' => (string)($contribution['app'] ?? ''),
 					'filesDownload' => $this->filesDownload(contribution: $contribution, register: $register, schema: $schema),
+					'documents' => $this->documents(contribution: $contribution, register: $register, schema: $schema),
 				];
 			}
 		}
@@ -112,4 +115,33 @@ class CitizenWriteActionFinder {
 
 		return false;
 	}//end filesDownload()
+
+	/**
+	 * The `documents` declaration of the contribution's collection on this
+	 * register and schema, already normalised, or null.
+	 *
+	 * @param array<string, mixed> $contribution One app's contribution.
+	 * @param string               $register     The case's register.
+	 * @param string               $schema       The case's schema.
+	 *
+	 * @return array{label: string, provider: string}|null
+	 *
+	 * @spec openspec/changes/cases-documents-on-the-case/specs/citizen-case-documents/spec.md#requirement-the-case-app-declares-which-documents-a-resident-may-see-req-cdc-001
+	 */
+	private function documents(array $contribution, string $register, string $schema): ?array {
+		foreach (($contribution['collections'] ?? []) as $collection) {
+			if (is_array($collection) === true
+				&& ($collection['register'] ?? '') === $register
+				&& ($collection['schema'] ?? '') === $schema
+				&& is_array(($collection['documents'] ?? null)) === true
+			) {
+				return [
+					'label' => (string)($collection['documents']['label'] ?? ''),
+					'provider' => (string)($collection['documents']['provider'] ?? ''),
+				];
+			}
+		}
+
+		return null;
+	}//end documents()
 }//end class
