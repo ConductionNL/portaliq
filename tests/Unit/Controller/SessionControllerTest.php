@@ -495,6 +495,7 @@ class SessionControllerTest extends TestCase {
 			'missing code' => [static fn (SessionControllerTest $t) => ['args' => ['state' => 's', 'code' => '']]],
 			'broker reported error' => [static fn (SessionControllerTest $t) => ['args' => ['state' => 's', 'code' => 'c', 'error' => 'access_denied']]],
 			'unknown/reused state' => [static fn (SessionControllerTest $t) => ['args' => ['state' => 's', 'code' => 'c'], 'stateConsume' => null]],
+			'a state written for the integriq broker route (signin-integriq-broker-login D3)' => [static fn (SessionControllerTest $t) => ['args' => ['state' => 's', 'code' => 'c'], 'stateConsume' => ['route' => 'broker', 'codeVerifier' => ''] + $t->pendingFixture(), 'orgConfig' => $t->oidcConfigFixture(), 'discover' => $t->discoveryFixture(), 'exchangeCode' => ['id_token' => 'x.y.z'], 'verifyIdToken' => ['sub' => 'abc'], 'mapClaims' => $t->mappedFixture(), 'findOrCreate' => ['subjectRef' => 'sub-1', 'isNew' => true]]],
 			'unconfigured provider' => [static fn (SessionControllerTest $t) => ['args' => ['state' => 's', 'code' => 'c'], 'stateConsume' => $t->pendingFixture(), 'orgConfig' => null]],
 			'discovery unreachable' => [static fn (SessionControllerTest $t) => ['args' => ['state' => 's', 'code' => 'c'], 'stateConsume' => $t->pendingFixture(), 'orgConfig' => $t->oidcConfigFixture(), 'discover' => null]],
 			'token exchange failed' => [static fn (SessionControllerTest $t) => ['args' => ['state' => 's', 'code' => 'c'], 'stateConsume' => $t->pendingFixture(), 'orgConfig' => $t->oidcConfigFixture(), 'discover' => $t->discoveryFixture(), 'exchangeCode' => null]],
@@ -656,6 +657,7 @@ class SessionControllerTest extends TestCase {
 			'org' => 'gemeente-x',
 			'provider' => 'eherkenning',
 			'returnTo' => '/portal',
+			'route' => 'oidc',
 		];
 
 	}//end pendingFixture()

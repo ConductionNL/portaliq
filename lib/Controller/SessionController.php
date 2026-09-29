@@ -411,7 +411,9 @@ class SessionController extends Controller {
 		}
 
 		$pending = $this->stateStore->consume(state: $state);
-		if ($pending === null) {
+		// A row written for the integriq broker route cannot complete an OIDC
+		// login (signin-integriq-broker-login, design D3).
+		if ($pending === null || $pending['route'] !== 'oidc' || $pending['codeVerifier'] === '') {
 			return $this->oidcGenericError();
 		}
 

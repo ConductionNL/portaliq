@@ -260,6 +260,11 @@ return [
         // SPA catch-all.
         ['name' => 'session#oidcStart', 'url' => '/portal/api/session/oidc/start', 'verb' => 'GET'],
         ['name' => 'session#oidcCallback', 'url' => '/portal/api/session/oidc/callback', 'verb' => 'GET'],
+        // The integriq broker route beside it (signin-integriq-broker-login,
+        // design D2): DigiD, eHerkenning or eIDAS through integriq's signed
+        // subject envelope. Also before the /portal/{path} catch-all.
+        ['name' => 'brokerSession#start', 'url' => '/portal/api/session/broker/start', 'verb' => 'GET'],
+        ['name' => 'brokerSession#callback', 'url' => '/portal/api/session/broker/callback', 'verb' => 'GET'],
 
         // Admin-only incident response (portal-auth-edge-session-hardening):
         // revoke every active portal session for an Organisation.
