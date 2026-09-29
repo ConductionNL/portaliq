@@ -16,9 +16,12 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\Service\PortalThemeResolver;
+use OCA\Portaliq\Service\Theme\PortalCustomThemeSets;
+use OCA\Thematiq\Service\CustomTokenSetValidator;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerInterface;
 
 /**
  * Theme reference -> token stylesheet.
@@ -82,6 +85,9 @@ class PortalThemeResolverTest extends TestCase {
 			unlink($file);
 		}
 
+		@unlink($this->themeRoot . '/lib/Controller/FontController.php');
+		@rmdir($this->themeRoot . '/lib/Controller');
+		@rmdir($this->themeRoot . '/lib');
 		@unlink($this->themeRoot . '/token-sets.json');
 		@rmdir($this->themeRoot . '/css/tokens/dark');
 		@rmdir($this->themeRoot . '/css/tokens');
@@ -471,6 +477,71 @@ class PortalThemeResolverTest extends TestCase {
 	 *
 	 * @return void
 	 */
+	/**
+	 * Task 2.3: the theme app's public font stylesheet is linked by route when
+	 * the installed build has font uploads, and not at all when it has none.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/nldesign-theme-integration/tasks.md
+	 */
+	public function testTheUploadedFontsStylesheetIsLinkedOnlyWhenTheThemeAppHasOne(): void {
+		$this->assertNull($this->resolver()->fontStylesheetRoute(), 'a build without font uploads has no route');
+
+		mkdir($this->themeRoot . '/lib/Controller', 0o777, true);
+		file_put_contents($this->themeRoot . '/lib/Controller/FontController.php', '<?php');
+		$appManager = $this->createMock(IAppManager::class);
+		$appManager->method('isInstalled')->willReturnCallback(static fn (string $id): bool => $id === 'thematiq');
+		$appManager->method('getAppPath')->willReturn($this->themeRoot);
+		$this->assertSame('thematiq.font.css', (new PortalThemeResolver(appManager: $appManager))->fontStylesheetRoute());
+
+		$template = (string)file_get_contents(__DIR__ . '/../../../templates/site.php');
+		$this->assertMatchesRegularExpression('/fontStylesheetRoute\(\);\s*if \(\$fontRoute !== null\) \{\s*\$stylesheets\[\] = \$url->linkToRoute\(\$fontRoute\);/', $template);
+	}//end testTheUploadedFontsStylesheetIsLinkedOnlyWhenTheThemeAppHasOne()
+
+
+	/**
+	 * Tasks 4.1 and 4.2: a custom set from the theme app is in the catalogue
+	 * and resolves; one whose file the theme app's validator refuses does not
+	 * resolve, so it is never linked, and says why.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/nldesign-theme-integration/tasks.md
+	 */
+	public function testACustomSetResolvesOnlyWhenTheValidatorPassesItsFile(): void {
+		$validator = new CustomTokenSetValidator();
+		file_put_contents($this->themeRoot . '/css/tokens/custom-noord.css', $validator->serialize(declarations: ['--nldesign-color-primary' => '#01689b']));
+		file_put_contents($this->themeRoot . '/css/tokens/custom-gedeeld.css', ":root {\n  --nldesign-logo-url: url(https://evil.example/x.svg);\n}\n");
+		$store = new class {
+			/**
+			 * @return array<int, array<string, mixed>>
+			 */
+			public function list(): array {
+				return [['id' => 'custom-noord', 'name' => 'Noord'], ['id' => 'custom-gedeeld', 'name' => 'Gedeeld'], ['id' => 'vng', 'name' => 'Dubbel']];
+			}
+		};
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willReturnCallback(
+			static fn (string $id): object => match ($id) {
+				'OCA\\Thematiq\\Service\\CustomTokenSetService' => $store,
+				'OCA\\Thematiq\\Service\\CustomTokenSetValidator' => $validator,
+				default => throw new \RuntimeException('not registered'),
+			}
+		);
+		$this->appManager->method('isInstalled')->willReturn(true);
+		$this->appManager->method('getAppPath')->willReturn($this->themeRoot);
+		$resolver = new PortalThemeResolver(appManager: $this->appManager, customSets: new PortalCustomThemeSets(container: $container));
+
+		$this->assertSame(['vng', 'venray', 'custom-noord', 'custom-gedeeld'], array_column($resolver->catalogue(), 'id'), 'a catalogued id is not listed twice');
+		$this->assertSame('tokens/custom-noord', $resolver->stylesheetFor(theme: 'custom-noord'));
+		$this->assertNull($resolver->refusalFor(theme: 'custom-noord'));
+		$this->assertNull($resolver->stylesheetFor(theme: 'custom-gedeeld'));
+		$this->assertStringContainsString('--nldesign-logo-url', (string)$resolver->refusalFor(theme: 'custom-gedeeld'));
+		$this->assertNull($resolver->refusalFor(theme: 'vng'), 'a shipped set is not re-validated');
+	}//end testACustomSetResolvesOnlyWhenTheValidatorPassesItsFile()
+
+
 	public function testTheDarkVariantIsDeliberatelyNotResolved(): void {
 		$this->assertFileExists($this->themeRoot . '/css/tokens/dark/vng.css');
 		$this->assertFalse(

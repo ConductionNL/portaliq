@@ -45,6 +45,19 @@ export function verdictState(verdict) {
  * @return {object}
  * @spec openspec/changes/nldesign-theme-integration/specs/nldesign-theme-integration/spec.md
  */
+/**
+ * Whether a listed set can be chosen. A set the theme app's validator refused
+ * (a shared or uploaded house style with a declaration it does not allow) is
+ * listed with its reason and cannot be picked.
+ *
+ * @param {object} set A listed set.
+ * @return {boolean}
+ * @spec openspec/changes/nldesign-theme-integration/tasks.md
+ */
+export function isSelectable(set) {
+	return !set?.refusal
+}
+
 export function createPortalThemeChoice({ get, put, url }) {
 	return {
 		/**
@@ -110,6 +123,9 @@ export function createPortalThemeChoice({ get, put, url }) {
 				}
 				if (data.error === 'unknown_theme') {
 					return { outcome: 'unknown' }
+				}
+				if (data.error === 'refused') {
+					return { outcome: 'refused', refusal: String(data.refusal || '') }
 				}
 				return { outcome: 'failed' }
 			}
