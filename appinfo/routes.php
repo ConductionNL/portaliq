@@ -58,6 +58,10 @@ return [
         // Which form a form binding resolves to today, for the admin's Form
         // bindings page (portal-intake-form-as-an-object T03). Admin-only.
         ['name' => 'formBindingAdmin#preview', 'url' => '/api/form-bindings/preview', 'verb' => 'POST'],
+        // A portal's "Case types" page: which case types residents see
+        // (operate-show-per-case-type). Admin-only.
+        ['name' => 'portalCaseTypes#index', 'url' => '/api/portals/{slug}/case-types', 'verb' => 'GET'],
+        ['name' => 'portalCaseTypes#update', 'url' => '/api/portals/{slug}/case-types', 'verb' => 'PUT'],
         ['name' => 'accessRequestAdmin#grant', 'url' => '/api/access-requests/{id}/grant', 'verb' => 'POST'],
         ['name' => 'accessRequestAdmin#refuse', 'url' => '/api/access-requests/{id}/refuse', 'verb' => 'POST'],
 

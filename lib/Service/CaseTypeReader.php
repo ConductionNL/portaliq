@@ -101,6 +101,52 @@ class CaseTypeReader {
 	}//end readCaseType()
 
 	/**
+	 * The case types of one schema, as a case app declares them in its
+	 * `caseTypeSource` (operate-show-per-case-type), so an administrator can
+	 * name a case type the portal has no form for.
+	 *
+	 * @param string $register The register the case types live in.
+	 * @param string $schema The schema the case types live in.
+	 * @param int $limit The row cap.
+	 *
+	 * @return array<int, array<string, mixed>> The case types, or [] on any failure.
+	 *
+	 * @spec openspec/changes/operate-show-per-case-type/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
+	 */
+	public function listCaseTypes(string $register, string $schema, int $limit = 200): array {
+		if ($register === '' || $schema === '') {
+			return [];
+		}
+
+		$objectService = $this->objectService();
+		if ($objectService === null) {
+			return [];
+		}
+
+		try {
+			$objectService->setRegister(register: $register);
+			$objectService->setSchema(schema: $schema);
+			$rows = $objectService->findAll(config: ['filters' => [], 'limit' => $limit, 'offset' => 0], _rbac: false, _multitenancy: false);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Portaliq: case type list failed',
+				['schema' => $schema, 'reason' => $e->getMessage()]
+			);
+			return [];
+		}
+
+		$types = [];
+		foreach ((array)$rows as $row) {
+			$type = $this->asArray(entity: $row);
+			if ($type !== null) {
+				$types[] = $type;
+			}
+		}
+
+		return $types;
+	}//end listCaseTypes()
+
+	/**
 	 * The entity as a plain array, or null when it cannot be one.
 	 *
 	 * OpenRegister answers with an array on some paths and an object with
