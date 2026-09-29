@@ -19,7 +19,7 @@ use PHPUnit\Framework\TestCase;
  * cause no-check, and a run of intervals that were not available is one
  * outage, closed by the first check that finds the portal available.
  *
- * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-an-interval-without-a-check-counts-as-down-req-oar-002
+ * @spec openspec/specs/portal-availability/spec.md#requirement-an-interval-without-a-check-counts-as-down-req-oar-002
  */
 class AvailabilityRollupTest extends TestCase {
 	public function testMissingHourIsTwelveDownIntervals(): void {
@@ -52,7 +52,7 @@ class AvailabilityRollupTest extends TestCase {
 	}//end testMissingHourIsTwelveDownIntervals()
 
 	/**
-	 * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-each-published-portal-is-checked-every-five-minutes-req-oar-001
+	 * @spec openspec/specs/portal-availability/spec.md#requirement-each-published-portal-is-checked-every-five-minutes-req-oar-001
 	 */
 	public function testAFailingCheckOpensAnOutageAndTheNextOneExtendsIt(): void {
 		$rollup = new AvailabilityRollup();

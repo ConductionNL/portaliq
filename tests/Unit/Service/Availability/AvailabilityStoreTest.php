@@ -21,7 +21,7 @@ use Psr\Log\LoggerInterface;
  * OpenRegister's REAL ObjectService methods (a double built with
  * onlyMethods() on the real class refuses a method it lacks), RBAC off.
  *
- * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-thirteen-months-are-kept-and-no-more-req-oar-003
+ * @spec openspec/specs/portal-availability/spec.md#requirement-thirteen-months-are-kept-and-no-more-req-oar-003
  */
 class AvailabilityStoreTest extends TestCase {
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';

@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
+ * @spec openspec/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
  */
 
 declare(strict_types=1);
@@ -43,7 +43,7 @@ use OCP\IRequest;
 /**
  * Serves one portal's availability report to an administrator.
  *
- * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
+ * @spec openspec/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
  */
 class AvailabilityController extends Controller {
 	/**
@@ -73,7 +73,7 @@ class AvailabilityController extends Controller {
 	 *
 	 * @auth admin-only availability is an operator's surface, the same posture as /api/metrics. Nextcloud expresses admin-only as the ABSENCE of an opt-out attribute.
 	 *
-	 * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
+	 * @spec openspec/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
 	 */
 	public function index(string $portal, int $months = 12): JSONResponse {
 		if ($this->isPublished(portal: $portal) === false) {
@@ -93,7 +93,7 @@ class AvailabilityController extends Controller {
 	 *
 	 * @auth admin-only availability is an operator's surface. The CSRF exemption is what a navigated download needs; the admin check still applies.
 	 *
-	 * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
+	 * @spec openspec/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
 	 */
 	#[NoCSRFRequired]
 	public function export(string $portal, int $months = 12): Response {

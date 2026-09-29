@@ -7642,7 +7642,7 @@
 			"id": "dem-tnd-availability-report",
 			"area": "operate",
 			"name": "Report the portal's measured availability over the past twelve months for a service level review.",
-			"portaliq": "no",
+			"portaliq": "yes",
 			"open-inwoner": "no",
 			"nl-portal": "no",
 			"xxllnc-pip": "no",
@@ -7653,15 +7653,17 @@
 				"nl-portal": "no match for 'uptime|availability report' in backend/ and frontend/packages; only actuator health [reached on nothing]",
 				"xxllnc-pip": "no availability reporting [reached on nothing; was unknown from docs]",
 				"mijnoverheid": "not settled from docs: no availability or uptime report for MijnOverheid found; pages read on 2026-09-26 (mijn.overheid.nl /, /vragen/, /vragen/Algemeen, /inloggen-bij-mijnoverheid/; logius.nl MijnOverheid hoe-werkt-het, Berichtenbox, Lopende zaken) are silent",
-				"liferay-dxp": "not settled from docs: https://learn.liferay.com/w/dxp/cloud/support-and-troubleshooting/troubleshooting-tools-and-resources/liferay-cloud-platform-status offers current status and 'Incident History'; https://learn.liferay.com/w/dxp/cloud states 'over 99.9% uptime' in aggregate. A measured twelve-month availability report per customer is not described."
+				"liferay-dxp": "not settled from docs: https://learn.liferay.com/w/dxp/cloud/support-and-troubleshooting/troubleshooting-tools-and-resources/liferay-cloud-platform-status offers current status and 'Incident History'; https://learn.liferay.com/w/dxp/cloud states 'over 99.9% uptime' in aggregate. A measured twelve-month availability report per customer is not described.",
+				"portaliq": "lib/BackgroundJob/AvailabilityProbeJob.php + src/widgets/AvailabilityReport.vue: the portal checks itself every five minutes, keeps daily figures and outages for thirteen months, and an administrator reads and downloads the last twelve full months [reached on Reports -> Availability]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "lib/Controller/HealthController.php (GET /api/health) and lib/Controller/MetricsController.php (GET /api/metrics) give point-in-time probes only; grep -riE 'uptime|availability|beschikbaarheid' lib: no stored history or report",
-				"reachedOn": "nothing reaches it",
+				"state": "built",
+				"evidence": "lib/BackgroundJob/AvailabilityProbeJob.php (every 300 s, each published portal's site route + health through the instance's own URL, lib/Service/Availability/AvailabilityProbe.php); lib/Service/Availability/AvailabilityRollup.php (a missed interval counts as down, cause no-check; outages); records portalAvailabilityDaily / portalAvailabilityOutage kept 13 months (AvailabilityStore::purgeBefore); lib/Controller/AvailabilityController.php (admin-only JSON + CSV); src/widgets/AvailabilityReport.vue on the Availability dashboard reached from the Reports hub",
+				"reachedOn": "admin: Reports -> Availability -> pick a portal: twelve monthly percentages, the outages, 'How this is measured', Download as CSV",
 				"owner": "ConductionNL/portaliq",
-				"note": "An external monitor can measure availability from the health and metrics endpoints, but portaliq keeps no availability history and produces no twelve-month report. Specified in openspec/changes/operate-availability-report (OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"note": "Built 2026-09-29 (operate-availability-report). Measured inside the installation, so an outage of the network in front of it is not seen; the report says so and names the hosting party's external monitor as the complement. No planned maintenance is subtracted.",
+				"origin": "code",
+				"change": "2026-09-29-operate-availability-report"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",

@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-each-published-portal-is-checked-every-five-minutes-req-oar-001
+ * @spec openspec/specs/portal-availability/spec.md#requirement-each-published-portal-is-checked-every-five-minutes-req-oar-001
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ use Throwable;
  * off: the probe job runs without a user, and the schemas are readable by
  * administrators only.
  *
- * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-each-published-portal-is-checked-every-five-minutes-req-oar-001
+ * @spec openspec/specs/portal-availability/spec.md#requirement-each-published-portal-is-checked-every-five-minutes-req-oar-001
  */
 class AvailabilityStore {
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
@@ -76,7 +76,7 @@ class AvailabilityStore {
 	 *
 	 * @return array<string, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
+	 * @spec openspec/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
 	 */
 	public function dailyBetween(string $portal, string $from, string $until): array {
 		$days = [];
@@ -100,7 +100,7 @@ class AvailabilityStore {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
+	 * @spec openspec/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
 	 */
 	public function outagesBetween(string $portal, string $from, string $until): array {
 		$rows = $this->findAll(schema: self::OUTAGE_SCHEMA, filters: ['portal' => $portal, 'startedAt' => ['gte' => $from, 'lte' => $until]]);
@@ -117,7 +117,7 @@ class AvailabilityStore {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-each-published-portal-is-checked-every-five-minutes-req-oar-001
+	 * @spec openspec/specs/portal-availability/spec.md#requirement-each-published-portal-is-checked-every-five-minutes-req-oar-001
 	 */
 	public function openOutage(string $portal): ?array {
 		foreach ($this->findAll(schema: self::OUTAGE_SCHEMA, filters: ['portal' => $portal]) as $row) {
@@ -137,7 +137,7 @@ class AvailabilityStore {
 	 *
 	 * @return bool True when saved.
 	 *
-	 * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-each-published-portal-is-checked-every-five-minutes-req-oar-001
+	 * @spec openspec/specs/portal-availability/spec.md#requirement-each-published-portal-is-checked-every-five-minutes-req-oar-001
 	 */
 	public function save(string $schema, array $row): bool {
 		$objectService = $this->objectService();
@@ -178,7 +178,7 @@ class AvailabilityStore {
 	 *
 	 * @return int How many records were removed.
 	 *
-	 * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-thirteen-months-are-kept-and-no-more-req-oar-003
+	 * @spec openspec/specs/portal-availability/spec.md#requirement-thirteen-months-are-kept-and-no-more-req-oar-003
 	 */
 	public function purgeBefore(string $cutoff): int {
 		$removed = 0;

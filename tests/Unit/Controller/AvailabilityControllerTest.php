@@ -27,7 +27,7 @@ use ReflectionClass;
  * report; it answers twelve months for a published portal, and 404 for any
  * other slug.
  *
- * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
+ * @spec openspec/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
  */
 class AvailabilityControllerTest extends TestCase {
 	public function testNonAdminIsRefused(): void {

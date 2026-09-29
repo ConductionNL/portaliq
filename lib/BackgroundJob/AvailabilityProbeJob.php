@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-each-published-portal-is-checked-every-five-minutes-req-oar-001
+ * @spec openspec/specs/portal-availability/spec.md#requirement-each-published-portal-is-checked-every-five-minutes-req-oar-001
  */
 
 declare(strict_types=1);
@@ -43,7 +43,7 @@ use Throwable;
  * intervals missed since the last one) into its records, then remove what
  * is older than thirteen months.
  *
- * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-each-published-portal-is-checked-every-five-minutes-req-oar-001
+ * @spec openspec/specs/portal-availability/spec.md#requirement-each-published-portal-is-checked-every-five-minutes-req-oar-001
  */
 class AvailabilityProbeJob extends TimedJob {
 	/**
@@ -81,8 +81,8 @@ class AvailabilityProbeJob extends TimedJob {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-each-published-portal-is-checked-every-five-minutes-req-oar-001
-	 * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-thirteen-months-are-kept-and-no-more-req-oar-003
+	 * @spec openspec/specs/portal-availability/spec.md#requirement-each-published-portal-is-checked-every-five-minutes-req-oar-001
+	 * @spec openspec/specs/portal-availability/spec.md#requirement-thirteen-months-are-kept-and-no-more-req-oar-003
 	 */
 	protected function run($argument): void {
 		$now = DateTimeImmutable::createFromInterface($this->time->getDateTime())->setTimezone(new DateTimeZone('UTC'));

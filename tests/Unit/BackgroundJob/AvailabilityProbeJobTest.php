@@ -30,7 +30,7 @@ use RuntimeException;
  * portal is checked through the instance's own URL and recorded as
  * available, degraded or down, and records past thirteen months go.
  *
- * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-each-published-portal-is-checked-every-five-minutes-req-oar-001
+ * @spec openspec/specs/portal-availability/spec.md#requirement-each-published-portal-is-checked-every-five-minutes-req-oar-001
  */
 class AvailabilityProbeJobTest extends TestCase {
 	/**
@@ -77,7 +77,7 @@ class AvailabilityProbeJobTest extends TestCase {
 	}//end testAnAvailablePortalOpensNoOutage()
 
 	/**
-	 * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-thirteen-months-are-kept-and-no-more-req-oar-003
+	 * @spec openspec/specs/portal-availability/spec.md#requirement-thirteen-months-are-kept-and-no-more-req-oar-003
 	 */
 	public function testRecordsOlderThanThirteenMonthsAreDeleted(): void {
 		$this->runJob(site: 200, health: 'ok');
@@ -89,7 +89,7 @@ class AvailabilityProbeJobTest extends TestCase {
 	 * An instance that was off for days still counts the gap: with no check
 	 * in the last two days, the whole kept window is read.
 	 *
-	 * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-an-interval-without-a-check-counts-as-down-req-oar-002
+	 * @spec openspec/specs/portal-availability/spec.md#requirement-an-interval-without-a-check-counts-as-down-req-oar-002
 	 */
 	public function testAGapOfDaysIsCounted(): void {
 		$this->olderDays = ['2026-09-26' => ['uuid' => 'd-26', 'portal' => 'open-tilburg', 'date' => '2026-09-26', 'intervals' => 288, 'available' => 288, 'degraded' => 0, 'down' => 0, 'noCheck' => 0, 'lastCheckAt' => '2026-09-26T23:55:00+00:00']];

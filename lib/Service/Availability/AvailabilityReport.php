@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
+ * @spec openspec/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
  */
 
 declare(strict_types=1);
@@ -36,7 +36,7 @@ use DateTimeZone;
  * in this app yet. A month with no intervals was not measured and says so
  * (null) rather than reading as 0 or 100.
  *
- * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
+ * @spec openspec/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
  */
 class AvailabilityReport {
 	/**
@@ -58,7 +58,7 @@ class AvailabilityReport {
 	 *
 	 * @return array{portal: string, from: string, until: string, months: array<int, array<string, mixed>>, outages: array<int, array<string, mixed>>}
 	 *
-	 * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
+	 * @spec openspec/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
 	 */
 	public function forPortal(string $portal, DateTimeImmutable $now, int $months = 12): array {
 		$months = max(1, min(12, $months));
@@ -115,7 +115,7 @@ class AvailabilityReport {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
+	 * @spec openspec/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
 	 */
 	public function csv(array $report): string {
 		$lines = [['month', 'availability_percent', 'intervals', 'available', 'degraded', 'down', 'no_check']];

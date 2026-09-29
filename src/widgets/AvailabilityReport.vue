@@ -10,7 +10,7 @@
   down. The paragraph "How this is measured" says what the figure covers and
   what it cannot see.
 
-  @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
+  @spec openspec/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
 -->
 <template>
 	<div class="availability" data-testid="availability-report">
@@ -153,7 +153,7 @@ export default {
 		 * The CSV download of the selected portal's report.
 		 *
 		 * @return {string}
-		 * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
+		 * @spec openspec/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
 		 */
 		downloadUrl() {
 			return this.selected ? exportUrl(this.selected.id, generateUrl) : ''
@@ -169,7 +169,7 @@ export default {
 		 * Read the published portals and pick the first.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
+		 * @spec openspec/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
 		 */
 		async loadPortals() {
 			try {
@@ -192,7 +192,7 @@ export default {
 		 *
 		 * @param {object} option The picked portal.
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
+		 * @spec openspec/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
 		 */
 		async onSelect(option) {
 			if (!option) {
@@ -222,7 +222,7 @@ export default {
 		 *
 		 * @param {number|null} value The percentage.
 		 * @return {string}
-		 * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
+		 * @spec openspec/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
 		 */
 		percent(value) {
 			return percentLabel(value, t)
@@ -233,7 +233,7 @@ export default {
 		 *
 		 * @param {string} value The cause.
 		 * @return {string}
-		 * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
+		 * @spec openspec/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
 		 */
 		cause(value) {
 			return causeLabel(value, t)
@@ -244,7 +244,7 @@ export default {
 		 *
 		 * @param {number} value Minutes.
 		 * @return {string}
-		 * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
+		 * @spec openspec/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
 		 */
 		duration(value) {
 			return durationLabel(value, t)

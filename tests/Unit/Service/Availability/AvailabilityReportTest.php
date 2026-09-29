@@ -18,7 +18,7 @@ use PHPUnit\Framework\TestCase;
  * operate-availability-report REQ-OAR-004: twelve full months, each as a
  * percentage to two decimals, the outages of the period, and the same as CSV.
  *
- * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
+ * @spec openspec/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
  */
 class AvailabilityReportTest extends TestCase {
 	public function testMonthlyPercentage(): void {

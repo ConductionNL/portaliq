@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-an-interval-without-a-check-counts-as-down-req-oar-002
+ * @spec openspec/specs/portal-availability/spec.md#requirement-an-interval-without-a-check-counts-as-down-req-oar-002
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ use Throwable;
  * keeps the cause of its first interval and is closed by the first check that
  * finds the portal available.
  *
- * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-an-interval-without-a-check-counts-as-down-req-oar-002
+ * @spec openspec/specs/portal-availability/spec.md#requirement-an-interval-without-a-check-counts-as-down-req-oar-002
  */
 class AvailabilityRollup {
 	/**
@@ -75,7 +75,7 @@ class AvailabilityRollup {
 	 *
 	 * @return array{days: array<string, array<string, mixed>>, open: array<string, mixed>|null, closed: array<int, array<string, mixed>>}
 	 *
-	 * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-an-interval-without-a-check-counts-as-down-req-oar-002
+	 * @spec openspec/specs/portal-availability/spec.md#requirement-an-interval-without-a-check-counts-as-down-req-oar-002
 	 */
 	public function record(string $portal, DateTimeImmutable $at, string $status, string $cause, array $days, ?array $openOutage): array {
 		$at = $at->setTimezone(new DateTimeZone('UTC'));
@@ -102,7 +102,7 @@ class AvailabilityRollup {
 	 *
 	 * @return DateTimeImmutable|null
 	 *
-	 * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-an-interval-without-a-check-counts-as-down-req-oar-002
+	 * @spec openspec/specs/portal-availability/spec.md#requirement-an-interval-without-a-check-counts-as-down-req-oar-002
 	 */
 	public function lastCheckAt(array $days): ?DateTimeImmutable {
 		$latest = null;

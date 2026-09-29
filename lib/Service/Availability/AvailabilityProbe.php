@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-each-published-portal-is-checked-every-five-minutes-req-oar-001
+ * @spec openspec/specs/portal-availability/spec.md#requirement-each-published-portal-is-checked-every-five-minutes-req-oar-001
  */
 
 declare(strict_types=1);
@@ -39,7 +39,7 @@ use Throwable;
  * The request passes through the web server and PHP like a visitor's, and
  * through nothing in front of the installation. The report says so.
  *
- * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-each-published-portal-is-checked-every-five-minutes-req-oar-001
+ * @spec openspec/specs/portal-availability/spec.md#requirement-each-published-portal-is-checked-every-five-minutes-req-oar-001
  */
 class AvailabilityProbe {
 	/**
@@ -66,7 +66,7 @@ class AvailabilityProbe {
 	 *
 	 * @return array{status: string, cause: string}
 	 *
-	 * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-each-published-portal-is-checked-every-five-minutes-req-oar-001
+	 * @spec openspec/specs/portal-availability/spec.md#requirement-each-published-portal-is-checked-every-five-minutes-req-oar-001
 	 */
 	public function check(string $slug): array {
 		$site = $this->get(url: $this->urls->linkToRouteAbsolute('portaliq.content.site', ['portal' => $slug]));

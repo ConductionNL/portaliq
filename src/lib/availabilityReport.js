@@ -10,7 +10,7 @@
  * @param {string} slug The portal slug.
  * @param {(path: string) => string} generateUrl Nextcloud's URL generator.
  * @return {string}
- * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
+ * @spec openspec/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
  */
 export function availabilityUrl(slug, generateUrl) {
 	return generateUrl(
@@ -24,7 +24,7 @@ export function availabilityUrl(slug, generateUrl) {
  * @param {string} slug The portal slug.
  * @param {(path: string) => string} generateUrl Nextcloud's URL generator.
  * @return {string}
- * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
+ * @spec openspec/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
  */
 export function exportUrl(slug, generateUrl) {
 	return generateUrl(
@@ -38,7 +38,7 @@ export function exportUrl(slug, generateUrl) {
  * @param {number|null} percentage The percentage, or null when not measured.
  * @param {(app: string, text: string, vars?: object) => string} t The translator.
  * @return {string}
- * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
+ * @spec openspec/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
  */
 export function percentLabel(percentage, t) {
 	if (percentage === null || percentage === undefined) {
@@ -53,7 +53,7 @@ export function percentLabel(percentage, t) {
  * @param {string} cause The stored cause.
  * @param {(app: string, text: string, vars?: object) => string} t The translator.
  * @return {string}
- * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
+ * @spec openspec/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
  */
 export function causeLabel(cause, t) {
 	switch (cause) {
@@ -79,7 +79,7 @@ export function causeLabel(cause, t) {
  * @param {number} minutes The duration.
  * @param {(app: string, text: string, vars?: object) => string} t The translator.
  * @return {string}
- * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
+ * @spec openspec/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
  */
 export function durationLabel(minutes, t) {
 	if (!minutes) {
@@ -93,7 +93,7 @@ export function durationLabel(minutes, t) {
  *
  * @param {object|Array<object>} body OpenRegister's list answer.
  * @return {Array<{id: string, label: string}>}
- * @spec openspec/changes/operate-availability-report/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
+ * @spec openspec/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
  */
 export function portalsFrom(body) {
 	const rows = Array.isArray(body) ? body : (body?.results ?? [])

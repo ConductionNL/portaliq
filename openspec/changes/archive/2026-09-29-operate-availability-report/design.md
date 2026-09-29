@@ -81,3 +81,23 @@ Served by `GET /api/availability/{portal}?months=12`, admin-only like
 
 - No public status page.
 - No alerting.
+
+## As built (2026-09-29)
+
+- **The report is a dashboard page, not a custom page.** D4 named a custom
+  page `AvailabilityReport`. It is the dashboard page `Availability`
+  (`/availability`) carrying one widget `AvailabilityReport`, reached from
+  the Reports hub card: the fleet's page-type gate refuses a new custom page.
+- **The daily record keeps `lastCheckAt`.** D3 listed the counters only. The
+  next check needs the time of the previous one to count the intervals
+  missed in between, so the daily record carries it. When the last two days
+  hold no check, the job reads the whole kept window, so an installation that
+  was off for days still counts its gap.
+- **No planned maintenance is subtracted.** `operate-maintenance-notice` has
+  not landed, so `planned` is zero and the report says so.
+- The code: `lib/Service/Availability/` (`AvailabilityRollup` for the
+  arithmetic, `AvailabilityProbe` for the check, `AvailabilityStore` for the
+  records, `AvailabilityReport` for the months and the CSV),
+  `lib/BackgroundJob/AvailabilityProbeJob.php`,
+  `lib/Controller/AvailabilityController.php` with `index` (JSON) and
+  `export` (CSV, a navigated download), `src/widgets/AvailabilityReport.vue`.
