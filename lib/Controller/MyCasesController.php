@@ -91,7 +91,7 @@ class MyCasesController extends Controller implements PortalProtected {
 	 *
 	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
 	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
-	 * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md#requirement-you-choose-whom-you-act-for-req-cmc-004
+	 * @spec openspec/specs/portal-my-cases/spec.md#requirement-you-choose-whom-you-act-for-req-cmc-004
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]

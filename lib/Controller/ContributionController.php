@@ -295,7 +295,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @spec openspec/changes/portal-inbox-v2/tasks.md#T04
 	 * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
 	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-mijn-taken-lists-details-and-completes-the-partys-open-tasks
-	 * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md#requirement-your-cases-from-every-app-in-one-list-req-cmc-001
+	 * @spec openspec/specs/portal-my-cases/spec.md#requirement-your-cases-from-every-app-in-one-list-req-cmc-001
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]

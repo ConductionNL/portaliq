@@ -9,7 +9,7 @@
 //
 // Imports nothing, so tests/my-cases-page.spec.mjs runs it as a plain node script.
 //
-// @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md
+// @spec openspec/specs/portal-my-cases/spec.md
 
 /**
  * The cases split into open and closed, each keeping the server's order.
@@ -17,7 +17,7 @@
  * @param {Array<object>|null} cases The merged rows.
  * @return {{open: Array<object>, closed: Array<object>}} The two lists.
  *
- * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md#requirement-open-and-closed-cases-are-told-apart-by-a-declared-field-req-cmc-002
+ * @spec openspec/specs/portal-my-cases/spec.md#requirement-open-and-closed-cases-are-told-apart-by-a-declared-field-req-cmc-002
  */
 export function splitCases(cases) {
 	const rows = Array.isArray(cases) ? cases : []
@@ -34,7 +34,7 @@ export function splitCases(cases) {
  * @param {object} row The case row.
  * @return {{app: string, collection: string, id: string}|null} The target.
  *
- * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md#requirement-a-case-opens-where-it-lives-req-cmc-005
+ * @spec openspec/specs/portal-my-cases/spec.md#requirement-a-case-opens-where-it-lives-req-cmc-005
  */
 export function caseTarget(row) {
 	const source = row?._source || {}
@@ -55,7 +55,7 @@ export function caseTarget(row) {
  * @param {object} row The case row.
  * @return {string} The name.
  *
- * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md#requirement-your-cases-from-every-app-in-one-list-req-cmc-001
+ * @spec openspec/specs/portal-my-cases/spec.md#requirement-your-cases-from-every-app-in-one-list-req-cmc-001
  */
 export function caseTitle(row) {
 	for (const field of ['title', 'name', 'reference', 'identifier']) {
@@ -80,7 +80,7 @@ export const ACTING_FOR_KEY = 'portaliq.actingFor'
  * @param {(key: string) => string} t The translator.
  * @return {Array<{id: string, label: string}>} The choices.
  *
- * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md#requirement-you-choose-whom-you-act-for-req-cmc-004
+ * @spec openspec/specs/portal-my-cases/spec.md#requirement-you-choose-whom-you-act-for-req-cmc-004
  */
 export function actingForOptions(mandates, t) {
 	const held = (Array.isArray(mandates) ? mandates : [])

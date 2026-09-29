@@ -20,7 +20,7 @@ use PHPUnit\Framework\TestCase;
  * The case list reader and the mandate service are the real classes; only the
  * OpenRegister read, the stored mandates and the party tree are doubles.
  *
- * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md#requirement-you-choose-whom-you-act-for-req-cmc-004
+ * @spec openspec/specs/portal-my-cases/spec.md#requirement-you-choose-whom-you-act-for-req-cmc-004
  */
 class MandatedCaseReaderTest extends TestCase {
 	private const SUBJECT = ['subjectRef' => 'employee-1', 'organisation' => 'gemeente-x', 'audience' => 'client', 'trust' => 'substantial'];

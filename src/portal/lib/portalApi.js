@@ -156,7 +156,7 @@ export function createPortalApi(config) {
 		 *
 		 * @param {string} [mandateId] The mandate acted under, or none.
 		 * @return {Promise<{ok: boolean, status: number, cases: Array, mandates: Array, activeMandate: object|null, error: string}>}
-		 * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md#requirement-your-cases-from-every-app-in-one-list-req-cmc-001
+		 * @spec openspec/specs/portal-my-cases/spec.md#requirement-your-cases-from-every-app-in-one-list-req-cmc-001
 		 */
 		async fetchMyCases(mandateId = '') {
 			const query = mandateId

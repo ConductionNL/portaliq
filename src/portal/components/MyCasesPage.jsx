@@ -47,7 +47,7 @@ function formatDate(value, locale) {
  * @param {string} [props.initialTab] 'open' or 'closed' (test seam).
  * @return {object} The element.
  *
- * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md
+ * @spec openspec/specs/portal-my-cases/spec.md
  */
 export default function MyCasesPage({
 	api,

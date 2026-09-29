@@ -121,7 +121,7 @@ class MyCasesControllerTest extends TestCase {
 	 * cases only, even while you hold a mandate. The mandates are still named,
 	 * so the switcher can offer them.
 	 *
-	 * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md#requirement-you-choose-whom-you-act-for-req-cmc-004
+	 * @spec openspec/specs/portal-my-cases/spec.md#requirement-you-choose-whom-you-act-for-req-cmc-004
 	 */
 	public function testActingForYourselfListsNoMandatedCase(): void {
 		$cases = $this->cases();

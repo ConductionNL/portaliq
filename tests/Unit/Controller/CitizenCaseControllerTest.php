@@ -170,7 +170,7 @@ class CitizenCaseControllerTest extends TestCase {
 	 * same case without the mandate, and any write under it, stays "not
 	 * yours", and nothing is written.
 	 *
-	 * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md#requirement-you-choose-whom-you-act-for-req-cmc-004
+	 * @spec openspec/specs/portal-my-cases/spec.md#requirement-you-choose-whom-you-act-for-req-cmc-004
 	 */
 	public function testACaseListedUnderAMandateOpensReadOnlyUnderIt(): void {
 		$company = ['id' => 'zaak-9', 'omschrijving' => 'een bedrijfspand', 'status' => 'ontvangen', '_mandate' => ['id' => 'mandate-1', 'label' => 'Bakkerij Jansen BV']];

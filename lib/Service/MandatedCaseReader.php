@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md#requirement-you-choose-whom-you-act-for-req-cmc-004
+ * @spec openspec/specs/portal-my-cases/spec.md#requirement-you-choose-whom-you-act-for-req-cmc-004
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ use OCA\Portaliq\Service\Identity\PortalPartyTreeResolver;
 /**
  * Reads one case under a named mandate, or nothing.
  *
- * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md#requirement-you-choose-whom-you-act-for-req-cmc-004
+ * @spec openspec/specs/portal-my-cases/spec.md#requirement-you-choose-whom-you-act-for-req-cmc-004
  */
 class MandatedCaseReader {
 	/**
@@ -75,7 +75,7 @@ class MandatedCaseReader {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md#requirement-you-choose-whom-you-act-for-req-cmc-004
+	 * @spec openspec/specs/portal-my-cases/spec.md#requirement-you-choose-whom-you-act-for-req-cmc-004
 	 */
 	public function read(array $subject, string $mandateId, string $register, string $schema, string $id): ?array {
 		$mandate = $this->heldMandate(subject: $subject, mandateId: $mandateId);

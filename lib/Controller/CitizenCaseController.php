@@ -186,7 +186,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse|null
 	 *
-	 * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md#requirement-you-choose-whom-you-act-for-req-cmc-004
+	 * @spec openspec/specs/portal-my-cases/spec.md#requirement-you-choose-whom-you-act-for-req-cmc-004
 	 */
 	private function showUnderMandate(string $register, string $schema, string $id): ?JSONResponse {
 		$subject = $this->session->resolveFromBearer($this->request->getHeader('Authorization'));

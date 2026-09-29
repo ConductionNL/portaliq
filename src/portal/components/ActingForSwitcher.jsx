@@ -18,7 +18,7 @@ import { actingForOptions } from '../lib/myCases.js'
  * @param {(id: string) => void} props.onChange Called with the new choice.
  * @return {object|null} The element.
  *
- * @spec openspec/changes/cases-my-cases-page/specs/portal-my-cases/spec.md#requirement-you-choose-whom-you-act-for-req-cmc-004
+ * @spec openspec/specs/portal-my-cases/spec.md#requirement-you-choose-whom-you-act-for-req-cmc-004
  */
 export default function ActingForSwitcher({ t, mandates, value, onChange }) {
 	if (!Array.isArray(mandates) || mandates.length === 0) {
