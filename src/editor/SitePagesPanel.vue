@@ -93,6 +93,25 @@
 						{{ t('portaliq', 'Cancel') }}
 					</NcButton>
 				</template>
+				<template v-else-if="confirming === node.page.id">
+					<span role="alert">{{
+						t('portaliq', 'Delete the draft page "{title}"?', {
+							title: node.page.title,
+						})
+					}}</span>
+					<span class="pq-site-panel__actions">
+						<NcButton
+							variant="error"
+							data-testid="site-pages-delete-confirm"
+							:disabled="busy"
+							@click="remove(node.page)">
+							{{ t('portaliq', 'Delete') }}
+						</NcButton>
+						<NcButton @click="confirming = ''">
+							{{ t('portaliq', 'Cancel') }}
+						</NcButton>
+					</span>
+				</template>
 				<template v-else>
 					<span class="pq-site-panel__name">
 						{{ node.page.title }}
@@ -220,6 +239,7 @@ export default {
 			error: '',
 			notice: '',
 			renaming: '',
+			confirming: '',
 			draftTitle: '',
 			moving: '',
 			moveParent: '',
@@ -419,15 +439,13 @@ export default {
 			if (!canDeletePage(page)) {
 				return
 			}
-			if (
-				!window.confirm(
-					this.t('portaliq', 'Delete the draft page "{title}"?', {
-						title: page.title,
-					}),
-				)
-			) {
+			// Two presses, the second on an explicit question in the row:
+			// a delete cannot be undone.
+			if (this.confirming !== page.id) {
+				this.confirming = page.id
 				return
 			}
+			this.confirming = ''
 			await this.run(
 				() => this.api.remove('page', page.id),
 				this.t('portaliq', 'The draft page is deleted.'),
@@ -532,6 +550,7 @@ export default {
 	width: 1px;
 	height: 1px;
 	overflow: hidden;
-	clip: rect(0 0 0 0);
+	clip-path: inset(50%);
+	white-space: nowrap;
 }
 </style>
