@@ -20,7 +20,10 @@ import { withoutEnvelope } from './pageBody.js'
  * @return {Array<object>} The renumbered copy.
  */
 function renumber(items) {
-	return JSON.parse(JSON.stringify(items)).map((item, order) => ({ ...item, order }))
+	return JSON.parse(JSON.stringify(items)).map((item, order) => ({
+		...item,
+		order,
+	}))
 }
 
 /**
@@ -32,7 +35,9 @@ function renumber(items) {
  */
 export function sortedMenuItems(items) {
 	return renumber(
-		[...(items || [])].sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0)),
+		[...(items || [])].sort(
+			(a, b) => (Number(a.order) || 0) - (Number(b.order) || 0),
+		),
 	)
 }
 
@@ -50,7 +55,10 @@ export function addMenuItem(items, { name, link }) {
 	if (!label) {
 		throw new Error('A menu item needs a name.')
 	}
-	return renumber([...(items || []), { name: label, link: String(link || '').trim() }])
+	return renumber([
+		...(items || []),
+		{ name: label, link: String(link || '').trim() },
+	])
 }
 
 /**

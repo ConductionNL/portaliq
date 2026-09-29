@@ -36,13 +36,19 @@ export function createPortalObjects({ get, post, put, del, url }) {
 		 * @return {Promise<Array<object>>} The objects.
 		 */
 		async list(schema, portal) {
-			const { data } = await get(url(schema), { params: { portal, _limit: 500 } })
+			const { data } = await get(url(schema), {
+				params: { portal, _limit: 500 },
+			})
 			const results = Array.isArray(data?.results) ? data.results : []
 			return results.map((object) => {
 				const plain = { ...object }
 				const self = plain['@self'] || {}
 				delete plain['@self']
-				return { ...plain, id: String(self.id || plain.id || ''), version: String(self.updated || '') }
+				return {
+					...plain,
+					id: String(self.id || plain.id || ''),
+					version: String(self.updated || ''),
+				}
 			})
 		},
 
@@ -68,7 +74,11 @@ export function createPortalObjects({ get, post, put, del, url }) {
 		 * @return {Promise<void>} Resolves when saved.
 		 */
 		save(schema, id, payload, version) {
-			return createPageSaver({ get, put, url: (objectId) => url(schema, objectId) }).save(id, payload, version)
+			return createPageSaver({
+				get,
+				put,
+				url: (objectId) => url(schema, objectId),
+			}).save(id, payload, version)
 		},
 
 		/**

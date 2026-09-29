@@ -249,6 +249,7 @@
 				<SiteEditMode
 					v-else-if="editMode && editing && editing.pageId"
 					:pageId="editing.pageId"
+					:portal="(site && site.slug) || portalSlug || ''"
 					@leave="leaveEditMode" />
 				<article
 					v-else-if="page"

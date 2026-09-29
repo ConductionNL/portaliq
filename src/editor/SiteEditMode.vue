@@ -83,6 +83,18 @@
 					@click="historyOpen = true">
 					{{ t('portaliq', 'History') }}
 				</NcButton>
+				<NcButton
+					data-testid="site-edit-pages"
+					:pressed="panel === 'pages'"
+					@click="toggle('pages')">
+					{{ t('portaliq', 'Pages') }}
+				</NcButton>
+				<NcButton
+					data-testid="site-edit-menu"
+					:pressed="panel === 'menu'"
+					@click="toggle('menu')">
+					{{ t('portaliq', 'Menu') }}
+				</NcButton>
 				<NcButton data-testid="site-edit-leave" @click="leave">
 					{{ t('portaliq', 'Stop editing') }}
 				</NcButton>
@@ -121,6 +133,13 @@
 			{{ t('portaliq', 'Unsaved changes. Save the draft to keep them.') }}
 		</NcNoteCard>
 
+		<!-- The rest of the portal, from the portal (A3). -->
+		<SitePagesPanel
+			v-if="panel === 'pages'"
+			:portal="portal"
+			:currentPageId="pageId" />
+		<SiteMenuPanel v-if="panel === 'menu'" :portal="portal" />
+
 		<div v-if="state.loading" class="pq-site-editor__loading">
 			<NcLoadingIcon :size="32" />
 		</div>
@@ -147,6 +166,8 @@ import { reactive } from 'vue'
 import PageHistoryDialog from '../dialogs/PageHistoryDialog.vue'
 import WidgetPaletteDialog from '../dialogs/WidgetPaletteDialog.vue'
 import PageGridEditor from './PageGridEditor.vue'
+import SiteMenuPanel from './SiteMenuPanel.vue'
+import SitePagesPanel from './SitePagesPanel.vue'
 import { defaultSizeFor } from '../lib/pageWidgetCatalogue.js'
 import { createPageEditor, createPageSaver } from './index.js'
 
@@ -184,6 +205,8 @@ export default {
 		NcNoteCard,
 		PageGridEditor,
 		PageHistoryDialog,
+		SiteMenuPanel,
+		SitePagesPanel,
 		WidgetPaletteDialog,
 	},
 
@@ -192,6 +215,12 @@ export default {
 		pageId: {
 			type: String,
 			required: true,
+		},
+
+		/** The portal slug, for the pages and the menu panels. */
+		portal: {
+			type: String,
+			default: '',
 		},
 	},
 
@@ -218,6 +247,7 @@ export default {
 			paletteOpen: false,
 			historyOpen: false,
 			leaving: false,
+			panel: '',
 		}
 	},
 
@@ -256,6 +286,18 @@ export default {
 		 */
 		t(app, text, vars) {
 			return translate(app, text, vars)
+		},
+
+		/**
+		 * Open or close the pages or the menu panel.
+		 *
+		 * @param {string} name The panel.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
+		 */
+		toggle(name) {
+			this.panel = this.panel === name ? '' : name
 		},
 
 		/**

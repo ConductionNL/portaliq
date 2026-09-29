@@ -22,7 +22,9 @@ import { withoutEnvelope } from './pageBody.js'
  * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
  */
 export function normaliseRoute(route) {
-	const trimmed = String(route || '').trim().replace(/^\/+|\/+$/g, '')
+	const trimmed = String(route || '')
+		.trim()
+		.replace(/^\/+|\/+$/g, '')
 	return '/' + trimmed
 }
 
@@ -54,12 +56,20 @@ export function buildPageTree(pages) {
 	const ids = new Set(pages.map((p) => p.id))
 	const childrenOf = (parent, depth, seen) =>
 		pages
-			.filter((p) => (parent === null ? !p.parent || !ids.has(p.parent) : p.parent === parent))
+			.filter((p) =>
+				parent === null
+					? !p.parent || !ids.has(p.parent)
+					: p.parent === parent,
+			)
 			.filter((p) => !seen.has(p.id))
 			.sort(byOrder)
 			.map((page) => {
 				const next = new Set(seen).add(page.id)
-				return { page, depth, children: childrenOf(page.id, depth + 1, next) }
+				return {
+					page,
+					depth,
+					children: childrenOf(page.id, depth + 1, next),
+				}
 			})
 	return childrenOf(null, 0, new Set())
 }
