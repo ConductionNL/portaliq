@@ -467,7 +467,6 @@ import { defineAsyncComponent } from 'vue'
 import MarkdownBlock from './components/MarkdownBlock.vue'
 import SiteMenu from './components/SiteMenu.vue'
 import WidgetGrid from './components/WidgetGrid.vue'
-import { loadSiteEditor } from './lib/loadSiteEditor.js'
 import {
 	adoptSessionToken,
 	authBaseFrom,
@@ -486,6 +485,7 @@ import {
 	resolveApiBase,
 } from './lib/contentApi.js'
 import { editorBaseFrom, fetchEditingContext } from './lib/editorApi.js'
+import { loadSiteEditor } from './lib/loadSiteEditor.js'
 
 /**
  * LOADED ON DEMAND, and the budget is why — the same reason the detail and
