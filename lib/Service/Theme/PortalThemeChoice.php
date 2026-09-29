@@ -128,27 +128,62 @@ class PortalThemeChoice {
 	 * Save a theme for the portal.
 	 *
 	 * A set the resolver would not render is refused. A set whose tokens fail
-	 * AA on a portal surface is refused unless the administrator confirms,
-	 * and the refusal carries the findings so they can see why.
+	 * AA on a portal surface is refused with its verdict, so the administrator
+	 * sees why; saving it anyway is its own method, taken deliberately.
 	 *
-	 * @param array<string, mixed> $portal         The portal.
-	 * @param string               $theme          The set id.
-	 * @param bool                 $acceptFindings Whether the administrator confirmed failing contrast.
+	 * @param array<string, mixed> $portal The portal.
+	 * @param string               $theme  The set id.
 	 *
-	 * @return array<string, mixed> `{portal}` or `{error, verdict?}`.
+	 * @return array<string, mixed> `{portal, verdict}` or `{error, verdict?}`.
 	 *
 	 * @spec openspec/changes/nldesign-theme-integration/specs/nldesign-theme-integration/spec.md
 	 */
-	public function choose(array $portal, string $theme, bool $acceptFindings = false): array {
+	public function choose(array $portal, string $theme): array {
 		if ($this->resolver->stylesheetFor(theme: $theme) === null) {
 			return ['error' => 'unknown_theme'];
 		}
 
 		$verdict = $this->contrast->evaluate(tokens: $this->resolver->tokenValuesFor(theme: $theme));
-		if ($verdict['findings'] !== [] && $acceptFindings === false) {
+		if ($verdict['findings'] !== []) {
 			return ['error' => 'contrast', 'verdict' => $verdict];
 		}
 
+		return $this->store(portal: $portal, theme: $theme, verdict: $verdict);
+	}//end choose()
+
+	/**
+	 * Save a theme the administrator was shown the contrast findings for and
+	 * confirmed. A set that does not resolve is still refused.
+	 *
+	 * @param array<string, mixed> $portal The portal.
+	 * @param string               $theme  The set id.
+	 *
+	 * @return array<string, mixed> `{portal, verdict}` or `{error}`.
+	 *
+	 * @spec openspec/changes/nldesign-theme-integration/specs/nldesign-theme-integration/spec.md
+	 */
+	public function chooseConfirmingFindings(array $portal, string $theme): array {
+		if ($this->resolver->stylesheetFor(theme: $theme) === null) {
+			return ['error' => 'unknown_theme'];
+		}
+
+		return $this->store(
+			portal: $portal,
+			theme: $theme,
+			verdict: $this->contrast->evaluate(tokens: $this->resolver->tokenValuesFor(theme: $theme))
+		);
+	}//end chooseConfirmingFindings()
+
+	/**
+	 * Write the theme onto the portal.
+	 *
+	 * @param array<string, mixed> $portal  The portal.
+	 * @param string               $theme   The set id.
+	 * @param array<string, mixed> $verdict Its contrast verdict, returned with the result.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function store(array $portal, string $theme, array $verdict): array {
 		$saved = $this->writer->updateObject(
 			register: self::REGISTER,
 			schema: self::SCHEMA,
@@ -163,5 +198,5 @@ class PortalThemeChoice {
 		}
 
 		return ['portal' => $saved, 'verdict' => $verdict];
-	}//end choose()
+	}//end store()
 }//end class

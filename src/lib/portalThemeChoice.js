@@ -22,6 +22,7 @@
  *
  * @param {object} verdict `{evaluated, measured, passes, findings}`.
  * @return {'passes'|'fails'|'unchecked'}
+ * @spec openspec/changes/nldesign-theme-integration/specs/nldesign-theme-integration/spec.md
  */
 export function verdictState(verdict) {
 	if (
@@ -42,6 +43,7 @@ export function verdictState(verdict) {
  * @param {Function} deps.put (url, body) => Promise<{data}>
  * @param {Function} deps.url (path, params) => string, path relative to the app
  * @return {object}
+ * @spec openspec/changes/nldesign-theme-integration/specs/nldesign-theme-integration/spec.md
  */
 export function createPortalThemeChoice({ get, put, url }) {
 	return {
@@ -50,6 +52,7 @@ export function createPortalThemeChoice({ get, put, url }) {
 		 *
 		 * @param {string} slug The portal slug.
 		 * @return {Promise<object>}
+		 * @spec openspec/changes/nldesign-theme-integration/specs/nldesign-theme-integration/spec.md
 		 */
 		async load(slug) {
 			if (!slug) {
@@ -88,6 +91,7 @@ export function createPortalThemeChoice({ get, put, url }) {
 		 * @param {string} theme The set id.
 		 * @param {boolean} acceptFindings Whether the administrator confirmed.
 		 * @return {Promise<object>}
+		 * @spec openspec/changes/nldesign-theme-integration/specs/nldesign-theme-integration/spec.md
 		 */
 		async save(slug, theme, acceptFindings = false) {
 			try {

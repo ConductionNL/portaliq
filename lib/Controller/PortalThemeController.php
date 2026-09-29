@@ -72,9 +72,11 @@ class PortalThemeController extends Controller {
 	/**
 	 * Save the portal's theme.
 	 *
-	 * @param string $slug           The portal slug.
-	 * @param string $theme          The set id.
-	 * @param bool   $acceptFindings Whether the administrator confirmed a set that fails contrast.
+	 * The administrator's confirmation of a set that fails contrast arrives
+	 * as the `acceptFindings` body field and selects the confirming save.
+	 *
+	 * @param string $slug  The portal slug.
+	 * @param string $theme The set id.
 	 *
 	 * @return JSONResponse The list as stored; 404 for an unknown portal; 422
 	 *                      for a set that does not resolve, or one that fails
@@ -86,13 +88,16 @@ class PortalThemeController extends Controller {
 	 *
 	 * @spec openspec/changes/nldesign-theme-integration/specs/nldesign-theme-integration/spec.md
 	 */
-	public function update(string $slug, string $theme = '', bool $acceptFindings = false): JSONResponse {
+	public function update(string $slug, string $theme = ''): JSONResponse {
 		$portal = $this->choice->portalBySlug(slug: $slug);
 		if ($portal === null) {
 			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		$result = $this->choice->choose(portal: $portal, theme: $theme, acceptFindings: $acceptFindings);
+		$result = $this->choice->choose(portal: $portal, theme: $theme);
+		if (filter_var($this->request->getParam('acceptFindings', false), FILTER_VALIDATE_BOOLEAN) === true) {
+			$result = $this->choice->chooseConfirmingFindings(portal: $portal, theme: $theme);
+		}
 		if (($result['error'] ?? null) === 'save_failed') {
 			return new JSONResponse($result, Http::STATUS_BAD_GATEWAY);
 		}

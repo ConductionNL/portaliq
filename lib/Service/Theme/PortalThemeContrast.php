@@ -98,39 +98,14 @@ class PortalThemeContrast {
 		$findings = [];
 		$measured = 0;
 		foreach (self::SURFACES as $surface => $roles) {
-			$background = trim((string)($tokens[$roles['background']] ?? ''));
-			$candidates = $this->candidatesFor(roles: $roles, tokens: $tokens);
-			if ($background === '' || $candidates === []) {
-				// A surface the theme does not paint is skipped, and the skip
-				// shows in `measured`, never as a pass.
-				continue;
-			}
-
-			try {
-				$results = $service->evaluate($candidates, $background);
-			} catch (Throwable $e) {
-				$this->logger->warning('[portaliq] theme contrast evaluation failed', ['surface' => $surface, 'reason' => $e->getMessage()]);
+			$judged = $this->judgeSurface(service: $service, surface: $surface, roles: $roles, tokens: $tokens);
+			if ($judged === null) {
 				return $unevaluated;
 			}
 
-			foreach ((array)$results as $result) {
-				if (is_array($result) === false || ($result['unevaluated'] ?? false) === true) {
-					continue;
-				}
-
-				$measured++;
-				if (($result['pass'] ?? false) === true) {
-					continue;
-				}
-
-				$findings[] = [
-					'surface' => $surface,
-					'token' => (string)($result['name'] ?? ''),
-					'ratio' => (float)($result['ratio'] ?? 0),
-					'threshold' => (float)($result['threshold'] ?? 4.5),
-				];
-			}
-		}//end foreach
+			$measured += $judged['measured'];
+			$findings = array_merge($findings, $judged['findings']);
+		}
 
 		return [
 			'evaluated' => $measured > 0,
@@ -139,6 +114,57 @@ class PortalThemeContrast {
 			'findings' => $findings,
 		];
 	}//end evaluate()
+
+	/**
+	 * One surface's measured pairs and failing tokens, or null when the
+	 * service failed and nothing can be trusted.
+	 *
+	 * A surface the theme does not paint is skipped: zero measured, and the
+	 * skip shows in `measured`, never as a pass.
+	 *
+	 * @param object                                              $service The theme app's contrast service.
+	 * @param string                                              $surface The surface name.
+	 * @param array{background: string, text: array<int, string>} $roles   The surface's tokens.
+	 * @param array<string, string>                               $tokens  The theme's tokens.
+	 *
+	 * @return array{measured: int, findings: array<int, array<string, mixed>>}|null
+	 */
+	private function judgeSurface(object $service, string $surface, array $roles, array $tokens): ?array {
+		$background = trim((string)($tokens[$roles['background']] ?? ''));
+		$candidates = $this->candidatesFor(roles: $roles, tokens: $tokens);
+		if ($background === '' || $candidates === []) {
+			return ['measured' => 0, 'findings' => []];
+		}
+
+		try {
+			$results = $service->evaluate($candidates, $background);
+		} catch (Throwable $e) {
+			$this->logger->warning('[portaliq] theme contrast evaluation failed', ['surface' => $surface, 'reason' => $e->getMessage()]);
+			return null;
+		}
+
+		$measured = 0;
+		$findings = [];
+		foreach ((array)$results as $result) {
+			if (is_array($result) === false || ($result['unevaluated'] ?? false) === true) {
+				continue;
+			}
+
+			$measured++;
+			if (($result['pass'] ?? false) === true) {
+				continue;
+			}
+
+			$findings[] = [
+				'surface' => $surface,
+				'token' => (string)($result['name'] ?? ''),
+				'ratio' => (float)($result['ratio'] ?? 0),
+				'threshold' => (float)($result['threshold'] ?? 4.5),
+			];
+		}
+
+		return ['measured' => $measured, 'findings' => $findings];
+	}//end judgeSurface()
 
 	/**
 	 * The text colours a surface's roles resolve to, as the service takes them.

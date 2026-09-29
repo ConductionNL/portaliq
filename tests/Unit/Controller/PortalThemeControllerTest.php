@@ -59,14 +59,15 @@ class PortalThemeControllerTest extends TestCase {
 	}//end testARefusedSetIs422WithTheReason()
 
 	public function testTheConfirmationIsPassedOn(): void {
-		$controller = $this->controller(portal: ['slug' => 'gemeente']);
+		$controller = $this->controller(portal: ['slug' => 'gemeente'], acceptFindings: true);
+		$this->choice->method('choose')->willReturn(['error' => 'contrast', 'verdict' => ['findings' => [['token' => '--x']]]]);
 		$this->choice->expects($this->once())
-			->method('choose')
-			->with($this->anything(), $this->equalTo('faint'), $this->isTrue())
+			->method('chooseConfirmingFindings')
+			->with($this->anything(), $this->equalTo('faint'))
 			->willReturn(['portal' => ['slug' => 'gemeente', 'theme' => 'faint']]);
 		$this->choice->method('listFor')->willReturn(['current' => 'faint', 'currentResolves' => true, 'sets' => []]);
 
-		$this->assertSame(Http::STATUS_OK, $controller->update(slug: 'gemeente', theme: 'faint', acceptFindings: true)->getStatus());
+		$this->assertSame(Http::STATUS_OK, $controller->update(slug: 'gemeente', theme: 'faint')->getStatus());
 	}//end testTheConfirmationIsPassedOn()
 
 	public function testAFailedWriteIs502(): void {
@@ -89,18 +90,24 @@ class PortalThemeControllerTest extends TestCase {
 	/**
 	 * The controller over a choice double.
 	 *
-	 * @param array<string, mixed>|null $portal The portal the slug finds.
+	 * @param array<string, mixed>|null $portal         The portal the slug finds.
+	 * @param bool                      $acceptFindings What the request says about confirming.
 	 *
 	 * @return PortalThemeController
 	 */
-	private function controller(?array $portal): PortalThemeController {
+	private function controller(?array $portal, bool $acceptFindings = false): PortalThemeController {
 		$this->choice = $this->getMockBuilder(PortalThemeChoice::class)
 			->disableOriginalConstructor()
-			->onlyMethods(['portalBySlug', 'listFor', 'choose'])
+			->onlyMethods(['portalBySlug', 'listFor', 'choose', 'chooseConfirmingFindings'])
 			->getMock();
 		$this->choice->method('portalBySlug')->willReturn($portal);
 
-		return new PortalThemeController($this->createMock(IRequest::class), $this->choice);
+		$request = $this->createMock(IRequest::class);
+		$request->method('getParam')->willReturnCallback(
+			static fn (string $key, mixed $default = null): mixed => ($key === 'acceptFindings' ? $acceptFindings : $default)
+		);
+
+		return new PortalThemeController($request, $this->choice);
 	}//end controller()
 
 }//end class

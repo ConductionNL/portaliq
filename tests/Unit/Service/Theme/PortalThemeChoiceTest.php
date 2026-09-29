@@ -117,6 +117,7 @@ class PortalThemeChoiceTest extends TestCase {
 		$this->writer->expects($this->never())->method('updateObject');
 
 		$this->assertSame(['error' => 'unknown_theme'], $choice->choose(portal: ['slug' => 'gemeente', 'id' => 'p-1'], theme: 'missing'));
+		$this->assertSame(['error' => 'unknown_theme'], $choice->chooseConfirmingFindings(portal: ['slug' => 'gemeente', 'id' => 'p-1'], theme: 'missing'));
 	}//end testASetThatDoesNotResolveIsRefused()
 
 	public function testAHardToReadSetIsRefusedWithItsFindingsUntilConfirmed(): void {
@@ -138,7 +139,7 @@ class PortalThemeChoiceTest extends TestCase {
 		$this->assertSame('contrast', $refused['error']);
 		$this->assertSame('--nldesign-color-text', $refused['verdict']['findings'][0]['token']);
 
-		$saved = $choice->choose(portal: ['slug' => 'gemeente', 'id' => 'p-1'], theme: 'faint', acceptFindings: true);
+		$saved = $choice->chooseConfirmingFindings(portal: ['slug' => 'gemeente', 'id' => 'p-1'], theme: 'faint');
 		$this->assertSame('faint', $saved['portal']['theme']);
 	}//end testAHardToReadSetIsRefusedWithItsFindingsUntilConfirmed()
 
