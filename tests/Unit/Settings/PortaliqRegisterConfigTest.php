@@ -287,11 +287,12 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// (site-page-seo-history-and-media T06). New schema, additive.
 		// 0.45.0 (portal 0.8.0): the portal's shell, `headerVariant`,
 		// `authentication.register` and `registerLabel`, `footer` and
-		// `regions` (portal-theme-blocks-and-contributed-pages tasks 4-7).
+		// `regions` (portal-theme-blocks-and-contributed-pages tasks 4-7);
+		// page 0.5.0: `body.clearedRegions` and `draftBody.clearedRegions`.
 		// Additive.
 		$this->assertSame('0.45.0', self::$register['info']['version']);
 		$this->assertSame('0.45.0', self::$register['components']['registers']['portaliq']['version']);
-		$this->assertSame('0.4.0', self::$register['components']['schemas']['page']['version']);
+		$this->assertSame('0.5.0', self::$register['components']['schemas']['page']['version']);
 		$this->assertSame(70, self::$register['components']['schemas']['page']['properties']['seoTitle']['maxLength']);
 		$this->assertSame(160, self::$register['components']['schemas']['page']['properties']['seoDescription']['maxLength']);
 		$this->assertSame('boolean', self::$register['components']['schemas']['page']['properties']['seoNoindex']['type']);
@@ -336,7 +337,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalTrafficRecording']['version']);
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalTrafficRecording']['authorization']['read']);
 		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
-		$this->assertSame('0.4.0', self::$register['components']['schemas']['page']['version']);
+		$this->assertSame('0.5.0', self::$register['components']['schemas']['page']['version']);
 		$this->assertSame('0.8.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('0.12.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalPage']['version']);
@@ -662,6 +663,29 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertFalse($valid(['title' => 'Docs', 'footer' => ['socials' => 'https://social.example']]), 'socials is a list');
 		$this->assertSame(['description', 'colophon', 'socials', 'legalLinks', 'badges'], array_keys($schema['properties']['footer']['properties']));
 	}//end testThePortalDeclaresItsFooter()
+
+	/**
+	 * portal-theme-blocks-and-contributed-pages REQ-PTB-009: a portal fills
+	 * regions and a page empties them, validated with the real fragments.
+	 *
+	 * @return void
+	 */
+	public function testThePortalFillsRegionsAndAPageEmptiesThem(): void {
+		$portal = self::$register['components']['schemas']['portal'];
+		$valid  = $this->portalValidator(schema: $portal);
+
+		$this->assertTrue($valid(['title' => 'Docs', 'regions' => ['hero' => [['widgetKey' => 'hero', 'props' => ['title' => 'Welkom']]], 'footer' => []]]));
+		$this->assertFalse($valid(['title' => 'Docs', 'regions' => ['hero' => [['props' => ['title' => 'Welkom']]]]]), 'a region widget names its widget key');
+		$this->assertSame(['header', 'hero', 'main', 'aside', 'footer'], array_keys($portal['properties']['regions']['properties']));
+
+		$page = self::$register['components']['schemas']['page'];
+		foreach (['body', 'draftBody'] as $body) {
+			$fragment = json_decode((string)json_encode($page['properties'][$body]), false);
+			$check    = static fn (array $value): bool => (new Validator())->validate(json_decode((string)json_encode($value), false), $fragment)->isValid();
+			$this->assertTrue($check(['type' => 'grid', 'widgets' => [], 'clearedRegions' => ['hero', 'aside']]), $body);
+			$this->assertFalse($check(['type' => 'grid', 'widgets' => [], 'clearedRegions' => ['sidebar']]), $body.' clears known regions only');
+		}
+	}//end testThePortalFillsRegionsAndAPageEmptiesThem()
 
 	/**
 	 * A validator for portal records against the real schema fragment.

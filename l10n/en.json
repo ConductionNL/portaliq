@@ -1719,7 +1719,22 @@
         "Legal links": "Legal links",
         "Links in the bottom bar, such as privacy and accessibility. Empty uses the menu at position 2 or higher.": "Links in the bottom bar, such as privacy and accessibility. Empty uses the menu at position 2 or higher.",
         "Certificates": "Certificates",
-        "Certificates the organisation holds, each linking to its proof.": "Certificates the organisation holds, each linking to its proof."
+        "Certificates the organisation holds, each linking to its proof.": "Certificates the organisation holds, each linking to its proof.",
+        "Emptied regions": "Emptied regions",
+        "Regions this page leaves empty on purpose, such as hero. Such a region shows nothing on this page, even when the portal fills it.": "Regions this page leaves empty on purpose, such as hero. Such a region shows nothing on this page, even when the portal fills it.",
+        "The region this widget sits in: header, hero, main, aside or footer. Empty or body means main.": "The region this widget sits in: header, hero, main, aside or footer. Empty or body means main.",
+        "What the portal shows in each region of every page, unless a page fills or empties that region itself. A region left out shows the default. An empty list shows nothing.": "What the portal shows in each region of every page, unless a page fills or empties that region itself. A region left out shows the default. An empty list shows nothing.",
+        "Header region": "Header region",
+        "The blocks at the top of every page. The default is the portal header.": "The blocks at the top of every page. The default is the portal header.",
+        "Hero region": "Hero region",
+        "The band under the header of every page. The default is empty.": "The band under the header of every page. The default is empty.",
+        "Main region": "Main region",
+        "Blocks shown in the main content of a page that has none of its own.": "Blocks shown in the main content of a page that has none of its own.",
+        "Side region": "Side region",
+        "Blocks shown beside the main content. The default is empty.": "Blocks shown beside the main content. The default is empty.",
+        "Footer region": "Footer region",
+        "The blocks at the bottom of every page. The default is the portal footer.": "The blocks at the bottom of every page. The default is the portal footer.",
+        "Page regions": "Page regions"
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

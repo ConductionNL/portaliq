@@ -254,6 +254,23 @@ class ContentControllerTest extends TestCase {
 
 
 	/**
+	 * The site serves the portal's regions, an empty map as a JSON object
+	 * (portal-theme-blocks-and-contributed-pages REQ-PTB-009).
+	 *
+	 * @return void
+	 */
+	public function testTheSiteServesThePortalsRegions(): void {
+		$portal            = $this->portal();
+		$portal['regions'] = ['hero' => [['widgetKey' => 'hero', 'props' => ['title' => 'Welkom']]]];
+		$this->resolver->method('resolve')->willReturn($portal);
+
+		$data = $this->controller()->site()->getData();
+
+		$this->assertSame('Welkom', $data['regions']['hero'][0]['props']['title']);
+	}//end testTheSiteServesThePortalsRegions()
+
+
+	/**
 	 * Only the authentication MODES are exposed.
 	 *
 	 * Provider configuration belongs in the credential broker; a public

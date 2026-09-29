@@ -605,6 +605,67 @@ class CmsReaderTest extends TestCase {
 
 
 	/**
+	 * portal-theme-blocks-and-contributed-pages REQ-PTB-008 and REQ-PTB-009:
+	 * the page body serves its widgets grouped by region beside the flat
+	 * list, reports a slot that names no region, carries the regions it
+	 * clears, and still never projects `draftBody`.
+	 *
+	 * @return void
+	 */
+	public function testAPageServesItsRegionsBesideItsWidgets(): void {
+		$this->withRows(
+			[
+				[
+					'title' => 'Home',
+					'route' => '/',
+					'body' => [
+						'type' => 'grid',
+						'clearedRegions' => ['aside', 'nowhere'],
+						'widgets' => [
+							['id' => 'hero', 'widgetKey' => 'hero', 'slot' => 'hero', 'gridY' => 0],
+							['id' => 'intro', 'widgetKey' => 'markdown', 'slot' => 'body', 'gridY' => 1],
+							['id' => 'typo', 'widgetKey' => 'markdown', 'slot' => 'heder', 'gridY' => 2],
+						],
+					],
+					'draftBody' => ['type' => 'grid', 'widgets' => [['id' => 'secret', 'widgetKey' => 'markdown']]],
+				],
+			]
+		);
+
+		$page = $this->reader->page(portal: 'open-tilburg', route: '/', locale: 'nl', audience: 'anonymous');
+
+		$this->assertSame(['hero', 'intro', 'typo'], array_column($page['body']['widgets'], 'id'), 'body.widgets is unchanged');
+		$this->assertSame(['hero', 'main'], array_keys($page['body']['regions']));
+		$this->assertSame(['intro'], array_column($page['body']['regions']['main'], 'id'));
+		$this->assertSame(['heder'], $page['body']['unknownRegions']);
+		$this->assertSame(['aside'], $page['body']['clearedRegions']);
+		$this->assertArrayNotHasKey('draftBody', $page);
+		$this->assertStringNotContainsString('secret', (string)json_encode($page));
+	}//end testAPageServesItsRegionsBesideItsWidgets()
+
+	/**
+	 * A grid page without widgets serves `regions` as an empty JSON object,
+	 * and a markdown page still carries the regions it clears.
+	 *
+	 * @return void
+	 */
+	public function testEmptyRegionsStayAnObject(): void {
+		$this->withRows(
+			[
+				['title' => 'Leeg', 'route' => '/leeg', 'body' => ['type' => 'grid', 'widgets' => []]],
+				['title' => 'Tekst', 'route' => '/tekst', 'body' => ['type' => 'markdown', 'markdown' => 'x', 'clearedRegions' => ['hero']]],
+			]
+		);
+
+		$grid = $this->reader->page(portal: 'open-tilburg', route: '/leeg', locale: 'nl', audience: 'anonymous');
+		$this->assertSame('{}', json_encode($grid['body']['regions']));
+
+		$markdown = $this->reader->page(portal: 'open-tilburg', route: '/tekst', locale: 'nl', audience: 'anonymous');
+		$this->assertSame(['hero'], $markdown['body']['clearedRegions']);
+	}//end testEmptyRegionsStayAnObject()
+
+
+	/**
 	 * A route that does not match returns null, not the first row.
 	 *
 	 * The query filters by route, but the match is re-checked here: a filter

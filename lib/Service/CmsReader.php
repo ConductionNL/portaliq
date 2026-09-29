@@ -86,6 +86,7 @@ class CmsReader {
 	 * @param LoggerInterface       $logger       The logger.
 	 * @param PortalRegisterContext $context      Points the shared ObjectService at this app's schemas.
 	 * @param MediaReferences       $media        Resolves a page's media:<id> references.
+	 * @param PortalRegionResolver  $regions      Groups a page's widgets by region.
 	 *
 	 * @return void
 	 */
@@ -95,6 +96,7 @@ class CmsReader {
 		private readonly LoggerInterface $logger,
 		private readonly PortalRegisterContext $context,
 		private readonly MediaReferences $media,
+		private readonly PortalRegionResolver $regions=new PortalRegionResolver(),
 	) {
 		$this->cache = $cacheFactory->createDistributed('portaliq_cms');
 	}//end __construct()
@@ -473,6 +475,10 @@ class CmsReader {
 			'body'    => ['type' => $type],
 		];
 
+		// The regions this page empties on purpose (REQ-PTB-009). Served for
+		// both body types: a markdown page can clear the portal's hero too.
+		$shaped['body']['clearedRegions'] = $this->regions->cleared(cleared: ($body['clearedRegions'] ?? []));
+
 		if ($type === 'markdown') {
 			// Served as SOURCE. Rendering to HTML here would force every
 			// consumer that wants markdown — a Docusaurus build, most
@@ -506,6 +512,13 @@ class CmsReader {
 		);
 
 		$shaped['body']['widgets'] = $widgets;
+
+		// The same widgets grouped by region, beside the flat list the
+		// Docusaurus plugin reads (REQ-PTB-008). A slot that names no region
+		// is reported, not dropped silently. An empty map stays an object.
+		$grouped = $this->regions->group(widgets: $widgets);
+		$shaped['body']['regions']        = ($grouped['regions'] === [] ? new \stdClass() : $grouped['regions']);
+		$shaped['body']['unknownRegions'] = $grouped['unknownRegions'];
 
 		return $shaped;
 	}//end shapePage()

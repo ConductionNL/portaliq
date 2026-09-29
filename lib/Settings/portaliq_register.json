@@ -2077,6 +2077,288 @@
                             }
                         }
                     },
+                    "regions": {
+                        "title": "Page regions",
+                        "type": "object",
+                        "description": "What the portal shows in each region of every page, unless a page fills or empties that region itself. A region left out shows the default. An empty list shows nothing.",
+                        "properties": {
+                            "header": {
+                                "title": "Header region",
+                                "type": "array",
+                                "description": "The blocks at the top of every page. The default is the portal header.",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "title": "Id",
+                                            "type": "string",
+                                            "description": "Stable kebab-case identity for this placement.",
+                                            "example": "intro"
+                                        },
+                                        "widgetKey": {
+                                            "title": "Widget key",
+                                            "type": "string",
+                                            "description": "Registry key identifying the widget component. Resolved against nc-vue's communal dashboardWidgetRegistry — the SAME catalog LaunchPad and OpenBuild consume. Only entries flagged public render at a public origin; anything else renders an inert placeholder.",
+                                            "example": "markdown"
+                                        },
+                                        "gridX": {
+                                            "title": "Grid X",
+                                            "type": "integer",
+                                            "description": "Zero-based column.",
+                                            "example": 0
+                                        },
+                                        "gridY": {
+                                            "title": "Grid Y",
+                                            "type": "integer",
+                                            "description": "Zero-based row.",
+                                            "example": 0
+                                        },
+                                        "gridWidth": {
+                                            "title": "Grid width",
+                                            "type": "integer",
+                                            "description": "Width in grid columns, of twelve.",
+                                            "example": 12
+                                        },
+                                        "gridHeight": {
+                                            "title": "Grid height",
+                                            "type": "integer",
+                                            "description": "Height in grid rows.",
+                                            "example": 4
+                                        },
+                                        "props": {
+                                            "title": "Props",
+                                            "type": "object",
+                                            "description": "Serialisable configuration handed to the widget.",
+                                            "additionalProperties": true
+                                        }
+                                    },
+                                    "required": [
+                                        "widgetKey"
+                                    ]
+                                }
+                            },
+                            "hero": {
+                                "title": "Hero region",
+                                "type": "array",
+                                "description": "The band under the header of every page. The default is empty.",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "title": "Id",
+                                            "type": "string",
+                                            "description": "Stable kebab-case identity for this placement.",
+                                            "example": "intro"
+                                        },
+                                        "widgetKey": {
+                                            "title": "Widget key",
+                                            "type": "string",
+                                            "description": "Registry key identifying the widget component. Resolved against nc-vue's communal dashboardWidgetRegistry — the SAME catalog LaunchPad and OpenBuild consume. Only entries flagged public render at a public origin; anything else renders an inert placeholder.",
+                                            "example": "markdown"
+                                        },
+                                        "gridX": {
+                                            "title": "Grid X",
+                                            "type": "integer",
+                                            "description": "Zero-based column.",
+                                            "example": 0
+                                        },
+                                        "gridY": {
+                                            "title": "Grid Y",
+                                            "type": "integer",
+                                            "description": "Zero-based row.",
+                                            "example": 0
+                                        },
+                                        "gridWidth": {
+                                            "title": "Grid width",
+                                            "type": "integer",
+                                            "description": "Width in grid columns, of twelve.",
+                                            "example": 12
+                                        },
+                                        "gridHeight": {
+                                            "title": "Grid height",
+                                            "type": "integer",
+                                            "description": "Height in grid rows.",
+                                            "example": 4
+                                        },
+                                        "props": {
+                                            "title": "Props",
+                                            "type": "object",
+                                            "description": "Serialisable configuration handed to the widget.",
+                                            "additionalProperties": true
+                                        }
+                                    },
+                                    "required": [
+                                        "widgetKey"
+                                    ]
+                                }
+                            },
+                            "main": {
+                                "title": "Main region",
+                                "type": "array",
+                                "description": "Blocks shown in the main content of a page that has none of its own.",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "title": "Id",
+                                            "type": "string",
+                                            "description": "Stable kebab-case identity for this placement.",
+                                            "example": "intro"
+                                        },
+                                        "widgetKey": {
+                                            "title": "Widget key",
+                                            "type": "string",
+                                            "description": "Registry key identifying the widget component. Resolved against nc-vue's communal dashboardWidgetRegistry — the SAME catalog LaunchPad and OpenBuild consume. Only entries flagged public render at a public origin; anything else renders an inert placeholder.",
+                                            "example": "markdown"
+                                        },
+                                        "gridX": {
+                                            "title": "Grid X",
+                                            "type": "integer",
+                                            "description": "Zero-based column.",
+                                            "example": 0
+                                        },
+                                        "gridY": {
+                                            "title": "Grid Y",
+                                            "type": "integer",
+                                            "description": "Zero-based row.",
+                                            "example": 0
+                                        },
+                                        "gridWidth": {
+                                            "title": "Grid width",
+                                            "type": "integer",
+                                            "description": "Width in grid columns, of twelve.",
+                                            "example": 12
+                                        },
+                                        "gridHeight": {
+                                            "title": "Grid height",
+                                            "type": "integer",
+                                            "description": "Height in grid rows.",
+                                            "example": 4
+                                        },
+                                        "props": {
+                                            "title": "Props",
+                                            "type": "object",
+                                            "description": "Serialisable configuration handed to the widget.",
+                                            "additionalProperties": true
+                                        }
+                                    },
+                                    "required": [
+                                        "widgetKey"
+                                    ]
+                                }
+                            },
+                            "aside": {
+                                "title": "Side region",
+                                "type": "array",
+                                "description": "Blocks shown beside the main content. The default is empty.",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "title": "Id",
+                                            "type": "string",
+                                            "description": "Stable kebab-case identity for this placement.",
+                                            "example": "intro"
+                                        },
+                                        "widgetKey": {
+                                            "title": "Widget key",
+                                            "type": "string",
+                                            "description": "Registry key identifying the widget component. Resolved against nc-vue's communal dashboardWidgetRegistry — the SAME catalog LaunchPad and OpenBuild consume. Only entries flagged public render at a public origin; anything else renders an inert placeholder.",
+                                            "example": "markdown"
+                                        },
+                                        "gridX": {
+                                            "title": "Grid X",
+                                            "type": "integer",
+                                            "description": "Zero-based column.",
+                                            "example": 0
+                                        },
+                                        "gridY": {
+                                            "title": "Grid Y",
+                                            "type": "integer",
+                                            "description": "Zero-based row.",
+                                            "example": 0
+                                        },
+                                        "gridWidth": {
+                                            "title": "Grid width",
+                                            "type": "integer",
+                                            "description": "Width in grid columns, of twelve.",
+                                            "example": 12
+                                        },
+                                        "gridHeight": {
+                                            "title": "Grid height",
+                                            "type": "integer",
+                                            "description": "Height in grid rows.",
+                                            "example": 4
+                                        },
+                                        "props": {
+                                            "title": "Props",
+                                            "type": "object",
+                                            "description": "Serialisable configuration handed to the widget.",
+                                            "additionalProperties": true
+                                        }
+                                    },
+                                    "required": [
+                                        "widgetKey"
+                                    ]
+                                }
+                            },
+                            "footer": {
+                                "title": "Footer region",
+                                "type": "array",
+                                "description": "The blocks at the bottom of every page. The default is the portal footer.",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "title": "Id",
+                                            "type": "string",
+                                            "description": "Stable kebab-case identity for this placement.",
+                                            "example": "intro"
+                                        },
+                                        "widgetKey": {
+                                            "title": "Widget key",
+                                            "type": "string",
+                                            "description": "Registry key identifying the widget component. Resolved against nc-vue's communal dashboardWidgetRegistry — the SAME catalog LaunchPad and OpenBuild consume. Only entries flagged public render at a public origin; anything else renders an inert placeholder.",
+                                            "example": "markdown"
+                                        },
+                                        "gridX": {
+                                            "title": "Grid X",
+                                            "type": "integer",
+                                            "description": "Zero-based column.",
+                                            "example": 0
+                                        },
+                                        "gridY": {
+                                            "title": "Grid Y",
+                                            "type": "integer",
+                                            "description": "Zero-based row.",
+                                            "example": 0
+                                        },
+                                        "gridWidth": {
+                                            "title": "Grid width",
+                                            "type": "integer",
+                                            "description": "Width in grid columns, of twelve.",
+                                            "example": 12
+                                        },
+                                        "gridHeight": {
+                                            "title": "Grid height",
+                                            "type": "integer",
+                                            "description": "Height in grid rows.",
+                                            "example": 4
+                                        },
+                                        "props": {
+                                            "title": "Props",
+                                            "type": "object",
+                                            "description": "Serialisable configuration handed to the widget.",
+                                            "additionalProperties": true
+                                        }
+                                    },
+                                    "required": [
+                                        "widgetKey"
+                                    ]
+                                }
+                            }
+                        }
+                    },
                     "slug": {
                         "title": "Slug",
                         "type": "string",
@@ -3279,7 +3561,7 @@
             "page": {
                 "slug": "page",
                 "icon": "FileDocument",
-                "version": "0.4.0",
+                "version": "0.5.0",
                 "title": "Page",
                 "authorization": {
                     "read": [
@@ -3420,7 +3702,7 @@
                                         "slot": {
                                             "title": "Slot",
                                             "type": "string",
-                                            "description": "Placement slot on the page.",
+                                            "description": "The region this widget sits in: header, hero, main, aside or footer. Empty or body means main.",
                                             "example": "body"
                                         },
                                         "gridX": {
@@ -3455,6 +3737,24 @@
                                         }
                                     }
                                 }
+                            },
+                            "clearedRegions": {
+                                "title": "Emptied regions",
+                                "type": "array",
+                                "description": "Regions this page leaves empty on purpose, such as hero. Such a region shows nothing on this page, even when the portal fills it.",
+                                "items": {
+                                    "type": "string",
+                                    "enum": [
+                                        "header",
+                                        "hero",
+                                        "main",
+                                        "aside",
+                                        "footer"
+                                    ]
+                                },
+                                "example": [
+                                    "hero"
+                                ]
                             }
                         }
                     },
@@ -3511,7 +3811,7 @@
                                         "slot": {
                                             "title": "Slot",
                                             "type": "string",
-                                            "description": "Placement slot on the page.",
+                                            "description": "The region this widget sits in: header, hero, main, aside or footer. Empty or body means main.",
                                             "example": "body"
                                         },
                                         "gridX": {
@@ -3546,6 +3846,24 @@
                                         }
                                     }
                                 }
+                            },
+                            "clearedRegions": {
+                                "title": "Emptied regions",
+                                "type": "array",
+                                "description": "Regions this page leaves empty on purpose, such as hero. Such a region shows nothing on this page, even when the portal fills it.",
+                                "items": {
+                                    "type": "string",
+                                    "enum": [
+                                        "header",
+                                        "hero",
+                                        "main",
+                                        "aside",
+                                        "footer"
+                                    ]
+                                },
+                                "example": [
+                                    "hero"
+                                ]
                             }
                         }
                     },

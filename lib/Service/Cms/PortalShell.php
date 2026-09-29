@@ -22,6 +22,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Cms;
 
+use OCA\Portaliq\Service\PortalRegionResolver;
+
 /**
  * Chosen fields of the portal record, projected onto named keys.
  *
@@ -35,6 +37,16 @@ class PortalShell {
 	 * The header shapes a portal may choose. The first is the default.
 	 */
 	public const HEADER_VARIANTS = ['double', 'single'];
+
+	/**
+	 * Constructor.
+	 *
+	 * @param PortalRegionResolver $regions The closed list of regions.
+	 */
+	public function __construct(
+		private readonly PortalRegionResolver $regions=new PortalRegionResolver(),
+	) {
+	}//end __construct()
 
 	/**
 	 * The header variant: the portal's choice when it is known, else `double`.
@@ -107,6 +119,46 @@ class PortalShell {
 			'badges'      => $this->links(entries: ($footer['badges'] ?? []), extra: null),
 		];
 	}//end footer()
+
+	/**
+	 * The portal's own region contents, the middle step of resolution.
+	 *
+	 * Known regions only, in render order. A present key is kept even when
+	 * its list is empty: that is how a portal leaves a region out on every
+	 * page (REQ-PTB-009). Each widget is served on named keys, and authored
+	 * `style` and `class` never leave the record (REQ-PTB-007).
+	 *
+	 * @param array<string, mixed> $portal The portal record.
+	 *
+	 * @return array<string, list<array<string, mixed>>> Region name to widgets.
+	 *
+	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-regions-must-resolve-page-first-then-portal-then-default-req-ptb-009
+	 */
+	public function regions(array $portal): array {
+		$stored = $portal['regions'] ?? [];
+		$known  = $this->regions->ordered(regions: (is_array($stored) === true ? $stored : []));
+
+		$served = [];
+		foreach ($known as $region => $widgets) {
+			$served[$region] = [];
+			foreach ($widgets as $index => $widget) {
+				$props = (is_array($widget['props'] ?? null) === true ? $widget['props'] : []);
+				unset($props['style'], $props['class']);
+				$served[$region][] = [
+					'id'         => $this->text(value: ($widget['id'] ?? $region.'-'.$index)),
+					'widgetKey'  => $this->text(value: ($widget['widgetKey'] ?? '')),
+					'slot'       => $region,
+					'gridX'      => (int)($widget['gridX'] ?? 0),
+					'gridY'      => (int)($widget['gridY'] ?? $index),
+					'gridWidth'  => (int)($widget['gridWidth'] ?? 12),
+					'gridHeight' => (int)($widget['gridHeight'] ?? 1),
+					'props'      => $props,
+				];
+			}
+		}
+
+		return $served;
+	}//end regions()
 
 	/**
 	 * The entries that carry both a label and a followable destination.

@@ -72,4 +72,18 @@ class PortalShellTest extends TestCase {
 			(new PortalShell())->footer(portal: ['footer' => 'broken'])
 		);
 	}//end testAPortalWithoutAFooterServesTheEmptyShape()
+
+	public function testThePortalsRegionsKeepAPresentEmptyKeyAndDropStyling(): void {
+		$regions = (new PortalShell())->regions(portal: ['regions' => [
+			'footer'  => [],
+			'hero'    => [['widgetKey' => 'hero', 'props' => ['title' => 'Welkom', 'style' => 'position:absolute', 'class' => 'evil']]],
+			'sidebar' => [['widgetKey' => 'markdown']],
+		]]);
+
+		$this->assertSame(['hero', 'footer'], array_keys($regions));
+		$this->assertSame([], $regions['footer'], 'a portal leaves its footer out on purpose');
+		$this->assertSame(['title' => 'Welkom'], $regions['hero'][0]['props']);
+		$this->assertSame('hero', $regions['hero'][0]['slot']);
+		$this->assertSame([], (new PortalShell())->regions(portal: ['regions' => 'broken']));
+	}//end testThePortalsRegionsKeepAPresentEmptyKeyAndDropStyling()
 }//end class

@@ -96,8 +96,8 @@ that touches the shell ends with `node tests/shell-snapshot.mjs compare <dir>`.
   - GIVEN a page that fills `hero` WHEN rendered THEN exactly one hero and one `h1` appear
   - GIVEN `CmsReader` WHEN it shapes a page THEN `draftBody` is still never projected
 - Reference: a5657c6, 7974e5a, 79fdb2c
-- [ ] Implement
-- [ ] Test
+- [x] Implement
+- [x] Test
 
 ### Task 8: The designer keeps the regions it does not edit
 

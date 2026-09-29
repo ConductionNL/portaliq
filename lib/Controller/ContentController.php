@@ -218,6 +218,8 @@ class ContentController extends Controller {
 			return $this->notFound();
 		}
 
+		$regions = $this->shell->regions(portal: $portal);
+
 		return $this->publicJson(
 			payload: [
 				'title'   => (string)($portal['title'] ?? ''),
@@ -241,6 +243,9 @@ class ContentController extends Controller {
 				// The footer's authored content on named keys only; entries a
 				// visitor cannot follow are dropped (REQ-PTB-005).
 				'footer'        => $this->shell->footer(portal: $portal),
+				// The portal's own region contents, keys meaningful: a present
+				// empty list leaves that region out (REQ-PTB-009).
+				'regions'       => ($regions === [] ? new \stdClass() : $regions),
 				// The resolved measurement configuration, defaults filled in,
 				// so the client sends only what the portal asked for; and the
 				// absolute collector URL, so a statically built site on its

@@ -1766,7 +1766,22 @@ OC.L10N.register(
         "Legal links": "Juridische links",
         "Links in the bottom bar, such as privacy and accessibility. Empty uses the menu at position 2 or higher.": "Links in de onderste balk, zoals privacy en toegankelijkheid. Leeg gebruikt het menu op positie 2 of hoger.",
         "Certificates": "Certificaten",
-        "Certificates the organisation holds, each linking to its proof.": "Certificaten van de organisatie, elk met een link naar het bewijs."
+        "Certificates the organisation holds, each linking to its proof.": "Certificaten van de organisatie, elk met een link naar het bewijs.",
+        "Emptied regions": "Leeggemaakte gebieden",
+        "Regions this page leaves empty on purpose, such as hero. Such a region shows nothing on this page, even when the portal fills it.": "Gebieden die deze pagina bewust leeg laat, zoals hero. Zo'n gebied toont niets op deze pagina, ook als het portaal het vult.",
+        "The region this widget sits in: header, hero, main, aside or footer. Empty or body means main.": "Het gebied waarin deze widget staat: header, hero, main, aside of footer. Leeg of body betekent main.",
+        "What the portal shows in each region of every page, unless a page fills or empties that region itself. A region left out shows the default. An empty list shows nothing.": "Wat het portaal in elk gebied van elke pagina toont, tenzij een pagina dat gebied zelf vult of leegmaakt. Een weggelaten gebied toont de standaard. Een lege lijst toont niets.",
+        "Header region": "Kopgebied",
+        "The blocks at the top of every page. The default is the portal header.": "De blokken boven aan elke pagina. De standaard is de kop van het portaal.",
+        "Hero region": "Herogebied",
+        "The band under the header of every page. The default is empty.": "De band onder de kop van elke pagina. De standaard is leeg.",
+        "Main region": "Hoofdgebied",
+        "Blocks shown in the main content of a page that has none of its own.": "Blokken in de hoofdinhoud van een pagina die zelf geen blokken heeft.",
+        "Side region": "Zijgebied",
+        "Blocks shown beside the main content. The default is empty.": "Blokken naast de hoofdinhoud. De standaard is leeg.",
+        "Footer region": "Voetgebied",
+        "The blocks at the bottom of every page. The default is the portal footer.": "De blokken onder aan elke pagina. De standaard is de voettekst van het portaal.",
+        "Page regions": "Paginagebieden"
     },
     "nplurals=2; plural=(n != 1);"
 )

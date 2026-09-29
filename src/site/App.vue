@@ -51,20 +51,34 @@
 			shell owns the SC 2.4.1 affordance; a second one at this level would
 			be a duplicate tab stop announcing the same target twice.
 		-->
-		<!-- The header is the `brandHeader` block (REQ-PTB-004): the shell owns
-		     the data, the block owns the markup. -->
-		<BrandHeader
-			:title="site.title || ''"
-			:variant="headerVariant"
-			:menus="headerMenus"
-			:currentRoute="route"
-			:breadcrumbs="breadcrumbs"
-			:session="session"
-			:sessionLabel="sessionLabel"
-			:signInRoutes="signInRoutes"
-			:registerRoute="registerRoute"
-			@navigate="go"
-			@signout="signOut" />
+		<!--
+			THE HEADER REGION (REQ-PTB-008, REQ-PTB-009). Its default is one
+			`brandHeader` block, which reproduces the header this shell used to
+			hard-code; a portal or page can replace it or leave it empty. The
+			shell owns the data, the block owns the markup (REQ-PTB-004).
+		-->
+		<template v-for="block in regions.header" :key="block.id || block.widgetKey">
+			<BrandHeader
+				v-if="block.widgetKey === 'brandHeader'"
+				v-bind="authoredProps(block)"
+				:title="site.title || ''"
+				:variant="headerVariant"
+				:menus="headerMenus"
+				:currentRoute="route"
+				:breadcrumbs="breadcrumbs"
+				:session="session"
+				:sessionLabel="sessionLabel"
+				:signInRoutes="signInRoutes"
+				:registerRoute="registerRoute"
+				@navigate="go"
+				@signout="signOut" />
+			<WidgetGrid
+				v-else
+				:widgets="[block]"
+				v-bind="gridContext"
+				@navigate="go"
+				@search="goSearch" />
+		</template>
 
 		<!--
 			`.container` IS THE CONTENT COLUMN, AND IT IS NOT OPTIONAL.
@@ -96,6 +110,16 @@
 				takes one, and `WidgetGrid` decides per block whether to.
 			-->
 			<div>
+				<!-- THE HERO REGION: the page's own hero band, else the
+				     portal's, unless the page clears it (REQ-PTB-009). -->
+				<WidgetGrid
+					v-if="!loading && !error && page && regions.hero.length"
+					data-testid="site-region-hero"
+					:widgets="regions.hero"
+					v-bind="gridContext"
+					@navigate="go"
+					@search="goSearch" />
+
 				<p v-if="loading" class="container" data-testid="site-loading">
 					Bezig met laden…
 				</p>
@@ -180,13 +204,12 @@
 							:alt="page.hero.alt" />
 					</div>
 
+					<!-- The main region: the page's own widgets outside the other
+					     four regions (REQ-PTB-008). -->
 					<WidgetGrid
 						v-if="page.body && page.body.type === 'grid'"
-						:widgets="page.body.widgets || []"
-						:glossary="glossary"
-						:contributions="contributions"
-						:routeParam="routeParam"
-						:portal="site.slug || ''"
+						:widgets="regions.main"
+						v-bind="gridContext"
 						@navigate="go"
 						@search="goSearch" />
 
@@ -196,6 +219,17 @@
 							:source="(page.body && page.body.markdown) || ''" />
 					</div>
 				</article>
+
+				<aside
+					v-if="!loading && !error && page && regions.aside.length"
+					class="pq-site__aside"
+					data-testid="site-region-aside">
+					<WidgetGrid
+						:widgets="regions.aside"
+						v-bind="gridContext"
+						@navigate="go"
+						@search="goSearch" />
+				</aside>
 
 				<!--
 					NEITHER THE GLOSSARY NOR THE CONTRIBUTED SURFACES ARE
@@ -228,14 +262,25 @@
 			</div>
 		</main>
 
-		<!-- The footer is the `footerColumns` block (REQ-PTB-005). -->
-		<FooterColumns
-			:title="site.title || ''"
-			:tagline="site.tagline || ''"
-			:menus="footerMenus"
-			:legalLinks="legalLinks"
-			:footer="site.footer || {}"
-			@navigate="go" />
+		<!-- THE FOOTER REGION. Its default is one `footerColumns` block
+		     (REQ-PTB-005); a portal or page can replace it or leave it empty. -->
+		<template v-for="block in regions.footer" :key="block.id || block.widgetKey">
+			<FooterColumns
+				v-if="block.widgetKey === 'footerColumns'"
+				v-bind="authoredProps(block)"
+				:title="site.title || ''"
+				:tagline="site.tagline || ''"
+				:menus="footerMenus"
+				:legalLinks="legalLinks"
+				:footer="site.footer || {}"
+				@navigate="go" />
+			<WidgetGrid
+				v-else
+				:widgets="[block]"
+				v-bind="gridContext"
+				@navigate="go"
+				@search="goSearch" />
+		</template>
 
 		<!--
 			THE EDITING DOOR, and it is last in the document on purpose: it is
@@ -260,6 +305,7 @@ import {
 	fetchSession,
 	signInRoutes,
 } from './lib/authApi.js'
+import { withoutStyling } from './lib/blockProps.js'
 import { captureLanding } from './lib/campaignTracking.js'
 import { runtimeConfig } from './lib/contentApi.js'
 import {
@@ -271,6 +317,7 @@ import {
 	resolveApiBase,
 } from './lib/contentApi.js'
 import { editorBaseFrom, fetchEditingContext } from './lib/editorApi.js'
+import { pageRegionsOf, resolveRegions } from './lib/regions.js'
 import { headerMenusOf, headerVariantOf, registerRouteOf } from './lib/shellData.js'
 
 /**
@@ -453,9 +500,7 @@ export default {
 		 */
 		bodyProvidesHeading() {
 			const body = this.page.body || {}
-			if (body.type !== 'grid') {
-				return false
-			}
+			const main = body.type === 'grid' ? this.regions.main : []
 
 			// A block that renders its SUBJECT's name owns the page heading.
 			//
@@ -464,9 +509,43 @@ export default {
 			// one — so a detail page printed "Publicatie" as an h1 and then
 			// "Subsidieregister Rotterdam" as another, two page titles where
 			// the reference has one, and the generic one first.
-			return (body.widgets || []).some(
+			//
+			// A hero in the hero region counts too, the portal's included: the
+			// page then keeps one h1 (REQ-PTB-009).
+			return [...this.regions.hero, ...main].some(
 				(w) => w.widgetKey === 'hero' || w.widgetKey === 'publicationDetail',
 			)
+		},
+
+		/**
+		 * Every region's blocks for the page on screen: the page's own, else
+		 * the portal's, else the default shell.
+		 *
+		 * @return {object} Region name to widgets, all five present.
+		 *
+		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-regions-must-resolve-page-first-then-portal-then-default-req-ptb-009
+		 */
+		regions() {
+			return resolveRegions(
+				pageRegionsOf(this.page && this.page.body),
+				this.site.regions,
+			)
+		},
+
+		/**
+		 * What every widget grid on the page is handed by the host.
+		 *
+		 * @return {object} The WidgetGrid props besides `widgets`.
+		 *
+		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-blocks-must-take-their-data-as-props-and-nothing-else-req-ptb-007
+		 */
+		gridContext() {
+			return {
+				glossary: this.glossary,
+				contributions: this.contributions,
+				routeParam: this.routeParam,
+				portal: this.site.slug || '',
+			}
 		},
 
 		/**
@@ -929,6 +1008,19 @@ export default {
 		 *
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
 		 */
+		/**
+		 * A shell block's authored props, without `style` and `class`. The
+		 * shell's own data is bound after them, so it wins.
+		 *
+		 * @param {object} block The region's block.
+		 * @return {object} The authored props.
+		 *
+		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-blocks-must-take-their-data-as-props-and-nothing-else-req-ptb-007
+		 */
+		authoredProps(block) {
+			return withoutStyling(block.props)
+		},
+
 		hrefForRoute(route) {
 			const url = new URL(window.location.href)
 			url.search = ''
