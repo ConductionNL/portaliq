@@ -12,16 +12,16 @@
 
 ## Leaves
 
-- [ ] **T05**: Register `portaliq-change-proposals` (data-provider, `list` and `create`) on `RegisterLeafProvidersEvent` (REQ-CPQ-004)
-- [ ] **T06**: Register `portaliq-change-proposal-queue` (render-surface, widget and tab) in PHP and JS under one id (REQ-CPQ-004)
+- [x] **T05**: Register `portaliq-change-proposals` (data-provider, `list` and `create`) on `RegisterLeafProvidersEvent` (REQ-CPQ-004)
+- [x] **T06**: Register `portaliq-change-proposal-queue` (render-surface, widget and tab) in PHP and JS under one id (REQ-CPQ-004)
 
 ## Quality
 
 - [x] **T07**: PHPUnit: accept refused without write on the subject; drifted snapshot flagged; reject needs a reason
 - [x] **T08**: Playwright `tests/e2e/change-proposal-queue.spec.ts`: propose from the portal, accept in the widget, subject updated
-- [ ] **T09**: Dutch and English strings; docs with screenshots; hand the leaf ids to dossiq
+- [x] **T09**: Dutch and English strings; docs with screenshots; hand the leaf ids to dossiq
 
-## What shipped, and what the leaves still need
+## What shipped
 
 Shipped and covered: the `changeProposal` schema with its four-state lifecycle
 and the snapshot on every change, `ProposalService` (`propose`, `accept`,
@@ -30,17 +30,25 @@ and the snapshot on every change, `ProposalService` (`propose`, `accept`,
 ON, so the record's audit trail names the reviewer), the `propose-change`
 contribution action with its `proposable` allow-list, and both ways in:
 `POST /portal/api/proposals` for a portal subject and
-`POST /apps/portaliq/api/proposals` for a colleague. Reviewing is gated by the
-ADR-023 action `portal.review-proposal` plus a read of the record with RBAC on.
+`POST /apps/portaliq/api/proposals` for a colleague, who now needs read on the
+record (`PortalCaseAccessGuard::mayRead`).
 
-Left open, and marked so: **T05** and **T06**, the two leaves
-(`portaliq-change-proposals` as a data-provider and
-`portaliq-change-proposal-queue` as a render-surface). Portaliq consumes no
-`RegisterLeafProvidersEvent` yet; that groundwork belongs to the
-`leaf-integrations` change, and registering half a pair would fail gate-24
-rather than help. The queue's data is already reachable over
-`GET /apps/portaliq/api/proposals`, which is what both leaves will read.
+The leaves (T05, T06, 2026-09-29):
 
-For dossiq: the leaf ids above, the action type `propose-change` with its
-`proposable` list, and the staff endpoints for accept and reject.
-
+- `lib/Listener/RegisterProposalLeavesListener.php` contributes both on
+  `RegisterLeafProvidersEvent`, registered by string in `Application`.
+- `portaliq-change-proposals` is served by
+  `lib/Service/Proposals/ChangeProposalsProvider.php` (storage `app-local`):
+  `list` answers only a reviewer, `create` records a colleague's proposal as
+  that colleague, `get`/`update`/`delete` are not offered.
+- `portaliq-change-proposal-queue` is `src/integrations/ProposalQueueWidget.vue`
+  over `src/integrations/proposalQueue.js`, registered by
+  `src/integrations/registerProposalQueueLeaf.js` in mount mode, from
+  `src/main.js` and from the new `portaliq-leaves` bundle (`src/leaves.js`,
+  kept out of the shared chunks, because nothing loads those on another
+  app's page).
+- `scripts/check-integration-parity.sh` gives gate-24 its checker (vendored from
+  filinq; R2 now applies to render-surface leaves only, as its header says).
+- Docs: `docs/operations/reviewing-change-proposals.md` (no screenshots: no
+  app places the widget yet). Leaf ids handed to dossiq in
+  ConductionNL/dossiq#3215.

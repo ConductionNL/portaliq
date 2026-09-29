@@ -47,6 +47,12 @@ as proposable SHALL be refused.
 - **THEN** a `queued` proposal exists with `channel = portal` and `proposedBy` from the session
 - e2e: `tests/e2e/change-proposal-queue.spec.ts`
 
+#### Scenario: A colleague who cannot read the record proposes nothing
+- **GIVEN** a logged-in user without read on the case
+- **WHEN** they propose a change on it through `POST /apps/portaliq/api/proposals` or the `portaliq-change-proposals` leaf
+- **THEN** the request is refused and no proposal exists
+- @e2e exclude authorization guard; covered by PHPUnit on `ProposalController::proposeAsColleague()` and `ChangeProposalsProvider::create()`
+
 #### Scenario: A status field cannot be proposed
 - **GIVEN** the contribution does not list `status` as proposable
 - **WHEN** a citizen submits `propose-change` for `status`
