@@ -23,6 +23,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Contribution\PortalContributionFilter;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\ContentController;
+use OCA\Portaliq\Service\Cms\PortalShell;
 use OCA\Portaliq\Service\CmsReader;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
@@ -90,6 +91,11 @@ class ContentControllerTest extends TestCase {
 
 		$this->resolver = $this->createMock(PortalResolver::class);
 		$this->reader = $this->createMock(CmsReader::class);
+		// The shell projection is the real one: a stub answering [] would let
+		// the site() tests pass without the fields they assert.
+		$this->reader->method('shell')->willReturnCallback(
+			static fn (array $portal): array => (new PortalShell())->project(portal: $portal)
+		);
 		$this->request = $this->createMock(IRequest::class);
 	}//end setUp()
 

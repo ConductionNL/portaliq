@@ -29,7 +29,6 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Contribution\PortalContributionFilter;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
-use OCA\Portaliq\Service\Cms\PortalShell;
 use OCA\Portaliq\Service\CmsReader;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
@@ -86,7 +85,6 @@ class ContentController extends Controller {
 	 * @param PortalSessionService       $session      Resolves the caller's portal session for the content gate.
 	 * @param TrafficConfigResolver      $traffic      Resolves the portal's measurement configuration.
 	 * @param IURLGenerator              $urlGenerator Builds the absolute collector URL.
-	 * @param PortalShell                $shell        Projects the portal's header, footer and regions.
 	 *
 	 * @return void
 	 */
@@ -101,7 +99,6 @@ class ContentController extends Controller {
 		private readonly PortalSessionService $session,
 		private readonly TrafficConfigResolver $traffic,
 		private readonly IURLGenerator $urlGenerator,
-		private readonly PortalShell $shell=new PortalShell(),
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -218,8 +215,6 @@ class ContentController extends Controller {
 			return $this->notFound();
 		}
 
-		$regions = $this->shell->regions(portal: $portal);
-
 		return $this->publicJson(
 			payload: [
 				'title'   => (string)($portal['title'] ?? ''),
@@ -236,16 +231,13 @@ class ContentController extends Controller {
 				// The MODES are public — a visitor has to know how to sign in.
 				// Provider secrets are not here and never will be; they live in
 				// the credential broker.
-				'authentication' => $this->shell->authentication(portal: $portal),
-				// The header's shape (REQ-PTB-004); `double` unless the
-				// portal chose another known one.
-				'headerVariant' => $this->shell->headerVariant(portal: $portal),
-				// The footer's authored content on named keys only; entries a
-				// visitor cannot follow are dropped (REQ-PTB-005).
-				'footer'        => $this->shell->footer(portal: $portal),
-				// The portal's own region contents, keys meaningful: a present
-				// empty list leaves that region out (REQ-PTB-009).
-				'regions'       => ($regions === [] ? new \stdClass() : $regions),
+				// The shell: the public part of `authentication` (modes, and a
+				// declared register destination), the header's shape, the
+				// footer on named keys and the portal's regions
+				// (portal-theme-blocks-and-contributed-pages REQ-PTB-004,
+				// REQ-PTB-005, REQ-PTB-009). Provider secrets never leave the
+				// record; they live in the credential broker.
+				...$this->reader->shell(portal: $portal),
 				// The resolved measurement configuration, defaults filled in,
 				// so the client sends only what the portal asked for; and the
 				// absolute collector URL, so a statically built site on its

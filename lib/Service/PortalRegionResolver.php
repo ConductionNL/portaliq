@@ -22,6 +22,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use stdClass;
+
 /**
  * Groups widgets by region for the content contract.
  *
@@ -82,7 +84,7 @@ class PortalRegionResolver {
 			$slot   = ($widget['slot'] ?? null);
 			$region = $this->regionFor(slot: $slot);
 			if ($region === null) {
-				$unknown[] = (string)(is_scalar($slot) === true ? $slot : '');
+				$unknown[] = $this->slotName(slot: $slot);
 				continue;
 			}
 
@@ -94,6 +96,40 @@ class PortalRegionResolver {
 			'unknownRegions' => array_values(array_unique($unknown)),
 		];
 	}//end group()
+
+	/**
+	 * A slot as text, for the report of unknown regions.
+	 *
+	 * @param mixed $slot The stored slot.
+	 *
+	 * @return string The slot, or '' when it is not text.
+	 *
+	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-a-widgets-slot-must-select-one-of-five-regions-req-ptb-008
+	 */
+	private function slotName(mixed $slot): string {
+		if (is_scalar($slot) === false) {
+			return '';
+		}
+
+		return (string)$slot;
+	}//end slotName()
+
+	/**
+	 * A region map for a JSON response: an empty map stays an object.
+	 *
+	 * @param array<string, mixed> $regions Region name to widgets.
+	 *
+	 * @return array<string, mixed>|stdClass The map, or `{}` when empty.
+	 *
+	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-a-widgets-slot-must-select-one-of-five-regions-req-ptb-008
+	 */
+	public function forJson(array $regions): array|stdClass {
+		if ($regions === []) {
+			return new stdClass();
+		}
+
+		return $regions;
+	}//end forJson()
 
 	/**
 	 * The regions a page empties on purpose: known names only, each once.

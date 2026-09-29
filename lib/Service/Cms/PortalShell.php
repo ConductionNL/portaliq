@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Cms;
 
 use OCA\Portaliq\Service\PortalRegionResolver;
+use stdClass;
 
 /**
  * Chosen fields of the portal record, projected onto named keys.
@@ -47,6 +48,24 @@ class PortalShell {
 		private readonly PortalRegionResolver $regions=new PortalRegionResolver(),
 	) {
 	}//end __construct()
+
+	/**
+	 * Every shell field the public site contract serves.
+	 *
+	 * @param array<string, mixed> $portal The portal record.
+	 *
+	 * @return array<string, mixed> `authentication`, `headerVariant`, `footer` and `regions`.
+	 *
+	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-header-must-be-a-block-whose-shape-the-portal-chooses-req-ptb-004
+	 */
+	public function project(array $portal): array {
+		return [
+			'authentication' => $this->authentication(portal: $portal),
+			'headerVariant'  => $this->headerVariant(portal: $portal),
+			'footer'         => $this->footer(portal: $portal),
+			'regions'        => $this->publicRegions(portal: $portal),
+		];
+	}//end project()
 
 	/**
 	 * The header variant: the portal's choice when it is known, else `double`.
@@ -101,7 +120,7 @@ class PortalShell {
 	 *
 	 * @param array<string, mixed> $portal The portal record.
 	 *
-	 * @return array{description: string, colophon: string, socials: list<array<string, string>>, legalLinks: list<array<string, string>>, badges: list<array<string, string>>}
+	 * @return array<string, mixed> `{description, colophon, socials, legalLinks, badges}`; each list holds `{label, href}` entries.
 	 *
 	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-footer-must-be-a-block-whose-bands-are-styled-by-role-req-ptb-005
 	 */
@@ -136,13 +155,21 @@ class PortalShell {
 	 */
 	public function regions(array $portal): array {
 		$stored = $portal['regions'] ?? [];
-		$known  = $this->regions->ordered(regions: (is_array($stored) === true ? $stored : []));
+		if (is_array($stored) === false) {
+			$stored = [];
+		}
+
+		$known = $this->regions->ordered(regions: $stored);
 
 		$served = [];
 		foreach ($known as $region => $widgets) {
 			$served[$region] = [];
 			foreach ($widgets as $index => $widget) {
-				$props = (is_array($widget['props'] ?? null) === true ? $widget['props'] : []);
+				$props = ($widget['props'] ?? []);
+				if (is_array($props) === false) {
+					$props = [];
+				}
+
 				unset($props['style'], $props['class']);
 				$served[$region][] = [
 					'id'         => $this->text(value: ($widget['id'] ?? $region.'-'.$index)),
@@ -161,6 +188,19 @@ class PortalShell {
 	}//end regions()
 
 	/**
+	 * The portal's regions for the JSON response: an empty map stays `{}`.
+	 *
+	 * @param array<string, mixed> $portal The portal record.
+	 *
+	 * @return array<string, mixed>|stdClass Region name to widgets.
+	 *
+	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-regions-must-resolve-page-first-then-portal-then-default-req-ptb-009
+	 */
+	public function publicRegions(array $portal): array|stdClass {
+		return $this->regions->forJson(regions: $this->regions(portal: $portal));
+	}//end publicRegions()
+
+	/**
 	 * The entries that carry both a label and a followable destination.
 	 *
 	 * @param mixed       $entries The authored list.
@@ -172,7 +212,11 @@ class PortalShell {
 	 */
 	private function links(mixed $entries, ?string $extra): array {
 		$kept = [];
-		foreach ((is_array($entries) === true ? $entries : []) as $entry) {
+		if (is_array($entries) === false) {
+			return [];
+		}
+
+		foreach ($entries as $entry) {
 			if (is_array($entry) === false) {
 				continue;
 			}
@@ -218,6 +262,10 @@ class PortalShell {
 	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-footer-must-be-a-block-whose-bands-are-styled-by-role-req-ptb-005
 	 */
 	private function text(mixed $value): string {
-		return is_scalar($value) === true ? trim((string)$value) : '';
+		if (is_scalar($value) === false) {
+			return '';
+		}
+
+		return trim((string)$value);
 	}//end text()
 }//end class
