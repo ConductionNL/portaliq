@@ -634,6 +634,47 @@ export function createPortalApi(config) {
 		},
 
 		/**
+		 * Withdraw the citizen's own request. Only the reason travels; the
+		 * server decides whether the window is open and which status follows
+		 * (case-actions-withdraw-screen, REQ-WDS-002).
+		 *
+		 * @param {object} collection Manifest collection: `{ register, schema }`.
+		 * @param {string} id The case id.
+		 * @param {string} reason Why, or ''.
+		 * @return {Promise<object>} `{ ok, status, case, withdrawal }` or `{ ok: false, status, message, error }`.
+		 * @spec openspec/changes/case-actions-withdraw-screen/specs/citizen-case-withdraw-screen/spec.md#requirement-withdrawing-takes-a-confirmation-with-an-optional-reason-req-wds-002
+		 */
+		async withdrawCitizenCase(collection, id, reason) {
+			const res = await fetch(
+				`${base}${citizenCase(collection.register, collection.schema)}/${encodeURIComponent(id)}/withdraw`,
+				{
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						Accept: 'application/json',
+						...authHeaders(),
+					},
+					body: JSON.stringify({ reason }),
+				},
+			)
+			const json = await res.json().catch(() => ({}))
+			if (!res.ok) {
+				return {
+					ok: false,
+					status: res.status,
+					message: json.message || '',
+					error: json.error || '',
+				}
+			}
+			return {
+				ok: true,
+				status: res.status,
+				case: json.case || null,
+				withdrawal: json.withdrawal || null,
+			}
+		},
+
+		/**
 		 * Add a document to the running case. Nothing already on the case is
 		 * replaced: the server gives a colliding name a suffix.
 		 *

@@ -171,5 +171,14 @@
 	"This record is not in your list, so nothing of it is shown.": "Dit staat niet in uw lijst, dus we tonen er niets van.",
 	"Also sent to {label}.": "Ook verstuurd naar {label}.",
 	"Also send letters to {label}": "Brieven ook naar {label} sturen",
-	"Loading…": "Laden…"
+	"Loading…": "Laden…",
+	"Withdraw this request": "Deze aanvraag intrekken",
+	"Withdraw this request?": "Deze aanvraag intrekken?",
+	"If you withdraw, we stop handling your request. You cannot undo this.": "Als u intrekt, stoppen wij met de behandeling. U kunt dit niet terugdraaien.",
+	"Why are you withdrawing? (optional)": "Waarom trekt u de aanvraag in? (niet verplicht)",
+	"Withdraw request": "Aanvraag intrekken",
+	"Keep my request": "Aanvraag houden",
+	"Your request has been withdrawn.": "Uw aanvraag is ingetrokken.",
+	"Withdrawn on {date}.": "Ingetrokken op {date}.",
+	"Your reason: {reason}": "Uw reden: {reason}"
 }
