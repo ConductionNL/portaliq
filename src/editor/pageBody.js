@@ -21,7 +21,7 @@
  * of those is re-read from the page at write time, so the admin designer and the
  * portal edit mode, which both go through this module, cannot drop a hero.
  *
- * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-designer-must-keep-a-markdown-pages-markdown-req-pie-001
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-designer-must-keep-a-markdown-pages-markdown-req-pie-001
  * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-page-designer-must-preserve-regions-it-does-not-edit-req-ptb-010
  */
 
@@ -33,7 +33,7 @@ import { normaliseWidgets, storedWidget } from './gridModel.js'
  *
  * @param {object} object The object as read.
  * @return {object} The page.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-designer-must-keep-a-markdown-pages-markdown-req-pie-001
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-designer-must-keep-a-markdown-pages-markdown-req-pie-001
  */
 export function withoutEnvelope(object) {
 	const page = { ...(object || {}) }
@@ -46,7 +46,7 @@ export function withoutEnvelope(object) {
  *
  * @param {object} object The object as read.
  * @return {string} The marker, or '' when the store gave none.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-a-save-must-not-overwrite-a-newer-save-by-someone-else-req-pie-005
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-a-save-must-not-overwrite-a-newer-save-by-someone-else-req-pie-005
  */
 export function versionOf(object) {
 	return String(object?.['@self']?.updated || '')
@@ -85,7 +85,7 @@ export function isMainWidget(widget) {
  *
  * @param {object} page The page.
  * @return {{kind: string, widgets: Array<object>, markdown: string, fromDraft: boolean}} The body.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-designer-must-keep-a-markdown-pages-markdown-req-pie-001
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-designer-must-keep-a-markdown-pages-markdown-req-pie-001
  * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-page-designer-must-preserve-regions-it-does-not-edit-req-ptb-010
  */
 export function readBody(page) {
@@ -116,7 +116,7 @@ export function readBody(page) {
  *
  * @param {{kind: string, widgets: Array<object>, markdown: string, page?: object}} state The editor's state.
  * @return {object} The body.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-designer-must-keep-a-markdown-pages-markdown-req-pie-001
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-designer-must-keep-a-markdown-pages-markdown-req-pie-001
  * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-page-designer-must-preserve-regions-it-does-not-edit-req-ptb-010
  */
 export function bodyFor(state) {
@@ -145,7 +145,7 @@ export function bodyFor(state) {
  * @param {object} page The page as loaded.
  * @param {object} body The draft body.
  * @return {object} The payload.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-designer-must-keep-a-markdown-pages-markdown-req-pie-001
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-designer-must-keep-a-markdown-pages-markdown-req-pie-001
  */
 export function draftPayload(page, body) {
 	return { ...withoutEnvelope(page), draftBody: body }
@@ -159,7 +159,7 @@ export function draftPayload(page, body) {
  * @param {object} page The page as loaded.
  * @param {object} body The body to publish.
  * @return {object} The payload.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-designer-must-keep-a-markdown-pages-markdown-req-pie-001
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-designer-must-keep-a-markdown-pages-markdown-req-pie-001
  */
 export function publishPayload(page, body) {
 	const payload = { ...withoutEnvelope(page), body }
@@ -172,7 +172,7 @@ export function publishPayload(page, body) {
  *
  * @param {object} page The page as loaded.
  * @return {object} The payload.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-designer-must-keep-a-markdown-pages-markdown-req-pie-001
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-designer-must-keep-a-markdown-pages-markdown-req-pie-001
  */
 export function discardPayload(page) {
 	const payload = withoutEnvelope(page)

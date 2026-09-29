@@ -104,7 +104,7 @@ export default {
 		 * @return {Array<object>} The entries.
 		 *
 		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-palette-must-mark-widgets-that-cannot-render-on-a-public-page
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
+		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
 		 */
 		entries() {
 			const entries = widgetCatalogue()
@@ -124,7 +124,7 @@ export default {
 		 * @param {object} vars The placeholders.
 		 * @return {string} The translation.
 		 *
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
+		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
 		 */
 		t(app, text, vars) {
 			return translate(app, text, vars)

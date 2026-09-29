@@ -25,4 +25,4 @@
 
 ## Archive
 
-- [ ] **T15**: `opsx-archive`: fold the deltas into `openspec/specs/portal-page-designer` and `openspec/specs/portal-in-place-editing`.
+- [x] **T15**: `opsx-archive`: fold the deltas into `openspec/specs/portal-page-designer` and `openspec/specs/portal-in-place-editing`.

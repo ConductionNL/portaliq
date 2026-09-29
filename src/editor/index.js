@@ -36,7 +36,7 @@
  * - Shared forms: `sharedFormFor, inspectorModeFor, formWidgetFor,
  *   propsFromFormContent`.
  *
- * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
  */
 
 export { createEditHistory, HISTORY_LIMIT, historyIntent } from './editHistory.js'

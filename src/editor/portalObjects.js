@@ -9,7 +9,7 @@
  * there, by the schema authorization the editor groups write
  * (`PageEditorService::applyToSchema()`), so a refusal here is OpenRegister's.
  *
- * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
+ * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
  */
 
 import { createPageSaver } from './pageSaver.js'
@@ -24,7 +24,7 @@ import { createPageSaver } from './pageSaver.js'
  * @param {Function} deps.del (url) => Promise
  * @param {Function} deps.url (schema, id?) => the collection or object URL
  * @return {object} The client.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
+ * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
  */
 export function createPortalObjects({ get, post, put, del, url }) {
 	return {

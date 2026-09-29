@@ -257,7 +257,7 @@ class PageEditorService {
 	 * @return bool True when the schema was updated.
 	 *
 	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
-	 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-writes-to-the-menu-must-be-governed-by-the-editor-groups-req-pie-012
+	 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-writes-to-the-menu-must-be-governed-by-the-editor-groups-req-pie-012
 	 */
 	public function applyToSchema(array $groups): bool {
 		$mapper = $this->schemaMapper();

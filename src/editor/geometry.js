@@ -11,7 +11,7 @@
  * in columns 7 to 12: the two cannot read the same numbers differently. This
  * file is imported by the site ENTRY, so it stays a few lines with no imports.
  *
- * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-the-editor-and-the-public-page-must-place-widgets-identically-req-pie-008
+ * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-the-editor-and-the-public-page-must-place-widgets-identically-req-pie-008
  */
 
 /** The number of columns every page grid has. */
@@ -23,7 +23,7 @@ export const GRID_COLUMNS = 12
  *
  * @param {{gridX?: number, gridY?: number, gridWidth?: number, gridHeight?: number}} widget The placement.
  * @return {{gridX: number, gridY: number, gridWidth: number, gridHeight: number}} The cell.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-the-editor-and-the-public-page-must-place-widgets-identically-req-pie-008
+ * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-the-editor-and-the-public-page-must-place-widgets-identically-req-pie-008
  */
 export function cellOf(widget) {
 	const gridX = Math.max(
@@ -47,7 +47,7 @@ export function cellOf(widget) {
  *
  * @param {object} widget The placement.
  * @return {{gridColumn: string, gridRow: string}} The style.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-the-editor-and-the-public-page-must-place-widgets-identically-req-pie-008
+ * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-the-editor-and-the-public-page-must-place-widgets-identically-req-pie-008
  */
 export function cellStyleOf(widget) {
 	const cell = cellOf(widget)

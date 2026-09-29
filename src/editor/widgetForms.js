@@ -19,7 +19,7 @@
  * The registry is handed in: importing it here would pull the whole component
  * library into every test and every consumer of this module.
  *
- * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-a-widget-with-a-shared-configuration-form-must-be-configured-through-it-req-pie-003
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-a-widget-with-a-shared-configuration-form-must-be-configured-through-it-req-pie-003
  */
 
 /**
@@ -28,7 +28,7 @@
  * @param {string} key The widget key.
  * @param {object} registry The shared widget registry.
  * @return {object|null} The form component.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-a-widget-with-a-shared-configuration-form-must-be-configured-through-it-req-pie-003
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-a-widget-with-a-shared-configuration-form-must-be-configured-through-it-req-pie-003
  */
 export function sharedFormFor(key, registry) {
 	if (!registry || !Object.hasOwn(registry, key)) {
@@ -46,7 +46,7 @@ export function sharedFormFor(key, registry) {
  * @param {Function} context.isPublic (key) => whether the site renders it.
  * @param {Array<object>} context.fields The fields read from the component.
  * @return {'form'|'fields'|'json'} The mode.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-a-widget-with-a-shared-configuration-form-must-be-configured-through-it-req-pie-003
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-a-widget-with-a-shared-configuration-form-must-be-configured-through-it-req-pie-003
  */
 export function inspectorModeFor(key, { registry, isPublic, fields }) {
 	if (!isPublic(key) && sharedFormFor(key, registry)) {
@@ -60,7 +60,7 @@ export function inspectorModeFor(key, { registry, isPublic, fields }) {
  *
  * @param {object} widget The placement.
  * @return {{type: string, content: object}} The form's editing widget.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-a-widget-with-a-shared-configuration-form-must-be-configured-through-it-req-pie-003
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-a-widget-with-a-shared-configuration-form-must-be-configured-through-it-req-pie-003
  */
 export function formWidgetFor(widget) {
 	return { type: widget.widgetKey, content: { ...(widget.props || {}) } }
@@ -71,7 +71,7 @@ export function formWidgetFor(widget) {
  *
  * @param {object} content The form's `update:content` payload.
  * @return {object} The props.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-a-widget-with-a-shared-configuration-form-must-be-configured-through-it-req-pie-003
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-a-widget-with-a-shared-configuration-form-must-be-configured-through-it-req-pie-003
  */
 export function propsFromFormContent(content) {
 	return JSON.parse(JSON.stringify(content || {}))

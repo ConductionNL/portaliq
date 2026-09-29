@@ -9,7 +9,7 @@
  * breaks a link someone saved. A new page is always a draft: it is not served
  * until someone publishes it.
  *
- * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
+ * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
  */
 
 import { withoutEnvelope } from './pageBody.js'
@@ -19,7 +19,7 @@ import { withoutEnvelope } from './pageBody.js'
  *
  * @param {string} route The typed route.
  * @return {string} The route.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
+ * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
  */
 export function normaliseRoute(route) {
 	const trimmed = String(route || '')
@@ -50,7 +50,7 @@ function byOrder(a, b) {
  *
  * @param {Array<object>} pages The portal's pages, each with an `id`.
  * @return {Array<object>} The top-level nodes.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
+ * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
  */
 export function buildPageTree(pages) {
 	const ids = new Set(pages.map((p) => p.id))
@@ -79,7 +79,7 @@ export function buildPageTree(pages) {
  *
  * @param {Array<object>} tree The nodes.
  * @return {Array<object>} The nodes, depth first.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
+ * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
  */
 export function flattenPageTree(tree) {
 	return tree.flatMap((node) => [node, ...flattenPageTree(node.children)])
@@ -113,7 +113,7 @@ function subtreeIds(id, pages) {
  *
  * @param {object} page The page.
  * @return {boolean} True for a draft page.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
+ * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
  */
 export function canDeletePage(page) {
 	return page?.status === 'draft'
@@ -126,7 +126,7 @@ export function canDeletePage(page) {
  * @param {Array<object>} pages The portal's pages, to refuse a taken route.
  * @return {object} The page to create.
  * @throws {Error} When the title is empty or the route is taken.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
+ * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
  */
 export function newPagePayload({ title, route, portal, parent = '' }, pages) {
 	const name = String(title || '').trim()
@@ -158,7 +158,7 @@ export function newPagePayload({ title, route, portal, parent = '' }, pages) {
  * @param {object} page The page as read.
  * @param {string} title The new title.
  * @return {object} The page to store.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
+ * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
  */
 export function renamePagePayload(page, title) {
 	const name = String(title || '').trim()
@@ -179,7 +179,7 @@ export function renamePagePayload(page, title) {
  * @param {Array<object>} pages The portal's pages.
  * @return {object} The page to store.
  * @throws {Error} When the page would move under itself.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
+ * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
  */
 export function movePagePayload(page, { parent, order }, pages) {
 	if (parent && subtreeIds(page.id, pages).has(parent)) {
