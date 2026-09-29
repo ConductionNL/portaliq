@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\BackgroundJob;
 
+use OCA\Integriq\Event\DigitalPostDeliveredEvent;
 use OCA\Integriq\Event\DigitalPostSendRequestedEvent;
 use OCA\Portaliq\BackgroundJob\NotificationDispatchJob;
 use OCA\Portaliq\Contribution\PortalProviderLocator;
+use OCA\Portaliq\Listener\PortalDigitalPostDeliveredListener;
 use OCA\Portaliq\Service\Notifications\MessageBoxSender;
 use OCA\Portaliq\Service\Notifications\NotificationChannels;
 use OCA\Portaliq\Service\Notifications\PushDeliveryService;
@@ -982,4 +984,46 @@ class NotificationDispatchJobTest extends TestCase {
 		$captured = [];
 		$this->assertSame([], $updated, 'no e-mail streak or fallback flag is touched');
 	}//end testMessageIdIsRecorded()
+
+	/**
+	 * Integriq announces the letter's first status inside the send itself,
+	 * before portaliq has written the row (DigitalPostService::handleSendRequest
+	 * calls announce() before it sets the message id). The REAL delivered
+	 * listener hears it then, and the row the sender writes carries it: a
+	 * simulated binding's letter is logged as simulated, not as sent.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/inbox-berichtenbox-channel/specs/portal-message-box-channel/spec.md#requirement-the-resident-sees-only-a-real-delivery-req-mbc-004
+	 */
+	public function testAStatusAnnouncedDuringTheSendLandsOnTheRow(): void {
+		if (class_exists(DigitalPostSendRequestedEvent::class) === false) {
+			$this->markTestSkipped('Integriq is not loadable: run inside Nextcloud or set PORTALIQ_INTEGRIQ_LIB.');
+		}
+
+		$listenerReader = $this->createMock(PortalObjectReader::class);
+		$listenerReader->method('readCollection')->willReturn([]);
+		$listener = new PortalDigitalPostDeliveredListener(
+			reader: $listenerReader,
+			writer: $this->createMock(PortalObjectWriter::class),
+			logger: $this->createMock(LoggerInterface::class)
+		);
+
+		$created = [];
+		$updated = [];
+		$job = $this->messageBoxJob(
+			created: $created,
+			updated: $updated,
+			recipient: self::BSN,
+			integriq: static function (DigitalPostSendRequestedEvent $event) use ($listener): void {
+				$event->setHandled(true);
+				$listener->handle(new DigitalPostDeliveredEvent(messageId: 'msg-9', status: 'sent', requestedBy: $event->getRequestedBy(), previousStatus: 'queued', simulated: true));
+				$event->setMessageId('msg-9');
+			}
+		);
+		$this->invokeRun($job, self::MESSAGE_BOX_ARGUMENT);
+
+		$this->assertSame('simulated', $created[0]['data']['status']);
+		$this->assertSame('msg-9', $created[0]['data']['externalMessageId']);
+	}//end testAStatusAnnouncedDuringTheSendLandsOnTheRow()
 }//end class

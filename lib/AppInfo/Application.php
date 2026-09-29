@@ -49,6 +49,7 @@ use OCA\Portaliq\Listener\LandingPageRequestedEventListener;
 use OCA\Portaliq\Listener\LandingPageSubmissionDispatchListener;
 use OCA\Portaliq\Listener\PortalAccountClaimListener;
 use OCA\Portaliq\Listener\PortalAccountProvisionListener;
+use OCA\Portaliq\Listener\PortalDigitalPostDeliveredListener;
 use OCA\Portaliq\Listener\PortalRecordChangeListener;
 use OCA\Portaliq\Middleware\PortalAuthMiddleware;
 use OCA\Portaliq\Middleware\PublicApiCorsMiddleware;
@@ -215,6 +216,10 @@ class Application extends App implements IBootstrap {
 		foreach ([ObjectCreatedEvent::class, ObjectUpdatedEvent::class] as $event) {
 			$context->registerEventListener($event, PortalRecordChangeListener::class);
 		}
+
+		// Integriq's report on a message box letter (inbox-berichtenbox-channel).
+		// Named by string: without integriq nothing dispatches it.
+		$context->registerEventListener(PortalDigitalPostDeliveredListener::EVENT, PortalDigitalPostDeliveredListener::class);
 	}//end registerRecordChangeListener()
 
 	/**
