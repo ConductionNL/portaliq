@@ -241,19 +241,13 @@
 					self-contained document, which is a question about semantics
 					and not about line length.
 				-->
-				<!--
-					EDIT MODE REPLACES THE PAGE, IN PLACE. The editor is a bundle
-					of its own, loaded with a script tag only when an editor
-					chooses to edit, and mounted in this element: a visitor never
-					downloads it (portal-in-place-editing, REQ-PIE-007).
-				-->
+				<!-- Edit mode: the editor bundle mounts in place of the page. -->
 				<div
 					v-else-if="editMode && editing && editing.pageId"
 					data-testid="site-edit-host">
 					<p v-if="editorStatus" class="container" role="status">
 						{{ editorStatus }}
 					</p>
-					<!-- Owned by the editor app, never rendered into by this one. -->
 					<div ref="editorHost" />
 				</div>
 				<article
@@ -521,13 +515,7 @@ const SiteEditButton = defineAsyncComponent(
 export default {
 	name: 'App',
 
-	components: {
-		CnSiteIcon,
-		MarkdownBlock,
-		SiteEditButton,
-		SiteMenu,
-		WidgetGrid,
-	},
+	components: { CnSiteIcon, MarkdownBlock, SiteEditButton, SiteMenu, WidgetGrid },
 
 	props: {
 		/** Explicit site slug, when not resolving by host. */
@@ -561,11 +549,9 @@ export default {
 			// The editing context for the route on screen, or null for every
 			// visitor who may not edit — which is almost all of them.
 			editing: null,
-			// True while an editor edits the page on screen in place.
+			// Edit mode (portal-in-place-editing): on, its status line, its unmount.
 			editMode: false,
-			// What the editor host says while the editor loads, or why it did not.
 			editorStatus: '',
-			// Unmounts the editor app, while one is mounted.
 			unmountEditor: null,
 			// Set once the probe has refused, and never unset for this page
 			// load. It is what keeps a reader's visit to one extra request in
@@ -1032,8 +1018,7 @@ export default {
 		},
 
 		/**
-		 * Leave edit mode and show the page as a visitor sees it, read again
-		 * so a change the editor published is on screen.
+		 * Leave edit mode and read the page again.
 		 *
 		 * @return {Promise<void>} Resolves when the page is shown.
 		 *
@@ -1049,8 +1034,7 @@ export default {
 		},
 
 		/**
-		 * Swap the page for the editor: load the editor bundle and mount it
-		 * where the page was.
+		 * Load the editor bundle and mount it where the page was.
 		 *
 		 * @return {Promise<void>} Resolves when the editor is mounted.
 		 *

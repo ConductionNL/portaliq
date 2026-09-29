@@ -123,7 +123,10 @@ and that was measured, not assumed: as a chunk, the editor shares Vue with the
 entry, a module shared with a lazy chunk is no longer tree-shaken or
 scope-hoisted there, and the ENTRY grew from 408.5 KiB to 428.6 KiB with none
 of the editor in it, over the 410 KiB budget. As its own bundle with its own
-Vue, the entry grows only by the loader and the button's action. The editor
+Vue, the entry grows only by the loader and the button's action. The entry also stops inlining CSS source maps: css-loader followed
+`devtool: 'source-map'` and put every scoped style's map, with the .vue file's
+whole source, into the visitor's JavaScript (App.vue twice), so any line added
+to App.vue cost twice its length. `sourceMap` is now on only in development. The editor
 bundle has no size budget: only an editor on the Nextcloud origin loads it.
 Its chunks carry their own file prefix and its runtime its own global, so the
 builds that share `js/` cannot collide.

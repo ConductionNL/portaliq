@@ -45,7 +45,19 @@ const site = {
 			},
 			{
 				test: /\.css$/,
-				use: ['style-loader', 'css-loader'],
+				use: [
+					'style-loader',
+					// NO CSS SOURCE MAPS IN PRODUCTION. css-loader follows
+					// `devtool`, and with `source-map` it inlined every scoped
+					// style's map INTO the JavaScript, sources included: each
+					// .vue file's whole source text sat in the visitor's entry,
+					// once per style block (App.vue twice, about 46 KiB in
+					// total). Measured while adding the editor loader
+					// (portal-in-place-editing): a comment added to App.vue
+					// cost the visitor twice its length. The JavaScript keeps
+					// its own external .map.
+					{ loader: 'css-loader', options: { sourceMap: isDev } },
+				],
 			},
 			{
 				test: /\.(png|jpe?g|gif|svg|woff2?)$/,
