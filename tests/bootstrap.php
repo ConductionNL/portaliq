@@ -140,6 +140,26 @@ if (is_string($portaliqOrLib) === true && $portaliqOrLib !== '' && is_dir($porta
 	);
 }
 
+// Integriq outside the container, the same way. The message box channel
+// dispatches integriq's REAL DigitalPostSendRequestedEvent and hears its REAL
+// DigitalPostDeliveredEvent; point PORTALIQ_INTEGRIQ_LIB at an integriq
+// checkout's lib/ and they autoload from there.
+$portaliqIntegriqLib = getenv('PORTALIQ_INTEGRIQ_LIB');
+if (is_string($portaliqIntegriqLib) === true && $portaliqIntegriqLib !== '' && is_dir($portaliqIntegriqLib) === true) {
+	spl_autoload_register(
+		static function (string $class) use ($portaliqIntegriqLib): void {
+			if (str_starts_with($class, 'OCA\\Integriq\\') === false) {
+				return;
+			}
+
+			$file = rtrim($portaliqIntegriqLib, '/') . '/' . str_replace('\\', '/', substr($class, strlen('OCA\\Integriq\\'))) . '.php';
+			if (is_file($file) === true) {
+				require_once $file;
+			}
+		}
+	);
+}
+
 // OCP outside the container. `nextcloud/ocp` ships the public API as plain
 // PSR-4 files but declares no `autoload` block of its own, so Composer never
 // maps `OCP\` and every test that doubles an OCP interface dies with "Class or

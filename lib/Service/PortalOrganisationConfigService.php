@@ -189,6 +189,45 @@ class PortalOrganisationConfigService {
 	}//end resolve()
 
 	/**
+	 * The organisation's government message box channel: the integriq digital
+	 * post source to send over and the label residents read, or null when the
+	 * organisation does not offer the channel.
+	 *
+	 * Both values must be non-empty text. Half a configuration is no channel,
+	 * so an organisation that set only one of them sends nothing and shows its
+	 * residents no choice (REQ-MBC-001).
+	 *
+	 * @param string $orgSlug The organisation slug.
+	 *
+	 * @return array{sourceId: string, label: string}|null
+	 *
+	 * @spec openspec/changes/inbox-berichtenbox-channel/specs/portal-message-box-channel/spec.md#requirement-the-organisation-turns-the-channel-on-req-mbc-001
+	 */
+	public function messageBox(string $orgSlug): ?array {
+		if ($orgSlug === '') {
+			return null;
+		}
+
+		$organisation = $this->findOrganisationBySlug(slug: $orgSlug);
+		if ($organisation === null) {
+			return null;
+		}
+
+		$raw = ($this->presentationOverrides(organisationUuid: $organisation['uuid'])['messageBox'] ?? null);
+		if (is_array($raw) === false) {
+			return null;
+		}
+
+		$sourceId = ($raw['sourceId'] ?? null);
+		$label = ($raw['label'] ?? null);
+		if (is_string($sourceId) === false || is_string($label) === false || trim($sourceId) === '' || trim($label) === '') {
+			return null;
+		}
+
+		return ['sourceId' => trim($sourceId), 'label' => trim($label)];
+	}//end messageBox()
+
+	/**
 	 * Resolve the FULL per-organisation OIDC broker config for one provider —
 	 * issuer/clientId/clientSecret/scopes/claimMap/loaMap merged with the
 	 * provider's preset. NEVER call this from a path that returns to the SPA
