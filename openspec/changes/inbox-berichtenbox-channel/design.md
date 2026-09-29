@@ -54,3 +54,11 @@ The settings section from `inbox-notifications-and-preferences` gains one row wh
 - It does not store or show a citizen service number anywhere.
 - It does not talk to Logius. Integriq does.
 - It does not receive post.
+
+## Notes from the build (2026-09-29)
+
+- **Integriq reports before portaliq writes.** `DigitalPostService::handleSendRequest` dispatches the first `DigitalPostDeliveredEvent` inside the send, before it sets the message id, so the listener hears about a row that does not exist yet. The listener keeps that status in `MessageBoxStatus`, and the sender writes it onto the row it creates. Without this, every simulated letter would have been logged as `sent`.
+- **The refusal code has its own property.** `portalNotification.refusalCode` holds `not_installed`, `unhandled`, `dispatch_failed` or integriq's own code. Integriq's refusal reason is not stored: it may quote the recipient.
+- **The job reads the message, the queue does not carry it.** A job argument is capped in size, so the job carries the message's reference and its collection's register, schema and scope field, and reads the message scoped to the resident when it runs.
+- **The channel does not depend on `message.created`.** An app that declares `messageBox` on an inbox collection gets its letters sent even without the e-mail rule.
+- **A choice, not a kind.** `notificationPreferences.messageBox` is written only once the resident makes the choice; before that it reads as on.

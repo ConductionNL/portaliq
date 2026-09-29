@@ -42,7 +42,13 @@
  *   portal calls it only after the subject's scoped read of the object
  *   succeeded, and renders the entries as returned, so the provider decides
  *   what is public. A name that is not a plain identifier, or names a
- *   contract method, drops the key; portaliq#723).
+ *   contract method, drops the key; portaliq#723), and on a `kind: inbox`
+ *   collection `messageBox` (`{recipientProvider}`: a public method on this
+ *   provider taking one message id and returning the recipient identity for
+ *   the government message box, or null to keep the message in the portal;
+ *   return null for a letter the app sends there itself. Held to the timeline
+ *   rule; portaliq passes the value to integriq and keeps it nowhere;
+ *   inbox-berichtenbox-channel).
  * - Actions: `fieldConfigs` (per-whitelisted-field `{label?, visible?, required?,
  *   disabled?, size?, placeholder?, help?}` — a config for a non-whitelisted field
  *   is dropped), `optionsProviders` (per-field `{type: static, options[]}` or
