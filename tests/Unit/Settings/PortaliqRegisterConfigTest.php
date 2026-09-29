@@ -266,11 +266,21 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.40.0 (portal 0.7.0): a portal lists the case types it does not
 		// show to residents (`hiddenCaseTypes`) (operate-show-per-case-type).
 		// Additive; empty shows every case type, as before.
+		// 0.41.0 (portalAvailabilityDaily 0.1.0, portalAvailabilityOutage
+		// 0.1.0): each published portal's availability per day and its
+		// outages, read by administrators only (operate-availability-report).
+		// Additive.
 		// Every new schema is listed in
 		// `components.registers.portaliq.schemas` (ImportHandler binds only
 		// what is listed there) and declares a non-empty `read` rule.
-		$this->assertSame('0.40.0', self::$register['info']['version']);
-		$this->assertSame('0.40.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.41.0', self::$register['info']['version']);
+		$this->assertSame('0.41.0', self::$register['components']['registers']['portaliq']['version']);
+		foreach (['portalAvailabilityDaily', 'portalAvailabilityOutage'] as $availability) {
+			$this->assertSame('0.1.0', self::$register['components']['schemas'][$availability]['version']);
+			$this->assertSame(['admin'], self::$register['components']['schemas'][$availability]['authorization']['read']);
+			$this->assertContains($availability, self::$register['components']['registers']['portaliq']['schemas']);
+		}
+		$this->assertSame(['site-error', 'timeout', 'health-degraded', 'no-check'], self::$register['components']['schemas']['portalAvailabilityOutage']['properties']['cause']['enum']);
 		$this->assertSame('array', self::$register['components']['schemas']['portal']['properties']['hiddenCaseTypes']['type']);
 		$this->assertSame(['typeId'], self::$register['components']['schemas']['portal']['properties']['hiddenCaseTypes']['items']['required']);
 		$this->assertSame('object', self::$register['components']['schemas']['portalMessage']['properties']['recordLink']['type']);

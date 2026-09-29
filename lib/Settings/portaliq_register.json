@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.40.0"
+        "version": "0.41.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.40.0",
+                "version": "0.41.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -69,7 +69,9 @@
                     "pendingPush",
                     "activityOffer",
                     "activitySignup",
-                    "activityAttendance"
+                    "activityAttendance",
+                    "portalAvailabilityDaily",
+                    "portalAvailabilityOutage"
                 ]
             }
         },
@@ -7756,6 +7758,135 @@
                         "type": "string",
                         "format": "date-time",
                         "description": "When it was last marked."
+                    }
+                }
+            },
+            "portalAvailabilityDaily": {
+                "slug": "portalAvailabilityDaily",
+                "authorization": {
+                    "read": [
+                        "admin"
+                    ]
+                },
+                "icon": "ChartLine",
+                "version": "0.1.0",
+                "title": "Portal availability per day",
+                "description": "How available one portal was on one UTC day, measured by the portal itself every five minutes. An interval in which no check ran counts as down. Kept for thirteen months, for the availability report.",
+                "type": "object",
+                "required": [
+                    "portal",
+                    "date"
+                ],
+                "properties": {
+                    "portal": {
+                        "title": "Portal",
+                        "type": "string",
+                        "description": "The portal's slug.",
+                        "example": "open-tilburg"
+                    },
+                    "date": {
+                        "title": "Date",
+                        "type": "string",
+                        "description": "The UTC day, as YYYY-MM-DD.",
+                        "format": "date",
+                        "example": "2026-09-29"
+                    },
+                    "intervals": {
+                        "title": "Intervals",
+                        "type": "integer",
+                        "description": "The five-minute intervals counted so far this day.",
+                        "minimum": 0,
+                        "default": 0
+                    },
+                    "available": {
+                        "title": "Available",
+                        "type": "integer",
+                        "description": "Intervals in which the portal answered and its health check said ok.",
+                        "minimum": 0,
+                        "default": 0
+                    },
+                    "degraded": {
+                        "title": "Degraded",
+                        "type": "integer",
+                        "description": "Intervals in which the portal answered but its health check said degraded.",
+                        "minimum": 0,
+                        "default": 0
+                    },
+                    "down": {
+                        "title": "Down",
+                        "type": "integer",
+                        "description": "Intervals in which the portal did not answer, including intervals without a check.",
+                        "minimum": 0,
+                        "default": 0
+                    },
+                    "noCheck": {
+                        "title": "No check",
+                        "type": "integer",
+                        "description": "Intervals in which no check ran. They are counted as down as well.",
+                        "minimum": 0,
+                        "default": 0
+                    },
+                    "lastCheckAt": {
+                        "title": "Last check",
+                        "type": "string",
+                        "description": "When the last check of this portal ran, so the next one can count the intervals missed in between.",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "portalAvailabilityOutage": {
+                "slug": "portalAvailabilityOutage",
+                "authorization": {
+                    "read": [
+                        "admin"
+                    ]
+                },
+                "icon": "ChartLine",
+                "version": "0.1.0",
+                "title": "Portal outage",
+                "description": "One run of consecutive five-minute intervals in which a portal was not available. Open while it lasts, closed at the first check that finds the portal available again. Kept for thirteen months.",
+                "type": "object",
+                "required": [
+                    "portal",
+                    "startedAt",
+                    "cause"
+                ],
+                "properties": {
+                    "portal": {
+                        "title": "Portal",
+                        "type": "string",
+                        "description": "The portal's slug.",
+                        "example": "open-tilburg"
+                    },
+                    "startedAt": {
+                        "title": "Started",
+                        "type": "string",
+                        "description": "The start of the first interval that was not available.",
+                        "format": "date-time"
+                    },
+                    "endedAt": {
+                        "title": "Ended",
+                        "type": "string",
+                        "description": "The check that found the portal available again. Empty while the outage lasts.",
+                        "format": "date-time"
+                    },
+                    "durationMinutes": {
+                        "title": "Duration in minutes",
+                        "type": "integer",
+                        "description": "How long the outage lasted, or has lasted so far.",
+                        "minimum": 0,
+                        "default": 0
+                    },
+                    "cause": {
+                        "title": "Cause",
+                        "type": "string",
+                        "description": "Why the first interval was not available.",
+                        "enum": [
+                            "site-error",
+                            "timeout",
+                            "health-degraded",
+                            "no-check"
+                        ]
                     }
                 }
             }
