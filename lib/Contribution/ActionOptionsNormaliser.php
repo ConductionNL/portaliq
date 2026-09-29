@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/contribution-manifest-v3/tasks.md#T1
+ * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T1
  */
 
 declare(strict_types=1);
@@ -34,7 +34,7 @@ namespace OCA\Portaliq\Contribution;
 /**
  * Validates an action's option providers, fail-closed.
  *
- * @spec openspec/changes/contribution-manifest-v3/tasks.md#T1
+ * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T1
  */
 class ActionOptionsNormaliser {
 	/**
@@ -60,7 +60,7 @@ class ActionOptionsNormaliser {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/contribution-manifest-v3/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T1
 	 */
 	public function normaliseOptionsProviders(array $action, array $whitelist): array {
 		if (array_key_exists('optionsProviders', $action) === false) {

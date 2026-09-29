@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/contribution-manifest-v3/tasks.md#T1
+ * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T1
  * @spec openspec/specs/supplier-portal/spec.md#download-is-opt-in-per-collection-fail-closed
  */
 
@@ -36,7 +36,7 @@ namespace OCA\Portaliq\Contribution;
 /**
  * Validates and sanitises the v3 collection presentation config, fail-closed.
  *
- * @spec openspec/changes/contribution-manifest-v3/tasks.md#T1
+ * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T1
  */
 class CollectionConfigNormaliser {
 	/**
@@ -109,7 +109,7 @@ class CollectionConfigNormaliser {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/contribution-manifest-v3/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T1
 	 * @spec openspec/changes/contribution-pay-screen/specs/portal-contribution-contract/spec.md#requirement-server-enforced-status-transitions
 	 */
 	public function resolveRowActions(array $collections, array $actions): array {

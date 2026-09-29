@@ -558,7 +558,7 @@ class PortalObjectReader {
 	 *
 	 * @return string|null The scope value, or null when a declared claim is absent.
 	 *
-	 * @spec openspec/changes/portal-status-transitions/tasks.md#T2
+	 * @spec openspec/changes/archive/2026-09-29-portal-status-transitions/tasks.md#T2
 	 */
 	public function resolveScopeValue(string $scopeClaim, string $contributingApp, array $subject): ?string {
 		$subjectRef = (string)($subject['subjectRef'] ?? '');

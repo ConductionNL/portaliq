@@ -104,7 +104,7 @@ export const SIGNIN_FAILED_MESSAGE =
  * `#signin=failed` fragment and removed from the URL, like `#token=`.
  *
  * @return {boolean}
- * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-a-failed-login-returns-to-the-login-screen-without-a-reason-req-bel-006
+ * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-a-failed-login-returns-to-the-login-screen-without-a-reason-req-bel-006
  */
 export function takeSigninFailed() {
 	if (typeof window === 'undefined') {

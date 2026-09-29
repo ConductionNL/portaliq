@@ -27,7 +27,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/contribution-manifest-v3/tasks.md#T1
+ * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T1
  * @spec openspec/specs/supplier-portal/spec.md#form-data-minimisation-no-non-mandatory-field-may-be-required
  */
 
@@ -41,7 +41,7 @@ use OCA\Portaliq\Service\PortalSchemaReader;
 /**
  * Validates and sanitises the v3 action form config, fail-closed.
  *
- * @spec openspec/changes/contribution-manifest-v3/tasks.md#T1
+ * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T1
  * @spec openspec/specs/supplier-portal/spec.md#form-data-minimisation-no-non-mandatory-field-may-be-required
  *
  * @SuppressWarnings(PHPMD.StaticAccess) -- PortalJwtService::isReservedScopeClaim() is a pure check on
@@ -101,7 +101,7 @@ class ActionConfigNormaliser {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/contribution-manifest-v3/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T1
 	 */
 	public function normaliseActions(array $actions): array {
 		$out = [];

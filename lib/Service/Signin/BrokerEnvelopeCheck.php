@@ -29,7 +29,7 @@ namespace OCA\Portaliq\Service\Signin;
  * answers null, and the caller ends the login the same way as every other
  * failure.
  *
- * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-every-claim-portaliq-acts-on-is-checked-req-bel-004
+ * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-every-claim-portaliq-acts-on-is-checked-req-bel-004
  */
 class BrokerEnvelopeCheck {
 
@@ -67,7 +67,7 @@ class BrokerEnvelopeCheck {
 	 *
 	 * @return array{sub: string, provider: string, trust: string}|null
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-every-claim-portaliq-acts-on-is-checked-req-bel-004
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-every-claim-portaliq-acts-on-is-checked-req-bel-004
 	 */
 	public function check(string $envelope, string $consumerId, string $org, string $provider, int $now): ?array {
 		$claims = $this->claims(envelope: $envelope);

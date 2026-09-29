@@ -16,8 +16,8 @@ use PHPUnit\Framework\TestCase;
  * a non-whitelisted field is dropped; a column for a projected-away field is kept
  * but carries no data because projection is the authority elsewhere).
  *
- * @spec openspec/changes/contribution-manifest-v3/tasks.md#T1
- * @spec openspec/changes/contribution-manifest-v3/tasks.md#T2
+ * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T1
+ * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T2
  */
 class PortalManifestNormaliserTest extends TestCase {
 

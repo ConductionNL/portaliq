@@ -7,7 +7,7 @@
 ## Implementation Tasks
 
 ### Task 1: Normaliser — action `set` + collection `rowActions`
-- **spec_ref**: `openspec/changes/portal-status-transitions/specs/portal-contribution-contract/spec.md#requirement-server-enforced-status-transitions`
+- **spec_ref**: `openspec/changes/archive/2026-09-29-portal-status-transitions/specs/portal-contribution-contract/spec.md#requirement-server-enforced-status-transitions`
 - **files**: `lib/Contribution/PortalManifestNormaliser.php`, `tests/Unit/Contribution/PortalManifestNormaliserTest.php`
 - **acceptance_criteria**:
   - GIVEN a `type: update` action with `set` THEN only keys in the action's `fields` whitelist with scalar values survive; a smuggled scope field or non-scalar value is dropped; a non-array `set` drops the key
@@ -15,7 +15,7 @@
   - Fail-closed, never throws; runs after the actions/collections are otherwise normalised
 
 ### Task 2: Update endpoint — `?action=` + server-enforced `set`
-- **spec_ref**: `openspec/changes/portal-status-transitions/specs/portal-contribution-contract/spec.md#requirement-server-enforced-status-transitions`
+- **spec_ref**: `openspec/changes/archive/2026-09-29-portal-status-transitions/specs/portal-contribution-contract/spec.md#requirement-server-enforced-status-transitions`
 - **files**: `lib/Controller/ContributionController.php`
 - **acceptance_criteria**:
   - `update()` reads an optional `?action=<id>`; `authorisedUpdateAction` matches that id exactly when given (else first update action — v1 compat)
@@ -23,7 +23,7 @@
   - Ownership re-verification + scope re-stamp (portal-scoped-crud) still run; a foreign/absent id is still a single 404
 
 ### Task 3: Frontend — per-row transition buttons
-- **spec_ref**: `openspec/changes/portal-status-transitions/specs/portal-contribution-contract/spec.md#requirement-server-enforced-status-transitions`
+- **spec_ref**: `openspec/changes/archive/2026-09-29-portal-status-transitions/specs/portal-contribution-contract/spec.md#requirement-server-enforced-status-transitions`
 - **files**: `src/portal/components/CollectionTable.jsx`, `src/portal/components/PageView.jsx`, `src/portal/App.jsx`, `src/portal/lib/portalApi.js`
 - **acceptance_criteria**:
   - A collection with `rowActions` renders an "Acties" column with one button per resolved update action; clicking it PATCHes that row with `?action=<id>` and NO field data, then reloads the collection
@@ -31,7 +31,7 @@
   - Live-verified: click "Afhandelen" on an `open` row → status becomes `closed`
 
 ### Task 4: Vocabulary docs + demo transition
-- **spec_ref**: `openspec/changes/portal-status-transitions/specs/portal-contribution-contract/spec.md#requirement-server-enforced-status-transitions`
+- **spec_ref**: `openspec/changes/archive/2026-09-29-portal-status-transitions/specs/portal-contribution-contract/spec.md#requirement-server-enforced-status-transitions`
 - **files**: `lib/Portal/PortalContributionProvider.php`, `README.md`, `openspec/specs/portal-contribution-contract/spec.md`
 - **acceptance_criteria**:
   - The demo provider declares a `closeExample` update action (`fields: [status]`, `set: {status: closed}`) + `exampleCollection.rowActions: [closeExample]`
@@ -39,6 +39,6 @@
 
 ## Quality checklist
 
-- [ ] `composer check` green (lint, phpcs, psalm, phpstan, unit)
-- [ ] Security test: `set` for a non-whitelisted field is dropped; a tampered client status is overwritten by `set`
-- [ ] Additive-compat: an update action without `set`, and a collection without `rowActions`, behave exactly as before
+- [x] `composer check` green (lint, phpcs, psalm, phpstan, unit)
+- [x] Security test: `set` for a non-whitelisted field is dropped; a tampered client status is overwritten by `set`
+- [x] Additive-compat: an update action without `set`, and a collection without `rowActions`, behave exactly as before

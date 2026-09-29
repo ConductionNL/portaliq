@@ -33,7 +33,7 @@ use OCA\Portaliq\Service\PortalSessionService;
  * null, so the caller cannot tell one cause from another and neither can the
  * visitor.
  *
- * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md
+ * @spec openspec/specs/portal-broker-envelope-login/spec.md
  */
 class BrokerLogin {
 
@@ -78,7 +78,7 @@ class BrokerLogin {
 	 *
 	 * @return string|null
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-broker-start-binds-the-login-to-one-organisation-and-one-provider-req-bel-002
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-broker-start-binds-the-login-to-one-organisation-and-one-provider-req-bel-002
 	 */
 	public function start(string $org, string $provider, string $returnTo, string $callbackUrl): ?string {
 		// Asked first, before any secret-bearing read: an OIDC-routed
@@ -128,7 +128,7 @@ class BrokerLogin {
 	 *
 	 * @return array{token: string, returnTo: string}|null
 	 *
-	 * @spec openspec/changes/signin-integriq-broker-login/specs/portal-broker-envelope-login/spec.md#requirement-the-envelope-becomes-an-ordinary-portal-session-req-bel-005
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-envelope-becomes-an-ordinary-portal-session-req-bel-005
 	 */
 	public function complete(string $state, string $code): ?array {
 		if ($state === '' || $code === '') {
