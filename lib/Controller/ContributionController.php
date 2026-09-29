@@ -51,11 +51,11 @@ use OCA\Portaliq\Contribution\ActionScopeResolver;
 use OCA\Portaliq\Contribution\FileFieldConfigNormaliser;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\AuditTrailService;
+use OCA\Portaliq\Service\CaseRowMarker;
 use OCA\Portaliq\Service\CaseTypeVisibility;
 use OCA\Portaliq\Service\NotificationDispatchService;
 use OCA\Portaliq\Service\PortalActionForwarder;
 use OCA\Portaliq\Service\PortalAuditHook;
-use OCA\Portaliq\Service\PortalCaseListReader;
 use OCA\Portaliq\Service\PortalCrossRefGuard;
 use OCA\Portaliq\Service\PortalFileReader;
 use OCA\Portaliq\Service\PortalFileWriter;
@@ -322,7 +322,7 @@ class ContributionController extends Controller implements PortalProtected {
 		$aggregate['tasks'] = ['enabled' => ($this->taskGateway?->isAvailable() === true)];
 		// Announce "My cases" (cases-my-cases-page REQ-CMC-001) and whether
 		// any case collection can tell a closed case from an open one.
-		$aggregate['cases'] = PortalCaseListReader::announce(aggregate: $aggregate);
+		$aggregate['cases'] = (new CaseRowMarker())->announce(aggregate: $aggregate);
 
 		return new JSONResponse($aggregate);
 	}//end index()
