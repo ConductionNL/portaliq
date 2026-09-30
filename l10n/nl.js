@@ -1906,7 +1906,13 @@ OC.L10N.register(
         "Correction form": "Correctieformulier",
         "The form binding behind \"Report an error in these details\".": "De formulierkoppeling achter \"Een fout in deze gegevens melden\".",
         "Address investigation form": "Formulier voor adresonderzoek",
-        "The form binding behind \"Something wrong at this address?\", shown to residents only.": "De formulierkoppeling achter \"Klopt er iets niet op dit adres?\", alleen getoond aan inwoners."
+        "The form binding behind \"Something wrong at this address?\", shown to residents only.": "De formulierkoppeling achter \"Klopt er iets niet op dit adres?\", alleen getoond aan inwoners.",
+        "Contact addresses": "Contactadressen",
+        "The e-mail addresses and phone numbers the owner keeps on the account (identity-profile-page). An e-mail address is used for nothing until it is confirmed; the preferred confirmed e-mail is copied into `email`, the only address notifications go to. A phone number is stored for the organisation to call and is never confirmed.": "De e-mailadressen en telefoonnummers die de eigenaar bij het account bewaart (identity-profile-page). Een e-mailadres wordt pas gebruikt als het is bevestigd; het bevestigde voorkeursadres wordt gekopieerd naar `email`, het enige adres waar meldingen naartoe gaan. Een telefoonnummer bewaren we zodat de organisatie kan bellen; het wordt nooit bevestigd.",
+        "Contact channel": "Contactkanaal",
+        "How the owner wants the organisation to contact them: through the portal only, by e-mail, by phone or by post (identity-profile-page). A change raises PortalContactDetailsChangedEvent; a case app honours it.": "Hoe de eigenaar wil dat de organisatie contact opneemt: alleen via het portaal, per e-mail, telefonisch of per post (identity-profile-page). Een wijziging geeft PortalContactDetailsChangedEvent; een zaak-app houdt zich eraan.",
+        "Pending email mode": "Soort wachtend e-mailadres",
+        "`replace` when the owner changed their address, so the confirmed address takes over; `add` when they added one more, so it joins the list.": "`replace` als de eigenaar het adres heeft gewijzigd, zodat het bevestigde adres het overneemt; `add` als de eigenaar er een adres bij heeft gezet, zodat het aan de lijst wordt toegevoegd."
     },
     "nplurals=2; plural=(n != 1);"
 )

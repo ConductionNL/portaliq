@@ -1859,7 +1859,13 @@
         "Correction form": "Correction form",
         "The form binding behind \"Report an error in these details\".": "The form binding behind \"Report an error in these details\".",
         "Address investigation form": "Address investigation form",
-        "The form binding behind \"Something wrong at this address?\", shown to residents only.": "The form binding behind \"Something wrong at this address?\", shown to residents only."
+        "The form binding behind \"Something wrong at this address?\", shown to residents only.": "The form binding behind \"Something wrong at this address?\", shown to residents only.",
+        "Contact addresses": "Contact addresses",
+        "The e-mail addresses and phone numbers the owner keeps on the account (identity-profile-page). An e-mail address is used for nothing until it is confirmed; the preferred confirmed e-mail is copied into `email`, the only address notifications go to. A phone number is stored for the organisation to call and is never confirmed.": "The e-mail addresses and phone numbers the owner keeps on the account (identity-profile-page). An e-mail address is used for nothing until it is confirmed; the preferred confirmed e-mail is copied into `email`, the only address notifications go to. A phone number is stored for the organisation to call and is never confirmed.",
+        "Contact channel": "Contact channel",
+        "How the owner wants the organisation to contact them: through the portal only, by e-mail, by phone or by post (identity-profile-page). A change raises PortalContactDetailsChangedEvent; a case app honours it.": "How the owner wants the organisation to contact them: through the portal only, by e-mail, by phone or by post (identity-profile-page). A change raises PortalContactDetailsChangedEvent; a case app honours it.",
+        "Pending email mode": "Pending email mode",
+        "`replace` when the owner changed their address, so the confirmed address takes over; `add` when they added one more, so it joins the list.": "`replace` when the owner changed their address, so the confirmed address takes over; `add` when they added one more, so it joins the list."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

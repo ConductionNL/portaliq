@@ -34,7 +34,6 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
-use DateInterval;
 use DateTimeImmutable;
 use OCA\Portaliq\Service\Notifications\NotificationChannels;
 use OCA\Portaliq\Service\PortalAccountService;
@@ -59,11 +58,6 @@ class PortalSelfServiceService {
 	private const SCHEMA = 'portalAccount';
 
 	/**
-	 * How long a confirmation link works.
-	 */
-	private const TTL = 'P1D';
-
-	/**
 	 * A BCP-47 shaped language tag (translated-message-notice): a 2 or 3
 	 * letter primary subtag, then optional 1 to 8 character subtags.
 	 */
@@ -76,12 +70,14 @@ class PortalSelfServiceService {
 	 * @param PortalObjectReader $reader Looks a confirmation up by hash.
 	 * @param PortalObjectWriter $writer Writes the account row.
 	 * @param ISecureRandom $random Mints the confirmation secret.
+	 * @param ContactAddressBook $book The address rules (identity-profile-page).
 	 */
 	public function __construct(
 		private readonly PortalAccountService $accounts,
 		private readonly PortalObjectReader $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly ISecureRandom $random,
+		private readonly ContactAddressBook $book = new ContactAddressBook(),
 	) {
 	}//end __construct()
 
@@ -135,14 +131,13 @@ class PortalSelfServiceService {
 
 		$token = '';
 		if ($email !== '') {
-			if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+			$token = $this->random->generate(48, (ISecureRandom::CHAR_LOWER . ISecureRandom::CHAR_DIGITS));
+			$pending = $this->changedAddress(account: $account, email: $email, token: $token);
+			if ($pending === null) {
 				return null;
 			}
 
-			$token = $this->random->generate(48, (ISecureRandom::CHAR_LOWER . ISecureRandom::CHAR_DIGITS));
-			$data['pendingEmail'] = $email;
-			$data['pendingEmailTokenHash'] = hash('sha256', $token);
-			$data['pendingEmailExpiresAt'] = (new DateTimeImmutable())->add(new DateInterval(self::TTL))->format(DATE_ATOM);
+			$data = $data + $pending;
 		}
 
 		$written = $this->write(account: $account, data: $data);
@@ -171,12 +166,52 @@ class PortalSelfServiceService {
 
 		$channels = (array)($account['notificationChannels'] ?? []);
 		return [
-			'displayName'        => (string)($account['displayName'] ?? ''),
-			'email'              => (string)($account['email'] ?? ''),
-			'emailNotifications' => (($channels['email'] ?? true) !== false),
-			'messageLanguage'    => (string)($account['messageLanguage'] ?? ''),
+			'displayName'          => (string)($account['displayName'] ?? ''),
+			'email'                => (string)($account['email'] ?? ''),
+			'emailNotifications'   => (($channels['email'] ?? true) !== false),
+			'messageLanguage'      => (string)($account['messageLanguage'] ?? ''),
+			'contactAddresses'     => $this->book->entries(account: $account),
+			'pendingEmail'         => $this->book->mask(email: (string)($account['pendingEmail'] ?? '')),
+			'contactChannel'       => (string)($account['contactChannel'] ?? 'portal'),
+			'notificationChannels' => $channels,
 		];
 	}//end details()
+
+	/**
+	 * The fields that park a changed address until its link is followed, or
+	 * null when it is not an address or too many already wait.
+	 *
+	 * The address joins the list unconfirmed; on confirmation it takes over as
+	 * the preferred address (mode `replace`). One already confirmed on the
+	 * list takes over at once, without a mail.
+	 *
+	 * @param array<string, mixed> $account The account as it stands.
+	 * @param string $email The new address.
+	 * @param string $token The secret for the mail.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/identity-profile-page/tasks.md#T03
+	 */
+	private function changedAddress(array $account, string $email, string $token): ?array {
+		$normalised = $this->book->normalise(kind: 'email', value: $email);
+		if ($normalised === null) {
+			return null;
+		}
+
+		$entries = $this->book->entries(account: $account);
+		$added   = $this->book->add(entries: $entries, kind: 'email', value: $normalised);
+		if ($added['refusal'] === 'exists') {
+			$preferred = $this->book->prefer(entries: $entries, kind: 'email', value: $normalised);
+			return ['contactAddresses' => $preferred['entries'], 'email' => $this->book->preferred(entries: $preferred['entries'], kind: 'email')];
+		}
+
+		if ($added['refusal'] !== '') {
+			return null;
+		}
+
+		return ['contactAddresses' => $added['entries']] + $this->book->pendingFields(email: $normalised, token: $token, mode: 'replace');
+	}//end changedAddress()
 
 	/**
 	 * The language a holder reads school messages in, '' when they read them
@@ -334,17 +369,26 @@ class PortalSelfServiceService {
 			return null;
 		}
 
-		$email = (string)($account['pendingEmail'] ?? '');
-		$written = $this->write(
-			account: $account,
-			data: [
-				'email' => $email,
-				'verifiedEmail' => true,
-				'pendingEmail' => '',
-				'pendingEmailTokenHash' => '',
-				'pendingEmailExpiresAt' => '',
-			]
+		$email   = (string)($account['pendingEmail'] ?? '');
+		$entries = $this->book->confirm(
+			entries: $this->book->entries(account: $account),
+			email: $email,
+			mode: (string)($account['pendingEmailMode'] ?? 'replace')
 		);
+		$inUse   = $this->book->preferred(entries: $entries, kind: 'email');
+		// The expiry stays as it was: the hash is what makes the link dead,
+		// and an empty string is not a date-time the schema accepts.
+		$data = [
+			'contactAddresses' => $entries,
+			'email' => $inUse,
+			'pendingEmail' => '',
+			'pendingEmailTokenHash' => '',
+		];
+		if ($inUse === $email) {
+			$data['verifiedEmail'] = true;
+		}
+
+		$written = $this->write(account: $account, data: $data);
 		if ($written === false) {
 			return null;
 		}
@@ -420,6 +464,7 @@ class PortalSelfServiceService {
 				'email' => '',
 				'pendingEmail' => '',
 				'pendingEmailTokenHash' => '',
+				'contactAddresses' => [],
 				'displayName' => '',
 				'verifiedEmail' => false,
 				// Every app's link to this person goes with the account. The
