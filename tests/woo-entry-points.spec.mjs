@@ -29,7 +29,7 @@ const MANIFEST = {
 	contributions: [
 		{
 			app: 'opencatalogi',
-			actions: [{ id: 'addToCollection' }, { id: 'saveSearch' }],
+			actions: [{ id: 'addToDossier' }, { id: 'saveSearch' }],
 			collections: [
 				{
 					id: 'mijnDossiers',
@@ -43,19 +43,19 @@ const MANIFEST = {
 				},
 			],
 		},
-		{ app: 'pipelinq', actions: [{ id: 'addToCollection' }] },
+		{ app: 'pipelinq', actions: [{ id: 'addToDossier' }] },
 	],
 }
 
 test('anonymous sees no save action', () => {
 	const offered = offeredActions(MANIFEST, 'opencatalogi')
-	assert.equal(saveVisible(false, offered, 'addToCollection'), false)
+	assert.equal(saveVisible(false, offered, 'addToDossier'), false)
 	assert.equal(saveVisible(false, offered, 'saveSearch'), false)
 })
 
 test('offered actions', () => {
 	const offered = offeredActions(MANIFEST, 'opencatalogi')
-	assert.equal(saveVisible(true, offered, 'addToCollection'), true)
+	assert.equal(saveVisible(true, offered, 'addToDossier'), true)
 	assert.equal(saveVisible(true, offered, 'removeEverything'), false)
 
 	const without = offeredActions(
@@ -171,4 +171,12 @@ test('post action sends the bearer and the body', async () => {
 		throw new Error('offline')
 	})
 	assert.deepEqual(failed, { ok: false, status: 0, body: {} })
+})
+
+test('the defaults name the actions opencatalogi declares', async () => {
+	const { RESIDENT_ACTION_DEFAULTS } =
+		await import('../src/site/lib/residentActions.js')
+	assert.equal(RESIDENT_ACTION_DEFAULTS.addAction, 'addToDossier')
+	assert.equal(RESIDENT_ACTION_DEFAULTS.saveSearchAction, 'saveSearch')
+	assert.equal(RESIDENT_ACTION_DEFAULTS.dossierSchema, 'collection')
 })

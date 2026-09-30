@@ -191,6 +191,21 @@ class AttachedActionResolver {
 			return null;
 		}
 
+		$listed = $this->listedFor(app: $app, action: $action);
+
+		return ['app' => $app, 'target' => $target['app'], 'schema' => $target['schema'], 'action' => $action, 'listed' => $listed];
+	}//end attachment()
+
+	/**
+	 * What the target collection lists of an attaching action: never its
+	 * endpoint, and never its row field, which the server stamps.
+	 *
+	 * @param string               $app    The app that declares it.
+	 * @param array<string, mixed> $action The action.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function listedFor(string $app, array $action): array {
 		$listed = ['app' => $app, 'id' => $action['id']];
 		foreach (self::LISTED as $key) {
 			if (array_key_exists($key, $action) === true) {
@@ -198,8 +213,14 @@ class AttachedActionResolver {
 			}
 		}
 
-		return ['app' => $app, 'target' => $target['app'], 'schema' => $target['schema'], 'action' => $action, 'listed' => $listed];
-	}//end attachment()
+		// The row field is stamped by the server with the proven row id, so the
+		// resident is never asked for it.
+		if (is_array($listed['fields'] ?? null) === true) {
+			$listed['fields'] = array_values(array_diff($listed['fields'], [$action['rowField']]));
+		}
+
+		return $listed;
+	}//end listedFor()
 
 	/**
 	 * Whether a value is a plain app or schema name.

@@ -43,7 +43,7 @@ bearer with `adoptSessionToken()` only when they call an action.
   `saveSearchBody({ title, frequency, query })`.
 - `postAction(authBase, appId, actionId, body)` returns `{ ok, status, body }`.
 
-Defaults, each a block prop: app `opencatalogi`, actions `addToCollection` and
+Defaults, each a block prop: app `opencatalogi`, actions `addToDossier` and
 `saveSearch`, dossier collection `opencatalogi/collection`. The opencatalogi
 lane names the real ids; the coordinator aligns the defaults before merge.
 

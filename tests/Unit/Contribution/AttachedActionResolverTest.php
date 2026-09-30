@@ -125,6 +125,18 @@ class AttachedActionResolverTest extends TestCase {
 	}//end testMalformedActionsAttachNothing()
 
 	/**
+	 * The row field is stamped by the server, so it is not among the fields
+	 * the resident fills in.
+	 *
+	 * @return void
+	 */
+	public function testTheRowFieldIsNotAsked(): void {
+		$out = (new AttachedActionResolver())->resolve(contributions: $this->contributions(action: $this->ask(['fields' => ['collectionId', 'question']])));
+
+		self::assertSame(['question'], $out[0]['collections'][0]['attachedActions'][0]['fields']);
+	}//end testTheRowFieldIsNotAsked()
+
+	/**
 	 * The forward's lookup: the attached action in its own contribution.
 	 *
 	 * @return void

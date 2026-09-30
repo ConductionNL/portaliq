@@ -23,7 +23,7 @@
  */
 export const RESIDENT_ACTION_DEFAULTS = Object.freeze({
 	app: 'opencatalogi',
-	addAction: 'addToCollection',
+	addAction: 'addToDossier',
 	saveSearchAction: 'saveSearch',
 	dossierSchema: 'collection',
 })
