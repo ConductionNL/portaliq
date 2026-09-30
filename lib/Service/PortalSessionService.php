@@ -281,7 +281,7 @@ class PortalSessionService {
 	 *         bearer token, its id and the session's times, or null when the edge is not yet configured.
 	 *
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T10
-	 * @spec openspec/changes/signin-eherkenning-branch/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-09-30-signin-eherkenning-branch/tasks.md#T02
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
 	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.3
 	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#2.1
@@ -691,6 +691,61 @@ class PortalSessionService {
 			return null;
 		}
 
+		// A refresh carries the branch and its restriction unchanged: it
+		// can never widen a branch login to the whole company.
+		return $this->rotate(
+			subject: $subject,
+			context: [
+				'number' => (string)($subject['branch'] ?? ''),
+				'restricted' => (($subject['branchRestricted'] ?? false) === true),
+				'provider' => (string)($subject['provider'] ?? ''),
+			]
+		);
+	}//end refreshSession()
+
+	/**
+	 * Re-issue a whole-company session for one branch, or for the whole
+	 * company again with '' (signin-eherkenning-branch T05, REQ-SEB-003).
+	 *
+	 * Rotates like a refresh, within the same absolute cap. Refused (null)
+	 * for a session the login restricted to a branch, for a malformed branch
+	 * number and on every rejection refresh has. Whether the branch belongs
+	 * to the company is the caller's check (SessionBranchController).
+	 *
+	 * @param string|null $authorizationHeader The raw Authorization header value.
+	 * @param string      $branch              A 12-digit branch number, or '' for the whole company.
+	 *
+	 * @return array{token: string, jti: string, expiresAt: int, hardExpiresAt: int, idleTimeout: int}|null
+	 *
+	 * @spec openspec/specs/portal-branch-scope/spec.md#requirement-a-whole-company-user-can-narrow-to-a-branch-req-seb-003
+	 */
+	public function rebranchSession(?string $authorizationHeader, string $branch): ?array {
+		$subject = $this->resolveFromBearer(authorizationHeader: $authorizationHeader);
+		if ($subject === null || ($subject['branchRestricted'] ?? false) === true) {
+			return null;
+		}
+
+		$number = (new BranchNumber())->normalise(value: $branch);
+		if ($branch !== '' && $number === '') {
+			return null;
+		}
+
+		return $this->rotate(
+			subject: $subject,
+			context: ['number' => $number, 'restricted' => false, 'provider' => (string)($subject['provider'] ?? '')]
+		);
+	}//end rebranchSession()
+
+	/**
+	 * Rotate a resolved session: mint a new bearer with the given context,
+	 * revoke the old one quietly and record one `refresh`.
+	 *
+	 * @param array<string, mixed>                                          $subject The resolved subject.
+	 * @param array{number?: string, restricted?: bool, provider?: string} $context The new bearer's context.
+	 *
+	 * @return array{token: string, jti: string, expiresAt: int, hardExpiresAt: int, idleTimeout: int}|null
+	 */
+	private function rotate(array $subject, array $context): ?array {
 		$oldJti = (string)($subject['jti'] ?? '');
 		$authTime = (int)($subject['authTime'] ?? 0);
 		if ($oldJti === '' || $authTime <= 0) {
@@ -711,13 +766,7 @@ class PortalSessionService {
 			trust: (string)($subject['trust'] ?? ''),
 			roles: (array)($subject['roles'] ?? []),
 			authTime: $authTime,
-			// A refresh carries the branch and its restriction unchanged: it
-			// can never widen a branch login to the whole company.
-			context: [
-				'number' => (string)($subject['branch'] ?? ''),
-				'restricted' => (($subject['branchRestricted'] ?? false) === true),
-				'provider' => (string)($subject['provider'] ?? ''),
-			]
+			context: $context
 		);
 		if ($issued === null) {
 			return null;
@@ -739,7 +788,7 @@ class PortalSessionService {
 		);
 
 		return $issued;
-	}//end refreshSession()
+	}//end rotate()
 
 	/**
 	 * Whether a `jti` has a corresponding, not-revoked `portalSession` row.

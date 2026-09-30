@@ -13,6 +13,7 @@
 
 import AccessRequestsPage from '@portal/components/AccessRequestsPage.jsx'
 import ActingForSwitcher from '@portal/components/ActingForSwitcher.jsx'
+import BranchSwitcher from '@portal/components/BranchSwitcher.jsx'
 import IdleWarningDialog from '@portal/components/IdleWarningDialog.jsx'
 import InboxPage from '@portal/components/InboxPage.jsx'
 import MessagesPage from '@portal/components/MessagesPage.jsx'
@@ -282,6 +283,37 @@ export default function App({ config, t: tProp }) {
 	// a mandate, kept for the session. The mandates held are learned from the
 	// "My cases" answer; a refusal never forgets them.
 	const [actingFor, setActingFor] = useState(() => readActingFor(sessionStore()))
+	// The company's branches a whole-company eHerkenning session may narrow
+	// to (signin-eherkenning-branch T06). A session the login restricted to
+	// a branch never asks.
+	const [branches, setBranches] = useState([])
+	const [branchRefused, setBranchRefused] = useState(false)
+	const sessionBranchRestricted = state.session ? state.session.branchRestricted === true : true
+	useEffect(() => {
+		if (sessionBranchRestricted) {
+			setBranches([])
+			return undefined
+		}
+		let live = true
+		api.fetchBranches().then((answer) => {
+			if (live) {
+				setBranches(answer.restricted ? [] : answer.branches)
+			}
+		})
+		return () => {
+			live = false
+		}
+	}, [api, sessionBranchRestricted])
+	const chooseBranch = useCallback(async (branch) => {
+		setBranchRefused(false)
+		const answer = await api.chooseBranch(branch)
+		if (!answer.ok) {
+			setBranchRefused(true)
+			return
+		}
+		// The new bearer names the branch; every list reads it again.
+		window.location.reload()
+	}, [api])
 	const [mandates, setMandates] = useState([])
 	const onCasesLoaded = useCallback((answer) => {
 		if (!answer || !answer.ok) {
@@ -478,9 +510,13 @@ export default function App({ config, t: tProp }) {
 				{state.session && (
 					<ActingForSwitcher t={t} mandates={mandates} value={actingFor} onChange={chooseActingFor} />
 				)}
-				{state.session && branchInEffect(state.session, t) !== '' && (
+				{state.session && state.session.branchRestricted !== true && branches.length > 1 && (
+					<BranchSwitcher t={t} branches={branches} value={state.session.branch || ''} onChange={chooseBranch} />
+				)}
+				{state.session && branchInEffect(state.session, t) !== '' && !(state.session.branchRestricted !== true && branches.length > 1) && (
 					<span className="portaliq-branch" data-testid="branch-in-effect">{branchInEffect(state.session, t)}</span>
 				)}
+				{branchRefused && <span className="portaliq-branch-refused" role="alert">{t('That branch could not be chosen.')}</span>}
 				{state.session && (
 					<button type="button" className="portaliq-logout" onClick={logout}>Uitloggen</button>
 				)}

@@ -230,5 +230,8 @@
 	"The portal cannot show registered details for this way of signing in.": "The portal cannot show registered details for this way of signing in.",
 	"No registered details were found for you.": "No registered details were found for you.",
 	"There is no portal account for this sign-in.": "There is no portal account for this sign-in.",
-	"Your registered details cannot be shown right now.": "Your registered details cannot be shown right now."
+	"Your registered details cannot be shown right now.": "Your registered details cannot be shown right now.",
+	"Whole company": "Whole company",
+	"Acting for branch": "Acting for branch",
+	"That branch could not be chosen.": "That branch could not be chosen."
 }

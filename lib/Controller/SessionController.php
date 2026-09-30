@@ -165,7 +165,7 @@ class SessionController extends Controller {
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T05
-	 * @spec openspec/changes/signin-eherkenning-branch/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-09-30-signin-eherkenning-branch/tasks.md#T02
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T02
 	 */
 	#[PublicPage]
@@ -430,7 +430,7 @@ class SessionController extends Controller {
 	 * @spec openspec/specs/supplier-portal/spec.md#oidc-callback-validates-the-id-token-and-fails-closed-on-every-error
 	 * @spec openspec/specs/supplier-portal/spec.md#every-validation-failure-is-an-identical-generic-error
 	 * @spec openspec/specs/supplier-portal/spec.md#the-subject-reference-is-server-derived-never-client-supplied
-	 * @spec openspec/changes/signin-eherkenning-branch/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-09-30-signin-eherkenning-branch/tasks.md#T02
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T08
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T10
 	 *

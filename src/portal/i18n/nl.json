@@ -230,5 +230,8 @@
 	"The portal cannot show registered details for this way of signing in.": "Bij deze manier van inloggen kan het portaal geen geregistreerde gegevens tonen.",
 	"No registered details were found for you.": "Er zijn geen geregistreerde gegevens van u gevonden.",
 	"There is no portal account for this sign-in.": "Er is geen portaalaccount voor deze inlog.",
-	"Your registered details cannot be shown right now.": "Uw geregistreerde gegevens kunnen nu niet worden getoond."
+	"Your registered details cannot be shown right now.": "Uw geregistreerde gegevens kunnen nu niet worden getoond.",
+	"Whole company": "Hele bedrijf",
+	"Acting for branch": "Namens vestiging",
+	"That branch could not be chosen.": "Die vestiging kan niet worden gekozen."
 }
