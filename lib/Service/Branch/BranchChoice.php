@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/signin-eherkenning-branch/specs/signin-eherkenning-branch/spec.md#requirement-a-whole-company-user-can-narrow-to-a-branch-req-seb-003
+ * @spec openspec/specs/portal-branch-scope/spec.md#requirement-a-whole-company-user-can-narrow-to-a-branch-req-seb-003
  */
 
 declare(strict_types=1);
@@ -35,7 +35,7 @@ use OCA\Portaliq\Service\PortalAccountService;
 /**
  * The branches a session may choose.
  *
- * @spec openspec/changes/signin-eherkenning-branch/specs/signin-eherkenning-branch/spec.md#requirement-a-whole-company-user-can-narrow-to-a-branch-req-seb-003
+ * @spec openspec/specs/portal-branch-scope/spec.md#requirement-a-whole-company-user-can-narrow-to-a-branch-req-seb-003
  */
 class BranchChoice {
 
@@ -59,7 +59,7 @@ class BranchChoice {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/signin-eherkenning-branch/specs/signin-eherkenning-branch/spec.md#requirement-a-whole-company-user-can-narrow-to-a-branch-req-seb-003
+	 * @spec openspec/specs/portal-branch-scope/spec.md#requirement-a-whole-company-user-can-narrow-to-a-branch-req-seb-003
 	 */
 	public function branchesFor(array $subject): array {
 		if (($subject['branchRestricted'] ?? false) === true) {
@@ -87,7 +87,7 @@ class BranchChoice {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/signin-eherkenning-branch/specs/signin-eherkenning-branch/spec.md#requirement-a-whole-company-user-can-narrow-to-a-branch-req-seb-003
+	 * @spec openspec/specs/portal-branch-scope/spec.md#requirement-a-whole-company-user-can-narrow-to-a-branch-req-seb-003
 	 */
 	public function allows(array $subject, string $branch): bool {
 		if (($subject['branchRestricted'] ?? false) === true) {

@@ -16,7 +16,7 @@ const BRANCH_NUMBER = /^\d{12}$/
  * @param {(key: string, vars?: object) => string} t The translator.
  * @return {string} The text.
  *
- * @spec openspec/changes/signin-eherkenning-branch/tasks.md#T06
+ * @spec openspec/changes/archive/2026-09-30-signin-eherkenning-branch/tasks.md#T06
  */
 export function branchInEffect(session, t) {
 	const number =
@@ -30,4 +30,33 @@ export function branchInEffect(session, t) {
 	}
 
 	return t('Branch {number}', { number })
+}
+
+/**
+ * The header's branch options for a whole-company session
+ * (signin-eherkenning-branch T06): the whole company first, then each branch
+ * by name and address. Empty without branches.
+ *
+ * @param {Array<{number: string, name: string, address: string}>|null} branches The company's branches.
+ * @param {(key: string, vars?: object) => string} t The translator.
+ * @return {Array<{id: string, label: string}>} The options.
+ *
+ * @spec openspec/specs/portal-branch-scope/spec.md#requirement-a-whole-company-user-can-narrow-to-a-branch-req-seb-003
+ */
+export function branchOptions(branches, t) {
+	if (!Array.isArray(branches) || branches.length === 0) {
+		return []
+	}
+
+	return [
+		{ id: '', label: t('Whole company') },
+		...branches
+			.filter((branch) => BRANCH_NUMBER.test(String(branch?.number || '')))
+			.map((branch) => ({
+				id: branch.number,
+				label: [branch.name || branch.number, branch.address]
+					.filter(Boolean)
+					.join(', '),
+			})),
+	]
 }

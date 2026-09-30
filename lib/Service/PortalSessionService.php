@@ -281,7 +281,7 @@ class PortalSessionService {
 	 *         bearer token, its id and the session's times, or null when the edge is not yet configured.
 	 *
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T10
-	 * @spec openspec/changes/signin-eherkenning-branch/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-09-30-signin-eherkenning-branch/tasks.md#T02
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
 	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.3
 	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#2.1
@@ -717,7 +717,7 @@ class PortalSessionService {
 	 *
 	 * @return array{token: string, jti: string, expiresAt: int, hardExpiresAt: int, idleTimeout: int}|null
 	 *
-	 * @spec openspec/changes/signin-eherkenning-branch/specs/signin-eherkenning-branch/spec.md#requirement-a-whole-company-user-can-narrow-to-a-branch-req-seb-003
+	 * @spec openspec/specs/portal-branch-scope/spec.md#requirement-a-whole-company-user-can-narrow-to-a-branch-req-seb-003
 	 */
 	public function rebranchSession(?string $authorizationHeader, string $branch): ?array {
 		$subject = $this->resolveFromBearer(authorizationHeader: $authorizationHeader);

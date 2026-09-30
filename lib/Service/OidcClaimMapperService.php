@@ -255,7 +255,7 @@ class OidcClaimMapperService {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/signin-eherkenning-branch/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-09-30-signin-eherkenning-branch/tasks.md#T01
 	 */
 	private function branchOf(array $claims, array $config): string {
 		$claim = (string)($config['branchClaim'] ?? '');

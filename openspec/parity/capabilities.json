@@ -7945,12 +7945,12 @@
 			},
 			"built": {
 				"state": "building",
-				"evidence": "lib/Service/OidcClaimMapperService.php branchOf() reads claimMap.branch (12 digits, lib/Service/Branch/BranchNumber.php); PortalSessionService::issueSession(branch:) signs branch + branchRestricted, refreshSession keeps them; lib/Service/Branch/PortalBranchScope.php filters ContributionController::collection()/object(), PortalCaseListReader (My cases) and CitizenCaseController, stamps branchField on create; header text src/portal/lib/branch.js in App.jsx. Missing: dossiq declares branchField (for-ruben/dossiq-branch-field-on-business-cases.md), integriq envelope carries the branch (for-ruben/integriq-broker-envelope-carries-the-branch.md), and the whole-company user's branch choice (T05/T06, needs the KvK branch list of identity-registered-details).",
+				"evidence": "lib/Service/OidcClaimMapperService.php branchOf() reads claimMap.branch (12 digits, lib/Service/Branch/BranchNumber.php); PortalSessionService::issueSession(branch:) signs branch + branchRestricted, refreshSession keeps them; lib/Service/Branch/PortalBranchScope.php filters ContributionController::collection()/object(), PortalCaseListReader (My cases) and CitizenCaseController, stamps branchField on create; header text src/portal/lib/branch.js in App.jsx. Missing: dossiq declares branchField (for-ruben/dossiq-branch-field-on-business-cases.md), integriq envelope carries the branch (for-ruben/integriq-broker-envelope-carries-the-branch.md), and the whole-company user's branch choice (T05/T06, needs the KvK branch list of identity-registered-details). Branch choice (30 Sep): a whole-company session lists the company's KvK branches (GET /portal/api/session/branches, BranchChoice over identity-registered-details) and narrows to one or back to the whole company (POST /portal/api/session/branch, PortalSessionService::rebranchSession, refused for a restricted session or a foreign branch); header control src/portal/components/BranchSwitcher.jsx.",
 				"reachedOn": "after an OIDC eHerkenning login whose broker sends the claim named in claimMap.branch: the portal header and My cases",
 				"owner": "ConductionNL/portaliq",
 				"note": "A login restricted to one branch gives a session restricted to it (signin-eherkenning-branch part 1, 30 Sep 2026). The choice of a branch by a whole-company user is not built yet.",
 				"origin": "code",
-				"change": "signin-eherkenning-branch"
+				"change": "2026-09-30-signin-eherkenning-branch"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",

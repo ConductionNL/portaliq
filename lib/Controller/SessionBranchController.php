@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/signin-eherkenning-branch/specs/signin-eherkenning-branch/spec.md#requirement-a-whole-company-user-can-narrow-to-a-branch-req-seb-003
+ * @spec openspec/specs/portal-branch-scope/spec.md#requirement-a-whole-company-user-can-narrow-to-a-branch-req-seb-003
  */
 
 declare(strict_types=1);
@@ -43,7 +43,7 @@ use OCP\IRequest;
 /**
  * The branch a business session acts for.
  *
- * @spec openspec/changes/signin-eherkenning-branch/specs/signin-eherkenning-branch/spec.md#requirement-a-whole-company-user-can-narrow-to-a-branch-req-seb-003
+ * @spec openspec/specs/portal-branch-scope/spec.md#requirement-a-whole-company-user-can-narrow-to-a-branch-req-seb-003
  */
 class SessionBranchController extends Controller {
 
@@ -67,7 +67,7 @@ class SessionBranchController extends Controller {
 	 *
 	 * @return JSONResponse `{branch, restricted, branches}`, 401 without a session.
 	 *
-	 * @spec openspec/changes/signin-eherkenning-branch/specs/signin-eherkenning-branch/spec.md#requirement-a-whole-company-user-can-narrow-to-a-branch-req-seb-003
+	 * @spec openspec/specs/portal-branch-scope/spec.md#requirement-a-whole-company-user-can-narrow-to-a-branch-req-seb-003
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -94,7 +94,7 @@ class SessionBranchController extends Controller {
 	 *
 	 * @return JSONResponse The new bearer; 401 without a session; 403 when refused.
 	 *
-	 * @spec openspec/changes/signin-eherkenning-branch/specs/signin-eherkenning-branch/spec.md#requirement-a-whole-company-user-can-narrow-to-a-branch-req-seb-003
+	 * @spec openspec/specs/portal-branch-scope/spec.md#requirement-a-whole-company-user-can-narrow-to-a-branch-req-seb-003
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]

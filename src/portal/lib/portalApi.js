@@ -1030,6 +1030,57 @@ export function createPortalApi(config) {
 		},
 
 		/**
+		 * The branch in effect and the branches a whole-company business
+		 * session may choose (signin-eherkenning-branch T06). Any failure
+		 * reads as a restricted session with none.
+		 *
+		 * @return {Promise<{branch: string, restricted: boolean, branches: Array<object>}>}
+		 *
+		 * @spec openspec/specs/portal-branch-scope/spec.md#requirement-a-whole-company-user-can-narrow-to-a-branch-req-seb-003
+		 */
+		async fetchBranches() {
+			try {
+				const json = await get('/session/branches')
+				if (json && Array.isArray(json.branches)) {
+					return json
+				}
+			} catch {
+				// Falls through to "none".
+			}
+			return { branch: '', restricted: true, branches: [] }
+		},
+
+		/**
+		 * Re-issue the session for one branch, or '' for the whole company,
+		 * and keep the new bearer. A refusal keeps the old one.
+		 *
+		 * @param {string} branch The branch number, or ''.
+		 * @return {Promise<{ok: boolean}>} Whether the branch is now in effect.
+		 *
+		 * @spec openspec/specs/portal-branch-scope/spec.md#requirement-a-whole-company-user-can-narrow-to-a-branch-req-seb-003
+		 */
+		async chooseBranch(branch) {
+			const res = await fetch(`${base}/session/branch`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					Accept: 'application/json',
+					...authHeaders(),
+				},
+				body: JSON.stringify({ branch: branch || '' }),
+			})
+			if (!res.ok) {
+				return { ok: false }
+			}
+			const body = await res.json().catch(() => null)
+			if (!body || !body.token) {
+				return { ok: false }
+			}
+			setToken(body.token)
+			return { ok: true }
+		},
+
+		/**
 		 * Rotate the bearer ahead of its natural expiry (portal-session-hardening-v2,
 		 * T04): mints a new jti and revokes the old one server-side, capped by the
 		 * absolute session lifetime. Fails closed silently — a revoked, expired, or

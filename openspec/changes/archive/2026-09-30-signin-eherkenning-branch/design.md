@@ -70,6 +70,16 @@ company's, checked against the KvK branches `identity-registered-details`
 reads for the account's KvK number. The header's "Acting for" list
 (`cases-my-cases-page`) gains the branches, by name and address.
 
+As built (30 Sep): the choice has its own controller
+(`SessionBranchController`, also `GET /portal/api/session/branches` for the
+list) and its own header control (`BranchSwitcher`, "Acting for branch")
+beside the mandate switcher, because a mandate and a branch are different
+axes: a person can act under a mandate for another company without that
+company's branch list. `{ branch: '' }` means the whole company. Without a
+readable branch list every branch is refused (fail closed); the whole company
+is always allowed. The rotation is `PortalSessionService::rebranchSession()`,
+which shares refresh's absolute cap and records one `refresh`.
+
 ## Risks
 
 - A broker that sends the branch under an unexpected claim name gives a
