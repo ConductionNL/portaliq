@@ -149,6 +149,10 @@ class PortalContributionRegistry {
 			);
 		}//end foreach
 
+		// Actions that attach to another app's collection (woo-journey-entry-
+		// points D3) resolve across contributions, so only once all are in.
+		$contributions = (new AttachedActionResolver())->resolve(contributions: $contributions);
+
 		return [
 			'audience' => $audience,
 			'organisation' => (string)($subject['organisation'] ?? ''),
