@@ -88,7 +88,7 @@ test('an inactivity sign-out is remembered once for the login screen', () => {
 test('silent sign-in is tried once per browser session, and only when turned on', () => {
 	const store = memoryStore()
 	const config = { apiBase: '/api', organisationSlug: 'gemeente-x', silentSignIn: 'digid' }
-	assert.equal(silentSignInUrl(config, store), '/api/session/oidc/start?org=gemeente-x&provider=digid&silent=1')
+	assert.equal(silentSignInUrl(config, store), '/api/session/oidc/start?org=gemeente-x&provider=digid&portal=gemeente-x&silent=1')
 	assert.equal(silentSignInUrl(config, store), '', 'a second load does not try again')
 	assert.equal(silentSignInUrl({ ...config, silentSignIn: '' }, memoryStore()), '', 'off')
 	assert.equal(silentSignInUrl(config, null), '', 'no storage, no attempt: it could loop')

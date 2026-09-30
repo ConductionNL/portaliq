@@ -7,3 +7,6 @@
 - [x] **T2**: `devLogin` in the runtime config; the SPA shows the dev login button only when it is true
   - PHPUnit `PortalRuntimeConfigResolverTest::testTheDevLoginIsOfferedOnlyWhereItIsEnabled`
   - node `tests/broker-login.spec.mjs`: the dev login button shows only where the server accepts it
+- [x] **T3**: A login started from a portal returns to that portal (`?portal=<slug>`), so its title and branding survive the sign-in; the server echoes only a portal that resolves
+  - PHPUnit `SessionControllerTest::testALoginStartedFromAPortalReturnsToIt`
+  - node `tests/broker-login.spec.mjs`: the login names the serving portal so it returns there

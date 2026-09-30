@@ -13,6 +13,8 @@ Found while testing a primary school parent portal end to end (2026-09-30). The 
 - The runtime config gains `signinOrganisation`: the `?org=` value, or else the resolved portal's own `organisation`. The login buttons and the silent sign-in start with it. The providers come from that organisation too.
 - The runtime config gains `devLogin`, true only where the server accepts the dev login (system `debug`, or app config `dev_login_enabled` = `yes`). The SPA shows the button only then.
 
+- A login started from a portal returns to that portal. Before, the callback always returned to `/apps/portaliq/portal` without `?portal=`, so after sign-in the header said "Portaliq" instead of the school portal's title.
+
 ## Not changed
 
 - `organisationSlug` keeps meaning the portal's slug for everything else (the `X-Portaliq-Portal` header).

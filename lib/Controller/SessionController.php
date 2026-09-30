@@ -109,6 +109,60 @@ class SessionController extends Controller {
 	}//end portalReturnTo()
 
 	/**
+	 * Where a login returns: the serving portal's own address when the login
+	 * was started from a portal that exists, so its title and branding
+	 * survive the sign-in; else the plain portal address. Only a resolved
+	 * portal's slug is echoed, never raw input (portal-signin-on-its-own-address).
+	 *
+	 * @param array<string, mixed>|null $site The resolved serving portal, or null.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/portal-signin-on-its-own-address/tasks.md#T3
+	 */
+	private function returnToPortal(?array $site): string {
+		$slug = (string)($site['slug'] ?? '');
+		if ($slug === '') {
+			return $this->portalReturnTo();
+		}
+
+		return $this->portalReturnTo() . '?portal=' . rawurlencode($slug);
+	}//end returnToPortal()
+
+	/**
+	 * The portal a login was started from, or null for none or an unknown one.
+	 *
+	 * @param string $portal The portal slug, or ''.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/portal-signin-on-its-own-address/tasks.md#T3
+	 */
+	private function siteFor(string $portal): ?array {
+		if ($portal === '') {
+			return null;
+		}
+
+		return $this->portalFor(slug: $portal);
+	}//end siteFor()
+
+	/**
+	 * A resolved portal's organisation slug, or ''.
+	 *
+	 * @param array<string, mixed>|null $site The resolved portal, or null.
+	 *
+	 * @return string
+	 */
+	private function organisationOf(?array $site): string {
+		$organisation = ($site['organisation'] ?? null);
+		if (is_string($organisation) === false) {
+			return '';
+		}
+
+		return trim($organisation);
+	}//end organisationOf()
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request object.
@@ -315,8 +369,11 @@ class SessionController extends Controller {
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 30, period: 60)]
 	public function oidcStart(string $org = '', string $provider = '', string $portal = '', string $silent = ''): Response {
-		if ($org === '' && $portal !== '') {
-			$org = $this->organisationOfPortal(slug: $portal);
+		// The serving portal, resolved once: it names the organisation when
+		// `?org=` is empty, and the login returns to it.
+		$site = $this->siteFor(portal: $portal);
+		if ($org === '') {
+			$org = $this->organisationOf(site: $site);
 		}
 
 		// A provider the organisation routes to integriq's broker goes there
@@ -365,7 +422,7 @@ class SessionController extends Controller {
 			codeVerifier: $pkce['verifier'],
 			org: $org,
 			provider: $provider,
-			returnTo: $this->portalReturnTo(),
+			returnTo: $this->returnToPortal(site: $site),
 			silent: ($prompt === 'none')
 		);
 		if ($stored === false) {
@@ -387,26 +444,6 @@ class SessionController extends Controller {
 		return new RedirectResponse($url, Http::STATUS_FOUND);
 	}//end oidcStart()
 
-	/**
-	 * The organisation slug a portal belongs to, or '' when the slug names no
-	 * published portal or the portal carries no organisation. An empty answer
-	 * reaches the same policy refusal as an empty `org`, so an unknown portal
-	 * gets the identical generic error and the start stays no oracle.
-	 *
-	 * @param string $slug The `?portal=` slug.
-	 *
-	 * @return string The organisation slug, or ''.
-	 *
-	 * @spec openspec/changes/archive/2026-09-29-signin-integriq-broker-login/design.md#d2-two-new-routes-and-the-spas-follow-the-route-field
-	 */
-	private function organisationOfPortal(string $slug): string {
-		$organisation = ($this->portalFor(slug: $slug)['organisation'] ?? null);
-		if (is_string($organisation) === false) {
-			return '';
-		}
-
-		return trim($organisation);
-	}//end organisationOfPortal()
 
 	/**
 	 * OIDC broker callback: consumes the single-use `state` (CSRF/replay

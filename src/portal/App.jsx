@@ -462,7 +462,7 @@ export default function App({ config, t: tProp }) {
 	function oidcLogin(p) {
 		// The route the organisation chose for this provider: its own OIDC
 		// broker or integriq's (signin-integriq-broker-login T09).
-		window.location.href = loginStartUrl(config.apiBase, signinOrganisation(config), p.provider, p.route)
+		window.location.href = loginStartUrl(config.apiBase, signinOrganisation(config), p.provider, p.route, config.organisationSlug)
 	}
 
 	return (
