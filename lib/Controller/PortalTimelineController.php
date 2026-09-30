@@ -36,6 +36,7 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Service\PortalItemReader;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\PortalTimelineReader;
@@ -65,6 +66,7 @@ class PortalTimelineController extends Controller implements PortalProtected {
 	 * @param PortalSessionService $session Resolves the subject from the bearer.
 	 * @param PortalObjectReader $reader The scoped single-object read.
 	 * @param PortalTimelineReader $timelines Calls the declared provider method.
+	 * @param PortalItemReader|null $items Calls the item-list provider method (my-dossiers).
 	 */
 	public function __construct(
 		IRequest $request,
@@ -72,6 +74,7 @@ class PortalTimelineController extends Controller implements PortalProtected {
 		private readonly PortalSessionService $session,
 		private readonly PortalObjectReader $reader,
 		private readonly PortalTimelineReader $timelines,
+		private readonly ?PortalItemReader $items = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -91,6 +94,74 @@ class PortalTimelineController extends Controller implements PortalProtected {
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 60, period: 60)]
 	public function show(string $register, string $schema, string $id): JSONResponse {
+		$proven = $this->provenObject(register: $register, schema: $schema, id: $id, key: 'timeline');
+		if ($proven instanceof JSONResponse) {
+			return $proven;
+		}
+
+		$entries = $this->timelines->entries(appId: $proven['app'], method: $proven['declared']['provider'], id: $id);
+		if ($entries === null) {
+			// A history that could not be read is not an empty one.
+			return new JSONResponse(['error' => 'timeline_unavailable'], Http::STATUS_BAD_GATEWAY);
+		}
+
+		return new JSONResponse(['label' => (string)($proven['declared']['label'] ?? ''), 'entries' => $entries]);
+	}//end show()
+
+	/**
+	 * The items of one object the subject owns (my-dossiers): a dossier's
+	 * publications, from the provider method its collection's `itemList`
+	 * names. Proven exactly as the history is.
+	 *
+	 * @param string $register The register of the collection.
+	 * @param string $schema The schema of the collection.
+	 * @param string $id The object id (never trusted; ownership proven first).
+	 *
+	 * @return JSONResponse `{label, items, removeAction}`, or 401 / 403 / 404 / 502.
+	 *
+	 * @spec openspec/changes/my-dossiers/specs/portal-contribution-contract/spec.md#requirement-a-collection-must-be-able-to-declare-an-item-list-read-from-its-app-req-myd-001
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 60, period: 60)]
+	public function items(string $register, string $schema, string $id): JSONResponse {
+		$proven = $this->provenObject(register: $register, schema: $schema, id: $id, key: 'itemList');
+		if ($proven instanceof JSONResponse) {
+			return $proven;
+		}
+
+		$items = $this->items?->items(appId: $proven['app'], method: $proven['declared']['provider'], id: $id);
+		if ($items === null) {
+			// A list that could not be read is not an empty dossier.
+			return new JSONResponse(['error' => 'items_unavailable'], Http::STATUS_BAD_GATEWAY);
+		}
+
+		return new JSONResponse(
+			[
+				'label' => (string)($proven['declared']['label'] ?? ''),
+				'items' => $items,
+				'removeAction' => (string)($proven['declared']['removeAction'] ?? ''),
+			]
+		);
+	}//end items()
+
+	/**
+	 * Prove the object is the subject's, in a collection that declares `$key`.
+	 *
+	 * The subject's session, the collection being one of the subject's own,
+	 * its minTrust, the declaration and the scoped read of the object, in that
+	 * order; a foreign or absent id is one 404 and the provider is never asked.
+	 *
+	 * @param string $register The register of the collection.
+	 * @param string $schema   The schema of the collection.
+	 * @param string $id       The object id.
+	 * @param string $key      `timeline` or `itemList`.
+	 *
+	 * @return JSONResponse|array{app: string, declared: array<string, mixed>} The refusal, or the proven match.
+	 *
+	 * @spec openspec/changes/my-dossiers/specs/portal-contribution-contract/spec.md#requirement-a-collection-must-be-able-to-declare-an-item-list-read-from-its-app-req-myd-001
+	 */
+	private function provenObject(string $register, string $schema, string $id, string $key): JSONResponse|array {
 		$subject = $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
 		if ($subject === null) {
 			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
@@ -102,8 +173,8 @@ class PortalTimelineController extends Controller implements PortalProtected {
 		}
 
 		$collection = $match['collection'];
-		$timeline = ($collection['timeline'] ?? null);
-		if (is_array($timeline) === false || is_string($timeline['provider'] ?? null) === false) {
+		$declared = ($collection[$key] ?? null);
+		if (is_array($declared) === false || is_string($declared['provider'] ?? null) === false) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
@@ -126,14 +197,8 @@ class PortalTimelineController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		$entries = $this->timelines->entries(appId: $match['app'], method: $timeline['provider'], id: $id);
-		if ($entries === null) {
-			// A history that could not be read is not an empty one.
-			return new JSONResponse(['error' => 'timeline_unavailable'], Http::STATUS_BAD_GATEWAY);
-		}
-
-		return new JSONResponse(['label' => (string)($timeline['label'] ?? ''), 'entries' => $entries]);
-	}//end show()
+		return ['app' => $match['app'], 'declared' => $declared];
+	}//end provenObject()
 
 	/**
 	 * The subject's own collection for a register and schema, with its app.
