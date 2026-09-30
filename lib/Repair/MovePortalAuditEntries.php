@@ -38,6 +38,7 @@ use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 use Throwable;
 
 /**
@@ -113,6 +114,7 @@ class MovePortalAuditEntries implements IRepairStep {
 		do {
 			$pages++;
 			$page = $this->page(offset: $kept);
+			$read = count($page);
 			foreach ($page as $row) {
 				if ($this->move(row: $row) === true) {
 					$moved++;
@@ -121,7 +123,7 @@ class MovePortalAuditEntries implements IRepairStep {
 
 				$kept++;
 			}
-		} while (count($page) === self::PAGE && $pages < self::MAX_PAGES);
+		} while ($read === self::PAGE && $pages < self::MAX_PAGES);
 
 		$output->info('MovePortalAuditEntries: moved ' . $moved . ', could not move ' . $kept . '.');
 	}//end run()
@@ -200,7 +202,7 @@ class MovePortalAuditEntries implements IRepairStep {
 	private function objectService(): object {
 		$service = $this->container->get(self::OBJECT_SERVICE);
 		if (is_object($service) === false) {
-			throw new \RuntimeException('OpenRegister object service unavailable');
+			throw new RuntimeException('OpenRegister object service unavailable');
 		}
 
 		return $service;
