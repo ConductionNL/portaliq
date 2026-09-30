@@ -299,9 +299,11 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// records live in OpenRegister's audit trail
 		// (consume-or-audit-trail-proof-records). The repair step
 		// MovePortalAuditEntries moves the existing records.
-		$this->assertSame('0.48.0', self::$register['info']['version']);
-		$this->assertSame('0.48.0', self::$register['components']['registers']['portaliq']['version']);
-		$this->assertSame('0.5.0', self::$register['components']['schemas']['page']['version']);
+		// 0.49.0 (page 0.6.0): a page's place in the portal's page tree,
+		// `parent` and `order` (portal-in-place-editing A3). Additive.
+		$this->assertSame('0.49.0', self::$register['info']['version']);
+		$this->assertSame('0.49.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.6.0', self::$register['components']['schemas']['page']['version']);
 		$this->assertSame(70, self::$register['components']['schemas']['page']['properties']['seoTitle']['maxLength']);
 		$this->assertSame(160, self::$register['components']['schemas']['page']['properties']['seoDescription']['maxLength']);
 		$this->assertSame('boolean', self::$register['components']['schemas']['page']['properties']['seoNoindex']['type']);
@@ -344,7 +346,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalTrafficRecording']['version']);
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalTrafficRecording']['authorization']['read']);
 		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
-		$this->assertSame('0.5.0', self::$register['components']['schemas']['page']['version']);
+		$this->assertSame('0.6.0', self::$register['components']['schemas']['page']['version']);
 		$this->assertSame('0.8.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('0.12.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalPage']['version']);

@@ -28,6 +28,11 @@
  * - Bodies and payloads: `readBody, bodyFor, isMainWidget, sourceBodyOf,
  *   draftPayload, publishPayload,
  *   discardPayload, versionOf, withoutEnvelope`.
+ * - Page tree (A3): `buildPageTree, flattenPageTree, canDeletePage, newPagePayload,
+ *   renamePagePayload, movePagePayload, normaliseRoute`; `createPortalObjects({get, post,
+ *   put, del, url})` for list, create, save (version-checked) and remove.
+ * - Menu (A3): `sortedMenuItems, addMenuItem, renameMenuItem, moveMenuItem,
+ *   removeMenuItem, menuPayload`.
  * - Shared forms: `sharedFormFor, inspectorModeFor, formWidgetFor,
  *   propsFromFormContent`.
  *
@@ -59,8 +64,26 @@ export {
 	versionOf,
 	withoutEnvelope,
 } from './pageBody.js'
+export {
+	addMenuItem,
+	menuPayload,
+	moveMenuItem,
+	removeMenuItem,
+	renameMenuItem,
+	sortedMenuItems,
+} from './menuModel.js'
 export { createPageEditor } from './pageEditor.js'
 export { createPageSaver, isConflict, PageConflictError } from './pageSaver.js'
+export {
+	buildPageTree,
+	canDeletePage,
+	flattenPageTree,
+	movePagePayload,
+	newPagePayload,
+	normaliseRoute,
+	renamePagePayload,
+} from './pageTree.js'
+export { createPortalObjects } from './portalObjects.js'
 export {
 	formWidgetFor,
 	inspectorModeFor,
