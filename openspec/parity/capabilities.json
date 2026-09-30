@@ -7939,12 +7939,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/commerce/creating-store-content/liferay-commerce-fragments ('Using the Account Selector') and https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/using-system-objects-with-custom-objects/restricting-access-to-object-data-by-account: a user picks an account and sees only its entries. Mapping an eHerkenning branch number to an account is custom. [was unknown; custom: eHerkenning attributes to account mapping]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "lib/Service/OidcClaimMapperService.php:73-100 eherkenning preset maps subject and acr only; grep -riE 'vestiging|establishment' lib src: no claim handling (only a mock-data sentence)",
-				"reachedOn": "nothing reaches it",
+				"state": "building",
+				"evidence": "lib/Service/OidcClaimMapperService.php branchOf() reads claimMap.branch (12 digits, lib/Service/Branch/BranchNumber.php); PortalSessionService::issueSession(branch:) signs branch + branchRestricted, refreshSession keeps them; lib/Service/Branch/PortalBranchScope.php filters ContributionController::collection()/object(), PortalCaseListReader (My cases) and CitizenCaseController, stamps branchField on create; header text src/portal/lib/branch.js in App.jsx. Missing: dossiq declares branchField (for-ruben/dossiq-branch-field-on-business-cases.md), integriq envelope carries the branch (for-ruben/integriq-broker-envelope-carries-the-branch.md), and the whole-company user's branch choice (T05/T06, needs the KvK branch list of identity-registered-details).",
+				"reachedOn": "after an OIDC eHerkenning login whose broker sends the claim named in claimMap.branch: the portal header and My cases",
 				"owner": "ConductionNL/portaliq",
-				"note": "No branch (vestigingsnummer) claim is read or scoped on; an eHerkenning login acts for the whole company subjectRef. Specified in openspec/changes/signin-eherkenning-branch (OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"note": "A login restricted to one branch gives a session restricted to it (signin-eherkenning-branch part 1, 30 Sep 2026). The choice of a branch by a whole-company user is not built yet.",
+				"origin": "code",
+				"change": "signin-eherkenning-branch"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
