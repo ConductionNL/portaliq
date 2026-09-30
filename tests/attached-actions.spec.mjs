@@ -94,7 +94,7 @@ test('the api sends actionApp and the detail card renders the actions', () => {
 	const api = readFileSync(join(ROOT, 'src/portal/lib/portalApi.js'), 'utf8')
 	assert.match(
 		api,
-		/actionApp \? `&actionApp=\$\{encodeURIComponent\(actionApp\)\}` : ''/,
+		/actionApp\s*\?\s*`&actionApp=\$\{encodeURIComponent\(actionApp\)\}`\s*:\s*''/,
 	)
 	const page = readFileSync(
 		join(ROOT, 'src/portal/components/PageView.jsx'),

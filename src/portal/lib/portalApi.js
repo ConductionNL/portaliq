@@ -878,7 +878,7 @@ export function createPortalApi(config) {
 		 * @param {string} rowId The row's id.
 		 * @param {string} actionId The endpoint row action's id.
 		 * @param {object} [answers] The answers to send, `{}` by default.
-		 * @param actionApp
+		 * @param {string} [actionApp] Another app whose action is attached to this collection.
 		 * @return {Promise<object>} `{ ok, status, body }`; `status` 0 on a network error.
 		 */
 		async forwardRowAction(
