@@ -131,6 +131,17 @@ const editor = {
 		chunkFilename: 'portaliq-site-editor-[name].js',
 		uniqueName: 'portaliqSiteEditor',
 	},
+	// The editor mounts @nextcloud/vue components, which read these build-time
+	// globals; without them every mount logs "The library was used without
+	// setting / replacing the appName". webpack.config.js re-adds them for the
+	// admin bundles for the same reason. The visitor's entry mounts none.
+	plugins: [
+		...site.plugins,
+		new webpack.DefinePlugin({
+			appName: JSON.stringify('portaliq'),
+			appVersion: JSON.stringify(require('./package.json').version),
+		}),
+	],
 	performance: {
 		hints: false,
 	},
