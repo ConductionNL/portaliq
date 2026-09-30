@@ -247,4 +247,99 @@ class PortalAccountAdminController extends Controller {
 		// list is scoped on the session's uid, not on a parameter.
 		return new JSONResponse(['invitations' => $this->invitations->sentBy(invitedBy: $user->getUID(), organisation: $organisation)]);
 	}//end invitations()
+
+	/**
+	 * Withdraw an invitation that was not accepted.
+	 *
+	 * @param string $id The invitation's id.
+	 * @param string $organisation The tenant the clerk works for.
+	 *
+	 * @return JSONResponse `{state: revoked}`, or a refusal.
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-identity-staff-account-screens/tasks.md#T02
+	 */
+	#[NoAdminRequired]
+	public function revokeInvitation(string $id, string $organisation = ''): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		try {
+			$this->actionAuth->requireAction(user: $user, action: self::ACTION_PROVISION);
+		} catch (OCSForbiddenException $exception) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		$outcome = $this->invitations->revoke(id: $id, organisation: $organisation);
+		if ($outcome !== '') {
+			return new JSONResponse(['error' => $outcome], Http::STATUS_BAD_REQUEST);
+		}
+
+		return new JSONResponse(['state' => 'revoked']);
+	}//end revokeInvitation()
+
+	/**
+	 * Approve a self-registration that waits for a decision.
+	 *
+	 * @param string $subjectRef The account.
+	 *
+	 * @return JSONResponse `{status: active}`, or `not_pending`.
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-identity-staff-account-screens/tasks.md#T03
+	 */
+	#[NoAdminRequired]
+	public function approve(string $subjectRef): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		try {
+			$this->actionAuth->requireAction(user: $user, action: self::ACTION_PROVISION);
+		} catch (OCSForbiddenException $exception) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		if ($this->accounts->approvePending(subjectRef: $subjectRef) === false) {
+			return new JSONResponse(['error' => 'not_pending'], Http::STATUS_BAD_REQUEST);
+		}
+
+		return new JSONResponse(['status' => PortalAccountService::STATUS_ACTIVE]);
+	}//end approve()
+
+	/**
+	 * Refuse a self-registration, with the reason on the row.
+	 *
+	 * @param string $subjectRef The account.
+	 * @param string $reason Why it is refused.
+	 *
+	 * @return JSONResponse `{status: void}`, or a refusal.
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-identity-staff-account-screens/tasks.md#T03
+	 */
+	#[NoAdminRequired]
+	public function refuse(string $subjectRef, string $reason = ''): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		try {
+			$this->actionAuth->requireAction(user: $user, action: self::ACTION_PROVISION);
+		} catch (OCSForbiddenException $exception) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		if ($reason === '') {
+			return new JSONResponse(['error' => 'reason_required'], Http::STATUS_BAD_REQUEST);
+		}
+
+		if ($this->accounts->voidPending(subjectRef: $subjectRef, reason: $reason, voidedBy: $user->getUID()) === false) {
+			return new JSONResponse(['error' => 'not_pending'], Http::STATUS_BAD_REQUEST);
+		}
+
+		return new JSONResponse(['status' => PortalAccountService::STATUS_VOID]);
+	}//end refuse()
+
 }//end class

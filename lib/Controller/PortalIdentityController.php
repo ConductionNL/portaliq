@@ -344,7 +344,7 @@ class PortalIdentityController extends Controller {
 			// Neither policy trusts the address yet: approval waits for a
 			// person, activation waits for the mail.
 			verifiedEmail: false,
-			provisionedBy: 'self-registration',
+			provisionedBy: PortalAccountService::SELF_REGISTRATION,
 			displayName: $displayName
 		);
 		if ($account === null) {

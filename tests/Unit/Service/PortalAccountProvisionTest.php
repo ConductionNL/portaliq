@@ -200,6 +200,27 @@ class PortalAccountProvisionTest extends TestCase {
 	}//end testAnActiveAccountCannotBeVoided()
 
 	/**
+	 * identity-staff-account-screens T03 (REQ-ISA-004): a pending
+	 * self-registration is approved into an active account; an account a
+	 * clerk provisioned, or an active one, is not.
+	 *
+	 * @return void
+	 */
+	public function testAPendingSelfRegistrationIsApprovedAndNothingElseIs(): void {
+		$service = $this->service();
+		$registered = $service->provision(audience: 'client', organisation: 'gemeente-x', email: 'ans@example.org', provisionedBy: 'self-registration');
+		$byClerk = $service->provision(audience: 'client', organisation: 'gemeente-x', identityType: 'digid', identityRef: 'bsn-clerk', provisionedBy: 'clerk-anna');
+
+		$this->assertTrue($service->approvePending(subjectRef: $registered['subjectRef']));
+		$this->assertSame('active', $this->rowBySubjectRef($registered['subjectRef'])['status']);
+		$this->assertFalse($service->approvePending(subjectRef: $registered['subjectRef']), 'an active account is not pending');
+		$this->assertFalse($service->approvePending(subjectRef: $byClerk['subjectRef']), 'a clerk-provisioned account activates on its own first sign-in');
+		$this->assertSame('pending', $this->rowBySubjectRef($byClerk['subjectRef'])['status']);
+		$this->assertFalse($service->approvePending(subjectRef: 'nobody'));
+
+	}//end testAPendingSelfRegistrationIsApprovedAndNothingElseIs()
+
+	/**
 	 * The row in the store, when there is exactly one.
 	 *
 	 * @return array<string, mixed>
