@@ -91,6 +91,9 @@ class PortalOrganisationConfigService {
 		// includes a secret — provider + label only, for the SPA's login
 		// buttons.
 		'oidcProviders' => [],
+		// Change signin-session-idle-warning-and-sso D5: the provider the portal SPA
+		// tries a silent sign-in with once per browser session, or '' for off.
+		'silentSignIn' => '',
 	];
 
 	/**
@@ -142,8 +145,10 @@ class PortalOrganisationConfigService {
 	 *
 	 * @return array<string, mixed> `{organisationName, organisationSlug, theme,
 	 *                              logo, featureFlags, allowedEmbedOrigins,
-	 *                              apiBase, audience, locale, oidcProviders}`.
+	 *                              apiBase, audience, locale, oidcProviders,
+	 *                              silentSignIn}`.
 	 *
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T09
 	 * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.2
 	 * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.3
 	 * @spec openspec/changes/portal-spa-i18n-locale-support/tasks.md#2.2
@@ -178,6 +183,8 @@ class PortalOrganisationConfigService {
 			$featureFlags = $overrides['featureFlags'];
 		}
 
+		$providers = $this->configuredOidcProviders(orgSlug: $orgSlug, organisationUuid: $uuid, overrides: $overrides);
+
 		return [
 			'organisationName' => $name,
 			'organisationSlug' => $orgSlug,
@@ -189,7 +196,8 @@ class PortalOrganisationConfigService {
 			'audience' => (string)($overrides['audience'] ?? self::NEUTRAL_DEFAULT['audience']),
 			'locale' => $locale,
 			// Portal-oidc-broker-login: SECRET-FREE — provider + label only.
-			'oidcProviders' => $this->configuredOidcProviders(orgSlug: $orgSlug, organisationUuid: $uuid, overrides: $overrides),
+			'oidcProviders' => $providers,
+			'silentSignIn' => $this->loginProviders->silentProvider(overrides: $overrides, providers: $providers),
 		];
 	}//end resolve()
 

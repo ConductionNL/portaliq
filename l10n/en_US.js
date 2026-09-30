@@ -293,7 +293,9 @@ OC.L10N.register(
         "Menu": "Menu",
         "Title": "Title",
         "Route": "Route",
-        "Position": "Position"
+        "Position": "Position",
+        "Silent sign-in": "Silent sign-in",
+        "Whether the start asked the broker to sign in without a prompt. A silent row the broker answers with login_required lands on the login screen without an error. Absent means false.": "Whether the start asked the broker to sign in without a prompt. A silent row the broker answers with login_required lands on the login screen without an error. Absent means false."
     },
     "nplurals=2; plural=(n != 1);"
 )

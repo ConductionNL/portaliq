@@ -59,6 +59,7 @@ class PortalRuntimeConfigResolverTest extends TestCase {
 		'audience' => 'supplier',
 		'locale' => 'nl',
 		'oidcProviders' => [],
+		'silentSignIn' => '',
 	];
 
 
@@ -381,6 +382,7 @@ class PortalRuntimeConfigResolverTest extends TestCase {
 						'organisationName' => 'Gemeente X',
 						'theme' => 'gemeente-x-brand',
 						'oidcProviders' => [['provider' => 'digid', 'label' => 'DigiD']],
+						'silentSignIn' => 'digid',
 					]
 				);
 			}
@@ -404,6 +406,11 @@ class PortalRuntimeConfigResolverTest extends TestCase {
 		$config = $resolver->runtimeConfigFor(portal: null, orgValue: 'gemeente-x', locale: 'nl');
 		$this->assertSame('Portaliq', $config['organisationName']);
 		$this->assertSame('default', $config['theme']);
+
+		// Silent sign-in belongs to the broker, so it comes from the
+		// organisation too (signin-session-idle-warning-and-sso T09).
+		$this->assertSame('digid', $config['silentSignIn']);
+		$this->assertSame('', $resolver->runtimeConfigFor(portal: null, orgValue: '', locale: 'nl')['silentSignIn']);
 	}//end testOidcProvidersStillComeFromTheOrganisation()
 
 

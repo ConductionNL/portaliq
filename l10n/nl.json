@@ -1909,7 +1909,9 @@
         "A page needs a title.": "Een pagina heeft een titel nodig.",
         "Another page already uses this route.": "Een andere pagina gebruikt deze route al.",
         "A page cannot move under itself.": "Een pagina kan niet onder zichzelf worden geplaatst.",
-        "A menu item needs a name.": "Een menu-item heeft een naam nodig."
+        "A menu item needs a name.": "Een menu-item heeft een naam nodig.",
+        "Silent sign-in": "Stil inloggen",
+        "Whether the start asked the broker to sign in without a prompt. A silent row the broker answers with login_required lands on the login screen without an error. Absent means false.": "Of het begin de inlogdienst vroeg om zonder vraag in te loggen. Een stille regel die de inlogdienst met login_required beantwoordt, komt zonder foutmelding op het inlogscherm. Ontbreekt de waarde, dan is die false."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

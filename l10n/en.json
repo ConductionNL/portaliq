@@ -1851,7 +1851,9 @@
         "A page needs a title.": "A page needs a title.",
         "Another page already uses this route.": "Another page already uses this route.",
         "A page cannot move under itself.": "A page cannot move under itself.",
-        "A menu item needs a name.": "A menu item needs a name."
+        "A menu item needs a name.": "A menu item needs a name.",
+        "Silent sign-in": "Silent sign-in",
+        "Whether the start asked the broker to sign in without a prompt. A silent row the broker answers with login_required lands on the login screen without an error. Absent means false.": "Whether the start asked the broker to sign in without a prompt. A silent row the broker answers with login_required lands on the login screen without an error. Absent means false."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

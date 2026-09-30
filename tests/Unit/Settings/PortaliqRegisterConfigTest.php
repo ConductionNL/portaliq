@@ -301,8 +301,12 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// MovePortalAuditEntries moves the existing records.
 		// 0.49.0 (page 0.6.0): a page's place in the portal's page tree,
 		// `parent` and `order` (portal-in-place-editing A3). Additive.
-		$this->assertSame('0.49.0', self::$register['info']['version']);
-		$this->assertSame('0.49.0', self::$register['components']['registers']['portaliq']['version']);
+		// 0.50.0 (portalOidcState 0.3.0): the optional `silent` flag of a
+		// silent sign-in (signin-session-idle-warning-and-sso T07). Additive.
+		$this->assertSame('0.50.0', self::$register['info']['version']);
+		$this->assertSame('0.50.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalOidcState']['version']);
+		$this->assertSame('boolean', self::$register['components']['schemas']['portalOidcState']['properties']['silent']['type']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['page']['version']);
 		$this->assertSame(70, self::$register['components']['schemas']['page']['properties']['seoTitle']['maxLength']);
 		$this->assertSame(160, self::$register['components']['schemas']['page']['properties']['seoDescription']['maxLength']);
@@ -519,7 +523,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 			['state', 'nonce', 'org', 'provider', 'expiresAt'],
 			$state['required']
 		);
-		$this->assertSame('0.2.0', $state['version']);
+		$this->assertSame('0.3.0', $state['version']);
 		$this->assertSame(['oidc', 'broker'], $state['properties']['route']['enum']);
 
 		$account = $schemas['portalAccount'];

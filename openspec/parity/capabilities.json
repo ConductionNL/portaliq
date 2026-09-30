@@ -947,7 +947,7 @@
 			"id": "cmp-sig-sso",
 			"area": "signin",
 			"name": "Move between the portal and the organisation's other citizen services without signing in again.",
-			"portaliq": "no",
+			"portaliq": "partial",
 			"open-inwoner": "unknown",
 			"nl-portal": "unknown",
 			"xxllnc-pip": "partial",
@@ -961,12 +961,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/security/configuring-sso/authenticating-with-saml/saml-authentication-process-overview describes SAML Web Browser SSO and single logout across multiple service providers; https://learn.liferay.com/w/dxp/security-and-administration/security/configuring-sso/using-openid-connect covers OIDC providers."
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "Searched lib/ and src/ for a shared-cookie or federation-token mechanism beyond the portal's own bearer (lib/Service/PortalJwtService.php, PortalSessionService.php): the session is a Portaliq-minted HS256 bearer scoped to this app only",
-				"reachedOn": "nothing reaches it",
+				"state": "built",
+				"evidence": "GET /portal/api/session/oidc/start?silent=1 sends prompt=none and records silent on portalOidcState (SessionController::oidcStart, OidcClientService::buildAuthorizationUrl, OidcStateStoreService); a silent row answered with login_required/interaction_required/consent_required/account_selection_required lands on the login screen without an error (SessionController::brokerErrorAnswer); the organisation's silentSignIn override makes the portal SPA try once per browser session (src/portal/lib/idleSession.js silentSignInUrl); DELETE /portal/api/session answers the broker's end_session_endpoint as logoutUrl (SessionController::brokerLogoutUrl) and both SPAs follow it. Tests: SessionControllerTest, OidcClientServiceTest, OidcStateStoreServiceTest, PortalOrganisationConfigServiceTest, tests/idle-session.spec.mjs",
+				"reachedOn": "a link from another service of the organisation with silent=1; the portal's sign-out button",
 				"owner": "ConductionNL/portaliq",
-				"note": "No evidence of single sign-on with any external citizen-service beyond the identity broker exchange itself (which authenticates INTO portaliq, not FROM it to somewhere else). Specified in openspec/changes/signin-session-idle-warning-and-sso (OpenSpec pass 2026-09-27).",
-				"origin": "competitor"
+				"note": "Built 2026-09-30. Partial: single sign-on works through the organisation's own OIDC broker only, not through integriq's broker route, and it depends on the broker keeping a session and announcing end_session_endpoint.",
+				"origin": "competitor",
+				"change": "2026-09-30-signin-session-idle-warning-and-sso"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -7892,7 +7893,7 @@
 			"id": "cmp-sig-idle-warning",
 			"area": "signin",
 			"name": "Get a warning shortly before you are signed out for inactivity, and stay signed in with one click.",
-			"portaliq": "no",
+			"portaliq": "yes",
 			"open-inwoner": "yes",
 			"nl-portal": "yes",
 			"xxllnc-pip": "yes",
@@ -7906,12 +7907,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/administration/configuring-liferay/virtual-instances/infrastructure 'Auto Extend: If checked, automatically extends the session without prompting the user', which implies a prompt when it is off; the warning and its one-click extend are not described on the pages read today. [was unknown]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "src/portal/App.jsx:129 setInterval refreshSession every 25 min while the page is open; grep -riE 'idle|inactiv' src: 0 hits",
-				"reachedOn": "nothing reaches it",
+				"state": "built",
+				"evidence": "lib/Service/PortalSessionService.php mints every bearer for one idle window (session_idle_timeout, default 900, clamped 300-3600) and reports expiresAt/hardExpiresAt/idleTimeout through GET /portal/api/session and POST /portal/api/session/refresh (SessionController); src/portal/lib/useIdleSession.js refreshes only after a key, pointer or touch in the second half of the window, opens src/portal/components/IdleWarningDialog.jsx two minutes before expiry (Stay signed in / Sign out, cap variant Sign in again) and ends the session at expiry with 'You were signed out because you were inactive.'; the site renderer does the same through src/site/lib/idleTracker.js and src/site/components/IdleWarningDialog.vue. Tests: PortalSessionServiceTest, SessionControllerTest, tests/idle-session.spec.mjs",
+				"reachedOn": "every signed-in page of the portal app and the public site",
 				"owner": "ConductionNL/portaliq",
-				"note": "The session is slid forward silently while the tab is open; there is no inactivity timer, no warning dialog and no 'stay signed in' control. Specified in openspec/changes/signin-session-idle-warning-and-sso (OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"note": "Built 2026-09-30. The server enforces the window through the bearer lifetime; the 8-hour cap (session_max_lifetime) stays. Playwright tests/e2e/signin-session-idle-warning.spec.ts written, not run.",
+				"origin": "code",
+				"change": "2026-09-30-signin-session-idle-warning-and-sso"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",

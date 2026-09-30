@@ -1012,6 +1012,11 @@ export function createPortalApi(config) {
 		 * absolute session lifetime. Fails closed silently — a revoked, expired, or
 		 * past-the-cap bearer is simply not rotated; the existing (or absent) token
 		 * is left as-is and the next getSession() call surfaces the real state.
+		 *
+		 * @return {Promise<{token: string, expiresAt: number, hardExpiresAt: number, idleTimeout: number}|null>}
+		 *         The answer with when the rotated session ends
+		 *         (signin-session-idle-warning-and-sso T02), or null.
+		 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T03
 		 */
 		async refreshSession() {
 			const res = await fetch(`${base}/session/refresh`, {
@@ -1024,7 +1029,7 @@ export function createPortalApi(config) {
 			const body = await res.json().catch(() => null)
 			if (body && body.token) {
 				setToken(body.token)
-				return body.token
+				return body
 			}
 			return null
 		},
@@ -1057,17 +1062,27 @@ export function createPortalApi(config) {
 			return null
 		},
 
-		/** End the session server-side (best-effort) and drop the local token. */
+		/**
+		 * End the session server-side (best-effort) and drop the local token.
+		 *
+		 * @return {Promise<object|null>} The answer, carrying `logoutUrl` when
+		 *         the broker offers a sign-out (signin-session-idle-warning-and-sso
+		 *         T11), or null when the edge could not be reached.
+		 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T11
+		 */
 		async logout() {
+			let answer = null
 			try {
-				await fetch(`${base}/session`, {
+				const res = await fetch(`${base}/session`, {
 					method: 'DELETE',
-					headers: authHeaders(),
+					headers: { Accept: 'application/json', ...authHeaders() },
 				})
+				answer = res.ok ? await res.json().catch(() => null) : null
 			} catch (e) {
 				/* best-effort — the token is dropped regardless */
 			}
 			setToken(null)
+			return answer
 		},
 
 		/**

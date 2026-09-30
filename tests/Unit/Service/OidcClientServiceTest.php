@@ -251,6 +251,49 @@ class OidcClientServiceTest extends TestCase {
 
 	}//end testDiscoverFailsClosedWhenTheDocumentIsMissingARequiredEndpoint()
 
+	/**
+	 * REQ-SIS-005: a silent start asks the broker for a sign-in without a prompt.
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T07
+	 */
+	public function testSilentAuthorizationUrlCarriesPromptNone(): void {
+		$service = $this->service();
+		$args = ['authorizeEndpoint' => 'https://broker.example/authorize', 'clientId' => 'rp', 'redirectUri' => 'https://portal.example/cb', 'scopes' => ['openid'], 'state' => 's', 'nonce' => 'n', 'codeChallenge' => 'c'];
+
+		parse_str((string)parse_url($service->buildAuthorizationUrl(...$args, prompt: 'none'), PHP_URL_QUERY), $silent);
+		$this->assertSame('none', $silent['prompt']);
+
+		parse_str((string)parse_url($service->buildAuthorizationUrl(...$args), PHP_URL_QUERY), $plain);
+		$this->assertArrayNotHasKey('prompt', $plain);
+
+	}//end testSilentAuthorizationUrlCarriesPromptNone()
+
+	/**
+	 * REQ-SIS-006: discovery keeps the broker's `end_session_endpoint`, and
+	 * reports '' when the broker announces none.
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T10
+	 */
+	public function testDiscoverKeepsTheEndSessionEndpoint(): void {
+		$document = ['authorization_endpoint' => 'https://broker.example/authorize', 'token_endpoint' => 'https://broker.example/token', 'jwks_uri' => 'https://broker.example/jwks'];
+		foreach ([['https://broker.example/logout', 'https://broker.example/logout'], [null, '']] as [$announced, $expected]) {
+			$body = $document;
+			if ($announced !== null) {
+				$body['end_session_endpoint'] = $announced;
+			}
+
+			$response = $this->createMock(IResponse::class);
+			$response->method('getBody')->willReturn((string)json_encode($body));
+			$client = $this->createMock(IClient::class);
+			$client->method('get')->willReturn($response);
+			$clientService = $this->createMock(IClientService::class);
+			$clientService->method('newClient')->willReturn($client);
+
+			$this->assertSame($expected, $this->service(clientService: $clientService)->discover(self::ISSUER)['end_session_endpoint']);
+		}
+
+	}//end testDiscoverKeepsTheEndSessionEndpoint()
+
 	public function testVerifyIdTokenRetriesOnceOnAKeyRotationBeforeFailingClosed(): void {
 		$rotatedPair = openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA]);
 		$token = $this->signedTokenWithKey($rotatedPair, claimOverrides: [], kid: 'rotated-kid');

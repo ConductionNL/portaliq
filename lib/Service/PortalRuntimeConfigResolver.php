@@ -169,6 +169,8 @@ class PortalRuntimeConfigResolver {
 		if ($orgValue !== '') {
 			$resolved = $this->orgResolver->resolve(orgSlug: $orgValue, locale: $locale);
 			$config['oidcProviders'] = (array)($resolved['oidcProviders'] ?? []);
+			// Silent sign-in goes through the same broker (signin-session-idle-warning-and-sso T09).
+			$config['silentSignIn'] = (string)($resolved['silentSignIn'] ?? '');
 		}
 
 		if ($portal === null) {

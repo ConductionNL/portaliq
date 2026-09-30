@@ -81,12 +81,19 @@ class OidcStateStoreService {
 	 * @param string $org The `?org=` slug the login was started for.
 	 * @param string $provider The provider preset.
 	 * @param string $returnTo The SPA path to redirect to once minted.
+	 * @param bool $silent Whether the start asked the broker for no prompt
+	 *                     (signin-session-idle-warning-and-sso D5).
 	 *
 	 * @return bool True when the row was written; false on any write failure
 	 *              (the caller — `oidcStart()` — fails the whole request
 	 *              closed rather than issue a redirect with no matching state).
 	 *
 	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T07
+	 *
+	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) -- `silent` is one recorded
+	 * fact of the round trip, stored as-is on the row; the method does the
+	 * same thing either way.
 	 */
 	public function create(
 		string $state,
@@ -95,6 +102,7 @@ class OidcStateStoreService {
 		string $org,
 		string $provider,
 		string $returnTo,
+		bool $silent = false,
 	): bool {
 		if ($state === '') {
 			return false;
@@ -116,6 +124,7 @@ class OidcStateStoreService {
 				'returnTo' => $returnTo,
 				'expiresAt' => $now->add(new DateInterval('PT' . self::TTL_SECONDS . 'S'))->format(DATE_ATOM),
 				'used' => false,
+				'silent' => $silent,
 			]
 		);
 
@@ -174,9 +183,10 @@ class OidcStateStoreService {
 	 *
 	 * @param string $state The OIDC `state` parameter to consume.
 	 *
-	 * @return array{nonce: string, codeVerifier: string, org: string, provider: string, returnTo: string, route: string}|null
+	 * @return array{nonce: string, codeVerifier: string, org: string, provider: string, returnTo: string, route: string, silent: bool}|null
 	 *
 	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T08
 	 * @spec openspec/specs/supplier-portal/spec.md#every-validation-failure-is-an-identical-generic-error
 	 */
 	public function consume(string $state): ?array {
@@ -226,6 +236,8 @@ class OidcStateStoreService {
 			'returnTo' => (string)($row['returnTo'] ?? ''),
 			// Absent on every row written before the broker route existed.
 			'route' => (string)($row['route'] ?? 'oidc'),
+			// A silent start (signin-session-idle-warning-and-sso D5); absent is false.
+			'silent' => (($row['silent'] ?? false) === true),
 		];
 	}//end consume()
 

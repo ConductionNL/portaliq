@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.49.0"
+        "version": "0.50.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.49.0",
+                "version": "0.50.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -1398,7 +1398,7 @@
                     ]
                 },
                 "icon": "ShieldLock",
-                "version": "0.2.0",
+                "version": "0.3.0",
                 "title": "Portal OIDC State",
                 "description": "Short-lived, single-use server-side storage for one OIDC authorization-code + PKCE round trip (portal-oidc-broker-login). Written by SessionController::oidcStart(), consumed exactly once by SessionController::oidcCallback(); a reused or expired row fails the callback closed. Never publicly readable — it briefly carries the PKCE code_verifier.",
                 "type": "object",
@@ -1467,6 +1467,12 @@
                         "type": "string",
                         "format": "date-time",
                         "description": "When this row becomes unusable — a TTL bound on the whole start→callback round trip, independent of `used`."
+                    },
+                    "silent": {
+                        "title": "Silent sign-in",
+                        "type": "boolean",
+                        "description": "Whether the start asked the broker to sign in without a prompt. A silent row the broker answers with login_required lands on the login screen without an error. Absent means false.",
+                        "example": false
                     },
                     "used": {
                         "title": "Used",

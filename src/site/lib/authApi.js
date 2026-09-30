@@ -173,6 +173,47 @@ export async function fetchSession(authBase) {
 }
 
 /**
+ * Rotate this tab's bearer (signin-session-idle-warning-and-sso T06). The
+ * site keeps its bearer in sessionStorage; the rotated one replaces it. A
+ * refusal (revoked, expired, past the cap) resolves null and changes nothing.
+ *
+ * @param {string} authBase The auth edge base.
+ * @return {Promise<object|null>} The answer (token and session times), or null.
+ * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T06
+ */
+export async function refreshSession(authBase) {
+	try {
+		const token = adoptSessionToken()
+		if (!token) {
+			return null
+		}
+		const response = await fetch(`${authBase}/session/refresh`, {
+			method: 'POST',
+			headers: {
+				Accept: 'application/json',
+				Authorization: `Bearer ${token}`,
+			},
+			credentials: 'include',
+		})
+		if (!response.ok) {
+			return null
+		}
+		const body = await response.json()
+		if (!body || !body.token) {
+			return null
+		}
+		try {
+			window.sessionStorage.setItem(TOKEN_KEY, body.token)
+		} catch {
+			// No storage: the page keeps the old bearer until it expires.
+		}
+		return body
+	} catch {
+		return null
+	}
+}
+
+/**
  * The sign-in routes a portal offers, derived from its declared modes.
  *
  * `public` is not a sign-in route — it is the absence of one. A portal that

@@ -32,7 +32,7 @@ class OidcStateStoreServiceTest extends TestCase {
 
 		$consumed = $service->consume(state: 'state-1');
 		$this->assertSame(
-			['nonce' => 'nonce-1', 'codeVerifier' => 'verifier-1', 'org' => 'gemeente-x', 'provider' => 'eherkenning', 'returnTo' => '/portal', 'route' => 'oidc'],
+			['nonce' => 'nonce-1', 'codeVerifier' => 'verifier-1', 'org' => 'gemeente-x', 'provider' => 'eherkenning', 'returnTo' => '/portal', 'route' => 'oidc', 'silent' => false],
 			$consumed
 		);
 
@@ -69,6 +69,34 @@ class OidcStateStoreServiceTest extends TestCase {
 		$this->assertSame('', $consumed['codeVerifier']);
 		$this->assertNull($service->consume(state: 'relay-1'), 'once');
 	}//end testBrokerRowRecordsItsRoute()
+
+	/**
+	 * REQ-SIS-005: a silent start records `silent: true` on its row, the row
+	 * fits the real portalOidcState schema with nothing undeclared, and the
+	 * consumed row says it was silent.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T07
+	 */
+	public function testASilentRowRecordsTheFlag(): void {
+		$store = [];
+		$service = $this->serviceWithStore(store: $store);
+
+		$this->assertTrue($service->create(state: 'state-s', nonce: 'nonce-s', codeVerifier: 'verifier-s', org: 'gemeente-x', provider: 'digid', returnTo: '/portal', silent: true));
+
+		$row = array_values($store)[0];
+		unset($row['uuid']);
+		$this->assertTrue($row['silent']);
+
+		$register = json_decode((string)file_get_contents(__DIR__ . '/../../../lib/Settings/portaliq_register.json'), true);
+		$schema = $register['components']['schemas']['portalOidcState'];
+		$jsonSchema = json_decode((string)json_encode(['type' => 'object', 'required' => $schema['required'], 'properties' => $schema['properties'], 'additionalProperties' => false]), false);
+		$this->assertTrue((new Validator())->validate(json_decode((string)json_encode($row), false), $jsonSchema)->isValid(), 'the silent row fits portalOidcState');
+
+		$this->assertTrue($service->consume(state: 'state-s')['silent']);
+
+	}//end testASilentRowRecordsTheFlag()
 
 	public function testConsumingAnUnknownStateFailsClosed(): void {
 		$service = $this->serviceWithStore();

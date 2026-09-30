@@ -35,6 +35,9 @@ const RUNTIME_CONFIG = loadState('portaliq', 'runtimeConfig', {
 	// portal-oidc-broker-login: secret-free {provider, label} pairs the login
 	// buttons are built from; empty here means "no broker configured".
 	oidcProviders: [],
+	// signin-session-idle-warning-and-sso: the provider to try a silent
+	// sign-in with once per browser session, or '' for off.
+	silentSignIn: '',
 	featureFlags: {},
 	allowedEmbedOrigins: [],
 	apiBase: '/index.php/apps/portaliq/portal/api',

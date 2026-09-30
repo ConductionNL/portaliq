@@ -491,3 +491,23 @@ body .guest-box {
 	display: flex;
 	gap: var(--portaliq-space-sm);
 }
+
+/* The warning before an inactivity sign-out (signin-session-idle-warning-and-sso). */
+.portaliq-idle-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 1000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: var(--portaliq-space-md);
+	background: rgb(0 0 0 / 40%);
+}
+
+.portaliq-idle-warning {
+	max-width: 32rem;
+	padding: var(--portaliq-space-md);
+	border: 1px solid var(--portaliq-color-border);
+	background: var(--portaliq-color-background);
+	color: var(--portaliq-color-text);
+}

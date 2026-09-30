@@ -81,6 +81,21 @@
 				@search="goSearch" />
 		</template>
 
+		<!-- The warning before an inactivity sign-out (signin-session-idle-warning-and-sso T06). -->
+		<IdleWarningDialog
+			v-if="session && idleWarning && idleTimes"
+			:times="idleTimes"
+			:locale="site.locale || 'nl'"
+			@stay="staySignedIn"
+			@signout="signOut" />
+		<p
+			v-if="idleSignedOut && !session"
+			class="utrecht-paragraph pq-idle-signed-out"
+			role="status"
+			data-testid="site-idle-signed-out">
+			{{ idleSignedOutMessage }}
+		</p>
+
 		<!-- Maintenance and warning notices running now (operate-maintenance-notice). -->
 		<SiteNotices
 			v-if="(site.notices || []).length > 0"
@@ -315,13 +330,18 @@
 import { defineAsyncComponent } from 'vue'
 import BrandHeader from './components/BrandHeader.vue'
 import FooterColumns from './components/FooterColumns.vue'
+import IdleWarningDialog from './components/IdleWarningDialog.vue'
 import MarkdownBlock from './components/MarkdownBlock.vue'
 import WidgetGrid from './components/WidgetGrid.vue'
+import idleEn from '../portal/i18n/en.json'
+import idleNl from '../portal/i18n/nl.json'
+import { logoutTarget } from '../portal/lib/idleSession.js'
 import {
 	adoptSessionToken,
 	authBaseFrom,
 	clearSessionToken,
 	fetchSession,
+	refreshSession,
 	SIGNIN_FAILED_MESSAGE,
 	signInRoutes,
 	takeSigninFailed,
@@ -338,6 +358,7 @@ import {
 	resolveApiBase,
 } from './lib/contentApi.js'
 import { editorBaseFrom, fetchEditingContext } from './lib/editorApi.js'
+import { createIdleTracker } from './lib/idleTracker.js'
 import { loadSiteEditor } from './lib/loadSiteEditor.js'
 import { pageRegionsOf, resolveRegions } from './lib/regions.js'
 import {
@@ -385,6 +406,7 @@ export default {
 	components: {
 		BrandHeader,
 		FooterColumns,
+		IdleWarningDialog,
 		MarkdownBlock,
 		SiteEditButton,
 		SiteNotices,
@@ -409,6 +431,11 @@ export default {
 			glossary: [],
 			contributions: [],
 			session: null,
+			// The idle window (signin-session-idle-warning-and-sso T06).
+			idleTimes: null,
+			idleWarning: false,
+			idleSignedOut: false,
+			idleTracker: null,
 			page: null,
 			route: '/',
 			// The trailing segment of a route that resolved to its PARENT
@@ -670,6 +697,17 @@ export default {
 		},
 
 		/**
+		 * @return {string} Why the visitor was signed out, in the site's language.
+		 *
+		 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T06
+		 */
+		idleSignedOutMessage() {
+			const key = 'You were signed out because you were inactive.'
+			const strings = this.site.locale === 'en' ? idleEn : idleNl
+			return strings[key] || key
+		},
+
+		/**
 		 * @return {string} How to name the signed-in visitor.
 		 *
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portal-must-offer-only-the-sign-in-routes-it-declares
@@ -710,8 +748,14 @@ export default {
 		await this.loadRoute(this.route)
 	},
 
+	/**
+	 * Stop listening, and stop the idle window.
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T06
+	 */
 	beforeUnmount() {
 		window.removeEventListener('popstate', this.onPopState)
+		this.idleTracker?.stop()
 	},
 
 	methods: {
@@ -784,6 +828,7 @@ export default {
 			// the overwhelming majority of what it serves; `fetchSession`
 			// resolves null rather than throwing for exactly that reason.
 			this.session = await fetchSession(authBaseFrom(resolveApiBase()))
+			this.watchIdle()
 
 			this.applyDocumentTitle()
 		},
@@ -834,22 +879,103 @@ export default {
 		 */
 		async signOut() {
 			const token = adoptSessionToken()
+			let answer = null
 			try {
-				await fetch(`${authBaseFrom(resolveApiBase())}/session`, {
-					method: 'DELETE',
-					credentials: 'include',
-					// The edge revokes the session the BEARER names. Without it
-					// the request is anonymous, the server revokes nothing, and
-					// only this tab forgets — a sign-out that leaves a live
-					// token behind is the one failure mode that matters here.
-					headers: token ? { Authorization: `Bearer ${token}` } : {},
-				})
+				const response = await fetch(
+					`${authBaseFrom(resolveApiBase())}/session`,
+					{
+						method: 'DELETE',
+						credentials: 'include',
+						// The edge revokes the session the BEARER names. Without it
+						// the request is anonymous, the server revokes nothing, and
+						// only this tab forgets — a sign-out that leaves a live
+						// token behind is the one failure mode that matters here.
+						headers: token
+							? {
+									Accept: 'application/json',
+									Authorization: `Bearer ${token}`,
+								}
+							: {},
+					},
+				)
+				answer = response.ok ? await response.json() : null
 			} catch {
 				// Reported by the state change below, not by an alert.
 			}
 
 			clearSessionToken()
+			this.endIdle()
 			this.session = null
+
+			// The broker's own sign-out, when it offers one
+			// (signin-session-idle-warning-and-sso T11).
+			const target = logoutTarget(answer)
+			if (target) {
+				window.location.assign(target)
+			}
+		},
+
+		/**
+		 * Start the idle window for the session on screen: activity refreshes
+		 * the bearer, idling opens the warning, expiry signs out.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T06
+		 */
+		watchIdle() {
+			this.idleTracker?.stop()
+			if (!this.session) {
+				return
+			}
+			this.idleTracker = createIdleTracker({
+				refresh: () => refreshSession(authBaseFrom(resolveApiBase())),
+				onTimes: (times) => {
+					this.idleTimes = times
+					this.idleWarning = false
+				},
+				onWarn: () => {
+					this.idleWarning = true
+				},
+				onEnd: () => {
+					clearSessionToken()
+					this.endIdle()
+					this.session = null
+					this.idleSignedOut = true
+				},
+			})
+			this.idleTimes = {
+				expiresAt: Number(this.session.expiresAt),
+				hardExpiresAt: Number(this.session.hardExpiresAt),
+				idleTimeout: Number(this.session.idleTimeout),
+			}
+			this.idleSignedOut = false
+			this.idleTracker.start(this.session)
+		},
+
+		/**
+		 * "Stay signed in": refresh now.
+		 *
+		 * @return {Promise<void>} Resolves when refreshed.
+		 *
+		 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T06
+		 */
+		async staySignedIn() {
+			await this.idleTracker?.extend()
+		},
+
+		/**
+		 * Stop the idle window.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T06
+		 */
+		endIdle() {
+			this.idleTracker?.stop()
+			this.idleTracker = null
+			this.idleTimes = null
+			this.idleWarning = false
 		},
 
 		/**

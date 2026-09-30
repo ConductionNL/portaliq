@@ -190,6 +190,28 @@ class PortalOrganisationConfigServiceTest extends TestCase {
 
 	}//end testConfiguredProviderSurfacesInOidcProvidersAndResolvesFully()
 
+	/**
+	 * REQ-SIS-005: silent sign-in is on only when the override names a
+	 * provider the organisation configured on its own OIDC broker.
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T09
+	 */
+	public function testSilentSignInNamesAConfiguredOidcProvider(): void {
+		$oidc = ['eherkenning' => ['issuer' => 'https://broker.example/idp', 'clientId' => 'rp-client-1']];
+		foreach ([['eherkenning', 'eherkenning'], ['digid', ''], [null, ''], [['x'], '']] as [$named, $expected]) {
+			$overrides = ['oidc' => $oidc];
+			if ($named !== null) {
+				$overrides['silentSignIn'] = $named;
+			}
+
+			$service = $this->oidcService(overridesJson: json_encode($overrides), secret: 's3cr3t-value-0000000000');
+			$this->assertSame($expected, $service->resolve('gemeente-x')['silentSignIn'], json_encode($named));
+		}
+
+		$this->assertSame('', $this->oidcService(overridesJson: '{}', secret: '')->resolve('')['silentSignIn']);
+
+	}//end testSilentSignInNamesAConfiguredOidcProvider()
+
 	public function testUnconfiguredProviderResolvesToNullNotAnError(): void {
 		$service = $this->oidcService(overridesJson: '{}', secret: '');
 
