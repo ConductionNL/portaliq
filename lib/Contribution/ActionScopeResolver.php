@@ -87,6 +87,24 @@ class ActionScopeResolver {
 	}//end prepare()
 
 	/**
+	 * What a create action stamps into its scope field: the declared
+	 * `scopeClaim` resolved from the subject's own portal account, else the
+	 * subject's subjectRef; null when a declared claim is absent
+	 * (claim-scoped-create-stamps-the-claim).
+	 *
+	 * @param array<string, mixed> $action The create action.
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param string $appId The contributing app.
+	 *
+	 * @return string|null
+	 *
+	 * @spec openspec/changes/claim-scoped-create-stamps-the-claim/tasks.md#T1
+	 */
+	public function createStamp(array $action, array $subject, string $appId): ?string {
+		return $this->resolve(scopeClaim: (string)($action['scopeClaim'] ?? ''), appId: $appId, subject: $subject);
+	}//end createStamp()
+
+	/**
 	 * The subject's value for a scope claim, or null when it does not resolve.
 	 *
 	 * @param string $scopeClaim The claim ('' reads the subject reference).
