@@ -48,10 +48,33 @@ export function buildRequestUrl(state) {
 		url.searchParams.set('_search', state.query)
 	}
 
-	url.searchParams.set(`_facets[${state.facetField}][type]`, 'terms')
+	// ONE FACET PER FIELD, IN THE SAME REQUEST (woo-search-and-detail D1).
+	// `facetFields` with a `facets` map is the current shape; a caller that
+	// still passes the single `facetField` with `selectedFacets` gets exactly
+	// the request it got before.
+	const fields = facetFieldsOf(state)
+	for (const field of fields) {
+		url.searchParams.set(`_facets[${field}][type]`, 'terms')
+	}
 
-	for (const value of state.selectedFacets || []) {
-		url.searchParams.append(state.facetField, value)
+	const selected = state.facets || { [fields[0]]: state.selectedFacets || [] }
+	for (const field of fields) {
+		for (const value of selected[field] || []) {
+			url.searchParams.append(field, value)
+		}
+	}
+
+	// THE PERIOD AS A RANGE (D2). OpenRegister reads `<field>[gte]` and
+	// `<field>[lte]`; the to date covers its whole day. A date that does not
+	// parse is left out: a filter nobody can read back is not sent.
+	const periodField = state.periodField || 'publicationDate'
+	const from = validDate(state.periodFrom)
+	const to = validDate(state.periodTo)
+	if (from) {
+		url.searchParams.set(`${periodField}[gte]`, from)
+	}
+	if (to) {
+		url.searchParams.set(`${periodField}[lte]`, `${to}T23:59:59Z`)
 	}
 
 	// `_order[<field>]=ASC|DESC`. Verified against the live endpoint on
@@ -252,4 +275,149 @@ export function formatDutchDate(value) {
 	]
 
 	return `${parsed.getUTCDate()} ${months[parsed.getUTCMonth()]} ${parsed.getUTCFullYear()}`
+}
+
+/**
+ * The facet fields of a search state, oldest shape included.
+ *
+ * @param {object} state The search state.
+ * @return {Array<string>} The field names, never empty.
+ *
+ * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-information-category-and-organisation-req-wsd-001
+ */
+export function facetFieldsOf(state) {
+	const fields = (
+		state && Array.isArray(state.facetFields) ? state.facetFields : []
+	).filter((field) => typeof field === 'string' && field !== '')
+	if (fields.length > 0) {
+		return fields
+	}
+
+	return [(state && state.facetField) || 'themes']
+}
+
+/**
+ * A calendar date as `YYYY-MM-DD`, or '' when the value is not one.
+ *
+ * @param {string} value The value from an input or the page address.
+ * @return {string} The date, or ''.
+ *
+ * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-a-publication-period-req-wsd-002
+ */
+export function validDate(value) {
+	const text = String(value || '')
+	if (/^\d{4}-\d{2}-\d{2}$/.test(text) === false) {
+		return ''
+	}
+
+	const parsed = new Date(`${text}T00:00:00Z`)
+	if (Number.isNaN(parsed.getTime()) === true) {
+		return ''
+	}
+
+	// `2026-02-31` parses and rolls over to March; that is not the date typed.
+	return parsed.toISOString().slice(0, 10) === text ? text : ''
+}
+
+/**
+ * Read the search state from a page address query string.
+ *
+ * Each facet field has its own `f.<field>` parameter. The older `_facets`
+ * parameter is still read, as values of the FIRST field, so a link shared
+ * before the filters split keeps opening the same search.
+ *
+ * @param {string}        search      `window.location.search`.
+ * @param {Array<string>} facetFields The block's facet fields.
+ * @return {object} `{query, page, sort, facets, periodFrom, periodTo}`.
+ *
+ * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-every-filter-must-survive-a-shared-link-req-wsd-003
+ */
+export function readSearchState(search, facetFields) {
+	const params = new URLSearchParams(search || '')
+	const split = (value) => (value ? value.split(',').filter(Boolean) : [])
+	const facets = {}
+
+	for (const field of facetFields) {
+		facets[field] = split(params.get(`f.${field}`))
+	}
+
+	const legacy = split(params.get('_facets'))
+	if (
+		legacy.length > 0
+		&& facetFields.length > 0
+		&& facets[facetFields[0]].length === 0
+	) {
+		facets[facetFields[0]] = legacy
+	}
+
+	return {
+		query: params.get('_search') || '',
+		page: Math.max(1, parseInt(params.get('_page'), 10) || 1),
+		sort: params.get('_sort') || '',
+		facets,
+		periodFrom: validDate(params.get('periodFrom')),
+		periodTo: validDate(params.get('periodTo')),
+	}
+}
+
+/**
+ * Write the search state into a page address.
+ *
+ * `route` and every parameter this block does not own are left alone.
+ *
+ * @param {URL}           url         The address to change in place.
+ * @param {object}        state       The search state.
+ * @param {Array<string>} facetFields The block's facet fields.
+ * @return {URL} The same address.
+ *
+ * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-every-filter-must-survive-a-shared-link-req-wsd-003
+ */
+export function writeSearchState(url, state, facetFields) {
+	const assign = (key, value) => {
+		if (value) {
+			url.searchParams.set(key, value)
+		} else {
+			url.searchParams.delete(key)
+		}
+	}
+
+	assign('_search', state.query)
+	assign('_page', state.page > 1 ? String(state.page) : '')
+	assign('_sort', state.sort)
+	url.searchParams.delete('_facets')
+	for (const field of facetFields) {
+		assign(`f.${field}`, ((state.facets || {})[field] || []).join(','))
+	}
+	assign('periodFrom', validDate(state.periodFrom))
+	assign('periodTo', validDate(state.periodTo))
+
+	return url
+}
+
+/**
+ * The search as the saved-search query of contract C2.
+ *
+ * `organization` is the publication schema's field name; C2 calls the same
+ * filter `organisation`. Any other facet field is not part of C2 and is left
+ * out rather than invented.
+ *
+ * @param {object} state   The search state.
+ * @param {string} catalog The catalog the block searches, or ''.
+ * @return {object} `{text, filters: {informatiecategorie, organisation, periodFrom, periodTo}, catalog}`.
+ *
+ * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-block-must-describe-its-search-as-the-saved-search-query-req-wsd-004
+ */
+export function searchQuery(state, catalog = '') {
+	const facets = (state && state.facets) || {}
+
+	return {
+		text: String((state && state.query) || ''),
+		filters: {
+			informatiecategorie: [...(facets.informatiecategorie || [])],
+			organisation: [...(facets.organization || facets.organisation || [])],
+			periodFrom: validDate(state && state.periodFrom),
+			periodTo: validDate(state && state.periodTo),
+		},
+		catalog: String(catalog || ''),
+	}
 }

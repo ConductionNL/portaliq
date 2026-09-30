@@ -29,11 +29,16 @@
 
 import {
 	buildRequestUrl,
+	facetFieldsOf,
 	formatDutchDate,
 	pageWindow,
 	paginationItems,
+	readSearchState,
+	searchQuery,
 	toBuckets,
 	toResult,
+	validDate,
+	writeSearchState,
 } from '../src/site/lib/federatedSearch.js'
 
 let failures = 0
@@ -367,6 +372,154 @@ assertEqual(
 	'uses a schema title when the instance supplies one',
 	toResult({ name: 'x', '@self': { schemaTitle: 'Publiccode' } }).type,
 	'Publiccode',
+)
+
+// woo-search-and-detail: facets per field, the period, the address and the
+// saved-search query (REQ-WSD-001 to REQ-WSD-004).
+
+console.log('facets per field')
+
+{
+	const url = new URL(
+		buildRequestUrl({
+			...BASE,
+			facetField: undefined,
+			facetFields: ['informatiecategorie', 'organization'],
+			facets: { informatiecategorie: ['woo-verzoeken'], organization: [] },
+		}),
+	)
+	assertEqual(
+		'asks a facet for the first field',
+		url.searchParams.get('_facets[informatiecategorie][type]'),
+		'terms',
+	)
+	assertEqual(
+		'asks a facet for the second field in the same request',
+		url.searchParams.get('_facets[organization][type]'),
+		'terms',
+	)
+	assertEqual(
+		'sends the ticked category as a filter',
+		url.searchParams.getAll('informatiecategorie'),
+		['woo-verzoeken'],
+	)
+	assertTrue(
+		'sends no filter for a field without a selection',
+		url.searchParams.has('organization') === false,
+	)
+	assertEqual(
+		'a state without facetFields keeps its single field',
+		facetFieldsOf({ facetField: 'themes' }),
+		['themes'],
+	)
+}
+
+console.log('period range')
+
+{
+	const url = new URL(
+		buildRequestUrl({
+			...BASE,
+			periodFrom: '2026-01-01',
+			periodTo: '2026-12-31',
+		}),
+	)
+	assertEqual(
+		'sends the from date as a gte range',
+		url.searchParams.get('publicationDate[gte]'),
+		'2026-01-01',
+	)
+	assertEqual(
+		'sends the to date through the end of that day',
+		url.searchParams.get('publicationDate[lte]'),
+		'2026-12-31T23:59:59Z',
+	)
+	const bad = new URL(buildRequestUrl({ ...BASE, periodFrom: 'gisteren' }))
+	assertTrue(
+		'does not send a from date that is not a date',
+		bad.searchParams.has('publicationDate[gte]') === false,
+	)
+	assertEqual('refuses a date that rolls over', validDate('2026-02-31'), '')
+	const own = new URL(
+		buildRequestUrl({
+			...BASE,
+			periodField: 'period.from',
+			periodFrom: '2026-01-01',
+		}),
+	)
+	assertEqual(
+		'uses another period field when the block names one',
+		own.searchParams.get('period.from[gte]'),
+		'2026-01-01',
+	)
+}
+
+console.log('address round trip')
+
+{
+	const fields = ['informatiecategorie', 'organization']
+	const state = {
+		query: 'fietspad',
+		page: 1,
+		sort: '',
+		facets: { informatiecategorie: ['woo-verzoeken'], organization: [] },
+		periodFrom: '2026-01-01',
+		periodTo: '',
+	}
+	const url = writeSearchState(
+		new URL('https://portal.example.org/site?route=/zoeken'),
+		state,
+		fields,
+	)
+	assertEqual('keeps the route', url.searchParams.get('route'), '/zoeken')
+	assertEqual(
+		'writes the category per field',
+		url.searchParams.get('f.informatiecategorie'),
+		'woo-verzoeken',
+	)
+	assertEqual(
+		'writes the from date',
+		url.searchParams.get('periodFrom'),
+		'2026-01-01',
+	)
+	const back = readSearchState(url.search, fields)
+	assertEqual('reads the text back', back.query, 'fietspad')
+	assertEqual('reads the facets back', back.facets, state.facets)
+	assertEqual('reads the from date back', back.periodFrom, '2026-01-01')
+}
+
+console.log('old _facets parameter')
+
+{
+	const back = readSearchState('?_facets=parkeren', ['themes', 'organization'])
+	assertEqual(
+		'an old link selects its value in the first field',
+		back.facets.themes,
+		['parkeren'],
+	)
+	assertEqual('and nothing in the second', back.facets.organization, [])
+}
+
+console.log('search query object')
+
+assertEqual(
+	'describes the search in the C2 shape, organization as organisation',
+	searchQuery({
+		query: 'fietspad',
+		facets: { informatiecategorie: [], organization: ['org-1'] },
+		periodFrom: '',
+		periodTo: '',
+	}),
+	{
+		text: 'fietspad',
+		filters: {
+			informatiecategorie: [],
+			organisation: ['org-1'],
+			periodFrom: '',
+			periodTo: '',
+		},
+		catalog: '',
+	},
 )
 
 if (failures > 0) {
