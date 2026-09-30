@@ -336,6 +336,7 @@ class PortalObjectReader {
 		mixed $via = null,
 		string $audience = '',
 		mixed $fields = null,
+		array $filter = [],
 	): ?array {
 		if ($id === '') {
 			return null;
@@ -368,7 +369,7 @@ class PortalObjectReader {
 		}
 
 		$row = $this->fetchById(objectService: $objectService, register: $register, schema: $schema, id: $id);
-		if ($row === null) {
+		if ($row === null || $this->rowMatchesFilter(row: $row, filter: $filter, scopeField: $scopeField) === false) {
 			return null;
 		}
 
@@ -400,6 +401,35 @@ class PortalObjectReader {
 
 		return $this->projector->projectRow(row: $verified[0], fields: $fields);
 	}//end readObject()
+
+	/**
+	 * Whether a row fetched by id satisfies the collection's declared
+	 * `filter`, the narrowing the list read hands to OpenRegister. A row the
+	 * list would never show is not shown by id either (a report card under
+	 * review stays hidden from a parent). The scope field is left to the
+	 * scope checks, exactly as scopedFilters() lets it win.
+	 *
+	 * @param array<string, mixed> $row The fetched row.
+	 * @param array<string, mixed> $filter The declared filter.
+	 * @param string $scopeField The collection's scope field.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/via-read-scoped-query/tasks.md#T2
+	 */
+	private function rowMatchesFilter(array $row, array $filter, string $scopeField): bool {
+		foreach ($filter as $key => $expected) {
+			if (is_string($key) === false || $key === '' || $key === $scopeField) {
+				continue;
+			}
+
+			if ($this->dotGet(row: $row, path: $key) !== $expected) {
+				return false;
+			}
+		}
+
+		return true;
+	}//end rowMatchesFilter()
 
 	/**
 	 * Read one row as the signed-in Nextcloud user, with OpenRegister's own

@@ -2,7 +2,7 @@
 
 ### Requirement: A via read MUST query the subject's own rows and honour the declared filter
 
-In the reverse mode (`match: 'scopeField'`) the outer read MUST ask OpenRegister for rows whose collection `scopeField` equals a verified target, one query per target, so the result does not depend on how many other rows the schema holds. A row returned by two queries MUST be returned once. A collection's declared `filter` MUST narrow the outer read in both modes, and the collection's `scopeField` MUST override any filter entry with the same key. The per-row membership and tenant checks MUST still run on every outer row.
+In the reverse mode (`match: 'scopeField'`) the outer read MUST ask OpenRegister for rows whose collection `scopeField` equals a verified target, one query per target, so the result does not depend on how many other rows the schema holds. A row returned by two queries MUST be returned once. A collection's declared `filter` MUST narrow the outer read in both modes, and the collection's `scopeField` MUST override any filter entry with the same key. The per-row membership and tenant checks MUST still run on every outer row. A read by id MUST return nothing for a row that does not match the declared `filter`, on the via and the direct path.
 
 #### Scenario: A child's rows behind a full page of other rows are returned
 
@@ -25,3 +25,10 @@ In the reverse mode (`match: 'scopeField'`) the outer read MUST ask OpenRegister
 - WHEN the guardian reads the collection
 - THEN only the guardian's own child's rows are returned
 - @e2e exclude covered by PHPUnit `PortalObjectReaderViaQueryTest::testADeclaredFilterOnTheScopeFieldCannotWidenTheVia`
+
+#### Scenario: A report card under review is not readable by id
+
+- GIVEN the same collection and a `draft` report card of the guardian's own child
+- WHEN the guardian reads that report card by id
+- THEN the answer is 404
+- @e2e exclude covered by PHPUnit `PortalObjectReaderViaQueryTest::testTheDeclaredFilterAlsoHoldsForAReadById`

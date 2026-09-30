@@ -107,6 +107,44 @@ class PortalObjectReaderViaQueryTest extends TestCase {
 	}//end testADeclaredFilterOnTheScopeFieldCannotWidenTheVia()
 
 	/**
+	 * The single-object read honours the declared filter too: a report card
+	 * under review is a 404 by id, on the via path and on a direct one.
+	 */
+	public function testTheDeclaredFilterAlsoHoldsForAReadById(): void {
+		$objectService = $this->filteringObjectService(
+			[
+				'learner-profile' => [['id' => 'child-1', 'guardianRefs' => ['guardian-1']]],
+				'report-card' => [
+					['id' => 'rc-draft', 'learnerRef' => 'child-1', 'lifecycle' => 'draft'],
+					['id' => 'rc-published', 'learnerRef' => 'child-1', 'lifecycle' => 'published-to-parents'],
+				],
+			]
+		);
+		$reader = new PortalObjectReader(
+			$this->container($objectService),
+			$this->createMock(LoggerInterface::class),
+			new PortalFieldProjector($this->createMock(LoggerInterface::class))
+		);
+
+		$read = fn (string $id, mixed $via, string $scopeField, string $subject): ?array => $reader->readObject(
+			register: 'learniq',
+			schema: 'report-card',
+			scopeField: $scopeField,
+			subjectRef: $subject,
+			id: $id,
+			via: $via,
+			audience: 'parent',
+			filter: ['lifecycle' => 'published-to-parents']
+		);
+
+		$this->assertNull($read('rc-draft', self::CHILD_JOIN, 'learnerRef', 'guardian-1'));
+		$this->assertSame('rc-published', $read('rc-published', self::CHILD_JOIN, 'learnerRef', 'guardian-1')['id']);
+		$this->assertNull($read('rc-draft', null, 'learnerRef', 'child-1'));
+		$this->assertSame('rc-published', $read('rc-published', null, 'learnerRef', 'child-1')['id']);
+
+	}//end testTheDeclaredFilterAlsoHoldsForAReadById()
+
+	/**
 	 * Read one reverse-via collection for guardian-1.
 	 *
 	 * @param object $objectService The fake OpenRegister.
@@ -186,6 +224,19 @@ class PortalObjectReaderViaQueryTest extends TestCase {
 
 				return array_slice($matched, (int)($config['offset'] ?? 0), (int)($config['limit'] ?? 20));
 			}//end findAll()
+
+			/**
+			 * @return array<string,mixed>|null
+			 */
+			public function find(string $id, string $register = '', string $schema = '', bool $_rbac = true, bool $_multitenancy = true): ?array {
+				foreach (($this->rows[$schema !== '' ? $schema : $this->schema] ?? []) as $row) {
+					if (($row['id'] ?? null) === $id) {
+						return $row;
+					}
+				}
+
+				return null;
+			}//end find()
 		};
 
 	}//end filteringObjectService()
