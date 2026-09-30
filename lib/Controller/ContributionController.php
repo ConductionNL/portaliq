@@ -48,6 +48,7 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\ActionScopeResolver;
+use OCA\Portaliq\Contribution\CreateBody;
 use OCA\Portaliq\Contribution\FileFieldConfigNormaliser;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\Branch\PortalBranchScope;
@@ -979,18 +980,8 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		$data = $this->withoutFileFields(action: $action, data: $this->whitelist(fields: (array)($action['fields'] ?? [])));
-
-		// A declared action `defaults` map is stamped server-side over the
-		// whitelisted client payload. It carries values the client must not choose
-		// — notably a supertype discriminator (pipelinq's `ticketType`), which is
-		// required by the schema but is never a client-editable field. Applied
-		// AFTER the whitelist so a client can never override it.
-		foreach ((array)($action['defaults'] ?? []) as $key => $value) {
-			if (is_string($key) === true && $key !== '') {
-				$data[$key] = $value;
-			}
-		}
+		$whitelisted = $this->withoutFileFields(action: $action, data: $this->whitelist(fields: (array)($action['fields'] ?? [])));
+		$data = (new CreateBody())->build(action: $action, whitelisted: $whitelisted);
 
 		// The cross-reference guard (portal-create-cross-refs). Every field the
 		// action declares as a reference has to resolve inside the subject's
@@ -1010,17 +1001,11 @@ class ContributionController extends Controller implements PortalProtected {
 			);
 		}
 
-		// A declared `scopeClaim` names what the scope field is stamped with:
-		// the server-resolved claim from the subject's own portalAccount, the
-		// same value the action's collections read by. Without one the stamp
-		// stays the subjectRef. An absent claim refuses the write
+		// The scope field carries the declared `scopeClaim` resolved server
+		// side, else the subjectRef; an absent claim refuses the write
 		// (claim-scoped-create-stamps-the-claim).
-		$stamp = $this->reader->resolveScopeValue(
-			scopeClaim: (string)($action['scopeClaim'] ?? ''),
-			contributingApp: $match['app'],
-			subject: $subject
-		);
-		if ($stamp === null || $stamp === '') {
+		$stamp = (new ActionScopeResolver(reader: $this->reader))->createStamp(action: $action, subject: $subject, appId: $match['app']);
+		if ($stamp === null) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
@@ -1064,6 +1049,7 @@ class ContributionController extends Controller implements PortalProtected {
 
 		return new JSONResponse(['object' => $created]);
 	}//end create()
+
 
 	/**
 	 * Find a `type: create` action for (register, schema) in the subject's
@@ -1121,18 +1107,12 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		$data = $this->withoutFileFields(action: $action, data: $this->whitelist(fields: (array)($action['fields'] ?? [])));
-
-		// Server-forced defaults, applied AFTER the whitelist so a client can
-		// never override them — identical discipline to the authenticated
-		// path (e.g. stamping a placeholder ownership marker a schema's
-		// `required` set may mandate, since an anonymous write carries no
-		// real subjectRef).
-		foreach ((array)($action['defaults'] ?? []) as $key => $value) {
-			if (is_string($key) === true && $key !== '') {
-				$data[$key] = $value;
-			}
-		}
+		// Server-forced defaults ride over the whitelist, identical discipline
+		// to the authenticated path (e.g. a placeholder ownership marker a
+		// schema's `required` set may mandate, since an anonymous write
+		// carries no real subjectRef).
+		$whitelisted = $this->withoutFileFields(action: $action, data: $this->whitelist(fields: (array)($action['fields'] ?? [])));
+		$data = (new CreateBody())->build(action: $action, whitelisted: $whitelisted);
 
 		$created = $this->writer->createAnonymousObject(register: $register, schema: $schema, data: $data);
 		if ($created === null) {
