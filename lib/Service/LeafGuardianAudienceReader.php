@@ -84,7 +84,7 @@ class LeafGuardianAudienceReader {
 	 *
 	 * @param string $subjectRef The guardian's own subjectRef.
 	 *
-	 * @return array{schoolRef: string, groupRefs: array<int, string>, childRefs: array<int, string>, photoConsent: array<string, array<string, bool>>}|null
+	 * @return array<string, mixed>|null The audience (schoolRef, groupRefs, childRefs, photoConsent), or null.
 	 *
 	 * @spec openspec/changes/news-audience-from-the-school-app/tasks.md#T1
 	 */
@@ -93,55 +93,76 @@ class LeafGuardianAudienceReader {
 			return null;
 		}
 
+		$audience = ['schoolRef' => '', 'groupRefs' => [], 'childRefs' => [], 'photoConsent' => []];
+		foreach ($this->declaringContributions(subjectRef: $subjectRef) as $contribution) {
+			$audience = $this->merge(audience: $audience, contribution: $contribution, subjectRef: $subjectRef);
+		}
+
+		if ($audience['childRefs'] === []) {
+			return null;
+		}
+
+		$audience['groupRefs'] = array_values(array_unique($audience['groupRefs']));
+		$audience['childRefs'] = array_values(array_unique($audience['childRefs']));
+
+		return $audience;
+	}//end resolveAudience()
+
+	/**
+	 * The parent-audience contributions that declare a `guardianAudience`.
+	 *
+	 * @param string $subjectRef The guardian's own subjectRef.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function declaringContributions(string $subjectRef): array {
+		$subject = ['subjectRef' => $subjectRef, 'audience' => self::AUDIENCE, 'organisation' => '', 'trust' => self::LOOKUP_TRUST];
 		try {
-			$aggregate = $this->registry->aggregateFor(
-				subject: ['subjectRef' => $subjectRef, 'audience' => self::AUDIENCE, 'organisation' => '', 'trust' => self::LOOKUP_TRUST]
-			);
+			$aggregate = $this->registry->aggregateFor(subject: $subject);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: guardian audience lookup failed', ['reason' => $e->getMessage()]);
-			return null;
+			return [];
 		}
 
-		$schoolRef = '';
-		$childRefs = [];
-		$groupRefs = [];
-		foreach ((array)($aggregate['contributions'] ?? []) as $contribution) {
-			$declaration = ($contribution['guardianAudience'] ?? null);
-			if (is_array($declaration) === false) {
-				continue;
-			}
+		return array_values(
+			array_filter(
+				(array)($aggregate['contributions'] ?? []),
+				static fn ($contribution): bool => is_array($contribution['guardianAudience'] ?? null) === true
+			)
+		);
+	}//end declaringContributions()
 
-			$children = $this->rows(contribution: $contribution, collectionId: (string)($declaration['children'] ?? ''), subjectRef: $subjectRef);
-			foreach ($children as $child) {
-				$childRefs = array_merge($childRefs, $this->ids(row: $child));
-				$school = ($child[(string)($declaration['schoolField'] ?? '')] ?? null);
-				if ($schoolRef === '' && is_string($school) === true) {
-					$schoolRef = $school;
-				}
+	/**
+	 * Add one contribution's children, school and groups to the audience.
+	 * No purpose the school app declares maps onto "news" yet, so photo
+	 * consent stays empty and the photo gate keeps failing closed.
+	 *
+	 * @param array<string, mixed> $audience The audience so far.
+	 * @param array<string, mixed> $contribution The declaring contribution.
+	 * @param string $subjectRef The guardian's own subjectRef.
+	 *
+	 * @return array<string, mixed> The audience with this contribution added.
+	 */
+	private function merge(array $audience, array $contribution, string $subjectRef): array {
+		$declaration = $contribution['guardianAudience'];
+		$schoolField = (string)($declaration['schoolField'] ?? '');
+		foreach ($this->rows(contribution: $contribution, collectionId: (string)($declaration['children'] ?? ''), subjectRef: $subjectRef) as $child) {
+			$audience['childRefs'] = array_merge($audience['childRefs'], $this->ids(row: $child));
+			if ($audience['schoolRef'] === '' && is_string($child[$schoolField] ?? null) === true) {
+				$audience['schoolRef'] = $child[$schoolField];
 			}
-
-			$groups = (array)($declaration['groups'] ?? []);
-			foreach ($this->rows(contribution: $contribution, collectionId: (string)($groups['collection'] ?? ''), subjectRef: $subjectRef) as $row) {
-				$group = ($row[(string)($groups['field'] ?? '')] ?? null);
-				if (is_string($group) === true && $group !== '') {
-					$groupRefs[] = $group;
-				}
-			}
-		}//end foreach
-
-		if ($childRefs === []) {
-			return null;
 		}
 
-		return [
-			'schoolRef' => $schoolRef,
-			'groupRefs' => array_values(array_unique($groupRefs)),
-			'childRefs' => array_values(array_unique($childRefs)),
-			// No purpose the school app declares maps onto "news" yet, so the
-			// photo gate keeps failing closed for these children.
-			'photoConsent' => [],
-		];
-	}//end resolveAudience()
+		$groups = (array)($declaration['groups'] ?? []);
+		$groupField = (string)($groups['field'] ?? '');
+		foreach ($this->rows(contribution: $contribution, collectionId: (string)($groups['collection'] ?? ''), subjectRef: $subjectRef) as $row) {
+			if (is_string($row[$groupField] ?? null) === true && $row[$groupField] !== '') {
+				$audience['groupRefs'][] = $row[$groupField];
+			}
+		}
+
+		return $audience;
+	}//end merge()
 
 	/**
 	 * The guardian's rows of one declared collection, unprojected.
