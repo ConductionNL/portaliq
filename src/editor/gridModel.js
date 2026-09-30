@@ -11,7 +11,7 @@
  * A placement is the manifest-v2 widget entry a page stores:
  * `{id, widgetKey, slot, gridX, gridY, gridWidth, gridHeight, props}`.
  *
- * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
  */
 
 import { cellOf, GRID_COLUMNS } from './geometry.js'
@@ -23,7 +23,7 @@ export { GRID_COLUMNS }
  *
  * @param {Array<object>} widgets The placements.
  * @return {Array<object>} The copy.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-editor-changes-must-be-undoable-and-redoable-req-pie-004
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-editor-changes-must-be-undoable-and-redoable-req-pie-004
  */
 export function cloneWidgets(widgets) {
 	return JSON.parse(JSON.stringify(widgets || []))
@@ -37,7 +37,7 @@ export function cloneWidgets(widgets) {
  *
  * @param {Array<object>} widgets The stored placements.
  * @return {Array<object>} The normalised placements.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
  */
 export function normaliseWidgets(widgets) {
 	return (Array.isArray(widgets) ? widgets : []).map((widget, index) => ({
@@ -60,7 +60,7 @@ export function normaliseWidgets(widgets) {
  *
  * @param {object} widget A placement.
  * @return {object} The stored shape.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
  */
 export function storedWidget(widget) {
 	return {
@@ -78,7 +78,7 @@ export function storedWidget(widget) {
  * @param {Array<object>} widgets The placements.
  * @param {string} key The widget key.
  * @return {string} The id.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
  */
 export function nextWidgetId(widgets, key) {
 	const taken = new Set((widgets || []).map((w) => w.id))
@@ -100,7 +100,7 @@ export function nextWidgetId(widgets, key) {
  * @param {string} key The widget key.
  * @param {{gridWidth: number, gridHeight: number}} size The first size.
  * @return {{widgets: Array<object>, id: string}} The new placements and the new id.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
  */
 export function addWidget(widgets, key, size) {
 	const bottom = (widgets || []).reduce(
@@ -133,7 +133,7 @@ export function addWidget(widgets, key, size) {
  * @param {Array<object>} widgets The placements.
  * @param {string} id The placement id.
  * @return {Array<object>} The remaining placements.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
  */
 export function removeWidget(widgets, id) {
 	return cloneWidgets(widgets).filter((w) => w.id !== id)
@@ -149,7 +149,7 @@ export function removeWidget(widgets, id) {
  * @param {Array<object>} widgets The placements.
  * @param {Array<object>} layout The engine's items.
  * @return {{widgets: Array<object>, changed: boolean}} The placements and whether any moved.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
  */
 export function applyLayout(widgets, layout) {
 	const next = cloneWidgets(widgets)
@@ -183,7 +183,7 @@ export function applyLayout(widgets, layout) {
  * @param {string} name The prop name.
  * @param {*} value The value.
  * @return {Array<object>} The placements.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
  */
 export function setWidgetProp(widgets, id, name, value) {
 	const next = cloneWidgets(widgets)
@@ -206,7 +206,7 @@ export function setWidgetProp(widgets, id, name, value) {
  * @param {string} id The placement id.
  * @param {object} props The new props.
  * @return {Array<object>} The placements.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-a-widget-with-a-shared-configuration-form-must-be-configured-through-it-req-pie-003
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-a-widget-with-a-shared-configuration-form-must-be-configured-through-it-req-pie-003
  */
 export function replaceWidgetProps(widgets, id, props) {
 	const next = cloneWidgets(widgets)

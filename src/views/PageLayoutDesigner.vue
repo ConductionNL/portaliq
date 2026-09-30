@@ -24,7 +24,7 @@
   A refusal here is OpenRegister refusing, not this view deciding.
 
   @spec openspec/specs/portal-page-designer/spec.md#requirement-a-pages-widget-grid-must-be-editable-by-direct-manipulation
-  @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
+  @spec openspec/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
 -->
 <template>
 	<div class="designer">
@@ -216,7 +216,7 @@ export default {
 		/**
 		 * @return {object} The editor's state.
 		 *
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
 		 */
 		state() {
 			return this.editor.state
@@ -226,7 +226,7 @@ export default {
 		 * The whole stored page, as the editor loaded it.
 		 *
 		 * @return {object} The page.
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
 		 */
 		page() {
 			return this.editor.state.page
@@ -254,7 +254,7 @@ export default {
 		 *
 		 * @return {object} The editor.
 		 *
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
 		 */
 		makeEditor() {
 			const pageId = String(this.$route?.params?.id || '')

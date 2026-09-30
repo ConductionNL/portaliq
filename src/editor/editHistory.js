@@ -9,7 +9,7 @@
  * one step by passing the same `coalesceKey` on consecutive records, so Ctrl+Z
  * undoes an edit, not a letter.
  *
- * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-editor-changes-must-be-undoable-and-redoable-req-pie-004
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-editor-changes-must-be-undoable-and-redoable-req-pie-004
  */
 
 /** The most steps the editor can undo. */
@@ -20,7 +20,7 @@ export const HISTORY_LIMIT = 50
  *
  * @param {{limit?: number}} options The cap.
  * @return {object} The history.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-editor-changes-must-be-undoable-and-redoable-req-pie-004
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-editor-changes-must-be-undoable-and-redoable-req-pie-004
  */
 export function createEditHistory({ limit = HISTORY_LIMIT } = {}) {
 	let past = []
@@ -105,7 +105,7 @@ export function createEditHistory({ limit = HISTORY_LIMIT } = {}) {
  *
  * @param {KeyboardEvent|object} event The key event.
  * @return {'undo'|'redo'|null} The intent.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-editor-changes-must-be-undoable-and-redoable-req-pie-004
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-editor-changes-must-be-undoable-and-redoable-req-pie-004
  */
 export function historyIntent(event) {
 	if (!event || !(event.ctrlKey || event.metaKey) || event.altKey) {

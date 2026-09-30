@@ -8,7 +8,7 @@
  * next to the site's own script, the first time an editor asks to edit. A
  * visitor never gets here (portal-in-place-editing, REQ-PIE-007).
  *
- * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-the-portal-editor-must-not-weigh-on-a-visitors-first-load-req-pie-007
+ * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-the-portal-editor-must-not-weigh-on-a-visitors-first-load-req-pie-007
  */
 
 let loading = null
@@ -31,7 +31,7 @@ function besideSiteBundle(file) {
  * The editor's mount API, loading the bundle once.
  *
  * @return {Promise<{mount: Function}>} The editor.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-the-portal-editor-must-not-weigh-on-a-visitors-first-load-req-pie-007
+ * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-the-portal-editor-must-not-weigh-on-a-visitors-first-load-req-pie-007
  */
 export function loadSiteEditor() {
 	if (window.PortaliqSiteEditor) {

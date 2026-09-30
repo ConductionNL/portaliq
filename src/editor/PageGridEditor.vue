@@ -16,7 +16,7 @@
   A MARKDOWN PAGE IS NOT A GRID. It is shown as markdown, with no grid actions,
   so nothing here can turn it into a grid page by accident (REQ-PIE-001).
 
-  @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
+  @spec openspec/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
 -->
 <template>
 	<div class="page-grid-editor">
@@ -255,7 +255,7 @@ export default {
 		/**
 		 * @return {object} The editor's reactive state.
 		 *
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
 		 */
 		state() {
 			return this.editor.state
@@ -264,7 +264,7 @@ export default {
 		/**
 		 * @return {object|null} The selected placement.
 		 *
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
 		 */
 		selected() {
 			return (
@@ -276,7 +276,7 @@ export default {
 		/**
 		 * @return {Array<object>} The fields read from the selected widget's props.
 		 *
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
 		 */
 		fields() {
 			return this.selected ? fieldsFor(this.selected.widgetKey) : []
@@ -286,7 +286,7 @@ export default {
 		 * How the selected widget is configured: shared form, fields or JSON.
 		 *
 		 * @return {string} The mode.
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-a-widget-with-a-shared-configuration-form-must-be-configured-through-it-req-pie-003
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-a-widget-with-a-shared-configuration-form-must-be-configured-through-it-req-pie-003
 		 */
 		mode() {
 			if (!this.selected) {
@@ -302,7 +302,7 @@ export default {
 		/**
 		 * @return {object|null} The shared form component.
 		 *
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
 		 */
 		sharedForm() {
 			return this.selected
@@ -313,7 +313,7 @@ export default {
 		/**
 		 * @return {object|null} The placement as the shared form reads it.
 		 *
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
 		 */
 		formWidget() {
 			return this.selected ? formWidgetFor(this.selected) : null
@@ -322,7 +322,7 @@ export default {
 		/**
 		 * @return {string} The selected widget's props as JSON.
 		 *
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
 		 */
 		propsJson() {
 			return JSON.stringify(this.selected?.props || {}, null, 2)
@@ -352,7 +352,7 @@ export default {
 		 * @param {string} text The source text.
 		 * @param {object} vars The placeholders.
 		 * @return {string} The translation.
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
 		 */
 		t(app, text, vars) {
 			return translate(app, text, vars)
@@ -363,7 +363,7 @@ export default {
 		 *
 		 * @param {KeyboardEvent} event The key event.
 		 * @return {void}
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-editor-changes-must-be-undoable-and-redoable-req-pie-004
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-editor-changes-must-be-undoable-and-redoable-req-pie-004
 		 */
 		onKeydown(event) {
 			const intent = historyIntent(event)
@@ -383,7 +383,7 @@ export default {
 		 *
 		 * @param {object} item The placement.
 		 * @return {string} The name.
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
 		 */
 		itemLabel(item) {
 			return this.t('portaliq', 'Widget {key}', { key: item.widgetKey })
@@ -394,7 +394,7 @@ export default {
 		 *
 		 * @param {object} payload The grid's activate payload.
 		 * @return {void}
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
 		 */
 		onActivate(payload) {
 			if (payload?.item?.id) {
@@ -405,7 +405,7 @@ export default {
 		/**
 		 * @param {string} key The widget key.
 		 * @return {boolean} Whether the public site renders it.
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
 		 */
 		isPublic(key) {
 			return isPublicWidget(key)
@@ -414,7 +414,7 @@ export default {
 		/**
 		 * @param {string} key The widget key.
 		 * @return {object|null} The preview component.
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
 		 */
 		previewFor(key) {
 			return previewComponentFor(key)
@@ -426,7 +426,7 @@ export default {
 		 *
 		 * @param {object} widget The placement.
 		 * @return {object} The props.
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
 		 */
 		previewProps(widget) {
 			const props = widget.props || {}
@@ -439,7 +439,7 @@ export default {
 		/**
 		 * @param {object} field The field.
 		 * @return {string} The value in the control.
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
 		 */
 		fieldValue(field) {
 			const value = this.selected?.props?.[field.name]
@@ -456,7 +456,7 @@ export default {
 		 * @param {object} field The field.
 		 * @param {string} raw The typed value.
 		 * @return {void}
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
 		 */
 		onFieldInput(field, raw) {
 			this.jsonError = ''
@@ -487,7 +487,7 @@ export default {
 		 *
 		 * @param {string} raw The typed JSON.
 		 * @return {void}
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
 		 */
 		onJsonInput(raw) {
 			this.jsonError = ''
@@ -510,7 +510,7 @@ export default {
 		 *
 		 * @param {object} content The form content.
 		 * @return {void}
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-a-widget-with-a-shared-configuration-form-must-be-configured-through-it-req-pie-003
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-a-widget-with-a-shared-configuration-form-must-be-configured-through-it-req-pie-003
 		 */
 		onFormContent(content) {
 			this.editor.replaceProps(propsFromFormContent(content))

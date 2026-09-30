@@ -9,7 +9,7 @@
   the version check. Sub-menus travel with their item. Who may save is decided
   by OpenRegister, through the editor groups on the `menu` schema.
 
-  @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-the-portals-menu-from-the-portal-req-pie-011
+  @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-the-portals-menu-from-the-portal-req-pie-011
 -->
 <template>
 	<section
@@ -195,7 +195,7 @@ export default {
 		 *
 		 * @return {object|null} The menu.
 		 *
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-the-portals-menu-from-the-portal-req-pie-011
+		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-the-portals-menu-from-the-portal-req-pie-011
 		 */
 		menu() {
 			return this.menus.find((m) => m.id === this.menuId) || null
@@ -215,7 +215,7 @@ export default {
 		 * @param {object} vars The placeholders.
 		 * @return {string} The translation.
 		 *
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-the-portals-menu-from-the-portal-req-pie-011
+		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-the-portals-menu-from-the-portal-req-pie-011
 		 */
 		t(app, text, vars) {
 			return translate(app, text, vars)
@@ -226,7 +226,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when read.
 		 *
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-the-portals-menu-from-the-portal-req-pie-011
+		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-the-portals-menu-from-the-portal-req-pie-011
 		 */
 		async load() {
 			this.loading = true
@@ -251,7 +251,7 @@ export default {
 		 *
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-the-portals-menu-from-the-portal-req-pie-011
+		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-the-portals-menu-from-the-portal-req-pie-011
 		 */
 		pick() {
 			this.items = sortedMenuItems(this.menu?.items || [])
@@ -264,7 +264,7 @@ export default {
 		 * @param {Function} change () => the new items.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-the-portals-menu-from-the-portal-req-pie-011
+		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-the-portals-menu-from-the-portal-req-pie-011
 		 */
 		apply(change) {
 			this.error = ''
@@ -280,7 +280,7 @@ export default {
 		/**
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-the-portals-menu-from-the-portal-req-pie-011
+		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-the-portals-menu-from-the-portal-req-pie-011
 		 */
 		add() {
 			this.apply(() =>
@@ -297,7 +297,7 @@ export default {
 		 * @param {string} name The new name.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-the-portals-menu-from-the-portal-req-pie-011
+		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-the-portals-menu-from-the-portal-req-pie-011
 		 */
 		rename(index, name) {
 			this.apply(() => renameMenuItem(this.items, index, name))
@@ -308,7 +308,7 @@ export default {
 		 * @param {number} delta The direction.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-the-portals-menu-from-the-portal-req-pie-011
+		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-the-portals-menu-from-the-portal-req-pie-011
 		 */
 		move(index, delta) {
 			this.apply(() => moveMenuItem(this.items, index, delta))
@@ -318,7 +318,7 @@ export default {
 		 * @param {number} index The item.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-the-portals-menu-from-the-portal-req-pie-011
+		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-the-portals-menu-from-the-portal-req-pie-011
 		 */
 		remove(index) {
 			this.apply(() => removeMenuItem(this.items, index))
@@ -329,7 +329,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when saved or refused.
 		 *
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-the-portals-menu-from-the-portal-req-pie-011
+		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-the-portals-menu-from-the-portal-req-pie-011
 		 */
 		async save() {
 			if (!this.menu) {
@@ -362,7 +362,7 @@ export default {
 		 * @param {object} error The error.
 		 * @return {string} The message.
 		 *
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-the-portals-menu-from-the-portal-req-pie-011
+		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-the-portals-menu-from-the-portal-req-pie-011
 		 */
 		messageFor(error) {
 			if (isConflict(error)) {

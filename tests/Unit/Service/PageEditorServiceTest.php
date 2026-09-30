@@ -363,7 +363,7 @@ class PageEditorServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-writes-to-the-menu-must-be-governed-by-the-editor-groups-req-pie-012
+	 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-writes-to-the-menu-must-be-governed-by-the-editor-groups-req-pie-012
 	 */
 	public function testTheEditorGroupsAlsoWriteTheMenu(): void {
 		$this->service(isAdmin: true)->setEditorGroups(['redactie']);

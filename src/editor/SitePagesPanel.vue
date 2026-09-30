@@ -9,7 +9,7 @@
   and deletes a page that was never published. The route is never changed by
   any of these: it is the page's address.
 
-  @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
+  @spec openspec/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
 -->
 <template>
 	<section
@@ -256,7 +256,7 @@ export default {
 		 *
 		 * @return {Array<object>} The rows.
 		 *
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
+		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
 		 */
 		rows() {
 			return flattenPageTree(buildPageTree(this.pages))
@@ -278,7 +278,7 @@ export default {
 		 * @param {object} vars The placeholders.
 		 * @return {string} The translation.
 		 *
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
+		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
 		 */
 		t(app, text, vars) {
 			return translate(app, text, vars)
@@ -289,7 +289,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when read.
 		 *
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
+		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
 		 */
 		async load() {
 			this.loading = true
@@ -309,7 +309,7 @@ export default {
 		 * @param {string} notice The message on success.
 		 * @return {Promise<void>} Resolves when done.
 		 *
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
+		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
 		 */
 		async run(write, notice) {
 			this.busy = true
@@ -338,7 +338,7 @@ export default {
 		 * @param {object} error The error.
 		 * @return {string} The message.
 		 *
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
+		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
 		 */
 		messageFor(error) {
 			if (isConflict(error)) {
@@ -364,7 +364,7 @@ export default {
 		 * @param {object} page The page.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
+		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
 		 */
 		startRename(page) {
 			this.moving = ''
@@ -376,7 +376,7 @@ export default {
 		 * @param {object} page The page.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
+		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
 		 */
 		startMove(page) {
 			this.renaming = ''
@@ -389,7 +389,7 @@ export default {
 		 * @param {object} page The page.
 		 * @return {Promise<void>} Resolves when renamed.
 		 *
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
+		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
 		 */
 		rename(page) {
 			return this.run(
@@ -408,7 +408,7 @@ export default {
 		 * @param {object} page The page.
 		 * @return {Promise<void>} Resolves when moved.
 		 *
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
+		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
 		 */
 		move(page) {
 			return this.run(
@@ -433,7 +433,7 @@ export default {
 		 * @param {object} page The page.
 		 * @return {Promise<void>} Resolves when deleted.
 		 *
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
+		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
 		 */
 		async remove(page) {
 			if (!canDeletePage(page)) {
@@ -457,7 +457,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when created.
 		 *
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
+		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
 		 */
 		async create() {
 			await this.run(

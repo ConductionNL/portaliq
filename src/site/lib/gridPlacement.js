@@ -67,7 +67,7 @@ export function runsFor(widgets, isBand) {
  * @return {object} `{gridColumn, gridRow}` style bindings.
  *
  * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-hero-must-cap-its-calls-to-action-and-keep-one-outline-entry-req-ptb-006
- * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-the-editor-and-the-public-page-must-place-widgets-identically-req-pie-008
+ * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-the-editor-and-the-public-page-must-place-widgets-identically-req-pie-008
  */
 export function cellStyle(widget, rowOffset = 0) {
 	// The column, width and height come from the SAME function the editor

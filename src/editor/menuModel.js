@@ -8,7 +8,7 @@
  * every change, so the stored order always equals what the editor sees. A
  * sub-menu (`items` of an item) travels with its item unchanged.
  *
- * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-the-portals-menu-from-the-portal-req-pie-011
+ * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-the-portals-menu-from-the-portal-req-pie-011
  */
 
 import { withoutEnvelope } from './pageBody.js'
@@ -31,7 +31,7 @@ function renumber(items) {
  *
  * @param {Array<object>} items The items as stored.
  * @return {Array<object>} The items sorted by `order`.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-the-portals-menu-from-the-portal-req-pie-011
+ * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-the-portals-menu-from-the-portal-req-pie-011
  */
 export function sortedMenuItems(items) {
 	return renumber(
@@ -48,7 +48,7 @@ export function sortedMenuItems(items) {
  * @param {{name: string, link: string}} item The new item.
  * @return {Array<object>} The items.
  * @throws {Error} When the name is empty.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-the-portals-menu-from-the-portal-req-pie-011
+ * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-the-portals-menu-from-the-portal-req-pie-011
  */
 export function addMenuItem(items, { name, link }) {
 	const label = String(name || '').trim()
@@ -68,7 +68,7 @@ export function addMenuItem(items, { name, link }) {
  * @param {number} index The item.
  * @param {string} name The new name.
  * @return {Array<object>} The items.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-the-portals-menu-from-the-portal-req-pie-011
+ * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-the-portals-menu-from-the-portal-req-pie-011
  */
 export function renameMenuItem(items, index, name) {
 	const label = String(name || '').trim()
@@ -87,7 +87,7 @@ export function renameMenuItem(items, index, name) {
  * @param {number} index The item.
  * @param {number} delta The direction.
  * @return {Array<object>} The items.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-the-portals-menu-from-the-portal-req-pie-011
+ * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-the-portals-menu-from-the-portal-req-pie-011
  */
 export function moveMenuItem(items, index, delta) {
 	const target = index + delta
@@ -106,7 +106,7 @@ export function moveMenuItem(items, index, delta) {
  * @param {Array<object>} items The items.
  * @param {number} index The item.
  * @return {Array<object>} The items.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-the-portals-menu-from-the-portal-req-pie-011
+ * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-the-portals-menu-from-the-portal-req-pie-011
  */
 export function removeMenuItem(items, index) {
 	return renumber(items.filter((_item, i) => i !== index))
@@ -118,7 +118,7 @@ export function removeMenuItem(items, index) {
  * @param {object} menu The menu as read.
  * @param {Array<object>} items The items.
  * @return {object} The menu to store.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-the-portals-menu-from-the-portal-req-pie-011
+ * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-the-portals-menu-from-the-portal-req-pie-011
  */
 export function menuPayload(menu, items) {
 	const payload = withoutEnvelope(menu)
