@@ -1221,7 +1221,7 @@
 			"id": "id-staff-invite",
 			"area": "identity",
 			"name": "Let staff invite an e-mail address into the portal, with the invitation's state visible and an expiry.",
-			"portaliq": "no",
+			"portaliq": "yes",
 			"open-inwoner": "partial",
 			"nl-portal": "no",
 			"xxllnc-pip": "yes",
@@ -1235,12 +1235,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/users-and-permissions/accounts/account-users: staff invite e-mail addresses into an account with chosen account roles ('Liferay sends an invitation to the included email addresses'). A visible invitation state and an expiry are not described. [was unknown]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "lib/Controller/PortalAccountAdminController.php (not shown here, invite()/invitations()); appinfo/routes.php:52-53 POST/GET /api/invitations; register schema 'Portal Invitation' at lib/Settings/portaliq_register.json:4901",
-				"reachedOn": "nothing reaches it: grep for 'invit' across src/ finds no admin-app caller and manifest.json has no page for the portalInvitation schema",
+				"state": "built",
+				"evidence": "src/dialogs/InviteDialog.vue via the 'Invite someone' handler (src/lib/staffAccountActions.js invite -> POST /api/invitations, answer carries the expiry, never the link); manifest page Invitations over portalInvitation with 'Withdraw invitation' (POST /api/invitations/{id}/revoke, PortalInvitationService::revoke refuses an accepted one); tests/staff-account-screens.spec.mjs, PortalInvitationServiceTest, tests/e2e/identity-staff-account-screens.spec.ts",
+				"reachedOn": "admin app: Accounts and Invitations pages, 'Invite someone'; Invitations row action 'Withdraw invitation'",
 				"owner": "ConductionNL/portaliq",
-				"note": "No manifest page exists for portalInvitation at all (unlike portalAccount and portalSession, which at least have generic OR index/detail pages), so staff cannot even browse invitations generically, let alone send one. Specified in openspec/changes/identity-staff-account-screens (OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"note": "Built 2026-09-30 (identity-staff-account-screens). The invitee's acceptance screen is identity-ways-in-screens T06.",
+				"origin": "code",
+				"change": "2026-09-30-identity-staff-account-screens"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1251,7 +1252,7 @@
 			"id": "id-staff-provision-desk",
 			"area": "identity",
 			"name": "Let staff issue a portal account at the desk for someone who cannot use a national login.",
-			"portaliq": "partial",
+			"portaliq": "yes",
 			"open-inwoner": "yes",
 			"nl-portal": "no",
 			"xxllnc-pip": "yes",
@@ -1265,12 +1266,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/users-and-permissions/users/adding-and-managing-users: administrators add users in Control Panel → Users and Organizations and can create an account for any person; generic admin provisioning, not tied to a national login. [was unknown]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "lib/Controller/PortalAccountAdminController.php:83-124 provision(), gated by ActionAuthService action portal.provision; appinfo/routes.php:57",
-				"reachedOn": "the dedicated endpoint (/api/accounts/provision) is reached by nothing in src/; PortalAccounts index (src/manifest.json:531-552) is a generic OpenRegister create/edit page for the same portalAccount schema with no allowCreate:false, so staff CAN create a raw portalAccount object there instead",
+				"state": "built",
+				"evidence": "src/dialogs/IssueAccountDialog.vue via the 'Issue an account' handler (POST /api/accounts/provision; a duplicate identity is refused in the dialog); PortalAccounts showAdd false so the raw object form is gone; tests/staff-account-screens.spec.mjs",
+				"reachedOn": "admin app: Accounts page, actions menu 'Issue an account'",
 				"owner": "ConductionNL/portaliq",
-				"note": "The dedicated, validated provision() action (identity de-duplication, ADR-023 authorization) is unreached; the only working path is the generic OR object-create form, which bypasses that validation. Specified in openspec/changes/identity-staff-account-screens (OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"note": "Built 2026-09-30 (identity-staff-account-screens).",
+				"origin": "code",
+				"change": "2026-09-30-identity-staff-account-screens"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1281,7 +1283,7 @@
 			"id": "id-staff-void",
 			"area": "identity",
 			"name": "Let staff withdraw a portal account that was provisioned by mistake.",
-			"portaliq": "partial",
+			"portaliq": "yes",
 			"open-inwoner": "yes",
 			"nl-portal": "no",
 			"xxllnc-pip": "yes",
@@ -1295,12 +1297,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/users-and-permissions/users/adding-and-managing-users 'Deactivate: Disable the user's account' and 'Removing users is a two-step process' (deactivate, then delete); 'Erase Personal Data' is also offered. [was unknown]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "lib/Controller/PortalAccountAdminController.php void() method (self::ACTION_PROVISION-gated, same file as provision()); appinfo/routes.php:58",
-				"reachedOn": "the dedicated /api/accounts/void endpoint is unreached; the generic OR PortalAccountDetail page (src/manifest.json:566ff) exposes the record's own status lifecycle (active/suspended per the note at manifest.json:566) which a clerk could use instead, and the generic index/detail page's own delete action",
+				"state": "built",
+				"evidence": "src/widgets/PortalAccountWithdraw.vue on PortalAccountDetail: 'Withdraw this account' only on status pending, reason from src/dialogs/VoidAccountDialog.vue, POST /api/accounts/void; tests/staff-account-screens.spec.mjs",
+				"reachedOn": "admin app: an account's own page, 'Withdraw this account' widget",
 				"owner": "ConductionNL/portaliq",
-				"note": "Same pattern as id-staff-provision-desk: a purpose-built, audited action exists but is unreached, while a cruder generic path stands in for it. Specified in openspec/changes/identity-staff-account-screens (OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"note": "Built 2026-09-30 (identity-staff-account-screens). A widget, not a header action: see the archived design's As built.",
+				"origin": "code",
+				"change": "2026-09-30-identity-staff-account-screens"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1435,7 +1438,7 @@
 			"id": "id-registration-policy",
 			"area": "identity",
 			"name": "Turn self-registration off, or require approval or activation, per organisation, with an allowed e-mail domain list.",
-			"portaliq": "no",
+			"portaliq": "partial",
 			"open-inwoner": "partial",
 			"nl-portal": "no",
 			"xxllnc-pip": "partial",
@@ -1449,12 +1452,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/administration/configuring-liferay/virtual-instances/user-authentication: 'Allow strangers to create accounts?', 'Allow strangers to create accounts with a company email address?' and 'Require strangers to verify their email address?' per virtual instance. No per-organisation policy, no approval step and no allowed-domain list are documented."
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "lib/Service/Identity/PortalRegistrationPolicyService.php (off/approval/activation, allowedDomains[])",
-				"reachedOn": "only consumed by PortalIdentityController::register(), which is itself unreached (see id-self-registration-form)",
+				"state": "built",
+				"evidence": "src/widgets/PortalRegistration.vue on PortalDetail: policy off/approval/activation and allowed domains saved on portal.authentication.registration (src/lib/registrationSettings.js, body validated with Opis in tests/Unit/Settings/RegistrationSavePayloadTest.php), read by PortalRegistrationPolicyService; 'Waiting for approval' with Approve/Refuse (POST /api/accounts/{subjectRef}/approve|refuse)",
+				"reachedOn": "admin app: a portal's page, 'Registration' widget",
 				"owner": "ConductionNL/portaliq",
-				"note": "A real policy engine gating a dead endpoint; no admin UI to set the policy either. Specified in openspec/changes/identity-staff-account-screens (OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"note": "Built 2026-09-30 (identity-staff-account-screens). Partial: the policy is per portal, not per organisation, and the visitor's registration form is identity-ways-in-screens (id-self-registration-form).",
+				"origin": "code",
+				"change": "2026-09-30-identity-staff-account-screens"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",

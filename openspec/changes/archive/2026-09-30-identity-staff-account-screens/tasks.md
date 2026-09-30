@@ -29,4 +29,5 @@
 
 ## Close
 
-- [ ] **T08**: Dutch and English strings; an administrator docs page; `openspec validate identity-staff-account-screens --strict`
+- [x] **T08**: Dutch and English strings; an administrator docs page; `openspec validate identity-staff-account-screens --strict`
+  - Done: 53 strings in l10n/nl.json, en.json, en_US.json (and the built .js); docs/operations/staff-accounts-and-registration.md; `openspec validate identity-staff-account-screens --strict` valid.

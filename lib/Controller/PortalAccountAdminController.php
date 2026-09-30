@@ -178,7 +178,7 @@ class PortalAccountAdminController extends Controller {
 	 *                      Never the secret: that is in the mail only.
 	 *
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
-	 * @spec openspec/changes/identity-staff-account-screens/tasks.md#T01
+	 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-invite-an-address-and-portaliq-mails-it-req-isa-001
 	 */
 	#[NoAdminRequired]
 	public function invite(string $email, string $organisation, string $audience = 'client'): JSONResponse {
@@ -256,7 +256,7 @@ class PortalAccountAdminController extends Controller {
 	 *
 	 * @return JSONResponse `{state: revoked}`, or a refusal.
 	 *
-	 * @spec openspec/changes/identity-staff-account-screens/tasks.md#T02
+	 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-see-and-withdraw-invitations-req-isa-002
 	 */
 	#[NoAdminRequired]
 	public function revokeInvitation(string $id, string $organisation = ''): JSONResponse {
@@ -286,7 +286,7 @@ class PortalAccountAdminController extends Controller {
 	 *
 	 * @return JSONResponse `{status: active}`, or `not_pending`.
 	 *
-	 * @spec openspec/changes/identity-staff-account-screens/tasks.md#T03
+	 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-set-the-registration-policy-and-approve-registrations-req-isa-004
 	 */
 	#[NoAdminRequired]
 	public function approve(string $subjectRef): JSONResponse {
@@ -316,7 +316,7 @@ class PortalAccountAdminController extends Controller {
 	 *
 	 * @return JSONResponse `{status: void}`, or a refusal.
 	 *
-	 * @spec openspec/changes/identity-staff-account-screens/tasks.md#T03
+	 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-set-the-registration-policy-and-approve-registrations-req-isa-004
 	 */
 	#[NoAdminRequired]
 	public function refuse(string $subjectRef, string $reason = ''): JSONResponse {
