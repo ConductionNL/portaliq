@@ -645,7 +645,8 @@ class ContributionController extends Controller implements PortalProtected {
 			contributingApp: $match['app'],
 			via: ($collection['via'] ?? null),
 			audience: (string)($subject['audience'] ?? ''),
-			fields: ($collection['fields'] ?? null)
+			fields: ($collection['fields'] ?? null),
+			filter: (array)($collection['filter'] ?? [])
 		);
 
 		// Null = not the subject's OR does not exist — a single 404, no oracle.
