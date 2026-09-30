@@ -707,6 +707,198 @@ class SessionControllerTest extends TestCase {
 	}//end testOidcCallbackMintsASessionAndRedirectsWithTheBearerInTheFragment()
 
 	/**
+	 * REQ-SIS-001: the session answer says when it ends.
+	 *
+	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T02
+	 */
+	public function testIndexReportsExpiry(): void {
+		$session = $this->createMock(PortalSessionService::class);
+		$session->method('resolveFromBearer')->willReturn(self::SUBJECT);
+		$session->method('sessionTimes')->willReturn(['expiresAt' => 1900, 'hardExpiresAt' => 29800, 'idleTimeout' => 900]);
+
+		$data = $this->controller(session: $session)->index()->getData();
+
+		$this->assertSame(1900, $data['expiresAt']);
+		$this->assertSame(29800, $data['hardExpiresAt']);
+		$this->assertSame(900, $data['idleTimeout']);
+
+	}//end testIndexReportsExpiry()
+
+	/**
+	 * REQ-SIS-001: the refresh answer says when the rotated session ends.
+	 *
+	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T02
+	 */
+	public function testRefreshReportsExpiry(): void {
+		$session = $this->createMock(PortalSessionService::class);
+		$session->method('refreshSession')->willReturn(['token' => 'new.signed.jwt', 'jti' => 'jti-2', 'expiresAt' => 2800, 'hardExpiresAt' => 29800, 'idleTimeout' => 900]);
+
+		$data = $this->controller(session: $session)->refresh()->getData();
+
+		$this->assertSame('new.signed.jwt', $data['token']);
+		$this->assertSame(2800, $data['expiresAt']);
+		$this->assertSame(29800, $data['hardExpiresAt']);
+		$this->assertSame(900, $data['idleTimeout']);
+		$this->assertArrayNotHasKey('jti', $data);
+
+	}//end testRefreshReportsExpiry()
+
+	/**
+	 * REQ-SIS-005: `silent=1` records the flag on the state row and asks the
+	 * broker for no prompt; without it neither happens.
+	 *
+	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T07
+	 */
+	public function testSilentStartRecordsTheFlag(): void {
+		foreach (['1' => [true, 'none'], '' => [false, '']] as $silent => [$flag, $prompt]) {
+			$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
+			$orgConfig->method('isLoginProviderAllowed')->willReturn(true);
+			$orgConfig->method('resolveOidcConfig')->willReturn($this->oidcConfigFixture());
+
+			$oidc = $this->createMock(OidcClientService::class);
+			$oidc->method('discover')->willReturn($this->discoveryFixture());
+			$oidc->method('generateToken')->willReturnOnConsecutiveCalls('state-1', 'nonce-1');
+			$oidc->method('generatePkce')->willReturn(['verifier' => 'verifier-1', 'challenge' => 'challenge-1']);
+			$oidc->expects($this->once())->method('buildAuthorizationUrl')
+				->with($this->anything(), $this->anything(), $this->anything(), $this->anything(), $this->anything(), $this->anything(), $this->anything(), $prompt)
+				->willReturn('https://broker.example/authorize?state=state-1');
+
+			$stateStore = $this->createMock(OidcStateStoreService::class);
+			$stateStore->expects($this->once())->method('create')
+				->with('state-1', 'nonce-1', 'verifier-1', 'gemeente-x', 'digid', $this->anything(), $flag)
+				->willReturn(true);
+
+			$response = $this->controller(session: $this->createMock(PortalSessionService::class), orgConfig: $orgConfig, oidc: $oidc, stateStore: $stateStore)
+				->oidcStart(org: 'gemeente-x', provider: 'digid', silent: (string)$silent);
+
+			$this->assertSame(Http::STATUS_FOUND, $response->getStatus());
+		}
+
+	}//end testSilentStartRecordsTheFlag()
+
+	/**
+	 * REQ-SIS-005: a silent attempt the broker answers with "the resident must
+	 * interact" lands on the portal's login screen, with no error and no token.
+	 *
+	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T08
+	 */
+	public function testSilentLoginRequiredLandsQuietly(): void {
+		foreach (['login_required', 'interaction_required', 'consent_required', 'account_selection_required'] as $error) {
+			$stateStore = $this->createMock(OidcStateStoreService::class);
+			$stateStore->expects($this->once())->method('consume')->with('s')->willReturn(['silent' => true] + $this->pendingFixture());
+
+			$urlGenerator = $this->createMock(IURLGenerator::class);
+			$urlGenerator->method('getAbsoluteURL')->willReturnCallback(fn (string $url) => 'https://portal.example' . $url);
+
+			$session = $this->createMock(PortalSessionService::class);
+			$session->expects($this->never())->method('issueSession');
+
+			$response = $this->controller(session: $session, stateStore: $stateStore, urlGenerator: $urlGenerator)
+				->oidcCallback(state: 's', code: '', error: $error);
+
+			$this->assertSame(Http::STATUS_FOUND, $response->getStatus(), $error);
+			$this->assertSame('https://portal.example/portal', $response->getRedirectURL(), $error);
+		}
+
+	}//end testSilentLoginRequiredLandsQuietly()
+
+	/**
+	 * REQ-SIS-005: every other broker error, and any error on a row that was
+	 * not silent, keeps the one generic failure.
+	 *
+	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T08
+	 */
+	public function testNonSilentErrorKeepsTheGenericFailure(): void {
+		$cases = [
+			['login_required', $this->pendingFixture()],
+			['access_denied', ['silent' => true] + $this->pendingFixture()],
+			['login_required', null],
+		];
+		foreach ($cases as [$error, $row]) {
+			$stateStore = $this->createMock(OidcStateStoreService::class);
+			$stateStore->method('consume')->willReturn($row);
+
+			$response = $this->controller(session: $this->createMock(PortalSessionService::class), stateStore: $stateStore)
+				->oidcCallback(state: 's', code: '', error: $error);
+
+			$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus(), $error);
+			$this->assertSame(['error' => 'oidc_failed'], $response->getData());
+		}
+
+	}//end testNonSilentErrorKeepsTheGenericFailure()
+
+	/**
+	 * REQ-SIS-006: signing out of an OIDC-minted session also answers the
+	 * broker's logout address, with client_id and post_logout_redirect_uri.
+	 *
+	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T10
+	 */
+	public function testLogoutReturnsTheBrokerLogoutUrl(): void {
+		$session = $this->createMock(PortalSessionService::class);
+		$session->method('resolveFromBearer')->willReturn(['organisation' => 'gemeente-x', 'provider' => 'digid'] + self::SUBJECT);
+		$session->expects($this->once())->method('revoke')->with('jti-1');
+
+		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
+		$orgConfig->expects($this->once())->method('resolveOidcConfig')->with('gemeente-x', 'digid')->willReturn($this->oidcConfigFixture());
+
+		$oidc = $this->createMock(OidcClientService::class);
+		$oidc->method('discover')->willReturn(['end_session_endpoint' => 'https://broker.example/logout'] + $this->discoveryFixture());
+
+		$urlGenerator = $this->createMock(IURLGenerator::class);
+		$urlGenerator->method('linkToRoute')->willReturn('/apps/portaliq/portal');
+		$urlGenerator->method('getAbsoluteURL')->willReturnCallback(fn (string $url) => 'https://portal.example' . $url);
+
+		$data = $this->controller(session: $session, orgConfig: $orgConfig, oidc: $oidc, urlGenerator: $urlGenerator)->logout()->getData();
+
+		$this->assertTrue($data['ok']);
+		$this->assertSame(
+			'https://broker.example/logout?client_id=rp-client-1&post_logout_redirect_uri=' . rawurlencode('https://portal.example/apps/portaliq/portal'),
+			$data['logoutUrl']
+		);
+
+	}//end testLogoutReturnsTheBrokerLogoutUrl()
+
+	/**
+	 * REQ-SIS-006: a broker that announces no end_session_endpoint gives no logoutUrl.
+	 *
+	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T10
+	 */
+	public function testLogoutWithoutEndSessionReturnsNone(): void {
+		$session = $this->createMock(PortalSessionService::class);
+		$session->method('resolveFromBearer')->willReturn(['organisation' => 'gemeente-x', 'provider' => 'digid'] + self::SUBJECT);
+
+		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
+		$orgConfig->method('resolveOidcConfig')->willReturn($this->oidcConfigFixture());
+
+		$oidc = $this->createMock(OidcClientService::class);
+		$oidc->method('discover')->willReturn(['end_session_endpoint' => ''] + $this->discoveryFixture());
+
+		$data = $this->controller(session: $session, orgConfig: $orgConfig, oidc: $oidc)->logout()->getData();
+
+		$this->assertSame(['ok' => true], $data);
+
+	}//end testLogoutWithoutEndSessionReturnsNone()
+
+	/**
+	 * REQ-SIS-006: a session without a provider (dev-login, the Nextcloud
+	 * mode, integriq's broker route) never looks up a broker on sign-out.
+	 *
+	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T10
+	 */
+	public function testDevLoginSessionHasNoProvider(): void {
+		$session = $this->createMock(PortalSessionService::class);
+		$session->method('resolveFromBearer')->willReturn(['provider' => ''] + self::SUBJECT);
+
+		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
+		$orgConfig->expects($this->never())->method('resolveOidcConfig');
+
+		$data = $this->controller(session: $session, orgConfig: $orgConfig)->logout()->getData();
+
+		$this->assertSame(['ok' => true], $data);
+
+	}//end testDevLoginSessionHasNoProvider()
+
+	/**
 	 * @return array<string, mixed>
 	 */
 	public function oidcConfigFixture(): array {

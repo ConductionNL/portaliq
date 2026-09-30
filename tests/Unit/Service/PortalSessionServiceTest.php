@@ -605,6 +605,106 @@ class PortalSessionServiceTest extends TestCase {
 	}//end testAMalformedBranchIsNeverSigned()
 
 	/**
+	 * REQ-SIS-001: a new bearer lives one idle window (default 900 s), not two hours.
+	 *
+	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T01
+	 */
+	public function testBearerLivesOneIdleWindow(): void {
+		$issued = $this->service()->issueSession(subjectRef: 's1', audience: 'client', organisation: 'org-1');
+
+		$claims = (new PortalJwtService(self::SECRET))->validate($issued['token']);
+		$this->assertSame(900, ((int)$claims['exp'] - (int)$claims['iat']));
+
+		$issued = $this->service(idleTimeout: '1200')->issueSession(subjectRef: 's1', audience: 'client', organisation: 'org-1');
+		$claims = (new PortalJwtService(self::SECRET))->validate($issued['token']);
+		$this->assertSame(1200, ((int)$claims['exp'] - (int)$claims['iat']));
+
+	}//end testBearerLivesOneIdleWindow()
+
+	/**
+	 * REQ-SIS-001: the idle window is clamped to 300 through 3600 seconds, and
+	 * a value that is not a number falls back to the default.
+	 *
+	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T01
+	 */
+	public function testIdleTimeoutIsClamped(): void {
+		foreach (['60' => 300, '99999' => 3600, 'soon' => 900, '0' => 900, '-5' => 900] as $configured => $expected) {
+			$issued = $this->service(idleTimeout: (string)$configured)->issueSession(subjectRef: 's1', audience: 'client', organisation: 'org-1');
+			$claims = (new PortalJwtService(self::SECRET))->validate($issued['token']);
+			$this->assertSame($expected, ((int)$claims['exp'] - (int)$claims['iat']), "configured '{$configured}'");
+		}
+
+	}//end testIdleTimeoutIsClamped()
+
+	/**
+	 * REQ-SIS-001: a rotated bearer lives one idle window too, and the answer
+	 * reports when the session ends; the absolute cap still refuses a refresh.
+	 *
+	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T01
+	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T02
+	 */
+	public function testRefreshPastTheCapIsStillRefused(): void {
+		$store = [];
+		$service = $this->service(store: $store, maxLifetime: 3600, idleTimeout: '600');
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'client', organisation: 'org-1');
+
+		$rotated = $service->refreshSession('Bearer ' . $issued['token']);
+		$this->assertNotNull($rotated);
+		$claims = (new PortalJwtService(self::SECRET))->validate($rotated['token']);
+		$this->assertSame(600, ((int)$claims['exp'] - (int)$claims['iat']));
+		$this->assertSame((int)$claims['exp'], $rotated['expiresAt']);
+		$this->assertSame(((int)$claims['authTime'] + 3600), $rotated['hardExpiresAt']);
+		$this->assertSame(600, $rotated['idleTimeout']);
+
+		// A bearer whose origin login is past the cap is refused, whatever the window.
+		$old = (new PortalJwtService(self::SECRET))->createSession(subjectRef: 's1', audience: 'client', organisation: 'org-1', jti: 'jti-old', authTime: (time() - 3601));
+		$store['uuid-old'] = ['jti' => 'jti-old', 'revoked' => false, 'uuid' => 'uuid-old', 'subjectRef' => 's1'];
+		$this->assertNull($service->refreshSession('Bearer ' . $old));
+
+	}//end testRefreshPastTheCapIsStillRefused()
+
+	/**
+	 * REQ-SIS-001: the times a session reports: its bearer's expiry, the
+	 * absolute cap from the origin login, and the idle window.
+	 *
+	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T02
+	 */
+	public function testSessionTimesComeFromTheBearer(): void {
+		$service = $this->service(maxLifetime: 28800);
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'client', organisation: 'org-1');
+		$subject = $service->resolveFromBearer('Bearer ' . $issued['token']);
+		$claims = (new PortalJwtService(self::SECRET))->validate($issued['token']);
+
+		$this->assertSame(
+			['expiresAt' => (int)$claims['exp'], 'hardExpiresAt' => ((int)$claims['authTime'] + 28800), 'idleTimeout' => 900],
+			$service->sessionTimes($subject)
+		);
+
+	}//end testSessionTimesComeFromTheBearer()
+
+	/**
+	 * REQ-SIS-006: an OIDC-minted session carries the provider it came from,
+	 * a refresh keeps it, and a session without one reports ''.
+	 *
+	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T10
+	 */
+	public function testTheBearerCarriesTheProvider(): void {
+		$store = [];
+		$service = $this->service(store: $store);
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'client', organisation: 'org-1', provider: 'digid');
+		$this->assertSame('digid', $service->resolveFromBearer('Bearer ' . $issued['token'])['provider']);
+
+		$rotated = $service->refreshSession('Bearer ' . $issued['token']);
+		$this->assertSame('digid', $service->resolveFromBearer('Bearer ' . $rotated['token'])['provider']);
+
+		$plain = $service->issueSession(subjectRef: 's1', audience: 'client', organisation: 'org-1');
+		$this->assertSame('', $service->resolveFromBearer('Bearer ' . $plain['token'])['provider']);
+		$claims = (new PortalJwtService(self::SECRET))->validate($plain['token']);
+		$this->assertArrayNotHasKey('provider', $claims);
+
+	}//end testTheBearerCarriesTheProvider()
+
+	/**
 	 * Build a service backed by a dedicated (default: valid) signing secret
 	 * and an in-memory fake portalSession store (create/read/update), unless
 	 * $store is null (used for the "no secret configured" refusal tests,
@@ -618,12 +718,15 @@ class PortalSessionServiceTest extends TestCase {
 	 * @param AuditTrailService|null $auditor Override the audit recorder; null uses a permissive mock.
 	 * @param int $maxLifetime Override `session_max_lifetime` (seconds); the default 8h otherwise.
 	 */
-	private function service(?string $secret = self::SECRET, array &$store = [], ?AuditTrailService $auditor = null, int $maxLifetime = 0): PortalSessionService {
+	private function service(?string $secret = self::SECRET, array &$store = [], ?AuditTrailService $auditor = null, int $maxLifetime = 0, ?string $idleTimeout = null): PortalSessionService {
 		$config = $this->createMock(IConfig::class);
 		$config->method('getAppValue')->willReturnCallback(
-			function (string $appId, string $key, string $default = '') use ($secret, $maxLifetime) {
+			function (string $appId, string $key, string $default = '') use ($secret, $maxLifetime, $idleTimeout) {
 				if ($key === 'session_max_lifetime' && $maxLifetime > 0) {
 					return (string)$maxLifetime;
+				}
+				if ($key === 'session_idle_timeout') {
+					return ($idleTimeout ?? $default);
 				}
 				return ($secret ?? '');
 			}
