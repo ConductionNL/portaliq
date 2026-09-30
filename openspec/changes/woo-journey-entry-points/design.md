@@ -15,8 +15,9 @@ Read at portaliq `development` `0e0cfc8d`.
 - `PortalRowActionController::forward()` proves the row through the collection's
   scope (`ownedRow()`), then forwards the collection's own row action with
   `rowField` set to the row id. It only looks in the collection's own contribution.
-- `PortalSelfServiceService::removeAccount()` empties and marks the account. It
-  dispatches nothing.
+- `PortalSelfServiceService::removeAccount()` empties the account and writes
+  `status: removed` through OpenRegister, which raises `ObjectUpdatedEvent`.
+  opencatalogi listens for that (hydra C7); portaliq adds nothing.
 - `PortalRecordChangeListener::onCreated()` returns early for every
   `portaliq/portalMessage` ("dispatched by whoever wrote them"). Another app that
   writes one gets the inbox entry and nothing else.
@@ -73,16 +74,7 @@ In the React portal, `DetailCard` renders each attached action as a button.
 `AttachedActionDialog` shows the action's fields, then calls
 `api.forwardRowAction(collection, rowId, id, body, app)`.
 
-## D4. The account-removed event
-
-`OCA\Portaliq\Event\PortalAccountRemovedEvent` with `getSubjectRef()`,
-`getOrganisation()` and `getRemovedAt()`, name `portal.account.removed`.
-`PortalSelfServiceService::removeAccount()` dispatches it after the write
-succeeded, never before. A listener that throws is caught and logged; the
-removal stands. opencatalogi registers a listener on the class name string, so
-it keeps no hard dependency.
-
-## D5. Delivering another app's notice
+## D4. Delivering another app's notice
 
 `portalMessage` gains an optional `ruleKey` (schema `0.5.0` to `0.6.0`, register
 `0.51.0` to `0.52.0`). `PortalRecordChangeListener::onCreated()` keeps skipping
@@ -91,4 +83,4 @@ written by another app with a `ruleKey` it resolves the account and calls
 `dispatch(ruleKey, app, subject, recordLink)`. The app is the part of the rule
 key before the first dot. `dispatch()` already refuses a key the app does not
 declare, so a message cannot borrow another app's key. Berichtenbox is not
-queued: see the deviation in the proposal.
+queued: not in this journey (hydra #730).

@@ -75,7 +75,7 @@ block's current search object (REQ-WSD-004). Implements hydra
 resident could have found".
 
 #### Scenario: A resident saves a daily search
-- **GIVEN** a signed-in resident who searched "fietspad" in category "woo-verzoeken"
+- **GIVEN** a signed-in resident who searched "fietspad" in category "infocat014"
 - **WHEN** they choose "Bewaar deze zoekopdracht", name it "Fietspaden" and keep "Dagelijks"
-- **THEN** the action receives `{ title: "Fietspaden", frequency: "daily", query: { text: "fietspad", filters: { informatiecategorie: ["woo-verzoeken"], organisation: [], periodFrom: "", periodTo: "" }, catalog: "" } }`
+- **THEN** the action receives `{ title: "Fietspaden", frequency: "daily", query: { text: "fietspad", filters: { informatiecategorie: ["infocat014"], organisation: [], periodFrom: "", periodTo: "" }, catalog: "" } }`
 - test: `tests/woo-entry-points.spec.mjs` ("save search body")

@@ -18,16 +18,17 @@ Read at portaliq `development` `0e0cfc8d`, opencatalogi `development`
   (public). It answers OpenRegister's file envelope:
   `{ results: [{ id, title, type, size, downloadUrl, accessUrl, ... }], total }`,
   shared files only.
-- opencatalogi's `publication` schema names the publishing organisation
-  `organization` (American spelling, a uuid). Contract C6 adds
-  `informatiecategorie` and `period`.
+- opencatalogi's `publication` schema names the information category
+  `wooCategory` (TOOI codes `infocat001` to `infocat017`) and the publishing
+  organisation `organization` (American spelling, a uuid). There is no
+  `informatiecategorie` property (hydra C6 as settled on 30 September).
 - OpenRegister reads `<field>[gte]` and `<field>[lte]` as range filters.
 
 ## D1. Several facet fields, one request
 
 `facetFields` (array prop) replaces the single `facetField`; the old prop stays
 accepted as a one-element list, so existing placements keep working. The
-default is `['informatiecategorie', 'organization']`, each with a heading from
+default is `['wooCategory', 'organization']`, each with a heading from
 `facetLabels`. `buildRequestUrl()` asks one `_facets[<field>][type]=terms` per
 field in the same request, and appends selected values per field. The facet
 column renders one group per field that returned buckets. A field without
@@ -50,7 +51,8 @@ dropped, not sent.
 
 `searchQuery(state)` in `federatedSearch.js` returns
 `{ text, filters: { informatiecategorie: [], organisation: [], periodFrom, periodTo }, catalog }`.
-The facet field `organization` maps to the C2 key `organisation`. `catalog` is
+The facet field `wooCategory` maps to the C2 key `informatiecategorie`, and
+`organization` to `organisation`, the names `GET /api/search` also accepts. `catalog` is
 the block's `catalog` prop, empty by default. The object is pure data, so the
 save action in `woo-journey-entry-points` and a node test share one source.
 

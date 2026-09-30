@@ -15,7 +15,7 @@ hydra `openspec/changes/woo-citizen-journey/journey-map.md`.
 ### Requirement: The search block MUST filter on information category and organisation (REQ-WSD-001)
 
 The public search block SHALL facet on every field in `facetFields`, default
-`informatiecategorie` and `organization`, in the same request as the results.
+`wooCategory` (the information category) and `organization`, in the same request as the results.
 It SHALL render one filter group per field that returned buckets, and SHALL
 send each selected value as `<field>=<value>`. Each field's selection SHALL
 travel in the page address as `f.<field>`. Implements hydra
@@ -23,10 +23,10 @@ travel in the page address as `f.<field>`. Implements hydra
 publication".
 
 #### Scenario: A resident narrows by information category
-- **GIVEN** publications with `informatiecategorie` "woo-verzoeken" and "convenanten"
-- **WHEN** a resident ticks "woo-verzoeken" in the filters
-- **THEN** the request carries `informatiecategorie=woo-verzoeken` and only those publications are listed
-- **AND** the page address carries `f.informatiecategorie=woo-verzoeken`
+- **GIVEN** publications with `wooCategory` "infocat014" and "infocat009"
+- **WHEN** a resident ticks "infocat014" in the filters
+- **THEN** the request carries `wooCategory=infocat014` and only those publications are listed
+- **AND** the page address carries `f.wooCategory=infocat014`
 - test: `tests/federated-search.spec.mjs` ("facets per field")
 
 #### Scenario: A link shared before this change still works
@@ -60,7 +60,7 @@ The block SHALL restore the text, every facet selection and the period from
 the page address, so a link opens the same search.
 
 #### Scenario: A resident shares a filtered search
-- **GIVEN** a search for "fietspad" in category "woo-verzoeken" from 2026-01-01
+- **GIVEN** a search for "fietspad" in category "infocat014" from 2026-01-01
 - **WHEN** another visitor opens the page address
 - **THEN** they see the same text, the same ticked category and the same from date
 - test: `tests/federated-search.spec.mjs` ("address round trip")
@@ -69,14 +69,14 @@ the page address, so a link opens the same search.
 
 The block SHALL describe its current search as
 `{ text, filters: { informatiecategorie, organisation, periodFrom, periodTo }, catalog }`,
-the query shape of contract C2, with the facet field `organization` under the
-key `organisation`. Implements hydra `woo-citizen-journey` "A saved search MUST
+the query shape of contract C2, with the facet field `wooCategory` under the key
+`informatiecategorie` and `organization` under `organisation`. Implements hydra `woo-citizen-journey` "A saved search MUST
 notify only about publications the resident could have found".
 
 #### Scenario: The query matches what was searched
-- **GIVEN** a search for "fietspad" with organisation "org-1" and no period
+- **GIVEN** a search for "fietspad" with category "infocat014", organisation "org-1" and no period
 - **WHEN** the block describes its search
-- **THEN** it returns `{ text: "fietspad", filters: { informatiecategorie: [], organisation: ["org-1"], periodFrom: "", periodTo: "" }, catalog: "" }`
+- **THEN** it returns `{ text: "fietspad", filters: { informatiecategorie: ["infocat014"], organisation: ["org-1"], periodFrom: "", periodTo: "" }, catalog: "" }`
 - test: `tests/federated-search.spec.mjs` ("search query object")
 
 ### Requirement: The publication page MUST list and offer every document for download (REQ-WSD-005)
