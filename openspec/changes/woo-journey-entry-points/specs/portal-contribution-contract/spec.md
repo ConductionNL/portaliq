@@ -6,8 +6,7 @@ status: proposed
 
 ## Purpose
 
-An app offers an action on another app's collection, and portaliq tells other
-apps when a portal account is removed. Journeys J4.1 and J5.1, contract C7 in
+An app offers an action on another app's collection. Journeys J4.1 and J5.1, contract C7 in
 hydra `openspec/changes/woo-citizen-journey/design.md`.
 
 ## ADDED Requirements
@@ -43,24 +42,3 @@ and from pipelinq alike" (the portal half of each).
 - **WHEN** a resident opens their dossier
 - **THEN** "Start een Woo-verzoek" does not show
 - test: PHPUnit `tests/Unit/Contribution/AttachedActionResolverTest.php` ("no declaring app, no attachment")
-
-### Requirement: Removing a portal account MUST raise an event other apps can act on (REQ-WJE-005)
-
-When a resident removes their portal account, portaliq SHALL dispatch
-`OCA\Portaliq\Event\PortalAccountRemovedEvent` with the subject reference,
-organisation and moment, after the account was written, and SHALL NOT let a
-failing listener undo or fail the removal. Implements hydra
-`woo-citizen-journey` "Removing a portal account MUST remove the resident's
-dossiers and saved searches" (the portaliq half).
-
-#### Scenario: A resident removes their account
-- **GIVEN** a resident with a portal account
-- **WHEN** they remove it
-- **THEN** one `PortalAccountRemovedEvent` is dispatched with their subject reference
-- test: PHPUnit `tests/Unit/Service/Identity/PortalSelfServiceServiceTest.php` ("removal dispatches the event")
-
-#### Scenario: A removal that fails raises nothing
-- **GIVEN** an account that is already removed
-- **WHEN** the removal is asked again
-- **THEN** no event is dispatched
-- test: PHPUnit `tests/Unit/Service/Identity/PortalSelfServiceServiceTest.php` ("no event without removal")

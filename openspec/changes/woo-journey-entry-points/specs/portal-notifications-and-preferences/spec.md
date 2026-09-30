@@ -18,7 +18,8 @@ A `portalMessage` MAY carry `ruleKey`. When a `portalMessage` is created outside
 portaliq's own writes with a `ruleKey`, portaliq SHALL dispatch that rule key
 for the app named before its first dot, for the message's subject. The email
 SHALL go only when that app's contribution declares the rule key and the
-resident allows email. The inbox entry SHALL stand in every case. This holds
+resident allows email. The inbox entry SHALL stand in every case. No Berichtenbox send SHALL be
+queued for it (hydra #730: not in this journey). This holds
 for `pipelinq.question.answered`, `dossiq.wooRequest.published` and
 `opencatalogi.savedSearch.matched`. Implements hydra `woo-citizen-journey`
 "Every answer, decision and alert MUST reach the resident through portaliq's

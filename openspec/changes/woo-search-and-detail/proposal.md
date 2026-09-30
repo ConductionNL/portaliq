@@ -25,7 +25,8 @@ documents. Journey J2 of the Woo citizen journey stops there (hydra
   as `{ text, filters: { informatiecategorie[], organisation[], periodFrom,
   periodTo }, catalog }`, the shape opencatalogi stores for a saved search
   (contract C2). `woo-journey-entry-points` sends this object when a resident
-  saves the search.
+  saves the search. The facet field `wooCategory` maps to the query key
+  `informatiecategorie`, `organization` to `organisation` (hydra C6).
 - **The first-load budget holds.** Both blocks already load on demand. The
   visitor's entry stays within 412 KiB (`webpack.site.js`).
 
@@ -40,7 +41,7 @@ documents. Journey J2 of the Woo citizen journey stops there (hydra
 ## Out of scope
 
 - The save buttons and the signed-in state: `woo-journey-entry-points`.
-- The publication properties themselves (`informatiecategorie`, `period`,
-  `publicationKind`): opencatalogi, contract C6.
+- The publication properties themselves (`wooCategory` exists; `period`,
+  `publicationKind` and `caseReference` are new): opencatalogi, contract C6.
 - Faceting on federated peers that do not declare these properties. Their rows
   still appear, without facet counts.
