@@ -66,6 +66,13 @@
 		</p>
 
 		<!--
+			"Bewaar deze zoekopdracht" (woo-journey-entry-points, REQ-WJE-003).
+			Loaded only for a signed-in resident; it shows itself only when the
+			resident's manifest offers the action.
+		-->
+		<SaveSearch v-if="signedIn" :query="savedQuery" />
+
+		<!--
 			THE FACET COLUMN IS ONLY RESERVED WHEN THERE IS ONE.
 
 			A fixed `180px 3fr` grid puts the results into the FIRST track when
@@ -79,7 +86,7 @@
 		-->
 		<div
 			class="pq-search__layout"
-			:class="{ 'pq-search__layout--faceted': facetBuckets.length > 0 }">
+			:class="{ 'pq-search__layout--faceted': hasFilters }">
 			<!--
 				FACETS ARE RENDERED ONLY WHEN THE API RETURNED BUCKETS.
 
@@ -338,34 +345,78 @@
 				facet".
 			-->
 			<aside
-				v-if="facetBuckets.length"
+				v-if="hasFilters"
 				class="pq-search__facets"
 				data-testid="federated-search-facets">
 				<h2 class="utrecht-heading-2">{{ facetLabel }}</h2>
-				<ul class="pq-search__facet-list">
-					<li v-for="bucket in facetBuckets" :key="bucket.value">
-						<label
-							class="utrecht-form-label utrecht-form-label--checkbox">
-							<input
-								type="checkbox"
-								class="utrecht-checkbox"
-								:value="bucket.value"
-								:checked="selectedFacets.includes(bucket.value)"
-								:data-testid="`federated-search-facet-${bucket.value}`"
-								@change="toggleFacet(bucket.value)" />
-							{{ bucket.label }}
-							<span class="pq-search__facet-count"
-								>({{ bucket.count }})</span
-							>
-						</label>
-					</li>
-				</ul>
+				<!--
+					ONE GROUP PER FIELD THAT RETURNED BUCKETS (woo-search-and-detail
+					D1). A fieldset with a legend, so a screen reader hears which
+					filter a checkbox belongs to: two lists of bare checkboxes read
+					as one list of unrelated words.
+				-->
+				<fieldset
+					v-for="group in facetGroups"
+					:key="group.field"
+					class="pq-search__facet-group"
+					:data-testid="`federated-search-facet-group-${group.field}`">
+					<legend class="utrecht-form-label">{{ group.label }}</legend>
+					<ul class="pq-search__facet-list">
+						<li v-for="bucket in group.buckets" :key="bucket.value">
+							<label
+								class="utrecht-form-label utrecht-form-label--checkbox">
+								<input
+									type="checkbox"
+									class="utrecht-checkbox"
+									:value="bucket.value"
+									:checked="isSelected(group.field, bucket.value)"
+									:data-testid="`federated-search-facet-${bucket.value}`"
+									@change="
+										toggleFacet(bucket.value, group.field)
+									" />
+								{{ bucket.label }}
+								<span class="pq-search__facet-count"
+									>({{ bucket.count }})</span
+								>
+							</label>
+						</li>
+					</ul>
+				</fieldset>
+
+				<!-- The period (D2): two dates, sent as a range. -->
+				<fieldset
+					v-if="!hidePeriod"
+					class="pq-search__facet-group"
+					data-testid="federated-search-period">
+					<legend class="utrecht-form-label">{{ periodLabel }}</legend>
+					<label class="utrecht-form-label" for="pq-federated-search-from">
+						{{ periodFromLabel }}
+					</label>
+					<input
+						id="pq-federated-search-from"
+						type="date"
+						class="utrecht-textbox"
+						:value="periodFrom"
+						data-testid="federated-search-period-from"
+						@change="setPeriod('periodFrom', $event.target.value)" />
+					<label class="utrecht-form-label" for="pq-federated-search-to">
+						{{ periodToLabel }}
+					</label>
+					<input
+						id="pq-federated-search-to"
+						type="date"
+						class="utrecht-textbox"
+						:value="periodTo"
+						data-testid="federated-search-period-to"
+						@change="setPeriod('periodTo', $event.target.value)" />
+				</fieldset>
 			</aside>
 		</div>
 	</section>
 </template>
 
 <script>
+import { CnSiteSearch } from '@conduction/nextcloud-vue/public'
 /**
  * Public, federated publication search.
  *
@@ -397,19 +448,25 @@
  *
  * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
  */
-import { CnSiteSearch } from '@conduction/nextcloud-vue/public'
+import { defineAsyncComponent } from 'vue'
 import {
 	buildRequestUrl,
 	pageWindow,
 	paginationItems,
+	readSearchState,
+	searchQuery,
 	toBuckets,
 	toResult,
+	writeSearchState,
 } from '../lib/federatedSearch.js'
 
 export default {
 	name: 'FederatedSearchBlock',
 
-	components: { CnSiteSearch },
+	components: {
+		CnSiteSearch,
+		SaveSearch: defineAsyncComponent(() => import('./SaveSearch.vue')),
+	},
 
 	props: {
 		/**
@@ -537,7 +594,77 @@ export default {
 		 */
 		facetField: {
 			type: String,
-			default: 'themes',
+			default: '',
+		},
+
+		/**
+		 * The fields to facet on, one filter group each (woo-search-and-detail
+		 * D1). A placement that still sets `facetField` gets that one field.
+		 *
+		 * `organization` is spelled the way opencatalogi's `publication`
+		 * schema spells it; the saved-search query calls it `organisation`.
+		 */
+		facetFields: {
+			type: Array,
+			default: () => ['wooCategory', 'organization'],
+		},
+
+		/** A heading per facet field; a field without one shows its name. */
+		facetLabels: {
+			type: Object,
+			default: () => ({
+				wooCategory: 'Informatiecategorie',
+				organization: 'Organisatie',
+				themes: 'Thema',
+			}),
+		},
+
+		/** Leave the period filter (D2) out, for a corpus without dates. */
+		hidePeriod: {
+			type: Boolean,
+			default: false,
+		},
+
+		/**
+		 * The date field the period filters on. `publicationDate`, because
+		 * every publication has it; `period` is newer and optional.
+		 */
+		periodField: {
+			type: String,
+			default: 'publicationDate',
+		},
+
+		/** Legend of the period filter. */
+		periodLabel: {
+			type: String,
+			default: 'Periode',
+		},
+
+		/** Label of the from date. */
+		periodFromLabel: {
+			type: String,
+			default: 'Van',
+		},
+
+		/** Label of the to date. */
+		periodToLabel: {
+			type: String,
+			default: 'Tot',
+		},
+
+		/**
+		 * Whether the page shell holds a portal session. Set by the host
+		 * after the authored props, never by page configuration.
+		 */
+		signedIn: {
+			type: Boolean,
+			default: false,
+		},
+
+		/** The catalog this block searches, carried into a saved search. */
+		catalog: {
+			type: String,
+			default: '',
 		},
 	},
 
@@ -555,9 +682,11 @@ export default {
 			// Empty means "no _order at all", which is the backend's own
 			// default rather than a fifth ordering invented here.
 			sort: '',
-			selectedFacets: [],
+			facets: {},
+			periodFrom: '',
+			periodTo: '',
 			results: [],
-			facetBuckets: [],
+			facetGroups: [],
 			total: 0,
 			// The last term reported to the traffic client, so paging the
 			// same search is not a second search.
@@ -574,6 +703,40 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The facet fields in effect: the old single field when a placement
+		 * sets it, else the list.
+		 *
+		 * @return {Array<string>} Field names.
+		 *
+		 * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-information-category-and-organisation-req-wsd-001
+		 */
+		fields() {
+			return this.facetField ? [this.facetField] : this.facetFields
+		},
+
+		/**
+		 * Whether the filter column has anything to show.
+		 *
+		 * @return {boolean} True with facet buckets or the period filter.
+		 *
+		 * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-a-publication-period-req-wsd-002
+		 */
+		hasFilters() {
+			return this.facetGroups.length > 0 || this.hidePeriod === false
+		},
+
+		/**
+		 * The current search as the saved-search query of contract C2.
+		 *
+		 * @return {object} The query object.
+		 *
+		 * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-block-must-describe-its-search-as-the-saved-search-query-req-wsd-004
+		 */
+		savedQuery() {
+			return searchQuery(this.$data, this.catalog)
+		},
+
 		/**
 		 * The line announced to assistive tech and read by everyone else.
 		 *
@@ -700,17 +863,14 @@ export default {
 		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
 		 */
 		readLocation() {
-			const params = new URLSearchParams(window.location.search)
+			const state = readSearchState(window.location.search, this.fields)
 
-			// `query` alone: the box takes its displayed term from the `value`
-			// prop and watches it, so a back/forward that changes the query
-			// refills the field without this component reaching into it.
-			this.query = params.get('_search') || ''
-			this.page = Math.max(1, parseInt(params.get('_page'), 10) || 1)
-
-			const facets = params.get('_facets')
-			this.selectedFacets = facets ? facets.split(',').filter(Boolean) : []
-			this.sort = params.get('_sort') || ''
+			this.query = state.query
+			this.page = state.page
+			this.sort = state.sort
+			this.facets = state.facets
+			this.periodFrom = state.periodFrom
+			this.periodTo = state.periodTo
 		},
 
 		/**
@@ -726,20 +886,11 @@ export default {
 		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
 		 */
 		writeLocation(push) {
-			const url = new URL(window.location.href)
-
-			const assign = (key, value) => {
-				if (value) {
-					url.searchParams.set(key, value)
-				} else {
-					url.searchParams.delete(key)
-				}
-			}
-
-			assign('_search', this.query)
-			assign('_page', this.page > 1 ? String(this.page) : '')
-			assign('_facets', this.selectedFacets.join(','))
-			assign('_sort', this.sort)
+			const url = writeSearchState(
+				new URL(window.location.href),
+				this.$data,
+				this.fields,
+			)
 
 			if (push === true) {
 				window.history.pushState({}, '', url)
@@ -774,8 +925,11 @@ export default {
 				pageSize: this.pageSize,
 				page: this.page,
 				query: this.query,
-				facetField: this.facetField,
-				selectedFacets: this.selectedFacets,
+				facetFields: this.fields,
+				facets: this.facets,
+				periodField: this.periodField,
+				periodFrom: this.periodFrom,
+				periodTo: this.periodTo,
 				sort: this.sort,
 			})
 		},
@@ -813,7 +967,13 @@ export default {
 				this.results = (body.results || []).map((row) => toResult(row))
 				this.total = body.total || 0
 				this.pages = Math.max(1, body.pages || 1)
-				this.facetBuckets = toBuckets(body.facets, this.facetField)
+				this.facetGroups = this.fields
+					.map((field) => ({
+						field,
+						label: this.facetLabels[field] || field,
+						buckets: toBuckets(body.facets, field),
+					}))
+					.filter((group) => group.buckets.length > 0)
 				this.reportSearch(this.total)
 			} catch {
 				// The reason is deliberately not surfaced to the visitor: this
@@ -829,7 +989,7 @@ export default {
 				this.results = []
 				this.total = 0
 				this.pages = 1
-				this.facetBuckets = []
+				this.facetGroups = []
 			} finally {
 				if (mine === this.sequence) {
 					this.loading = false
@@ -998,19 +1158,49 @@ export default {
 		 * Add or remove a facet value.
 		 *
 		 * @param {string} value The bucket value.
+		 * @param {string} field The facet field, the first one by default.
 		 * @return {void}
 		 *
 		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-facet-buckets-must-be-read-in-both-dialects-the-endpoint-speaks
+		 * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-information-category-and-organisation-req-wsd-001
 		 */
-		toggleFacet(value) {
-			if (this.selectedFacets.includes(value) === true) {
-				this.selectedFacets = this.selectedFacets.filter(
-					(entry) => entry !== value,
-				)
-			} else {
-				this.selectedFacets = [...this.selectedFacets, value]
-			}
+		toggleFacet(value, field = this.fields[0]) {
+			const current = this.facets[field] || []
+			const next =
+				current.includes(value) === true
+					? current.filter((entry) => entry !== value)
+					: [...current, value]
 
+			this.facets = { ...this.facets, [field]: next }
+			this.page = 1
+			this.writeLocation(true)
+			this.search()
+		},
+
+		/**
+		 * Whether a facet value is ticked.
+		 *
+		 * @param {string} field The facet field.
+		 * @param {string} value The bucket value.
+		 * @return {boolean} True when selected.
+		 *
+		 * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-information-category-and-organisation-req-wsd-001
+		 */
+		isSelected(field, value) {
+			return (this.facets[field] || []).includes(value)
+		},
+
+		/**
+		 * Change one end of the period and search again.
+		 *
+		 * @param {string} which `periodFrom` or `periodTo`.
+		 * @param {string} value The date from the input, `YYYY-MM-DD` or ''.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-a-publication-period-req-wsd-002
+		 */
+		setPeriod(which, value) {
+			this[which] = value || ''
 			this.page = 1
 			this.writeLocation(true)
 			this.search()
@@ -1152,6 +1342,20 @@ export default {
 
 .pq-search__facet-count {
 	color: var(--nldesign-color-text-muted, #65757b);
+}
+
+/* A filter group: the fieldset carries the legend for assistive tech and no
+   frame of its own; the groups are separated by space only. */
+.pq-search__facet-group {
+	border: 0;
+	margin: 0 0 16px;
+	padding: 0;
+}
+
+.pq-search__facet-group input[type='date'] {
+	display: block;
+	margin-block-end: 8px;
+	max-inline-size: 100%;
 }
 
 @media (max-width: 768px) {

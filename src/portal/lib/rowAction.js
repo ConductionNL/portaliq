@@ -124,15 +124,40 @@ export function outcomeKey(result) {
 }
 
 /**
+ * The link an action answered with (my-dossiers REQ-MYD-004), for example a
+ * dossier's share link: https or a path on this instance, else ''.
+ *
+ * @param {object} result `{ok, body}` from a forward.
+ * @return {string} The link, or ''.
+ * @spec openspec/changes/my-dossiers/specs/portal-contribution-contract/spec.md#requirement-a-link-in-an-actions-answer-must-be-shown-to-the-resident-req-myd-004
+ */
+export function answerLink(result) {
+	if (
+		!result
+		|| !result.ok
+		|| !result.body
+		|| typeof result.body.link !== 'string'
+	) {
+		return ''
+	}
+	const link = result.body.link.trim()
+	if (/^https:\/\/\S+$/i.test(link) || /^\/(?!\/)\S*$/.test(link)) {
+		return link
+	}
+	return ''
+}
+
+/**
  * Run one endpoint row action for one row and decide what the screen does:
- * go to `redirect`, or show the message `messageKey`. Only the row's id and
- * the action's id are sent; the server stamps the rest.
+ * go to `redirect`, or show the message `messageKey`, and any `link` the
+ * action answered with. Only the row's id and the action's id are sent; the
+ * server stamps the rest.
  *
  * @param {object} api The portal api (forwardRowAction).
  * @param {object} collection The collection the row belongs to.
  * @param {object} row The row.
  * @param {object} action The endpoint row action.
- * @return {Promise<{redirect: string|null, messageKey: string}>}
+ * @return {Promise<{redirect: string|null, messageKey: string, link: string}>}
  */
 export async function runRowAction(api, collection, row, action) {
 	const rowId = row && (row.id || row['@self']?.id)
@@ -144,7 +169,14 @@ export async function runRowAction(api, collection, row, action) {
 	}
 	const result = await api.forwardRowAction(collection, rowId, action.id)
 	const redirect = redirectTarget(result)
-	return { redirect, messageKey: redirect ? '' : outcomeKey(result) }
+	const link = answerLink(result)
+	// `link` only when the action answered one, so every other outcome keeps
+	// its shape.
+	return {
+		redirect,
+		messageKey: redirect ? '' : outcomeKey(result),
+		...(link ? { link } : {}),
+	}
 }
 
 /**

@@ -1918,6 +1918,7 @@
         "The form binding behind \"Report an error in these details\".": "De formulierkoppeling achter \"Een fout in deze gegevens melden\".",
         "Address investigation form": "Formulier voor adresonderzoek",
         "The form binding behind \"Something wrong at this address?\", shown to residents only.": "De formulierkoppeling achter \"Klopt er iets niet op dit adres?\", alleen getoond aan inwoners.",
+        "The rule key of the app that wrote this message. Portaliq also sends the email when that app declares the key.": "De regelsleutel van de app die dit bericht schreef. Portaliq stuurt dan ook de e-mail, als die app de sleutel opgeeft.",
         "Contact addresses": "Contactadressen",
         "The e-mail addresses and phone numbers the owner keeps on the account (identity-profile-page). An e-mail address is used for nothing until it is confirmed; the preferred confirmed e-mail is copied into `email`, the only address notifications go to. A phone number is stored for the organisation to call and is never confirmed.": "De e-mailadressen en telefoonnummers die de eigenaar bij het account bewaart (identity-profile-page). Een e-mailadres wordt pas gebruikt als het is bevestigd; het bevestigde voorkeursadres wordt gekopieerd naar `email`, het enige adres waar meldingen naartoe gaan. Een telefoonnummer bewaren we zodat de organisatie kan bellen; het wordt nooit bevestigd.",
         "Contact channel": "Contactkanaal",

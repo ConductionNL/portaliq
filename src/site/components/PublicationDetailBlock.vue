@@ -24,6 +24,12 @@
 				{{ title }}
 			</h1>
 
+			<!-- "Bewaar in mijn dossier" (woo-journey-entry-points, REQ-WJE-002). -->
+			<SaveToDossier
+				v-if="signedIn"
+				:publication="subjectId"
+				:subject="title" />
+
 			<!--
 				EVERY FIELD, IN THE ORDER THE API RETURNS THEM, matching the
 				reference portal — including the ones that are empty, which it
@@ -88,12 +94,66 @@
 					</dd>
 				</div>
 			</dl>
+
+			<!--
+				THE DOCUMENTS (woo-search-and-detail, REQ-WSD-005). Rendered
+				once the attachment call answered; a failed call leaves the
+				section out rather than putting an error over a publication
+				that loaded fine.
+			-->
+			<section
+				v-if="documents !== null"
+				class="pq-detail__documents"
+				data-testid="publication-documents">
+				<h2 class="utrecht-heading-2">Documenten</h2>
+				<p
+					v-if="documents.length === 0"
+					class="utrecht-paragraph"
+					data-testid="publication-documents-empty">
+					Deze publicatie heeft geen documenten.
+				</p>
+				<ul v-else class="pq-detail__document-list">
+					<li
+						v-for="document in documents"
+						:key="document.id || document.title"
+						data-testid="publication-document">
+						<a
+							v-if="document.href"
+							class="utrecht-link"
+							:href="document.href"
+							download
+							rel="noopener noreferrer">
+							{{ document.title }}
+						</a>
+						<span v-else>{{ document.title }}</span>
+						<span
+							v-if="document.type || document.size"
+							class="pq-detail__document-meta">
+							({{
+								[document.type, document.size]
+									.filter(Boolean)
+									.join(', ')
+							}})
+						</span>
+						<SaveToDossier
+							v-if="signedIn && document.id"
+							:publication="subjectId"
+							:attachment="document.id"
+							:subject="document.title" />
+					</li>
+				</ul>
+			</section>
 		</article>
 	</section>
 </template>
 
 <script>
-import { detailFields, humaniseLabel } from '../lib/publicationDetail.js'
+import { defineAsyncComponent } from 'vue'
+import {
+	detailFields,
+	humaniseLabel,
+	toDocuments,
+} from '../lib/publicationDetail.js'
 
 /**
  * One publication, rendered as the reference portal renders it.
@@ -120,6 +180,10 @@ import { detailFields, humaniseLabel } from '../lib/publicationDetail.js'
 export default {
 	name: 'PublicationDetailBlock',
 
+	components: {
+		SaveToDossier: defineAsyncComponent(() => import('./SaveToDossier.vue')),
+	},
+
 	props: {
 		/**
 		 * The publication id, taken from the route by the host renderer.
@@ -129,6 +193,15 @@ export default {
 		subjectId: {
 			type: String,
 			default: '',
+		},
+
+		/**
+		 * Whether the page shell holds a portal session. Set by the host
+		 * after the authored props, never by page configuration.
+		 */
+		signedIn: {
+			type: Boolean,
+			default: false,
 		},
 
 		/**
@@ -144,6 +217,7 @@ export default {
 	data() {
 		return {
 			publication: null,
+			documents: null,
 			loading: true,
 			error: false,
 		}
@@ -252,6 +326,7 @@ export default {
 					this.publication = null
 				} else {
 					this.publication = candidate
+					this.loadDocuments(url.toString())
 				}
 			} catch {
 				// The reason is not surfaced: this runs at a public origin and
@@ -260,6 +335,39 @@ export default {
 				this.publication = null
 			} finally {
 				this.loading = false
+			}
+		},
+
+		/**
+		 * Read the publication's documents (woo-search-and-detail D4).
+		 *
+		 * Separate from the publication on purpose: the documents are a list
+		 * of their own on opencatalogi's side, and a failure here must not
+		 * take the publication down with it. `null` keeps the section out.
+		 *
+		 * @param {string} publicationUrl The publication's own URL.
+		 * @return {Promise<void>} Resolves once `documents` is set.
+		 *
+		 * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-list-and-offer-every-document-for-download-req-wsd-005
+		 */
+		async loadDocuments(publicationUrl) {
+			const asked = this.subjectId
+			this.documents = null
+
+			try {
+				const response = await fetch(`${publicationUrl}/attachments`, {
+					headers: { Accept: 'application/json' },
+				})
+				if (response.ok === false) {
+					return
+				}
+
+				const body = await response.json()
+				if (asked === this.subjectId) {
+					this.documents = toDocuments(body)
+				}
+			} catch {
+				// Left out: see above.
 			}
 		},
 
@@ -326,6 +434,20 @@ export default {
 .pq-detail__group {
 	display: block;
 	padding-inline-start: 20px;
+}
+
+.pq-detail__documents {
+	margin-block-start: 24px;
+}
+
+.pq-detail__document-list {
+	margin: 0;
+	padding-inline-start: 20px;
+}
+
+.pq-detail__document-meta {
+	color: var(--nldesign-color-text-muted, #65757b);
+	margin-inline-start: 4px;
 }
 
 .pq-detail__group-entry > strong {

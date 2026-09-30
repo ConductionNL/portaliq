@@ -312,8 +312,13 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// and `pendingEmailMode` (identity-profile-page T02). Additive; an
 		// account from before reads as channel `portal` with its `email` as
 		// the one preferred address.
-		$this->assertSame('0.53.0', self::$register['info']['version']);
-		$this->assertSame('0.53.0', self::$register['components']['registers']['portaliq']['version']);
+		// 0.54.0 (portalMessage 0.6.0): the optional `ruleKey` of a message
+		// another app writes, so it is also sent by email
+		// (woo-journey-entry-points T07). Additive.
+		$this->assertSame('0.54.0', self::$register['info']['version']);
+		$this->assertSame('0.54.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalMessage']['version']);
+		$this->assertSame('string', self::$register['components']['schemas']['portalMessage']['properties']['ruleKey']['type']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalOidcState']['version']);
 		$this->assertSame('boolean', self::$register['components']['schemas']['portalOidcState']['properties']['silent']['type']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['page']['version']);

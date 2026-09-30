@@ -39,6 +39,8 @@ function goTo(url) {
 export default function RowActionConfirm({ action, collection, row, api, t, onDone, onClose, navigate = goTo }) {
 	const [busy, setBusy] = useState(false)
 	const [message, setMessage] = useState('')
+	// A link the action answered with, e.g. a dossier's share link (my-dossiers REQ-MYD-004).
+	const [link, setLink] = useState('')
 	const headingRef = useRef(null)
 	const notice = rowNotice(collection, row)
 	const label = action.label || action.id
@@ -56,13 +58,14 @@ export default function RowActionConfirm({ action, collection, row, api, t, onDo
 	 */
 	async function onConfirm() {
 		setBusy(true)
-		const { redirect, messageKey } = await runRowAction(api, collection, row, action)
+		const { redirect, messageKey, link: answered } = await runRowAction(api, collection, row, action)
 		if (redirect) {
 			navigate(redirect)
 			return
 		}
 		setBusy(false)
 		setMessage(t(messageKey))
+		setLink(answered || '')
 		if (onDone) {
 			onDone()
 		}
@@ -83,6 +86,13 @@ export default function RowActionConfirm({ action, collection, row, api, t, onDo
 				</button>
 			</div>
 			<p className="portaliq-rowaction-status" role="status">{message}</p>
+			{link !== '' && (
+				<p className="portaliq-rowaction-link">
+					<label htmlFor={`rowaction-link-${action.id}`}>{t('Link')}</label>
+					<input id={`rowaction-link-${action.id}`} type="text" readOnly value={link} data-testid="rowaction-link" onFocus={(event) => event.target.select()} />
+					<button type="button" onClick={() => navigator.clipboard && navigator.clipboard.writeText(link)}>{t('Copy link')}</button>
+				</p>
+			)}
 		</section>
 	)
 }

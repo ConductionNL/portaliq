@@ -395,4 +395,81 @@ class PortalRecordChangeListenerTest extends TestCase {
 		$this->assertCount(1, $this->jobs, 'the message box job without the e-mail rule');
 		$this->assertSame([], $this->dispatched, 'and no e-mail nudge the app did not ask for');
 	}//end testMessageBoxJobOnlyWhenAllowed()
+	/**
+	 * A portalMessage another app wrote, with a rule key.
+	 *
+	 * @param array<string, mixed> $extra Keys to add to the message.
+	 *
+	 * @return ObjectEntity
+	 */
+	private function foreignMessage(array $extra): ObjectEntity {
+		$message = new ObjectEntity();
+		$message->setRegister('1');
+		$message->setSchema('2');
+		$message->setUuid('msg-9');
+		$message->setObject(array_merge(['subjectRef' => 'bsn-1', 'subject' => 'Er is een antwoord op uw vraag'], $extra));
+
+		return $message;
+	}//end foreignMessage()
+
+	/**
+	 * Foreign message with a declared key: the rule key is dispatched for the
+	 * app named before its first dot, with the message's record link, and no
+	 * Berichtenbox job is queued (not in this journey).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-journey-entry-points/specs/portal-notifications-and-preferences/spec.md#requirement-another-apps-notice-with-a-declared-rule-key-must-be-sent-by-email-req-wje-006
+	 */
+	public function testForeignMessageWithADeclaredKey(): void {
+		$link = ['app' => 'pipelinq', 'collection' => 'mijnVragen', 'id' => 'ticket-1'];
+		$message = $this->foreignMessage(['ruleKey' => 'pipelinq.question.answered', 'recordLink' => $link]);
+
+		$this->listener(messageBox: ['offered' => true, 'declared' => true])->handle(new ObjectCreatedEvent($message));
+
+		$this->assertCount(1, $this->dispatched);
+		$this->assertSame('pipelinq.question.answered', $this->dispatched[0]['ruleKey']);
+		$this->assertSame('pipelinq', $this->dispatched[0]['appId']);
+		$this->assertSame('bsn-1', $this->dispatched[0]['subject']['subjectRef']);
+		$this->assertSame($link, $this->dispatched[0]['record']);
+		$this->assertSame([], $this->jobs, 'no Berichtenbox job for a direct message');
+		$this->assertSame([], $this->written, 'the message is not written a second time');
+		$this->assertValidPortalMessage($message->getObject());
+		$register = json_decode((string)file_get_contents(__DIR__.'/../../../lib/Settings/portaliq_register.json'), true);
+		$this->assertSame('string', $register['components']['schemas']['portalMessage']['properties']['ruleKey']['type'], 'the schema declares ruleKey');
+	}//end testForeignMessageWithADeclaredKey()
+
+	/**
+	 * App from the rule key: whatever app the record link names, the dispatch
+	 * is asked for the key's own app, so a message cannot borrow a key.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-journey-entry-points/specs/portal-notifications-and-preferences/spec.md#requirement-another-apps-notice-with-a-declared-rule-key-must-be-sent-by-email-req-wje-006
+	 */
+	public function testAppFromTheRuleKey(): void {
+		$message = $this->foreignMessage(['ruleKey' => 'pipelinq.question.answered', 'recordLink' => ['app' => 'opencatalogi', 'collection' => 'x', 'id' => '1']]);
+
+		$this->listener()->handle(new ObjectCreatedEvent($message));
+
+		$this->assertSame('pipelinq', $this->dispatched[0]['appId'] ?? null);
+	}//end testAppFromTheRuleKey()
+
+	/**
+	 * Own message not dispatched twice: a portalMessage written inside
+	 * portaliq's own write context is skipped, rule key or not; a malformed
+	 * rule key dispatches nothing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-journey-entry-points/specs/portal-notifications-and-preferences/spec.md#requirement-another-apps-notice-with-a-declared-rule-key-must-be-sent-by-email-req-wje-006
+	 */
+	public function testOwnMessageNotDispatchedTwice(): void {
+		$listener = $this->listener();
+		$this->context->run(fn () => $listener->handle(new ObjectCreatedEvent($this->foreignMessage(['ruleKey' => 'pipelinq.question.answered']))));
+		$listener->handle(new ObjectCreatedEvent($this->foreignMessage(['ruleKey' => 'nodot'])));
+		$listener->handle(new ObjectCreatedEvent($this->foreignMessage(['ruleKey' => 'pipelinq.x', 'subjectRef' => 'nobody'])));
+
+		$this->assertSame([], $this->dispatched);
+	}//end testOwnMessageNotDispatchedTwice()
 }//end class
