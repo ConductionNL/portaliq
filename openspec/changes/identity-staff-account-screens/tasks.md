@@ -14,14 +14,18 @@
 
 ## Screens
 
-- [ ] **T04**: `IssueAccountDialog.vue` and hiding the generic add on the Portal accounts index (REQ-ISA-003)
+- [x] **T04**: `IssueAccountDialog.vue` and hiding the generic add on the Portal accounts index (REQ-ISA-003)
   - Verify: Playwright `tests/e2e/identity-staff-account-screens.spec.ts`: issue an account; a duplicate identity is refused with the reason shown
-- [ ] **T05**: `InviteDialog.vue` and the `Invitations` manifest page with "Withdraw invitation" (REQ-ISA-001, REQ-ISA-002)
+  - Done: src/dialogs/IssueAccountDialog.vue submits through src/lib/staffAccountActions.js `issue` (POST /api/accounts/provision; `isNew: false` shows 'An account for this identity already exists, so no second account was made.' in the dialog). PortalAccounts: `showAdd: false`, headerActions `issueAccount` and `inviteSomeone` (src/customComponents.js). tests/staff-account-screens.spec.mjs; e2e written, not run.
+- [x] **T05**: `InviteDialog.vue` and the `Invitations` manifest page with "Withdraw invitation" (REQ-ISA-001, REQ-ISA-002)
   - Verify: Playwright: invite, see it listed as sent with its expiry, withdraw it
-- [ ] **T06**: "Withdraw this account" on a pending account with `VoidAccountDialog.vue` (REQ-ISA-003)
+  - Done: src/dialogs/InviteDialog.vue (answer names the expiry, never the link); manifest page `Invitations` (/invitations, index over portalInvitation, no Add) with row action `withdrawInvitation` (confirm, POST /api/invitations/{id}/revoke with the row organisation, hidden on accepted rows) and menu entry. tests/staff-account-screens.spec.mjs.
+- [x] **T06**: "Withdraw this account" on a pending account with `VoidAccountDialog.vue` (REQ-ISA-003)
   - Verify: Playwright: the action is absent on an active account
-- [ ] **T07**: The Registration tab on `PortalDetail` and the "Waiting for approval" list (REQ-ISA-004)
+  - Done: widget `PortalAccountWithdraw` on PortalAccountDetail (a detail header action cannot open a dialog that knows the record in nc-vue 2.57, so a widget): the button only on `status: pending`, reason from src/dialogs/VoidAccountDialog.vue, POST /api/accounts/void. tests/staff-account-screens.spec.mjs (canWithdrawAccount, voidAccount).
+- [x] **T07**: The Registration tab on `PortalDetail` and the "Waiting for approval" list (REQ-ISA-004)
   - Verify: Playwright: set approval, register as a visitor, approve as staff
+  - Done: widget `PortalRegistration` on PortalDetail (src/lib/registrationSettings.js): policy radios and allowed domains saved on the portal record through OpenRegister (GET then PUT, other authentication keys kept; the body is tests/fixtures/registration-save.json, validated with Opis against the real portal schema in tests/Unit/Settings/RegistrationSavePayloadTest.php); 'Waiting for approval' lists pending self-registrations of the portal's organisation with Approve and Refuse (POST /api/accounts/{subjectRef}/approve|refuse, refusal reason via VoidAccountDialog).
 
 ## Close
 

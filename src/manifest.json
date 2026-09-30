@@ -84,6 +84,13 @@
       "order": 30
     },
     {
+      "id": "InvitationsMenu",
+      "label": "Invitations",
+      "icon": "EmailOutline",
+      "route": "Invitations",
+      "order": 31
+    },
+    {
       "id": "AccessRequestsMenu",
       "label": "Access requests",
       "icon": "AccountKey",
@@ -700,7 +707,78 @@
         "sidebar": {
           "enabled": true,
           "showMetadata": true
-        }
+        },
+        "showAdd": false,
+        "headerActions": [
+          {
+            "id": "issue-account",
+            "label": "Issue an account",
+            "icon": "AccountPlus",
+            "handler": "issueAccount"
+          },
+          {
+            "id": "invite-someone",
+            "label": "Invite someone",
+            "icon": "EmailPlusOutline",
+            "handler": "inviteSomeone"
+          }
+        ],
+        "_note": "identity-staff-account-screens T04: the generic Add is hidden, because a portal account made through the object form skips the identity de-duplication of the provision route. 'Issue an account' and 'Invite someone' are handlers that post PortalAccountAdminController behind portal.provision; see src/lib/staffAccountActions.js."
+      }
+    },
+    {
+      "id": "Invitations",
+      "route": "/invitations",
+      "type": "index",
+      "title": "Invitations",
+      "config": {
+        "register": "portaliq",
+        "schema": "portalInvitation",
+        "_note": "identity-staff-account-screens T05: the invitations staff sent, with their state and expiry. The secret is never on the row (tokenHash only, not a column). 'Withdraw invitation' posts /api/invitations/{id}/revoke behind portal.provision, which refuses an accepted invitation; 'Invite someone' opens InviteDialog. No generic Add: an invitation made through the object form would never be mailed.",
+        "showAdd": false,
+        "columns": [
+          "email",
+          {
+            "key": "state",
+            "label": "State",
+            "widget": "badge",
+            "widgetProps": {
+              "colorMap": {
+                "sent": "info",
+                "opened": "info",
+                "accepted": "success",
+                "expired": "warning",
+                "revoked": "error"
+              }
+            }
+          },
+          "sentAt",
+          "expiresAt",
+          "invitedBy",
+          "organisation"
+        ],
+        "headerActions": [
+          {
+            "id": "invite-someone",
+            "label": "Invite someone",
+            "icon": "EmailPlusOutline",
+            "handler": "inviteSomeone"
+          }
+        ],
+        "actions": [
+          {
+            "id": "withdraw-invitation",
+            "label": "Withdraw invitation",
+            "icon": "Close",
+            "type": "handler",
+            "handler": "withdrawInvitation",
+            "visibleWhen": {
+              "field": "state",
+              "op": "neq",
+              "value": "accepted"
+            }
+          }
+        ]
       }
     },
     {
@@ -722,6 +800,12 @@
             "content": {
               "columns": 2
             }
+          },
+          {
+            "id": "account-withdraw",
+            "type": "PortalAccountWithdraw",
+            "title": "Withdraw this account",
+            "icon": "Account"
           },
           {
             "id": "account-stats-sessions-issued",
@@ -878,10 +962,18 @@
             "gridHeight": 3
           },
           {
+            "id": "account-withdraw",
+            "widgetId": "account-withdraw",
+            "gridX": 0,
+            "gridY": 5,
+            "gridWidth": 12,
+            "gridHeight": 2
+          },
+          {
             "id": "3",
             "widgetId": "account-sessions",
             "gridX": 0,
-            "gridY": 5,
+            "gridY": 7,
             "gridWidth": 12,
             "gridHeight": 4
           },
@@ -889,7 +981,7 @@
             "id": "4",
             "widgetId": "account-messages",
             "gridX": 0,
-            "gridY": 9,
+            "gridY": 11,
             "gridWidth": 12,
             "gridHeight": 4
           },
@@ -897,7 +989,7 @@
             "id": "account-calendar",
             "widgetId": "account-calendar",
             "gridX": 0,
-            "gridY": 13,
+            "gridY": 15,
             "gridWidth": 12,
             "gridHeight": 3
           }
@@ -1514,6 +1606,12 @@
             "title": "Sign-in",
             "icon": "Login",
             "content": {}
+          },
+          {
+            "id": "portal-registration",
+            "type": "PortalRegistration",
+            "title": "Registration",
+            "icon": "AccountPlus"
           }
         ],
         "layout": [
@@ -1604,6 +1702,14 @@
             "gridY": 26,
             "gridWidth": 12,
             "gridHeight": 6
+          },
+          {
+            "id": "portal-registration",
+            "widgetId": "portal-registration",
+            "gridX": 0,
+            "gridY": 32,
+            "gridWidth": 12,
+            "gridHeight": 7
           }
         ],
         "sidebar": {
