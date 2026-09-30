@@ -291,6 +291,16 @@ export default {
 			type: String,
 			default: '',
 		},
+
+		/**
+		 * Whether the shell holds a portal session. Handed to the search and
+		 * publication blocks AFTER their authored props, so a page cannot
+		 * switch the save actions on (woo-journey-entry-points D1).
+		 */
+		signedIn: {
+			type: Boolean,
+			default: false,
+		},
 	},
 
 	// `search` comes from the shared hero block, which renders a search box and
@@ -405,7 +415,20 @@ export default {
 			// must not be overridable from page configuration, or a placement
 			// could pin the page to one publication regardless of its URL.
 			if (widget.widgetKey === 'publicationDetail') {
-				return { ...props, subjectId: this.routeParam }
+				// Inline rather than `withSignedIn()` from residentActions.js:
+				// importing that module here would pull all of it into the
+				// visitor's first-load entry (webpack.site.js budget).
+				return {
+					...props,
+					subjectId: this.routeParam,
+					signedIn: this.signedIn === true,
+				}
+			}
+
+			// The search block learns the signed-in state the same way
+			// (woo-journey-entry-points D1).
+			if (widget.widgetKey === 'federatedSearch') {
+				return { ...props, signedIn: this.signedIn === true }
 			}
 
 			// SAME RULE, FOURTH SUBJECT. Which portal a form's UTM capture is

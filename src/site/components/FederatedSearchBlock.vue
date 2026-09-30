@@ -66,6 +66,13 @@
 		</p>
 
 		<!--
+			"Bewaar deze zoekopdracht" (woo-journey-entry-points, REQ-WJE-003).
+			Loaded only for a signed-in resident; it shows itself only when the
+			resident's manifest offers the action.
+		-->
+		<SaveSearch v-if="signedIn" :query="savedQuery" />
+
+		<!--
 			THE FACET COLUMN IS ONLY RESERVED WHEN THERE IS ONE.
 
 			A fixed `180px 3fr` grid puts the results into the FIRST track when
@@ -409,6 +416,7 @@
 </template>
 
 <script>
+import { CnSiteSearch } from '@conduction/nextcloud-vue/public'
 /**
  * Public, federated publication search.
  *
@@ -440,7 +448,7 @@
  *
  * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
  */
-import { CnSiteSearch } from '@conduction/nextcloud-vue/public'
+import { defineAsyncComponent } from 'vue'
 import {
 	buildRequestUrl,
 	pageWindow,
@@ -455,7 +463,10 @@ import {
 export default {
 	name: 'FederatedSearchBlock',
 
-	components: { CnSiteSearch },
+	components: {
+		CnSiteSearch,
+		SaveSearch: defineAsyncComponent(() => import('./SaveSearch.vue')),
+	},
 
 	props: {
 		/**
@@ -639,6 +650,15 @@ export default {
 		periodToLabel: {
 			type: String,
 			default: 'Tot',
+		},
+
+		/**
+		 * Whether the page shell holds a portal session. Set by the host
+		 * after the authored props, never by page configuration.
+		 */
+		signedIn: {
+			type: Boolean,
+			default: false,
 		},
 
 		/** The catalog this block searches, carried into a saved search. */

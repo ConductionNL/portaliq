@@ -24,6 +24,12 @@
 				{{ title }}
 			</h1>
 
+			<!-- "Bewaar in mijn dossier" (woo-journey-entry-points, REQ-WJE-002). -->
+			<SaveToDossier
+				v-if="signedIn"
+				:publication="subjectId"
+				:subject="title" />
+
 			<!--
 				EVERY FIELD, IN THE ORDER THE API RETURNS THEM, matching the
 				reference portal — including the ones that are empty, which it
@@ -129,6 +135,11 @@
 									.join(', ')
 							}})
 						</span>
+						<SaveToDossier
+							v-if="signedIn && document.id"
+							:publication="subjectId"
+							:attachment="document.id"
+							:subject="document.title" />
 					</li>
 				</ul>
 			</section>
@@ -137,6 +148,7 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue'
 import {
 	detailFields,
 	humaniseLabel,
@@ -168,6 +180,10 @@ import {
 export default {
 	name: 'PublicationDetailBlock',
 
+	components: {
+		SaveToDossier: defineAsyncComponent(() => import('./SaveToDossier.vue')),
+	},
+
 	props: {
 		/**
 		 * The publication id, taken from the route by the host renderer.
@@ -177,6 +193,15 @@ export default {
 		subjectId: {
 			type: String,
 			default: '',
+		},
+
+		/**
+		 * Whether the page shell holds a portal session. Set by the host
+		 * after the authored props, never by page configuration.
+		 */
+		signedIn: {
+			type: Boolean,
+			default: false,
 		},
 
 		/**
