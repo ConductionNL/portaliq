@@ -174,7 +174,9 @@ class PortalSelfServiceServiceTest extends TestCase {
 		$this->assertSame('ar', $service->messageLanguage(subjectRef: 'subject-1'));
 		$this->assertSame(
 			['displayName' => 'Ans de Vries', 'email' => 'oud@example.org', 'emailNotifications' => true, 'messageLanguage' => 'ar'],
-			$service->details(subjectRef: 'subject-1')
+			// identity-profile-page T05 adds the addresses and the channel to
+			// the same read; this test is about the four it always had.
+			array_intersect_key($service->details(subjectRef: 'subject-1'), array_flip(['displayName', 'email', 'emailNotifications', 'messageLanguage']))
 		);
 
 		$this->assertNotNull($service->updateDetails(subjectRef: 'subject-1', messageLanguage: ''));
@@ -212,6 +214,53 @@ class PortalSelfServiceServiceTest extends TestCase {
 		$this->assertSame('', $service->messageLanguage(subjectRef: 'someone-else'));
 
 	}//end testAnUnknownSubjectHasNoDetails()
+
+	/**
+	 * identity-profile-page T05 (REQ-IPP-001): the page's read shows the
+	 * addresses, the masked pending address and the channel, and never the
+	 * identity reference or a claim.
+	 *
+	 * @return void
+	 */
+	public function testTheDetailsShowAddressesAndChannelAndNoIdentity(): void {
+		$this->seedAccount();
+		$service = $this->service();
+		$service->updateDetails(subjectRef: 'subject-1', email: 'nieuw@example.org');
+
+		$details = $service->details(subjectRef: 'subject-1');
+
+		$this->assertSame('portal', $details['contactChannel'], 'an account from before reads as portal only');
+		$this->assertSame('n***@example.org', $details['pendingEmail']);
+		$this->assertSame(
+			[
+				['kind' => 'email', 'value' => 'oud@example.org', 'confirmed' => true, 'preferred' => true],
+				['kind' => 'email', 'value' => 'nieuw@example.org', 'confirmed' => false, 'preferred' => false],
+			],
+			$details['contactAddresses']
+		);
+		$this->assertArrayHasKey('notificationChannels', $details);
+		$this->assertArrayNotHasKey('identityRef', $details);
+		$this->assertArrayNotHasKey('claims', $details);
+		$this->assertStringNotContainsString('bsn-1', (string)json_encode($details));
+
+	}//end testTheDetailsShowAddressesAndChannelAndNoIdentity()
+
+	/**
+	 * identity-profile-page REQ-IPP-006: removal also takes the phone numbers
+	 * and addresses, which are the person's data too.
+	 *
+	 * @return void
+	 */
+	public function testRemovalTakesEveryAddress(): void {
+		$this->seedAccount();
+		$service = $this->service();
+		$service->updateDetails(subjectRef: 'subject-1', email: 'nieuw@example.org');
+
+		$service->removeAccount(subjectRef: 'subject-1');
+
+		$this->assertSame([], $this->account()['contactAddresses']);
+
+	}//end testRemovalTakesEveryAddress()
 
 	/**
 	 * The account row as it now stands.

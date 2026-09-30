@@ -28,7 +28,7 @@ use RuntimeException;
  * builder over a route table double, so a link that would 404 fails here.
  *
  * @spec openspec/changes/identity-ways-in-screens/specs/portal-ways-in/spec.md
- * @spec openspec/changes/identity-profile-page/tasks.md#T01
+ * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T01
  * @spec openspec/changes/identity-staff-account-screens/tasks.md#T01
  */
 class PortalIdentityMailerTest extends TestCase {
