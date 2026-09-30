@@ -94,6 +94,10 @@ class PortalOrganisationConfigService {
 		// Change signin-session-idle-warning-and-sso D5: the provider the portal SPA
 		// tries a silent sign-in with once per browser session, or '' for off.
 		'silentSignIn' => '',
+		// Change portal-signin-on-its-own-address: the organisation the login
+		// buttons start with, and whether the dev login is offered.
+		'signinOrganisation' => '',
+		'devLogin' => false,
 	];
 
 	/**
