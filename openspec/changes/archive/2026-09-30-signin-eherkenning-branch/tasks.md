@@ -16,14 +16,16 @@
 
 ## Choice
 
-- [ ] **T05** (blocked: needs the company's KvK branch list, which `identity-registered-details` T02 reads through OpenRegister's `KvkProvider`; not built yet): `POST /portal/api/session/branch`, refused for a restricted session and for a foreign branch (REQ-SEB-003)
+- [x] **T05**: `POST /portal/api/session/branch`, refused for a restricted session and for a foreign branch (REQ-SEB-003)
   - Verify: PHPUnit controller test with the KvK lookup mocked
+  - As built: `lib/Controller/SessionBranchController.php` (`GET /portal/api/session/branches`, `POST /portal/api/session/branch`), `lib/Service/Branch/BranchChoice.php` over `PortalRegisteredDetailsService::companyBranches()`, `PortalSessionService::rebranchSession()` (a rotation like refresh). Tests: `SessionBranchControllerTest`, `BranchChoiceTest`, `PortalSessionServiceTest` (+3).
 - [x] **T06a**: The branch in effect shown in the header (REQ-SEB-001)
   - Verify: `tests/branch-in-effect.spec.mjs` (`branchInEffect()` in `src/portal/lib/branch.js`, both locales, the header wiring in `App.jsx`)
-- [ ] **T06**: The branches in the header's "Acting for" (REQ-SEB-003). Blocked with T05 on the KvK branch list of `identity-registered-details`.
+- [x] **T06**: The branches in the header's "Acting for" (REQ-SEB-003)
   - Verify: Playwright `tests/e2e/signin-eherkenning-branch.spec.ts` with the OIDC broker stubbed to send a branch claim, and once without
+  - As built: `src/portal/components/BranchSwitcher.jsx` ("Acting for branch", whole company plus each branch by name and address) beside the mandate switcher, shown only to a session the login did not restrict and whose company has two or more branches; a choice stores the new bearer and reloads. `tests/branch-choice.spec.mjs` (6). The e2e drives the endpoints over HTTP (no broker stub on the CI instance).
 
 ## Close
 
 - [x] **T07a**: Dutch and English strings for the header; admin docs `docs/operations/acting-for-one-branch.md`; the dossiq `branchField` half and the integriq envelope half drafted for Ruben (`~/memcap-work/build-all/for-ruben/dossiq-branch-field-on-business-cases.md`, `integriq-broker-envelope-carries-the-branch.md`)
-- [ ] **T07**: strings for the branch choice (with T05/T06); `openspec validate signin-eherkenning-branch --strict`
+- [x] **T07**: strings for the branch choice (with T05/T06); `openspec validate signin-eherkenning-branch --strict`

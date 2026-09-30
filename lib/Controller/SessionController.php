@@ -38,6 +38,7 @@ use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\OidcClaimMapperService;
 use OCA\Portaliq\Service\OidcClientService;
 use OCA\Portaliq\Service\OidcStateStoreService;
+use OCA\Portaliq\Service\Identity\ContactAddressValues;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCA\Portaliq\Service\PortalResolver;
@@ -109,6 +110,60 @@ class SessionController extends Controller {
 	}//end portalReturnTo()
 
 	/**
+	 * Where a login returns: the serving portal's own address when the login
+	 * was started from a portal that exists, so its title and branding
+	 * survive the sign-in; else the plain portal address. Only a resolved
+	 * portal's slug is echoed, never raw input (portal-signin-on-its-own-address).
+	 *
+	 * @param array<string, mixed>|null $site The resolved serving portal, or null.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/portal-signin-on-its-own-address/tasks.md#T3
+	 */
+	private function returnToPortal(?array $site): string {
+		$slug = (string)($site['slug'] ?? '');
+		if ($slug === '') {
+			return $this->portalReturnTo();
+		}
+
+		return $this->portalReturnTo() . '?portal=' . rawurlencode($slug);
+	}//end returnToPortal()
+
+	/**
+	 * The portal a login was started from, or null for none or an unknown one.
+	 *
+	 * @param string $portal The portal slug, or ''.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/portal-signin-on-its-own-address/tasks.md#T3
+	 */
+	private function siteFor(string $portal): ?array {
+		if ($portal === '') {
+			return null;
+		}
+
+		return $this->portalFor(slug: $portal);
+	}//end siteFor()
+
+	/**
+	 * A resolved portal's organisation slug, or ''.
+	 *
+	 * @param array<string, mixed>|null $site The resolved portal, or null.
+	 *
+	 * @return string
+	 */
+	private function organisationOf(?array $site): string {
+		$organisation = ($site['organisation'] ?? null);
+		if (is_string($organisation) === false) {
+			return '';
+		}
+
+		return trim($organisation);
+	}//end organisationOf()
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request object.
@@ -165,8 +220,9 @@ class SessionController extends Controller {
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T05
-	 * @spec openspec/changes/signin-eherkenning-branch/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-09-30-signin-eherkenning-branch/tasks.md#T02
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T06
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -205,6 +261,10 @@ class SessionController extends Controller {
 				// Change signin-eherkenning-branch: the header shows the branch in effect.
 				'branch' => (string)($subject['branch'] ?? ''),
 				'branchRestricted' => (($subject['branchRestricted'] ?? false) === true),
+				// Change identity-profile-page T06: ask for an e-mail address when none is in use.
+				'contactPrompt' => (new ContactAddressValues())->needsContactPrompt(
+					account: $this->accounts->findBySubjectRef(subjectRef: (string)$subject['subjectRef'])
+				),
 			] + $this->session->sessionTimes(subject: $subject)
 		);
 	}//end index()
@@ -315,8 +375,11 @@ class SessionController extends Controller {
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 30, period: 60)]
 	public function oidcStart(string $org = '', string $provider = '', string $portal = '', string $silent = ''): Response {
-		if ($org === '' && $portal !== '') {
-			$org = $this->organisationOfPortal(slug: $portal);
+		// The serving portal, resolved once: it names the organisation when
+		// `?org=` is empty, and the login returns to it.
+		$site = $this->siteFor(portal: $portal);
+		if ($org === '') {
+			$org = $this->organisationOf(site: $site);
 		}
 
 		// A provider the organisation routes to integriq's broker goes there
@@ -365,7 +428,7 @@ class SessionController extends Controller {
 			codeVerifier: $pkce['verifier'],
 			org: $org,
 			provider: $provider,
-			returnTo: $this->portalReturnTo(),
+			returnTo: $this->returnToPortal(site: $site),
 			silent: ($prompt === 'none')
 		);
 		if ($stored === false) {
@@ -387,26 +450,6 @@ class SessionController extends Controller {
 		return new RedirectResponse($url, Http::STATUS_FOUND);
 	}//end oidcStart()
 
-	/**
-	 * The organisation slug a portal belongs to, or '' when the slug names no
-	 * published portal or the portal carries no organisation. An empty answer
-	 * reaches the same policy refusal as an empty `org`, so an unknown portal
-	 * gets the identical generic error and the start stays no oracle.
-	 *
-	 * @param string $slug The `?portal=` slug.
-	 *
-	 * @return string The organisation slug, or ''.
-	 *
-	 * @spec openspec/changes/archive/2026-09-29-signin-integriq-broker-login/design.md#d2-two-new-routes-and-the-spas-follow-the-route-field
-	 */
-	private function organisationOfPortal(string $slug): string {
-		$organisation = ($this->portalFor(slug: $slug)['organisation'] ?? null);
-		if (is_string($organisation) === false) {
-			return '';
-		}
-
-		return trim($organisation);
-	}//end organisationOfPortal()
 
 	/**
 	 * OIDC broker callback: consumes the single-use `state` (CSRF/replay
@@ -430,7 +473,7 @@ class SessionController extends Controller {
 	 * @spec openspec/specs/supplier-portal/spec.md#oidc-callback-validates-the-id-token-and-fails-closed-on-every-error
 	 * @spec openspec/specs/supplier-portal/spec.md#every-validation-failure-is-an-identical-generic-error
 	 * @spec openspec/specs/supplier-portal/spec.md#the-subject-reference-is-server-derived-never-client-supplied
-	 * @spec openspec/changes/signin-eherkenning-branch/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-09-30-signin-eherkenning-branch/tasks.md#T02
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T08
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T10
 	 *

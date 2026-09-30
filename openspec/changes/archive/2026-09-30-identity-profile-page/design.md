@@ -105,3 +105,26 @@ screen.
 
 - It does not change `NotificationDispatchJob`.
 - It adds no admin screen; staff see the fields on the generic account detail.
+
+## As built (30 Sep 2026)
+
+- The rules of D2 live in `ContactAddressBook` (pure, no store), the writes in
+  `PortalContactAddressService`, and the routes in their own
+  `PortalContactAddressController` (`POST identity/addresses`,
+  `POST identity/addresses/preferred`, `POST identity/addresses/remove`,
+  `PUT identity/contact-channel`). `PortalAccountSelfController` already held
+  nine public methods, so the new routes did not go there.
+- One confirmation link at a time. The existing single `pendingEmail` slot
+  stays; adding or re-sending an address moves the slot to it, so an earlier
+  link stops working. `pendingEmailMode` says what confirmation does:
+  `replace` (the PATCH that changes your address) makes it the preferred one,
+  `add` (one more address) keeps the current preferred one unless there is
+  none. The cap of five counts unconfirmed addresses on the list.
+- Confirming no longer writes `pendingEmailExpiresAt: ''`: an empty string is
+  not a `date-time`, so the schema would refuse the row. The cleared hash is
+  what makes the link dead.
+- The existing `email` of an account from before reads as one confirmed,
+  preferred address; `contactPrompt` is true when `email` is empty or
+  `needsAlternativeContact` is set.
+- Removal also empties `contactAddresses`: phone numbers are personal data.
+- The event is raised on a channel change only.

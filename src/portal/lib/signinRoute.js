@@ -20,12 +20,34 @@
  * @param {string} org The organisation slug.
  * @param {string} provider `digid`, `eherkenning`, `eidas` or `generic`.
  * @param {string} route `oidc` or `broker`; anything else is `oidc`.
+ * @param {string} portal The serving portal's slug, or ''.
  * @return {string}
  * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
  */
-export function loginStartUrl(base, org, provider, route) {
+export function loginStartUrl(base, org, provider, route, portal = '') {
 	const path = route === 'broker' ? 'broker' : 'oidc'
-	return `${base}/session/${path}/start?org=${encodeURIComponent(org || '')}&provider=${encodeURIComponent(provider || '')}`
+	const url = `${base}/session/${path}/start?org=${encodeURIComponent(org || '')}&provider=${encodeURIComponent(provider || '')}`
+	// The serving portal rides along so the login returns to it and keeps its
+	// title (portal-signin-on-its-own-address T3); the server only echoes a
+	// portal that exists.
+	return portal ? `${url}&portal=${encodeURIComponent(portal)}` : url
+}
+
+/**
+ * The organisation a login button starts with.
+ *
+ * The runtime config's `organisationSlug` is the serving PORTAL's slug once a
+ * portal is resolved, which is not an organisation, so a portal whose slug
+ * differs from its organisation sent the login to a tenant with no broker.
+ * The server now names the organisation in `signinOrganisation`; an older
+ * server without that key keeps the old behaviour.
+ *
+ * @param {{organisationSlug?: string, signinOrganisation?: string}} config The runtime config.
+ * @return {string}
+ * @spec openspec/changes/portal-signin-on-its-own-address/tasks.md#T1
+ */
+export function signinOrganisation(config) {
+	return String(config?.signinOrganisation || config?.organisationSlug || '')
 }
 
 /**

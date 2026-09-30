@@ -106,18 +106,20 @@ class PortalRegisteredDetailsService {
 	}//end forSubject()
 
 	/**
-	 * The branch numbers the KvK holds for one company, for the branch choice
-	 * of signin-eherkenning-branch.
+	 * The branches the KvK holds for one company, for the branch choice of
+	 * signin-eherkenning-branch.
 	 *
 	 * @param string $kvkNumber The 8-digit KvK number.
 	 *
-	 * @return array<int, string>|null The branch numbers, or null when the
-	 *                                 number is not a KvK number or the
-	 *                                 source cannot answer.
+	 * @return array<int, array<string, mixed>>|null Each branch's number, name,
+	 *                                                address and main flag; null
+	 *                                                when the number is not a KvK
+	 *                                                number or the source cannot
+	 *                                                answer.
 	 *
 	 * @spec openspec/changes/identity-registered-details/specs/registered-details/spec.md#requirement-a-business-user-sees-their-companys-kvk-record-req-ird-002
 	 */
-	public function companyBranchNumbers(string $kvkNumber): ?array {
+	public function companyBranches(string $kvkNumber): ?array {
 		if (preg_match('/^\d{8}$/', $kvkNumber) !== 1) {
 			return null;
 		}
@@ -127,7 +129,25 @@ class PortalRegisteredDetailsService {
 			return null;
 		}
 
-		return array_column($answer['company']['branches'], 'number');
+		return $answer['company']['branches'];
+	}//end companyBranches()
+
+	/**
+	 * The branch numbers the KvK holds for one company.
+	 *
+	 * @param string $kvkNumber The 8-digit KvK number.
+	 *
+	 * @return array<int, string>|null The branch numbers, or null as companyBranches().
+	 *
+	 * @spec openspec/changes/identity-registered-details/specs/registered-details/spec.md#requirement-a-business-user-sees-their-companys-kvk-record-req-ird-002
+	 */
+	public function companyBranchNumbers(string $kvkNumber): ?array {
+		$branches = $this->companyBranches(kvkNumber: $kvkNumber);
+		if ($branches === null) {
+			return null;
+		}
+
+		return array_column($branches, 'number');
 	}//end companyBranchNumbers()
 
 	/**

@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCP\IConfig;
 use OCP\IRequest;
 
 /**
@@ -70,6 +71,7 @@ class PortalRuntimeConfigResolver {
 	 *                                                        OIDC provider list.
 	 * @param PortalThemeResolver             $themeResolver  Maps a portal's theme reference onto a
 	 *                                                        real thematiq token stylesheet.
+	 * @param IConfig|null                    $config         Tells whether the dev login is accepted.
 	 *
 	 * @return void
 	 */
@@ -77,6 +79,7 @@ class PortalRuntimeConfigResolver {
 		private readonly PortalResolver $portalResolver,
 		private readonly PortalOrganisationConfigService $orgResolver,
 		private readonly PortalThemeResolver $themeResolver,
+		private readonly ?IConfig $config=null,
 	) {
 	}//end __construct()
 
@@ -165,7 +168,19 @@ class PortalRuntimeConfigResolver {
 		// too". Only `oidcProviders` is taken from the result; every branding
 		// key it carries is discarded on purpose, because an organisation can
 		// no longer answer "what does this portal look like".
+		//
+		// A portal opened by its own address (`?portal=` or its domain) names
+		// no `?org=`; its own `organisation` is then the tenant whose brokers
+		// are offered (portal-signin-on-its-own-address). `signinOrganisation`
+		// is what the login buttons start with: the SPA's `organisationSlug`
+		// becomes the PORTAL's slug below, which is not an organisation.
 		$orgValue = trim($orgValue);
+		if ($orgValue === '' && $portal !== null && is_string(($portal['organisation'] ?? null)) === true) {
+			$orgValue = trim($portal['organisation']);
+		}
+
+		$config['signinOrganisation'] = $orgValue;
+		$config['devLogin'] = $this->devLoginEnabled();
 		if ($orgValue !== '') {
 			$resolved = $this->orgResolver->resolve(orgSlug: $orgValue, locale: $locale);
 			$config['oidcProviders'] = (array)($resolved['oidcProviders'] ?? []);
@@ -179,6 +194,29 @@ class PortalRuntimeConfigResolver {
 
 		return $this->applyPortalBranding(config: $config, portal: $portal);
 	}//end runtimeConfigFor()
+
+
+	/**
+	 * Whether the server accepts the dev login, by the same rule as
+	 * SessionController::devLogin() (system `debug`, or app config
+	 * `dev_login_enabled` = `yes`). The SPA shows the button only then, so a
+	 * resident never sees a test button that answers 404.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/portal-signin-on-its-own-address/tasks.md#T2
+	 */
+	private function devLoginEnabled(): bool {
+		if ($this->config === null) {
+			return false;
+		}
+
+		if ($this->config->getSystemValueBool('debug', false) === true) {
+			return true;
+		}
+
+		return $this->config->getAppValue('portaliq', 'dev_login_enabled', 'no') === 'yes';
+	}//end devLoginEnabled()
 
 
 	/**

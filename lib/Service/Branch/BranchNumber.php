@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/signin-eherkenning-branch/tasks.md#T01
+ * @spec openspec/changes/archive/2026-09-30-signin-eherkenning-branch/tasks.md#T01
  */
 
 declare(strict_types=1);
@@ -30,7 +30,7 @@ namespace OCA\Portaliq\Service\Branch;
  * A malformed value is dropped, never guessed at: a branch that is not
  * exactly a vestigingsnummer can neither widen nor narrow a session.
  *
- * @spec openspec/changes/signin-eherkenning-branch/tasks.md#T01
+ * @spec openspec/changes/archive/2026-09-30-signin-eherkenning-branch/tasks.md#T01
  */
 class BranchNumber {
 	/**
@@ -45,7 +45,7 @@ class BranchNumber {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/signin-eherkenning-branch/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-09-30-signin-eherkenning-branch/tasks.md#T01
 	 */
 	public function normalise(mixed $value): string {
 		if (is_string($value) === false || preg_match(self::PATTERN, $value) !== 1) {

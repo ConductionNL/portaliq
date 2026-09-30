@@ -14,7 +14,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
-import { consumeSigninFailed, loginStartUrl } from '../src/portal/lib/signinRoute.js'
+import { consumeSigninFailed, loginStartUrl, signinOrganisation } from '../src/portal/lib/signinRoute.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -55,7 +55,7 @@ test('a failed login is read once from the fragment and stripped', () => {
 
 test('the login screen starts each button by its route and shows the failure', () => {
 	const app = readFileSync(join(ROOT, 'src', 'portal', 'App.jsx'), 'utf8')
-	assert.match(app, /loginStartUrl\(config\.apiBase, config\.organisationSlug, p\.provider, p\.route\)/)
+	assert.match(app, /loginStartUrl\(config\.apiBase, signinOrganisation\(config\), p\.provider, p\.route, config\.organisationSlug\)/)
 	assert.match(app, /consumeSigninFailed\(window\.location, window\.history\)/)
 	assert.match(
 		app,
@@ -69,4 +69,30 @@ test('the login screen starts each button by its route and shows the failure', (
 		nl['Signing in did not work. Try again or choose another way in.'],
 		'Inloggen is niet gelukt. Probeer het opnieuw of kies een andere manier.',
 	)
+})
+
+test('the login starts with the sign-in organisation, not the portal slug (portal-signin-on-its-own-address T1)', () => {
+	assert.equal(
+		signinOrganisation({ organisationSlug: 'wilgenboom', signinOrganisation: 'default-organisation' }),
+		'default-organisation',
+	)
+	assert.equal(
+		signinOrganisation({ organisationSlug: 'gemeente-x', signinOrganisation: '' }),
+		'gemeente-x',
+		'an older server without the key keeps the old behaviour',
+	)
+	assert.equal(signinOrganisation({}), '')
+})
+
+test('the dev login button shows only where the server accepts it (portal-signin-on-its-own-address T2)', () => {
+	const app = readFileSync(join(ROOT, 'src', 'portal', 'App.jsx'), 'utf8')
+	assert.match(app, /\{config\.devLogin === true && \(\s*<button type="button" className="portaliq-devlogin"/)
+})
+
+test('the login names the serving portal so it returns there (portal-signin-on-its-own-address T3)', () => {
+	assert.equal(
+		loginStartUrl('/api', 'default-organisation', 'digid', 'oidc', 'wilgenboom'),
+		'/api/session/oidc/start?org=default-organisation&provider=digid&portal=wilgenboom',
+	)
+	assert.equal(loginStartUrl('/api', 'org', 'digid', 'oidc', ''), '/api/session/oidc/start?org=org&provider=digid')
 })

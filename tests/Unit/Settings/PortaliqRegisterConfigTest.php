@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Settings;
 
+use OCA\Portaliq\Service\Identity\ContactAddressBook;
+use OCA\Portaliq\Service\Identity\ContactAddressValues;
 use Opis\JsonSchema\Validator;
 use PHPUnit\Framework\TestCase;
 
@@ -306,11 +308,15 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.51.0 (portal 0.9.0): the optional `registeredDetails` form
 		// bindings of the "My details" section (identity-registered-details
 		// T06). Additive.
-		// 0.52.0 (portalMessage 0.6.0): the optional `ruleKey` of a message
+		// 0.53.0 (portalAccount 0.13.0; 0.52.0 is taken by the woo-journey PR #983): `contactAddresses`, `contactChannel`
+		// and `pendingEmailMode` (identity-profile-page T02). Additive; an
+		// account from before reads as channel `portal` with its `email` as
+		// the one preferred address.
+		// 0.54.0 (portalMessage 0.6.0): the optional `ruleKey` of a message
 		// another app writes, so it is also sent by email
 		// (woo-journey-entry-points T07). Additive.
-		$this->assertSame('0.52.0', self::$register['info']['version']);
-		$this->assertSame('0.52.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.54.0', self::$register['info']['version']);
+		$this->assertSame('0.54.0', self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalMessage']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalMessage']['properties']['ruleKey']['type']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalOidcState']['version']);
@@ -360,7 +366,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['page']['version']);
 		$this->assertSame('0.9.0', self::$register['components']['schemas']['portal']['version']);
-		$this->assertSame('0.12.0', self::$register['components']['schemas']['portalAccount']['version']);
+		$this->assertSame('0.13.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalSession']['version']);
 
@@ -584,10 +590,49 @@ class PortaliqRegisterConfigTest extends TestCase {
 	 *
 	 * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-portaliq-asks-integriq-to-send-and-records-the-answer-req-mbc-003
 	 */
+	/**
+	 * identity-profile-page T02 (REQ-IPP-003, REQ-IPP-004): the account rows
+	 * PortalContactAddressService and confirmEmail() write fit the real
+	 * portalAccount fragment, validated with Opis; an account from before
+	 * reads with contact channel `portal`.
+	 *
+	 * @return void
+	 */
+	public function testTheAccountCarriesAddressesAndAContactChannel(): void {
+		$schema = self::$register['components']['schemas']['portalAccount'];
+		$this->assertSame('portal', $schema['properties']['contactChannel']['default']);
+		$this->assertSame(['portal', 'email', 'phone', 'post'], $schema['properties']['contactChannel']['enum']);
+		$jsonSchema = json_decode((string)json_encode(['type' => 'object', 'required' => $schema['required'], 'properties' => $schema['properties']]), false);
+
+		$book = new ContactAddressBook();
+		$entries = $book->add(entries: $book->entries(['email' => 'a@example.nl']), kind: 'email', value: 'b@example.nl')['entries'];
+		$entries = $book->add(entries: $entries, kind: 'phone', value: '+31612345678')['entries'];
+		$row = [
+			'audience' => 'citizen',
+			'subjectRef' => 'subject-1',
+			'organisation' => 'gemeente-x',
+			'email' => 'a@example.nl',
+			'contactAddresses' => $entries,
+			'contactChannel' => 'post',
+			'verifiedEmail' => true,
+		] + (new ContactAddressValues())->pendingFields(email: 'b@example.nl', token: 'secret-1', mode: 'add');
+		$result = (new Validator())->validate(json_decode((string)json_encode($row), false), $jsonSchema);
+		$this->assertTrue($result->isValid(), 'the written account fits the schema');
+
+		$confirmed = ['contactAddresses' => $book->confirm(entries: $entries, email: 'b@example.nl', mode: 'add'), 'email' => 'a@example.nl', 'pendingEmail' => '', 'pendingEmailTokenHash' => ''] + $row;
+		$this->assertTrue((new Validator())->validate(json_decode((string)json_encode($confirmed), false), $jsonSchema)->isValid(), 'the confirmed account fits the schema');
+
+		$this->assertFalse((new Validator())->validate(json_decode((string)json_encode(['contactChannel' => 'pigeon'] + $row), false), $jsonSchema)->isValid(), 'an unknown channel is refused');
+		$wrongKind = $row;
+		$wrongKind['contactAddresses'][] = ['kind' => 'fax', 'value' => '0201234567', 'confirmed' => false, 'preferred' => false];
+		$this->assertFalse((new Validator())->validate(json_decode((string)json_encode($wrongKind), false), $jsonSchema)->isValid(), 'an unknown kind is refused');
+
+	}//end testTheAccountCarriesAddressesAndAContactChannel()
+
 	public function testTheMessageBoxRowsFitThePortalNotificationSchema(): void {
 		$schema = self::$register['components']['schemas']['portalNotification'];
 		$this->assertSame('0.3.0', $schema['version']);
-		$this->assertSame('0.12.0', self::$register['components']['schemas']['portalAccount']['version']);
+		$this->assertSame('0.13.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$jsonSchema = json_decode((string)json_encode(['type' => 'object', 'required' => $schema['required'], 'properties' => $schema['properties']]), false);
 
 		$row = [

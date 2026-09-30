@@ -68,10 +68,12 @@ class GuardianAudienceFixtureReader {
 	 *
 	 * @param ContainerInterface $container For resolving OpenRegister services.
 	 * @param LoggerInterface $logger The logger.
+	 * @param LeafGuardianAudienceReader|null $leafAudience The school app's own audience, when no fixture row exists.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
+		private readonly ?LeafGuardianAudienceReader $leafAudience=null,
 	) {
 	}//end __construct()
 
@@ -113,7 +115,10 @@ class GuardianAudienceFixtureReader {
 		}
 
 		if (is_array($rows) === false || count($rows) === 0) {
-			return $empty;
+			// No fixture row: ask the school app that serves the guardian
+			// (news-audience-from-the-school-app). A fixture row still wins,
+			// so the seeded demo guardians keep their audience.
+			return ($this->leafAudience?->resolveAudience(subjectRef: $subjectRef) ?? $empty);
 		}
 
 		$row = $this->normalise(row: $rows[0]);
