@@ -26,7 +26,7 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/identity-ways-in-screens/specs/portal-ways-in/spec.md#requirement-every-way-in-sends-its-secret-by-mail-req-iwi-001
- * @spec openspec/changes/identity-profile-page/tasks.md#T01
+ * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T01
  * @spec openspec/changes/identity-staff-account-screens/tasks.md#T01
  */
 

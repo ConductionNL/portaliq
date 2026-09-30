@@ -168,7 +168,7 @@ class SessionController extends Controller {
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T05
 	 * @spec openspec/changes/archive/2026-09-30-signin-eherkenning-branch/tasks.md#T02
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T02
-	 * @spec openspec/changes/identity-profile-page/tasks.md#T06
+	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T06
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]

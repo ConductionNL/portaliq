@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/identity-profile-page/specs/portal-profile/spec.md#requirement-you-choose-how-the-organisation-contacts-you-req-ipp-004
+ * @spec openspec/changes/archive/2026-09-30-identity-profile-page/specs/portal-profile/spec.md#requirement-you-choose-how-the-organisation-contacts-you-req-ipp-004
  */
 
 declare(strict_types=1);
@@ -34,7 +34,7 @@ use OCP\EventDispatcher\Event;
 /**
  * A changed contact channel.
  *
- * @spec openspec/changes/identity-profile-page/specs/portal-profile/spec.md#requirement-you-choose-how-the-organisation-contacts-you-req-ipp-004
+ * @spec openspec/changes/archive/2026-09-30-identity-profile-page/specs/portal-profile/spec.md#requirement-you-choose-how-the-organisation-contacts-you-req-ipp-004
  */
 class PortalContactDetailsChangedEvent extends Event {
 	/**

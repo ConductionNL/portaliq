@@ -30,7 +30,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/identity-profile-page/specs/portal-profile/spec.md#requirement-you-keep-several-addresses-one-of-each-kind-preferred-req-ipp-003
+ * @spec openspec/changes/archive/2026-09-30-identity-profile-page/specs/portal-profile/spec.md#requirement-you-keep-several-addresses-one-of-each-kind-preferred-req-ipp-003
  */
 
 declare(strict_types=1);
@@ -43,7 +43,7 @@ use DateTimeImmutable;
 /**
  * The address rules of one account.
  *
- * @spec openspec/changes/identity-profile-page/specs/portal-profile/spec.md#requirement-you-keep-several-addresses-one-of-each-kind-preferred-req-ipp-003
+ * @spec openspec/changes/archive/2026-09-30-identity-profile-page/specs/portal-profile/spec.md#requirement-you-keep-several-addresses-one-of-each-kind-preferred-req-ipp-003
  */
 class ContactAddressBook {
 	/**
@@ -76,7 +76,7 @@ class ContactAddressBook {
 	 *
 	 * @return array<int, array{kind: string, value: string, confirmed: bool, preferred: bool}>
 	 *
-	 * @spec openspec/changes/identity-profile-page/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T03
 	 */
 	public function entries(array $account): array {
 		$entries = [];
@@ -119,7 +119,7 @@ class ContactAddressBook {
 	 *
 	 * @return string|null
 	 *
-	 * @spec openspec/changes/identity-profile-page/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T03
 	 */
 	public function normalise(string $kind, string $value): ?string {
 		$value = trim($value);
@@ -157,7 +157,7 @@ class ContactAddressBook {
 	 *         `refusal` is '' on success, else `exists` or `too_many_pending`;
 	 *         `confirm` says a confirmation mail is due.
 	 *
-	 * @spec openspec/changes/identity-profile-page/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T03
 	 */
 	public function add(array $entries, string $kind, string $value): array {
 		$found = $this->find(entries: $entries, kind: $kind, value: $value);
@@ -188,7 +188,7 @@ class ContactAddressBook {
 	 * @return array{entries: array<int, array<string, mixed>>, refusal: string}
 	 *         `refusal` is '' on success, else `not_found` or `confirm_first`.
 	 *
-	 * @spec openspec/changes/identity-profile-page/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T03
 	 */
 	public function prefer(array $entries, string $kind, string $value): array {
 		$found = $this->find(entries: $entries, kind: $kind, value: $value);
@@ -214,7 +214,7 @@ class ContactAddressBook {
 	 *         `refusal` is '' on success, else `not_found` or
 	 *         `choose_another_preferred`.
 	 *
-	 * @spec openspec/changes/identity-profile-page/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T03
 	 */
 	public function remove(array $entries, string $kind, string $value): array {
 		$found = $this->find(entries: $entries, kind: $kind, value: $value);
@@ -249,7 +249,7 @@ class ContactAddressBook {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/identity-profile-page/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T03
 	 */
 	public function confirm(array $entries, string $email, string $mode): array {
 		if ($this->find(entries: $entries, kind: 'email', value: $email) === null) {
@@ -277,7 +277,7 @@ class ContactAddressBook {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/identity-profile-page/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T03
 	 */
 	public function preferred(array $entries, string $kind): string {
 		foreach ($entries as $entry) {
@@ -298,7 +298,7 @@ class ContactAddressBook {
 	 *
 	 * @return array<string, string>
 	 *
-	 * @spec openspec/changes/identity-profile-page/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T03
 	 */
 	public function pendingFields(string $email, string $token, string $mode): array {
 		return [
@@ -318,7 +318,7 @@ class ContactAddressBook {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/identity-profile-page/specs/portal-profile/spec.md#requirement-you-are-asked-for-an-e-mail-address-when-there-is-none-req-ipp-005
+	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/specs/portal-profile/spec.md#requirement-you-are-asked-for-an-e-mail-address-when-there-is-none-req-ipp-005
 	 */
 	public function needsContactPrompt(?array $account): bool {
 		if ($account === null) {
@@ -336,7 +336,7 @@ class ContactAddressBook {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/identity-profile-page/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T05
 	 */
 	public function mask(string $email): string {
 		$at = strrpos($email, '@');

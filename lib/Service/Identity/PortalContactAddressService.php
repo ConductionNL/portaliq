@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/identity-profile-page/specs/portal-profile/spec.md
+ * @spec openspec/changes/archive/2026-09-30-identity-profile-page/specs/portal-profile/spec.md
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ use OCP\Security\ISecureRandom;
 /**
  * A person's own addresses and contact channel.
  *
- * @spec openspec/changes/identity-profile-page/specs/portal-profile/spec.md
+ * @spec openspec/changes/archive/2026-09-30-identity-profile-page/specs/portal-profile/spec.md
  */
 class PortalContactAddressService {
 	/**
@@ -83,7 +83,7 @@ class PortalContactAddressService {
 	 *         `refusal` '' on success, else `no_account`, `invalid`, `exists`,
 	 *         `too_many_pending` or `not_written`.
 	 *
-	 * @spec openspec/changes/identity-profile-page/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T03
 	 */
 	public function addAddress(string $subjectRef, string $kind, string $value): array {
 		$account = $this->ownAccount(subjectRef: $subjectRef);
@@ -126,7 +126,7 @@ class PortalContactAddressService {
 	 * @return string '' on success, else `no_account`, `not_found`,
 	 *                `confirm_first` or `not_written`.
 	 *
-	 * @spec openspec/changes/identity-profile-page/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T03
 	 */
 	public function preferAddress(string $subjectRef, string $kind, string $value): string {
 		$account = $this->ownAccount(subjectRef: $subjectRef);
@@ -152,7 +152,7 @@ class PortalContactAddressService {
 	 * @return string '' on success, else `no_account`, `not_found`,
 	 *                `choose_another_preferred` or `not_written`.
 	 *
-	 * @spec openspec/changes/identity-profile-page/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T03
 	 */
 	public function removeAddress(string $subjectRef, string $kind, string $value): string {
 		$account = $this->ownAccount(subjectRef: $subjectRef);
@@ -184,7 +184,7 @@ class PortalContactAddressService {
 	 *
 	 * @return string '' on success, else `no_account`, `invalid` or `not_written`.
 	 *
-	 * @spec openspec/changes/identity-profile-page/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T04
 	 */
 	public function chooseChannel(string $subjectRef, string $channel): string {
 		$account = $this->ownAccount(subjectRef: $subjectRef);

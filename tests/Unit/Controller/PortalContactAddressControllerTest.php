@@ -17,7 +17,7 @@ use PHPUnit\Framework\TestCase;
  * session, a new e-mail address gets its mail, and the secret never comes
  * back in the answer.
  *
- * @spec openspec/changes/identity-profile-page/specs/portal-profile/spec.md#requirement-a-new-e-mail-address-is-confirmed-before-it-is-used-req-ipp-002
+ * @spec openspec/changes/archive/2026-09-30-identity-profile-page/specs/portal-profile/spec.md#requirement-a-new-e-mail-address-is-confirmed-before-it-is-used-req-ipp-002
  */
 class PortalContactAddressControllerTest extends TestCase {
 

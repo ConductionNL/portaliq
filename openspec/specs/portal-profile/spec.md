@@ -1,15 +1,6 @@
----
-status: proposed
----
-
-# Spec: portal-profile
-
-**Status:** proposed
-**Scope:** portaliq (owner); a case app listens for the contact-details event
-**Depends on:** `portal-identity-and-the-organisations-cases` (the self-service backend)
+# portal-profile Specification
 
 ## Purpose
-
 A signed-in resident or business user manages their own portal account: name,
 e-mail addresses, phone numbers, how the organisation contacts them, and
 removing the account. Requested by the portaliq parity matrix rows
@@ -17,7 +8,7 @@ removing the account. Requested by the portaliq parity matrix rows
 `cmp-id-contact-channel`, `cmp-id-prompt-missing-email` and
 `id-remove-own-account`.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: You see your own account (REQ-IPP-001)
 
@@ -53,6 +44,7 @@ the link's fragment and SHALL NOT be logged.
 - **GIVEN** a confirmation mail sent to new@example.nl
 - **WHEN** the resident follows the link
 - **THEN** the portal shows new@example.nl as confirmed, and following the same link again reads "This link is no longer valid."
+- @e2e exclude the CI instance captures no mail; pinned by PortalContactAddressServiceTest::testAChangedAddressWaitsForTheLinkAndNotificationsStayOnTheOldOne and tests/account-page.spec.mjs (the link is read once)
 
 ### Requirement: You keep several addresses, one of each kind preferred (REQ-IPP-003)
 
@@ -65,6 +57,7 @@ notifications go to.
 - **GIVEN** a resident with two confirmed addresses, a@example.nl preferred
 - **WHEN** they mark b@example.nl as preferred
 - **THEN** the next notification mail goes to b@example.nl
+- @e2e exclude needs the confirmation mail first; pinned by PortalContactAddressServiceTest::testASecondConfirmedAddressMarkedPreferredIsWhereNotificationsGo
 
 #### Scenario: An unconfirmed address cannot be preferred
 - **GIVEN** a resident who just added c@example.nl and has not confirmed it

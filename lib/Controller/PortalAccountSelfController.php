@@ -95,7 +95,7 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 	 *                      mail left.
 	 *
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
-	 * @spec openspec/changes/identity-profile-page/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T01
 	 * @spec openspec/changes/notification-preferences-per-role/specs/supplier-portal/spec.md#requirement-an-accounts-own-channel-opt-out-gates-dispatch
 	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-a-guardian-chooses-the-language-messages-are-shown-in
 	 */

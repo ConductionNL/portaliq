@@ -191,7 +191,7 @@ class PortalSelfServiceService {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/identity-profile-page/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T03
 	 */
 	private function changedAddress(array $account, string $email, string $token): ?array {
 		$normalised = $this->book->normalise(kind: 'email', value: $email);

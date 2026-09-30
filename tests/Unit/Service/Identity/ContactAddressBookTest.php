@@ -11,7 +11,7 @@ use PHPUnit\Framework\TestCase;
  * identity-profile-page REQ-IPP-003, design D2: the address rules, one per
  * test.
  *
- * @spec openspec/changes/identity-profile-page/specs/portal-profile/spec.md#requirement-you-keep-several-addresses-one-of-each-kind-preferred-req-ipp-003
+ * @spec openspec/changes/archive/2026-09-30-identity-profile-page/specs/portal-profile/spec.md#requirement-you-keep-several-addresses-one-of-each-kind-preferred-req-ipp-003
  */
 class ContactAddressBookTest extends TestCase {
 

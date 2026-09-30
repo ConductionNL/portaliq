@@ -17,7 +17,7 @@ use PHPUnit\Framework\TestCase;
  * address waits for its link, a preferred one becomes the address
  * notifications go to, and a changed channel is announced once.
  *
- * @spec openspec/changes/identity-profile-page/specs/portal-profile/spec.md
+ * @spec openspec/changes/archive/2026-09-30-identity-profile-page/specs/portal-profile/spec.md
  */
 class PortalContactAddressServiceTest extends TestCase {
 	use PortalIdentityStoreTrait;

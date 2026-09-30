@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/identity-profile-page/specs/portal-profile/spec.md
+ * @spec openspec/changes/archive/2026-09-30-identity-profile-page/specs/portal-profile/spec.md
  */
 
 declare(strict_types=1);
@@ -43,7 +43,7 @@ use OCP\IRequest;
 /**
  * The bearer's own addresses and contact channel.
  *
- * @spec openspec/changes/identity-profile-page/specs/portal-profile/spec.md
+ * @spec openspec/changes/archive/2026-09-30-identity-profile-page/specs/portal-profile/spec.md
  */
 class PortalContactAddressController extends Controller implements PortalProtected {
 
@@ -74,8 +74,8 @@ class PortalContactAddressController extends Controller implements PortalProtect
 	 * @return JSONResponse `{added, value, confirmationPending, confirmationSent}`,
 	 *                      400 with a refusal, 401 without a session.
 	 *
-	 * @spec openspec/changes/identity-profile-page/tasks.md#T03
-	 * @spec openspec/changes/identity-profile-page/specs/portal-profile/spec.md#requirement-a-new-e-mail-address-is-confirmed-before-it-is-used-req-ipp-002
+	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/specs/portal-profile/spec.md#requirement-a-new-e-mail-address-is-confirmed-before-it-is-used-req-ipp-002
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -113,7 +113,7 @@ class PortalContactAddressController extends Controller implements PortalProtect
 	 *
 	 * @return JSONResponse `{preferred: true}`, 400 with a refusal, 401 without a session.
 	 *
-	 * @spec openspec/changes/identity-profile-page/specs/portal-profile/spec.md#requirement-you-keep-several-addresses-one-of-each-kind-preferred-req-ipp-003
+	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/specs/portal-profile/spec.md#requirement-you-keep-several-addresses-one-of-each-kind-preferred-req-ipp-003
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -138,7 +138,7 @@ class PortalContactAddressController extends Controller implements PortalProtect
 	 *
 	 * @return JSONResponse `{removed: true}`, 400 with a refusal, 401 without a session.
 	 *
-	 * @spec openspec/changes/identity-profile-page/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T03
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -162,7 +162,7 @@ class PortalContactAddressController extends Controller implements PortalProtect
 	 *
 	 * @return JSONResponse `{channel}`, 400 with a refusal, 401 without a session.
 	 *
-	 * @spec openspec/changes/identity-profile-page/specs/portal-profile/spec.md#requirement-you-choose-how-the-organisation-contacts-you-req-ipp-004
+	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/specs/portal-profile/spec.md#requirement-you-choose-how-the-organisation-contacts-you-req-ipp-004
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
