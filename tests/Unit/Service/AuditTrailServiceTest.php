@@ -16,8 +16,8 @@ use RuntimeException;
  * OpenRegister's audit trail (the real AuditTrail entity), carries no payload,
  * never fails the audited action, and the metrics count those rows per verb.
  *
- * @spec openspec/changes/consume-or-audit-trail-proof-records/tasks.md#T01
- * @spec openspec/changes/consume-or-audit-trail-proof-records/tasks.md#T03
+ * @spec openspec/changes/archive/2026-09-30-consume-or-audit-trail-proof-records/tasks.md#T01
+ * @spec openspec/changes/archive/2026-09-30-consume-or-audit-trail-proof-records/tasks.md#T03
  */
 class AuditTrailServiceTest extends TestCase {
 	/**

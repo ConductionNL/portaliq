@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/consume-or-audit-trail-proof-records/tasks.md#T02
+ * @spec openspec/changes/archive/2026-09-30-consume-or-audit-trail-proof-records/tasks.md#T02
  */
 
 declare(strict_types=1);
@@ -43,7 +43,7 @@ use Throwable;
 /**
  * Moves `portalAuditEntry` objects into OpenRegister's audit trail.
  *
- * @spec openspec/changes/consume-or-audit-trail-proof-records/tasks.md#T02
+ * @spec openspec/changes/archive/2026-09-30-consume-or-audit-trail-proof-records/tasks.md#T02
  */
 class MovePortalAuditEntries implements IRepairStep {
 	/**
@@ -104,7 +104,7 @@ class MovePortalAuditEntries implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/consume-or-audit-trail-proof-records/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-09-30-consume-or-audit-trail-proof-records/tasks.md#T02
 	 */
 	public function run(IOutput $output): void {
 		$moved = 0;

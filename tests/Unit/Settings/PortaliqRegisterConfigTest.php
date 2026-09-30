@@ -773,7 +773,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/consume-or-audit-trail-proof-records/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-09-30-consume-or-audit-trail-proof-records/tasks.md#T04
 	 */
 	public function testNoProofRecordSchemaIsLeft(): void {
 		$this->assertArrayNotHasKey('portalAuditEntry', self::$register['components']['schemas']);
@@ -790,7 +790,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/consume-or-audit-trail-proof-records/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-09-30-consume-or-audit-trail-proof-records/tasks.md#T04
 	 */
 	public function testNothingInLibNamesTheOldProofRecordButTheMove(): void {
 		$lib = realpath(__DIR__ . '/../../../lib');

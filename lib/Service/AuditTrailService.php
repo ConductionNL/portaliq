@@ -31,7 +31,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/consume-or-audit-trail-proof-records/tasks.md#T01
+ * @spec openspec/changes/archive/2026-09-30-consume-or-audit-trail-proof-records/tasks.md#T01
  */
 
 declare(strict_types=1);
@@ -48,7 +48,7 @@ use Throwable;
  * Failure-isolated writer and counter of the portal's rows in OpenRegister's
  * audit trail.
  *
- * @spec openspec/changes/consume-or-audit-trail-proof-records/tasks.md#T01
+ * @spec openspec/changes/archive/2026-09-30-consume-or-audit-trail-proof-records/tasks.md#T01
  */
 class AuditTrailService {
 	/**
@@ -97,7 +97,7 @@ class AuditTrailService {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/consume-or-audit-trail-proof-records/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-09-30-consume-or-audit-trail-proof-records/tasks.md#T01
 	 */
 	public function record(
 		string $verb,
@@ -140,7 +140,7 @@ class AuditTrailService {
 	 *
 	 * @throws Throwable When OpenRegister is absent or the insert fails.
 	 *
-	 * @spec openspec/changes/consume-or-audit-trail-proof-records/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-09-30-consume-or-audit-trail-proof-records/tasks.md#T01
 	 */
 	public function append(array $fact, string $uuid, DateTime $created): void {
 		$verb = (string)($fact['verb'] ?? '');
@@ -187,7 +187,7 @@ class AuditTrailService {
 	 *
 	 * @throws Throwable When OpenRegister is absent.
 	 *
-	 * @spec openspec/changes/consume-or-audit-trail-proof-records/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-09-30-consume-or-audit-trail-proof-records/tasks.md#T02
 	 */
 	public function has(string $uuid): bool {
 		return $this->mapper()->findAll(limit: 1, filters: ['uuid' => $uuid]) !== [];
@@ -200,7 +200,7 @@ class AuditTrailService {
 	 *
 	 * @return array<string, int> Counts keyed by verb.
 	 *
-	 * @spec openspec/changes/consume-or-audit-trail-proof-records/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-09-30-consume-or-audit-trail-proof-records/tasks.md#T03
 	 */
 	public function countsByVerb(): array {
 		$counts = array_fill_keys(self::VERBS, 0);

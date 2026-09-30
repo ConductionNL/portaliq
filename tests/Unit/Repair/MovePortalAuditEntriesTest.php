@@ -20,7 +20,7 @@ use RuntimeException;
  * metrics count the same afterwards, a second run writes nothing twice, and a
  * record that cannot be removed is kept, never lost.
  *
- * @spec openspec/changes/consume-or-audit-trail-proof-records/tasks.md#T02
+ * @spec openspec/changes/archive/2026-09-30-consume-or-audit-trail-proof-records/tasks.md#T02
  */
 class MovePortalAuditEntriesTest extends TestCase {
 	private FakeAuditTrailMapper $mapper;
