@@ -6979,11 +6979,12 @@
 			},
 			"built": {
 				"state": "built",
-				"evidence": "lib/Service/AuditTrailService.php and lib/Service/PortalAuditHook.php are both called from lib/Controller/ContributionController.php, lib/Service/PortalSessionService.php, lib/Service/CitizenWriteRecorder.php, lib/Controller/PortalTaskProxyController.php, and lib/Controller/MetricsController.php (verified with grep -l for real call sites, not just the declaring file)",
-				"reachedOn": "every contribution write, portal session event and task proxy call passes through the hook",
+				"evidence": "lib/Service/AuditTrailService.php writes every portal proof record (sign-in, sign-out, refresh, create, update, forward, download, task completion) as one row in OpenRegister's audit trail (AuditTrailMapper::insertAuditTrails, action portaliq.<verb>); called from ContributionController, PortalSessionService, CitizenWriteRecorder, PortalTaskProxyController, PortalAuditHook; MetricsController counts the rows. lib/Repair/MovePortalAuditEntries moves the old portalAuditEntry objects on upgrade.",
+				"reachedOn": "every contribution write, portal session event, download and task completion; administrators read the rows in OpenRegister's audit trail",
 				"owner": "ConductionNL/portaliq",
 				"note": "This is not a guard-with-no-caller: multiple real call sites confirmed across controllers and services.",
-				"origin": "code"
+				"origin": "code",
+				"change": "2026-09-30-consume-or-audit-trail-proof-records"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -7311,11 +7312,12 @@
 			},
 			"built": {
 				"state": "built",
-				"evidence": "same evidence as ops-audit-trail: AuditTrailService/PortalAuditHook with confirmed call sites in ContributionController, PortalSessionService, CitizenWriteRecorder, PortalTaskProxyController, MetricsController",
-				"reachedOn": "every contribution write and portal session event",
+				"evidence": "lib/Service/AuditTrailService.php writes every portal proof record (sign-in, sign-out, refresh, create, update, forward, download, task completion) as one row in OpenRegister's audit trail (AuditTrailMapper::insertAuditTrails, action portaliq.<verb>); called from ContributionController, PortalSessionService, CitizenWriteRecorder, PortalTaskProxyController, PortalAuditHook; MetricsController counts the rows. lib/Repair/MovePortalAuditEntries moves the old portalAuditEntry objects on upgrade.",
+				"reachedOn": "every contribution write, portal session event, download and task completion; administrators read the rows in OpenRegister's audit trail",
 				"owner": "ConductionNL/portaliq",
 				"note": "Not rated only from a class existing: multiple independent real callers were confirmed.",
-				"origin": "competitor"
+				"origin": "competitor",
+				"change": "2026-09-30-consume-or-audit-trail-proof-records"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -7937,12 +7939,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/commerce/creating-store-content/liferay-commerce-fragments ('Using the Account Selector') and https://learn.liferay.com/w/dxp/low-code/objects/creating-and-managing-objects/using-system-objects-with-custom-objects/restricting-access-to-object-data-by-account: a user picks an account and sees only its entries. Mapping an eHerkenning branch number to an account is custom. [was unknown; custom: eHerkenning attributes to account mapping]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "lib/Service/OidcClaimMapperService.php:73-100 eherkenning preset maps subject and acr only; grep -riE 'vestiging|establishment' lib src: no claim handling (only a mock-data sentence)",
-				"reachedOn": "nothing reaches it",
+				"state": "building",
+				"evidence": "lib/Service/OidcClaimMapperService.php branchOf() reads claimMap.branch (12 digits, lib/Service/Branch/BranchNumber.php); PortalSessionService::issueSession(branch:) signs branch + branchRestricted, refreshSession keeps them; lib/Service/Branch/PortalBranchScope.php filters ContributionController::collection()/object(), PortalCaseListReader (My cases) and CitizenCaseController, stamps branchField on create; header text src/portal/lib/branch.js in App.jsx. Missing: dossiq declares branchField (for-ruben/dossiq-branch-field-on-business-cases.md), integriq envelope carries the branch (for-ruben/integriq-broker-envelope-carries-the-branch.md), and the whole-company user's branch choice (T05/T06, needs the KvK branch list of identity-registered-details).",
+				"reachedOn": "after an OIDC eHerkenning login whose broker sends the claim named in claimMap.branch: the portal header and My cases",
 				"owner": "ConductionNL/portaliq",
-				"note": "No branch (vestigingsnummer) claim is read or scoped on; an eHerkenning login acts for the whole company subjectRef. Specified in openspec/changes/signin-eherkenning-branch (OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"note": "A login restricted to one branch gives a session restricted to it (signin-eherkenning-branch part 1, 30 Sep 2026). The choice of a branch by a whole-company user is not built yet.",
+				"origin": "code",
+				"change": "signin-eherkenning-branch"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -8183,7 +8186,7 @@
 			"id": "dem-cl-maintenance-notice",
 			"area": "operate",
 			"name": "Show a maintenance or warning notice to visitors on the portal's pages.",
-			"portaliq": "partial",
+			"portaliq": "yes",
 			"open-inwoner": "yes",
 			"nl-portal": "yes",
 			"xxllnc-pip": "partial",
@@ -8197,12 +8200,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/content-management-system/alerts-and-announcements 'Alerts are for high-priority information (e.g. planned downtime alerts, security alerts, etc.) and appear with a red Important tag', placed with the Alerts widget. [was unknown]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "grep -riE 'maintenance|announcement|banner' src/site src/portal lib/Service/CmsReader.php: no notice feature; pages are editable through the page designer (existing row ops-editor-vs-admin-pages)",
-				"reachedOn": "/site pages via the page designer's markdown block, one page at a time",
+				"state": "built",
+				"evidence": "lib/Settings/portaliq_register.json portalNotice 0.1.0 (portal, message, level, window with a required end, surfaces site/portal, status); lib/Service/PortalNoticeReader.php::active() (published, portal, surface, window, newest first, at most three); lib/Controller/ContentController.php site() 'notices' and lib/Controller/PortalPageController.php runtimeConfig 'notices'; src/site/components/SiteNotices.vue and src/portal/components/PortalNotices.jsx above <main> (close for the visit, end checked on the client); lib/Listener/NoticeWriteGuardListener.php (end after start); PageEditorService gives the editor groups the writes",
+				"reachedOn": "admin: Notices -> add a notice; visitor: every page of /site and of /portal while it runs",
 				"owner": "ConductionNL/portaliq",
-				"note": "An editor can write a warning into a page's content, but there is no site-wide notice or banner, nothing time-boxed, and nothing on the signed-in /portal SPA. Specified in openspec/changes/operate-maintenance-notice (OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"note": "Built 2026-09-29 (operate-maintenance-notice). Site-wide, time-boxed, on the public site and the signed-in portal, closable for the visit. The public site answer may be cached up to five minutes, so a notice can show late but never after its end. One notice per language.",
+				"origin": "code",
+				"change": "2026-09-29-operate-maintenance-notice"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",

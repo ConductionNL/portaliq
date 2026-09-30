@@ -244,11 +244,13 @@ combine with, rather than replace, the existing `jti` revocation and
 fail-closed middleware.
 
 **Audit trail.** Every portal mutation (`create`/`update`/`forward`), every
-file `download`, and every session event (`login`/`logout`/`refresh`) writes
-an append-only `portalAuditEntry` (`jti`, `subjectRef`, `organisation`,
-`appId`, `verb`, target `register`/`schema`/`id`, `timestamp`) via
-`AuditTrailService::record()` — a **fact record only**, it never carries
-payload content. A `record()` failure is caught and logged; it never reverses
+file `download`, every confirmed task completion and every session event
+(`login`/`logout`/`refresh`) writes one row into OpenRegister's hash-chained
+audit trail with action `portaliq.<verb>` (subject, session `jti`,
+organisation, target `appId`/`register`/`schema`/`id`, time) via
+`AuditTrailService::record()`: a **fact record only**, it never carries
+payload content. Records written by earlier versions move there on
+upgrade (`MovePortalAuditEntries`); see `docs/operations/portal-proof-records.md`. A `record()` failure is caught and logged; it never reverses
 the audited action (failure isolation). The count (never the subjects or
 targets) is exposed per-verb via `GET /api/metrics`
 (`portaliq_audit_entries_total{verb="..."}`, ADR-006). Retention is

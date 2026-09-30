@@ -157,6 +157,7 @@ class SessionController extends Controller {
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T05
+	 * @spec openspec/changes/signin-eherkenning-branch/tasks.md#T02
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -192,6 +193,9 @@ class SessionController extends Controller {
 				'audience' => $subject['audience'],
 				'organisation' => $subject['organisation'],
 				'trust' => $subject['trust'],
+				// Change signin-eherkenning-branch: the header shows the branch in effect.
+				'branch' => (string)($subject['branch'] ?? ''),
+				'branchRestricted' => (($subject['branchRestricted'] ?? false) === true),
 			]
 		);
 	}//end index()
@@ -407,6 +411,7 @@ class SessionController extends Controller {
 	 * @spec openspec/specs/supplier-portal/spec.md#oidc-callback-validates-the-id-token-and-fails-closed-on-every-error
 	 * @spec openspec/specs/supplier-portal/spec.md#every-validation-failure-is-an-identical-generic-error
 	 * @spec openspec/specs/supplier-portal/spec.md#the-subject-reference-is-server-derived-never-client-supplied
+	 * @spec openspec/changes/signin-eherkenning-branch/tasks.md#T02
 	 *
 	 * @SuppressWarnings(PHPMD.CyclomaticComplexity) -- one fail-closed guard
 	 * per step of the OIDC flow (state, config, discovery, exchange, ID-token
@@ -470,24 +475,13 @@ class SessionController extends Controller {
 			return $this->oidcGenericError();
 		}
 
-		// REQ-PIS-002 of portal-identity-space: an account provisioned before
-		// this login is matched on its identity reference first, and only
-		// then on an address the broker itself says it verified. An
-		// unverified address is not passed on at all, so it can never claim
-		// a waiting account.
-		$verifiedEmail = '';
-		$emailIsVerified = (($claims['email_verified'] ?? false) === true || ($claims['email_verified'] ?? '') === 'true');
-		if ($emailIsVerified === true && is_string(($claims['email'] ?? null)) === true) {
-			$verifiedEmail = (string)$claims['email'];
-		}
-
 		$account = $this->accounts->findOrCreate(
 			identityType: $mapped['identityType'],
 			identityRef: $mapped['identityRef'],
 			organisation: $pending['org'],
 			audience: $mapped['audience'],
 			subjectRefOverride: $mapped['subjectRef'],
-			verifiedEmail: $verifiedEmail
+			verifiedEmail: $this->verifiedEmailOf(claims: $claims)
 		);
 		if ($account === null) {
 			return $this->oidcGenericError();
@@ -499,7 +493,8 @@ class SessionController extends Controller {
 			audience: $mapped['audience'],
 			organisation: $pending['org'],
 			trust: $trust,
-			roles: [$mapped['audience'] . ':read']
+			roles: [$mapped['audience'] . ':read'],
+			branch: (string)($mapped['branch'] ?? '')
 		);
 		if ($issued === null) {
 			return $this->oidcGenericError();
@@ -518,6 +513,27 @@ class SessionController extends Controller {
 		// Explicit 302 (design.md) — RedirectResponse's own default is 303.
 		return new RedirectResponse($redirectUrl, Http::STATUS_FOUND);
 	}//end oidcCallback()
+
+	/**
+	 * The address the broker itself says it verified, or ''.
+	 *
+	 * REQ-PIS-002 of portal-identity-space: an account provisioned before
+	 * a login is matched on its identity reference first, and only then on
+	 * an address the broker says it verified. An unverified address is not
+	 * passed on at all, so it can never claim a waiting account.
+	 *
+	 * @param array<string, mixed> $claims The verified ID token claims.
+	 *
+	 * @return string
+	 */
+	private function verifiedEmailOf(array $claims): string {
+		$emailIsVerified = (($claims['email_verified'] ?? false) === true || ($claims['email_verified'] ?? '') === 'true');
+		if ($emailIsVerified === true && is_string(($claims['email'] ?? null)) === true) {
+			return (string)$claims['email'];
+		}
+
+		return '';
+	}//end verifiedEmailOf()
 
 	/**
 	 * The redirect_uri this RP presents to every broker — MUST be identical

@@ -33,6 +33,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Service\Branch\PortalBranchScope;
+
 /**
  * Validates and sanitises the v3 collection presentation config, fail-closed.
  *
@@ -88,6 +90,7 @@ class CollectionConfigNormaliser {
 			$collection = $this->normaliseFileFlags(collection: $collection);
 			$collection = $this->normaliseKind(collection: $collection);
 			$collection = $this->normaliseClosedField(collection: $collection);
+			$collection = (new PortalBranchScope())->normalise(collection: $collection);
 			$collection = (new MessageBoxConfigNormaliser())->normalise(collection: $collection);
 			$collection = (new RowActionResolver())->normaliseNoticeField(collection: $collection);
 			$collection = $this->values->normaliseAnonymousFlag(entry: $collection);

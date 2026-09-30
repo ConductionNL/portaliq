@@ -193,6 +193,11 @@
 	"No closed cases.": "No closed cases.",
 	"Your cases could not be loaded. Try again later.": "Your cases could not be loaded. Try again later.",
 	"Acting for": "Acting for",
+	"Signed in for branch {number}": "Signed in for branch {number}",
+	"Branch {number}": "Branch {number}",
 	"Yourself": "Yourself",
-	"This organisation has too many cases to list here. Choose a narrower mandate.": "This organisation has too many cases to list here. Choose a narrower mandate."
+	"This organisation has too many cases to list here. Choose a narrower mandate.": "This organisation has too many cases to list here. Choose a narrower mandate.",
+	"Notice": "Notice",
+	"Close this notice": "Close this notice",
+	"More information": "More information"
 }

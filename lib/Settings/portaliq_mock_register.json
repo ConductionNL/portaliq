@@ -881,54 +881,6 @@
       {
         "@self": {
           "register": "portaliq",
-          "schema": "portalAuditEntry",
-          "slug": "portalauditentry-portalauditentry-1-1"
-        },
-        "subjectRef": "Voorbeeld Subjectref 1",
-        "organisation": "Voorbeeld Organisation 1",
-        "verb": "create",
-        "timestamp": "2026-03-01T09:00:00+00:00",
-        "jti": "Voorbeeld Jti 1",
-        "appId": "Voorbeeld Appid 1",
-        "register": "Voorbeeld Register 1",
-        "schema": "Voorbeeld Schema 1",
-        "targetId": "Voorbeeld Targetid 1"
-      },
-      {
-        "@self": {
-          "register": "portaliq",
-          "schema": "portalAuditEntry",
-          "slug": "portalauditentry-portalauditentry-2-2"
-        },
-        "subjectRef": "Voorbeeld Subjectref 2",
-        "organisation": "Voorbeeld Organisation 2",
-        "verb": "update",
-        "timestamp": "2026-03-02T09:00:00+00:00",
-        "jti": "Voorbeeld Jti 2",
-        "appId": "Voorbeeld Appid 2",
-        "register": "Voorbeeld Register 2",
-        "schema": "Voorbeeld Schema 2",
-        "targetId": "Voorbeeld Targetid 2"
-      },
-      {
-        "@self": {
-          "register": "portaliq",
-          "schema": "portalAuditEntry",
-          "slug": "portalauditentry-portalauditentry-3-3"
-        },
-        "subjectRef": "Voorbeeld Subjectref 3",
-        "organisation": "Voorbeeld Organisation 3",
-        "verb": "forward",
-        "timestamp": "2026-03-03T09:00:00+00:00",
-        "jti": "Voorbeeld Jti 3",
-        "appId": "Voorbeeld Appid 3",
-        "register": "Voorbeeld Register 3",
-        "schema": "Voorbeeld Schema 3",
-        "targetId": "Voorbeeld Targetid 3"
-      },
-      {
-        "@self": {
-          "register": "portaliq",
           "schema": "portalCase",
           "slug": "portalcase-portalcase-1-1"
         },
@@ -3418,6 +3370,58 @@
         "kind": "image",
         "status": "draft",
         "alt": "Tekening van de nieuwe bibliotheek aan het water"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalNotice",
+          "slug": "demo-notice-1"
+        },
+        "portal": "demo-portal",
+        "message": "Zaterdag van 22.00 tot 02.00 uur kunt u geen aanvragen doen door onderhoud.",
+        "level": "warning",
+        "startsAt": "2026-10-03T10:00:00+02:00",
+        "endsAt": "2026-10-04T02:00:00+02:00",
+        "surfaces": [
+          "site",
+          "portal"
+        ],
+        "status": "published",
+        "linkLabel": "Meer over het onderhoud",
+        "linkUrl": "https://www.example.nl/onderhoud"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalNotice",
+          "slug": "demo-notice-2"
+        },
+        "portal": "demo-portal",
+        "message": "Het telefoonnummer is maandag de hele dag niet bereikbaar.",
+        "level": "info",
+        "startsAt": "2026-10-05T00:00:00+02:00",
+        "endsAt": "2026-10-06T00:00:00+02:00",
+        "surfaces": [
+          "site"
+        ],
+        "status": "published"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalNotice",
+          "slug": "demo-notice-3"
+        },
+        "portal": "demo-portal",
+        "message": "Tijdens de kerstdagen zijn de balies gesloten.",
+        "level": "info",
+        "startsAt": "2026-12-24T00:00:00+01:00",
+        "endsAt": "2026-12-27T00:00:00+01:00",
+        "surfaces": [
+          "site",
+          "portal"
+        ],
+        "status": "draft"
       }
     ]
   }

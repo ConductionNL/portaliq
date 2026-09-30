@@ -52,7 +52,7 @@ completion posts multipart through the proxy; success shows a confirmation and
 removes the task from the open list.
 
 A CONFIRMED completion is a submission in the WMEBV sense (art. 2:10). Once the
-seam answers 2xx the proxy MUST write a `portalAuditEntry` with verb `complete`
+seam answers 2xx the proxy MUST record a `portaliq.complete` row in OpenRegister's audit trail
 naming the task (`openregister` / `portalTask` / uuid, with the session `jti`;
 a fact, never payload) and MUST produce the same ontvangstbevestiging a
 create-action gets: a receipt `portalMessage` with a reference id in the
@@ -82,7 +82,7 @@ file content. A refused (4xx), unavailable (seam 401 → 503) or unreachable
 
 - GIVEN a resident with a bearer session who completes an open task through the proxy with a comment and an accepted upload
 - WHEN the seam confirms the completion (2xx)
-- THEN a `portalAuditEntry` with verb `complete` names the task and carries the session jti, a receipt `portalMessage` with a reference id lands in the resident's inbox, and a linked `portalSubmission` proof log records the answers, comment, outcome and upload names — and a 400/404/409, a seam 401 (503) or a transport failure (502) records none of these
+- THEN a `portaliq.complete` audit-trail row names the task and carries the session jti, a receipt `portalMessage` with a reference id lands in the resident's inbox, and a linked `portalSubmission` proof log records the answers, comment, outcome and upload names — and a 400/404/409, a seam 401 (503) or a transport failure (502) records none of these
 
 - @e2e exclude pinned by `tests/Unit/Controller/PortalTaskProxyControllerTest.php` (`testASuccessfulCompletionIsAuditedAndReceipted`, `testTheCopyNamesOnlyTheEvidenceTheSeamStored`, `testTheSubmissionCopyFallsBackToTheRequestedOutcomeAndUuid`, `testAnEmptySeamUuidFallsBackToTheAddressedUuid`, `testARefusedOrFailedCompletionRecordsNothing`) and, for the receipt + proof log themselves, `tests/Unit/Service/SubmissionReceiptServiceTest.php` (`testATaskCompletionYieldsAReceiptAndALinkedProofLog`, real service over a stubbed writer); the end-to-end run needs the seeded flow rig named above (verified by hand on the dev instance, WOO-569)
 

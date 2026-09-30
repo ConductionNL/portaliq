@@ -102,3 +102,19 @@ test('the site entry stays under its budget and the editor is its own bundle', {
 	assert.ok(entry < 410 * 1024, `portaliq-site.js is ${entry} bytes`)
 	assert.doesNotMatch(readFileSync(join(ROOT, 'js', 'portaliq-site.js'), 'utf8'), /PageGridEditor|createPageEditor/)
 })
+
+// The editor bundle mounts @nextcloud/vue components, which read the build-time
+// `appName` and `appVersion` globals. Without them every mount logs
+// "[ERROR] @nextcloud/vue: The library was used without setting / replacing the
+// appName" in the editor's console (found live on 30 Sep 2026). webpack.config.js
+// re-adds them for the admin bundles for the same reason.
+test('the editor bundle defines appName and appVersion for @nextcloud/vue', async () => {
+	const { createRequire } = await import('node:module')
+	const require = createRequire(import.meta.url)
+	const configs = require(join(ROOT, 'webpack.site.js'))
+	const editor = configs.find((c) => Object.keys(c.entry).includes('portaliq-site-editor'))
+	assert.ok(editor, 'webpack.site.js exports an editor config')
+	const defined = Object.assign({}, ...editor.plugins.filter((p) => p.constructor.name === 'DefinePlugin').map((p) => p.definitions))
+	assert.equal(defined.appName, JSON.stringify('portaliq'), 'appName is defined as "portaliq"')
+	assert.ok(typeof defined.appVersion === 'string' && defined.appVersion.length > 2, 'appVersion is defined')
+})

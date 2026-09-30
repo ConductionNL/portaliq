@@ -44,6 +44,23 @@ A collection may declare `branchField`, a projected field.
 Writes stamp `branchField` from the session when it is set, the same way the
 writer stamps `scopeField`, so a case filed under a branch lands on it.
 
+### D2 as built (30 Sep 2026)
+
+The rule lives in `lib/Service/Branch/PortalBranchScope.php`, applied after the
+subject scope at the reads a resident reaches (`ContributionController::collection()`
+and `::object()`, `PortalCaseListReader` for "My cases", the ownership check of
+`CitizenCaseController`), not inside `PortalObjectReader`: that reader also
+serves many internal reads (sessions, accounts, settings) that have no branch.
+It only removes rows the subject scope allowed, so it cannot widen a read. The
+create action declares its own `branchField` for the stamp, because a write
+matches an action, not a collection. `branchField` on a collection is kept only
+when it names a projected field (`PortalBranchScope::normalise()`, called by
+`CollectionConfigNormaliser`).
+
+The branch claim travels as `branch` and `branchRestricted` in the signed
+bearer (`PortalJwtService::createSession(branch:)`); `GET /portal/api/session`
+returns both for the header.
+
 ## D3. Choosing a branch
 
 `POST /portal/api/session/branch` with `{ branch }` or `{ branch: null }`

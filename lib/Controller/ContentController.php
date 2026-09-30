@@ -30,6 +30,7 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\Contribution\PortalContributionFilter;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\CmsReader;
+use OCA\Portaliq\Service\PortalNoticeReader;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\TrafficConfigResolver;
@@ -63,11 +64,17 @@ use Psr\Log\LoggerInterface;
  * every re-check calls it statically so the ordering can never fork. Same
  * reasoning, and the same suppression, as ContributionController.
  *
- * @SuppressWarnings(PHPMD.ExcessiveParameterList)   -- ten parameters, of which
+ * @SuppressWarnings(PHPMD.ExcessiveParameterList)   -- eleven parameters, of which
  * `$appName` and `$request` are Nextcloud's own `Controller` contract and
- * cannot be dropped or grouped. The class injects eight collaborators of its
+ * cannot be dropped or grouped. The class injects nine collaborators of its
  * own, under the threshold; folding them into a parameter object would hide
  * the dependencies from the container rather than remove them.
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)  -- 13, one over the bound,
+ * since the site record carries the portal's running notices
+ * (operate-maintenance-notice). Each collaborator is one read the public
+ * content API answers; moving the notice read behind another collaborator
+ * would hide the coupling, not remove it.
  */
 class ContentController extends Controller {
 
@@ -85,6 +92,7 @@ class ContentController extends Controller {
 	 * @param PortalSessionService       $session      Resolves the caller's portal session for the content gate.
 	 * @param TrafficConfigResolver      $traffic      Resolves the portal's measurement configuration.
 	 * @param IURLGenerator              $urlGenerator Builds the absolute collector URL.
+	 * @param PortalNoticeReader         $notices      The notices running on the site now.
 	 *
 	 * @return void
 	 */
@@ -99,6 +107,7 @@ class ContentController extends Controller {
 		private readonly PortalSessionService $session,
 		private readonly TrafficConfigResolver $traffic,
 		private readonly IURLGenerator $urlGenerator,
+		private readonly PortalNoticeReader $notices,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -205,6 +214,7 @@ class ContentController extends Controller {
 	 * @return JSONResponse The site, or 404.
 	 *
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-request-must-resolve-to-exactly-one-portal-or-to-none
+	 * @spec openspec/specs/portal-notices/spec.md#requirement-a-notice-shows-on-every-page-during-its-window-req-omn-001
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -245,6 +255,11 @@ class ContentController extends Controller {
 				// is exactly what the client is about to act on.
 				'traffic' => $this->traffic->resolve(portal: $portal),
 				'collector' => $this->urlGenerator->linkToRouteAbsolute('portaliq.traffic.collect'),
+				// Maintenance and warning notices running now
+				// (operate-maintenance-notice). This answer is cached for up
+				// to five minutes, so each carries its end and the client
+				// drops it once that has passed.
+				'notices' => $this->notices->active(portal: (string)($portal['slug'] ?? ''), surface: 'site'),
 			]
 		);
 	}//end site()
