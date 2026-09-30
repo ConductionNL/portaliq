@@ -197,3 +197,99 @@ export function detailFields(publication) {
 
 	return rows
 }
+
+/**
+ * A link a visitor can follow: http(s), or a path on this instance.
+ *
+ * A protocol-relative `//host` is refused with the rest: it leaves the
+ * instance while looking like a path.
+ *
+ * @param {string} value The candidate link.
+ * @return {string} The link, or '' when it is not safe to render.
+ */
+function safeLink(value) {
+	const text = typeof value === 'string' ? value.trim() : ''
+	if (/^https?:\/\//i.test(text) === true) {
+		return text
+	}
+
+	return /^\/(?!\/)/.test(text) === true ? text : ''
+}
+
+/**
+ * A file size the way a Dutch reader writes it: `120 kB`, `2,4 MB`.
+ *
+ * @param {number} bytes The size in bytes.
+ * @return {string} The size, or '' when unknown.
+ *
+ * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-list-and-offer-every-document-for-download-req-wsd-005
+ */
+export function humanSize(bytes) {
+	if (bytes === null || bytes === undefined || bytes === '') {
+		return ''
+	}
+
+	const size = Number(bytes)
+	if (Number.isFinite(size) === false || size < 0) {
+		return ''
+	}
+
+	if (size < 1000) {
+		return `${Math.round(size)} B`
+	}
+
+	if (size < 1000000) {
+		return `${Math.round(size / 1000)} kB`
+	}
+
+	return `${(size / 1000000).toFixed(1).replace('.', ',')} MB`
+}
+
+/**
+ * The file type a visitor recognises: the extension in capitals.
+ *
+ * @param {object} file One file from the envelope.
+ * @return {string} For example `PDF`, or ''.
+ */
+function fileType(file) {
+	const extension = String(file.extension || '').trim()
+	if (extension !== '') {
+		return extension.toUpperCase()
+	}
+
+	const match = String(file.title || file.name || '').match(
+		/\.([A-Za-z0-9]{1,8})$/,
+	)
+	return match ? match[1].toUpperCase() : ''
+}
+
+/**
+ * The documents of a publication, from opencatalogi's attachment envelope.
+ *
+ * The envelope is OpenRegister's file listing, `{results: [...], total}`; a
+ * bare array is read too. Per file only what the page shows is kept, and the
+ * link is dropped when it is not one a visitor can safely follow.
+ *
+ * @param {object|Array} envelope The attachments answer.
+ * @return {Array<object>} `{id, title, type, size, href}` rows.
+ *
+ * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-list-and-offer-every-document-for-download-req-wsd-005
+ */
+export function toDocuments(envelope) {
+	let files = []
+	if (Array.isArray(envelope) === true) {
+		files = envelope
+	} else if (envelope && Array.isArray(envelope.results) === true) {
+		files = envelope.results
+	}
+
+	return files
+		.filter((file) => file && typeof file === 'object')
+		.map((file) => ({
+			id: String(file.id ?? ''),
+			title: String(file.title || file.name || 'Document'),
+			type: fileType(file),
+			size: humanSize(file.size),
+			href: safeLink(file.downloadUrl) || safeLink(file.accessUrl),
+		}))
+}
