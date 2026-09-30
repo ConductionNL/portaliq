@@ -115,11 +115,13 @@ class PortalObjectReader {
 	 *                                        declared `fields` whitelist. Runs
 	 *                                        AFTER verification, so it never
 	 *                                        decides which rows return.
+	 * @param PortalFilteredRows $filteredRows The via outer query and the declared-filter check.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
 		private readonly PortalFieldProjector $projector,
+		private readonly PortalFilteredRows $filteredRows=new PortalFilteredRows(new \Psr\Log\NullLogger()),
 	) {
 	}//end __construct()
 
@@ -314,6 +316,7 @@ class PortalObjectReader {
 	 * @param mixed $via Optional one-hop join declaration (array), fail-closed on anything else.
 	 * @param string $audience The subject's audience (portalAccount lookup filter).
 	 * @param mixed $fields Optional projection whitelist (array of property names); null = full row.
+	 * @param array<string, mixed> $filter The collection's declared filter; a row outside it is null.
 	 *
 	 * @return array<string, mixed>|null The subject's object, or null (→ 404).
 	 *
@@ -369,7 +372,8 @@ class PortalObjectReader {
 		}
 
 		$row = $this->fetchById(objectService: $objectService, register: $register, schema: $schema, id: $id);
-		if ($row === null || $this->rowMatchesFilter(row: $row, filter: $filter, scopeField: $scopeField) === false) {
+		$row = $this->withinFilter(row: $row, filter: $filter, scopeField: $scopeField);
+		if ($row === null) {
 			return null;
 		}
 
@@ -403,33 +407,25 @@ class PortalObjectReader {
 	}//end readObject()
 
 	/**
-	 * Whether a row fetched by id satisfies the collection's declared
-	 * `filter`, the narrowing the list read hands to OpenRegister. A row the
-	 * list would never show is not shown by id either (a report card under
-	 * review stays hidden from a parent). The scope field is left to the
-	 * scope checks, exactly as scopedFilters() lets it win.
+	 * The row when it satisfies the collection's declared filter, else null:
+	 * a row the list would never show is not shown by id either.
 	 *
-	 * @param array<string, mixed> $row The fetched row.
+	 * @param array<string, mixed>|null $row The fetched row.
 	 * @param array<string, mixed> $filter The declared filter.
 	 * @param string $scopeField The collection's scope field.
 	 *
-	 * @return bool
+	 * @return array<string, mixed>|null
 	 *
 	 * @spec openspec/changes/via-read-scoped-query/tasks.md#T2
 	 */
-	private function rowMatchesFilter(array $row, array $filter, string $scopeField): bool {
-		foreach ($filter as $key => $expected) {
-			if (is_string($key) === false || $key === '' || $key === $scopeField) {
-				continue;
-			}
-
-			if ($this->dotGet(row: $row, path: $key) !== $expected) {
-				return false;
-			}
+	private function withinFilter(?array $row, array $filter, string $scopeField): ?array {
+		if ($row === null || $this->filteredRows->matchesFilter(row: $row, filter: $filter, scopeField: $scopeField) === false) {
+			return null;
 		}
 
-		return true;
-	}//end rowMatchesFilter()
+		return $row;
+	}//end withinFilter()
+
 
 	/**
 	 * Read one row as the signed-in Nextcloud user, with OpenRegister's own
@@ -815,9 +811,16 @@ class PortalObjectReader {
 		// The via is validated, so `match` is absent, 'id', or 'scopeField'.
 		$match = (string)($via['match'] ?? 'id');
 
-		$rows = $this->readOuterRows(
+		try {
+			$objectService->setRegister(register: $register);
+			$objectService->setSchema(schema: $schema);
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: OR read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
+			return [];
+		}
+
+		$rows = $this->filteredRows->outerRows(
 			objectService: $objectService,
-			register: $register,
 			schema: $schema,
 			scopeField: $scopeField,
 			targets: $targets,
@@ -832,108 +835,7 @@ class PortalObjectReader {
 		return $this->filterTargetRows(rows: $rows, targets: $targets, organisation: $organisation, match: $match, scopeField: $scopeField);
 	}//end readViaCollection()
 
-	/**
-	 * Ask OpenRegister for the outer rows of a via read.
-	 *
-	 * In the reverse mode the query names each verified target in the
-	 * collection's own scope field, so OpenRegister returns the subject's
-	 * own rows rather than the first page of the whole schema (a schema with
-	 * more rows than the limit silently dropped the subject's rows before).
-	 * The declared `filter` narrows the query in both modes, and the scope
-	 * field always wins over it (scopedFilters). The per-row membership and
-	 * tenant checks in filterTargetRows() stay the security boundary.
-	 *
-	 * @param object $objectService OpenRegister's ObjectService.
-	 * @param string $register The target register.
-	 * @param string $schema The target schema.
-	 * @param string $scopeField The collection's own scope field.
-	 * @param array<string, true> $targets The verified target set.
-	 * @param string $match 'id' (forward) or 'scopeField' (reverse).
-	 * @param int $limit Maximum rows to return.
-	 * @param array<string, mixed> $filter The declared narrowing filter.
-	 *
-	 * @return array<int, mixed>|null The raw rows, or null when the read failed.
-	 *
-	 * @spec openspec/changes/via-read-scoped-query/tasks.md#T1
-	 *
-	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- one parameter per
-	 * part of the declared collection, as in readViaCollection.
-	 */
-	private function readOuterRows(
-		object $objectService,
-		string $register,
-		string $schema,
-		string $scopeField,
-		array $targets,
-		string $match,
-		int $limit,
-		array $filter,
-	): ?array {
-		$queries = [$this->scopedFilters(filter: $filter, scopeField: '', scopeValue: '')];
-		if ($match === 'scopeField' && $scopeField !== '') {
-			$queries = [];
-			foreach (array_keys($targets) as $target) {
-				$queries[] = $this->scopedFilters(filter: $filter, scopeField: $scopeField, scopeValue: (string)$target);
-			}
-		}
 
-		$rows = [];
-		try {
-			$objectService->setRegister(register: $register);
-			$objectService->setSchema(schema: $schema);
-			foreach ($queries as $filters) {
-				$remaining = ($limit - count($rows));
-				if ($remaining <= 0) {
-					break;
-				}
-
-				$page = $objectService->findAll(config: ['filters' => $filters, 'limit' => $remaining, 'offset' => 0], _rbac: false, _multitenancy: false);
-				if (is_array($page) === true) {
-					$rows = $this->withoutDuplicates(rows: $rows, page: $page);
-				}
-			}
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: OR read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
-			return null;
-		}
-
-		return $rows;
-	}//end readOuterRows()
-
-	/**
-	 * Append a page of rows, skipping a row already read by an earlier query
-	 * (a list-valued scope field can name two of the subject's targets).
-	 *
-	 * @param array<int, mixed> $rows The rows read so far.
-	 * @param array<int|string, mixed> $page The next page.
-	 *
-	 * @return array<int, mixed> The rows with the new ones appended.
-	 */
-	private function withoutDuplicates(array $rows, array $page): array {
-		$seen = [];
-		foreach ($rows as $row) {
-			$normalised = $this->normalise(row: $row);
-			foreach ($this->rowIds(row: ($normalised ?? [])) as $id) {
-				$seen[$id] = true;
-			}
-		}
-
-		foreach ($page as $row) {
-			$normalised = $this->normalise(row: $row);
-			$ids = $this->rowIds(row: ($normalised ?? []));
-			if (array_intersect_key(array_flip($ids), $seen) !== []) {
-				continue;
-			}
-
-			foreach ($ids as $id) {
-				$seen[$id] = true;
-			}
-
-			$rows[] = $row;
-		}
-
-		return $rows;
-	}//end withoutDuplicates()
 
 	/**
 	 * Run the join pre-pass and collect the verified target references: query
