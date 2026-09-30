@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: EUPL-1.2
  */
 
+import { cellOf } from '../../editor/geometry.js'
+
 /**
  * Where a page's widgets land: the two pure functions behind `WidgetGrid`.
  *
@@ -65,15 +67,18 @@ export function runsFor(widgets, isBand) {
  * @return {object} `{gridColumn, gridRow}` style bindings.
  *
  * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-hero-must-cap-its-calls-to-action-and-keep-one-outline-entry-req-ptb-006
+ * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-the-editor-and-the-public-page-must-place-widgets-identically-req-pie-008
  */
 export function cellStyle(widget, rowOffset = 0) {
-	const x = Math.max(0, Math.min(11, Number(widget.gridX) || 0))
-	const width = Math.max(1, Math.min(12 - x, Number(widget.gridWidth) || 12))
-	const height = Math.max(1, Number(widget.gridHeight) || 1)
-	const row = Math.max(0, (Number(widget.gridY) || 0) - (Number(rowOffset) || 0))
+	// The column, width and height come from the SAME function the editor
+	// stores its geometry with (portal-in-place-editing REQ-PIE-008), so the
+	// editor and the public page cannot place a widget differently. Only the
+	// row is re-based onto the run.
+	const cell = cellOf(widget)
+	const row = Math.max(0, cell.gridY - (Number(rowOffset) || 0))
 
 	return {
-		gridColumn: `${x + 1} / span ${width}`,
-		gridRow: `${row + 1} / span ${height}`,
+		gridColumn: `${cell.gridX + 1} / span ${cell.gridWidth}`,
+		gridRow: `${row + 1} / span ${cell.gridHeight}`,
 	}
 }

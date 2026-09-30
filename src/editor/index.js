@@ -21,6 +21,7 @@
  * - `createPageSaver({get, put, url})`: `load(id)`, `save(id, payload, version)`
  *   with the version check; `PageConflictError`, `isConflict()`.
  * - `createEditHistory({limit?})`, `HISTORY_LIMIT`, `historyIntent(event)`.
+ * - Geometry, shared with the public renderer: `cellOf, cellStyleOf`.
  * - Grid model: `GRID_COLUMNS, normaliseWidgets, storedWidget, nextWidgetId,
  *   addWidget, removeWidget, applyLayout, setWidgetProp, replaceWidgetProps,
  *   cloneWidgets`.
@@ -34,6 +35,7 @@
  */
 
 export { createEditHistory, HISTORY_LIMIT, historyIntent } from './editHistory.js'
+export { cellOf, cellStyleOf } from './geometry.js'
 export {
 	addWidget,
 	applyLayout,

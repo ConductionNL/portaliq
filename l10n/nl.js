@@ -1850,7 +1850,16 @@ OC.L10N.register(
         "Discard draft": "Concept verwijderen",
         "View on the site": "Bekijk op de site",
         "Reload the page": "Pagina opnieuw laden",
-        "Unsaved changes. Save the draft to keep them.": "Niet opgeslagen wijzigingen. Sla het concept op om ze te bewaren."
+        "Unsaved changes. Save the draft to keep them.": "Niet opgeslagen wijzigingen. Sla het concept op om ze te bewaren.",
+        "The PKCE `code_verifier` presented to the token endpoint on callback, matching the `code_challenge` sent at start.": "De PKCE-`code_verifier` die bij de callback aan het token-endpoint wordt aangeboden, passend bij de `code_challenge` van de start.",
+        "For a failed `messageBox` row: why no letter left. `not_installed` when integriq is absent, `unhandled` when nothing answered, or the code integriq's refusal carried.": "Bij een mislukte `messageBox`-regel: waarom er geen brief vertrok. `not_installed` als integriq ontbreekt, `unhandled` als niets antwoordde, of de code uit de weigering van integriq.",
+        "Edit this page": "Deze pagina bewerken",
+        "Editing": "Bewerken",
+        "Stop editing": "Stoppen met bewerken",
+        "You have unsaved changes. Save the draft first, or stop editing and lose them.": "Je hebt wijzigingen die niet zijn opgeslagen. Sla eerst het concept op, of stop met bewerken en raak ze kwijt.",
+        "Stop editing and lose the changes": "Stoppen en wijzigingen kwijtraken",
+        "Add a widget": "Een widget toevoegen",
+        "Pick a widget to place on this page. You can move and resize it afterwards.": "Kies een widget om op deze pagina te plaatsen. Daarna kun je hem verplaatsen en van formaat veranderen."
     },
     "nplurals=2; plural=(n != 1);"
 )
