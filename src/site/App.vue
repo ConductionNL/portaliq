@@ -81,6 +81,12 @@
 				@search="goSearch" />
 		</template>
 
+		<!-- Maintenance and warning notices running now (operate-maintenance-notice). -->
+		<SiteNotices
+			v-if="(site.notices || []).length > 0"
+			:notices="site.notices"
+			:locale="site.locale || 'nl'" />
+
 		<!--
 			`.container` IS THE CONTENT COLUMN, AND IT IS NOT OPTIONAL.
 
@@ -359,6 +365,12 @@ const SiteEditButton = defineAsyncComponent(
 	() => import('./components/SiteEditButton.vue'),
 )
 
+// Loaded only when a notice is running, so a portal without one pays nothing
+// for it in the site bundle (operate-maintenance-notice).
+const SiteNotices = defineAsyncComponent(
+	() => import('./components/SiteNotices.vue'),
+)
+
 /**
  * The built-in site renderer.
  *
@@ -375,6 +387,7 @@ export default {
 		FooterColumns,
 		MarkdownBlock,
 		SiteEditButton,
+		SiteNotices,
 		WidgetGrid,
 	},
 

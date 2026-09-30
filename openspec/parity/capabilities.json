@@ -8183,7 +8183,7 @@
 			"id": "dem-cl-maintenance-notice",
 			"area": "operate",
 			"name": "Show a maintenance or warning notice to visitors on the portal's pages.",
-			"portaliq": "partial",
+			"portaliq": "yes",
 			"open-inwoner": "yes",
 			"nl-portal": "yes",
 			"xxllnc-pip": "partial",
@@ -8197,12 +8197,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/content-management-system/alerts-and-announcements 'Alerts are for high-priority information (e.g. planned downtime alerts, security alerts, etc.) and appear with a red Important tag', placed with the Alerts widget. [was unknown]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "grep -riE 'maintenance|announcement|banner' src/site src/portal lib/Service/CmsReader.php: no notice feature; pages are editable through the page designer (existing row ops-editor-vs-admin-pages)",
-				"reachedOn": "/site pages via the page designer's markdown block, one page at a time",
+				"state": "built",
+				"evidence": "lib/Settings/portaliq_register.json portalNotice 0.1.0 (portal, message, level, window with a required end, surfaces site/portal, status); lib/Service/PortalNoticeReader.php::active() (published, portal, surface, window, newest first, at most three); lib/Controller/ContentController.php site() 'notices' and lib/Controller/PortalPageController.php runtimeConfig 'notices'; src/site/components/SiteNotices.vue and src/portal/components/PortalNotices.jsx above <main> (close for the visit, end checked on the client); lib/Listener/NoticeWriteGuardListener.php (end after start); PageEditorService gives the editor groups the writes",
+				"reachedOn": "admin: Notices -> add a notice; visitor: every page of /site and of /portal while it runs",
 				"owner": "ConductionNL/portaliq",
-				"note": "An editor can write a warning into a page's content, but there is no site-wide notice or banner, nothing time-boxed, and nothing on the signed-in /portal SPA. Specified in openspec/changes/operate-maintenance-notice (OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"note": "Built 2026-09-29 (operate-maintenance-notice). Site-wide, time-boxed, on the public site and the signed-in portal, closable for the visit. The public site answer may be cached up to five minutes, so a notice can show late but never after its end. One notice per language.",
+				"origin": "code",
+				"change": "2026-09-29-operate-maintenance-notice"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",

@@ -88,9 +88,15 @@ const site = {
 		// 396 KiB, the bump 404 KiB, with no other module in the entry growing.
 		// The markdown renderer draws the body of every markdown page, so
 		// loading it on demand would delay the content itself.
+		//
+		// 412 KiB, up from 410, since operate-maintenance-notice. The entry sat
+		// 182 bytes under 410 KiB (419,658 B measured on development 19a7019),
+		// and mounting the notices adds 1,274 B (420,932 B). The notice
+		// component and its alert styles load on demand, only when a notice
+		// runs; what stays in the entry is the mount point and its loader.
 		hints: isDev ? false : 'error',
-		maxAssetSize: 410 * 1024,
-		maxEntrypointSize: 410 * 1024,
+		maxAssetSize: 412 * 1024,
+		maxEntrypointSize: 412 * 1024,
 	},
 }
 

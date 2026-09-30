@@ -10,6 +10,7 @@ use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalThemeResolver;
 use OCA\Portaliq\Service\Cms\SiteHead;
 use OCA\Portaliq\Service\CmsReader;
+use OCA\Portaliq\Service\PortalNoticeReader;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\IRequest;
 use OCP\IURLGenerator;
@@ -114,7 +115,8 @@ class PortalPageControllerTest extends TestCase {
 			$this->createMock(IURLGenerator::class),
 			$this->createMock(PortalResolver::class),
 			$this->createMock(PortalThemeResolver::class),
-			new SiteHead($this->createMock(CmsReader::class))
+			new SiteHead($this->createMock(CmsReader::class)),
+			$this->createMock(PortalNoticeReader::class)
 		))->index();
 
 		$this->assertSame('en-US', $received);
@@ -161,7 +163,8 @@ class PortalPageControllerTest extends TestCase {
 			$this->createMock(IURLGenerator::class),
 			$this->createMock(PortalResolver::class),
 			$this->createMock(PortalThemeResolver::class),
-			new SiteHead($this->createMock(CmsReader::class))
+			new SiteHead($this->createMock(CmsReader::class)),
+			$this->createMock(PortalNoticeReader::class)
 		))->index();
 
 		$this->assertSame(['portal' => 'demo', 'org' => 'dev-org'], $seen);
@@ -191,6 +194,30 @@ class PortalPageControllerTest extends TestCase {
 		$this->assertSame('tokens/opencatalogi', $params['themeStylesheet']);
 
 	}//end testIndexHandsTheTemplateTheResolvedThemeStylesheet()
+
+
+	/**
+	 * operate-maintenance-notice T03 (REQ-OMN-001): the signed-in portal's
+	 * runtime config carries the notices active on the portal surface, and
+	 * a request that resolves no portal carries none.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-notices/spec.md#requirement-a-notice-shows-on-every-page-during-its-window-req-omn-001
+	 */
+	public function testRuntimeConfigCarriesActiveNotices(): void {
+		$notice  = ['id' => 'n-1', 'message' => 'Onderhoud', 'level' => 'info', 'linkLabel' => '', 'linkUrl' => '', 'endsAt' => '2026-10-04T02:00:00+00:00'];
+		$notices = $this->createMock(PortalNoticeReader::class);
+		$notices->expects($this->once())->method('active')->with('demo', 'portal')->willReturn([$notice]);
+
+		$params = $this->controller(orgSlug: '', portal: ['slug' => 'demo'], notices: $notices)->index()->getParams();
+		$this->assertSame([$notice], $params['runtimeConfig']['notices']);
+
+		$none = $this->createMock(PortalNoticeReader::class);
+		$none->expects($this->never())->method('active');
+		$params = $this->controller(orgSlug: '', notices: $none)->index()->getParams();
+		$this->assertSame([], $params['runtimeConfig']['notices']);
+	}//end testRuntimeConfigCarriesActiveNotices()
 
 
 	/**
@@ -464,7 +491,8 @@ class PortalPageControllerTest extends TestCase {
 		?string $logoFile = null,
 		?string $themeAppId = 'thematiq',
 		?array $page = null,
-		string $route = ''
+		string $route = '',
+		?PortalNoticeReader $notices = null
 	): PortalPageController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getParam')->willReturnCallback(
@@ -561,7 +589,8 @@ class PortalPageControllerTest extends TestCase {
 			$urlGenerator,
 			$portalResolver,
 			$themeResolver,
-			new SiteHead($reader)
+			new SiteHead($reader),
+			($notices ?? $this->createMock(PortalNoticeReader::class))
 		);
 	}//end controller()
 

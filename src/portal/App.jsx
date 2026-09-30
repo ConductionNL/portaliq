@@ -18,6 +18,7 @@ import MessagesPage from '@portal/components/MessagesPage.jsx'
 import MyCasesPage from '@portal/components/MyCasesPage.jsx'
 import NewsPage, { hasNews } from '@portal/components/NewsPage.jsx'
 import PageView from '@portal/components/PageView.jsx'
+import PortalNotices from '@portal/components/PortalNotices.jsx'
 import TasksPage from '@portal/components/TasksPage.jsx'
 import { actingForHeld, keepActingFor, readActingFor } from '@portal/lib/myCases.js'
 import { consumeOpenTarget, forgetOpenTarget, navKeyFor } from '@portal/lib/openRecord.js'
@@ -477,6 +478,8 @@ export default function App({ config, t: tProp }) {
 					))}
 				</nav>
 			)}
+
+			<PortalNotices notices={config.notices} t={t} />
 
 			<main className="portaliq-main">
 				{state.loading && <Loading t={t} />}
