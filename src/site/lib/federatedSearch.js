@@ -397,8 +397,9 @@ export function writeSearchState(url, state, facetFields) {
 /**
  * The search as the saved-search query of contract C2.
  *
- * `organization` is the publication schema's field name; C2 calls the same
- * filter `organisation`. Any other facet field is not part of C2 and is left
+ * `wooCategory` and `organization` are the publication schema's field names;
+ * C2 (and opencatalogi's `GET /api/search`) call the same filters
+ * `informatiecategorie` and `organisation`. Any other facet field is not part of C2 and is left
  * out rather than invented.
  *
  * @param {object} state   The search state.
@@ -413,7 +414,9 @@ export function searchQuery(state, catalog = '') {
 	return {
 		text: String((state && state.query) || ''),
 		filters: {
-			informatiecategorie: [...(facets.informatiecategorie || [])],
+			informatiecategorie: [
+				...(facets.wooCategory || facets.informatiecategorie || []),
+			],
 			organisation: [...(facets.organization || facets.organisation || [])],
 			periodFrom: validDate(state && state.periodFrom),
 			periodTo: validDate(state && state.periodTo),

@@ -122,7 +122,7 @@ test('save search body', () => {
 	const query = {
 		text: 'fietspad',
 		filters: {
-			informatiecategorie: ['woo-verzoeken'],
+			informatiecategorie: ['infocat014'],
 			organisation: [],
 			periodFrom: '',
 			periodTo: '',

@@ -606,14 +606,14 @@ export default {
 		 */
 		facetFields: {
 			type: Array,
-			default: () => ['informatiecategorie', 'organization'],
+			default: () => ['wooCategory', 'organization'],
 		},
 
 		/** A heading per facet field; a field without one shows its name. */
 		facetLabels: {
 			type: Object,
 			default: () => ({
-				informatiecategorie: 'Informatiecategorie',
+				wooCategory: 'Informatiecategorie',
 				organization: 'Organisatie',
 				themes: 'Thema',
 			}),

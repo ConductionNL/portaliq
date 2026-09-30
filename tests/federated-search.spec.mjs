@@ -384,13 +384,13 @@ console.log('facets per field')
 		buildRequestUrl({
 			...BASE,
 			facetField: undefined,
-			facetFields: ['informatiecategorie', 'organization'],
-			facets: { informatiecategorie: ['woo-verzoeken'], organization: [] },
+			facetFields: ['wooCategory', 'organization'],
+			facets: { wooCategory: ['infocat014'], organization: [] },
 		}),
 	)
 	assertEqual(
 		'asks a facet for the first field',
-		url.searchParams.get('_facets[informatiecategorie][type]'),
+		url.searchParams.get('_facets[wooCategory][type]'),
 		'terms',
 	)
 	assertEqual(
@@ -400,8 +400,8 @@ console.log('facets per field')
 	)
 	assertEqual(
 		'sends the ticked category as a filter',
-		url.searchParams.getAll('informatiecategorie'),
-		['woo-verzoeken'],
+		url.searchParams.getAll('wooCategory'),
+		['infocat014'],
 	)
 	assertTrue(
 		'sends no filter for a field without a selection',
@@ -457,12 +457,12 @@ console.log('period range')
 console.log('address round trip')
 
 {
-	const fields = ['informatiecategorie', 'organization']
+	const fields = ['wooCategory', 'organization']
 	const state = {
 		query: 'fietspad',
 		page: 1,
 		sort: '',
-		facets: { informatiecategorie: ['woo-verzoeken'], organization: [] },
+		facets: { wooCategory: ['infocat014'], organization: [] },
 		periodFrom: '2026-01-01',
 		periodTo: '',
 	}
@@ -474,8 +474,8 @@ console.log('address round trip')
 	assertEqual('keeps the route', url.searchParams.get('route'), '/zoeken')
 	assertEqual(
 		'writes the category per field',
-		url.searchParams.get('f.informatiecategorie'),
-		'woo-verzoeken',
+		url.searchParams.get('f.wooCategory'),
+		'infocat014',
 	)
 	assertEqual(
 		'writes the from date',
@@ -506,14 +506,14 @@ assertEqual(
 	'describes the search in the C2 shape, organization as organisation',
 	searchQuery({
 		query: 'fietspad',
-		facets: { informatiecategorie: [], organization: ['org-1'] },
+		facets: { wooCategory: ['infocat014'], organization: ['org-1'] },
 		periodFrom: '',
 		periodTo: '',
 	}),
 	{
 		text: 'fietspad',
 		filters: {
-			informatiecategorie: [],
+			informatiecategorie: ['infocat014'],
 			organisation: ['org-1'],
 			periodFrom: '',
 			periodTo: '',
