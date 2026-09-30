@@ -162,7 +162,7 @@ class OidcClaimMapperService {
 			'audienceMap' => (string)($claimMap['audience'] ?? $preset['audience']),
 			'loaClaim' => (string)($rawConfig['loaClaim'] ?? $preset['loaClaim']),
 			'loaMap' => $loaMap,
-			// signin-eherkenning-branch: the claim that carries the
+			// Change signin-eherkenning-branch: the claim that carries the
 			// vestigingsnummer. No preset names one, because brokers name it
 			// differently; an organisation sets it in its claimMap.
 			'branchClaim' => (string)($claimMap['branch'] ?? ''),

@@ -126,7 +126,7 @@ class PortalJwtService {
 	 *                           so the absolute session lifetime can be enforced from
 	 *                           the true origin, not the most recent mint. Defaults to
 	 *                           `$iat` (a fresh login) when not supplied.
-	 * @param array{number?: string, restricted?: bool} $branch The branch in effect and whether the login restricted the session to it (signin-eherkenning-branch).
+	 * @param array{number?: string, restricted?: bool} $branch The branch in effect and whether the login restricted the session to it.
 	 *
 	 * @return string Compact JWT string.
 	 *
@@ -164,7 +164,7 @@ class PortalJwtService {
 			'authTime' => ($authTime ?? $iat),
 		];
 
-		// signin-eherkenning-branch: the branch in effect, and whether the
+		// Change signin-eherkenning-branch: the branch in effect, and whether the
 		// login restricted the session to it. Signed only when set, so a
 		// session without a branch carries exactly the claims it did before.
 		if ((string)($branch['number'] ?? '') !== '') {

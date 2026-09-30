@@ -463,7 +463,7 @@ class PortalSessionService {
 			// for a token minted before this claim existed, which refreshSession()
 			// treats as "cannot establish an origin" and refuses (fail-closed).
 			'authTime' => (int)($claims['authTime'] ?? 0),
-			// signin-eherkenning-branch: the branch in effect ('' for none)
+			// Change signin-eherkenning-branch: the branch in effect ('' for none)
 			// and whether the login restricted the session to it.
 			'branch' => (new BranchNumber())->normalise(value: ($claims['branch'] ?? null)),
 			'branchRestricted' => (($claims['branchRestricted'] ?? false) === true && ($claims['branch'] ?? '') !== ''),

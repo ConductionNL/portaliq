@@ -66,6 +66,7 @@ class PortalCaseListReader {
 	 *                                                     subject's own cases
 	 *                                                     never depend on the
 	 *                                                     mandate record.
+	 * @param PortalBranchScope $branches The branch filter of signin-eherkenning-branch.
 	 */
 	public function __construct(
 		private readonly PortalObjectReader $reader,
@@ -480,7 +481,7 @@ class PortalCaseListReader {
 			filter: (array)($collection['filter'] ?? [])
 		);
 
-		// signin-eherkenning-branch D2: a branch session sees its branch only.
+		// Change signin-eherkenning-branch D2: a branch session sees its branch only.
 		return $this->branches->rows(subject: $subject, collection: $collection, rows: $rows);
 	}//end readCases()
 }//end class

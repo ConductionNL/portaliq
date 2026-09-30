@@ -19,7 +19,8 @@ const BRANCH_NUMBER = /^\d{12}$/
  * @spec openspec/changes/signin-eherkenning-branch/tasks.md#T06
  */
 export function branchInEffect(session, t) {
-	const number = session && typeof session.branch === 'string' ? session.branch : ''
+	const number =
+		session && typeof session.branch === 'string' ? session.branch : ''
 	if (!BRANCH_NUMBER.test(number)) {
 		return ''
 	}

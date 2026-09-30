@@ -110,6 +110,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 * @param MandatedCaseReader|null $mandatedCases Reads a case listed under a
 	 *                                               mandate (cases-my-cases-page).
 	 *                                               Absent opens only own cases.
+	 * @param PortalBranchScope $branches The branch filter of signin-eherkenning-branch.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -533,7 +534,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			contributingApp: $match['app'],
 			audience: (string)($subject['audience'] ?? '')
 		);
-		// signin-eherkenning-branch D2: a branch session changes only its
+		// Change signin-eherkenning-branch D2: a branch session changes only its
 		// branch's cases, and answers the same as for a case not its own.
 		if ($case === null || $this->branches->admits(subject: $subject, collection: $action, row: $case) === false) {
 			return $this->refuse(

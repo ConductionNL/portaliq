@@ -155,6 +155,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *                                           collection
 	 *                                           (operate-show-per-case-type).
 	 *                                           Absent hides nothing.
+	 * @param PortalBranchScope $branches The branch filter of signin-eherkenning-branch.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -526,7 +527,7 @@ class ContributionController extends Controller implements PortalProtected {
 			filter: (array)($collection['filter'] ?? [])
 		);
 
-		// signin-eherkenning-branch D2: a branch session sees its branch only.
+		// Change signin-eherkenning-branch D2: a branch session sees its branch only.
 		$objects = $this->branches->rows(subject: $subject, collection: $collection, rows: $objects);
 
 		$hidden = ($this->caseTypes?->hiddenForCollection(request: $this->request, subject: $subject, collection: $collection) ?? []);
@@ -1015,7 +1016,7 @@ class ContributionController extends Controller implements PortalProtected {
 			scopeField: (string)($action['scopeField'] ?? 'subjectRef'),
 			subjectRef: (string)($subject['subjectRef'] ?? ''),
 			organisation: (string)($subject['organisation'] ?? ''),
-			// signin-eherkenning-branch D2: a case filed in a branch session
+			// Change signin-eherkenning-branch D2: a case filed in a branch session
 			// lands on that branch.
 			data: $this->branches->stamp(subject: $subject, action: $action, data: $data)
 		);
