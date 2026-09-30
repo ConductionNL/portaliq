@@ -58,7 +58,12 @@ class ItemListConfigNormaliser {
 			$declared = $collection[self::KEY];
 			unset($collection[self::KEY]);
 			if (is_array($declared) === true && (new TimelineProviderMethod())->accepts(name: ($declared['provider'] ?? null)) === true) {
-				$list = ['label' => (is_string($declared['label'] ?? null) === true) ? $declared['label'] : '', 'provider' => $declared['provider']];
+				$label = '';
+				if (is_string($declared['label'] ?? null) === true) {
+					$label = $declared['label'];
+				}
+
+				$list = ['label' => $label, 'provider' => $declared['provider']];
 				if ($this->removes(collection: $collection, actions: $actions, id: ($declared['removeAction'] ?? null)) === true) {
 					$list['removeAction'] = $declared['removeAction'];
 				}

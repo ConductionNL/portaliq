@@ -174,19 +174,16 @@ class PortalRowActionController extends Controller implements PortalProtected {
 		$contributions = ($this->registry->aggregateFor($subject)['contributions'] ?? []);
 		foreach ($contributions as $contribution) {
 			foreach (($contribution['collections'] ?? []) as $collection) {
-				if (($collection['register'] ?? '') !== $register
-					|| ($collection['schema'] ?? '') !== $schema
-					|| ($collectionId !== '' && ($collection['id'] ?? '') !== $collectionId)
-				) {
+				if ($this->isRequested(collection: $collection, requested: [$register, $schema, $collectionId]) === false) {
 					continue;
 				}
 
 				// An action another app attaches to this collection
 				// (woo-journey-entry-points D3): `?actionApp=` names that app.
 				$actionApp = (string)$this->request->getParam('actionApp', '');
-				$collectionApp = (string)($contribution['app'] ?? '');
-				if ($actionApp !== '' && $actionApp !== $collectionApp) {
-					return $this->attachedMatch(contributions: $contributions, subject: $subject, collection: $collection, collectionApp: $collectionApp, actionApp: $actionApp, actionId: $actionId);
+				if ($actionApp !== '' && $actionApp !== (string)($contribution['app'] ?? '')) {
+					$target = ['collection' => $collection, 'app' => (string)($contribution['app'] ?? '')];
+					return $this->attachedMatch(contributions: $contributions, subject: $subject, target: $target, actionApp: $actionApp, actionId: $actionId);
 				}
 
 				// The first collection on this register and schema decides, as
@@ -204,23 +201,41 @@ class PortalRowActionController extends Controller implements PortalProtected {
 	}//end authorisedRowAction()
 
 	/**
+	 * Whether a collection is the one the route names: its register and
+	 * schema, and its id when `?collection=` gives one.
+	 *
+	 * @param array<string, mixed>                $collection The collection.
+	 * @param array{0: string, 1: string, 2: string} $requested Register, schema, collection id or ''.
+	 *
+	 * @return bool
+	 */
+	private function isRequested(array $collection, array $requested): bool {
+		[$register, $schema, $collectionId] = $requested;
+
+		return ($collection['register'] ?? '') === $register
+			&& ($collection['schema'] ?? '') === $schema
+			&& ($collectionId === '' || ($collection['id'] ?? '') === $collectionId);
+	}//end isRequested()
+
+	/**
 	 * The match for an action another app attaches to this collection, or null.
 	 *
 	 * The row is still read through THIS collection's scope (`rowApp`); the
 	 * action is forwarded to its own app (`app`).
 	 *
 	 * @param array<int, array<string, mixed>> $contributions The subject's aggregate.
-	 * @param array<string, mixed> $subject       The resolved subject.
-	 * @param array<string, mixed> $collection    The target collection.
-	 * @param string               $collectionApp The app that owns the collection.
-	 * @param string               $actionApp     The app of the action.
-	 * @param string               $actionId      The action id.
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param array{collection: array<string, mixed>, app: string} $target The target collection and its app.
+	 * @param string $actionApp The app of the action.
+	 * @param string $actionId The action id.
 	 *
 	 * @return array{collection: array<string, mixed>, action: array<string, mixed>, app: string, rowApp: string}|null
 	 *
 	 * @spec openspec/changes/woo-journey-entry-points/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-attach-to-another-apps-collection-req-wje-004
 	 */
-	private function attachedMatch(array $contributions, array $subject, array $collection, string $collectionApp, string $actionApp, string $actionId): ?array {
+	private function attachedMatch(array $contributions, array $subject, array $target, string $actionApp, string $actionId): ?array {
+		$collection = $target['collection'];
+		$collectionApp = $target['app'];
 		$action = (new AttachedActionResolver())->attachedAction(
 			contributions: $contributions,
 			collectionApp: $collectionApp,

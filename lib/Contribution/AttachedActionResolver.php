@@ -109,29 +109,39 @@ class AttachedActionResolver {
 	 * @spec openspec/changes/woo-journey-entry-points/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-attach-to-another-apps-collection-req-wje-004
 	 */
 	public function attachedAction(array $contributions, string $collectionApp, array $collection, string $actionApp, string $actionId): ?array {
-		$listed = false;
-		foreach ((array)($collection[self::KEY] ?? []) as $entry) {
-			if (is_array($entry) === true && ($entry['app'] ?? '') === $actionApp && ($entry['id'] ?? '') === $actionId) {
-				$listed = true;
-			}
-		}
-
-		if ($listed === false) {
+		if ($this->isListed(collection: $collection, actionApp: $actionApp, actionId: $actionId) === false) {
 			return null;
 		}
 
+		$schema = (string)($collection['schema'] ?? '');
 		foreach ($this->attaching(contributions: $contributions) as $entry) {
-			if ($entry['app'] === $actionApp
-				&& $entry['action']['id'] === $actionId
-				&& $entry['target'] === $collectionApp
-				&& $entry['schema'] === (string)($collection['schema'] ?? '')
-			) {
+			$same = [$entry['app'], $entry['action']['id'], $entry['target'], $entry['schema']] === [$actionApp, $actionId, $collectionApp, $schema];
+			if ($same === true) {
 				return $entry['action'];
 			}
 		}
 
 		return null;
 	}//end attachedAction()
+
+	/**
+	 * Whether the collection lists this app's action.
+	 *
+	 * @param array<string, mixed> $collection The collection.
+	 * @param string               $actionApp  The app of the action.
+	 * @param string               $actionId   The action id.
+	 *
+	 * @return bool
+	 */
+	private function isListed(array $collection, string $actionApp, string $actionId): bool {
+		foreach ((array)($collection[self::KEY] ?? []) as $entry) {
+			if (is_array($entry) === true && ($entry['app'] ?? '') === $actionApp && ($entry['id'] ?? '') === $actionId) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end isListed()
 
 	/**
 	 * Every well-formed attaching action in the aggregate.
@@ -141,7 +151,6 @@ class AttachedActionResolver {
 	 * @return array<int, array{app: string, target: string, schema: string, action: array<string, mixed>, listed: array<string, mixed>}>
 	 */
 	private function attaching(array $contributions): array {
-		$rows = new RowActionResolver();
 		$out = [];
 		foreach ($contributions as $contribution) {
 			if (is_array($contribution) === false) {
@@ -150,28 +159,47 @@ class AttachedActionResolver {
 
 			$app = (string)($contribution['app'] ?? '');
 			foreach ((array)($contribution['actions'] ?? []) as $action) {
-				if (is_array($action) === false || is_string($action['id'] ?? null) === false || $rows->isEndpointRowAction(action: $action) === false) {
-					continue;
+				$entry = $this->attachment(app: $app, action: $action);
+				if ($entry !== null) {
+					$out[] = $entry;
 				}
-
-				$target = ($action['attachTo'] ?? null);
-				if (is_array($target) === false || $this->isName(value: ($target['app'] ?? null)) === false || $this->isName(value: ($target['schema'] ?? null)) === false) {
-					continue;
-				}
-
-				$listed = ['app' => $app, 'id' => $action['id']];
-				foreach (self::LISTED as $key) {
-					if (array_key_exists($key, $action) === true) {
-						$listed[$key] = $action[$key];
-					}
-				}
-
-				$out[] = ['app' => $app, 'target' => $target['app'], 'schema' => $target['schema'], 'action' => $action, 'listed' => $listed];
-			}//end foreach
-		}//end foreach
+			}
+		}
 
 		return $out;
 	}//end attaching()
+
+	/**
+	 * One action as an attachment, or null when it does not attach.
+	 *
+	 * @param string $app    The app that declares it.
+	 * @param mixed  $action The action.
+	 *
+	 * @return array{app: string, target: string, schema: string, action: array<string, mixed>, listed: array<string, mixed>}|null
+	 */
+	private function attachment(string $app, mixed $action): ?array {
+		if (is_array($action) === false || is_string($action['id'] ?? null) === false
+			|| (new RowActionResolver())->isEndpointRowAction(action: $action) === false
+		) {
+			return null;
+		}
+
+		$target = ($action['attachTo'] ?? null);
+		if (is_array($target) === false || $this->isName(value: ($target['app'] ?? null)) === false
+			|| $this->isName(value: ($target['schema'] ?? null)) === false
+		) {
+			return null;
+		}
+
+		$listed = ['app' => $app, 'id' => $action['id']];
+		foreach (self::LISTED as $key) {
+			if (array_key_exists($key, $action) === true) {
+				$listed[$key] = $action[$key];
+			}
+		}
+
+		return ['app' => $app, 'target' => $target['app'], 'schema' => $target['schema'], 'action' => $action, 'listed' => $listed];
+	}//end attachment()
 
 	/**
 	 * Whether a value is a plain app or schema name.

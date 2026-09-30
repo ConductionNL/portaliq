@@ -169,10 +169,13 @@ export async function runRowAction(api, collection, row, action) {
 	}
 	const result = await api.forwardRowAction(collection, rowId, action.id)
 	const redirect = redirectTarget(result)
+	const link = answerLink(result)
+	// `link` only when the action answered one, so every other outcome keeps
+	// its shape.
 	return {
 		redirect,
 		messageKey: redirect ? '' : outcomeKey(result),
-		link: answerLink(result),
+		...(link ? { link } : {}),
 	}
 }
 
