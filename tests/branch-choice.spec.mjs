@@ -25,8 +25,16 @@ const { renderToStaticMarkup } = require('react-dom/server')
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const OUT_DIR = join(ROOT, 'node_modules', '.cache', 'portaliq-tests')
 const BASE = '/apps/portaliq/portal/api'
-const t = (key, vars = {}) =>
-	key.replace(/\{(\w+)\}/g, (_, name) => String(vars[name] ?? ''))
+/**
+ * An identity translator with {name} substitution.
+ *
+ * @param {string} key The English source key.
+ * @param {object} vars The substitutions.
+ * @return {string} The text.
+ */
+function t(key, vars = {}) {
+	return key.replace(/\{(\w+)\}/g, (_, name) => String(vars[name] ?? ''))
+}
 
 /**
  * Compile one portal source file with the portal build's React preset and
