@@ -256,7 +256,7 @@ class PortalAccountAdminController extends Controller {
 	 *
 	 * @return JSONResponse `{state: revoked}`, or a refusal.
 	 *
-	 * @spec openspec/changes/archive/2026-09-30-identity-staff-account-screens/tasks.md#T02
+	 * @spec openspec/changes/identity-staff-account-screens/tasks.md#T02
 	 */
 	#[NoAdminRequired]
 	public function revokeInvitation(string $id, string $organisation = ''): JSONResponse {
@@ -286,7 +286,7 @@ class PortalAccountAdminController extends Controller {
 	 *
 	 * @return JSONResponse `{status: active}`, or `not_pending`.
 	 *
-	 * @spec openspec/changes/archive/2026-09-30-identity-staff-account-screens/tasks.md#T03
+	 * @spec openspec/changes/identity-staff-account-screens/tasks.md#T03
 	 */
 	#[NoAdminRequired]
 	public function approve(string $subjectRef): JSONResponse {
@@ -316,7 +316,7 @@ class PortalAccountAdminController extends Controller {
 	 *
 	 * @return JSONResponse `{status: void}`, or a refusal.
 	 *
-	 * @spec openspec/changes/archive/2026-09-30-identity-staff-account-screens/tasks.md#T03
+	 * @spec openspec/changes/identity-staff-account-screens/tasks.md#T03
 	 */
 	#[NoAdminRequired]
 	public function refuse(string $subjectRef, string $reason = ''): JSONResponse {

@@ -257,7 +257,7 @@ class PortalInvitationService {
 	 *
 	 * @return string '' when it is withdrawn, else `not_found` or `already_accepted`.
 	 *
-	 * @spec openspec/changes/archive/2026-09-30-identity-staff-account-screens/tasks.md#T02
+	 * @spec openspec/changes/identity-staff-account-screens/tasks.md#T02
 	 */
 	public function revoke(string $id, string $organisation): string {
 		$row = $this->findById(id: $id, organisation: $organisation);
