@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\Service\GuardianAudienceFixtureReader;
+use OCA\Portaliq\Service\LeafGuardianAudienceReader;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -95,6 +96,25 @@ class GuardianAudienceFixtureReaderTest extends TestCase {
 		$this->assertSame([], $audience['groupRefs']);
 		$this->assertSame([], $audience['childRefs']);
 	}//end testReturnsEmptyAudienceForAGuardianWithNoFixtureRow()
+
+	/**
+	 * Without a fixture row the school app's own audience answers; a fixture
+	 * row still wins (news-audience-from-the-school-app).
+	 *
+	 * @spec openspec/changes/news-audience-from-the-school-app/tasks.md#T1
+	 */
+	public function testWithoutAFixtureRowTheSchoolAppAnswers(): void {
+		$os = $this->fakeObjectService([
+			['guardianRef' => 'guardian-anna-devries', 'schoolRef' => 'school-a', 'groupRefs' => ['groep-5a'], 'childRefs' => ['child-1'], 'photoConsent' => []],
+		]);
+		$leaf = $this->createMock(LeafGuardianAudienceReader::class);
+		$leaf->method('resolveAudience')->willReturn(['schoolRef' => 'school-w', 'groupRefs' => ['groep-7'], 'childRefs' => ['vera'], 'photoConsent' => []]);
+
+		$reader = new GuardianAudienceFixtureReader($this->container($os), $this->createMock(LoggerInterface::class), $leaf);
+
+		$this->assertSame('school-w', $reader->resolveAudience('guardian-from-the-portal')['schoolRef']);
+		$this->assertSame('school-a', $reader->resolveAudience('guardian-anna-devries')['schoolRef']);
+	}//end testWithoutAFixtureRowTheSchoolAppAnswers()
 
 	public function testResolvesAMatchingRow(): void {
 		$os = $this->fakeObjectService([

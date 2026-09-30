@@ -38,6 +38,7 @@ use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\OidcClaimMapperService;
 use OCA\Portaliq\Service\OidcClientService;
 use OCA\Portaliq\Service\OidcStateStoreService;
+use OCA\Portaliq\Service\Identity\ContactAddressValues;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCA\Portaliq\Service\PortalResolver;
@@ -219,8 +220,9 @@ class SessionController extends Controller {
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T05
-	 * @spec openspec/changes/signin-eherkenning-branch/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-09-30-signin-eherkenning-branch/tasks.md#T02
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T06
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -259,6 +261,10 @@ class SessionController extends Controller {
 				// Change signin-eherkenning-branch: the header shows the branch in effect.
 				'branch' => (string)($subject['branch'] ?? ''),
 				'branchRestricted' => (($subject['branchRestricted'] ?? false) === true),
+				// Change identity-profile-page T06: ask for an e-mail address when none is in use.
+				'contactPrompt' => (new ContactAddressValues())->needsContactPrompt(
+					account: $this->accounts->findBySubjectRef(subjectRef: (string)$subject['subjectRef'])
+				),
 			] + $this->session->sessionTimes(subject: $subject)
 		);
 	}//end index()
@@ -467,7 +473,7 @@ class SessionController extends Controller {
 	 * @spec openspec/specs/supplier-portal/spec.md#oidc-callback-validates-the-id-token-and-fails-closed-on-every-error
 	 * @spec openspec/specs/supplier-portal/spec.md#every-validation-failure-is-an-identical-generic-error
 	 * @spec openspec/specs/supplier-portal/spec.md#the-subject-reference-is-server-derived-never-client-supplied
-	 * @spec openspec/changes/signin-eherkenning-branch/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-09-30-signin-eherkenning-branch/tasks.md#T02
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T08
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T10
 	 *

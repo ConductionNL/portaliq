@@ -59,3 +59,11 @@ The field must be one the collection projects in `fields`, or the portal drops `
 ## Not yet in this version
 
 A person who signed in for the whole company cannot yet narrow to one branch under "Acting for". That needs the list of the company's branches from the KvK, which comes with the registered company details.
+
+## Choosing a branch after signing in for the whole company
+
+A business user who signed in for the whole company can narrow the portal to one branch. The header then shows **Acting for branch**, with **Whole company** and every branch the Chamber of Commerce (KvK) holds for the company, by name and address. Choosing a branch filters every page whose case app declares a branch field. Choosing **Whole company** shows everything again.
+
+The list comes from the KvK record the portal reads through OpenRegister (see [My registered details](./my-registered-details.md)), so it needs the OpenConnector source `kvk`. Without it the choice does not appear, and a branch sent to the portal anyway is refused.
+
+A login that was itself restricted to one branch never gets the choice. It cannot widen to the whole company or move to another branch.

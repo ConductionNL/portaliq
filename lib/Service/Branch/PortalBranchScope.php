@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/signin-eherkenning-branch/tasks.md#T04
+ * @spec openspec/changes/archive/2026-09-30-signin-eherkenning-branch/tasks.md#T04
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ namespace OCA\Portaliq\Service\Branch;
  * It only ever removes rows the subject scope already allowed, so it can
  * never widen a read.
  *
- * @spec openspec/changes/signin-eherkenning-branch/tasks.md#T04
+ * @spec openspec/changes/archive/2026-09-30-signin-eherkenning-branch/tasks.md#T04
  */
 class PortalBranchScope {
 	/**
@@ -51,7 +51,7 @@ class PortalBranchScope {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/signin-eherkenning-branch/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-09-30-signin-eherkenning-branch/tasks.md#T03
 	 */
 	public function normalise(array $collection): array {
 		if (array_key_exists('branchField', $collection) === false) {
@@ -77,7 +77,7 @@ class PortalBranchScope {
 	 *
 	 * @return array<int, mixed>
 	 *
-	 * @spec openspec/changes/signin-eherkenning-branch/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-09-30-signin-eherkenning-branch/tasks.md#T04
 	 */
 	public function rows(array $subject, array $collection, array $rows): array {
 		if ($this->branchOf(subject: $subject) === '') {
@@ -101,7 +101,7 @@ class PortalBranchScope {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/signin-eherkenning-branch/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-09-30-signin-eherkenning-branch/tasks.md#T04
 	 */
 	public function admits(array $subject, array $collection, array $row): bool {
 		$branch = $this->branchOf(subject: $subject);
@@ -134,7 +134,7 @@ class PortalBranchScope {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/signin-eherkenning-branch/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-09-30-signin-eherkenning-branch/tasks.md#T04
 	 */
 	public function stamp(array $subject, array $action, array $data): array {
 		$field = $action['branchField'] ?? null;

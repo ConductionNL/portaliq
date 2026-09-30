@@ -1900,7 +1900,26 @@ OC.L10N.register(
         "A page cannot move under itself.": "Een pagina kan niet onder zichzelf worden geplaatst.",
         "A menu item needs a name.": "Een menu-item heeft een naam nodig.",
         "Silent sign-in": "Stil inloggen",
-        "Whether the start asked the broker to sign in without a prompt. A silent row the broker answers with login_required lands on the login screen without an error. Absent means false.": "Of het begin de inlogdienst vroeg om zonder vraag in te loggen. Een stille regel die de inlogdienst met login_required beantwoordt, komt zonder foutmelding op het inlogscherm. Ontbreekt de waarde, dan is die false."
+        "Whether the start asked the broker to sign in without a prompt. A silent row the broker answers with login_required lands on the login screen without an error. Absent means false.": "Of het begin de inlogdienst vroeg om zonder vraag in te loggen. Een stille regel die de inlogdienst met login_required beantwoordt, komt zonder foutmelding op het inlogscherm. Ontbreekt de waarde, dan is die false.",
+        "My details forms": "Formulieren voor Mijn gegevens",
+        "The request forms the \"My details\" section links to. Each names a published form binding of this portal by its id. An empty or unpublished binding shows no link. The portal changes no base registration: a request goes to the organisation like any other form.": "De aanvraagformulieren waar het onderdeel \"Mijn gegevens\" naar verwijst. Elk noemt een gepubliceerde formulierkoppeling van dit portaal bij haar id. Een lege of niet gepubliceerde koppeling toont geen link. Het portaal wijzigt geen basisregistratie: een verzoek gaat naar de organisatie zoals elk ander formulier.",
+        "Correction form": "Correctieformulier",
+        "The form binding behind \"Report an error in these details\".": "De formulierkoppeling achter \"Een fout in deze gegevens melden\".",
+        "Address investigation form": "Formulier voor adresonderzoek",
+        "The form binding behind \"Something wrong at this address?\", shown to residents only.": "De formulierkoppeling achter \"Klopt er iets niet op dit adres?\", alleen getoond aan inwoners.",
+        "Contact addresses": "Contactadressen",
+        "The e-mail addresses and phone numbers the owner keeps on the account (identity-profile-page). An e-mail address is used for nothing until it is confirmed; the preferred confirmed e-mail is copied into `email`, the only address notifications go to. A phone number is stored for the organisation to call and is never confirmed.": "De e-mailadressen en telefoonnummers die de eigenaar bij het account bewaart (identity-profile-page). Een e-mailadres wordt pas gebruikt als het is bevestigd; het bevestigde voorkeursadres wordt gekopieerd naar `email`, het enige adres waar meldingen naartoe gaan. Een telefoonnummer bewaren we zodat de organisatie kan bellen; het wordt nooit bevestigd.",
+        "Contact channel": "Contactkanaal",
+        "How the owner wants the organisation to contact them: through the portal only, by e-mail, by phone or by post (identity-profile-page). A change raises PortalContactDetailsChangedEvent; a case app honours it.": "Hoe de eigenaar wil dat de organisatie contact opneemt: alleen via het portaal, per e-mail, telefonisch of per post (identity-profile-page). Een wijziging geeft PortalContactDetailsChangedEvent; een zaak-app houdt zich eraan.",
+        "Pending email mode": "Soort wachtend e-mailadres",
+        "`replace` when the owner changed their address, so the confirmed address takes over; `add` when they added one more, so it joins the list.": "`replace` als de eigenaar het adres heeft gewijzigd, zodat het bevestigde adres het overneemt; `add` als de eigenaar er een adres bij heeft gezet, zodat het aan de lijst wordt toegevoegd.",
+        "`email` or `phone`.": "`email` of `phone`.",
+        "Address": "Adres",
+        "The e-mail address, or the phone number in E.164 where it parses.": "Het e-mailadres, of het telefoonnummer in E.164 als het zich zo laat lezen.",
+        "Confirmed": "Bevestigd",
+        "True once the link in the confirmation mail was followed. A phone number is never confirmed.": "Waar zodra de link in de bevestigingsmail is gevolgd. Een telefoonnummer wordt nooit bevestigd.",
+        "Preferred": "Voorkeur",
+        "The one address of its kind the organisation uses. Only a confirmed e-mail address can be preferred.": "Het ene adres van deze soort dat de organisatie gebruikt. Alleen een bevestigd e-mailadres kan voorkeur hebben."
     },
     "nplurals=2; plural=(n != 1);"
 )

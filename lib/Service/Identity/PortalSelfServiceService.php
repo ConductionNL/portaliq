@@ -34,7 +34,6 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
-use DateInterval;
 use DateTimeImmutable;
 use OCA\Portaliq\Service\Notifications\NotificationChannels;
 use OCA\Portaliq\Service\PortalAccountService;
@@ -59,11 +58,6 @@ class PortalSelfServiceService {
 	private const SCHEMA = 'portalAccount';
 
 	/**
-	 * How long a confirmation link works.
-	 */
-	private const TTL = 'P1D';
-
-	/**
 	 * A BCP-47 shaped language tag (translated-message-notice): a 2 or 3
 	 * letter primary subtag, then optional 1 to 8 character subtags.
 	 */
@@ -76,12 +70,14 @@ class PortalSelfServiceService {
 	 * @param PortalObjectReader $reader Looks a confirmation up by hash.
 	 * @param PortalObjectWriter $writer Writes the account row.
 	 * @param ISecureRandom $random Mints the confirmation secret.
+	 * @param ContactAddressChange $addressChange The address fields (identity-profile-page).
 	 */
 	public function __construct(
 		private readonly PortalAccountService $accounts,
 		private readonly PortalObjectReader $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly ISecureRandom $random,
+		private readonly ContactAddressChange $addressChange = new ContactAddressChange(),
 	) {
 	}//end __construct()
 
@@ -135,14 +131,13 @@ class PortalSelfServiceService {
 
 		$token = '';
 		if ($email !== '') {
-			if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+			$token = $this->random->generate(48, (ISecureRandom::CHAR_LOWER . ISecureRandom::CHAR_DIGITS));
+			$pending = $this->addressChange->changedFields(account: $account, email: $email, token: $token);
+			if ($pending === null) {
 				return null;
 			}
 
-			$token = $this->random->generate(48, (ISecureRandom::CHAR_LOWER . ISecureRandom::CHAR_DIGITS));
-			$data['pendingEmail'] = $email;
-			$data['pendingEmailTokenHash'] = hash('sha256', $token);
-			$data['pendingEmailExpiresAt'] = (new DateTimeImmutable())->add(new DateInterval(self::TTL))->format(DATE_ATOM);
+			$data = $data + $pending;
 		}
 
 		$written = $this->write(account: $account, data: $data);
@@ -171,11 +166,12 @@ class PortalSelfServiceService {
 
 		$channels = (array)($account['notificationChannels'] ?? []);
 		return [
-			'displayName'        => (string)($account['displayName'] ?? ''),
-			'email'              => (string)($account['email'] ?? ''),
-			'emailNotifications' => (($channels['email'] ?? true) !== false),
-			'messageLanguage'    => (string)($account['messageLanguage'] ?? ''),
-		];
+			'displayName'          => (string)($account['displayName'] ?? ''),
+			'email'                => (string)($account['email'] ?? ''),
+			'emailNotifications'   => (($channels['email'] ?? true) !== false),
+			'messageLanguage'      => (string)($account['messageLanguage'] ?? ''),
+			'notificationChannels' => $channels,
+		] + $this->addressChange->readFields(account: $account);
 	}//end details()
 
 	/**
@@ -334,17 +330,8 @@ class PortalSelfServiceService {
 			return null;
 		}
 
-		$email = (string)($account['pendingEmail'] ?? '');
-		$written = $this->write(
-			account: $account,
-			data: [
-				'email' => $email,
-				'verifiedEmail' => true,
-				'pendingEmail' => '',
-				'pendingEmailTokenHash' => '',
-				'pendingEmailExpiresAt' => '',
-			]
-		);
+		$email   = (string)($account['pendingEmail'] ?? '');
+		$written = $this->write(account: $account, data: $this->addressChange->confirmedFields(account: $account));
 		if ($written === false) {
 			return null;
 		}
@@ -420,6 +407,7 @@ class PortalSelfServiceService {
 				'email' => '',
 				'pendingEmail' => '',
 				'pendingEmailTokenHash' => '',
+				'contactAddresses' => [],
 				'displayName' => '',
 				'verifiedEmail' => false,
 				// Every app's link to this person goes with the account. The

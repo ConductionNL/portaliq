@@ -655,6 +655,31 @@ class SessionControllerTest extends TestCase {
 
 	}//end testIndexReportsTheBranchInEffect()
 
+	/**
+	 * identity-profile-page T06 (REQ-IPP-005): the session says when to ask
+	 * for an e-mail address: none in use, or dispatch flagged the account.
+	 *
+	 * @return void
+	 */
+	public function testIndexAsksForAnEmailAddressWhenNoneIsInUse(): void {
+		$session = $this->createMock(PortalSessionService::class);
+		$session->method('resolveFromBearer')->willReturn(self::SUBJECT);
+		$cases = [
+			'a confirmed address' => [['email' => 'a@example.nl'], false],
+			'no address' => [['email' => ''], true],
+			'dispatch flagged it' => [['email' => 'a@example.nl', 'needsAlternativeContact' => true], true],
+		];
+		foreach ($cases as $label => [$account, $expected]) {
+			$accounts = $this->createMock(PortalAccountService::class);
+			$accounts->method('findBySubjectRef')->with('s1')->willReturn($account + ['subjectRef' => 's1']);
+
+			$data = $this->controller(session: $session, accounts: $accounts)->index()->getData();
+
+			$this->assertSame($expected, $data['contactPrompt'], $label);
+		}
+
+	}//end testIndexAsksForAnEmailAddressWhenNoneIsInUse()
+
 	public function testOidcCallbackMintsASessionAndRedirectsWithTheBearerInTheFragment(): void {
 		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
 		$orgConfig->method('isLoginProviderAllowed')->willReturn(true);

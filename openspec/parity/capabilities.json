@@ -1311,7 +1311,7 @@
 			"id": "id-update-own-details",
 			"area": "identity",
 			"name": "Change your own name or e-mail address from the portal, with the new address confirmed before it is used.",
-			"portaliq": "no",
+			"portaliq": "yes",
 			"open-inwoner": "yes",
 			"nl-portal": "partial",
 			"xxllnc-pip": "partial",
@@ -1325,12 +1325,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/security-and-administration/users-and-permissions/users/updating-user-profile-pictures: a user opens My Profile → Edit Information → Account Settings to edit their own details. https://learn.liferay.com/w/dxp/security-and-administration/administration/configuring-liferay/virtual-instances/user-authentication: 'Require strangers to verify their email address' covers new accounts and admin e-mail changes ('Manual updating of current Users' emails by administrators also requires verification'); confirmation of a self-service address change before use is not stated."
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "lib/Controller/PortalAccountSelfController.php:87 updateDetails(), :119 confirmEmail(); appinfo/routes.php:199-200",
-				"reachedOn": "nothing reaches it: no frontend calls /portal/api/identity/details or /identity/email/confirm; the portal SPA (src/portal/App.jsx) shows only a read-only subject line, no edit form",
+				"state": "built",
+				"evidence": "Name: PATCH /portal/api/identity/details (PortalAccountSelfController::updateDetails). E-mail: a changed or added address joins portalAccount.contactAddresses unconfirmed and gets the confirmation mail (PortalIdentityMailer email-confirmation, link #confirm-email=<secret> consumed once by src/portal/lib/account.js consumeConfirmEmail and posted to /identity/email/confirm); until then notifications keep going to portalAccount.email. Tests: PortalContactAddressServiceTest, PortalSelfServiceServiceTest, tests/account-page.spec.mjs, tests/e2e/identity-profile-page.spec.ts.",
+				"reachedOn": "Signed-in portal (/apps/portaliq/portal) -> nav 'My account' (src/portal/App.jsx, special 'account') -> src/portal/components/AccountPage.jsx",
 				"owner": "ConductionNL/portaliq",
-				"note": "tasks.md T10 'change your own details, with a new e-mail confirmed by a link' is marked done for the backend only. Specified in openspec/changes/identity-profile-page (OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"note": "tasks.md T10 'change your own details, with a new e-mail confirmed by a link' is marked done for the backend only. Built by openspec/changes/archive/2026-09-30-identity-profile-page (build-all lane 19, 2026-09-30).",
+				"origin": "code",
+				"change": "2026-09-30-identity-profile-page"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1341,7 +1342,7 @@
 			"id": "id-remove-own-account",
 			"area": "identity",
 			"name": "Ask for your own portal account to be removed, while your cases stay.",
-			"portaliq": "no",
+			"portaliq": "yes",
 			"open-inwoner": "yes",
 			"nl-portal": "no",
 			"xxllnc-pip": "no",
@@ -1355,12 +1356,13 @@
 				"liferay-dxp": "not settled from docs: https://learn.liferay.com/w/dxp/security-and-administration/users-and-permissions/users/adding-and-managing-users documents admin 'Erase Personal Data' and deactivate/delete, but no self-service request to remove one's own account was found."
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "lib/Controller/PortalAccountSelfController.php:138 removeAccount(); appinfo/routes.php:201",
-				"reachedOn": "nothing reaches it: no frontend calls /portal/api/identity/remove",
+				"state": "built",
+				"evidence": "AccountPage 'Remove my account' shows 'Your portal account is removed. Your cases stay with the organisation.' and, on confirmation, POST /portal/api/identity/remove (PortalSelfServiceService::removeAccount blanks identity, name, addresses and claims, status removed, cases untouched), then signs out. Tests: PortalSelfServiceServiceTest::testTheAccountAndItsClaimsGoAndTheCaseStays, ::testRemovalTakesEveryAddress, e2e identity-profile-page.",
+				"reachedOn": "Signed-in portal (/apps/portaliq/portal) -> nav 'My account' (src/portal/App.jsx, special 'account') -> src/portal/components/AccountPage.jsx",
 				"owner": "ConductionNL/portaliq",
-				"note": "tasks.md T11 marked done; no UI affordance in the portal SPA to request it. Specified in openspec/changes/identity-profile-page (OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"note": "tasks.md T11 marked done; no UI affordance in the portal SPA to request it. Built by openspec/changes/archive/2026-09-30-identity-profile-page (build-all lane 19, 2026-09-30).",
+				"origin": "code",
+				"change": "2026-09-30-identity-profile-page"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1618,7 +1620,7 @@
 			"id": "cmp-id-brp",
 			"area": "identity",
 			"name": "See the personal details the base registration (BRP) holds about you.",
-			"portaliq": "no",
+			"portaliq": "yes",
 			"open-inwoner": "yes",
 			"nl-portal": "yes",
 			"xxllnc-pip": "yes",
@@ -1632,12 +1634,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/integrating-objects-with-third-party-services/managing-data-from-external-systems: a proxy object can 'store and retrieve data from an external data source', so BRP data could be shown on a display page. No BRP connector is documented; the proxy storage type for BRP would be custom (only Salesforce is named). [was no: the earlier no rested on silence]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "Searched lib/ for BRP/StUF-BG/Basisregistratie/haalcentraal: no match outside comment prose. portalAccount only stores identityType/identityRef/displayName/email (lib/Settings/portaliq_register.json:356-400), no BRP-sourced field set",
-				"reachedOn": "nothing reaches it",
+				"state": "built",
+				"evidence": "lib/Service/Identity/PortalRegisteredDetailsService.php reads the caller's own portalAccount (digid/eidas + a BSN passing the eleven test) and calls OpenRegister's BrpPersonProvider::lookupByBsn in process; lib/Service/Identity/RegisteredDetailsShape.php maps it to name, birthDate, address; the BSN and the raw object never reach the browser. Tests: tests/Unit/Service/Identity/PortalRegisteredDetailsServiceTest.php (real OR provider class), tests/registered-details.spec.mjs. Needs the OpenConnector source brp-haalcentraal (docs/operations/my-registered-details.md).",
+				"reachedOn": "Signed-in portal (/apps/portaliq/portal) -> nav 'My details' (src/portal/App.jsx, special 'details') -> src/portal/components/RegisteredDetailsPage.jsx -> GET /portal/api/identity/registered-details (PortalRegisteredDetailsController::show, bearer only)",
 				"owner": "ConductionNL/portaliq",
-				"note": "Portaliq's own account record holds only what the broker's claims or a clerk typed in; there is no BRP/Haal Centraal lookup anywhere in this app. Specified in openspec/changes/identity-registered-details (OpenSpec pass 2026-09-27).",
-				"origin": "competitor"
+				"note": "Portaliq's own account record holds only what the broker's claims or a clerk typed in; there is no BRP/Haal Centraal lookup anywhere in this app. Built by openspec/changes/identity-registered-details (build-all lane 17, 2026-09-30).",
+				"origin": "competitor",
+				"change": "identity-registered-details"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1647,7 +1650,7 @@
 			"id": "cmp-id-correct",
 			"area": "identity",
 			"name": "Ask for a correction of your personal details.",
-			"portaliq": "no",
+			"portaliq": "yes",
 			"open-inwoner": "no",
 			"nl-portal": "partial",
 			"xxllnc-pip": "no",
@@ -1661,12 +1664,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/understanding-object-integrations/using-forms-with-objects and https://learn.liferay.com/w/dxp/low-code/objects/enabling-workflows-for-objects: a correction request can be a form-backed object entry routed through workflow. The correction process against a base registration is not documented and would be custom. [was no: the earlier no rested on silence]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "The nearest capability is id-update-own-details (PortalAccountSelfController.php:87 updateDetails, PATCH /portal/api/identity/details) which lets a subject change displayName/email directly, not 'ask for a correction' of an authoritative source",
-				"reachedOn": "nothing reaches it (same as id-update-own-details)",
+				"state": "built",
+				"evidence": "portal.registeredDetails.correctionFormBinding (register 0.51.0, portal 0.9.0) names a published portalFormBinding; lib/Service/Identity/PortalRegisteredDetailsLinks.php turns it into a site link (portaliq.portalPage.site ?portal&route) and the section shows 'Report an error in these details'; an unset or unpublished binding shows no link. The request is an ordinary intake submission to the case app. Tests: PortalRegisteredDetailsLinksTest, PortaliqRegisterConfigTest::testThePortalNamesTheFormsOfMyDetails (Opis on the real portal schema), tests/registered-details.spec.mjs.",
+				"reachedOn": "Signed-in portal (/apps/portaliq/portal) -> nav 'My details' (src/portal/App.jsx, special 'details') -> src/portal/components/RegisteredDetailsPage.jsx -> GET /portal/api/identity/registered-details (PortalRegisteredDetailsController::show, bearer only)",
 				"owner": "ConductionNL/portaliq",
-				"note": "Even if reached, updateDetails() edits portaliq's own copy of the two fields it stores; it is not a correction-request workflow against a base registration. Specified in openspec/changes/identity-registered-details (OpenSpec pass 2026-09-27).",
-				"origin": "competitor"
+				"note": "Even if reached, updateDetails() edits portaliq's own copy of the two fields it stores; it is not a correction-request workflow against a base registration. Built by openspec/changes/identity-registered-details (build-all lane 17, 2026-09-30).",
+				"origin": "competitor",
+				"change": "identity-registered-details"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1676,7 +1680,7 @@
 			"id": "cmp-id-contact-channel",
 			"area": "identity",
 			"name": "Choose how the organisation contacts you: portal, e-mail, phone or post.",
-			"portaliq": "no",
+			"portaliq": "yes",
 			"open-inwoner": "partial",
 			"nl-portal": "partial",
 			"xxllnc-pip": "yes",
@@ -1690,12 +1694,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/notifications/configuring-personal-notifications 'Users can customize which notifications they receive by enabling email, or website notifications'. Only e-mail and website channels; phone and post preferences are not documented. [was unknown]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "Searched portalAccount schema (lib/Settings/portaliq_register.json:356-400) and PortalAccountSelfController.php: no contactPreference/channel field or endpoint",
-				"reachedOn": "nothing reaches it",
+				"state": "built",
+				"evidence": "portalAccount.contactChannel portal|email|phone|post (default portal); PUT /portal/api/identity/contact-channel (PortalContactAddressController::channel) records it and dispatches OCA\\Portaliq\\Event\\PortalContactDetailsChangedEvent once per change (PortalContactAddressService::chooseChannel). A case app that sends letters or phones honours it by listening (docs/operations/my-account.md). Tests: PortalContactAddressServiceTest::testChoosingPostIsRecordedAndAnnouncedOnce.",
+				"reachedOn": "Signed-in portal (/apps/portaliq/portal) -> nav 'My account' (src/portal/App.jsx, special 'account') -> src/portal/components/AccountPage.jsx",
 				"owner": "ConductionNL/portaliq",
-				"note": "portalAccount carries a single e-mail address, no channel preference of any kind. Specified in openspec/changes/identity-profile-page (OpenSpec pass 2026-09-27).",
-				"origin": "competitor"
+				"note": "portalAccount carries a single e-mail address, no channel preference of any kind. Built by openspec/changes/archive/2026-09-30-identity-profile-page (build-all lane 19, 2026-09-30).",
+				"origin": "competitor",
+				"change": "2026-09-30-identity-profile-page"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1705,7 +1710,7 @@
 			"id": "cmp-id-company",
 			"area": "identity",
 			"name": "See the details the Chamber of Commerce (KvK) holds about your company.",
-			"portaliq": "no",
+			"portaliq": "yes",
 			"open-inwoner": "partial",
 			"nl-portal": "yes",
 			"xxllnc-pip": "yes",
@@ -1719,12 +1724,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/integrating-objects-with-third-party-services/managing-data-from-external-systems: proxy objects read external data sources; a KvK connector is not documented and the storage type would be custom. [was no: the earlier no rested on silence]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "Searched lib/ for KvK/Kamer van Koophandel/company-register lookups: none found; eherkenning preset (OidcClaimMapperService.php:82-88) only maps identityRef/audience, no company-detail fetch",
-				"reachedOn": "nothing reaches it",
+				"state": "built",
+				"evidence": "PortalRegisteredDetailsService calls OpenRegister's KvkProvider::lookupByKvkNumber for an eherkenning account with an 8-digit identityRef; RegisteredDetailsShape::company gives tradeName, kvkNumber, legalForm (when KvK sends rechtsvorm) and every branch; RegisteredDetailsPage.jsx shows them. Tests: PortalRegisteredDetailsServiceTest::testAnEherkenningAccountSeesItsCompanyWithEveryBranch, tests/registered-details.spec.mjs. Needs the OpenConnector source kvk.",
+				"reachedOn": "Signed-in portal (/apps/portaliq/portal) -> nav 'My details' (src/portal/App.jsx, special 'details') -> src/portal/components/RegisteredDetailsPage.jsx -> GET /portal/api/identity/registered-details (PortalRegisteredDetailsController::show, bearer only)",
 				"owner": "ConductionNL/portaliq",
-				"note": "eHerkenning login authenticates the business identity but portaliq does not fetch or display KvK company data. Specified in openspec/changes/identity-registered-details (OpenSpec pass 2026-09-27).",
-				"origin": "competitor"
+				"note": "eHerkenning login authenticates the business identity but portaliq does not fetch or display KvK company data. Built by openspec/changes/identity-registered-details (build-all lane 17, 2026-09-30).",
+				"origin": "competitor",
+				"change": "identity-registered-details"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -7942,12 +7948,12 @@
 			},
 			"built": {
 				"state": "building",
-				"evidence": "lib/Service/OidcClaimMapperService.php branchOf() reads claimMap.branch (12 digits, lib/Service/Branch/BranchNumber.php); PortalSessionService::issueSession(branch:) signs branch + branchRestricted, refreshSession keeps them; lib/Service/Branch/PortalBranchScope.php filters ContributionController::collection()/object(), PortalCaseListReader (My cases) and CitizenCaseController, stamps branchField on create; header text src/portal/lib/branch.js in App.jsx. Missing: dossiq declares branchField (for-ruben/dossiq-branch-field-on-business-cases.md), integriq envelope carries the branch (for-ruben/integriq-broker-envelope-carries-the-branch.md), and the whole-company user's branch choice (T05/T06, needs the KvK branch list of identity-registered-details).",
+				"evidence": "lib/Service/OidcClaimMapperService.php branchOf() reads claimMap.branch (12 digits, lib/Service/Branch/BranchNumber.php); PortalSessionService::issueSession(branch:) signs branch + branchRestricted, refreshSession keeps them; lib/Service/Branch/PortalBranchScope.php filters ContributionController::collection()/object(), PortalCaseListReader (My cases) and CitizenCaseController, stamps branchField on create; header text src/portal/lib/branch.js in App.jsx. Missing: dossiq declares branchField (for-ruben/dossiq-branch-field-on-business-cases.md), integriq envelope carries the branch (for-ruben/integriq-broker-envelope-carries-the-branch.md), and the whole-company user's branch choice (T05/T06, needs the KvK branch list of identity-registered-details). Branch choice (30 Sep): a whole-company session lists the company's KvK branches (GET /portal/api/session/branches, BranchChoice over identity-registered-details) and narrows to one or back to the whole company (POST /portal/api/session/branch, PortalSessionService::rebranchSession, refused for a restricted session or a foreign branch); header control src/portal/components/BranchSwitcher.jsx.",
 				"reachedOn": "after an OIDC eHerkenning login whose broker sends the claim named in claimMap.branch: the portal header and My cases",
 				"owner": "ConductionNL/portaliq",
 				"note": "A login restricted to one branch gives a session restricted to it (signin-eherkenning-branch part 1, 30 Sep 2026). The choice of a branch by a whole-company user is not built yet.",
 				"origin": "code",
-				"change": "signin-eherkenning-branch"
+				"change": "2026-09-30-signin-eherkenning-branch"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -7960,7 +7966,7 @@
 			"id": "dem-cl-multiple-contact-addresses",
 			"area": "identity",
 			"name": "Keep several e-mail addresses and phone numbers on your profile and mark one of each as preferred.",
-			"portaliq": "no",
+			"portaliq": "yes",
 			"open-inwoner": "yes",
 			"nl-portal": "no",
 			"xxllnc-pip": "no",
@@ -7974,12 +7980,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/integration/headless-apis/user-management-apis/user-account-api-basics: 'userAccountContactInformation' holds lists 'emailAddresses', 'telephones' and 'postalAddresses'; postal addresses carry '\"primary\": false' (https://learn.liferay.com/w/dxp/integration/headless-apis/user-management-apis/postal-address-api-basics). A resident-facing screen to mark a preferred e-mail and phone is not described. [was unknown]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "lib/Settings/portaliq_register.json portalAccount has one 'email' (plus pendingEmail) and no phone; existing row id-update-own-details: PATCH /portal/api/identity/details has no frontend caller",
-				"reachedOn": "nothing reaches it",
+				"state": "built",
+				"evidence": "portalAccount.contactAddresses [{kind email|phone, value, confirmed, preferred}] (register 0.53.0); rules in lib/Service/Identity/ContactAddressBook.php (one preferred per kind, only a confirmed e-mail can be preferred, the preferred e-mail is copied into email, five pending at most, phones in E.164); routes POST /portal/api/identity/addresses, /addresses/preferred, /addresses/remove (PortalContactAddressController). Tests: ContactAddressBookTest, PortalContactAddressServiceTest, PortaliqRegisterConfigTest (Opis).",
+				"reachedOn": "Signed-in portal (/apps/portaliq/portal) -> nav 'My account' (src/portal/App.jsx, special 'account') -> src/portal/components/AccountPage.jsx",
 				"owner": "ConductionNL/portaliq",
-				"note": "One e-mail per account, no phone numbers, no preferred marker, and the resident cannot edit contact details from any page. Specified in openspec/changes/identity-profile-page (OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"note": "One e-mail per account, no phone numbers, no preferred marker, and the resident cannot edit contact details from any page. Built by openspec/changes/archive/2026-09-30-identity-profile-page (build-all lane 19, 2026-09-30).",
+				"origin": "code",
+				"change": "2026-09-30-identity-profile-page"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -8221,7 +8228,7 @@
 			"id": "cmp-id-residents-at-address",
 			"area": "identity",
 			"name": "See how many people are registered at your address, and start an address investigation when that looks wrong.",
-			"portaliq": "no",
+			"portaliq": "partial",
 			"open-inwoner": "no",
 			"nl-portal": "yes",
 			"xxllnc-pip": "no",
@@ -8235,12 +8242,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/integrating-objects-with-third-party-services/managing-data-from-external-systems: a proxy object could show BRP data; the investigation request could be a form. No BRP connector is documented (as cmp-id-brp). [was unknown; custom: BRP proxy and request flow]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "grep -riE 'brp|bewoner|adresonderzoek|residents' lib src: 0 domain hits; existing row cmp-id-brp is no",
-				"reachedOn": "nothing reaches it",
+				"state": "building",
+				"evidence": "Address investigation built: portal.registeredDetails.addressInvestigationFormBinding -> 'Something wrong at this address?' under the resident's address (PortalRegisteredDetailsLinks, residents only). The count is not: residentsAtAddress stays null and the section says 'The number of residents at this address is not available.' until openregister answers a count by address object (ZoekMetAdresseerbaarObjectIdentificatie, numbers only); drafted for Ruben in for-ruben/openregister-brp-residents-at-address-count.md.",
+				"reachedOn": "Signed-in portal (/apps/portaliq/portal) -> nav 'My details' (src/portal/App.jsx, special 'details') -> src/portal/components/RegisteredDetailsPage.jsx -> GET /portal/api/identity/registered-details (PortalRegisteredDetailsController::show, bearer only)",
 				"owner": "ConductionNL/portaliq",
-				"note": "No BRP read and no address-investigation request. Specified in openspec/changes/identity-registered-details (OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"note": "No BRP read and no address-investigation request. Built by openspec/changes/identity-registered-details (build-all lane 17, 2026-09-30). Missing half: openregister's count by address object.",
+				"origin": "code",
+				"change": "identity-registered-details"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -8254,7 +8262,7 @@
 			"id": "cmp-id-prompt-missing-email",
 			"area": "identity",
 			"name": "Be prompted to add an e-mail address when the organisation has none on file.",
-			"portaliq": "no",
+			"portaliq": "yes",
 			"open-inwoner": "yes",
 			"nl-portal": "partial",
 			"xxllnc-pip": "partial",
@@ -8268,12 +8276,13 @@
 				"liferay-dxp": "not settled from docs: the user management and SSO pages read today (https://learn.liferay.com/w/dxp/security-and-administration/users-and-permissions/users/adding-and-managing-users, OpenID Connect) do not describe prompting a signed-in user to add a missing e-mail address."
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "src/portal/App.jsx session view shows subjectRef only; portalAccount.needsAlternativeContact is set by NotificationDispatchJob but nothing in src/ reads it; /portal/api/identity/details has no caller",
-				"reachedOn": "nothing reaches it",
+				"state": "built",
+				"evidence": "GET /portal/api/session answers contactPrompt when portalAccount.email is empty or needsAlternativeContact is set (SessionController::index, ContactAddressBook::needsContactPrompt); App.jsx shows ContactPrompt ('Add an e-mail address so we can tell you when something changes.') with a link to My account, dismissible for the session. Tests: SessionControllerTest::testIndexAsksForAnEmailAddressWhenNoneIsInUse, tests/account-page.spec.mjs.",
+				"reachedOn": "Signed-in portal (/apps/portaliq/portal) -> nav 'My account' (src/portal/App.jsx, special 'account') -> src/portal/components/AccountPage.jsx",
 				"owner": "ConductionNL/portaliq",
-				"note": "No prompt; a missing or failing e-mail only flags the account for staff. Specified in openspec/changes/identity-profile-page (OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"note": "No prompt; a missing or failing e-mail only flags the account for staff. Built by openspec/changes/archive/2026-09-30-identity-profile-page (build-all lane 19, 2026-09-30).",
+				"origin": "code",
+				"change": "2026-09-30-identity-profile-page"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
