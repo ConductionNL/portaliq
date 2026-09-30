@@ -446,7 +446,11 @@ test.describe.serial('the Woo citizen journey across four apps', () => {
 		})
 		await createPage(DETAIL_ROUTE, 'Woo publicatie (e2e)', {
 			widgetKey: 'publicationDetail',
-			props: {},
+			// OpenRegister refuses an empty object here; the default endpoint,
+			// spelled out, is the smallest valid props.
+			props: {
+				endpoint: '/index.php/apps/opencatalogi/api/federation/publications',
+			},
 		})
 	})
 
