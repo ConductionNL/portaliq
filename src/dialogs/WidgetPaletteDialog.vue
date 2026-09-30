@@ -65,6 +65,7 @@
 </template>
 
 <script>
+import { translate } from '@nextcloud/l10n'
 import { NcButton, NcDialog } from '@nextcloud/vue'
 import { widgetCatalogue } from '../lib/pageWidgetCatalogue.js'
 
@@ -82,6 +83,16 @@ export default {
 			type: Boolean,
 			default: false,
 		},
+
+		/**
+		 * Offer only widgets the public renderer mounts. The portal edit mode
+		 * sets it: on the portal a widget that renders as an empty place is
+		 * never what the editor meant to add.
+		 */
+		publicOnly: {
+			type: Boolean,
+			default: false,
+		},
 	},
 
 	emits: ['update:open', 'choose'],
@@ -93,13 +104,32 @@ export default {
 		 * @return {Array<object>} The entries.
 		 *
 		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-palette-must-mark-widgets-that-cannot-render-on-a-public-page
+		 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
 		 */
 		entries() {
-			return widgetCatalogue()
+			const entries = widgetCatalogue()
+			return this.publicOnly
+				? entries.filter((entry) => entry.publicSafe)
+				: entries
 		},
 	},
 
 	methods: {
+		/**
+		 * Translate. Local rather than the admin app's global mixin, because
+		 * the portal edit mode mounts this dialog on the public site too.
+		 *
+		 * @param {string} app The app id.
+		 * @param {string} text The source text.
+		 * @param {object} vars The placeholders.
+		 * @return {string} The translation.
+		 *
+		 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
+		 */
+		t(app, text, vars) {
+			return translate(app, text, vars)
+		},
+
 		/**
 		 * Hand the chosen key to the designer and close.
 		 *

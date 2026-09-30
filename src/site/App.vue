@@ -175,6 +175,15 @@
 					self-contained document, which is a question about semantics
 					and not about line length.
 				-->
+				<!-- Edit mode: the editor bundle mounts in place of the page. -->
+				<div
+					v-else-if="editMode && editing && editing.pageId"
+					data-testid="site-edit-host">
+					<p v-if="editorStatus" class="container" role="status">
+						{{ editorStatus }}
+					</p>
+					<div ref="editorHost" />
+				</div>
 				<article
 					v-else-if="page"
 					:class="bodyIsGrid ? null : 'utrecht-article'"
@@ -295,7 +304,10 @@
 			everything every visitor came for. It renders nothing at all until
 			the probe has said yes — see `refreshEditingContext`.
 		-->
-		<SiteEditButton v-if="editing" :context="editing" />
+		<SiteEditButton
+			v-if="editing && !editMode"
+			:context="editing"
+			@edit="enterEditMode" />
 	</div>
 </template>
 
@@ -326,6 +338,7 @@ import {
 	resolveApiBase,
 } from './lib/contentApi.js'
 import { editorBaseFrom, fetchEditingContext } from './lib/editorApi.js'
+import { loadSiteEditor } from './lib/loadSiteEditor.js'
 import { pageRegionsOf, resolveRegions } from './lib/regions.js'
 import {
 	footerMenusOf,
@@ -413,6 +426,10 @@ export default {
 			// The editing context for the route on screen, or null for every
 			// visitor who may not edit — which is almost all of them.
 			editing: null,
+			// Edit mode (portal-in-place-editing): on, its status line, its unmount.
+			editMode: false,
+			editorStatus: '',
+			unmountEditor: null,
 			// Set once the probe has refused, and never unset for this page
 			// load. It is what keeps a reader's visit to one extra request in
 			// total rather than one per navigation: whether a session MAY edit
@@ -891,6 +908,50 @@ export default {
 			// editors and must not be able to delay — or fail — the content
 			// every other visitor came for.
 			await this.refreshEditingContext()
+		},
+
+		/**
+		 * Leave edit mode and read the page again.
+		 *
+		 * @return {Promise<void>} Resolves when the page is shown.
+		 *
+		 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
+		 */
+		async leaveEditMode() {
+			if (this.unmountEditor) {
+				this.unmountEditor()
+				this.unmountEditor = null
+			}
+			this.editMode = false
+			await this.loadRoute(this.route)
+		},
+
+		/**
+		 * Load the editor bundle and mount it where the page was.
+		 *
+		 * @return {Promise<void>} Resolves when the editor is mounted.
+		 *
+		 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
+		 */
+		async enterEditMode() {
+			this.editMode = true
+			this.editorStatus = 'De editor wordt geladen…'
+			try {
+				const editor = await loadSiteEditor()
+				await this.$nextTick()
+				if (!this.$refs.editorHost) {
+					return
+				}
+				this.unmountEditor = editor.mount(this.$refs.editorHost, {
+					pageId: this.editing.pageId,
+					portal: (this.site && this.site.slug) || this.portalSlug || '',
+					onLeave: () => this.leaveEditMode(),
+				})
+				this.editorStatus = ''
+			} catch {
+				this.editorStatus =
+					'De editor kon niet worden geladen. Laad de pagina opnieuw en probeer het nog eens.'
+			}
 		},
 
 		/**

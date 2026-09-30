@@ -110,15 +110,37 @@ it). A save:
 On a conflict the editor keeps the unsaved work on screen and offers a reload.
 Nothing is overwritten silently.
 
-## D6. Edit mode on the portal is a separate chunk (A2)
+## D6. Edit mode on the portal is a separate bundle (A2)
 
-`SiteEditButton` gains "Deze pagina bewerken". It calls
-`import(/* webpackChunkName: "site-editor" */ ...)` so the editor, the grid
-library and the forms arrive only when an editor asks for them; the entry grows
-by the button and the import. The editing context adds `pageId` and `updated`.
-The palette is the public half of the catalogue. `WidgetGrid.vue` and the editor
-compute a widget's column and row from the same function
-(`src/editor/geometry.js`), and a test feeds both the same widgets.
+`SiteEditButton` offers "Deze pagina bewerken" when the editing context names
+a page (and keeps "In de beheeromgeving openen" for the admin designer).
+Choosing it loads `js/portaliq-site-editor.js` with one script tag
+(`src/site/lib/loadSiteEditor.js`) and mounts it where the page was
+(`src/editor/siteEditorMain.js`, root `SiteEditMode.vue`).
+
+It is a bundle of its own rather than a dynamic `import()` chunk of the site,
+and that was measured, not assumed: as a chunk, the editor shares Vue with the
+entry, a module shared with a lazy chunk is no longer tree-shaken or
+scope-hoisted there, and the ENTRY grew from 408.5 KiB to 428.6 KiB with none
+of the editor in it, over the 410 KiB budget. As its own bundle with its own
+Vue, the entry grows only by the loader and the button's action. The entry also stops inlining CSS source maps: css-loader followed
+`devtool: 'source-map'` and put every scoped style's map, with the .vue file's
+whole source, into the visitor's JavaScript (App.vue twice), so any line added
+to App.vue cost twice its length. `sourceMap` is now on only in development. The editor
+bundle has no size budget: only an editor on the Nextcloud origin loads it.
+Its chunks carry their own file prefix and its runtime its own global, so the
+builds that share `js/` cannot collide.
+
+The editing context already answers `pageId`; the version marker is read by
+the editor when it loads the page, not from the probe, because the probe's
+answer is older than the load and the check compares against what the editor
+actually shows. The site is a standalone document with no Nextcloud CSS and
+no Nextcloud translations, so the editor bundle registers the Dutch catalogue
+(a chunk of its own) and gives the Nextcloud tokens the shared components read
+portal-neutral values, using the portal's NL Design System tokens where one
+exists. The palette is the public half of the catalogue. `WidgetGrid.vue` and
+the editor compute a widget's cell with one function (`src/editor/geometry.js`),
+and a test feeds both the same widgets.
 
 ## D7. Page tree and menu from the portal (A3)
 
