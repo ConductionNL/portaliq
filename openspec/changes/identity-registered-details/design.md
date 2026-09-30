@@ -1,6 +1,6 @@
 # Design: identity-registered-details
 
-Read at portaliq `development` `eeda3fa`.
+Read at portaliq `development` `eeda3fa`; corrected against the code as built at `83abc06` (30 Sep), see "As built" below.
 
 ## Where it sits today
 
@@ -86,3 +86,34 @@ client is built here.
 
 - It writes nothing to `portalAccount`.
 - It adds no admin screen: the two bindings are set on the portal record.
+
+## As built (30 Sep 2026)
+
+- **D1, controller.** The endpoint lives on its own
+  `lib/Controller/PortalRegisteredDetailsController.php` (`show()`), not on
+  `PortalAccountSelfController`, which already carries nine surfaces. Same
+  bearer rule: `PortalSessionService::resolveFromBearer`, 401 without it, no
+  identifier read from the request.
+- **D1, the BSN check.** `PortalRegisteredDetailsService` applies the eleven
+  test itself, the same rule as OpenRegister's `BsnFormat` (ADR-008 rule 4),
+  so the decision to look up does not depend on OpenRegister being loadable.
+- **D2, class names.** OpenRegister's person provider is
+  `OCA\OpenRegister\Service\Integration\Providers\BrpPersonProvider`
+  (`lookupByBsn`), the company provider `KvkProvider` (`lookupByKvkNumber`).
+  Both are resolved from the container by name; a missing class or an
+  `{unavailable, cause}` answer becomes `source_unavailable`, and the log line
+  names the provider and the cause only.
+- **D3, the company.** KvK Zoeken returns one row per branch plus one for the
+  legal entity. The trade name is the main branch's name, else the legal
+  entity's. `legalForm` is filled only when a row carries `rechtsvorm`
+  (Zoeken usually does not; the basisprofiel does). `companyBranchNumbers()`
+  gives signin-eherkenning-branch T05 its list of branch numbers.
+- **D4, the links.** `lib/Service/Identity/PortalRegisteredDetailsLinks.php`
+  finds each binding among the serving portal's published bindings by its
+  OpenRegister id and links to the built-in site
+  (`portaliq.portalPage.site`, `?portal=<slug>&route=<binding route>`). The
+  serving portal is `CaseTypeVisibility::servingPortal()` (the
+  `X-Portaliq-Portal` header the SPA sends). Register 0.51.0, portal 0.9.0.
+- **D5.** Unchanged: `residentsAtAddress` is always null until openregister
+  answers a count; the request for it is drafted in
+  `~/memcap-work/build-all/for-ruben/openregister-brp-residents-at-address-count.md`.

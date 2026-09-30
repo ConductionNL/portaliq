@@ -20,6 +20,7 @@ import MyCasesPage from '@portal/components/MyCasesPage.jsx'
 import NewsPage, { hasNews } from '@portal/components/NewsPage.jsx'
 import PageView from '@portal/components/PageView.jsx'
 import PortalNotices from '@portal/components/PortalNotices.jsx'
+import RegisteredDetailsPage from '@portal/components/RegisteredDetailsPage.jsx'
 import TasksPage from '@portal/components/TasksPage.jsx'
 import { branchInEffect } from '@portal/lib/branch.js'
 import { logoutTarget, markIdleSignOut, silentSignInUrl, takeIdleSignOut } from '@portal/lib/idleSession.js'
@@ -59,6 +60,9 @@ const ACCESS_KEY = '__access__'
 // the backend announces `cases: {enabled: true}` on the contributions
 // aggregate, that is when some contribution declares a `kind: cases` collection.
 const CASES_KEY = '__cases__'
+// "My details" (identity-registered-details): what the BRP or the KvK holds
+// about the signed-in person, read when the section opens.
+const DETAILS_KEY = '__details__'
 
 /**
  * sessionStorage, or null where the browser refuses it (private mode, a
@@ -134,6 +138,8 @@ function buildNav(contributions, t, tasksEnabled, messagesEnabled = false, newsE
 	// cases" page to find it on.
 	if (accessEnabled) {
 		nav.push({ key: ACCESS_KEY, label: t('Access to cases'), icon: 'AccountKey', special: 'access' })
+		// The registered details, for the same reason and never the default.
+		nav.push({ key: DETAILS_KEY, label: t('My details'), icon: 'CardAccountDetails', special: 'details' })
 	}
 	return nav
 }
@@ -312,7 +318,7 @@ export default function App({ config, t: tProp }) {
 	// message list instead of the subject's actual records.
 	useEffect(() => {
 		if (nav.length > 0 && (activeKey === null || !nav.some((n) => n.key === activeKey))) {
-			const firstContent = nav.find((n) => n.special !== 'inbox' && n.special !== 'access') || nav[0]
+			const firstContent = nav.find((n) => n.special !== 'inbox' && n.special !== 'access' && n.special !== 'details') || nav[0]
 			setActiveKey(firstContent.key)
 		}
 	}, [nav, activeKey])
@@ -626,6 +632,10 @@ export default function App({ config, t: tProp }) {
 
 						{active && active.special === 'access' && (
 							<AccessRequestsPage api={api} t={t} locale={config.locale} />
+						)}
+
+						{active && active.special === 'details' && (
+							<RegisteredDetailsPage api={api} t={t} locale={config.locale} />
 						)}
 
 						{active && active.special === 'tasks' && (
