@@ -461,6 +461,77 @@ class ContributionControllerTest extends TestCase {
 
 	}//end testCreateNeverPassesClaimsToTheWriter()
 
+	/**
+	 * signin-eherkenning-branch REQ-SEB-002, from the caller: a session
+	 * restricted to a branch reads only that branch's rows, and nothing of a
+	 * collection that declares no branch field.
+	 */
+	public function testARestrictedSessionReadsOnlyItsBranchsRows(): void {
+		$aggregate = $this->aggregate(
+			collections: [
+				['id' => 'zaken', 'register' => 'zaken', 'schema' => 'zaak', 'scopeField' => 'kvk', 'branchField' => 'vestiging'],
+				['id' => 'andere', 'register' => 'zaken', 'schema' => 'melding', 'scopeField' => 'kvk'],
+			]
+		);
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('readCollection')->willReturn(
+			[
+				['id' => 'z1', 'vestiging' => '000012345678'],
+				['id' => 'z2', 'vestiging' => '000087654321'],
+				['id' => 'z3'],
+			]
+		);
+		$subject = self::SUBJECT + ['branch' => '000012345678', 'branchRestricted' => true];
+
+		$own = $this->controller(aggregate: $aggregate, subject: $subject, reader: $reader)->collection('zaken', 'zaak');
+		$this->assertSame(['z1'], array_column($own->getData()['objects'], 'id'));
+
+		$none = $this->controller(aggregate: $aggregate, subject: $subject, reader: $reader)->collection('zaken', 'melding');
+		$this->assertSame([], $none->getData()['objects']);
+
+		$chosen = $this->controller(aggregate: $aggregate, subject: self::SUBJECT + ['branch' => '000012345678', 'branchRestricted' => false], reader: $reader)->collection('zaken', 'melding');
+		$this->assertCount(3, $chosen->getData()['objects'], 'a chosen branch filters only where the collection can tell branches apart');
+
+	}//end testARestrictedSessionReadsOnlyItsBranchsRows()
+
+	public function testAnotherBranchsCaseAnswersNotFound(): void {
+		$aggregate = $this->aggregate(
+			collections: [
+				['id' => 'zaken', 'register' => 'zaken', 'schema' => 'zaak', 'scopeField' => 'kvk', 'branchField' => 'vestiging'],
+			]
+		);
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('readObject')->willReturn(['id' => 'z2', 'vestiging' => '000087654321']);
+		$subject = self::SUBJECT + ['branch' => '000012345678', 'branchRestricted' => true];
+
+		$response = $this->controller(aggregate: $aggregate, subject: $subject, reader: $reader)->object('zaken', 'zaak', 'z2');
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+
+	}//end testAnotherBranchsCaseAnswersNotFound()
+
+	public function testACaseFiledInABranchSessionLandsOnTheBranch(): void {
+		$aggregate = $this->aggregate(
+			actions: [
+				['id' => 'c1', 'type' => 'create', 'register' => 'r1', 'schema' => 'a', 'fields' => ['title'], 'branchField' => 'vestiging'],
+			]
+		);
+		$saved = null;
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('createObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, array $data) use (&$saved) {
+				$saved = $data;
+				return ['id' => 'new'];
+			}
+		);
+		$subject = self::SUBJECT + ['branch' => '000012345678', 'branchRestricted' => true];
+
+		$this->controller(aggregate: $aggregate, subject: $subject, writer: $writer)->create('r1', 'a');
+
+		$this->assertSame(['title' => 'X', 'vestiging' => '000012345678'], $saved);
+
+	}//end testACaseFiledInABranchSessionLandsOnTheBranch()
+
 	public function testCreateRecordsACreateAuditEntryWithTheNewId(): void {
 		// portal-session-hardening-v2 T09: a successful create() records a
 		// `create` audit entry carrying the NEWLY created object's id.

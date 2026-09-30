@@ -32,6 +32,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Service\Branch\PortalBranchScope;
+
 /**
  * Merges every `kind: cases` collection into the subject's own case list.
  *
@@ -68,6 +70,7 @@ class PortalCaseListReader {
 	public function __construct(
 		private readonly PortalObjectReader $reader,
 		private readonly ?Identity\PortalMandateService $mandates = null,
+		private readonly PortalBranchScope $branches = new PortalBranchScope(),
 	) {
 	}//end __construct()
 
@@ -462,7 +465,7 @@ class PortalCaseListReader {
 			return [];
 		}
 
-		return $this->reader->readCollection(
+		$rows = $this->reader->readCollection(
 			register: (string)($collection['register'] ?? ''),
 			schema: (string)($collection['schema'] ?? ''),
 			scopeField: $scopeField,
@@ -476,5 +479,8 @@ class PortalCaseListReader {
 			fields: ($collection['fields'] ?? null),
 			filter: (array)($collection['filter'] ?? [])
 		);
+
+		// signin-eherkenning-branch D2: a branch session sees its branch only.
+		return $this->branches->rows(subject: $subject, collection: $collection, rows: $rows);
 	}//end readCases()
 }//end class

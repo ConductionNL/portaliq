@@ -432,6 +432,32 @@ class PortalManifestNormaliserTest extends TestCase {
 	}//end testAClosedFieldIsKeptOnlyWhenItNamesAProjectedField()
 
 	/**
+	 * signin-eherkenning-branch REQ-SEB-002 (T03): `branchField` stays only
+	 * when it names a projected field.
+	 */
+	public function testABranchFieldIsKeptOnlyWhenItNamesAProjectedField(): void {
+		$out = $this->normaliser()->normalise(
+			[
+				'collections' => [
+					['id' => 'c1', 'schema' => 's', 'fields' => ['title', 'vestiging'], 'branchField' => 'vestiging'],
+					['id' => 'c2', 'schema' => 's', 'fields' => ['title'], 'branchField' => 'vestiging'],
+					['id' => 'c3', 'schema' => 's', 'branchField' => 'vestiging'],
+					['id' => 'c4', 'schema' => 's', 'branchField' => ['vestiging']],
+					['id' => 'c5', 'schema' => 's', 'branchField' => ''],
+				],
+			]
+		);
+
+		$byId = array_column($out['collections'], null, 'id');
+		$this->assertSame('vestiging', $byId['c1']['branchField']);
+		$this->assertSame('vestiging', $byId['c3']['branchField']);
+		foreach (['c2', 'c4', 'c5'] as $id) {
+			$this->assertArrayNotHasKey('branchField', $byId[$id], $id);
+		}
+
+	}//end testABranchFieldIsKeptOnlyWhenItNamesAProjectedField()
+
+	/**
 	 * ADDITIVE-COMPAT: a pure v2 manifest round-trips with collections + actions
 	 * byte-identical; only an additive synthesised `pages` array appears.
 	 */

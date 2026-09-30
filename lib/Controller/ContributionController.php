@@ -50,6 +50,7 @@ use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\ActionScopeResolver;
 use OCA\Portaliq\Contribution\FileFieldConfigNormaliser;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Service\Branch\PortalBranchScope;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\CaseRowMarker;
 use OCA\Portaliq\Service\CaseTypeVisibility;
@@ -174,6 +175,7 @@ class ContributionController extends Controller implements PortalProtected {
 		private readonly ?PortalTaskGateway $taskGateway = null,
 		private readonly ?PortalCrossRefGuard $crossRefs = null,
 		private readonly ?CaseTypeVisibility $caseTypes = null,
+		private readonly PortalBranchScope $branches = new PortalBranchScope(),
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -524,6 +526,9 @@ class ContributionController extends Controller implements PortalProtected {
 			filter: (array)($collection['filter'] ?? [])
 		);
 
+		// signin-eherkenning-branch D2: a branch session sees its branch only.
+		$objects = $this->branches->rows(subject: $subject, collection: $collection, rows: $objects);
+
 		$hidden = ($this->caseTypes?->hiddenForCollection(request: $this->request, subject: $subject, collection: $collection) ?? []);
 		if ($hidden !== []) {
 			// A case of a type this portal does not show leaves the list
@@ -646,7 +651,10 @@ class ContributionController extends Controller implements PortalProtected {
 		// A case of a type the serving portal hides answers the same 404
 		// (operate-show-per-case-type REQ-OSC-002).
 		$hidden = ($this->caseTypes?->hiddenForCollection(request: $this->request, subject: $subject, collection: $collection) ?? []);
-		if ($object === null || $this->caseTypes?->rowIsHidden(row: $object, collection: $collection, hidden: $hidden) === true) {
+		if ($object === null
+			|| $this->branches->admits(subject: $subject, collection: $collection, row: $object) === false
+			|| $this->caseTypes?->rowIsHidden(row: $object, collection: $collection, hidden: $hidden) === true
+		) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
@@ -1007,7 +1015,9 @@ class ContributionController extends Controller implements PortalProtected {
 			scopeField: (string)($action['scopeField'] ?? 'subjectRef'),
 			subjectRef: (string)($subject['subjectRef'] ?? ''),
 			organisation: (string)($subject['organisation'] ?? ''),
-			data: $data
+			// signin-eherkenning-branch D2: a case filed in a branch session
+			// lands on that branch.
+			data: $this->branches->stamp(subject: $subject, action: $action, data: $data)
 		);
 
 		if ($created === null) {

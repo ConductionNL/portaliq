@@ -32,6 +32,30 @@ class PortalCaseListReaderTest extends TestCase {
 	}//end testACaseAttachedByClaimIsListed()
 
 	/**
+	 * signin-eherkenning-branch REQ-SEB-002: "My cases" for a session
+	 * restricted to a branch lists that branch's cases only, and nothing of a
+	 * case collection that declares no branch field.
+	 */
+	public function testARestrictedSessionListsOnlyItsBranchsCases(): void {
+		$reader = $this->readerReturning([
+			['reference' => 'ZAAK-1', 'vestiging' => '000012345678'],
+			['reference' => 'ZAAK-2', 'vestiging' => '000087654321'],
+		]);
+		$cases = new PortalCaseListReader($reader);
+		$subject = $this->subject() + ['branch' => '000012345678', 'branchRestricted' => true];
+
+		$own = $cases->listCases(subject: $subject, aggregate: $this->aggregate(collection: $this->casesCollection() + ['branchField' => 'vestiging']));
+		$this->assertSame(['ZAAK-1'], array_column($own, 'reference'));
+
+		$none = $cases->listCases(subject: $subject, aggregate: $this->aggregate(collection: $this->casesCollection()));
+		$this->assertSame([], $none);
+
+		$all = $cases->listCases(subject: $this->subject(), aggregate: $this->aggregate(collection: $this->casesCollection() + ['branchField' => 'vestiging']));
+		$this->assertCount(2, $all, 'a session without a branch lists every case');
+
+	}//end testARestrictedSessionListsOnlyItsBranchsCases()
+
+	/**
 	 * operate-show-per-case-type REQ-OSC-002: a case of a type the portal
 	 * hides leaves "My cases"; the other types stay, and so does a case whose
 	 * type is held as a reference object.

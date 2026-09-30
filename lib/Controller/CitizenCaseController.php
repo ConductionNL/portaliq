@@ -43,6 +43,7 @@ use OCA\Portaliq\Contribution\CitizenWriteActionFinder;
 use OCA\Portaliq\Contribution\CitizenWriteConfigNormaliser;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Event\PortalClientWriteEvent;
+use OCA\Portaliq\Service\Branch\PortalBranchScope;
 use OCA\Portaliq\Service\CitizenCaseDocuments;
 use OCA\Portaliq\Service\CitizenWritableSetResolver;
 use OCA\Portaliq\Service\CitizenWriteRecorder;
@@ -128,6 +129,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 		private readonly LoggerInterface $logger,
 		private readonly CitizenCaseDocuments $documents,
 		private readonly ?MandatedCaseReader $mandatedCases = null,
+		private readonly PortalBranchScope $branches = new PortalBranchScope(),
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -531,7 +533,9 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			contributingApp: $match['app'],
 			audience: (string)($subject['audience'] ?? '')
 		);
-		if ($case === null) {
+		// signin-eherkenning-branch D2: a branch session changes only its
+		// branch's cases, and answers the same as for a case not its own.
+		if ($case === null || $this->branches->admits(subject: $subject, collection: $action, row: $case) === false) {
 			return $this->refuse(
 				message: $this->l10n->t('This case is not yours.'),
 				slug: 'case-not-yours',

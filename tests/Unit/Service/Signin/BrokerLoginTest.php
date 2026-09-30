@@ -311,8 +311,9 @@ class BrokerLoginTest extends TestCase {
 		// identityType, identityRef, organisation, audience; no subject
 		// override and no verified e-mail (the broker supplies none).
 		$this->assertSame(['digid', 'pseudonym-3f2a', 'gemeente-x', 'client', null, ''], $this->accountCalls[0]);
-		// subjectRef, audience, organisation, trust, roles.
-		$this->assertSame(['subject-9', 'client', 'gemeente-x', 'substantial', ['client:read']], $this->sessionCalls[0]);
+		// subjectRef, audience, organisation, trust, roles, and no branch:
+		// integriq's envelope carries none yet (signin-eherkenning-branch).
+		$this->assertSame(['subject-9', 'client', 'gemeente-x', 'substantial', ['client:read'], ''], $this->sessionCalls[0]);
 	}//end testEnvelopeMintsASessionWithItsTrust()
 
 
