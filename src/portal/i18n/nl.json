@@ -231,5 +231,13 @@
 	"No registered details were found for you.": "Er zijn geen geregistreerde gegevens van u gevonden.",
 	"There is no portal account for this sign-in.": "Er is geen portaalaccount voor deze inlog.",
 	"Your registered details cannot be shown right now.": "Uw geregistreerde gegevens kunnen nu niet worden getoond.",
-	"Send": "Versturen"
+	"Send": "Versturen",
+	"In this dossier": "In dit dossier",
+	"The items could not be loaded.": "De inhoud kon niet worden geladen.",
+	"Removed.": "Verwijderd.",
+	"Nothing in this dossier yet.": "Er staat nog niets in dit dossier.",
+	"No longer public": "Niet meer openbaar",
+	"Remove": "Verwijderen",
+	"Link": "Link",
+	"Copy link": "Kopieer link"
 }

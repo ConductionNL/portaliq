@@ -573,6 +573,23 @@ export function createPortalApi(config) {
 		},
 
 		/**
+		 * The items of one object the subject owns (my-dossiers): `{ label,
+		 * items, removeAction }` from the app's `itemList` provider, read only
+		 * after the server proved the object is the subject's. Null when the
+		 * list could not be read.
+		 *
+		 * @param {object} collection Manifest collection: `{ id, register, schema }`.
+		 * @param {string} id The object id.
+		 * @return {Promise<object|null>} The answer, or null.
+		 */
+		async fetchItems(collection, id) {
+			const body = await get(
+				`${col(collection.register, collection.schema)}/${encodeURIComponent(id)}/items?collection=${encodeURIComponent(collection.id)}`,
+			)
+			return body && Array.isArray(body.items) ? body : null
+		},
+
+		/**
 		 * Create an object via a declared `type: create` action. Only the action's
 		 * whitelisted fields are sent; the server stamps ownership.
 		 *

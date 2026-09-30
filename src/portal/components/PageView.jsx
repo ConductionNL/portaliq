@@ -10,6 +10,7 @@
 // blocks, so a ref that does not resolve here is a defensive skip, not expected.
 
 import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { withoutRemoveAction } from '../lib/itemList.js'
 import { rowFor } from '../lib/openRecord.js'
 import { isEndpointRowAction, offersRowAction, rowNotice } from '../lib/rowAction.js'
 import { dialogFor, tableRowActions } from '../lib/signing.js'
@@ -17,6 +18,7 @@ import AttachedActions from './AttachedActions.jsx'
 import CitizenCase from './CitizenCase.jsx'
 import CollectionTable from './CollectionTable.jsx'
 import DeclineDialog from './DeclineDialog.jsx'
+import ItemList from './ItemList.jsx'
 import Loading from './Loading.jsx'
 import ProposeChangeForm from './ProposeChangeForm.jsx'
 import RichText from './RichText.jsx'
@@ -293,6 +295,8 @@ function DetailCard({ collection, row, api, proposeAction, t }) {
 			{collection.filesUpload === true && api && <FileUpload collection={collection} row={row} api={api} onUploaded={refresh} t={t} />}
 			{collection.filesDownload === true && api && <FileList collection={collection} row={detailRow} api={api} />}
 			{proposeAction && api && <ProposalQueue action={proposeAction} row={detailRow} api={api} />}
+			{/* What is in this record, from its app (my-dossiers). */}
+			{collection.itemList && api && <ItemList collection={collection} row={detailRow} api={api} t={t || ((key) => key)} />}
 			{/* Another app's actions on this record (woo-journey-entry-points D3). */}
 			<AttachedActions collection={collection} row={detailRow} api={api} t={t || ((key) => key)} />
 			{collection.timeline && timeline !== false && (
@@ -431,7 +435,7 @@ export default function PageView({ page, contribution, api, dataByCollection, on
 								// and show only on the rows their `rowWhen` names.
 								// Viewing the document belongs to the sign dialog, not to a
 								// button of its own (case-actions-sign-a-document).
-								rowActions={tableRowActions(rowActions.filter((a) => a.type === 'update' || isEndpointRowAction(a)))}
+								rowActions={tableRowActions(withoutRemoveAction(collection, rowActions.filter((a) => a.type === 'update' || isEndpointRowAction(a))))}
 								offers={offersRowAction}
 								busyRow={busyRow}
 								onRowAction={(action, row) => {
