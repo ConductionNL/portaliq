@@ -881,54 +881,6 @@
       {
         "@self": {
           "register": "portaliq",
-          "schema": "portalAuditEntry",
-          "slug": "portalauditentry-portalauditentry-1-1"
-        },
-        "subjectRef": "Voorbeeld Subjectref 1",
-        "organisation": "Voorbeeld Organisation 1",
-        "verb": "create",
-        "timestamp": "2026-03-01T09:00:00+00:00",
-        "jti": "Voorbeeld Jti 1",
-        "appId": "Voorbeeld Appid 1",
-        "register": "Voorbeeld Register 1",
-        "schema": "Voorbeeld Schema 1",
-        "targetId": "Voorbeeld Targetid 1"
-      },
-      {
-        "@self": {
-          "register": "portaliq",
-          "schema": "portalAuditEntry",
-          "slug": "portalauditentry-portalauditentry-2-2"
-        },
-        "subjectRef": "Voorbeeld Subjectref 2",
-        "organisation": "Voorbeeld Organisation 2",
-        "verb": "update",
-        "timestamp": "2026-03-02T09:00:00+00:00",
-        "jti": "Voorbeeld Jti 2",
-        "appId": "Voorbeeld Appid 2",
-        "register": "Voorbeeld Register 2",
-        "schema": "Voorbeeld Schema 2",
-        "targetId": "Voorbeeld Targetid 2"
-      },
-      {
-        "@self": {
-          "register": "portaliq",
-          "schema": "portalAuditEntry",
-          "slug": "portalauditentry-portalauditentry-3-3"
-        },
-        "subjectRef": "Voorbeeld Subjectref 3",
-        "organisation": "Voorbeeld Organisation 3",
-        "verb": "forward",
-        "timestamp": "2026-03-03T09:00:00+00:00",
-        "jti": "Voorbeeld Jti 3",
-        "appId": "Voorbeeld Appid 3",
-        "register": "Voorbeeld Register 3",
-        "schema": "Voorbeeld Schema 3",
-        "targetId": "Voorbeeld Targetid 3"
-      },
-      {
-        "@self": {
-          "register": "portaliq",
           "schema": "portalCase",
           "slug": "portalcase-portalcase-1-1"
         },

@@ -3,28 +3,21 @@
 /**
  * Portaliq Audit Trail Service
  *
- * Append-only, portal-owned record of who did what: writes a `portalAuditEntry`
- * for every portal mutation (create/update/forward), every download, and every
- * session event (login/logout/refresh). Backs WMEBV's burden-of-proof-of-
- * delivery requirement (~Awb 2:25) and org wish D7 (audit trails). Also the
- * concrete class `PortalAuditHook` resolves by name from the container — once
- * this class exists, the download hook already placed by portal-document-
- * download starts recording, with no further change to that hook.
+ * Writes the portal's proof records into OpenRegister's audit trail: every
+ * portal mutation (create/update/forward), every download, every confirmed
+ * task completion and every session event (login/logout/refresh) becomes one
+ * hash-chained row in OpenRegister's audit trail with the action
+ * `portaliq.<verb>`. These rows back the WMEBV burden of proof of delivery
+ * (~Awb 2:25). Until change consume-or-audit-trail-proof-records the portal
+ * kept them as objects in its own register; the repair step
+ * MovePortalAuditEntries moves those records here.
  *
- * A record is a FACT (jti, subjectRef, organisation, appId, verb, target
- * register/schema/id, timestamp) and NEVER carries payload content — recording
- * *that* a verb happened against a target, not the data itself, so the audit
- * trail cannot become a second, wider-exposed copy of the domain object.
+ * A row is a FACT (subject, organisation, session token id, app, verb, target
+ * register/schema/id, time) and NEVER carries payload content, so the trail
+ * cannot become a second copy of the domain object.
  *
- * Failure isolation (design.md): a write failure here must NEVER fail the
- * audited action. `record()` catches everything internally, logs the gap for
- * reconciliation, and never throws — callers invoke it fire-and-forget, with
- * no try/catch of their own required.
- *
- * Retention (Archiefwet): per the fleet convention, this service only WRITES
- * entries. Purge/retention is OpenRegister's records-management `_retention`
- * transient (consume, do not rebuild) — an operator/OR-side concern, not
- * enforced here.
+ * Failure isolation: a write failure here never fails the audited action.
+ * `record()` catches everything, logs the gap and never throws.
  *
  * @category Service
  * @package  OCA\Portaliq\Service
@@ -38,73 +31,73 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T08
+ * @spec openspec/changes/archive/2026-09-30-consume-or-audit-trail-proof-records/tasks.md#T01
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use DateTimeImmutable;
+use DateTime;
 use OCA\Portaliq\AppInfo\Application;
+use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * Failure-isolated writer for the append-only `portalAuditEntry` trail.
+ * Failure-isolated writer and counter of the portal's rows in OpenRegister's
+ * audit trail.
  *
- * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T08
+ * @spec openspec/changes/archive/2026-09-30-consume-or-audit-trail-proof-records/tasks.md#T01
  */
 class AuditTrailService {
 	/**
-	 * The OpenRegister register the `portalAuditEntry` schema lives in.
+	 * OpenRegister's audit-trail mapper: the only place a proof record is written.
 	 */
-	private const REGISTER = 'portaliq';
+	private const TRAIL_MAPPER = 'OCA\\OpenRegister\\Db\\AuditTrailMapper';
 
 	/**
-	 * The OpenRegister schema recording audit entries.
+	 * The action prefix of every portal row in the audit trail.
 	 */
-	private const SCHEMA = 'portalAuditEntry';
+	public const ACTION_PREFIX = Application::APP_ID . '.';
+
+	/**
+	 * The verbs the portal records.
+	 */
+	public const VERBS = ['create', 'update', 'forward', 'download', 'login', 'logout', 'refresh', 'complete'];
+
+	/**
+	 * A uuid, so a target that is an object is linked to that object's history.
+	 */
+	private const UUID_PATTERN = '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i';
 
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectWriter $writer Persists audit entries (append-only).
-	 * @param LoggerInterface $logger The logger — records a write failure
-	 *                                for reconciliation; never rethrown.
+	 * @param ContainerInterface $container Resolves OpenRegister's audit-trail mapper, which may be absent.
+	 * @param LoggerInterface $logger Records a write failure for reconciliation; never rethrown.
 	 */
 	public function __construct(
-		private readonly PortalObjectWriter $writer,
+		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
 
 	/**
-	 * Record one audit fact. NEVER throws — a failure is caught, logged, and
-	 * the audited action is never reversed because its audit entry could not
-	 * be written.
+	 * Record one audit fact. NEVER throws.
 	 *
-	 * `$jti` and `$appId` are optional because the existing `PortalAuditHook`
-	 * call site (portal-document-download) does not carry them — the hook's
-	 * signature is fixed and predates this service; `$appId` defaults to this
-	 * app's own id (the download hook always records portaliq's own action)
-	 * and an absent `$jti` simply records an empty token id.
-	 *
-	 * @param string $verb One of create|update|forward|download|login|logout|refresh|complete
-	 *                     (`complete` = a confirmed portal-task completion, WOO-569).
+	 * @param string $verb One of self::VERBS.
 	 * @param string $subjectRef The subject the event belongs to.
 	 * @param string $organisation The subject's tenant.
-	 * @param string $register The target register (or a stand-in namespace for
-	 *                         non-object events such as a forwarded action's appId).
-	 * @param string $schema The target schema (or a stand-in for the action id).
+	 * @param string $register The target register (or the app id of a forwarded action).
+	 * @param string $schema The target schema (or the action id).
 	 * @param string $id The target object id (may be empty for session events).
-	 * @param string $jti The acting/affected session's token id, when known.
+	 * @param string $jti The acting session's token id, when known.
 	 * @param string $appId The contributing app id recording the entry.
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T08
-	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-09-30-consume-or-audit-trail-proof-records/tasks.md#T01
 	 */
 	public function record(
 		string $verb,
@@ -116,54 +109,144 @@ class AuditTrailService {
 		string $jti = '',
 		string $appId = Application::APP_ID,
 	): void {
+		$fact = [
+			'jti' => $jti,
+			'subjectRef' => $subjectRef,
+			'organisation' => $organisation,
+			'appId' => $appId,
+			'verb' => $verb,
+			'register' => $register,
+			'schema' => $schema,
+			'targetId' => $id,
+		];
+
 		try {
-			$this->writer->createObject(
-				register: self::REGISTER,
-				schema: self::SCHEMA,
-				scopeField: '',
-				subjectRef: $subjectRef,
-				organisation: $organisation,
-				data: [
-					'jti' => $jti,
-					'subjectRef' => $subjectRef,
-					'organisation' => $organisation,
-					'appId' => $appId,
-					'verb' => $verb,
-					'register' => $register,
-					'schema' => $schema,
-					'targetId' => $id,
-					'timestamp' => (new DateTimeImmutable())->format(DATE_ATOM),
-				]
-			);
+			$this->append(fact: $fact, uuid: self::newUuid(), created: new DateTime());
 		} catch (Throwable $e) {
-			// Failure isolation (design.md): the audited action already
-			// happened — the gap is logged for reconciliation, never
-			// propagated to the caller.
+			// The audited action already happened: log the gap, never propagate.
 			$this->logger->warning('Portaliq: audit record failed', ['verb' => $verb, 'reason' => $e->getMessage()]);
-		}//end try
+		}
 	}//end record()
 
 	/**
-	 * Count-only exposure for `MetricsController` (never subjects/targets/
-	 * payload): the number of `portalAuditEntry` rows per verb. Degrades to an
-	 * all-zero map when OpenRegister is unavailable — metrics generation must
-	 * never fail because the audit register is unreachable.
+	 * Write one fact as an audit-trail row with a given uuid and time. The
+	 * repair step uses it to move an old record with its own uuid and time.
+	 *
+	 * @param array<string, mixed> $fact The fact fields (see record()).
+	 * @param string $uuid The row's uuid.
+	 * @param DateTime $created When the fact happened.
+	 *
+	 * @return void
+	 *
+	 * @throws Throwable When OpenRegister is absent or the insert fails.
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-consume-or-audit-trail-proof-records/tasks.md#T01
+	 */
+	public function append(array $fact, string $uuid, DateTime $created): void {
+		$verb = (string)($fact['verb'] ?? '');
+		$subject = (string)($fact['subjectRef'] ?? '');
+		$target = (string)($fact['targetId'] ?? '');
+
+		$class = $this->trailEntityClass();
+		$row = new $class();
+		$row->setUuid($uuid);
+		$row->setAction(self::ACTION_PREFIX . $verb);
+		$row->setUser($subject);
+		$row->setUserName($subject);
+		$row->setChanged(
+			[
+				'appId' => (string)($fact['appId'] ?? Application::APP_ID),
+				'register' => (string)($fact['register'] ?? ''),
+				'schema' => (string)($fact['schema'] ?? ''),
+				'targetId' => $target,
+			]
+		);
+		if ((string)($fact['jti'] ?? '') !== '') {
+			$row->setSession((string)$fact['jti']);
+		}
+
+		if ((string)($fact['organisation'] ?? '') !== '') {
+			$row->setOrganisationId((string)$fact['organisation']);
+		}
+
+		if (preg_match(self::UUID_PATTERN, $target) === 1) {
+			$row->setObjectUuid($target);
+		}
+
+		$row->setCreated($created);
+
+		$this->mapper()->insertAuditTrails([$row]);
+	}//end append()
+
+	/**
+	 * Whether the audit trail already holds a row with this uuid.
+	 *
+	 * @param string $uuid The row uuid.
+	 *
+	 * @return bool
+	 *
+	 * @throws Throwable When OpenRegister is absent.
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-consume-or-audit-trail-proof-records/tasks.md#T02
+	 */
+	public function has(string $uuid): bool {
+		return $this->mapper()->findAll(limit: 1, filters: ['uuid' => $uuid]) !== [];
+	}//end has()
+
+	/**
+	 * Count-only exposure for MetricsController: the number of portal rows
+	 * in the audit trail per verb, never a subject, target or payload.
+	 * Degrades to zero per verb when OpenRegister is unavailable.
 	 *
 	 * @return array<string, int> Counts keyed by verb.
 	 *
-	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T10
+	 * @spec openspec/changes/archive/2026-09-30-consume-or-audit-trail-proof-records/tasks.md#T03
 	 */
 	public function countsByVerb(): array {
-		$verbs = ['create', 'update', 'forward', 'download', 'login', 'logout', 'refresh', 'complete'];
-		$counts = [];
-		foreach ($verbs as $verb) {
-			$counts[$verb] = $this->writer->countObjects(
-				register: self::REGISTER,
-				schema: self::SCHEMA,
-				filters: ['verb' => $verb]
-			);
+		$counts = array_fill_keys(self::VERBS, 0);
+		try {
+			$mapper = $this->mapper();
+			foreach (self::VERBS as $verb) {
+				$counts[$verb] = count($mapper->findAll(filters: ['action' => self::ACTION_PREFIX . $verb]));
+			}
+		} catch (Throwable $e) {
+			$this->logger->debug('Portaliq: audit count read failed', ['reason' => $e->getMessage()]);
 		}
 
 		return $counts;
 	}//end countsByVerb()
+
+	/**
+	 * A random (version 4) uuid for a new row.
+	 *
+	 * @return string
+	 */
+	private static function newUuid(): string {
+		$bytes = random_bytes(16);
+		$bytes[6] = chr((ord($bytes[6]) & 0x0f) | 0x40);
+		$bytes[8] = chr((ord($bytes[8]) & 0x3f) | 0x80);
+
+		return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($bytes), 4));
+	}//end newUuid()
+
+	/**
+	 * OpenRegister's audit-trail mapper.
+	 *
+	 * @return mixed
+	 *
+	 * @throws Throwable When OpenRegister is not installed.
+	 */
+	private function mapper(): mixed {
+		return $this->container->get(self::TRAIL_MAPPER);
+	}//end mapper()
+
+	/**
+	 * OpenRegister's audit-trail entity class, named here rather than imported
+	 * because OpenRegister is a sibling app that may be absent.
+	 *
+	 * @return mixed
+	 */
+	private function trailEntityClass(): mixed {
+		return 'OCA\\OpenRegister\\Db\\AuditTrail';
+	}//end trailEntityClass()
 }//end class

@@ -6979,11 +6979,12 @@
 			},
 			"built": {
 				"state": "built",
-				"evidence": "lib/Service/AuditTrailService.php and lib/Service/PortalAuditHook.php are both called from lib/Controller/ContributionController.php, lib/Service/PortalSessionService.php, lib/Service/CitizenWriteRecorder.php, lib/Controller/PortalTaskProxyController.php, and lib/Controller/MetricsController.php (verified with grep -l for real call sites, not just the declaring file)",
-				"reachedOn": "every contribution write, portal session event and task proxy call passes through the hook",
+				"evidence": "lib/Service/AuditTrailService.php writes every portal proof record (sign-in, sign-out, refresh, create, update, forward, download, task completion) as one row in OpenRegister's audit trail (AuditTrailMapper::insertAuditTrails, action portaliq.<verb>); called from ContributionController, PortalSessionService, CitizenWriteRecorder, PortalTaskProxyController, PortalAuditHook; MetricsController counts the rows. lib/Repair/MovePortalAuditEntries moves the old portalAuditEntry objects on upgrade.",
+				"reachedOn": "every contribution write, portal session event, download and task completion; administrators read the rows in OpenRegister's audit trail",
 				"owner": "ConductionNL/portaliq",
 				"note": "This is not a guard-with-no-caller: multiple real call sites confirmed across controllers and services.",
-				"origin": "code"
+				"origin": "code",
+				"change": "2026-09-30-consume-or-audit-trail-proof-records"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -7311,11 +7312,12 @@
 			},
 			"built": {
 				"state": "built",
-				"evidence": "same evidence as ops-audit-trail: AuditTrailService/PortalAuditHook with confirmed call sites in ContributionController, PortalSessionService, CitizenWriteRecorder, PortalTaskProxyController, MetricsController",
-				"reachedOn": "every contribution write and portal session event",
+				"evidence": "lib/Service/AuditTrailService.php writes every portal proof record (sign-in, sign-out, refresh, create, update, forward, download, task completion) as one row in OpenRegister's audit trail (AuditTrailMapper::insertAuditTrails, action portaliq.<verb>); called from ContributionController, PortalSessionService, CitizenWriteRecorder, PortalTaskProxyController, PortalAuditHook; MetricsController counts the rows. lib/Repair/MovePortalAuditEntries moves the old portalAuditEntry objects on upgrade.",
+				"reachedOn": "every contribution write, portal session event, download and task completion; administrators read the rows in OpenRegister's audit trail",
 				"owner": "ConductionNL/portaliq",
 				"note": "Not rated only from a class existing: multiple independent real callers were confirmed.",
-				"origin": "competitor"
+				"origin": "competitor",
+				"change": "2026-09-30-consume-or-audit-trail-proof-records"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
