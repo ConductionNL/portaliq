@@ -195,23 +195,41 @@ class PortalActionForwarder {
 
 	/**
 	 * The raw request body to relay verbatim to the domain endpoint. Portaliq
-	 * never interprets it — the domain app validates its own input.
+	 * never interprets it: the domain app validates its own input.
+	 *
+	 * Nextcloud's runtime request declares getContent() protected, so it is
+	 * called only when callable; otherwise the raw body comes from the input
+	 * stream. A method_exists() guard let the protected call through and every
+	 * forwarded action answered 500.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/changes/contribution-pay-screen/specs/portal-contribution-contract/spec.md#requirement-a-row-scoped-forward-must-prove-the-row-before-it-forwards
 	 */
-	private function requestBody(): string {
-		// OCP\IRequest does not declare getContent() in every stub set; the
-		// runtime request object provides it. Guarded so unit mocks without it
-		// simply relay an empty body.
-		if (method_exists($this->request, 'getContent') === false) {
-			return '';
+	protected function requestBody(): string {
+		if (is_callable([$this->request, 'getContent']) === true) {
+			$content = $this->request->getContent();
+			if (is_string($content) === true) {
+				return $content;
+			}
 		}
 
-		$content = $this->request->getContent();
-		if (is_string($content) === false) {
-			return '';
-		}
-
-		return $content;
+		return $this->rawInput();
 	}//end requestBody()
+
+	/**
+	 * The raw body of the current HTTP request, read from the input stream.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/contribution-pay-screen/specs/portal-contribution-contract/spec.md#requirement-a-row-scoped-forward-must-prove-the-row-before-it-forwards
+	 */
+	protected function rawInput(): string {
+		$raw = file_get_contents('php://input');
+		if (is_string($raw) === false) {
+			return '';
+		}
+
+		return $raw;
+	}//end rawInput()
 }//end class
