@@ -1010,11 +1010,25 @@ class ContributionController extends Controller implements PortalProtected {
 			);
 		}
 
+		// A declared `scopeClaim` names what the scope field is stamped with:
+		// the server-resolved claim from the subject's own portalAccount, the
+		// same value the action's collections read by. Without one the stamp
+		// stays the subjectRef. An absent claim refuses the write
+		// (claim-scoped-create-stamps-the-claim).
+		$stamp = $this->reader->resolveScopeValue(
+			scopeClaim: (string)($action['scopeClaim'] ?? ''),
+			contributingApp: $match['app'],
+			subject: $subject
+		);
+		if ($stamp === null || $stamp === '') {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
 		$created = $this->writer->createObject(
 			register: $register,
 			schema: $schema,
 			scopeField: (string)($action['scopeField'] ?? 'subjectRef'),
-			subjectRef: (string)($subject['subjectRef'] ?? ''),
+			subjectRef: $stamp,
 			organisation: (string)($subject['organisation'] ?? ''),
 			// Change signin-eherkenning-branch D2: a case filed in a branch session
 			// lands on that branch.

@@ -532,6 +532,64 @@ class ContributionControllerTest extends TestCase {
 
 	}//end testACaseFiledInABranchSessionLandsOnTheBranch()
 
+	/**
+	 * A create action that declares `scopeClaim` stamps its scope field with
+	 * the server-resolved claim, not the subject's own subjectRef. Found on a
+	 * school's parent portal: learniq's guardian absence report
+	 * (`scopeField: submittedByRef`, `scopeClaim: guardianRef`) was stamped
+	 * with the portal account's subjectRef, which OpenRegister refused (not a
+	 * uuid), so no parent could report an absence.
+	 *
+	 * @spec openspec/changes/claim-scoped-create-stamps-the-claim/tasks.md#T1
+	 */
+	public function testAClaimScopedCreateStampsTheClaim(): void {
+		$aggregate = $this->aggregate(
+			actions: [
+				['id' => 'c1', 'type' => 'create', 'register' => 'r1', 'schema' => 'a', 'fields' => ['title'], 'scopeField' => 'submittedByRef', 'scopeClaim' => 'guardianRef'],
+			]
+		);
+		$stamp = null;
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('createObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef) use (&$stamp) {
+				$stamp = [$scopeField, $subjectRef];
+				return ['id' => 'new'];
+			}
+		);
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('resolveScopeValue')->willReturnCallback(
+			static fn (string $scopeClaim, string $contributingApp, array $subject): ?string => $scopeClaim === 'guardianRef' ? 'guardian-uuid' : null
+		);
+
+		$response = $this->controller(aggregate: $aggregate, reader: $reader, writer: $writer)->create('r1', 'a');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['submittedByRef', 'guardian-uuid'], $stamp);
+
+	}//end testAClaimScopedCreateStampsTheClaim()
+
+	/**
+	 * An absent claim refuses the create before anything is written.
+	 *
+	 * @spec openspec/changes/claim-scoped-create-stamps-the-claim/tasks.md#T1
+	 */
+	public function testAClaimScopedCreateWithoutTheClaimIsRefused(): void {
+		$aggregate = $this->aggregate(
+			actions: [
+				['id' => 'c1', 'type' => 'create', 'register' => 'r1', 'schema' => 'a', 'fields' => ['title'], 'scopeField' => 'submittedByRef', 'scopeClaim' => 'guardianRef'],
+			]
+		);
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->never())->method('createObject');
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('resolveScopeValue')->willReturn(null);
+
+		$response = $this->controller(aggregate: $aggregate, reader: $reader, writer: $writer)->create('r1', 'a');
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+
+	}//end testAClaimScopedCreateWithoutTheClaimIsRefused()
+
 	public function testCreateRecordsACreateAuditEntryWithTheNewId(): void {
 		// portal-session-hardening-v2 T09: a successful create() records a
 		// `create` audit entry carrying the NEWLY created object's id.
