@@ -20,6 +20,7 @@ import NewsPage, { hasNews } from '@portal/components/NewsPage.jsx'
 import PageView from '@portal/components/PageView.jsx'
 import PortalNotices from '@portal/components/PortalNotices.jsx'
 import TasksPage from '@portal/components/TasksPage.jsx'
+import { branchInEffect } from '@portal/lib/branch.js'
 import { actingForHeld, keepActingFor, readActingFor } from '@portal/lib/myCases.js'
 import { consumeOpenTarget, forgetOpenTarget, navKeyFor } from '@portal/lib/openRecord.js'
 import { consumeOidcCallbackFragment, createPortalApi, getToken } from '@portal/lib/portalApi.js'
@@ -442,6 +443,9 @@ export default function App({ config, t: tProp }) {
 				<span className="portaliq-org">{config.organisationName}</span>
 				{state.session && (
 					<ActingForSwitcher t={t} mandates={mandates} value={actingFor} onChange={chooseActingFor} />
+				)}
+				{state.session && branchInEffect(state.session, t) !== '' && (
+					<span className="portaliq-branch" data-testid="branch-in-effect">{branchInEffect(state.session, t)}</span>
 				)}
 				{state.session && (
 					<button type="button" className="portaliq-logout" onClick={logout}>Uitloggen</button>

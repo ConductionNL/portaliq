@@ -46,6 +46,7 @@
     "check:broker-login": "node --test tests/broker-login.spec.mjs",
     "check:portal-signin-settings": "node --test tests/portal-signin-settings.spec.mjs",
     "check:notices": "node --test tests/notices.spec.mjs",
+    "check:branch-in-effect": "node --test tests/branch-in-effect.spec.mjs",
     "check:federated-search": "node tests/federated-search.spec.mjs",
     "check:open-portal-site": "node tests/open-portal-site.spec.mjs",
     "check:campaign-tracking": "node tests/campaign-tracking.spec.mjs",
