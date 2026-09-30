@@ -91,6 +91,9 @@ class PortalOrganisationConfigService {
 		// includes a secret — provider + label only, for the SPA's login
 		// buttons.
 		'oidcProviders' => [],
+		// signin-session-idle-warning-and-sso D5: the provider the portal SPA
+		// tries a silent sign-in with once per browser session, or '' for off.
+		'silentSignIn' => '',
 	];
 
 	/**
@@ -142,8 +145,10 @@ class PortalOrganisationConfigService {
 	 *
 	 * @return array<string, mixed> `{organisationName, organisationSlug, theme,
 	 *                              logo, featureFlags, allowedEmbedOrigins,
-	 *                              apiBase, audience, locale, oidcProviders}`.
+	 *                              apiBase, audience, locale, oidcProviders,
+	 *                              silentSignIn}`.
 	 *
+	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T09
 	 * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.2
 	 * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.3
 	 * @spec openspec/changes/portal-spa-i18n-locale-support/tasks.md#2.2
@@ -178,6 +183,8 @@ class PortalOrganisationConfigService {
 			$featureFlags = $overrides['featureFlags'];
 		}
 
+		$providers = $this->configuredOidcProviders(orgSlug: $orgSlug, organisationUuid: $uuid, overrides: $overrides);
+
 		return [
 			'organisationName' => $name,
 			'organisationSlug' => $orgSlug,
@@ -189,9 +196,37 @@ class PortalOrganisationConfigService {
 			'audience' => (string)($overrides['audience'] ?? self::NEUTRAL_DEFAULT['audience']),
 			'locale' => $locale,
 			// Portal-oidc-broker-login: SECRET-FREE — provider + label only.
-			'oidcProviders' => $this->configuredOidcProviders(orgSlug: $orgSlug, organisationUuid: $uuid, overrides: $overrides),
+			'oidcProviders' => $providers,
+			'silentSignIn' => $this->silentSignInProvider(overrides: $overrides, providers: $providers),
 		];
 	}//end resolve()
+
+	/**
+	 * The provider the portal SPA tries a silent sign-in with: the override's
+	 * `silentSignIn`, only when it names a provider this organisation offers
+	 * on its own OIDC broker (integriq's route has no silent sign-in), else ''.
+	 *
+	 * @param array<string, mixed> $overrides The presentation overrides.
+	 * @param array<int, array{provider: string, label: string, route: string}> $providers The offered providers.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T09
+	 */
+	private function silentSignInProvider(array $overrides, array $providers): string {
+		$named = ($overrides['silentSignIn'] ?? '');
+		if (is_string($named) === false || $named === '') {
+			return '';
+		}
+
+		foreach ($providers as $offered) {
+			if ($offered['provider'] === $named && $offered['route'] === 'oidc') {
+				return $named;
+			}
+		}
+
+		return '';
+	}//end silentSignInProvider()
 
 	/**
 	 * The organisation's government message box channel: the integriq digital
