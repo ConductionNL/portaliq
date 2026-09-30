@@ -115,11 +115,13 @@ class PortalObjectReader {
 	 *                                        declared `fields` whitelist. Runs
 	 *                                        AFTER verification, so it never
 	 *                                        decides which rows return.
+	 * @param PortalFilteredRows $filteredRows The via outer query and the declared-filter check.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
 		private readonly PortalFieldProjector $projector,
+		private readonly PortalFilteredRows $filteredRows=new PortalFilteredRows(new \Psr\Log\NullLogger()),
 	) {
 	}//end __construct()
 
@@ -213,7 +215,8 @@ class PortalObjectReader {
 				via: $via,
 				scopeValue: $scopeValue,
 				organisation: $organisation,
-				limit: $limit
+				limit: $limit,
+				filter: $filter
 			);
 			return $this->projector->projectRows(rows: $joined, fields: $fields);
 		}
@@ -313,6 +316,7 @@ class PortalObjectReader {
 	 * @param mixed $via Optional one-hop join declaration (array), fail-closed on anything else.
 	 * @param string $audience The subject's audience (portalAccount lookup filter).
 	 * @param mixed $fields Optional projection whitelist (array of property names); null = full row.
+	 * @param array<string, mixed> $filter The collection's declared filter; a row outside it is null.
 	 *
 	 * @return array<string, mixed>|null The subject's object, or null (→ 404).
 	 *
@@ -335,6 +339,7 @@ class PortalObjectReader {
 		mixed $via = null,
 		string $audience = '',
 		mixed $fields = null,
+		array $filter = [],
 	): ?array {
 		if ($id === '') {
 			return null;
@@ -367,6 +372,7 @@ class PortalObjectReader {
 		}
 
 		$row = $this->fetchById(objectService: $objectService, register: $register, schema: $schema, id: $id);
+		$row = $this->withinFilter(row: $row, filter: $filter, scopeField: $scopeField);
 		if ($row === null) {
 			return null;
 		}
@@ -399,6 +405,27 @@ class PortalObjectReader {
 
 		return $this->projector->projectRow(row: $verified[0], fields: $fields);
 	}//end readObject()
+
+	/**
+	 * The row when it satisfies the collection's declared filter, else null:
+	 * a row the list would never show is not shown by id either.
+	 *
+	 * @param array<string, mixed>|null $row The fetched row.
+	 * @param array<string, mixed> $filter The declared filter.
+	 * @param string $scopeField The collection's scope field.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/via-read-scoped-query/tasks.md#T2
+	 */
+	private function withinFilter(?array $row, array $filter, string $scopeField): ?array {
+		if ($row === null || $this->filteredRows->matchesFilter(row: $row, filter: $filter, scopeField: $scopeField) === false) {
+			return null;
+		}
+
+		return $row;
+	}//end withinFilter()
+
 
 	/**
 	 * Read one row as the signed-in Nextcloud user, with OpenRegister's own
@@ -742,11 +769,16 @@ class PortalObjectReader {
 	 * @param string $scopeValue The subject's scoping value.
 	 * @param string $organisation The subject's tenant (may be empty).
 	 * @param int $limit Maximum target rows to return.
+	 * @param array<string, mixed> $filter The collection's declared narrowing filter.
 	 *
 	 * @return array<int, array<string, mixed>> The verified target rows.
 	 *
 	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T6
 	 * @spec openspec/changes/archive/2026-09-07-reverse-scope-join/tasks.md#T1
+	 * @spec openspec/changes/via-read-scoped-query/tasks.md#T1
+	 *
+	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- the parameters map
+	 * 1:1 onto the declarative collection fields, identical to readCollection.
 	 */
 	private function readViaCollection(
 		object $objectService,
@@ -757,6 +789,7 @@ class PortalObjectReader {
 		string $scopeValue,
 		string $organisation,
 		int $limit,
+		array $filter=[],
 	): array {
 		if ($this->isValidVia(via: $via) === false) {
 			$this->logger->warning('Portaliq: invalid via declaration — failing closed to zero rows', ['register' => $register, 'schema' => $schema]);
@@ -775,24 +808,34 @@ class PortalObjectReader {
 			return [];
 		}
 
+		// The via is validated, so `match` is absent, 'id', or 'scopeField'.
+		$match = (string)($via['match'] ?? 'id');
+
 		try {
 			$objectService->setRegister(register: $register);
 			$objectService->setSchema(schema: $schema);
-			$rows = $objectService->findAll(config: ['filters' => [], 'limit' => $limit, 'offset' => 0], _rbac: false, _multitenancy: false);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: OR read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
 			return [];
 		}
 
-		if (is_array($rows) === false) {
+		$rows = $this->filteredRows->outerRows(
+			objectService: $objectService,
+			schema: $schema,
+			scopeField: $scopeField,
+			targets: $targets,
+			match: $match,
+			limit: $limit,
+			filter: $filter
+		);
+		if ($rows === null) {
 			return [];
 		}
 
-		// The via is validated, so `match` is absent, 'id', or 'scopeField'.
-		$match = (string)($via['match'] ?? 'id');
-
 		return $this->filterTargetRows(rows: $rows, targets: $targets, organisation: $organisation, match: $match, scopeField: $scopeField);
 	}//end readViaCollection()
+
+
 
 	/**
 	 * Run the join pre-pass and collect the verified target references: query

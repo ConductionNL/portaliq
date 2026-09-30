@@ -111,6 +111,40 @@ export function createPortalApi(config) {
 		return { ok: true, status: res.status, object: json.object || json }
 	}
 
+	/**
+	 * Send a write and keep the refusal the server named (identity-profile-page):
+	 * `{ ok, status, error, data }`, where `error` is the answer's `error` code.
+	 *
+	 * @param {string} method The HTTP method.
+	 * @param {string} path The path under the portal API.
+	 * @param {object} body The JSON body.
+	 * @return {Promise<object>} The envelope.
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T07
+	 */
+	async function answer(method, path, body) {
+		try {
+			const res = await fetch(`${base}${path}`, {
+				method,
+				headers: {
+					'Content-Type': 'application/json',
+					Accept: 'application/json',
+					...authHeaders(),
+				},
+				body: JSON.stringify(body || {}),
+			})
+			const data = await res.json().catch(() => ({}))
+			return {
+				ok: res.ok,
+				status: res.status,
+				error: res.ok ? '' : String(data?.error || ''),
+				data,
+			}
+		} catch {
+			return { ok: false, status: 0, error: '', data: null }
+		}
+	}
+
 	// The guardian message routes live beside the portal API, not under it
 	// (guardian-direct-messages): `/apps/portaliq/api/messages/...`.
 	const appRoot = String(base).replace(/\/portal\/api\/?$/, '')
@@ -522,6 +556,92 @@ export function createPortalApi(config) {
 		 */
 		async setMessageLanguage(language) {
 			return send('PATCH', '/identity/details', { messageLanguage: language })
+		},
+
+		/**
+		 * Change the account holder's own name (identity-profile-page).
+		 *
+		 * @param {string} displayName The new name.
+		 * @return {Promise<object>} `{ ok, status, error, data }`.
+		 *
+		 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T07
+		 */
+		async setDisplayName(displayName) {
+			return answer('PATCH', '/identity/details', { displayName })
+		},
+
+		/**
+		 * Add an e-mail address (it gets a confirmation mail) or a phone number.
+		 *
+		 * @param {string} kind `email` or `phone`.
+		 * @param {string} value The address.
+		 * @return {Promise<object>} `{ ok, status, error, data }`.
+		 *
+		 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T07
+		 */
+		async addContactAddress(kind, value) {
+			return answer('POST', '/identity/addresses', { kind, value })
+		},
+
+		/**
+		 * Mark an address as the preferred one of its kind.
+		 *
+		 * @param {string} kind `email` or `phone`.
+		 * @param {string} value The address.
+		 * @return {Promise<object>} `{ ok, status, error, data }`.
+		 *
+		 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T07
+		 */
+		async preferContactAddress(kind, value) {
+			return answer('POST', '/identity/addresses/preferred', { kind, value })
+		},
+
+		/**
+		 * Remove an address.
+		 *
+		 * @param {string} kind `email` or `phone`.
+		 * @param {string} value The address.
+		 * @return {Promise<object>} `{ ok, status, error, data }`.
+		 *
+		 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T07
+		 */
+		async removeContactAddress(kind, value) {
+			return answer('POST', '/identity/addresses/remove', { kind, value })
+		},
+
+		/**
+		 * Choose how the organisation contacts the account holder.
+		 *
+		 * @param {string} channel `portal`, `email`, `phone` or `post`.
+		 * @return {Promise<object>} `{ ok, status, error, data }`.
+		 *
+		 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T07
+		 */
+		async setContactChannel(channel) {
+			return answer('PUT', '/identity/contact-channel', { channel })
+		},
+
+		/**
+		 * Confirm an address with the secret from its mail.
+		 *
+		 * @param {string} token The secret.
+		 * @return {Promise<object>} `{ ok, status, error, data }`.
+		 *
+		 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T07
+		 */
+		async confirmEmail(token) {
+			return answer('POST', '/identity/email/confirm', { token })
+		},
+
+		/**
+		 * Remove the account holder's own portal account. The cases stay.
+		 *
+		 * @return {Promise<object>} `{ ok, status, error, data }`.
+		 *
+		 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T07
+		 */
+		async removeOwnAccount() {
+			return answer('POST', '/identity/remove', {})
 		},
 
 		/**
@@ -1056,6 +1176,57 @@ export function createPortalApi(config) {
 					label: r[provider.labelField] ?? r.title ?? r.name ?? r.id,
 				}))
 				.filter((o) => o.value !== undefined && o.value !== null)
+		},
+
+		/**
+		 * The branch in effect and the branches a whole-company business
+		 * session may choose (signin-eherkenning-branch T06). Any failure
+		 * reads as a restricted session with none.
+		 *
+		 * @return {Promise<{branch: string, restricted: boolean, branches: Array<object>}>}
+		 *
+		 * @spec openspec/specs/portal-branch-scope/spec.md#requirement-a-whole-company-user-can-narrow-to-a-branch-req-seb-003
+		 */
+		async fetchBranches() {
+			try {
+				const json = await get('/session/branches')
+				if (json && Array.isArray(json.branches)) {
+					return json
+				}
+			} catch {
+				// Falls through to "none".
+			}
+			return { branch: '', restricted: true, branches: [] }
+		},
+
+		/**
+		 * Re-issue the session for one branch, or '' for the whole company,
+		 * and keep the new bearer. A refusal keeps the old one.
+		 *
+		 * @param {string} branch The branch number, or ''.
+		 * @return {Promise<{ok: boolean}>} Whether the branch is now in effect.
+		 *
+		 * @spec openspec/specs/portal-branch-scope/spec.md#requirement-a-whole-company-user-can-narrow-to-a-branch-req-seb-003
+		 */
+		async chooseBranch(branch) {
+			const res = await fetch(`${base}/session/branch`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					Accept: 'application/json',
+					...authHeaders(),
+				},
+				body: JSON.stringify({ branch: branch || '' }),
+			})
+			if (!res.ok) {
+				return { ok: false }
+			}
+			const body = await res.json().catch(() => null)
+			if (!body || !body.token) {
+				return { ok: false }
+			}
+			setToken(body.token)
+			return { ok: true }
 		},
 
 		/**

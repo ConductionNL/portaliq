@@ -8,7 +8,7 @@
 // keep silent sign-in to one attempt per browser session. No framework code:
 // the portal SPA (React) and the site renderer (Vue) share them.
 
-import { loginStartUrl } from './signinRoute.js'
+import { loginStartUrl, signinOrganisation } from './signinRoute.js'
 
 /**
  * The events that count as activity: a key press, a pointer press, a touch.
@@ -173,7 +173,7 @@ export function silentSignInUrl(config, store) {
 	} catch {
 		return ''
 	}
-	return `${loginStartUrl(config.apiBase, config.organisationSlug, provider, 'oidc')}&silent=1`
+	return `${loginStartUrl(config.apiBase, signinOrganisation(config), provider, 'oidc', config.organisationSlug)}&silent=1`
 }
 
 /**

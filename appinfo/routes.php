@@ -258,6 +258,9 @@ return [
         // session lifetime (portal-session-hardening-v2 T03). Registered
         // before the /portal/{path} SPA catch-all.
         ['name' => 'session#refresh', 'url' => '/portal/api/session/refresh', 'verb' => 'POST'],
+        // The branch choice of a whole-company business session (signin-eherkenning-branch T05).
+        ['name' => 'sessionBranch#branches', 'url' => '/portal/api/session/branches', 'verb' => 'GET'],
+        ['name' => 'sessionBranch#choose', 'url' => '/portal/api/session/branch', 'verb' => 'POST'],
         // Generic, broker-agnostic OIDC Relying Party (portal-oidc-broker-login,
         // T06/T07): start builds a state+nonce+PKCE authorization request and
         // 302s to the broker; callback validates the ID token and mints the
@@ -326,6 +329,10 @@ return [
         ['name' => 'portalAccountSelf#notificationPreferences', 'url' => '/portal/api/identity/notification-preferences', 'verb' => 'GET'],
         ['name' => 'portalAccountSelf#updateNotificationPreferences', 'url' => '/portal/api/identity/notification-preferences', 'verb' => 'PATCH'],
         ['name' => 'portalAccountSelf#confirmEmail', 'url' => '/portal/api/identity/email/confirm', 'verb' => 'POST'],
+        ['name' => 'portalContactAddress#add', 'url' => '/portal/api/identity/addresses', 'verb' => 'POST'],
+        ['name' => 'portalContactAddress#prefer', 'url' => '/portal/api/identity/addresses/preferred', 'verb' => 'POST'],
+        ['name' => 'portalContactAddress#remove', 'url' => '/portal/api/identity/addresses/remove', 'verb' => 'POST'],
+        ['name' => 'portalContactAddress#channel', 'url' => '/portal/api/identity/contact-channel', 'verb' => 'PUT'],
         ['name' => 'portalAccountSelf#removeAccount', 'url' => '/portal/api/identity/remove', 'verb' => 'POST'],
         ['name' => 'portalAccountSelf#requestAccess', 'url' => '/portal/api/identity/access-requests', 'verb' => 'POST'],
         ['name' => 'portalAccountSelf#myAccessRequests', 'url' => '/portal/api/identity/access-requests', 'verb' => 'GET'],

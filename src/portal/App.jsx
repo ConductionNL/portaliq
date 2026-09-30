@@ -12,7 +12,9 @@
 // OpenRegister directly.
 
 import AccessRequestsPage from '@portal/components/AccessRequestsPage.jsx'
+import AccountPage, { ContactPrompt } from '@portal/components/AccountPage.jsx'
 import ActingForSwitcher from '@portal/components/ActingForSwitcher.jsx'
+import BranchSwitcher from '@portal/components/BranchSwitcher.jsx'
 import IdleWarningDialog from '@portal/components/IdleWarningDialog.jsx'
 import InboxPage from '@portal/components/InboxPage.jsx'
 import MessagesPage from '@portal/components/MessagesPage.jsx'
@@ -22,13 +24,14 @@ import PageView from '@portal/components/PageView.jsx'
 import PortalNotices from '@portal/components/PortalNotices.jsx'
 import RegisteredDetailsPage from '@portal/components/RegisteredDetailsPage.jsx'
 import TasksPage from '@portal/components/TasksPage.jsx'
+import { consumeConfirmEmail, dismissPrompt, promptDismissed, refusalText } from '@portal/lib/account.js'
 import { branchInEffect } from '@portal/lib/branch.js'
 import { logoutTarget, markIdleSignOut, silentSignInUrl, takeIdleSignOut } from '@portal/lib/idleSession.js'
 import { actingForHeld, keepActingFor, readActingFor } from '@portal/lib/myCases.js'
 import { consumeOpenTarget, forgetOpenTarget, navKeyFor } from '@portal/lib/openRecord.js'
 import { consumeOidcCallbackFragment, createPortalApi, getToken, setToken } from '@portal/lib/portalApi.js'
 import { runAction } from '@portal/lib/rowAction.js'
-import { consumeSigninFailed, loginStartUrl } from '@portal/lib/signinRoute.js'
+import { consumeSigninFailed, loginStartUrl, signinOrganisation } from '@portal/lib/signinRoute.js'
 import useIdleSession from '@portal/lib/useIdleSession.js'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Loading from './components/Loading.jsx'
@@ -63,6 +66,9 @@ const CASES_KEY = '__cases__'
 // "My details" (identity-registered-details): what the BRP or the KvK holds
 // about the signed-in person, read when the section opens.
 const DETAILS_KEY = '__details__'
+// "My account" (identity-profile-page): the person's own name, addresses,
+// contact channel and removal.
+const ACCOUNT_KEY = '__account__'
 
 /**
  * sessionStorage, or null where the browser refuses it (private mode, a
@@ -140,6 +146,7 @@ function buildNav(contributions, t, tasksEnabled, messagesEnabled = false, newsE
 		nav.push({ key: ACCESS_KEY, label: t('Access to cases'), icon: 'AccountKey', special: 'access' })
 		// The registered details, for the same reason and never the default.
 		nav.push({ key: DETAILS_KEY, label: t('My details'), icon: 'CardAccountDetails', special: 'details' })
+		nav.push({ key: ACCOUNT_KEY, label: t('My account'), icon: 'AccountCog', special: 'account' })
 	}
 	return nav
 }
@@ -174,6 +181,11 @@ export default function App({ config, t: tProp }) {
 		consumeOidcCallbackFragment()
 		return getToken()
 	})
+	// A confirmation link (identity-profile-page T08): `#confirm-email=<secret>`
+	// is read and stripped once, on mount, and posted; it needs no session.
+	const [confirmToken] = useState(() => consumeConfirmEmail(window.location, window.history))
+	const [confirmMessage, setConfirmMessage] = useState(null)
+	const [promptHidden, setPromptHidden] = useState(() => promptDismissed(sessionStore()))
 	const [state, setState] = useState({ loading: true, session: null, contributions: null, threads: [], news: [], devError: null })
 	const [dataByCollection, setDataByCollection] = useState({})
 	const [activeKey, setActiveKey] = useState(null)
@@ -240,6 +252,17 @@ export default function App({ config, t: tProp }) {
 
 	useEffect(() => { refresh() }, [refresh, token])
 
+	useEffect(() => {
+		if (!confirmToken) {
+			return
+		}
+		api.confirmEmail(confirmToken).then((answer) => {
+			setConfirmMessage(answer.ok
+				? { role: 'status', text: t('Your e-mail address is confirmed.') }
+				: { role: 'alert', text: t(refusalText('link_not_valid')) })
+		})
+	}, [api, confirmToken, t])
+
 	// The idle window (signin-session-idle-warning-and-sso T03-T05): activity
 	// refreshes the bearer, idling opens the warning, expiry ends the session
 	// and the login screen says why. A refresh swaps the token in localStorage
@@ -282,6 +305,37 @@ export default function App({ config, t: tProp }) {
 	// a mandate, kept for the session. The mandates held are learned from the
 	// "My cases" answer; a refusal never forgets them.
 	const [actingFor, setActingFor] = useState(() => readActingFor(sessionStore()))
+	// The company's branches a whole-company eHerkenning session may narrow
+	// to (signin-eherkenning-branch T06). A session the login restricted to
+	// a branch never asks.
+	const [branches, setBranches] = useState([])
+	const [branchRefused, setBranchRefused] = useState(false)
+	const sessionBranchRestricted = state.session ? state.session.branchRestricted === true : true
+	useEffect(() => {
+		if (sessionBranchRestricted) {
+			setBranches([])
+			return undefined
+		}
+		let live = true
+		api.fetchBranches().then((answer) => {
+			if (live) {
+				setBranches(answer.restricted ? [] : answer.branches)
+			}
+		})
+		return () => {
+			live = false
+		}
+	}, [api, sessionBranchRestricted])
+	const chooseBranch = useCallback(async (branch) => {
+		setBranchRefused(false)
+		const answer = await api.chooseBranch(branch)
+		if (!answer.ok) {
+			setBranchRefused(true)
+			return
+		}
+		// The new bearer names the branch; every list reads it again.
+		window.location.reload()
+	}, [api])
 	const [mandates, setMandates] = useState([])
 	const onCasesLoaded = useCallback((answer) => {
 		if (!answer || !answer.ok) {
@@ -318,7 +372,7 @@ export default function App({ config, t: tProp }) {
 	// message list instead of the subject's actual records.
 	useEffect(() => {
 		if (nav.length > 0 && (activeKey === null || !nav.some((n) => n.key === activeKey))) {
-			const firstContent = nav.find((n) => n.special !== 'inbox' && n.special !== 'access' && n.special !== 'details') || nav[0]
+			const firstContent = nav.find((n) => n.special !== 'inbox' && n.special !== 'access' && n.special !== 'details' && n.special !== 'account') || nav[0]
 			setActiveKey(firstContent.key)
 		}
 	}, [nav, activeKey])
@@ -468,7 +522,7 @@ export default function App({ config, t: tProp }) {
 	function oidcLogin(p) {
 		// The route the organisation chose for this provider: its own OIDC
 		// broker or integriq's (signin-integriq-broker-login T09).
-		window.location.href = loginStartUrl(config.apiBase, config.organisationSlug, p.provider, p.route)
+		window.location.href = loginStartUrl(config.apiBase, signinOrganisation(config), p.provider, p.route, config.organisationSlug)
 	}
 
 	return (
@@ -478,9 +532,13 @@ export default function App({ config, t: tProp }) {
 				{state.session && (
 					<ActingForSwitcher t={t} mandates={mandates} value={actingFor} onChange={chooseActingFor} />
 				)}
-				{state.session && branchInEffect(state.session, t) !== '' && (
+				{state.session && state.session.branchRestricted !== true && branches.length > 1 && (
+					<BranchSwitcher t={t} branches={branches} value={state.session.branch || ''} onChange={chooseBranch} />
+				)}
+				{state.session && branchInEffect(state.session, t) !== '' && !(state.session.branchRestricted !== true && branches.length > 1) && (
 					<span className="portaliq-branch" data-testid="branch-in-effect">{branchInEffect(state.session, t)}</span>
 				)}
+				{branchRefused && <span className="portaliq-branch-refused" role="alert">{t('That branch could not be chosen.')}</span>}
 				{state.session && (
 					<button type="button" className="portaliq-logout" onClick={logout}>Uitloggen</button>
 				)}
@@ -519,6 +577,17 @@ export default function App({ config, t: tProp }) {
 
 			<PortalNotices notices={config.notices} t={t} />
 
+			{confirmMessage && (
+				<p className={confirmMessage.role === 'alert' ? 'portaliq-error' : 'portaliq-notice'} role={confirmMessage.role} data-testid="confirm-email-result">{confirmMessage.text}</p>
+			)}
+
+			{state.session && state.session.contactPrompt === true && !promptHidden && (
+				<ContactPrompt
+					t={t}
+					onOpen={() => setActiveKey(ACCOUNT_KEY)}
+					onDismiss={() => { dismissPrompt(sessionStore()); setPromptHidden(true) }} />
+			)}
+
 			{state.session && idle.warning && idle.times && (
 				<IdleWarningDialog
 					times={idle.times}
@@ -553,9 +622,11 @@ export default function App({ config, t: tProp }) {
 						{(config.oidcProviders || []).length === 0 && (
 							<p className="portaliq-idp-hint">{t('No login method is configured for this organisation yet.')}</p>
 						)}
-						<button type="button" className="portaliq-devlogin" onClick={devLogin}>
-							Dev-login (test)
-						</button>
+						{config.devLogin === true && (
+							<button type="button" className="portaliq-devlogin" onClick={devLogin}>
+								Dev-login (test)
+							</button>
+						)}
 						{state.devError && <p className="portaliq-error" role="alert">{state.devError}</p>}
 					</section>
 				)}
@@ -636,6 +707,10 @@ export default function App({ config, t: tProp }) {
 
 						{active && active.special === 'details' && (
 							<RegisteredDetailsPage api={api} t={t} locale={config.locale} />
+						)}
+
+						{active && active.special === 'account' && (
+							<AccountPage api={api} t={t} onRemoved={logout} />
 						)}
 
 						{active && active.special === 'tasks' && (
