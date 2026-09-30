@@ -18,11 +18,11 @@
 
 ## A3: the rest of the portal from the portal
 
-- [ ] **T11**: `parent` and `order` on `page`, register version bump, schema-l10n labels (REQ-PIE-010). Verification: `npm run check:schema-l10n`, `check:register`.
-- [ ] **T12**: Page management in the edit mode: new page, rename, move, delete a draft page (REQ-PIE-010). Verification: `tests/site-page-tree.spec.mjs`.
-- [ ] **T13**: Menu editing in the edit mode (REQ-PIE-011). Verification: `tests/site-page-tree.spec.mjs`.
-- [ ] **T14**: `PageEditorService::applyToSchema()` writes the editor groups into `menu` (REQ-PIE-012). Verification: `PageEditorServiceTest`.
+- [x] **T11**: `parent` and `order` on `page`, register version bump, schema-l10n labels (REQ-PIE-010). Verification: `npm run check:schema-l10n`, `check:register`.
+- [x] **T12**: Page management in the edit mode: new page, rename, move, delete a draft page (REQ-PIE-010). Verification: `tests/site-page-tree.spec.mjs`.
+- [x] **T13**: Menu editing in the edit mode (REQ-PIE-011). Verification: `tests/site-page-tree.spec.mjs`.
+- [x] **T14**: `PageEditorService::applyToSchema()` writes the editor groups into `menu` (REQ-PIE-012). Verification: `PageEditorServiceTest`.
 
 ## Archive
 
-- [ ] **T15**: `opsx-archive`: fold the deltas into `openspec/specs/portal-page-designer` and `openspec/specs/portal-in-place-editing`.
+- [x] **T15**: `opsx-archive`: fold the deltas into `openspec/specs/portal-page-designer` and `openspec/specs/portal-in-place-editing`.

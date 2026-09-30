@@ -17,7 +17,7 @@
  * The HTTP calls are handed in (`@nextcloud/axios` in the app, a fake in
  * tests/page-editor.spec.mjs), so this module runs anywhere.
  *
- * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-a-save-must-not-overwrite-a-newer-save-by-someone-else-req-pie-005
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-a-save-must-not-overwrite-a-newer-save-by-someone-else-req-pie-005
  */
 
 import { versionOf, withoutEnvelope } from './pageBody.js'
@@ -41,7 +41,7 @@ export class PageConflictError extends Error {
  *
  * @param {*} error The error.
  * @return {boolean} True for a conflict.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-a-save-must-not-overwrite-a-newer-save-by-someone-else-req-pie-005
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-a-save-must-not-overwrite-a-newer-save-by-someone-else-req-pie-005
  */
 export function isConflict(error) {
 	return error instanceof PageConflictError
@@ -55,7 +55,7 @@ export function isConflict(error) {
  * @param {Function} deps.put (url, payload, config) => Promise
  * @param {Function} deps.url (pageId) => the object URL
  * @return {object} The saver.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-a-save-must-not-overwrite-a-newer-save-by-someone-else-req-pie-005
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-a-save-must-not-overwrite-a-newer-save-by-someone-else-req-pie-005
  */
 export function createPageSaver({ get, put, url }) {
 	return {

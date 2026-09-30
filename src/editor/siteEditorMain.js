@@ -10,7 +10,7 @@
  * so nothing is added to, the bundle every visitor downloads (see the editor
  * config in webpack.site.js for the measurement).
  *
- * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-the-portal-editor-must-not-weigh-on-a-visitors-first-load-req-pie-007
+ * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-the-portal-editor-must-not-weigh-on-a-visitors-first-load-req-pie-007
  */
 
 import { createApp, h } from 'vue'
@@ -22,7 +22,7 @@ import SiteEditMode from './SiteEditMode.vue'
  * @param {HTMLElement} element Where the page was rendered.
  * @param {{pageId: string, portal: string, onLeave: Function}} options The page, its portal, and what to do on leaving.
  * @return {Function} Unmounts the editor.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
+ * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
  */
 function mount(element, { pageId, portal, onLeave }) {
 	const app = createApp({

@@ -3490,7 +3490,7 @@
             "page": {
                 "slug": "page",
                 "icon": "FileDocument",
-                "version": "0.5.0",
+                "version": "0.6.0",
                 "title": "Page",
                 "authorization": {
                     "read": [
@@ -3801,6 +3801,18 @@
                         "type": "string",
                         "description": "The portal this page belongs to. REQUIRED — content is always resolved within a site.",
                         "example": "open-tilburg"
+                    },
+                    "parent": {
+                        "title": "Parent page",
+                        "type": "string",
+                        "description": "The page this page sits under in the portal's page tree. Empty for a page at the top. Only the tree changes: the route stays the page's address.",
+                        "example": "8f14e45f-ceea-467a-9575-6f2d6f9e4b21"
+                    },
+                    "order": {
+                        "title": "Order",
+                        "type": "integer",
+                        "description": "Position among the pages under the same parent, lowest first.",
+                        "example": 0
                     }
                 }
             },

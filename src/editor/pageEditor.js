@@ -13,7 +13,7 @@
  * `reactive` is handed in (Vue's in a component, the identity in a test), so
  * the controller needs no Vue to run and Vue still sees every change.
  *
- * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
  */
 
 import { restoredDraft } from '../lib/pageHistory.js'
@@ -48,7 +48,7 @@ const DEFAULT_SIZE = { gridWidth: 6, gridHeight: 4 }
  * @param {Function} [deps.defaultSizeFor] (key) => the first size of a widget.
  * @param {number} [deps.historyLimit] The undo cap.
  * @return {object} The editor.
- * @spec openspec/changes/portal-in-place-editing/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
  */
 export function createPageEditor({
 	saver,

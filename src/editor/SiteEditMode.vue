@@ -17,7 +17,7 @@
   design tokens apply; the Nextcloud tokens the shared components read are
   given portal-neutral values below, because the site loads no Nextcloud CSS.
 
-  @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
+  @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
 -->
 <template>
 	<div v-if="!ready" class="pq-site-editor__loading">
@@ -85,6 +85,18 @@
 					@click="historyOpen = true">
 					{{ t('portaliq', 'History') }}
 				</NcButton>
+				<NcButton
+					data-testid="site-edit-pages"
+					:pressed="panel === 'pages'"
+					@click="toggle('pages')">
+					{{ t('portaliq', 'Pages') }}
+				</NcButton>
+				<NcButton
+					data-testid="site-edit-menu"
+					:pressed="panel === 'menu'"
+					@click="toggle('menu')">
+					{{ t('portaliq', 'Menu') }}
+				</NcButton>
 				<NcButton data-testid="site-edit-leave" @click="leave">
 					{{ t('portaliq', 'Stop editing') }}
 				</NcButton>
@@ -123,6 +135,13 @@
 			{{ t('portaliq', 'Unsaved changes. Save the draft to keep them.') }}
 		</NcNoteCard>
 
+		<!-- The rest of the portal, from the portal (A3). -->
+		<SitePagesPanel
+			v-if="panel === 'pages'"
+			:portal="portal"
+			:currentPageId="pageId" />
+		<SiteMenuPanel v-if="panel === 'menu'" :portal="portal" />
+
 		<div v-if="state.loading" class="pq-site-editor__loading">
 			<NcLoadingIcon :size="32" />
 		</div>
@@ -149,6 +168,8 @@ import { reactive } from 'vue'
 import PageHistoryDialog from '../dialogs/PageHistoryDialog.vue'
 import WidgetPaletteDialog from '../dialogs/WidgetPaletteDialog.vue'
 import PageGridEditor from './PageGridEditor.vue'
+import SiteMenuPanel from './SiteMenuPanel.vue'
+import SitePagesPanel from './SitePagesPanel.vue'
 import { defaultSizeFor } from '../lib/pageWidgetCatalogue.js'
 import { createPageEditor, createPageSaver } from './index.js'
 
@@ -164,7 +185,7 @@ import '@conduction/nextcloud-vue/css/index.css'
  *
  * @return {Promise<void>} Resolves when registered.
  *
- * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
+ * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
  */
 async function loadCatalogue() {
 	const lang = String(document.documentElement.lang || 'nl').toLowerCase()
@@ -186,6 +207,8 @@ export default {
 		NcNoteCard,
 		PageGridEditor,
 		PageHistoryDialog,
+		SiteMenuPanel,
+		SitePagesPanel,
 		WidgetPaletteDialog,
 	},
 
@@ -194,6 +217,12 @@ export default {
 		pageId: {
 			type: String,
 			required: true,
+		},
+
+		/** The portal slug, for the pages and the menu panels. */
+		portal: {
+			type: String,
+			default: '',
 		},
 	},
 
@@ -220,6 +249,7 @@ export default {
 			paletteOpen: false,
 			historyOpen: false,
 			leaving: false,
+			panel: '',
 		}
 	},
 
@@ -227,7 +257,7 @@ export default {
 		/**
 		 * @return {object} The editor's state.
 		 *
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
+		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
 		 */
 		state() {
 			return this.editor.state
@@ -239,7 +269,7 @@ export default {
 	 *
 	 * @return {Promise<void>} Resolves when the page is loaded.
 	 *
-	 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
+	 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
 	 */
 	async mounted() {
 		try {
@@ -261,10 +291,22 @@ export default {
 		 * @param {object} vars The placeholders.
 		 * @return {string} The translation.
 		 *
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
+		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
 		 */
 		t(app, text, vars) {
 			return translate(app, text, vars)
+		},
+
+		/**
+		 * Open or close the pages or the menu panel.
+		 *
+		 * @param {string} name The panel.
+		 * @return {void}
+		 *
+		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
+		 */
+		toggle(name) {
+			this.panel = this.panel === name ? '' : name
 		},
 
 		/**
@@ -272,7 +314,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when published or refused.
 		 *
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
+		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
 		 */
 		async publish() {
 			await this.editor.publish()
@@ -287,7 +329,7 @@ export default {
 		 * @param {object} version A version from the page history.
 		 * @return {Promise<void>} Resolves when written.
 		 *
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
+		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
 		 */
 		async restore(version) {
 			this.historyOpen = false
@@ -301,7 +343,7 @@ export default {
 		 * @param {boolean} force Leave even with unsaved changes.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-in-place-editing/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
+		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
 		 */
 		leave(force = false) {
 			if (this.state.dirty && force !== true) {
