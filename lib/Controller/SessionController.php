@@ -353,6 +353,11 @@ class SessionController extends Controller {
 		$state = $this->oidc->generateToken();
 		$nonce = $this->oidc->generateToken();
 		$pkce = $this->oidc->generatePkce();
+		// A silent start asks the broker for no prompt (signin-session-idle-warning-and-sso D5).
+		$prompt = '';
+		if ($silent === '1') {
+			$prompt = 'none';
+		}
 
 		$stored = $this->stateStore->create(
 			state: $state,
@@ -361,7 +366,7 @@ class SessionController extends Controller {
 			org: $org,
 			provider: $provider,
 			returnTo: $this->portalReturnTo(),
-			silent: ($silent === '1')
+			silent: ($prompt === 'none')
 		);
 		if ($stored === false) {
 			return $this->oidcGenericError();
@@ -375,7 +380,7 @@ class SessionController extends Controller {
 			state: $state,
 			nonce: $nonce,
 			codeChallenge: $pkce['challenge'],
-			prompt: ($silent === '1' ? 'none' : '')
+			prompt: $prompt
 		);
 
 		// Explicit 302 (design.md) — RedirectResponse's own default is 303.

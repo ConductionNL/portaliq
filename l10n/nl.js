@@ -1859,7 +1859,9 @@ OC.L10N.register(
         "You have unsaved changes. Save the draft first, or stop editing and lose them.": "Je hebt wijzigingen die niet zijn opgeslagen. Sla eerst het concept op, of stop met bewerken en raak ze kwijt.",
         "Stop editing and lose the changes": "Stoppen en wijzigingen kwijtraken",
         "Add a widget": "Een widget toevoegen",
-        "Pick a widget to place on this page. You can move and resize it afterwards.": "Kies een widget om op deze pagina te plaatsen. Daarna kun je hem verplaatsen en van formaat veranderen."
+        "Pick a widget to place on this page. You can move and resize it afterwards.": "Kies een widget om op deze pagina te plaatsen. Daarna kun je hem verplaatsen en van formaat veranderen.",
+        "Silent sign-in": "Stil inloggen",
+        "Whether the start asked the broker to sign in without a prompt. A silent row the broker answers with login_required lands on the login screen without an error. Absent means false.": "Of het begin de inlogdienst vroeg om zonder vraag in te loggen. Een stille regel die de inlogdienst met login_required beantwoordt, komt zonder foutmelding op het inlogscherm. Ontbreekt de waarde, dan is die false."
     },
     "nplurals=2; plural=(n != 1);"
 )

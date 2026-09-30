@@ -90,6 +90,10 @@ class OidcStateStoreService {
 	 *
 	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T02
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T07
+	 *
+	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) -- `silent` is one recorded
+	 * fact of the round trip, stored as-is on the row; the method does the
+	 * same thing either way.
 	 */
 	public function create(
 		string $state,

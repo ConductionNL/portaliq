@@ -748,6 +748,11 @@ export default {
 		await this.loadRoute(this.route)
 	},
 
+	/**
+	 * Stop listening, and stop the idle window.
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T06
+	 */
 	beforeUnmount() {
 		window.removeEventListener('popstate', this.onPopState)
 		this.idleTracker?.stop()

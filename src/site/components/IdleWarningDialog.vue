@@ -104,6 +104,11 @@ export default {
 		},
 	},
 
+	/**
+	 * Start the countdown and focus the first action.
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T06
+	 */
 	mounted() {
 		this.tick = setInterval(() => {
 			this.left = this.times.expiresAt - Math.floor(Date.now() / 1000)
@@ -111,6 +116,11 @@ export default {
 		this.$nextTick(() => this.$refs.first?.focus())
 	},
 
+	/**
+	 * Stop the countdown.
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T06
+	 */
 	beforeUnmount() {
 		clearInterval(this.tick)
 	},
@@ -186,7 +196,7 @@ export default {
 	width: 1px;
 	height: 1px;
 	overflow: hidden;
-	clip: rect(0 0 0 0);
+	clip-path: inset(50%);
 	white-space: nowrap;
 }
 </style>

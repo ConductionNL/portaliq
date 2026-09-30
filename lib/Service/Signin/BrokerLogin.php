@@ -159,7 +159,7 @@ class BrokerLogin {
 	/**
 	 * Redeem the code and check the envelope's claims against the state row.
 	 *
-	 * @param array<string, string> $pending The consumed state row.
+	 * @param array<string, string|bool> $pending The consumed state row.
 	 * @param string                $code    The one-time code.
 	 *
 	 * @return array{sub: string, provider: string, trust: string, audience: string}|null
@@ -200,7 +200,7 @@ class BrokerLogin {
 	 * the identity type, the subject the identity reference, the preset's
 	 * audience the audience, and integriq's trust the session's trust.
 	 *
-	 * @param array<string, string> $pending The consumed state row.
+	 * @param array<string, string|bool> $pending The consumed state row.
 	 * @param array<string, string> $claims  The checked claims plus the audience.
 	 *
 	 * @return string|null The bearer.

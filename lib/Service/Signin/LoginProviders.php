@@ -83,6 +83,34 @@ class LoginProviders {
 
 
 	/**
+	 * The provider the portal SPA tries a silent sign-in with: the override's
+	 * `silentSignIn`, only when it names a provider this organisation offers
+	 * on its own OIDC broker (integriq's route has no silent sign-in), else ''.
+	 *
+	 * @param array<string, mixed> $overrides The presentation overrides.
+	 * @param array<int, array{provider: string, label: string, route: string}> $providers The offered providers.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T09
+	 */
+	public function silentProvider(array $overrides, array $providers): string {
+		$named = ($overrides['silentSignIn'] ?? '');
+		if (is_string($named) === false || $named === '') {
+			return '';
+		}
+
+		foreach ($providers as $offered) {
+			if ($offered['provider'] === $named && $offered['route'] === 'oidc') {
+				return $named;
+			}
+		}
+
+		return '';
+	}//end silentProvider()
+
+
+	/**
 	 * The integriq broker settings of one provider, with its preset's label
 	 * and audience, or null when it is not routed to a complete broker.
 	 *

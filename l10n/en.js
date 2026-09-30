@@ -1801,7 +1801,9 @@ OC.L10N.register(
         "You have unsaved changes. Save the draft first, or stop editing and lose them.": "You have unsaved changes. Save the draft first, or stop editing and lose them.",
         "Stop editing and lose the changes": "Stop editing and lose the changes",
         "Add a widget": "Add a widget",
-        "Pick a widget to place on this page. You can move and resize it afterwards.": "Pick a widget to place on this page. You can move and resize it afterwards."
+        "Pick a widget to place on this page. You can move and resize it afterwards.": "Pick a widget to place on this page. You can move and resize it afterwards.",
+        "Silent sign-in": "Silent sign-in",
+        "Whether the start asked the broker to sign in without a prompt. A silent row the broker answers with login_required lands on the login screen without an error. Absent means false.": "Whether the start asked the broker to sign in without a prompt. A silent row the broker answers with login_required lands on the login screen without an error. Absent means false."
     },
     "nplurals=2; plural=(n != 1);"
 )

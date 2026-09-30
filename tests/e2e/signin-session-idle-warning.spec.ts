@@ -42,6 +42,7 @@ test.describe('signin-session-idle-warning', () => {
 	}
 
 	test('The warning opens two minutes before expiry and Stay signed in extends it', async ({
+		// @e2e portal-session-idle-and-sso::one-click-keeps-the-resident-signed-in
 		page,
 	}) => {
 		await signIn(page)
@@ -58,6 +59,8 @@ test.describe('signin-session-idle-warning', () => {
 	})
 
 	test('Typing keeps the session, idling does not', async ({ page }) => {
+		// @e2e portal-session-idle-and-sso::typing-keeps-a-resident-signed-in
+		// @e2e portal-session-idle-and-sso::an-open-tab-alone-does-not-keep-a-session
 		await signIn(page)
 		await page.clock.fastForward('02:40')
 		const refreshed = page.waitForResponse(
@@ -70,9 +73,69 @@ test.describe('signin-session-idle-warning', () => {
 	})
 
 	test('After expiry the login screen names inactivity', async ({ page }) => {
+		// @e2e portal-session-idle-and-sso::the-login-screen-says-why
+		// @e2e portal-session-idle-and-sso::an-unattended-bearer-stops-working
 		await signIn(page)
 		await page.clock.fastForward('05:01')
 		await expect(page.getByTestId('idle-signed-out')).toBeVisible()
 		await expect(page.locator('.portaliq-logout')).toBeHidden()
+	})
+	test('The session reports when it ends', async ({ page }) => {
+		// @e2e portal-session-idle-and-sso::the-session-reports-when-it-ends
+		await page.goto('/apps/portaliq/portal')
+		await page.locator('.portaliq-devlogin').click()
+		await expect(page.locator('.portaliq-logout')).toBeVisible()
+		const token = await page.evaluate(() =>
+			window.localStorage.getItem('portaliq_token'),
+		)
+		const answer = await page.request.get('/apps/portaliq/portal/api/session', {
+			headers: { Authorization: `Bearer ${token}` },
+		})
+		const body = await answer.json()
+		expect(body.idleTimeout).toBe(300)
+		expect(body.hardExpiresAt).toBeGreaterThan(body.expiresAt)
+	})
+
+	test('Sign out from the warning', async ({ page }) => {
+		// @e2e portal-session-idle-and-sso::the-resident-signs-out-from-the-warning
+		await signIn(page)
+		await page.clock.fastForward('03:01')
+		await page.getByTestId('idle-sign-out').click()
+		await expect(page.locator('.portaliq-logout')).toBeHidden()
+		await expect(page.getByTestId('idle-signed-out')).toBeHidden()
+	})
+
+	test('Activity in another tab keeps this one', async ({ context }) => {
+		// @e2e portal-session-idle-and-sso::activity-in-another-tab-counts
+		const first = await context.newPage()
+		await signIn(first)
+		const second = await context.newPage()
+		await second.clock.install()
+		await second.goto('/apps/portaliq/portal')
+		await expect(second.locator('.portaliq-logout')).toBeVisible()
+		await first.clock.fastForward('02:40')
+		await second.clock.fastForward('02:40')
+		const refreshed = second.waitForResponse(
+			(r) => r.url().includes('/session/refresh') && r.ok(),
+		)
+		await second.keyboard.press('Shift')
+		await refreshed
+		await first.clock.fastForward('01:00')
+		await expect(first.getByRole('alertdialog')).toBeHidden()
+	})
+
+	test('Near the cap there is nothing to extend', async ({ page, request }) => {
+		// @e2e portal-session-idle-and-sso::near-the-cap-there-is-nothing-to-extend
+		const MAX =
+			'/ocs/v2.php/apps/provisioning_api/api/v1/config/apps/portaliq/session_max_lifetime'
+		await request.post(MAX, { headers: OCS, form: { value: '120' } })
+		try {
+			await signIn(page)
+			await page.clock.fastForward('03:01')
+			await expect(page.getByTestId('idle-sign-in-again')).toBeVisible()
+			await expect(page.getByTestId('idle-stay')).toHaveCount(0)
+		} finally {
+			await request.delete(MAX, { headers: OCS })
+		}
 	})
 })
