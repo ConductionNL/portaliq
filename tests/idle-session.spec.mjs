@@ -18,11 +18,11 @@ import {
 	canExtend,
 	IDLE_WARNING_STRINGS,
 	logoutTarget,
+	markIdleSignOut,
 	remainingText,
 	shouldRefresh,
 	silentSignInUrl,
 	takeIdleSignOut,
-	markIdleSignOut,
 	warningDelayMs,
 	warningLeadSeconds,
 } from '../src/portal/lib/idleSession.js'

@@ -13,6 +13,7 @@
 
 import AccessRequestsPage from '@portal/components/AccessRequestsPage.jsx'
 import ActingForSwitcher from '@portal/components/ActingForSwitcher.jsx'
+import IdleWarningDialog from '@portal/components/IdleWarningDialog.jsx'
 import InboxPage from '@portal/components/InboxPage.jsx'
 import MessagesPage from '@portal/components/MessagesPage.jsx'
 import MyCasesPage from '@portal/components/MyCasesPage.jsx'
@@ -21,12 +22,14 @@ import PageView from '@portal/components/PageView.jsx'
 import PortalNotices from '@portal/components/PortalNotices.jsx'
 import TasksPage from '@portal/components/TasksPage.jsx'
 import { branchInEffect } from '@portal/lib/branch.js'
+import { logoutTarget, markIdleSignOut, silentSignInUrl, takeIdleSignOut } from '@portal/lib/idleSession.js'
 import { actingForHeld, keepActingFor, readActingFor } from '@portal/lib/myCases.js'
 import { consumeOpenTarget, forgetOpenTarget, navKeyFor } from '@portal/lib/openRecord.js'
-import { consumeOidcCallbackFragment, createPortalApi, getToken } from '@portal/lib/portalApi.js'
+import { consumeOidcCallbackFragment, createPortalApi, getToken, setToken } from '@portal/lib/portalApi.js'
 import { runAction } from '@portal/lib/rowAction.js'
 import { consumeSigninFailed, loginStartUrl } from '@portal/lib/signinRoute.js'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import useIdleSession from '@portal/lib/useIdleSession.js'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Loading from './components/Loading.jsx'
 
 // The fixed cross-app inbox nav entry's key (portal-inbox-v2 T05) — distinct
@@ -71,12 +74,6 @@ function sessionStore() {
 	}
 }
 
-// How often to proactively rotate the bearer while a session is active
-// (portal-session-hardening-v2, T04) — comfortably inside the 2h default TTL
-// so a subject filling in a long form or reading a case is never logged out
-// mid-task. A failed/refused rotation is silent (see portalApi.refreshSession);
-// the existing bearer simply runs to its natural expiry.
-const REFRESH_INTERVAL_MS = 25 * 60 * 1000
 
 // Flatten every contribution's pages into a single navigable list, tagging each
 // with its owning contribution so a block's refs resolve in the right scope.
@@ -237,17 +234,43 @@ export default function App({ config, t: tProp }) {
 
 	useEffect(() => { refresh() }, [refresh, token])
 
-	// Slide the bearer forward ahead of its natural expiry (T04). Runs only
-	// while a session is active; deliberately does NOT touch React state on
-	// success (the rotated token is swapped in localStorage silently) so a
-	// routine rotation never re-triggers the full contributions reload.
-	useEffect(() => {
-		if (!state.session) {
-			return undefined
+	// The idle window (signin-session-idle-warning-and-sso T03-T05): activity
+	// refreshes the bearer, idling opens the warning, expiry ends the session
+	// and the login screen says why. A refresh swaps the token in localStorage
+	// without touching React state, so it never reloads the contributions.
+	const [idleSignedOut, setIdleSignedOut] = useState(() => takeIdleSignOut(sessionStore()))
+	const endSession = useCallback((reason) => {
+		setToken(null)
+		if (reason === 'idle') {
+			markIdleSignOut(sessionStore())
+			setIdleSignedOut(true)
 		}
-		const id = setInterval(() => { api.refreshSession() }, REFRESH_INTERVAL_MS)
-		return () => clearInterval(id)
-	}, [state.session, api])
+		setTokenState(null)
+	}, [])
+	const idle = useIdleSession({ session: state.session, api, onEnded: endSession })
+	useEffect(() => {
+		if (state.session) {
+			setIdleSignedOut(false)
+		}
+	}, [state.session])
+
+	// Silent sign-in (T09): tried on the first load only, once per browser
+	// session, and only when the organisation turned it on. A later signed-out
+	// state (a sign-out, an inactivity sign-out) never tries again.
+	const firstLoad = useRef(true)
+	useEffect(() => {
+		if (state.loading || !firstLoad.current) {
+			return
+		}
+		firstLoad.current = false
+		if (state.session || signinFailed || idleSignedOut) {
+			return
+		}
+		const url = silentSignInUrl(config, sessionStore())
+		if (url) {
+			window.location.assign(url)
+		}
+	}, [state.loading, state.session, signinFailed, idleSignedOut, config])
 
 	// Whom the person acts for (cases-my-cases-page REQ-CMC-004): yourself or
 	// a mandate, kept for the session. The mandates held are learned from the
@@ -419,8 +442,13 @@ export default function App({ config, t: tProp }) {
 	 *
 	 */
 	async function logout() {
-		await api.logout()
+		const answer = await api.logout()
 		setTokenState(null)
+		// The broker's own sign-out, when it offers one (T11).
+		const target = logoutTarget(answer)
+		if (target) {
+			window.location.assign(target)
+		}
 	}
 
 	// Navigate the WHOLE page to the OIDC start endpoint (portal-oidc-broker-
@@ -485,6 +513,14 @@ export default function App({ config, t: tProp }) {
 
 			<PortalNotices notices={config.notices} t={t} />
 
+			{state.session && idle.warning && idle.times && (
+				<IdleWarningDialog
+					times={idle.times}
+					t={t}
+					onStay={idle.extend}
+					onSignOut={logout} />
+			)}
+
 			<main className="portaliq-main">
 				{state.loading && <Loading t={t} />}
 
@@ -504,6 +540,9 @@ export default function App({ config, t: tProp }) {
 						))}
 						{signinFailed && (
 							<p className="portaliq-error" role="alert">{t('Signing in did not work. Try again or choose another way in.')}</p>
+						)}
+						{idleSignedOut && (
+							<p className="portaliq-notice" role="status" data-testid="idle-signed-out">{t('You were signed out because you were inactive.')}</p>
 						)}
 						{(config.oidcProviders || []).length === 0 && (
 							<p className="portaliq-idp-hint">{t('No login method is configured for this organisation yet.')}</p>

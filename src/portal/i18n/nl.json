@@ -199,5 +199,15 @@
 	"This organisation has too many cases to list here. Choose a narrower mandate.": "Deze organisatie heeft te veel zaken om hier te tonen. Kies een smallere machtiging.",
 	"Notice": "Melding",
 	"Close this notice": "Deze melding sluiten",
-	"More information": "Meer informatie"
+	"More information": "Meer informatie",
+	"You will be signed out soon": "U wordt zo uitgelogd",
+	"You will be signed out in {time} because you have been inactive.": "U wordt over {time} uitgelogd omdat u niets heeft gedaan.",
+	"Your session ends in {time}. Sign in again to keep going.": "Uw sessie stopt over {time}. Log opnieuw in om verder te gaan.",
+	"Stay signed in": "Ingelogd blijven",
+	"Sign out": "Uitloggen",
+	"Sign in again": "Opnieuw inloggen",
+	"You were signed out because you were inactive.": "U bent uitgelogd omdat u een tijd niets heeft gedaan.",
+	"{count} minutes": "{count} minuten",
+	"1 minute": "1 minuut",
+	"{count} seconds": "{count} seconden"
 }

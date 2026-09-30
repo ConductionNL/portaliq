@@ -199,5 +199,15 @@
 	"This organisation has too many cases to list here. Choose a narrower mandate.": "This organisation has too many cases to list here. Choose a narrower mandate.",
 	"Notice": "Notice",
 	"Close this notice": "Close this notice",
-	"More information": "More information"
+	"More information": "More information",
+	"You will be signed out soon": "You will be signed out soon",
+	"You will be signed out in {time} because you have been inactive.": "You will be signed out in {time} because you have been inactive.",
+	"Your session ends in {time}. Sign in again to keep going.": "Your session ends in {time}. Sign in again to keep going.",
+	"Stay signed in": "Stay signed in",
+	"Sign out": "Sign out",
+	"Sign in again": "Sign in again",
+	"You were signed out because you were inactive.": "You were signed out because you were inactive.",
+	"{count} minutes": "{count} minutes",
+	"1 minute": "1 minute",
+	"{count} seconds": "{count} seconds"
 }
