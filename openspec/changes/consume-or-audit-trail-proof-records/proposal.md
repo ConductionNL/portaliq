@@ -44,4 +44,4 @@ records.
   is the resident's own copy of what they sent, shown back to them, not an
   audit fact.
 - A counting method on OpenRegister's mapper. The counts read the rows today;
-  the ask is drafted for Ruben (`for-ruben/openregister-audit-count-by-action.md`).
+  the ask is drafted for Ruben (`for-ruben/portaliq-audit-trail-openregister-needs.md`).
