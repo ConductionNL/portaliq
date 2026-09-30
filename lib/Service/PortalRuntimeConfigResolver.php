@@ -71,6 +71,7 @@ class PortalRuntimeConfigResolver {
 	 *                                                        OIDC provider list.
 	 * @param PortalThemeResolver             $themeResolver  Maps a portal's theme reference onto a
 	 *                                                        real thematiq token stylesheet.
+	 * @param IConfig|null                    $config         Tells whether the dev login is accepted.
 	 *
 	 * @return void
 	 */
