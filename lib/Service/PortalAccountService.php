@@ -68,6 +68,11 @@ class PortalAccountService {
 	public const STATUS_VOID = 'void';
 
 	/**
+	 * The `provisionedBy` of an account a stranger created through self-registration.
+	 */
+	public const SELF_REGISTRATION = 'self-registration';
+
+	/**
 	 * The lazily built read half, see lookup().
 	 *
 	 * @var PortalAccountLookup|null
@@ -381,6 +386,45 @@ class PortalAccountService {
 		return $written !== null;
 	}//end voidPending()
 
+
+	/**
+	 * Approve a self-registration that waits for a decision (REQ-ISA-004).
+	 *
+	 * Only a pending account the registrant created is approved here: a
+	 * pending account a clerk provisioned becomes active on its owner's first
+	 * sign-in, not by a second clerk's click. `verifiedEmail` stays as the
+	 * registrant left it.
+	 *
+	 * @param string $subjectRef The account.
+	 *
+	 * @return bool True when the account is now active.
+	 *
+	 * @spec openspec/changes/identity-staff-account-screens/tasks.md#T03
+	 */
+	public function approvePending(string $subjectRef): bool {
+		$account = $this->findBySubjectRef(subjectRef: $subjectRef);
+		if ($account === null
+			|| ($account['status'] ?? '') !== self::STATUS_PENDING
+			|| ($account['provisionedBy'] ?? '') !== self::SELF_REGISTRATION
+		) {
+			return false;
+		}
+
+		$uuid = $this->lookup()->identifierOf(row: $account);
+		if ($uuid === null) {
+			return false;
+		}
+
+		return $this->writer->updateObject(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: '',
+			subjectRef: '',
+			organisation: '',
+			id: $uuid,
+			data: ['status' => self::STATUS_ACTIVE]
+		) !== null;
+	}//end approvePending()
 
 	/**
 	 * Activate the matched account and stamp the login (REQ-PIS-002).

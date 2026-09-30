@@ -108,6 +108,49 @@ class PortalAccountAdminControllerTest extends TestCase {
 	}//end testWithdrawingAPendingAccountSaysItIsVoid()
 
 	/**
+	 * identity-staff-account-screens T02, T03: withdrawing an invitation and
+	 * approving or refusing a registration need the provision action.
+	 *
+	 * @return void
+	 */
+	public function testTheNewStaffRoutesNeedTheProvisionAction(): void {
+		$accounts = $this->accounts();
+		$accounts->expects($this->never())->method('approvePending');
+		$accounts->expects($this->never())->method('voidPending');
+		$controller = $this->controller(accounts: $accounts, allowed: false, user: $this->user('clerk-anna'));
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $controller->revokeInvitation(id: 'inv-1', organisation: 'gemeente-x')->getStatus());
+		$this->assertSame(Http::STATUS_FORBIDDEN, $controller->approve(subjectRef: 'subject-1')->getStatus());
+		$this->assertSame(Http::STATUS_FORBIDDEN, $controller->refuse(subjectRef: 'subject-1', reason: 'unknown address')->getStatus());
+		$anonymous = $this->controller(accounts: $this->accounts(), allowed: true, user: null);
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $anonymous->approve(subjectRef: 'subject-1')->getStatus());
+
+	}//end testTheNewStaffRoutesNeedTheProvisionAction()
+
+	/**
+	 * Approve answers active, refuse needs a reason, withdraw names why it
+	 * could not.
+	 *
+	 * @return void
+	 */
+	public function testApproveRefuseAndWithdrawAnswerWhatHappened(): void {
+		$accounts = $this->accounts();
+		$accounts->method('approvePending')->willReturnOnConsecutiveCalls(true, false);
+		$accounts->method('voidPending')->willReturn(true);
+		$controller = $this->controller(accounts: $accounts, allowed: true, user: $this->user('clerk-anna'));
+
+		$this->assertSame(['status' => 'active'], $controller->approve(subjectRef: 'subject-1')->getData());
+		$this->assertSame(['error' => 'not_pending'], $controller->approve(subjectRef: 'subject-1')->getData());
+		$this->assertSame(['error' => 'reason_required'], $controller->refuse(subjectRef: 'subject-1')->getData());
+		$this->assertSame(['status' => 'void'], $controller->refuse(subjectRef: 'subject-1', reason: 'Not a resident')->getData());
+		$this->assertSame(['state' => 'revoked'], $controller->revokeInvitation(id: 'inv-1', organisation: 'gemeente-x')->getData());
+		$refused = $controller->revokeInvitation(id: 'inv-accepted', organisation: 'gemeente-x');
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $refused->getStatus());
+		$this->assertSame(['error' => 'already_accepted'], $refused->getData());
+
+	}//end testApproveRefuseAndWithdrawAnswerWhatHappened()
+
+	/**
 	 * The controller over doubles.
 	 *
 	 * @param PortalAccountService $accounts The account service double.
@@ -130,9 +173,10 @@ class PortalAccountAdminControllerTest extends TestCase {
 
 		$invitations = $this->getMockBuilder(PortalInvitationService::class)
 			->disableOriginalConstructor()
-			->onlyMethods(['invite', 'sentBy'])
+			->onlyMethods(['invite', 'sentBy', 'revoke'])
 			->getMock();
 		$invitations->method('invite')->willReturn(['token' => 'secret-1', 'expiresAt' => '2026-09-25T09:00:00+00:00']);
+		$invitations->method('revoke')->willReturnCallback(static fn (string $id): string => $id === 'inv-accepted' ? 'already_accepted' : '');
 		$invitations->method('sentBy')->willReturn([['email' => 'ans@example.org', 'state' => 'sent', 'sentAt' => '', 'expiresAt' => '']]);
 
 		if ($mailer === null) {
@@ -240,7 +284,7 @@ class PortalAccountAdminControllerTest extends TestCase {
 	private function accounts(): PortalAccountService {
 		return $this->getMockBuilder(PortalAccountService::class)
 			->disableOriginalConstructor()
-			->onlyMethods(['provision', 'voidPending'])
+			->onlyMethods(['provision', 'voidPending', 'approvePending'])
 			->getMock();
 	}//end accounts()
 

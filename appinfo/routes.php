@@ -51,6 +51,7 @@ return [
         // Staff acts behind the same `portal.provision` action.
         ['name' => 'portalAccountAdmin#invite', 'url' => '/api/invitations', 'verb' => 'POST'],
         ['name' => 'portalAccountAdmin#invitations', 'url' => '/api/invitations', 'verb' => 'GET'],
+        ['name' => 'portalAccountAdmin#revokeInvitation', 'url' => '/api/invitations/{id}/revoke', 'verb' => 'POST'],
 
         // The owner's side of an access request (identity-access-requests):
         // staff holding `portal.answer-access-request` list, grant and refuse.
@@ -78,6 +79,8 @@ return [
         // the ADR-023 action `portal.provision`; a citizen never reaches them.
         ['name' => 'portalAccountAdmin#provision', 'url' => '/api/accounts/provision', 'verb' => 'POST'],
         ['name' => 'portalAccountAdmin#void', 'url' => '/api/accounts/void', 'verb' => 'POST'],
+        ['name' => 'portalAccountAdmin#approve', 'url' => '/api/accounts/{subjectRef}/approve', 'verb' => 'POST'],
+        ['name' => 'portalAccountAdmin#refuse', 'url' => '/api/accounts/{subjectRef}/refuse', 'verb' => 'POST'],
 
         // Prometheus metrics endpoint.
         ['name' => 'metrics#index', 'url' => '/api/metrics', 'verb' => 'GET'],

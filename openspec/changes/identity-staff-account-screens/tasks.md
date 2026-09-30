@@ -2,12 +2,15 @@
 
 ## Server
 
-- [ ] **T01**: `invite()` mails through `PortalIdentityMailer` and stops answering the token (REQ-ISA-001)
+- [x] **T01**: `invite()` mails through `PortalIdentityMailer` and stops answering the token (REQ-ISA-001)
   - Verify: PHPUnit asserting the answer has no token and the mailer received it
-- [ ] **T02**: `PortalInvitationService::revoke()` and `POST /api/invitations/{id}/revoke`, refused for an accepted invitation (REQ-ISA-002)
+  - Done: Done by #822: PortalAccountAdminController::invite mails through PortalIdentityMailer (template invitation) and answers only `{state, expiresAt}`; PortalAccountAdminControllerTest::testTheInvitationIsMailedAndTheClerkNeverSeesItsSecret.
+- [x] **T02**: `PortalInvitationService::revoke()` and `POST /api/invitations/{id}/revoke`, refused for an accepted invitation (REQ-ISA-002)
   - Verify: PHPUnit for revoke, and that `accept()` then refuses the token
-- [ ] **T03**: `POST /api/accounts/{subjectRef}/approve` and `/refuse` for pending self-registrations, guarded by `portal.provision` (REQ-ISA-004)
+  - Done: PortalInvitationService::revoke(id, organisation): `not_found` outside the organisation, `already_accepted`, idempotent; route portalAccountAdmin#revokeInvitation. PortalInvitationServiceTest::testAWithdrawnInvitationAdmitsNobody, ::testAnAcceptedInvitationCannotBeWithdrawn; PortalAccountAdminControllerTest::testApproveRefuseAndWithdrawAnswerWhatHappened.
+- [x] **T03**: `POST /api/accounts/{subjectRef}/approve` and `/refuse` for pending self-registrations, guarded by `portal.provision` (REQ-ISA-004)
   - Verify: PHPUnit: approve a pending self-registration; refuse needs a reason; an active account answers `not_pending`; `hydra-gate-no-admin-idor` green
+  - Done: PortalAccountService::approvePending (only `provisionedBy: self-registration`, constant SELF_REGISTRATION); refuse voids with a required reason. PortalAccountProvisionTest::testAPendingSelfRegistrationIsApprovedAndNothingElseIs; PortalAccountAdminControllerTest::testTheNewStaffRoutesNeedTheProvisionAction.
 
 ## Screens
 
