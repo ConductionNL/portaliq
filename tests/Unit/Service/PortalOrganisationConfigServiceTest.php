@@ -194,7 +194,7 @@ class PortalOrganisationConfigServiceTest extends TestCase {
 	 * REQ-SIS-005: silent sign-in is on only when the override names a
 	 * provider the organisation configured on its own OIDC broker.
 	 *
-	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T09
 	 */
 	public function testSilentSignInNamesAConfiguredOidcProvider(): void {
 		$oidc = ['eherkenning' => ['issuer' => 'https://broker.example/idp', 'clientId' => 'rp-client-1']];

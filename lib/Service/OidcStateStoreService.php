@@ -89,7 +89,7 @@ class OidcStateStoreService {
 	 *              closed rather than issue a redirect with no matching state).
 	 *
 	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T02
-	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T07
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T07
 	 */
 	public function create(
 		string $state,
@@ -182,7 +182,7 @@ class OidcStateStoreService {
 	 * @return array{nonce: string, codeVerifier: string, org: string, provider: string, returnTo: string, route: string, silent: bool}|null
 	 *
 	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T02
-	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T08
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T08
 	 * @spec openspec/specs/supplier-portal/spec.md#every-validation-failure-is-an-identical-generic-error
 	 */
 	public function consume(string $state): ?array {

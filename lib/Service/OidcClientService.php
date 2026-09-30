@@ -166,7 +166,7 @@ class OidcClientService {
 	 * @return array{authorization_endpoint: string, token_endpoint: string, jwks_uri: string, end_session_endpoint: string}|null
 	 *
 	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T03
-	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T10
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T10
 	 * @spec openspec/changes/adopt-connection-registry/specs/app-connections/spec.md#requirement-req-portaliq-conn-003-a-broker-call-reports-what-the-broker-answered-throttled
 	 */
 	public function discover(string $issuer): ?array {
@@ -229,7 +229,7 @@ class OidcClientService {
 	 * @return string
 	 *
 	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T03
-	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T07
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T07
 	 */
 	public function buildAuthorizationUrl(
 		string $authorizeEndpoint,

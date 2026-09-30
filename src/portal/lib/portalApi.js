@@ -1016,7 +1016,7 @@ export function createPortalApi(config) {
 		 * @return {Promise<{token: string, expiresAt: number, hardExpiresAt: number, idleTimeout: number}|null>}
 		 *         The answer with when the rotated session ends
 		 *         (signin-session-idle-warning-and-sso T02), or null.
-		 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T03
+		 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T03
 		 */
 		async refreshSession() {
 			const res = await fetch(`${base}/session/refresh`, {
@@ -1068,7 +1068,7 @@ export function createPortalApi(config) {
 		 * @return {Promise<object|null>} The answer, carrying `logoutUrl` when
 		 *         the broker offers a sign-out (signin-session-idle-warning-and-sso
 		 *         T11), or null when the edge could not be reached.
-		 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T11
+		 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T11
 		 */
 		async logout() {
 			let answer = null

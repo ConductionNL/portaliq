@@ -48,7 +48,7 @@ function timesOf(answer) {
  * @param {object} options.api The portal api (refreshSession, getSession).
  * @param {(reason: string) => void} options.onEnded Called with `idle` at expiry, or `elsewhere` when another tab signed out.
  * @return {{times: object|null, warning: boolean, extend: () => Promise<void>}} The state.
- * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T03
+ * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T03
  */
 export default function useIdleSession({ session, api, onEnded }) {
 	const [times, setTimes] = useState(null)

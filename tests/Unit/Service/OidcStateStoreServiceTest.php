@@ -77,7 +77,7 @@ class OidcStateStoreServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T07
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T07
 	 */
 	public function testASilentRowRecordsTheFlag(): void {
 		$store = [];

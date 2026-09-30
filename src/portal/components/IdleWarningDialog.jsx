@@ -29,8 +29,8 @@ function nowSeconds() {
  * @param {() => void} props.onSignOut "Sign out", or "Sign in again" near the cap.
  * @return {object} The dialog.
  *
- * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T04
- * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T05
+ * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T04
+ * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T05
  */
 export default function IdleWarningDialog({ times, t, onStay, onSignOut }) {
 	const [left, setLeft] = useState(() => times.expiresAt - nowSeconds())

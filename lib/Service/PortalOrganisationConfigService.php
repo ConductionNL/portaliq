@@ -148,7 +148,7 @@ class PortalOrganisationConfigService {
 	 *                              apiBase, audience, locale, oidcProviders,
 	 *                              silentSignIn}`.
 	 *
-	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T09
 	 * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.2
 	 * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.3
 	 * @spec openspec/changes/portal-spa-i18n-locale-support/tasks.md#2.2
@@ -211,7 +211,7 @@ class PortalOrganisationConfigService {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T09
 	 */
 	private function silentSignInProvider(array $overrides, array $providers): string {
 		$named = ($overrides['silentSignIn'] ?? '');

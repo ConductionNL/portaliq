@@ -67,7 +67,7 @@ import { canExtend, remainingText } from '../../portal/lib/idleSession.js'
 const STRINGS = { en, nl }
 
 /**
- * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T06
+ * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T06
  */
 export default {
 	name: 'IdleWarningDialog',
@@ -97,7 +97,7 @@ export default {
 		/**
 		 * @return {boolean} Whether "Stay signed in" can still work.
 		 *
-		 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T06
+		 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T06
 		 */
 		extendable() {
 			return canExtend(this.times, Math.floor(Date.now() / 1000))
@@ -123,7 +123,7 @@ export default {
 		 * @param {object} [vars] Placeholder values.
 		 * @return {string} The string.
 		 *
-		 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T06
+		 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T06
 		 */
 		t(key, vars = {}) {
 			const strings = STRINGS[this.locale] || STRINGS.nl
@@ -138,7 +138,7 @@ export default {
 		 * @param {number} seconds Seconds left.
 		 * @return {string} The sentence.
 		 *
-		 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T06
+		 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T06
 		 */
 		sentence(seconds) {
 			const time = remainingText(seconds, this.t)

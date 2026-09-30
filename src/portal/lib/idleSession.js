@@ -42,7 +42,7 @@ const SILENT_TRIED_KEY = 'portaliq.silentSignInTried'
  *
  * @param {number} idleTimeout The idle window in seconds.
  * @return {number} Seconds.
- * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T04
+ * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T04
  */
 export function warningLeadSeconds(idleTimeout) {
 	if (Number(idleTimeout) > 0 && Number(idleTimeout) < 300) {
@@ -57,7 +57,7 @@ export function warningLeadSeconds(idleTimeout) {
  * @param {{expiresAt: number, idleTimeout: number}} times The session times.
  * @param {number} nowSeconds The current unix time in seconds.
  * @return {number} Milliseconds.
- * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T04
+ * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T04
  */
 export function warningDelayMs(times, nowSeconds) {
 	const due = Number(times.expiresAt) - warningLeadSeconds(times.idleTimeout)
@@ -74,7 +74,7 @@ export function warningDelayMs(times, nowSeconds) {
  * @param {number} lastActivity When the resident last did something, unix seconds.
  * @param {number} lastRefresh When the bearer was last minted or refreshed, unix seconds.
  * @return {boolean}
- * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T03
+ * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T03
  */
 export function shouldRefresh(times, nowSeconds, lastActivity, lastRefresh) {
 	if (!times || !(Number(times.expiresAt) > 0)) {
@@ -92,7 +92,7 @@ export function shouldRefresh(times, nowSeconds, lastActivity, lastRefresh) {
  * @param {{hardExpiresAt: number}} times The session times.
  * @param {number} nowSeconds The current unix time in seconds.
  * @return {boolean}
- * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T05
+ * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T05
  */
 export function canExtend(times, nowSeconds) {
 	return nowSeconds < Number(times.hardExpiresAt)
@@ -104,7 +104,7 @@ export function canExtend(times, nowSeconds) {
  * @param {number} seconds Seconds left.
  * @param {(key: string, vars?: object) => string} t The translator.
  * @return {string}
- * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T04
+ * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T04
  */
 export function remainingText(seconds, t) {
 	const left = Math.max(0, Math.round(seconds))
@@ -120,7 +120,7 @@ export function remainingText(seconds, t) {
  *
  * @param {Storage|null} store sessionStorage, or null.
  * @return {void}
- * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T05
+ * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T05
  */
 export function markIdleSignOut(store) {
 	try {
@@ -135,7 +135,7 @@ export function markIdleSignOut(store) {
  *
  * @param {Storage|null} store sessionStorage, or null.
  * @return {boolean}
- * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T05
+ * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T05
  */
 export function takeIdleSignOut(store) {
 	try {
@@ -158,7 +158,7 @@ export function takeIdleSignOut(store) {
  * @param {{apiBase: string, organisationSlug: string, silentSignIn: string}} config The runtime config.
  * @param {Storage|null} store sessionStorage, or null.
  * @return {string}
- * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T09
+ * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T09
  */
 export function silentSignInUrl(config, store) {
 	const provider = String(config?.silentSignIn || '')
@@ -182,7 +182,7 @@ export function silentSignInUrl(config, store) {
  *
  * @param {{logoutUrl?: string}|null} answer The DELETE /session answer.
  * @return {string}
- * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T11
+ * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T11
  */
 export function logoutTarget(answer) {
 	const url = String(answer?.logoutUrl || '')

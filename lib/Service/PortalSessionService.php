@@ -280,7 +280,7 @@ class PortalSessionService {
 	 * @return array{token: string, jti: string, expiresAt: int, hardExpiresAt: int, idleTimeout: int}|null The minted
 	 *         bearer token, its id and the session's times, or null when the edge is not yet configured.
 	 *
-	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T10
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T10
 	 * @spec openspec/changes/signin-eherkenning-branch/tasks.md#T02
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
 	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.3
@@ -352,7 +352,7 @@ class PortalSessionService {
 	 *
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T01
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T02
-	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T01
 	 */
 	private function mintSession(
 		string $subjectRef,
@@ -423,7 +423,7 @@ class PortalSessionService {
 	 *
 	 * @return int
 	 *
-	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T01
 	 */
 	private function idleTimeoutSeconds(): int {
 		$configured = (int)$this->config->getAppValue(Application::APP_ID, self::IDLE_TIMEOUT_CONFIG_KEY, (string)self::DEFAULT_IDLE_TIMEOUT);
@@ -443,7 +443,7 @@ class PortalSessionService {
 	 *
 	 * @return array{expiresAt: int, hardExpiresAt: int, idleTimeout: int}
 	 *
-	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T02
 	 */
 	public function sessionTimes(array $subject): array {
 		return [
@@ -678,7 +678,7 @@ class PortalSessionService {
 	 * @return array{token: string, jti: string, expiresAt: int, hardExpiresAt: int, idleTimeout: int}|null The NEW
 	 *         bearer token, its id and when the rotated session ends, or null on any rejection.
 	 *
-	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T02
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T02
 	 * @spec openspec/specs/supplier-portal/spec.md#session-refresh-rotates-the-token-within-an-absolute-cap
 	 */

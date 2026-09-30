@@ -50,7 +50,7 @@ export function timesOf(answer) {
  * @param {() => void} callbacks.onWarn The warning is due.
  * @param {() => void} callbacks.onEnd The window ran out.
  * @return {{start: (times: object) => void, stop: () => void, extend: () => Promise<void>}} The tracker.
- * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T06
+ * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T06
  */
 export function createIdleTracker({ refresh, onTimes, onWarn, onEnd }) {
 	let times = null

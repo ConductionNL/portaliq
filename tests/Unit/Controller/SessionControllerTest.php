@@ -709,7 +709,7 @@ class SessionControllerTest extends TestCase {
 	/**
 	 * REQ-SIS-001: the session answer says when it ends.
 	 *
-	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T02
 	 */
 	public function testIndexReportsExpiry(): void {
 		$session = $this->createMock(PortalSessionService::class);
@@ -727,7 +727,7 @@ class SessionControllerTest extends TestCase {
 	/**
 	 * REQ-SIS-001: the refresh answer says when the rotated session ends.
 	 *
-	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T02
 	 */
 	public function testRefreshReportsExpiry(): void {
 		$session = $this->createMock(PortalSessionService::class);
@@ -747,7 +747,7 @@ class SessionControllerTest extends TestCase {
 	 * REQ-SIS-005: `silent=1` records the flag on the state row and asks the
 	 * broker for no prompt; without it neither happens.
 	 *
-	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T07
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T07
 	 */
 	public function testSilentStartRecordsTheFlag(): void {
 		foreach (['1' => [true, 'none'], '' => [false, '']] as $silent => [$flag, $prompt]) {
@@ -780,7 +780,7 @@ class SessionControllerTest extends TestCase {
 	 * REQ-SIS-005: a silent attempt the broker answers with "the resident must
 	 * interact" lands on the portal's login screen, with no error and no token.
 	 *
-	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T08
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T08
 	 */
 	public function testSilentLoginRequiredLandsQuietly(): void {
 		foreach (['login_required', 'interaction_required', 'consent_required', 'account_selection_required'] as $error) {
@@ -806,7 +806,7 @@ class SessionControllerTest extends TestCase {
 	 * REQ-SIS-005: every other broker error, and any error on a row that was
 	 * not silent, keeps the one generic failure.
 	 *
-	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T08
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T08
 	 */
 	public function testNonSilentErrorKeepsTheGenericFailure(): void {
 		$cases = [
@@ -831,7 +831,7 @@ class SessionControllerTest extends TestCase {
 	 * REQ-SIS-006: signing out of an OIDC-minted session also answers the
 	 * broker's logout address, with client_id and post_logout_redirect_uri.
 	 *
-	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T10
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T10
 	 */
 	public function testLogoutReturnsTheBrokerLogoutUrl(): void {
 		$session = $this->createMock(PortalSessionService::class);
@@ -861,7 +861,7 @@ class SessionControllerTest extends TestCase {
 	/**
 	 * REQ-SIS-006: a broker that announces no end_session_endpoint gives no logoutUrl.
 	 *
-	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T10
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T10
 	 */
 	public function testLogoutWithoutEndSessionReturnsNone(): void {
 		$session = $this->createMock(PortalSessionService::class);
@@ -883,7 +883,7 @@ class SessionControllerTest extends TestCase {
 	 * REQ-SIS-006: a session without a provider (dev-login, the Nextcloud
 	 * mode, integriq's broker route) never looks up a broker on sign-out.
 	 *
-	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T10
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T10
 	 */
 	public function testDevLoginSessionHasNoProvider(): void {
 		$session = $this->createMock(PortalSessionService::class);

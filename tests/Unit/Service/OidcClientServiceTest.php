@@ -254,7 +254,7 @@ class OidcClientServiceTest extends TestCase {
 	/**
 	 * REQ-SIS-005: a silent start asks the broker for a sign-in without a prompt.
 	 *
-	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T07
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T07
 	 */
 	public function testSilentAuthorizationUrlCarriesPromptNone(): void {
 		$service = $this->service();
@@ -272,7 +272,7 @@ class OidcClientServiceTest extends TestCase {
 	 * REQ-SIS-006: discovery keeps the broker's `end_session_endpoint`, and
 	 * reports '' when the broker announces none.
 	 *
-	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T10
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T10
 	 */
 	public function testDiscoverKeepsTheEndSessionEndpoint(): void {
 		$document = ['authorization_endpoint' => 'https://broker.example/authorize', 'token_endpoint' => 'https://broker.example/token', 'jwks_uri' => 'https://broker.example/jwks'];

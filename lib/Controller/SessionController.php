@@ -166,7 +166,7 @@ class SessionController extends Controller {
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T05
 	 * @spec openspec/changes/signin-eherkenning-branch/tasks.md#T02
-	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T02
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -295,7 +295,7 @@ class SessionController extends Controller {
 	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T06
 	 * @spec openspec/specs/supplier-portal/spec.md#oidc-start-builds-a-state-nonce-pkce-authorization-request
 	 * @spec openspec/changes/archive/2026-09-29-signin-integriq-broker-login/design.md#d2-two-new-routes-and-the-spas-follow-the-route-field
-	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T07
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T07
 	 *
 	 * @no-admin-idor-exempt the lookup is unscoped because it MUST be: this is
 	 * the anonymous entry point to a portal's login, so a caller with no
@@ -426,8 +426,8 @@ class SessionController extends Controller {
 	 * @spec openspec/specs/supplier-portal/spec.md#every-validation-failure-is-an-identical-generic-error
 	 * @spec openspec/specs/supplier-portal/spec.md#the-subject-reference-is-server-derived-never-client-supplied
 	 * @spec openspec/changes/signin-eherkenning-branch/tasks.md#T02
-	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T08
-	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T10
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T08
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T10
 	 *
 	 * @SuppressWarnings(PHPMD.CyclomaticComplexity) -- one fail-closed guard
 	 * per step of the OIDC flow (state, config, discovery, exchange, ID-token
@@ -547,7 +547,7 @@ class SessionController extends Controller {
 	 *
 	 * @return Response
 	 *
-	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T08
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T08
 	 */
 	private function brokerErrorAnswer(string $state, string $error): Response {
 		$pending = $this->stateStore->consume(state: $state);
@@ -749,7 +749,7 @@ class SessionController extends Controller {
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
 	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#3.1
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T05
-	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T10
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T10
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -781,7 +781,7 @@ class SessionController extends Controller {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T10
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T10
 	 */
 	private function brokerLogoutUrl(array $subject): string {
 		$provider = (string)($subject['provider'] ?? '');
@@ -828,7 +828,7 @@ class SessionController extends Controller {
 	 * @return JSONResponse 200 with the new bearer, or 401 on any rejection.
 	 *
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T03
-	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T02
 	 * @spec openspec/specs/supplier-portal/spec.md#session-refresh-rotates-the-token-within-an-absolute-cap
 	 */
 	#[PublicPage]

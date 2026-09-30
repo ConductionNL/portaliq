@@ -607,7 +607,7 @@ class PortalSessionServiceTest extends TestCase {
 	/**
 	 * REQ-SIS-001: a new bearer lives one idle window (default 900 s), not two hours.
 	 *
-	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T01
 	 */
 	public function testBearerLivesOneIdleWindow(): void {
 		$issued = $this->service()->issueSession(subjectRef: 's1', audience: 'client', organisation: 'org-1');
@@ -625,7 +625,7 @@ class PortalSessionServiceTest extends TestCase {
 	 * REQ-SIS-001: the idle window is clamped to 300 through 3600 seconds, and
 	 * a value that is not a number falls back to the default.
 	 *
-	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T01
 	 */
 	public function testIdleTimeoutIsClamped(): void {
 		foreach (['60' => 300, '99999' => 3600, 'soon' => 900, '0' => 900, '-5' => 900] as $configured => $expected) {
@@ -640,8 +640,8 @@ class PortalSessionServiceTest extends TestCase {
 	 * REQ-SIS-001: a rotated bearer lives one idle window too, and the answer
 	 * reports when the session ends; the absolute cap still refuses a refresh.
 	 *
-	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T01
-	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T02
 	 */
 	public function testRefreshPastTheCapIsStillRefused(): void {
 		$store = [];
@@ -667,7 +667,7 @@ class PortalSessionServiceTest extends TestCase {
 	 * REQ-SIS-001: the portalSession row expires with its bearer, one idle
 	 * window after it was minted, not two hours.
 	 *
-	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T01
 	 */
 	public function testTheSessionRowExpiresWithTheBearer(): void {
 		$store = [];
@@ -683,7 +683,7 @@ class PortalSessionServiceTest extends TestCase {
 	 * REQ-SIS-001: the times a session reports: its bearer's expiry, the
 	 * absolute cap from the origin login, and the idle window.
 	 *
-	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T02
 	 */
 	public function testSessionTimesComeFromTheBearer(): void {
 		$service = $this->service(maxLifetime: 28800);
@@ -702,7 +702,7 @@ class PortalSessionServiceTest extends TestCase {
 	 * REQ-SIS-006: an OIDC-minted session carries the provider it came from,
 	 * a refresh keeps it, and a session without one reports ''.
 	 *
-	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T10
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T10
 	 */
 	public function testTheBearerCarriesTheProvider(): void {
 		$store = [];

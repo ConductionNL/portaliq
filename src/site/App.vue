@@ -699,7 +699,7 @@ export default {
 		/**
 		 * @return {string} Why the visitor was signed out, in the site's language.
 		 *
-		 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T06
+		 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T06
 		 */
 		idleSignedOutMessage() {
 			const key = 'You were signed out because you were inactive.'
@@ -916,7 +916,7 @@ export default {
 		 *
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T06
+		 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T06
 		 */
 		watchIdle() {
 			this.idleTracker?.stop()
@@ -953,7 +953,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when refreshed.
 		 *
-		 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T06
+		 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T06
 		 */
 		async staySignedIn() {
 			await this.idleTracker?.extend()
@@ -964,7 +964,7 @@ export default {
 		 *
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T06
+		 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T06
 		 */
 		endIdle() {
 			this.idleTracker?.stop()

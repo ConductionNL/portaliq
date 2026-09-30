@@ -179,7 +179,7 @@ export async function fetchSession(authBase) {
  *
  * @param {string} authBase The auth edge base.
  * @return {Promise<object|null>} The answer (token and session times), or null.
- * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T06
+ * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T06
  */
 export async function refreshSession(authBase) {
 	try {
