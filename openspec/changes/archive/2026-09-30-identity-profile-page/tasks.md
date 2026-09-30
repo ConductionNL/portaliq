@@ -7,7 +7,7 @@
   - Done: Done before this change by #822 (PortalIdentityMailer, `updateDetails()` mails the token); this change reuses it for added addresses (PortalContactAddressController::add).
 - [x] **T02**: `contactAddresses` and `contactChannel` on `portalAccount` in `lib/Settings/portaliq_register.json`, with a repair-safe default (REQ-IPP-003, REQ-IPP-004)
   - Verify: register import on a clean instance; existing accounts read with `contactChannel` `portal`
-  - Done: Register 0.52.0, portalAccount 0.13.0: `contactAddresses`, `contactChannel` (default `portal`), `pendingEmailMode`. Validated with Opis against the real fragment (PortaliqRegisterConfigTest::testTheAccountCarriesAddressesAndAContactChannel); a live import was not run.
+  - Done: Register 0.53.0, portalAccount 0.13.0: `contactAddresses`, `contactChannel` (default `portal`), `pendingEmailMode`. Validated with Opis against the real fragment (PortaliqRegisterConfigTest::testTheAccountCarriesAddressesAndAContactChannel); a live import was not run.
 - [x] **T03**: `PortalSelfServiceService` rules of design D2: add, confirm, mark preferred, remove; preferred confirmed e-mail copied into `email`; five pending confirmations per account at most (REQ-IPP-003)
   - Verify: PHPUnit per rule, including "an unconfirmed address cannot be preferred"
   - Done: ContactAddressBook (the rules) + PortalContactAddressService; ContactAddressBookTest, PortalContactAddressServiceTest.

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service\Identity;
 
 use OCA\Portaliq\Service\Identity\ContactAddressBook;
+use OCA\Portaliq\Service\Identity\ContactAddressValues;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -98,10 +99,10 @@ class ContactAddressBookTest extends TestCase {
 	public function testAPhoneNumberIsStoredInE164AndTheFirstIsPreferred(): void {
 		$book = new ContactAddressBook();
 
-		$this->assertSame('+31612345678', $book->normalise(kind: 'phone', value: '06 1234 5678'));
-		$this->assertSame('+3243219876', $book->normalise(kind: 'phone', value: '0032 4321 9876'));
-		$this->assertNull($book->normalise(kind: 'phone', value: 'bel me'));
-		$this->assertNull($book->normalise(kind: 'email', value: 'nieuw-at-example'));
+		$this->assertSame('+31612345678', (new ContactAddressValues())->normalise(kind: 'phone', value: '06 1234 5678'));
+		$this->assertSame('+3243219876', (new ContactAddressValues())->normalise(kind: 'phone', value: '0032 4321 9876'));
+		$this->assertNull((new ContactAddressValues())->normalise(kind: 'phone', value: 'bel me'));
+		$this->assertNull((new ContactAddressValues())->normalise(kind: 'email', value: 'nieuw-at-example'));
 
 		$added = $book->add(entries: [], kind: 'phone', value: '+31612345678');
 		$this->assertFalse($added['confirm'], 'a phone number gets no mail');
@@ -115,16 +116,16 @@ class ContactAddressBookTest extends TestCase {
 	public function testThePromptAsksWhenNoAddressIsInUseOrDispatchFlaggedIt(): void {
 		$book = new ContactAddressBook();
 
-		$this->assertFalse($book->needsContactPrompt(['email' => 'a@example.nl']));
-		$this->assertTrue($book->needsContactPrompt(['email' => '']));
-		$this->assertTrue($book->needsContactPrompt(['email' => 'a@example.nl', 'needsAlternativeContact' => true]));
-		$this->assertFalse($book->needsContactPrompt(null));
+		$this->assertFalse((new ContactAddressValues())->needsContactPrompt(['email' => 'a@example.nl']));
+		$this->assertTrue((new ContactAddressValues())->needsContactPrompt(['email' => '']));
+		$this->assertTrue((new ContactAddressValues())->needsContactPrompt(['email' => 'a@example.nl', 'needsAlternativeContact' => true]));
+		$this->assertFalse((new ContactAddressValues())->needsContactPrompt(null));
 
 	}//end testThePromptAsksWhenNoAddressIsInUseOrDispatchFlaggedIt()
 
 	public function testAPendingAddressIsShownMasked(): void {
-		$this->assertSame('n***@example.nl', (new ContactAddressBook())->mask('nieuw@example.nl'));
-		$this->assertSame('', (new ContactAddressBook())->mask(''));
+		$this->assertSame('n***@example.nl', (new ContactAddressValues())->mask('nieuw@example.nl'));
+		$this->assertSame('', (new ContactAddressValues())->mask(''));
 
 	}//end testAPendingAddressIsShownMasked()
 }//end class

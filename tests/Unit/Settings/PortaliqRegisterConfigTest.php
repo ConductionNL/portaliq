@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Settings;
 
 use OCA\Portaliq\Service\Identity\ContactAddressBook;
+use OCA\Portaliq\Service\Identity\ContactAddressValues;
 use Opis\JsonSchema\Validator;
 use PHPUnit\Framework\TestCase;
 
@@ -307,12 +308,12 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.51.0 (portal 0.9.0): the optional `registeredDetails` form
 		// bindings of the "My details" section (identity-registered-details
 		// T06). Additive.
-		// 0.52.0 (portalAccount 0.13.0): `contactAddresses`, `contactChannel`
+		// 0.53.0 (portalAccount 0.13.0; 0.52.0 is taken by the woo-journey PR #983): `contactAddresses`, `contactChannel`
 		// and `pendingEmailMode` (identity-profile-page T02). Additive; an
 		// account from before reads as channel `portal` with its `email` as
 		// the one preferred address.
-		$this->assertSame('0.52.0', self::$register['info']['version']);
-		$this->assertSame('0.52.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.53.0', self::$register['info']['version']);
+		$this->assertSame('0.53.0', self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalOidcState']['version']);
 		$this->assertSame('boolean', self::$register['components']['schemas']['portalOidcState']['properties']['silent']['type']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['page']['version']);
@@ -609,7 +610,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 			'contactAddresses' => $entries,
 			'contactChannel' => 'post',
 			'verifiedEmail' => true,
-		] + $book->pendingFields(email: 'b@example.nl', token: 'secret-1', mode: 'add');
+		] + (new ContactAddressValues())->pendingFields(email: 'b@example.nl', token: 'secret-1', mode: 'add');
 		$result = (new Validator())->validate(json_decode((string)json_encode($row), false), $jsonSchema);
 		$this->assertTrue($result->isValid(), 'the written account fits the schema');
 

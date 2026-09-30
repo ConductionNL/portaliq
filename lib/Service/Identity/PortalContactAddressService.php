@@ -58,6 +58,7 @@ class PortalContactAddressService {
 	 * @param ISecureRandom $random Mints the confirmation secret.
 	 * @param IEventDispatcher $dispatcher Announces a changed contact channel (ADR-041).
 	 * @param ContactAddressBook $book The address rules.
+	 * @param ContactAddressValues $values The address values.
 	 */
 	public function __construct(
 		private readonly PortalAccountService $accounts,
@@ -65,6 +66,7 @@ class PortalContactAddressService {
 		private readonly ISecureRandom $random,
 		private readonly IEventDispatcher $dispatcher,
 		private readonly ContactAddressBook $book,
+		private readonly ContactAddressValues $values = new ContactAddressValues(),
 	) {
 	}//end __construct()
 
@@ -91,7 +93,7 @@ class PortalContactAddressService {
 			return $this->refused(refusal: 'no_account');
 		}
 
-		$normalised = $this->book->normalise(kind: $kind, value: $value);
+		$normalised = $this->values->normalise(kind: $kind, value: $value);
 		if ($normalised === null) {
 			return $this->refused(refusal: 'invalid');
 		}
@@ -105,7 +107,7 @@ class PortalContactAddressService {
 		$token = '';
 		if ($added['confirm'] === true) {
 			$token = $this->random->generate(48, (ISecureRandom::CHAR_LOWER . ISecureRandom::CHAR_DIGITS));
-			$data  = $data + $this->book->pendingFields(email: $normalised, token: $token, mode: 'add');
+			$data  = $data + $this->values->pendingFields(email: $normalised, token: $token, mode: 'add');
 		}
 
 		if ($this->write(account: $account, data: $data) === false) {
@@ -192,7 +194,7 @@ class PortalContactAddressService {
 			return 'no_account';
 		}
 
-		if (in_array($channel, ContactAddressBook::CHANNELS, true) === false) {
+		if (in_array($channel, ContactAddressValues::CHANNELS, true) === false) {
 			return 'invalid';
 		}
 
@@ -236,7 +238,11 @@ class PortalContactAddressService {
 			$data['verifiedEmail'] = true;
 		}
 
-		return $this->write(account: $account, data: $data) === true ? '' : 'not_written';
+		if ($this->write(account: $account, data: $data) === false) {
+			return 'not_written';
+		}
+
+		return '';
 	}//end writeEntries()
 
 	/**

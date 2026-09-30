@@ -1923,7 +1923,14 @@
         "Contact channel": "Contactkanaal",
         "How the owner wants the organisation to contact them: through the portal only, by e-mail, by phone or by post (identity-profile-page). A change raises PortalContactDetailsChangedEvent; a case app honours it.": "Hoe de eigenaar wil dat de organisatie contact opneemt: alleen via het portaal, per e-mail, telefonisch of per post (identity-profile-page). Een wijziging geeft PortalContactDetailsChangedEvent; een zaak-app houdt zich eraan.",
         "Pending email mode": "Soort wachtend e-mailadres",
-        "`replace` when the owner changed their address, so the confirmed address takes over; `add` when they added one more, so it joins the list.": "`replace` als de eigenaar het adres heeft gewijzigd, zodat het bevestigde adres het overneemt; `add` als de eigenaar er een adres bij heeft gezet, zodat het aan de lijst wordt toegevoegd."
+        "`replace` when the owner changed their address, so the confirmed address takes over; `add` when they added one more, so it joins the list.": "`replace` als de eigenaar het adres heeft gewijzigd, zodat het bevestigde adres het overneemt; `add` als de eigenaar er een adres bij heeft gezet, zodat het aan de lijst wordt toegevoegd.",
+        "`email` or `phone`.": "`email` of `phone`.",
+        "Address": "Adres",
+        "The e-mail address, or the phone number in E.164 where it parses.": "Het e-mailadres, of het telefoonnummer in E.164 als het zich zo laat lezen.",
+        "Confirmed": "Bevestigd",
+        "True once the link in the confirmation mail was followed. A phone number is never confirmed.": "Waar zodra de link in de bevestigingsmail is gevolgd. Een telefoonnummer wordt nooit bevestigd.",
+        "Preferred": "Voorkeur",
+        "The one address of its kind the organisation uses. Only a confirmed e-mail address can be preferred.": "Het ene adres van deze soort dat de organisatie gebruikt. Alleen een bevestigd e-mailadres kan voorkeur hebben."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

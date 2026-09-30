@@ -38,7 +38,7 @@ use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\OidcClaimMapperService;
 use OCA\Portaliq\Service\OidcClientService;
 use OCA\Portaliq\Service\OidcStateStoreService;
-use OCA\Portaliq\Service\Identity\ContactAddressBook;
+use OCA\Portaliq\Service\Identity\ContactAddressValues;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCA\Portaliq\Service\PortalResolver;
@@ -208,7 +208,7 @@ class SessionController extends Controller {
 				'branch' => (string)($subject['branch'] ?? ''),
 				'branchRestricted' => (($subject['branchRestricted'] ?? false) === true),
 				// Change identity-profile-page T06: ask for an e-mail address when none is in use.
-				'contactPrompt' => (new ContactAddressBook())->needsContactPrompt(
+				'contactPrompt' => (new ContactAddressValues())->needsContactPrompt(
 					account: $this->accounts->findBySubjectRef(subjectRef: (string)$subject['subjectRef'])
 				),
 			] + $this->session->sessionTimes(subject: $subject)

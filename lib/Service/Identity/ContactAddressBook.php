@@ -18,6 +18,9 @@
  * - At most five unconfirmed e-mail addresses per account, so one session
  *   cannot turn the portal into a mail cannon.
  *
+ * The values themselves (a phone number's E.164 form, a masked address, the
+ * pending-confirmation fields) are ContactAddressValues'.
+ *
  * @category Service
  * @package  OCA\Portaliq\Service\Identity
  *
@@ -37,9 +40,6 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
-use DateInterval;
-use DateTimeImmutable;
-
 /**
  * The address rules of one account.
  *
@@ -52,19 +52,9 @@ class ContactAddressBook {
 	public const KINDS = ['email', 'phone'];
 
 	/**
-	 * The ways the organisation may contact the person (REQ-IPP-004).
-	 */
-	public const CHANNELS = ['portal', 'email', 'phone', 'post'];
-
-	/**
 	 * Unconfirmed e-mail addresses an account may hold at once.
 	 */
 	public const MAX_PENDING = 5;
-
-	/**
-	 * How long a confirmation link works.
-	 */
-	private const TTL = 'P1D';
 
 	/**
 	 * The account's addresses, each `{kind, value, confirmed, preferred}`.
@@ -109,41 +99,6 @@ class ContactAddressBook {
 	}//end entries()
 
 	/**
-	 * An address in the shape it is stored in, or null when it is not one.
-	 *
-	 * A phone number is kept as given but written in E.164 where it parses: a
-	 * leading 00 becomes +, and a Dutch number starting with 0 gets +31.
-	 *
-	 * @param string $kind `email` or `phone`.
-	 * @param string $value What the person typed.
-	 *
-	 * @return string|null
-	 *
-	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T03
-	 */
-	public function normalise(string $kind, string $value): ?string {
-		$value = trim($value);
-		if ($kind === 'email') {
-			return filter_var($value, FILTER_VALIDATE_EMAIL) === false ? null : $value;
-		}
-
-		if ($kind !== 'phone' || preg_match('/^[0-9+()\s.\-]+$/', $value) !== 1) {
-			return null;
-		}
-
-		$digits = (string)preg_replace('/[^0-9+]/', '', $value);
-		if (str_starts_with($digits, '00') === true) {
-			$digits = '+' . substr($digits, 2);
-		}
-
-		if (preg_match('/^0[1-9][0-9]{8}$/', $digits) === 1) {
-			$digits = '+31' . substr($digits, 1);
-		}
-
-		return preg_match('/^\+?[0-9]{6,15}$/', $digits) === 1 ? $digits : null;
-	}//end normalise()
-
-	/**
 	 * Add an address.
 	 *
 	 * An e-mail address already on the list and still unconfirmed is not
@@ -162,8 +117,12 @@ class ContactAddressBook {
 	public function add(array $entries, string $kind, string $value): array {
 		$found = $this->find(entries: $entries, kind: $kind, value: $value);
 		if ($found !== null) {
-			$resend = ($kind === 'email' && $found['confirmed'] === false);
-			return ['entries' => $entries, 'refusal' => ($resend === true ? '' : 'exists'), 'confirm' => $resend];
+			if ($kind === 'email' && $found['confirmed'] === false) {
+				// Asked again for an address that waits: a fresh mail, no second entry.
+				return ['entries' => $entries, 'refusal' => '', 'confirm' => true];
+			}
+
+			return ['entries' => $entries, 'refusal' => 'exists', 'confirm' => false];
 		}
 
 		if ($kind === 'email' && $this->pendingCount(entries: $entries) >= self::MAX_PENDING) {
@@ -290,64 +249,6 @@ class ContactAddressBook {
 	}//end preferred()
 
 	/**
-	 * The fields that park an e-mail address until its link is followed.
-	 *
-	 * @param string $email The address waiting for confirmation.
-	 * @param string $token The plain secret for the mail.
-	 * @param string $mode `replace` (change my address) or `add` (one more).
-	 *
-	 * @return array<string, string>
-	 *
-	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T03
-	 */
-	public function pendingFields(string $email, string $token, string $mode): array {
-		return [
-			'pendingEmail' => $email,
-			'pendingEmailTokenHash' => hash('sha256', $token),
-			'pendingEmailExpiresAt' => (new DateTimeImmutable())->add(new DateInterval(self::TTL))->format(DATE_ATOM),
-			'pendingEmailMode' => ($mode === 'add' ? 'add' : 'replace'),
-		];
-	}//end pendingFields()
-
-	/**
-	 * Whether the portal asks for an e-mail address after sign-in
-	 * (REQ-IPP-005): the account has none in use, or dispatch flagged that it
-	 * needs another way to reach the person.
-	 *
-	 * @param array<string, mixed>|null $account The account row, or null.
-	 *
-	 * @return bool
-	 *
-	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/specs/portal-profile/spec.md#requirement-you-are-asked-for-an-e-mail-address-when-there-is-none-req-ipp-005
-	 */
-	public function needsContactPrompt(?array $account): bool {
-		if ($account === null) {
-			return false;
-		}
-
-		return (string)($account['email'] ?? '') === '' || ($account['needsAlternativeContact'] ?? false) === true;
-	}//end needsContactPrompt()
-
-	/**
-	 * An address shown without giving it away: the first letter and the
-	 * domain.
-	 *
-	 * @param string $email The address.
-	 *
-	 * @return string
-	 *
-	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T05
-	 */
-	public function mask(string $email): string {
-		$at = strrpos($email, '@');
-		if ($email === '' || $at === false || $at < 1) {
-			return '';
-		}
-
-		return substr($email, 0, 1) . '***' . substr($email, $at);
-	}//end mask()
-
-	/**
 	 * One address on the list, or null.
 	 *
 	 * @param array<int, array<string, mixed>> $entries The list.
@@ -408,7 +309,9 @@ class ContactAddressBook {
 		return count(
 			array_filter(
 				$entries,
-				static fn (array $entry): bool => ($entry['kind'] === 'email' && $entry['confirmed'] === true && strcasecmp((string)$entry['value'], $value) !== 0)
+				static fn (array $entry): bool => $entry['kind'] === 'email'
+					&& $entry['confirmed'] === true
+					&& strcasecmp((string)$entry['value'], $value) !== 0
 			)
 		);
 	}//end confirmedOthers()

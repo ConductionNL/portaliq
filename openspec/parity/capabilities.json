@@ -7981,7 +7981,7 @@
 			},
 			"built": {
 				"state": "built",
-				"evidence": "portalAccount.contactAddresses [{kind email|phone, value, confirmed, preferred}] (register 0.52.0); rules in lib/Service/Identity/ContactAddressBook.php (one preferred per kind, only a confirmed e-mail can be preferred, the preferred e-mail is copied into email, five pending at most, phones in E.164); routes POST /portal/api/identity/addresses, /addresses/preferred, /addresses/remove (PortalContactAddressController). Tests: ContactAddressBookTest, PortalContactAddressServiceTest, PortaliqRegisterConfigTest (Opis).",
+				"evidence": "portalAccount.contactAddresses [{kind email|phone, value, confirmed, preferred}] (register 0.53.0); rules in lib/Service/Identity/ContactAddressBook.php (one preferred per kind, only a confirmed e-mail can be preferred, the preferred e-mail is copied into email, five pending at most, phones in E.164); routes POST /portal/api/identity/addresses, /addresses/preferred, /addresses/remove (PortalContactAddressController). Tests: ContactAddressBookTest, PortalContactAddressServiceTest, PortaliqRegisterConfigTest (Opis).",
 				"reachedOn": "Signed-in portal (/apps/portaliq/portal) -> nav 'My account' (src/portal/App.jsx, special 'account') -> src/portal/components/AccountPage.jsx",
 				"owner": "ConductionNL/portaliq",
 				"note": "One e-mail per account, no phone numbers, no preferred marker, and the resident cannot edit contact details from any page. Built by openspec/changes/archive/2026-09-30-identity-profile-page (build-all lane 19, 2026-09-30).",

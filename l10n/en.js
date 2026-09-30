@@ -1854,7 +1854,14 @@ OC.L10N.register(
         "Contact channel": "Contact channel",
         "How the owner wants the organisation to contact them: through the portal only, by e-mail, by phone or by post (identity-profile-page). A change raises PortalContactDetailsChangedEvent; a case app honours it.": "How the owner wants the organisation to contact them: through the portal only, by e-mail, by phone or by post (identity-profile-page). A change raises PortalContactDetailsChangedEvent; a case app honours it.",
         "Pending email mode": "Pending email mode",
-        "`replace` when the owner changed their address, so the confirmed address takes over; `add` when they added one more, so it joins the list.": "`replace` when the owner changed their address, so the confirmed address takes over; `add` when they added one more, so it joins the list."
+        "`replace` when the owner changed their address, so the confirmed address takes over; `add` when they added one more, so it joins the list.": "`replace` when the owner changed their address, so the confirmed address takes over; `add` when they added one more, so it joins the list.",
+        "`email` or `phone`.": "`email` or `phone`.",
+        "Address": "Address",
+        "The e-mail address, or the phone number in E.164 where it parses.": "The e-mail address, or the phone number in E.164 where it parses.",
+        "Confirmed": "Confirmed",
+        "True once the link in the confirmation mail was followed. A phone number is never confirmed.": "True once the link in the confirmation mail was followed. A phone number is never confirmed.",
+        "Preferred": "Preferred",
+        "The one address of its kind the organisation uses. Only a confirmed e-mail address can be preferred.": "The one address of its kind the organisation uses. Only a confirmed e-mail address can be preferred."
     },
     "nplurals=2; plural=(n != 1);"
 )
