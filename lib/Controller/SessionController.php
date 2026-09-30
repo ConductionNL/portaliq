@@ -88,6 +88,14 @@ class SessionController extends Controller {
 	private const OIDC_GENERIC_ERROR = 'oidc_failed';
 
 	/**
+	 * The broker errors that mean "the resident must interact" (OpenID Connect
+	 * Core 3.1.2.6). A silent attempt answered with one of these is not a
+	 * failure: the resident lands on the login screen with no message
+	 * (signin-session-idle-warning-and-sso D5).
+	 */
+	private const SILENT_LOGIN_ERRORS = ['login_required', 'interaction_required', 'consent_required', 'account_selection_required'];
+
+	/**
 	 * Where an OIDC callback lands in the SPA when no `returnTo` was stored:
 	 * the portal page's OWN route, resolved through the URL generator so it
 	 * carries the app's web-root (`/apps/portaliq/portal`). A bare `/portal`
@@ -158,6 +166,7 @@ class SessionController extends Controller {
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T05
 	 * @spec openspec/changes/signin-eherkenning-branch/tasks.md#T02
+	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T02
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -196,7 +205,7 @@ class SessionController extends Controller {
 				// Change signin-eherkenning-branch: the header shows the branch in effect.
 				'branch' => (string)($subject['branch'] ?? ''),
 				'branchRestricted' => (($subject['branchRestricted'] ?? false) === true),
-			]
+			] + $this->session->sessionTimes(subject: $subject)
 		);
 	}//end index()
 
@@ -278,12 +287,15 @@ class SessionController extends Controller {
 	 * @param string $org The `?org=` slug to log in to.
 	 * @param string $provider One of `digid|eherkenning|eidas|generic`.
 	 * @param string $portal The `?portal=` slug the public site sends when it names no org.
+	 * @param string $silent `1` asks the broker to sign in without a prompt
+	 *                       (signin-session-idle-warning-and-sso D5).
 	 *
 	 * @return Response 302 to the broker, or the generic OIDC error.
 	 *
 	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T06
 	 * @spec openspec/specs/supplier-portal/spec.md#oidc-start-builds-a-state-nonce-pkce-authorization-request
 	 * @spec openspec/changes/archive/2026-09-29-signin-integriq-broker-login/design.md#d2-two-new-routes-and-the-spas-follow-the-route-field
+	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T07
 	 *
 	 * @no-admin-idor-exempt the lookup is unscoped because it MUST be: this is
 	 * the anonymous entry point to a portal's login, so a caller with no
@@ -302,7 +314,7 @@ class SessionController extends Controller {
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 30, period: 60)]
-	public function oidcStart(string $org = '', string $provider = '', string $portal = ''): Response {
+	public function oidcStart(string $org = '', string $provider = '', string $portal = '', string $silent = ''): Response {
 		if ($org === '' && $portal !== '') {
 			$org = $this->organisationOfPortal(slug: $portal);
 		}
@@ -348,7 +360,8 @@ class SessionController extends Controller {
 			codeVerifier: $pkce['verifier'],
 			org: $org,
 			provider: $provider,
-			returnTo: $this->portalReturnTo()
+			returnTo: $this->portalReturnTo(),
+			silent: ($silent === '1')
 		);
 		if ($stored === false) {
 			return $this->oidcGenericError();
@@ -361,7 +374,8 @@ class SessionController extends Controller {
 			scopes: (array)$config['scopes'],
 			state: $state,
 			nonce: $nonce,
-			codeChallenge: $pkce['challenge']
+			codeChallenge: $pkce['challenge'],
+			prompt: ($silent === '1' ? 'none' : '')
 		);
 
 		// Explicit 302 (design.md) — RedirectResponse's own default is 303.
@@ -412,6 +426,8 @@ class SessionController extends Controller {
 	 * @spec openspec/specs/supplier-portal/spec.md#every-validation-failure-is-an-identical-generic-error
 	 * @spec openspec/specs/supplier-portal/spec.md#the-subject-reference-is-server-derived-never-client-supplied
 	 * @spec openspec/changes/signin-eherkenning-branch/tasks.md#T02
+	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T08
+	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T10
 	 *
 	 * @SuppressWarnings(PHPMD.CyclomaticComplexity) -- one fail-closed guard
 	 * per step of the OIDC flow (state, config, discovery, exchange, ID-token
@@ -425,7 +441,11 @@ class SessionController extends Controller {
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 30, period: 60)]
 	public function oidcCallback(string $state = '', string $code = '', string $error = ''): Response {
-		if ($state === '' || $code === '' || $error !== '') {
+		if ($error !== '') {
+			return $this->brokerErrorAnswer(state: $state, error: $error);
+		}
+
+		if ($state === '' || $code === '') {
 			return $this->oidcGenericError();
 		}
 
@@ -494,7 +514,8 @@ class SessionController extends Controller {
 			organisation: $pending['org'],
 			trust: $trust,
 			roles: [$mapped['audience'] . ':read'],
-			branch: (string)($mapped['branch'] ?? '')
+			branch: (string)($mapped['branch'] ?? ''),
+			provider: $pending['provider']
 		);
 		if ($issued === null) {
 			return $this->oidcGenericError();
@@ -513,6 +534,34 @@ class SessionController extends Controller {
 		// Explicit 302 (design.md) — RedirectResponse's own default is 303.
 		return new RedirectResponse($redirectUrl, Http::STATUS_FOUND);
 	}//end oidcCallback()
+
+	/**
+	 * The answer to a broker that returned an error instead of a code. A silent
+	 * attempt answered with "the resident must interact" lands on the portal's
+	 * login screen with no message and no token; every other error, and any
+	 * error on a row that was not silent, keeps the one generic failure. The
+	 * state is consumed either way, so it can never be replayed.
+	 *
+	 * @param string $state The OIDC `state` returned by the broker.
+	 * @param string $error The error the broker reported.
+	 *
+	 * @return Response
+	 *
+	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T08
+	 */
+	private function brokerErrorAnswer(string $state, string $error): Response {
+		$pending = $this->stateStore->consume(state: $state);
+		if ($pending === null || ($pending['silent'] ?? false) !== true || in_array($error, self::SILENT_LOGIN_ERRORS, true) === false) {
+			return $this->oidcGenericError();
+		}
+
+		$returnTo = $this->portalReturnTo();
+		if ($pending['returnTo'] !== '') {
+			$returnTo = $pending['returnTo'];
+		}
+
+		return new RedirectResponse($this->urlGenerator->getAbsoluteURL($returnTo), Http::STATUS_FOUND);
+	}//end brokerErrorAnswer()
 
 	/**
 	 * The address the broker itself says it verified, or ''.
@@ -691,23 +740,82 @@ class SessionController extends Controller {
 	 * `{ok: true}` — an already-invalid or unknown bearer is not itself an
 	 * error (the client's local token is dropped regardless per App.jsx).
 	 *
+	 * A session minted through an OIDC broker that announces an
+	 * `end_session_endpoint` also gets `logoutUrl`, the broker's sign-out
+	 * address, which the SPA follows (signin-session-idle-warning-and-sso D6).
+	 *
 	 * @return JSONResponse 200.
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
 	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#3.1
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T05
+	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T10
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 30, period: 60)]
 	public function logout(): JSONResponse {
 		$subject = $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
-		if ($subject !== null) {
-			$this->session->revoke((string)($subject['jti'] ?? ''));
+		if ($subject === null) {
+			return new JSONResponse(['ok' => true]);
 		}
 
-		return new JSONResponse(['ok' => true]);
+		$this->session->revoke((string)($subject['jti'] ?? ''));
+
+		$logoutUrl = $this->brokerLogoutUrl(subject: $subject);
+		if ($logoutUrl === '') {
+			return new JSONResponse(['ok' => true]);
+		}
+
+		return new JSONResponse(['ok' => true, 'logoutUrl' => $logoutUrl]);
 	}//end logout()
+
+	/**
+	 * The broker's sign-out address for a session minted through it, with
+	 * `client_id` and `post_logout_redirect_uri` (OpenID Connect RP-Initiated
+	 * Logout 1.0), or '' when the session has no provider, the provider has
+	 * no config, or the broker announces no `end_session_endpoint`. Portaliq
+	 * keeps no ID token, so it sends no `id_token_hint`.
+	 *
+	 * @param array<string, mixed> $subject The resolved session.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T10
+	 */
+	private function brokerLogoutUrl(array $subject): string {
+		$provider = (string)($subject['provider'] ?? '');
+		if ($provider === '') {
+			return '';
+		}
+
+		$config = $this->orgConfig->resolveOidcConfig(orgSlug: (string)($subject['organisation'] ?? ''), provider: $provider);
+		if ($config === null) {
+			return '';
+		}
+
+		$endSession = (string)($this->oidc->discover(issuer: (string)$config['issuer'])['end_session_endpoint'] ?? '');
+		if ($endSession === '') {
+			return '';
+		}
+
+		$separator = '?';
+		if (str_contains($endSession, '?') === true) {
+			$separator = '&';
+		}
+
+		$query = http_build_query(
+			[
+				'client_id' => (string)$config['clientId'],
+				'post_logout_redirect_uri' => $this->urlGenerator->getAbsoluteURL($this->portalReturnTo()),
+			],
+			'',
+			'&',
+			PHP_QUERY_RFC3986
+		);
+
+		return $endSession . $separator . $query;
+	}//end brokerLogoutUrl()
 
 	/**
 	 * Rotate the caller's bearer within the absolute session lifetime cap
@@ -720,6 +828,7 @@ class SessionController extends Controller {
 	 * @return JSONResponse 200 with the new bearer, or 401 on any rejection.
 	 *
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T03
+	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T02
 	 * @spec openspec/specs/supplier-portal/spec.md#session-refresh-rotates-the-token-within-an-absolute-cap
 	 */
 	#[PublicPage]
@@ -735,6 +844,9 @@ class SessionController extends Controller {
 			[
 				'token' => $issued['token'],
 				'tokenType' => 'Bearer',
+				'expiresAt' => (int)($issued['expiresAt'] ?? 0),
+				'hardExpiresAt' => (int)($issued['hardExpiresAt'] ?? 0),
+				'idleTimeout' => (int)($issued['idleTimeout'] ?? 0),
 			]
 		);
 	}//end refresh()

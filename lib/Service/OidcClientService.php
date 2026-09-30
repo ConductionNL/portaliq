@@ -159,9 +159,14 @@ class OidcClientService {
 	 *
 	 * @param string $issuer The configured issuer base URL.
 	 *
-	 * @return array{authorization_endpoint: string, token_endpoint: string, jwks_uri: string}|null
+	 * The broker's `end_session_endpoint` is kept too, '' when it announces
+	 * none (signin-session-idle-warning-and-sso D6). A document cached before
+	 * that may lack the key, so a reader uses `?? ''`.
+	 *
+	 * @return array{authorization_endpoint: string, token_endpoint: string, jwks_uri: string, end_session_endpoint: string}|null
 	 *
 	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T03
+	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T10
 	 * @spec openspec/changes/adopt-connection-registry/specs/app-connections/spec.md#requirement-req-portaliq-conn-003-a-broker-call-reports-what-the-broker-answered-throttled
 	 */
 	public function discover(string $issuer): ?array {
@@ -196,6 +201,7 @@ class OidcClientService {
 			'authorization_endpoint' => (string)($decoded['authorization_endpoint'] ?? ''),
 			'token_endpoint' => (string)($decoded['token_endpoint'] ?? ''),
 			'jwks_uri' => (string)($decoded['jwks_uri'] ?? ''),
+			'end_session_endpoint' => (string)($decoded['end_session_endpoint'] ?? ''),
 		];
 
 		if ($endpoints['authorization_endpoint'] === '' || $endpoints['token_endpoint'] === '' || $endpoints['jwks_uri'] === '') {
@@ -218,10 +224,12 @@ class OidcClientService {
 	 * @param string $state The CSRF state token.
 	 * @param string $nonce The replay nonce.
 	 * @param string $codeChallenge The PKCE S256 code challenge.
+	 * @param string $prompt The OIDC `prompt` value (`none` for a silent sign-in), or '' to send none.
 	 *
 	 * @return string
 	 *
 	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T03
+	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T07
 	 */
 	public function buildAuthorizationUrl(
 		string $authorizeEndpoint,
@@ -231,19 +239,23 @@ class OidcClientService {
 		string $state,
 		string $nonce,
 		string $codeChallenge,
+		string $prompt = '',
 	): string {
-		$query = http_build_query(
-			[
-				'response_type' => 'code',
-				'client_id' => $clientId,
-				'redirect_uri' => $redirectUri,
-				'scope' => implode(' ', $scopes),
-				'state' => $state,
-				'nonce' => $nonce,
-				'code_challenge' => $codeChallenge,
-				'code_challenge_method' => 'S256',
-			]
-		);
+		$params = [
+			'response_type' => 'code',
+			'client_id' => $clientId,
+			'redirect_uri' => $redirectUri,
+			'scope' => implode(' ', $scopes),
+			'state' => $state,
+			'nonce' => $nonce,
+			'code_challenge' => $codeChallenge,
+			'code_challenge_method' => 'S256',
+		];
+		if ($prompt !== '') {
+			$params['prompt'] = $prompt;
+		}
+
+		$query = http_build_query($params);
 
 		$separator = '?';
 		if (str_contains($authorizeEndpoint, '?') === true) {

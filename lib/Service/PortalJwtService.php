@@ -126,12 +126,16 @@ class PortalJwtService {
 	 *                           so the absolute session lifetime can be enforced from
 	 *                           the true origin, not the most recent mint. Defaults to
 	 *                           `$iat` (a fresh login) when not supplied.
-	 * @param array{number?: string, restricted?: bool} $branch The branch in effect and whether the login restricted the session to it.
+	 * @param array{number?: string, restricted?: bool, provider?: string} $context The login's context: the branch in
+	 *                                                                             effect, whether the login restricted
+	 *                                                                             the session to it, and the OIDC
+	 *                                                                             provider the session came through.
 	 *
 	 * @return string Compact JWT string.
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T01
+	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T10
 	 */
 	public function createSession(
 		string $subjectRef,
@@ -142,7 +146,7 @@ class PortalJwtService {
 		array $roles = [],
 		?int $ttl = null,
 		?int $authTime = null,
-		array $branch = [],
+		array $context = [],
 	): string {
 		$iat = time();
 		$exp = ($iat + ($ttl ?? self::DEFAULT_TTL));
@@ -167,9 +171,16 @@ class PortalJwtService {
 		// Change signin-eherkenning-branch: the branch in effect, and whether the
 		// login restricted the session to it. Signed only when set, so a
 		// session without a branch carries exactly the claims it did before.
-		if ((string)($branch['number'] ?? '') !== '') {
-			$claims['branch'] = (string)$branch['number'];
-			$claims['branchRestricted'] = (($branch['restricted'] ?? false) === true);
+		if ((string)($context['number'] ?? '') !== '') {
+			$claims['branch'] = (string)$context['number'];
+			$claims['branchRestricted'] = (($context['restricted'] ?? false) === true);
+		}
+
+		// Change signin-session-idle-warning-and-sso D6: the OIDC provider the
+		// session came through, so signing out can reach that broker. Signed
+		// only when set: dev-login and the Nextcloud mode carry none.
+		if ((string)($context['provider'] ?? '') !== '') {
+			$claims['provider'] = (string)$context['provider'];
 		}
 
 		$hPart = $this->b64UrlEncode(bytes: (string)json_encode($header, JSON_UNESCAPED_SLASHES));
