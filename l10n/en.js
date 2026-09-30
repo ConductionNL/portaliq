@@ -1848,7 +1848,8 @@ OC.L10N.register(
         "Correction form": "Correction form",
         "The form binding behind \"Report an error in these details\".": "The form binding behind \"Report an error in these details\".",
         "Address investigation form": "Address investigation form",
-        "The form binding behind \"Something wrong at this address?\", shown to residents only.": "The form binding behind \"Something wrong at this address?\", shown to residents only."
+        "The form binding behind \"Something wrong at this address?\", shown to residents only.": "The form binding behind \"Something wrong at this address?\", shown to residents only.",
+        "The rule key of the app that wrote this message. Portaliq also sends the email when that app declares the key.": "The rule key of the app that wrote this message. Portaliq also sends the email when that app declares the key."
     },
     "nplurals=2; plural=(n != 1);"
 )

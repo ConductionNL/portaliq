@@ -1906,7 +1906,8 @@ OC.L10N.register(
         "Correction form": "Correctieformulier",
         "The form binding behind \"Report an error in these details\".": "De formulierkoppeling achter \"Een fout in deze gegevens melden\".",
         "Address investigation form": "Formulier voor adresonderzoek",
-        "The form binding behind \"Something wrong at this address?\", shown to residents only.": "De formulierkoppeling achter \"Klopt er iets niet op dit adres?\", alleen getoond aan inwoners."
+        "The form binding behind \"Something wrong at this address?\", shown to residents only.": "De formulierkoppeling achter \"Klopt er iets niet op dit adres?\", alleen getoond aan inwoners.",
+        "The rule key of the app that wrote this message. Portaliq also sends the email when that app declares the key.": "De regelsleutel van de app die dit bericht schreef. Portaliq stuurt dan ook de e-mail, als die app de sleutel opgeeft."
     },
     "nplurals=2; plural=(n != 1);"
 )

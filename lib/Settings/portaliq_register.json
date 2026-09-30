@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.51.0"
+        "version": "0.52.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.51.0",
+                "version": "0.52.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -1056,7 +1056,7 @@
                     ]
                 },
                 "icon": "EmailOutline",
-                "version": "0.5.0",
+                "version": "0.6.0",
                 "configuration": {
                     "linkedTypes": [
                         "talk"
@@ -1171,6 +1171,12 @@
                             "collection": "mijnZaken",
                             "id": "b1946ac9-2ea7-4b1a-9d15-2f4c1e6f2a10"
                         }
+                    },
+                    "ruleKey": {
+                        "title": "Rule key",
+                        "type": "string",
+                        "description": "The rule key of the app that wrote this message. Portaliq also sends the email when that app declares the key.",
+                        "example": "pipelinq.question.answered"
                     },
                     "deliveryUuid": {
                         "title": "Delivery uuid",

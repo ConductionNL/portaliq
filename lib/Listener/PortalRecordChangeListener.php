@@ -195,8 +195,12 @@ class PortalRecordChangeListener implements IEventListener {
 		$register = (string)$object->getRegister();
 		$schema = (string)$object->getSchema();
 
-		// Portaliq's own messages are dispatched by whoever wrote them.
+		// Portaliq's own messages are dispatched by whoever wrote them. A
+		// message ANOTHER app wrote with a rule key is sent on here
+		// (woo-journey-entry-points D4); portaliq's own writes never reach
+		// this point, the write-context guard in handle() stops them.
 		if ($this->rules->isPortalMessage(register: $register, schema: $schema) === true) {
+			$this->onForeignMessage(data: $object->getObject(), recordId: (string)($object->getUuid() ?? ''));
 			return;
 		}
 
@@ -228,6 +232,41 @@ class PortalRecordChangeListener implements IEventListener {
 			$this->messageBox?->enqueue(account: $account, inbox: $inbox, recordId: (string)($object->getUuid() ?? ''));
 		}//end foreach
 	}//end onCreated()
+
+	/**
+	 * Send the email for a portalMessage another app wrote with a `ruleKey`.
+	 *
+	 * The app is the part of the rule key before its first dot, so a message
+	 * cannot borrow another app's key: `dispatch()` sends only when THAT app
+	 * declares it. No Berichtenbox job: the journey that needs this sends
+	 * inbox and email only (hydra woo-citizen-journey, #730).
+	 *
+	 * @param array<string, mixed> $data     The message.
+	 * @param string               $recordId The message's id.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-journey-entry-points/specs/portal-notifications-and-preferences/spec.md#requirement-another-apps-notice-with-a-declared-rule-key-must-be-sent-by-email-req-wje-006
+	 */
+	private function onForeignMessage(array $data, string $recordId): void {
+		$ruleKey = ($data['ruleKey'] ?? null);
+		if (is_string($ruleKey) === false || preg_match('/^([a-z][a-z0-9_-]*)\.[A-Za-z0-9_.-]+$/', $ruleKey, $match) !== 1) {
+			return;
+		}
+
+		$account = $this->account(data: $data, scopeField: 'subjectRef');
+		if ($account === null) {
+			return;
+		}
+
+		$link = ($data['recordLink'] ?? null);
+		$record = ['id' => $recordId];
+		if (is_array($link) === true) {
+			$record = array_intersect_key($link, array_flip(['app', 'collection', 'id']));
+		}
+
+		$this->dispatch->dispatch(ruleKey: $ruleKey, appId: $match[1], subject: $this->subject(account: $account), record: $record);
+	}//end onForeignMessage()
 
 	/**
 	 * The resident's account for the reference the record holds, or null.

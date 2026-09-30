@@ -306,8 +306,13 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.51.0 (portal 0.9.0): the optional `registeredDetails` form
 		// bindings of the "My details" section (identity-registered-details
 		// T06). Additive.
-		$this->assertSame('0.51.0', self::$register['info']['version']);
-		$this->assertSame('0.51.0', self::$register['components']['registers']['portaliq']['version']);
+		// 0.52.0 (portalMessage 0.6.0): the optional `ruleKey` of a message
+		// another app writes, so it is also sent by email
+		// (woo-journey-entry-points T07). Additive.
+		$this->assertSame('0.52.0', self::$register['info']['version']);
+		$this->assertSame('0.52.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalMessage']['version']);
+		$this->assertSame('string', self::$register['components']['schemas']['portalMessage']['properties']['ruleKey']['type']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalOidcState']['version']);
 		$this->assertSame('boolean', self::$register['components']['schemas']['portalOidcState']['properties']['silent']['type']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['page']['version']);
