@@ -592,6 +592,64 @@ class PortalSessionServiceTest extends TestCase {
 
 	}//end testARefreshKeepsTheBranchRestriction()
 
+	/**
+	 * signin-eherkenning-branch T05 (REQ-SEB-003): a whole-company session
+	 * narrows to one branch and back, the old bearer stops working, and the
+	 * chosen branch never restricts the session.
+	 *
+	 * @return void
+	 */
+	public function testAWholeCompanySessionNarrowsToABranchAndBack(): void {
+		$store = [];
+		$service = $this->service(store: $store);
+
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1', trust: 'high');
+		$narrowed = $service->rebranchSession('Bearer ' . $issued['token'], '000087654321');
+		$this->assertNotNull($narrowed);
+		$subject = $service->resolveFromBearer('Bearer ' . $narrowed['token']);
+		$this->assertSame('000087654321', $subject['branch']);
+		$this->assertFalse($subject['branchRestricted'], 'a chosen branch can be left again');
+		$this->assertSame('high', $subject['trust']);
+		$this->assertNull($service->resolveFromBearer('Bearer ' . $issued['token']), 'the old bearer is rotated out');
+
+		$widened = $service->rebranchSession('Bearer ' . $narrowed['token'], '');
+		$this->assertSame('', $service->resolveFromBearer('Bearer ' . $widened['token'])['branch']);
+
+	}//end testAWholeCompanySessionNarrowsToABranchAndBack()
+
+	/**
+	 * A session the login restricted to one branch cannot choose another, nor
+	 * the whole company, and keeps working.
+	 *
+	 * @return void
+	 */
+	public function testARestrictedSessionCannotChooseABranch(): void {
+		$store = [];
+		$service = $this->service(store: $store);
+
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1', branch: '000012345678');
+		$this->assertNull($service->rebranchSession('Bearer ' . $issued['token'], '000087654321'));
+		$this->assertNull($service->rebranchSession('Bearer ' . $issued['token'], ''));
+		$this->assertSame('000012345678', $service->resolveFromBearer('Bearer ' . $issued['token'])['branch']);
+
+	}//end testARestrictedSessionCannotChooseABranch()
+
+	/**
+	 * A malformed branch or a missing bearer changes nothing.
+	 *
+	 * @return void
+	 */
+	public function testAMalformedBranchChoiceIsRefused(): void {
+		$store = [];
+		$service = $this->service(store: $store);
+
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1');
+		$this->assertNull($service->rebranchSession('Bearer ' . $issued['token'], 'shop-12'));
+		$this->assertNull($service->rebranchSession(null, '000087654321'));
+		$this->assertNotNull($service->resolveFromBearer('Bearer ' . $issued['token']));
+
+	}//end testAMalformedBranchChoiceIsRefused()
+
 	public function testAMalformedBranchIsNeverSigned(): void {
 		$store = [];
 		$service = $this->service(store: $store);

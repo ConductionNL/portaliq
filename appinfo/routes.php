@@ -258,6 +258,9 @@ return [
         // session lifetime (portal-session-hardening-v2 T03). Registered
         // before the /portal/{path} SPA catch-all.
         ['name' => 'session#refresh', 'url' => '/portal/api/session/refresh', 'verb' => 'POST'],
+        // The branch choice of a whole-company business session (signin-eherkenning-branch T05).
+        ['name' => 'sessionBranch#branches', 'url' => '/portal/api/session/branches', 'verb' => 'GET'],
+        ['name' => 'sessionBranch#choose', 'url' => '/portal/api/session/branch', 'verb' => 'POST'],
         // Generic, broker-agnostic OIDC Relying Party (portal-oidc-broker-login,
         // T06/T07): start builds a state+nonce+PKCE authorization request and
         // 302s to the broker; callback validates the ID token and mints the
