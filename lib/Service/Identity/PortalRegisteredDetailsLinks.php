@@ -34,6 +34,9 @@ use OCP\IURLGenerator;
 
 /**
  * Resolves the correction and address investigation links of one portal.
+
+ *
+ * @spec openspec/changes/identity-registered-details/specs/registered-details/spec.md
  */
 class PortalRegisteredDetailsLinks {
 

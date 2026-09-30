@@ -35,6 +35,9 @@ use Throwable;
 
 /**
  * Reads the caller's own BRP or KvK record.
+
+ *
+ * @spec openspec/changes/identity-registered-details/specs/registered-details/spec.md
  */
 class PortalRegisteredDetailsService {
 

@@ -29,6 +29,8 @@ namespace OCA\Portaliq\Service\Identity;
 
 /**
  * The fixed shapes of a person and a company record.
+ *
+ * @spec openspec/changes/identity-registered-details/specs/registered-details/spec.md
  */
 class RegisteredDetailsShape {
 
@@ -37,7 +39,8 @@ class RegisteredDetailsShape {
 	 *
 	 * @param array<string, mixed> $raw The person object.
 	 *
-	 * @return array{name: string, birthDate: string, address: array{street: string, number: string, postcode: string, city: string}, residentsAtAddress: null}
+	 * @return array<string, mixed> `name`, `birthDate`, `address` (street, number,
+	 *                              postcode, city) and `residentsAtAddress` (null).
 	 *
 	 * @spec openspec/changes/identity-registered-details/specs/registered-details/spec.md#requirement-a-resident-sees-their-own-brp-record-req-ird-001
 	 */
@@ -78,45 +81,74 @@ class RegisteredDetailsShape {
 	 * @param array<int, array<string, mixed>> $rows      The rows.
 	 * @param string                           $kvkNumber The number asked for.
 	 *
-	 * @return array{tradeName: string, kvkNumber: string, legalForm: string, branches: array<int, array{number: string, name: string, address: string, main: bool}>}
+	 * @return array<string, mixed> `tradeName`, `kvkNumber`, `legalForm` and
+	 *                              `branches` (number, name, address, main).
 	 *
 	 * @spec openspec/changes/identity-registered-details/specs/registered-details/spec.md#requirement-a-business-user-sees-their-companys-kvk-record-req-ird-002
 	 */
 	public function company(array $rows, string $kvkNumber): array {
-		$tradeName = '';
-		$entity    = '';
+		$names     = ['hoofdvestiging' => '', 'rechtspersoon' => ''];
 		$legalForm = '';
 		$branches  = [];
 		foreach ($rows as $row) {
 			$name = (string)($row['naam'] ?? $row['handelsnaam'] ?? '');
 			$type = (string)($row['type'] ?? '');
-			if ($legalForm === '' && isset($row['rechtsvorm']) === true) {
-				$legalForm = (string)$row['rechtsvorm'];
+			if (isset($names[$type]) === true && $names[$type] === '') {
+				$names[$type] = $name;
 			}
 
-			if ($type === 'rechtspersoon' && $entity === '') {
-				$entity = $name;
+			if ($legalForm === '') {
+				$legalForm = (string)($row['rechtsvorm'] ?? '');
 			}
 
-			if ($type === 'hoofdvestiging' && $tradeName === '') {
-				$tradeName = $name;
-			}
-
-			$number = (string)($row['vestigingsnummer'] ?? '');
-			if ($number !== '') {
-				$branches[] = ['number' => $number, 'name' => $name, 'address' => $this->kvkAddress(row: $row), 'main' => ($type === 'hoofdvestiging')];
+			$branch = $this->branch(row: $row, name: $name, type: $type);
+			if ($branch !== null) {
+				$branches[] = $branch;
 			}
 		}
 
-		$first = (string)(($rows[0] ?? [])['naam'] ?? '');
-
 		return [
-			'tradeName' => ($tradeName !== '' ? $tradeName : ($entity !== '' ? $entity : $first)),
+			'tradeName' => $this->firstFilled(values: [$names['hoofdvestiging'], $names['rechtspersoon'], (string)(($rows[0] ?? [])['naam'] ?? '')]),
 			'kvkNumber' => $kvkNumber,
 			'legalForm' => $legalForm,
 			'branches'  => $branches,
 		];
 	}//end company()
+
+	/**
+	 * One KvK row as a branch, or null for a row without a branch number.
+	 *
+	 * @param array<string, mixed> $row  The row.
+	 * @param string               $name The row's name.
+	 * @param string               $type The row's type.
+	 *
+	 * @return array{number: string, name: string, address: string, main: bool}|null
+	 */
+	private function branch(array $row, string $name, string $type): ?array {
+		$number = (string)($row['vestigingsnummer'] ?? '');
+		if ($number === '') {
+			return null;
+		}
+
+		return ['number' => $number, 'name' => $name, 'address' => $this->kvkAddress(row: $row), 'main' => ($type === 'hoofdvestiging')];
+	}//end branch()
+
+	/**
+	 * The first value that is not empty, or ''.
+	 *
+	 * @param array<int, string> $values The candidates, in order.
+	 *
+	 * @return string
+	 */
+	private function firstFilled(array $values): string {
+		foreach ($values as $value) {
+			if ($value !== '') {
+				return $value;
+			}
+		}
+
+		return '';
+	}//end firstFilled()
 
 	/**
 	 * One KvK row's address on one line: "street number, postcode city".
@@ -149,7 +181,11 @@ class RegisteredDetailsShape {
 	private function join(array $parts, string $glue = ' '): string {
 		$kept = [];
 		foreach ($parts as $part) {
-			$text = trim((string)(is_scalar($part) === true ? $part : ''));
+			if (is_scalar($part) === false) {
+				continue;
+			}
+
+			$text = trim((string)$part);
 			if ($text !== '') {
 				$kept[] = $text;
 			}

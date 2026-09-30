@@ -42,6 +42,9 @@ use OCP\IRequest;
 
 /**
  * The bearer's own registered details.
+
+ *
+ * @spec openspec/changes/identity-registered-details/specs/registered-details/spec.md
  */
 class PortalRegisteredDetailsController extends Controller {
 

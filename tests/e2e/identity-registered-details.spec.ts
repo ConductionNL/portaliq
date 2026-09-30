@@ -73,29 +73,42 @@ test.describe('identity-registered-details', () => {
 	})
 
 	// @e2e registered-details::an-account-without-a-bsn-shows-why-nothing-is-there
-	test('a pseudonymous sign-in is told why there is nothing to show', async ({ request }) => {
+	test('a pseudonymous sign-in is told why there is nothing to show', async ({
+		request,
+	}) => {
 		const token = await signedIn(request, 'digid', `pairwise-${Date.now()}`)
 		const res = await request.get(`${API_BASE}/identity/registered-details`, {
 			headers: { Authorization: `Bearer ${token}` },
 		})
 		expect(res.ok()).toBeTruthy()
-		expect(await res.json()).toEqual({ available: false, reason: 'no_registration_identifier' })
+		expect(await res.json()).toEqual({
+			available: false,
+			reason: 'no_registration_identifier',
+		})
 	})
 
 	// @e2e registered-details::a-request-for-someone-elses-details-is-not-possible
 	test("another person's BSN as a parameter is ignored", async ({ request }) => {
 		const token = await signedIn(request, 'eherkenning', `kvk-${Date.now()}`)
-		const res = await request.get(`${API_BASE}/identity/registered-details?bsn=${TEST_BSN}`, {
-			headers: { Authorization: `Bearer ${token}` },
-		})
+		const res = await request.get(
+			`${API_BASE}/identity/registered-details?bsn=${TEST_BSN}`,
+			{
+				headers: { Authorization: `Bearer ${token}` },
+			},
+		)
 		expect(res.ok()).toBeTruthy()
 		const body = await res.json()
-		expect(body).toEqual({ available: false, reason: 'no_registration_identifier' })
+		expect(body).toEqual({
+			available: false,
+			reason: 'no_registration_identifier',
+		})
 		expect(JSON.stringify(body)).not.toContain(TEST_BSN)
 	})
 
 	// @e2e registered-details::the-brp-source-is-down
-	test('a resident with a BSN and no BRP source reads that the details cannot be shown', async ({ request }) => {
+	test('a resident with a BSN and no BRP source reads that the details cannot be shown', async ({
+		request,
+	}) => {
 		const token = await signedIn(request, 'digid', TEST_BSN)
 		const res = await request.get(`${API_BASE}/identity/registered-details`, {
 			headers: { Authorization: `Bearer ${token}` },
