@@ -552,6 +552,58 @@ class PortalSessionServiceTest extends TestCase {
 
 	}//end testRefreshRecordsARefreshAuditEntryNotALoginOrLogout()
 
+
+	// -- branch (signin-eherkenning-branch REQ-SEB-001) -------------------------
+
+	public function testALoginBranchTravelsWithTheSessionAsRestricted(): void {
+		$store = [];
+		$service = $this->service(store: $store);
+
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1', trust: 'high', branch: '000012345678');
+		$subject = $service->resolveFromBearer('Bearer ' . $issued['token']);
+
+		$this->assertSame('000012345678', $subject['branch']);
+		$this->assertTrue($subject['branchRestricted']);
+
+	}//end testALoginBranchTravelsWithTheSessionAsRestricted()
+
+	public function testASessionWithoutABranchHasNone(): void {
+		$store = [];
+		$service = $this->service(store: $store);
+
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1');
+		$subject = $service->resolveFromBearer('Bearer ' . $issued['token']);
+
+		$this->assertSame('', $subject['branch']);
+		$this->assertFalse($subject['branchRestricted']);
+
+	}//end testASessionWithoutABranchHasNone()
+
+	public function testARefreshKeepsTheBranchRestriction(): void {
+		$store = [];
+		$service = $this->service(store: $store);
+
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1', trust: 'high', branch: '000012345678');
+		$refreshed = $service->refreshSession('Bearer ' . $issued['token']);
+		$subject = $service->resolveFromBearer('Bearer ' . $refreshed['token']);
+
+		$this->assertSame('000012345678', $subject['branch']);
+		$this->assertTrue($subject['branchRestricted'], 'a refresh can never widen a branch login to the whole company');
+
+	}//end testARefreshKeepsTheBranchRestriction()
+
+	public function testAMalformedBranchIsNeverSigned(): void {
+		$store = [];
+		$service = $this->service(store: $store);
+
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1', branch: 'shop-12');
+		$subject = $service->resolveFromBearer('Bearer ' . $issued['token']);
+
+		$this->assertSame('', $subject['branch']);
+		$this->assertFalse($subject['branchRestricted']);
+
+	}//end testAMalformedBranchIsNeverSigned()
+
 	/**
 	 * Build a service backed by a dedicated (default: valid) signing secret
 	 * and an in-memory fake portalSession store (create/read/update), unless

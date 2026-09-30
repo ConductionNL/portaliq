@@ -598,6 +598,63 @@ class SessionControllerTest extends TestCase {
 	 * comes from the LoA mapper, and the redirect carries the bearer in the
 	 * URL FRAGMENT (never a query string — no Referer/log leak).
 	 */
+	/**
+	 * signin-eherkenning-branch REQ-SEB-001, through the REAL claim mapper: an
+	 * organisation that maps the broker's vestigingsnummer claim gives a
+	 * session restricted to that branch.
+	 */
+	public function testOidcCallbackCarriesTheLoginBranchIntoTheSession(): void {
+		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
+		$orgConfig->method('isLoginProviderAllowed')->willReturn(true);
+		$mapper = new OidcClaimMapperService();
+		$orgConfig->method('resolveOidcConfig')->willReturn(
+			$mapper->applyPreset('eherkenning', ['issuer' => 'https://broker.example', 'clientId' => 'rp', 'clientSecret' => 'x', 'claimMap' => ['branch' => 'vestigingsnummer']])
+		);
+
+		$oidc = $this->createMock(OidcClientService::class);
+		$oidc->method('discover')->willReturn($this->discoveryFixture());
+		$oidc->method('exchangeCode')->willReturn(['id_token' => 'x.y.z']);
+		$oidc->method('verifyIdToken')->willReturn(['sub' => 'kvk-1', 'acr' => 'high-loa', 'vestigingsnummer' => '000012345678']);
+
+		$stateStore = $this->createMock(OidcStateStoreService::class);
+		$stateStore->method('consume')->willReturn($this->pendingFixture());
+
+		$accounts = $this->createMock(PortalAccountService::class);
+		$accounts->method('findOrCreate')->willReturn(['subjectRef' => 'server-derived-subject', 'isNew' => false]);
+
+		$session = $this->createMock(PortalSessionService::class);
+		$session->expects($this->once())->method('issueSession')
+			->with($this->anything(), $this->anything(), $this->anything(), $this->anything(), $this->anything(), '000012345678')
+			->willReturn(['token' => 'signed.bearer.jwt', 'jti' => 'jti-1']);
+
+		$urlGenerator = $this->createMock(IURLGenerator::class);
+		$urlGenerator->method('getAbsoluteURL')->willReturnCallback(fn (string $url) => 'https://portal.example' . $url);
+
+		$response = $this->controller(
+			session: $session,
+			orgConfig: $orgConfig,
+			oidc: $oidc,
+			claimMapper: $mapper,
+			stateStore: $stateStore,
+			accounts: $accounts,
+			urlGenerator: $urlGenerator
+		)->oidcCallback(state: 's', code: 'c');
+
+		$this->assertSame(Http::STATUS_FOUND, $response->getStatus());
+
+	}//end testOidcCallbackCarriesTheLoginBranchIntoTheSession()
+
+	public function testIndexReportsTheBranchInEffect(): void {
+		$session = $this->createMock(PortalSessionService::class);
+		$session->method('resolveFromBearer')->willReturn(self::SUBJECT + ['branch' => '000012345678', 'branchRestricted' => true]);
+
+		$data = $this->controller(session: $session)->index()->getData();
+
+		$this->assertSame('000012345678', $data['branch']);
+		$this->assertTrue($data['branchRestricted']);
+
+	}//end testIndexReportsTheBranchInEffect()
+
 	public function testOidcCallbackMintsASessionAndRedirectsWithTheBearerInTheFragment(): void {
 		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
 		$orgConfig->method('isLoginProviderAllowed')->willReturn(true);

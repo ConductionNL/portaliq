@@ -126,6 +126,7 @@ class PortalJwtService {
 	 *                           so the absolute session lifetime can be enforced from
 	 *                           the true origin, not the most recent mint. Defaults to
 	 *                           `$iat` (a fresh login) when not supplied.
+	 * @param array{number?: string, restricted?: bool} $branch The branch in effect and whether the login restricted the session to it.
 	 *
 	 * @return string Compact JWT string.
 	 *
@@ -141,6 +142,7 @@ class PortalJwtService {
 		array $roles = [],
 		?int $ttl = null,
 		?int $authTime = null,
+		array $branch = [],
 	): string {
 		$iat = time();
 		$exp = ($iat + ($ttl ?? self::DEFAULT_TTL));
@@ -161,6 +163,14 @@ class PortalJwtService {
 			// the session chain (portal-session-hardening-v2, design.md).
 			'authTime' => ($authTime ?? $iat),
 		];
+
+		// Change signin-eherkenning-branch: the branch in effect, and whether the
+		// login restricted the session to it. Signed only when set, so a
+		// session without a branch carries exactly the claims it did before.
+		if ((string)($branch['number'] ?? '') !== '') {
+			$claims['branch'] = (string)$branch['number'];
+			$claims['branchRestricted'] = (($branch['restricted'] ?? false) === true);
+		}
 
 		$hPart = $this->b64UrlEncode(bytes: (string)json_encode($header, JSON_UNESCAPED_SLASHES));
 		$cPart = $this->b64UrlEncode(bytes: (string)json_encode($claims, JSON_UNESCAPED_SLASHES));
