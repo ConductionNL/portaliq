@@ -861,12 +861,16 @@ export function createPortalApi(config) {
 		 * @param {string} rowId The row's id.
 		 * @param {string} actionId The endpoint row action's id.
 		 * @param {object} [answers] The answers to send, `{}` by default.
+		 * @param actionApp
 		 * @return {Promise<object>} `{ ok, status, body }`; `status` 0 on a network error.
 		 */
-		async forwardRowAction(collection, rowId, actionId, answers = {}) {
+		async forwardRowAction(collection, rowId, actionId, answers = {}, actionApp = '') {
+			// `actionApp` names another app's action attached to this
+			// collection (woo-journey-entry-points D3).
+			const attached = actionApp ? `&actionApp=${encodeURIComponent(actionApp)}` : ''
 			try {
 				const res = await fetch(
-					`${base}${col(collection.register, collection.schema)}/${encodeURIComponent(rowId)}/actions/${encodeURIComponent(actionId)}?collection=${encodeURIComponent(collection.id)}`,
+					`${base}${col(collection.register, collection.schema)}/${encodeURIComponent(rowId)}/actions/${encodeURIComponent(actionId)}?collection=${encodeURIComponent(collection.id)}${attached}`,
 					{
 						method: 'POST',
 						headers: {
