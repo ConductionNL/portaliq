@@ -24,12 +24,15 @@
  * The sentence for a refusal, by the server's error code, then by status.
  */
 const REFUSALS = {
-	refused: 'The account could not be issued. Check the organisation and the identity.',
-	already_accepted: 'This invitation was already accepted, so it cannot be withdrawn.',
+	refused:
+		'The account could not be issued. Check the organisation and the identity.',
+	already_accepted:
+		'This invitation was already accepted, so it cannot be withdrawn.',
 	not_found: 'This invitation was not found in its organisation.',
 	not_pending: 'Only an account that was never used can be withdrawn.',
 	reason_required: 'Give a reason.',
-	mail_not_sent: 'The invitation mail could not be sent, so nobody was invited. Try again.',
+	mail_not_sent:
+		'The invitation mail could not be sent, so nobody was invited. Try again.',
 }
 
 /**
@@ -90,7 +93,12 @@ function text(value) {
  * @return {object} `issue`, `invite`, `withdrawInvitation`, `voidAccount`, each answering `{ok, message}`.
  * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-issue-and-withdraw-accounts-through-the-validated-actions-req-isa-003
  */
-export function createStaffAccountActions({ post, generateUrl, translate, formatDate }) {
+export function createStaffAccountActions({
+	post,
+	generateUrl,
+	translate,
+	formatDate,
+}) {
 	/**
 	 * Post, and turn a refusal into a sentence.
 	 *
@@ -127,24 +135,42 @@ export function createStaffAccountActions({ post, generateUrl, translate, format
 				displayName: text(fields?.displayName),
 			}
 			if (body.organisation === '') {
-				return { ok: false, message: translate('Give the organisation the account belongs to.') }
+				return {
+					ok: false,
+					message: translate(
+						'Give the organisation the account belongs to.',
+					),
+				}
 			}
 			if (body.identityRef === '' && body.email === '') {
-				return { ok: false, message: translate('Give an identity reference or an e-mail address.') }
+				return {
+					ok: false,
+					message: translate(
+						'Give an identity reference or an e-mail address.',
+					),
+				}
 			}
-			const sent = await send('/apps/portaliq/api/accounts/provision', {}, body)
+			const sent = await send(
+				'/apps/portaliq/api/accounts/provision',
+				{},
+				body,
+			)
 			if (sent.ok === false) {
 				return sent
 			}
 			if (sent.data.isNew === false) {
 				return {
 					ok: false,
-					message: translate('An account for this identity already exists, so no second account was made.'),
+					message: translate(
+						'An account for this identity already exists, so no second account was made.',
+					),
 				}
 			}
 			return {
 				ok: true,
-				message: translate('The account is issued. It becomes active when its owner signs in for the first time.'),
+				message: translate(
+					'The account is issued. It becomes active when its owner signs in for the first time.',
+				),
 			}
 		},
 
@@ -162,7 +188,10 @@ export function createStaffAccountActions({ post, generateUrl, translate, format
 				audience: text(fields?.audience) || 'client',
 			}
 			if (body.email === '' || body.organisation === '') {
-				return { ok: false, message: translate('Give the address and the organisation.') }
+				return {
+					ok: false,
+					message: translate('Give the address and the organisation.'),
+				}
 			}
 			const sent = await send('/apps/portaliq/api/invitations', {}, body)
 			if (sent.ok === false) {
@@ -170,10 +199,13 @@ export function createStaffAccountActions({ post, generateUrl, translate, format
 			}
 			return {
 				ok: true,
-				message: translate('Invitation sent to {email}. It is valid until {date}.', {
-					email: body.email,
-					date: formatDate(String(sent.data.expiresAt || '')),
-				}),
+				message: translate(
+					'Invitation sent to {email}. It is valid until {date}.',
+					{
+						email: body.email,
+						date: formatDate(String(sent.data.expiresAt || '')),
+					},
+				),
 			}
 		},
 
@@ -189,10 +221,21 @@ export function createStaffAccountActions({ post, generateUrl, translate, format
 			if (id === '') {
 				return { ok: false, message: translate(failureKey(null)) }
 			}
-			const sent = await send('/apps/portaliq/api/invitations/{id}/revoke', { id }, {
-				organisation: text(row?.organisation),
-			})
-			return sent.ok ? { ok: true, message: translate('The invitation is withdrawn. Its link admits nobody now.') } : sent
+			const sent = await send(
+				'/apps/portaliq/api/invitations/{id}/revoke',
+				{ id },
+				{
+					organisation: text(row?.organisation),
+				},
+			)
+			return sent.ok
+				? {
+						ok: true,
+						message: translate(
+							'The invitation is withdrawn. Its link admits nobody now.',
+						),
+					}
+				: sent
 		},
 
 		/**
@@ -207,11 +250,17 @@ export function createStaffAccountActions({ post, generateUrl, translate, format
 			if (text(reason) === '') {
 				return { ok: false, message: translate('Give a reason.') }
 			}
-			const sent = await send('/apps/portaliq/api/accounts/void', {}, {
-				subjectRef: text(account?.subjectRef),
-				reason: text(reason),
-			})
-			return sent.ok ? { ok: true, message: translate('The account is withdrawn.') } : sent
+			const sent = await send(
+				'/apps/portaliq/api/accounts/void',
+				{},
+				{
+					subjectRef: text(account?.subjectRef),
+					reason: text(reason),
+				},
+			)
+			return sent.ok
+				? { ok: true, message: translate('The account is withdrawn.') }
+				: sent
 		},
 	}
 }

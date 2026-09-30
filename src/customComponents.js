@@ -129,9 +129,13 @@ const staffAccountHandlers = createStaffAccountHandlers({
 	confirmWithdrawInvitation: (row) =>
 		showConfirmation({
 			name: t('portaliq', 'Withdraw this invitation?'),
-			text: t('portaliq', 'The link sent to {email} admits nobody after this.', {
-				email: row?.email || '',
-			}),
+			text: t(
+				'portaliq',
+				'The link sent to {email} admits nobody after this.',
+				{
+					email: row?.email || '',
+				},
+			),
 			labelConfirm: t('portaliq', 'Withdraw invitation'),
 			labelReject: t('portaliq', 'Cancel'),
 		}),

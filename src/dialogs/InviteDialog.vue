@@ -40,7 +40,11 @@
 			:label="t('portaliq', 'Audience')"
 			:helperText="t('portaliq', 'For example client or supplier.')"
 			data-testid="invite-someone-audience" />
-		<p v-if="refusal" class="invite__refusal" role="alert" data-testid="invite-someone-refusal">
+		<p
+			v-if="refusal"
+			class="invite__refusal"
+			role="alert"
+			data-testid="invite-someone-refusal">
 			{{ refusal }}
 		</p>
 

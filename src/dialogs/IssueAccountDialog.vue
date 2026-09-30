@@ -48,7 +48,12 @@
 		<NcTextField
 			v-model="fields.identityRef"
 			:label="t('portaliq', 'Identity reference')"
-			:helperText="t('portaliq', 'The BSN, KVK number or other number the sign-in service returns.')"
+			:helperText="
+				t(
+					'portaliq',
+					'The BSN, KVK number or other number the sign-in service returns.',
+				)
+			"
 			data-testid="issue-account-identity-ref" />
 		<NcTextField
 			v-model="fields.email"
@@ -60,7 +65,11 @@
 			data-testid="issue-account-verified">
 			{{ t('portaliq', 'I checked this address with its owner') }}
 		</NcCheckboxRadioSwitch>
-		<p v-if="refusal" class="issue__refusal" role="alert" data-testid="issue-account-refusal">
+		<p
+			v-if="refusal"
+			class="issue__refusal"
+			role="alert"
+			data-testid="issue-account-refusal">
 			{{ refusal }}
 		</p>
 
@@ -120,6 +129,7 @@ export default {
 				email: '',
 				verifiedEmail: false,
 			},
+
 			identityType: null,
 			refusal: '',
 			busy: false,

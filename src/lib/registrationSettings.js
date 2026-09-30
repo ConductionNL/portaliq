@@ -38,8 +38,12 @@ export const POLICIES = ['off', 'approval', 'activation']
  */
 export function registrationOf(portal) {
 	const registration = portal?.authentication?.registration || {}
-	const policy = POLICIES.includes(registration.policy) ? registration.policy : 'off'
-	const domains = Array.isArray(registration.allowedDomains) ? registration.allowedDomains : []
+	const policy = POLICIES.includes(registration.policy)
+		? registration.policy
+		: 'off'
+	const domains = Array.isArray(registration.allowedDomains)
+		? registration.allowedDomains
+		: []
 	return { policy, allowedDomains: domains.map((d) => String(d)) }
 }
 
@@ -78,7 +82,9 @@ export function portalWithRegistration(portal, choice) {
 		...(body.authentication || {}),
 		registration: {
 			policy: POLICIES.includes(choice?.policy) ? choice.policy : 'off',
-			allowedDomains: Array.isArray(choice?.allowedDomains) ? [...choice.allowedDomains] : [],
+			allowedDomains: Array.isArray(choice?.allowedDomains)
+				? [...choice.allowedDomains]
+				: [],
 		},
 	}
 	return body
@@ -118,12 +124,25 @@ export function createRegistrationSettings({ get, put, post, url, translate }) {
 		} catch (error) {
 			const status = error?.response?.status ?? 0
 			if (status === 403) {
-				return { ok: false, message: translate('You may not decide on registrations. Ask an administrator for this right.') }
+				return {
+					ok: false,
+					message: translate(
+						'You may not decide on registrations. Ask an administrator for this right.',
+					),
+				}
 			}
 			if (error?.response?.data?.error === 'not_pending') {
-				return { ok: false, message: translate('Someone already decided on this registration.') }
+				return {
+					ok: false,
+					message: translate(
+						'Someone already decided on this registration.',
+					),
+				}
 			}
-			return { ok: false, message: translate('The decision could not be saved. Try again.') }
+			return {
+				ok: false,
+				message: translate('The decision could not be saved. Try again.'),
+			}
 		}
 		return { ok: true, message: translate(done) }
 	}
@@ -138,15 +157,28 @@ export function createRegistrationSettings({ get, put, post, url, translate }) {
 		 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-set-the-registration-policy-and-approve-registrations-req-isa-004
 		 */
 		async save(portalId, choice) {
-			const address = url('/apps/openregister/api/objects/portaliq/portal/{id}', { id: portalId })
+			const address = url(
+				'/apps/openregister/api/objects/portaliq/portal/{id}',
+				{ id: portalId },
+			)
 			try {
 				const { data } = await get(address)
 				await put(address, portalWithRegistration(data, choice))
 			} catch (error) {
 				if (error?.response?.status === 403) {
-					return { ok: false, message: translate('Only an administrator can change who may register.') }
+					return {
+						ok: false,
+						message: translate(
+							'Only an administrator can change who may register.',
+						),
+					}
 				}
-				return { ok: false, message: translate('The registration settings could not be saved. Try again.') }
+				return {
+					ok: false,
+					message: translate(
+						'The registration settings could not be saved. Try again.',
+					),
+				}
 			}
 			return { ok: true, message: translate('Your choices are saved.') }
 		},
@@ -168,7 +200,11 @@ export function createRegistrationSettings({ get, put, post, url, translate }) {
 				organisation: String(organisation),
 				_limit: '100',
 			})
-			const { data } = await get(url('/apps/openregister/api/objects/portaliq/portalAccount') + '?' + query.toString())
+			const { data } = await get(
+				url('/apps/openregister/api/objects/portaliq/portalAccount')
+					+ '?'
+					+ query.toString(),
+			)
 			const rows = Array.isArray(data) ? data : data?.results
 			return Array.isArray(rows) ? rows : []
 		},
@@ -197,7 +233,12 @@ export function createRegistrationSettings({ get, put, post, url, translate }) {
 			if (why === '') {
 				return { ok: false, message: translate('Give a reason.') }
 			}
-			return decide(row, 'refuse', { reason: why }, 'The registration is refused.')
+			return decide(
+				row,
+				'refuse',
+				{ reason: why },
+				'The registration is refused.',
+			)
 		},
 	}
 }

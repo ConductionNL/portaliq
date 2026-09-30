@@ -32,7 +32,9 @@
 		<NcTextArea
 			v-model="domainsTyped"
 			:label="t('portaliq', 'Allowed e-mail domains')"
-			:helperText="t('portaliq', 'One per line. Leave empty to allow every address.')"
+			:helperText="
+				t('portaliq', 'One per line. Leave empty to allow every address.')
+			"
 			data-testid="portal-registration-domains" />
 		<NcNoteCard v-if="notice" :type="noticeType">
 			{{ notice }}
@@ -45,7 +47,9 @@
 			{{ t('portaliq', 'Save') }}
 		</NcButton>
 
-		<section class="portal-registration__waiting" data-testid="portal-registration-waiting">
+		<section
+			class="portal-registration__waiting"
+			data-testid="portal-registration-waiting">
 			<h3>{{ t('portaliq', 'Waiting for approval') }}</h3>
 			<NcLoadingIcon v-if="loading" />
 			<p v-else-if="waiting.length === 0" class="portal-registration__empty">
@@ -59,7 +63,11 @@
 					:data-testid="`portal-registration-row-${row.subjectRef}`">
 					<span class="portal-registration__who">
 						{{ row.displayName || row.email }}
-						<span v-if="row.displayName" class="portal-registration__email">{{ row.email }}</span>
+						<span
+							v-if="row.displayName"
+							class="portal-registration__email"
+							>{{ row.email }}</span
+						>
 						<span class="portal-registration__unverified">
 							{{ t('portaliq', 'This address is not verified.') }}
 						</span>
@@ -142,9 +150,21 @@ export default {
 		 */
 		policies() {
 			return [
-				{ id: 'off', label: t('portaliq', 'Nobody: accounts are issued or invited by staff') },
-				{ id: 'approval', label: t('portaliq', 'Anyone, after a staff member approves') },
-				{ id: 'activation', label: t('portaliq', 'Anyone who confirms their e-mail address') },
+				{
+					id: 'off',
+					label: t(
+						'portaliq',
+						'Nobody: accounts are issued or invited by staff',
+					),
+				},
+				{
+					id: 'approval',
+					label: t('portaliq', 'Anyone, after a staff member approves'),
+				},
+				{
+					id: 'activation',
+					label: t('portaliq', 'Anyone who confirms their e-mail address'),
+				},
 			]
 		},
 	},
@@ -175,8 +195,10 @@ export default {
 		async loadWaiting() {
 			this.loading = true
 			try {
-				this.waiting = await this.api.waiting(this.objectData?.organisation || '')
-			} catch (error) {
+				this.waiting = await this.api.waiting(
+					this.objectData?.organisation || '',
+				)
+			} catch {
 				this.waiting = []
 			}
 			this.loading = false
@@ -189,7 +211,12 @@ export default {
 		 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-set-the-registration-policy-and-approve-registrations-req-isa-004
 		 */
 		async save() {
-			const id = String(this.objectData?.id || this.objectData?.uuid || this.objectData?.['@self']?.id || '')
+			const id = String(
+				this.objectData?.id
+					|| this.objectData?.uuid
+					|| this.objectData?.['@self']?.id
+					|| '',
+			)
 			this.saving = true
 			const outcome = await this.api.save(id, {
 				policy: this.policy,
