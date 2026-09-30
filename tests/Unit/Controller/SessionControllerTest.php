@@ -802,6 +802,44 @@ class SessionControllerTest extends TestCase {
 	}//end testSilentStartRecordsTheFlag()
 
 	/**
+	 * A login started from a portal returns to that portal, so its title and
+	 * branding survive the sign-in; an unknown portal returns to the plain
+	 * portal address (portal-signin-on-its-own-address T3).
+	 *
+	 * @spec openspec/changes/portal-signin-on-its-own-address/tasks.md#T3
+	 */
+	public function testALoginStartedFromAPortalReturnsToIt(): void {
+		foreach (['wilgenboom' => '/apps/portaliq/portal?portal=wilgenboom', 'no-such-portal' => '/apps/portaliq/portal'] as $slug => $returnTo) {
+			$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
+			$orgConfig->method('isLoginProviderAllowed')->willReturn(true);
+			$orgConfig->method('resolveOidcConfig')->willReturn($this->oidcConfigFixture());
+
+			$oidc = $this->createMock(OidcClientService::class);
+			$oidc->method('discover')->willReturn($this->discoveryFixture());
+			$oidc->method('generateToken')->willReturnOnConsecutiveCalls('state-1', 'nonce-1');
+			$oidc->method('generatePkce')->willReturn(['verifier' => 'verifier-1', 'challenge' => 'challenge-1']);
+			$oidc->method('buildAuthorizationUrl')->willReturn('https://broker.example/authorize?state=state-1');
+
+			$urlGenerator = $this->createMock(IURLGenerator::class);
+			$urlGenerator->method('linkToRoute')->willReturn('/apps/portaliq/portal');
+
+			$portals = $this->createMock(PortalResolver::class);
+			$portals->method('resolve')->willReturnCallback(
+				static fn ($request, string $portalSlug = ''): ?array => $portalSlug === 'wilgenboom' ? ['slug' => 'wilgenboom', 'organisation' => 'school-org'] : null
+			);
+
+			$stateStore = $this->createMock(OidcStateStoreService::class);
+			$stateStore->expects($this->once())->method('create')
+				->with('state-1', 'nonce-1', 'verifier-1', 'school-org', 'digid', $returnTo, false)
+				->willReturn(true);
+
+			$this->controller(session: $this->createMock(PortalSessionService::class), orgConfig: $orgConfig, oidc: $oidc, stateStore: $stateStore, urlGenerator: $urlGenerator, portals: $portals)
+				->oidcStart(org: 'school-org', provider: 'digid', portal: $slug);
+		}
+
+	}//end testALoginStartedFromAPortalReturnsToIt()
+
+	/**
 	 * REQ-SIS-005: a silent attempt the broker answers with "the resident must
 	 * interact" lands on the portal's login screen, with no error and no token.
 	 *

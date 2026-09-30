@@ -173,7 +173,7 @@ export function silentSignInUrl(config, store) {
 	} catch {
 		return ''
 	}
-	return `${loginStartUrl(config.apiBase, signinOrganisation(config), provider, 'oidc')}&silent=1`
+	return `${loginStartUrl(config.apiBase, signinOrganisation(config), provider, 'oidc', config.organisationSlug)}&silent=1`
 }
 
 /**

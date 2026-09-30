@@ -17,3 +17,13 @@ When the portal SPA is served for a resolved portal and no `?org=` is given, the
 - WHEN a resident opens the portal login screen
 - THEN no dev login button is shown
 - @e2e exclude covered by PHPUnit `PortalRuntimeConfigResolverTest::testTheDevLoginIsOfferedOnlyWhereItIsEnabled` and node `tests/broker-login.spec.mjs`
+
+### Requirement: A login returns to the portal it started from
+
+The SPA MUST send the serving portal's slug with a login start, and the OIDC start MUST record a return address with `?portal=<slug>` when that slug resolves to a portal, so the portal's title and branding survive the sign-in. An unknown slug MUST return to the plain portal address.
+
+#### Scenario: The parent lands back on the school portal
+- GIVEN a parent who starts DigiD on `/apps/portaliq/portal?portal=wilgenboom`
+- WHEN the broker sends her back
+- THEN she lands on `/apps/portaliq/portal?portal=wilgenboom` and the header shows the portal's title
+- @e2e exclude covered by PHPUnit `SessionControllerTest::testALoginStartedFromAPortalReturnsToIt`; checked live on the school portal
