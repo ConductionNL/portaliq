@@ -37,6 +37,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Service\Branch\BranchNumber;
+
 /**
  * Provider presets + claim/LoA mapping for the OIDC broker login edge.
  *
@@ -160,6 +162,10 @@ class OidcClaimMapperService {
 			'audienceMap' => (string)($claimMap['audience'] ?? $preset['audience']),
 			'loaClaim' => (string)($rawConfig['loaClaim'] ?? $preset['loaClaim']),
 			'loaMap' => $loaMap,
+			// signin-eherkenning-branch: the claim that carries the
+			// vestigingsnummer. No preset names one, because brokers name it
+			// differently; an organisation sets it in its claimMap.
+			'branchClaim' => (string)($claimMap['branch'] ?? ''),
 		];
 	}//end applyPreset()
 
@@ -200,7 +206,7 @@ class OidcClaimMapperService {
 	 * @param array<string, mixed> $claims The validated ID token claim set.
 	 * @param array<string, mixed> $config The merged provider config (from `applyPreset()`).
 	 *
-	 * @return array{identityType: string, identityRef: string, subjectRef: string|null, audience: string}|null
+	 * @return array{identityType: string, identityRef: string, subjectRef: string|null, audience: string, branch: string}|null
 	 *
 	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T05
 	 * @spec openspec/specs/supplier-portal/spec.md#the-subject-reference-is-server-derived-never-client-supplied
@@ -234,8 +240,31 @@ class OidcClaimMapperService {
 			'identityRef' => $identityRef,
 			'subjectRef' => $resolvedSubjectRef,
 			'audience' => $audience,
+			'branch' => $this->branchOf(claims: $claims, config: $config),
 		];
 	}//end mapClaims()
+
+	/**
+	 * The branch (vestigingsnummer) the login was restricted to, or '' when
+	 * the organisation maps no branch claim, the broker sent none, or the
+	 * value is not twelve digits. A bad value never refuses the login: it
+	 * gives a whole-company session, the same as a login without a branch.
+	 *
+	 * @param array<string, mixed> $claims The validated ID token claim set.
+	 * @param array<string, mixed> $config The merged provider config.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/signin-eherkenning-branch/tasks.md#T01
+	 */
+	private function branchOf(array $claims, array $config): string {
+		$claim = (string)($config['branchClaim'] ?? '');
+		if ($claim === '') {
+			return '';
+		}
+
+		return (new BranchNumber())->normalise(value: ($claims[$claim] ?? null));
+	}//end branchOf()
 
 	/**
 	 * Map the broker's LoA (an `acr`-style claim, per-org configurable via

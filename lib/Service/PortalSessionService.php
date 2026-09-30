@@ -50,6 +50,7 @@ namespace OCA\Portaliq\Service;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Service\Branch\BranchNumber;
 use OCP\IConfig;
 use OCP\Security\ISecureRandom;
 use Psr\Log\LoggerInterface;
@@ -251,11 +252,13 @@ class PortalSessionService {
 	 * @param string $organisation Tenant the session is scoped to.
 	 * @param string $trust Assurance level (e.g. "EH3").
 	 * @param array<int, string> $roles Roles carried in the session.
+	 * @param string $branch The vestigingsnummer the login was restricted to, or ''.
 	 *
 	 * @return array{token: string, jti: string}|null The minted bearer token +
 	 *                                                its id, or null when the
 	 *                                                edge is not yet configured.
 	 *
+	 * @spec openspec/changes/signin-eherkenning-branch/tasks.md#T02
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
 	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.3
 	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#2.1
@@ -267,14 +270,19 @@ class PortalSessionService {
 		string $organisation,
 		string $trust = '',
 		array $roles = [],
+		string $branch = '',
 	): ?array {
+		// A branch from the login restricts the session to it
+		// (signin-eherkenning-branch D1); a malformed one is never signed.
+		$branchNumber = (new BranchNumber())->normalise(value: $branch);
 		$issued = $this->mintSession(
 			subjectRef: $subjectRef,
 			audience: $audience,
 			organisation: $organisation,
 			trust: $trust,
 			roles: $roles,
-			authTime: null
+			authTime: null,
+			branch: ['number' => $branchNumber, 'restricted' => ($branchNumber !== '')]
 		);
 		if ($issued === null) {
 			return null;
@@ -310,6 +318,7 @@ class PortalSessionService {
 	 * @param int|null $authTime The ORIGIN login's unix timestamp to carry
 	 *                           forward unchanged (a refresh rotation); null
 	 *                           mints a fresh origin (a genuine new login).
+	 * @param array{number?: string, restricted?: bool} $branch The branch in effect (signin-eherkenning-branch).
 	 *
 	 * @return array{token: string, jti: string}|null The minted bearer token +
 	 *                                                its id, or null when the
@@ -325,6 +334,7 @@ class PortalSessionService {
 		string $trust,
 		array $roles,
 		?int $authTime,
+		array $branch = [],
 	): ?array {
 		if ($this->jwt === null) {
 			$this->logger->warning('Portaliq: session issuance refused — no dedicated jwt_signing_secret configured');
@@ -342,7 +352,8 @@ class PortalSessionService {
 			jti: $jti,
 			trust: $trust,
 			roles: $roles,
-			authTime: $originAuthTime
+			authTime: $originAuthTime,
+			branch: $branch
 		);
 
 		$this->writer->createObject(
@@ -452,6 +463,10 @@ class PortalSessionService {
 			// for a token minted before this claim existed, which refreshSession()
 			// treats as "cannot establish an origin" and refuses (fail-closed).
 			'authTime' => (int)($claims['authTime'] ?? 0),
+			// signin-eherkenning-branch: the branch in effect ('' for none)
+			// and whether the login restricted the session to it.
+			'branch' => (new BranchNumber())->normalise(value: ($claims['branch'] ?? null)),
+			'branchRestricted' => (($claims['branchRestricted'] ?? false) === true && ($claims['branch'] ?? '') !== ''),
 		];
 	}//end resolveFromBearer()
 
@@ -615,7 +630,10 @@ class PortalSessionService {
 			organisation: (string)($subject['organisation'] ?? ''),
 			trust: (string)($subject['trust'] ?? ''),
 			roles: (array)($subject['roles'] ?? []),
-			authTime: $authTime
+			authTime: $authTime,
+			// A refresh carries the branch and its restriction unchanged: it
+			// can never widen a branch login to the whole company.
+			branch: ['number' => (string)($subject['branch'] ?? ''), 'restricted' => (($subject['branchRestricted'] ?? false) === true)]
 		);
 		if ($issued === null) {
 			return null;

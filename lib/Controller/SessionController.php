@@ -157,6 +157,7 @@ class SessionController extends Controller {
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T05
+	 * @spec openspec/changes/signin-eherkenning-branch/tasks.md#T02
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -192,6 +193,9 @@ class SessionController extends Controller {
 				'audience' => $subject['audience'],
 				'organisation' => $subject['organisation'],
 				'trust' => $subject['trust'],
+				// signin-eherkenning-branch: the header shows the branch in effect.
+				'branch' => (string)($subject['branch'] ?? ''),
+				'branchRestricted' => (($subject['branchRestricted'] ?? false) === true),
 			]
 		);
 	}//end index()
@@ -407,6 +411,7 @@ class SessionController extends Controller {
 	 * @spec openspec/specs/supplier-portal/spec.md#oidc-callback-validates-the-id-token-and-fails-closed-on-every-error
 	 * @spec openspec/specs/supplier-portal/spec.md#every-validation-failure-is-an-identical-generic-error
 	 * @spec openspec/specs/supplier-portal/spec.md#the-subject-reference-is-server-derived-never-client-supplied
+	 * @spec openspec/changes/signin-eherkenning-branch/tasks.md#T02
 	 *
 	 * @SuppressWarnings(PHPMD.CyclomaticComplexity) -- one fail-closed guard
 	 * per step of the OIDC flow (state, config, discovery, exchange, ID-token
@@ -499,7 +504,10 @@ class SessionController extends Controller {
 			audience: $mapped['audience'],
 			organisation: $pending['org'],
 			trust: $trust,
-			roles: [$mapped['audience'] . ':read']
+			roles: [$mapped['audience'] . ':read'],
+			// signin-eherkenning-branch: a login restricted to one branch
+			// gives a session restricted to it.
+			branch: (string)($mapped['branch'] ?? '')
 		);
 		if ($issued === null) {
 			return $this->oidcGenericError();
