@@ -664,6 +664,22 @@ class PortalSessionServiceTest extends TestCase {
 	}//end testRefreshPastTheCapIsStillRefused()
 
 	/**
+	 * REQ-SIS-001: the portalSession row expires with its bearer, one idle
+	 * window after it was minted, not two hours.
+	 *
+	 * @spec openspec/changes/signin-session-idle-warning-and-sso/tasks.md#T01
+	 */
+	public function testTheSessionRowExpiresWithTheBearer(): void {
+		$store = [];
+		$issued = $this->service(store: $store, idleTimeout: '600')->issueSession(subjectRef: 's1', audience: 'client', organisation: 'org-1');
+		$claims = (new PortalJwtService(self::SECRET))->validate($issued['token']);
+
+		$row = array_values($store)[0];
+		$this->assertSame((int)$claims['exp'], (new \DateTimeImmutable($row['expiresAt']))->getTimestamp());
+
+	}//end testTheSessionRowExpiresWithTheBearer()
+
+	/**
 	 * REQ-SIS-001: the times a session reports: its bearer's expiry, the
 	 * absolute cap from the origin login, and the idle window.
 	 *
