@@ -213,7 +213,8 @@ class PortalObjectReader {
 				via: $via,
 				scopeValue: $scopeValue,
 				organisation: $organisation,
-				limit: $limit
+				limit: $limit,
+				filter: $filter
 			);
 			return $this->projector->projectRows(rows: $joined, fields: $fields);
 		}
@@ -742,11 +743,16 @@ class PortalObjectReader {
 	 * @param string $scopeValue The subject's scoping value.
 	 * @param string $organisation The subject's tenant (may be empty).
 	 * @param int $limit Maximum target rows to return.
+	 * @param array<string, mixed> $filter The collection's declared narrowing filter.
 	 *
 	 * @return array<int, array<string, mixed>> The verified target rows.
 	 *
 	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T6
 	 * @spec openspec/changes/archive/2026-09-07-reverse-scope-join/tasks.md#T1
+	 * @spec openspec/changes/via-read-scoped-query/tasks.md#T1
+	 *
+	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- the parameters map
+	 * 1:1 onto the declarative collection fields, identical to readCollection.
 	 */
 	private function readViaCollection(
 		object $objectService,
@@ -757,6 +763,7 @@ class PortalObjectReader {
 		string $scopeValue,
 		string $organisation,
 		int $limit,
+		array $filter=[],
 	): array {
 		if ($this->isValidVia(via: $via) === false) {
 			$this->logger->warning('Portaliq: invalid via declaration — failing closed to zero rows', ['register' => $register, 'schema' => $schema]);
@@ -775,24 +782,128 @@ class PortalObjectReader {
 			return [];
 		}
 
-		try {
-			$objectService->setRegister(register: $register);
-			$objectService->setSchema(schema: $schema);
-			$rows = $objectService->findAll(config: ['filters' => [], 'limit' => $limit, 'offset' => 0], _rbac: false, _multitenancy: false);
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: OR read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
-			return [];
-		}
-
-		if (is_array($rows) === false) {
-			return [];
-		}
-
 		// The via is validated, so `match` is absent, 'id', or 'scopeField'.
 		$match = (string)($via['match'] ?? 'id');
 
+		$rows = $this->readOuterRows(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			scopeField: $scopeField,
+			targets: $targets,
+			match: $match,
+			limit: $limit,
+			filter: $filter
+		);
+		if ($rows === null) {
+			return [];
+		}
+
 		return $this->filterTargetRows(rows: $rows, targets: $targets, organisation: $organisation, match: $match, scopeField: $scopeField);
 	}//end readViaCollection()
+
+	/**
+	 * Ask OpenRegister for the outer rows of a via read.
+	 *
+	 * In the reverse mode the query names each verified target in the
+	 * collection's own scope field, so OpenRegister returns the subject's
+	 * own rows rather than the first page of the whole schema (a schema with
+	 * more rows than the limit silently dropped the subject's rows before).
+	 * The declared `filter` narrows the query in both modes, and the scope
+	 * field always wins over it (scopedFilters). The per-row membership and
+	 * tenant checks in filterTargetRows() stay the security boundary.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param string $register The target register.
+	 * @param string $schema The target schema.
+	 * @param string $scopeField The collection's own scope field.
+	 * @param array<string, true> $targets The verified target set.
+	 * @param string $match 'id' (forward) or 'scopeField' (reverse).
+	 * @param int $limit Maximum rows to return.
+	 * @param array<string, mixed> $filter The declared narrowing filter.
+	 *
+	 * @return array<int, mixed>|null The raw rows, or null when the read failed.
+	 *
+	 * @spec openspec/changes/via-read-scoped-query/tasks.md#T1
+	 *
+	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- one parameter per
+	 * part of the declared collection, as in readViaCollection.
+	 */
+	private function readOuterRows(
+		object $objectService,
+		string $register,
+		string $schema,
+		string $scopeField,
+		array $targets,
+		string $match,
+		int $limit,
+		array $filter,
+	): ?array {
+		$queries = [$this->scopedFilters(filter: $filter, scopeField: '', scopeValue: '')];
+		if ($match === 'scopeField' && $scopeField !== '') {
+			$queries = [];
+			foreach (array_keys($targets) as $target) {
+				$queries[] = $this->scopedFilters(filter: $filter, scopeField: $scopeField, scopeValue: (string)$target);
+			}
+		}
+
+		$rows = [];
+		try {
+			$objectService->setRegister(register: $register);
+			$objectService->setSchema(schema: $schema);
+			foreach ($queries as $filters) {
+				$remaining = ($limit - count($rows));
+				if ($remaining <= 0) {
+					break;
+				}
+
+				$page = $objectService->findAll(config: ['filters' => $filters, 'limit' => $remaining, 'offset' => 0], _rbac: false, _multitenancy: false);
+				if (is_array($page) === true) {
+					$rows = $this->withoutDuplicates(rows: $rows, page: $page);
+				}
+			}
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: OR read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
+			return null;
+		}
+
+		return $rows;
+	}//end readOuterRows()
+
+	/**
+	 * Append a page of rows, skipping a row already read by an earlier query
+	 * (a list-valued scope field can name two of the subject's targets).
+	 *
+	 * @param array<int, mixed> $rows The rows read so far.
+	 * @param array<int|string, mixed> $page The next page.
+	 *
+	 * @return array<int, mixed> The rows with the new ones appended.
+	 */
+	private function withoutDuplicates(array $rows, array $page): array {
+		$seen = [];
+		foreach ($rows as $row) {
+			$normalised = $this->normalise(row: $row);
+			foreach ($this->rowIds(row: ($normalised ?? [])) as $id) {
+				$seen[$id] = true;
+			}
+		}
+
+		foreach ($page as $row) {
+			$normalised = $this->normalise(row: $row);
+			$ids = $this->rowIds(row: ($normalised ?? []));
+			if (array_intersect_key(array_flip($ids), $seen) !== []) {
+				continue;
+			}
+
+			foreach ($ids as $id) {
+				$seen[$id] = true;
+			}
+
+			$rows[] = $row;
+		}
+
+		return $rows;
+	}//end withoutDuplicates()
 
 	/**
 	 * Run the join pre-pass and collect the verified target references: query
