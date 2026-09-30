@@ -10,12 +10,15 @@
 // blocks, so a ref that does not resolve here is a defensive skip, not expected.
 
 import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { withoutRemoveAction } from '../lib/itemList.js'
 import { rowFor } from '../lib/openRecord.js'
 import { isEndpointRowAction, offersRowAction, rowNotice } from '../lib/rowAction.js'
 import { dialogFor, tableRowActions } from '../lib/signing.js'
+import AttachedActions from './AttachedActions.jsx'
 import CitizenCase from './CitizenCase.jsx'
 import CollectionTable from './CollectionTable.jsx'
 import DeclineDialog from './DeclineDialog.jsx'
+import ItemList from './ItemList.jsx'
 import Loading from './Loading.jsx'
 import ProposeChangeForm from './ProposeChangeForm.jsx'
 import RichText from './RichText.jsx'
@@ -230,6 +233,7 @@ function ProposalQueue({ action, row, api }) {
  * @param root0.row
  * @param root0.api
  * @param root0.proposeAction
+ * @param root0.t
  */
 function DetailCard({ collection, row, api, proposeAction, t }) {
 	const rowId = row && (row.id || row['@self']?.id)
@@ -291,6 +295,10 @@ function DetailCard({ collection, row, api, proposeAction, t }) {
 			{collection.filesUpload === true && api && <FileUpload collection={collection} row={row} api={api} onUploaded={refresh} t={t} />}
 			{collection.filesDownload === true && api && <FileList collection={collection} row={detailRow} api={api} />}
 			{proposeAction && api && <ProposalQueue action={proposeAction} row={detailRow} api={api} />}
+			{/* What is in this record, from its app (my-dossiers). */}
+			{collection.itemList && api && <ItemList collection={collection} row={detailRow} api={api} t={t || ((key) => key)} />}
+			{/* Another app's actions on this record (woo-journey-entry-points D3). */}
+			<AttachedActions collection={collection} row={detailRow} api={api} t={t || ((key) => key)} />
 			{collection.timeline && timeline !== false && (
 				<TimelineList label={collection.timeline.label} entries={timeline ? timeline.entries : null} t={t} />
 			)}
@@ -310,6 +318,8 @@ function DetailCard({ collection, row, api, proposeAction, t }) {
  * @param root0.onRowAction
  * @param root0.busyRow
  * @param root0.t
+ * @param root0.openRecord
+ * @param root0.onRecordOpened
  */
 export default function PageView({ page, contribution, api, dataByCollection, onCreated, onAction, onRowAction, busyRow, t, openRecord = null, onRecordOpened = null }) {
 	// `t` is optional so a caller that does not supply a translator still
@@ -425,7 +435,7 @@ export default function PageView({ page, contribution, api, dataByCollection, on
 								// and show only on the rows their `rowWhen` names.
 								// Viewing the document belongs to the sign dialog, not to a
 								// button of its own (case-actions-sign-a-document).
-								rowActions={tableRowActions(rowActions.filter((a) => a.type === 'update' || isEndpointRowAction(a)))}
+								rowActions={tableRowActions(withoutRemoveAction(collection, rowActions.filter((a) => a.type === 'update' || isEndpointRowAction(a))))}
 								offers={offersRowAction}
 								busyRow={busyRow}
 								onRowAction={(action, row) => {

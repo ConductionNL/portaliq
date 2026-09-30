@@ -614,6 +614,7 @@ export default {
 				contributions: this.contributions,
 				routeParam: this.routeParam,
 				portal: this.site.slug || '',
+				signedIn: this.session !== null,
 			}
 		},
 

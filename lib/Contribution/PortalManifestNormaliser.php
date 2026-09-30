@@ -135,6 +135,10 @@ class PortalManifestNormaliser {
 		// back to an ordinary list.
 		$collections = (new TimedTaskConfigNormaliser())->resolve(collections: $collections, actions: $actions);
 
+		// The item list (my-dossiers): its remove action must be one of the
+		// collection's own row actions, so it resolves after them.
+		$collections = (new ItemListConfigNormaliser())->resolve(collections: $collections, actions: $actions);
+
 		$contribution['collections'] = $collections;
 		$contribution['actions'] = $actions;
 		$contribution['pages'] = $this->pages->normalisePages(

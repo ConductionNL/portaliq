@@ -29,7 +29,7 @@ signed in".
 - test: `tests/woo-entry-points.spec.mjs` ("anonymous sees no save action")
 
 #### Scenario: A portal without opencatalogi's actions
-- **GIVEN** a signed-in resident whose manifest has no opencatalogi `addToCollection` action
+- **GIVEN** a signed-in resident whose manifest has no opencatalogi `addToDossier` action
 - **WHEN** they open a publication
 - **THEN** "Bewaar in mijn dossier" does not show
 - test: `tests/woo-entry-points.spec.mjs` ("offered actions")

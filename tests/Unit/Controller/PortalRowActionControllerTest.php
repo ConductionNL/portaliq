@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
+use OCA\Portaliq\Contribution\AttachedActionResolver;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\PortalRowActionController;
 use OCA\Portaliq\Service\AuditTrailService;
@@ -425,4 +426,118 @@ class PortalRowActionControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_BAD_GATEWAY, $result->getStatus());
 		$this->assertSame(['error' => 'forward_failed'], $result->getData());
 	}//end testATransportFailureIs502()
+	/**
+	 * The dossier id every attached-action test acts on.
+	 */
+	private const DOSSIER_ID = '00000000-0000-0000-0000-00000000d055';
+
+	/**
+	 * pipelinq's askAboutDossier, attached to opencatalogi's dossiers.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function askAboutDossier(): array {
+		return [
+			'id' => 'askAboutDossier',
+			'label' => 'Stel een vraag over dit dossier',
+			'type' => 'endpoint-forward',
+			'endpoint' => '/index.php/apps/pipelinq/api/portal/dossier-questions',
+			'method' => 'POST',
+			'fields' => ['question'],
+			'rowField' => 'collectionId',
+			'attachTo' => ['app' => 'opencatalogi', 'schema' => 'collection'],
+		];
+	}//end askAboutDossier()
+
+	/**
+	 * A controller over opencatalogi's dossiers and pipelinq's attached action,
+	 * resolved the way the registry resolves them.
+	 *
+	 * @param PortalObjectReader    $reader    The reader double.
+	 * @param PortalActionForwarder $forwarder The forwarder double.
+	 *
+	 * @return PortalRowActionController
+	 */
+	private function dossierController(PortalObjectReader $reader, PortalActionForwarder $forwarder): PortalRowActionController {
+		$params = ['collection' => 'mijnDossiers', 'actionApp' => 'pipelinq', 'question' => 'Wanneer wordt dit besloten?', 'collectionId' => 'someone-elses'];
+		$request = $this->createMock(IRequest::class);
+		$request->method('getHeader')->willReturn('Bearer token');
+		$request->method('getParam')->willReturnCallback(static fn (string $key, mixed $default = null) => ($params[$key] ?? $default));
+
+		$aggregate = (new AttachedActionResolver())->resolve(contributions: [
+			['app' => 'opencatalogi', 'collections' => [['id' => 'mijnDossiers', 'register' => 'opencatalogi', 'schema' => 'collection', 'scopeField' => 'owner']], 'actions' => []],
+			['app' => 'pipelinq', 'collections' => [], 'actions' => [$this->askAboutDossier()]],
+		]);
+		$registry = $this->createMock(PortalContributionRegistry::class);
+		$registry->method('aggregateFor')->willReturn(['contributions' => $aggregate]);
+
+		$session = $this->createMock(PortalSessionService::class);
+		$session->method('resolveFromBearer')->willReturn(self::SUBJECT);
+
+		return new PortalRowActionController($request, $registry, $session, $reader, $forwarder, $this->createMock(AuditTrailService::class));
+	}//end dossierController()
+
+	/**
+	 * Attached action forwards with the proven row: the dossier is read
+	 * through opencatalogi's scope, the action goes to pipelinq with the
+	 * proven id under its rowField.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-journey-entry-points/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-attach-to-another-apps-collection-req-wje-004
+	 */
+	public function testAttachedActionForwardsWithTheProvenRow(): void {
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->expects($this->once())->method('readObject')
+			->with('opencatalogi', 'collection', 'owner', 'guardian-1', self::DOSSIER_ID, 'school-1', '', 'opencatalogi')
+			->willReturn(['id' => self::DOSSIER_ID, 'title' => 'Fietspad Oost']);
+
+		$response = $this->createMock(IResponse::class);
+		$response->method('getStatusCode')->willReturn(201);
+		$forwarder = $this->createMock(PortalActionForwarder::class);
+		$forwarder->method('isForwardable')->willReturn(true);
+		$forwarder->expects($this->once())->method('forward')
+			->with($this->askAboutDossier(), self::SUBJECT, ['question' => 'Wanneer wordt dit besloten?', 'collectionId' => self::DOSSIER_ID])
+			->willReturn($response);
+		$forwarder->method('decodeBody')->willReturn(['id' => 'ticket-1']);
+
+		$result = $this->dossierController($reader, $forwarder)->forward('opencatalogi', 'collection', self::DOSSIER_ID, 'askAboutDossier');
+
+		$this->assertSame(201, $result->getStatus());
+		$this->assertSame(['id' => 'ticket-1'], $result->getData());
+	}//end testAttachedActionForwardsWithTheProvenRow()
+
+	/**
+	 * Attached action on a foreign row: 404, nothing forwarded.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-journey-entry-points/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-attach-to-another-apps-collection-req-wje-004
+	 */
+	public function testAttachedActionOnAForeignRow(): void {
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->expects($this->once())->method('readObject')->willReturn(null);
+
+		$result = $this->dossierController($reader, $this->forwarderThatMustNotForward())
+			->forward('opencatalogi', 'collection', self::DOSSIER_ID, 'askAboutDossier');
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $result->getStatus());
+	}//end testAttachedActionOnAForeignRow()
+
+	/**
+	 * An action id the collection does not list is refused before any read.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-journey-entry-points/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-attach-to-another-apps-collection-req-wje-004
+	 */
+	public function testAnUnlistedAttachedActionIsForbidden(): void {
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->expects($this->never())->method('readObject');
+
+		$result = $this->dossierController($reader, $this->forwarderThatMustNotForward())
+			->forward('opencatalogi', 'collection', self::DOSSIER_ID, 'deleteEverything');
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $result->getStatus());
+	}//end testAnUnlistedAttachedActionIsForbidden()
 }//end class

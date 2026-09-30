@@ -37,6 +37,7 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\ActionScopeResolver;
+use OCA\Portaliq\Contribution\AttachedActionResolver;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Contribution\RowActionResolver;
 use OCA\Portaliq\Service\AuditTrailService;
@@ -166,17 +167,23 @@ class PortalRowActionController extends Controller implements PortalProtected {
 	 * @param string $schema The requested schema.
 	 * @param string $actionId The requested action.
 	 *
-	 * @return array{collection: array<string, mixed>, action: array<string, mixed>, app: string}|null
+	 * @return array{collection: array<string, mixed>, action: array<string, mixed>, app: string, rowApp?: string}|null
 	 */
 	private function authorisedRowAction(array $subject, string $register, string $schema, string $actionId): ?array {
 		$collectionId = (string)$this->request->getParam('collection', '');
-		foreach (($this->registry->aggregateFor($subject)['contributions'] ?? []) as $contribution) {
+		$contributions = ($this->registry->aggregateFor($subject)['contributions'] ?? []);
+		foreach ($contributions as $contribution) {
 			foreach (($contribution['collections'] ?? []) as $collection) {
-				if (($collection['register'] ?? '') !== $register
-					|| ($collection['schema'] ?? '') !== $schema
-					|| ($collectionId !== '' && ($collection['id'] ?? '') !== $collectionId)
-				) {
+				if ($this->isRequested(collection: $collection, requested: [$register, $schema, $collectionId]) === false) {
 					continue;
+				}
+
+				// An action another app attaches to this collection
+				// (woo-journey-entry-points D3): `?actionApp=` names that app.
+				$actionApp = (string)$this->request->getParam('actionApp', '');
+				if ($actionApp !== '' && $actionApp !== (string)($contribution['app'] ?? '')) {
+					$target = ['collection' => $collection, 'app' => (string)($contribution['app'] ?? '')];
+					return $this->attachedMatch(contributions: $contributions, subject: $subject, target: $target, actionApp: $actionApp, actionId: $actionId);
 				}
 
 				// The first collection on this register and schema decides, as
@@ -192,6 +199,56 @@ class PortalRowActionController extends Controller implements PortalProtected {
 
 		return null;
 	}//end authorisedRowAction()
+
+	/**
+	 * Whether a collection is the one the route names: its register and
+	 * schema, and its id when `?collection=` gives one.
+	 *
+	 * @param array<string, mixed>                $collection The collection.
+	 * @param array{0: string, 1: string, 2: string} $requested Register, schema, collection id or ''.
+	 *
+	 * @return bool
+	 */
+	private function isRequested(array $collection, array $requested): bool {
+		[$register, $schema, $collectionId] = $requested;
+
+		return ($collection['register'] ?? '') === $register
+			&& ($collection['schema'] ?? '') === $schema
+			&& ($collectionId === '' || ($collection['id'] ?? '') === $collectionId);
+	}//end isRequested()
+
+	/**
+	 * The match for an action another app attaches to this collection, or null.
+	 *
+	 * The row is still read through THIS collection's scope (`rowApp`); the
+	 * action is forwarded to its own app (`app`).
+	 *
+	 * @param array<int, array<string, mixed>> $contributions The subject's aggregate.
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param array{collection: array<string, mixed>, app: string} $target The target collection and its app.
+	 * @param string $actionApp The app of the action.
+	 * @param string $actionId The action id.
+	 *
+	 * @return array{collection: array<string, mixed>, action: array<string, mixed>, app: string, rowApp: string}|null
+	 *
+	 * @spec openspec/changes/woo-journey-entry-points/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-attach-to-another-apps-collection-req-wje-004
+	 */
+	private function attachedMatch(array $contributions, array $subject, array $target, string $actionApp, string $actionId): ?array {
+		$collection = $target['collection'];
+		$collectionApp = $target['app'];
+		$action = (new AttachedActionResolver())->attachedAction(
+			contributions: $contributions,
+			collectionApp: $collectionApp,
+			collection: $collection,
+			actionApp: $actionApp,
+			actionId: $actionId
+		);
+		if ($action === null || $this->trustAndEndpointHold(subject: $subject, collection: $collection, action: $action) === false) {
+			return null;
+		}
+
+		return ['collection' => $collection, 'action' => $action, 'app' => $actionApp, 'rowApp' => $collectionApp];
+	}//end attachedMatch()
 
 	/**
 	 * The endpoint row action a collection offers under this id, or null.
@@ -239,7 +296,7 @@ class PortalRowActionController extends Controller implements PortalProtected {
 	 * The row when the subject's collection scope reads it, else null (one
 	 * 404 for a foreign and a missing row alike).
 	 *
-	 * @param array{collection: array<string, mixed>, action: array<string, mixed>, app: string} $match The authorised row action.
+	 * @param array{collection: array<string, mixed>, action: array<string, mixed>, app: string, rowApp?: string} $match The authorised row action.
 	 * @param array<string, mixed> $subject The resolved subject.
 	 * @param array{register: string, schema: string, id: string} $target The route parameters.
 	 *
@@ -256,7 +313,7 @@ class PortalRowActionController extends Controller implements PortalProtected {
 			id: $target['id'],
 			organisation: (string)($subject['organisation'] ?? ''),
 			scopeClaim: (string)($collection['scopeClaim'] ?? ''),
-			contributingApp: $match['app'],
+			contributingApp: ($match['rowApp'] ?? $match['app']),
 			via: ($collection['via'] ?? null),
 			audience: (string)($subject['audience'] ?? ''),
 			fields: ($collection['fields'] ?? null)
@@ -269,7 +326,7 @@ class PortalRowActionController extends Controller implements PortalProtected {
 	 * under a declared `subjectField`, with the declared `scopeClaim`'s value
 	 * for the assertion. Null when either does not resolve.
 	 *
-	 * @param array{collection: array<string, mixed>, action: array<string, mixed>, app: string} $match The authorised row action.
+	 * @param array{collection: array<string, mixed>, action: array<string, mixed>, app: string, rowApp?: string} $match The authorised row action.
 	 * @param array<string, mixed> $subject The resolved subject.
 	 * @param string $rowId The proven row id.
 	 *

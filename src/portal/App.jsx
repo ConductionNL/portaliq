@@ -31,7 +31,7 @@ import { actingForHeld, keepActingFor, readActingFor } from '@portal/lib/myCases
 import { consumeOpenTarget, forgetOpenTarget, navKeyFor } from '@portal/lib/openRecord.js'
 import { consumeOidcCallbackFragment, createPortalApi, getToken, setToken } from '@portal/lib/portalApi.js'
 import { runAction } from '@portal/lib/rowAction.js'
-import { consumeSigninFailed, loginStartUrl } from '@portal/lib/signinRoute.js'
+import { consumeSigninFailed, loginStartUrl, signinOrganisation } from '@portal/lib/signinRoute.js'
 import useIdleSession from '@portal/lib/useIdleSession.js'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Loading from './components/Loading.jsx'
@@ -522,7 +522,7 @@ export default function App({ config, t: tProp }) {
 	function oidcLogin(p) {
 		// The route the organisation chose for this provider: its own OIDC
 		// broker or integriq's (signin-integriq-broker-login T09).
-		window.location.href = loginStartUrl(config.apiBase, config.organisationSlug, p.provider, p.route)
+		window.location.href = loginStartUrl(config.apiBase, signinOrganisation(config), p.provider, p.route, config.organisationSlug)
 	}
 
 	return (
@@ -622,9 +622,11 @@ export default function App({ config, t: tProp }) {
 						{(config.oidcProviders || []).length === 0 && (
 							<p className="portaliq-idp-hint">{t('No login method is configured for this organisation yet.')}</p>
 						)}
-						<button type="button" className="portaliq-devlogin" onClick={devLogin}>
-							Dev-login (test)
-						</button>
+						{config.devLogin === true && (
+							<button type="button" className="portaliq-devlogin" onClick={devLogin}>
+								Dev-login (test)
+							</button>
+						)}
 						{state.devError && <p className="portaliq-error" role="alert">{state.devError}</p>}
 					</section>
 				)}

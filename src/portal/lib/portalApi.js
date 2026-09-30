@@ -693,6 +693,23 @@ export function createPortalApi(config) {
 		},
 
 		/**
+		 * The items of one object the subject owns (my-dossiers): `{ label,
+		 * items, removeAction }` from the app's `itemList` provider, read only
+		 * after the server proved the object is the subject's. Null when the
+		 * list could not be read.
+		 *
+		 * @param {object} collection Manifest collection: `{ id, register, schema }`.
+		 * @param {string} id The object id.
+		 * @return {Promise<object|null>} The answer, or null.
+		 */
+		async fetchItems(collection, id) {
+			const body = await get(
+				`${col(collection.register, collection.schema)}/${encodeURIComponent(id)}/items?collection=${encodeURIComponent(collection.id)}`,
+			)
+			return body && Array.isArray(body.items) ? body : null
+		},
+
+		/**
 		 * Create an object via a declared `type: create` action. Only the action's
 		 * whitelisted fields are sent; the server stamps ownership.
 		 *
@@ -981,12 +998,24 @@ export function createPortalApi(config) {
 		 * @param {string} rowId The row's id.
 		 * @param {string} actionId The endpoint row action's id.
 		 * @param {object} [answers] The answers to send, `{}` by default.
+		 * @param {string} [actionApp] Another app whose action is attached to this collection.
 		 * @return {Promise<object>} `{ ok, status, body }`; `status` 0 on a network error.
 		 */
-		async forwardRowAction(collection, rowId, actionId, answers = {}) {
+		async forwardRowAction(
+			collection,
+			rowId,
+			actionId,
+			answers = {},
+			actionApp = '',
+		) {
+			// `actionApp` names another app's action attached to this
+			// collection (woo-journey-entry-points D3).
+			const attached = actionApp
+				? `&actionApp=${encodeURIComponent(actionApp)}`
+				: ''
 			try {
 				const res = await fetch(
-					`${base}${col(collection.register, collection.schema)}/${encodeURIComponent(rowId)}/actions/${encodeURIComponent(actionId)}?collection=${encodeURIComponent(collection.id)}`,
+					`${base}${col(collection.register, collection.schema)}/${encodeURIComponent(rowId)}/actions/${encodeURIComponent(actionId)}?collection=${encodeURIComponent(collection.id)}${attached}`,
 					{
 						method: 'POST',
 						headers: {

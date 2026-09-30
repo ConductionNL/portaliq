@@ -24,7 +24,8 @@ whole `itemList`. It never adds or widens an action.
 ## D2. Reading the items
 
 `GET /portal/api/collections/{register}/{schema}/{id}/items`,
-`PortalItemListController::show()`, mirrors the timeline controller: bearer,
+`PortalTimelineController::items()` (route `portalTimeline#items`), shares the
+timeline's ownership proof in one private method: bearer,
 the collection in the resident's own manifest, trust, the scoped read of the
 object (404 when it is not theirs), then the provider method. `PortalItemReader`
 calls the method and keeps per item only `id`, `title`, `url`, `note`,

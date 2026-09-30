@@ -38,6 +38,10 @@ const RUNTIME_CONFIG = loadState('portaliq', 'runtimeConfig', {
 	// signin-session-idle-warning-and-sso: the provider to try a silent
 	// sign-in with once per browser session, or '' for off.
 	silentSignIn: '',
+	// portal-signin-on-its-own-address: the organisation the login buttons
+	// start with, and whether the server accepts the dev login.
+	signinOrganisation: '',
+	devLogin: false,
 	featureFlags: {},
 	allowedEmbedOrigins: [],
 	apiBase: '/index.php/apps/portaliq/portal/api',
