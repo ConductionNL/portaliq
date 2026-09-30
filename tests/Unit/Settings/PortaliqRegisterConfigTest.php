@@ -295,10 +295,14 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// `regions` (portal-theme-blocks-and-contributed-pages tasks 4-7);
 		// page 0.5.0: `body.clearedRegions` and `draftBody.clearedRegions`.
 		// Additive.
-		// 0.48.0 (page 0.6.0): a page's place in the portal's page tree,
+		// 0.48.0: `portalAuditEntry` leaves the register; the portal's proof
+		// records live in OpenRegister's audit trail
+		// (consume-or-audit-trail-proof-records). The repair step
+		// MovePortalAuditEntries moves the existing records.
+		// 0.49.0 (page 0.6.0): a page's place in the portal's page tree,
 		// `parent` and `order` (portal-in-place-editing A3). Additive.
-		$this->assertSame('0.48.0', self::$register['info']['version']);
-		$this->assertSame('0.48.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.49.0', self::$register['info']['version']);
+		$this->assertSame('0.49.0', self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['page']['version']);
 		$this->assertSame(70, self::$register['components']['schemas']['page']['properties']['seoTitle']['maxLength']);
 		$this->assertSame(160, self::$register['components']['schemas']['page']['properties']['seoDescription']['maxLength']);
@@ -335,8 +339,6 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(['admin'], self::$register['components']['schemas']['activityAttendance']['authorization']['read']);
 		$this->assertArrayNotHasKey('fee', self::$register['components']['schemas']['activityOffer']['properties'], 'D19: an activity holds no amount');
 		$this->assertArrayNotHasKey('amount', self::$register['components']['schemas']['activityOffer']['properties'], 'D19: an activity holds no amount');
-		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalAuditEntry']['version']);
-		$this->assertContains('complete', self::$register['components']['schemas']['portalAuditEntry']['properties']['verb']['enum']);
 		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalCase']['version']);
 		$this->assertSame(['authenticated'], self::$register['components']['schemas']['portalCase']['authorization']['read']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalTrafficDaily']['version']);
@@ -767,6 +769,45 @@ class PortaliqRegisterConfigTest extends TestCase {
 	 *
 	 * @return void
 	 */
+	/**
+	 * consume-or-audit-trail-proof-records T04: the portal keeps no proof
+	 * record schema of its own, and no demo row names one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-consume-or-audit-trail-proof-records/tasks.md#T04
+	 */
+	public function testNoProofRecordSchemaIsLeft(): void {
+		$this->assertArrayNotHasKey('portalAuditEntry', self::$register['components']['schemas']);
+		$this->assertNotContains('portalAuditEntry', self::$register['components']['registers']['portaliq']['schemas']);
+		$mock = (string)file_get_contents(__DIR__ . '/../../../lib/Settings/portaliq_mock_register.json');
+		$this->assertStringNotContainsString('portalAuditEntry', $mock);
+		$seed = (string)file_get_contents(__DIR__ . '/../../e2e/ci-seed.sh');
+		$this->assertStringNotContainsString('portalAuditEntry', $seed);
+	}//end testNoProofRecordSchemaIsLeft()
+
+	/**
+	 * consume-or-audit-trail-proof-records T04: nothing in lib/ names the
+	 * retired schema but the repair step that moves its records.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-consume-or-audit-trail-proof-records/tasks.md#T04
+	 */
+	public function testNothingInLibNamesTheOldProofRecordButTheMove(): void {
+		$lib = realpath(__DIR__ . '/../../../lib');
+		$naming = [];
+		$files = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($lib, \FilesystemIterator::SKIP_DOTS));
+		foreach ($files as $file) {
+			if (str_contains((string)file_get_contents($file->getPathname()), 'portalAuditEntry') === true) {
+				$naming[] = substr($file->getPathname(), strlen($lib) + 1);
+			}
+		}
+
+		sort($naming);
+		$this->assertSame(['Repair/MovePortalAuditEntries.php'], $naming);
+	}//end testNothingInLibNamesTheOldProofRecordButTheMove()
+
 	public function testExactlyThreeSchemasAreReadableByAnonymousVisitors(): void {
 		$schemas = self::$register['components']['schemas'];
 

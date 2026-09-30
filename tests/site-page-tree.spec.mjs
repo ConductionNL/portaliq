@@ -74,8 +74,8 @@ test('the page schema carries parent and order, and the register version moved',
 	assert.equal(schemas.page.properties.order.type, 'integer')
 	assert.equal('format' in schemas.page.properties.parent, false, 'adding a format to a stored field is breaking')
 	assert.equal(schemas.page.version, '0.6.0')
-	assert.equal(register.info.version, '0.48.0')
-	assert.equal(register.components.registers.portaliq.version, '0.48.0')
+	assert.equal(register.info.version, '0.49.0')
+	assert.equal(register.components.registers.portaliq.version, '0.49.0')
 })
 
 test('pages form a tree ordered by order, then title; an orphan sits at the top', () => {

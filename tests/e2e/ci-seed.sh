@@ -285,7 +285,7 @@ required = {
     'registers': ['portaliq'],
     'schemas': [
         'portalAccount', 'portalSession', 'exampleDocument', 'portalMessage',
-        'portalSubmission', 'portalAuditEntry', 'portalNotification',
+        'portalSubmission', 'portalNotification',
         'portalOidcState', 'portalPage',
         # portal-traffic-analytics: the raw events and the daily rollups.
         'portalTrafficEvent', 'portalTrafficDaily',
