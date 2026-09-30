@@ -29,6 +29,23 @@ export function loginStartUrl(base, org, provider, route) {
 }
 
 /**
+ * The organisation a login button starts with.
+ *
+ * The runtime config's `organisationSlug` is the serving PORTAL's slug once a
+ * portal is resolved, which is not an organisation, so a portal whose slug
+ * differs from its organisation sent the login to a tenant with no broker.
+ * The server now names the organisation in `signinOrganisation`; an older
+ * server without that key keeps the old behaviour.
+ *
+ * @param {{organisationSlug?: string, signinOrganisation?: string}} config The runtime config.
+ * @return {string}
+ * @spec openspec/changes/portal-signin-on-its-own-address/tasks.md#T1
+ */
+export function signinOrganisation(config) {
+	return String(config?.signinOrganisation || config?.organisationSlug || '')
+}
+
+/**
  * Whether the page was reached from a failed login, read from the
  * `#signin=failed` fragment and removed from the address bar.
  *

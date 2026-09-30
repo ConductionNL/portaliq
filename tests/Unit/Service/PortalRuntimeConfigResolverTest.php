@@ -24,6 +24,7 @@ use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalRuntimeConfigResolver;
 use OCA\Portaliq\Service\PortalThemeResolver;
+use OCP\IConfig;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -412,6 +413,99 @@ class PortalRuntimeConfigResolverTest extends TestCase {
 		$this->assertSame('digid', $config['silentSignIn']);
 		$this->assertSame('', $resolver->runtimeConfigFor(portal: null, orgValue: '', locale: 'nl')['silentSignIn']);
 	}//end testOidcProvidersStillComeFromTheOrganisation()
+
+
+	/**
+	 * A portal opened by its own address offers its organisation's sign-in.
+	 *
+	 * Found on a school portal (slug `wilgenboom`, organisation
+	 * `default-organisation`): without `?org=` the login screen said no login
+	 * method was configured, and with it the DigiD button started the login
+	 * for organisation `wilgenboom`, the portal's slug, which no broker is
+	 * configured for. The providers and the sign-in organisation now follow
+	 * the portal's own `organisation`.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-signin-on-its-own-address/tasks.md#T1
+	 */
+	public function testAPortalOffersItsOwnOrganisationsSignIn(): void {
+		$resolver = $this->resolver(orgResolver: $this->orgWithBroker(slug: 'school-org'));
+		$portal = ['slug' => 'wilgenboom', 'title' => 'Ouderportaal', 'organisation' => 'school-org'];
+
+		$config = $resolver->runtimeConfigFor(portal: $portal, orgValue: '', locale: 'nl');
+
+		$this->assertSame([['provider' => 'digid', 'label' => 'DigiD']], $config['oidcProviders']);
+		$this->assertSame('school-org', $config['signinOrganisation']);
+		$this->assertSame('wilgenboom', $config['organisationSlug']);
+	}//end testAPortalOffersItsOwnOrganisationsSignIn()
+
+
+	/**
+	 * An explicit `?org=` still names the sign-in organisation, not the
+	 * portal's slug.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-signin-on-its-own-address/tasks.md#T1
+	 */
+	public function testTheOrgParameterNamesTheSignInOrganisation(): void {
+		$resolver = $this->resolver(orgResolver: $this->orgWithBroker(slug: 'school-org'));
+		$portal = ['slug' => 'wilgenboom', 'title' => 'Ouderportaal'];
+
+		$config = $resolver->runtimeConfigFor(portal: $portal, orgValue: 'school-org', locale: 'nl');
+
+		$this->assertSame('school-org', $config['signinOrganisation']);
+		$this->assertSame([['provider' => 'digid', 'label' => 'DigiD']], $config['oidcProviders']);
+	}//end testTheOrgParameterNamesTheSignInOrganisation()
+
+
+	/**
+	 * The dev login is only offered where the server accepts it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-signin-on-its-own-address/tasks.md#T2
+	 */
+	public function testTheDevLoginIsOfferedOnlyWhereItIsEnabled(): void {
+		$closed = $this->resolver()->runtimeConfigFor(portal: null, orgValue: '', locale: 'nl');
+		$this->assertFalse($closed['devLogin']);
+
+		$config = $this->createMock(IConfig::class);
+		$config->method('getSystemValueBool')->willReturn(false);
+		$config->method('getAppValue')->willReturn('yes');
+		$themeResolver = $this->createMock(PortalThemeResolver::class);
+		$open = new PortalRuntimeConfigResolver(
+			$this->createMock(PortalResolver::class),
+			$this->orgResolverDouble(),
+			$themeResolver,
+			$config
+		);
+		$this->assertTrue($open->runtimeConfigFor(portal: null, orgValue: '', locale: 'nl')['devLogin']);
+	}//end testTheDevLoginIsOfferedOnlyWhereItIsEnabled()
+
+
+	/**
+	 * An organisation service with one DigiD broker for one slug.
+	 *
+	 * @param string $slug The organisation slug that has the broker.
+	 *
+	 * @return PortalOrganisationConfigService The double.
+	 */
+	private function orgWithBroker(string $slug): PortalOrganisationConfigService {
+		$orgResolver = $this->createMock(PortalOrganisationConfigService::class);
+		$orgResolver->method('resolve')->willReturnCallback(
+			static function (string $orgSlug, string $locale = 'nl') use ($slug): array {
+				if ($orgSlug !== $slug) {
+					return self::NEUTRAL;
+				}
+
+				return array_merge(self::NEUTRAL, ['oidcProviders' => [['provider' => 'digid', 'label' => 'DigiD']]]);
+			}
+		);
+
+		return $orgResolver;
+	}//end orgWithBroker()
 
 
 	/**
