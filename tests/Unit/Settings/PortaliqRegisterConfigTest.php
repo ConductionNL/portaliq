@@ -303,8 +303,11 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// `parent` and `order` (portal-in-place-editing A3). Additive.
 		// 0.50.0 (portalOidcState 0.3.0): the optional `silent` flag of a
 		// silent sign-in (signin-session-idle-warning-and-sso T07). Additive.
-		$this->assertSame('0.50.0', self::$register['info']['version']);
-		$this->assertSame('0.50.0', self::$register['components']['registers']['portaliq']['version']);
+		// 0.51.0 (portal 0.9.0): the optional `registeredDetails` form
+		// bindings of the "My details" section (identity-registered-details
+		// T06). Additive.
+		$this->assertSame('0.51.0', self::$register['info']['version']);
+		$this->assertSame('0.51.0', self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalOidcState']['version']);
 		$this->assertSame('boolean', self::$register['components']['schemas']['portalOidcState']['properties']['silent']['type']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['page']['version']);
@@ -351,7 +354,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalTrafficRecording']['authorization']['read']);
 		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['page']['version']);
-		$this->assertSame('0.8.0', self::$register['components']['schemas']['portal']['version']);
+		$this->assertSame('0.9.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('0.12.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalSession']['version']);
@@ -741,6 +744,27 @@ class PortaliqRegisterConfigTest extends TestCase {
 			$this->assertFalse($check(['type' => 'grid', 'widgets' => [], 'clearedRegions' => ['sidebar']]), $body.' clears known regions only');
 		}
 	}//end testThePortalFillsRegionsAndAPageEmptiesThem()
+
+	/**
+	 * identity-registered-details T06: a portal names the two form bindings of
+	 * its "My details" section, validated with the real fragment.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/identity-registered-details/specs/registered-details/spec.md#requirement-a-resident-can-ask-for-a-correction-req-ird-004
+	 */
+	public function testThePortalNamesTheFormsOfMyDetails(): void {
+		$schema = self::$register['components']['schemas']['portal'];
+		$valid  = $this->portalValidator(schema: $schema);
+
+		$this->assertTrue($valid(['title' => 'Mijn gemeente', 'registeredDetails' => [
+			'correctionFormBinding'           => 'binding-correction',
+			'addressInvestigationFormBinding' => 'binding-address',
+		]]));
+		$this->assertTrue($valid(['title' => 'Mijn gemeente', 'registeredDetails' => ['correctionFormBinding' => 'binding-correction']]), 'each link is optional');
+		$this->assertFalse($valid(['title' => 'Mijn gemeente', 'registeredDetails' => ['correctionFormBinding' => ['id' => 'x']]]), 'a binding is named by its id');
+		$this->assertFalse($valid(['title' => 'Mijn gemeente', 'registeredDetails' => ['brpUrl' => 'https://brp.example']]), 'the portal holds no source of its own');
+	}//end testThePortalNamesTheFormsOfMyDetails()
 
 	/**
 	 * A validator for portal records against the real schema fragment.

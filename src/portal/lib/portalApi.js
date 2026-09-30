@@ -419,6 +419,29 @@ export function createPortalApi(config) {
 		},
 
 		/**
+		 * The caller's own registered details: the BRP record for a resident,
+		 * the KvK record for a business user (identity-registered-details).
+		 * No identifier is sent: the server reads the account behind the
+		 * bearer. Any failure reads as an unavailable source, never as an
+		 * empty record.
+		 *
+		 * @return {Promise<object>} `{available: true, kind, person|company, links}` or `{available: false, reason}`.
+		 *
+		 * @spec openspec/changes/identity-registered-details/specs/registered-details/spec.md#requirement-a-resident-sees-their-own-brp-record-req-ird-001
+		 */
+		async fetchRegisteredDetails() {
+			try {
+				const json = await get('/identity/registered-details')
+				if (json && typeof json.available === 'boolean') {
+					return json
+				}
+			} catch {
+				// Falls through to the unavailable answer.
+			}
+			return { available: false, reason: 'source_unavailable' }
+		},
+
+		/**
 		 * The access requests this user made, with the answers they were
 		 * given (identity-access-requests, REQ-IAR-001). A refused answer
 		 * reads as none, never as an error.

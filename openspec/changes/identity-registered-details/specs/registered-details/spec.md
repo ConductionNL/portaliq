@@ -6,7 +6,7 @@ status: proposed
 
 **Status:** proposed
 **Scope:** portaliq (owner); openregister supplies the person and company lookups
-**Depends on:** `portal-identity-and-the-organisations-cases`, `portal-intake-form-as-an-object`, openregister `integration-person-lookup` and `integration-company-lookup`
+**Depends on:** `portal-identity-and-the-organisations-cases`, `portal-intake-form-as-an-object`, openregister `integration-brp-haalcentraal` (`BrpPersonProvider`) and `integration-kvk-opencorporates` (`KvkProvider`)
 
 ## Purpose
 
@@ -27,6 +27,7 @@ they open the section. The identifier SHALL come from the caller's own
 record and SHALL NOT send the BSN or the raw lookup answer to the browser.
 
 #### Scenario: A resident signed in with DigiD sees their details
+@e2e exclude The CI instance configures no brp-haalcentraal source; tests/Unit/Service/Identity/PortalRegisteredDetailsServiceTest.php::testADigidAccountWithAValidBsnSeesItsPersonRecordAndNeverTheBsn maps a real HaalCentraal person through OpenRegister's real BrpPersonProvider class, and tests/registered-details.spec.mjs renders it.
 - **GIVEN** a resident signed in with DigiD whose account holds a valid BSN as identity reference
 - **WHEN** they open "My details" in the portal
 - **THEN** they see their name, date of birth and address as the BRP holds them
@@ -48,6 +49,7 @@ name, KvK number, legal form and registered branches the KvK holds for the
 KvK number on their account, read through OpenRegister's company lookup.
 
 #### Scenario: A business user sees the company record
+@e2e exclude The CI instance configures no kvk source; tests/Unit/Service/Identity/PortalRegisteredDetailsServiceTest.php::testAnEherkenningAccountSeesItsCompanyWithEveryBranch maps real KvK Zoeken rows through OpenRegister's real KvkProvider class, and tests/registered-details.spec.mjs renders them.
 - **GIVEN** a business user signed in with eHerkenning for KvK number 12345678
 - **WHEN** they open "My details"
 - **THEN** they see the trade name, legal form and branches the KvK holds for 12345678
@@ -72,11 +74,13 @@ form. Where an address investigation form is bound, the address block SHALL
 offer "Something wrong at this address?". An unbound link SHALL NOT render.
 
 #### Scenario: A bound correction form is offered
+@e2e exclude The link appears only beside a record, which needs a BRP source the CI instance lacks; tests/Unit/Service/Identity/PortalRegisteredDetailsLinksTest.php::testABoundAndPublishedFormBecomesALinkIntoThePortalSite and tests/registered-details.spec.mjs cover it.
 - **GIVEN** a portal whose `registeredDetails.correctionFormBinding` names a published form binding
 - **WHEN** a resident opens "My details"
 - **THEN** they see "Report an error in these details", and following it opens that form
 
 #### Scenario: No binding, no link
+@e2e exclude Same reason; tests/Unit/Service/Identity/PortalRegisteredDetailsLinksTest.php::testAnUnboundOrUnpublishedFormGivesNoLink and tests/registered-details.spec.mjs cover it.
 - **GIVEN** a portal with no correction form bound
 - **WHEN** a resident opens "My details"
 - **THEN** no correction link is shown
@@ -88,6 +92,7 @@ object, the address block SHALL show that number and no names. When it cannot,
 the block SHALL say the number is not available.
 
 #### Scenario: The count is shown without names
+@e2e exclude Blocked on the openregister count by address object (task T07); tests/registered-details.spec.mjs renders a given count as a number with no names.
 - **GIVEN** openregister answers a count of 3 for the resident's address object
 - **WHEN** the resident opens "My details"
 - **THEN** they see that 3 people are registered at their address, and no name of any of them

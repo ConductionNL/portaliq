@@ -319,6 +319,8 @@ return [
         ['name' => 'portalIdentity#acceptInvitation', 'url' => '/portal/api/identity/invitation/accept', 'verb' => 'POST'],
         ['name' => 'portalAccountSelf#updateDetails', 'url' => '/portal/api/identity/details', 'verb' => 'PATCH'],
         ['name' => 'portalAccountSelf#details', 'url' => '/portal/api/identity/details', 'verb' => 'GET'],
+        // What the BRP or the KvK holds about the bearer (identity-registered-details).
+        ['name' => 'portalRegisteredDetails#show', 'url' => '/portal/api/identity/registered-details', 'verb' => 'GET'],
         // The resident's own notice choices per kind and channel
         // (inbox-notifications-and-preferences).
         ['name' => 'portalAccountSelf#notificationPreferences', 'url' => '/portal/api/identity/notification-preferences', 'verb' => 'GET'],

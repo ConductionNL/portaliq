@@ -1853,7 +1853,13 @@
         "A page cannot move under itself.": "A page cannot move under itself.",
         "A menu item needs a name.": "A menu item needs a name.",
         "Silent sign-in": "Silent sign-in",
-        "Whether the start asked the broker to sign in without a prompt. A silent row the broker answers with login_required lands on the login screen without an error. Absent means false.": "Whether the start asked the broker to sign in without a prompt. A silent row the broker answers with login_required lands on the login screen without an error. Absent means false."
+        "Whether the start asked the broker to sign in without a prompt. A silent row the broker answers with login_required lands on the login screen without an error. Absent means false.": "Whether the start asked the broker to sign in without a prompt. A silent row the broker answers with login_required lands on the login screen without an error. Absent means false.",
+        "My details forms": "My details forms",
+        "The request forms the \"My details\" section links to. Each names a published form binding of this portal by its id. An empty or unpublished binding shows no link. The portal changes no base registration: a request goes to the organisation like any other form.": "The request forms the \"My details\" section links to. Each names a published form binding of this portal by its id. An empty or unpublished binding shows no link. The portal changes no base registration: a request goes to the organisation like any other form.",
+        "Correction form": "Correction form",
+        "The form binding behind \"Report an error in these details\".": "The form binding behind \"Report an error in these details\".",
+        "Address investigation form": "Address investigation form",
+        "The form binding behind \"Something wrong at this address?\", shown to residents only.": "The form binding behind \"Something wrong at this address?\", shown to residents only."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

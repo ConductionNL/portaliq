@@ -1618,7 +1618,7 @@
 			"id": "cmp-id-brp",
 			"area": "identity",
 			"name": "See the personal details the base registration (BRP) holds about you.",
-			"portaliq": "no",
+			"portaliq": "yes",
 			"open-inwoner": "yes",
 			"nl-portal": "yes",
 			"xxllnc-pip": "yes",
@@ -1632,12 +1632,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/integrating-objects-with-third-party-services/managing-data-from-external-systems: a proxy object can 'store and retrieve data from an external data source', so BRP data could be shown on a display page. No BRP connector is documented; the proxy storage type for BRP would be custom (only Salesforce is named). [was no: the earlier no rested on silence]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "Searched lib/ for BRP/StUF-BG/Basisregistratie/haalcentraal: no match outside comment prose. portalAccount only stores identityType/identityRef/displayName/email (lib/Settings/portaliq_register.json:356-400), no BRP-sourced field set",
-				"reachedOn": "nothing reaches it",
+				"state": "built",
+				"evidence": "lib/Service/Identity/PortalRegisteredDetailsService.php reads the caller's own portalAccount (digid/eidas + a BSN passing the eleven test) and calls OpenRegister's BrpPersonProvider::lookupByBsn in process; lib/Service/Identity/RegisteredDetailsShape.php maps it to name, birthDate, address; the BSN and the raw object never reach the browser. Tests: tests/Unit/Service/Identity/PortalRegisteredDetailsServiceTest.php (real OR provider class), tests/registered-details.spec.mjs. Needs the OpenConnector source brp-haalcentraal (docs/operations/my-registered-details.md).",
+				"reachedOn": "Signed-in portal (/apps/portaliq/portal) -> nav 'My details' (src/portal/App.jsx, special 'details') -> src/portal/components/RegisteredDetailsPage.jsx -> GET /portal/api/identity/registered-details (PortalRegisteredDetailsController::show, bearer only)",
 				"owner": "ConductionNL/portaliq",
-				"note": "Portaliq's own account record holds only what the broker's claims or a clerk typed in; there is no BRP/Haal Centraal lookup anywhere in this app. Specified in openspec/changes/identity-registered-details (OpenSpec pass 2026-09-27).",
-				"origin": "competitor"
+				"note": "Portaliq's own account record holds only what the broker's claims or a clerk typed in; there is no BRP/Haal Centraal lookup anywhere in this app. Built by openspec/changes/identity-registered-details (build-all lane 17, 2026-09-30).",
+				"origin": "competitor",
+				"change": "identity-registered-details"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1647,7 +1648,7 @@
 			"id": "cmp-id-correct",
 			"area": "identity",
 			"name": "Ask for a correction of your personal details.",
-			"portaliq": "no",
+			"portaliq": "yes",
 			"open-inwoner": "no",
 			"nl-portal": "partial",
 			"xxllnc-pip": "no",
@@ -1661,12 +1662,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/understanding-object-integrations/using-forms-with-objects and https://learn.liferay.com/w/dxp/low-code/objects/enabling-workflows-for-objects: a correction request can be a form-backed object entry routed through workflow. The correction process against a base registration is not documented and would be custom. [was no: the earlier no rested on silence]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "The nearest capability is id-update-own-details (PortalAccountSelfController.php:87 updateDetails, PATCH /portal/api/identity/details) which lets a subject change displayName/email directly, not 'ask for a correction' of an authoritative source",
-				"reachedOn": "nothing reaches it (same as id-update-own-details)",
+				"state": "built",
+				"evidence": "portal.registeredDetails.correctionFormBinding (register 0.51.0, portal 0.9.0) names a published portalFormBinding; lib/Service/Identity/PortalRegisteredDetailsLinks.php turns it into a site link (portaliq.portalPage.site ?portal&route) and the section shows 'Report an error in these details'; an unset or unpublished binding shows no link. The request is an ordinary intake submission to the case app. Tests: PortalRegisteredDetailsLinksTest, PortaliqRegisterConfigTest::testThePortalNamesTheFormsOfMyDetails (Opis on the real portal schema), tests/registered-details.spec.mjs.",
+				"reachedOn": "Signed-in portal (/apps/portaliq/portal) -> nav 'My details' (src/portal/App.jsx, special 'details') -> src/portal/components/RegisteredDetailsPage.jsx -> GET /portal/api/identity/registered-details (PortalRegisteredDetailsController::show, bearer only)",
 				"owner": "ConductionNL/portaliq",
-				"note": "Even if reached, updateDetails() edits portaliq's own copy of the two fields it stores; it is not a correction-request workflow against a base registration. Specified in openspec/changes/identity-registered-details (OpenSpec pass 2026-09-27).",
-				"origin": "competitor"
+				"note": "Even if reached, updateDetails() edits portaliq's own copy of the two fields it stores; it is not a correction-request workflow against a base registration. Built by openspec/changes/identity-registered-details (build-all lane 17, 2026-09-30).",
+				"origin": "competitor",
+				"change": "identity-registered-details"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1705,7 +1707,7 @@
 			"id": "cmp-id-company",
 			"area": "identity",
 			"name": "See the details the Chamber of Commerce (KvK) holds about your company.",
-			"portaliq": "no",
+			"portaliq": "yes",
 			"open-inwoner": "partial",
 			"nl-portal": "yes",
 			"xxllnc-pip": "yes",
@@ -1719,12 +1721,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/integrating-objects-with-third-party-services/managing-data-from-external-systems: proxy objects read external data sources; a KvK connector is not documented and the storage type would be custom. [was no: the earlier no rested on silence]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "Searched lib/ for KvK/Kamer van Koophandel/company-register lookups: none found; eherkenning preset (OidcClaimMapperService.php:82-88) only maps identityRef/audience, no company-detail fetch",
-				"reachedOn": "nothing reaches it",
+				"state": "built",
+				"evidence": "PortalRegisteredDetailsService calls OpenRegister's KvkProvider::lookupByKvkNumber for an eherkenning account with an 8-digit identityRef; RegisteredDetailsShape::company gives tradeName, kvkNumber, legalForm (when KvK sends rechtsvorm) and every branch; RegisteredDetailsPage.jsx shows them. Tests: PortalRegisteredDetailsServiceTest::testAnEherkenningAccountSeesItsCompanyWithEveryBranch, tests/registered-details.spec.mjs. Needs the OpenConnector source kvk.",
+				"reachedOn": "Signed-in portal (/apps/portaliq/portal) -> nav 'My details' (src/portal/App.jsx, special 'details') -> src/portal/components/RegisteredDetailsPage.jsx -> GET /portal/api/identity/registered-details (PortalRegisteredDetailsController::show, bearer only)",
 				"owner": "ConductionNL/portaliq",
-				"note": "eHerkenning login authenticates the business identity but portaliq does not fetch or display KvK company data. Specified in openspec/changes/identity-registered-details (OpenSpec pass 2026-09-27).",
-				"origin": "competitor"
+				"note": "eHerkenning login authenticates the business identity but portaliq does not fetch or display KvK company data. Built by openspec/changes/identity-registered-details (build-all lane 17, 2026-09-30).",
+				"origin": "competitor",
+				"change": "identity-registered-details"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -8221,7 +8224,7 @@
 			"id": "cmp-id-residents-at-address",
 			"area": "identity",
 			"name": "See how many people are registered at your address, and start an address investigation when that looks wrong.",
-			"portaliq": "no",
+			"portaliq": "partial",
 			"open-inwoner": "no",
 			"nl-portal": "yes",
 			"xxllnc-pip": "no",
@@ -8235,12 +8238,13 @@
 				"liferay-dxp": "https://learn.liferay.com/w/dxp/low-code/objects/integrating-objects-with-third-party-services/managing-data-from-external-systems: a proxy object could show BRP data; the investigation request could be a form. No BRP connector is documented (as cmp-id-brp). [was unknown; custom: BRP proxy and request flow]"
 			},
 			"built": {
-				"state": "specified",
-				"evidence": "grep -riE 'brp|bewoner|adresonderzoek|residents' lib src: 0 domain hits; existing row cmp-id-brp is no",
-				"reachedOn": "nothing reaches it",
+				"state": "building",
+				"evidence": "Address investigation built: portal.registeredDetails.addressInvestigationFormBinding -> 'Something wrong at this address?' under the resident's address (PortalRegisteredDetailsLinks, residents only). The count is not: residentsAtAddress stays null and the section says 'The number of residents at this address is not available.' until openregister answers a count by address object (ZoekMetAdresseerbaarObjectIdentificatie, numbers only); drafted for Ruben in for-ruben/openregister-brp-residents-at-address-count.md.",
+				"reachedOn": "Signed-in portal (/apps/portaliq/portal) -> nav 'My details' (src/portal/App.jsx, special 'details') -> src/portal/components/RegisteredDetailsPage.jsx -> GET /portal/api/identity/registered-details (PortalRegisteredDetailsController::show, bearer only)",
 				"owner": "ConductionNL/portaliq",
-				"note": "No BRP read and no address-investigation request. Specified in openspec/changes/identity-registered-details (OpenSpec pass 2026-09-27).",
-				"origin": "code"
+				"note": "No BRP read and no address-investigation request. Built by openspec/changes/identity-registered-details (build-all lane 17, 2026-09-30). Missing half: openregister's count by address object.",
+				"origin": "code",
+				"change": "identity-registered-details"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
