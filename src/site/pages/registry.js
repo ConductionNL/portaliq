@@ -71,6 +71,23 @@ registerBlockSlot('citizenCase', () => import('../components/e/CitizenCase.vue')
 const loaders = new Map(Object.entries(BUILT_IN))
 
 /**
+ * Sections whose page shows its own title as the page's h1, so the shell
+ * leaves its heading out and the page has one title, not the same one twice.
+ */
+const OWNS_HEADING = new Set(['cases', 'access', 'details', 'account'])
+
+/**
+ * Whether the page for an entry titles itself.
+ *
+ * @param {object|null} entry A navigation entry.
+ * @return {boolean}
+ * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ */
+export function pageOwnsHeading(entry) {
+	return Boolean(entry && OWNS_HEADING.has(entry.special) && sitePageLoader(entry))
+}
+
+/**
  * Register the component loader for a key.
  *
  * @param {string} key An entry key, a section name or `contribution`.

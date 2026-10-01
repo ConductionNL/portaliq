@@ -206,7 +206,7 @@ test('site: every app\'s cases are in one list, each naming its source, with the
 		closedMarker: true,
 		canOpen: (target) => target.app === 'dossiq',
 	})
-	assert.match(html, /<h2[^>]*>My cases<\/h2>/)
+	assert.match(html, /<h1[^>]*>My cases<\/h1>/)
 	assert.match(html, /role="tab"[^>]*aria-selected="true"[^>]*>Open \(2\)</)
 	assert.match(html, /role="tab"[^>]*aria-selected="false"[^>]*>Closed \(1\)</)
 	assert.match(html, /role="tabpanel"/)

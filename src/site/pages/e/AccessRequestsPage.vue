@@ -15,9 +15,11 @@
 		class="pq-access"
 		aria-labelledby="pq-access-title"
 		data-testid="access-requests">
-		<h2 id="pq-access-title" class="utrecht-heading-2">
+		<!-- The page title: the shell leaves its own h1 out for this page
+		     (OWNS_HEADING in pages/registry.js). -->
+		<h1 id="pq-access-title" class="utrecht-heading-2">
 			{{ t('Access to cases') }}
-		</h2>
+		</h1>
 		<p class="utrecht-paragraph">
 			{{
 				t(

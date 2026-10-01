@@ -63,6 +63,7 @@
 
 		<template v-else-if="entry">
 			<h1
+				v-if="!ownsHeading"
 				id="site-account-title"
 				class="utrecht-heading-2"
 				data-testid="site-account-title">
@@ -89,7 +90,7 @@ import { markRaw } from 'vue'
 import PlaceholderPage from '../pages/PlaceholderPage.vue'
 import { navKeyFor, OPEN_STORAGE_KEY } from '../../shared/openRecord.js'
 import { routeForNav } from '../../shared/portalNav.js'
-import { sitePageLoader } from '../pages/registry.js'
+import { pageOwnsHeading, sitePageLoader } from '../pages/registry.js'
 
 /**
  * The names a component declares as props, whether as an array or an object.
@@ -156,6 +157,15 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * @return {boolean} Whether the page on screen shows its own h1.
+		 *
+		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 */
+		ownsHeading() {
+			return pageOwnsHeading(this.entry)
+		},
+
 		/**
 		 * The page contract (pages/registry.js), narrowed to what the page
 		 * on screen declares.
