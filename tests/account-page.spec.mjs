@@ -11,7 +11,7 @@
 //   node --test tests/account-page.spec.mjs
 
 import assert from 'node:assert/strict'
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
@@ -49,12 +49,12 @@ async function load(relative) {
 	compileLoading(OUT_DIR)
 	writeFileSync(out, compiled.code
 		.replace("'./Loading.jsx'", `'${LOADING_MODULE}'`)
-		.replace("'../lib/account.js'", `'${pathToFileURL(join(OUT_DIR, 'lib_account.mjs')).href}'`))
+		.replace("'../../shared/account.js'", `'${pathToFileURL(join(ROOT, 'src', 'shared', 'account.js')).href}'`))
 	return import(pathToFileURL(out).href)
 }
 
 const { createPortalApi } = await load('lib/portalApi.js')
-const { consumeConfirmEmail, refusalText, promptDismissed, dismissPrompt } = await load('lib/account.js')
+const { consumeConfirmEmail, refusalText, promptDismissed, dismissPrompt } = await import(pathToFileURL(join(ROOT, 'src', 'shared', 'account.js')).href)
 const { default: AccountPage, ContactPrompt } = await load('components/AccountPage.jsx')
 
 const BASE = '/apps/portaliq/portal/api'
@@ -209,8 +209,8 @@ test('the prompt for an address links to My account and stays away once dismisse
 })
 
 test('every string of the page is in both locales, without em-dashes', () => {
-	const sources = ['components/AccountPage.jsx', 'lib/account.js']
-		.map((f) => readFileSync(join(ROOT, 'src', 'portal', f), 'utf8'))
+	const sources = [join('portal', 'components', 'AccountPage.jsx'), join('shared', 'account.js')]
+		.map((f) => readFileSync(join(ROOT, 'src', f), 'utf8'))
 		.join('\n')
 	const keys = [...sources.matchAll(/(?:\bt\(|return |: |\|\| )'([A-Z][^']+)'/g)].map((m) => m[1])
 	assert.ok(keys.length > 20, `found ${keys.length} keys`)
@@ -229,4 +229,134 @@ test('the portal shell offers "My account", consumes the link and shows the prom
 	assert.match(app, /active\.special === 'account'/)
 	assert.match(app, /consumeConfirmEmail\(window\.location, window\.history\)/)
 	assert.match(app, /state\.session\.contactPrompt === true/)
+})
+
+// The Vue port on the site (site-reaches-portal-parity T18, REQ-SRP-037).
+
+const { renderSfc, loadSfc } = await import('./support/render-sfc.mjs')
+const siteE = await import(pathToFileURL(join(ROOT, 'src', 'site', 'pages', 'e', 'index.js')).href)
+const { default: siteStrings } = await import(pathToFileURL(join(ROOT, 'src', 'site', 'pages', 'e', 'strings.js')).href)
+
+test('site: "My account" shows the name, both kinds of address with the preferred ones marked, and the channel', async () => {
+	const html = await renderSfc('src/site/pages/e/AccountPage.vue', { api: {}, t, initialDetails: DETAILS })
+	assert.match(html, /value="Ans de Vries"/)
+	assert.match(html, /a@example\.nl/)
+	assert.match(html, /c@example\.nl/)
+	assert.match(html, /Waiting for confirmation/)
+	assert.match(html, /\+31612345678/)
+	assert.equal((html.match(/\(Preferred\)/g) || []).length, 2, 'one preferred e-mail and one preferred phone')
+	assert.match(html, /value="post" checked/)
+	assert.match(html, /Send the link again/)
+	assert.equal((html.match(/Make preferred/g) || []).length, 0)
+	assert.match(html, /<label for="pq-account-name"/)
+	assert.doesNotMatch(html, /Your cases stay with the organisation\./, 'the removal text shows in the confirmation step only')
+})
+
+test('site: the removal step says the cases stay, and a failed read says so', async () => {
+	const html = await renderSfc('src/site/pages/e/AccountPage.vue', { api: {}, t, initialDetails: DETAILS, initialConfirmRemove: true })
+	assert.match(html, /Your portal account is removed\. Your cases stay with the organisation\./)
+	assert.match(html, /Yes, remove my account/)
+	const failed = await renderSfc('src/site/pages/e/AccountPage.vue', { api: {}, t, initialDetails: { failed: true } })
+	assert.match(failed, /role="alert"[^>]*>Your account cannot be shown right now\./)
+})
+
+test('site: an address action shows the outcome, reads the account again, and a refusal keeps its sentence', async () => {
+	const page = await loadSfc('src/site/pages/e/AccountPage.vue')
+	const calls = []
+	const api = {
+		addContactAddress: async (kind, value) => { calls.push(['add', kind, value]); return { ok: true } },
+		preferContactAddress: async () => ({ ok: false, error: 'confirm_first' }),
+		removeOwnAccount: async () => ({ ok: true }),
+		getDetails: async () => { calls.push(['read']); return DETAILS },
+	}
+	const emitted = []
+	const vm = { api, t, notice: '', error: '', details: null, name: '', $emit: (e) => emitted.push(e) }
+	vm.run = page.methods.run.bind(vm)
+	vm.reload = page.methods.reload.bind(vm)
+
+	assert.equal(await page.methods.act.call(vm, 'add', 'email', 'b@example.nl'), true)
+	assert.equal(vm.notice, 'We sent a link to b@example.nl. Follow it to confirm the address.')
+	assert.deepEqual(calls, [['add', 'email', 'b@example.nl'], ['read']])
+	assert.equal(vm.name, 'Ans de Vries')
+
+	assert.equal(await page.methods.act.call(vm, 'prefer', 'email', 'c@example.nl'), false)
+	assert.equal(vm.error, 'Confirm this address first.')
+	assert.equal(vm.notice, '')
+
+	await page.methods.removeAccount.call(vm)
+	assert.deepEqual(emitted, ['removed'], 'the shell signs out on `removed`')
+})
+
+test('site: the confirmation link is read once, posted, and answered with a sentence', async () => {
+	const posted = []
+	const api = { confirmEmail: async (secret) => { posted.push(secret); return { ok: secret === 'good' } } }
+	const location = { hash: '#confirm-email=good', href: 'https://gemeente.example/apps/portaliq/site#confirm-email=good' }
+	const replaced = []
+	const history = { replaceState: (_s, _t, url) => { replaced.push(url); location.hash = '' } }
+
+	assert.deepEqual(await siteE.confirmEmailFromLink({ api, t, location, history }), { role: 'status', text: 'Your e-mail address is confirmed.' })
+	assert.deepEqual(replaced, ['https://gemeente.example/apps/portaliq/site'])
+	assert.equal(await siteE.confirmEmailFromLink({ api, t, location, history }), null, 'read once')
+	assert.deepEqual(
+		await siteE.confirmEmailFromLink({ api, t, location: { hash: '#confirm-email=bad', href: 'x#confirm-email=bad' }, history: {} }),
+		{ role: 'alert', text: 'This link is no longer valid.' },
+	)
+	assert.deepEqual(posted, ['good', 'bad'])
+})
+
+test('site: the prompt for an address opens My account and stays away once dismissed', async () => {
+	const html = await renderSfc('src/site/components/e/ContactPrompt.vue', { t })
+	assert.match(html, /role="status"/)
+	assert.match(html, /Add an e-mail address so we can tell you when something changes\./)
+	assert.match(html, /Go to My account/)
+	assert.match(html, /Not now/)
+
+	const prompt = await loadSfc('src/site/components/e/ContactPrompt.vue')
+	const went = []
+	prompt.methods.open.call({ navigate: (key) => went.push(key) })
+	assert.deepEqual(went, ['__account__'])
+
+	const store = new Map()
+	const session = { getItem: (k) => store.get(k) ?? null, setItem: (k, v) => store.set(k, v) }
+	assert.equal(await siteE.contactPromptWanted({ contactPrompt: true }, session), true)
+	assert.equal(await siteE.contactPromptWanted({ contactPrompt: false }, session), false)
+	assert.equal(await siteE.contactPromptWanted(null, session), false)
+	dismissPrompt(session)
+	assert.equal(await siteE.contactPromptWanted({ contactPrompt: true }, session), false)
+})
+
+test('site: the slice exports its pages by the React section keys, each a lazy chunk', () => {
+	assert.deepEqual(Object.keys(siteE.pages).sort(), ['__access__', '__account__', '__cases__', '__details__'])
+	const index = readFileSync(join(ROOT, 'src', 'site', 'pages', 'e', 'index.js'), 'utf8')
+	assert.doesNotMatch(index, /^import /m, 'the entry file imports nothing eagerly')
+	assert.match(index, /@typedef \{object\} SitePageProps/)
+	const parts = readFileSync(join(ROOT, 'src', 'site', 'components', 'e', 'index.js'), 'utf8')
+	for (const name of ['CitizenCase', 'ActingForSwitcher', 'ContactPrompt']) {
+		assert.match(parts, new RegExp(`export const ${name} = defineAsyncComponent\\(\\s*\\(\\) => import\\('\\./${name}\\.vue'\\),?\\s*\\)`))
+	}
+})
+
+test('site: every string slice e uses is in strings.js in both languages, without em-dashes', () => {
+	const dirs = [['pages', 'e'], ['components', 'e'], ['modals', 'e']]
+	const sources = dirs
+		.flatMap((d) => readdirSync(join(ROOT, 'src', 'site', ...d)).map((f) => join(ROOT, 'src', 'site', ...d, f)))
+		.filter((f) => !f.endsWith('strings.js'))
+		.concat([join(ROOT, 'src', 'shared', 'account.js')])
+		.map((f) => readFileSync(f, 'utf8'))
+		.join('\n')
+	const keys = new Set([...sources.matchAll(/\bt\(\s*'([^']+)'/g)].map((m) => m[1]))
+	for (const m of sources.matchAll(/(?:return |: |\? |\|\| )'([A-Z][^']+[.?])'/g)) {
+		keys.add(m[1])
+	}
+	assert.ok(keys.size > 80, `found ${keys.size} keys`)
+	for (const key of keys) {
+		assert.ok(key in siteStrings.nl, `strings.js nl lacks "${key}"`)
+		assert.ok(key in siteStrings.en, `strings.js en lacks "${key}"`)
+	}
+	for (const locale of ['nl', 'en']) {
+		for (const [key, text] of Object.entries(siteStrings[locale])) {
+			assert.doesNotMatch(text, /—/, `${locale} "${key}" has an em-dash`)
+			assert.equal(text, (locale === 'nl' ? nl : en)[key], `${locale} "${key}" is the React text`)
+		}
+	}
 })
