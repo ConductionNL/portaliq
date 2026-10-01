@@ -1,5 +1,7 @@
 # Proposal: inbox-reply-with-attachments
 
+> Retargeted 2026-10-01 (`site-reaches-portal-parity`): new frontend work in this change lands in the Vue site `src/site/`, not in the React portal `src/portal/`, which is being retired.
+
 ## Why
 
 A resident reads a message from their municipality in the portal inbox and cannot answer it there. They cannot add a file to anything they send, and a file the organisation attached to its message is invisible to them.

@@ -5,6 +5,8 @@ depends_on: [portal-intake-form-as-an-object]
 
 # Proposal: intake-pay-on-submit
 
+> Retargeted 2026-10-01 (`site-reaches-portal-parity`): new frontend work in this change lands in the Vue site `src/site/`, not in the React portal `src/portal/`, which is being retired.
+
 ## Why
 
 Many requests carry a fee: a parking permit, a copy of a certificate, an
