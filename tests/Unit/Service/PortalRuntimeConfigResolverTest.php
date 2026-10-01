@@ -20,12 +20,20 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\Portaliq\Service\CaseTypeReader;
+use OCA\Portaliq\Service\Identity\PortalReferenceLinkService;
+use OCA\Portaliq\Service\Identity\PortalRegistrationPolicyService;
+use OCA\Portaliq\Service\Identity\PortalWaysInResolver;
+use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
+use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalRuntimeConfigResolver;
 use OCA\Portaliq\Service\PortalThemeResolver;
 use OCP\IConfig;
 use OCP\IRequest;
+use OCP\Security\ISecureRandom;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -507,6 +515,86 @@ class PortalRuntimeConfigResolverTest extends TestCase {
 		return $orgResolver;
 	}//end orgWithBroker()
 
+
+
+	/**
+	 * identity-ways-in-screens T07 (REQ-IWI-005): a portal with a registration
+	 * policy and an e-mail sign-in offers "Create an account"; the same portal
+	 * with only DigiD does not.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/identity-ways-in-screens/tasks.md#T07
+	 */
+	public function testTheDoorsFollowThePolicyAndTheEmailSignIn(): void {
+		$portal = ['slug' => 'gemeente-x', 'title' => 'Gemeente X', 'organisation' => 'gemeente-x', 'authentication' => ['registration' => ['policy' => 'activation']]];
+
+		$withEmail = $this->waysInResolver(providers: [['provider' => 'digid', 'label' => 'DigiD'], ['provider' => 'generic', 'label' => 'E-mail']])
+			->runtimeConfigFor(portal: $portal, orgValue: '', locale: 'nl');
+		$this->assertTrue($withEmail['waysIn']['register']);
+		$this->assertSame('E-mail', $withEmail['waysIn']['emailSignIn']);
+
+		$digidOnly = $this->waysInResolver(providers: [['provider' => 'digid', 'label' => 'DigiD']])
+			->runtimeConfigFor(portal: $portal, orgValue: '', locale: 'nl');
+		$this->assertFalse($digidOnly['waysIn']['register']);
+		$this->assertFalse($digidOnly['waysIn']['reference']);
+	}//end testTheDoorsFollowThePolicyAndTheEmailSignIn()
+
+
+	/**
+	 * Without a portal there is no door at all, and the key is still there.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/identity-ways-in-screens/tasks.md#T07
+	 */
+	public function testNoPortalNoDoors(): void {
+		$config = $this->waysInResolver(providers: [['provider' => 'generic', 'label' => 'E-mail']])
+			->runtimeConfigFor(portal: null, orgValue: 'gemeente-x', locale: 'nl');
+
+		$this->assertSame(['register' => false, 'reference' => false, 'emailSignIn' => '', 'referenceCaseTypes' => []], $config['waysIn']);
+	}//end testNoPortalNoDoors()
+
+
+	/**
+	 * The resolver with the real ways-in resolver, for an organisation whose
+	 * broker offers the given providers.
+	 *
+	 * @param array<int, array<string, string>> $providers The sign-in buttons.
+	 *
+	 * @return PortalRuntimeConfigResolver
+	 */
+	private function waysInResolver(array $providers): PortalRuntimeConfigResolver {
+		$orgResolver = $this->createMock(PortalOrganisationConfigService::class);
+		$orgResolver->method('resolve')->willReturnCallback(
+			static fn (string $orgSlug, string $locale = 'nl'): array => array_merge(self::NEUTRAL, $orgSlug === '' ? [] : ['oidcProviders' => $providers])
+		);
+
+		$bindings = $this->getMockBuilder(PortalFormBindingResolver::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['declaredCaseTypes'])
+			->getMock();
+		$bindings->method('declaredCaseTypes')->willReturn([]);
+
+		$waysIn = new PortalWaysInResolver(
+			new PortalRegistrationPolicyService(),
+			$bindings,
+			$this->getMockBuilder(CaseTypeReader::class)->disableOriginalConstructor()->onlyMethods(['readCaseType'])->getMock(),
+			new PortalReferenceLinkService(
+				$this->createMock(PortalObjectReader::class),
+				$this->createMock(PortalObjectWriter::class),
+				$this->createMock(ISecureRandom::class)
+			)
+		);
+
+		return new PortalRuntimeConfigResolver(
+			$this->createMock(PortalResolver::class),
+			$orgResolver,
+			$this->createMock(PortalThemeResolver::class),
+			null,
+			$waysIn
+		);
+	}//end waysInResolver()
 
 	/**
 	 * `?portal=` is consulted first and NEVER falls through to `?org=`.

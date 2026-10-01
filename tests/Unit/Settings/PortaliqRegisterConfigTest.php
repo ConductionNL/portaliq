@@ -315,8 +315,13 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.54.0 (portalMessage 0.6.0): the optional `ruleKey` of a message
 		// another app writes, so it is also sent by email
 		// (woo-journey-entry-points T07). Additive.
-		$this->assertSame('0.54.0', self::$register['info']['version']);
-		$this->assertSame('0.54.0', self::$register['components']['registers']['portaliq']['version']);
+		// 0.55.0 (portalAccount 0.14.0): `activationTokenHash` and
+		// `activationExpiresAt`, the activation link of a self-registration
+		// (identity-ways-in-screens T03). Additive.
+		$this->assertSame('0.55.0', self::$register['info']['version']);
+		$this->assertSame('0.55.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.14.0', self::$register['components']['schemas']['portalAccount']['version']);
+		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['activationExpiresAt']['format']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalMessage']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalMessage']['properties']['ruleKey']['type']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalOidcState']['version']);
@@ -366,7 +371,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['page']['version']);
 		$this->assertSame('0.9.0', self::$register['components']['schemas']['portal']['version']);
-		$this->assertSame('0.13.0', self::$register['components']['schemas']['portalAccount']['version']);
+		$this->assertSame('0.14.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalSession']['version']);
 
@@ -632,7 +637,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 	public function testTheMessageBoxRowsFitThePortalNotificationSchema(): void {
 		$schema = self::$register['components']['schemas']['portalNotification'];
 		$this->assertSame('0.3.0', $schema['version']);
-		$this->assertSame('0.13.0', self::$register['components']['schemas']['portalAccount']['version']);
+		$this->assertSame('0.14.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$jsonSchema = json_decode((string)json_encode(['type' => 'object', 'required' => $schema['required'], 'properties' => $schema['properties']]), false);
 
 		$row = [
