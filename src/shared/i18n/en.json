@@ -295,5 +295,10 @@
 	"Page not found": "Page not found",
 	"Something went wrong": "Something went wrong",
 	"This page does not exist (any more).": "This page does not exist (any more).",
-	"The content could not be loaded.": "The content could not be loaded."
+	"The content could not be loaded.": "The content could not be loaded.",
+	"Shared dossier": "Shared dossier",
+	"Someone shared this dossier with you. You see only the documents that are public now.": "Someone shared this dossier with you. You see only the documents that are public now.",
+	"This dossier has no public documents right now.": "This dossier has no public documents right now.",
+	"This link no longer works. Ask the person who shared it for a new link.": "This link no longer works. Ask the person who shared it for a new link.",
+	"We cannot show this dossier right now. Try again later.": "We cannot show this dossier right now. Try again later."
 }
