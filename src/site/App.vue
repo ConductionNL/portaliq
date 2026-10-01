@@ -191,6 +191,14 @@
 					@refresh="loadAccount"
 					@signout="signOut" />
 
+				<!-- A shared dossier link is public: anyone who has it reads the
+				     documents in it that are public now (site-shared-dossier). -->
+				<SharedDossierPage
+					v-else-if="sharedDossierRoute"
+					:token="sharedDossierToken"
+					:t="t"
+					@loaded="onSharedDossierLoaded" />
+
 				<p v-else-if="loading" class="container" data-testid="site-loading">
 					{{ t('Loading…') }}
 				</p>
@@ -427,6 +435,7 @@ import { editorBaseFrom, fetchEditingContext } from './lib/editorApi.js'
 import { createIdleTracker } from './lib/idleTracker.js'
 import { loadSiteEditor } from './lib/loadSiteEditor.js'
 import { pageRegionsOf, resolveRegions } from './lib/regions.js'
+import { isSharedDossierRoute, sharedDossierToken } from './lib/sharedDossier.js'
 import {
 	footerMenusOf,
 	headerMenusOf,
@@ -460,6 +469,12 @@ const SiteNotices = defineAsyncComponent(
 	() => import('./components/SiteNotices.vue'),
 )
 
+// Loaded only when somebody opens a shared dossier link, so every other
+// visitor pays nothing for it in the site bundle (site-shared-dossier).
+const SharedDossierPage = defineAsyncComponent(
+	() => import('./components/SharedDossierPage.vue'),
+)
+
 /**
  * The built-in site renderer.
  *
@@ -479,6 +494,7 @@ export default {
 		FooterColumns,
 		IdleWarningDialog,
 		MarkdownBlock,
+		SharedDossierPage,
 		SiteEditButton,
 		SiteNotices,
 		WidgetGrid,
@@ -538,6 +554,8 @@ export default {
 			// page — the publication id in `/publicatie/<id>`. Empty for an
 			// ordinary page. See `loadRoute`.
 			routeParam: '',
+			// The title of the shared dossier on screen, once it is read.
+			sharedDossierTitle: '',
 			// Where the hero's search box sends a term. A constant rather than
 			// a portal field for now: the seeded portal puts search at
 			// `/zoeken`, matching the reference, and a portal that moves it
@@ -617,6 +635,21 @@ export default {
 		breadcrumbs() {
 			if (this.accountRoute) {
 				return accountCrumbs(this.accountEntry, this.t, this.hrefForRoute)
+			}
+			// The token is not a word and no page sits at its parent.
+			if (this.sharedDossierRoute) {
+				return [
+					{
+						route: '/',
+						label: this.t('Home'),
+						href: this.hrefForRoute('/'),
+					},
+					{
+						route: this.route,
+						label: this.sharedDossierTitle || this.t('Shared dossier'),
+						href: this.hrefForRoute(this.route),
+					},
+				]
 			}
 			const crumbs = [
 				{ route: '/', label: this.t('Home'), href: this.hrefForRoute('/') },
@@ -833,6 +866,24 @@ export default {
 		 */
 		accountRoute() {
 			return isAccountRoute(this.route)
+		},
+
+		/**
+		 * @return {boolean} Whether the route on screen is a shared dossier link.
+		 *
+		 * @spec openspec/changes/site-shared-dossier/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
+		 */
+		sharedDossierRoute() {
+			return isSharedDossierRoute(this.route)
+		},
+
+		/**
+		 * @return {string} The share token of the route on screen, or ''.
+		 *
+		 * @spec openspec/changes/site-shared-dossier/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
+		 */
+		sharedDossierToken() {
+			return sharedDossierToken(this.route)
 		},
 
 		/**
@@ -1313,9 +1364,12 @@ export default {
 
 			// The page's search title first (site-page-seo-history-and-media),
 			// so the tab reads what the server already put in the head.
-			const pageName = this.accountRoute
+			let pageName = this.accountRoute
 				? this.accountEntry?.label || this.t('My overview')
 				: this.page?.seo?.title || this.page?.title
+			if (this.sharedDossierRoute) {
+				pageName = this.sharedDossierTitle || this.t('Shared dossier')
+			}
 			document.title =
 				pageName && pageName !== portalName
 					? `${pageName} - ${portalName}`
@@ -1437,6 +1491,19 @@ export default {
 		},
 
 		/**
+		 * Take the shared dossier's title for the tab and the breadcrumb.
+		 *
+		 * @param {string} title The dossier's title, or ''.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-shared-dossier/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
+		 */
+		onSharedDossierLoaded(title) {
+			this.sharedDossierTitle = title || ''
+			this.applyDocumentTitle()
+		},
+
+		/**
 		 * Load one page by route.
 		 *
 		 * @param {string} route The in-portal route.
@@ -1454,6 +1521,18 @@ export default {
 				this.routeParam = ''
 				this.loading = false
 				this.followAccountRoute()
+				this.applyDocumentTitle()
+				return
+			}
+
+			// A shared dossier link renders from opencatalogi's answer, not
+			// from a CMS page, so it opens on every portal without one.
+			if (isSharedDossierRoute(route)) {
+				this.page = null
+				this.error = null
+				this.routeParam = ''
+				this.sharedDossierTitle = ''
+				this.loading = false
 				this.applyDocumentTitle()
 				return
 			}
