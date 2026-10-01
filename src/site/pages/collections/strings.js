@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: EUPL-1.2
 //
 // The words of the collection pages, in Dutch and English. Keys are the
-// English source text, as in src/portal/i18n/*.json; where the React portal
+// English source text, as in src/shared/i18n/*.json; where the React portal
 // already had a key, it is reused with its text. Strings the React portal
 // wrote in Dutch only get an English key here.
 //

@@ -25,7 +25,7 @@ import {
 	takeIdleSignOut,
 	warningDelayMs,
 	warningLeadSeconds,
-} from '../src/portal/lib/idleSession.js'
+} from '../src/shared/idleSession.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const t = (key, vars = {}) => key.replace(/\{(\w+)\}/g, (_, name) => String(vars[name] ?? ''))
@@ -103,7 +103,7 @@ test('only an http(s) broker sign-out address is followed', () => {
 
 test('every idle string is translated for every locale the portal ships', () => {
 	for (const locale of ['nl', 'en']) {
-		const strings = JSON.parse(readFileSync(join(ROOT, 'src', 'portal', 'i18n', `${locale}.json`), 'utf8'))
+		const strings = JSON.parse(readFileSync(join(ROOT, 'src', 'shared', 'i18n', `${locale}.json`), 'utf8'))
 		for (const key of IDLE_WARNING_STRINGS) {
 			assert.ok(typeof strings[key] === 'string' && strings[key] !== '', `${locale}: ${key}`)
 		}

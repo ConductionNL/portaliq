@@ -15,6 +15,7 @@
  */
 
 import { loadState } from '@nextcloud/initial-state'
+import { adoptSessionToken } from './authApi.js'
 
 /**
  * The runtime configuration for this deployment.
@@ -119,9 +120,16 @@ async function get(path, query = {}) {
 		}
 	}
 
-	const response = await fetch(url.toString(), {
-		headers: { Accept: 'application/json' },
-	})
+	// A portal that declares a sign-in mode answers its content only to a
+	// session (ContentController), so the resident's bearer goes along when
+	// this tab holds one. A public portal ignores it.
+	const headers = { Accept: 'application/json' }
+	const token = adoptSessionToken()
+	if (token) {
+		headers.Authorization = `Bearer ${token}`
+	}
+
+	const response = await fetch(url.toString(), { headers })
 
 	if (!response.ok) {
 		const error = new Error(`content api ${response.status} for ${path}`)

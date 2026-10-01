@@ -60,9 +60,9 @@
 </template>
 
 <script>
-import en from '../../portal/i18n/en.json'
-import nl from '../../portal/i18n/nl.json'
-import { canExtend, remainingText } from '../../portal/lib/idleSession.js'
+import en from '../../shared/i18n/en.json'
+import nl from '../../shared/i18n/nl.json'
+import { canExtend, remainingText } from '../../shared/idleSession.js'
 
 const STRINGS = { en, nl }
 

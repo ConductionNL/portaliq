@@ -55,7 +55,7 @@ async function load(relative) {
 // Dependencies first, so the compiled files they import exist.
 await load('lib/rowAction.js')
 const signing = await load('lib/signing.js')
-const { createPortalApi } = await load('lib/portalApi.js')
+const { createPortalApi } = await load('../shared/portalApi.js')
 const { default: SigningDialog } = await load('components/SigningDialog.jsx')
 const { default: DeclineDialog } = await load('components/DeclineDialog.jsx')
 
@@ -279,10 +279,10 @@ test('the page opens the sign and decline dialogs from a row', () => {
 
 test('every new string has a Dutch translation', () => {
 	const nl = JSON.parse(
-		readFileSync(join(ROOT, 'src', 'portal', 'i18n', 'nl.json'), 'utf8'),
+		readFileSync(join(ROOT, 'src', 'shared', 'i18n', 'nl.json'), 'utf8'),
 	)
 	const en = JSON.parse(
-		readFileSync(join(ROOT, 'src', 'portal', 'i18n', 'en.json'), 'utf8'),
+		readFileSync(join(ROOT, 'src', 'shared', 'i18n', 'en.json'), 'utf8'),
 	)
 	for (const key of [
 		'Sign',

@@ -34,7 +34,7 @@ test('a whole-company session and a malformed branch show nothing', () => {
 
 test('both strings are translated for every locale the portal ships', () => {
 	for (const locale of ['nl', 'en']) {
-		const strings = JSON.parse(readFileSync(join(ROOT, 'src', 'portal', 'i18n', `${locale}.json`), 'utf8'))
+		const strings = JSON.parse(readFileSync(join(ROOT, 'src', 'shared', 'i18n', `${locale}.json`), 'utf8'))
 		for (const key of ['Signed in for branch {number}', 'Branch {number}']) {
 			assert.ok(typeof strings[key] === 'string' && strings[key] !== '', `${locale}: ${key}`)
 		}

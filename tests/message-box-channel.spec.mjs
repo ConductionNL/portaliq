@@ -113,7 +113,7 @@ test('the inbox and the settings section use it, and both locales say it', () =>
 	for (const locale of ['en', 'nl']) {
 		const bundle = JSON.parse(
 			readFileSync(
-				new URL(`../src/portal/i18n/${locale}.json`, import.meta.url),
+				new URL(`../src/shared/i18n/${locale}.json`, import.meta.url),
 				'utf8',
 			),
 		)

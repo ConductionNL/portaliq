@@ -44,6 +44,7 @@ use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\Signin\OrganisationLoginConfig;
+use OCA\Portaliq\Service\Signin\SiteReturnAddress;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -129,6 +130,65 @@ class SessionController extends Controller {
 
 		return $this->portalReturnTo() . '?portal=' . rawurlencode($slug);
 	}//end returnToPortal()
+
+	/**
+	 * The site page a login returns to, or '' when `$returnTo` is not a page
+	 * on the site route.
+	 *
+	 * @param string $returnTo The address the site sent.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+	 */
+	private function siteReturn(string $returnTo): string {
+		return (new SiteReturnAddress())->accept(
+			candidate: $returnTo,
+			sitePath: $this->urlGenerator->linkToRoute(Application::APP_ID . '.portalPage.site')
+		);
+	}//end siteReturn()
+
+	/**
+	 * Where a login returns: the site page it started on, else the portal.
+	 *
+	 * @param string                    $siteReturn The accepted site page, or ''.
+	 * @param array<string, mixed>|null $site       The serving portal, or null.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+	 */
+	private function returnAddress(string $siteReturn, ?array $site): string {
+		if ($siteReturn !== '') {
+			return $siteReturn;
+		}
+
+		return $this->returnToPortal(site: $site);
+	}//end returnAddress()
+
+	/**
+	 * The redirect to integriq's broker start, carrying the site page to
+	 * return to when there is one.
+	 *
+	 * @param string $org        The organisation slug.
+	 * @param string $provider   The provider.
+	 * @param string $siteReturn The accepted site page, or ''.
+	 *
+	 * @return RedirectResponse
+	 *
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+	 */
+	private function toBroker(string $org, string $provider, string $siteReturn): RedirectResponse {
+		$params = ['org' => $org, 'provider' => $provider];
+		if ($siteReturn !== '') {
+			$params['returnTo'] = $siteReturn;
+		}
+
+		return new RedirectResponse(
+			$this->urlGenerator->linkToRoute(Application::APP_ID . '.brokerSession.start', $params),
+			Http::STATUS_FOUND
+		);
+	}//end toBroker()
 
 	/**
 	 * The portal a login was started from, or null for none or an unknown one.
@@ -349,6 +409,7 @@ class SessionController extends Controller {
 	 * @param string $portal The `?portal=` slug the public site sends when it names no org.
 	 * @param string $silent `1` asks the broker to sign in without a prompt
 	 *                       (signin-session-idle-warning-and-sso D5).
+	 * @param string $returnTo The site page to land on once signed in; only a page on the site route is kept.
 	 *
 	 * @return Response 302 to the broker, or the generic OIDC error.
 	 *
@@ -356,6 +417,7 @@ class SessionController extends Controller {
 	 * @spec openspec/specs/supplier-portal/spec.md#oidc-start-builds-a-state-nonce-pkce-authorization-request
 	 * @spec openspec/changes/archive/2026-09-29-signin-integriq-broker-login/design.md#d2-two-new-routes-and-the-spas-follow-the-route-field
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T07
+	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 	 *
 	 * @no-admin-idor-exempt the lookup is unscoped because it MUST be: this is
 	 * the anonymous entry point to a portal's login, so a caller with no
@@ -374,7 +436,7 @@ class SessionController extends Controller {
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 30, period: 60)]
-	public function oidcStart(string $org = '', string $provider = '', string $portal = '', string $silent = ''): Response {
+	public function oidcStart(string $org = '', string $provider = '', string $portal = '', string $silent = '', string $returnTo = ''): Response {
 		// The serving portal, resolved once: it names the organisation when
 		// `?org=` is empty, and the login returns to it.
 		$site = $this->siteFor(portal: $portal);
@@ -385,11 +447,12 @@ class SessionController extends Controller {
 		// A provider the organisation routes to integriq's broker goes there
 		// (signin-integriq-broker-login D2), so every sign-in link, the public
 		// site's included, reaches the route the organisation chose.
+		// A login started on the public site returns to the page it came
+		// from, when that page is on the site route; anything else is dropped.
+		$siteReturn = $this->siteReturn(returnTo: $returnTo);
+
 		if ($this->loginConfig?->loginRouteFor(orgSlug: $org, provider: $provider) === 'broker') {
-			return new RedirectResponse(
-				$this->urlGenerator->linkToRoute(Application::APP_ID . '.brokerSession.start', ['org' => $org, 'provider' => $provider]),
-				Http::STATUS_FOUND
-			);
+			return $this->toBroker(org: $org, provider: $provider, siteReturn: $siteReturn);
 		}
 
 		// THE AUTHORISATION DECISION, MADE EXPLICITLY AND BEFORE ANY SECRET IS
@@ -428,7 +491,7 @@ class SessionController extends Controller {
 			codeVerifier: $pkce['verifier'],
 			org: $org,
 			provider: $provider,
-			returnTo: $this->returnToPortal(site: $site),
+			returnTo: $this->returnAddress(siteReturn: $siteReturn, site: $site),
 			silent: ($prompt === 'none')
 		);
 		if ($stored === false) {

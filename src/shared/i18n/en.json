@@ -281,5 +281,19 @@
 	"Your name is saved.": "Your name is saved.",
 	"Your portal account is removed. Your cases stay with the organisation.": "Your portal account is removed. Your cases stay with the organisation.",
 	"Your preferred address is changed.": "Your preferred address is changed.",
-	"Your e-mail address is confirmed.": "Your e-mail address is confirmed."
+	"Your e-mail address is confirmed.": "Your e-mail address is confirmed.",
+	"Log in": "Log in",
+	"Log in with your account": "Log in with your account",
+	"Register": "Register",
+	"User menu": "User menu",
+	"Breadcrumb": "Breadcrumb",
+	"Logo": "Logo",
+	"Home": "Home",
+	"Logged in": "Logged in",
+	"{count} unread": "{count} unread",
+	"This part of your portal is not available on this site yet.": "This part of your portal is not available on this site yet.",
+	"Page not found": "Page not found",
+	"Something went wrong": "Something went wrong",
+	"This page does not exist (any more).": "This page does not exist (any more).",
+	"The content could not be loaded.": "The content could not be loaded."
 }

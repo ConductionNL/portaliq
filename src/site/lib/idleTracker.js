@@ -13,7 +13,7 @@ import {
 	ACTIVITY_EVENTS,
 	shouldRefresh,
 	warningDelayMs,
-} from '../../portal/lib/idleSession.js'
+} from '../../shared/idleSession.js'
 
 /**
  * The current unix time in seconds.
