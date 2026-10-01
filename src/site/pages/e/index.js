@@ -70,8 +70,14 @@ export const pages = {
  *
  * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-manage-their-own-account-req-srp-037
  */
-export async function confirmEmailFromLink({ api, t, location = globalThis.window?.location, history = globalThis.window?.history }) {
-	const { consumeConfirmEmail, refusalText } = await import('../../../shared/account.js')
+export async function confirmEmailFromLink({
+	api,
+	t,
+	location = globalThis.window?.location,
+	history = globalThis.window?.history,
+}) {
+	const { consumeConfirmEmail, refusalText } =
+		await import('../../../shared/account.js')
 	const secret = consumeConfirmEmail(location, history)
 	if (!secret) {
 		return null

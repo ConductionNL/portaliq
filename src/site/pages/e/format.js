@@ -21,7 +21,9 @@ export function longDate(value, locale) {
 		return ''
 	}
 	try {
-		return new Intl.DateTimeFormat(locale || 'nl', { dateStyle: 'long' }).format(new Date(time))
+		return new Intl.DateTimeFormat(locale || 'nl', { dateStyle: 'long' }).format(
+			new Date(time),
+		)
 	} catch {
 		return new Date(time).toISOString().slice(0, 10)
 	}
@@ -43,7 +45,10 @@ export function calendarDate(value, locale) {
 		return value || ''
 	}
 	try {
-		return new Intl.DateTimeFormat(locale || 'nl', { dateStyle: 'long', timeZone: 'UTC' }).format(new Date(time))
+		return new Intl.DateTimeFormat(locale || 'nl', {
+			dateStyle: 'long',
+			timeZone: 'UTC',
+		}).format(new Date(time))
 	} catch {
 		return value
 	}
@@ -64,7 +69,9 @@ export function shortDate(value, locale) {
 		return ''
 	}
 	try {
-		return new Intl.DateTimeFormat(locale || 'nl', { dateStyle: 'short' }).format(new Date(time))
+		return new Intl.DateTimeFormat(locale || 'nl', {
+			dateStyle: 'short',
+		}).format(new Date(time))
 	} catch {
 		return new Date(time).toISOString().slice(0, 10)
 	}

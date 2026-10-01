@@ -332,7 +332,7 @@ test('site: the slice exports its pages by the React section keys, each a lazy c
 	assert.match(index, /@typedef \{object\} SitePageProps/)
 	const parts = readFileSync(join(ROOT, 'src', 'site', 'components', 'e', 'index.js'), 'utf8')
 	for (const name of ['CitizenCase', 'ActingForSwitcher', 'ContactPrompt']) {
-		assert.match(parts, new RegExp(`export const ${name} = defineAsyncComponent\\(\\(\\) => import\\('\\./${name}\\.vue'\\)\\)`))
+		assert.match(parts, new RegExp(`export const ${name} = defineAsyncComponent\\(\\s*\\(\\) => import\\('\\./${name}\\.vue'\\),?\\s*\\)`))
 	}
 })
 

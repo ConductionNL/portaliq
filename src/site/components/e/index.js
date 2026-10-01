@@ -37,7 +37,9 @@ export const CitizenCase = defineAsyncComponent(() => import('./CitizenCase.vue'
  *
  * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-act-for-someone-else-req-srp-041
  */
-export const ActingForSwitcher = defineAsyncComponent(() => import('./ActingForSwitcher.vue'))
+export const ActingForSwitcher = defineAsyncComponent(
+	() => import('./ActingForSwitcher.vue'),
+)
 
 /**
  * The prompt for a missing e-mail address. Show it while
@@ -49,4 +51,6 @@ export const ActingForSwitcher = defineAsyncComponent(() => import('./ActingForS
  *
  * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-manage-their-own-account-req-srp-037
  */
-export const ContactPrompt = defineAsyncComponent(() => import('./ContactPrompt.vue'))
+export const ContactPrompt = defineAsyncComponent(
+	() => import('./ContactPrompt.vue'),
+)

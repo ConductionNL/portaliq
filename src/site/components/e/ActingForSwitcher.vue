@@ -16,7 +16,9 @@
 -->
 <template>
 	<span v-if="held.length > 0" class="pq-acting-for" data-testid="acting-for">
-		<label for="pq-acting-for" class="utrecht-form-label">{{ t('Acting for') }}</label>
+		<label for="pq-acting-for" class="utrecht-form-label">{{
+			t('Acting for')
+		}}</label>
 		<select
 			id="pq-acting-for"
 			class="utrecht-select"

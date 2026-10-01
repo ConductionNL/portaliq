@@ -20,14 +20,25 @@
 	<p v-if="!caseId" class="utrecht-paragraph pq-empty">
 		<em>{{ t('Select a case.') }}</em>
 	</p>
-	<p v-else-if="loading" class="utrecht-paragraph" role="status" data-testid="case-loading">
+	<p
+		v-else-if="loading"
+		class="utrecht-paragraph"
+		role="status"
+		data-testid="case-loading">
 		{{ t('Loading…') }}
 	</p>
-	<p v-else-if="!data" class="utrecht-paragraph pq-e-error" role="alert" data-testid="case-unavailable">
+	<p
+		v-else-if="!data"
+		class="utrecht-paragraph pq-e-error"
+		role="alert"
+		data-testid="case-unavailable">
 		{{ t('This case is not yours.') }}
 	</p>
 	<section v-else class="pq-citizen-case" data-testid="citizen-case">
-		<div v-if="writableSet.status && writableSet.status.label" class="pq-case-status" data-testid="case-status">
+		<div
+			v-if="writableSet.status && writableSet.status.label"
+			class="pq-case-status"
+			data-testid="case-status">
 			<h3 class="utrecht-heading-3">
 				{{ writableSet.status.label }}
 			</h3>
@@ -36,7 +47,10 @@
 			</p>
 		</div>
 
-		<p v-if="!windowOpen" class="utrecht-paragraph pq-case-closed" data-testid="case-window-closed">
+		<p
+			v-if="!windowOpen"
+			class="utrecht-paragraph pq-case-closed"
+			data-testid="case-window-closed">
 			{{ (writableSet.window && writableSet.window.reason) || '' }}
 		</p>
 
@@ -65,10 +79,16 @@
 			<h4 class="utrecht-heading-4">
 				{{ data.documentsLabel || t('Documents') }}
 			</h4>
-			<p v-if="groups.empty" class="utrecht-paragraph pq-empty" data-testid="case-documents-empty">
+			<p
+				v-if="groups.empty"
+				class="utrecht-paragraph pq-empty"
+				data-testid="case-documents-empty">
 				{{ t('There are no documents on this case yet.') }}
 			</p>
-			<div v-for="group in documentGroups" :key="group.key" :class="`pq-case-documents-${group.key}`">
+			<div
+				v-for="group in documentGroups"
+				:key="group.key"
+				:class="`pq-case-documents-${group.key}`">
 				<h5 class="utrecht-heading-5">
 					{{ group.heading }}
 				</h5>
@@ -83,35 +103,53 @@
 							class="utrecht-button utrecht-button--subtle pq-case-document"
 							@click="onOpenDocument(entry)">
 							{{ entry.title }}
-						</button> <span v-if="entry.date" class="pq-case-document-date">{{ dateOf(entry.date) }}</span>
+						</button>
+						<span v-if="entry.date" class="pq-case-document-date">{{
+							dateOf(entry.date)
+						}}</span>
 					</li>
 				</ul>
 			</div>
 			<div v-if="documentsOpen" class="utrecht-form-field">
-				<label for="pq-case-add-document" class="utrecht-form-label">{{ t('Add a document') }}</label>
+				<label for="pq-case-add-document" class="utrecht-form-label">{{
+					t('Add a document')
+				}}</label>
 				<input
 					id="pq-case-add-document"
 					type="file"
 					class="pq-case-add-document"
 					data-testid="case-add-document"
 					:disabled="busy"
-					@change="onAddDocument">
+					@change="onAddDocument" />
 			</div>
-			<p v-else class="utrecht-paragraph pq-case-reason" data-testid="case-documents-closed">
+			<p
+				v-else
+				class="utrecht-paragraph pq-case-reason"
+				data-testid="case-documents-closed">
 				{{ (writableSet.documents && writableSet.documents.reason) || '' }}
 			</p>
 		</div>
 
-		<div v-if="withdrawal.kind === 'withdrawn'" class="pq-case-withdrawn" data-testid="case-withdrawn">
+		<div
+			v-if="withdrawal.kind === 'withdrawn'"
+			class="pq-case-withdrawn"
+			data-testid="case-withdrawn">
 			<p class="utrecht-paragraph">
-				{{ t('Withdrawn on {date}.', { date: dateOf(withdrawal.withdrawnAt) }) }}
+				{{
+					t('Withdrawn on {date}.', {
+						date: dateOf(withdrawal.withdrawnAt),
+					})
+				}}
 			</p>
 			<p v-if="withdrawal.reason" class="utrecht-paragraph">
 				{{ t('Your reason: {reason}', { reason: withdrawal.reason }) }}
 			</p>
 		</div>
 
-		<p v-if="withdrawal.kind === 'closed'" class="utrecht-paragraph pq-case-reason" data-testid="case-withdraw-closed">
+		<p
+			v-if="withdrawal.kind === 'closed'"
+			class="utrecht-paragraph pq-case-reason"
+			data-testid="case-withdraw-closed">
 			{{ withdrawal.reason }}
 		</p>
 
@@ -134,7 +172,11 @@
 			@confirm="onWithdraw"
 			@cancel="closeWithdraw" />
 
-		<p v-if="notice" class="utrecht-paragraph pq-case-notice" data-testid="case-notice" role="status">
+		<p
+			v-if="notice"
+			class="utrecht-paragraph pq-case-notice"
+			data-testid="case-notice"
+			role="status">
 			{{ notice }}
 		</p>
 	</section>
@@ -263,7 +305,11 @@ export default {
 			this.loading = true
 			this.data = null
 			const id = this.caseId
-			const data = await this.api.fetchCitizenCase(this.collection, id, this.mandateId)
+			const data = await this.api.fetchCitizenCase(
+				this.collection,
+				id,
+				this.mandateId,
+			)
 			if (id !== this.caseId) {
 				return
 			}
@@ -293,9 +339,15 @@ export default {
 		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-citizen-must-work-on-their-own-case-req-srp-042
 		 */
 		async onOpenDocument(entry) {
-			const result = await this.api.downloadCitizenDocument(this.collection, this.caseId, entry)
+			const result = await this.api.downloadCitizenDocument(
+				this.collection,
+				this.caseId,
+				entry,
+			)
 			if (!result.ok) {
-				this.notice = this.t('The document could not be opened. Try again later.')
+				this.notice = this.t(
+					'The document could not be opened. Try again later.',
+				)
 			}
 		},
 
@@ -324,11 +376,16 @@ export default {
 				return
 			}
 			this.busy = true
-			const result = await this.api.amendCitizenCase(this.collection, this.caseId, this.draft)
+			const result = await this.api.amendCitizenCase(
+				this.collection,
+				this.caseId,
+				this.draft,
+			)
 			this.busy = false
 			this.notice = result.ok
 				? this.t('Your change has been saved.')
-				: result.message || this.t('The change could not be saved. Please try again.')
+				: result.message
+					|| this.t('The change could not be saved. Please try again.')
 			if (result.ok) {
 				this.load()
 			}
@@ -348,12 +405,19 @@ export default {
 				return
 			}
 			this.busy = true
-			const result = await this.api.addCitizenDocument(this.collection, this.caseId, file)
+			const result = await this.api.addCitizenDocument(
+				this.collection,
+				this.caseId,
+				file,
+			)
 			this.busy = false
 			event.target.value = ''
 			this.notice = result.ok
-				? this.t('{name} has been added to your case.', { name: result.document?.name || file.name })
-				: result.message || this.t('The document could not be added. Please try again.')
+				? this.t('{name} has been added to your case.', {
+						name: result.document?.name || file.name,
+					})
+				: result.message
+					|| this.t('The document could not be added. Please try again.')
 			if (result.ok) {
 				this.load()
 			}
@@ -394,12 +458,17 @@ export default {
 		 */
 		async onWithdraw(reason) {
 			this.busy = true
-			const result = await this.api.withdrawCitizenCase(this.collection, this.caseId, reason)
+			const result = await this.api.withdrawCitizenCase(
+				this.collection,
+				this.caseId,
+				reason,
+			)
 			this.busy = false
 			this.confirming = false
 			this.notice = result.ok
 				? this.t('Your request has been withdrawn.')
-				: result.message || this.t('The change could not be saved. Please try again.')
+				: result.message
+					|| this.t('The change could not be saved. Please try again.')
 			if (result.ok) {
 				this.load()
 			}
@@ -419,7 +488,10 @@ export default {
 }
 
 .pq-e-error {
-	color: var(--utrecht-feedback-danger-color, var(--nldesign-color-error, currentcolor));
+	color: var(
+		--utrecht-feedback-danger-color,
+		var(--nldesign-color-error, currentcolor)
+	);
 	font-weight: var(--utrecht-typography-weight-scale-bold-font-weight, bold);
 }
 </style>

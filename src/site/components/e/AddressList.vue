@@ -15,7 +15,11 @@
 			{{ email ? t('E-mail addresses') : t('Phone numbers') }}
 		</h3>
 		<p v-if="entries.length === 0" class="utrecht-paragraph">
-			{{ email ? t('You have no e-mail address on your account.') : t('You have no phone number on your account.') }}
+			{{
+				email
+					? t('You have no e-mail address on your account.')
+					: t('You have no phone number on your account.')
+			}}
 		</p>
 		<ul v-else class="utrecht-unordered-list pq-account__list">
 			<li
@@ -25,7 +29,9 @@
 				:data-testid="`address-${kind}`">
 				<span>{{ entry.value }}</span>
 				<strong v-if="entry.preferred"> ({{ t('Preferred') }})</strong>
-				<em v-if="email && !entry.confirmed"> ({{ t('Waiting for confirmation') }})</em>
+				<em v-if="email && !entry.confirmed">
+					({{ t('Waiting for confirmation') }})</em
+				>
 				<span class="pq-e-buttons">
 					<button
 						v-if="email && !entry.confirmed"
@@ -60,8 +66,10 @@
 				class="utrecht-textbox"
 				:type="email ? 'email' : 'tel'"
 				:autocomplete="email ? 'email' : 'tel'"
-				required>
-			<button type="submit" class="utrecht-button utrecht-button--secondary-action">
+				required />
+			<button
+				type="submit"
+				class="utrecht-button utrecht-button--secondary-action">
 				{{ email ? t('Add e-mail address') : t('Add phone number') }}
 			</button>
 		</form>

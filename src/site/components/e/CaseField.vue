@@ -10,7 +10,10 @@
 	why. Never a disabled control without an explanation.
 -->
 <template>
-	<div class="pq-case-field" :class="writable ? 'open' : 'closed'" :data-testid="`case-field-${field}`">
+	<div
+		class="pq-case-field"
+		:class="writable ? 'open' : 'closed'"
+		:data-testid="`case-field-${field}`">
 		<template v-if="writable">
 			<label :for="inputId" class="utrecht-form-label">{{ field }}</label>
 			<input
@@ -19,17 +22,24 @@
 				type="text"
 				:value="text"
 				:data-testid="`case-input-${field}`"
-				@input="$emit('change', field, $event.target.value)">
+				@input="$emit('change', field, $event.target.value)" />
 		</template>
 		<template v-else>
 			<p :id="inputId" class="utrecht-form-label pq-case-field__label">
 				{{ field }}
 			</p>
-			<p class="utrecht-paragraph pq-case-value" :data-testid="`case-value-${field}`">
+			<p
+				class="utrecht-paragraph pq-case-value"
+				:data-testid="`case-value-${field}`">
 				{{ text }}
 			</p>
-			<p class="utrecht-paragraph pq-case-reason" :data-testid="`case-reason-${field}`">
-				{{ state?.reason || t('This answer cannot be changed from the portal.') }}
+			<p
+				class="utrecht-paragraph pq-case-reason"
+				:data-testid="`case-reason-${field}`">
+				{{
+					state?.reason
+					|| t('This answer cannot be changed from the portal.')
+				}}
 			</p>
 		</template>
 	</div>
@@ -58,7 +68,9 @@ export default {
 		},
 
 		text() {
-			return this.value === null || this.value === undefined ? '' : String(this.value)
+			return this.value === null || this.value === undefined
+				? ''
+				: String(this.value)
 		},
 
 		inputId() {

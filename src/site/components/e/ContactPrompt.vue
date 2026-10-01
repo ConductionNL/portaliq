@@ -10,9 +10,14 @@
 	src/site/pages/e/index.js holds. "Not now" hides it for the session.
 -->
 <template>
-	<div class="pq-contact-prompt utrecht-alert" role="status" data-testid="contact-prompt">
+	<div
+		class="pq-contact-prompt utrecht-alert"
+		role="status"
+		data-testid="contact-prompt">
 		<p class="utrecht-paragraph">
-			{{ t('Add an e-mail address so we can tell you when something changes.') }}
+			{{
+				t('Add an e-mail address so we can tell you when something changes.')
+			}}
 		</p>
 		<div class="pq-e-buttons">
 			<button

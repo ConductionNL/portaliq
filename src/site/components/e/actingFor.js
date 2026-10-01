@@ -10,7 +10,11 @@
 // them.
 
 import { reactive } from 'vue'
-import { actingForHeld, keepActingFor, readActingFor } from '../../../shared/myCases.js'
+import {
+	actingForHeld,
+	keepActingFor,
+	readActingFor,
+} from '../../../shared/myCases.js'
 
 /**
  * sessionStorage, or null where the browser refuses it or there is none.

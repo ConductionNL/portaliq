@@ -11,12 +11,19 @@
 	granted, or refused with the reason the organisation gave.
 -->
 <template>
-	<section class="pq-access" aria-labelledby="pq-access-title" data-testid="access-requests">
+	<section
+		class="pq-access"
+		aria-labelledby="pq-access-title"
+		data-testid="access-requests">
 		<h2 id="pq-access-title" class="utrecht-heading-2">
 			{{ t('Access to cases') }}
 		</h2>
 		<p class="utrecht-paragraph">
-			{{ t('Ask for access to the cases of a company or person you act for. The organisation answers your request.') }}
+			{{
+				t(
+					'Ask for access to the cases of a company or person you act for. The organisation answers your request.',
+				)
+			}}
 		</p>
 
 		<form class="pq-access__form" novalidate @submit.prevent="send">
@@ -29,7 +36,7 @@
 					v-model="draft.onBehalfOf"
 					class="utrecht-textbox"
 					name="onBehalfOf"
-					data-testid="access-request-party">
+					data-testid="access-request-party" />
 			</div>
 			<div class="utrecht-form-field">
 				<label for="access-request-reason" class="utrecht-form-label">
@@ -50,7 +57,11 @@
 				data-testid="access-request-problem">
 				{{ t(problem) }}
 			</p>
-			<p v-if="notice !== ''" class="utrecht-paragraph" role="status" data-testid="access-request-notice">
+			<p
+				v-if="notice !== ''"
+				class="utrecht-paragraph"
+				role="status"
+				data-testid="access-request-notice">
 				{{ t(notice) }}
 			</p>
 
@@ -69,18 +80,32 @@
 		<p v-if="loading" class="utrecht-paragraph" role="status">
 			{{ t('Loading…') }}
 		</p>
-		<p v-else-if="sorted.length === 0" class="utrecht-paragraph" data-testid="access-requests-empty">
+		<p
+			v-else-if="sorted.length === 0"
+			class="utrecht-paragraph"
+			data-testid="access-requests-empty">
 			{{ t('You have not asked for access yet.') }}
 		</p>
-		<ul v-else class="utrecht-unordered-list pq-access__list" data-testid="access-requests-list">
+		<ul
+			v-else
+			class="utrecht-unordered-list pq-access__list"
+			data-testid="access-requests-list">
 			<li
 				v-for="(request, index) in sorted"
 				:key="request.id || request.uuid || `request-${index}`"
 				class="utrecht-unordered-list__item"
 				data-testid="access-request-row"
 				:data-state="request.state || 'pending'">
-				<strong>{{ t('For {party}', { party: request.onBehalfOf || '' }) }}</strong> <span>{{ t(stateLabel(request.state)) }}</span> <span v-if="askedOn(request)">{{ t('Asked on {date}', { date: askedOn(request) }) }}</span>
-				<p v-if="request.state === 'refused' && request.decisionReason" class="utrecht-paragraph">
+				<strong>{{
+					t('For {party}', { party: request.onBehalfOf || '' })
+				}}</strong>
+				<span>{{ t(stateLabel(request.state)) }}</span>
+				<span v-if="askedOn(request)">{{
+					t('Asked on {date}', { date: askedOn(request) })
+				}}</span>
+				<p
+					v-if="request.state === 'refused' && request.decisionReason"
+					class="utrecht-paragraph">
 					{{ t('Reason: {reason}', { reason: request.decisionReason }) }}
 				</p>
 			</li>
@@ -89,7 +114,12 @@
 </template>
 
 <script>
-import { newestFirst, requestProblem, sendProblem, stateLabel } from './accessRequests.js'
+import {
+	newestFirst,
+	requestProblem,
+	sendProblem,
+	stateLabel,
+} from './accessRequests.js'
 import { longDate, readerLocale } from './format.js'
 
 export default {
@@ -164,7 +194,9 @@ export default {
 		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-ask-for-access-to-cases-req-srp-039
 		 */
 		askedOn(request) {
-			return request.requestedAt ? longDate(request.requestedAt, readerLocale(this.locale)) : ''
+			return request.requestedAt
+				? longDate(request.requestedAt, readerLocale(this.locale))
+				: ''
 		},
 
 		/**
@@ -182,7 +214,10 @@ export default {
 				return
 			}
 			this.busy = true
-			const outcome = await this.api.requestAccess(this.draft.onBehalfOf.trim(), this.draft.reason.trim())
+			const outcome = await this.api.requestAccess(
+				this.draft.onBehalfOf.trim(),
+				this.draft.reason.trim(),
+			)
 			this.busy = false
 			if (!outcome.ok) {
 				this.problem = sendProblem(outcome)
@@ -203,7 +238,10 @@ export default {
 }
 
 .pq-e-error {
-	color: var(--utrecht-feedback-danger-color, var(--nldesign-color-error, currentcolor));
+	color: var(
+		--utrecht-feedback-danger-color,
+		var(--nldesign-color-error, currentcolor)
+	);
 	font-weight: var(--utrecht-typography-weight-scale-bold-font-weight, bold);
 }
 </style>

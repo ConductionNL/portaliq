@@ -18,12 +18,19 @@
 	the React page shows a case no page can open.
 -->
 <template>
-	<section class="pq-cases" aria-labelledby="pq-cases-title" data-testid="my-cases">
+	<section
+		class="pq-cases"
+		aria-labelledby="pq-cases-title"
+		data-testid="my-cases">
 		<h2 id="pq-cases-title" class="utrecht-heading-2">
 			{{ t('My cases') }}
 		</h2>
 
-		<p v-if="data === null" class="utrecht-paragraph" role="status" data-testid="my-cases-loading">
+		<p
+			v-if="data === null"
+			class="utrecht-paragraph"
+			role="status"
+			data-testid="my-cases-loading">
 			{{ t('Loading…') }}
 		</p>
 
@@ -32,12 +39,19 @@
 			class="utrecht-paragraph pq-e-error"
 			role="alert"
 			data-testid="my-cases-error">
-			{{ t(data.error === 'group_too_large'
-				? 'This organisation has too many cases to list here. Choose a narrower mandate.'
-				: 'Your cases could not be loaded. Try again later.') }}
+			{{
+				t(
+					data.error === 'group_too_large'
+						? 'This organisation has too many cases to list here. Choose a narrower mandate.'
+						: 'Your cases could not be loaded. Try again later.',
+				)
+			}}
 		</p>
 
-		<p v-else-if="split.open.length + split.closed.length === 0" class="utrecht-paragraph" data-testid="my-cases-empty">
+		<p
+			v-else-if="split.open.length + split.closed.length === 0"
+			class="utrecht-paragraph"
+			data-testid="my-cases-empty">
 			{{ t('No cases yet.') }}
 		</p>
 
@@ -80,14 +94,30 @@
 			<div
 				id="pq-cases-panel"
 				:role="closedMarker ? 'tabpanel' : null"
-				:aria-labelledby="closedMarker ? (tab === 'closed' ? 'pq-cases-tab-closed' : 'pq-cases-tab-open') : null">
-				<p v-if="shown.length === 0" class="utrecht-paragraph" data-testid="my-cases-none-here">
+				:aria-labelledby="
+					closedMarker
+						? tab === 'closed'
+							? 'pq-cases-tab-closed'
+							: 'pq-cases-tab-open'
+						: null
+				">
+				<p
+					v-if="shown.length === 0"
+					class="utrecht-paragraph"
+					data-testid="my-cases-none-here">
 					{{ t(tab === 'closed' ? 'No closed cases.' : 'No cases yet.') }}
 				</p>
-				<ul v-else class="utrecht-unordered-list pq-cases__list" data-testid="my-cases-list">
+				<ul
+					v-else
+					class="utrecht-unordered-list pq-cases__list"
+					data-testid="my-cases-list">
 					<li
 						v-for="(item, index) in rows"
-						:key="item.target ? `${item.target.app}:${item.target.collection}:${item.target.id}` : index"
+						:key="
+							item.target
+								? `${item.target.app}:${item.target.collection}:${item.target.id}`
+								: index
+						"
 						class="utrecht-unordered-list__item pq-cases__row"
 						data-testid="my-cases-row">
 						<button
@@ -99,9 +129,18 @@
 						</button>
 						<span v-else class="pq-cases__title">{{ item.title }}</span>
 						<span class="pq-cases__source">{{ item.source }}</span>
-						<span v-if="item.mandate" class="pq-cases__mandate" data-testid="my-cases-mandate">{{ item.mandate }}</span>
-						<span v-if="item.status" class="pq-cases__status">{{ item.status }}</span>
-						<span v-if="item.date" class="pq-cases__date">{{ item.date }}</span>
+						<span
+							v-if="item.mandate"
+							class="pq-cases__mandate"
+							data-testid="my-cases-mandate"
+							>{{ item.mandate }}</span
+						>
+						<span v-if="item.status" class="pq-cases__status">{{
+							item.status
+						}}</span>
+						<span v-if="item.date" class="pq-cases__date">{{
+							item.date
+						}}</span>
 					</li>
 				</ul>
 			</div>
@@ -160,7 +199,9 @@ export default {
 		},
 
 		shown() {
-			return this.closedMarker && this.tab === 'closed' ? this.split.closed : this.split.open
+			return this.closedMarker && this.tab === 'closed'
+				? this.split.closed
+				: this.split.open
 		},
 
 		rows() {
@@ -170,12 +211,18 @@ export default {
 				return {
 					row,
 					target,
-					openable: target !== null && typeof this.canOpen === 'function' && this.canOpen(target) === true,
+					openable:
+						target !== null
+						&& typeof this.canOpen === 'function'
+						&& this.canOpen(target) === true,
 					title: caseTitle(row),
 					source: row._source?.label || row._source?.appId || '',
 					mandate: row._mandate?.label || '',
 					status: typeof row.status === 'string' ? row.status : '',
-					date: longDate(row.created || row.startedAt || row['@self']?.created, locale),
+					date: longDate(
+						row.created || row.startedAt || row['@self']?.created,
+						locale,
+					),
 				}
 			})
 		},
@@ -240,7 +287,8 @@ export default {
 .pq-cases__tabs {
 	display: flex;
 	gap: var(--utrecht-space-inline-sm, 0.5rem);
-	border-block-end: var(--utrecht-border-width-sm, 1px) solid var(--utrecht-color-grey-80, currentcolor);
+	border-block-end: var(--utrecht-border-width-sm, 1px) solid
+		var(--utrecht-color-grey-80, currentcolor);
 }
 
 .pq-cases__tabs [aria-selected='true'] {
@@ -263,7 +311,10 @@ export default {
 }
 
 .pq-e-error {
-	color: var(--utrecht-feedback-danger-color, var(--nldesign-color-error, currentcolor));
+	color: var(
+		--utrecht-feedback-danger-color,
+		var(--nldesign-color-error, currentcolor)
+	);
 	font-weight: var(--utrecht-typography-weight-scale-bold-font-weight, bold);
 }
 </style>

@@ -30,7 +30,12 @@
 				{{ t('Withdraw this request?') }}
 			</h2>
 			<p id="pq-withdraw-body" class="utrecht-paragraph">
-				{{ confirmText || t('If you withdraw, we stop handling your request. You cannot undo this.') }}
+				{{
+					confirmText
+					|| t(
+						'If you withdraw, we stop handling your request. You cannot undo this.',
+					)
+				}}
 			</p>
 			<label for="pq-withdraw-reason" class="utrecht-form-label">
 				{{ t('Why are you withdrawing? (optional)') }}
@@ -97,7 +102,10 @@ export default {
 	},
 
 	beforeUnmount() {
-		if (this.$refs.dialog?.open && typeof this.$refs.dialog.close === 'function') {
+		if (
+			this.$refs.dialog?.open
+			&& typeof this.$refs.dialog.close === 'function'
+		) {
 			this.$refs.dialog.close()
 		}
 	},
@@ -123,7 +131,8 @@ export default {
 	padding: var(--utrecht-space-block-lg, 1.5rem);
 	color: var(--utrecht-document-color, inherit);
 	background: var(--utrecht-document-background-color, Canvas);
-	border: var(--utrecht-border-width-sm, 1px) solid var(--utrecht-color-grey-80, currentcolor);
+	border: var(--utrecht-border-width-sm, 1px) solid
+		var(--utrecht-color-grey-80, currentcolor);
 }
 
 .pq-withdraw-confirm form > * + * {

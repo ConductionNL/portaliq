@@ -11,13 +11,21 @@
 	a removal the page emits `removed`: the shell listens and signs out.
 -->
 <template>
-	<p v-if="details === null" class="utrecht-paragraph" role="status" data-testid="account-loading">
+	<p
+		v-if="details === null"
+		class="utrecht-paragraph"
+		role="status"
+		data-testid="account-loading">
 		{{ t('Loading…') }}
 	</p>
 	<p v-else-if="details.failed" class="utrecht-paragraph" role="alert">
 		{{ t('Your account cannot be shown right now.') }}
 	</p>
-	<section v-else class="pq-account" aria-labelledby="pq-account-title" data-testid="account-page">
+	<section
+		v-else
+		class="pq-account"
+		aria-labelledby="pq-account-title"
+		data-testid="account-page">
 		<h2 id="pq-account-title" class="utrecht-heading-2">
 			{{ t('My account') }}
 		</h2>
@@ -29,15 +37,19 @@
 		</p>
 
 		<form class="pq-account__name" @submit.prevent="saveName">
-			<label for="pq-account-name" class="utrecht-form-label">{{ t('Name') }}</label>
+			<label for="pq-account-name" class="utrecht-form-label">{{
+				t('Name')
+			}}</label>
 			<input
 				id="pq-account-name"
 				v-model="name"
 				class="utrecht-textbox"
 				type="text"
 				autocomplete="name"
-				required>
-			<button type="submit" class="utrecht-button utrecht-button--secondary-action">
+				required />
+			<button
+				type="submit"
+				class="utrecht-button utrecht-button--secondary-action">
 				{{ t('Save name') }}
 			</button>
 		</form>
@@ -49,14 +61,17 @@
 			<legend class="utrecht-form-fieldset__legend">
 				{{ t('How should we contact you?') }}
 			</legend>
-			<label v-for="option in channels" :key="option.value" class="utrecht-form-label pq-account__radio">
+			<label
+				v-for="option in channels"
+				:key="option.value"
+				class="utrecht-form-label pq-account__radio">
 				<input
 					type="radio"
 					class="utrecht-radio-button"
 					name="pq-contact-channel"
 					:value="option.value"
 					:checked="channel === option.value"
-					@change="chooseChannel(option.value)">
+					@change="chooseChannel(option.value)" />
 				{{ t(option.label) }}
 			</label>
 		</fieldset>
@@ -75,7 +90,11 @@
 			</button>
 			<div v-else role="group" aria-labelledby="pq-account-remove">
 				<p class="utrecht-paragraph">
-					{{ t('Your portal account is removed. Your cases stay with the organisation.') }}
+					{{
+						t(
+							'Your portal account is removed. Your cases stay with the organisation.',
+						)
+					}}
 				</p>
 				<div class="pq-e-buttons">
 					<button
@@ -85,7 +104,10 @@
 						@click="removeAccount">
 						{{ t('Yes, remove my account') }}
 					</button>
-					<button type="button" class="utrecht-button utrecht-button--secondary-action" @click="confirmRemove = false">
+					<button
+						type="button"
+						class="utrecht-button utrecht-button--secondary-action"
+						@click="confirmRemove = false">
 						{{ t('Cancel') }}
 					</button>
 				</div>
@@ -143,7 +165,9 @@ export default {
 
 	computed: {
 		entries() {
-			return Array.isArray(this.details?.contactAddresses) ? this.details.contactAddresses : []
+			return Array.isArray(this.details?.contactAddresses)
+				? this.details.contactAddresses
+				: []
 		},
 
 		emails() {
@@ -213,14 +237,24 @@ export default {
 		 */
 		act(action, kind, value) {
 			if (action === 'prefer') {
-				return this.run(this.api.preferContactAddress(kind, value), this.t('Your preferred address is changed.'))
+				return this.run(
+					this.api.preferContactAddress(kind, value),
+					this.t('Your preferred address is changed.'),
+				)
 			}
 			if (action === 'remove') {
-				return this.run(this.api.removeContactAddress(kind, value), this.t('The address is removed.'))
+				return this.run(
+					this.api.removeContactAddress(kind, value),
+					this.t('The address is removed.'),
+				)
 			}
-			const sent = kind === 'email'
-				? this.t('We sent a link to {address}. Follow it to confirm the address.', { address: value })
-				: this.t('The phone number is added.')
+			const sent =
+				kind === 'email'
+					? this.t(
+							'We sent a link to {address}. Follow it to confirm the address.',
+							{ address: value },
+						)
+					: this.t('The phone number is added.')
 			return this.run(this.api.addContactAddress(kind, value), sent)
 		},
 
@@ -232,7 +266,10 @@ export default {
 		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-manage-their-own-account-req-srp-037
 		 */
 		saveName() {
-			return this.run(this.api.setDisplayName(this.name), this.t('Your name is saved.'))
+			return this.run(
+				this.api.setDisplayName(this.name),
+				this.t('Your name is saved.'),
+			)
 		},
 
 		/**
@@ -244,7 +281,10 @@ export default {
 		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-manage-their-own-account-req-srp-037
 		 */
 		chooseChannel(value) {
-			return this.run(this.api.setContactChannel(value), this.t('Your choice is saved.'))
+			return this.run(
+				this.api.setContactChannel(value),
+				this.t('Your choice is saved.'),
+			)
 		},
 
 		/**
@@ -289,7 +329,10 @@ export default {
 }
 
 .pq-e-error {
-	color: var(--utrecht-feedback-danger-color, var(--nldesign-color-error, currentcolor));
+	color: var(
+		--utrecht-feedback-danger-color,
+		var(--nldesign-color-error, currentcolor)
+	);
 	font-weight: var(--utrecht-typography-weight-scale-bold-font-weight, bold);
 }
 

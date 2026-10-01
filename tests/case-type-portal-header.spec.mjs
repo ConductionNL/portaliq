@@ -104,6 +104,9 @@ test('site: the citizen case block reads the case through the adapter, which nam
 	assert.equal(calls[0].url, '/api/citizen/cases/dossiq/case/case-1')
 	assert.equal(calls[0].headers['X-Portaliq-Portal'], 'mijn-alkmaar')
 
-	const screen = readFileSync(join(ROOT, 'src', 'site', 'components', 'e', 'CitizenCase.vue'), 'utf8')
-	assert.match(screen, /this\.api\.fetchCitizenCase\(this\.collection, id, this\.mandateId\)/)
+	const { loadSfc } = await import('./support/render-sfc.mjs')
+	const screen = await loadSfc('src/site/components/e/CitizenCase.vue')
+	await screen.methods.load.call({ caseId: 'case-2', mandateId: '', collection: CASES, api })
+	assert.equal(calls[1].url, '/api/citizen/cases/dossiq/case/case-2')
+	assert.equal(calls[1].headers['X-Portaliq-Portal'], 'mijn-alkmaar', 'the block reads through the adapter')
 })

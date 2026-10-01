@@ -37,7 +37,9 @@ export function newestFirst(requests) {
 		const time = Date.parse(request?.requestedAt || '')
 		return Number.isNaN(time) ? -Infinity : time
 	}
-	return [...(Array.isArray(requests) ? requests : [])].sort((a, b) => stamp(b) - stamp(a))
+	return [...(Array.isArray(requests) ? requests : [])].sort(
+		(a, b) => stamp(b) - stamp(a),
+	)
 }
 
 /**

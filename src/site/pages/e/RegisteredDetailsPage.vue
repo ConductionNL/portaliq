@@ -12,23 +12,42 @@
 	published form to them.
 -->
 <template>
-	<p v-if="details === null" class="utrecht-paragraph" role="status" data-testid="details-loading">
+	<p
+		v-if="details === null"
+		class="utrecht-paragraph"
+		role="status"
+		data-testid="details-loading">
 		{{ t('Loading…') }}
 	</p>
-	<section v-else class="pq-details" aria-labelledby="pq-details-title" data-testid="registered-details">
+	<section
+		v-else
+		class="pq-details"
+		aria-labelledby="pq-details-title"
+		data-testid="registered-details">
 		<h2 id="pq-details-title" class="utrecht-heading-2">
 			{{ t('My details') }}
 		</h2>
-		<p v-if="details.available !== true" class="utrecht-paragraph" role="status" data-testid="details-unavailable">
+		<p
+			v-if="details.available !== true"
+			class="utrecht-paragraph"
+			role="status"
+			data-testid="details-unavailable">
 			{{ t(reason) }}
 		</p>
 
 		<template v-if="details.available === true && details.kind === 'person'">
 			<p class="utrecht-paragraph">
-				{{ t('These are the details the Personal Records Database (BRP) holds about you.') }}
+				{{
+					t(
+						'These are the details the Personal Records Database (BRP) holds about you.',
+					)
+				}}
 			</p>
 			<dl class="pq-details__list">
-				<div v-for="row in personRows" :key="row.label" class="pq-details__row">
+				<div
+					v-for="row in personRows"
+					:key="row.label"
+					class="pq-details__row">
 					<dt>{{ row.label }}</dt>
 					<dd>{{ row.value }}</dd>
 				</div>
@@ -37,22 +56,31 @@
 				{{ t('Address') }}
 			</h3>
 			<p class="utrecht-paragraph" data-testid="details-address">
-				{{ address[0] }}<br>{{ address[1] }}
+				{{ address[0] }}<br />{{ address[1] }}
 			</p>
 			<p class="utrecht-paragraph">
 				{{ residentsLine }}
 			</p>
 			<p v-if="links.addressInvestigation" class="utrecht-paragraph">
-				<a class="utrecht-link" :href="links.addressInvestigation">{{ t('Something wrong at this address?') }}</a>
+				<a class="utrecht-link" :href="links.addressInvestigation">{{
+					t('Something wrong at this address?')
+				}}</a>
 			</p>
 		</template>
 
 		<template v-if="details.available === true && details.kind === 'company'">
 			<p class="utrecht-paragraph">
-				{{ t('These are the details the Chamber of Commerce (KvK) holds about your company.') }}
+				{{
+					t(
+						'These are the details the Chamber of Commerce (KvK) holds about your company.',
+					)
+				}}
 			</p>
 			<dl class="pq-details__list">
-				<div v-for="row in companyRows" :key="row.label" class="pq-details__row">
+				<div
+					v-for="row in companyRows"
+					:key="row.label"
+					class="pq-details__row">
 					<dt>{{ row.label }}</dt>
 					<dd>{{ row.value }}</dd>
 				</div>
@@ -64,21 +92,30 @@
 				{{ t('The KvK lists no branches for this company.') }}
 			</p>
 			<ul v-else class="utrecht-unordered-list pq-details__branches">
-				<li v-for="branch in branches" :key="branch.number" class="utrecht-unordered-list__item">
+				<li
+					v-for="branch in branches"
+					:key="branch.number"
+					class="utrecht-unordered-list__item">
 					<strong>{{ branch.name }}</strong>
 					<template v-if="branch.main">
 						({{ t('Main branch') }})
 					</template>
-					<br>{{ t('Branch number {number}', { number: branch.number }) }}
+					<br />{{
+						t('Branch number {number}', { number: branch.number })
+					}}
 					<template v-if="branch.address">
-						<br>{{ branch.address }}
+						<br />{{ branch.address }}
 					</template>
 				</li>
 			</ul>
 		</template>
 
-		<p v-if="details.available === true && links.correction" class="utrecht-paragraph">
-			<a class="utrecht-link" :href="links.correction">{{ t('Report an error in these details') }}</a>
+		<p
+			v-if="details.available === true && links.correction"
+			class="utrecht-paragraph">
+			<a class="utrecht-link" :href="links.correction">{{
+				t('Report an error in these details')
+			}}</a>
 		</p>
 	</section>
 </template>
@@ -127,7 +164,13 @@ export default {
 		personRows() {
 			return [
 				{ label: this.t('Name'), value: this.person.name },
-				{ label: this.t('Date of birth'), value: calendarDate(this.person.birthDate, readerLocale(this.locale)) },
+				{
+					label: this.t('Date of birth'),
+					value: calendarDate(
+						this.person.birthDate,
+						readerLocale(this.locale),
+					),
+				},
 			].filter((row) => row.value)
 		},
 
