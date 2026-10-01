@@ -7,7 +7,7 @@
 	<SigningDialog
 		v-if="kind === 'sign'"
 		:action="action"
-		:viewAction="viewAction"
+		:viewAction="viewDocument"
 		:collection="collection"
 		:row="row"
 		:api="api"
@@ -73,11 +73,17 @@ export default {
 		),
 	},
 
+	inheritAttrs: false,
+
 	props: {
 		/** The endpoint row action the resident pressed. */
 		action: { type: Object, required: true },
 		/** Every resolved row action of the collection (finds `viewDocument`). */
 		rowActions: { type: Array, default: () => [] },
+		/** The `viewDocument` row action when the page already found it. */
+		viewAction: { type: Object, default: null },
+		/** The step when the page already chose it: sign, decline or confirm. */
+		dialog: { type: String, default: '' },
 		/** The collection the row belongs to. */
 		collection: { type: Object, required: true },
 		/** The row. */
@@ -94,14 +100,18 @@ export default {
 
 	computed: {
 		kind() {
-			return dialogFor(this.action)
+			return ['sign', 'decline', 'confirm'].includes(this.dialog)
+				? this.dialog
+				: dialogFor(this.action)
 		},
 
-		viewAction() {
+		viewDocument() {
 			return (
-				this.rowActions.find(
+				this.viewAction
+				|| this.rowActions.find(
 					(a) => a && a.id === 'viewDocument' && isEndpointRowAction(a),
-				) || null
+				)
+				|| null
 			)
 		},
 	},

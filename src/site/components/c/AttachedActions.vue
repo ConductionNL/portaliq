@@ -93,6 +93,8 @@ export default {
 
 	components: { SchemaField },
 
+	inheritAttrs: false,
+
 	props: {
 		/** The collection the record belongs to (lists `attachedActions`). */
 		collection: { type: Object, required: true },

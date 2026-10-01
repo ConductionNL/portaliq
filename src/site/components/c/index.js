@@ -12,13 +12,15 @@
  * `api` is the portal api (`src/portal/lib/portalApi.js` `createPortalApi()`,
  * later `src/shared/portalApi.js`). Events are Vue emits.
  *
- * Where PageView.jsx used each one:
+ * Slice b's ContributionPage already mounts them: `src/site/pages/c/index.js`
+ * fills its named places (`src/site/pages/collections/blockSlots.js`) when it
+ * is imported. Where PageView.jsx used each one:
  *
- * - `action` / `cta` block            -> `<ActionBlock :block :contribution :api :t @submitted>`
- * - detail block, `propose-change`    -> `<ProposalQueue :action :row :api :t>`
- * - detail block, attached actions    -> `<AttachedActions :collection :row :api :t>`
- * - table, endpoint row action press  -> `<RowActionDialog :action :row-actions :collection :row :api :t @done @close>`
- * - table, `type: update` row action  -> `runRowTransition(api, action, row)`, then reload the collection
+ * - `action` / `cta` block            -> slot `action`: `<ActionBlock :block :action :contribution :api :t @created>`
+ * - detail block, `propose-change`    -> slot `proposals`: `<ProposalQueue :action :row :api :t>`
+ * - detail block, attached actions    -> slot `attachedActions`: `<AttachedActions :collection :row :api :t>`
+ * - table, endpoint row action press  -> slot `rowAction`: `<RowActionDialog :action :dialog :viewAction :collection :row :api :t @done @close>`
+ * - table, `type: update` row action  -> slice b's collection loader (`transition()`), no field data
  * - table, which buttons a row shows  -> `tableRowActions(...)`, `offersRowAction(action, row)`, `isEndpointRowAction(action)`
  *
  * @typedef {(key: string, vars?: Record<string, string|number>) => string} Translate
@@ -39,10 +41,11 @@
  *
  * @typedef {object} ActionBlockProps
  * @property {object} block `{type: 'action'|'cta', action, label?}`.
- * @property {object} contribution The contribution (`app`, `actions`).
+ * @property {object|null} [action] The block's action, when already resolved.
+ * @property {object} [contribution] The contribution (`app`, `actions`).
  * @property {object} api The portal api. @property {Translate} [t] The translator.
  * @property {(url: string) => void} [navigate] Where a checked redirect goes.
- * Emits `submitted(object, action)` from its form.
+ * Emits `created(object, action)` after its form saved.
  *
  * @typedef {object} ActionButtonProps
  * @property {object} action The endpoint action. @property {string} [app] The contributing app.
@@ -65,6 +68,7 @@
  *
  * @typedef {object} RowActionDialogProps
  * @property {object} action The pressed endpoint row action. @property {object[]} [rowActions] All resolved row actions.
+ * @property {object|null} [viewAction] The `viewDocument` action. @property {string} [dialog] `sign`, `decline` or `confirm`.
  * @property {object} collection The collection. @property {object} row The row. @property {object} api `forwardRowAction`.
  * @property {Translate} [t] The translator. @property {(url: string) => void} [navigate] Where a checked redirect goes.
  * Emits `done` (reload the collection) and `close` (drop the pending action).
@@ -95,7 +99,6 @@ export const RowActionDialog = defineAsyncComponent(
 	() => import('./RowActionDialog.vue'),
 )
 
-export { runRowTransition } from './forms.js'
 export { isEndpointRowAction, offersRowAction } from '../../../shared/rowAction.js'
 export { tableRowActions } from '../../../shared/signing.js'
 export { default as strings } from '../../pages/c/strings.js'

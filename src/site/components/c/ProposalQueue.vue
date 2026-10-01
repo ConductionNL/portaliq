@@ -63,6 +63,8 @@ export default {
 
 	components: { ProposeChangeForm },
 
+	inheritAttrs: false,
+
 	props: {
 		/** The `propose-change` action. */
 		action: { type: Object, required: true },

@@ -323,23 +323,3 @@ export function proposalStateKey(state) {
 		}[state] || String(state || '')
 	)
 }
-
-/**
- * Run a `type: update` row transition: the row's id and the action, no field
- * data, so the server's `set` decides the new state.
- *
- * @param {object} api The portal api (`updateObject`).
- * @param {object} action The update action.
- * @param {object} row The row.
- * @return {Promise<{ok: boolean}>} Whether it went through.
- *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-status-transition-must-send-no-field-data-req-srp-025
- */
-export async function runRowTransition(api, action, row) {
-	const id = rowIdOf(row)
-	if (!id || !api || !action) {
-		return { ok: false }
-	}
-	const result = await api.updateObject(action, id, {})
-	return { ok: Boolean(result && result.ok) }
-}

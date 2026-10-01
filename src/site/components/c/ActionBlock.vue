@@ -5,23 +5,23 @@
 
 <template>
 	<div
-		v-if="action"
+		v-if="resolved"
 		class="pq-action-block"
-		:data-testid="`action-block-${action.id}`">
+		:data-testid="`action-block-${resolved.id}`">
 		<template v-if="isForm">
 			<h2 class="utrecht-heading-2">
-				{{ action.label || action.id }}
+				{{ resolved.label || resolved.id }}
 			</h2>
 			<SchemaForm
-				:action="action"
+				:action="resolved"
 				:api="api"
 				:t="t"
-				@submitted="(object) => $emit('submitted', object, action)" />
+				@submitted="(object) => $emit('created', object, resolved)" />
 		</template>
 		<ActionButton
 			v-else
-			:action="action"
-			:app="contribution.app || ''"
+			:action="resolved"
+			:app="(contribution && contribution.app) || ''"
 			:label="block.type === 'cta' ? block.label || '' : ''"
 			:requireEndpoint="block.type === 'action'"
 			:api="api"
@@ -56,34 +56,41 @@ export default {
 
 	components: { ActionButton, SchemaForm },
 
+	inheritAttrs: false,
+
 	props: {
 		/** The page block: `{type: 'action'|'cta', action, label?}`. */
 		block: { type: Object, required: true },
 		/** The contribution the page belongs to (`app`, `actions`). */
-		contribution: { type: Object, required: true },
+		contribution: { type: Object, default: () => ({}) },
 		/** The portal api. */
 		api: { type: Object, required: true },
 		/** The translator `t(key, vars)`. */
 		t: { type: Function, default: null },
+		/** The block's action when the page already resolved it. */
+		action: { type: Object, default: null },
 		/** Where a checked redirect goes; the browser by default. */
 		navigate: { type: Function, default: goTo },
 	},
 
-	emits: ['submitted'],
+	emits: ['created'],
 
 	computed: {
-		action() {
+		resolved() {
 			return (
-				(this.contribution.actions || []).find(
+				this.action
+				|| ((this.contribution && this.contribution.actions) || []).find(
 					(a) => a && a.id === this.block.action,
-				) || null
+				)
+				|| null
 			)
 		},
 
 		isForm() {
 			return (
 				this.block.type === 'action'
-				&& (this.action.type === 'create' || this.action.type === 'update')
+				&& (this.resolved.type === 'create'
+					|| this.resolved.type === 'update')
 			)
 		},
 	},

@@ -500,17 +500,6 @@ test('an action block renders a create action as a form and a cta as a labelled 
 	)
 })
 
-test('a status transition sends no field data', async () => {
-	const { runRowTransition } = await import('../src/site/components/c/forms.js')
-	const api = forwardingApi({ ok: true })
-	assert.deepEqual(
-		await runRowTransition(api, close, { '@self': { id: 'req-9' } }),
-		{ ok: true },
-	)
-	assert.deepEqual(api.calls, [{ update: 'close', id: 'req-9', body: {} }])
-	assert.deepEqual(await runRowTransition(api, close, {}), { ok: false })
-})
-
 test('the row action step picks the confirm step for a plain endpoint action', async () => {
 	const api = forwardingApi({ ok: true, status: 200, body: {} })
 	const step = await mountSfc('src/site/components/c/RowActionDialog.vue', {
@@ -522,4 +511,79 @@ test('the row action step picks the confirm step for a plain endpoint action', a
 	})
 	await step.flush()
 	assert.ok(step.find('rowaction-confirm'))
+})
+
+test("slice c fills slice b's four places on a contribution page", async () => {
+	const { blockSlotLoader } =
+		await import('../src/site/pages/collections/blockSlots.js')
+	const before = ['action', 'rowAction', 'proposals', 'attachedActions'].map(
+		(name) => blockSlotLoader(name),
+	)
+	assert.deepEqual(
+		before,
+		[null, null, null, null],
+		'nothing is filled before slice c is imported',
+	)
+	const sliceC = await import('../src/site/pages/c/index.js')
+	assert.deepEqual(sliceC.pages, {})
+	for (const name of ['action', 'rowAction', 'proposals', 'attachedActions']) {
+		assert.equal(typeof blockSlotLoader(name), 'function', name)
+	}
+	assert.equal(
+		blockSlotLoader('timedTask'),
+		null,
+		'another slice keeps its own place',
+	)
+})
+
+test('the row action step takes the step and the view action the page chose', async () => {
+	const api = forwardingApi({ ok: true, status: 200, body: {} })
+	const step = await mountSfc('src/site/components/c/RowActionDialog.vue', {
+		action: pay,
+		dialog: 'confirm',
+		viewAction: null,
+		collection: salesInvoices,
+		row: issued,
+		api,
+		t,
+		locale: 'nl',
+	})
+	await step.flush()
+	assert.ok(step.find('rowaction-confirm'))
+	assert.equal(
+		step.find('rowaction-confirm').props.locale,
+		undefined,
+		'no stray attribute',
+	)
+})
+
+test('an action block takes the action the page resolved and reports the write as created', async () => {
+	const action = {
+		id: 'createNote',
+		type: 'create',
+		label: 'Write a note',
+		register: 'learniq',
+		schema: 'note',
+		fields: ['title'],
+		fieldConfigs: {},
+	}
+	const api = {
+		async createObject(a, body) {
+			return { ok: true, object: { id: 'n1', ...body } }
+		},
+	}
+	const block = await mountSfc('src/site/components/c/ActionBlock.vue', {
+		block: { type: 'action', action: 'createNote' },
+		action,
+		contribution: null,
+		api,
+		t,
+	})
+	await block.fire(block.find('schema-form'), 'submit')
+	assert.equal(block.emitted.created.length, 1)
+	assert.equal(
+		block.emitted.created[0][1].schema,
+		'note',
+		'the written schema goes back to the page',
+	)
 })
