@@ -25,13 +25,17 @@
  *   - `contribution`, for every contribution page without its own key (the
  *     site's counterpart of the React portal's PageView).
  *
- * WHAT A PAGE RECEIVES. Props: `entry` (the navigation entry: `key`, `label`,
- * `special`, and for a contribution page `page` and `contribution`), `api` (the
- * shared portal API bound to the site's bearer, src/shared/portalApi.js),
- * `session`, `contributions` (the aggregate), `nav` (every entry), `t` (the
- * site translator) and `locale`. Events: `navigate` with an in-site route,
- * `unread` with the inbox's new unread count, and `refresh` to read the
- * contributions again.
+ * WHAT A PAGE RECEIVES. Props, each passed only when the page declares it:
+ * `entry` (the navigation entry: `key`, `label`, `special`, and for a
+ * contribution page `page` and `contribution`), `page`, `contribution`, `api`
+ * (the shared portal API bound to the site's bearer, src/shared/portalApi.js),
+ * `session`, `portal` (the portal record), `contributions` (the aggregate),
+ * `nav` (every entry), `t` (the site translator), `locale`, `openRecord`,
+ * `navigate(keyOrRoute)`, and for my cases `closedMarker`, `canOpen(target)`
+ * and `openCase(target, row)`. Events: `navigate` with an in-site route or a
+ * section key, `unread` with the inbox's new unread count, `refresh` to read
+ * the contributions again, and `removed` after the account is removed (the
+ * shell signs out).
  *
  * Imports only loader maps and shared code, so tests/site-signed-in-shell.spec.mjs
  * runs it as node.
@@ -39,7 +43,9 @@
  * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 
+import { registerBlockSlot } from './collections/blockSlots.js'
 import { pages as collectionPages } from './collections/index.js'
+import { pages as accountPages } from './e/index.js'
 
 /** The key every contribution page falls back to. */
 export const CONTRIBUTION_PAGE = 'contribution'
@@ -52,7 +58,15 @@ export const CONTRIBUTION_PAGE = 'contribution'
 const BUILT_IN = {
 	// Slice b: collections, detail and timeline (the React portal's PageView).
 	...collectionPages,
+	// Slice e: my cases, access to cases, my details, my account.
+	cases: accountPages.__cases__,
+	access: accountPages.__access__,
+	details: accountPages.__details__,
+	account: accountPages.__account__,
 }
+
+// Slice e's own case fills slice b's `citizenCase` place on a contribution page.
+registerBlockSlot('citizenCase', () => import('../components/e/CitizenCase.vue'))
 
 const loaders = new Map(Object.entries(BUILT_IN))
 

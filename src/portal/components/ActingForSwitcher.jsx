@@ -6,7 +6,7 @@
 // The choice applies to "My cases" and to every case screen for the rest of
 // the session. Renders nothing for a person who holds no mandate.
 
-import { actingForOptions } from '../lib/myCases.js'
+import { actingForOptions } from '../../shared/myCases.js'
 
 /**
  * The switcher.

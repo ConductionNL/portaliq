@@ -46,6 +46,9 @@
 					class="ac-navigation pq-site__auth"
 					data-testid="site-auth">
 					<template v-if="session">
+						<!-- What the shell adds beside the signed-in name, such as
+						     whom the resident acts for. -->
+						<slot name="account" />
 						<span data-testid="site-auth-subject">{{
 							sessionLabel
 						}}</span>

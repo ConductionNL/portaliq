@@ -62,38 +62,48 @@
 		</p>
 
 		<template v-else-if="entry">
-			<h1 class="utrecht-heading-2" data-testid="site-account-title">
+			<h1
+				id="site-account-title"
+				class="utrecht-heading-2"
+				data-testid="site-account-title">
 				{{ entry.label }}
 			</h1>
+			<p v-if="pageLoading" class="utrecht-paragraph" role="status">
+				{{ t('Loading…') }}
+			</p>
 			<component
 				:is="pageComponent"
+				v-else-if="pageComponent"
 				:key="entry.key"
-				:entry="entry"
-				:api="api"
-				:session="session"
-				:contributions="contributions"
-				:nav="nav"
-				:t="t"
-				:locale="locale"
+				v-bind="pageProps"
 				@navigate="$emit('navigate', $event)"
 				@unread="$emit('unread', $event)"
-				@refresh="$emit('refresh')" />
+				@refresh="$emit('refresh')"
+				@removed="$emit('signout')" />
 		</template>
 	</section>
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
+import { markRaw } from 'vue'
 import PlaceholderPage from '../pages/PlaceholderPage.vue'
+import { navKeyFor, OPEN_STORAGE_KEY } from '../../shared/openRecord.js'
+import { routeForNav } from '../../shared/portalNav.js'
 import { sitePageLoader } from '../pages/registry.js'
 
 /**
- * One async component per loader, so moving between two sections that share
- * a page does not download or remount it twice.
+ * The names a component declares as props, whether as an array or an object.
  *
- * @type {WeakMap<() => Promise<object>, object>}
+ * @param {object} component The component.
+ * @return {Array<string>} The prop names.
  */
-const ASYNC_PAGES = new WeakMap()
+function declaredProps(component) {
+	const props = component && component.props
+	if (Array.isArray(props)) {
+		return props
+	}
+	return props ? Object.keys(props) : []
+}
 
 /**
  * The signed-in area of the site renderer.
@@ -128,28 +138,127 @@ export default {
 		t: { type: Function, required: true },
 		/** The site language. */
 		locale: { type: String, default: 'nl' },
+		/** The portal record from the content API. */
+		portal: { type: Object, default: null },
 	},
 
-	emits: ['devlogin', 'navigate', 'unread', 'refresh'],
+	emits: ['devlogin', 'navigate', 'unread', 'refresh', 'signout'],
+
+	data() {
+		return {
+			// The page module for the entry on screen, loaded on demand, and
+			// whether it is still loading. Loaded here rather than through
+			// defineAsyncComponent so the props it declares are known: a page
+			// gets only those, and nothing lands on its DOM as an attribute.
+			pageComponent: null,
+			pageLoading: false,
+		}
+	},
 
 	computed: {
 		/**
-		 * The component for the entry on screen: the registered page, else
-		 * the placeholder.
+		 * The page contract (pages/registry.js), narrowed to what the page
+		 * on screen declares.
 		 *
-		 * @return {object} The component.
+		 * @return {object} The props.
 		 *
 		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 		 */
-		pageComponent() {
-			const loader = sitePageLoader(this.entry)
+		pageProps() {
+			const contract = {
+				entry: this.entry,
+				page: this.entry && this.entry.page,
+				contribution: this.entry && this.entry.contribution,
+				api: this.api,
+				session: this.session,
+				portal: this.portal,
+				contributions: this.contributions,
+				nav: this.nav,
+				t: this.t,
+				locale: this.locale,
+				navigate: (target) => this.$emit('navigate', target),
+				closedMarker: this.contributions?.cases?.closedMarker === true,
+				canOpen: (target) => navKeyFor(this.nav, target) !== null,
+				openCase: (target, row) => this.openCase(target, row),
+			}
+			const wanted = declaredProps(this.pageComponent)
+			return Object.fromEntries(
+				Object.entries(contract).filter(([name]) => wanted.includes(name)),
+			)
+		},
+	},
+
+	watch: {
+		entry: {
+			immediate: true,
+			handler() {
+				this.loadPage()
+			},
+		},
+	},
+
+	methods: {
+		/**
+		 * Load the component for the entry on screen: the registered page,
+		 * else the placeholder.
+		 *
+		 * @return {Promise<void>} Resolves when the page is set.
+		 *
+		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 */
+		async loadPage() {
+			const entry = this.entry
+			const loader = sitePageLoader(entry)
 			if (!loader) {
-				return PlaceholderPage
+				this.pageComponent = markRaw(PlaceholderPage)
+				this.pageLoading = false
+				return
 			}
-			if (!ASYNC_PAGES.has(loader)) {
-				ASYNC_PAGES.set(loader, defineAsyncComponent(loader))
+			this.pageLoading = true
+			let component = PlaceholderPage
+			try {
+				const module = await loader()
+				component = module.default || module
+			} catch {
+				// A page that does not load says it is not available here.
 			}
-			return ASYNC_PAGES.get(loader)
+			if (entry !== this.entry) {
+				return
+			}
+			this.pageComponent = markRaw(component)
+			this.pageLoading = false
+		},
+
+		/**
+		 * Open a case from my cases on the page of the app it belongs to,
+		 * the way a record link does: kept for the page, then routed to.
+		 *
+		 * @param {{app: string, collection: string, id: string}} target The case.
+		 * @param {object} [row] The case row, so a case read under a mandate opens.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-record-link-must-open-its-record-after-sign-in-req-srp-021
+		 */
+		openCase(target, row) {
+			const key = navKeyFor(this.nav, target)
+			const entry = this.nav.find((candidate) => candidate.key === key)
+			if (!entry) {
+				return
+			}
+			try {
+				window.sessionStorage.setItem(
+					OPEN_STORAGE_KEY,
+					JSON.stringify({
+						app: target.app,
+						collection: target.collection,
+						id: target.id,
+						row: row || null,
+					}),
+				)
+			} catch {
+				// Without storage the page opens without the case selected.
+			}
+			this.$emit('navigate', routeForNav(entry))
 		},
 	},
 }

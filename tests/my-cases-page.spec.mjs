@@ -43,6 +43,7 @@ async function load(relative) {
 	const code = compiled.code
 		.replace(/from '\.\/([A-Za-z]+)\.jsx'/g, (whole, name) => `from './${flat('components/' + name + '.jsx')}'`)
 		.replace(/from '\.\.\/lib\/([A-Za-z]+)\.js'/g, (whole, name) => `from './${flat('lib/' + name + '.js')}'`)
+		.replace(/from '\.\.\/\.\.\/shared\/([A-Za-z]+)\.js'/g, (whole, name) => `from '${pathToFileURL(join(ROOT, 'src', 'shared', name + '.js')).href}'`)
 	const out = join(OUT_DIR, flat(relative))
 	writeFileSync(out, code)
 	return import(pathToFileURL(out).href)
@@ -50,7 +51,7 @@ async function load(relative) {
 
 compileLoading(OUT_DIR)
 const { createPortalApi } = await load('../shared/portalApi.js')
-const { splitCases, caseTarget, caseTitle } = await load('lib/myCases.js')
+const { splitCases, caseTarget, caseTitle } = await import(pathToFileURL(join(ROOT, 'src', 'shared', 'myCases.js')).href)
 const { default: MyCasesPage } = await load('components/MyCasesPage.jsx')
 const { createElement } = await import('react')
 const { renderToStaticMarkup } = await import('react-dom/server')
@@ -190,4 +191,65 @@ test('the shell offers "My cases" first when the server announces it, and both l
 			assert.equal(bundle[key], locale === 'nl' ? dutch : key, `${locale}: ${key}`)
 		}
 	}
+})
+
+// The Vue port on the site (site-reaches-portal-parity T20, REQ-SRP-040).
+
+const { renderSfc, loadSfc } = await import('./support/render-sfc.mjs')
+const SITE_PAGE = 'src/site/pages/e/MyCasesPage.vue'
+
+test('site: every app\'s cases are in one list, each naming its source, with the tabs counted', async () => {
+	const html = await renderSfc(SITE_PAGE, {
+		api: {},
+		t,
+		initialData: { ok: true, cases: CASES },
+		closedMarker: true,
+		canOpen: (target) => target.app === 'dossiq',
+	})
+	assert.match(html, /<h2[^>]*>My cases<\/h2>/)
+	assert.match(html, /role="tab"[^>]*aria-selected="true"[^>]*>Open \(2\)</)
+	assert.match(html, /role="tab"[^>]*aria-selected="false"[^>]*>Closed \(1\)</)
+	assert.match(html, /role="tabpanel"/)
+	assert.ok(html.indexOf('Parkeervergunning') < html.indexOf('Kapvergunning'))
+	assert.match(html, /Parkeervergunning[\s\S]*Aanvragen/)
+	assert.match(html, /Kapvergunning[\s\S]*Zaken/)
+	assert.doesNotMatch(html, /ZAAK-0/)
+	assert.match(html, /<button[^>]*>Kapvergunning<\/button>/)
+	assert.doesNotMatch(html, /<button[^>]*>Parkeervergunning<\/button>/)
+})
+
+test('site: without the shell\'s page lookup a case is listed but not a button', async () => {
+	const html = await renderSfc(SITE_PAGE, { api: {}, t, initialData: { ok: true, cases: CASES } })
+	assert.match(html, /<span class="pq-cases__title">Kapvergunning<\/span>/)
+	assert.doesNotMatch(html, /pq-cases__open/)
+})
+
+test('site: the closed tab lists the closed cases, is not there when nothing can be closed, and nothing reads "No cases yet."', async () => {
+	const closed = await renderSfc(SITE_PAGE, { api: {}, t, initialData: { ok: true, cases: CASES }, closedMarker: true, initialTab: 'closed' })
+	assert.match(closed, /ZAAK-0/)
+	assert.doesNotMatch(closed, /Kapvergunning/)
+	const unmarked = await renderSfc(SITE_PAGE, { api: {}, t, initialData: { ok: true, cases: CASES.slice(0, 2) } })
+	assert.doesNotMatch(unmarked, /Closed/)
+	assert.doesNotMatch(unmarked, /role="tab"/)
+	const none = await renderSfc(SITE_PAGE, { api: {}, t, initialData: { ok: true, cases: [] }, closedMarker: true })
+	assert.match(none, /No cases yet\./)
+	const failed = await renderSfc(SITE_PAGE, { api: {}, t, initialData: { ok: false, error: 'other', cases: [] } })
+	assert.match(failed, /role="alert"[^>]*>Your cases could not be loaded\. Try again later\.</)
+})
+
+test('site: opening a case hands the shell the target and the row', async () => {
+	const page = await loadSfc(SITE_PAGE)
+	const opened = []
+	const vm = {
+		shown: CASES.slice(0, 2),
+		locale: 'nl',
+		canOpen: () => true,
+		openCase: (target, row) => opened.push([target, row.id]),
+	}
+	const rows = page.computed.rows.call(vm)
+	assert.equal(rows[1].openable, true)
+	assert.equal(rows[1].source, 'Zaken')
+	assert.match(rows[1].date, /2026/)
+	vm.openCase(rows[1].target, rows[1].row)
+	assert.deepEqual(opened, [[{ app: 'dossiq', collection: 'mijnZaken', id: 'z-1' }, 'z-1']])
 })

@@ -9,7 +9,7 @@
 // opens on the page of the app it came from.
 
 import { useEffect, useState } from 'react'
-import { caseTarget, caseTitle, splitCases } from '../lib/myCases.js'
+import { caseTarget, caseTitle, splitCases } from '../../shared/myCases.js'
 import Loading from './Loading.jsx'
 
 /**

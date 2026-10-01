@@ -250,3 +250,71 @@ test('every new string has a Dutch translation', () => {
 		assert.doesNotMatch(nl[key], /—/)
 	}
 })
+
+// The Vue port on the site (site-reaches-portal-parity T19, REQ-SRP-039).
+
+const { renderSfc, loadSfc } = await import('./support/render-sfc.mjs')
+const site = await import(pathToFileURL(join(ROOT, 'src', 'site', 'pages', 'e', 'accessRequests.js')).href)
+const SITE_PAGE = 'src/site/pages/e/AccessRequestsPage.vue'
+
+test('site: a request needs a party and a reason, the newest comes first, and each state reads as words', () => {
+	assert.equal(site.requestProblem({ onBehalfOf: ' ', reason: 'x' }), 'Say whose cases you need access to.')
+	assert.equal(site.requestProblem({ onBehalfOf: '1', reason: ' ' }), 'Give a reason for your request.')
+	assert.equal(site.requestProblem({ onBehalfOf: '1', reason: 'x' }), '')
+	assert.deepEqual(
+		site.newestFirst([{ id: 'a' }, { id: 'b', requestedAt: '2026-01-01' }, { id: 'c', requestedAt: '2026-02-01' }]).map((r) => r.id),
+		['c', 'b', 'a'],
+	)
+	assert.equal(site.stateLabel('granted'), 'Granted')
+	assert.equal(site.stateLabel('refused'), 'Refused')
+	assert.equal(site.stateLabel('pending'), 'Waiting for an answer')
+	assert.equal(site.sendProblem({ ok: false, error: 'reason_required' }), 'Give a reason for your request.')
+	assert.equal(site.sendProblem({ ok: false, error: 'other' }), 'Your request could not be sent. Try again later.')
+})
+
+test('site: the list shows a pending request and a refusal with its reason, with a label for each field', async () => {
+	const html = await renderSfc(SITE_PAGE, {
+		api: {},
+		t,
+		locale: 'en',
+		initialRequests: [
+			{ id: 'r2', onBehalfOf: '11223344', state: 'refused', decisionReason: 'No authorisation from the company', requestedAt: '2026-09-10T10:00:00+00:00' },
+			{ id: 'r1', onBehalfOf: '87654321', state: 'pending', requestedAt: '2026-09-20T10:00:00+00:00' },
+		],
+	})
+	assert.ok(html.indexOf('87654321') < html.indexOf('11223344'), 'newest first')
+	assert.match(html, /data-state="pending"/)
+	assert.match(html, /Waiting for an answer/)
+	assert.match(html, /Reason: No authorisation from the company/)
+	assert.match(html, /Asked on September 20, 2026|Asked on 20 September 2026/)
+	assert.match(html, /<label for="access-request-party"/)
+	assert.match(html, /<label for="access-request-reason"/)
+	const empty = await renderSfc(SITE_PAGE, { api: {}, t, initialRequests: [] })
+	assert.match(empty, /You have not asked for access yet\./)
+})
+
+test('site: sending checks the form first, then asks, empties the form and lists the request as waiting', async () => {
+	const page = await loadSfc(SITE_PAGE)
+	const asked = []
+	const api = {
+		requestAccess: async (party, reason) => { asked.push([party, reason]); return { ok: true } },
+		fetchMyAccessRequests: async () => [{ id: 'n', onBehalfOf: '87654321', state: 'pending' }],
+	}
+	const vm = { api, draft: { onBehalfOf: '', reason: '' }, problem: '', notice: '', busy: false, requests: [] }
+	await page.methods.send.call(vm)
+	assert.equal(vm.problem, 'Say whose cases you need access to.')
+	assert.equal(asked.length, 0, 'nothing is sent while the form is incomplete')
+
+	vm.draft = { onBehalfOf: ' 87654321 ', reason: ' I am the director ' }
+	await page.methods.send.call(vm)
+	assert.deepEqual(asked, [['87654321', 'I am the director']])
+	assert.equal(vm.problem, '')
+	assert.equal(vm.notice, 'Your request has been sent.')
+	assert.deepEqual(vm.draft, { onBehalfOf: '', reason: '' })
+	assert.equal(vm.requests[0].state, 'pending')
+
+	vm.api = { requestAccess: async () => ({ ok: false, error: 'reason_required' }) }
+	vm.draft = { onBehalfOf: '1', reason: 'x' }
+	await page.methods.send.call(vm)
+	assert.equal(vm.problem, 'Give a reason for your request.')
+})

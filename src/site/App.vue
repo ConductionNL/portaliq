@@ -77,7 +77,11 @@
 				:breadcrumbLabel="t('Breadcrumb')"
 				:logoLabel="t('Logo')"
 				@navigate="go"
-				@signout="signOut" />
+				@signout="signOut">
+				<template #account>
+					<ActingForSwitcher :t="t" />
+				</template>
+			</BrandHeader>
 			<WidgetGrid
 				v-else
 				:widgets="[block]"
@@ -100,6 +104,23 @@
 			data-testid="site-idle-signed-out">
 			{{ idleSignedOutMessage }}
 		</p>
+
+		<!-- The answer to a `#confirm-email=` link (identity-profile-page T08). -->
+		<p
+			v-if="confirmMessage"
+			class="container utrecht-paragraph"
+			:role="confirmMessage.role"
+			data-testid="site-confirm-email">
+			{{ confirmMessage.text }}
+		</p>
+
+		<!-- The ask for an e-mail address while the account has none. -->
+		<div v-if="session && contactPrompt" class="container">
+			<ContactPrompt
+				:t="t"
+				:navigate="goSection"
+				@dismiss="contactPrompt = false" />
+		</div>
 
 		<!-- Maintenance and warning notices running now (operate-maintenance-notice). -->
 		<SiteNotices
@@ -163,10 +184,12 @@
 					:devError="devError"
 					:t="t"
 					:locale="locale"
+					:portal="site"
 					@devlogin="devLogin"
-					@navigate="go"
+					@navigate="goSection"
 					@unread="unreadOverride = $event"
-					@refresh="loadAccount" />
+					@refresh="loadAccount"
+					@signout="signOut" />
 
 				<p v-else-if="loading" class="container" data-testid="site-loading">
 					{{ t('Loading…') }}
@@ -372,6 +395,7 @@ import {
 	routeForNav,
 	shellSections,
 } from '../shared/portalNav.js'
+import { ActingForSwitcher, ContactPrompt } from './components/e/index.js'
 import {
 	accountCrumbs,
 	accountMenu,
@@ -411,6 +435,7 @@ import {
 	registerRouteOf,
 } from './lib/shellData.js'
 import { openRecordEntry } from './pages/collections/index.js'
+import { confirmEmailFromLink, contactPromptWanted } from './pages/e/index.js'
 
 /**
  * LOADED ON DEMAND, and the budget is why — the same reason the detail and
@@ -448,6 +473,8 @@ export default {
 
 	components: {
 		AccountArea,
+		ActingForSwitcher,
+		ContactPrompt,
 		BrandHeader,
 		FooterColumns,
 		IdleWarningDialog,
@@ -491,6 +518,10 @@ export default {
 			devError: '',
 			// The page on screen is behind the portal's sign-in.
 			signInNeeded: false,
+			// The answer to a `#confirm-email=` link, or null.
+			confirmMessage: null,
+			// Whether to ask for an e-mail address (slice e's ContactPrompt).
+			contactPrompt: false,
 			site: {},
 			menus: [],
 			glossary: [],
@@ -1028,6 +1059,12 @@ export default {
 
 			this.applyDocumentTitle()
 
+			// A confirmation link needs no session; it is read once, at boot.
+			this.confirmMessage = await confirmEmailFromLink({
+				api: this.api,
+				t: this.t,
+			})
+
 			if (this.session) {
 				await this.loadAccount()
 			} else {
@@ -1079,6 +1116,7 @@ export default {
 				this.api.fetchNewsFeed(),
 			])
 			this.unreadOverride = null
+			this.contactPrompt = await contactPromptWanted(this.session)
 			this.account = {
 				loading: false,
 				contributions,
@@ -1103,6 +1141,7 @@ export default {
 				news: [],
 			}
 			this.unreadOverride = null
+			this.contactPrompt = false
 		},
 
 		/**
@@ -1132,6 +1171,30 @@ export default {
 			const target = accountRedirect(this.nav, this.route)
 			if (target) {
 				this.replaceRoute(target)
+			}
+		},
+
+		/**
+		 * Go to a section by its key (`__account__`, `account`) or to an
+		 * in-site route, the way pages and prompts ask for one.
+		 *
+		 * @param {string} target A navigation key, a section name or a route.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 */
+		goSection(target) {
+			const value = String(target || '')
+			if (value.startsWith('/')) {
+				this.go(value)
+				return
+			}
+			const entry = this.nav.find(
+				(candidate) =>
+					candidate.key === value || candidate.special === value,
+			)
+			if (entry) {
+				this.go(routeForNav(entry))
 			}
 		},
 

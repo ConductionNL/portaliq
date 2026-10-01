@@ -9,8 +9,8 @@
 // says why. A disabled control with no explanation is the thing this replaces.
 
 import React, { useCallback, useEffect, useState } from 'react'
-import { groupDocuments } from '../lib/caseDocuments.js'
-import { caseFieldNames, withdrawalView } from '../lib/withdrawal.js'
+import { groupDocuments } from '../../shared/caseDocuments.js'
+import { caseFieldNames, withdrawalView } from '../../shared/withdrawal.js'
 import Loading from './Loading.jsx'
 import WithdrawCaseConfirm from './WithdrawCaseConfirm.jsx'
 
