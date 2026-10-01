@@ -96,6 +96,29 @@ class PortalBindingPreviewTest extends TestCase {
 	}//end testAHiddenCaseTypeIsNamedAsTheReason()
 
 	/**
+	 * REQ-ICQ-003: the administrator reads why a form with a condition the
+	 * portal cannot check opens nothing, and what to change.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/intake-conditional-questions-and-drafts/specs/portal-intake-form/spec.md#requirement-a-condition-the-portal-cannot-check-refuses-the-form-req-icq-003
+	 */
+	public function testAnUnsupportedConditionIsNamedAsTheReason(): void {
+		$preview = $this->previewAnswering(
+			render: ['kind' => 'hosted', 'resolvesToNoForm' => true, 'reason' => 'unsupportedCondition']
+		);
+
+		$described = $preview->describe(binding: ['formName' => 'Verhuizing']);
+
+		$this->assertSame(PortalBindingPreview::RESOLVES_TO_NONE, $described['state']);
+		$this->assertSame(PortalBindingPreview::REASON_UNSUPPORTED_CONDITION, $described['reason']);
+		$this->assertSame(
+			'This form uses a condition the portal cannot check. Change it to a condition on another answer.',
+			$described['message']
+		);
+	}//end testAnUnsupportedConditionIsNamedAsTheReason()
+
+	/**
 	 * 🔴 AND IT INVENTS NO NAME. A stale or configured-but-unresolved name
 	 * tells an administrator the binding is working.
 	 *

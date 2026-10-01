@@ -2010,7 +2010,8 @@ OC.L10N.register(
         "Write the text of the news item.": "Schrijf de tekst van het nieuwsbericht.",
         "Choose at least one group.": "Kies minstens een groep.",
         "Choose the school.": "Kies de school.",
-        "For": "Voor"
+        "For": "Voor",
+        "This form uses a condition the portal cannot check. Change it to a condition on another answer.": "Dit formulier gebruikt een voorwaarde die het portaal niet kan controleren. Maak er een voorwaarde op een ander antwoord van."
     },
     "nplurals=2; plural=(n != 1);"
 )

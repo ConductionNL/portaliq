@@ -280,6 +280,44 @@ class PortalFormBindingResolverTest extends TestCase {
 	}//end testHiddenCaseTypeResolvesToNoForm()
 
 	/**
+	 * intake-conditional-questions-and-drafts REQ-ICQ-003: a form with a
+	 * condition the portal cannot replay on submit (an endpoint, a source, the
+	 * clock) opens no form, with the reason the preview names; a condition on
+	 * another answer is fine.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/intake-conditional-questions-and-drafts/specs/portal-intake-form/spec.md#requirement-a-condition-the-portal-cannot-check-refuses-the-form-req-icq-003
+	 */
+	public function testNonLocalConditionResolvesToNoForm(): void {
+		$local = ['name' => 'partnerName', 'order' => 2, 'visibleWhen' => ['field' => 'together', 'op' => 'eq', 'value' => 'Yes']];
+		foreach ([
+			['endpoint' => '/apps/dossiq/api/eligibility', 'field' => 'ok', 'value' => true],
+			['source' => ['register' => 'dossiq', 'schema' => 'case'], 'field' => '@total', 'op' => 'gt', 'value' => 0],
+			['all' => [['field' => 'together', 'value' => 'Yes'], ['field' => 'movedOn', 'op' => 'lt', 'value' => '@today']]],
+		] as $condition) {
+			$this->setUp();
+			$this->seedForm(audience: 'client', fields: [
+				['name' => 'together', 'order' => 1],
+				$local,
+				['name' => 'extra', 'order' => 3, 'visibleWhen' => $condition],
+			]);
+
+			$render = $this->resolver()->render(binding: $this->binding());
+
+			$this->assertTrue($render['resolvesToNoForm'], json_encode($condition));
+			$this->assertSame('unsupportedCondition', $render['reason']);
+			$this->assertSame([], $render['fields']);
+		}
+
+		$this->setUp();
+		$this->seedForm(audience: 'client', fields: [['name' => 'together', 'order' => 1], $local]);
+		$render = $this->resolver()->render(binding: $this->binding());
+		$this->assertFalse($render['resolvesToNoForm']);
+		$this->assertSame($local['visibleWhen'], $render['fields'][1]['visibleWhen']);
+	}//end testNonLocalConditionResolvesToNoForm()
+
+	/**
 	 * A resolver whose portal gemeente-x hides the case type verhuizing.
 	 *
 	 * @return PortalFormBindingResolver
