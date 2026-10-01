@@ -103,7 +103,9 @@ class BrokerLogin {
 				'provider' => $provider,
 				'trust' => self::REQUESTED_TRUST,
 				'consumer' => $broker['consumerId'],
-				'state' => $state,
+				// Integriq's name for it (digid-eherkenning-auth-adapter
+				// REQ-IDP-001). It hands the same name back to the callback.
+				'relayState' => $state,
 				'returnUrl' => $callbackUrl,
 			],
 			'',
@@ -121,13 +123,20 @@ class BrokerLogin {
 
 
 	/**
-	 * Complete a login: the minted bearer and where to land, or null.
+	 * Complete a login: the minted bearer and where to land, or null when no
+	 * state row of this route was spent.
+	 *
+	 * A failure after the row is spent answers an empty token with the row's
+	 * return address, so the failure message shows on the portal the login
+	 * started from (portal-broker-login-keeps-the-portal). The reason is
+	 * still not told.
 	 *
 	 * @param string $state The relay state integriq handed back.
 	 * @param string $code  The one-time code.
 	 *
 	 * @return array{token: string, returnTo: string}|null
 	 *
+	 * @spec openspec/changes/portal-broker-login-keeps-the-portal/specs/portal-broker-envelope-login/spec.md
 	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-envelope-becomes-an-ordinary-portal-session-req-bel-005
 	 */
 	public function complete(string $state, string $code): ?array {
@@ -142,17 +151,18 @@ class BrokerLogin {
 			return null;
 		}
 
-		$claims = $this->redeem(pending: $pending, code: $code);
+		$returnTo = (string)$pending['returnTo'];
+		$claims   = $this->redeem(pending: $pending, code: $code);
 		if ($claims === null) {
-			return null;
+			return ['token' => '', 'returnTo' => $returnTo];
 		}
 
 		$token = $this->mint(pending: $pending, claims: $claims);
 		if ($token === null) {
-			return null;
+			return ['token' => '', 'returnTo' => $returnTo];
 		}
 
-		return ['token' => $token, 'returnTo' => $pending['returnTo']];
+		return ['token' => $token, 'returnTo' => $returnTo];
 	}//end complete()
 
 
