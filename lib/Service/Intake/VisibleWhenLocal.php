@@ -62,6 +62,18 @@ class VisibleWhenLocal {
 	private const CLOCK_TOKENS = ['@now', '@today', '@monthStart', '@quarterStart', '@yearStart', '@currentFiscalYear'];
 
 	/**
+	 * Constructor.
+	 *
+	 * @param VisibleWhenComparison $comparison The operators, with JavaScript's coercion.
+	 * @param JsValue $javascript JavaScript's property access and truthiness.
+	 */
+	public function __construct(
+		private readonly VisibleWhenComparison $comparison = new VisibleWhenComparison(),
+		private readonly JsValue $javascript = new JsValue(),
+	) {
+	}//end __construct()
+
+	/**
 	 * Whether the field this condition guards is shown, given the answers.
 	 *
 	 * A null condition shows the field. Anything else that is not a condition
@@ -85,25 +97,49 @@ class VisibleWhenLocal {
 		}
 
 		$parts = $this->partsOf(condition: $condition);
-		if ($parts !== null) {
-			$results = array_map(fn (mixed $part): bool => $this->isVisible(condition: $part, answers: $answers), $parts);
-			if ($this->isList(value: ($condition['all'] ?? null)) === true) {
-				return (in_array(false, $results, true) === false);
+		if ($parts === null) {
+			return $this->leafIsVisible(condition: $condition, answers: $answers);
+		}
+
+		$results = array_map(fn (mixed $part): bool => $this->isVisible(condition: $part, answers: $answers), $parts);
+		if ($this->isList(value: ($condition['all'] ?? null)) === true) {
+			return (in_array(false, $results, true) === false);
+		}
+
+		return in_array(true, $results, true);
+	}//end isVisible()
+
+	/**
+	 * Whether the portal can check every field's condition of a form.
+	 *
+	 * @param array<int, array<string, mixed>> $fields The form's fields.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/intake-conditional-questions-and-drafts/specs/portal-intake-form/spec.md#requirement-a-condition-the-portal-cannot-check-refuses-the-form-req-icq-003
+	 */
+	public function decidesEveryField(array $fields): bool {
+		foreach ($fields as $field) {
+			if (is_array($field) === true && $this->isDecidable(condition: ($field['visibleWhen'] ?? null)) === false) {
+				return false;
 			}
-
-			return in_array(true, $results, true);
 		}
 
-		if ($this->isTruthy(value: ($condition['endpoint'] ?? null)) === true
-			|| $this->isTruthy(value: ($condition['source'] ?? null)) === true
-		) {
-			return false;
-		}
+		return true;
+	}//end decidesEveryField()
 
-		$app = ($condition['appInstalled'] ?? null);
-		if (is_string($app) === true && $app !== '') {
-			// No app answers a public form: the resident has no Nextcloud
-			// session for one to be installed for.
+	/**
+	 * One condition that is no `all` / `any` composition.
+	 *
+	 * @param array<string, mixed> $condition The condition.
+	 * @param array<string, mixed> $answers The answers so far.
+	 *
+	 * @return bool
+	 */
+	private function leafIsVisible(array $condition, array $answers): bool {
+		if ($this->asksElsewhere(condition: $condition) === true) {
+			// An endpoint, a source or an installed app: no app answers a
+			// public form, and the server replays no request.
 			return false;
 		}
 
@@ -117,15 +153,34 @@ class VisibleWhenLocal {
 			$operator = 'eq';
 		}
 
-		[$found, $actual] = $this->readPath(answers: $answers, field: $field);
+		[$found, $actual] = $this->javascript->readPath(answers: $answers, field: $field);
 
-		return $this->compare(
+		return $this->comparison->holds(
 			found: $found,
 			actual: $actual,
 			operator: $operator,
 			expected: $this->resolveToken(value: ($condition['value'] ?? null), answers: $answers)
 		);
-	}//end isVisible()
+	}//end leafIsVisible()
+
+	/**
+	 * Whether a condition asks a server (`endpoint`, `source`) or the
+	 * resident's installed apps (`appInstalled`) rather than the answers.
+	 *
+	 * @param array<string, mixed> $condition The condition.
+	 *
+	 * @return bool
+	 */
+	private function asksElsewhere(array $condition): bool {
+		if ($this->javascript->isTruthy(value: ($condition['endpoint'] ?? null)) === true
+			|| $this->javascript->isTruthy(value: ($condition['source'] ?? null)) === true
+		) {
+			return true;
+		}
+
+		$app = ($condition['appInstalled'] ?? null);
+		return (is_string($app) === true && $app !== '');
+	}//end asksElsewhere()
 
 	/**
 	 * Whether the server can decide this condition the way the screen does.
@@ -158,14 +213,7 @@ class VisibleWhenLocal {
 			return true;
 		}
 
-		if ($this->isTruthy(value: ($condition['endpoint'] ?? null)) === true
-			|| $this->isTruthy(value: ($condition['source'] ?? null)) === true
-		) {
-			return false;
-		}
-
-		$app = ($condition['appInstalled'] ?? null);
-		if (is_string($app) === true && $app !== '') {
+		if ($this->asksElsewhere(condition: $condition) === true) {
 			return false;
 		}
 
@@ -213,36 +261,6 @@ class VisibleWhenLocal {
 	}//end readsTheClock()
 
 	/**
-	 * Read a dotted path off the answers.
-	 *
-	 * @param array<string, mixed> $answers The answers.
-	 * @param string $field The dotted path.
-	 *
-	 * @return array{0: bool, 1: mixed} Whether the path exists (JavaScript's
-	 *         `undefined` is "not found"), and the value there.
-	 */
-	private function readPath(array $answers, string $field): array {
-		$found = true;
-		$value = $answers;
-		foreach (explode('.', $field) as $key) {
-			if ($found === false || $value === null) {
-				// Past a missing or a null step, JavaScript keeps what it has.
-				continue;
-			}
-
-			if (is_array($value) === false || array_key_exists($key, $value) === false) {
-				$found = false;
-				$value = null;
-				continue;
-			}
-
-			$value = $value[$key];
-		}
-
-		return [$found, $value];
-	}//end readPath()
-
-	/**
 	 * Resolve the right-hand value the way nextcloud-vue's resolveFilterValue
 	 * does for a form: `@object.<answer>` reads another answer, `@me` is
 	 * nobody on a public form, and any other text is itself.
@@ -270,189 +288,6 @@ class VisibleWhenLocal {
 
 		return $value;
 	}//end resolveToken()
-
-	/**
-	 * Apply the operator, as nextcloud-vue's compareVisibleWhen does.
-	 *
-	 * @param bool $found Whether the left-hand answer exists.
-	 * @param mixed $actual The left-hand answer.
-	 * @param string $operator One of OPS.
-	 * @param mixed $expected The resolved right-hand value.
-	 *
-	 * @return bool
-	 */
-	private function compare(bool $found, mixed $actual, string $operator, mixed $expected): bool {
-		if ($operator === 'empty' || $operator === 'notEmpty') {
-			$blank = ($found === false || $actual === null || $actual === '' || $actual === []);
-			return ($operator === 'empty') ? $blank : ($blank === false);
-		}
-
-		if ($operator === 'eq' || $operator === 'neq') {
-			$equal = (($found === true && is_scalar($actual) === true && $actual === $expected)
-				|| $this->toText(found: $found, value: $actual) === $this->toText(found: true, value: $expected));
-			return ($operator === 'eq') ? $equal : ($equal === false);
-		}
-
-		$left = $this->toNumber(found: $found, value: $actual);
-		$right = $this->toNumber(found: true, value: $expected);
-		if (is_finite($left) === false || is_finite($right) === false) {
-			return false;
-		}
-
-		return match ($operator) {
-			'gt' => ($left > $right),
-			'gte' => ($left >= $right),
-			'lt' => ($left < $right),
-			default => ($left <= $right),
-		};
-	}//end compare()
-
-	/**
-	 * JavaScript's `String(value)`.
-	 *
-	 * @param bool $found False for `undefined`.
-	 * @param mixed $value The value.
-	 *
-	 * @return string
-	 */
-	private function toText(bool $found, mixed $value): string {
-		if ($found === false) {
-			return 'undefined';
-		}
-
-		if ($value === null) {
-			return 'null';
-		}
-
-		if (is_bool($value) === true) {
-			return ($value === true) ? 'true' : 'false';
-		}
-
-		if (is_float($value) === true) {
-			return $this->floatText(value: $value);
-		}
-
-		if (is_array($value) === false) {
-			return (string)$value;
-		}
-
-		if (array_is_list($value) === false) {
-			return '[object Object]';
-		}
-
-		// An array joins its items with commas, and null in it is blank.
-		return implode(
-			',',
-			array_map(fn (mixed $item): string => ($item === null) ? '' : $this->toText(found: true, value: $item), $value)
-		);
-	}//end toText()
-
-	/**
-	 * A float the way JavaScript prints it: `3`, not `3.0`.
-	 *
-	 * @param float $value The number.
-	 *
-	 * @return string
-	 */
-	private function floatText(float $value): string {
-		if (is_nan($value) === true) {
-			return 'NaN';
-		}
-
-		if (is_infinite($value) === true) {
-			return ($value > 0) ? 'Infinity' : '-Infinity';
-		}
-
-		if (floor($value) === $value && abs($value) < 1e21) {
-			return sprintf('%.0f', $value);
-		}
-
-		return (string)json_encode($value);
-	}//end floatText()
-
-	/**
-	 * JavaScript's `Number(value)`; NAN where it gives NaN.
-	 *
-	 * @param bool $found False for `undefined`.
-	 * @param mixed $value The value.
-	 *
-	 * @return float
-	 */
-	private function toNumber(bool $found, mixed $value): float {
-		if ($found === false) {
-			return NAN;
-		}
-
-		if ($value === null) {
-			return 0.0;
-		}
-
-		if (is_bool($value) === true) {
-			return ($value === true) ? 1.0 : 0.0;
-		}
-
-		if (is_int($value) === true || is_float($value) === true) {
-			return (float)$value;
-		}
-
-		if (is_array($value) === true) {
-			if ($value === []) {
-				return 0.0;
-			}
-
-			if (array_is_list($value) === true && count($value) === 1) {
-				return $this->textToNumber(text: $this->toText(found: true, value: $value[0]));
-			}
-
-			return NAN;
-		}
-
-		return $this->textToNumber(text: (string)$value);
-	}//end toNumber()
-
-	/**
-	 * JavaScript's `Number(text)`: trimmed, blank is zero, otherwise a decimal
-	 * or a hexadecimal literal, else NaN.
-	 *
-	 * @param string $text The text.
-	 *
-	 * @return float
-	 */
-	private function textToNumber(string $text): float {
-		$text = trim($text);
-		if ($text === '') {
-			return 0.0;
-		}
-
-		if (preg_match('/^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/', $text) === 1) {
-			return (float)$text;
-		}
-
-		if (preg_match('/^0[xX][0-9a-fA-F]+$/', $text) === 1) {
-			return (float)hexdec(substr($text, 2));
-		}
-
-		return match ($text) {
-			'Infinity', '+Infinity' => INF,
-			'-Infinity' => -INF,
-			default => NAN,
-		};
-	}//end textToNumber()
-
-	/**
-	 * JavaScript truthiness, for the `endpoint` / `source` mode switch.
-	 *
-	 * @param mixed $value The value.
-	 *
-	 * @return bool
-	 */
-	private function isTruthy(mixed $value): bool {
-		if (is_array($value) === true) {
-			return true;
-		}
-
-		return ($value !== null && $value !== false && $value !== '' && $value !== 0 && $value !== 0.0);
-	}//end isTruthy()
 
 	/**
 	 * Whether a decoded JSON value was an object: an array with keys.

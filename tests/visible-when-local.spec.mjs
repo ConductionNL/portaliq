@@ -17,15 +17,20 @@
  * @spec openspec/changes/intake-conditional-questions-and-drafts/specs/portal-intake-form/spec.md#requirement-the-server-skips-a-hidden-field-req-icq-002
  */
 
-import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
+import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 
-const memoryStorage = () => {
+/**
+ * A Storage with nothing in it.
+ *
+ * @return {Storage}
+ */
+function memoryStorage() {
 	const items = new Map()
 	return {
 		getItem: (key) => (items.has(key) ? items.get(key) : null),

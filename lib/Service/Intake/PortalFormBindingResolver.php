@@ -291,7 +291,7 @@ class PortalFormBindingResolver {
 		}
 
 		$fields = $this->fieldsOf(form: $form);
-		if ($this->checksEveryCondition(fields: $fields) === false) {
+		if ($this->visibleWhen->decidesEveryField(fields: $fields) === false) {
 			// The server could not repeat on submit what the screen decided,
 			// so the form is refused rather than half checked (REQ-ICQ-003).
 			return [
@@ -449,24 +449,6 @@ class PortalFormBindingResolver {
 
 		return $out;
 	}//end fieldsOf()
-
-	/**
-	 * Whether the portal can check every field's condition on submit.
-	 *
-	 * @param array<int, array<string, mixed>> $fields The form's fields.
-	 *
-	 * @return bool False when one asks an endpoint, a source, the clock or the
-	 *              installed apps (VisibleWhenLocal::isDecidable()).
-	 */
-	private function checksEveryCondition(array $fields): bool {
-		foreach ($fields as $field) {
-			if ($this->visibleWhen->isDecidable(condition: ($field['visibleWhen'] ?? null)) === false) {
-				return false;
-			}
-		}
-
-		return true;
-	}//end checksEveryCondition()
 
 	/**
 	 * The host a URL names, for the card the visitor reads before leaving.
