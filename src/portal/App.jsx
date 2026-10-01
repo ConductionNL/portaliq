@@ -28,7 +28,7 @@ import { consumeConfirmEmail, dismissPrompt, promptDismissed, refusalText } from
 import { branchInEffect } from '@portal/lib/branch.js'
 import { logoutTarget, markIdleSignOut, silentSignInUrl, takeIdleSignOut } from '@portal/lib/idleSession.js'
 import { actingForHeld, keepActingFor, readActingFor } from '@portal/lib/myCases.js'
-import { consumeOpenTarget, forgetOpenTarget, navKeyFor } from '@portal/lib/openRecord.js'
+import { consumeOpenTarget, forgetOpenTarget, navKeyFor } from '../shared/openRecord.js'
 import { consumeOidcCallbackFragment, createPortalApi, getToken, setToken } from '@portal/lib/portalApi.js'
 import { runAction } from '@portal/lib/rowAction.js'
 import { consumeSigninFailed, loginStartUrl, signinOrganisation } from '@portal/lib/signinRoute.js'

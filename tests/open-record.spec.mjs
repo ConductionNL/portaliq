@@ -21,7 +21,7 @@ import {
 	OPEN_STORAGE_KEY,
 	parseOpenFragment,
 	rowFor,
-} from '../src/portal/lib/openRecord.js'
+} from '../src/shared/openRecord.js'
 
 /**
  * A sessionStorage stand-in.

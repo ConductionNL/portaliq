@@ -17,7 +17,7 @@ import {
 	itemRows,
 	removeItem,
 	withoutRemoveAction,
-} from '../src/portal/lib/itemList.js'
+} from '../src/shared/itemList.js'
 import { answerLink, runRowAction } from '../src/portal/lib/rowAction.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
