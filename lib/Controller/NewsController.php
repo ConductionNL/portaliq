@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Service\NewsAudienceOptions;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -44,6 +45,11 @@ use Throwable;
  * Staff authoring for news items.
  *
  * @spec openspec/changes/news-and-newsletter-authoring/design.md#api-design
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- `IUserSession` is the
+ * authorization guard every `#[NoAdminRequired]` method calls first, and
+ * `NewsAudienceOptions` serves the News screen's audience choices; both are
+ * the endpoint's purpose, not incidental coupling (see NewsletterController).
  */
 class NewsController extends Controller {
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
@@ -59,12 +65,14 @@ class NewsController extends Controller {
 	 * @param IUserSession $userSession Confirms an authenticated Nextcloud user reached this endpoint.
 	 * @param ContainerInterface $container For resolving OpenRegister services.
 	 * @param LoggerInterface $logger The logger.
+	 * @param NewsAudienceOptions|null $audienceOptions The school and group choices for the News screen.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly IUserSession $userSession,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
+		private readonly ?NewsAudienceOptions $audienceOptions=null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -138,6 +146,49 @@ class NewsController extends Controller {
 	}//end create()
 
 	/**
+	 * Change a news item's title, body and audience. The status, the author,
+	 * the photos and the read receipts stay as they are; publishing has its
+	 * own endpoints.
+	 *
+	 * @param string $id The news item id.
+	 * @param string $title The title.
+	 * @param string $body The body.
+	 * @param array<string, mixed> $target The target (schoolRef/groupRefs/childRefs).
+	 *
+	 * @return JSONResponse The updated object, a 400 or a 404.
+	 *
+	 * @spec openspec/changes/staff-news-screen/tasks.md#T1
+	 */
+	#[NoAdminRequired]
+	public function update(string $id, string $title, string $body, array $target): JSONResponse {
+		$this->requireAuthenticatedStaff();
+
+		if ($title === '' || $body === '' || $this->hasAnyTarget(target: $target) === false) {
+			return new JSONResponse(['error' => 'invalid_target'], Http::STATUS_BAD_REQUEST);
+		}
+
+		return $this->write(id: $id, data: ['title' => $title, 'body' => $body, 'target' => $target]);
+	}//end update()
+
+	/**
+	 * The schools and groups the News screen offers as a news item's audience.
+	 *
+	 * @return JSONResponse `{schools: [{id, label}], groups: [{id, label}]}`.
+	 *
+	 * @spec openspec/changes/staff-news-screen/tasks.md#T2
+	 */
+	#[NoAdminRequired]
+	public function audiences(): JSONResponse {
+		$this->requireAuthenticatedStaff();
+
+		if ($this->audienceOptions === null) {
+			return new JSONResponse(['schools' => [], 'groups' => []]);
+		}
+
+		return new JSONResponse($this->audienceOptions->options());
+	}//end audiences()
+
+	/**
 	 * Publish a news item.
 	 *
 	 * @param string $id The news item id.
@@ -178,6 +229,18 @@ class NewsController extends Controller {
 	 * @return JSONResponse
 	 */
 	private function setStatus(string $id, string $status): JSONResponse {
+		return $this->write(id: $id, data: ['status' => $status]);
+	}//end setStatus()
+
+	/**
+	 * Write fields onto a news item, preserving everything else.
+	 *
+	 * @param string $id The news item id.
+	 * @param array<string, mixed> $data The fields to write.
+	 *
+	 * @return JSONResponse
+	 */
+	private function write(string $id, array $data): JSONResponse {
 		if ($id === '') {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
@@ -195,7 +258,7 @@ class NewsController extends Controller {
 			subjectRef: '',
 			organisation: '',
 			id: $id,
-			data: ['status' => $status]
+			data: $data
 		);
 
 		if ($updated === null) {
@@ -203,7 +266,7 @@ class NewsController extends Controller {
 		}
 
 		return new JSONResponse($updated);
-	}//end setStatus()
+	}//end write()
 
 	/**
 	 * Whether a target names at least one dimension.

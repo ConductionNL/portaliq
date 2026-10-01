@@ -10,6 +10,7 @@
 // blocks, so a ref that does not resolve here is a defensive skip, not expected.
 
 import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { anyGrouped, groupFieldOf, groupLabelCollection, groupRows } from '../../shared/collectionGroups.js'
 import { withoutRemoveAction } from '../../shared/itemList.js'
 import { rowFor } from '../../shared/openRecord.js'
 import { isEndpointRowAction, offersRowAction, rowNotice } from '../lib/rowAction.js'
@@ -357,6 +358,29 @@ export default function PageView({ page, contribution, api, dataByCollection, on
 		}
 	}, [openRecord, dataByCollection, onRecordOpened])
 
+	// A collection that declares `groupByField` shows one table per child
+	// (collection-group-by-field). The headings are the children's names, read
+	// once from the contribution's `guardianAudience.children` collection.
+	const groupLabelSource = groupLabelCollection(contribution)
+	const pageGroups = anyGrouped(
+		(page.blocks || [])
+			.filter((block) => block.type === 'collection')
+			.map((block) => findCollection(contribution, block.collection)),
+	)
+	const [groupLabelRows, setGroupLabelRows] = useState([])
+	useEffect(() => {
+		if (!pageGroups || !groupLabelSource || !api || typeof api.fetchCollection !== 'function') {
+			return undefined
+		}
+		let live = true
+		Promise.resolve(api.fetchCollection(groupLabelSource))
+			.then((rows) => live && setGroupLabelRows(Array.isArray(rows) ? rows : []))
+			.catch(() => undefined)
+		return () => {
+			live = false
+		}
+	}, [api, pageGroups, groupLabelSource && groupLabelSource.id])
+
 	return (
 		<section className="portaliq-page">
 			{recordNotFound && (
@@ -415,13 +439,11 @@ export default function PageView({ page, contribution, api, dataByCollection, on
 							/>
 						)
 					}
-					return (
-						<div key={i} className="portaliq-block-collection">
-							{collection.label && <h3>{collection.label}</h3>}
+					const tableFor = (objects) => (
 							<CollectionTable
 								collection={collection}
 								t={translate}
-								objects={loaded?.objects || []}
+								objects={objects}
 								loading={loaded?.loading}
 								onSelect={(row) => setSelected((s) => ({ ...s, [collection.id]: row }))}
 								selectedRow={selected[collection.id]}
@@ -448,6 +470,18 @@ export default function PageView({ page, contribution, api, dataByCollection, on
 									}
 								}}
 							/>
+					)
+					const groups = groupRows(loaded?.objects || [], groupFieldOf(collection), groupLabelRows)
+					return (
+						<div key={i} className="portaliq-block-collection">
+							{collection.label && <h3>{collection.label}</h3>}
+							{groups.length === 0 && tableFor(loaded?.objects || [])}
+							{groups.map((group) => (
+								<div key={group.value || '_rest'} className="portaliq-collection-group">
+									<h4>{group.label || translate('Other')}</h4>
+									{tableFor(group.rows)}
+								</div>
+							))}
 							{/* Sign and decline get their own dialogs (case-actions-sign-a-document,
 							    D4); every other endpoint row action the plain confirm step. */}
 							{pending && pending.collectionId === collection.id && dialogFor(pending.action) === 'sign' && (
