@@ -108,6 +108,7 @@
     "check:availability-report": "node --test tests/availability-report.spec.mjs",
     "check:site-collections": "node --test tests/site-collections.spec.mjs",
     "check:collection-loader": "node --test tests/collection-loader.spec.mjs",
+    "check:collection-groups": "node --test tests/collection-groups.spec.mjs",
     "check:rich-text": "node --test tests/rich-text.spec.mjs"
   },
   "browserslist": [

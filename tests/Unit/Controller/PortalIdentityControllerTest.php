@@ -6,6 +6,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\PortalIdentityController;
 use OCA\Portaliq\Service\CaseTypeReader;
+use OCA\Portaliq\Service\Identity\PortalAccountActivationService;
 use OCA\Portaliq\Service\Identity\PortalChallengeService;
 use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
 use OCA\Portaliq\Service\Identity\PortalReferenceCaseService;
@@ -44,6 +45,10 @@ class PortalIdentityControllerTest extends TestCase {
 	 * @var array{register: string, schema: string}|null
 	 */
 	private ?array $linkable = ['register' => 'dossiq', 'schema' => 'case'];
+
+	private array $params = [];
+
+	private ?string $resolvedSlug = null;
 
 	public function testRegistrationSwitchedOffCreatesNoAccount(): void {
 		$controller = $this->controller(site: ['organisation' => 'gemeente-x']);
@@ -501,6 +506,129 @@ class PortalIdentityControllerTest extends TestCase {
 	}//end testAnAcceptedInvitationSaysOnlyThatItLanded()
 
 
+
+	/**
+	 * identity-ways-in-screens T01 (REQ-IWI-001): under the activation policy
+	 * the activation secret goes out by mail and never in the answer.
+	 *
+	 * @return void
+	 */
+	public function testUnderActivationTheLinkIsMailedAndNeverAnswered(): void {
+		$site = ['slug' => 'gemeente-x', 'organisation' => 'gemeente-x'];
+		$controller = $this->controller(site: $site);
+		$this->doubles['policy']->method('isOffered')->willReturn(true);
+		$this->doubles['challenge']->method('accepts')->willReturn(true);
+		$this->doubles['policy']->method('decide')->willReturn(['accepted' => true, 'reason' => 'activation', 'status' => 'pending']);
+		$this->doubles['accounts']->method('provision')->willReturn(['subjectRef' => 'subject-1', 'isNew' => true, 'status' => 'pending']);
+		$this->doubles['activation']->expects($this->once())
+			->method('issue')
+			->with($this->equalTo('subject-1'))
+			->willReturn('activation-secret');
+		$this->doubles['mailer']->expects($this->once())
+			->method('send')
+			->with(
+				$this->equalTo(PortalIdentityMailer::TEMPLATE_REGISTRATION_ACTIVATION),
+				$this->equalTo('ans@example.org'),
+				$this->equalTo('activation-secret'),
+				$this->equalTo('gemeente-x'),
+				$this->equalTo($site)
+			)
+			->willReturn(true);
+
+		$data = $controller->register(email: 'ans@example.org')->getData();
+
+		$this->assertSame(['status' => 'pending', 'awaiting' => 'activation'], $data);
+		$this->assertStringNotContainsString('activation-secret', (string)json_encode($data));
+
+	}//end testUnderActivationTheLinkIsMailedAndNeverAnswered()
+
+	/**
+	 * Under approval nothing is mailed: staff activate the account.
+	 *
+	 * @return void
+	 */
+	public function testUnderApprovalNoActivationLinkIsMinted(): void {
+		$controller = $this->controller(site: ['organisation' => 'gemeente-x']);
+		$this->doubles['policy']->method('isOffered')->willReturn(true);
+		$this->doubles['challenge']->method('accepts')->willReturn(true);
+		$this->doubles['policy']->method('decide')->willReturn(['accepted' => true, 'reason' => 'approval', 'status' => 'pending']);
+		$this->doubles['accounts']->method('provision')->willReturn(['subjectRef' => 'subject-1', 'isNew' => true, 'status' => 'pending']);
+		$this->doubles['activation']->expects($this->never())->method('issue');
+		$this->doubles['mailer']->expects($this->never())->method('send');
+
+		$controller->register(email: 'ans@example.org');
+
+	}//end testUnderApprovalNoActivationLinkIsMinted()
+
+	/**
+	 * T03: a followed activation link answers only that the account is ready.
+	 *
+	 * @return void
+	 */
+	public function testAFollowedActivationLinkSaysOnlyThatTheAccountIsReady(): void {
+		$controller = $this->controller(site: null);
+		$this->doubles['activation']->expects($this->once())
+			->method('activate')
+			->with($this->equalTo('activation-secret'))
+			->willReturn(['organisation' => 'gemeente-x']);
+
+		$response = $controller->activate(token: 'activation-secret');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['activated' => true], $response->getData());
+
+	}//end testAFollowedActivationLinkSaysOnlyThatTheAccountIsReady()
+
+	/**
+	 * T03: used, expired and unknown are one refusal.
+	 *
+	 * @return void
+	 */
+	public function testASpentActivationLinkIsRefusedWithoutSayingWhy(): void {
+		$controller = $this->controller(site: null);
+		$this->doubles['activation']->method('activate')->willReturn(null);
+
+		$response = $controller->activate(token: 'spent');
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		$this->assertSame(['error' => 'activation_not_valid'], $response->getData());
+
+	}//end testASpentActivationLinkIsRefusedWithoutSayingWhy()
+
+	/**
+	 * T02: the challenge names the portal's honeypot field, so the form can
+	 * carry it empty.
+	 *
+	 * @return void
+	 */
+	public function testTheChallengeNamesTheHoneypotFieldThePortalDeclares(): void {
+		$site = ['organisation' => 'gemeente-x', 'authentication' => ['challenge' => ['honeypotField' => 'website']]];
+		$controller = $this->controller(site: $site);
+		$this->doubles['challenge']->method('issue')->willReturn(['nonce' => 'nonce-1', 'difficulty' => 12]);
+
+		$data = $controller->challenge(surface: 'registration')->getData();
+
+		$this->assertSame('website', $data['honeypotField']);
+
+	}//end testTheChallengeNamesTheHoneypotFieldThePortalDeclares()
+
+	/**
+	 * T02: the portal the SPA is served as is the one the door belongs to;
+	 * on a shared host the host alone names no portal.
+	 *
+	 * @return void
+	 */
+	public function testThePortalTheSpaNamesIsTheOneResolved(): void {
+		$this->params = ['portal' => 'gemeente-x'];
+		$controller = $this->controller(site: ['organisation' => 'gemeente-x']);
+		$this->doubles['challenge']->method('issue')->willReturn(['nonce' => 'nonce-1', 'difficulty' => 12]);
+
+		$controller->challenge(surface: 'registration');
+
+		$this->assertSame('gemeente-x', $this->resolvedSlug);
+
+	}//end testThePortalTheSpaNamesIsTheOneResolved()
+
 	/**
 	 * The controller over doubles, all of which can only answer methods the
 	 * real classes have.
@@ -515,9 +643,17 @@ class PortalIdentityControllerTest extends TestCase {
 	private function controller(?array $site, bool $inScope = true): PortalIdentityController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getParams')->willReturn([]);
+		$request->method('getParam')->willReturnCallback(
+			fn (string $key, mixed $default = null): mixed => ($this->params[$key] ?? $default)
+		);
 
 		$portals = $this->double(PortalResolver::class, ['resolve']);
-		$portals->method('resolve')->willReturn($site);
+		$portals->method('resolve')->willReturnCallback(
+			function (IRequest $request, ?string $portalSlug = null) use ($site): ?array {
+				$this->resolvedSlug = $portalSlug;
+				return $site;
+			}
+		);
 
 		$this->doubles = [
 			'challenge' => $this->double(PortalChallengeService::class, ['issue', 'accepts']),
@@ -530,6 +666,7 @@ class PortalIdentityControllerTest extends TestCase {
 			'mailer' => $this->double(PortalIdentityMailer::class, ['send']),
 			'referenceCases' => $this->double(PortalReferenceCaseService::class, ['linkableCase', 'read']),
 			'sessions' => $this->double(PortalSessionService::class, ['issueReferenceSession', 'resolveReferenceFromBearer']),
+			'activation' => $this->double(PortalAccountActivationService::class, ['issue', 'activate']),
 		];
 
 		// The case behind a reference link is found and its address matches,
@@ -552,7 +689,8 @@ class PortalIdentityControllerTest extends TestCase {
 			$this->doubles['bindings'],
 			$this->doubles['mailer'],
 			$this->doubles['referenceCases'],
-			$this->doubles['sessions']
+			$this->doubles['sessions'],
+			$this->doubles['activation']
 		);
 	}//end controller()
 

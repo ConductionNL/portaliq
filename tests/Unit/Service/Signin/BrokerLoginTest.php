@@ -268,7 +268,10 @@ class BrokerLoginTest extends TestCase {
 		$this->assertStringNotContainsString('consumer-secret-1', (string)$url);
 
 		$row = array_values($this->rows)[0];
-		$this->assertSame($query['state'], $row['state']);
+		// Integriq reads and hands back `relayState` (digid-eherkenning-auth-adapter
+		// REQ-IDP-001); a `state` it does not read came back empty.
+		$this->assertSame($query['relayState'], $row['state']);
+		$this->assertArrayNotHasKey('state', $query);
 		$this->assertSame('broker', $row['route']);
 		$this->assertSame('gemeente-x', $row['org']);
 	}//end testStartRedirectsWithRelayState()
@@ -301,7 +304,7 @@ class BrokerLoginTest extends TestCase {
 	 */
 	public function testEnvelopeMintsASessionWithItsTrust(): void {
 		$login = $this->login($this->routed(), 200, $this->exchangeBody());
-		$state = $this->queryOf((string)$login->start(org: 'gemeente-x', provider: 'digid', returnTo: '/apps/portaliq/portal', callbackUrl: 'https://p/cb'))['state'];
+		$state = $this->queryOf((string)$login->start(org: 'gemeente-x', provider: 'digid', returnTo: '/apps/portaliq/portal', callbackUrl: 'https://p/cb'))['relayState'];
 
 		$this->assertSame(['token' => 'bearer-1', 'returnTo' => '/apps/portaliq/portal'], $login->complete(state: $state, code: 'one-time-code'));
 
@@ -328,7 +331,7 @@ class BrokerLoginTest extends TestCase {
 	 */
 	public function testUnknownTrustBecomesLow(): void {
 		$login = $this->login($this->routed(), 200, $this->exchangeBody(['trust' => 'eidas-high']));
-		$state = $this->queryOf((string)$login->start(org: 'gemeente-x', provider: 'digid', returnTo: '/p', callbackUrl: 'https://p/cb'))['state'];
+		$state = $this->queryOf((string)$login->start(org: 'gemeente-x', provider: 'digid', returnTo: '/p', callbackUrl: 'https://p/cb'))['relayState'];
 
 		$this->assertNotNull($login->complete(state: $state, code: 'c'));
 		$this->assertSame('low', $this->sessionCalls[0][3]);
@@ -367,8 +370,8 @@ class BrokerLoginTest extends TestCase {
 		foreach ([[401, '{"error":"unauthorized"}'], [200, '{"envelope":""}'], [200, 'not json'], [500, '']] as [$status, $body]) {
 			$this->rows = [];
 			$login = $this->login($this->routed(), $status, $body);
-			$state = $this->queryOf((string)$login->start(org: 'gemeente-x', provider: 'digid', returnTo: '/p', callbackUrl: 'https://p/cb'))['state'];
-			$this->assertNull($login->complete(state: $state, code: 'c'), $status . ' ' . $body);
+			$state = $this->queryOf((string)$login->start(org: 'gemeente-x', provider: 'digid', returnTo: '/p', callbackUrl: 'https://p/cb'))['relayState'];
+			$this->assertSame(['token' => '', 'returnTo' => '/p'], $login->complete(state: $state, code: 'c'), $status . ' ' . $body);
 		}
 
 		$this->assertSame([], $this->sessionCalls);
@@ -376,7 +379,7 @@ class BrokerLoginTest extends TestCase {
 		$this->rows = [];
 		$this->exchanged = [];
 		$login = $this->login($this->routed(), 200, $this->exchangeBody());
-		$state = $this->queryOf((string)$login->start(org: 'gemeente-x', provider: 'digid', returnTo: '/p', callbackUrl: 'https://p/cb'))['state'];
+		$state = $this->queryOf((string)$login->start(org: 'gemeente-x', provider: 'digid', returnTo: '/p', callbackUrl: 'https://p/cb'))['relayState'];
 		$this->assertNotNull($login->complete(state: $state, code: 'c'));
 		$this->assertNull($login->complete(state: $state, code: 'c'), 'a replayed callback is refused');
 		$this->assertCount(1, $this->exchanged, 'the replay never reached integriq');
@@ -393,9 +396,11 @@ class BrokerLoginTest extends TestCase {
 	 */
 	public function testAnEnvelopeForAnotherOrganisationIsRefused(): void {
 		$login = $this->login($this->routed(), 200, $this->exchangeBody(['organisation' => 'gemeente-y']));
-		$state = $this->queryOf((string)$login->start(org: 'gemeente-x', provider: 'digid', returnTo: '/p', callbackUrl: 'https://p/cb'))['state'];
+		$state = $this->queryOf((string)$login->start(org: 'gemeente-x', provider: 'digid', returnTo: '/p', callbackUrl: 'https://p/cb'))['relayState'];
 
-		$this->assertNull($login->complete(state: $state, code: 'c'));
+		// A failure after the state row is spent still names where the login
+		// started, so the failure message shows on that portal.
+		$this->assertSame(['token' => '', 'returnTo' => '/p'], $login->complete(state: $state, code: 'c'));
 		$this->assertSame([], $this->accountCalls);
 	}//end testAnEnvelopeForAnotherOrganisationIsRefused()
 }//end class
