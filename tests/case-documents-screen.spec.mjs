@@ -37,7 +37,7 @@ async function load(relative) {
 }
 
 const { createPortalApi } = await load('lib/portalApi.js')
-const { groupDocuments } = await load('lib/caseDocuments.js')
+const { groupDocuments } = await import(pathToFileURL(join(ROOT, 'src', 'shared', 'caseDocuments.js')).href)
 
 test('the listed documents are grouped: decisions, documents, sent by you', () => {
 	const listed = [

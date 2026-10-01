@@ -42,6 +42,7 @@ async function load(relative) {
 	const code = compiled.code
 		.replace(/from '\.\/([A-Za-z]+)\.jsx'/g, (whole, name) => `from './${flat('components/' + name + '.jsx')}'`)
 		.replace(/from '\.\.\/lib\/([A-Za-z]+)\.js'/g, (whole, name) => `from './${flat('lib/' + name + '.js')}'`)
+		.replace(/from '\.\.\/\.\.\/shared\/([A-Za-z]+)\.js'/g, (whole, name) => `from '${pathToFileURL(join(ROOT, 'src', 'shared', name + '.js')).href}'`)
 	const out = join(OUT_DIR, flat(relative))
 	writeFileSync(out, code)
 	return import(pathToFileURL(out).href)
@@ -49,7 +50,7 @@ async function load(relative) {
 
 compileLoading(OUT_DIR)
 const { createPortalApi } = await load('lib/portalApi.js')
-const { splitCases, caseTarget, caseTitle } = await load('lib/myCases.js')
+const { splitCases, caseTarget, caseTitle } = await import(pathToFileURL(join(ROOT, 'src', 'shared', 'myCases.js')).href)
 const { default: MyCasesPage } = await load('components/MyCasesPage.jsx')
 const { createElement } = await import('react')
 const { renderToStaticMarkup } = await import('react-dom/server')

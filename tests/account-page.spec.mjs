@@ -49,12 +49,12 @@ async function load(relative) {
 	compileLoading(OUT_DIR)
 	writeFileSync(out, compiled.code
 		.replace("'./Loading.jsx'", `'${LOADING_MODULE}'`)
-		.replace("'../lib/account.js'", `'${pathToFileURL(join(OUT_DIR, 'lib_account.mjs')).href}'`))
+		.replace("'../../shared/account.js'", `'${pathToFileURL(join(ROOT, 'src', 'shared', 'account.js')).href}'`))
 	return import(pathToFileURL(out).href)
 }
 
 const { createPortalApi } = await load('lib/portalApi.js')
-const { consumeConfirmEmail, refusalText, promptDismissed, dismissPrompt } = await load('lib/account.js')
+const { consumeConfirmEmail, refusalText, promptDismissed, dismissPrompt } = await import(pathToFileURL(join(ROOT, 'src', 'shared', 'account.js')).href)
 const { default: AccountPage, ContactPrompt } = await load('components/AccountPage.jsx')
 
 const BASE = '/apps/portaliq/portal/api'
@@ -209,8 +209,8 @@ test('the prompt for an address links to My account and stays away once dismisse
 })
 
 test('every string of the page is in both locales, without em-dashes', () => {
-	const sources = ['components/AccountPage.jsx', 'lib/account.js']
-		.map((f) => readFileSync(join(ROOT, 'src', 'portal', f), 'utf8'))
+	const sources = [join('portal', 'components', 'AccountPage.jsx'), join('shared', 'account.js')]
+		.map((f) => readFileSync(join(ROOT, 'src', f), 'utf8'))
 		.join('\n')
 	const keys = [...sources.matchAll(/(?:\bt\(|return |: |\|\| )'([A-Z][^']+)'/g)].map((m) => m[1])
 	assert.ok(keys.length > 20, `found ${keys.length} keys`)
