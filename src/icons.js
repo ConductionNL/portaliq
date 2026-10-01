@@ -54,6 +54,7 @@ import Menu from 'vue-material-design-icons/Menu.vue'
 import MessageText from 'vue-material-design-icons/MessageText.vue'
 import MessageTextOutline from 'vue-material-design-icons/MessageTextOutline.vue'
 import MotionPlayOutline from 'vue-material-design-icons/MotionPlayOutline.vue'
+import NewspaperVariantOutline from 'vue-material-design-icons/NewspaperVariantOutline.vue'
 import OpenInNew from 'vue-material-design-icons/OpenInNew.vue'
 import Palette from 'vue-material-design-icons/Palette.vue'
 import PowerPlugOutline from 'vue-material-design-icons/PowerPlugOutline.vue'
@@ -112,6 +113,7 @@ export default {
 	MotionPlayOutline,
 	MessageText,
 	MessageTextOutline,
+	NewspaperVariantOutline,
 	OpenInNew,
 	Palette,
 	PowerPlugOutline,

@@ -77,6 +77,13 @@
       "order": 26
     },
     {
+      "id": "NewsMenu",
+      "label": "News",
+      "icon": "NewspaperVariantOutline",
+      "route": "News",
+      "order": 27
+    },
+    {
       "id": "PortalAccounts",
       "label": "Accounts",
       "icon": "Account",
@@ -2240,6 +2247,14 @@
           "showMetadata": true
         }
       }
+    },
+    {
+      "id": "News",
+      "route": "/news",
+      "type": "custom",
+      "title": "News",
+      "component": "NewsAuthoring",
+      "_note": "School news for parents (staff-news-screen). A custom page because news is written through the staff authoring routes of NewsController, which check the audience and keep the read receipts and translations the server owns, and because the audience is one choice (the whole school or groups) rather than the nested target object an index page form would show."
     },
     {
       "id": "Flows",

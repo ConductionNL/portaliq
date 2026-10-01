@@ -42,6 +42,7 @@ import EmailField from './formFields/EmailField.vue'
 import ExampleModal from './modals/ExampleModal.vue'
 import CustomExample from './views/CustomExample.vue'
 import FlowDetailSidebar from './views/flows/FlowDetailSidebar.vue'
+import NewsAuthoring from './views/NewsAuthoring.vue'
 import PageLayoutDesigner from './views/PageLayoutDesigner.vue'
 import AvailabilityReport from './widgets/AvailabilityReport.vue'
 import PageTrafficFlow from './widgets/PageTrafficFlow.vue'
@@ -328,6 +329,17 @@ export default {
 	PageLayoutDesigner: {
 		kind: 'page',
 		component: PageLayoutDesigner,
+	},
+
+	/**
+	 * The staff News screen (staff-news-screen T4): write school news,
+	 * choose the whole school or groups, change it and publish it, through
+	 * the staff authoring routes. Custom for the reasons in the manifest
+	 * page's _note.
+	 */
+	NewsAuthoring: {
+		kind: 'page',
+		component: NewsAuthoring,
 	},
 
 	// -------------------------------------------------------------------------

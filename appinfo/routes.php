@@ -126,6 +126,8 @@ return [
         // guardian-facing feed/read/archive routes are PortalProtected
         // (bearer session, never a client-supplied subject).
         ['name' => 'news#create', 'url' => '/api/news', 'verb' => 'POST'],
+        ['name' => 'news#audiences', 'url' => '/api/news/audiences', 'verb' => 'GET'],
+        ['name' => 'news#update', 'url' => '/api/news/{id}', 'verb' => 'PUT'],
         ['name' => 'news#publish', 'url' => '/api/news/{id}/publish', 'verb' => 'PUT'],
         ['name' => 'news#unpublish', 'url' => '/api/news/{id}/unpublish', 'verb' => 'PUT'],
         ['name' => 'newsletter#create', 'url' => '/api/newsletters', 'verb' => 'POST'],
