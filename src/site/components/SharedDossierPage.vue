@@ -118,6 +118,12 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The dossier on screen, or an empty one before it is read.
+		 *
+		 * @return {object}
+		 * @spec openspec/changes/site-shared-dossier/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
+		 */
 		dossier() {
 			return this.answer && this.answer.dossier
 				? this.answer.dossier
@@ -126,11 +132,23 @@ export default {
 	},
 
 	watch: {
+		/**
+		 * Read again when the link on screen changes.
+		 *
+		 * @return {void}
+		 * @spec openspec/changes/site-shared-dossier/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
+		 */
 		token() {
 			this.load()
 		},
 	},
 
+	/**
+	 * Read the dossier unless an answer was handed in.
+	 *
+	 * @return {void}
+	 * @spec openspec/changes/site-shared-dossier/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
+	 */
 	mounted() {
 		if (this.answer === null) {
 			this.load()
