@@ -21,4 +21,4 @@
 ## Docs, strings and validation
 
 - [x] **T07** (built: the site carries its words as Dutch defaults of authorable block props, the convention of every site block, not catalogue keys; the register strings are in the catalogues; docs `docs/operations/request-fees.md`): English and Dutch strings ("This request costs {amount}.", "Pay {amount} now", "Paid", "Not paid yet", "The payment failed", "We cannot show the payment yet", "You cannot pay right now. Try again later.", "Log in to submit this request. It has a fee of {amount}."); a docs page for administrators on `paymentHosts` and for case app authors on `portalFee`. Verification: `npm run lint`, `test:l10n`.
-- [ ] **T08**: `openspec validate intake-pay-on-submit --strict`.
+- [x] **T08**: `openspec validate intake-pay-on-submit --strict`.
