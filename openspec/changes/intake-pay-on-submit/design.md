@@ -30,14 +30,14 @@ Read at portaliq `development` `eeda3fa`, integriq archived
 
 `portalCaseType.portalFee`, an object the case app fills:
 `{amount: "12.50", currency: "EUR", description, payAction}`. `payAction` is
-the id of an endpoint action in the case app's own contribution.
+the id of an endpoint action in the case app's own contribution. The portal
+reads it through the binding's case type at render time and at pay time. The
+browser never sends an amount; the forwarded amount is the declaration's.
 
 Built (changed while building): the declaration also names `payApp`, the app
 whose contribution carries `payAction`. Action ids are per contribution
 (shillinq already declares a `pay`), so an id alone could match another
-app's action. The register requires `amount`, `payApp` and `payAction`. The portal
-reads it through the binding's case type at render time and at pay time. The
-browser never sends an amount; the forwarded amount is the declaration's.
+app's action. The register requires `amount`, `payApp` and `payAction`.
 
 ## D2. A fee-bearing form needs a session
 
