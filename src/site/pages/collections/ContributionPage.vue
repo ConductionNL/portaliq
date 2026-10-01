@@ -326,6 +326,14 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * Load every collection the page's blocks read, and the children's
+		 * names when a table groups.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/collection-group-by-field/tasks.md#T3
+		 */
 		loadPage() {
 			if (this.loader && this.currentPage) {
 				this.loader.loadPage(this.currentPage, this.currentContribution)
@@ -370,6 +378,15 @@ export default {
 			)
 		},
 
+		/**
+		 * The id of one group's heading, which labels that group's table.
+		 *
+		 * @param {object} item The page block.
+		 * @param {object} group The group.
+		 * @return {string}
+		 *
+		 * @spec openspec/changes/collection-group-by-field/tasks.md#T3
+		 */
 		groupHeadingId(item, group) {
 			return `${this.headingId(item)}-group-${group.value ? group.value.replace(/[^A-Za-z0-9_-]/g, '') : 'rest'}`
 		},
