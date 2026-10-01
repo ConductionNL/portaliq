@@ -102,7 +102,10 @@
     "check:account-page": "node --test tests/account-page.spec.mjs",
     "check:signing-dialog": "node --test tests/signing-dialog.spec.mjs",
     "check:case-type-visibility": "node --test tests/case-type-portal-header.spec.mjs tests/case-type-visibility-page.spec.mjs",
-    "check:availability-report": "node --test tests/availability-report.spec.mjs"
+    "check:availability-report": "node --test tests/availability-report.spec.mjs",
+    "check:site-collections": "node --test tests/site-collections.spec.mjs",
+    "check:collection-loader": "node --test tests/collection-loader.spec.mjs",
+    "check:rich-text": "node --test tests/rich-text.spec.mjs"
   },
   "browserslist": [
     "extends @nextcloud/browserslist-config"

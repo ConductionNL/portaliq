@@ -5,7 +5,7 @@
 - [ ] **T01**: `tests/fixtures/visible-when-local.json` from nextcloud-vue's `tests/utils/visibleWhen.spec.js` local-mode cases; a Vitest test runs it against the imported `evaluateVisibleWhenLocal` (REQ-ICQ-002). Verification: Vitest green.
 - [ ] **T02**: `lib/Service/Intake/VisibleWhenLocal.php` and its use in `PortalFormValidator::validate()`: skip required, drop answers, declared order (REQ-ICQ-002). Verification: `VisibleWhenLocalTest` over the same fixture; `PortalFormValidatorTest::testHiddenRequiredFieldIsNotRequired`, `::testHiddenAnswerIsDropped`.
 - [ ] **T03**: `PortalFormBindingResolver::fieldsOf()` resolves a form with an `endpoint` or `source` condition to no form, reason `unsupportedCondition`; `PortalBindingPreview` shows the sentence (REQ-ICQ-003). Verification: `PortalFormBindingResolverTest::testNonLocalConditionResolvesToNoForm`.
-- [ ] **T04**: `EmbeddedForm.jsx` evaluates each field's condition with the imported predicate on every change (REQ-ICQ-001). Verification: Vitest on `EmbeddedForm.jsx`; the Playwright spec's embed case.
+- [ ] **T04**: The embed entry's `EmbeddedForm.vue` (`site-reaches-portal-parity` T23) evaluates each field's condition with the imported predicate on every change (REQ-ICQ-001). Verification: node test on `EmbeddedForm.vue`; the Playwright spec's embed case.
 
 ## The intake page
 
@@ -14,7 +14,7 @@
 ## Drafts (after openregister `or-form-and-journey-registry` Tasks 2 and 3)
 
 - [ ] **T06**: Routes `POST /portal/api/intake/drafts`, `GET /portal/api/intake/drafts`, `POST /portal/api/intake/drafts/resume` over openregister's run service, owner by `subjectRef` or by resume code, visible answers only (REQ-ICQ-005). Verification: `PortalIntakeDraftControllerTest::testSaveCreatesNoCase`, `::testWrongCodeAndForeignCodeLookIdentical`, `::testOnlyOwnDraftIsReturned`.
-- [ ] **T07**: "Save and continue later" and the resume prompt on `IntakeFormBlock.vue` and `EmbeddedForm.jsx`, with the retention date from the run (REQ-ICQ-005). Verification: the Playwright spec saves, reopens signed in, and resumes anonymously with the code.
+- [ ] **T07**: "Save and continue later" and the resume prompt on `IntakeFormBlock.vue` and the embed's `EmbeddedForm.vue`, with the retention date from the run (REQ-ICQ-005). Verification: the Playwright spec saves, reopens signed in, and resumes anonymously with the code.
 
 ## Docs, strings and validation
 

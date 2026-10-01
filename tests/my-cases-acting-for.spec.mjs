@@ -176,3 +176,8 @@ test('the shell, the page, the case screen and both locales are wired', () => {
 		}
 	}
 })
+
+test('site: a case opened under a mandate uses the row the list handed over', () => {
+	const loader = readFileSync(join(ROOT, 'src', 'site', 'pages', 'collections', 'collectionLoader.js'), 'utf8')
+	assert.match(loader, /rowFor\(loaded\.objects, target\.id\) \|\| target\.row \|\| null/)
+})

@@ -10,8 +10,8 @@
 
 ## The page
 
-- [ ] **T03**: Consume `#guest/<app>/<action>/<token>` once on mount and clear it (REQ-GST-002). Verification: Vitest `portalApi.test.js`.
-- [ ] **T04**: `GuestActionPage.jsx`: preview, unavailable reason, declared fields, label, confirmation, message, `https` redirect (REQ-GST-004). Verification: Vitest with stubbed answers for each case.
+- [ ] **T03**: Consume `#guest/<app>/<action>/<token>` once when the site (`src/site/App.vue`) mounts and clear it (REQ-GST-002). Verification: node test on the fragment helper.
+- [ ] **T04**: `src/site/pages/GuestActionPage.vue`: preview, unavailable reason, declared fields, label, confirmation, message, `https` redirect (REQ-GST-004). Verification: node test with stubbed answers for each case.
 - [ ] **T05**: Playwright `tests/e2e/identity-guest-page-for-signed-links.spec.ts` against a fixture contribution that declares a guest action with a preview. Verification: the spec passes in CI.
 
 ## Strings, docs and validation

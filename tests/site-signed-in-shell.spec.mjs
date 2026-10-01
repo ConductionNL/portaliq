@@ -123,9 +123,10 @@ test('the page registry resolves the entry key, then the section, then any contr
 	assert.deepEqual(sitePageKeys(children), ['learniq:children', CONTRIBUTION_PAGE])
 	assert.deepEqual(sitePageKeys(inbox), ['__inbox__', 'inbox'])
 
-	// Nothing registered: the area renders the placeholder.
+	// Nothing registered for the inbox: the area renders the placeholder.
+	// Every contribution page has slice b's page from the start.
 	assert.equal(sitePageLoader(inbox), null)
-	assert.equal(sitePageLoader(children), null)
+	assert.equal(typeof sitePageLoader(children), 'function')
 
 	const inboxPage = async () => ({ name: 'InboxPage' })
 	const anyPage = async () => ({ name: 'ContributionPage' })

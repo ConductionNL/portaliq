@@ -1,5 +1,7 @@
 # Proposal: identity-ways-in-screens
 
+> Retargeted 2026-10-01 (`site-reaches-portal-parity`): new frontend work in this change lands in the Vue site `src/site/`, not in the React portal `src/portal/`, which is being retired.
+
 ## Why
 
 A person who does not yet have a portal account, or who has only a case number,

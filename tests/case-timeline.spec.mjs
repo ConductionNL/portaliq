@@ -107,3 +107,36 @@ test('a refused or failed timeline read is null, not an empty history', async ()
 
 	assert.equal(await api.fetchTimeline({ id: 'mijnZaken', register: 'dossiq', schema: 'case' }, 'x'), null)
 })
+
+// The same promises, held by the site's Vue timeline (site-reaches-portal-
+// parity slice b, REQ-SRP-019). The React half above goes when /portal retires.
+
+const { renderSfc } = await import('./support/render-sfc.mjs')
+const { newestFirst: siteNewestFirst } = await import('../src/site/components/collections/timeline.js')
+const VUE_TIMELINE = 'src/site/components/collections/TimelineList.vue'
+const siteT = (key) => key
+
+test('site: the entries render under the declared label, newest first, none dropped', async () => {
+	const html = await renderSfc(VUE_TIMELINE, { label: 'Wat er is gebeurd', entries: ENTRIES, t: siteT, locale: 'nl' })
+
+	assert.match(html, /<h3 class="utrecht-heading-4">Wat er is gebeurd<\/h3>/)
+	const order = ['Besluit genomen', 'Brief verstuurd', 'Telefonisch gesproken'].map((text) => html.indexOf(text))
+	assert.ok(order.every((at) => at > -1), 'every entry the provider returned is shown')
+	assert.deepEqual([...order].sort((a, b) => a - b), order, 'newest first')
+	assert.match(html, /<time class="pq-timeline__moment" datetime="2026-09-25T15:00:00\+00:00">/)
+})
+
+test('site: ordering never changes the list the provider returned', () => {
+	const given = [...ENTRIES]
+	assert.deepEqual(siteNewestFirst(given).map((e) => e.id), ['e3', 'e2', 'e1'])
+	assert.deepEqual(given, ENTRIES)
+})
+
+test('site: a case with no history says so, and one still loading says that', async () => {
+	const empty = await renderSfc(VUE_TIMELINE, { label: 'Wat er is gebeurd', entries: [], t: siteT })
+	assert.match(empty, /Nothing has happened yet\./)
+	assert.doesNotMatch(empty, /<ol/)
+	const loading = await renderSfc(VUE_TIMELINE, { entries: null, t: siteT })
+	assert.match(loading, /aria-busy="true"/)
+	assert.match(loading, /What happened/)
+})

@@ -102,3 +102,8 @@ test('the api sends actionApp and the detail card renders the actions', () => {
 	)
 	assert.match(page, /<AttachedActions\s/)
 })
+
+test('site: the detail card leaves a place for the attached actions (slice c fills it)', () => {
+	const card = readFileSync(join(ROOT, 'src/site/components/collections/DetailCard.vue'), 'utf8')
+	assert.match(card, /<SlotHost\s+name="attachedActions"/)
+})

@@ -33,10 +33,13 @@
  * `unread` with the inbox's new unread count, and `refresh` to read the
  * contributions again.
  *
- * Imports nothing, so tests/site-signed-in-shell.spec.mjs runs it as node.
+ * Imports only loader maps and shared code, so tests/site-signed-in-shell.spec.mjs
+ * runs it as node.
  *
  * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
+
+import { pages as collectionPages } from './collections/index.js'
 
 /** The key every contribution page falls back to. */
 export const CONTRIBUTION_PAGE = 'contribution'
@@ -46,7 +49,10 @@ export const CONTRIBUTION_PAGE = 'contribution'
  *
  * @type {Record<string, () => Promise<object>>}
  */
-const BUILT_IN = {}
+const BUILT_IN = {
+	// Slice b: collections, detail and timeline (the React portal's PageView).
+	...collectionPages,
+}
 
 const loaders = new Map(Object.entries(BUILT_IN))
 

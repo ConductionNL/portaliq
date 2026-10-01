@@ -362,12 +362,14 @@ import MarkdownBlock from './components/MarkdownBlock.vue'
 import WidgetGrid from './components/WidgetGrid.vue'
 import { createTranslator } from '../shared/i18n/index.js'
 import { logoutTarget, silentSignInUrl } from '../shared/idleSession.js'
+import { consumeOpenTarget } from '../shared/openRecord.js'
 import { createPortalApi } from '../shared/portalApi.js'
 import {
 	ACCOUNT_ROUTE,
 	buildNav,
 	isAccountRoute,
 	navEntryForRoute,
+	routeForNav,
 	shellSections,
 } from '../shared/portalNav.js'
 import {
@@ -408,6 +410,7 @@ import {
 	legalLinksOf,
 	registerRouteOf,
 } from './lib/shellData.js'
+import { openRecordEntry } from './pages/collections/index.js'
 
 /**
  * LOADED ON DEMAND, and the budget is why — the same reason the detail and
@@ -929,6 +932,10 @@ export default {
 		// the landing that brought them. The site fetch below repeats it
 		// under the slug the API answers with, which is the same one.
 		captureLanding(this.portalSlug || runtimeConfig().resolvedPortal || '')
+		// A notification's record link (`#open=<app>/<collection>/<id>`) is
+		// kept in sessionStorage before anything else reads the address, so
+		// it survives the sign-in and opens once the navigation has loaded.
+		this.keepOpenTarget()
 		this.route = this.routeFromLocation()
 		window.addEventListener('popstate', this.onPopState)
 		await this.loadSite()
@@ -1034,9 +1041,9 @@ export default {
 		 * fallback, so the door (title, theme, sign-in routes) still renders.
 		 * Any other failure stays a failure.
 		 *
-		 * @param {Promise<*>} read The content read.
-		 * @param {*} fallback What a refused read answers.
-		 * @return {Promise<*>} The read's answer, or the fallback.
+		 * @param {Promise<Array<object>>} read The content read.
+		 * @param {Array<object>} fallback What a refused read answers.
+		 * @return {Promise<Array<object>>} The read's answer, or the fallback.
 		 *
 		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 		 */
@@ -1111,6 +1118,13 @@ export default {
 			if (!this.session || this.nav.length === 0) {
 				return
 			}
+			// A kept record link opens the page that shows its collection.
+			const opened = openRecordEntry(this.nav)
+			if (opened) {
+				this.freshSignIn = false
+				this.replaceRoute(routeForNav(opened))
+				return
+			}
 			if (this.freshSignIn && this.route === '/') {
 				this.freshSignIn = false
 				this.replaceRoute(ACCOUNT_ROUTE)
@@ -1119,6 +1133,23 @@ export default {
 			if (target) {
 				this.replaceRoute(target)
 			}
+		},
+
+		/**
+		 * Keep a record link from the address for after the sign-in.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-record-link-must-open-its-record-after-sign-in-req-srp-021
+		 */
+		keepOpenTarget() {
+			let storage = null
+			try {
+				storage = window.sessionStorage
+			} catch {
+				// Without storage the link lives as long as this page view.
+			}
+			consumeOpenTarget(window.location, window.history, storage)
 		},
 
 		/**
