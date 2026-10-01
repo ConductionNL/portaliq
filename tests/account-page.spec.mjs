@@ -16,6 +16,7 @@ import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { buildNav, defaultNavKey } from '../src/shared/portalNav.js'
 import { compileLoading, LOADING_MODULE } from './support/compile-loading.mjs'
 
 const require = createRequire(import.meta.url)
@@ -53,13 +54,13 @@ async function load(relative) {
 	return import(pathToFileURL(out).href)
 }
 
-const { createPortalApi } = await load('lib/portalApi.js')
+const { createPortalApi } = await load('../shared/portalApi.js')
 const { consumeConfirmEmail, refusalText, promptDismissed, dismissPrompt } = await import(pathToFileURL(join(ROOT, 'src', 'shared', 'account.js')).href)
 const { default: AccountPage, ContactPrompt } = await load('components/AccountPage.jsx')
 
 const BASE = '/apps/portaliq/portal/api'
-const nl = JSON.parse(readFileSync(join(ROOT, 'src', 'portal', 'i18n', 'nl.json'), 'utf8'))
-const en = JSON.parse(readFileSync(join(ROOT, 'src', 'portal', 'i18n', 'en.json'), 'utf8'))
+const nl = JSON.parse(readFileSync(join(ROOT, 'src', 'shared', 'i18n', 'nl.json'), 'utf8'))
+const en = JSON.parse(readFileSync(join(ROOT, 'src', 'shared', 'i18n', 'en.json'), 'utf8'))
 
 /**
  * An identity translator with {name} substitution.
@@ -225,7 +226,10 @@ test('every string of the page is in both locales, without em-dashes', () => {
 test('the portal shell offers "My account", consumes the link and shows the prompt', () => {
 	const app = readFileSync(join(ROOT, 'src', 'portal', 'App.jsx'), 'utf8')
 	assert.match(app, /import AccountPage, \{ ContactPrompt \} from '@portal\/components\/AccountPage\.jsx'/)
-	assert.match(app, /label: t\('My account'\)/)
+	// The shared navigation offers it once signed in, and never as the first page.
+	const nav = buildNav([{ app: 'a', pages: [{ id: 'p' }] }], (key) => key, { access: true })
+	assert.ok(nav.some((entry) => entry.special === 'account' && entry.label === 'My account'))
+	assert.equal(defaultNavKey(nav), 'a:p')
 	assert.match(app, /active\.special === 'account'/)
 	assert.match(app, /consumeConfirmEmail\(window\.location, window\.history\)/)
 	assert.match(app, /state\.session\.contactPrompt === true/)

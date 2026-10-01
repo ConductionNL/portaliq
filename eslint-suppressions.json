@@ -37,7 +37,7 @@
       "count": 1
     }
   },
-  "src/portal/lib/portalApi.js": {
+  "src/shared/portalApi.js": {
     "no-unused-vars": {
       "count": 5
     }

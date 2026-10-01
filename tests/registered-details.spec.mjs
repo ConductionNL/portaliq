@@ -16,6 +16,7 @@ import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { buildNav, defaultNavKey } from '../src/shared/portalNav.js'
 import { compileLoading, LOADING_MODULE } from './support/compile-loading.mjs'
 
 const require = createRequire(import.meta.url)
@@ -51,15 +52,15 @@ async function load(relative) {
 	return import(pathToFileURL(out).href)
 }
 
-const { createPortalApi } = await load('lib/portalApi.js')
+const { createPortalApi } = await load('../shared/portalApi.js')
 const {
 	default: RegisteredDetailsPage,
 	reasonText,
 } = await load('components/RegisteredDetailsPage.jsx')
 
 const BASE = '/apps/portaliq/portal/api'
-const nl = JSON.parse(readFileSync(join(ROOT, 'src', 'portal', 'i18n', 'nl.json'), 'utf8'))
-const en = JSON.parse(readFileSync(join(ROOT, 'src', 'portal', 'i18n', 'en.json'), 'utf8'))
+const nl = JSON.parse(readFileSync(join(ROOT, 'src', 'shared', 'i18n', 'nl.json'), 'utf8'))
+const en = JSON.parse(readFileSync(join(ROOT, 'src', 'shared', 'i18n', 'en.json'), 'utf8'))
 
 /**
  * An identity translator with {name} substitution.
@@ -206,7 +207,10 @@ test('every string of the section is in both locales', () => {
 test('the portal shell offers "My details" once signed in', () => {
 	const app = readFileSync(join(ROOT, 'src', 'portal', 'App.jsx'), 'utf8')
 	assert.match(app, /import RegisteredDetailsPage from '@portal\/components\/RegisteredDetailsPage\.jsx'/)
-	assert.match(app, /label: t\('My details'\)/)
+	// The shared navigation offers it once signed in, and never as the first page.
+	const nav = buildNav([{ app: 'a', pages: [{ id: 'p' }] }], (key) => key, { access: true })
+	assert.ok(nav.some((entry) => entry.special === 'details' && entry.label === 'My details'))
+	assert.equal(defaultNavKey(nav), 'a:p')
 	assert.match(app, /active\.special === 'details'/)
 })
 

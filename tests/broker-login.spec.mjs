@@ -14,7 +14,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
-import { consumeSigninFailed, loginStartUrl, signinOrganisation } from '../src/portal/lib/signinRoute.js'
+import { consumeSigninFailed, loginStartUrl, signinOrganisation } from '../src/shared/signinRoute.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -63,7 +63,7 @@ test('the login screen starts each button by its route and shows the failure', (
 	)
 
 	const nl = JSON.parse(
-		readFileSync(join(ROOT, 'src', 'portal', 'i18n', 'nl.json'), 'utf8'),
+		readFileSync(join(ROOT, 'src', 'shared', 'i18n', 'nl.json'), 'utf8'),
 	)
 	assert.equal(
 		nl['Signing in did not work. Try again or choose another way in.'],

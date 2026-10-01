@@ -49,15 +49,28 @@
 				@mouseleave="open = null"
 				@focusin="open = item.name"
 				@focusout="onFocusOut($event, item.name)">
+				<!-- `href` when the item carries a real address (the signed-in
+				     menu does), so a new tab or a copied link works; the click
+				     still routes in place. `badge` is a count shown beside the
+				     name, read out through its own label. -->
 				<a
 					class="ac-c-navigation__link-container pq-menu__link"
-					:href="item.link"
+					:href="item.href || item.link"
 					:aria-current="isCurrent(item.link) ? 'page' : undefined"
 					:aria-expanded="
 						hasChildren(item) ? String(open === item.name) : undefined
 					"
 					@click.prevent="select(item.link)">
 					<div class="ac-c-navigation__label">{{ item.name }}</div>
+					<span
+						v-if="item.badge"
+						class="pq-menu__badge"
+						data-testid="site-menu-badge">
+						<span aria-hidden="true">{{ item.badge }}</span>
+						<span class="pq-menu__sr">{{
+							item.badgeLabel || item.badge
+						}}</span>
+					</span>
 				</a>
 
 				<!-- Exactly one level of children. The API already drops
@@ -74,7 +87,7 @@
 						class="ac-c-navigation__li pq-menu__item">
 						<a
 							class="ac-c-navigation__link-container pq-menu__link pq-menu__link--child"
-							:href="child.link"
+							:href="child.href || child.link"
 							:aria-current="
 								isCurrent(child.link) ? 'page' : undefined
 							"
@@ -227,8 +240,47 @@ export default {
  * its visitors regardless of which stylesheet is loaded, and it changes no
  * geometry.
  */
+/*
+ * A LONG MENU WRAPS. A signed-in guardian's menu holds fourteen sections, and
+ * on one unwrapping row the last two sat past the right edge of a 1280px
+ * viewport, reachable only by scrolling the page sideways.
+ */
+.pq-menu__list {
+	flex-wrap: wrap;
+}
+
 .pq-menu__link:focus-visible {
 	outline: 2px solid var(--pq-focus-color, #1a1a1a);
 	outline-offset: 2px;
+}
+
+/* The unread count beside a menu item: the design system's own badge tokens,
+   with the text and background of the page as the fallback pair. */
+.pq-menu__badge {
+	display: inline-block;
+	min-inline-size: 1.5em;
+	margin-inline-start: 6px;
+	padding: 0 6px;
+	border-radius: 999px;
+	background: var(
+		--utrecht-badge-counter-background-color,
+		var(--utrecht-document-color, CanvasText)
+	);
+	color: var(
+		--utrecht-badge-counter-color,
+		var(--utrecht-document-background-color, Canvas)
+	);
+	font-size: 0.85em;
+	line-height: 1.5;
+	text-align: center;
+}
+
+.pq-menu__sr {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
 }
 </style>

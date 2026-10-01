@@ -15,6 +15,7 @@ import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { buildNav, shellSections } from '../src/shared/portalNav.js'
 
 const require = createRequire(import.meta.url)
 const babel = require('@babel/core')
@@ -103,9 +104,14 @@ test('the news page appears only when the feed holds an item', () => {
 	assert.equal(hasNews(null), false)
 	assert.equal(hasNews([ITEM]), true)
 	const app = readFileSync(join(ROOT, 'src', 'portal', 'App.jsx'), 'utf8')
-	assert.match(app, /special: 'news'/)
+	assert.match(app, /buildNav\(state\.contributions\?\.contributions, t, shellSections\(state\)\)/)
+	assert.equal(shellSections({ news: [ITEM] }).news, true)
+	assert.equal(shellSections({ news: [] }).news, false)
 	assert.match(app, /<NewsPage/)
-	const api = readFileSync(join(ROOT, 'src', 'portal', 'lib', 'portalApi.js'), 'utf8')
+	// The shared navigation offers News only when the feed holds an item.
+	assert.ok(buildNav([], (key) => key, { news: true }).some((entry) => entry.special === 'news'))
+	assert.ok(!buildNav([], (key) => key, { news: false }).some((entry) => entry.special === 'news'))
+	const api = readFileSync(join(ROOT, 'src', 'shared', 'portalApi.js'), 'utf8')
 	assert.match(api, /async fetchNewsFeed\(\)[\s\S]*\/api\/news\/feed/)
 })
 
@@ -126,8 +132,8 @@ test('newsItem declares translations and the register moved', () => {
 })
 
 test('every new SPA string has a Dutch value', () => {
-	const en = JSON.parse(readFileSync(join(ROOT, 'src', 'portal', 'i18n', 'en.json'), 'utf8'))
-	const nl = JSON.parse(readFileSync(join(ROOT, 'src', 'portal', 'i18n', 'nl.json'), 'utf8'))
+	const en = JSON.parse(readFileSync(join(ROOT, 'src', 'shared', 'i18n', 'en.json'), 'utf8'))
+	const nl = JSON.parse(readFileSync(join(ROOT, 'src', 'shared', 'i18n', 'nl.json'), 'utf8'))
 	for (const key of ['News', 'No news yet.', 'News from school is translated by AI into your language. You can always see the original text.']) {
 		assert.equal(en[key], key, `en identity for ${key}`)
 		assert.ok(nl[key] && nl[key] !== '', `nl value for ${key}`)

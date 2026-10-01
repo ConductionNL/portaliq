@@ -19,56 +19,30 @@ import IdleWarningDialog from '@portal/components/IdleWarningDialog.jsx'
 import InboxPage from '@portal/components/InboxPage.jsx'
 import MessagesPage from '@portal/components/MessagesPage.jsx'
 import MyCasesPage from '@portal/components/MyCasesPage.jsx'
-import NewsPage, { hasNews } from '@portal/components/NewsPage.jsx'
+import NewsPage from '@portal/components/NewsPage.jsx'
 import PageView from '@portal/components/PageView.jsx'
 import PortalNotices from '@portal/components/PortalNotices.jsx'
 import RegisteredDetailsPage from '@portal/components/RegisteredDetailsPage.jsx'
 import TasksPage from '@portal/components/TasksPage.jsx'
 import { branchInEffect } from '@portal/lib/branch.js'
-import { logoutTarget, markIdleSignOut, silentSignInUrl, takeIdleSignOut } from '@portal/lib/idleSession.js'
-import { consumeOidcCallbackFragment, createPortalApi, getToken, setToken } from '@portal/lib/portalApi.js'
 import { runAction } from '@portal/lib/rowAction.js'
-import { consumeSigninFailed, loginStartUrl, signinOrganisation } from '@portal/lib/signinRoute.js'
 import useIdleSession from '@portal/lib/useIdleSession.js'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { consumeConfirmEmail, dismissPrompt, promptDismissed, refusalText } from '../shared/account.js'
+import { logoutTarget, markIdleSignOut, silentSignInUrl, takeIdleSignOut } from '../shared/idleSession.js'
 import { actingForHeld, keepActingFor, readActingFor } from '../shared/myCases.js'
 import { consumeOpenTarget, forgetOpenTarget, navKeyFor } from '../shared/openRecord.js'
+import { consumeOidcCallbackFragment, createPortalApi, getToken, setToken } from '../shared/portalApi.js'
+import { buildNav, defaultNavKey, NAV_KEYS, shellSections } from '../shared/portalNav.js'
+import { consumeSigninFailed, loginStartUrl, signinOrganisation } from '../shared/signinRoute.js'
 import Loading from './components/Loading.jsx'
 
-// The fixed cross-app inbox nav entry's key (portal-inbox-v2 T05) — distinct
-// from any `${contribution.app}:${page.id}` key a real contribution could mint.
-const INBOX_KEY = '__inbox__'
-
-// The fixed "Mijn taken" nav entry's key (portal-task-delivery) — like the
-// inbox, a shell surface rather than any contribution's own page: portal
-// tasks live behind openregister's assertion-guarded seam, not in a
-// contribution collection. Shown only when the backend announces
-// `tasks: {enabled: true}` on the contributions aggregate.
-const TASKS_KEY = '__tasks__'
-
-// The guardian's conversations with school (translated-message-notice), shown
-// only when the subject takes part in at least one message thread, so a
-// supplier or citizen portal never shows an empty tab.
-const MESSAGES_KEY = '__messages__'
-
-// School news (news-item-translation), shown only when the guardian's feed holds
-// an item, so a portal without news never shows an empty tab.
-const NEWS_KEY = '__news__'
-
-// The asker's side of an access request (identity-access-requests).
-const ACCESS_KEY = '__access__'
-
-// "My cases" (cases-my-cases-page): every app's cases in one list, shown when
-// the backend announces `cases: {enabled: true}` on the contributions
-// aggregate, that is when some contribution declares a `kind: cases` collection.
-const CASES_KEY = '__cases__'
-// "My details" (identity-registered-details): what the BRP or the KvK holds
-// about the signed-in person, read when the section opens.
-const DETAILS_KEY = '__details__'
-// "My account" (identity-profile-page): the person's own name, addresses,
-// contact channel and removal.
-const ACCOUNT_KEY = '__account__'
+// The shell's own sections (inbox, tasks, messages, news, access, cases,
+// details, account) carry fixed keys, distinct from any
+// `${contribution.app}:${page.id}` key a real contribution could mint. The
+// navigation itself is built in src/shared/portalNav.js, which the Vue site
+// renderer uses too.
+const { tasks: TASKS_KEY, account: ACCOUNT_KEY } = NAV_KEYS
 
 /**
  * sessionStorage, or null where the browser refuses it (private mode, a
@@ -84,72 +58,6 @@ function sessionStore() {
 	}
 }
 
-
-// Flatten every contribution's pages into a single navigable list, tagging each
-// with its owning contribution so a block's refs resolve in the right scope.
-// The unified inbox (portal-inbox-v2) is appended last: a fixed, cross-app nav
-// entry that is not sourced from any single contribution's own `pages`.
-/**
- *
- * @param contributions
- * @param t
- * @param tasksEnabled
- * @param messagesEnabled
- * @param {boolean} newsEnabled Whether the guardian's feed holds news.
- * @param {boolean} accessEnabled Whether the signed-in user's contributions have loaded.
- * @param {boolean} casesEnabled Whether a contribution declares a case collection.
- */
-function buildNav(contributions, t, tasksEnabled, messagesEnabled = false, newsEnabled = false, accessEnabled = false, casesEnabled = false) {
-	const nav = []
-	for (const contribution of (contributions || [])) {
-		for (const page of (contribution.pages || [])) {
-			nav.push({
-				key: `${contribution.app}:${page.id}`,
-				label: page.label || page.id,
-				icon: page.icon,
-				page,
-				contribution,
-			})
-		}
-	}
-	// The fixed "Mijn taken" entry (portal-task-delivery): announced by the
-	// backend only when the task seam is actually reachable, and appended
-	// even when no contribution pages exist — a party can have an open task
-	// without any other portal content.
-	// "My cases" first (cases-my-cases-page): the one place a person sees
-	// every case from every app, so it is where the portal opens.
-	if (casesEnabled) {
-		nav.unshift({ key: CASES_KEY, label: t('My cases'), icon: 'FolderAccount', special: 'cases' })
-	}
-	if (tasksEnabled) {
-		nav.push({ key: TASKS_KEY, label: t('My tasks'), icon: 'CheckboxMarkedOutline', special: 'tasks' })
-	}
-	if (messagesEnabled) {
-		nav.push({ key: MESSAGES_KEY, label: t('Messages'), icon: 'MessageText', special: 'messages' })
-	}
-	if (newsEnabled) {
-		nav.push({ key: NEWS_KEY, label: t('News'), icon: 'Newspaper', special: 'news' })
-	}
-	// Surface the fixed cross-app inbox only once contributions have loaded.
-	// Appending it on the initial (pre-load) render would make it the sole nav
-	// entry, locking the default active page to the empty inbox instead of the
-	// subject's first content page.
-	if (nav.length > 0) {
-		nav.push({ key: INBOX_KEY, label: t('Inbox'), icon: 'Email', special: 'inbox' })
-	}
-	// Asking for access to a party's cases (identity-access-requests, T05).
-	// Offered to every signed-in user once the contributions have loaded, for
-	// the same reason as the inbox; last, so it never becomes the default.
-	// Its own entry, because a person without any case yet has no "My
-	// cases" page to find it on.
-	if (accessEnabled) {
-		nav.push({ key: ACCESS_KEY, label: t('Access to cases'), icon: 'AccountKey', special: 'access' })
-		// The registered details, for the same reason and never the default.
-		nav.push({ key: DETAILS_KEY, label: t('My details'), icon: 'CardAccountDetails', special: 'details' })
-		nav.push({ key: ACCOUNT_KEY, label: t('My account'), icon: 'AccountCog', special: 'account' })
-	}
-	return nav
-}
 
 /**
  *
@@ -354,15 +262,7 @@ export default function App({ config, t: tProp }) {
 	const [pendingTaskUuid, setPendingTaskUuid] = useState(null)
 
 	const nav = useMemo(
-		() => buildNav(
-			state.contributions?.contributions,
-			t,
-			state.contributions?.tasks?.enabled === true,
-			(state.threads || []).length > 0,
-			hasNews(state.news),
-			Boolean(state.session && state.contributions),
-			state.contributions?.cases?.enabled === true,
-		),
+		() => buildNav(state.contributions?.contributions, t, shellSections(state)),
 		[state.session, state.contributions, state.threads, state.news, t],
 	)
 	const unreadCount = unreadOverride ?? (state.contributions?.unreadCount || 0)
@@ -372,8 +272,7 @@ export default function App({ config, t: tProp }) {
 	// message list instead of the subject's actual records.
 	useEffect(() => {
 		if (nav.length > 0 && (activeKey === null || !nav.some((n) => n.key === activeKey))) {
-			const firstContent = nav.find((n) => n.special !== 'inbox' && n.special !== 'access' && n.special !== 'details' && n.special !== 'account') || nav[0]
-			setActiveKey(firstContent.key)
+			setActiveKey(defaultNavKey(nav))
 		}
 	}, [nav, activeKey])
 
