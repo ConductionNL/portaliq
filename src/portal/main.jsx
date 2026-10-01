@@ -10,7 +10,7 @@ import React from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.jsx'
 import EmbeddedForm from './components/EmbeddedForm.jsx'
-import { startHeightReporting } from './embedHeight.js'
+import { startHeightReporting } from '../shared/embedHeight.js'
 import { createTranslator } from './i18n/index.js'
 
 // Shell-level NL Design System theme tokens (portal-spa-nl-design-system-styling).
