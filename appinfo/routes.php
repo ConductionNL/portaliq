@@ -325,6 +325,10 @@ return [
         // The activation link of a self-registration (identity-ways-in-screens T03).
         ['name' => 'portalIdentity#activate', 'url' => '/portal/api/identity/activate', 'verb' => 'POST'],
         ['name' => 'portalIdentity#acceptInvitation', 'url' => '/portal/api/identity/invitation/accept', 'verb' => 'POST'],
+        // A guest's one act from a link a contributing app signed
+        // (identity-guest-page-for-signed-links D3): public, rate limited, no session.
+        ['name' => 'guestAction#preview', 'url' => '/portal/api/guest/{appId}/{actionId}/preview', 'verb' => 'POST'],
+        ['name' => 'guestAction#act', 'url' => '/portal/api/guest/{appId}/{actionId}', 'verb' => 'POST'],
         ['name' => 'portalAccountSelf#updateDetails', 'url' => '/portal/api/identity/details', 'verb' => 'PATCH'],
         ['name' => 'portalAccountSelf#details', 'url' => '/portal/api/identity/details', 'verb' => 'GET'],
         // What the BRP or the KvK holds about the bearer (identity-registered-details).

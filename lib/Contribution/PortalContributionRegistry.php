@@ -54,6 +54,11 @@ use Throwable;
  */
 class PortalContributionRegistry {
 	/**
+	 * The audience a provider lists to declare guest actions.
+	 */
+	public const GUEST_AUDIENCE = 'guest';
+
+	/**
 	 * Locates each app's provider class. Built here from the injected
 	 * dependencies when not supplied, so the constructor signature every
 	 * existing caller and test uses keeps working unchanged.
@@ -209,6 +214,58 @@ class PortalContributionRegistry {
 
 		return ['contributions' => $contributions];
 	}//end aggregateAnonymous()
+
+	/**
+	 * One declared guest action, or null (identity-guest-page-for-signed-links
+	 * D1). Only an installed app whose provider serves the `guest` audience is
+	 * asked, as a `low`-trust guest, and only an action marked `guest` that
+	 * survived trust filtering and normalisation is returned. Null covers an
+	 * unknown app, an unknown action and a resident-only action alike, so the
+	 * caller answers them with the same 404.
+	 *
+	 * @param string $appId The contributing app.
+	 * @param string $actionId The declared action id.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/identity-guest-page-for-signed-links/tasks.md#T01
+	 */
+	public function guestAction(string $appId, string $actionId): ?array {
+		if (in_array($appId, $this->appManager->getInstalledApps(), true) === false) {
+			return null;
+		}
+
+		$provider = $this->resolveProvider(appId: $appId);
+		if ($provider === null
+			|| method_exists($provider, 'getContribution') === false
+			|| $this->servesAudience(provider: $provider, audience: self::GUEST_AUDIENCE) === false
+		) {
+			return null;
+		}
+
+		try {
+			$contribution = $provider->getContribution(['audience' => self::GUEST_AUDIENCE, 'trust' => 'low']);
+			if (is_array($contribution) === false) {
+				return null;
+			}
+
+			$contribution['app'] = $appId;
+			$contribution = $this->normaliser->normalise(
+				contribution: $this->filterByTrust(contribution: $contribution, trust: 'low')
+			);
+		} catch (Throwable $e) {
+			$this->logger->error('Portaliq: guest contribution failed', ['app' => $appId, 'reason' => $e->getMessage()]);
+			return null;
+		}
+
+		foreach (($contribution['actions'] ?? []) as $action) {
+			if (($action['id'] ?? '') === $actionId && ($action['guest'] ?? false) === true) {
+				return $action;
+			}
+		}
+
+		return null;
+	}//end guestAction()
 
 	/**
 	 * Resolve one provider/audience pair's anonymous-only contribution, or
