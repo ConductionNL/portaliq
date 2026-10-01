@@ -432,6 +432,34 @@ class PortalManifestNormaliserTest extends TestCase {
 	}//end testAClosedFieldIsKeptOnlyWhenItNamesAProjectedField()
 
 	/**
+	 * collection-group-by-field T2: `groupByField` stays only when it names a
+	 * projected field, so the portal never groups on a field the rows lack.
+	 *
+	 * @spec openspec/changes/collection-group-by-field/tasks.md#T2
+	 */
+	public function testAGroupByFieldIsKeptOnlyWhenItNamesAProjectedField(): void {
+		$out = $this->normaliser()->normalise(
+			[
+				'collections' => [
+					['id' => 'c1', 'schema' => 's', 'fields' => ['learnerRef', 'value'], 'groupByField' => 'learnerRef'],
+					['id' => 'c2', 'schema' => 's', 'fields' => ['value'], 'groupByField' => 'learnerRef'],
+					['id' => 'c3', 'schema' => 's', 'groupByField' => 'learnerRef'],
+					['id' => 'c4', 'schema' => 's', 'groupByField' => ['learnerRef']],
+					['id' => 'c5', 'schema' => 's', 'groupByField' => ''],
+				],
+			]
+		);
+
+		$byId = array_column($out['collections'], null, 'id');
+		$this->assertSame('learnerRef', $byId['c1']['groupByField']);
+		$this->assertSame('learnerRef', $byId['c3']['groupByField']);
+		foreach (['c2', 'c4', 'c5'] as $id) {
+			$this->assertArrayNotHasKey('groupByField', $byId[$id], $id);
+		}
+
+	}//end testAGroupByFieldIsKeptOnlyWhenItNamesAProjectedField()
+
+	/**
 	 * signin-eherkenning-branch REQ-SEB-002 (T03): `branchField` stays only
 	 * when it names a projected field.
 	 */

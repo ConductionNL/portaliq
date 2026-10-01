@@ -96,18 +96,21 @@ class BrokerSessionController extends Controller {
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 30, period: 60)]
 	public function start(string $org = '', string $provider = '', string $portal = '', string $returnTo = ''): RedirectResponse {
-		if ($org === '' && $portal !== '') {
-			$org = $this->organisationOfPortal(slug: $portal);
+		// The serving portal, resolved once: it names the organisation when
+		// `org` is empty, and the login returns to it.
+		$site = $this->siteFor(portal: $portal);
+		if ($org === '') {
+			$org = $this->organisationOf(site: $site);
 		}
 
 		$url = $this->login->start(
 			org: $org,
 			provider: $provider,
-			returnTo: $this->returnPath(returnTo: $returnTo),
+			returnTo: $this->returnPath(returnTo: $returnTo, site: $site),
 			callbackUrl: $this->urlGenerator->linkToRouteAbsolute(Application::APP_ID . '.brokerSession.callback')
 		);
 		if ($url === null) {
-			return $this->failed();
+			return $this->failed(landing: $this->portalOf(site: $site));
 		}
 
 		return new RedirectResponse($url, Http::STATUS_FOUND);
@@ -118,12 +121,14 @@ class BrokerSessionController extends Controller {
 	 * Complete a login: 302 to the portal with the bearer in the fragment, or
 	 * to the failed-login fragment.
 	 *
-	 * @param string $state The relay state.
-	 * @param string $code  The one-time code.
+	 * @param string $state      The relay state, as a broker that names it `state` sends it.
+	 * @param string $code       The one-time code.
+	 * @param string $relayState The relay state, as integriq names it.
 	 *
 	 * @return RedirectResponse
 	 *
 	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-a-failed-login-returns-to-the-login-screen-without-a-reason-req-bel-006
+	 * @spec openspec/changes/portal-broker-login-keeps-the-portal/specs/portal-broker-envelope-login/spec.md
 	 *
 	 * @no-admin-idor-exempt The anonymous return leg of a login. What it acts
 	 * on is bound by the single-use state row written at the start and by the
@@ -133,10 +138,18 @@ class BrokerSessionController extends Controller {
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 30, period: 60)]
-	public function callback(string $state = '', string $code = ''): RedirectResponse {
+	public function callback(string $state = '', string $code = '', string $relayState = ''): RedirectResponse {
+		if ($relayState !== '') {
+			$state = $relayState;
+		}
+
 		$done = $this->login->complete(state: $state, code: $code);
 		if ($done === null) {
-			return $this->failed();
+			return $this->failed(landing: $this->portalPath());
+		}
+
+		if ($done['token'] === '') {
+			return $this->failed(landing: $this->localPath(path: $done['returnTo']));
 		}
 
 		$returnTo = $done['returnTo'];
@@ -154,36 +167,82 @@ class BrokerSessionController extends Controller {
 
 
 	/**
-	 * The one failed-login answer.
+	 * The one failed-login answer: the same fragment for every cause, on the
+	 * portal the login started from when that is known.
+	 *
+	 * @param string $landing The path to land on.
 	 *
 	 * @return RedirectResponse
+	 *
+	 * @spec openspec/changes/portal-broker-login-keeps-the-portal/specs/portal-broker-envelope-login/spec.md
 	 */
-	private function failed(): RedirectResponse {
-		return new RedirectResponse($this->urlGenerator->getAbsoluteURL($this->portalPath()) . self::FAILED_FRAGMENT, Http::STATUS_FOUND);
+	private function failed(string $landing): RedirectResponse {
+		return new RedirectResponse($this->urlGenerator->getAbsoluteURL($landing) . self::FAILED_FRAGMENT, Http::STATUS_FOUND);
 	}//end failed()
 
 
 	/**
 	 * Where a login returns: the site page it was started from, when that is a
-	 * page on the site route, else the portal SPA.
+	 * page on the site route, else the portal it was started from.
 	 *
-	 * @param string $returnTo The page the site sent.
+	 * @param string                    $returnTo The page the site sent.
+	 * @param array<string, mixed>|null $site     The serving portal, or null.
 	 *
 	 * @return string
 	 *
 	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+	 * @spec openspec/changes/portal-broker-login-keeps-the-portal/specs/portal-broker-envelope-login/spec.md
 	 */
-	private function returnPath(string $returnTo): string {
-		$site = (new SiteReturnAddress())->accept(
+	private function returnPath(string $returnTo, ?array $site): string {
+		$page = (new SiteReturnAddress())->accept(
 			candidate: $returnTo,
 			sitePath: $this->urlGenerator->linkToRoute(Application::APP_ID . '.portalPage.site')
 		);
-		if ($site !== '') {
-			return $site;
+		if ($page !== '') {
+			return $page;
 		}
 
-		return $this->portalPath();
+		return $this->portalOf(site: $site);
 	}//end returnPath()
+
+
+	/**
+	 * The portal SPA's address for a resolved portal: `?portal=<slug>` when it
+	 * has one, else the plain portal address. Only a resolved portal's slug is
+	 * echoed, never raw input.
+	 *
+	 * @param array<string, mixed>|null $site The serving portal, or null.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/portal-broker-login-keeps-the-portal/specs/portal-broker-envelope-login/spec.md
+	 */
+	private function portalOf(?array $site): string {
+		$slug = ($site['slug'] ?? null);
+		if (is_string($slug) === false || $slug === '') {
+			return $this->portalPath();
+		}
+
+		return $this->portalPath() . '?portal=' . rawurlencode($slug);
+	}//end portalOf()
+
+
+	/**
+	 * A stored return address when it is a path on this server, else the
+	 * portal. The start only ever stores such a path; this keeps a row that
+	 * says otherwise from becoming a redirect elsewhere.
+	 *
+	 * @param string $path The stored return address.
+	 *
+	 * @return string
+	 */
+	private function localPath(string $path): string {
+		if (str_starts_with($path, '/') === false || str_starts_with($path, '//') === true || str_contains($path, '\\') === true) {
+			return $this->portalPath();
+		}
+
+		return $path;
+	}//end localPath()
 
 
 	/**
@@ -197,18 +256,34 @@ class BrokerSessionController extends Controller {
 
 
 	/**
-	 * The organisation slug of a portal, or '' when it names none.
+	 * The portal a login was started from, or null for none or an unknown one.
 	 *
-	 * @param string $slug The portal slug.
+	 * @param string $portal The portal slug, or ''.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function siteFor(string $portal): ?array {
+		if ($portal === '') {
+			return null;
+		}
+
+		return $this->portals->resolve(request: $this->request, portalSlug: $portal);
+	}//end siteFor()
+
+
+	/**
+	 * A resolved portal's organisation slug, or '' when it names none.
+	 *
+	 * @param array<string, mixed>|null $site The resolved portal, or null.
 	 *
 	 * @return string
 	 */
-	private function organisationOfPortal(string $slug): string {
-		$organisation = ($this->portals->resolve(request: $this->request, portalSlug: $slug)['organisation'] ?? null);
+	private function organisationOf(?array $site): string {
+		$organisation = ($site['organisation'] ?? null);
 		if (is_string($organisation) === false) {
 			return '';
 		}
 
 		return trim($organisation);
-	}//end organisationOfPortal()
+	}//end organisationOf()
 }//end class

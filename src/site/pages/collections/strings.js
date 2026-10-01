@@ -13,6 +13,7 @@
 export default {
 	nl: {
 		'Loading…': 'Laden…',
+		Other: 'Overig',
 		'No items.': 'Geen items.',
 		'No messages.': 'Geen berichten.',
 		Actions: 'Acties',
@@ -42,6 +43,7 @@ export default {
 	},
 	en: {
 		'Loading…': 'Loading…',
+		Other: 'Other',
 		'No items.': 'No items.',
 		'No messages.': 'No messages.',
 		Actions: 'Actions',
