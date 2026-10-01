@@ -98,6 +98,7 @@
     "check:news-item-translation": "node --test tests/news-item-translation.spec.mjs",
     "check:news-title-and-newsletter-translation": "node --test tests/news-title-and-newsletter-translation.spec.mjs",
     "check:newsletter-title-translation": "node --test tests/newsletter-title-translation.spec.mjs",
+    "check:news-authoring": "node --test tests/news-authoring.spec.mjs",
     "check:intake-entry": "node --test tests/intake-entry.spec.mjs",
     "check:access-request-asker": "node --test tests/access-request-asker.spec.mjs",
     "check:registered-details": "node --test tests/registered-details.spec.mjs",
@@ -108,6 +109,7 @@
     "check:availability-report": "node --test tests/availability-report.spec.mjs",
     "check:site-collections": "node --test tests/site-collections.spec.mjs",
     "check:collection-loader": "node --test tests/collection-loader.spec.mjs",
+    "check:collection-groups": "node --test tests/collection-groups.spec.mjs",
     "check:rich-text": "node --test tests/rich-text.spec.mjs"
   },
   "browserslist": [

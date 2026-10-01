@@ -90,6 +90,7 @@ class CollectionConfigNormaliser {
 			$collection = $this->normaliseFileFlags(collection: $collection);
 			$collection = $this->normaliseKind(collection: $collection);
 			$collection = $this->normaliseClosedField(collection: $collection);
+			$collection = $this->normaliseGroupByField(collection: $collection);
 			$collection = (new PortalBranchScope())->normalise(collection: $collection);
 			$collection = (new MessageBoxConfigNormaliser())->normalise(collection: $collection);
 			$collection = (new RowActionResolver())->normaliseNoticeField(collection: $collection);
@@ -176,6 +177,37 @@ class CollectionConfigNormaliser {
 
 		return $collection;
 	}//end normaliseClosedField()
+
+	/**
+	 * Keep `groupByField` only when it names a field the collection projects.
+	 *
+	 * The hint tells the portal to show the rows in groups, one per value of
+	 * that field (learniq groups a guardian's grades per child on
+	 * `learnerRef`). It is kept only as a non-empty string naming one of the
+	 * projected `fields` (or any field, when the collection projects none),
+	 * because grouping on a field the rows never carry would put every row
+	 * under one unnamed heading.
+	 *
+	 * @param array<string, mixed> $collection The collection.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/collection-group-by-field/tasks.md#T2
+	 */
+	private function normaliseGroupByField(array $collection): array {
+		if (array_key_exists('groupByField', $collection) === false) {
+			return $collection;
+		}
+
+		$field = $collection['groupByField'];
+		$fields = ($collection['fields'] ?? null);
+		$named = (is_string($field) === true && $field !== '');
+		if ($named === false || (is_array($fields) === true && in_array($field, $fields, true) === false)) {
+			unset($collection['groupByField']);
+		}
+
+		return $collection;
+	}//end normaliseGroupByField()
 
 	/**
 	 * Coerce the opt-in file flags to strict booleans.

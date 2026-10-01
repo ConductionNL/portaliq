@@ -77,6 +77,13 @@
       "order": 26
     },
     {
+      "id": "NewsMenu",
+      "label": "News",
+      "icon": "NewspaperVariantOutline",
+      "route": "News",
+      "order": 27
+    },
+    {
       "id": "PortalAccounts",
       "label": "Accounts",
       "icon": "Account",
@@ -2239,6 +2246,75 @@
           "enabled": true,
           "showMetadata": true
         }
+      }
+    },
+    {
+      "id": "News",
+      "route": "/news",
+      "type": "index",
+      "title": "News",
+      "config": {
+        "register": "portaliq",
+        "schema": "newsItem",
+        "_note": "School news for parents (staff-news-screen). Every write goes through NewsController's staff routes, never the object form: they check the audience and keep the read receipts and translations the server owns. 'New news item' and 'Change' open NewsItemDialog, which offers the whole school or groups from GET /api/news/audiences; 'Publish' and 'Take back' call the publish routes. See src/lib/newsAuthoring.js.",
+        "showAdd": false,
+        "columns": [
+          "title",
+          "target",
+          {
+            "key": "status",
+            "label": "Status",
+            "widget": "badge",
+            "widgetProps": {
+              "colorMap": {
+                "published": "success",
+                "draft": "warning"
+              }
+            }
+          },
+          "authorRef"
+        ],
+        "headerActions": [
+          {
+            "id": "new-news-item",
+            "label": "New news item",
+            "icon": "Plus",
+            "handler": "newNewsItem"
+          }
+        ],
+        "actions": [
+          {
+            "id": "change-news-item",
+            "label": "Change",
+            "icon": "Pencil",
+            "type": "handler",
+            "handler": "changeNewsItem"
+          },
+          {
+            "id": "publish-news-item",
+            "label": "Publish",
+            "icon": "Check",
+            "type": "handler",
+            "handler": "publishNewsItem",
+            "visibleWhen": {
+              "field": "status",
+              "op": "neq",
+              "value": "published"
+            }
+          },
+          {
+            "id": "unpublish-news-item",
+            "label": "Take back",
+            "icon": "Close",
+            "type": "handler",
+            "handler": "unpublishNewsItem",
+            "visibleWhen": {
+              "field": "status",
+              "op": "eq",
+              "value": "published"
+            }
+          }
+        ]
       }
     },
     {
