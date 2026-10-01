@@ -344,6 +344,105 @@ class ContributionControllerTest extends TestCase {
 
 	}//end testAnonymousCreateWriteFailureIs502()
 
+	/**
+	 * Every active landing-page form is its own anonymous create action on
+	 * `landingPageSubmission`. A submission names its form's action, so it
+	 * is filed under that form's whitelist and defaults, not the first one.
+	 *
+	 * @spec openspec/changes/create-names-its-action/tasks.md#T3
+	 */
+	public function testAnonymousCreateWritesThroughTheFormItNames(): void {
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->once())->method('createAnonymousObject')
+			->with('portaliq', 'landingPageSubmission', ['email' => 'a@example.nl', 'formId' => 'form-b'])
+			->willReturn(['id' => 'new']);
+
+		$response = $this->controller(
+			aggregate: $this->aggregate(),
+			subject: null,
+			writer: $writer,
+			anonymousAggregate: $this->twoLandingPageForms(),
+			params: ['actionId' => 'submit-form-b', 'email' => 'a@example.nl', 'name' => 'Ada']
+		)->create('portaliq', 'landingPageSubmission');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+
+	}//end testAnonymousCreateWritesThroughTheFormItNames()
+
+	/**
+	 * An anonymous create naming no anonymous action on the target is
+	 * refused, and two forms without a name are refused rather than guessed.
+	 *
+	 * @spec openspec/changes/create-names-its-action/tasks.md#T3
+	 */
+	public function testAnonymousCreateNamingNoFormOrAnUnknownOneIsRefused(): void {
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->never())->method('createAnonymousObject');
+
+		$unknown = $this->controller(
+			aggregate: $this->aggregate(),
+			subject: null,
+			writer: $writer,
+			anonymousAggregate: $this->twoLandingPageForms(),
+			params: ['actionId' => 'submit-form-c']
+		)->create('portaliq', 'landingPageSubmission');
+		$this->assertSame(Http::STATUS_FORBIDDEN, $unknown->getStatus());
+
+		$unnamed = $this->controller(
+			aggregate: $this->aggregate(),
+			subject: null,
+			writer: $writer,
+			anonymousAggregate: $this->twoLandingPageForms()
+		)->create('portaliq', 'landingPageSubmission');
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $unnamed->getStatus());
+		$this->assertSame('action_required', $unnamed->getData()['error']);
+
+	}//end testAnonymousCreateNamingNoFormOrAnUnknownOneIsRefused()
+
+	/**
+	 * An anonymous create can never name an action that is not anonymous,
+	 * even when the anonymous aggregate carries one for the same target.
+	 *
+	 * @spec openspec/changes/create-names-its-action/tasks.md#T3
+	 */
+	public function testAnonymousCreateNamingASignedInActionIsRefused(): void {
+		$aggregate = $this->twoLandingPageForms();
+		$aggregate['contributions'][0]['actions'][] = ['id' => 'staffOnly', 'type' => 'create', 'register' => 'portaliq', 'schema' => 'landingPageSubmission', 'fields' => ['email']];
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->never())->method('createAnonymousObject');
+
+		$response = $this->controller(
+			aggregate: $this->aggregate(),
+			subject: null,
+			writer: $writer,
+			anonymousAggregate: $aggregate,
+			params: ['actionId' => 'staffOnly']
+		)->create('portaliq', 'landingPageSubmission');
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+
+	}//end testAnonymousCreateNamingASignedInActionIsRefused()
+
+	/**
+	 * Two active landing-page forms, as PortalContributionProvider synthesises them.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function twoLandingPageForms(): array {
+		return [
+			'contributions' => [
+				[
+					'app' => 'portaliq',
+					'actions' => [
+						['id' => 'submit-form-a', 'type' => 'create', 'anonymous' => true, 'register' => 'portaliq', 'schema' => 'landingPageSubmission', 'fields' => ['name'], 'defaults' => ['formId' => 'form-a']],
+						['id' => 'submit-form-b', 'type' => 'create', 'anonymous' => true, 'register' => 'portaliq', 'schema' => 'landingPageSubmission', 'fields' => ['email'], 'defaults' => ['formId' => 'form-b']],
+					],
+				],
+			],
+		];
+
+	}//end twoLandingPageForms()
+
 	public function testCollectionBelowTrustThresholdIs403BeforeAnyRead(): void {
 		$aggregate = $this->aggregate(
 			collections: [

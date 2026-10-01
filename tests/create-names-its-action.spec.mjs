@@ -11,7 +11,13 @@
 //   node --test tests/create-names-its-action.spec.mjs
 
 import assert from 'node:assert/strict'
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import {
+	existsSync,
+	mkdirSync,
+	readdirSync,
+	readFileSync,
+	writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
@@ -94,3 +100,136 @@ test('the action id is encoded, and an action without an id sends none', async (
 	)
 	assert.equal(calls[1].url, '/apps/portaliq/portal/api/collections/r/s')
 })
+
+// The Vue site (/apps/portaliq/site). Its signed-in forms write through the
+// same shared adapter as the portal (src/shared/portalApi.js, tested above).
+// Its one create of its own is the landing-page form (FormBlock.vue): every
+// active form is its own anonymous create action on `landingPageSubmission`
+// (`submit-{formId}`), so the form names its action too.
+
+/**
+ * Stub the site's browser globals: a site config block, empty storage and a
+ * recording fetch.
+ *
+ * @return {Array<object>} The recorded calls.
+ */
+function stubSite() {
+	const calls = []
+	const store = {
+		getItem: () => null,
+		setItem() {},
+		removeItem() {},
+	}
+	globalThis.document = {
+		referrer: '',
+		getElementById: (id) =>
+			id === 'portaliq-site-config'
+				? {
+						textContent: JSON.stringify({
+							apiBase: '/apps/portaliq/api/content/site',
+						}),
+					}
+				: null,
+	}
+	globalThis.window = {
+		localStorage: store,
+		sessionStorage: store,
+		location: { origin: 'http://localhost', search: '', hash: '' },
+	}
+	globalThis.fetch = async (url, init = {}) => {
+		calls.push({ url: String(url), init })
+		return {
+			ok: true,
+			status: 200,
+			json: async () => ({ object: { id: 'new' } }),
+		}
+	}
+	return calls
+}
+
+const { loadSfc } = await import('./support/render-sfc.mjs')
+
+/**
+ * Submit FormBlock's form, with a stand-in `this`.
+ *
+ * @param {string} formId The bound form's id.
+ * @return {Promise<object>} The stand-in, after the submit.
+ */
+async function submitFormBlock(formId) {
+	const block = await loadSfc('src/site/components/FormBlock.vue')
+	const vm = {
+		formId,
+		portal: 'gemeente',
+		values: { email: 'a@example.nl' },
+		submitting: false,
+		status: null,
+	}
+	await block.methods.submit.call(vm)
+	return vm
+}
+
+test('site: a landing-page form names its own create action', async () => {
+	const calls = stubSite()
+
+	const vm = await submitFormBlock('form-b')
+
+	assert.equal(vm.status, 'success')
+	assert.equal(calls.length, 1)
+	assert.equal(calls[0].init.method, 'POST')
+	assert.equal(
+		calls[0].url,
+		'http://localhost/apps/portaliq/portal/api/collections/portaliq/landingPageSubmission?actionId=submit-form-b',
+	)
+	assert.equal(JSON.parse(calls[0].init.body).email, 'a@example.nl')
+})
+
+test('site: a form without an id sends no action id', async () => {
+	const calls = stubSite()
+
+	await submitFormBlock('')
+
+	assert.equal(
+		calls[0].url,
+		'http://localhost/apps/portaliq/portal/api/collections/portaliq/landingPageSubmission',
+	)
+})
+
+test('site: no create in src/shared or src/site bypasses the action id', () => {
+	// Every POST to `/collections/` in the site and the shared code must be
+	// one of the two named-action creates above; a new one has to name its
+	// action as well, and then be listed here.
+	const allowed = new Set([
+		'src/shared/portalApi.js',
+		'src/site/lib/formSubmission.js',
+	])
+	const files = [
+		...listFiles(join(ROOT, 'src', 'shared')),
+		...listFiles(join(ROOT, 'src', 'site')),
+	]
+	const offenders = files
+		.filter((file) => /\.(js|vue)$/.test(file))
+		.filter((file) => {
+			const source = readFileSync(file, 'utf8')
+			return (
+				/\/collections\//.test(source)
+				&& /method:\s*'POST'|send\(\s*'POST'/.test(source)
+			)
+		})
+		.map((file) => file.slice(ROOT.length + 1))
+		.filter((file) => !allowed.has(file))
+	assert.deepEqual(offenders, [])
+})
+
+/**
+ * Every file below a directory.
+ *
+ * @param {string} dir The directory.
+ * @return {Array<string>} The absolute paths.
+ */
+function listFiles(dir) {
+	return readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>
+		entry.isDirectory()
+			? listFiles(join(dir, entry.name))
+			: [join(dir, entry.name)],
+	)
+}

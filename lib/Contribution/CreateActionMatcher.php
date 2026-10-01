@@ -52,13 +52,15 @@ class CreateActionMatcher {
 	 * @param string               $register  The requested register.
 	 * @param string               $schema    The requested schema.
 	 * @param string               $actionId  The id the client named ('' for none).
+	 * @param bool                 $anonymous Only `anonymous: true` actions (a caller without a subject).
 	 *
 	 * @return array{action: array<string, mixed>, app: string}|string|null
 	 *
 	 * @spec openspec/changes/create-names-its-action/tasks.md#T1
+	 * @spec openspec/changes/create-names-its-action/tasks.md#T3
 	 */
-	public function match(array $aggregate, string $register, string $schema, string $actionId): array|string|null {
-		$candidates = $this->candidates(aggregate: $aggregate, register: $register, schema: $schema);
+	public function match(array $aggregate, string $register, string $schema, string $actionId, bool $anonymous=false): array|string|null {
+		$candidates = $this->candidates(aggregate: $aggregate, register: $register, schema: $schema, anonymous: $anonymous);
 		if ($actionId !== '') {
 			foreach ($candidates as $candidate) {
 				if (($candidate['action']['id'] ?? null) === $actionId) {
@@ -82,16 +84,18 @@ class CreateActionMatcher {
 	 * @param array<string, mixed> $aggregate The subject's aggregated contributions.
 	 * @param string               $register  The requested register.
 	 * @param string               $schema    The requested schema.
+	 * @param bool                 $anonymous Only `anonymous: true` actions.
 	 *
 	 * @return array<int, array{action: array<string, mixed>, app: string}>
 	 */
-	private function candidates(array $aggregate, string $register, string $schema): array {
+	private function candidates(array $aggregate, string $register, string $schema, bool $anonymous): array {
 		$candidates = [];
 		foreach (($aggregate['contributions'] ?? []) as $contribution) {
 			foreach (($contribution['actions'] ?? []) as $action) {
 				if (($action['type'] ?? '') === 'create'
 					&& ($action['register'] ?? '') === $register
 					&& ($action['schema'] ?? '') === $schema
+					&& ($anonymous === false || ($action['anonymous'] ?? false) === true)
 				) {
 					$candidates[] = ['action' => $action, 'app' => (string)($contribution['app'] ?? '')];
 				}

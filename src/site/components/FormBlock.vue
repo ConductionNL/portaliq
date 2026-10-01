@@ -117,7 +117,7 @@ export default {
 	name: 'FormBlock',
 
 	props: {
-		/** The bound form's own id. Not sent with the submission (the anonymous action's server-stamped `defaults` are the source of truth for `formId`); it is what the traffic client reports form analytics under, through `data-portaliq-form` (portal-traffic-outcomes). */
+		/** The bound form's own id. Not sent as a value (the anonymous action's server-stamped `defaults` are the source of truth for `formId`), but it names the form's create action (`?actionId=submit-{formId}`), and it is what the traffic client reports form analytics under, through `data-portaliq-form` (portal-traffic-outcomes). */
 		formId: {
 			type: String,
 			default: '',
@@ -210,22 +210,27 @@ export default {
 
 		/**
 		 * Submit the collected values plus the client-observed UTM/referrer
-		 * attribution.
+		 * attribution, through this form's own create action.
 		 *
 		 * @return {Promise<void>}
 		 *
 		 * @spec openspec/specs/landing-page-provisioning/spec.md#requirement-a-landing-pages-form-is-submittable-with-no-portal-session
+		 * @spec openspec/changes/create-names-its-action/tasks.md#T3
 		 */
 		async submit() {
 			this.submitting = true
 			this.status = null
 
 			try {
-				await submitLandingPageForm(this.values, {
-					utmFirstTouch: firstTouch(this.portal),
-					utmLastTouch: lastTouch(this.portal),
-					referrer: capturedReferrer(this.portal),
-				})
+				await submitLandingPageForm(
+					this.values,
+					{
+						utmFirstTouch: firstTouch(this.portal),
+						utmLastTouch: lastTouch(this.portal),
+						referrer: capturedReferrer(this.portal),
+					},
+					this.formId,
+				)
 				this.status = 'success'
 				this.values = {}
 			} catch {

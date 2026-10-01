@@ -1082,17 +1082,11 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @spec openspec/changes/create-names-its-action/tasks.md#T1
 	 */
 	private function authorisedCreateAction(array $subject, string $register, string $schema): array|string|null {
-		$requested = $this->request->getParam('actionId', '');
-		$actionId = '';
-		if (is_string($requested) === true) {
-			$actionId = $requested;
-		}
-
 		return (new CreateActionMatcher())->match(
 			aggregate: $this->registry->aggregateFor($subject),
 			register: $register,
 			schema: $schema,
-			actionId: $actionId
+			actionId: $this->requestedActionId()
 		);
 	}//end authorisedCreateAction()
 
@@ -1119,10 +1113,18 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
 	 */
 	private function createAnonymous(string $register, string $schema): JSONResponse {
-		$action = $this->authorisedAnonymousCreateAction(register: $register, schema: $schema);
-		if ($action === null) {
+		$match = $this->authorisedAnonymousCreateAction(register: $register, schema: $schema);
+		if ($match === CreateActionMatcher::AMBIGUOUS) {
+			// Two or more landing-page forms write this schema and the client
+			// named none: refuse rather than file it under the first form.
+			return new JSONResponse(['error' => 'action_required'], Http::STATUS_BAD_REQUEST);
+		}
+
+		if ($match === null) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
+
+		$action = $match['action'];
 
 		// Server-forced defaults ride over the whitelist, identical discipline
 		// to the authenticated path (e.g. a placeholder ownership marker a
@@ -1140,33 +1142,49 @@ class ContributionController extends Controller implements PortalProtected {
 	}//end createAnonymous()
 
 	/**
-	 * Find an `anonymous: true`, `type: create` action for (register, schema)
-	 * in the fleet-wide anonymous aggregate, or null when nothing matches
-	 * (portal-page-provisioning).
+	 * Find the `anonymous: true`, `type: create` action for (register, schema)
+	 * in the fleet-wide anonymous aggregate (portal-page-provisioning), by the
+	 * id the client sends as `actionId`.
+	 *
+	 * Every active landing-page form is its own anonymous create action on
+	 * `landingPageSubmission`, so the first match is never taken for granted
+	 * (create-names-its-action): a named id must be one of the anonymous create
+	 * actions on this target, else null (403), and two or more without an id
+	 * answer CreateActionMatcher::AMBIGUOUS (400).
 	 *
 	 * @param string $register The requested register.
-	 * @param string $schema The requested schema.
+	 * @param string $schema   The requested schema.
 	 *
-	 * @return array<string, mixed>|null The matched action, or null.
+	 * @return array{action: array<string, mixed>, app: string}|string|null The match, 'ambiguous', or null.
 	 *
 	 * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
+	 * @spec openspec/changes/create-names-its-action/tasks.md#T3
 	 */
-	private function authorisedAnonymousCreateAction(string $register, string $schema): ?array {
-		$aggregate = $this->registry->aggregateAnonymous();
-		foreach (($aggregate['contributions'] ?? []) as $contribution) {
-			foreach (($contribution['actions'] ?? []) as $action) {
-				if (($action['type'] ?? '') === 'create'
-					&& ($action['anonymous'] ?? false) === true
-					&& ($action['register'] ?? '') === $register
-					&& ($action['schema'] ?? '') === $schema
-				) {
-					return $action;
-				}
-			}
+	private function authorisedAnonymousCreateAction(string $register, string $schema): array|string|null {
+		return (new CreateActionMatcher())->match(
+			aggregate: $this->registry->aggregateAnonymous(),
+			register: $register,
+			schema: $schema,
+			actionId: $this->requestedActionId(),
+			anonymous: true
+		);
+	}//end authorisedAnonymousCreateAction()
+
+	/**
+	 * The create action id the client named as `?actionId=`, or ''.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/create-names-its-action/tasks.md#T1
+	 */
+	private function requestedActionId(): string {
+		$requested = $this->request->getParam('actionId', '');
+		if (is_string($requested) === true) {
+			return $requested;
 		}
 
-		return null;
-	}//end authorisedAnonymousCreateAction()
+		return '';
+	}//end requestedActionId()
 
 	/**
 	 * The write body with the action's server-enforced transition target applied.
