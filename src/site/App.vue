@@ -135,14 +135,20 @@
 				<!-- THE HERO REGION: the page's own hero band, else the
 				     portal's, unless the page clears it (REQ-PTB-009). -->
 				<WidgetGrid
-					v-if="!loading && !error && page && regions.hero.length"
+					v-if="!guestLink && !loading && !error && page && regions.hero.length"
 					data-testid="site-region-hero"
 					:widgets="regions.hero"
 					v-bind="gridContext"
 					@navigate="go"
 					@search="goSearch" />
 
-				<p v-if="loading" class="container" data-testid="site-loading">
+				<!-- A signed link opens its one act before any page (REQ-GST-002). -->
+				<GuestActionPage
+					v-if="guestLink"
+					:auth-base="guestAuthBase"
+					:portal="site.slug || portalSlug" />
+
+				<p v-else-if="loading" class="container" data-testid="site-loading">
 					Bezig met laden…
 				</p>
 
@@ -392,6 +398,12 @@ const SiteNotices = defineAsyncComponent(
 	() => import('./components/SiteNotices.vue'),
 )
 
+// The guest page for a signed link (identity-guest-page-for-signed-links),
+// loaded only when the address carries one.
+const GuestActionPage = defineAsyncComponent(
+	() => import('./pages/GuestActionPage.vue'),
+)
+
 /**
  * The built-in site renderer.
  *
@@ -406,6 +418,7 @@ export default {
 	components: {
 		BrandHeader,
 		FooterColumns,
+		GuestActionPage,
 		IdleWarningDialog,
 		MarkdownBlock,
 		SiteEditButton,
@@ -425,6 +438,8 @@ export default {
 		return {
 			// A failed sign-in the edge sent back (REQ-BEL-006), read once.
 			signinFailed: takeSigninFailed(),
+			// A signed link for one guest act (`#guest/...`); the page reads it.
+			guestLink: String(window.location.hash).startsWith('#guest/'),
 			signinFailedMessage: SIGNIN_FAILED_MESSAGE,
 			site: {},
 			menus: [],
@@ -681,6 +696,17 @@ export default {
 		 */
 		legalLinks() {
 			return legalLinksOf(this.site, this.menus)
+		},
+
+		/**
+		 * The portal API base the guest page posts to.
+		 *
+		 * @return {string} The base, `.../portal/api`.
+		 *
+		 * @spec openspec/changes/identity-guest-page-for-signed-links/tasks.md#T03
+		 */
+		guestAuthBase() {
+			return authBaseFrom(resolveApiBase())
 		},
 
 		/**
