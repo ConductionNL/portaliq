@@ -124,6 +124,26 @@ export function takeSigninFailed() {
 }
 
 /**
+ * Keep a bearer for this tab: the one a dev login or a refresh minted. An
+ * empty value forgets the stored one.
+ *
+ * @param {string|null} token The bearer.
+ * @return {void}
+ * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ */
+export function storeSessionToken(token) {
+	try {
+		if (token) {
+			window.sessionStorage.setItem(TOKEN_KEY, token)
+		} else {
+			window.sessionStorage.removeItem(TOKEN_KEY)
+		}
+	} catch {
+		// No storage: the bearer lasts this page view.
+	}
+}
+
+/**
  * Forget the stored bearer.
  *
  * @return {void}
@@ -214,6 +234,22 @@ export async function refreshSession(authBase) {
 }
 
 /**
+ * The Dutch sign-in labels, for a caller that brings no translator.
+ *
+ * @param {string} key The English source string.
+ * @param {object} [vars] Placeholder values.
+ * @return {string} The Dutch label.
+ */
+function dutchLabel(key, vars = {}) {
+	const nl = {
+		'Log in with your account': 'Inloggen met uw account',
+		'Log in': 'Inloggen',
+		'Log in with {provider}': 'Inloggen met {provider}',
+	}
+	return (nl[key] || key).replace(/\{(\w+)\}/g, (_, name) => String(vars[name] ?? ''))
+}
+
+/**
  * The sign-in routes a portal offers, derived from its declared modes.
  *
  * `public` is not a sign-in route — it is the absence of one. A portal that
@@ -223,20 +259,22 @@ export async function refreshSession(authBase) {
  *
  * @param {object} site     The portal record from /api/content/site.
  * @param {string} authBase The auth edge base.
+ * @param {(key: string, vars?: object) => string} [t] The site translator;
+ *        without one the labels are the Dutch the site always showed.
  * @return {Array<{mode: string, label: string, href: string}>} The routes.
  */
-export function signInRoutes(site, authBase) {
+export function signInRoutes(site, authBase, t = dutchLabel) {
 	const modes = Array.isArray(site?.authentication?.modes)
 		? site.authentication.modes
 		: []
 
 	const labels = {
-		nextcloud: 'Inloggen met uw account',
-		local: 'Inloggen',
-		oidc: 'Inloggen',
-		digid: 'Inloggen met DigiD',
-		eherkenning: 'Inloggen met eHerkenning',
-		eidas: 'Inloggen met eIDAS',
+		nextcloud: t('Log in with your account'),
+		local: t('Log in'),
+		oidc: t('Log in'),
+		digid: t('Log in with {provider}', { provider: 'DigiD' }),
+		eherkenning: t('Log in with {provider}', { provider: 'eHerkenning' }),
+		eidas: t('Log in with {provider}', { provider: 'eIDAS' }),
 	}
 
 	// THE PORTAL SLUG TRAVELS WITH THE LINK, and leaving it off is not a

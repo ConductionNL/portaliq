@@ -15,7 +15,7 @@ import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { buildNav } from '../src/shared/portalNav.js'
+import { buildNav, shellSections } from '../src/shared/portalNav.js'
 
 const require = createRequire(import.meta.url)
 const babel = require('@babel/core')
@@ -104,7 +104,9 @@ test('the news page appears only when the feed holds an item', () => {
 	assert.equal(hasNews(null), false)
 	assert.equal(hasNews([ITEM]), true)
 	const app = readFileSync(join(ROOT, 'src', 'portal', 'App.jsx'), 'utf8')
-	assert.match(app, /news: hasNews\(state\.news\)/)
+	assert.match(app, /buildNav\(state\.contributions\?\.contributions, t, shellSections\(state\)\)/)
+	assert.equal(shellSections({ news: [ITEM] }).news, true)
+	assert.equal(shellSections({ news: [] }).news, false)
 	assert.match(app, /<NewsPage/)
 	// The shared navigation offers News only when the feed holds an item.
 	assert.ok(buildNav([], (key) => key, { news: true }).some((entry) => entry.special === 'news'))

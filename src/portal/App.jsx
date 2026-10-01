@@ -19,7 +19,7 @@ import IdleWarningDialog from '@portal/components/IdleWarningDialog.jsx'
 import InboxPage from '@portal/components/InboxPage.jsx'
 import MessagesPage from '@portal/components/MessagesPage.jsx'
 import MyCasesPage from '@portal/components/MyCasesPage.jsx'
-import NewsPage, { hasNews } from '@portal/components/NewsPage.jsx'
+import NewsPage from '@portal/components/NewsPage.jsx'
 import PageView from '@portal/components/PageView.jsx'
 import PortalNotices from '@portal/components/PortalNotices.jsx'
 import RegisteredDetailsPage from '@portal/components/RegisteredDetailsPage.jsx'
@@ -33,7 +33,7 @@ import useIdleSession from '@portal/lib/useIdleSession.js'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { logoutTarget, markIdleSignOut, silentSignInUrl, takeIdleSignOut } from '../shared/idleSession.js'
 import { consumeOidcCallbackFragment, createPortalApi, getToken, setToken } from '../shared/portalApi.js'
-import { buildNav, defaultNavKey, NAV_KEYS } from '../shared/portalNav.js'
+import { buildNav, defaultNavKey, NAV_KEYS, shellSections } from '../shared/portalNav.js'
 import { consumeSigninFailed, loginStartUrl, signinOrganisation } from '../shared/signinRoute.js'
 import Loading from './components/Loading.jsx'
 
@@ -262,13 +262,7 @@ export default function App({ config, t: tProp }) {
 	const [pendingTaskUuid, setPendingTaskUuid] = useState(null)
 
 	const nav = useMemo(
-		() => buildNav(state.contributions?.contributions, t, {
-			tasks: state.contributions?.tasks?.enabled === true,
-			messages: (state.threads || []).length > 0,
-			news: hasNews(state.news),
-			access: Boolean(state.session && state.contributions),
-			cases: state.contributions?.cases?.enabled === true,
-		}),
+		() => buildNav(state.contributions?.contributions, t, shellSections(state)),
 		[state.session, state.contributions, state.threads, state.news, t],
 	)
 	const unreadCount = unreadOverride ?? (state.contributions?.unreadCount || 0)

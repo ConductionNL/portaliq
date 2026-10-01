@@ -16,7 +16,7 @@ import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { buildNav, defaultNavKey } from '../src/shared/portalNav.js'
+import { buildNav, defaultNavKey, shellSections } from '../src/shared/portalNav.js'
 import { compileLoading, LOADING_MODULE } from './support/compile-loading.mjs'
 
 const require = createRequire(import.meta.url)
@@ -207,7 +207,8 @@ test('the portal offers the page to every signed-in user', () => {
 		app,
 		/import AccessRequestsPage from '@portal\/components\/AccessRequestsPage\.jsx'/,
 	)
-	assert.match(app, /access: Boolean\(state\.session && state\.contributions\)/)
+	assert.equal(shellSections({ session: {}, contributions: {} }).access, true)
+	assert.equal(shellSections({ session: null, contributions: {} }).access, false)
 	// The shared navigation offers it, after the content pages, never first.
 	const nav = buildNav([{ app: 'a', pages: [{ id: 'p' }] }], (key) => key, { access: true })
 	assert.ok(nav.some((entry) => entry.special === 'access'))

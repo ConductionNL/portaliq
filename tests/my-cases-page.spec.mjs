@@ -18,7 +18,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { buildNav } from '../src/shared/portalNav.js'
+import { buildNav, shellSections } from '../src/shared/portalNav.js'
 import { compileLoading } from './support/compile-loading.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -167,7 +167,8 @@ test('nothing to show reads "No cases yet."', () => {
 test('the shell offers "My cases" first when the server announces it, and both locales carry the strings', () => {
 	const shell = readFileSync(join(ROOT, 'src', 'portal', 'App.jsx'), 'utf8')
 	assert.match(shell, /import MyCasesPage from '@portal\/components\/MyCasesPage\.jsx'/)
-	assert.match(shell, /state\.contributions\?\.cases\?\.enabled === true/)
+	assert.equal(shellSections({ contributions: { cases: { enabled: true } } }).cases, true)
+	assert.equal(shellSections({ contributions: {} }).cases, false)
 	// The navigation itself is shared with the site renderer: My cases leads it.
 	const nav = buildNav([{ app: 'learniq', pages: [{ id: 'children', label: 'Children' }] }], (key) => key, { cases: true })
 	assert.equal(nav[0].label, 'My cases')

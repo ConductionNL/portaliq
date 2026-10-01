@@ -71,6 +71,11 @@
 				:signInRoutes="signInRoutes"
 				:registerRoute="registerRoute"
 				:signinFailedMessage="signinFailed ? signinFailedMessage : ''"
+				:registerLabel="t('Register')"
+				:signOutLabel="t('Sign out')"
+				:userMenuLabel="t('User menu')"
+				:breadcrumbLabel="t('Breadcrumb')"
+				:logoLabel="t('Logo')"
 				@navigate="go"
 				@signout="signOut" />
 			<WidgetGrid
@@ -85,7 +90,7 @@
 		<IdleWarningDialog
 			v-if="session && idleWarning && idleTimes"
 			:times="idleTimes"
-			:locale="site.locale || 'nl'"
+			:locale="locale"
 			@stay="staySignedIn"
 			@signout="signOut" />
 		<p
@@ -100,7 +105,7 @@
 		<SiteNotices
 			v-if="(site.notices || []).length > 0"
 			:notices="site.notices"
-			:locale="site.locale || 'nl'" />
+			:locale="locale" />
 
 		<!--
 			`.container` IS THE CONTENT COLUMN, AND IT IS NOT OPTIONAL.
@@ -142,8 +147,29 @@
 					@navigate="go"
 					@search="goSearch" />
 
-				<p v-if="loading" class="container" data-testid="site-loading">
-					Bezig met laden…
+				<!-- The signed-in area owns every `/mijn` route; no CMS page is
+				     read for it (src/shared/portalNav.js). -->
+				<AccountArea
+					v-if="accountRoute"
+					:sessionKnown="sessionKnown"
+					:session="session"
+					:loading="account.loading"
+					:nav="nav"
+					:entry="accountEntry"
+					:contributions="account.contributions"
+					:api="api"
+					:signInRoutes="signInRoutes"
+					:devLogin="signinConfig.devLogin === true"
+					:devError="devError"
+					:t="t"
+					:locale="locale"
+					@devlogin="devLogin"
+					@navigate="go"
+					@unread="unreadOverride = $event"
+					@refresh="loadAccount" />
+
+				<p v-else-if="loading" class="container" data-testid="site-loading">
+					{{ t('Loading…') }}
 				</p>
 
 				<!-- A failed load says so. Rendering an empty page instead would
@@ -159,15 +185,15 @@
 					<h2>
 						{{
 							error.status === 404
-								? 'Pagina niet gevonden'
-								: 'Er ging iets mis'
+								? t('Page not found')
+								: t('Something went wrong')
 						}}
 					</h2>
 					<p>
 						{{
 							error.status === 404
-								? 'Deze pagina bestaat niet (meer).'
-								: 'De inhoud kon niet worden geladen.'
+								? t('This page does not exist (any more).')
+								: t('The content could not be loaded.')
 						}}
 					</p>
 				</div>
@@ -328,22 +354,36 @@
 
 <script>
 import { defineAsyncComponent } from 'vue'
+import AccountArea from './components/AccountArea.vue'
 import BrandHeader from './components/BrandHeader.vue'
 import FooterColumns from './components/FooterColumns.vue'
 import IdleWarningDialog from './components/IdleWarningDialog.vue'
 import MarkdownBlock from './components/MarkdownBlock.vue'
 import WidgetGrid from './components/WidgetGrid.vue'
-import idleEn from '../shared/i18n/en.json'
-import idleNl from '../shared/i18n/nl.json'
-import { logoutTarget } from '../shared/idleSession.js'
+import { createTranslator } from '../shared/i18n/index.js'
+import { logoutTarget, silentSignInUrl } from '../shared/idleSession.js'
+import { createPortalApi } from '../shared/portalApi.js'
+import {
+	ACCOUNT_ROUTE,
+	buildNav,
+	isAccountRoute,
+	navEntryForRoute,
+	shellSections,
+} from '../shared/portalNav.js'
+import {
+	accountCrumbs,
+	accountMenu,
+	accountRedirect,
+	loggedInAs,
+} from './lib/accountArea.js'
 import {
 	adoptSessionToken,
 	authBaseFrom,
 	clearSessionToken,
 	fetchSession,
 	refreshSession,
-	SIGNIN_FAILED_MESSAGE,
 	signInRoutes,
+	storeSessionToken,
 	takeSigninFailed,
 } from './lib/authApi.js'
 import { withoutStyling } from './lib/blockProps.js'
@@ -404,6 +444,7 @@ export default {
 	name: 'App',
 
 	components: {
+		AccountArea,
 		BrandHeader,
 		FooterColumns,
 		IdleWarningDialog,
@@ -425,7 +466,26 @@ export default {
 		return {
 			// A failed sign-in the edge sent back (REQ-BEL-006), read once.
 			signinFailed: takeSigninFailed(),
-			signinFailedMessage: SIGNIN_FAILED_MESSAGE,
+			// A bearer in the fragment means the resident just signed in;
+			// read before the session fetch strips it. A fresh sign-in on the
+			// home page opens the signed-in area, as `/portal` does.
+			freshSignIn: /[#&]token=/.test(String(window.location.hash || '')),
+			// Whether the session has been read yet: until then the
+			// signed-in area shows neither the way in nor a page.
+			sessionKnown: false,
+			// What the signed-in shell loaded for the session (the
+			// contributions aggregate, message threads and news feed); the
+			// navigation is built from it (src/shared/portalNav.js).
+			account: {
+				loading: false,
+				contributions: null,
+				threads: [],
+				news: [],
+			},
+
+			// The inbox's unread count after a page changed it, else null.
+			unreadOverride: null,
+			devError: '',
 			site: {},
 			menus: [],
 			glossary: [],
@@ -519,8 +579,11 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
 		 */
 		breadcrumbs() {
+			if (this.accountRoute) {
+				return accountCrumbs(this.accountEntry, this.t, this.hrefForRoute)
+			}
 			const crumbs = [
-				{ route: '/', label: 'Home', href: this.hrefForRoute('/') },
+				{ route: '/', label: this.t('Home'), href: this.hrefForRoute('/') },
 			]
 			const segments = String(this.route || '/')
 				.split('/')
@@ -635,7 +698,135 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-content-api-must-be-sufficient-without-the-built-in-renderer
 		 */
 		headerMenus() {
-			return headerMenusOf(this.menus)
+			const menus = headerMenusOf(this.menus)
+			if (!this.session || this.nav.length === 0) {
+				return menus
+			}
+			// The signed-in navigation is one more header menu, after the
+			// portal's own, so it gets the same bar, styling and keyboard
+			// handling (SiteMenu) rather than a second kind of menu.
+			return [
+				...menus,
+				accountMenu(this.nav, this.t, this.unreadCount, this.hrefForRoute),
+			]
+		},
+
+		/**
+		 * The site's language: the portal's, else the document's.
+		 *
+		 * @return {string} A language code, `nl` when nothing says otherwise.
+		 *
+		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 */
+		locale() {
+			const lang =
+				this.site.locale
+				|| (typeof document !== 'undefined' && document.documentElement.lang)
+				|| 'nl'
+			return String(lang).slice(0, 2).toLowerCase()
+		},
+
+		/**
+		 * The site translator: English source strings, Dutch and English
+		 * bundles shared with `/portal` (src/shared/i18n).
+		 *
+		 * @return {(key: string, vars?: object) => string} The translator.
+		 *
+		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 */
+		t() {
+			return createTranslator(this.locale)
+		},
+
+		/**
+		 * How a resident signs in here, from the shell (`site()` in
+		 * PortalPageController): dev login, silent sign-in, organisation.
+		 *
+		 * @return {object} The sign-in settings, possibly empty.
+		 *
+		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 */
+		signinConfig() {
+			return runtimeConfig().signin || {}
+		},
+
+		/**
+		 * The shared portal API, bound to this portal and to the bearer
+		 * this tab keeps (sessionStorage, per tab).
+		 *
+		 * @return {object} The API.
+		 *
+		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 */
+		api() {
+			return createPortalApi(
+				{
+					apiBase: authBaseFrom(resolveApiBase()),
+					organisationSlug: this.site.slug || this.portalSlug || '',
+					audience: this.signinConfig.audience || '',
+				},
+				{
+					getToken: () => adoptSessionToken() || null,
+					setToken: storeSessionToken,
+				},
+			)
+		},
+
+		/**
+		 * The signed-in navigation, empty when signed out.
+		 *
+		 * @return {Array<object>} The entries.
+		 *
+		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 */
+		nav() {
+			if (!this.session || !this.account.contributions) {
+				return []
+			}
+			return buildNav(
+				this.account.contributions.contributions,
+				this.t,
+				shellSections({ session: this.session, ...this.account }),
+			)
+		},
+
+		/**
+		 * @return {boolean} Whether the route on screen is in the signed-in area.
+		 *
+		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 */
+		accountRoute() {
+			return isAccountRoute(this.route)
+		},
+
+		/**
+		 * @return {object|null} The navigation entry the route names.
+		 *
+		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 */
+		accountEntry() {
+			return navEntryForRoute(this.nav, this.route)
+		},
+
+		/**
+		 * @return {number} The inbox's unread count.
+		 *
+		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 */
+		unreadCount() {
+			return (
+				this.unreadOverride
+				?? (this.account.contributions?.unreadCount || 0)
+			)
+		},
+
+		/**
+		 * @return {string} The one sentence a failed sign-in shows.
+		 *
+		 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-a-failed-login-returns-to-the-login-screen-without-a-reason-req-bel-006
+		 */
+		signinFailedMessage() {
+			return this.t('Signing in did not work. Try again or choose another way in.')
 		},
 
 		/**
@@ -694,7 +885,7 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portal-must-offer-only-the-sign-in-routes-it-declares
 		 */
 		signInRoutes() {
-			return signInRoutes(this.site, authBaseFrom(resolveApiBase()))
+			return signInRoutes(this.site, authBaseFrom(resolveApiBase()), this.t)
 		},
 
 		/**
@@ -703,9 +894,7 @@ export default {
 		 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T06
 		 */
 		idleSignedOutMessage() {
-			const key = 'You were signed out because you were inactive.'
-			const strings = this.site.locale === 'en' ? idleEn : idleNl
-			return strings[key] || key
+			return this.t('You were signed out because you were inactive.')
 		},
 
 		/**
@@ -714,12 +903,7 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portal-must-offer-only-the-sign-in-routes-it-declares
 		 */
 		sessionLabel() {
-			return (
-				this.session?.name
-				|| this.session?.subject
-				|| this.session?.sub
-				|| 'Ingelogd'
-			)
+			return loggedInAs(this.session, this.t)
 		},
 	},
 
@@ -829,9 +1013,156 @@ export default {
 			// the overwhelming majority of what it serves; `fetchSession`
 			// resolves null rather than throwing for exactly that reason.
 			this.session = await fetchSession(authBaseFrom(resolveApiBase()))
+			this.sessionKnown = true
 			this.watchIdle()
 
 			this.applyDocumentTitle()
+
+			if (this.session) {
+				await this.loadAccount()
+			} else {
+				this.trySilentSignIn()
+			}
+		},
+
+		/**
+		 * Read what the signed-in navigation is built from, as `/portal`
+		 * does: the contributions aggregate, the message threads and the
+		 * news feed, each fail-closed. Then follow the route the navigation
+		 * implies (the default page for a bare `/mijn`).
+		 *
+		 * @return {Promise<void>} Resolves when loaded.
+		 *
+		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 */
+		async loadAccount() {
+			if (!this.session) {
+				return
+			}
+			this.account = { ...this.account, loading: true }
+			const [contributions, threads, news] = await Promise.all([
+				this.api.getContributions(),
+				this.api.fetchThreads(),
+				this.api.fetchNewsFeed(),
+			])
+			this.unreadOverride = null
+			this.account = {
+				loading: false,
+				contributions,
+				threads: threads || [],
+				news: news || [],
+			}
+			this.followAccountRoute()
+		},
+
+		/**
+		 * Forget everything the signed-in shell loaded.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 */
+		forgetAccount() {
+			this.account = {
+				loading: false,
+				contributions: null,
+				threads: [],
+				news: [],
+			}
+			this.unreadOverride = null
+		},
+
+		/**
+		 * Open the signed-in area after a fresh sign-in on the home page,
+		 * and replace a bare `/mijn` (or a page the navigation does not
+		 * offer) with the default page.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 */
+		followAccountRoute() {
+			if (!this.session || this.nav.length === 0) {
+				return
+			}
+			if (this.freshSignIn && this.route === '/') {
+				this.freshSignIn = false
+				this.replaceRoute(ACCOUNT_ROUTE)
+			}
+			const target = accountRedirect(this.nav, this.route)
+			if (target) {
+				this.replaceRoute(target)
+			}
+		},
+
+		/**
+		 * Show another in-site route in place of this history entry.
+		 *
+		 * @param {string} route The route.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 */
+		replaceRoute(route) {
+			this.route = route
+			const url = new URL(window.location.href)
+			url.searchParams.set('route', route)
+			window.history.replaceState({}, '', url)
+			this.applyDocumentTitle()
+		},
+
+		/**
+		 * Mint a test session where the server accepts the dev login, and
+		 * carry on signed in.
+		 *
+		 * @return {Promise<void>} Resolves when signed in, or refused.
+		 *
+		 * @spec openspec/changes/portal-signin-on-its-own-address/tasks.md#T2
+		 */
+		async devLogin() {
+			this.devError = ''
+			const minted = await this.api.devLogin(this.signinConfig.audience || undefined)
+			if (!minted) {
+				this.devError = this.t('Dev-login is disabled on this environment.')
+				return
+			}
+			this.session = await fetchSession(authBaseFrom(resolveApiBase()))
+			this.watchIdle()
+			await this.loadAccount()
+		},
+
+		/**
+		 * Try a silent sign-in once per browser session, where the
+		 * organisation turned it on, and never after a failed sign-in or an
+		 * inactivity sign-out. The login returns to this page.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T09
+		 */
+		trySilentSignIn() {
+			if (this.signinFailed || this.idleSignedOut) {
+				return
+			}
+			let store
+			try {
+				store = window.sessionStorage
+			} catch {
+				return
+			}
+			const url = silentSignInUrl(
+				{
+					apiBase: authBaseFrom(resolveApiBase()),
+					signinOrganisation: this.signinConfig.signinOrganisation || '',
+					silentSignIn: this.signinConfig.silentSignIn || '',
+					organisationSlug: this.site.slug || this.portalSlug || '',
+				},
+				store,
+			)
+			if (url) {
+				const back = window.location.pathname + window.location.search
+				window.location.assign(`${url}&returnTo=${encodeURIComponent(back)}`)
+			}
 		},
 
 		/**
@@ -860,7 +1191,9 @@ export default {
 
 			// The page's search title first (site-page-seo-history-and-media),
 			// so the tab reads what the server already put in the head.
-			const pageName = this.page?.seo?.title || this.page?.title
+			const pageName = this.accountRoute
+				? this.accountEntry?.label || this.t('My overview')
+				: this.page?.seo?.title || this.page?.title
 			document.title =
 				pageName && pageName !== portalName
 					? `${pageName} - ${portalName}`
@@ -907,6 +1240,7 @@ export default {
 			clearSessionToken()
 			this.endIdle()
 			this.session = null
+			this.forgetAccount()
 
 			// The broker's own sign-out, when it offers one
 			// (signin-session-idle-warning-and-sso T11).
@@ -942,6 +1276,7 @@ export default {
 					clearSessionToken()
 					this.endIdle()
 					this.session = null
+					this.forgetAccount()
 					this.idleSignedOut = true
 				},
 			})
@@ -988,6 +1323,18 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-unpublished-content-must-be-indistinguishable-from-absent-content
 		 */
 		async loadRoute(route) {
+			// The signed-in area renders from the session, not from a CMS
+			// page, so no page is read for it.
+			if (isAccountRoute(route)) {
+				this.page = null
+				this.error = null
+				this.routeParam = ''
+				this.loading = false
+				this.followAccountRoute()
+				this.applyDocumentTitle()
+				return
+			}
+
 			this.loading = true
 			this.error = null
 			this.routeParam = ''
