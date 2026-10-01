@@ -726,8 +726,11 @@ test.describe.serial('the Woo citizen journey across four apps', () => {
 		)
 		expect(String(share.link ?? '')).not.toBe('')
 		state.shareToken = String(share.token)
+		// The link is for anyone: read it as an anonymous visitor. (A context
+		// carrying a Nextcloud login session is refused by the CORS middleware.)
+		const visitor = await playwrightRequest.newContext({ baseURL: BASE_URL })
 		const shared = await json(
-			await admin().get(
+			await visitor.get(
 				`/index.php/apps/opencatalogi/api/collections/shared/${state.shareToken}`,
 			),
 			'the shared dossier',
@@ -743,10 +746,11 @@ test.describe.serial('the Woo citizen journey across four apps', () => {
 			await rowAction(state.dossiers!, state.dossierId, 'unshareDossier', {}),
 			'revoke the link',
 		)
-		const revoked = await admin().get(
+		const revoked = await visitor.get(
 			`/index.php/apps/opencatalogi/api/collections/shared/${state.shareToken}`,
 		)
 		expect(revoked.status()).toBe(404)
+		await visitor.dispose()
 	})
 
 	// ------------------------------------------------------------------ J4
