@@ -8,7 +8,8 @@
   "Groups: Groep 7, Groep 8", with the names from GET /api/news/audiences,
   fetched once per page load and shared by every row.
 
-  Registered with appliesTo: { schema: "newsItem", property: "target" }.
+  The column widget `news-target` (src/App.vue cellWidgets, used by the News
+  page's `target` column in src/manifest.json).
 
   @spec openspec/changes/staff-news-screen/tasks.md#T4
   @visual exclude one line of text in a table cell; its wording is pinned by tests/news-authoring.spec.mjs (audienceOf, audienceLine)

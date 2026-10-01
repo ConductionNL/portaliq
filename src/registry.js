@@ -37,7 +37,6 @@
 //
 // See: https://github.com/ConductionNL/hydra → openspec/architecture/adr-036-universal-widget-manifest.md
 
-import NewsTargetCell from './cellRenderers/NewsTargetCell.vue'
 import StatusBadge from './cellRenderers/StatusBadge.vue'
 import EmailField from './formFields/EmailField.vue'
 import ExampleModal from './modals/ExampleModal.vue'
@@ -361,16 +360,6 @@ export default {
 		appliesTo: {
 			schema: 'example',
 			property: 'status',
-		},
-	},
-
-	// Who a news item is for, as one line (staff-news-screen T4).
-	'news-target': {
-		kind: 'cell-renderer',
-		component: NewsTargetCell,
-		appliesTo: {
-			schema: 'newsItem',
-			property: 'target',
 		},
 	},
 }

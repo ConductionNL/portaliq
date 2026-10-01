@@ -2260,7 +2260,11 @@
         "showAdd": false,
         "columns": [
           "title",
-          "target",
+          {
+            "key": "target",
+            "label": "For",
+            "widget": "news-target"
+          },
           {
             "key": "status",
             "label": "Status",
