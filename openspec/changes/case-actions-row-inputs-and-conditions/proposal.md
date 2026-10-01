@@ -5,6 +5,8 @@ depends_on: [case-actions-sign-a-document]
 
 # Proposal: case-actions-row-inputs-and-conditions
 
+> Retargeted 2026-10-01 (`site-reaches-portal-parity`): new frontend work in this change lands in the Vue site `src/site/`, not in the React portal `src/portal/`, which is being retired.
+
 ## Why
 
 `case-actions-sign-a-document` lets a row carry an endpoint action: the

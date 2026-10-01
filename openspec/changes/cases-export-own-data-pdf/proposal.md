@@ -1,5 +1,7 @@
 # Proposal: cases-export-own-data-pdf
 
+> Retargeted 2026-10-01 (`site-reaches-portal-parity`): new frontend work in this change lands in the Vue site `src/site/`, not in the React portal `src/portal/`, which is being retired.
+
 ## Why
 
 A resident wants a copy of their own information to keep, print or hand to someone: their payment statements, their budget plan, their list of requests. The portal shows it on screen and offers no way to take it along.

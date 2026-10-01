@@ -5,6 +5,8 @@ depends_on: []
 
 # Proposal: operate-pages-per-portal-and-client
 
+> Retargeted 2026-10-01 (`site-reaches-portal-parity`): new frontend work in this change lands in the Vue site `src/site/`, not in the React portal `src/portal/`, which is being retired.
+
 ## Why
 
 Every contribution a subject's audience may see lands in the portal's

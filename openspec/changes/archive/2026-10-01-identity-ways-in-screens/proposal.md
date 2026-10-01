@@ -1,5 +1,9 @@
 # Proposal: identity-ways-in-screens
 
+> Retargeted 2026-10-01 (`site-reaches-portal-parity`): new frontend work in this change lands in the Vue site `src/site/`, not in the React portal `src/portal/`, which is being retired.
+
+> Built before that retarget reached this branch: the screens of T02, T04 and T06 live in the React portal (`src/portal/components/WaysIn.jsx`, `src/portal/lib/waysIn.js`). Their Vue port is row a14 and task T07a of `site-reaches-portal-parity`, so they are not built twice.
+
 ## Why
 
 A person who does not yet have a portal account, or who has only a case number,

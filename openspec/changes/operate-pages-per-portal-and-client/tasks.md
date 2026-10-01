@@ -7,7 +7,7 @@
 ## The portal choice
 
 - [ ] **T02**: `ContributionController::index()` resolves the serving portal and applies its `navigation` list for the subject's audience: hidden pages dropped, listed pages ordered, unlisted pages after them (REQ-PGC-001). Verification: `ContributionControllerTest::testPortalNavigationHidesAndOrdersPages`, `::testUnlistedPageKeepsItsPlace`, `::testNoChoiceAnswersAsToday`.
-- [ ] **T03**: "Navigation" section on the portal detail page: pages per audience, a show toggle and up and down buttons, saving `portal.navigation` (REQ-PGC-003). Verification: Playwright `tests/e2e/operate-pages-per-portal-and-client.spec.ts` hides a page and sees it gone from the portal menu.
+- [ ] **T03**: "Navigation" section on the portal detail page: pages per audience, a show toggle and up and down buttons, saving `portal.navigation` (REQ-PGC-003). Verification: Playwright `tests/e2e/operate-pages-per-portal-and-client.spec.ts` hides a page and sees it gone from the signed-in menu on `/site`.
 
 ## The client choice
 

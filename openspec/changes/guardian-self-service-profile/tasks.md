@@ -20,7 +20,7 @@
   - GIVEN a queued proposal the guardian made WHEN they open their own proposals list THEN it shows with a withdraw action, and withdrawing calls the existing withdraw route
   - GIVEN an accepted or rejected proposal WHEN shown in the list THEN no withdraw action is offered
 - [x] Implement
-- [ ] Test (no vitest/jest harness exists yet for `src/portal/`'s `.jsx` files — verified by code
+- [ ] Test, against the Vue port `src/site/components/ProposeChangeForm.vue` with node test `tests/propose-change.spec.mjs` (no vitest/jest harness exists yet for `src/portal/`'s `.jsx` files — verified by code
   inspection + ESLint only; see PR #683's "Inherited, not introduced" note)
 
 ## Quality checklist

@@ -35,7 +35,7 @@
 
 ## Frontend build + tests
 
-- [ ] **T12**: Build the React portal (`npm run build` → `js/portaliq-portal.js`); add the eHerkenning login handshake, session store, contribution renderer, and inbox view.
+- [ ] **T12**: In the Vue site (`src/site/`, `npm run build:site` → `js/portaliq-site.js`), not the React portal: add the eHerkenning login handshake, session store, contribution renderer, and inbox view.
 - [ ] **T13**: Tests — PHP unit for the auth edge + registry (fail-closed, IDOR, tenant isolation); a Playwright e2e for the supplier login → see tenders/contracts/invoices → perform an action → receive a notification.
 
 ## Gates / review
