@@ -645,6 +645,123 @@ export function createPortalApi(config) {
 		},
 
 		/**
+		 * A challenge for a public surface, solved in the browser before the
+		 * form is sent (identity-ways-in-screens T02). The portal this page is
+		 * served as is named, so a shared host resolves to it.
+		 *
+		 * @param {string} surface The surface, e.g. `registration`.
+		 * @return {Promise<object|null>} `{ nonce, expiresAt, signature, difficulty, honeypotField? }`.
+		 *
+		 * @spec openspec/changes/identity-ways-in-screens/tasks.md#T02
+		 */
+		async challenge(surface) {
+			const query = new URLSearchParams({ surface, portal: config.organisationSlug || '' })
+			return get(`/identity/challenge?${query.toString()}`)
+		},
+
+		/**
+		 * Create an account under the portal's registration policy.
+		 *
+		 * @param {object} form The form: `email`, `displayName`, the solved
+		 *                      `challenge` and `solution`, and `honeypot`
+		 *                      (`{ field, value }`) when the portal names one.
+		 * @return {Promise<object>} `{ ok, status, error, data }`; `data.awaiting` is the policy.
+		 *
+		 * @spec openspec/changes/identity-ways-in-screens/tasks.md#T02
+		 */
+		async registerAccount({ email, displayName = '', challenge = {}, solution = '', honeypot = null }) {
+			const body = {
+				portal: config.organisationSlug || '',
+				email,
+				displayName,
+				nonce: challenge.nonce || '',
+				expiresAt: challenge.expiresAt || 0,
+				signature: challenge.signature || '',
+				solution,
+			}
+			if (honeypot?.field) {
+				body[honeypot.field] = honeypot.value || ''
+			}
+			return answer('POST', '/identity/register', body)
+		},
+
+		/**
+		 * Follow the activation link of a self-registration.
+		 *
+		 * @param {string} token The secret from the mail.
+		 * @return {Promise<object>} `{ ok, status, error, data }`.
+		 *
+		 * @spec openspec/changes/identity-ways-in-screens/tasks.md#T03
+		 */
+		async activateAccount(token) {
+			return answer('POST', '/identity/activate', { token })
+		},
+
+		/**
+		 * Ask for a one-time link to one case, mailed to the address the case
+		 * records. The answer is the same whether or not a mail left.
+		 *
+		 * @param {object} request `register`, `schema`, `caseType`, `caseReference`, `email`.
+		 * @return {Promise<object>} `{ ok, status, error, data }`.
+		 *
+		 * @spec openspec/changes/identity-ways-in-screens/tasks.md#T04
+		 */
+		async requestReferenceLink({ register, schema, caseType, caseReference, email }) {
+			return answer('POST', '/identity/reference-link', {
+				portal: config.organisationSlug || '',
+				register,
+				schema,
+				caseType,
+				caseReference,
+				email,
+			})
+		},
+
+		/**
+		 * Spend a reference link: a short, read-only session for its one case.
+		 *
+		 * @param {string} token The secret from the mail.
+		 * @return {Promise<object>} `{ ok, status, error, data }`; `data.bearer` is the session.
+		 *
+		 * @spec openspec/changes/identity-ways-in-screens/tasks.md#T04
+		 */
+		async redeemReferenceLink(token) {
+			return answer('POST', '/identity/reference-link/redeem', { token })
+		},
+
+		/**
+		 * The one case a reference session reads. The bearer is that session's
+		 * own and is never stored: a reload asks for a new link.
+		 *
+		 * @param {string} bearer The reference session.
+		 * @return {Promise<object|null>} `{ case, caseReference, readOnly }`, or null.
+		 *
+		 * @spec openspec/changes/identity-ways-in-screens/tasks.md#T05
+		 */
+		async referenceCase(bearer) {
+			try {
+				const res = await fetch(`${base}/identity/reference-case`, {
+					headers: { Accept: 'application/json', Authorization: `Bearer ${bearer}` },
+				})
+				return res.ok ? await res.json() : null
+			} catch {
+				return null
+			}
+		},
+
+		/**
+		 * Accept an invitation, which creates the account for its address.
+		 *
+		 * @param {string} token The secret from the invitation mail.
+		 * @return {Promise<object>} `{ ok, status, error, data }`.
+		 *
+		 * @spec openspec/changes/identity-ways-in-screens/tasks.md#T06
+		 */
+		async acceptInvitation(token) {
+			return answer('POST', '/identity/invitation/accept', { token })
+		},
+
+		/**
 		 * List one collection's objects, subject-scoped. Disambiguated on the
 		 * wire with `?collection=<id>` so two collections sharing a register+
 		 * schema (a direct view and a scopeClaim/via view) never collide.

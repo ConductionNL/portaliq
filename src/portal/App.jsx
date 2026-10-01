@@ -24,6 +24,7 @@ import PageView from '@portal/components/PageView.jsx'
 import PortalNotices from '@portal/components/PortalNotices.jsx'
 import RegisteredDetailsPage from '@portal/components/RegisteredDetailsPage.jsx'
 import TasksPage from '@portal/components/TasksPage.jsx'
+import { CreateAccountForm, ReferenceLinkForm, WayInLink } from '@portal/components/WaysIn.jsx'
 import { consumeConfirmEmail, dismissPrompt, promptDismissed, refusalText } from '@portal/lib/account.js'
 import { branchInEffect } from '@portal/lib/branch.js'
 import { logoutTarget, markIdleSignOut, silentSignInUrl, takeIdleSignOut } from '@portal/lib/idleSession.js'
@@ -33,6 +34,7 @@ import { consumeOidcCallbackFragment, createPortalApi, getToken, setToken } from
 import { runAction } from '@portal/lib/rowAction.js'
 import { consumeSigninFailed, loginStartUrl, signinOrganisation } from '@portal/lib/signinRoute.js'
 import useIdleSession from '@portal/lib/useIdleSession.js'
+import { consumeWayInFragment } from '@portal/lib/waysIn.js'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Loading from './components/Loading.jsx'
 
@@ -185,6 +187,9 @@ export default function App({ config, t: tProp }) {
 	// is read and stripped once, on mount, and posted; it needs no session.
 	const [confirmToken] = useState(() => consumeConfirmEmail(window.location, window.history))
 	const [confirmMessage, setConfirmMessage] = useState(null)
+	// A mailed way in (identity-ways-in-screens T03, T04, T06): `#activate=`,
+	// `#invitation=` or `#reference=`, read and stripped once, on mount.
+	const [wayInLink] = useState(() => consumeWayInFragment(window.location, window.history))
 	const [promptHidden, setPromptHidden] = useState(() => promptDismissed(sessionStore()))
 	const [state, setState] = useState({ loading: true, session: null, contributions: null, threads: [], news: [], devError: null })
 	const [dataByCollection, setDataByCollection] = useState({})
@@ -628,6 +633,18 @@ export default function App({ config, t: tProp }) {
 							</button>
 						)}
 						{state.devError && <p className="portaliq-error" role="alert">{state.devError}</p>}
+						{wayInLink && (
+							<WayInLink
+								api={api}
+								t={t}
+								link={wayInLink}
+								emailSignIn={config.waysIn?.emailSignIn || ''}
+								portalName={config.organisationName || ''} />
+						)}
+						{config.waysIn?.register === true && <CreateAccountForm api={api} t={t} />}
+						{config.waysIn?.reference === true && (
+							<ReferenceLinkForm api={api} t={t} caseTypes={config.waysIn.referenceCaseTypes || []} />
+						)}
 					</section>
 				)}
 

@@ -511,3 +511,23 @@ body .guest-box {
 	background: var(--portaliq-color-background);
 	color: var(--portaliq-color-text);
 }
+
+/* The ways in without an account (identity-ways-in-screens). The trap field
+   is out of sight and out of the tab order; a person never fills it. */
+.portaliq-way-in {
+	margin-block: var(--portaliq-space-md);
+}
+
+.portaliq-way-in form {
+	display: grid;
+	gap: var(--portaliq-space-sm);
+	max-width: 32rem;
+}
+
+.portaliq-way-in__trap {
+	position: absolute;
+	inset-inline-start: -10000px;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+}
