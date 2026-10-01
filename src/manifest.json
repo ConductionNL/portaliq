@@ -2258,9 +2258,15 @@
         "schema": "newsItem",
         "_note": "School news for parents (staff-news-screen). Every write goes through NewsController's staff routes, never the object form: they check the audience and keep the read receipts and translations the server owns. 'New news item' and 'Change' open NewsItemDialog, which offers the whole school or groups from GET /api/news/audiences; 'Publish' and 'Take back' call the publish routes. See src/lib/newsAuthoring.js.",
         "showAdd": false,
+        "showEditAction": false,
+        "showCopyAction": false,
         "columns": [
           "title",
-          "target",
+          {
+            "key": "target",
+            "label": "For",
+            "widget": "news-target"
+          },
           {
             "key": "status",
             "label": "Status",

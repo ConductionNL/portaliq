@@ -362,6 +362,8 @@ test('the News page is an index page whose actions are handlers backed by the ro
 		false,
 		'no object-form Add: news goes through the authoring routes',
 	)
+	assert.equal(page.config.showEditAction, false, 'no object-form Edit')
+	assert.equal(page.config.showCopyAction, false, 'no object-form Copy')
 	assert.ok(
 		manifest.menu.some((entry) => entry.route === 'News'),
 		'the menu links the News page',
@@ -378,11 +380,15 @@ test('the News page is an index page whose actions are handlers backed by the ro
 
 	const components = readFileSync(join(ROOT, 'src/customComponents.js'), 'utf8')
 	assert.match(components, /\.\.\.newsHandlers,/)
-	const registry = readFileSync(join(ROOT, 'src/registry.js'), 'utf8')
-	assert.match(
-		registry,
-		/component: NewsTargetCell,\s*appliesTo: \{\s*schema: 'newsItem',\s*property: 'target',/,
+	assert.ok(
+		page.config.columns.some(
+			(column) => column.key === 'target' && column.widget === 'news-target',
+		),
+		'the target column uses the news-target widget',
 	)
+	const app = readFileSync(join(ROOT, 'src/App.vue'), 'utf8')
+	assert.match(app, /:cellWidgets="cellWidgets"/)
+	assert.match(app, /'news-target': NewsTargetCell/)
 
 	const routes = readFileSync(join(ROOT, 'appinfo/routes.php'), 'utf8')
 	for (const route of [

@@ -2009,7 +2009,8 @@ OC.L10N.register(
         "Give the news item a title.": "Geef het nieuwsbericht een titel.",
         "Write the text of the news item.": "Schrijf de tekst van het nieuwsbericht.",
         "Choose at least one group.": "Kies minstens een groep.",
-        "Choose the school.": "Kies de school."
+        "Choose the school.": "Kies de school.",
+        "For": "Voor"
     },
     "nplurals=2; plural=(n != 1);"
 )
