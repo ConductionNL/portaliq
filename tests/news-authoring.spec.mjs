@@ -362,6 +362,8 @@ test('the News page is an index page whose actions are handlers backed by the ro
 		false,
 		'no object-form Add: news goes through the authoring routes',
 	)
+	assert.equal(page.config.showEditAction, false, 'no object-form Edit')
+	assert.equal(page.config.showCopyAction, false, 'no object-form Copy')
 	assert.ok(
 		manifest.menu.some((entry) => entry.route === 'News'),
 		'the menu links the News page',
