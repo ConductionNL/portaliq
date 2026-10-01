@@ -13,6 +13,7 @@
   src/lib/newsAuthoring.js; this view is the screen.
 
   @spec openspec/changes/staff-news-screen/tasks.md#T4
+  @visual exclude a plain toolbar, note card and semantic table built from Nextcloud components; the calls, form rules and wiring are pinned by tests/news-authoring.spec.mjs
 -->
 <template>
 	<div class="news-authoring">
@@ -155,6 +156,8 @@ export default {
 		 * Load the news items and the audience choices.
 		 *
 		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/changes/staff-news-screen/tasks.md#T4
 		 */
 		async load() {
 			this.loading = true
@@ -177,6 +180,8 @@ export default {
 		 *
 		 * @param {object} item The news item.
 		 * @return {string}
+		 *
+		 * @spec openspec/changes/staff-news-screen/tasks.md#T4
 		 */
 		audienceText(item) {
 			const { kind, names } = audienceOf(item, this.options)
@@ -196,6 +201,8 @@ export default {
 		 *
 		 * @param {object|null} item The news item.
 		 * @return {void}
+		 *
+		 * @spec openspec/changes/staff-news-screen/tasks.md#T4
 		 */
 		open(item) {
 			this.editing = { item }

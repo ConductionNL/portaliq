@@ -72,6 +72,7 @@ function strings(value) {
  *
  * @param {object} row The row.
  * @return {string}
+ * @spec openspec/changes/staff-news-screen/tasks.md#T3
  */
 export function idOf(row) {
 	return String(row?.id || row?.uuid || row?.['@self']?.id || '')
@@ -230,6 +231,7 @@ export function createNewsApi({ get, post, put, generateUrl }) {
 		 * Every news item, newest first.
 		 *
 		 * @return {Promise<Array<object>>}
+		 * @spec openspec/changes/staff-news-screen/tasks.md#T3
 		 */
 		async list() {
 			const { data } = await get(
@@ -244,6 +246,7 @@ export function createNewsApi({ get, post, put, generateUrl }) {
 		 * The school and group choices.
 		 *
 		 * @return {Promise<{schools: Array, groups: Array}>}
+		 * @spec openspec/changes/staff-news-screen/tasks.md#T3
 		 */
 		async audiences() {
 			const { data } = await get(route('/apps/portaliq/api/news/audiences'))
@@ -260,6 +263,7 @@ export function createNewsApi({ get, post, put, generateUrl }) {
 		 * @param {string} id The item id, '' for a new item.
 		 * @param {string} authorRef The signed-in staff member, for a new item.
 		 * @return {Promise<object>} The saved item.
+		 * @spec openspec/changes/staff-news-screen/tasks.md#T3
 		 */
 		async save(form, id, authorRef) {
 			const body = {
@@ -284,6 +288,7 @@ export function createNewsApi({ get, post, put, generateUrl }) {
 		 * @param {string} id The item id.
 		 * @param {boolean} published True to publish.
 		 * @return {Promise<object>} The item.
+		 * @spec openspec/changes/staff-news-screen/tasks.md#T3
 		 */
 		async setPublished(id, published) {
 			const path = published

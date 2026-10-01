@@ -156,9 +156,17 @@ export default {
 	computed: {
 		/** The chosen school as an option, read and written through the form. */
 		school: {
+			/**
+			 * @return {object|null}
+			 * @spec openspec/changes/staff-news-screen/tasks.md#T4
+			 */
 			get() {
 				return this.optionFor(this.options.schools, this.form.schoolRef)
 			},
+			/**
+			 * @param {object|null} option The chosen school.
+			 * @spec openspec/changes/staff-news-screen/tasks.md#T4
+			 */
 			set(option) {
 				this.form.schoolRef = option?.id || ''
 			},
@@ -166,9 +174,17 @@ export default {
 
 		/** The chosen groups as options, read and written through the form. */
 		groups: {
+			/**
+			 * @return {Array<object>}
+			 * @spec openspec/changes/staff-news-screen/tasks.md#T4
+			 */
 			get() {
 				return this.form.groupRefs.map((ref) => this.optionFor(this.options.groups, ref))
 			},
+			/**
+			 * @param {Array} selected The chosen groups.
+			 * @spec openspec/changes/staff-news-screen/tasks.md#T4
+			 */
 			set(selected) {
 				this.form.groupRefs = (selected || [])
 					.map((option) => (typeof option === 'string' ? option : option?.id || option?.label || ''))
@@ -177,8 +193,12 @@ export default {
 		},
 	},
 
+	/**
+	 * A single school needs no choosing.
+	 *
+	 * @spec openspec/changes/staff-news-screen/tasks.md#T4
+	 */
 	created() {
-		// A single school needs no choosing.
 		if (!this.item && this.options.schools.length === 1) {
 			this.form.schoolRef = this.options.schools[0].id
 		}
@@ -193,6 +213,8 @@ export default {
 		 * @param {Array} list The options.
 		 * @param {string} ref The reference.
 		 * @return {object|null}
+		 *
+		 * @spec openspec/changes/staff-news-screen/tasks.md#T4
 		 */
 		optionFor(list, ref) {
 			if (!ref) {
