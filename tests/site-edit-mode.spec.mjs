@@ -69,7 +69,7 @@ test('the site loads the editor as its own bundle, never in its entry', () => {
 	assert.match(main, /window\.PortaliqSiteEditor = \{ mount \}/)
 	const config = read('webpack.site.js')
 	assert.match(config, /'portaliq-site-editor': path\.join\(\s*__dirname,\s*'src',\s*'editor',\s*'siteEditorMain\.js',?\s*\)/)
-	assert.match(config, /module\.exports = \[site, editor\]/)
+	assert.match(config, /module\.exports = \[site, editor(, embed)?\]/)
 })
 
 test('the edit control offers editing in place for a page, and the designer as a second way', () => {
