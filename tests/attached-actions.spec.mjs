@@ -18,7 +18,7 @@ import {
 	attachedBody,
 	fieldLabel,
 	runAttachedAction,
-} from '../src/portal/lib/attachedActions.js'
+} from '../src/shared/attachedActions.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 

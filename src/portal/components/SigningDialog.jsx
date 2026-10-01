@@ -9,7 +9,7 @@
 // is nothing to read, so there is nothing to sign either.
 
 import { useEffect, useRef, useState } from 'react'
-import { documentView, outcome } from '../lib/signing.js'
+import { documentView, outcome } from '../../shared/signing.js'
 
 /**
  * The signing dialog for one row.

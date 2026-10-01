@@ -9,7 +9,7 @@
 // Usage:
 //   node --test tests/schema-form-file-field.spec.mjs
 //
-// The submit flow lives in src/portal/lib/fileFieldSubmit.js so it can be
+// The submit flow lives in src/shared/fileFieldSubmit.js so it can be
 // driven here against a fake api: the live attach fails on a fresh instance
 // (portaliq#29), so a browser run would prove the instance, not the form.
 // SchemaForm is JSX; it is compiled with the same Babel preset
@@ -32,7 +32,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const OUT_DIR = join(ROOT, 'node_modules', '.cache', 'portaliq-tests')
 mkdirSync(OUT_DIR, { recursive: true })
 
-const SUBMIT_SOURCE = join(ROOT, 'src', 'portal', 'lib', 'fileFieldSubmit.js')
+const SUBMIT_SOURCE = join(ROOT, 'src', 'shared', 'fileFieldSubmit.js')
 const SUBMIT_OUT = join(OUT_DIR, 'fileFieldSubmit.mjs')
 writeFileSync(SUBMIT_OUT, readFileSync(SUBMIT_SOURCE, 'utf8'))
 
@@ -44,7 +44,7 @@ const compiled = babel.transformSync(readFileSync(FORM_SOURCE, 'utf8'), {
 	configFile: false,
 	presets: [['@babel/preset-react', { runtime: 'automatic' }]],
 })
-writeFileSync(FORM_OUT, compiled.code.replace("'../lib/fileFieldSubmit.js'", "'./fileFieldSubmit.mjs'"))
+writeFileSync(FORM_OUT, compiled.code.replace("'../../shared/fileFieldSubmit.js'", "'./fileFieldSubmit.mjs'"))
 
 const { default: SchemaForm } = await import(pathToFileURL(FORM_OUT).href)
 const submit = await import(pathToFileURL(SUBMIT_OUT).href)

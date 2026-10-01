@@ -11,7 +11,7 @@ import {
 	attachedActionsOf,
 	fieldLabel,
 	runAttachedAction,
-} from '../lib/attachedActions.js'
+} from '../../shared/attachedActions.js'
 
 /**
  * The attached actions of one record.

@@ -30,7 +30,7 @@ import { logoutTarget, markIdleSignOut, silentSignInUrl, takeIdleSignOut } from 
 import { actingForHeld, keepActingFor, readActingFor } from '@portal/lib/myCases.js'
 import { consumeOpenTarget, forgetOpenTarget, navKeyFor } from '@portal/lib/openRecord.js'
 import { consumeOidcCallbackFragment, createPortalApi, getToken, setToken } from '@portal/lib/portalApi.js'
-import { runAction } from '@portal/lib/rowAction.js'
+import { runAction } from '../shared/rowAction.js'
 import { consumeSigninFailed, loginStartUrl, signinOrganisation } from '@portal/lib/signinRoute.js'
 import useIdleSession from '@portal/lib/useIdleSession.js'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'

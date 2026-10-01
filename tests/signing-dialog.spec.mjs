@@ -28,14 +28,15 @@ const OUT_DIR = join(ROOT, 'node_modules', '.cache', 'portaliq-tests', 'signing'
 
 /**
  * Compile one portal source file with the portal build's React preset, keeping
- * its path under src/portal so the relative imports between the compiled files
- * still resolve, and import it from where `react` resolves.
+ * its path under src so the relative imports between the compiled files
+ * (src/portal and src/shared) still resolve, and import it from where `react`
+ * resolves.
  *
- * @param {string} relative The path under src/portal.
+ * @param {string} relative The path under src.
  * @return {Promise<object>} The module.
  */
 async function load(relative) {
-	const source = join(ROOT, 'src', 'portal', relative)
+	const source = join(ROOT, 'src', relative)
 	const compiled = babel.transformSync(readFileSync(source, 'utf8'), {
 		filename: source,
 		babelrc: false,
@@ -53,11 +54,11 @@ async function load(relative) {
 }
 
 // Dependencies first, so the compiled files they import exist.
-await load('lib/rowAction.js')
-const signing = await load('lib/signing.js')
-const { createPortalApi } = await load('lib/portalApi.js')
-const { default: SigningDialog } = await load('components/SigningDialog.jsx')
-const { default: DeclineDialog } = await load('components/DeclineDialog.jsx')
+await load('shared/rowAction.js')
+const signing = await load('shared/signing.js')
+const { createPortalApi } = await load('portal/lib/portalApi.js')
+const { default: SigningDialog } = await load('portal/components/SigningDialog.jsx')
+const { default: DeclineDialog } = await load('portal/components/DeclineDialog.jsx')
 
 const COLLECTION = {
 	id: 'signerSigningRequests',
