@@ -21,14 +21,20 @@
 
 import { expect, test } from '@playwright/test'
 
-const site = (portal: string, route = '/mijn') => `/apps/portaliq/site?portal=${portal}&route=${route}`
+function site(portal: string, route = '/mijn') {
+	return `/apps/portaliq/site?portal=${portal}&route=${route}`
+}
 
 test.describe('identity-ways-in-screens', () => {
 	test('Registration under activation', async ({ page }) => {
 		await page.goto(site('e2e-ways-in'))
 		const door = page.getByTestId('way-in-register')
-		await door.getByLabel(/E-mail address|E-mailadres/).fill(`e2e-${Date.now()}@example.org`)
-		await door.getByRole('button', { name: /Create an account|Account aanmaken/ }).click()
+		await door
+			.getByLabel(/E-mail address|E-mailadres/)
+			.fill(`e2e-${Date.now()}@example.org`)
+		await door
+			.getByRole('button', { name: /Create an account|Account aanmaken/ })
+			.click()
 		await expect(page.getByTestId('way-in-register-result')).toContainText(
 			/activate your account|uw account te activeren/,
 		)
@@ -37,7 +43,9 @@ test.describe('identity-ways-in-screens', () => {
 			route.fulfill({ status: 200, json: { activated: true } }),
 		)
 		await page.goto(`${site('e2e-ways-in', '/')}#activate=mailed-secret`)
-		await expect(page.getByTestId('way-in-link-result')).toContainText(/Your account is ready|Uw account is klaar/)
+		await expect(page.getByTestId('way-in-link-result')).toContainText(
+			/Your account is ready|Uw account is klaar/,
+		)
 		await expect(page).not.toHaveURL(/#activate=/)
 	})
 
@@ -53,21 +61,36 @@ test.describe('identity-ways-in-screens', () => {
 		await expect(page.getByTestId('way-in-register')).toHaveCount(0)
 	})
 
-	test('A reference link arrives by mail and opens one case read only', async ({ page }) => {
+	test('A reference link arrives by mail and opens one case read only', async ({
+		page,
+	}) => {
 		await page.goto(site('e2e-ways-in'))
 		const door = page.getByTestId('way-in-reference')
 		await door.getByLabel(/Case number|Zaaknummer/).fill('Z-2026-0001')
-		await door.getByLabel(/E-mail address|E-mailadres/).fill('resident@example.org')
-		await door.getByRole('button', { name: /Send me a link|Stuur mij een link/ }).click()
-		await expect(page.getByTestId('way-in-reference-result')).toContainText(/It works once|één keer/)
+		await door
+			.getByLabel(/E-mail address|E-mailadres/)
+			.fill('resident@example.org')
+		await door
+			.getByRole('button', { name: /Send me a link|Stuur mij een link/ })
+			.click()
+		await expect(page.getByTestId('way-in-reference-result')).toContainText(
+			/It works once|één keer/,
+		)
 
 		await page.route('**/portal/api/identity/reference-link/redeem', (route) =>
-			route.fulfill({ status: 200, json: { caseReference: 'Z-2026-0001', bearer: 'reference-bearer' } }),
+			route.fulfill({
+				status: 200,
+				json: { caseReference: 'Z-2026-0001', bearer: 'reference-bearer' },
+			}),
 		)
 		await page.route('**/portal/api/identity/reference-case', (route) =>
 			route.fulfill({
 				status: 200,
-				json: { case: { title: 'Parkeervergunning', status: 'In behandeling' }, caseReference: 'Z-2026-0001', readOnly: true },
+				json: {
+					case: { title: 'Parkeervergunning', status: 'In behandeling' },
+					caseReference: 'Z-2026-0001',
+					readOnly: true,
+				},
 			}),
 		)
 		await page.goto(`${site('e2e-ways-in', '/')}#reference=mailed-secret`)
@@ -83,12 +106,17 @@ test.describe('identity-ways-in-screens', () => {
 			accepted += 1
 			return accepted === 1
 				? route.fulfill({ status: 200, json: { status: 'pending' } })
-				: route.fulfill({ status: 403, json: { error: 'invitation_not_valid' } })
+				: route.fulfill({
+						status: 403,
+						json: { error: 'invitation_not_valid' },
+					})
 		})
 
 		await page.goto(`${site('e2e-ways-in', '/')}#invitation=mailed-secret`)
 		await page.getByTestId('way-in-accept').click()
-		await expect(page.getByTestId('way-in-link-result')).toContainText(/Your account is ready|Uw account is klaar/)
+		await expect(page.getByTestId('way-in-link-result')).toContainText(
+			/Your account is ready|Uw account is klaar/,
+		)
 
 		await page.goto(`${site('e2e-ways-in', '/')}#invitation=mailed-secret`)
 		await page.getByTestId('way-in-accept').click()

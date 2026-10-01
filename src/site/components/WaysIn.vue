@@ -195,6 +195,8 @@ export default {
 		 * The identity routes for this portal.
 		 *
 		 * @return {object}
+		 *
+		 * @spec openspec/specs/portal-ways-in/spec.md#requirement-every-way-in-sends-its-secret-by-mail-req-iwi-001
 		 */
 		api() {
 			return waysInApi(this.authBase, this.portal)

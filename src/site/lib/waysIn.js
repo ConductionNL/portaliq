@@ -15,7 +15,7 @@ const LINK = /^#(activate|invitation|reference)=([^&]+)$/
 /**
  * The translator the ways in use: the site's own `t` first, then
  * waysInStrings.js for a key the site's bundle does not carry yet, as the
- * site's slices do (pages/collections/translate.js).
+ * site's slices do (the collection pages' translate.js).
  *
  * @param {Function} t The site's translator.
  * @param {string} locale The page language.
