@@ -53,9 +53,7 @@ test('an attached action shows only on the rows its rowWhen names', () => {
 		attachedActionsOf(collection, { status: 'awaiting_customer' }),
 		[ASK, REPLY],
 	)
-	assert.deepEqual(attachedActionsOf(collection, { status: 'converted' }), [
-		ASK,
-	])
+	assert.deepEqual(attachedActionsOf(collection, { status: 'converted' }), [ASK])
 	assert.deepEqual(attachedActionsOf(collection, {}), [ASK])
 	const malformed = { ...REPLY, rowWhen: { field: 'status' } }
 	assert.deepEqual(
@@ -133,6 +131,9 @@ test('the api sends actionApp and the detail card renders the actions', () => {
 })
 
 test('site: the detail card leaves a place for the attached actions (slice c fills it)', () => {
-	const card = readFileSync(join(ROOT, 'src/site/components/collections/DetailCard.vue'), 'utf8')
+	const card = readFileSync(
+		join(ROOT, 'src/site/components/collections/DetailCard.vue'),
+		'utf8',
+	)
 	assert.match(card, /<SlotHost\s+name="attachedActions"/)
 })
