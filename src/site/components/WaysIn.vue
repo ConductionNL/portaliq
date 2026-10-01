@@ -154,7 +154,7 @@ import {
  * (identity-ways-in-screens T02, T04): "Create an account" and "Follow a case
  * with its case number", each only when the site config's `waysIn` opens it.
  *
- * @spec openspec/changes/identity-ways-in-screens/specs/portal-ways-in/spec.md#requirement-the-sign-in-screen-shows-only-the-doors-that-lead-somewhere-req-iwi-005
+ * @spec openspec/specs/portal-ways-in/spec.md#requirement-the-sign-in-screen-shows-only-the-doors-that-lead-somewhere-req-iwi-005
  */
 export default {
 	name: 'WaysIn',
@@ -207,7 +207,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/identity-ways-in-screens/tasks.md#T02
+		 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/tasks.md#T02
 		 */
 		async register() {
 			this.registration.busy = true
@@ -243,7 +243,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/identity-ways-in-screens/tasks.md#T04
+		 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/tasks.md#T04
 		 */
 		async requestLink() {
 			const type = this.ways.referenceCaseTypes[this.reference.choice]

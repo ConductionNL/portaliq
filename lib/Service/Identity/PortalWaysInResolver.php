@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/identity-ways-in-screens/specs/portal-ways-in/spec.md#requirement-the-sign-in-screen-shows-only-the-doors-that-lead-somewhere-req-iwi-005
+ * @spec openspec/specs/portal-ways-in/spec.md#requirement-the-sign-in-screen-shows-only-the-doors-that-lead-somewhere-req-iwi-005
  */
 
 declare(strict_types=1);
@@ -34,7 +34,7 @@ use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 /**
  * Decides the `waysIn` block of the portal SPA's runtime config.
  *
- * @spec openspec/changes/identity-ways-in-screens/specs/portal-ways-in/spec.md#requirement-the-sign-in-screen-shows-only-the-doors-that-lead-somewhere-req-iwi-005
+ * @spec openspec/specs/portal-ways-in/spec.md#requirement-the-sign-in-screen-shows-only-the-doors-that-lead-somewhere-req-iwi-005
  */
 class PortalWaysInResolver {
 
@@ -70,7 +70,7 @@ class PortalWaysInResolver {
 	 * @return array{register: bool, reference: bool, emailSignIn: string, referenceCaseTypes: array<int, array<string, string>>}
 	 *         `referenceCaseTypes` holds `register`, `schema`, `caseType` and `label` per case type.
 	 *
-	 * @spec openspec/changes/identity-ways-in-screens/tasks.md#T07
+	 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/tasks.md#T07
 	 */
 	public function waysIn(array $portal, array $oidcProviders): array {
 		$emailSignIn = '';

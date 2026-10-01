@@ -70,7 +70,7 @@ import {
  * What a mailed link opens on the site (identity-ways-in-screens T03, T04,
  * T06): an activation, an invitation to accept, or one case read only.
  *
- * @spec openspec/changes/identity-ways-in-screens/specs/portal-ways-in/spec.md#requirement-every-way-in-sends-its-secret-by-mail-req-iwi-001
+ * @spec openspec/specs/portal-ways-in/spec.md#requirement-every-way-in-sends-its-secret-by-mail-req-iwi-001
  */
 export default {
 	name: 'WayInLink',
@@ -106,7 +106,7 @@ export default {
 	/**
 	 * Read the link once; an activation and a reference link act at once.
 	 *
-	 * @spec openspec/changes/identity-ways-in-screens/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/tasks.md#T03
 	 */
 	async mounted() {
 		this.link = takeWayInLink(window.location, window.history)
@@ -137,7 +137,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/identity-ways-in-screens/tasks.md#T04
+		 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/tasks.md#T04
 		 */
 		async openReference() {
 			this.busy = true
@@ -167,7 +167,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/identity-ways-in-screens/tasks.md#T06
+		 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/tasks.md#T06
 		 */
 		async accept() {
 			this.busy = true

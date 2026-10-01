@@ -1010,7 +1010,7 @@ export default {
 		 *
 		 * @return {object} See waysInFrom().
 		 *
-		 * @spec openspec/changes/identity-ways-in-screens/tasks.md#T07
+		 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/tasks.md#T07
 		 */
 		waysIn() {
 			return waysInFrom(this.signinConfig)
@@ -1022,7 +1022,7 @@ export default {
 		 *
 		 * @return {Function}
 		 *
-		 * @spec openspec/changes/identity-ways-in-screens/tasks.md#T08
+		 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/tasks.md#T08
 		 */
 		waysInT() {
 			return waysInTranslator(this.t, this.locale)

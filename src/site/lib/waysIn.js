@@ -21,7 +21,7 @@ const LINK = /^#(activate|invitation|reference)=([^&]+)$/
  * @param {string} locale The page language.
  * @return {Function} `(key, vars) => text`.
  *
- * @spec openspec/changes/identity-ways-in-screens/tasks.md#T08
+ * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/tasks.md#T08
  */
 export function waysInTranslator(t, locale) {
 	const lang = String(locale || 'nl')
@@ -44,7 +44,7 @@ export function waysInTranslator(t, locale) {
  * @param {object} signin The site config's `signin` block.
  * @return {{register: boolean, reference: boolean, emailSignIn: string, referenceCaseTypes: Array<object>}}
  *
- * @spec openspec/changes/identity-ways-in-screens/specs/portal-ways-in/spec.md#requirement-the-sign-in-screen-shows-only-the-doors-that-lead-somewhere-req-iwi-005
+ * @spec openspec/specs/portal-ways-in/spec.md#requirement-the-sign-in-screen-shows-only-the-doors-that-lead-somewhere-req-iwi-005
  */
 export function waysInFrom(signin) {
 	const ways = (signin && signin.waysIn) || {}
@@ -74,7 +74,7 @@ export function waysInFrom(signin) {
  * @param {History|object} history The window history.
  * @return {{kind: string, token: string}|null} The link, or null when the page was not opened from one.
  *
- * @spec openspec/changes/identity-ways-in-screens/tasks.md#T06
+ * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/tasks.md#T06
  */
 export function takeWayInLink(location, history) {
 	const match = String((location && location.hash) || '').match(LINK)
@@ -127,7 +127,7 @@ export function leadingZeroBits(bytes) {
  * @param {SubtleCrypto} subtle The browser's digest.
  * @return {Promise<string>} The solution, or '' when none was found in reach.
  *
- * @spec openspec/changes/identity-ways-in-screens/tasks.md#T02
+ * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/tasks.md#T02
  */
 export async function solveChallenge(
 	nonce,
@@ -158,7 +158,7 @@ export async function solveChallenge(
  * @param {string} code The refusal code.
  * @return {string} The sentence key.
  *
- * @spec openspec/changes/identity-ways-in-screens/specs/portal-ways-in/spec.md#requirement-you-can-create-an-account-where-the-portal-allows-it-req-iwi-002
+ * @spec openspec/specs/portal-ways-in/spec.md#requirement-you-can-create-an-account-where-the-portal-allows-it-req-iwi-002
  */
 export function wayInRefusalText(code) {
 	const texts = {
@@ -183,7 +183,7 @@ export function wayInRefusalText(code) {
  * @param {string} awaiting The policy the server answered: `activation` or `approval`.
  * @return {string} The sentence key.
  *
- * @spec openspec/changes/identity-ways-in-screens/specs/portal-ways-in/spec.md#requirement-you-can-create-an-account-where-the-portal-allows-it-req-iwi-002
+ * @spec openspec/specs/portal-ways-in/spec.md#requirement-you-can-create-an-account-where-the-portal-allows-it-req-iwi-002
  */
 export function registrationOutcomeText(awaiting) {
 	if (awaiting === 'activation') {
@@ -214,7 +214,7 @@ export function readyText(t, emailSignIn) {
  * @param {object} record The case as the case app projects it.
  * @return {Array<{key: string, value: string}>}
  *
- * @spec openspec/changes/identity-ways-in-screens/specs/portal-ways-in/spec.md#requirement-a-case-number-and-an-e-mail-address-open-one-case-req-iwi-003
+ * @spec openspec/specs/portal-ways-in/spec.md#requirement-a-case-number-and-an-e-mail-address-open-one-case-req-iwi-003
  */
 export function referenceCaseFields(record) {
 	return Object.entries(record || {})
@@ -285,7 +285,7 @@ async function post(url, body, fetchImpl) {
  * @param {Function} fetchImpl `fetch`, replaceable in tests.
  * @return {object} The calls.
  *
- * @spec openspec/changes/identity-ways-in-screens/tasks.md#T02
+ * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/tasks.md#T02
  */
 export function waysInApi(
 	authBase,

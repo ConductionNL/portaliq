@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/identity-ways-in-screens/specs/portal-ways-in/spec.md#requirement-you-can-create-an-account-where-the-portal-allows-it-req-iwi-002
+ * @spec openspec/specs/portal-ways-in/spec.md#requirement-you-can-create-an-account-where-the-portal-allows-it-req-iwi-002
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use OCP\Security\ISecureRandom;
 /**
  * Issues and spends the activation link of a self-registered account.
  *
- * @spec openspec/changes/identity-ways-in-screens/specs/portal-ways-in/spec.md#requirement-you-can-create-an-account-where-the-portal-allows-it-req-iwi-002
+ * @spec openspec/specs/portal-ways-in/spec.md#requirement-you-can-create-an-account-where-the-portal-allows-it-req-iwi-002
  */
 class PortalAccountActivationService {
 
@@ -84,7 +84,7 @@ class PortalAccountActivationService {
 	 *                     account is not a pending self-registration or the
 	 *                     write failed.
 	 *
-	 * @spec openspec/changes/identity-ways-in-screens/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/tasks.md#T01
 	 */
 	public function issue(string $subjectRef, ?DateTimeImmutable $now = null): ?string {
 		$lookup  = new PortalAccountLookup(reader: $this->reader);
@@ -125,7 +125,7 @@ class PortalAccountActivationService {
 	 *
 	 * @return array{organisation: string}|null
 	 *
-	 * @spec openspec/changes/identity-ways-in-screens/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/tasks.md#T03
 	 */
 	public function activate(string $token, ?DateTimeImmutable $now = null): ?array {
 		if ($token === '') {

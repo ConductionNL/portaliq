@@ -389,7 +389,7 @@ class PortalPageControllerTest extends TestCase {
 	 * The site's sign-in screen learns which ways in a portal opens from the
 	 * same runtime config as `/portal`, and gets none when it names none.
 	 *
-	 * @spec openspec/changes/identity-ways-in-screens/specs/portal-ways-in/spec.md#requirement-the-sign-in-screen-shows-only-the-doors-that-lead-somewhere-req-iwi-005
+	 * @spec openspec/specs/portal-ways-in/spec.md#requirement-the-sign-in-screen-shows-only-the-doors-that-lead-somewhere-req-iwi-005
 	 */
 	public function testSiteCarriesTheWaysIn(): void {
 		$ways = ['register' => true, 'reference' => false, 'emailSignIn' => 'E-mail', 'referenceCaseTypes' => []];

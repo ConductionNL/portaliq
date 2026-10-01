@@ -27,7 +27,7 @@ use RuntimeException;
  * The doubles are the real OCP mail interfaces and the real deep link
  * builder over a route table double, so a link that would 404 fails here.
  *
- * @spec openspec/changes/identity-ways-in-screens/specs/portal-ways-in/spec.md
+ * @spec openspec/specs/portal-ways-in/spec.md
  * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T01
  * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-invite-an-address-and-portaliq-mails-it-req-isa-001
  */
@@ -68,7 +68,7 @@ class PortalIdentityMailerTest extends TestCase {
 		$this->assertSame(1, $this->mailed['sent']);
 		$this->assertSame(['anna@example.nl'], $this->mailed['to']);
 		$this->assertSame(
-			['https://portal.example.test/apps/portaliq/portal?portal=gemeente-x#reference=secret-abc'],
+			['https://portal.example.test/apps/portaliq/site?portal=gemeente-x#reference=secret-abc'],
 			$this->mailed['buttons']
 		);
 		$this->assertStringContainsString('Gemeente X', $this->mailed['subject']);
@@ -101,13 +101,36 @@ class PortalIdentityMailerTest extends TestCase {
 
 	}//end testEachTemplateHasItsOwnFragment()
 
+	/**
+	 * The three ways in open on the Vue site, where their screens are
+	 * (identity-ways-in-screens, portaliq#1021); the e-mail confirmation
+	 * stays on the portal screen that consumes it today.
+	 *
+	 * @spec openspec/specs/portal-ways-in/spec.md#requirement-every-way-in-sends-its-secret-by-mail-req-iwi-001
+	 */
+	public function testTheWaysInOpenOnTheSite(): void {
+		$expected = [
+			PortalIdentityMailer::TEMPLATE_REFERENCE_LINK => '/apps/portaliq/site?portal=gemeente-x#',
+			PortalIdentityMailer::TEMPLATE_INVITATION => '/apps/portaliq/site?portal=gemeente-x#',
+			PortalIdentityMailer::TEMPLATE_REGISTRATION_ACTIVATION => '/apps/portaliq/site?portal=gemeente-x#',
+			PortalIdentityMailer::TEMPLATE_EMAIL_CONFIRMATION => '/apps/portaliq/portal?portal=gemeente-x#',
+		];
+
+		foreach ($expected as $template => $address) {
+			$this->setUp();
+			$this->mailer()->send(template: $template, email: 'anna@example.nl', secret: 's', organisation: 'gemeente-x', portal: ['slug' => 'gemeente-x']);
+			$this->assertStringContainsString($address, (string)($this->mailed['buttons'][0] ?? ''), $template);
+		}
+
+	}//end testTheWaysInOpenOnTheSite()
+
 	public function testWithoutAPortalTheOrganisationsOnePortalIsUsed(): void {
 		$mailer = $this->mailer(byOrganisation: ['slug' => 'gemeente-x-portaal', 'title' => 'Mijn Gemeente X']);
 
 		$mailer->send(template: PortalIdentityMailer::TEMPLATE_INVITATION, email: 'piet@leverancier.nl', secret: 'secret-abc', organisation: 'gemeente-x');
 
 		$this->assertSame(
-			['https://portal.example.test/apps/portaliq/portal?portal=gemeente-x-portaal#invitation=secret-abc'],
+			['https://portal.example.test/apps/portaliq/site?portal=gemeente-x-portaal#invitation=secret-abc'],
 			$this->mailed['buttons']
 		);
 		$this->assertStringContainsString('Mijn Gemeente X', $this->mailed['subject']);
@@ -214,7 +237,12 @@ class PortalIdentityMailerTest extends TestCase {
 				$query = '?' . http_build_query($parameters);
 			}
 
-			return '/apps/portaliq/portal' . $query;
+			$path = '/apps/portaliq/portal';
+			if ($route === 'portaliq.portalPage.site') {
+				$path = '/apps/portaliq/site';
+			}
+
+			return $path . $query;
 		});
 		$urls->method('getAbsoluteURL')->willReturnCallback(static fn (string $path): string => 'https://portal.example.test' . $path);
 
