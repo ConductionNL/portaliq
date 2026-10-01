@@ -1951,7 +1951,8 @@ OC.L10N.register(
         "Give the news item a title.": "Give the news item a title.",
         "Write the text of the news item.": "Write the text of the news item.",
         "Choose at least one group.": "Choose at least one group.",
-        "Choose the school.": "Choose the school."
+        "Choose the school.": "Choose the school.",
+        "This form uses a condition the portal cannot check. Change it to a condition on another answer.": "This form uses a condition the portal cannot check. Change it to a condition on another answer."
     },
     "nplurals=2; plural=(n != 1);"
 )

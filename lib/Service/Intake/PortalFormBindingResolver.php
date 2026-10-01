@@ -80,10 +80,13 @@ class PortalFormBindingResolver {
 	 * @param CaseTypeVisibility|null $caseTypes The case types a portal hides
 	 *                                           (operate-show-per-case-type).
 	 *                                           Absent hides nothing.
+	 * @param VisibleWhenLocal $visibleWhen Which field conditions the portal
+	 *                                      can check on submit.
 	 */
 	public function __construct(
 		private readonly PortalObjectReader $reader,
 		private readonly ?CaseTypeVisibility $caseTypes = null,
+		private readonly VisibleWhenLocal $visibleWhen = new VisibleWhenLocal(),
 	) {
 	}//end __construct()
 
@@ -240,6 +243,7 @@ class PortalFormBindingResolver {
 	 *
 	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
 	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 * @spec openspec/changes/intake-conditional-questions-and-drafts/specs/portal-intake-form/spec.md#requirement-a-condition-the-portal-cannot-check-refuses-the-form-req-icq-003
 	 */
 	public function render(array $binding): array {
 		$settings = [
@@ -286,6 +290,19 @@ class PortalFormBindingResolver {
 			];
 		}
 
+		$fields = $this->fieldsOf(form: $form);
+		if ($this->checksEveryCondition(fields: $fields) === false) {
+			// The server could not repeat on submit what the screen decided,
+			// so the form is refused rather than half checked (REQ-ICQ-003).
+			return [
+				'kind' => self::KIND_HOSTED,
+				'resolvesToNoForm' => true,
+				'reason' => 'unsupportedCondition',
+				'fields' => [],
+				'settings' => $settings,
+			];
+		}
+
 		$confirmation = (string)($form['confirmationText'] ?? '');
 		if ($confirmation !== '') {
 			// The confirmation the citizen reads is the form's own words when
@@ -298,7 +315,7 @@ class PortalFormBindingResolver {
 			'resolvesToNoForm' => false,
 			'formId' => (string)($form['uuid'] ?? $form['id'] ?? ''),
 			'formName' => (string)($form['name'] ?? ''),
-			'fields' => $this->fieldsOf(form: $form),
+			'fields' => $fields,
 			'settings' => $settings,
 			// The sign-in level the maker chose for this form (buildiq#935).
 			// Carried as declared; requiredTrust() decides what it means.
@@ -432,6 +449,24 @@ class PortalFormBindingResolver {
 
 		return $out;
 	}//end fieldsOf()
+
+	/**
+	 * Whether the portal can check every field's condition on submit.
+	 *
+	 * @param array<int, array<string, mixed>> $fields The form's fields.
+	 *
+	 * @return bool False when one asks an endpoint, a source, the clock or the
+	 *              installed apps (VisibleWhenLocal::isDecidable()).
+	 */
+	private function checksEveryCondition(array $fields): bool {
+		foreach ($fields as $field) {
+			if ($this->visibleWhen->isDecidable(condition: ($field['visibleWhen'] ?? null)) === false) {
+				return false;
+			}
+		}
+
+		return true;
+	}//end checksEveryCondition()
 
 	/**
 	 * The host a URL names, for the card the visitor reads before leaving.

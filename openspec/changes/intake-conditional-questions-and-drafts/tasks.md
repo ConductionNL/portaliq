@@ -4,7 +4,7 @@
 
 - [x] **T01**: `tests/fixtures/visible-when-local.json` from nextcloud-vue's `tests/utils/visibleWhen.spec.js` local-mode cases (v2.57.3, the installed version); `tests/visible-when-local.spec.mjs` runs it under `node --test` against the imported `evaluateVisibleWhenLocal` (REQ-ICQ-002). Portaliq has no Vitest, so the design's Vitest test is a node test (design D2). Verification: `npm run check:visible-when-local` green, 66 cases.
 - [x] **T02**: `lib/Service/Intake/VisibleWhenLocal.php` and its use in `PortalFormValidator::validate()`: skip required, drop answers, declared order (REQ-ICQ-002). Verification: `VisibleWhenLocalTest` over the same fixture; `PortalFormValidatorTest::testHiddenRequiredFieldIsNotRequired`, `::testHiddenAnswerIsDropped`.
-- [ ] **T03**: `PortalFormBindingResolver::fieldsOf()` resolves a form with an `endpoint` or `source` condition to no form, reason `unsupportedCondition`; `PortalBindingPreview` shows the sentence (REQ-ICQ-003). Verification: `PortalFormBindingResolverTest::testNonLocalConditionResolvesToNoForm`.
+- [x] **T03**: `PortalFormBindingResolver::fieldsOf()` resolves a form with an `endpoint` or `source` condition to no form, reason `unsupportedCondition`; `PortalBindingPreview` shows the sentence (REQ-ICQ-003). Verification: `PortalFormBindingResolverTest::testNonLocalConditionResolvesToNoForm`.
 - [ ] **T04**: The embed entry's `EmbeddedForm.vue` (`site-reaches-portal-parity` T23) evaluates each field's condition with the imported predicate on every change (REQ-ICQ-001). Verification: node test on `EmbeddedForm.vue`; the Playwright spec's embed case.
 
 ## The intake page
