@@ -32,7 +32,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const OUT_DIR = join(ROOT, 'node_modules', '.cache', 'portaliq-tests', 'timed-task')
 mkdirSync(OUT_DIR, { recursive: true })
 
-writeFileSync(join(OUT_DIR, 'timedTask.mjs'), readFileSync(join(ROOT, 'src', 'portal', 'lib', 'timedTask.js'), 'utf8'))
+writeFileSync(join(OUT_DIR, 'timedTask.mjs'), readFileSync(join(ROOT, 'src', 'shared', 'timedTask.js'), 'utf8'))
 
 /**
  * Compile one component into the cache, pointing its imports at the cache.
@@ -48,7 +48,7 @@ function compile(name) {
 		configFile: false,
 		presets: [['@babel/preset-react', { runtime: 'automatic' }]],
 	}).code
-		.replace("'../lib/timedTask.js'", "'./timedTask.mjs'")
+		.replace("'../../shared/timedTask.js'", "'./timedTask.mjs'")
 		.replace("'./TimedTaskItem.jsx'", "'./TimedTaskItem.mjs'")
 		.replace("'./Loading.jsx'", `'${LOADING_MODULE}'`)
 	const out = join(OUT_DIR, `${name}.mjs`)

@@ -7,7 +7,7 @@
 // type. The leaf app sent the prompt as plain text and the options in
 // presentation order; nothing here can reveal an answer.
 
-import { move, renderAs } from '../lib/timedTask.js'
+import { move, renderAs } from '../../shared/timedTask.js'
 
 /**
  * @param {object} props Props.

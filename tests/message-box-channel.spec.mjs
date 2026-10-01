@@ -19,7 +19,7 @@ import {
 	deliveryLine,
 	messageBoxChoice,
 	withMessageBoxChoice,
-} from '../src/portal/lib/messageBox.js'
+} from '../src/shared/messageBox.js'
 
 /**
  * A translator that fills `{name}` placeholders, as the portal's does.

@@ -43,8 +43,8 @@ async function load(relative) {
 	const flat = (path) => path.replace(/[\\/]/g, '_').replace(/\.jsx?$/, '.mjs')
 	const code = compiled.code
 		.replace(/from '\.\/([A-Za-z]+)\.jsx'/g, (whole, name) => `from './${flat('components/' + name + '.jsx')}'`)
-		.replace(/from '\.\.\/lib\/([A-Za-z]+)\.js'/g, (whole, name) => `from './${flat('lib/' + name + '.js')}'`)
-	const out = join(OUT_DIR, flat(relative))
+		.replace(/from '\.\.\/\.\.\/shared\/([A-Za-z]+)\.js'/g, (whole, name) => `from './${flat('lib/' + name + '.js')}'`)
+	const out = join(OUT_DIR, flat(relative.replace('../shared/', 'lib/')))
 	writeFileSync(out, code)
 	return import(pathToFileURL(out).href)
 }
@@ -54,7 +54,7 @@ const { default: TranslatedText, languageLabel, noticeText, isLabelledTranslatio
 // InboxPage imports NotificationSettings (inbox-notifications-and-preferences),
 // so it is compiled first, as TranslatedText is.
 // Both import the message box helpers (inbox-berichtenbox-channel).
-await load('lib/messageBox.js')
+await load('../shared/messageBox.js')
 await load('components/Loading.jsx')
 await load('components/NotificationSettings.jsx')
 const { default: InboxPage } = await load('components/InboxPage.jsx')
