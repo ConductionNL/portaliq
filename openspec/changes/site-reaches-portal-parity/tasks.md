@@ -21,9 +21,11 @@ screenshot. `design.md` has the file-by-file map.
 
 ## Slice b: collections
 
-- [ ] **T08**: `ContributionPage.vue` on `/diensten/{app}/{page}` (builds on `portal-theme-blocks-and-contributed-pages` task 9) with the block switch and the collection loader (REQ-SRP-014, REQ-SRP-016). Verification: new `tests/collection-loader.spec.mjs`; `tests/attached-actions.spec.mjs` and `tests/my-dossiers.spec.mjs` read the Vue page.
-- [ ] **T09**: `CollectionTable.vue`, `DetailCard.vue`, `TimelineList.vue`, `ItemList.vue`; rich text through `MarkdownBlock.vue` once its sanitising is checked (REQ-SRP-015, REQ-SRP-017, REQ-SRP-018, REQ-SRP-019, REQ-SRP-020). Verification: `tests/collection-table-keyboard.spec.mjs`, `tests/case-timeline.spec.mjs`, `tests/my-dossiers.spec.mjs`, new `tests/rich-text.spec.mjs`.
+- [x] **T08**: `ContributionPage.vue` on `/diensten/{app}/{page}` (builds on `portal-theme-blocks-and-contributed-pages` task 9) with the block switch and the collection loader (REQ-SRP-014, REQ-SRP-016). Verification: new `tests/collection-loader.spec.mjs`; `tests/attached-actions.spec.mjs` and `tests/my-dossiers.spec.mjs` read the Vue page.
+- [x] **T09**: `CollectionTable.vue`, `DetailCard.vue`, `TimelineList.vue`, `ItemList.vue`; rich text through `MarkdownBlock.vue` once its sanitising is checked (REQ-SRP-015, REQ-SRP-017, REQ-SRP-018, REQ-SRP-019, REQ-SRP-020). Verification: `tests/collection-table-keyboard.spec.mjs`, `tests/case-timeline.spec.mjs`, `tests/my-dossiers.spec.mjs`, new `tests/rich-text.spec.mjs`.
+  - Done on `feat/site-collections`: the page is exported as `pages.contribution` from `src/site/pages/collections/index.js`; its route comes from the shell's registry (slice a). Rich text is a text-only `RichTextBlock.vue`: `MarkdownBlock.vue` was checked and not reused, because `cnRenderMarkdown` keeps safe raw HTML (`<b>`, `<img>`) and REQ-SRP-018 allows none.
 - [ ] **T10**: `#open=` record links across sign-in (REQ-SRP-021). Verification: `tests/open-record.spec.mjs`; live: a notification link as Fatima.
+  - Page half done on `feat/site-collections` (select from own rows, "not in your list" notice, `openRecordEntry(nav)` for the shell). Open until the shell calls `openRecordEntry(nav)` on boot and routes to the entry it returns (App.vue, slice a).
 
 ## Slice c: forms and actions
 

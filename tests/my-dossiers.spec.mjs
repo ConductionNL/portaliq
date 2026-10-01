@@ -13,11 +13,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
-import {
-	itemRows,
-	removeItem,
-	withoutRemoveAction,
-} from '../src/portal/lib/itemList.js'
+import { itemRows, removeItem, withoutRemoveAction } from '../src/shared/itemList.js'
 import { answerLink, runRowAction } from '../src/shared/rowAction.js'
 import { mountSfc } from './support/mount-sfc.mjs'
 
@@ -158,4 +154,96 @@ test('the site confirm step shows the link the action answered', async () => {
 		step.find('rowaction-link').props.value,
 		'https://gemeente.example/shared/abc',
 	)
+})
+
+// The same promises, held by the site's Vue pages (site-reaches-portal-parity
+// slice b, REQ-SRP-017, REQ-SRP-020). The React half above goes when /portal
+// retires.
+
+const { loadSfc, renderSfc } = await import('./support/render-sfc.mjs')
+const VUE_ITEMS = 'src/site/components/collections/ItemList.vue'
+const dossier = {
+	id: 'mijnDossiers',
+	itemList: { label: 'In dit dossier', removeAction: 'removeItem' },
+}
+const answer = {
+	items: [
+		{ id: 'i1', title: 'Besluit fietspad', url: 'https://example.org/p/1' },
+		{ id: 'i2', title: 'Oude notitie', public: false, note: 'Ingetrokken' },
+	],
+}
+
+test('site: the item list marks an item that is no longer public and offers remove per item', async () => {
+	const html = await renderSfc(VUE_ITEMS, {
+		collection: dossier,
+		row: { id: 'dos-1' },
+		t: (key, vars) => (vars ? `${key}:${vars.title}` : key),
+		initialAnswer: answer,
+	})
+
+	assert.equal((html.match(/data-testid="item-list-item"/g) || []).length, 2)
+	assert.match(
+		html,
+		/<a class="utrecht-link" href="https:\/\/example.org\/p\/1">Besluit fietspad<\/a>/,
+	)
+	assert.equal((html.match(/data-testid="item-not-public"/g) || []).length, 1)
+	assert.equal((html.match(/data-testid="item-list-remove"/g) || []).length, 2)
+	assert.match(html, /aria-label="Remove \{title\}:Oude notitie"/)
+})
+
+test('site: removing one item forwards the remove action and reads the list again', async () => {
+	const component = await loadSfc(VUE_ITEMS)
+	const calls = []
+	const self = {
+		api: {
+			forwardRowAction: async (...args) => {
+				calls.push(args)
+				return { ok: true, status: 200 }
+			},
+		},
+		collection: dossier,
+		row: { id: 'dos-1' },
+		t: (key) => key,
+		message: '',
+		load: async () => calls.push(['load']),
+	}
+	await component.methods.remove.call(self, 'i2')
+
+	assert.deepEqual(calls[0], [dossier, 'dos-1', 'removeItem', { itemId: 'i2' }])
+	assert.deepEqual(calls[1], ['load'])
+	assert.equal(self.message, 'Removed.')
+})
+
+test('site: the detail card renders the item list, the table drops the remove action', () => {
+	const card = readFileSync(
+		join(ROOT, 'src/site/components/collections/DetailCard.vue'),
+		'utf8',
+	)
+	assert.match(card, /<ItemList\s/)
+	const blocks = readFileSync(
+		join(ROOT, 'src/site/pages/collections/pageBlocks.js'),
+		'utf8',
+	)
+	assert.match(blocks, /withoutRemoveAction\(\s*collection,/)
+})
+
+test('site: a file downloads through the portal api with the record and the file', async () => {
+	const component = await loadSfc('src/site/components/collections/DetailCard.vue')
+	const calls = []
+	const self = {
+		rowId: 'dos-1',
+		collection: dossier,
+		api: {
+			downloadFile: async (...args) => {
+				calls.push(args)
+				return { ok: true }
+			},
+		},
+		t: (key) => key,
+		download: { busyId: null, message: '' },
+	}
+	await component.methods.onDownload.call(self, { id: 'f1', name: 'besluit.pdf' })
+
+	assert.deepEqual(calls, [[dossier, 'dos-1', { id: 'f1', name: 'besluit.pdf' }]])
+	assert.deepEqual(self.download, { busyId: null, message: '' })
 })

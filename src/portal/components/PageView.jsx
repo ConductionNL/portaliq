@@ -10,10 +10,10 @@
 // blocks, so a ref that does not resolve here is a defensive skip, not expected.
 
 import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { withoutRemoveAction } from '../../shared/itemList.js'
+import { rowFor } from '../../shared/openRecord.js'
 import { isEndpointRowAction, offersRowAction, rowNotice } from '../../shared/rowAction.js'
 import { dialogFor, tableRowActions } from '../../shared/signing.js'
-import { withoutRemoveAction } from '../lib/itemList.js'
-import { rowFor } from '../lib/openRecord.js'
 import AttachedActions from './AttachedActions.jsx'
 import CitizenCase from './CitizenCase.jsx'
 import CollectionTable from './CollectionTable.jsx'

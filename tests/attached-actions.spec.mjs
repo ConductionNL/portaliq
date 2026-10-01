@@ -175,3 +175,11 @@ test('the site renders nothing without attached actions or without a record', as
 	})
 	assert.equal(noRow.text(), '')
 })
+
+test('site: the detail card leaves a place for the attached actions (slice c fills it)', () => {
+	const card = readFileSync(
+		join(ROOT, 'src/site/components/collections/DetailCard.vue'),
+		'utf8',
+	)
+	assert.match(card, /<SlotHost\s+name="attachedActions"/)
+})

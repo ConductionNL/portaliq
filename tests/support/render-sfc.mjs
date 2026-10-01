@@ -87,3 +87,18 @@ export async function renderSfc(file, props = {}, stubs = {}) {
 	const { renderToString } = await import('vue/server-renderer')
 	return renderToString(createSSRApp({ render: () => h(component, props) }))
 }
+
+/**
+ * Load a component's options without rendering it, so a test can call its
+ * methods and computed getters with a stand-in `this`.
+ *
+ * @param {string} file  Path of the `.vue` file, relative to the repository.
+ * @param {object} stubs Bare specifier to module source.
+ * @return {Promise<object>} The component options.
+ */
+export async function loadSfc(file, stubs = {}) {
+	const dir = join(OUT, `${process.pid}-${counter++}`)
+	mkdirSync(dir, { recursive: true })
+	const compiled = compile(join(ROOT, file), stubs, dir)
+	return (await import(pathToFileURL(compiled).href)).default
+}
