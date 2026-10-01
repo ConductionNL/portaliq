@@ -115,7 +115,7 @@ class PortalReferenceLinkService {
 	 *         type does not admit the reference route, or the call is empty.
 	 *
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
-	 * @spec openspec/changes/identity-ways-in-screens/design.md
+	 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/design.md
 	 *
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- each field is stored
 	 * on the link row; the reference session reads the case through them.
@@ -180,7 +180,7 @@ class PortalReferenceLinkService {
 	 *         expired. `linkId` is for the session the link opens, never for
 	 *         the answer.
 	 *
-	 * @spec openspec/changes/identity-ways-in-screens/design.md
+	 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/design.md
 	 *
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
@@ -230,7 +230,7 @@ class PortalReferenceLinkService {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/identity-ways-in-screens/design.md
+	 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/design.md
 	 */
 	public function nominalExpiry(): string {
 		return (new DateTimeImmutable())->add(new DateInterval(self::TTL))->format(DATE_ATOM);

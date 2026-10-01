@@ -180,6 +180,16 @@
 					:authBase="guestAuthBase"
 					:portal="site.slug || portalSlug" />
 
+				<!-- A mailed way in (an activation, an invitation, one case by
+				     its number) opens before any page (identity-ways-in-screens). -->
+				<WayInLink
+					v-else-if="wayInLink"
+					:authBase="guestAuthBase"
+					:portal="site.slug || portalSlug"
+					:portalName="site.title || ''"
+					:emailSignIn="waysIn.emailSignIn"
+					:t="waysInT" />
+
 				<!-- The signed-in area owns every `/mijn` route; no CMS page is
 				     read for it (src/shared/portalNav.js). -->
 				<AccountArea
@@ -192,6 +202,10 @@
 					:contributions="account.contributions"
 					:api="api"
 					:signInRoutes="signInRoutes"
+					:ways="waysIn"
+					:waysT="waysInT"
+					:authBase="guestAuthBase"
+					:portalSlug="site.slug || portalSlug"
 					:devLogin="signinConfig.devLogin === true"
 					:devError="devError"
 					:t="t"
@@ -455,6 +469,7 @@ import {
 	legalLinksOf,
 	registerRouteOf,
 } from './lib/shellData.js'
+import { hasWayInLink, waysInFrom, waysInTranslator } from './lib/waysIn.js'
 import { openRecordEntry } from './pages/collections/index.js'
 import { confirmEmailFromLink, contactPromptWanted } from './pages/e/index.js'
 
@@ -493,6 +508,10 @@ const GuestActionPage = defineAsyncComponent(
 	() => import('./pages/GuestActionPage.vue'),
 )
 
+// What a mailed way-in link opens (identity-ways-in-screens), loaded only
+// when the address carries one.
+const WayInLink = defineAsyncComponent(() => import('./components/WayInLink.vue'))
+
 /**
  * The built-in site renderer.
  *
@@ -511,6 +530,7 @@ export default {
 		BrandHeader,
 		FooterColumns,
 		GuestActionPage,
+		WayInLink,
 		IdleWarningDialog,
 		MarkdownBlock,
 		SharedDossierPage,
@@ -559,6 +579,8 @@ export default {
 			contactPrompt: false,
 			// A signed link for one guest act (`#guest/...`); the page reads it.
 			guestLink: String(window.location.hash).startsWith('#guest/'),
+			// A mailed way in (`#activate=`, `#invitation=`, `#reference=`).
+			wayInLink: hasWayInLink(window.location),
 			site: {},
 			menus: [],
 			glossary: [],
@@ -981,6 +1003,29 @@ export default {
 		 */
 		legalLinks() {
 			return legalLinksOf(this.site, this.menus)
+		},
+
+		/**
+		 * The doors the site config opens besides the sign-in buttons.
+		 *
+		 * @return {object} See waysInFrom().
+		 *
+		 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/tasks.md#T07
+		 */
+		waysIn() {
+			return waysInFrom(this.signinConfig)
+		},
+
+		/**
+		 * The translator of the ways in: the site's, with their own strings
+		 * for the keys its bundle lacks.
+		 *
+		 * @return {Function}
+		 *
+		 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/tasks.md#T08
+		 */
+		waysInT() {
+			return waysInTranslator(this.t, this.locale)
 		},
 
 		/**

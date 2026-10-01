@@ -19,7 +19,7 @@ use PHPUnit\Framework\TestCase;
  * only when the path behind it works. The policy and the reference admission
  * are the real services; the bindings and the case types are the portal's.
  *
- * @spec openspec/changes/identity-ways-in-screens/specs/portal-ways-in/spec.md#requirement-the-sign-in-screen-shows-only-the-doors-that-lead-somewhere-req-iwi-005
+ * @spec openspec/specs/portal-ways-in/spec.md#requirement-the-sign-in-screen-shows-only-the-doors-that-lead-somewhere-req-iwi-005
  */
 class PortalWaysInResolverTest extends TestCase {
 

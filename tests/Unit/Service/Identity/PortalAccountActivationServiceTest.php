@@ -18,7 +18,7 @@ use PHPUnit\Framework\TestCase;
  * the real PortalAccountService over the same fake store, and every write is
  * checked against the real `portalAccount` schema.
  *
- * @spec openspec/changes/identity-ways-in-screens/specs/portal-ways-in/spec.md#requirement-you-can-create-an-account-where-the-portal-allows-it-req-iwi-002
+ * @spec openspec/specs/portal-ways-in/spec.md#requirement-you-can-create-an-account-where-the-portal-allows-it-req-iwi-002
  */
 class PortalAccountActivationServiceTest extends TestCase {
 	use PortalIdentityStoreTrait;
