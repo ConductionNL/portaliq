@@ -48,3 +48,11 @@ See the workspace-level `.claude/docs/` for:
 ## Standards
 
 This app follows all [Conduction app standards](../.claude/openspec/architecture/).
+
+### The React portal is frozen
+
+`src/portal/` (the React portal at `/portal`) is being retired in favour of the Vue site in `src/site/` (change `site-reaches-portal-parity`). From 1 October 2026:
+
+- New signed-in screens and new portal features go into `src/site/`. Do not add components, routes or capabilities to `src/portal/`.
+- Bug and security fixes in `src/portal/` are still welcome until `/portal` redirects to `/site`. Name the fix in the parity checklist of that change, so the port carries it too.
+- The `/portal/api/*` endpoints stay. Both renderers use them.
