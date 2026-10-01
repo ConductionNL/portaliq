@@ -61,7 +61,9 @@ export function rowIdOf(row) {
  * @return {string[]} The fields.
  */
 export function formFields(action) {
-	return ((action && action.fields) || []).filter((field) => typeof field === 'string')
+	return ((action && action.fields) || []).filter(
+		(field) => typeof field === 'string',
+	)
 }
 
 /**
@@ -112,16 +114,16 @@ export function fieldInput(action, field, options) {
 		return 'textarea'
 	}
 	switch (config.input) {
-	case 'date':
-		return 'date'
-	case 'datetime':
-		return 'datetime-local'
-	case 'number':
-		return 'number'
-	case 'email':
-		return 'email'
-	default:
-		return 'text'
+		case 'date':
+			return 'date'
+		case 'datetime':
+			return 'datetime-local'
+		case 'number':
+			return 'number'
+		case 'email':
+			return 'email'
+		default:
+			return 'text'
 	}
 }
 
@@ -152,7 +154,9 @@ export function staticOptions(action) {
 export function collectionProviders(action) {
 	const providers = (action && action.optionsProviders) || {}
 	return formFields(action)
-		.filter((field) => providers[field] && providers[field].type === 'collection')
+		.filter(
+			(field) => providers[field] && providers[field].type === 'collection',
+		)
 		.map((field) => [field, providers[field]])
 }
 
@@ -189,7 +193,10 @@ export function formBody(action, values, options = {}) {
 	const body = {}
 	for (const field of formFields(action)) {
 		if (!files.includes(field)) {
-			body[field] = sentValue(fieldInput(action, field, options[field]), (values || {})[field])
+			body[field] = sentValue(
+				fieldInput(action, field, options[field]),
+				(values || {})[field],
+			)
 		}
 	}
 	return body
@@ -218,7 +225,9 @@ export function fieldErrors(action, values, files, t) {
 		const label = fieldLabel(action, field)
 		if (fileNames.includes(field)) {
 			if (((files || {})[field] || []).length === 0) {
-				errors[field] = translate('Please choose a file for {field}.', { field: label })
+				errors[field] = translate('Please choose a file for {field}.', {
+					field: label,
+				})
 			}
 			continue
 		}
@@ -271,8 +280,13 @@ export function proposalStart(action, row) {
  */
 export function proposedChanges(action, row, values) {
 	return ((action && action.proposable) || [])
-		.filter((field) => rowText(row, field) !== String((values || {})[field] ?? ''))
-		.map((field) => ({ property: field, proposedValue: String((values || {})[field] ?? '') }))
+		.filter(
+			(field) => rowText(row, field) !== String((values || {})[field] ?? ''),
+		)
+		.map((field) => ({
+			property: field,
+			proposedValue: String((values || {})[field] ?? ''),
+		}))
 }
 
 /**
@@ -285,7 +299,11 @@ export function proposedChanges(action, row, values) {
  */
 export function proposalsOn(mine, action, rowId) {
 	return (Array.isArray(mine) ? mine : []).filter(
-		(p) => p && p.subjectId === rowId && p.subjectRegister === action.register && p.subjectSchema === action.schema,
+		(p) =>
+			p
+			&& p.subjectId === rowId
+			&& p.subjectRegister === action.register
+			&& p.subjectSchema === action.schema,
 	)
 }
 
@@ -296,12 +314,14 @@ export function proposalsOn(mine, action, rowId) {
  * @return {string} The English source string.
  */
 export function proposalStateKey(state) {
-	return {
-		queued: 'Waiting for review',
-		accepted: 'Accepted',
-		rejected: 'Rejected',
-		withdrawn: 'Withdrawn',
-	}[state] || String(state || '')
+	return (
+		{
+			queued: 'Waiting for review',
+			accepted: 'Accepted',
+			rejected: 'Rejected',
+			withdrawn: 'Withdrawn',
+		}[state] || String(state || '')
+	)
 }
 
 /**

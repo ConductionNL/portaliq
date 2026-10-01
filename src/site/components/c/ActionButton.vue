@@ -10,7 +10,9 @@
 			class="utrecht-button utrecht-button--primary-action"
 			:disabled="busy || (requireEndpoint && !action.endpoint)"
 			@click="run">
-			{{ busy ? translate('Please wait…') : (label || action.label || action.id) }}
+			{{
+				busy ? translate('Please wait…') : label || action.label || action.id
+			}}
 		</button>
 		<p
 			class="utrecht-paragraph pq-action-button__status"
@@ -90,7 +92,11 @@ export default {
 			this.message = ''
 			this.busy = true
 			const api = this.api || forwardApi(residentAuthBase(), residentToken)
-			const { redirect, messageKey } = await runAction(api, this.action.app || this.app, this.action)
+			const { redirect, messageKey } = await runAction(
+				api,
+				this.action.app || this.app,
+				this.action,
+			)
 			if (redirect) {
 				this.navigate(redirect)
 				return

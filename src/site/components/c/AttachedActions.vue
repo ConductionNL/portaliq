@@ -45,7 +45,11 @@
 					type="submit"
 					class="utrecht-button utrecht-button--primary-action"
 					:disabled="busy">
-					{{ busy ? translate('Please wait…') : (open.submitLabel || translate('Send')) }}
+					{{
+						busy
+							? translate('Please wait…')
+							: open.submitLabel || translate('Send')
+					}}
 				</button>
 				<button
 					type="button"
@@ -67,7 +71,11 @@
 
 <script>
 import SchemaField from './SchemaField.vue'
-import { attachedActionsOf, fieldLabel, runAttachedAction } from '../../../shared/attachedActions.js'
+import {
+	attachedActionsOf,
+	fieldLabel,
+	runAttachedAction,
+} from '../../../shared/attachedActions.js'
 import { fieldConfig, fieldErrors, formFields, translatorOr } from './forms.js'
 
 /**
@@ -136,7 +144,9 @@ export default {
 		 */
 		choose(entry) {
 			this.open = entry
-			this.values = Object.fromEntries(formFields(entry).map((field) => [field, '']))
+			this.values = Object.fromEntries(
+				formFields(entry).map((field) => [field, '']),
+			)
 			this.errors = {}
 			this.message = ''
 		},
@@ -154,10 +164,19 @@ export default {
 				return
 			}
 			this.busy = true
-			const result = await runAttachedAction(this.api, this.collection, this.row, this.open, this.values)
+			const result = await runAttachedAction(
+				this.api,
+				this.collection,
+				this.row,
+				this.open,
+				this.values,
+			)
 			this.busy = false
 			const success = this.open.successMessage
-			this.message = result.ok && typeof success === 'string' && success !== '' ? success : this.translate(result.messageKey)
+			this.message =
+				result.ok && typeof success === 'string' && success !== ''
+					? success
+					: this.translate(result.messageKey)
 			if (result.ok) {
 				this.open = null
 				this.values = {}

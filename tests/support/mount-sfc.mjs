@@ -53,8 +53,11 @@ function compile(file, dir, done) {
 	code += `\n${template.code}\n__sfc__.render = render\nexport default __sfc__\n`
 
 	code = code.replace(/^import\s+['"][^'"]+\.css['"];?\s*$/gm, '')
-	code = code.replace(/import\(\s*['"](\.[^'"]+\.vue)['"]\s*\)/g, (match, spec) =>
-		`import('${pathToFileURL(compile(resolve(dirname(file), spec), dir, done)).href}')`)
+	code = code.replace(
+		/import\(\s*['"](\.[^'"]+\.vue)['"]\s*\)/g,
+		(match, spec) =>
+			`import('${pathToFileURL(compile(resolve(dirname(file), spec), dir, done)).href}')`,
+	)
 	code = code.replace(/from\s+['"]([^'"]+)['"]/g, (match, spec) => {
 		if (spec.endsWith('.vue') && spec.startsWith('.')) {
 			return `from '${pathToFileURL(compile(resolve(dirname(file), spec), dir, done)).href}'`
@@ -95,8 +98,12 @@ const nodeOps = {
 	},
 	createText: (text) => ({ text, parent: null }),
 	createComment: (text) => ({ comment: text, parent: null }),
-	setText: (node, text) => { node.text = text },
-	setElementText: (node, text) => { node.children = [{ text, parent: node }] },
+	setText: (node, text) => {
+		node.text = text
+	},
+	setElementText: (node, text) => {
+		node.children = [{ text, parent: node }]
+	},
 	insert(child, parent, anchor) {
 		if (child.parent) {
 			nodeOps.remove(child)
@@ -165,7 +172,9 @@ export async function mountSfc(file, props = {}) {
 
 	const root = { tag: 'root', props: {}, children: [], parent: null }
 	const { createApp } = createRenderer(nodeOps)
-	const app = createApp({ render: () => h(component, { ...listeners, ...props, ref: 'subject' }) })
+	const app = createApp({
+		render: () => h(component, { ...listeners, ...props, ref: 'subject' }),
+	})
 	app.config.warnHandler = () => {}
 	const host = app.mount(root)
 
@@ -176,7 +185,13 @@ export async function mountSfc(file, props = {}) {
 		}
 		return out
 	}
-	const textOf = (node) => walk(node).filter((n) => typeof n.text === 'string').map((n) => n.text).join(' ').replace(/\s+/g, ' ').trim()
+	const textOf = (node) =>
+		walk(node)
+			.filter((n) => typeof n.text === 'string')
+			.map((n) => n.text)
+			.join(' ')
+			.replace(/\s+/g, ' ')
+			.trim()
 	const flush = async () => {
 		for (let i = 0; i < 10; i++) {
 			await new Promise((r) => setTimeout(r, 0))
@@ -192,7 +207,9 @@ export async function mountSfc(file, props = {}) {
 		text: () => textOf(root),
 		textOf,
 		findAll: (predicate) => walk(root).filter((n) => n.tag && predicate(n)),
-		find: (testid) => walk(root).find((n) => n.props && n.props['data-testid'] === testid) || null,
+		find: (testid) =>
+			walk(root).find((n) => n.props && n.props['data-testid'] === testid)
+			|| null,
 		/**
 		 * Call an element's listener with a fake event.
 		 *
@@ -203,10 +220,14 @@ export async function mountSfc(file, props = {}) {
 		 */
 		async fire(el, name, target = {}) {
 			Object.assign(el, target)
-			const handler = el.props[`on${name.charAt(0).toUpperCase()}${name.slice(1)}`]
+			const handler =
+				el.props[`on${name.charAt(0).toUpperCase()}${name.slice(1)}`]
 			const event = { target: el, preventDefault() {}, stopPropagation() {} }
 			el.select = () => {}
-			for (const fn of [...[].concat(handler || []), ...((el.listeners || {})[name] || [])]) {
+			for (const fn of [
+				...[].concat(handler || []),
+				...((el.listeners || {})[name] || []),
+			]) {
 				await fn(event)
 			}
 			await flush()

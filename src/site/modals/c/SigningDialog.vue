@@ -8,17 +8,11 @@
 		class="pq-rowaction pq-signing"
 		:aria-label="label"
 		data-testid="signing-dialog">
-		<h3
-			ref="heading"
-			class="utrecht-heading-3"
-			tabindex="-1">
+		<h3 ref="heading" class="utrecht-heading-3" tabindex="-1">
 			{{ label }}{{ documentName ? `: ${documentName}` : '' }}
 		</h3>
 
-		<p
-			v-if="view.state === 'loading'"
-			class="utrecht-paragraph"
-			role="status">
+		<p v-if="view.state === 'loading'" class="utrecht-paragraph" role="status">
 			{{ translate('Loading the document…') }}
 		</p>
 
@@ -36,10 +30,16 @@
 				:type="view.mimeType"
 				class="pq-signing__preview"
 				:aria-label="documentName">
-				<p class="utrecht-paragraph">{{ translate('This document cannot be shown here.') }}</p>
+				<p class="utrecht-paragraph">
+					{{ translate('This document cannot be shown here.') }}
+				</p>
 			</object>
 			<p v-else class="utrecht-paragraph pq-rowaction__notice">
-				{{ translate('This document is too large to show here. Download it to read it.') }}
+				{{
+					translate(
+						'This document is too large to show here. Download it to read it.',
+					)
+				}}
 			</p>
 			<p class="utrecht-paragraph">
 				<a
@@ -47,7 +47,11 @@
 					:href="view.href"
 					:download="view.name"
 					data-testid="signing-download">
-					{{ translate('Download {documentName}', { documentName: view.name }) }}
+					{{
+						translate('Download {documentName}', {
+							documentName: view.name,
+						})
+					}}
 				</a>
 			</p>
 		</div>
@@ -58,8 +62,10 @@
 				v-model="read"
 				type="checkbox"
 				class="utrecht-checkbox utrecht-checkbox--html-input"
-				data-testid="signing-read">
-			<label class="utrecht-form-label utrecht-form-label--checkbox" :for="`signing-read-${rowId}`">
+				data-testid="signing-read" />
+			<label
+				class="utrecht-form-label utrecht-form-label--checkbox"
+				:for="`signing-read-${rowId}`">
 				{{ translate('I have read this document and I sign it.') }}
 			</label>
 		</p>
@@ -158,7 +164,11 @@ export default {
 		},
 
 		documentName() {
-			return (this.view.state === 'shown' && this.view.name) || (this.row && this.row.documentName) || ''
+			return (
+				(this.view.state === 'shown' && this.view.name)
+				|| (this.row && this.row.documentName)
+				|| ''
+			)
 		},
 
 		done() {
@@ -173,7 +183,11 @@ export default {
 		if (this.initialDocument || !this.viewAction || !this.rowId) {
 			return
 		}
-		const result = await this.api.forwardRowAction(this.collection, this.rowId, this.viewAction.id)
+		const result = await this.api.forwardRowAction(
+			this.collection,
+			this.rowId,
+			this.viewAction.id,
+		)
 		this.view = documentView(result)
 	},
 
@@ -187,7 +201,12 @@ export default {
 		 */
 		async sign() {
 			this.busy = true
-			const result = await this.api.forwardRowAction(this.collection, this.rowId, this.action.id, { consent: true })
+			const result = await this.api.forwardRowAction(
+				this.collection,
+				this.rowId,
+				this.action.id,
+				{ consent: true },
+			)
 			const answer = outcome('sign', result, this.documentName)
 			this.busy = false
 			this.message = answer
@@ -203,7 +222,8 @@ export default {
 .pq-rowaction {
 	margin-block: var(--utrecht-space-block-md, 1rem);
 	padding: var(--utrecht-space-block-md, 1rem);
-	border: var(--utrecht-border-width-sm, 1px) solid var(--utrecht-color-grey-60, currentcolor);
+	border: var(--utrecht-border-width-sm, 1px) solid
+		var(--utrecht-color-grey-60, currentcolor);
 }
 
 .pq-rowaction__buttons {

@@ -6,11 +6,20 @@
 <template>
 	<div
 		class="utrecht-form-field pq-field"
-		:class="[`pq-field--${size}`, { 'utrecht-form-field--invalid': error !== '' }]"
+		:class="[
+			`pq-field--${size}`,
+			{ 'utrecht-form-field--invalid': error !== '' },
+		]"
 		:data-testid="`schema-field-${field}`">
 		<div class="utrecht-form-field__label">
 			<label :for="id" class="utrecht-form-label">
-				{{ label }}<span v-if="required" class="pq-field__required" aria-hidden="true"> *</span>
+				{{ label
+				}}<span
+					v-if="required"
+					class="pq-field__required"
+					aria-hidden="true">
+					*</span
+				>
 			</label>
 		</div>
 		<div
@@ -39,15 +48,23 @@
 					:required="required"
 					:aria-invalid="error !== '' ? 'true' : undefined"
 					:aria-describedby="describedBy"
-					@change="$emit('pick', $event.target.files)">
+					@change="$emit('pick', $event.target.files)" />
 				<p
 					v-if="files.length > 0"
 					:id="`${id}-picked`"
 					class="utrecht-form-field-description">
-					{{ translate('Selected: {files}', { files: files.map((f) => f.name).join(', ') }) }}
+					{{
+						translate('Selected: {files}', {
+							files: files.map((f) => f.name).join(', '),
+						})
+					}}
 				</p>
 				<p :id="`${id}-limit`" class="utrecht-form-field-description">
-					{{ translate('Up to {size} MB per file', { size: config.maxSizeMb || defaultMaxSize }) }}
+					{{
+						translate('Up to {size} MB per file', {
+							size: config.maxSizeMb || defaultMaxSize,
+						})
+					}}
 				</p>
 			</template>
 			<select
@@ -95,7 +112,7 @@
 				:required="required"
 				:aria-invalid="error !== '' ? 'true' : undefined"
 				:aria-describedby="describedBy"
-				@input="$emit('update:modelValue', $event.target.value)">
+				@input="$emit('update:modelValue', $event.target.value)" />
 		</div>
 	</div>
 </template>
@@ -157,7 +174,9 @@ export default {
 		},
 
 		size() {
-			return ['small', 'medium', 'large', 'full'].includes(this.config.size) ? this.config.size : 'medium'
+			return ['small', 'medium', 'large', 'full'].includes(this.config.size)
+				? this.config.size
+				: 'medium'
 		},
 
 		help() {
@@ -165,7 +184,9 @@ export default {
 		},
 
 		accept() {
-			return Array.isArray(this.config.accept) ? this.config.accept.join(',') : ''
+			return Array.isArray(this.config.accept)
+				? this.config.accept.join(',')
+				: ''
 		},
 
 		defaultMaxSize() {
@@ -194,7 +215,10 @@ export default {
 
 <style scoped>
 .pq-field {
-	margin-block-end: var(--utrecht-form-field-margin-block-end, var(--utrecht-space-block-md, 1rem));
+	margin-block-end: var(
+		--utrecht-form-field-margin-block-end,
+		var(--utrecht-space-block-md, 1rem)
+	);
 	max-inline-size: 40rem;
 }
 

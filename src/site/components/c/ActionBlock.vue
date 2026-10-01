@@ -22,7 +22,7 @@
 			v-else
 			:action="action"
 			:app="contribution.app || ''"
-			:label="block.type === 'cta' ? (block.label || '') : ''"
+			:label="block.type === 'cta' ? block.label || '' : ''"
 			:requireEndpoint="block.type === 'action'"
 			:api="api"
 			:t="t"
@@ -73,11 +73,18 @@ export default {
 
 	computed: {
 		action() {
-			return (this.contribution.actions || []).find((a) => a && a.id === this.block.action) || null
+			return (
+				(this.contribution.actions || []).find(
+					(a) => a && a.id === this.block.action,
+				) || null
+			)
 		},
 
 		isForm() {
-			return this.block.type === 'action' && (this.action.type === 'create' || this.action.type === 'update')
+			return (
+				this.block.type === 'action'
+				&& (this.action.type === 'create' || this.action.type === 'update')
+			)
 		},
 	},
 }

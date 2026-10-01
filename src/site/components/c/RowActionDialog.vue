@@ -60,9 +60,17 @@ export default {
 	name: 'RowActionDialog',
 
 	components: {
-		SigningDialog: defineAsyncComponent(() => import('../../modals/c/SigningDialog.vue')),
-		DeclineDialog: defineAsyncComponent(() => import('../../modals/c/DeclineDialog.vue')),
-		RowActionConfirm: defineAsyncComponent(() => import('../../modals/c/RowActionConfirm.vue')),
+		SigningDialog: defineAsyncComponent(
+			() => import('../../modals/c/SigningDialog.vue'),
+		),
+
+		DeclineDialog: defineAsyncComponent(
+			() => import('../../modals/c/DeclineDialog.vue'),
+		),
+
+		RowActionConfirm: defineAsyncComponent(
+			() => import('../../modals/c/RowActionConfirm.vue'),
+		),
 	},
 
 	props: {
@@ -90,7 +98,11 @@ export default {
 		},
 
 		viewAction() {
-			return this.rowActions.find((a) => a && a.id === 'viewDocument' && isEndpointRowAction(a)) || null
+			return (
+				this.rowActions.find(
+					(a) => a && a.id === 'viewDocument' && isEndpointRowAction(a),
+				) || null
+			)
 		},
 	},
 }

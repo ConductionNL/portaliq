@@ -141,9 +141,21 @@ test('the detail card renders the item list and the confirm shows the link', () 
 
 test('the site confirm step shows the link the action answered', async () => {
 	const api = {
-		forwardRowAction: async () => ({ ok: true, status: 200, body: { link: 'https://gemeente.example/shared/abc' } }),
+		forwardRowAction: async () => ({
+			ok: true,
+			status: 200,
+			body: { link: 'https://gemeente.example/shared/abc' },
+		}),
 	}
-	const step = await mountSfc('src/site/modals/c/RowActionConfirm.vue', { action: { id: 'share', label: 'Delen' }, collection: { id: 'mijnDossiers' }, row: { id: 'dos-1' }, api })
+	const step = await mountSfc('src/site/modals/c/RowActionConfirm.vue', {
+		action: { id: 'share', label: 'Delen' },
+		collection: { id: 'mijnDossiers' },
+		row: { id: 'dos-1' },
+		api,
+	})
 	await step.fire(step.find('rowaction-continue'), 'click')
-	assert.equal(step.find('rowaction-link').props.value, 'https://gemeente.example/shared/abc')
+	assert.equal(
+		step.find('rowaction-link').props.value,
+		'https://gemeente.example/shared/abc',
+	)
 })

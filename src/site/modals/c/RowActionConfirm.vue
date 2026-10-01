@@ -8,10 +8,7 @@
 		class="pq-rowaction"
 		:aria-label="label"
 		data-testid="rowaction-confirm">
-		<h3
-			ref="heading"
-			class="utrecht-heading-3"
-			tabindex="-1">
+		<h3 ref="heading" class="utrecht-heading-3" tabindex="-1">
 			{{ label }}
 		</h3>
 		<p
@@ -45,7 +42,9 @@
 			{{ message }}
 		</p>
 		<p v-if="link !== ''" class="pq-rowaction__link">
-			<label class="utrecht-form-label" :for="`rowaction-link-${action.id}`">{{ translate('Link') }}</label>
+			<label class="utrecht-form-label" :for="`rowaction-link-${action.id}`">{{
+				translate('Link')
+			}}</label>
 			<input
 				:id="`rowaction-link-${action.id}`"
 				type="text"
@@ -53,7 +52,7 @@
 				readonly
 				:value="link"
 				data-testid="rowaction-link"
-				@focus="$event.target.select()">
+				@focus="$event.target.select()" />
 			<button
 				type="button"
 				class="utrecht-button utrecht-button--secondary-action"
@@ -144,7 +143,12 @@ export default {
 		 */
 		async confirm() {
 			this.busy = true
-			const { redirect, messageKey, link } = await runRowAction(this.api, this.collection, this.row, this.action)
+			const { redirect, messageKey, link } = await runRowAction(
+				this.api,
+				this.collection,
+				this.row,
+				this.action,
+			)
 			if (redirect) {
 				this.navigate(redirect)
 				return
@@ -168,7 +172,8 @@ export default {
 .pq-rowaction {
 	margin-block: var(--utrecht-space-block-md, 1rem);
 	padding: var(--utrecht-space-block-md, 1rem);
-	border: var(--utrecht-border-width-sm, 1px) solid var(--utrecht-color-grey-60, currentcolor);
+	border: var(--utrecht-border-width-sm, 1px) solid
+		var(--utrecht-color-grey-60, currentcolor);
 }
 
 .pq-rowaction__buttons {

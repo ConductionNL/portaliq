@@ -41,7 +41,11 @@
 				class="utrecht-button utrecht-button--primary-action"
 				:disabled="submitting"
 				data-testid="propose-submit">
-				{{ submitting ? translate('Please wait…') : translate('Send proposal') }}
+				{{
+					submitting
+						? translate('Please wait…')
+						: translate('Send proposal')
+				}}
 			</button>
 			<button
 				type="button"
@@ -114,7 +118,9 @@ export default {
 			this.error = ''
 			const changes = proposedChanges(this.action, this.row, this.values)
 			if (changes.length === 0) {
-				this.error = this.translate('Change at least one field before you send a proposal.')
+				this.error = this.translate(
+					'Change at least one field before you send a proposal.',
+				)
 				return
 			}
 			this.submitting = true

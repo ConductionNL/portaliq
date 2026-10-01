@@ -131,12 +131,16 @@ export default {
 		},
 
 		submitLabel() {
-			return this.action.submitLabel || this.action.label || this.translate('Save')
+			return (
+				this.action.submitLabel
+				|| this.action.label
+				|| this.translate('Save')
+			)
 		},
 	},
 
 	watch: {
-		'action.id': function() {
+		'action.id': function () {
 			this.values = this.emptyValues()
 			this.options = staticOptions(this.action)
 			this.loadOptions()
@@ -170,12 +174,17 @@ export default {
 		 */
 		async loadOptions() {
 			const actionId = this.action.id
-			await Promise.all(collectionProviders(this.action).map(async ([field, provider]) => {
-				const fetched = await this.api.fetchOptions(provider)
-				if (this.action.id === actionId) {
-					this.options = { ...this.options, [field]: Array.isArray(fetched) ? fetched : [] }
-				}
-			}))
+			await Promise.all(
+				collectionProviders(this.action).map(async ([field, provider]) => {
+					const fetched = await this.api.fetchOptions(provider)
+					if (this.action.id === actionId) {
+						this.options = {
+							...this.options,
+							[field]: Array.isArray(fetched) ? fetched : [],
+						}
+					}
+				}),
+			)
 		},
 
 		inputId(field) {
@@ -209,7 +218,10 @@ export default {
 		 */
 		focusFirstError() {
 			const first = this.fields.find((field) => this.errors[field])
-			const element = first && typeof document !== 'undefined' ? document.getElementById(this.inputId(first)) : null
+			const element =
+				first && typeof document !== 'undefined'
+					? document.getElementById(this.inputId(first))
+					: null
 			if (element) {
 				element.focus()
 			}
@@ -227,7 +239,10 @@ export default {
 				return
 			}
 			this.pending = { id, failed }
-			this.error = this.translate('Saved, but these files were not attached: {files}', { files: failed.map((f) => f.file.name).join(', ') })
+			this.error = this.translate(
+				'Saved, but these files were not attached: {files}',
+				{ files: failed.map((f) => f.file.name).join(', ') },
+			)
 		},
 
 		/**
@@ -247,7 +262,12 @@ export default {
 			}
 			this.error = ''
 			this.submitting = true
-			const { failed } = await uploadFiles(this.api, this.action, this.pending.id, byField)
+			const { failed } = await uploadFiles(
+				this.api,
+				this.action,
+				this.pending.id,
+				byField,
+			)
 			this.submitting = false
 			this.reportFailed(this.pending.id, failed)
 			if (failed.length === 0) {
@@ -267,18 +287,27 @@ export default {
 			this.done = ''
 			this.errors = fieldErrors(this.action, this.values, this.files, this.t)
 			if (Object.keys(this.errors).length > 0) {
-				this.error = this.translate('Not everything is filled in yet. Check the fields below.')
+				this.error = this.translate(
+					'Not everything is filled in yet. Check the fields below.',
+				)
 				this.$nextTick(() => this.focusFirstError())
 				return
 			}
 			const tooLarge = oversizedFiles(this.action, this.files)
 			if (tooLarge.length > 0) {
-				this.error = this.translate('These files are too large: {files}', { files: tooLarge.join(', ') })
+				this.error = this.translate('These files are too large: {files}', {
+					files: tooLarge.join(', '),
+				})
 				return
 			}
 
 			this.submitting = true
-			const result = await submitWithFiles(this.api, this.action, formBody(this.action, this.values, this.options), this.files)
+			const result = await submitWithFiles(
+				this.api,
+				this.action,
+				formBody(this.action, this.values, this.options),
+				this.files,
+			)
 			this.submitting = false
 			if (!result.ok) {
 				this.error = this.translate('Saving did not work.')

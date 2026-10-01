@@ -82,10 +82,18 @@ export const SchemaForm = defineAsyncComponent(() => import('./SchemaForm.vue'))
 export const SchemaField = defineAsyncComponent(() => import('./SchemaField.vue'))
 export const ActionBlock = defineAsyncComponent(() => import('./ActionBlock.vue'))
 export const ActionButton = defineAsyncComponent(() => import('./ActionButton.vue'))
-export const ProposeChangeForm = defineAsyncComponent(() => import('./ProposeChangeForm.vue'))
-export const ProposalQueue = defineAsyncComponent(() => import('./ProposalQueue.vue'))
-export const AttachedActions = defineAsyncComponent(() => import('./AttachedActions.vue'))
-export const RowActionDialog = defineAsyncComponent(() => import('./RowActionDialog.vue'))
+export const ProposeChangeForm = defineAsyncComponent(
+	() => import('./ProposeChangeForm.vue'),
+)
+export const ProposalQueue = defineAsyncComponent(
+	() => import('./ProposalQueue.vue'),
+)
+export const AttachedActions = defineAsyncComponent(
+	() => import('./AttachedActions.vue'),
+)
+export const RowActionDialog = defineAsyncComponent(
+	() => import('./RowActionDialog.vue'),
+)
 
 export { runRowTransition } from './forms.js'
 export { isEndpointRowAction, offersRowAction } from '../../../shared/rowAction.js'

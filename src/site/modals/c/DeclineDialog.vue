@@ -8,16 +8,15 @@
 		class="pq-rowaction pq-decline"
 		:aria-label="label"
 		data-testid="decline-dialog">
-		<h3
-			ref="heading"
-			class="utrecht-heading-3"
-			tabindex="-1">
+		<h3 ref="heading" class="utrecht-heading-3" tabindex="-1">
 			{{ label }}{{ documentName ? `: ${documentName}` : '' }}
 		</h3>
 		<form novalidate @submit.prevent="submit">
 			<div v-if="!done" class="utrecht-form-field">
 				<div class="utrecht-form-field__label">
-					<label class="utrecht-form-label" :for="fieldId">{{ translate('Why do you decline?') }}</label>
+					<label class="utrecht-form-label" :for="fieldId">{{
+						translate('Why do you decline?')
+					}}</label>
 				</div>
 				<div class="utrecht-form-field__input">
 					<textarea
@@ -140,7 +139,12 @@ export default {
 				return
 			}
 			this.busy = true
-			const result = await this.api.forwardRowAction(this.collection, this.rowId, this.action.id, { reason: this.reason.trim() })
+			const result = await this.api.forwardRowAction(
+				this.collection,
+				this.rowId,
+				this.action.id,
+				{ reason: this.reason.trim() },
+			)
 			const answer = outcome('decline', result, this.documentName)
 			this.busy = false
 			this.message = answer
@@ -156,7 +160,8 @@ export default {
 .pq-rowaction {
 	margin-block: var(--utrecht-space-block-md, 1rem);
 	padding: var(--utrecht-space-block-md, 1rem);
-	border: var(--utrecht-border-width-sm, 1px) solid var(--utrecht-color-grey-60, currentcolor);
+	border: var(--utrecht-border-width-sm, 1px) solid
+		var(--utrecht-color-grey-60, currentcolor);
 }
 
 .pq-rowaction__buttons {

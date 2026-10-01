@@ -14,7 +14,9 @@
 				:key="proposal.uuid || proposal.id"
 				class="pq-proposals__item">
 				<span>{{ summary(proposal) }}</span>
-				<span class="pq-proposals__state">{{ translate(stateKey(proposal.state)) }}</span>
+				<span class="pq-proposals__state">{{
+					translate(stateKey(proposal.state))
+				}}</span>
 				<button
 					v-if="proposal.state === 'queued'"
 					type="button"
@@ -106,7 +108,9 @@ export default {
 		},
 
 		summary(proposal) {
-			return (proposal.changes || []).map((c) => `${c.property}: ${c.proposedValue}`).join(', ')
+			return (proposal.changes || [])
+				.map((c) => `${c.property}: ${c.proposedValue}`)
+				.join(', ')
 		},
 
 		/**
@@ -133,7 +137,12 @@ export default {
 		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-propose-a-change-req-srp-024
 		 */
 		async send(changes, note) {
-			const result = await this.api.proposeChange(this.action, this.rowId, changes, note)
+			const result = await this.api.proposeChange(
+				this.action,
+				this.rowId,
+				changes,
+				note,
+			)
 			if (result && result.ok) {
 				this.showForm = false
 				this.refresh()
