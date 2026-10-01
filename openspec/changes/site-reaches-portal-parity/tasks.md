@@ -41,7 +41,7 @@ screenshot. `design.md` has the file-by-file map.
 ## Slice e: account, registered details, access requests, my cases, citizen case
 
 - [x] **T18**: `AccountPage.vue` with the contact prompt and `#confirm-email=` (REQ-SRP-037). Verification: `tests/account-page.spec.mjs`.
-- [ ] **T19**: `RegisteredDetailsPage.vue` and `AccessRequestsPage.vue` (REQ-SRP-038, REQ-SRP-039). Verification: `tests/registered-details.spec.mjs`, `tests/access-request-asker.spec.mjs`.
+- [x] **T19**: `RegisteredDetailsPage.vue` and `AccessRequestsPage.vue` (REQ-SRP-038, REQ-SRP-039). Verification: `tests/registered-details.spec.mjs`, `tests/access-request-asker.spec.mjs`.
 - [ ] **T20**: `MyCasesPage.vue` and `ActingForSwitcher.vue` (REQ-SRP-040, REQ-SRP-041). Verification: `tests/my-cases-page.spec.mjs`, `tests/my-cases-acting-for.spec.mjs`.
 - [ ] **T21**: `CitizenCase.vue` and `WithdrawCaseConfirm.vue` (REQ-SRP-042, REQ-SRP-043). Verification: `tests/case-documents-screen.spec.mjs`, `tests/case-withdraw-screen.spec.mjs`, `tests/case-type-portal-header.spec.mjs`.
 
