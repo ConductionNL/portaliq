@@ -10,6 +10,14 @@
 		data-testid="schema-form"
 		novalidate
 		@submit.prevent="submit">
+		<p
+			v-if="error !== ''"
+			class="utrecht-paragraph pq-schema-form__error"
+			role="alert"
+			data-testid="schema-form-error">
+			{{ error }}
+		</p>
+
 		<SchemaField
 			v-for="field in fields"
 			:id="inputId(field)"
@@ -25,14 +33,6 @@
 			:error="errors[field] || ''"
 			:t="t"
 			@pick="(picked) => pick(field, picked)" />
-
-		<p
-			v-if="error !== ''"
-			class="utrecht-paragraph pq-schema-form__error"
-			role="alert"
-			data-testid="schema-form-error">
-			{{ error }}
-		</p>
 
 		<div class="pq-schema-form__buttons">
 			<button
