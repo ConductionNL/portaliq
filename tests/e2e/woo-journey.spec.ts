@@ -266,6 +266,35 @@ function resident(): Record<string, string> {
 }
 
 /**
+ * The resident's inbox as the portal serves it (`GET /portal/api/inbox`),
+ * not the stored objects: a notice OpenRegister holds but the inbox does not
+ * serve never reaches the resident.
+ *
+ * @return The inbox messages.
+ */
+async function inbox(): Promise<any[]> {
+	const answer = await json(
+		await admin().get(`${PORTAL_API}/inbox`, { headers: resident() }),
+		'read the inbox',
+	)
+	return answer.messages ?? []
+}
+
+/**
+ * The inbox notice about one record, or undefined.
+ *
+ * @param app The app that holds the record.
+ * @param id The record id, or '' for any record of that app.
+ * @return The notice.
+ */
+async function noticeAbout(app: string, id = ''): Promise<any> {
+	return (await inbox()).find(
+		(m: any) =>
+			m.recordLink?.app === app && (id === '' || m.recordLink?.id === id),
+	)
+}
+
+/**
  * Run a page-level portal action as the resident.
  *
  * @param app The contributing app.
@@ -756,6 +785,7 @@ test.describe.serial('the Woo citizen journey across four apps', () => {
 	// ------------------------------------------------------------------ J4
 	// @e2e portal-contribution-contract::a-resident-asks-a-question-about-their-dossier
 	// @e2e portal-notifications-and-preferences::an-answer-to-a-question
+	// @e2e portal-notifications-and-preferences::an-answered-question-reaches-the-inbox
 	test('J4 a resident asks about the dossier, gets an answer, replies, and the question becomes a Woo request', async () => {
 		const asked = await json(
 			await rowAction(
@@ -803,6 +833,25 @@ test.describe.serial('the Woo citizen journey across four apps', () => {
 				'--class=OCA\\Portaliq\\BackgroundJob\\NotificationDispatchJob',
 			),
 		).toContain('pipelinq.question.answered')
+
+		// The inbox serves the notice, unread, with a link to the question.
+		const notice = await noticeAbout('pipelinq', state.ticketId)
+		expect(notice, 'the inbox serves the answer notice').toBeTruthy()
+		expect(String(notice.subject ?? '')).not.toBe('')
+		expect(String(notice.receivedAt ?? '')).not.toBe('')
+		expect(notice.read).toBe(false)
+		expect(notice._source.schema).toBe('portalMessage')
+
+		// The resident marks it read, and the inbox says so.
+		const source = notice._source
+		await json(
+			await admin().patch(
+				`${PORTAL_API}/inbox/${source.register}/${source.schema}/${idOf(notice)}/read?collection=${source.collection}`,
+				{ headers: resident() },
+			),
+			'mark the notice read',
+		)
+		expect((await noticeAbout('pipelinq', state.ticketId)).read).toBe(true)
 
 		// The resident replies.
 		await json(
@@ -935,10 +984,15 @@ test.describe.serial('the Woo citizen journey across four apps', () => {
 				{ timeout: 30_000 },
 			)
 			.toBe(true)
+		expect(
+			await noticeAbout('dossiq'),
+			'the inbox serves the decision notice',
+		).toBeTruthy()
 	})
 
 	// ------------------------------------------------------------------ J6
 	// @e2e portal-federated-search::a-resident-saves-a-daily-search
+	// @e2e portal-notifications-and-preferences::a-matched-saved-search-reaches-the-inbox
 	test('J6 a resident saves a daily search, a new publication matches it, and pausing stops it', async () => {
 		const saved = await json(
 			await portalAction('opencatalogi', 'saveSearch', {
@@ -1016,6 +1070,9 @@ test.describe.serial('the Woo citizen journey across four apps', () => {
 				'--class=OCA\\Portaliq\\BackgroundJob\\NotificationDispatchJob',
 			),
 		).toContain('opencatalogi.savedSearch.matched')
+		const matchNotice = await noticeAbout('opencatalogi', state.savedSearchId)
+		expect(matchNotice, 'the inbox serves the match notice').toBeTruthy()
+		expect(matchNotice.read).toBe(false)
 
 		// Pause.
 		const paused = await json(
