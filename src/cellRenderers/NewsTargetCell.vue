@@ -60,6 +60,12 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The item's audience as one line.
+		 *
+		 * @return {string}
+		 * @spec openspec/changes/staff-news-screen/tasks.md#T4
+		 */
 		line() {
 			return audienceLine({ target: this.value }, this.options, (text, vars) =>
 				t('portaliq', text, vars),
