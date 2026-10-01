@@ -32,6 +32,7 @@ namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
 use OCA\Portaliq\Service\Identity\PortalAccountLookup;
+use OCA\Portaliq\Service\Identity\WaitingAccountJoin;
 use OCP\Security\ISecureRandom;
 
 /**
@@ -120,6 +121,7 @@ class PortalAccountService {
 	 *
 	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T08
 	 * @spec openspec/specs/supplier-portal/spec.md#the-subject-reference-is-server-derived-never-client-supplied
+	 * @spec openspec/changes/portal-invitation-joins-the-signed-in-account/specs/portal-identity-space/spec.md
 	 */
 	public function findOrCreate(
 		string $identityType,
@@ -133,17 +135,12 @@ class PortalAccountService {
 			return null;
 		}
 
-		$existing = $this->lookup()->byIdentity(identityType: $identityType, identityRef: $identityRef, organisation: $organisation);
-		if ($existing === null && $verifiedEmail !== '') {
-			// REQ-PIS-002 second pass, and only a second pass: an account
-			// provisioned on an identity reference is matched on that
-			// reference or not at all, so a broker that volunteers somebody
-			// else's address can never reach it. Only an email-only pending
-			// account, whose address was verified out of band, is claimable
-			// this way.
-			$existing = $this->lookup()->pendingByVerifiedEmail(email: $verifiedEmail, organisation: $organisation);
-		}
-
+		$existing = $this->existingFor(
+			identityType: $identityType,
+			identityRef: $identityRef,
+			organisation: $organisation,
+			verifiedEmail: $verifiedEmail
+		);
 		if ($existing !== null) {
 			$this->activate(existing: $existing, identityType: $identityType, identityRef: $identityRef);
 			return ['subjectRef' => (string)($existing['subjectRef'] ?? ''), 'isNew' => false];
@@ -536,6 +533,45 @@ class PortalAccountService {
 
 		return $this->lookup()->pendingByVerifiedEmail(email: $email, organisation: $organisation);
 	}//end accountAlreadyProvisioned()
+
+	/**
+	 * The account a sign-in matches, or null for a new one.
+	 *
+	 * First on the identity reference. A person who signed in before an app
+	 * provisioned a waiting account for their verified address would never
+	 * reach that account, so its claims join the account found here
+	 * (portal-invitation-joins-the-signed-in-account). Then, and only then,
+	 * on the verified address (REQ-PIS-002 second pass): an account
+	 * provisioned on an identity reference is matched on that reference or
+	 * not at all, so a broker that volunteers somebody else's address can
+	 * never reach it. Only an email-only pending account, whose address was
+	 * verified out of band, is claimable this way.
+	 *
+	 * @param string $identityType The identity type.
+	 * @param string $identityRef The identity reference.
+	 * @param string $organisation The tenant slug.
+	 * @param string $verifiedEmail An address the broker says it verified, or ''.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/specs/portal-identity-space/spec.md#requirement-first-login-matches-the-pending-account-req-pis-002
+	 * @spec openspec/changes/portal-invitation-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+	 */
+	private function existingFor(string $identityType, string $identityRef, string $organisation, string $verifiedEmail): ?array {
+		$existing = $this->lookup()->byIdentity(identityType: $identityType, identityRef: $identityRef, organisation: $organisation);
+		if ($existing === null) {
+			// An empty address finds nothing here.
+			return $this->lookup()->pendingByVerifiedEmail(email: $verifiedEmail, organisation: $organisation);
+		}
+
+		(new WaitingAccountJoin(lookup: $this->lookup(), writer: $this->writer))->join(
+			account: $existing,
+			verifiedEmail: $verifiedEmail,
+			organisation: $organisation
+		);
+
+		return $existing;
+	}//end existingFor()
 
 	/**
 	 * The read half of the account space.
