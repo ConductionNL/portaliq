@@ -240,6 +240,15 @@ export default {
  * its visitors regardless of which stylesheet is loaded, and it changes no
  * geometry.
  */
+/*
+ * A LONG MENU WRAPS. A signed-in guardian's menu holds fourteen sections, and
+ * on one unwrapping row the last two sat past the right edge of a 1280px
+ * viewport, reachable only by scrolling the page sideways.
+ */
+.pq-menu__list {
+	flex-wrap: wrap;
+}
+
 .pq-menu__link:focus-visible {
 	outline: 2px solid var(--pq-focus-color, #1a1a1a);
 	outline-offset: 2px;

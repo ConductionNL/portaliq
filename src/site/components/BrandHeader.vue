@@ -225,4 +225,25 @@ export default {
 .pq-site__auth .pq-site__signout {
 	display: inline-flex;
 }
+
+/*
+ * THE BREADCRUMB IS ONE LINE. App.vue carried this rule scoped, and a scoped
+ * rule never reaches a child component's elements, so the trail rendered as
+ * three stacked lines on every page. It belongs with the markup it styles.
+ */
+.ac-breadcrumb__list {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.ac-breadcrumb__item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
 </style>
