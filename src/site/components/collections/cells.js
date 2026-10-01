@@ -237,10 +237,14 @@ export function readable(value, { locale, t }, depth = 0) {
 		return ''
 	}
 	if (Array.isArray(value)) {
+		// A list in a cell reads one value per line; the table keeps the
+		// breaks (white-space: pre-line). Joined with commas, "Rekenen: 7,9"
+		// and "Taal: 8,3" ran together with their Dutch decimal commas
+		// (array-cells-one-line-per-item).
 		return value
 			.map((item) => readable(item, { locale, t }, depth + 1))
 			.filter((text) => text !== '')
-			.join(depth === 0 ? '; ' : ', ')
+			.join(depth === 0 ? '\n' : ', ')
 	}
 	if (typeof value === 'object') {
 		for (const key of NAME_KEYS) {

@@ -11,6 +11,27 @@ import React from 'react'
 import Loading from './Loading.jsx'
 
 /**
+ * The lines of a cell that holds a list of plain values (strings or
+ * numbers), or null for any other value. learniq's report card `gradeLines`
+ * is such a list; joined with a comma, "Rekenen: 7,9" and "Taal: 8,3" ran
+ * together with their Dutch decimal commas (array-cells-one-line-per-item).
+ *
+ * @param {unknown} value The cell value.
+ * @return {Array<string>|null}
+ * @spec openspec/changes/array-cells-one-line-per-item/tasks.md#T1
+ */
+export function cellLines(value) {
+	if (!Array.isArray(value) || value.length === 0) {
+		return null
+	}
+	if (!value.every((item) => typeof item === 'string' || typeof item === 'number')) {
+		return null
+	}
+	const lines = value.map((item) => String(item).trim()).filter((line) => line !== '')
+	return lines.length > 0 ? lines : null
+}
+
+/**
  *
  * @param value
  * @param render
@@ -113,9 +134,12 @@ export default function CollectionTable({ collection, objects, loading, onSelect
 							aria-current={isSelected ? 'true' : undefined}
 						>
 							{columns.map((c, ci) => {
+								const lines = c.render === 'badge' ? null : cellLines(row[c.field])
 								const cell = c.render === 'badge'
 									? <span className={`portaliq-badge portaliq-badge-${String(row[c.field] || '').toLowerCase()}`}>{formatCell(row[c.field], 'text')}</span>
-									: formatCell(row[c.field], c.render)
+									: lines
+										? lines.map((line, li) => <span key={li} className="portaliq-cell-line">{line}</span>)
+										: formatCell(row[c.field], c.render)
 								return (
 									<td key={c.field}>
 										{onSelect && ci === 0
