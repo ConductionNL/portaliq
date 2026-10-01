@@ -265,10 +265,6 @@ class PortalPageController extends Controller {
 					// The document title, server-rendered for the same reason the theme
 					// below is; the why lives on siteTitle().
 					'title' => $this->siteTitle(),
-					// How a resident signs in here, which is not content: the
-					// dev login only where the server accepts it, the silent
-					// sign-in provider, and the organisation and audience the
-					// login starts with, the same values `/portal` boots with.
 					'signin' => $this->siteSignin(),
 				],
 				// THEME TOKENS ARE THE ONE THING THAT CANNOT WAIT FOR THE API.

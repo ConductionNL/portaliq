@@ -174,7 +174,7 @@ class BrokerSessionController extends Controller {
 	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 	 */
 	private function returnPath(string $returnTo): string {
-		$site = SiteReturnAddress::accept(
+		$site = (new SiteReturnAddress())->accept(
 			candidate: $returnTo,
 			sitePath: $this->urlGenerator->linkToRoute(Application::APP_ID . '.portalPage.site')
 		);

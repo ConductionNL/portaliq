@@ -45,8 +45,8 @@ final class SiteReturnAddress {
 	 *
 	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 	 */
-	public static function accept(string $candidate, string $sitePath): string {
-		$sitePath = self::withoutFrontController(path: $sitePath);
+	public function accept(string $candidate, string $sitePath): string {
+		$sitePath = $this->withoutFrontController(path: $sitePath);
 		if ($candidate === '' || $sitePath === '' || $sitePath[0] !== '/') {
 			return '';
 		}
@@ -66,7 +66,7 @@ final class SiteReturnAddress {
 			$query = substr($candidate, $mark);
 		}
 
-		if (self::withoutFrontController(path: $path) !== $sitePath) {
+		if ($this->withoutFrontController(path: $path) !== $sitePath) {
 			return '';
 		}
 
@@ -80,7 +80,7 @@ final class SiteReturnAddress {
 	 *
 	 * @return string The path.
 	 */
-	private static function withoutFrontController(string $path): string {
+	private function withoutFrontController(string $path): string {
 		if (str_starts_with($path, '/index.php/') === true) {
 			return substr($path, strlen('/index.php'));
 		}

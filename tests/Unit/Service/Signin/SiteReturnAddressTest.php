@@ -33,8 +33,8 @@ class SiteReturnAddressTest extends TestCase {
 	 */
 	public function testAPageOnTheSiteIsKept(): void {
 		$page = '/apps/portaliq/site?portal=wilgenboom&route=%2Fmijn%2Finbox';
-		$this->assertSame($page, SiteReturnAddress::accept(candidate: $page, sitePath: '/apps/portaliq/site'));
-		$this->assertSame('/apps/portaliq/site', SiteReturnAddress::accept(candidate: '/apps/portaliq/site', sitePath: '/apps/portaliq/site'));
+		$this->assertSame($page, (new SiteReturnAddress())->accept(candidate: $page, sitePath: '/apps/portaliq/site'));
+		$this->assertSame('/apps/portaliq/site', (new SiteReturnAddress())->accept(candidate: '/apps/portaliq/site', sitePath: '/apps/portaliq/site'));
 	}//end testAPageOnTheSiteIsKept()
 
 	/**
@@ -45,11 +45,11 @@ class SiteReturnAddressTest extends TestCase {
 	public function testTheFrontControllerIsOptional(): void {
 		$this->assertSame(
 			'/apps/portaliq/site?portal=x',
-			SiteReturnAddress::accept(candidate: '/apps/portaliq/site?portal=x', sitePath: '/index.php/apps/portaliq/site')
+			(new SiteReturnAddress())->accept(candidate: '/apps/portaliq/site?portal=x', sitePath: '/index.php/apps/portaliq/site')
 		);
 		$this->assertSame(
 			'/index.php/apps/portaliq/site?portal=x',
-			SiteReturnAddress::accept(candidate: '/index.php/apps/portaliq/site?portal=x', sitePath: '/apps/portaliq/site')
+			(new SiteReturnAddress())->accept(candidate: '/index.php/apps/portaliq/site?portal=x', sitePath: '/apps/portaliq/site')
 		);
 	}//end testTheFrontControllerIsOptional()
 
@@ -74,7 +74,7 @@ class SiteReturnAddressTest extends TestCase {
 			'apps/portaliq/site',
 		];
 		foreach ($refused as $candidate) {
-			$this->assertSame('', SiteReturnAddress::accept(candidate: $candidate, sitePath: '/apps/portaliq/site'), $candidate);
+			$this->assertSame('', (new SiteReturnAddress())->accept(candidate: $candidate, sitePath: '/apps/portaliq/site'), $candidate);
 		}
 	}//end testEveryOtherAddressIsRefused()
 }//end class

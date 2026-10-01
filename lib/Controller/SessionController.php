@@ -132,6 +132,65 @@ class SessionController extends Controller {
 	}//end returnToPortal()
 
 	/**
+	 * The site page a login returns to, or '' when `$returnTo` is not a page
+	 * on the site route.
+	 *
+	 * @param string $returnTo The address the site sent.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+	 */
+	private function siteReturn(string $returnTo): string {
+		return (new SiteReturnAddress())->accept(
+			candidate: $returnTo,
+			sitePath: $this->urlGenerator->linkToRoute(Application::APP_ID . '.portalPage.site')
+		);
+	}//end siteReturn()
+
+	/**
+	 * Where a login returns: the site page it started on, else the portal.
+	 *
+	 * @param string                    $siteReturn The accepted site page, or ''.
+	 * @param array<string, mixed>|null $site       The serving portal, or null.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+	 */
+	private function returnAddress(string $siteReturn, ?array $site): string {
+		if ($siteReturn !== '') {
+			return $siteReturn;
+		}
+
+		return $this->returnToPortal(site: $site);
+	}//end returnAddress()
+
+	/**
+	 * The redirect to integriq's broker start, carrying the site page to
+	 * return to when there is one.
+	 *
+	 * @param string $org        The organisation slug.
+	 * @param string $provider   The provider.
+	 * @param string $siteReturn The accepted site page, or ''.
+	 *
+	 * @return RedirectResponse
+	 *
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+	 */
+	private function toBroker(string $org, string $provider, string $siteReturn): RedirectResponse {
+		$params = ['org' => $org, 'provider' => $provider];
+		if ($siteReturn !== '') {
+			$params['returnTo'] = $siteReturn;
+		}
+
+		return new RedirectResponse(
+			$this->urlGenerator->linkToRoute(Application::APP_ID . '.brokerSession.start', $params),
+			Http::STATUS_FOUND
+		);
+	}//end toBroker()
+
+	/**
 	 * The portal a login was started from, or null for none or an unknown one.
 	 *
 	 * @param string $portal The portal slug, or ''.
@@ -390,21 +449,10 @@ class SessionController extends Controller {
 		// site's included, reaches the route the organisation chose.
 		// A login started on the public site returns to the page it came
 		// from, when that page is on the site route; anything else is dropped.
-		$siteReturn = SiteReturnAddress::accept(
-			candidate: $returnTo,
-			sitePath: $this->urlGenerator->linkToRoute(Application::APP_ID . '.portalPage.site')
-		);
+		$siteReturn = $this->siteReturn(returnTo: $returnTo);
 
 		if ($this->loginConfig?->loginRouteFor(orgSlug: $org, provider: $provider) === 'broker') {
-			$brokerParams = ['org' => $org, 'provider' => $provider];
-			if ($siteReturn !== '') {
-				$brokerParams['returnTo'] = $siteReturn;
-			}
-
-			return new RedirectResponse(
-				$this->urlGenerator->linkToRoute(Application::APP_ID . '.brokerSession.start', $brokerParams),
-				Http::STATUS_FOUND
-			);
+			return $this->toBroker(org: $org, provider: $provider, siteReturn: $siteReturn);
 		}
 
 		// THE AUTHORISATION DECISION, MADE EXPLICITLY AND BEFORE ANY SECRET IS
@@ -437,18 +485,13 @@ class SessionController extends Controller {
 			$prompt = 'none';
 		}
 
-		$returnAddress = $siteReturn;
-		if ($returnAddress === '') {
-			$returnAddress = $this->returnToPortal(site: $site);
-		}
-
 		$stored = $this->stateStore->create(
 			state: $state,
 			nonce: $nonce,
 			codeVerifier: $pkce['verifier'],
 			org: $org,
 			provider: $provider,
-			returnTo: $returnAddress,
+			returnTo: $this->returnAddress(siteReturn: $siteReturn, site: $site),
 			silent: ($prompt === 'none')
 		);
 		if ($stored === false) {
