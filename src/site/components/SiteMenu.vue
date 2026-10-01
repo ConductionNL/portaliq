@@ -61,18 +61,16 @@
 						hasChildren(item) ? String(open === item.name) : undefined
 					"
 					@click.prevent="select(item.link)">
-					<div class="ac-c-navigation__label">
-						{{ item.name }}
-						<span
-							v-if="item.badge"
-							class="pq-menu__badge"
-							data-testid="site-menu-badge">
-							<span aria-hidden="true">{{ item.badge }}</span>
-							<span class="pq-menu__sr">{{
-								item.badgeLabel || item.badge
-							}}</span>
-						</span>
-					</div>
+					<div class="ac-c-navigation__label">{{ item.name }}</div>
+					<span
+						v-if="item.badge"
+						class="pq-menu__badge"
+						data-testid="site-menu-badge">
+						<span aria-hidden="true">{{ item.badge }}</span>
+						<span class="pq-menu__sr">{{
+							item.badgeLabel || item.badge
+						}}</span>
+					</span>
 				</a>
 
 				<!-- Exactly one level of children. The API already drops
