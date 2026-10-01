@@ -92,7 +92,7 @@ test('the forward names the action app', async () => {
 })
 
 test('the api sends actionApp and the detail card renders the actions', () => {
-	const api = readFileSync(join(ROOT, 'src/portal/lib/portalApi.js'), 'utf8')
+	const api = readFileSync(join(ROOT, 'src/shared/portalApi.js'), 'utf8')
 	assert.match(
 		api,
 		/actionApp\s*\?\s*`&actionApp=\$\{encodeURIComponent\(actionApp\)\}`\s*:\s*''/,

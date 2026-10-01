@@ -359,6 +359,33 @@ class PortalPageControllerTest extends TestCase {
 
 
 	/**
+	 * The site boots with the same ways in as `/portal`: the dev login only
+	 * where the server accepts it, the silent sign-in provider, and the
+	 * organisation and audience a login starts with.
+	 *
+	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+	 */
+	public function testSiteCarriesTheSigninSettings(): void {
+		$controller = $this->controller(
+			orgSlug: '',
+			resolved: ['devLogin' => true, 'silentSignIn' => 'digid', 'signinOrganisation' => 'school-org', 'audience' => 'client'],
+			portal: ['slug' => 'wilgenboom', 'organisation' => 'school-org']
+		);
+
+		$signin = $controller->site()->getParams()['portalConfig']['signin'];
+
+		$this->assertSame(
+			expected: ['devLogin' => true, 'silentSignIn' => 'digid', 'signinOrganisation' => 'school-org', 'audience' => 'client'],
+			actual: $signin
+		);
+
+		$closed = $this->controller(orgSlug: '')->site()->getParams()['portalConfig']['signin'];
+		$this->assertFalse($closed['devLogin']);
+
+	}//end testSiteCarriesTheSigninSettings()
+
+
+	/**
 	 * No resolved portal, or a resolver that throws, gives '' and still
 	 * renders: the capture then keys by the explicit slug or not at all.
 	 */

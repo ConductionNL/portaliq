@@ -26,9 +26,11 @@
 		class="pq-account"
 		aria-labelledby="pq-account-title"
 		data-testid="account-page">
-		<h2 id="pq-account-title" class="utrecht-heading-2">
+		<!-- The page title: the shell leaves its own h1 out for this page
+		     (OWNS_HEADING in pages/registry.js). -->
+		<h1 id="pq-account-title" class="utrecht-heading-2">
 			{{ t('My account') }}
-		</h2>
+		</h1>
 		<p v-if="notice" class="utrecht-paragraph pq-e-notice" role="status">
 			{{ notice }}
 		</p>

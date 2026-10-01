@@ -24,9 +24,11 @@
 		class="pq-details"
 		aria-labelledby="pq-details-title"
 		data-testid="registered-details">
-		<h2 id="pq-details-title" class="utrecht-heading-2">
+		<!-- The page title: the shell leaves its own h1 out for this page
+		     (OWNS_HEADING in pages/registry.js). -->
+		<h1 id="pq-details-title" class="utrecht-heading-2">
 			{{ t('My details') }}
-		</h2>
+		</h1>
 		<p
 			v-if="details.available !== true"
 			class="utrecht-paragraph"

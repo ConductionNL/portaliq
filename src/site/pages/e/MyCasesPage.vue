@@ -22,9 +22,11 @@
 		class="pq-cases"
 		aria-labelledby="pq-cases-title"
 		data-testid="my-cases">
-		<h2 id="pq-cases-title" class="utrecht-heading-2">
+		<!-- The page title: the shell leaves its own h1 out for this page
+		     (OWNS_HEADING in pages/registry.js). -->
+		<h1 id="pq-cases-title" class="utrecht-heading-2">
 			{{ t('My cases') }}
-		</h2>
+		</h1>
 
 		<p
 			v-if="data === null"

@@ -16,12 +16,12 @@
  * @property {object|null} session The session as `/portal/api/session` returns it.
  * @property {object|null} portal The portal record.
  * @property {object} api The portal API adapter, `createPortalApi(config)` from
- *   src/portal/lib/portalApi.js: the pages call `getDetails`, `setDisplayName`,
+ *   src/shared/portalApi.js: the pages call `getDetails`, `setDisplayName`,
  *   `addContactAddress`, `preferContactAddress`, `removeContactAddress`,
  *   `setContactChannel`, `removeOwnAccount`, `fetchRegisteredDetails`,
  *   `requestAccess`, `fetchMyAccessRequests` and `fetchMyCases`.
  * @property {(key: string, vars?: object) => string} t The translator; keys are
- *   the English source strings in ./strings.js (and src/portal/i18n/*.json).
+ *   the English source strings in ./strings.js (and src/shared/i18n/*.json).
  * @property {(key: string, params?: object) => void} navigate Opens another
  *   section by its key, for example `navigate('__account__')`.
  */

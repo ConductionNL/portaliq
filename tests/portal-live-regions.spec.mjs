@@ -110,7 +110,7 @@ test('Loading is a polite status region with a spoken label', async () => {
 	assert.match(untranslated, /Loading…/, 'without a translator the key is spoken')
 
 	for (const locale of ['en', 'nl']) {
-		const bundle = JSON.parse(readFileSync(join(PORTAL, 'i18n', `${locale}.json`), 'utf8'))
+		const bundle = JSON.parse(readFileSync(join(ROOT, 'src', 'shared', 'i18n', `${locale}.json`), 'utf8'))
 		assert.equal(bundle['Loading…'], locale === 'nl' ? 'Laden…' : 'Loading…', locale)
 	}
 })

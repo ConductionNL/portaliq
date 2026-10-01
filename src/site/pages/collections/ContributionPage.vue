@@ -26,8 +26,11 @@
 				class="pq-contribution-page__collection"
 				:data-collection="item.collection.id"
 				data-testid="contribution-page-collection">
+				<!-- One heading per title: a collection named like the page it
+				     is on is already titled by the shell's h1, whose id it then
+				     takes as its label. -->
 				<h2
-					v-if="item.collection.label"
+					v-if="showsHeading(item)"
 					:id="headingId(item)"
 					class="utrecht-heading-3">
 					{{ item.collection.label }}
@@ -41,7 +44,7 @@
 					:rowActions="item.tableActions"
 					:offers="offers"
 					:busyRow="busyRow"
-					:labelledby="item.collection.label ? headingId(item) : ''"
+					:labelledby="labelOf(item)"
 					:t="tr"
 					:locale="lang"
 					@select="select(item.collection, $event)"
@@ -301,6 +304,36 @@ export default {
 
 		headingId(item) {
 			return `pq-collection-${item.index}-${item.collection.id}`
+		},
+
+		/**
+		 * Whether a collection shows its own heading: it has a label, and
+		 * the label is not the page title the shell already shows as h1.
+		 *
+		 * @param {object} item The page block.
+		 * @return {boolean}
+		 *
+		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-contribution-page-must-render-its-blocks-req-srp-014
+		 */
+		showsHeading(item) {
+			const label = item.collection.label || ''
+			return label !== '' && label !== (this.entry && this.entry.label)
+		},
+
+		/**
+		 * The id of the heading that names a collection's table: its own,
+		 * else the shell's page title, else none.
+		 *
+		 * @param {object} item The page block.
+		 * @return {string} The id, or ''.
+		 *
+		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-contribution-page-must-render-its-blocks-req-srp-014
+		 */
+		labelOf(item) {
+			if (this.showsHeading(item)) {
+				return this.headingId(item)
+			}
+			return item.collection.label ? 'site-account-title' : ''
 		},
 
 		offers(action, row) {

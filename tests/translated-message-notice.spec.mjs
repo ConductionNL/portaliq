@@ -68,7 +68,7 @@ const { pickerLabel, MESSAGE_LANGUAGES } = await load('components/MessagesPage.j
  * @return {Function} t(key, vars)
  */
 function bundleTranslator(locale) {
-	const bundle = JSON.parse(readFileSync(join(ROOT, 'src', 'portal', 'i18n', `${locale}.json`), 'utf8'))
+	const bundle = JSON.parse(readFileSync(join(ROOT, 'src', 'shared', 'i18n', `${locale}.json`), 'utf8'))
 	return (key, vars) => {
 		let text = bundle[key] || key
 		for (const [name, value] of Object.entries(vars || {})) {
@@ -156,8 +156,8 @@ test('the Dutch notice reads naturally', () => {
 })
 
 test('every new SPA string has a Dutch value', () => {
-	const en = JSON.parse(readFileSync(join(ROOT, 'src', 'portal', 'i18n', 'en.json'), 'utf8'))
-	const nl = JSON.parse(readFileSync(join(ROOT, 'src', 'portal', 'i18n', 'nl.json'), 'utf8'))
+	const en = JSON.parse(readFileSync(join(ROOT, 'src', 'shared', 'i18n', 'en.json'), 'utf8'))
+	const nl = JSON.parse(readFileSync(join(ROOT, 'src', 'shared', 'i18n', 'nl.json'), 'utf8'))
 	for (const key of ['AI translation', 'Translated by AI', 'Translated by AI from {language}', 'Show the original text', 'Hide the original text', 'Messages', 'Show messages in', 'As written']) {
 		assert.equal(en[key], key, `en identity for ${key}`)
 		assert.ok(nl[key] && nl[key] !== '', `nl value for ${key}`)

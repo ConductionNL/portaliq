@@ -8,7 +8,7 @@
 // can help, so the dialog then only offers to sign in again (REQ-SIS-004).
 
 import { useEffect, useRef, useState } from 'react'
-import { canExtend, remainingText } from '../lib/idleSession.js'
+import { canExtend, remainingText } from '../../shared/idleSession.js'
 
 /**
  * The current unix time in seconds.

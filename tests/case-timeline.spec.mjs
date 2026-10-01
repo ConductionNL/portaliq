@@ -53,7 +53,7 @@ async function load(relative) {
 }
 
 const { default: TimelineList, newestFirst } = await load('components/TimelineList.jsx')
-const { createPortalApi } = await load('lib/portalApi.js')
+const { createPortalApi } = await load('../shared/portalApi.js')
 
 const ENTRIES = [
 	{ id: 'e1', kind: 'contact-moment', message: 'Telefonisch gesproken', occurredAt: '2026-09-18T09:00:00+00:00' },
