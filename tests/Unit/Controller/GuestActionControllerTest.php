@@ -113,7 +113,12 @@ class GuestActionControllerTest extends TestCase {
 		$calls = [];
 		$controller = $this->controller(['token' => 'A', 'reason' => 'x'], $calls);
 
-		$this->assertSame(200, $controller->preview('portaliq', 'withdraw')->getStatus());
+		$preview = $controller->preview('portaliq', 'withdraw');
+		$this->assertSame(200, $preview->getStatus());
+		$this->assertSame(
+			['preview' => ['ok' => true], 'action' => ['fields' => ['reason'], 'label' => 'Withdraw from contract here']],
+			$preview->getData()
+		);
 		$this->assertSame('https://cloud.example/apps/portaliq/api/test/withdraw/preview', $calls[0]['url']);
 		$this->assertSame(['withdrawToken' => 'A'], json_decode($calls[0]['options']['body'], true));
 

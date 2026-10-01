@@ -100,14 +100,62 @@ class GuestActionController extends Controller {
 
 		$preview = ['endpoint' => $action['previewEndpoint'], 'method' => 'POST'];
 
-		return $this->relay(
+		$answer = $this->relay(
 			action: $preview,
 			appId: $appId,
 			auditAs: $actionId . ':preview',
 			token: $token,
 			body: [(string)$action['tokenField'] => $token]
 		);
+		if ($answer->getStatus() === Http::STATUS_BAD_GATEWAY) {
+			return $answer;
+		}
+
+		// The page shows the app's summary next to what the action declares:
+		// its button label, confirmation, fields, never its endpoints.
+		return new JSONResponse(
+			['preview' => $answer->getData(), 'action' => $this->declaration(action: $action)],
+			$answer->getStatus()
+		);
 	}//end preview()
+
+	/**
+	 * What the guest page may know of an action: the texts it shows and the
+	 * fields it asks for, without the token field and without any endpoint.
+	 *
+	 * @param array<string, mixed> $action The declared guest action.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function declaration(array $action): array {
+		$tokenField = (string)$action['tokenField'];
+		$fields = array_values(
+			array_filter(
+				(array)($action['fields'] ?? []),
+				static fn ($field) => is_string($field) === true && $field !== $tokenField
+			)
+		);
+
+		$declaration = ['fields' => $fields];
+		foreach (['label', 'confirmText', 'successText'] as $key) {
+			if (is_string(($action[$key] ?? null)) === true) {
+				$declaration[$key] = $action[$key];
+			}
+		}
+
+		$configs = [];
+		foreach ((array)($action['fieldConfigs'] ?? []) as $field => $config) {
+			if (in_array($field, $fields, true) === true && is_array($config) === true) {
+				$configs[$field] = $config;
+			}
+		}
+
+		if ($configs !== []) {
+			$declaration['fieldConfigs'] = $configs;
+		}
+
+		return $declaration;
+	}//end declaration()
 
 	/**
 	 * Forward the confirmed act: the declared fields only, with the token
