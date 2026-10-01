@@ -262,8 +262,7 @@ class PortalPageController extends Controller {
 					// site fetch, where a visitor who moved on quickly lost the
 					// landing that brought them.
 					'resolvedPortal' => $this->siteResolvedSlug(),
-					// The document title, server-rendered for the same reason the theme
-					// below is; the why lives on siteTitle().
+					// The document title, server-rendered; the why is on siteTitle().
 					'title' => $this->siteTitle(),
 					'signin' => $this->siteSignin(),
 				],
