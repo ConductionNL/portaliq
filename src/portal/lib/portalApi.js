@@ -652,7 +652,7 @@ export function createPortalApi(config) {
 		 * @param {string} surface The surface, e.g. `registration`.
 		 * @return {Promise<object|null>} `{ nonce, expiresAt, signature, difficulty, honeypotField? }`.
 		 *
-		 * @spec openspec/changes/identity-ways-in-screens/tasks.md#T02
+		 * @spec openspec/changes/archive/2026-10-01-identity-ways-in-screens/tasks.md#T02
 		 */
 		async challenge(surface) {
 			const query = new URLSearchParams({ surface, portal: config.organisationSlug || '' })
@@ -667,7 +667,7 @@ export function createPortalApi(config) {
 		 *                      (`{ field, value }`) when the portal names one.
 		 * @return {Promise<object>} `{ ok, status, error, data }`; `data.awaiting` is the policy.
 		 *
-		 * @spec openspec/changes/identity-ways-in-screens/tasks.md#T02
+		 * @spec openspec/changes/archive/2026-10-01-identity-ways-in-screens/tasks.md#T02
 		 */
 		async registerAccount({ email, displayName = '', challenge = {}, solution = '', honeypot = null }) {
 			const body = {
@@ -691,7 +691,7 @@ export function createPortalApi(config) {
 		 * @param {string} token The secret from the mail.
 		 * @return {Promise<object>} `{ ok, status, error, data }`.
 		 *
-		 * @spec openspec/changes/identity-ways-in-screens/tasks.md#T03
+		 * @spec openspec/changes/archive/2026-10-01-identity-ways-in-screens/tasks.md#T03
 		 */
 		async activateAccount(token) {
 			return answer('POST', '/identity/activate', { token })
@@ -704,7 +704,7 @@ export function createPortalApi(config) {
 		 * @param {object} request `register`, `schema`, `caseType`, `caseReference`, `email`.
 		 * @return {Promise<object>} `{ ok, status, error, data }`.
 		 *
-		 * @spec openspec/changes/identity-ways-in-screens/tasks.md#T04
+		 * @spec openspec/changes/archive/2026-10-01-identity-ways-in-screens/tasks.md#T04
 		 */
 		async requestReferenceLink({ register, schema, caseType, caseReference, email }) {
 			return answer('POST', '/identity/reference-link', {
@@ -723,7 +723,7 @@ export function createPortalApi(config) {
 		 * @param {string} token The secret from the mail.
 		 * @return {Promise<object>} `{ ok, status, error, data }`; `data.bearer` is the session.
 		 *
-		 * @spec openspec/changes/identity-ways-in-screens/tasks.md#T04
+		 * @spec openspec/changes/archive/2026-10-01-identity-ways-in-screens/tasks.md#T04
 		 */
 		async redeemReferenceLink(token) {
 			return answer('POST', '/identity/reference-link/redeem', { token })
@@ -736,7 +736,7 @@ export function createPortalApi(config) {
 		 * @param {string} bearer The reference session.
 		 * @return {Promise<object|null>} `{ case, caseReference, readOnly }`, or null.
 		 *
-		 * @spec openspec/changes/identity-ways-in-screens/tasks.md#T05
+		 * @spec openspec/changes/archive/2026-10-01-identity-ways-in-screens/tasks.md#T05
 		 */
 		async referenceCase(bearer) {
 			try {
@@ -755,7 +755,7 @@ export function createPortalApi(config) {
 		 * @param {string} token The secret from the invitation mail.
 		 * @return {Promise<object>} `{ ok, status, error, data }`.
 		 *
-		 * @spec openspec/changes/identity-ways-in-screens/tasks.md#T06
+		 * @spec openspec/changes/archive/2026-10-01-identity-ways-in-screens/tasks.md#T06
 		 */
 		async acceptInvitation(token) {
 			return answer('POST', '/identity/invitation/accept', { token })

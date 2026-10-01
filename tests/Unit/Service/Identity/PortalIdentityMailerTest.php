@@ -27,7 +27,7 @@ use RuntimeException;
  * The doubles are the real OCP mail interfaces and the real deep link
  * builder over a route table double, so a link that would 404 fails here.
  *
- * @spec openspec/changes/identity-ways-in-screens/specs/portal-ways-in/spec.md
+ * @spec openspec/specs/portal-ways-in/spec.md
  * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T01
  * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-invite-an-address-and-portaliq-mails-it-req-isa-001
  */

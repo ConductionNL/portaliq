@@ -524,7 +524,7 @@ class PortalRuntimeConfigResolverTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/identity-ways-in-screens/tasks.md#T07
+	 * @spec openspec/changes/archive/2026-10-01-identity-ways-in-screens/tasks.md#T07
 	 */
 	public function testTheDoorsFollowThePolicyAndTheEmailSignIn(): void {
 		$portal = ['slug' => 'gemeente-x', 'title' => 'Gemeente X', 'organisation' => 'gemeente-x', 'authentication' => ['registration' => ['policy' => 'activation']]];
@@ -546,7 +546,7 @@ class PortalRuntimeConfigResolverTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/identity-ways-in-screens/tasks.md#T07
+	 * @spec openspec/changes/archive/2026-10-01-identity-ways-in-screens/tasks.md#T07
 	 */
 	public function testNoPortalNoDoors(): void {
 		$config = $this->waysInResolver(providers: [['provider' => 'generic', 'label' => 'E-mail']])

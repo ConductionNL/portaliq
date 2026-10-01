@@ -16,7 +16,7 @@ use PHPUnit\Framework\TestCase;
  * The case app's declaration is the only source of both field names; a
  * collection that declares no address field opens nothing.
  *
- * @spec openspec/changes/identity-ways-in-screens/design.md
+ * @spec openspec/changes/archive/2026-10-01-identity-ways-in-screens/design.md
  */
 class PortalReferenceCaseServiceTest extends TestCase {
 	use PortalIdentityStoreTrait;

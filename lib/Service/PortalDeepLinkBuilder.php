@@ -104,7 +104,7 @@ class PortalDeepLinkBuilder {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/identity-ways-in-screens/design.md
+	 * @spec openspec/changes/archive/2026-10-01-identity-ways-in-screens/design.md
 	 */
 	public function forPortal(string $portalSlug, string $organisation = ''): string {
 		if ($portalSlug === '') {

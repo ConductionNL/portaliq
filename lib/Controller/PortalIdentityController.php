@@ -140,7 +140,7 @@ class PortalIdentityController extends Controller {
 	 * @return JSONResponse Whether a link was issued, or a refusal.
 	 *
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
-	 * @spec openspec/changes/identity-ways-in-screens/specs/portal-ways-in/spec.md#requirement-every-way-in-sends-its-secret-by-mail-req-iwi-001
+	 * @spec openspec/specs/portal-ways-in/spec.md#requirement-every-way-in-sends-its-secret-by-mail-req-iwi-001
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -230,7 +230,7 @@ class PortalIdentityController extends Controller {
 	 * @return JSONResponse The case the link admits to with its bearer, or a refusal.
 	 *
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
-	 * @spec openspec/changes/identity-ways-in-screens/design.md
+	 * @spec openspec/changes/archive/2026-10-01-identity-ways-in-screens/design.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -273,7 +273,7 @@ class PortalIdentityController extends Controller {
 	 * @return JSONResponse The case, 401 without a reference session, 404 when
 	 *                      the case is not found.
 	 *
-	 * @spec openspec/changes/identity-ways-in-screens/design.md
+	 * @spec openspec/changes/archive/2026-10-01-identity-ways-in-screens/design.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -379,7 +379,7 @@ class PortalIdentityController extends Controller {
 	 *
 	 * @return JSONResponse Whether the account is ready.
 	 *
-	 * @spec openspec/changes/identity-ways-in-screens/specs/portal-ways-in/spec.md#requirement-you-can-create-an-account-where-the-portal-allows-it-req-iwi-002
+	 * @spec openspec/specs/portal-ways-in/spec.md#requirement-you-can-create-an-account-where-the-portal-allows-it-req-iwi-002
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]

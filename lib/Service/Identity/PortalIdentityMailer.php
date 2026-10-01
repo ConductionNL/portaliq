@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/identity-ways-in-screens/specs/portal-ways-in/spec.md#requirement-every-way-in-sends-its-secret-by-mail-req-iwi-001
+ * @spec openspec/specs/portal-ways-in/spec.md#requirement-every-way-in-sends-its-secret-by-mail-req-iwi-001
  * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T01
  * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-invite-an-address-and-portaliq-mails-it-req-isa-001
  */
@@ -47,7 +47,7 @@ use Throwable;
 /**
  * Mails the identity secrets, each inside its own link.
  *
- * @spec openspec/changes/identity-ways-in-screens/specs/portal-ways-in/spec.md#requirement-every-way-in-sends-its-secret-by-mail-req-iwi-001
+ * @spec openspec/specs/portal-ways-in/spec.md#requirement-every-way-in-sends-its-secret-by-mail-req-iwi-001
  */
 class PortalIdentityMailer {
 	/**
@@ -162,7 +162,7 @@ class PortalIdentityMailer {
 	 *
 	 * @return bool True when the mail left.
 	 *
-	 * @spec openspec/changes/identity-ways-in-screens/specs/portal-ways-in/spec.md#requirement-every-way-in-sends-its-secret-by-mail-req-iwi-001
+	 * @spec openspec/specs/portal-ways-in/spec.md#requirement-every-way-in-sends-its-secret-by-mail-req-iwi-001
 	 */
 	public function send(string $template, string $email, string $secret, string $organisation, ?array $portal = null): bool {
 		$keys = (self::TEMPLATES[$template] ?? null);

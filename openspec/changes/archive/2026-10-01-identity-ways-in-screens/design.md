@@ -85,3 +85,29 @@ success screen of each door says which button to use next: "Sign in with
 
 - It adds no password login.
 - It does not show the case list to a reference session.
+
+## As built (2026-10-01)
+
+- D4's `PortalAccountService::activate(token)` is its own class,
+  `PortalAccountActivationService` (`issue(subjectRef)`, `activate(token)`):
+  the account service already has a private `activate()` for the sign-in
+  that matches a pending account, and the link's hash and expiry live on two
+  new `portalAccount` fields, `activationTokenHash` and `activationExpiresAt`
+  (register 0.55.0, `portalAccount` 0.14.0). Only a pending
+  self-registration gets a link; a staff-provisioned or invited account never
+  does. Following the link empties the hash and leaves the expiry, because an
+  empty string is no `date-time`. The link works two days.
+- D3's "an OIDC provider whose claims include a verified `email`" is the
+  `generic` provider: DigiD, eHerkenning and eIDAS sign in on a BSN, a KVK
+  number or a foreign identity. `PortalWaysInResolver` decides `waysIn` and
+  also answers `emailSignIn` (the label the success screen names) and
+  `referenceCaseTypes` (the reference form's choice).
+- The identity routes resolve the portal the SPA names (`portal` in the query
+  or the body), the way `/site` does; on a shared host the host alone names
+  none. The challenge answer names the portal's `honeypotField`.
+- Found on the way: `PortalAccountService::provision()` wrote `identityType:
+  ''` for an address-only account, which the enum refuses, so every
+  self-registration and invitation would have been refused by the register.
+  It now leaves the identity fields out until a sign-in fills them.
+- The reference case is shown as the case app projects it (its declared
+  `fields`), labelled by field name, read only.

@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/identity-ways-in-screens/design.md
+ * @spec openspec/changes/archive/2026-10-01-identity-ways-in-screens/design.md
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ use Exception;
 /**
  * Signals a reference session on a route it may not use.
  *
- * @spec openspec/changes/identity-ways-in-screens/design.md
+ * @spec openspec/changes/archive/2026-10-01-identity-ways-in-screens/design.md
  */
 class PortalReadOnlySessionException extends Exception {
 }//end class

@@ -33,7 +33,7 @@ function readyText(t, emailSignIn) {
  * @param {Function} [props.solve] The proof of work (test seam).
  * @return {object} The element.
  *
- * @spec openspec/changes/identity-ways-in-screens/tasks.md#T02
+ * @spec openspec/changes/archive/2026-10-01-identity-ways-in-screens/tasks.md#T02
  */
 export function CreateAccountForm({ api, t, solve = solveChallenge }) {
 	const [email, setEmail] = useState('')
@@ -98,7 +98,7 @@ export function CreateAccountForm({ api, t, solve = solveChallenge }) {
  * @param {Array<object>} props.caseTypes `{ register, schema, caseType, label }` per case type.
  * @return {object} The element.
  *
- * @spec openspec/changes/identity-ways-in-screens/tasks.md#T04
+ * @spec openspec/changes/archive/2026-10-01-identity-ways-in-screens/tasks.md#T04
  */
 export function ReferenceLinkForm({ api, t, caseTypes }) {
 	const [choice, setChoice] = useState(0)
@@ -165,7 +165,7 @@ export function ReferenceLinkForm({ api, t, caseTypes }) {
  * @param {object} props.record The case, projected by the case app.
  * @return {object} The element.
  *
- * @spec openspec/changes/identity-ways-in-screens/tasks.md#T05
+ * @spec openspec/changes/archive/2026-10-01-identity-ways-in-screens/tasks.md#T05
  */
 export function ReferenceCaseView({ t, caseReference, record }) {
 	const entries = Object.entries(record || {}).filter(([key]) => !key.startsWith('@') && !key.startsWith('_') && key !== 'id' && key !== 'uuid')
@@ -206,7 +206,7 @@ export function ReferenceCaseView({ t, caseReference, record }) {
  * @param {string} props.portalName The portal's name, for the invitation.
  * @return {object} The element.
  *
- * @spec openspec/changes/identity-ways-in-screens/tasks.md#T06
+ * @spec openspec/changes/archive/2026-10-01-identity-ways-in-screens/tasks.md#T06
  */
 export function WayInLink({ api, t, link, emailSignIn, portalName }) {
 	const [result, setResult] = useState(null)

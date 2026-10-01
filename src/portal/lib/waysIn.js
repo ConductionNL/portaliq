@@ -16,7 +16,7 @@ const FRAGMENTS = ['activate', 'invitation', 'reference']
  * @param {History|object} history The window history.
  * @return {{kind: string, token: string}|null} The link, or null when the page was not opened from one.
  *
- * @spec openspec/changes/identity-ways-in-screens/tasks.md#T06
+ * @spec openspec/changes/archive/2026-10-01-identity-ways-in-screens/tasks.md#T06
  */
 export function consumeWayInFragment(location, history) {
 	const match = String(location?.hash || '').match(/^#(activate|invitation|reference)=([^&]+)$/)
@@ -57,7 +57,7 @@ export function leadingZeroBits(bytes) {
  * @param {SubtleCrypto} subtle The browser's digest.
  * @return {Promise<string>} The solution, or '' when none was found in reach.
  *
- * @spec openspec/changes/identity-ways-in-screens/tasks.md#T02
+ * @spec openspec/changes/archive/2026-10-01-identity-ways-in-screens/tasks.md#T02
  */
 export async function solveChallenge(nonce, difficulty, subtle = globalThis.crypto?.subtle) {
 	if (!subtle || !nonce) {
@@ -82,7 +82,7 @@ export async function solveChallenge(nonce, difficulty, subtle = globalThis.cryp
  * @param {string} code The refusal code.
  * @return {string} The sentence key.
  *
- * @spec openspec/changes/identity-ways-in-screens/specs/portal-ways-in/spec.md#requirement-you-can-create-an-account-where-the-portal-allows-it-req-iwi-002
+ * @spec openspec/specs/portal-ways-in/spec.md#requirement-you-can-create-an-account-where-the-portal-allows-it-req-iwi-002
  */
 export function wayInRefusalText(code) {
 	const texts = {
@@ -104,7 +104,7 @@ export function wayInRefusalText(code) {
  * @param {string} awaiting The policy the server answered: `activation` or `approval`.
  * @return {string} The sentence key.
  *
- * @spec openspec/changes/identity-ways-in-screens/specs/portal-ways-in/spec.md#requirement-you-can-create-an-account-where-the-portal-allows-it-req-iwi-002
+ * @spec openspec/specs/portal-ways-in/spec.md#requirement-you-can-create-an-account-where-the-portal-allows-it-req-iwi-002
  */
 export function registrationOutcomeText(awaiting) {
 	if (awaiting === 'activation') {
