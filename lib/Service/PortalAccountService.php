@@ -120,6 +120,7 @@ class PortalAccountService {
 	 *
 	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T08
 	 * @spec openspec/specs/supplier-portal/spec.md#the-subject-reference-is-server-derived-never-client-supplied
+	 * @spec openspec/changes/portal-invitation-joins-the-signed-in-account/specs/portal-identity-space/spec.md
 	 */
 	public function findOrCreate(
 		string $identityType,
@@ -134,6 +135,14 @@ class PortalAccountService {
 		}
 
 		$existing = $this->lookup()->byIdentity(identityType: $identityType, identityRef: $identityRef, organisation: $organisation);
+		if ($existing !== null && $verifiedEmail !== '') {
+			// The person signed in before an app provisioned a waiting account
+			// for their verified address (a school inviting a guardian who
+			// already used DigiD). That account would never be reached, so
+			// its claims join the account that signs in now.
+			$this->joinWaitingAccount(account: $existing, verifiedEmail: $verifiedEmail, organisation: $organisation);
+		}
+
 		if ($existing === null && $verifiedEmail !== '') {
 			// REQ-PIS-002 second pass, and only a second pass: an account
 			// provisioned on an identity reference is matched on that
@@ -466,6 +475,91 @@ class PortalAccountService {
 			]
 		);
 	}//end activate()
+
+	/**
+	 * Give a signed-in account the claims of the waiting account provisioned
+	 * for the same verified address, and withdraw the waiting one
+	 * (portal-invitation-joins-the-signed-in-account).
+	 *
+	 * The match is the one REQ-PIS-002 already trusts for activating a waiting
+	 * account: an address the broker says it verified, against a pending,
+	 * email-only account whose address was verified out of band, in the same
+	 * organisation. A claim the signed-in account already holds is kept.
+	 * Best-effort: a failed write leaves both accounts as they were and never
+	 * blocks the sign-in.
+	 *
+	 * @param array<string, mixed> $account The account found on its identity reference.
+	 * @param string $verifiedEmail The address the broker says it verified.
+	 * @param string $organisation The tenant slug.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-invitation-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+	 */
+	private function joinWaitingAccount(array $account, string $verifiedEmail, string $organisation): void {
+		$waiting = $this->lookup()->pendingByVerifiedEmail(email: $verifiedEmail, organisation: $organisation);
+		if ($waiting === null || ($waiting['subjectRef'] ?? '') === ($account['subjectRef'] ?? '')) {
+			return;
+		}
+
+		$accountId = $this->lookup()->identifierOf(row: $account);
+		$waitingId = $this->lookup()->identifierOf(row: $waiting);
+		if ($accountId === null || $waitingId === null) {
+			return;
+		}
+
+		$claims = self::claimsJoined(held: (array)($account['claims'] ?? []), added: (array)($waiting['claims'] ?? []));
+		if ($claims !== (array)($account['claims'] ?? [])) {
+			$written = $this->writer->updateObject(
+				register: self::REGISTER,
+				schema: self::SCHEMA,
+				scopeField: '',
+				subjectRef: '',
+				organisation: '',
+				id: $accountId,
+				data: ['claims' => $claims]
+			);
+			if ($written === null) {
+				return;
+			}
+		}
+
+		$this->writer->updateObject(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: '',
+			subjectRef: '',
+			organisation: '',
+			id: $waitingId,
+			data: [
+				'status' => self::STATUS_VOID,
+				'voidReason' => 'Joined the account that signed in with this verified address',
+			]
+		);
+	}//end joinWaitingAccount()
+
+	/**
+	 * The claims an account holds, with the claims it lacks added.
+	 *
+	 * @param array<mixed> $held The claims the account holds, by app id.
+	 * @param array<mixed> $added The claims to add, by app id.
+	 *
+	 * @return array<mixed>
+	 *
+	 * @spec openspec/changes/portal-invitation-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+	 */
+	private static function claimsJoined(array $held, array $added): array {
+		foreach ($added as $appId => $appClaims) {
+			if (is_array($appClaims) === false) {
+				continue;
+			}
+
+			$heldForApp = (array)($held[$appId] ?? []);
+			$held[$appId] = ($heldForApp + $appClaims);
+		}
+
+		return $held;
+	}//end claimsJoined()
 
 	/**
 	 * Stamp `lastLoginAt` on an existing account. Best-effort — a failure to
