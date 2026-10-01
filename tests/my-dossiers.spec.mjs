@@ -19,6 +19,7 @@ import {
 	withoutRemoveAction,
 } from '../src/portal/lib/itemList.js'
 import { answerLink, runRowAction } from '../src/shared/rowAction.js'
+import { mountSfc } from './support/mount-sfc.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -136,4 +137,13 @@ test('the detail card renders the item list and the confirm shows the link', () 
 		'utf8',
 	)
 	assert.match(confirm, /data-testid="rowaction-link"/)
+})
+
+test('the site confirm step shows the link the action answered', async () => {
+	const api = {
+		forwardRowAction: async () => ({ ok: true, status: 200, body: { link: 'https://gemeente.example/shared/abc' } }),
+	}
+	const step = await mountSfc('src/site/modals/c/RowActionConfirm.vue', { action: { id: 'share', label: 'Delen' }, collection: { id: 'mijnDossiers' }, row: { id: 'dos-1' }, api })
+	await step.fire(step.find('rowaction-continue'), 'click')
+	assert.equal(step.find('rowaction-link').props.value, 'https://gemeente.example/shared/abc')
 })

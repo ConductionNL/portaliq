@@ -22,6 +22,7 @@ import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { mountSfc } from './support/mount-sfc.mjs'
 
 const require = createRequire(import.meta.url)
 const babel = require('@babel/core')
@@ -173,4 +174,45 @@ test('the saved id is read wherever the server put it', () => {
 	assert.equal(submit.objectIdOf({ uuid: 'b' }), 'b')
 	assert.equal(submit.objectIdOf({ '@self': { id: 'c' } }), 'c')
 	assert.equal(submit.objectIdOf(null), '')
+})
+
+// The site's Vue port (site-reaches-portal-parity T11, REQ-SRP-023) runs the
+// same shared flow from src/shared/fileFieldSubmit.js.
+
+test('the site form renders a file picker with its limit', async () => {
+	const form = await mountSfc('src/site/components/c/SchemaForm.vue', { action, api: fakeApi() })
+	const picker = form.findAll((n) => n.props.id === 'f-createSubmission-attachmentRefs')[0]
+
+	assert.equal(picker.props.type, 'file')
+	assert.equal(picker.props.multiple, true)
+	assert.equal(picker.props.accept, '.pdf')
+	assert.match(form.textOf(form.find('schema-field-attachmentRefs')), /Your work Up to 1 MB per file/)
+})
+
+test('the site form creates, uploads, names the failed file and retries only that one', async () => {
+	const api = fakeApi({ failNames: ['bijlage.pdf'] })
+	const form = await mountSfc('src/site/components/c/SchemaForm.vue', { action, api })
+	const field = (name) => form.findAll((n) => n.props.id === `f-createSubmission-${name}`)[0]
+	await form.fire(field('assignmentId'), 'input', { value: 'assignment-1' })
+	await form.fire(field('attachmentRefs'), 'change', { files: [file('essay.pdf'), file('bijlage.pdf')] })
+	await form.fire(form.find('schema-form'), 'submit')
+
+	assert.deepEqual(api.calls.created, [{ assignmentId: 'assignment-1' }])
+	assert.deepEqual(api.calls.uploads.map((u) => u.name), ['essay.pdf', 'bijlage.pdf'])
+	assert.equal(form.textOf(form.find('schema-form-error')), 'Saved, but these files were not attached: bijlage.pdf')
+
+	await form.fire(form.find('schema-form-retry'), 'click')
+	assert.deepEqual(api.calls.uploads.map((u) => u.name), ['essay.pdf', 'bijlage.pdf', 'bijlage.pdf'])
+	assert.equal(api.calls.created.length, 1, 'a retry never creates the record again')
+})
+
+test('the site form refuses an oversized file before saving', async () => {
+	const api = fakeApi()
+	const form = await mountSfc('src/site/components/c/SchemaForm.vue', { action, api })
+	const picker = form.findAll((n) => n.props.id === 'f-createSubmission-attachmentRefs')[0]
+	await form.fire(picker, 'change', { files: [file('huge.pdf', 2 * 1024 * 1024)] })
+	await form.fire(form.find('schema-form'), 'submit')
+
+	assert.deepEqual(api.calls.created, [])
+	assert.equal(form.textOf(form.find('schema-form-error')), 'These files are too large: huge.pdf')
 })

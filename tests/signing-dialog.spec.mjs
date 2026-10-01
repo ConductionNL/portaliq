@@ -17,6 +17,7 @@ import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { mountSfc } from './support/mount-sfc.mjs'
 
 const require = createRequire(import.meta.url)
 const babel = require('@babel/core')
@@ -305,4 +306,78 @@ test('every new string has a Dutch translation', () => {
 		assert.equal(en[key], key, `en.json lacks "${key}"`)
 		assert.doesNotMatch(nl[key], /—/)
 	}
+})
+
+// The site's Vue port (site-reaches-portal-parity T13, REQ-SRP-029), in
+// src/site/modals/c/ on the same shared src/shared/signing.js.
+
+/**
+ * A fake api: the view answers a PDF, the sign and decline answer `answer`.
+ *
+ * @param {object} answer What sign and decline answer.
+ * @return {object} The api with `calls`.
+ */
+function signingApi(answer) {
+	const calls = []
+	return {
+		calls,
+		async forwardRowAction(collection, rowId, actionId, answers = {}) {
+			calls.push({ actionId, answers })
+			if (actionId === 'viewDocument') {
+				return { ok: true, status: 200, body: { contentBase64: 'JVBERi0=', mimeType: 'application/pdf', documentName: 'Huurcontract.pdf' } }
+			}
+			return answer
+		},
+	}
+}
+
+test('the site sign dialog shows the document, then signs only after the tick', async () => {
+	const api = signingApi({ ok: true, status: 200, body: {} })
+	const dialog = await mountSfc('src/site/modals/c/SigningDialog.vue', { action: SIGN, viewAction: VIEW, collection: COLLECTION, row: ROW, api, t })
+	await dialog.flush()
+
+	assert.equal(dialog.find('signing-download').props.href, 'data:application/pdf;base64,JVBERi0=')
+	assert.equal(dialog.find('signing-submit').props.disabled, true, 'no signing before the tick')
+	await dialog.fire(dialog.find('signing-read'), 'change', { checked: true })
+	assert.equal(dialog.find('signing-submit').props.disabled, false)
+	await dialog.fire(dialog.find('signing-submit'), 'click')
+
+	assert.deepEqual(api.calls.map((c) => c.actionId), ['viewDocument', 'sign'])
+	assert.deepEqual(api.calls[1].answers, { consent: true })
+	assert.equal(dialog.textOf(dialog.find('signing-status')), 'You signed Huurcontract.pdf.')
+	assert.equal(dialog.emitted.done.length, 1)
+})
+
+test('the site sign dialog without a view action has nothing to sign', async () => {
+	const dialog = await mountSfc('src/site/modals/c/SigningDialog.vue', { action: SIGN, viewAction: null, collection: COLLECTION, row: ROW, api: signingApi({}), t })
+	assert.ok(dialog.find('signing-unavailable'))
+	assert.equal(dialog.find('signing-submit'), null)
+})
+
+test('the site decline dialog asks why, forwards the reason and keeps a refusal open', async () => {
+	const refused = signingApi({ ok: false, status: 409, body: {} })
+	const dialog = await mountSfc('src/site/modals/c/DeclineDialog.vue', { action: DECLINE, collection: COLLECTION, row: ROW, api: refused, t })
+	const form = dialog.findAll((n) => n.tag === 'form')[0]
+
+	await dialog.fire(form, 'submit')
+	assert.equal(refused.calls.length, 0)
+	assert.equal(dialog.textOf(dialog.find('decline-status')), 'Give a reason.')
+
+	await dialog.fire(dialog.find('decline-reason'), 'input', { value: ' Verkeerde datum ' })
+	await dialog.fire(form, 'submit')
+	assert.deepEqual(refused.calls, [{ actionId: 'decline', answers: { reason: 'Verkeerde datum' } }])
+	assert.equal(dialog.textOf(dialog.find('decline-status')), 'This can no longer be done for this item.')
+	assert.ok(dialog.find('decline-submit'), 'a refused decline stays open')
+})
+
+test('the site row action step opens the sign dialog with the view action', async () => {
+	const api = signingApi({ ok: true, status: 200, body: {} })
+	const step = await mountSfc('src/site/components/c/RowActionDialog.vue', { action: SIGN, rowActions: [SIGN, DECLINE, VIEW], collection: COLLECTION, row: ROW, api, t })
+	await step.flush()
+	assert.ok(step.find('signing-dialog'))
+	assert.deepEqual(api.calls.map((c) => c.actionId), ['viewDocument'])
+
+	const decline = await mountSfc('src/site/components/c/RowActionDialog.vue', { action: DECLINE, rowActions: [SIGN, DECLINE, VIEW], collection: COLLECTION, row: ROW, api, t })
+	await decline.flush()
+	assert.ok(decline.find('decline-dialog'))
 })

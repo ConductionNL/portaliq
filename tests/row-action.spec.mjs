@@ -22,6 +22,7 @@ import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { compileLoading, LOADING_MODULE } from './support/compile-loading.mjs'
+import { mountSfc } from './support/mount-sfc.mjs'
 
 const require = createRequire(import.meta.url)
 const babel = require('@babel/core')
@@ -225,4 +226,112 @@ test('a page-level action shows the leaf app answer instead of discarding it (#8
 		redirect: null,
 		messageKey: 'This is not available right now. Try again later.',
 	})
+})
+
+// The site's Vue port (site-reaches-portal-parity T12 and T13, REQ-SRP-025,
+// REQ-SRP-026, REQ-SRP-027) on the same shared src/shared/rowAction.js.
+
+/**
+ * A fake portal api that records every forward.
+ *
+ * @param {object} answer What every forward answers.
+ * @return {object} The api with `calls`.
+ */
+function forwardingApi(answer) {
+	const calls = []
+	return {
+		calls,
+		// The real api sends `{}` when no answers are given.
+		async forwardRowAction(collection, rowId, actionId, answers = {}) {
+			calls.push({ collection: collection.id, rowId, actionId, answers })
+			return answer
+		},
+		async forwardAction(app, actionId, body) {
+			calls.push({ app, actionId, body })
+			return answer
+		},
+		async updateObject(action, id, body) {
+			calls.push({ update: action.id, id, body })
+			return { ok: true }
+		},
+	}
+}
+
+test('the site confirm step shows the notice and sends nothing until Continue', async () => {
+	const api = forwardingApi({ ok: true, status: 200, body: {} })
+	const step = await mountSfc('src/site/modals/c/RowActionConfirm.vue', { action: pay, collection: salesInvoices, row: issued, api, t })
+
+	assert.match(step.text(), new RegExp(`Pay now ${VOLUNTARY}`))
+	assert.equal(step.textOf(step.focused()), 'Pay now', 'focus moves to what the resident confirms')
+	assert.equal(api.calls.length, 0)
+	await step.fire(step.find('rowaction-continue'), 'click')
+	assert.deepEqual(api.calls, [{ collection: 'salesInvoices', rowId: 'inv-1', actionId: 'pay', answers: {} }])
+	assert.equal(step.textOf(step.find('rowaction-status')), '[Done.]')
+	assert.equal(step.emitted.done.length, 1)
+	assert.equal(step.find('rowaction-continue'), null, 'the step cannot run twice')
+})
+
+test('the site confirm step follows a checked redirect and never an unsafe one', async () => {
+	const went = []
+	const safe = forwardingApi({ ok: true, status: 200, body: { checkoutUrl: 'https://pay.example/checkout/1' } })
+	const step = await mountSfc('src/site/modals/c/RowActionConfirm.vue', { action: pay, collection: salesInvoices, row: issued, api: safe, t, navigate: (url) => went.push(url) })
+	await step.fire(step.find('rowaction-continue'), 'click')
+	assert.deepEqual(went, ['https://pay.example/checkout/1'])
+
+	const unsafe = forwardingApi({ ok: true, status: 200, body: { redirectUrl: 'javascript:alert(1)' } })
+	const other = await mountSfc('src/site/modals/c/RowActionConfirm.vue', { action: pay, collection: salesInvoices, row: issued, api: unsafe, t, navigate: (url) => went.push(url) })
+	await other.fire(other.find('rowaction-continue'), 'click')
+	assert.equal(went.length, 1)
+	assert.equal(other.textOf(other.find('rowaction-status')), '[The next page could not be opened.]')
+})
+
+test('an endpoint or cta action on a site page shows the leaf answer in a status region', async () => {
+	const api = forwardingApi({ ok: false, status: 409, body: {} })
+	const button = await mountSfc('src/site/components/c/ActionButton.vue', { action: { id: 'startTask', label: 'Start', endpoint: '/x' }, app: 'learniq', api, t })
+	await button.fire(button.findAll((n) => n.tag === 'button')[0], 'click')
+
+	assert.deepEqual(api.calls, [{ app: 'learniq', actionId: 'startTask', body: {} }])
+	const status = button.find('action-status-startTask')
+	assert.equal(status.props.role, 'status')
+	assert.equal(button.textOf(status), '[This can no longer be done for this item.]')
+})
+
+test('an action block renders a create action as a form and a cta as a labelled button', async () => {
+	const contribution = {
+		app: 'learniq',
+		actions: [
+			{ id: 'createNote', type: 'create', label: 'Write a note', fields: ['title'], fieldConfigs: {} },
+			{ id: 'startTask', type: 'endpoint', label: 'Start', endpoint: '/x' },
+			{ id: 'noEndpoint', type: 'endpoint', label: 'Broken' },
+		],
+	}
+	const api = forwardingApi({ ok: true, status: 200, body: {} })
+	const form = await mountSfc('src/site/components/c/ActionBlock.vue', { block: { type: 'action', action: 'createNote' }, contribution, api, t })
+	await form.flush()
+	assert.ok(form.find('schema-form'))
+	assert.match(form.text(), /^Write a note/)
+
+	const cta = await mountSfc('src/site/components/c/ActionBlock.vue', { block: { type: 'cta', action: 'startTask', label: 'Begin de toets' }, contribution, api, t })
+	assert.equal(cta.text(), 'Begin de toets')
+
+	const broken = await mountSfc('src/site/components/c/ActionBlock.vue', { block: { type: 'action', action: 'noEndpoint' }, contribution, api, t })
+	assert.equal(broken.findAll((n) => n.tag === 'button')[0].props.disabled, true)
+
+	const unknown = await mountSfc('src/site/components/c/ActionBlock.vue', { block: { type: 'action', action: 'ghost' }, contribution, api, t })
+	assert.equal(unknown.text(), '', 'a block naming an undeclared action renders nothing')
+})
+
+test('a status transition sends no field data', async () => {
+	const { runRowTransition } = await import('../src/site/components/c/forms.js')
+	const api = forwardingApi({ ok: true })
+	assert.deepEqual(await runRowTransition(api, close, { '@self': { id: 'req-9' } }), { ok: true })
+	assert.deepEqual(api.calls, [{ update: 'close', id: 'req-9', body: {} }])
+	assert.deepEqual(await runRowTransition(api, close, {}), { ok: false })
+})
+
+test('the row action step picks the confirm step for a plain endpoint action', async () => {
+	const api = forwardingApi({ ok: true, status: 200, body: {} })
+	const step = await mountSfc('src/site/components/c/RowActionDialog.vue', { action: pay, collection: salesInvoices, row: issued, api, t })
+	await step.flush()
+	assert.ok(step.find('rowaction-confirm'))
 })
