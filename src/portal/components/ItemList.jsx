@@ -6,7 +6,7 @@
 // can be removed on its own.
 
 import { useCallback, useEffect, useState } from 'react'
-import { itemRows, removeItem } from '../lib/itemList.js'
+import { itemRows, removeItem } from '../../shared/itemList.js'
 import Loading from './Loading.jsx'
 
 /**

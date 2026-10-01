@@ -1972,7 +1972,7 @@
 			},
 			"built": {
 				"state": "built",
-				"evidence": "lib/Service/PortalDeepLinkBuilder.php forRecord() (#open=<app>/<collection>/<id>) used by NotificationDispatchJob; src/portal/lib/openRecord.js read and stripped in src/portal/App.jsx, kept in sessionStorage through sign-in, row preselected in PageView.jsx from the resident's own scoped rows; tests/open-record.spec.mjs, PortalDeepLinkBuilderTest::testForRecordAddsTheFragment",
+				"evidence": "lib/Service/PortalDeepLinkBuilder.php forRecord() (#open=<app>/<collection>/<id>) used by NotificationDispatchJob; src/shared/openRecord.js read and stripped in src/portal/App.jsx, kept in sessionStorage through sign-in, row preselected in PageView.jsx from the resident's own scoped rows; tests/open-record.spec.mjs, PortalDeepLinkBuilderTest::testForRecordAddsTheFragment",
 				"reachedOn": "the link in a change e-mail and the Open button on an inbox message (src/portal/components/InboxPage.jsx)",
 				"owner": "ConductionNL/portaliq",
 				"note": "Built 2026-09-28. A link to a record that is not in the reader's own list shows nothing of it.",
