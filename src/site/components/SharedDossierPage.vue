@@ -73,7 +73,9 @@
 						item.title || item.href
 					}}</a>
 					<span v-else>{{ item.title }}</span>
-					<p v-if="item.note" class="utrecht-paragraph pq-shared-dossier__note">
+					<p
+						v-if="item.note"
+						class="utrecht-paragraph pq-shared-dossier__note">
 						{{ item.note }}
 					</p>
 				</li>

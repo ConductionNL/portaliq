@@ -18,9 +18,9 @@ import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import {
-	SHARED_DOSSIER_ENDPOINT,
 	fetchSharedDossier,
 	isSharedDossierRoute,
+	SHARED_DOSSIER_ENDPOINT,
 	sharedDossierToken,
 	sharedDossierView,
 } from '../src/site/lib/sharedDossier.js'

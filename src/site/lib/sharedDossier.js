@@ -105,7 +105,7 @@ export function sharedDossierView(body) {
  * link is for anyone, so what it shows must not depend on who opens it.
  *
  * @param {string} token The share token.
- * @param {Function} fetchImpl `fetch`, or a stand-in in a test.
+ * @param {(url: string, init: object) => Promise<object>} fetchImpl `fetch`, or a stand-in in a test.
  * @return {Promise<{status: 'ok', dossier: object}|{status: 'notFound'}|{status: 'error'}>}
  * @spec openspec/changes/site-shared-dossier/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
  */

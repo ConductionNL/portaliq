@@ -639,7 +639,11 @@ export default {
 			// The token is not a word and no page sits at its parent.
 			if (this.sharedDossierRoute) {
 				return [
-					{ route: '/', label: this.t('Home'), href: this.hrefForRoute('/') },
+					{
+						route: '/',
+						label: this.t('Home'),
+						href: this.hrefForRoute('/'),
+					},
 					{
 						route: this.route,
 						label: this.sharedDossierTitle || this.t('Shared dossier'),
