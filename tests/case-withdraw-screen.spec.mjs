@@ -42,6 +42,7 @@ async function load(relative) {
 	const code = compiled.code
 		.replace(/from '\.\/([A-Za-z]+)\.jsx'/g, (whole, name) => `from './${flat('components/' + name + '.jsx')}'`)
 		.replace(/from '\.\.\/lib\/([A-Za-z]+)\.js'/g, (whole, name) => `from './${flat('lib/' + name + '.js')}'`)
+		.replace(/from '\.\.\/\.\.\/shared\/([A-Za-z]+)\.js'/g, (whole, name) => `from '${pathToFileURL(join(ROOT, 'src', 'shared', name + '.js')).href}'`)
 	const out = join(OUT_DIR, flat(relative))
 	writeFileSync(out, code)
 	return import(pathToFileURL(out).href)
@@ -49,7 +50,7 @@ async function load(relative) {
 
 compileLoading(OUT_DIR)
 const { createPortalApi } = await load('lib/portalApi.js')
-const { withdrawalView, caseFieldNames } = await load('lib/withdrawal.js')
+const { withdrawalView, caseFieldNames } = await import(pathToFileURL(join(ROOT, 'src', 'shared', 'withdrawal.js')).href)
 const { default: WithdrawCaseConfirm } = await load('components/WithdrawCaseConfirm.jsx')
 const { createElement } = await import('react')
 const { renderToStaticMarkup } = await import('react-dom/server')
@@ -144,4 +145,105 @@ test('the case screen uses them, and both locales carry the strings', () => {
 			assert.equal(bundle[key], locale === 'nl' ? dutch : key, `${locale}: ${key}`)
 		}
 	}
+})
+
+// The Vue port on the site (site-reaches-portal-parity T21, REQ-SRP-043).
+
+const { renderSfc, loadSfc } = await import('./support/render-sfc.mjs')
+const SITE_CASE = 'src/site/components/e/CitizenCase.vue'
+const SITE_CONFIRM = 'src/site/modals/e/WithdrawCaseConfirm.vue'
+
+test('site: the confirmation is a modal that says what withdrawing means, asks an optional reason, and offers both ways out', async () => {
+	const html = await renderSfc(SITE_CONFIRM, { t, busy: false })
+	assert.match(html, /^<dialog[^>]*aria-labelledby="pq-withdraw-title"/)
+	assert.match(html, /<h2 id="pq-withdraw-title"[^>]*tabindex="-1"[^>]*>Withdraw this request\?<\/h2>/)
+	assert.match(html, /If you withdraw, we stop handling your request\. You cannot undo this\./)
+	assert.match(html, /<label for="pq-withdraw-reason"[^>]*>Why are you withdrawing\? \(optional\)<\/label>/)
+	assert.match(html, /<textarea id="pq-withdraw-reason"/)
+	assert.match(html, />Withdraw request<\/button>/)
+	assert.match(html, />Keep my request<\/button>/)
+
+	const own = await renderSfc(SITE_CONFIRM, { t, confirmText: 'Wij stoppen de behandeling.', busy: true })
+	assert.match(own, /Wij stoppen de behandeling\./)
+	assert.doesNotMatch(own, /You cannot undo this/)
+	assert.match(own, /<button[^>]*disabled[^>]*>Withdraw request<\/button>/)
+})
+
+test('site: the modal opens with focus on its heading and sends the trimmed reason only on confirm', async () => {
+	const confirm = await loadSfc(SITE_CONFIRM)
+	const events = []
+	let focused = false
+	let modal = false
+	const vm = {
+		reason: '  Ik ben toch niet verhuisd.  ',
+		$refs: { dialog: { showModal() { modal = true } }, heading: { focus() { focused = true } } },
+		$emit: (...args) => events.push(args),
+	}
+	confirm.mounted.call(vm)
+	assert.equal(modal, true)
+	assert.equal(focused, true)
+	assert.deepEqual(events, [], 'opening sends nothing')
+	confirm.methods.submit.call(vm)
+	assert.deepEqual(events, [['confirm', 'Ik ben toch niet verhuisd.']])
+	assert.deepEqual(confirm.emits, ['confirm', 'cancel'])
+})
+
+test('site: the case offers withdrawal exactly as the server declares, and shows the withdrawn state', async () => {
+	const base = { case: { naam: 'Jansen' }, writableSet: { fields: {} }, documents: [] }
+	const button = await renderSfc(SITE_CASE, { api: {}, t, collection: COLLECTION, row: { id: 'c1' }, initialData: { ...base, withdrawal: { declared: true, open: true } } })
+	assert.match(button, /data-testid="case-withdraw"[^>]*>Withdraw this request</)
+	assert.doesNotMatch(button, /<dialog/)
+	const closed = await renderSfc(SITE_CASE, { api: {}, t, collection: COLLECTION, row: { id: 'c1' }, initialData: { ...base, withdrawal: { declared: true, open: false, reason: 'Deze aanvraag is al besloten.' } } })
+	assert.match(closed, /data-testid="case-withdraw-closed"[^>]*>Deze aanvraag is al besloten\.</)
+	assert.doesNotMatch(closed, /case-withdraw"/)
+	const none = await renderSfc(SITE_CASE, { api: {}, t, collection: COLLECTION, row: { id: 'c1' }, initialData: { ...base, withdrawal: { declared: false } } })
+	assert.doesNotMatch(none, /Withdraw/)
+	const withdrawn = await renderSfc(SITE_CASE, {
+		api: {},
+		t,
+		locale: 'nl',
+		collection: COLLECTION,
+		row: { id: 'c1' },
+		initialData: { ...base, case: { naam: 'Jansen', withdrawnAt: '2026-09-29T10:00:00+00:00', withdrawalReason: 'Ik ben toch niet verhuisd.' }, withdrawal: { declared: true, open: false } },
+	})
+	assert.match(withdrawn, /Withdrawn on 29-09-2026\./)
+	assert.match(withdrawn, /Your reason: Ik ben toch niet verhuisd\./)
+	assert.doesNotMatch(withdrawn, /case-field-withdrawnAt/, 'the withdrawal fields are not ordinary answers')
+	const open = await renderSfc(SITE_CASE, { api: {}, t, collection: COLLECTION, row: { id: 'c1' }, initialConfirming: true, initialData: { ...base, withdrawal: { declared: true, open: true, confirmText: 'Wij stoppen.' } } })
+	assert.match(open, /<dialog[\s\S]*Wij stoppen\./)
+})
+
+test('site: cancelling sends nothing and puts focus back on the withdraw button; confirming withdraws and reads the case again', async () => {
+	const screen = await loadSfc(SITE_CASE)
+	const sent = []
+	let focused = false
+	const vm = {
+		t,
+		collection: COLLECTION,
+		caseId: 'c1',
+		confirming: true,
+		busy: false,
+		notice: 'old',
+		$refs: { withdrawButton: { focus() { focused = true } } },
+		$nextTick: (fn) => fn(),
+		load() { this.loaded = true },
+		api: { withdrawCitizenCase: async (c, id, reason) => { sent.push([id, reason]); return { ok: true } } },
+	}
+	screen.methods.closeWithdraw.call(vm)
+	assert.equal(vm.confirming, false)
+	assert.equal(focused, true)
+	assert.deepEqual(sent, [])
+
+	screen.methods.openWithdraw.call(vm)
+	assert.equal(vm.confirming, true)
+	assert.equal(vm.notice, '')
+	await screen.methods.onWithdraw.call(vm, 'Verhuisd')
+	assert.deepEqual(sent, [['c1', 'Verhuisd']])
+	assert.equal(vm.confirming, false)
+	assert.equal(vm.notice, 'Your request has been withdrawn.')
+	assert.equal(vm.loaded, true)
+
+	vm.api = { withdrawCitizenCase: async () => ({ ok: false, message: 'Deze aanvraag is al besloten.' }) }
+	await screen.methods.onWithdraw.call(vm, '')
+	assert.equal(vm.notice, 'Deze aanvraag is al besloten.')
 })

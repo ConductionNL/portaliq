@@ -37,7 +37,7 @@ async function load(relative) {
 }
 
 const { createPortalApi } = await load('lib/portalApi.js')
-const { groupDocuments } = await load('lib/caseDocuments.js')
+const { groupDocuments } = await import(pathToFileURL(join(ROOT, 'src', 'shared', 'caseDocuments.js')).href)
 
 test('the listed documents are grouped: decisions, documents, sent by you', () => {
 	const listed = [
@@ -101,4 +101,90 @@ test('the case screen renders the groups and both locales say it', () => {
 			assert.equal(bundle[key], locale === 'nl' ? dutch : key, `${locale}: ${key}`)
 		}
 	}
+})
+
+// The Vue port on the site (site-reaches-portal-parity T21, REQ-SRP-042).
+
+const { renderSfc, loadSfc } = await import('./support/render-sfc.mjs')
+const t = (key, vars = {}) => key.replace(/\{(\w+)\}/g, (_, name) => String(vars[name] ?? ''))
+const SITE_CASE = 'src/site/components/e/CitizenCase.vue'
+const COLLECTION = { id: 'mijnZaken', register: 'zaken', schema: 'zaak' }
+const ANSWER = {
+	case: { naam: 'Jansen', adres: 'Straat 1' },
+	writableSet: {
+		status: { label: 'In behandeling', description: 'We bekijken uw aanvraag.' },
+		window: { open: true },
+		fields: { naam: { writable: false, reason: 'Uw naam komt uit de BRP.' }, adres: { writable: true } },
+		documents: { open: true },
+	},
+	documents: [
+		{ id: 'upload:5', title: 'bewijs.pdf', kind: 'yours', date: '' },
+		{ id: 'brief-1', title: 'Brief', kind: 'document', date: '2026-08-01' },
+		{ id: 'besluit-1', title: 'Besluit', kind: 'decision', date: '2026-09-01' },
+	],
+}
+
+test('site: the case shows its status, closed answers with their reason, open answers as inputs, and the documents grouped decision first', async () => {
+	const html = await renderSfc(SITE_CASE, { api: {}, t, collection: COLLECTION, row: { id: 'zaak-1' }, initialData: ANSWER })
+	assert.match(html, /data-testid="case-status"[\s\S]*In behandeling[\s\S]*We bekijken uw aanvraag\./)
+	assert.match(html, /data-testid="case-value-naam"[^>]*>Jansen</)
+	assert.match(html, /data-testid="case-reason-naam"[^>]*>Uw naam komt uit de BRP\.</)
+	assert.match(html, /<label for="pq-case-field-adres"[^>]*>adres<\/label><input id="pq-case-field-adres"[^>]*value="Straat 1"/)
+	assert.match(html, /data-testid="case-save" disabled/)
+	const decision = html.indexOf('>Decision<')
+	const documents = html.indexOf('>Documents<', html.indexOf('pq-case-documents-documents'))
+	const yours = html.indexOf('>Sent by you<')
+	assert.ok(decision > 0 && decision < documents && documents < yours, 'decision, then documents, then what you sent')
+	assert.match(html, /<button[^>]*pq-case-document[^>]*>Besluit<\/button>/)
+	assert.match(html, /<label for="pq-case-add-document"[^>]*>Add a document<\/label>/)
+})
+
+test('site: no documents says so, a closed window and a closed document slot give their reason, no row asks for one', async () => {
+	const closed = {
+		case: { naam: 'Jansen' },
+		writableSet: { window: { open: false, reason: 'De termijn is voorbij.' }, documents: { open: false, reason: 'Er kan niets meer bij.' }, fields: {} },
+		documents: [],
+	}
+	const html = await renderSfc(SITE_CASE, { api: {}, t, collection: COLLECTION, row: { id: 'zaak-1' }, initialData: closed })
+	assert.match(html, /There are no documents on this case yet\./)
+	assert.match(html, /data-testid="case-window-closed"[^>]*>De termijn is voorbij\.</)
+	assert.match(html, /data-testid="case-documents-closed"[^>]*>Er kan niets meer bij\.</)
+	assert.match(html, /This answer cannot be changed from the portal\./)
+	assert.doesNotMatch(html, /case-save/)
+	assert.doesNotMatch(html, /type="file"/)
+	assert.match(await renderSfc(SITE_CASE, { api: {}, t, collection: COLLECTION, row: null }), /Select a case\./)
+})
+
+test('site: a document opens through the case route, a failure says so, and an added document is named', async () => {
+	const screen = await loadSfc(SITE_CASE)
+	const opened = []
+	const vm = {
+		t,
+		collection: COLLECTION,
+		caseId: 'zaak-1',
+		notice: '',
+		busy: false,
+		draft: {},
+		load() { this.loaded = true },
+		api: {
+			downloadCitizenDocument: async (c, id, entry) => { opened.push([c.id, id, entry.id]); return { ok: entry.id !== 'gone' } },
+			addCitizenDocument: async (c, id, file) => ({ ok: true, document: { name: file.name } }),
+			amendCitizenCase: async (c, id, fields) => ({ ok: false, message: `Niet: ${Object.keys(fields).join()}` }),
+		},
+	}
+	await screen.methods.onOpenDocument.call(vm, { id: 'besluit-1' })
+	assert.equal(vm.notice, '')
+	await screen.methods.onOpenDocument.call(vm, { id: 'gone' })
+	assert.equal(vm.notice, 'The document could not be opened. Try again later.')
+	assert.deepEqual(opened, [['mijnZaken', 'zaak-1', 'besluit-1'], ['mijnZaken', 'zaak-1', 'gone']])
+
+	const input = { files: [{ name: 'bewijs.pdf' }], value: 'C:\\bewijs.pdf' }
+	await screen.methods.onAddDocument.call(vm, { target: input })
+	assert.equal(vm.notice, 'bewijs.pdf has been added to your case.')
+	assert.equal(input.value, '')
+	assert.equal(vm.loaded, true, 'the case is read again so it shows under what you sent')
+
+	screen.methods.onFieldChange.call(vm, 'adres', 'Laan 2')
+	await screen.methods.onSave.call(vm)
+	assert.equal(vm.notice, 'Niet: adres', 'a refusal is the server\'s sentence')
 })

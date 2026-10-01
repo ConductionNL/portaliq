@@ -9,7 +9,7 @@
 // is where notifications go.
 
 import { useCallback, useEffect, useState } from 'react'
-import { refusalText } from '../lib/account.js'
+import { refusalText } from '../../shared/account.js'
 import Loading from './Loading.jsx'
 
 const CHANNELS = [

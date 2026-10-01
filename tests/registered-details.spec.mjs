@@ -209,3 +209,59 @@ test('the portal shell offers "My details" once signed in', () => {
 	assert.match(app, /label: t\('My details'\)/)
 	assert.match(app, /active\.special === 'details'/)
 })
+
+// The Vue port on the site (site-reaches-portal-parity T19, REQ-SRP-038).
+
+const { renderSfc, loadSfc } = await import('./support/render-sfc.mjs')
+const site = await import(pathToFileURL(join(ROOT, 'src', 'site', 'pages', 'e', 'registeredDetails.js')).href)
+const SITE_PAGE = 'src/site/pages/e/RegisteredDetailsPage.vue'
+
+test('site: a resident sees name, date of birth and address, and the count says it is not available', async () => {
+	const html = await renderSfc(SITE_PAGE, { api: {}, t, locale: 'en', initialDetails: PERSON })
+	assert.match(html, /Jan de Vries/)
+	assert.match(html, /April 12, 1980|12 April 1980/)
+	assert.match(html, /Dorpsstraat 12A/)
+	assert.match(html, /1234AB Utrecht/)
+	assert.match(html, /The number of residents at this address is not available\./)
+	assert.match(html, /Personal Records Database \(BRP\)/)
+	const withCount = await renderSfc(SITE_PAGE, { api: {}, t, initialDetails: { ...PERSON, person: { ...PERSON.person, residentsAtAddress: 3 } } })
+	assert.match(withCount, /3 people are registered at this address\./)
+})
+
+test('site: a bound correction form is a link, and an unbound one is not there', async () => {
+	const html = await renderSfc(SITE_PAGE, { api: {}, t, initialDetails: PERSON })
+	assert.match(html, /href="\/apps\/portaliq\/site\?portal=p&amp;route=%2Fcorrectie"/)
+	assert.doesNotMatch(html, /Something wrong at this address\?/)
+	const other = await renderSfc(SITE_PAGE, { api: {}, t, initialDetails: { ...PERSON, links: { correction: null, addressInvestigation: '/adres' } } })
+	assert.doesNotMatch(other, /Report an error in these details/)
+	assert.match(other, /href="\/adres"[^>]*>Something wrong at this address\?/)
+})
+
+test('site: a business user sees the company with every branch', async () => {
+	const html = await renderSfc(SITE_PAGE, { api: {}, t, initialDetails: COMPANY })
+	assert.match(html, /Chamber of Commerce \(KvK\)/)
+	assert.match(html, /12345678/)
+	assert.match(html, /Besloten Vennootschap/)
+	assert.match(html, /Korenschoof Zuid/)
+	assert.match(html, /Laan 40, 3521CD Utrecht/)
+	assert.match(html, /Main branch/)
+	assert.match(html, /Branch number 000087654321/)
+	const none = await renderSfc(SITE_PAGE, { api: {}, t, initialDetails: { ...COMPANY, company: { ...COMPANY.company, branches: [] } } })
+	assert.match(none, /The KvK lists no branches for this company\./)
+})
+
+test('site: each empty state says why, and the screen reads the details when it opens', async () => {
+	assert.equal(site.reasonText('source_unavailable'), 'Your registered details cannot be shown right now.')
+	assert.equal(site.reasonText('no_registration_identifier'), 'The portal cannot show registered details for this way of signing in.')
+	assert.equal(site.reasonText('not_found'), 'No registered details were found for you.')
+	assert.equal(site.reasonText('no_account'), 'There is no portal account for this sign-in.')
+	assert.equal(site.reasonText('something-new'), 'Your registered details cannot be shown right now.')
+	const html = await renderSfc(SITE_PAGE, { api: {}, t, initialDetails: { available: false, reason: 'source_unavailable' } })
+	assert.match(html, /role="status"[^>]*>Your registered details cannot be shown right now\./)
+	assert.doesNotMatch(html, /Date of birth/)
+
+	const page = await loadSfc(SITE_PAGE)
+	const vm = { initialDetails: null, live: true, details: null, api: { fetchRegisteredDetails: async () => PERSON } }
+	await page.mounted.call(vm)
+	assert.deepEqual(vm.details, PERSON)
+})
