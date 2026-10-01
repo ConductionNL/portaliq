@@ -4,6 +4,12 @@ kind: code
 
 # Proposal: portal-shared-runtime
 
+> **Superseded 2026-10-01 by `site-reaches-portal-parity`.** This proposal
+> counts 1,208 lines in seven files; `src/portal/` now holds 10,878 lines in 59
+> files, and the retirement lands on the Vue site renderer in `src/site/`, not
+> on `bootstrapCnApp`. Read that change for the work. This one is kept, not
+> archived, because code still cites its spec.
+
 ## Summary
 
 Delete Portaliq's React portal and rebuild it on the shared manifest runtime:
