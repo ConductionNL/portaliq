@@ -33,10 +33,10 @@ screenshot. `design.md` has the file-by-file map.
 
 ## Slice d: inbox, messages, news, notification settings, tasks, timed tasks
 
-- [ ] **T14**: `InboxPage.vue` and `NotificationSettings.vue` (REQ-SRP-030, REQ-SRP-031). Verification: `tests/message-box-channel.spec.mjs`, `tests/translated-message-notice.spec.mjs`.
-- [ ] **T15**: `MessagesPage.vue`, `NewsPage.vue`, `TranslatedText.vue` (REQ-SRP-032, REQ-SRP-033, REQ-SRP-034). Verification: the three news and translation specs; live as Fatima.
-- [ ] **T16**: `TasksPage.vue` with the inbox deep link (REQ-SRP-035). Verification: new `tests/tasks-page.spec.mjs`.
-- [ ] **T17**: `TimedTaskView.vue` and `TimedTaskItem.vue` on the shared `timedTask.js` (REQ-SRP-036). Verification: `tests/timed-task.spec.mjs`.
+- [x] **T14**: `InboxPage.vue` and `NotificationSettings.vue` (REQ-SRP-030, REQ-SRP-031). Verification: `tests/message-box-channel.spec.mjs`, `tests/translated-message-notice.spec.mjs`.
+- [x] **T15**: `MessagesPage.vue`, `NewsPage.vue`, `TranslatedText.vue` (REQ-SRP-032, REQ-SRP-033, REQ-SRP-034). Verification: the three news and translation specs; live as Fatima.
+- [x] **T16**: `TasksPage.vue` with the inbox deep link (REQ-SRP-035). Verification: new `tests/tasks-page.spec.mjs`.
+- [x] **T17**: `TimedTaskView.vue` and `TimedTaskItem.vue` on the shared `timedTask.js` (REQ-SRP-036). Verification: `tests/timed-task.spec.mjs`.
 
 ## Slice e: account, registered details, access requests, my cases, citizen case
 
