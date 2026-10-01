@@ -31,7 +31,9 @@ async function loadPortalApi() {
 	mkdirSync(dir, { recursive: true })
 	const out = join(dir, 'portalApi.mjs')
 	const shared = join(ROOT, 'src', 'shared', 'portalApi.js')
-	const source = existsSync(shared) ? shared : join(ROOT, 'src', 'portal', 'lib', 'portalApi.js')
+	const source = existsSync(shared)
+		? shared
+		: join(ROOT, 'src', 'portal', 'lib', 'portalApi.js')
 	writeFileSync(out, readFileSync(source, 'utf8'))
 	return import(pathToFileURL(out).href)
 }
@@ -51,7 +53,11 @@ function stubBrowser() {
 	}
 	globalThis.fetch = async (url, init = {}) => {
 		calls.push({ url: String(url), init })
-		return { ok: true, status: 200, json: async () => ({ object: { id: 'new' } }) }
+		return {
+			ok: true,
+			status: 200,
+			json: async () => ({ object: { id: 'new' } }),
+		}
 	}
 	return calls
 }
@@ -68,7 +74,10 @@ test('a create names the action whose form was filled in', async () => {
 	assert.equal(result.ok, true)
 	assert.equal(calls.length, 1)
 	assert.equal(calls[0].init.method, 'POST')
-	assert.equal(calls[0].url, '/apps/portaliq/portal/api/collections/pipelinq/ticket?actionId=createOwnComplaint')
+	assert.equal(
+		calls[0].url,
+		'/apps/portaliq/portal/api/collections/pipelinq/ticket?actionId=createOwnComplaint',
+	)
 	assert.deepEqual(JSON.parse(calls[0].init.body), { title: 'Te laat' })
 })
 
@@ -79,6 +88,9 @@ test('the action id is encoded, and an action without an id sends none', async (
 	await api.createObject({ id: 'a b&c', register: 'r', schema: 's' }, {})
 	await api.createObject({ register: 'r', schema: 's' }, {})
 
-	assert.equal(calls[0].url, '/apps/portaliq/portal/api/collections/r/s?actionId=a%20b%26c')
+	assert.equal(
+		calls[0].url,
+		'/apps/portaliq/portal/api/collections/r/s?actionId=a%20b%26c',
+	)
 	assert.equal(calls[1].url, '/apps/portaliq/portal/api/collections/r/s')
 })

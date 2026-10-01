@@ -727,7 +727,11 @@ export function createPortalApi(config) {
 		async createObject(action, data) {
 			const id = action && typeof action.id === 'string' ? action.id : ''
 			const query = id !== '' ? `?actionId=${encodeURIComponent(id)}` : ''
-			return send('POST', `${col(action.register, action.schema)}${query}`, data)
+			return send(
+				'POST',
+				`${col(action.register, action.schema)}${query}`,
+				data,
+			)
 		},
 
 		/**
