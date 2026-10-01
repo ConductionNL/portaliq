@@ -750,4 +750,53 @@ class PortalManifestNormaliserTest extends TestCase {
 
 		$this->assertSame(['sign'], array_column($out['actions'], 'id'));
 	}//end testReservedScopeClaimNameIsDropped()
+
+	/**
+	 * A guest action without a `tokenField` has nowhere to carry the signed
+	 * token, and one aimed off the instance would forward it elsewhere: both
+	 * are dropped, a well-formed one keeps its guest keys.
+	 *
+	 * @spec openspec/changes/archive/2026-10-01-identity-guest-page-for-signed-links/tasks.md#T01
+	 */
+	public function testGuestActionNeedsATokenField(): void {
+		$out = $this->normaliser()->normalise(
+			[
+				'collections' => [],
+				'actions' => [
+					['id' => 'withdraw', 'guest' => true, 'endpoint' => '/apps/shillinq/api/withdraw', 'tokenField' => 'token', 'label' => 'Withdraw from contract here', 'previewEndpoint' => '/apps/shillinq/api/withdraw/preview', 'confirmText' => 'Withdraw?'],
+					['id' => 'noToken', 'guest' => true, 'endpoint' => '/apps/shillinq/api/x'],
+					['id' => 'badToken', 'guest' => true, 'endpoint' => '/apps/shillinq/api/x', 'tokenField' => 'a b'],
+					['id' => 'remote', 'guest' => true, 'endpoint' => 'https://evil.example/x', 'tokenField' => 'token'],
+					['id' => 'remotePreview', 'guest' => true, 'endpoint' => '/apps/shillinq/api/x', 'tokenField' => 'token', 'previewEndpoint' => '//evil.example/p'],
+				],
+			]
+		);
+
+		$this->assertSame(['withdraw'], array_column($out['actions'], 'id'));
+		$this->assertTrue($out['actions'][0]['guest']);
+		$this->assertSame('token', $out['actions'][0]['tokenField']);
+		$this->assertSame('/apps/shillinq/api/withdraw/preview', $out['actions'][0]['previewEndpoint']);
+		$this->assertSame('Withdraw from contract here', $out['actions'][0]['label']);
+	}//end testGuestActionNeedsATokenField()
+
+	/**
+	 * A guest is never more than `low`: a guest action asking for more is
+	 * dropped, not offered to a visitor who cannot have it (REQ-GST-001).
+	 *
+	 * @spec openspec/changes/archive/2026-10-01-identity-guest-page-for-signed-links/tasks.md#T01
+	 */
+	public function testGuestActionAboveLowTrustIsDropped(): void {
+		$out = $this->normaliser()->normalise(
+			[
+				'collections' => [],
+				'actions' => [
+					['id' => 'withdraw', 'guest' => true, 'endpoint' => '/apps/shillinq/api/withdraw', 'tokenField' => 'token', 'minTrust' => 'substantial'],
+					['id' => 'pay', 'guest' => true, 'endpoint' => '/apps/shillinq/api/pay', 'tokenField' => 'payToken', 'minTrust' => 'low'],
+					['id' => 'resident', 'endpoint' => '/apps/shillinq/api/r', 'minTrust' => 'substantial'],
+				],
+			]
+		);
+
+		$this->assertSame(['pay', 'resident'], array_column($out['actions'], 'id'));
+	}//end testGuestActionAboveLowTrustIsDropped()
 }
