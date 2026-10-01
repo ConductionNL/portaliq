@@ -49,6 +49,7 @@ use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\ActionScopeResolver;
 use OCA\Portaliq\Contribution\CreateBody;
+use OCA\Portaliq\Contribution\CreateActionMatcher;
 use OCA\Portaliq\Contribution\FileFieldConfigNormaliser;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\Branch\PortalBranchScope;
@@ -969,6 +970,12 @@ class ContributionController extends Controller implements PortalProtected {
 		}
 
 		$match = $this->authorisedCreateAction(subject: $subject, register: $register, schema: $schema);
+		if ($match === CreateActionMatcher::AMBIGUOUS) {
+			// Two or more create actions write this schema and the client
+			// named none: refuse rather than guess (create-names-its-action).
+			return new JSONResponse(['error' => 'action_required'], Http::STATUS_BAD_REQUEST);
+		}
+
 		if ($match === null) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
@@ -1053,31 +1060,34 @@ class ContributionController extends Controller implements PortalProtected {
 
 
 	/**
-	 * Find a `type: create` action for (register, schema) in the subject's
-	 * contributions, or null when the subject is not entitled to create there.
+	 * Find the subject's `type: create` action for (register, schema), by the
+	 * id the client sends as `actionId`.
+	 *
+	 * Two create actions may write one schema (a request form and a complaint
+	 * form both writing `ticket`), so the first declared one is never taken
+	 * for granted (create-names-its-action). A named id must be one of the
+	 * subject's create actions on this register and schema, else null (403).
+	 * Without an id, a single candidate is used as before, and two or more
+	 * answer CreateActionMatcher::AMBIGUOUS (400) rather than a guess.
 	 *
 	 * @param array<string, mixed> $subject The resolved subject.
 	 * @param string $register The requested register.
 	 * @param string $schema The requested schema.
 	 *
-	 * @return array{action: array<string, mixed>, app: string}|null The matched
-	 *                                                               action and its contributing app (the
-	 *                                                               WMEBV receipt's `appId`), or null.
+	 * @return array{action: array<string, mixed>, app: string}|string|null The matched
+	 *                                                                      action and its contributing app (the
+	 *                                                                      WMEBV receipt's `appId`), 'ambiguous',
+	 *                                                                      or null.
+	 *
+	 * @spec openspec/changes/create-names-its-action/tasks.md#T1
 	 */
-	private function authorisedCreateAction(array $subject, string $register, string $schema): ?array {
-		$aggregate = $this->registry->aggregateFor($subject);
-		foreach (($aggregate['contributions'] ?? []) as $contribution) {
-			foreach (($contribution['actions'] ?? []) as $action) {
-				if (($action['type'] ?? '') === 'create'
-					&& ($action['register'] ?? '') === $register
-					&& ($action['schema'] ?? '') === $schema
-				) {
-					return ['action' => $action, 'app' => (string)($contribution['app'] ?? '')];
-				}
-			}
-		}
-
-		return null;
+	private function authorisedCreateAction(array $subject, string $register, string $schema): array|string|null {
+		return (new CreateActionMatcher())->match(
+			aggregate: $this->registry->aggregateFor($subject),
+			register: $register,
+			schema: $schema,
+			actionId: $this->request->getParam('actionId', '')
+		);
 	}//end authorisedCreateAction()
 
 	/**
@@ -1103,10 +1113,18 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
 	 */
 	private function createAnonymous(string $register, string $schema): JSONResponse {
-		$action = $this->authorisedAnonymousCreateAction(register: $register, schema: $schema);
-		if ($action === null) {
+		$match = $this->authorisedAnonymousCreateAction(register: $register, schema: $schema);
+		if ($match === CreateActionMatcher::AMBIGUOUS) {
+			// Two or more landing-page forms write this schema and the client
+			// named none: refuse rather than file it under the first form.
+			return new JSONResponse(['error' => 'action_required'], Http::STATUS_BAD_REQUEST);
+		}
+
+		if ($match === null) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
+
+		$action = $match['action'];
 
 		// Server-forced defaults ride over the whitelist, identical discipline
 		// to the authenticated path (e.g. a placeholder ownership marker a
@@ -1124,33 +1142,33 @@ class ContributionController extends Controller implements PortalProtected {
 	}//end createAnonymous()
 
 	/**
-	 * Find an `anonymous: true`, `type: create` action for (register, schema)
-	 * in the fleet-wide anonymous aggregate, or null when nothing matches
-	 * (portal-page-provisioning).
+	 * Find the `anonymous: true`, `type: create` action for (register, schema)
+	 * in the fleet-wide anonymous aggregate (portal-page-provisioning), by the
+	 * id the client sends as `actionId`.
+	 *
+	 * Every active landing-page form is its own anonymous create action on
+	 * `landingPageSubmission`, so the first match is never taken for granted
+	 * (create-names-its-action): a named id must be one of the anonymous create
+	 * actions on this target, else null (403), and two or more without an id
+	 * answer CreateActionMatcher::AMBIGUOUS (400).
 	 *
 	 * @param string $register The requested register.
-	 * @param string $schema The requested schema.
+	 * @param string $schema   The requested schema.
 	 *
-	 * @return array<string, mixed>|null The matched action, or null.
+	 * @return array{action: array<string, mixed>, app: string}|string|null The match, 'ambiguous', or null.
 	 *
 	 * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
+	 * @spec openspec/changes/create-names-its-action/tasks.md#T3
 	 */
-	private function authorisedAnonymousCreateAction(string $register, string $schema): ?array {
-		$aggregate = $this->registry->aggregateAnonymous();
-		foreach (($aggregate['contributions'] ?? []) as $contribution) {
-			foreach (($contribution['actions'] ?? []) as $action) {
-				if (($action['type'] ?? '') === 'create'
-					&& ($action['anonymous'] ?? false) === true
-					&& ($action['register'] ?? '') === $register
-					&& ($action['schema'] ?? '') === $schema
-				) {
-					return $action;
-				}
-			}
-		}
-
-		return null;
+	private function authorisedAnonymousCreateAction(string $register, string $schema): array|string|null {
+		return (new CreateActionMatcher())->matchAnonymous(
+			aggregate: $this->registry->aggregateAnonymous(),
+			register: $register,
+			schema: $schema,
+			actionId: $this->request->getParam('actionId', '')
+		);
 	}//end authorisedAnonymousCreateAction()
+
 
 	/**
 	 * The write body with the action's server-enforced transition target applied.
