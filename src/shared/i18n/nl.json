@@ -295,5 +295,21 @@
 	"Page not found": "Pagina niet gevonden",
 	"Something went wrong": "Er ging iets mis",
 	"This page does not exist (any more).": "Deze pagina bestaat niet (meer).",
-	"The content could not be loaded.": "De inhoud kon niet worden geladen."
+	"The content could not be loaded.": "De inhoud kon niet worden geladen.",
+	"Saved.": "Opgeslagen.",
+	"Saving did not work.": "Opslaan is niet gelukt.",
+	"{field} is required.": "{field} is verplicht.",
+	"Choose an option": "Kies een optie",
+	"Not everything is filled in yet. Check the fields below.": "Nog niet alles is ingevuld. Controleer de velden hieronder.",
+	"Propose a change": "Wijziging voorstellen",
+	"Note": "Toelichting",
+	"Send proposal": "Voorstel indienen",
+	"Change at least one field before you send a proposal.": "Wijzig minstens één veld voordat u een voorstel indient.",
+	"Sending the proposal did not work.": "Voorstel indienen is niet gelukt.",
+	"Your proposals": "Uw voorstellen",
+	"Withdraw": "Intrekken",
+	"Waiting for review": "Wacht op beoordeling",
+	"Accepted": "Overgenomen",
+	"Rejected": "Afgewezen",
+	"Withdrawn": "Ingetrokken"
 }

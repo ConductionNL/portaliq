@@ -244,3 +244,26 @@ test('the helpers: required checks, the body and a datetime value', () => {
 	)
 	assert.equal(sentValue('text', null), '')
 })
+
+test('the shell registry runs slice c, and every slice c string is in both shared bundles', async () => {
+	await import('../src/site/pages/registry.js')
+	const { blockSlotLoader } =
+		await import('../src/site/pages/collections/blockSlots.js')
+	for (const name of ['action', 'rowAction', 'proposals', 'attachedActions']) {
+		assert.equal(typeof blockSlotLoader(name), 'function', name)
+	}
+	const { readFileSync } = await import('node:fs')
+	const { default: strings } = await import('../src/site/pages/c/strings.js')
+	for (const lang of ['nl', 'en']) {
+		const bundle = JSON.parse(
+			readFileSync(
+				new URL(`../src/shared/i18n/${lang}.json`, import.meta.url),
+				'utf8',
+			),
+		)
+		for (const [key, text] of Object.entries(strings[lang])) {
+			assert.equal(bundle[key], text, `${lang}: ${key}`)
+			assert.doesNotMatch(text, /—/, 'no em-dash')
+		}
+	}
+})

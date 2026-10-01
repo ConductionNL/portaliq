@@ -9,8 +9,7 @@
  *
  * Every component takes `t`, the page's `t(key, vars)`; without one it shows
  * the English source string. The strings are in `src/site/pages/c/strings.js`.
- * `api` is the portal api (`src/portal/lib/portalApi.js` `createPortalApi()`,
- * later `src/shared/portalApi.js`). Events are Vue emits.
+ * `api` is the portal api (`src/shared/portalApi.js` `createPortalApi()`). Events are Vue emits.
  *
  * Slice b's ContributionPage already mounts them: `src/site/pages/c/index.js`
  * fills its named places (`src/site/pages/collections/blockSlots.js`) when it

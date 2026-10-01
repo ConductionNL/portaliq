@@ -55,7 +55,6 @@ export default {
 		'Choose an option': 'Kies een optie',
 		'Not everything is filled in yet. Check the fields below.':
 			'Nog niet alles is ingevuld. Controleer de velden hieronder.',
-		required: 'verplicht',
 		'Propose a change': 'Wijziging voorstellen',
 		Note: 'Toelichting',
 		'Send proposal': 'Voorstel indienen',
@@ -112,7 +111,6 @@ export default {
 		'Choose an option': 'Choose an option',
 		'Not everything is filled in yet. Check the fields below.':
 			'Not everything is filled in yet. Check the fields below.',
-		required: 'required',
 		'Propose a change': 'Propose a change',
 		Note: 'Note',
 		'Send proposal': 'Send proposal',

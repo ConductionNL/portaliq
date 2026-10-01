@@ -5,6 +5,8 @@
  * Slice c (forms and actions) has no screen of its own: its forms and actions
  * live on slice b's contributed pages. Importing this file fills the four
  * places that page leaves for slice c (blockSlots.js); it registers no pages.
+ * The shell imports it from src/site/pages/registry.js, so it stays small: the
+ * strings live in src/shared/i18n (and ./strings.js for the slice's own tests).
  *
  * @typedef {object} SitePageProps
  * @property {object} session The session as `/portal/api/session` returns it.
@@ -17,8 +19,6 @@
  */
 
 import { registerBlockSlot } from '../collections/blockSlots.js'
-
-export { default as strings } from './strings.js'
 
 // Fill slice b's places on a contribution page; each part loads on first use.
 registerBlockSlot('action', () => import('../../components/c/ActionBlock.vue'))

@@ -295,5 +295,21 @@
 	"Page not found": "Page not found",
 	"Something went wrong": "Something went wrong",
 	"This page does not exist (any more).": "This page does not exist (any more).",
-	"The content could not be loaded.": "The content could not be loaded."
+	"The content could not be loaded.": "The content could not be loaded.",
+	"Saved.": "Saved.",
+	"Saving did not work.": "Saving did not work.",
+	"{field} is required.": "{field} is required.",
+	"Choose an option": "Choose an option",
+	"Not everything is filled in yet. Check the fields below.": "Not everything is filled in yet. Check the fields below.",
+	"Propose a change": "Propose a change",
+	"Note": "Note",
+	"Send proposal": "Send proposal",
+	"Change at least one field before you send a proposal.": "Change at least one field before you send a proposal.",
+	"Sending the proposal did not work.": "Sending the proposal did not work.",
+	"Your proposals": "Your proposals",
+	"Withdraw": "Withdraw",
+	"Waiting for review": "Waiting for review",
+	"Accepted": "Accepted",
+	"Rejected": "Rejected",
+	"Withdrawn": "Withdrawn"
 }
