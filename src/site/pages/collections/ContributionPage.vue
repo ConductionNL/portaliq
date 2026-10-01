@@ -35,7 +35,35 @@
 					class="utrecht-heading-3">
 					{{ item.collection.label }}
 				</h2>
+				<!-- A collection that declares groupByField shows one table per
+				     child, each named by its own heading
+				     (collection-group-by-field). -->
+				<template
+					v-for="group in groupsOf(item)"
+					:key="group.value || '_rest'">
+					<h3
+						:id="groupHeadingId(item, group)"
+						class="utrecht-heading-4 pq-contribution-page__group"
+						data-testid="contribution-page-group">
+						{{ group.label || tr('Other') }}
+					</h3>
+					<CollectionTable
+						:collection="item.collection"
+						:objects="group.rows"
+						:loading="loadedOf(item.collection).loading"
+						:selectable="true"
+						:selectedRow="selected[item.collection.id] || null"
+						:rowActions="item.tableActions"
+						:offers="offers"
+						:busyRow="busyRow"
+						:labelledby="groupHeadingId(item, group)"
+						:t="tr"
+						:locale="lang"
+						@select="select(item.collection, $event)"
+						@rowAction="(action, row) => onRowAction(item, action, row)" />
+				</template>
 				<CollectionTable
+					v-if="groupsOf(item).length === 0"
 					:collection="item.collection"
 					:objects="loadedOf(item.collection).objects"
 					:loading="loadedOf(item.collection).loading"
@@ -122,6 +150,12 @@ import {
 	offersRowAction,
 } from '../../../portal/lib/rowAction.js'
 import { dialogFor } from '../../../portal/lib/signing.js'
+import {
+	anyGrouped,
+	groupFieldOf,
+	groupLabelCollection,
+	groupRows,
+} from '../../../shared/collectionGroups.js'
 import { consumeOpenTarget, forgetOpenTarget } from '../../../shared/openRecord.js'
 import { rowIdOf } from '../../components/collections/cells.js'
 import { createCollectionLoader, openRecordState } from './collectionLoader.js'
@@ -293,7 +327,49 @@ export default {
 		loadPage() {
 			if (this.loader && this.currentPage) {
 				this.loader.loadPage(this.currentPage, this.currentContribution)
+				this.loadGroupLabels()
 			}
+		},
+
+		/**
+		 * Load the rows that name the groups (the guardian's children), when
+		 * a table on this page groups its rows.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/collection-group-by-field/tasks.md#T3
+		 */
+		loadGroupLabels() {
+			const source = groupLabelCollection(this.currentContribution)
+			const grouped = anyGrouped(
+				this.blocks
+					.filter((item) => item.kind === 'table')
+					.map((item) => item.collection),
+			)
+			if (source && grouped && !this.store[source.id]) {
+				this.loader.load(source)
+			}
+		},
+
+		/**
+		 * A table block's rows in groups, or [] to render it as one table.
+		 *
+		 * @param {object} item The page block.
+		 * @return {Array<{value: string, label: string, rows: Array<object>}>}
+		 *
+		 * @spec openspec/changes/collection-group-by-field/tasks.md#T3
+		 */
+		groupsOf(item) {
+			const source = groupLabelCollection(this.currentContribution)
+			return groupRows(
+				this.loadedOf(item.collection).objects,
+				groupFieldOf(item.collection),
+				source ? this.store[source.id]?.objects || [] : [],
+			)
+		},
+
+		groupHeadingId(item, group) {
+			return `${this.headingId(item)}-group-${group.value ? group.value.replace(/[^A-Za-z0-9_-]/g, '') : 'rest'}`
 		},
 
 		loadedOf(collection) {
