@@ -675,10 +675,14 @@ test.describe.serial('the Woo citizen journey across four apps', () => {
 			page.getByTestId('save-to-dossier-status').first(),
 		).toContainText(`Bewaard in Fietspad ${TOKEN_WORD}`)
 
+		// Looked up by the run's unique title: OpenRegister's list API reads an
+		// `owner` query parameter as its own record-owner field, so the
+		// collection's `owner` property cannot be filtered over HTTP.
 		const dossiers = await listObjects('publication', 'collection', {
-			owner: state.subjectRef,
+			title: `Fietspad ${TOKEN_WORD}`,
 		})
 		expect(dossiers).toHaveLength(1)
+		expect(dossiers[0].owner).toBe(state.subjectRef)
 		state.dossierId = idOf(dossiers[0])
 		remember('publication', 'collection', state.dossierId)
 		expect(dossiers[0].items.map((i: any) => i.publication)).toContain(
