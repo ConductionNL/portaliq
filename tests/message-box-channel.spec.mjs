@@ -85,21 +85,24 @@ test('switching it sets messageBox.enabled and keeps the other choices', () => {
 	assert.deepEqual(choices, { 'case.updated': { email: true, push: false } })
 })
 
-test('the inbox and the settings section use it, and both locales say it', () => {
+test('the inbox and the settings section use it, and both locales say it', async () => {
 	const inbox = readFileSync(
-		new URL('../src/portal/components/InboxPage.jsx', import.meta.url),
+		new URL('../src/site/pages/inbox/InboxPage.vue', import.meta.url),
 		'utf8',
 	)
-	assert.match(inbox, /deliveryLine\(message, t\)/)
+	assert.match(inbox, /deliveryLine\(message, this\.tr\)/)
 	const settings = readFileSync(
 		new URL(
-			'../src/portal/components/NotificationSettings.jsx',
+			'../src/site/components/inbox/NotificationSettings.vue',
 			import.meta.url,
 		),
 		'utf8',
 	)
-	assert.match(settings, /messageBoxChoice\(loaded\)/)
+	assert.match(settings, /messageBoxChoice\(this\.loaded\)/)
 	assert.match(settings, /withMessageBoxChoice\(/)
+	const { default: strings } = await import(
+		'../src/site/pages/inbox/strings.js'
+	)
 	const expected = {
 		nl: {
 			'Also sent to {label}.': 'Ook verstuurd naar {label}.',
@@ -111,14 +114,36 @@ test('the inbox and the settings section use it, and both locales say it', () =>
 		},
 	}
 	for (const locale of ['en', 'nl']) {
-		const bundle = JSON.parse(
-			readFileSync(
-				new URL(`../src/portal/i18n/${locale}.json`, import.meta.url),
-				'utf8',
-			),
-		)
 		for (const [key, value] of Object.entries(expected[locale])) {
-			assert.equal(bundle[key], value, `${locale}: ${key}`)
+			assert.equal(strings[locale][key], value, `${locale}: ${key}`)
 		}
 	}
+})
+
+test('the settings show the message box row only when offered, and push only with a device', async () => {
+	const { loadSfc, renderComponent } = await import('./support/render-sfc.mjs')
+	const settings = await loadSfc(
+		'src/site/components/inbox/NotificationSettings.vue',
+	)
+	const api = {}
+	const plain = await renderComponent(settings, {
+		api,
+		t,
+		initial: { preferences: { 'case.updated': { email: false } } },
+	})
+	assert.doesNotMatch(plain, /portaliq-notify-message-box/)
+	assert.doesNotMatch(plain, />Push</)
+	assert.match(plain, /<th scope="row" class="utrecht-table__header-cell">Changes on your cases<\/th>/)
+	assert.match(plain, /id="portaliq-notify-case-updated-email" type="checkbox" class="utrecht-checkbox"><label for="portaliq-notify-case-updated-email"/)
+	const offered = await renderComponent(settings, {
+		api,
+		t,
+		initial: {
+			preferences: {},
+			pushAvailable: true,
+			messageBox: { label: 'MijnOverheid Berichtenbox' },
+		},
+	})
+	assert.match(offered, /Also send letters to MijnOverheid Berichtenbox/)
+	assert.match(offered, />Push</)
 })

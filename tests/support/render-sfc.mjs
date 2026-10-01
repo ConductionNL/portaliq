@@ -87,3 +87,31 @@ export async function renderSfc(file, props = {}, stubs = {}) {
 	const { renderToString } = await import('vue/server-renderer')
 	return renderToString(createSSRApp({ render: () => h(component, props) }))
 }
+
+/**
+ * Compile a component and return its options, without rendering it, so a test
+ * can drive its methods or render it in a state of its choosing.
+ *
+ * @param {string} file  Path of the `.vue` file, relative to the repository.
+ * @param {object} stubs Bare specifier to module source.
+ * @return {Promise<object>} The component options.
+ */
+export async function loadSfc(file, stubs = {}) {
+	const dir = join(OUT, `${process.pid}-${counter++}`)
+	mkdirSync(dir, { recursive: true })
+	const compiled = compile(join(ROOT, file), stubs, dir)
+	return (await import(pathToFileURL(compiled).href)).default
+}
+
+/**
+ * Render compiled component options to an HTML string.
+ *
+ * @param {object} component The component options.
+ * @param {object} props     The props to render with.
+ * @return {Promise<string>} The rendered HTML.
+ */
+export async function renderComponent(component, props = {}) {
+	const { createSSRApp, h } = await import('vue')
+	const { renderToString } = await import('vue/server-renderer')
+	return renderToString(createSSRApp({ render: () => h(component, props) }))
+}

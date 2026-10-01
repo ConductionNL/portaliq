@@ -4,67 +4,25 @@
 //
 // news-item-translation.spec.mjs: a guardian reads a school news item that AI
 // translated, sees the same notice a translated message shows, and reaches the
-// original in one step (decision D24, news-item-translation).
+// original in one step (decision D24, news-item-translation). Runs against
+// the site's Vue port (site-reaches-portal-parity REQ-SRP-033).
 //
 // Usage:
 //   node --test tests/news-item-translation.spec.mjs
 
 import assert from 'node:assert/strict'
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { createRequire } from 'node:module'
+import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
-import { fileURLToPath, pathToFileURL } from 'node:url'
-
-const require = createRequire(import.meta.url)
-const babel = require('@babel/core')
-const { createElement } = require('react')
-const { renderToStaticMarkup } = require('react-dom/server')
+import { fileURLToPath } from 'node:url'
+import { t } from './support/page-instance.mjs'
+import { loadSfc, renderComponent } from './support/render-sfc.mjs'
+import { hasNews } from '../src/site/pages/inbox/translation.js'
+import { pages } from '../src/site/pages/inbox/index.js'
+import strings from '../src/site/pages/inbox/strings.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
-const OUT_DIR = join(ROOT, 'node_modules', '.cache', 'portaliq-tests')
-
-/**
- * Compile one portal source file (and the local components it imports) with
- * the portal build's React preset and import it from where `react` resolves.
- *
- * @param {string} relative - the path under src/portal
- * @return {Promise<object>} the module
- */
-async function load(relative) {
-	const source = join(ROOT, 'src', 'portal', relative)
-	const compiled = babel.transformSync(readFileSync(source, 'utf8'), {
-		filename: source,
-		babelrc: false,
-		configFile: false,
-		presets: [['@babel/preset-react', { runtime: 'automatic' }]],
-	})
-	mkdirSync(OUT_DIR, { recursive: true })
-	const flat = (path) => path.replace(/[\\/]/g, '_').replace(/\.jsx?$/, '.mjs')
-	const code = compiled.code.replace(/from '\.\/([A-Za-z]+)\.jsx'/g, (whole, name) => `from './${flat('components/' + name + '.jsx')}'`)
-	const out = join(OUT_DIR, flat(relative))
-	writeFileSync(out, code)
-	return import(pathToFileURL(out).href)
-}
-
-await load('components/TranslatedText.jsx')
-await load('components/MessagesPage.jsx')
-const { NewsItem, hasNews } = await load('components/NewsPage.jsx')
-
-/**
- * The identity translator: English source strings with interpolation.
- *
- * @param {string} key - the English string
- * @param {object} [vars] - placeholder values
- * @return {string} the string
- */
-function t(key, vars) {
-	let text = key
-	for (const [name, value] of Object.entries(vars || {})) {
-		text = text.replace(`{${name}}`, String(value))
-	}
-	return text
-}
+const NewsItem = await loadSfc('src/site/components/inbox/NewsItem.vue')
 
 const ITEM = {
 	id: 'n1',
@@ -79,42 +37,48 @@ const ITEM = {
 	},
 }
 
-test('a translated news item shows the translation, the AI notice naming Dutch, and the original one button away', () => {
-	const html = renderToStaticMarkup(createElement(NewsItem, { item: ITEM, t, locale: 'en' }))
+/**
+ * The shared portal API's source, wherever the shell slice put it.
+ *
+ * @return {string} The source.
+ */
+function portalApiSource() {
+	const shared = join(ROOT, 'src', 'shared', 'portalApi.js')
+	return readFileSync(existsSync(shared) ? shared : join(ROOT, 'src', 'portal', 'lib', 'portalApi.js'), 'utf8')
+}
 
-	assert.match(html, /<h3 class="portaliq-news__title">Studiedag<\/h3>/)
-	assert.match(html, /<p class="portaliq-news__body" lang="ar">المدرسة مغلقة يوم الجمعة\.<\/p>/)
-	assert.match(html, /<aside class="portaliq-ai-notice" aria-label="AI translation">/)
+test('a translated news item shows the translation, the AI notice naming Dutch, and the original one button away', async () => {
+	const html = await renderComponent(NewsItem, { item: ITEM, t, locale: 'en' })
+	assert.match(html, /<h3 class="utrecht-heading-3 pq-news__title">Studiedag<\/h3>/)
+	assert.match(html, /<p class="utrecht-paragraph pq-news__body" lang="ar">المدرسة مغلقة يوم الجمعة\.<\/p>/)
+	assert.match(html, /<aside class="pq-ai-notice" aria-label="AI translation">/)
 	assert.match(html, /Translated by AI from Dutch/)
 	assert.match(html, /aria-expanded="false" aria-controls="portaliq-original-news-n1">Show the original text<\/button>/)
-	assert.match(html, /<blockquote id="portaliq-original-news-n1" class="portaliq-translated__original" lang="nl" hidden="">De school is vrijdag dicht\.<\/blockquote>/)
+	assert.match(html, /<blockquote id="portaliq-original-news-n1" class="pq-translated__original" lang="nl" hidden>(<!--\[-->)?De school is vrijdag dicht\./)
 })
 
-test('a news item without a labelled translation renders as written with no notice', () => {
+test('a news item without a labelled translation renders as written with no notice', async () => {
 	for (const translation of [undefined, { ...ITEM.translation, translatedByAi: false }]) {
-		const html = renderToStaticMarkup(createElement(NewsItem, { item: { ...ITEM, translation }, t, locale: 'en' }))
-		assert.match(html, /<p class="portaliq-news__body">De school is vrijdag dicht\.<\/p>/)
-		assert.doesNotMatch(html, /portaliq-ai-notice/)
+		const html = await renderComponent(NewsItem, { item: { ...ITEM, translation }, t, locale: 'en' })
+		assert.match(html, /<p class="utrecht-paragraph pq-news__body">De school is vrijdag dicht\.<\/p>/)
+		assert.doesNotMatch(html, /pq-ai-notice/)
 	}
 })
 
-test('the news page appears only when the feed holds an item', () => {
+test('the news page appears only when the feed holds an item, and reads the feed', () => {
 	assert.equal(hasNews([]), false)
 	assert.equal(hasNews(null), false)
 	assert.equal(hasNews([ITEM]), true)
-	const app = readFileSync(join(ROOT, 'src', 'portal', 'App.jsx'), 'utf8')
-	assert.match(app, /special: 'news'/)
-	assert.match(app, /<NewsPage/)
-	const api = readFileSync(join(ROOT, 'src', 'portal', 'lib', 'portalApi.js'), 'utf8')
-	assert.match(api, /async fetchNewsFeed\(\)[\s\S]*\/api\/news\/feed/)
+	assert.equal(typeof pages.news, 'function')
+	assert.match(portalApiSource(), /async fetchNewsFeed\(\)[\s\S]*\/api\/news\/feed/)
 })
 
 test('the news page carries the same language picker as the messages page', () => {
-	const source = readFileSync(join(ROOT, 'src', 'portal', 'components', 'NewsPage.jsx'), 'utf8')
-	assert.match(source, /import \{ MessageLanguagePicker \} from '\.\/MessagesPage\.jsx'/)
-	assert.match(source, /<MessageLanguagePicker/)
-	const messages = readFileSync(join(ROOT, 'src', 'portal', 'components', 'MessagesPage.jsx'), 'utf8')
-	assert.match(messages, /<MessageLanguagePicker/)
+	for (const page of ['NewsPage', 'MessagesPage']) {
+		const source = readFileSync(join(ROOT, 'src', 'site', 'pages', 'inbox', `${page}.vue`), 'utf8')
+		assert.match(source, /import MessageLanguagePicker from '\.\.\/\.\.\/components\/inbox\/MessageLanguagePicker\.vue'/)
+		assert.match(source, /<MessageLanguagePicker/)
+	}
 })
 
 test('newsItem declares translations and the register moved', () => {
@@ -125,11 +89,9 @@ test('newsItem declares translations and the register moved', () => {
 	assert.equal(register.info.version, register.components.registers.portaliq.version)
 })
 
-test('every new SPA string has a Dutch value', () => {
-	const en = JSON.parse(readFileSync(join(ROOT, 'src', 'portal', 'i18n', 'en.json'), 'utf8'))
-	const nl = JSON.parse(readFileSync(join(ROOT, 'src', 'portal', 'i18n', 'nl.json'), 'utf8'))
+test('every string has a Dutch value', () => {
 	for (const key of ['News', 'No news yet.', 'News from school is translated by AI into your language. You can always see the original text.']) {
-		assert.equal(en[key], key, `en identity for ${key}`)
-		assert.ok(nl[key] && nl[key] !== '', `nl value for ${key}`)
+		assert.equal(strings.en[key], key, `en identity for ${key}`)
+		assert.ok(strings.nl[key] && strings.nl[key] !== key, `nl value for ${key}`)
 	}
 })
