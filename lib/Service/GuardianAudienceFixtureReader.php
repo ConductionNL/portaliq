@@ -69,11 +69,13 @@ class GuardianAudienceFixtureReader {
 	 * @param ContainerInterface $container For resolving OpenRegister services.
 	 * @param LoggerInterface $logger The logger.
 	 * @param LeafGuardianAudienceReader|null $leafAudience The school app's own audience, when no fixture row exists.
+	 * @param GuardianAccountDirectory|null $accounts The active guardian accounts the school app resolves, for guardiansMatching().
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
 		private readonly ?LeafGuardianAudienceReader $leafAudience=null,
+		private readonly ?GuardianAccountDirectory $accounts=null,
 	) {
 	}//end __construct()
 
@@ -229,21 +231,50 @@ class GuardianAudienceFixtureReader {
 	}//end childPhotoConsentGranted()
 
 	/**
-	 * Every guardian subjectRef whose fixture audience intersects a target
-	 * (school OR group OR child, any match) — the count/enumeration primitive
-	 * `NewsFeedReader` and `NewsletterPreflightService` both call, so the
-	 * preflight count can never drift from the actual delivery set.
+	 * Every guardian subjectRef whose audience intersects a target (school OR
+	 * group OR child, any match) — the count/enumeration primitive the
+	 * newsletter preflight, the newsletter send check and the emergency push
+	 * all call, so the preflight count can never drift from the actual
+	 * delivery set.
+	 *
+	 * Fixture rows are matched first, and a guardian with a fixture row is
+	 * matched on that row only, the same precedence resolveAudience() keeps.
+	 * Every other active guardian account is then resolved through the school
+	 * app (guardian-enumeration-from-the-school-app).
 	 *
 	 * @param array{schoolRef?: string, groupRefs?: array<int, string>, childRefs?: array<int, string>} $target The target.
 	 *
 	 * @return array<int, string> Distinct guardian subjectRefs.
 	 *
 	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsletter-send-is-preceded-by-a-recipient-count-preflight
+	 * @spec openspec/changes/guardian-enumeration-from-the-school-app/tasks.md#T2
 	 */
 	public function guardiansMatching(array $target): array {
+		$fixture = $this->fixtureGuardiansMatching(target: $target);
+
+		return array_values(
+			array_unique(
+				array_merge(
+					$fixture['matched'],
+					($this->accounts?->guardiansMatching(target: $target, exclude: $fixture['covered']) ?? [])
+				)
+			)
+		);
+	}//end guardiansMatching()
+
+	/**
+	 * The fixture guardians matching a target, and every guardian the fixture
+	 * holds a row for at all.
+	 *
+	 * @param array{schoolRef?: string, groupRefs?: array<int, string>, childRefs?: array<int, string>} $target The target.
+	 *
+	 * @return array{matched: array<int, string>, covered: array<int, string>}
+	 */
+	private function fixtureGuardiansMatching(array $target): array {
+		$none = ['matched' => [], 'covered' => []];
 		$objectService = $this->objectService();
 		if ($objectService === null) {
-			return [];
+			return $none;
 		}
 
 		try {
@@ -252,20 +283,22 @@ class GuardianAudienceFixtureReader {
 			$rows = $objectService->findAll(config: ['filters' => [], 'limit' => 500, 'offset' => 0], _rbac: false, _multitenancy: false);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: guardian audience fixture enumeration failed', ['reason' => $e->getMessage()]);
-			return [];
+			return $none;
 		}
 
 		if (is_array($rows) === false) {
-			return [];
+			return $none;
 		}
 
 		$matched = [];
+		$covered = [];
 		foreach ($rows as $row) {
 			$normalised = $this->normalise(row: $row);
 			if ($normalised === null) {
 				continue;
 			}
 
+			$covered[] = (string)($normalised['guardianRef'] ?? '');
 			$audience = [
 				'schoolRef' => (string)($normalised['schoolRef'] ?? ''),
 				'groupRefs' => $this->stringList(value: $normalised['groupRefs'] ?? []),
@@ -280,8 +313,8 @@ class GuardianAudienceFixtureReader {
 			}
 		}
 
-		return $matched;
-	}//end guardiansMatching()
+		return ['matched' => $matched, 'covered' => $covered];
+	}//end fixtureGuardiansMatching()
 
 	/**
 	 * Coerce a value to a list of strings, dropping anything else.
