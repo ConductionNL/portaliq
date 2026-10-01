@@ -48,6 +48,14 @@
 			<p v-if="devError" class="utrecht-paragraph" role="alert">
 				{{ devError }}
 			</p>
+			<!-- The doors besides the sign-in buttons, only where they lead
+			     somewhere (identity-ways-in-screens REQ-IWI-005). -->
+			<WaysIn
+				v-if="ways.register || ways.reference"
+				:ways="ways"
+				:authBase="authBase"
+				:portal="portalSlug"
+				:t="waysT || t" />
 		</div>
 
 		<p v-else-if="loading" class="utrecht-paragraph" role="status">
@@ -88,6 +96,7 @@
 <script>
 import { markRaw } from 'vue'
 import PlaceholderPage from '../pages/PlaceholderPage.vue'
+import WaysIn from './WaysIn.vue'
 import { navKeyFor, OPEN_STORAGE_KEY } from '../../shared/openRecord.js'
 import { routeForNav } from '../../shared/portalNav.js'
 import { pageOwnsHeading, sitePageLoader } from '../pages/registry.js'
@@ -114,6 +123,8 @@ function declaredProps(component) {
 export default {
 	name: 'AccountArea',
 
+	components: { WaysIn },
+
 	props: {
 		/** Whether the session has been read; until then nothing is decided. */
 		sessionKnown: { type: Boolean, default: false },
@@ -131,6 +142,23 @@ export default {
 		api: { type: Object, default: null },
 		/** The portal's sign-in routes. */
 		signInRoutes: { type: Array, default: () => [] },
+		/** The doors besides the sign-in buttons, from waysInFrom(). */
+		ways: {
+			type: Object,
+			default: () => ({
+				register: false,
+				reference: false,
+				emailSignIn: '',
+				referenceCaseTypes: [],
+			}),
+		},
+
+		/** The translator of the ways in, or null for the site's. */
+		waysT: { type: Function, default: null },
+		/** The portal API base (`.../portal/api`), for the ways in. */
+		authBase: { type: String, default: '' },
+		/** The serving portal's slug, or ''. */
+		portalSlug: { type: String, default: '' },
 		/** Whether the server accepts the dev login. */
 		devLogin: { type: Boolean, default: false },
 		/** Why the dev login did not work, or ''. */

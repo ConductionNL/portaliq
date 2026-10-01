@@ -375,7 +375,7 @@ class PortalPageControllerTest extends TestCase {
 		$signin = $controller->site()->getParams()['portalConfig']['signin'];
 
 		$this->assertSame(
-			expected: ['devLogin' => true, 'silentSignIn' => 'digid', 'signinOrganisation' => 'school-org', 'audience' => 'client'],
+			expected: ['devLogin' => true, 'silentSignIn' => 'digid', 'signinOrganisation' => 'school-org', 'audience' => 'client', 'waysIn' => []],
 			actual: $signin
 		);
 
@@ -383,6 +383,28 @@ class PortalPageControllerTest extends TestCase {
 		$this->assertFalse($closed['devLogin']);
 
 	}//end testSiteCarriesTheSigninSettings()
+
+
+	/**
+	 * The site's sign-in screen learns which ways in a portal opens from the
+	 * same runtime config as `/portal`, and gets none when it names none.
+	 *
+	 * @spec openspec/changes/identity-ways-in-screens/specs/portal-ways-in/spec.md#requirement-the-sign-in-screen-shows-only-the-doors-that-lead-somewhere-req-iwi-005
+	 */
+	public function testSiteCarriesTheWaysIn(): void {
+		$ways = ['register' => true, 'reference' => false, 'emailSignIn' => 'E-mail', 'referenceCaseTypes' => []];
+		$controller = $this->controller(
+			orgSlug: '',
+			resolved: ['waysIn' => $ways],
+			portal: ['slug' => 'wilgenboom', 'organisation' => 'school-org']
+		);
+
+		$this->assertSame(expected: $ways, actual: $controller->site()->getParams()['portalConfig']['signin']['waysIn']);
+
+		$none = $this->controller(orgSlug: '')->site()->getParams()['portalConfig']['signin'];
+		$this->assertSame(expected: [], actual: $none['waysIn']);
+
+	}//end testSiteCarriesTheWaysIn()
 
 
 	/**
