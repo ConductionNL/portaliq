@@ -60,7 +60,9 @@
 						:t="tr"
 						:locale="lang"
 						@select="select(item.collection, $event)"
-						@rowAction="(action, row) => onRowAction(item, action, row)" />
+						@rowAction="
+							(action, row) => onRowAction(item, action, row)
+						" />
 				</template>
 				<CollectionTable
 					v-if="groupsOf(item).length === 0"

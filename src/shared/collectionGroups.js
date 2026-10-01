@@ -40,7 +40,10 @@ export function groupLabelCollection(contribution) {
 	if (typeof id !== 'string' || id === '') {
 		return null
 	}
-	return (contribution.collections || []).find((collection) => collection?.id === id) || null
+	return (
+		(contribution.collections || []).find((collection) => collection?.id === id)
+		|| null
+	)
 }
 
 /**
@@ -148,7 +151,11 @@ export function groupRows(rows, field, labelRows = []) {
 	for (const row of rows) {
 		const value = valueOf(row, field)
 		if (!groups.has(value)) {
-			groups.set(value, { value, label: value === '' ? '' : names.get(value) || value, rows: [] })
+			groups.set(value, {
+				value,
+				label: value === '' ? '' : names.get(value) || value,
+				rows: [],
+			})
 		}
 		groups.get(value).rows.push(row)
 	}
@@ -157,7 +164,12 @@ export function groupRows(rows, field, labelRows = []) {
 	}
 
 	const named = [...groups.values()].filter((group) => group.value !== '')
-	named.sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true, sensitivity: 'base' }))
+	named.sort((a, b) =>
+		a.label.localeCompare(b.label, undefined, {
+			numeric: true,
+			sensitivity: 'base',
+		}),
+	)
 	const rest = groups.get('')
 	return rest ? [...named, rest] : named
 }
