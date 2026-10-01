@@ -150,7 +150,7 @@
 				<!-- The signed-in area owns every `/mijn` route; no CMS page is
 				     read for it (src/shared/portalNav.js). -->
 				<AccountArea
-					v-if="accountRoute"
+					v-if="accountRoute || (signInNeeded && !session)"
 					:sessionKnown="sessionKnown"
 					:session="session"
 					:loading="account.loading"
@@ -486,6 +486,8 @@ export default {
 			// The inbox's unread count after a page changed it, else null.
 			unreadOverride: null,
 			devError: '',
+			// The page on screen is behind the portal's sign-in.
+			signInNeeded: false,
 			site: {},
 			menus: [],
 			glossary: [],
@@ -985,8 +987,8 @@ export default {
 			try {
 				const [site, menus, glossary] = await Promise.all([
 					fetchSite(this.portalSlug),
-					fetchMenus(this.portalSlug),
-					fetchGlossary(this.portalSlug),
+					this.unlessSignInNeeded(fetchMenus(this.portalSlug), []),
+					this.unlessSignInNeeded(fetchGlossary(this.portalSlug), []),
 				])
 				this.site = site
 				this.menus = menus
@@ -1022,6 +1024,29 @@ export default {
 				await this.loadAccount()
 			} else {
 				this.trySilentSignIn()
+			}
+		},
+
+		/**
+		 * A content read that a portal behind a sign-in refuses to a visitor
+		 * without a session (401) or below its trust floor (403) answers the
+		 * fallback, so the door (title, theme, sign-in routes) still renders.
+		 * Any other failure stays a failure.
+		 *
+		 * @param {Promise<*>} read The content read.
+		 * @param {*} fallback What a refused read answers.
+		 * @return {Promise<*>} The read's answer, or the fallback.
+		 *
+		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 */
+		async unlessSignInNeeded(read, fallback) {
+			try {
+				return await read
+			} catch (error) {
+				if (error && (error.status === 401 || error.status === 403)) {
+					return fallback
+				}
+				throw error
 			}
 		},
 
@@ -1323,6 +1348,7 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-unpublished-content-must-be-indistinguishable-from-absent-content
 		 */
 		async loadRoute(route) {
+			this.signInNeeded = false
 			// The signed-in area renders from the session, not from a CMS
 			// page, so no page is read for it.
 			if (isAccountRoute(route)) {
@@ -1370,6 +1396,9 @@ export default {
 				}
 
 				this.page = null
+				// A page behind the portal's sign-in shows the way in rather
+				// than an error: the signed-in area renders signed out.
+				this.signInNeeded = Boolean(error && (error.status === 401 || error.status === 403))
 				// A 404 is information, not a fault — an unknown route and an
 				// unpublished page are answered identically by the API on
 				// purpose, and both belong on screen as "not found".
@@ -1545,7 +1574,15 @@ export default {
 		 */
 		goSearch(term) {
 			const url = new URL(window.location.href)
+			// The portal the page is served as stays on the address: on an
+			// instance with several portals, an address without it opens
+			// another portal, or none, after a reload or in a new tab.
+			const portal = url.searchParams.get('portal')
 			url.search = ''
+			url.hash = ''
+			if (portal) {
+				url.searchParams.set('portal', portal)
+			}
 			url.searchParams.set('route', this.searchRoute)
 			if (term) {
 				url.searchParams.set('_search', term)
@@ -1583,7 +1620,15 @@ export default {
 		 */
 		hrefForRoute(route) {
 			const url = new URL(window.location.href)
+			// The portal the page is served as stays on the address: on an
+			// instance with several portals, an address without it opens
+			// another portal, or none, after a reload or in a new tab.
+			const portal = url.searchParams.get('portal')
 			url.search = ''
+			url.hash = ''
+			if (portal) {
+				url.searchParams.set('portal', portal)
+			}
 			if (route && route !== '/') {
 				url.searchParams.set('route', route)
 			}
